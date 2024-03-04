@@ -1,0 +1,14 @@
+﻿<Application x:Class="Sample.Client.Wpf.Windows.App"
+		xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		StartupUri="/Windows/MainWindow.xaml">
+	<Application.Resources>
+		<ResourceDictionary>
+			<ResourceDictionary.MergedDictionaries>
+				<ResourceDictionary Source="Pack://application:,,,/Cornerstone.Wpf;component/Themes/Generic.xaml" />
+				<ResourceDictionary Source="/Xaml/ListViewSample.xaml"></ResourceDictionary>
+				<ResourceDictionary Source="/Xaml/SyncSample.xaml"></ResourceDictionary>
+			</ResourceDictionary.MergedDictionaries>
+		</ResourceDictionary>
+	</Application.Resources>
+</Application>

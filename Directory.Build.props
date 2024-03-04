@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0;net6.0;net7.0;net8.0</TargetFrameworks>
+		<Configurations>Debug;Release</Configurations>
+		<Company>Bobby Cannon</Company>
+		<Authors>Bobby Cannon</Authors>
+		<Copyright>© Copyright 2014-2024</Copyright>
+		
+		<!-- Versions -->
+		<AssemblyVersion>1.0.4.1</AssemblyVersion>
+		<FileVersion>1.0.4.1</FileVersion>
+		<Version>1.0.4.1</Version>
+		
+		<LangVersion>latest</LangVersion>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<SignAssembly>false</SignAssembly>
+		<DelaySign>false</DelaySign>
+		<Description>Cornerstone in as development framework to help speed up and make building applications and systems much easier.</Description>
+		<AssemblyOriginatorKeyFile>$(SolutionDir)..\Cornerstone\Cornerstone.snk</AssemblyOriginatorKeyFile>
+		<PackageIcon>Cornerstone.png</PackageIcon>
+		<PackageIconUrl>https://raw.githubusercontent.com/BobbyCannon/Cornerstone/master/Cornerstone.png</PackageIconUrl>
+		<PackageLicenseFile>License.txt</PackageLicenseFile>
+		<PackageProjectUrl>https://github.com/BobbyCannon/Cornerstone</PackageProjectUrl>
+		<PackageReadmeFile>readme.md</PackageReadmeFile>
+		<RepositoryType>git</RepositoryType>
+		<RepositoryUrl>https://github.com/BobbyCannon/Cornerstone</RepositoryUrl>
+		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+		<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+		<Nullable>disable</Nullable>
+		<NoWarn>$(NoWarn);CA1416;CS8625;MSB3277;NETSDK1206</NoWarn>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Remove="FodyWeavers.xml" />
+		<None Include="$(SolutionDir)..\Cornerstone\FodyWeavers.xml" />
+		<None Include="$(SolutionDir)..\Cornerstone\License.txt">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="$(SolutionDir)..\Cornerstone\readme.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="$(SolutionDir)..\Cornerstone\Cornerstone.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Fody" Version="6.8.0" PrivateAssets="All" />
+		<PackageReference Include="PropertyChanged.Fody" Version="4.1.0" PrivateAssets="All" />
+	</ItemGroup>
+</Project>

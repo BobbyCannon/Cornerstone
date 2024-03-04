@@ -1,0 +1,113 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+		xmlns:maui="clr-namespace:Sample.Client.Maui"
+		x:Class="Sample.Client.Maui.Pages.SettingsPage"
+		x:DataType="maui:MauiViewManager">
+	<ContentPage.Resources>
+		<Style x:Key="Section" TargetType="VerticalStackLayout">
+			<Setter Property="WidthRequest" Value="360" />
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="Margin" Value="0,10,0,10" />
+		</Style>
+	</ContentPage.Resources>
+	<ContentPage.Content>
+		<ScrollView HorizontalScrollBarVisibility="Never">
+			<FlexLayout Margin="10"
+					HorizontalOptions="Center"
+					AlignContent="SpaceEvenly"
+					AlignItems="Start"
+					JustifyContent="SpaceEvenly"
+					VerticalOptions="Start"
+					Wrap="Wrap">
+
+				<VerticalStackLayout Style="{StaticResource Section}">
+					<Image WidthRequest="120"
+							HeightRequest="120"
+							HorizontalOptions="Center"
+							VerticalOptions="Start"
+							Margin="0,0,0,20">
+						<Image.Source>
+							<x:FontImage FontFamily="FontAwesome"
+									Size="256"
+									Glyph="&#xf013;"
+									Color="White" />
+						</Image.Source>
+					</Image>
+					<Label Text="{Binding RuntimeInformation.ApplicationName}"
+							HorizontalTextAlignment="Center" />
+					<HorizontalStackLayout HorizontalOptions="Center">
+						<Label Text="v" />
+						<Label Text="{Binding RuntimeInformation.ApplicationVersion}" />
+					</HorizontalStackLayout>
+				</VerticalStackLayout>
+
+				<VerticalStackLayout Style="{StaticResource Section}">
+					<Label Text="System Information"
+							Style="{StaticResource HeaderLabel}"
+							HorizontalTextAlignment="Center"
+							Margin="0,0,0,10" />
+
+					<Label Text="{Binding RuntimeInformation.ApplicationName}"
+							FontSize="16"
+							HorizontalTextAlignment="Center"
+							Margin="0,0,0,10" />
+
+					<HorizontalStackLayout HorizontalOptions="Center">
+						<Label Text="FileName:" Margin="0,0,10,0" />
+						<Label Text="{Binding RuntimeInformation.ApplicationFileName}" />
+					</HorizontalStackLayout>
+					<HorizontalStackLayout HorizontalOptions="Center">
+						<Label Text="Application Version:" Margin="0,0,10,0" />
+						<Label Text="{Binding RuntimeInformation.ApplicationVersion}" />
+					</HorizontalStackLayout>
+					<HorizontalStackLayout HorizontalOptions="Center">
+						<Label Text="Application Bitness:" Margin="0,0,10,0" />
+						<Label Text="{Binding RuntimeInformation.ApplicationBitness}" />
+					</HorizontalStackLayout>
+					<HorizontalStackLayout HorizontalOptions="Center">
+						<Label Text="Device Platform:" Margin="0,0,10,0" />
+						<Label Text="{Binding RuntimeInformation.DevicePlatform}" />
+					</HorizontalStackLayout>
+					<HorizontalStackLayout HorizontalOptions="Center">
+						<Label Text="Device Platform Version:" Margin="0,0,10,0" />
+						<Label Text="{Binding RuntimeInformation.DevicePlatformVersion}" />
+					</HorizontalStackLayout>
+					<HorizontalStackLayout HorizontalOptions="Center">
+						<Label Text="Device Platform Bitness:" Margin="0,0,10,0" />
+						<Label Text="{Binding RuntimeInformation.DevicePlatformBitness}" />
+					</HorizontalStackLayout>
+					<HorizontalStackLayout HorizontalOptions="Center">
+						<Label Text="Device Type:" Margin="0,0,10,0" />
+						<Label Text="{Binding RuntimeInformation.DeviceType}" />
+					</HorizontalStackLayout>
+					<HorizontalStackLayout HorizontalOptions="Center">
+						<Label Text="Device Manufacturer:" Margin="0,0,10,0" />
+						<Label Text="{Binding RuntimeInformation.DeviceManufacturer}" />
+					</HorizontalStackLayout>
+					<HorizontalStackLayout HorizontalOptions="Center">
+						<Label Text="Device Model:" Margin="0,0,10,0" />
+						<Label Text="{Binding RuntimeInformation.DeviceModel}" />
+					</HorizontalStackLayout>
+					<HorizontalStackLayout HorizontalOptions="Center">
+						<Label Text="Device Name:" Margin="0,0,10,0" />
+						<Label Text="{Binding RuntimeInformation.DeviceName}" />
+					</HorizontalStackLayout>
+					<HorizontalStackLayout HorizontalOptions="Center">
+						<Label Text="Device Id:" Margin="0,0,10,0" />
+						<Label Text="{Binding RuntimeInformation.DeviceId}" />
+					</HorizontalStackLayout>
+					<HorizontalStackLayout HorizontalOptions="Center">
+						<Label Text="Application Location:" Margin="0,0,10,0" />
+						<Label Text="{Binding RuntimeInformation.ApplicationLocation}" />
+					</HorizontalStackLayout>
+					<HorizontalStackLayout HorizontalOptions="Center">
+						<Label Text="Application Data Location:" Margin="0,0,10,0" />
+						<Label Text="{Binding RuntimeInformation.ApplicationDataLocation}" />
+					</HorizontalStackLayout>
+				</VerticalStackLayout>
+			</FlexLayout>
+		</ScrollView>
+	</ContentPage.Content>
+</ContentPage>
