@@ -1,0 +1,448 @@
+#region References
+
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
+using Cornerstone.Collections;
+using Cornerstone.Convert.Converters;
+using Cornerstone.Protocols.Osc;
+using Cornerstone.Serialization.Json.Values;
+using Cornerstone.Testing;
+using Cornerstone.Text;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+#endregion
+
+namespace Cornerstone.UnitTests.Convert.Converters;
+
+[TestClass]
+public class StringConverterTests : ConverterTests<StringConverter>
+{
+	#region Methods
+
+	[TestMethod]
+	public void Basic()
+	{
+		AreEqual(null, Converter.TryConvertTo(null, typeof(string), typeof(bool?), out var value) ? value : 1);
+		AreEqual(true, Converter.TryConvertTo("true", typeof(string), typeof(bool), out value) ? value : 1);
+		AreEqual(true, Converter.TryConvertTo("True", typeof(string), typeof(bool), out value) ? value : 1);
+		AreEqual(true, Converter.TryConvertTo("TRUE", typeof(string), typeof(bool), out value) ? value : 1);
+		AreEqual(false, Converter.TryConvertTo("false", typeof(string), typeof(bool), out value) ? value : 1);
+		AreEqual(false, Converter.TryConvertTo("False", typeof(string), typeof(bool), out value) ? value : 1);
+		AreEqual(false, Converter.TryConvertTo("FALSE", typeof(string), typeof(bool), out value) ? value : 1);
+	}
+
+	[TestMethod]
+	public void CanConvert()
+	{
+		ValidateCanConvert();
+
+		IsTrue(Converter.CanConvert(typeof(StringBuilder), typeof(TextBuilder)));
+		IsTrue(Converter.CanConvert(typeof(StringBuilder), typeof(int)));
+		IsTrue(Converter.CanConvert(typeof(TextBuilder), typeof(Guid)));
+		IsTrue(Converter.CanConvert(typeof(JsonString), typeof(ShortGuid)));
+		IsTrue(Converter.CanConvert(typeof(JsonString), typeof(bool)));
+		IsTrue(Converter.CanConvert(typeof(JsonString), typeof(bool?)));
+		IsTrue(Converter.CanConvert(typeof(string), typeof(Version)));
+
+		IsFalse(Converter.CanConvert(typeof(DateTime), typeof(string)));
+	}
+
+	[TestMethod]
+	public void GenerateScenarios()
+	{
+		GenerateNewScenarios($"{nameof(StringConverterTests)}.cs", EnableFileUpdates || IsDebugging);
+	}
+
+	[TestMethod]
+	public void RunAllTests()
+	{
+		TestScenarios(GetTestScenarios());
+	}
+
+	[TestMethod]
+	public void RunSingleTest()
+	{
+		TestScenarios(GetTestScenarios()[11]);
+	}
+
+	[SuppressMessage("ReSharper", "StringLiteralTypo")]
+	[SuppressMessage("ReSharper", "RedundantCast")]
+	private TestScenario[] GetTestScenarios()
+	{
+		var response = new List<TestScenario>();
+
+		response.AddRange(new TestScenario[]
+		{
+			// <Scenarios>
+			new("0: string -> string", null, typeof(string), null, typeof(string)),
+			new("1: string -> StringBuilder", null, typeof(string), null, typeof(StringBuilder)),
+			new("2: StringBuilder -> string", null, typeof(StringBuilder), null, typeof(string)),
+			new("3: string -> TextBuilder", null, typeof(string), null, typeof(TextBuilder)),
+			new("4: TextBuilder -> string", null, typeof(TextBuilder), null, typeof(string)),
+			new("5: string -> GapBuffer<char>", null, typeof(string), null, typeof(GapBuffer<char>)),
+			new("6: GapBuffer<char> -> string", null, typeof(GapBuffer<char>), null, typeof(string)),
+			new("7: string -> RopeBuffer<char>", null, typeof(string), null, typeof(RopeBuffer<char>)),
+			new("8: RopeBuffer<char> -> string", null, typeof(RopeBuffer<char>), null, typeof(string)),
+			new("9: string -> JsonString", null, typeof(string), null, typeof(JsonString)),
+			new("10: JsonString -> string", null, typeof(JsonString), null, typeof(string)),
+			new("11: string -> char", "a", 'a'),
+			new("12: string -> char?", null, typeof(string), null, typeof(char?)),
+			new("13: string -> DateTime", "2000-01-02T03:04:00.0000000Z", new DateTime(2000, 1, 2, 3, 4, 0, DateTimeKind.Utc)),
+			new("14: string -> DateTime?", null, typeof(string), null, typeof(DateTime?)),
+			new("15: string -> DateTimeOffset", "2000-01-02T03:04:01.0000000Z", new DateTimeOffset(2000, 1, 2, 3, 4, 1, 0, 0, new TimeSpan(0, 0, 0))),
+			new("16: string -> DateTimeOffset?", null, typeof(string), null, typeof(DateTimeOffset?)),
+			new("17: string -> IsoDateTime", "2000-01-02T03:04:02.0000000Z", new IsoDateTime(new DateTime(2000, 1, 2, 3, 4, 2, DateTimeKind.Utc), new TimeSpan(0, 0, 0))),
+			new("18: string -> IsoDateTime?", null, typeof(string), null, typeof(IsoDateTime?)),
+			new("19: string -> OscTimeTag", "2000-01-02T03:04:03.0000000Z", new OscTimeTag(new DateTime(2000, 1, 2, 3, 4, 3, DateTimeKind.Utc))),
+			new("20: string -> OscTimeTag?", null, typeof(string), null, typeof(OscTimeTag?)),
+			new("21: string -> TimeSpan", "0:03:04:04.0000000", new TimeSpan(3, 4, 4)),
+			new("22: string -> TimeSpan?", null, typeof(string), null, typeof(TimeSpan?)),
+			new("23: string -> byte", "6", 6),
+			new("24: string -> byte?", null, typeof(string), null, typeof(byte?)),
+			new("25: string -> sbyte", "7", 7),
+			new("26: string -> sbyte?", null, typeof(string), null, typeof(sbyte?)),
+			new("27: string -> short", "8", 8),
+			new("28: string -> short?", null, typeof(string), null, typeof(short?)),
+			new("29: string -> ushort", "9", 9),
+			new("30: string -> ushort?", null, typeof(string), null, typeof(ushort?)),
+			new("31: string -> int", "10", 10),
+			new("32: string -> int?", null, typeof(string), null, typeof(int?)),
+			new("33: string -> uint", "11", 11),
+			new("34: string -> uint?", null, typeof(string), null, typeof(uint?)),
+			new("35: string -> long", "12", 12),
+			new("36: string -> long?", null, typeof(string), null, typeof(long?)),
+			new("37: string -> ulong", "13", 13),
+			new("38: string -> ulong?", null, typeof(string), null, typeof(ulong?)),
+			new("39: string -> IntPtr", "14", (IntPtr) 14),
+			new("40: string -> IntPtr?", null, typeof(string), null, typeof(IntPtr?)),
+			new("41: string -> UIntPtr", "15", (UIntPtr) 15),
+			new("42: string -> UIntPtr?", null, typeof(string), null, typeof(UIntPtr?)),
+			new("43: string -> decimal", "16.01", (decimal) 16.01),
+			new("44: string -> decimal?", null, typeof(string), null, typeof(decimal?)),
+			new("45: string -> double", "17.02", (double) 17.02),
+			new("46: string -> double?", null, typeof(string), null, typeof(double?)),
+			new("47: string -> float", "18.03", (float) 18.03),
+			new("48: string -> float?", null, typeof(string), null, typeof(float?)),
+			new("49: string -> Guid", "00000000-0000-0000-0000-000000000019", Guid.Parse("00000000-0000-0000-0000-000000000019")),
+			new("50: string -> Guid?", null, typeof(string), null, typeof(Guid?)),
+			new("51: string -> ShortGuid", "00000000-0000-0000-0000-000000000020", ShortGuid.Parse("AAAAAAAAAAAAAAAAAAAAIA")),
+			new("52: string -> ShortGuid?", null, typeof(string), null, typeof(ShortGuid?)),
+			new("53: string -> bool", "True", true),
+			new("54: string -> bool?", null, typeof(string), null, typeof(bool?)),
+			new("55: string -> Version", null, typeof(string), null, typeof(Version)),
+			new("56: StringBuilder -> string", null, typeof(StringBuilder), null, typeof(string)),
+			new("57: string -> StringBuilder", null, typeof(string), null, typeof(StringBuilder)),
+			new("58: StringBuilder -> StringBuilder", null, typeof(StringBuilder), null, typeof(StringBuilder)),
+			new("59: StringBuilder -> TextBuilder", null, typeof(StringBuilder), null, typeof(TextBuilder)),
+			new("60: TextBuilder -> StringBuilder", null, typeof(TextBuilder), null, typeof(StringBuilder)),
+			new("61: StringBuilder -> GapBuffer<char>", null, typeof(StringBuilder), null, typeof(GapBuffer<char>)),
+			new("62: GapBuffer<char> -> StringBuilder", null, typeof(GapBuffer<char>), null, typeof(StringBuilder)),
+			new("63: StringBuilder -> RopeBuffer<char>", null, typeof(StringBuilder), null, typeof(RopeBuffer<char>)),
+			new("64: RopeBuffer<char> -> StringBuilder", null, typeof(RopeBuffer<char>), null, typeof(StringBuilder)),
+			new("65: StringBuilder -> JsonString", null, typeof(StringBuilder), null, typeof(JsonString)),
+			new("66: JsonString -> StringBuilder", null, typeof(JsonString), null, typeof(StringBuilder)),
+			new("67: StringBuilder -> char", new StringBuilder("u"), 'u'),
+			new("68: StringBuilder -> char?", null, typeof(StringBuilder), null, typeof(char?)),
+			new("69: StringBuilder -> DateTime", "2000-01-02T03:04:20.0000000Z", new DateTime(2000, 1, 2, 3, 4, 20, DateTimeKind.Utc)),
+			new("70: StringBuilder -> DateTime?", null, typeof(StringBuilder), null, typeof(DateTime?)),
+			new("71: StringBuilder -> DateTimeOffset", "2000-01-02T03:04:21.0000000Z", new DateTimeOffset(2000, 1, 2, 3, 4, 21, 0, 0, new TimeSpan(0, 0, 0))),
+			new("72: StringBuilder -> DateTimeOffset?", null, typeof(StringBuilder), null, typeof(DateTimeOffset?)),
+			new("73: StringBuilder -> IsoDateTime", "2000-01-02T03:04:22.0000000Z", new IsoDateTime(new DateTime(2000, 1, 2, 3, 4, 22, DateTimeKind.Utc), new TimeSpan(0, 0, 0))),
+			new("74: StringBuilder -> IsoDateTime?", null, typeof(StringBuilder), null, typeof(IsoDateTime?)),
+			new("75: StringBuilder -> OscTimeTag", "2000-01-02T03:04:23.0000000Z", new OscTimeTag(new DateTime(2000, 1, 2, 3, 4, 23, DateTimeKind.Utc))),
+			new("76: StringBuilder -> OscTimeTag?", null, typeof(StringBuilder), null, typeof(OscTimeTag?)),
+			new("77: StringBuilder -> TimeSpan", "0:03:04:24.0000000", new TimeSpan(3, 4, 24)),
+			new("78: StringBuilder -> TimeSpan?", null, typeof(StringBuilder), null, typeof(TimeSpan?)),
+			new("79: StringBuilder -> byte", new StringBuilder("26"), 26),
+			new("80: StringBuilder -> byte?", null, typeof(StringBuilder), null, typeof(byte?)),
+			new("81: StringBuilder -> sbyte", new StringBuilder("27"), 27),
+			new("82: StringBuilder -> sbyte?", null, typeof(StringBuilder), null, typeof(sbyte?)),
+			new("83: StringBuilder -> short", new StringBuilder("28"), 28),
+			new("84: StringBuilder -> short?", null, typeof(StringBuilder), null, typeof(short?)),
+			new("85: StringBuilder -> ushort", new StringBuilder("29"), 29),
+			new("86: StringBuilder -> ushort?", null, typeof(StringBuilder), null, typeof(ushort?)),
+			new("87: StringBuilder -> int", new StringBuilder("30"), 30),
+			new("88: StringBuilder -> int?", null, typeof(StringBuilder), null, typeof(int?)),
+			new("89: StringBuilder -> uint", new StringBuilder("31"), 31),
+			new("90: StringBuilder -> uint?", null, typeof(StringBuilder), null, typeof(uint?)),
+			new("91: StringBuilder -> long", new StringBuilder("32"), 32),
+			new("92: StringBuilder -> long?", null, typeof(StringBuilder), null, typeof(long?)),
+			new("93: StringBuilder -> ulong", new StringBuilder("33"), 33),
+			new("94: StringBuilder -> ulong?", null, typeof(StringBuilder), null, typeof(ulong?)),
+			new("95: StringBuilder -> IntPtr", new StringBuilder("34"), (IntPtr) 34),
+			new("96: StringBuilder -> IntPtr?", null, typeof(StringBuilder), null, typeof(IntPtr?)),
+			new("97: StringBuilder -> UIntPtr", new StringBuilder("35"), (UIntPtr) 35),
+			new("98: StringBuilder -> UIntPtr?", null, typeof(StringBuilder), null, typeof(UIntPtr?)),
+			new("99: StringBuilder -> decimal", new StringBuilder("36.04"), (decimal) 36.04),
+			new("100: StringBuilder -> decimal?", null, typeof(StringBuilder), null, typeof(decimal?)),
+			new("101: StringBuilder -> double", new StringBuilder("37.05"), (double) 37.05),
+			new("102: StringBuilder -> double?", null, typeof(StringBuilder), null, typeof(double?)),
+			new("103: StringBuilder -> float", new StringBuilder("38.06"), (float) 38.06),
+			new("104: StringBuilder -> float?", null, typeof(StringBuilder), null, typeof(float?)),
+			new("105: StringBuilder -> Guid", new StringBuilder("00000000-0000-0000-0000-000000000039"), Guid.Parse("00000000-0000-0000-0000-000000000039")),
+			new("106: StringBuilder -> Guid?", null, typeof(StringBuilder), null, typeof(Guid?)),
+			new("107: StringBuilder -> ShortGuid", new StringBuilder("00000000-0000-0000-0000-000000000040"), ShortGuid.Parse("AAAAAAAAAAAAAAAAAAAAQA")),
+			new("108: StringBuilder -> ShortGuid?", null, typeof(StringBuilder), null, typeof(ShortGuid?)),
+			new("109: StringBuilder -> bool", new StringBuilder("True"), true),
+			new("110: StringBuilder -> bool?", null, typeof(StringBuilder), null, typeof(bool?)),
+			new("111: StringBuilder -> Version", null, typeof(StringBuilder), null, typeof(Version)),
+			new("112: TextBuilder -> string", null, typeof(TextBuilder), null, typeof(string)),
+			new("113: string -> TextBuilder", null, typeof(string), null, typeof(TextBuilder)),
+			new("114: TextBuilder -> StringBuilder", null, typeof(TextBuilder), null, typeof(StringBuilder)),
+			new("115: StringBuilder -> TextBuilder", null, typeof(StringBuilder), null, typeof(TextBuilder)),
+			new("116: TextBuilder -> TextBuilder", null, typeof(TextBuilder), null, typeof(TextBuilder)),
+			new("117: TextBuilder -> GapBuffer<char>", null, typeof(TextBuilder), null, typeof(GapBuffer<char>)),
+			new("118: GapBuffer<char> -> TextBuilder", null, typeof(GapBuffer<char>), null, typeof(TextBuilder)),
+			new("119: TextBuilder -> RopeBuffer<char>", null, typeof(TextBuilder), null, typeof(RopeBuffer<char>)),
+			new("120: RopeBuffer<char> -> TextBuilder", null, typeof(RopeBuffer<char>), null, typeof(TextBuilder)),
+			new("121: TextBuilder -> JsonString", null, typeof(TextBuilder), null, typeof(JsonString)),
+			new("122: JsonString -> TextBuilder", null, typeof(JsonString), null, typeof(TextBuilder)),
+			new("123: TextBuilder -> char", new TextBuilder("O"), 'O'),
+			new("124: TextBuilder -> char?", null, typeof(TextBuilder), null, typeof(char?)),
+			new("125: TextBuilder -> DateTime", "2000-01-02T03:04:40.0000000Z", new DateTime(2000, 1, 2, 3, 4, 40, DateTimeKind.Utc)),
+			new("126: TextBuilder -> DateTime?", null, typeof(TextBuilder), null, typeof(DateTime?)),
+			new("127: TextBuilder -> DateTimeOffset", "2000-01-02T03:04:41.0000000Z", new DateTimeOffset(2000, 1, 2, 3, 4, 41, 0, 0, new TimeSpan(0, 0, 0))),
+			new("128: TextBuilder -> DateTimeOffset?", null, typeof(TextBuilder), null, typeof(DateTimeOffset?)),
+			new("129: TextBuilder -> IsoDateTime", "2000-01-02T03:04:42.0000000Z", new IsoDateTime(new DateTime(2000, 1, 2, 3, 4, 42, DateTimeKind.Utc), new TimeSpan(0, 0, 0))),
+			new("130: TextBuilder -> IsoDateTime?", null, typeof(TextBuilder), null, typeof(IsoDateTime?)),
+			new("131: TextBuilder -> OscTimeTag", "2000-01-02T03:04:43.0000000Z", new OscTimeTag(new DateTime(2000, 1, 2, 3, 4, 43, DateTimeKind.Utc))),
+			new("132: TextBuilder -> OscTimeTag?", null, typeof(TextBuilder), null, typeof(OscTimeTag?)),
+			new("133: TextBuilder -> TimeSpan", "0:03:04:44.0000000", new TimeSpan(3, 4, 44)),
+			new("134: TextBuilder -> TimeSpan?", null, typeof(TextBuilder), null, typeof(TimeSpan?)),
+			new("135: TextBuilder -> byte", new TextBuilder("46"), 46),
+			new("136: TextBuilder -> byte?", null, typeof(TextBuilder), null, typeof(byte?)),
+			new("137: TextBuilder -> sbyte", new TextBuilder("47"), 47),
+			new("138: TextBuilder -> sbyte?", null, typeof(TextBuilder), null, typeof(sbyte?)),
+			new("139: TextBuilder -> short", new TextBuilder("48"), 48),
+			new("140: TextBuilder -> short?", null, typeof(TextBuilder), null, typeof(short?)),
+			new("141: TextBuilder -> ushort", new TextBuilder("49"), 49),
+			new("142: TextBuilder -> ushort?", null, typeof(TextBuilder), null, typeof(ushort?)),
+			new("143: TextBuilder -> int", new TextBuilder("50"), 50),
+			new("144: TextBuilder -> int?", null, typeof(TextBuilder), null, typeof(int?)),
+			new("145: TextBuilder -> uint", new TextBuilder("51"), 51),
+			new("146: TextBuilder -> uint?", null, typeof(TextBuilder), null, typeof(uint?)),
+			new("147: TextBuilder -> long", new TextBuilder("52"), 52),
+			new("148: TextBuilder -> long?", null, typeof(TextBuilder), null, typeof(long?)),
+			new("149: TextBuilder -> ulong", new TextBuilder("53"), 53),
+			new("150: TextBuilder -> ulong?", null, typeof(TextBuilder), null, typeof(ulong?)),
+			new("151: TextBuilder -> IntPtr", new TextBuilder("54"), (IntPtr) 54),
+			new("152: TextBuilder -> IntPtr?", null, typeof(TextBuilder), null, typeof(IntPtr?)),
+			new("153: TextBuilder -> UIntPtr", new TextBuilder("55"), (UIntPtr) 55),
+			new("154: TextBuilder -> UIntPtr?", null, typeof(TextBuilder), null, typeof(UIntPtr?)),
+			new("155: TextBuilder -> decimal", new TextBuilder("56.07"), (decimal) 56.07),
+			new("156: TextBuilder -> decimal?", null, typeof(TextBuilder), null, typeof(decimal?)),
+			new("157: TextBuilder -> double", new TextBuilder("57.08"), (double) 57.08),
+			new("158: TextBuilder -> double?", null, typeof(TextBuilder), null, typeof(double?)),
+			new("159: TextBuilder -> float", new TextBuilder("58.09"), (float) 58.09),
+			new("160: TextBuilder -> float?", null, typeof(TextBuilder), null, typeof(float?)),
+			new("161: TextBuilder -> Guid", new TextBuilder("00000000-0000-0000-0000-000000000059"), Guid.Parse("00000000-0000-0000-0000-000000000059")),
+			new("162: TextBuilder -> Guid?", null, typeof(TextBuilder), null, typeof(Guid?)),
+			new("163: TextBuilder -> ShortGuid", new TextBuilder("00000000-0000-0000-0000-000000000060"), ShortGuid.Parse("AAAAAAAAAAAAAAAAAAAAYA")),
+			new("164: TextBuilder -> ShortGuid?", null, typeof(TextBuilder), null, typeof(ShortGuid?)),
+			new("165: TextBuilder -> bool", new TextBuilder("True"), true),
+			new("166: TextBuilder -> bool?", null, typeof(TextBuilder), null, typeof(bool?)),
+			new("167: TextBuilder -> Version", null, typeof(TextBuilder), null, typeof(Version)),
+			new("168: GapBuffer<char> -> string", null, typeof(GapBuffer<char>), null, typeof(string)),
+			new("169: string -> GapBuffer<char>", null, typeof(string), null, typeof(GapBuffer<char>)),
+			new("170: GapBuffer<char> -> StringBuilder", null, typeof(GapBuffer<char>), null, typeof(StringBuilder)),
+			new("171: StringBuilder -> GapBuffer<char>", null, typeof(StringBuilder), null, typeof(GapBuffer<char>)),
+			new("172: GapBuffer<char> -> TextBuilder", null, typeof(GapBuffer<char>), null, typeof(TextBuilder)),
+			new("173: TextBuilder -> GapBuffer<char>", null, typeof(TextBuilder), null, typeof(GapBuffer<char>)),
+			new("174: GapBuffer<char> -> GapBuffer<char>", null, typeof(GapBuffer<char>), null, typeof(GapBuffer<char>)),
+			new("175: GapBuffer<char> -> RopeBuffer<char>", null, typeof(GapBuffer<char>), null, typeof(RopeBuffer<char>)),
+			new("176: RopeBuffer<char> -> GapBuffer<char>", null, typeof(RopeBuffer<char>), null, typeof(GapBuffer<char>)),
+			new("177: GapBuffer<char> -> JsonString", null, typeof(GapBuffer<char>), null, typeof(JsonString)),
+			new("178: JsonString -> GapBuffer<char>", null, typeof(JsonString), null, typeof(GapBuffer<char>)),
+			new("179: GapBuffer<char> -> char", new GapBuffer<char>("8"), '8'),
+			new("180: GapBuffer<char> -> char?", null, typeof(GapBuffer<char>), null, typeof(char?)),
+			new("181: GapBuffer<char> -> DateTime", "2000-01-02T03:05:00.0000000Z", new DateTime(2000, 1, 2, 3, 5, 0, DateTimeKind.Utc)),
+			new("182: GapBuffer<char> -> DateTime?", null, typeof(GapBuffer<char>), null, typeof(DateTime?)),
+			new("183: GapBuffer<char> -> DateTimeOffset", "2000-01-02T03:05:01.0000000Z", new DateTimeOffset(2000, 1, 2, 3, 5, 1, 0, 0, new TimeSpan(0, 0, 0))),
+			new("184: GapBuffer<char> -> DateTimeOffset?", null, typeof(GapBuffer<char>), null, typeof(DateTimeOffset?)),
+			new("185: GapBuffer<char> -> IsoDateTime", "2000-01-02T03:05:02.0000000Z", new IsoDateTime(new DateTime(2000, 1, 2, 3, 5, 2, DateTimeKind.Utc), new TimeSpan(0, 0, 0))),
+			new("186: GapBuffer<char> -> IsoDateTime?", null, typeof(GapBuffer<char>), null, typeof(IsoDateTime?)),
+			new("187: GapBuffer<char> -> OscTimeTag", "2000-01-02T03:05:03.0000000Z", new OscTimeTag(new DateTime(2000, 1, 2, 3, 5, 3, DateTimeKind.Utc))),
+			new("188: GapBuffer<char> -> OscTimeTag?", null, typeof(GapBuffer<char>), null, typeof(OscTimeTag?)),
+			new("189: GapBuffer<char> -> TimeSpan", "0:03:05:04.0000000", new TimeSpan(3, 5, 4)),
+			new("190: GapBuffer<char> -> TimeSpan?", null, typeof(GapBuffer<char>), null, typeof(TimeSpan?)),
+			new("191: GapBuffer<char> -> byte", new GapBuffer<char>("66"), 66),
+			new("192: GapBuffer<char> -> byte?", null, typeof(GapBuffer<char>), null, typeof(byte?)),
+			new("193: GapBuffer<char> -> sbyte", new GapBuffer<char>("67"), 67),
+			new("194: GapBuffer<char> -> sbyte?", null, typeof(GapBuffer<char>), null, typeof(sbyte?)),
+			new("195: GapBuffer<char> -> short", new GapBuffer<char>("68"), 68),
+			new("196: GapBuffer<char> -> short?", null, typeof(GapBuffer<char>), null, typeof(short?)),
+			new("197: GapBuffer<char> -> ushort", new GapBuffer<char>("69"), 69),
+			new("198: GapBuffer<char> -> ushort?", null, typeof(GapBuffer<char>), null, typeof(ushort?)),
+			new("199: GapBuffer<char> -> int", new GapBuffer<char>("70"), 70),
+			new("200: GapBuffer<char> -> int?", null, typeof(GapBuffer<char>), null, typeof(int?)),
+			new("201: GapBuffer<char> -> uint", new GapBuffer<char>("71"), 71),
+			new("202: GapBuffer<char> -> uint?", null, typeof(GapBuffer<char>), null, typeof(uint?)),
+			new("203: GapBuffer<char> -> long", new GapBuffer<char>("72"), 72),
+			new("204: GapBuffer<char> -> long?", null, typeof(GapBuffer<char>), null, typeof(long?)),
+			new("205: GapBuffer<char> -> ulong", new GapBuffer<char>("73"), 73),
+			new("206: GapBuffer<char> -> ulong?", null, typeof(GapBuffer<char>), null, typeof(ulong?)),
+			new("207: GapBuffer<char> -> IntPtr", new GapBuffer<char>("74"), (IntPtr) 74),
+			new("208: GapBuffer<char> -> IntPtr?", null, typeof(GapBuffer<char>), null, typeof(IntPtr?)),
+			new("209: GapBuffer<char> -> UIntPtr", new GapBuffer<char>("75"), (UIntPtr) 75),
+			new("210: GapBuffer<char> -> UIntPtr?", null, typeof(GapBuffer<char>), null, typeof(UIntPtr?)),
+			new("211: GapBuffer<char> -> decimal", new GapBuffer<char>("76.10"), (decimal) 76.10),
+			new("212: GapBuffer<char> -> decimal?", null, typeof(GapBuffer<char>), null, typeof(decimal?)),
+			new("213: GapBuffer<char> -> double", new GapBuffer<char>("77.11"), (double) 77.11),
+			new("214: GapBuffer<char> -> double?", null, typeof(GapBuffer<char>), null, typeof(double?)),
+			new("215: GapBuffer<char> -> float", new GapBuffer<char>("78.12"), (float) 78.12),
+			new("216: GapBuffer<char> -> float?", null, typeof(GapBuffer<char>), null, typeof(float?)),
+			new("217: GapBuffer<char> -> Guid", new GapBuffer<char>("00000000-0000-0000-0000-000000000079"), Guid.Parse("00000000-0000-0000-0000-000000000079")),
+			new("218: GapBuffer<char> -> Guid?", null, typeof(GapBuffer<char>), null, typeof(Guid?)),
+			new("219: GapBuffer<char> -> ShortGuid", new GapBuffer<char>("00000000-0000-0000-0000-000000000080"), ShortGuid.Parse("AAAAAAAAAAAAAAAAAAAAgA")),
+			new("220: GapBuffer<char> -> ShortGuid?", null, typeof(GapBuffer<char>), null, typeof(ShortGuid?)),
+			new("221: GapBuffer<char> -> bool", new GapBuffer<char>("True"), true),
+			new("222: GapBuffer<char> -> bool?", null, typeof(GapBuffer<char>), null, typeof(bool?)),
+			new("223: GapBuffer<char> -> Version", null, typeof(GapBuffer<char>), null, typeof(Version)),
+			new("224: RopeBuffer<char> -> string", null, typeof(RopeBuffer<char>), null, typeof(string)),
+			new("225: string -> RopeBuffer<char>", null, typeof(string), null, typeof(RopeBuffer<char>)),
+			new("226: RopeBuffer<char> -> StringBuilder", null, typeof(RopeBuffer<char>), null, typeof(StringBuilder)),
+			new("227: StringBuilder -> RopeBuffer<char>", null, typeof(StringBuilder), null, typeof(RopeBuffer<char>)),
+			new("228: RopeBuffer<char> -> TextBuilder", null, typeof(RopeBuffer<char>), null, typeof(TextBuilder)),
+			new("229: TextBuilder -> RopeBuffer<char>", null, typeof(TextBuilder), null, typeof(RopeBuffer<char>)),
+			new("230: RopeBuffer<char> -> GapBuffer<char>", null, typeof(RopeBuffer<char>), null, typeof(GapBuffer<char>)),
+			new("231: GapBuffer<char> -> RopeBuffer<char>", null, typeof(GapBuffer<char>), null, typeof(RopeBuffer<char>)),
+			new("232: RopeBuffer<char> -> RopeBuffer<char>", null, typeof(RopeBuffer<char>), null, typeof(RopeBuffer<char>)),
+			new("233: RopeBuffer<char> -> JsonString", null, typeof(RopeBuffer<char>), null, typeof(JsonString)),
+			new("234: JsonString -> RopeBuffer<char>", null, typeof(JsonString), null, typeof(RopeBuffer<char>)),
+			new("235: RopeBuffer<char> -> char", new RopeBuffer<char>("="), '='),
+			new("236: RopeBuffer<char> -> char?", null, typeof(RopeBuffer<char>), null, typeof(char?)),
+			new("237: RopeBuffer<char> -> DateTime", "2000-01-02T03:05:20.0000000Z", new DateTime(2000, 1, 2, 3, 5, 20, DateTimeKind.Utc)),
+			new("238: RopeBuffer<char> -> DateTime?", null, typeof(RopeBuffer<char>), null, typeof(DateTime?)),
+			new("239: RopeBuffer<char> -> DateTimeOffset", "2000-01-02T03:05:21.0000000Z", new DateTimeOffset(2000, 1, 2, 3, 5, 21, 0, 0, new TimeSpan(0, 0, 0))),
+			new("240: RopeBuffer<char> -> DateTimeOffset?", null, typeof(RopeBuffer<char>), null, typeof(DateTimeOffset?)),
+			new("241: RopeBuffer<char> -> IsoDateTime", "2000-01-02T03:05:22.0000000Z", new IsoDateTime(new DateTime(2000, 1, 2, 3, 5, 22, DateTimeKind.Utc), new TimeSpan(0, 0, 0))),
+			new("242: RopeBuffer<char> -> IsoDateTime?", null, typeof(RopeBuffer<char>), null, typeof(IsoDateTime?)),
+			new("243: RopeBuffer<char> -> OscTimeTag", "2000-01-02T03:05:23.0000000Z", new OscTimeTag(new DateTime(2000, 1, 2, 3, 5, 23, DateTimeKind.Utc))),
+			new("244: RopeBuffer<char> -> OscTimeTag?", null, typeof(RopeBuffer<char>), null, typeof(OscTimeTag?)),
+			new("245: RopeBuffer<char> -> TimeSpan", "0:03:05:24.0000000", new TimeSpan(3, 5, 24)),
+			new("246: RopeBuffer<char> -> TimeSpan?", null, typeof(RopeBuffer<char>), null, typeof(TimeSpan?)),
+			new("247: RopeBuffer<char> -> byte", new RopeBuffer<char>("86"), 86),
+			new("248: RopeBuffer<char> -> byte?", null, typeof(RopeBuffer<char>), null, typeof(byte?)),
+			new("249: RopeBuffer<char> -> sbyte", new RopeBuffer<char>("87"), 87),
+			new("250: RopeBuffer<char> -> sbyte?", null, typeof(RopeBuffer<char>), null, typeof(sbyte?)),
+			new("251: RopeBuffer<char> -> short", new RopeBuffer<char>("88"), 88),
+			new("252: RopeBuffer<char> -> short?", null, typeof(RopeBuffer<char>), null, typeof(short?)),
+			new("253: RopeBuffer<char> -> ushort", new RopeBuffer<char>("89"), 89),
+			new("254: RopeBuffer<char> -> ushort?", null, typeof(RopeBuffer<char>), null, typeof(ushort?)),
+			new("255: RopeBuffer<char> -> int", new RopeBuffer<char>("90"), 90),
+			new("256: RopeBuffer<char> -> int?", null, typeof(RopeBuffer<char>), null, typeof(int?)),
+			new("257: RopeBuffer<char> -> uint", new RopeBuffer<char>("91"), 91),
+			new("258: RopeBuffer<char> -> uint?", null, typeof(RopeBuffer<char>), null, typeof(uint?)),
+			new("259: RopeBuffer<char> -> long", new RopeBuffer<char>("92"), 92),
+			new("260: RopeBuffer<char> -> long?", null, typeof(RopeBuffer<char>), null, typeof(long?)),
+			new("261: RopeBuffer<char> -> ulong", new RopeBuffer<char>("93"), 93),
+			new("262: RopeBuffer<char> -> ulong?", null, typeof(RopeBuffer<char>), null, typeof(ulong?)),
+			new("263: RopeBuffer<char> -> IntPtr", new RopeBuffer<char>("94"), (IntPtr) 94),
+			new("264: RopeBuffer<char> -> IntPtr?", null, typeof(RopeBuffer<char>), null, typeof(IntPtr?)),
+			new("265: RopeBuffer<char> -> UIntPtr", new RopeBuffer<char>("95"), (UIntPtr) 95),
+			new("266: RopeBuffer<char> -> UIntPtr?", null, typeof(RopeBuffer<char>), null, typeof(UIntPtr?)),
+			new("267: RopeBuffer<char> -> decimal", new RopeBuffer<char>("96.13"), (decimal) 96.13),
+			new("268: RopeBuffer<char> -> decimal?", null, typeof(RopeBuffer<char>), null, typeof(decimal?)),
+			new("269: RopeBuffer<char> -> double", new RopeBuffer<char>("97.14"), (double) 97.14),
+			new("270: RopeBuffer<char> -> double?", null, typeof(RopeBuffer<char>), null, typeof(double?)),
+			new("271: RopeBuffer<char> -> float", new RopeBuffer<char>("98.15"), (float) 98.15),
+			new("272: RopeBuffer<char> -> float?", null, typeof(RopeBuffer<char>), null, typeof(float?)),
+			new("273: RopeBuffer<char> -> Guid", new RopeBuffer<char>("00000000-0000-0000-0000-000000000099"), Guid.Parse("00000000-0000-0000-0000-000000000099")),
+			new("274: RopeBuffer<char> -> Guid?", null, typeof(RopeBuffer<char>), null, typeof(Guid?)),
+			new("275: RopeBuffer<char> -> ShortGuid", new RopeBuffer<char>("00000000-0000-0000-0000-000000000100"), ShortGuid.Parse("AAAAAAAAAAAAAAAAAAABAA")),
+			new("276: RopeBuffer<char> -> ShortGuid?", null, typeof(RopeBuffer<char>), null, typeof(ShortGuid?)),
+			new("277: RopeBuffer<char> -> bool", new RopeBuffer<char>("True"), true),
+			new("278: RopeBuffer<char> -> bool?", null, typeof(RopeBuffer<char>), null, typeof(bool?)),
+			new("279: RopeBuffer<char> -> Version", null, typeof(RopeBuffer<char>), null, typeof(Version)),
+			new("280: JsonString -> string", null, typeof(JsonString), null, typeof(string)),
+			new("281: string -> JsonString", null, typeof(string), null, typeof(JsonString)),
+			new("282: JsonString -> StringBuilder", null, typeof(JsonString), null, typeof(StringBuilder)),
+			new("283: StringBuilder -> JsonString", null, typeof(StringBuilder), null, typeof(JsonString)),
+			new("284: JsonString -> TextBuilder", null, typeof(JsonString), null, typeof(TextBuilder)),
+			new("285: TextBuilder -> JsonString", null, typeof(TextBuilder), null, typeof(JsonString)),
+			new("286: JsonString -> GapBuffer<char>", null, typeof(JsonString), null, typeof(GapBuffer<char>)),
+			new("287: GapBuffer<char> -> JsonString", null, typeof(GapBuffer<char>), null, typeof(JsonString)),
+			new("288: JsonString -> RopeBuffer<char>", null, typeof(JsonString), null, typeof(RopeBuffer<char>)),
+			new("289: RopeBuffer<char> -> JsonString", null, typeof(RopeBuffer<char>), null, typeof(JsonString)),
+			new("290: JsonString -> JsonString", null, typeof(JsonString), null, typeof(JsonString)),
+			new("291: JsonString -> char", new JsonString("d"), 'd'),
+			new("292: JsonString -> char?", null, typeof(JsonString), null, typeof(char?)),
+			new("293: JsonString -> DateTime", "2000-01-02T03:05:40.0000000Z", new DateTime(2000, 1, 2, 3, 5, 40, DateTimeKind.Utc)),
+			new("294: JsonString -> DateTime?", null, typeof(JsonString), null, typeof(DateTime?)),
+			new("295: JsonString -> DateTimeOffset", "2000-01-02T03:05:41.0000000Z", new DateTimeOffset(2000, 1, 2, 3, 5, 41, 0, 0, new TimeSpan(0, 0, 0))),
+			new("296: JsonString -> DateTimeOffset?", null, typeof(JsonString), null, typeof(DateTimeOffset?)),
+			new("297: JsonString -> IsoDateTime", "2000-01-02T03:05:42.0000000Z", new IsoDateTime(new DateTime(2000, 1, 2, 3, 5, 42, DateTimeKind.Utc), new TimeSpan(0, 0, 0))),
+			new("298: JsonString -> IsoDateTime?", null, typeof(JsonString), null, typeof(IsoDateTime?)),
+			new("299: JsonString -> OscTimeTag", "2000-01-02T03:05:43.0000000Z", new OscTimeTag(new DateTime(2000, 1, 2, 3, 5, 43, DateTimeKind.Utc))),
+			new("300: JsonString -> OscTimeTag?", null, typeof(JsonString), null, typeof(OscTimeTag?)),
+			new("301: JsonString -> TimeSpan", "0:03:05:44.0000000", new TimeSpan(3, 5, 44)),
+			new("302: JsonString -> TimeSpan?", null, typeof(JsonString), null, typeof(TimeSpan?)),
+			new("303: JsonString -> byte", new JsonString("106"), 106),
+			new("304: JsonString -> byte?", null, typeof(JsonString), null, typeof(byte?)),
+			new("305: JsonString -> sbyte", new JsonString("107"), 107),
+			new("306: JsonString -> sbyte?", null, typeof(JsonString), null, typeof(sbyte?)),
+			new("307: JsonString -> short", new JsonString("108"), 108),
+			new("308: JsonString -> short?", null, typeof(JsonString), null, typeof(short?)),
+			new("309: JsonString -> ushort", new JsonString("109"), 109),
+			new("310: JsonString -> ushort?", null, typeof(JsonString), null, typeof(ushort?)),
+			new("311: JsonString -> int", new JsonString("110"), 110),
+			new("312: JsonString -> int?", null, typeof(JsonString), null, typeof(int?)),
+			new("313: JsonString -> uint", new JsonString("111"), 111),
+			new("314: JsonString -> uint?", null, typeof(JsonString), null, typeof(uint?)),
+			new("315: JsonString -> long", new JsonString("112"), 112),
+			new("316: JsonString -> long?", null, typeof(JsonString), null, typeof(long?)),
+			new("317: JsonString -> ulong", new JsonString("113"), 113),
+			new("318: JsonString -> ulong?", null, typeof(JsonString), null, typeof(ulong?)),
+			new("319: JsonString -> IntPtr", new JsonString("114"), (IntPtr) 114),
+			new("320: JsonString -> IntPtr?", null, typeof(JsonString), null, typeof(IntPtr?)),
+			new("321: JsonString -> UIntPtr", new JsonString("115"), (UIntPtr) 115),
+			new("322: JsonString -> UIntPtr?", null, typeof(JsonString), null, typeof(UIntPtr?)),
+			new("323: JsonString -> decimal", new JsonString("116.16"), (decimal) 116.16),
+			new("324: JsonString -> decimal?", null, typeof(JsonString), null, typeof(decimal?)),
+			new("325: JsonString -> double", new JsonString("117.17"), (double) 117.17),
+			new("326: JsonString -> double?", null, typeof(JsonString), null, typeof(double?)),
+			new("327: JsonString -> float", new JsonString("118.18"), (float) 118.18),
+			new("328: JsonString -> float?", null, typeof(JsonString), null, typeof(float?)),
+			new("329: JsonString -> Guid", new JsonString("00000000-0000-0000-0000-000000000119"), Guid.Parse("00000000-0000-0000-0000-000000000119")),
+			new("330: JsonString -> Guid?", null, typeof(JsonString), null, typeof(Guid?)),
+			new("331: JsonString -> ShortGuid", new JsonString("00000000-0000-0000-0000-000000000120"), ShortGuid.Parse("AAAAAAAAAAAAAAAAAAABIA")),
+			new("332: JsonString -> ShortGuid?", null, typeof(JsonString), null, typeof(ShortGuid?)),
+			new("333: JsonString -> bool", new JsonString("True"), true),
+			new("334: JsonString -> bool?", null, typeof(JsonString), null, typeof(bool?)),
+			new("335: JsonString -> Version", null, typeof(JsonString), null, typeof(Version)),
+			#if (!NET48)
+			new("336: string -> DateOnly", "2000-01-02", new DateOnly(2000, 1, 2)),
+			new("337: string -> DateOnly?", null, typeof(string), null, typeof(DateOnly?)),
+			new("338: string -> TimeOnly", "03:06:01.0000000", TimeOnly.Parse("03:06:01.0000000")),
+			new("339: string -> TimeOnly?", null, typeof(string), null, typeof(TimeOnly?)),
+			new("340: StringBuilder -> DateOnly", "2000-01-02", new DateOnly(2000, 1, 2)),
+			new("341: StringBuilder -> DateOnly?", null, typeof(StringBuilder), null, typeof(DateOnly?)),
+			new("342: StringBuilder -> TimeOnly", "03:06:03.0000000", TimeOnly.Parse("03:06:03.0000000")),
+			new("343: StringBuilder -> TimeOnly?", null, typeof(StringBuilder), null, typeof(TimeOnly?)),
+			new("344: TextBuilder -> DateOnly", "2000-01-02", new DateOnly(2000, 1, 2)),
+			new("345: TextBuilder -> DateOnly?", null, typeof(TextBuilder), null, typeof(DateOnly?)),
+			new("346: TextBuilder -> TimeOnly", "03:06:05.0000000", TimeOnly.Parse("03:06:05.0000000")),
+			new("347: TextBuilder -> TimeOnly?", null, typeof(TextBuilder), null, typeof(TimeOnly?)),
+			new("348: GapBuffer<char> -> DateOnly", "2000-01-02", new DateOnly(2000, 1, 2)),
+			new("349: GapBuffer<char> -> DateOnly?", null, typeof(GapBuffer<char>), null, typeof(DateOnly?)),
+			new("350: GapBuffer<char> -> TimeOnly", "03:04:01.0000000", TimeOnly.Parse("03:04:01.0000000")),
+			new("351: GapBuffer<char> -> TimeOnly?", null, typeof(GapBuffer<char>), null, typeof(TimeOnly?)),
+			new("352: RopeBuffer<char> -> DateOnly", "2000-01-02", new DateOnly(2000, 1, 2)),
+			new("353: RopeBuffer<char> -> DateOnly?", null, typeof(RopeBuffer<char>), null, typeof(DateOnly?)),
+			new("354: RopeBuffer<char> -> TimeOnly", "03:04:03.0000000", TimeOnly.Parse("03:04:03.0000000")),
+			new("355: RopeBuffer<char> -> TimeOnly?", null, typeof(RopeBuffer<char>), null, typeof(TimeOnly?)),
+			new("356: JsonString -> DateOnly", "2000-01-02", new DateOnly(2000, 1, 2)),
+			new("357: JsonString -> DateOnly?", null, typeof(JsonString), null, typeof(DateOnly?)),
+			new("358: JsonString -> TimeOnly", "03:04:05.0000000", TimeOnly.Parse("03:04:05.0000000")),
+			new("359: JsonString -> TimeOnly?", null, typeof(JsonString), null, typeof(TimeOnly?)),
+			#endif
+			// </Scenarios>
+		});
+
+		return response.ToArray();
+	}
+
+	#endregion
+}

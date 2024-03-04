@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+	<metadata>
+		<id>Cornerstone.Uwp</id>
+		<title>Cornerstone UWP</title>
+		<version>$version$</version>
+		<authors>Bobby Cannon</authors>
+		<description>Cornerstone in as development framework to help speed up and make building applications and systems much easier.</description>
+		<projectUrl>https://github.com/BobbyCannon/Cornerstone</projectUrl>
+		<icon>Cornerstone.png</icon>
+		<tags>UWP UAP Embedded key value pair persistent repository database thread safe thread-safe EntityFramework Entity Framework EntityFrameworkCore EFCore</tags>
+		<dependencies>
+			<group targetFramework="uap10.0">
+				<dependency id="Cornerstone" version="$version$" />
+				<dependency id="Cornerstone.Application" version="$version$" />
+			</group>
+		</dependencies>
+	</metadata>
+	<files>
+		<file src="C:\Workspaces\GitHub\Cornerstone\Cornerstone.Uwp\bin\Release\Cornerstone.Uwp.dll" target="lib\uap10.0" />
+		<file src="C:\Workspaces\GitHub\Cornerstone\Cornerstone.png" target="\" />
+	</files>
+</package>

@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<AssemblyTitle>Cornerstone.Newtonsoft</AssemblyTitle>
+		<PackageId>Cornerstone.Newtonsoft</PackageId>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<SignAssembly>true</SignAssembly>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Cornerstone\Cornerstone.csproj" />
+	</ItemGroup>
+</Project>

@@ -1,0 +1,402 @@
+﻿#region References
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Mail;
+using System.Runtime.CompilerServices;
+using System.Security;
+using System.Security.Cryptography;
+using System.Text;
+using Cornerstone.Serialization.Json;
+
+#endregion
+
+namespace Cornerstone.Extensions;
+
+/// <summary>
+/// Extensions for the string type.
+/// </summary>
+public static class StringExtensions
+{
+	#region Methods
+
+	/// <summary>
+	/// Calculate an MD5 hash for the string.
+	/// </summary>
+	/// <param name="input"> The string to hash. </param>
+	/// <returns> The MD5 formatted hash for the input. </returns>
+	public static string CalculateMd5Hash(this string input)
+	{
+		// Calculate MD5 hash from input.
+		var inputBytes = Encoding.ASCII.GetBytes(input);
+
+		// Calculate MD5 hash from input.
+		var md5 = MD5.Create();
+		var hash = md5.ComputeHash(inputBytes);
+
+		// Convert byte array to hex string.
+		var sb = new StringBuilder();
+		foreach (var item in hash)
+		{
+			sb.Append(item.ToString("X2"));
+		}
+
+		// Return the MD5 string.
+		return sb.ToString().ToLower();
+	}
+
+	/// <summary>
+	/// Check to see if a string contains any of the provided characters.
+	/// </summary>
+	/// <param name="value"> The string value. </param>
+	/// <param name="characters"> The characters to validate. </param>
+	/// <returns> True if the string contains any of the provided characters. </returns>
+	public static bool ContainsAny(this string value, params char[] characters)
+	{
+		return ContainsAny(value, null, characters);
+	}
+
+	/// <summary>
+	/// Check to see if a string contains any of the provided characters.
+	/// </summary>
+	/// <param name="value"> The string value. </param>
+	/// <param name="comparer"> An optional char comparer. </param>
+	/// <param name="characters"> The characters to validate. </param>
+	/// <returns> True if the string contains any of the provided characters. </returns>
+	public static bool ContainsAny(this string value, IEqualityComparer<char> comparer = null, params char[] characters)
+	{
+		return (characters.Length > 0) && value.Any(c => characters.Contains(c, comparer));
+	}
+
+	/// <summary>
+	/// To literal version of the string.
+	/// </summary>
+	/// <param name="input"> The string input. </param>
+	/// <returns> The literal version of the string. </returns>
+	public static string Escape(this string input)
+	{
+		if (input == null)
+		{
+			return "null";
+		}
+
+		var builder = new StringBuilder(input.Length);
+
+		foreach (var c in input)
+		{
+			if (TryProcessCharacter(c, builder))
+			{
+				continue;
+			}
+
+			if (c == 0)
+			{
+				builder.Append(@"\u");
+				builder.Append(((int) c).ToString("X4"));
+			}
+			else if ((c >= 0x20) && (c <= 0x7e))
+			{
+				// ASCII printable character
+				builder.Append(c);
+			}
+			else
+			{
+				// As UTF16 escaped character
+				builder.Append(@"\u");
+				builder.Append(((int) c).ToString("X4"));
+			}
+		}
+
+		return builder.ToString();
+	}
+
+	/// <summary>
+	/// Convert string from a base 64 string.
+	/// </summary>
+	/// <param name="data"> The data to be converted. </param>
+	/// <returns> The unencoded string. </returns>
+	public static string FromBase64String(this string data)
+	{
+		var bytes = System.Convert.FromBase64String(data);
+		return Encoding.UTF8.GetString(bytes);
+	}
+
+	/// <summary>
+	/// Convert string from a base 64 string.
+	/// </summary>
+	/// <param name="data"> The data to be converted. </param>
+	/// <returns> The unencoded byte array. </returns>
+	public static byte[] FromBase64StringToByteArray(this string data)
+	{
+		var key = ";base64,";
+		var index = data.IndexOf(key);
+		if (index >= 0)
+		{
+			data = data.Substring(index + key.Length);
+		}
+
+		return System.Convert.FromBase64String(data);
+	}
+
+	/// <summary>
+	/// Convert the hex string back to byte array.
+	/// </summary>
+	/// <param name="value"> The hex string to be converter. </param>
+	/// <returns> The byte array. </returns>
+	public static byte[] FromHexStringToArray(this string value)
+	{
+		var bytes = new byte[value.Length / 2];
+
+		for (var i = 0; i < bytes.Length; i++)
+		{
+			bytes[i] = System.Convert.ToByte(value.Substring(i * 2, 2), 16);
+		}
+
+		return bytes;
+	}
+
+	/// <summary>
+	/// Gets a stable hash code for a string value.
+	/// </summary>
+	/// <param name="value"> The string value. </param>
+	/// <returns> The hash code for the value. </returns>
+	public static int GetStableHashCode(this string value)
+	{
+		unchecked
+		{
+			var hash1 = 5381;
+			var hash2 = hash1;
+
+			for (var i = 0; (i < value.Length) && (value[i] != '\0'); i += 2)
+			{
+				hash1 = ((hash1 << 5) + hash1) ^ value[i];
+				if ((i == (value.Length - 1)) || (value[i + 1] == '\0'))
+				{
+					break;
+				}
+				hash2 = ((hash2 << 5) + hash2) ^ value[i + 1];
+			}
+
+			return hash1 + (hash2 * 1566083941);
+		}
+	}
+
+	/// <summary>
+	/// Gets the index of the first occurrence of any character in the specified array in reverse of provided start index.
+	/// </summary>
+	/// <param name="value"> The value to process. </param>
+	/// <param name="anyOf"> Characters to search for </param>
+	/// <param name="startIndex"> Start index of the area to search. </param>
+	/// <returns> The first index where any character was found; or -1 if no occurrence was found. </returns>
+	public static int IndexOfAnyReverse(this string value, char[] anyOf, int startIndex)
+	{
+		if (!value.ValidRange(startIndex, 0))
+		{
+			return -1;
+		}
+
+		if (anyOf.Contains(value[startIndex]))
+		{
+			return startIndex;
+		}
+
+		for (var index = startIndex - 1; index >= 0; index--)
+		{
+			if (anyOf.Contains(value[index]))
+			{
+				return index;
+			}
+		}
+
+		return -1;
+	}
+
+	/// <summary>
+	/// Determines if the string is a JSON string.
+	/// </summary>
+	/// <param name="input"> The value to validate. </param>
+	/// <returns> True if the input is JSON or false if otherwise. </returns>
+	public static bool IsJson(this string input)
+	{
+		input = input.Trim();
+
+		var isWellFormed = new Func<bool>(() =>
+		{
+			try
+			{
+				JsonSerializer.Parse(input);
+			}
+			catch
+			{
+				return false;
+			}
+
+			return true;
+		});
+
+		return ((input.StartsWith("{") && input.EndsWith("}"))
+				|| (input.StartsWith("[") && input.EndsWith("]"))
+				|| (input.StartsWith("\"") && input.EndsWith("\""))
+			) && isWellFormed();
+	}
+
+	/// <summary>
+	/// Determines if the string is a query string
+	/// </summary>
+	/// <param name="input"> The value to validate. </param>
+	/// <returns> True if the input is a query string or false if otherwise. </returns>
+	public static bool IsQueryString(this string input)
+	{
+		return input is { Length: >= 1 }
+			&& (input[0] == '?');
+	}
+
+	/// <summary>
+	/// Determines if the string is a valid email address.
+	/// </summary>
+	/// <param name="emailAddress"> The string to validate. </param>
+	/// <returns> Returns true if the email address is valid. False if otherwise. </returns>
+	public static bool IsValidEmailAddress(this string emailAddress)
+	{
+		try
+		{
+			// ReSharper disable once ObjectCreationAsStatement
+			new MailAddress(emailAddress);
+			return true;
+		}
+		catch
+		{
+			return false;
+		}
+	}
+
+	/// <summary>
+	/// Convert string to a base 64 string.
+	/// </summary>
+	/// <param name="data"> The data to be converted. </param>
+	/// <returns> The base 64 encoded string. </returns>
+	public static string ToBase64String(this string data)
+	{
+		return data == null ? string.Empty : Encoding.UTF8.GetBytes(data).ToBase64String();
+	}
+
+	/// <summary>
+	/// Converts a string to hex string value. Ex. "A" -> "41"
+	/// </summary>
+	/// <param name="value"> The string value to convert. </param>
+	/// <param name="delimiter"> An optional delimited to put between bytes of the data. </param>
+	/// <param name="prefix"> An optional prefix to put before each byte of the data. </param>
+	/// <returns> The string in a hex string format. </returns>
+	public static string ToHexString(this string value, string delimiter = null, string prefix = null)
+	{
+		var bytes = Encoding.Default.GetBytes(value);
+		var hexString = bytes.ToHexString(null, null, delimiter, prefix);
+		return hexString;
+	}
+
+	/// <summary>
+	/// Converts a byte array to a hex string format. Ex. [41],[42] = "4142"
+	/// </summary>
+	/// <param name="data"> The byte array to convert. </param>
+	/// <param name="startIndex"> The starting position within value. </param>
+	/// <param name="length"> The number of array elements in value to convert. </param>
+	/// <param name="delimiter"> An optional delimited to put between bytes of the data. </param>
+	/// <param name="prefix"> An optional prefix to put before each byte of the data. </param>
+	/// <returns> The byte array in a hex string format. </returns>
+	public static string ToHexString(this byte[] data, int? startIndex = null, int? length = null, string delimiter = null, string prefix = null)
+	{
+		var hexString = BitConverter.ToString(data, startIndex ?? 0, length ?? data.Length);
+		hexString = (prefix ?? "") + hexString.Replace("-", (delimiter ?? "") + (prefix ?? ""));
+		return hexString;
+	}
+
+	/// <summary>
+	/// Convert a string into a secure string.
+	/// </summary>
+	/// <param name="input"> The string. </param>
+	/// <param name="makeReadOnly"> Option to make the SecureString read only. </param>
+	/// <returns> The secure string. </returns>
+	public static SecureString ToSecureString(this string input, bool makeReadOnly = false)
+	{
+		var secure = new SecureString();
+		foreach (var c in input)
+		{
+			secure.AppendChar(c);
+		}
+		if (makeReadOnly)
+		{
+			secure.MakeReadOnly();
+		}
+		return secure;
+	}
+
+	/// <summary>
+	/// Check index and length to ensure it is within bounds of the string.
+	/// </summary>
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public static bool ValidRange(this string value, int index, int length)
+	{
+		if (value.Length <= 0)
+		{
+			return false;
+		}
+
+		if ((index < 0) || (index >= value.Length))
+		{
+			return false;
+		}
+
+		var end = index + length;
+		if ((end < 0) || (end > value.Length))
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	private static bool TryProcessCharacter(char c, StringBuilder builder)
+	{
+		switch (c)
+		{
+			case '\'':
+				builder.Append(@"\'");
+				return true;
+			case '\"':
+				builder.Append("\\\"");
+				return true;
+			case '\\':
+				builder.Append(@"\\");
+				return true;
+			case '\0':
+				builder.Append(@"\0");
+				return true;
+			case '\a':
+				builder.Append(@"\a");
+				return true;
+			case '\b':
+				builder.Append(@"\b");
+				return true;
+			case '\f':
+				builder.Append(@"\f");
+				return true;
+			case '\n':
+				builder.Append(@"\n");
+				return true;
+			case '\r':
+				builder.Append(@"\r");
+				return true;
+			case '\t':
+				builder.Append(@"\t");
+				return true;
+			case '\v':
+				builder.Append(@"\v");
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	#endregion
+}

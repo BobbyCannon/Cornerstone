@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Shell
+		x:Class="Sample.Client.Maui.AppShell"
+		xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+		xmlns:pages="clr-namespace:Sample.Client.Maui.Pages"
+		FlyoutBehavior="Disabled"
+		NavBarIsVisible="False"
+		Title="Sample.Client.Maui">
+
+	<ShellItem Route="LogIn">
+		<ShellContent ContentTemplate="{DataTemplate pages:LogInPage}" />
+	</ShellItem>
+
+	<TabBar Route="Main">
+		<ShellContent Title="{x:Static pages:PageSwitcher.SpeedyListPageName}"
+				ContentTemplate="{DataTemplate pages:SpeedyListPage}"
+				Route="{x:Static pages:PageSwitcher.SpeedyListPageRoute}">
+			<ShellContent.Icon>
+				<x:FontImage FontFamily="FontAwesome" Glyph="&#xf0ae;" />
+			</ShellContent.Icon>
+		</ShellContent>
+		<ShellContent Title="{x:Static pages:PageSwitcher.SettingsPageName}"
+				ContentTemplate="{DataTemplate pages:SettingsPage}"
+				Route="{x:Static pages:PageSwitcher.SettingsPageRoute}">
+			<ShellContent.Icon>
+				<x:FontImage FontFamily="FontAwesome" Glyph="&#xf013;" />
+			</ShellContent.Icon>
+		</ShellContent>
+		<ShellContent Title="{x:Static pages:PageSwitcher.WebClientPageName}"
+				ContentTemplate="{DataTemplate pages:WebClientPage}"
+				Route="{x:Static pages:PageSwitcher.WebClientPageRoute}">
+			<ShellContent.Icon>
+				<x:FontImage FontFamily="FontAwesome" Glyph="&#xf0c2;" />
+			</ShellContent.Icon>
+		</ShellContent>
+	</TabBar>
+</Shell>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+		xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+		xmlns:maui="clr-namespace:Sample.Client.Maui"
+		xmlns:controls="clr-namespace:Cornerstone.Maui.Controls;assembly=Cornerstone.Maui"
+		x:Class="Sample.Client.Maui.Pages.LogInPage"
+		x:DataType="maui:MauiViewManager">
+	<Grid>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="*" />
+			<RowDefinition Height="Auto" />
+		</Grid.RowDefinitions>
+
+		<ScrollView Grid.Row="0" 
+				Margin="0,60,0,0"
+				HorizontalOptions="Fill"
+				VerticalOptions="Start">
+			<VerticalStackLayout
+					WidthRequest="280">
+				<Label FontFamily="OpenSansLight"
+						FontSize="30"
+						Text="Cornerstone"
+						HorizontalOptions="Center"
+						HorizontalTextAlignment="Center" />
+
+				<Image WidthRequest="200" 
+						HeightRequest="200"
+						HorizontalOptions="Center"
+						Margin="0,60,0,20">
+					<Image.Source>
+						<x:FontImage FontFamily="FontAwesome"
+								Color="{StaticResource PrimaryDark}"
+								Size="256"
+								Glyph="&#xf023;" />
+					</Image.Source>
+				</Image>
+
+				<!-- https://github.com/dotnet/maui/discussions/18966 -->
+				<controls:TextBox Placeholder="email" Keyboard="Email" AutomationId="Login" />
+				<controls:TextBox Placeholder="password" Keyboard="Default" AutomationId="Password" IsPassword="True" />
+				
+				<Button Text="Unlock"
+						Margin="0,10,0,0"
+						Command="{Binding PageSwitcher.SwitchToSpeedyListCommand}"/>
+
+			</VerticalStackLayout>
+		</ScrollView>
+		
+		<toolkit:Expander Grid.Row="1" Margin="0,0,0,6">
+			<toolkit:Expander.Resources>
+				<Style TargetType="Label">
+					<Setter Property="FontSize" Value="16" />
+					<Setter Property="TextColor" Value="DarkGray" />
+				</Style>
+			</toolkit:Expander.Resources>
+			<toolkit:Expander.Header>
+				<HorizontalStackLayout Margin="4"
+						HorizontalOptions="Center">
+					<Label Text="v" />
+					<Label Text="{Binding RuntimeInformation.ApplicationVersion, Mode=OneWay}" Margin="0,0,10,0" />
+				</HorizontalStackLayout>
+			</toolkit:Expander.Header>
+			<Grid HorizontalOptions="Fill">
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="*" />
+				</Grid.ColumnDefinitions>
+				<Grid.RowDefinitions>
+					<RowDefinition Height="*" />
+					<RowDefinition Height="Auto" />
+				</Grid.RowDefinitions>
+				<Label Grid.Row="1"
+						Text="{Binding RuntimeInformation.DeviceId, Mode=OneWay}"
+						LineBreakMode="CharacterWrap"
+						HorizontalOptions="Center"
+						HorizontalTextAlignment="Center"
+						Margin="20,0" />
+			</Grid>
+		</toolkit:Expander>
+	</Grid>
+</ContentPage>

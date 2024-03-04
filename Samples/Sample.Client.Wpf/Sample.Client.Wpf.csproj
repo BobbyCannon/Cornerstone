@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFrameworks>net8.0-windows10.0.19041.0</TargetFrameworks>
+		<UseWPF>true</UseWPF>
+		<GenerateDocumentationFile>false</GenerateDocumentationFile>
+		<StartupObject>Sample.Client.Wpf.Program</StartupObject>
+	</PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\Cornerstone.Wpf\Cornerstone.Wpf.csproj" />
+		<ProjectReference Include="..\..\Cornerstone\Cornerstone.csproj" />
+		<ProjectReference Include="..\Sample.Shared\Sample.Shared.csproj" />
+	</ItemGroup>
+</Project>

@@ -1,0 +1,316 @@
+﻿<helpItems xmlns="http://msh" schema="maml">
+	<command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/1" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:gl="http://schemas.falchionconsulting.com/maml/gl/2013/02" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10">
+		<command:details>
+			<command:name>Convert-NumberUnits</command:name>
+			<gl:group>Utility</gl:group>
+			<maml:description>
+				<maml:para>Convert the number from one unit to another.</maml:para>
+			</maml:description>
+			<command:verb>Convert</command:verb>
+			<command:noun>NumberUnits</command:noun>
+		</command:details>
+		<maml:description>
+			<maml:para>Convert the number from one unit to another.</maml:para>
+		</maml:description>
+		<command:syntax>
+			<command:syntaxItem>
+				<maml:name>Convert-NumberUnits</maml:name>
+				<command:parameter required="true" position="1">
+					<maml:name>Value</maml:name>
+					<command:parameterValue required="true">Double</command:parameterValue>
+				</command:parameter>
+				<command:parameter required="true" position="2">
+					<maml:name>ValueUnit</maml:name>
+					<command:parameterValue required="true">Bit | Byte | Kilobyte | Megabyte | Gigabyte | Terabyte</command:parameterValue>
+				</command:parameter>
+				<command:parameter required="true" position="3">
+					<maml:name>OutputUnit</maml:name>
+					<command:parameterValue required="true">Bit | Byte | Kilobyte | Megabyte | Gigabyte | Terabyte</command:parameterValue>
+				</command:parameter>
+			</command:syntaxItem>
+		</command:syntax>
+		<command:parameters>
+			<command:parameter required="true" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="1" variableLength="false">
+				<maml:name>Value</maml:name>
+				<maml:description>
+					<maml:para>The number value.</maml:para>
+				</maml:description>
+				<command:parameterValue required="true" variableLength="false">Double</command:parameterValue>
+				<dev:type>
+					<maml:name>Double</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+			<command:parameter required="true" globbing="false" pipelineInput="true (ByPropertyName)" position="2" variableLength="false">
+				<maml:name>ValueUnit</maml:name>
+				<maml:description>
+					<maml:para>The number's unit value.</maml:para>
+				</maml:description>
+				<command:parameterValue required="true" variableLength="false">ByteUnit</command:parameterValue>
+				<dev:type>
+					<maml:name>ByteUnit</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+			<command:parameter required="true" globbing="false" pipelineInput="true (ByPropertyName)" position="3" variableLength="false">
+				<maml:name>OutputUnit</maml:name>
+				<maml:description>
+					<maml:para>The desired output unit.</maml:para>
+				</maml:description>
+				<command:parameterValue required="true" variableLength="false">ByteUnit</command:parameterValue>
+				<dev:type>
+					<maml:name>ByteUnit</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+		</command:parameters>
+		<command:inputTypes>
+			<command:inputType>
+				<dev:type>
+					<maml:name />
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:inputType>
+		</command:inputTypes>
+		<command:returnValues>
+			<command:returnValue>
+				<dev:type>
+					<maml:name />
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:returnValue>
+		</command:returnValues>
+		<command:terminatingErrors />
+		<command:nonTerminatingErrors />
+		<maml:alertSet>
+			<maml:title />
+			<maml:alert>
+				<maml:para>For more information, type "Get-Help Convert-NumberUnits -detailed". For technical information, type "Get-Help Convert-NumberUnits -full".</maml:para>
+			</maml:alert>
+		</maml:alertSet>
+		<command:examples>
+			<command:example>
+				<maml:title>------------------EXAMPLE------------------</maml:title>
+				<dev:code>Get-RuntimeInformation | Format-List
+
+ApplicationBitness            : X64
+ApplicationDataLocation       : C:\Users\Account\AppData\Local\Console
+ApplicationFileName           : BobsToolbox.Console.exe
+ApplicationFilePath           : C:\Workspaces\Console\Console\bin\x64\Debug\net8.0-windows\Console.exe
+ApplicationIsDevelopmentBuild : True
+ApplicationIsElevated         : True
+ApplicationLocation           : C:\Workspaces\Console\Console\bin\x64\Debug\net8.0-windows
+ApplicationName               : Console
+ApplicationVersion            : 1.2.3.4
+DeviceId                      : ABC123
+DeviceManufacturer            : Microsoft
+DeviceModel                   : Surface
+DeviceName                    : MyComputer
+DevicePlatform                : Windows
+DevicePlatformBitness         : X64
+DevicePlatformVersion         : 10.0.22621.0
+DeviceType                    : Desktop
+
+</dev:code>
+				<dev:remarks>
+					<maml:para />
+				</dev:remarks>
+			</command:example>
+		</command:examples>
+		<maml:relatedLinks>
+			<maml:navigationLink>
+				<maml:linkText>Online version:</maml:linkText>
+				<maml:uri />
+			</maml:navigationLink>
+		</maml:relatedLinks>
+	</command:command>
+	<command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/1" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:gl="http://schemas.falchionconsulting.com/maml/gl/2013/02" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10">
+		<command:details>
+			<command:name>Get-RuntimeInformation</command:name>
+			<gl:group>Environment</gl:group>
+			<maml:description>
+				<maml:para>The runtime information of the system.</maml:para>
+			</maml:description>
+			<command:verb>Get</command:verb>
+			<command:noun>RuntimeInformation</command:noun>
+		</command:details>
+		<maml:description>
+			<maml:para>The runtime information of the system.</maml:para>
+		</maml:description>
+		<command:parameters />
+		<command:inputTypes>
+			<command:inputType>
+				<dev:type>
+					<maml:name />
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:inputType>
+		</command:inputTypes>
+		<command:returnValues>
+			<command:returnValue>
+				<dev:type>
+					<maml:name />
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:returnValue>
+		</command:returnValues>
+		<command:terminatingErrors />
+		<command:nonTerminatingErrors />
+		<maml:alertSet>
+			<maml:title />
+			<maml:alert>
+				<maml:para>For more information, type "Get-Help Get-RuntimeInformation -detailed". For technical information, type "Get-Help Get-RuntimeInformation -full".</maml:para>
+			</maml:alert>
+		</maml:alertSet>
+		<command:examples>
+			<command:example>
+				<maml:title>------------------EXAMPLE------------------</maml:title>
+				<dev:code>Get-RuntimeInformation | Format-List
+
+ApplicationBitness            : X64
+ApplicationDataLocation       : C:\Users\Account\AppData\Local\Console
+ApplicationFileName           : BobsToolbox.Console.exe
+ApplicationFilePath           : C:\Workspaces\Console\Console\bin\x64\Debug\net8.0-windows\Console.exe
+ApplicationIsDevelopmentBuild : True
+ApplicationIsElevated         : True
+ApplicationLocation           : C:\Workspaces\Console\Console\bin\x64\Debug\net8.0-windows
+ApplicationName               : Console
+ApplicationVersion            : 1.2.3.4
+DeviceId                      : ABC123
+DeviceManufacturer            : Microsoft
+DeviceModel                   : Surface
+DeviceName                    : MyComputer
+DevicePlatform                : Windows
+DevicePlatformBitness         : X64
+DevicePlatformVersion         : 10.0.22621.0
+DeviceType                    : Desktop
+
+</dev:code>
+				<dev:remarks>
+					<maml:para />
+				</dev:remarks>
+			</command:example>
+		</command:examples>
+		<maml:relatedLinks>
+			<maml:navigationLink>
+				<maml:linkText>Online version:</maml:linkText>
+				<maml:uri />
+			</maml:navigationLink>
+		</maml:relatedLinks>
+	</command:command>
+	<command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/1" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:gl="http://schemas.falchionconsulting.com/maml/gl/2013/02" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10">
+		<command:details>
+			<command:name>Test-SampleCmdlet</command:name>
+			<gl:group>SampleCmdlet</gl:group>
+			<maml:description>
+				<maml:para>Sample Cmdlet</maml:para>
+			</maml:description>
+			<command:verb>Test</command:verb>
+			<command:noun>SampleCmdlet</command:noun>
+		</command:details>
+		<maml:description>
+			<maml:para>Sample Cmdlet</maml:para>
+		</maml:description>
+		<command:syntax>
+			<command:syntaxItem>
+				<maml:name>Test-SampleCmdlet</maml:name>
+				<command:parameter required="true" position="1">
+					<maml:name>FavoriteNumber</maml:name>
+					<command:parameterValue required="true">Int32</command:parameterValue>
+				</command:parameter>
+				<command:parameter required="false" position="2">
+					<maml:name>FavoritePet</maml:name>
+					<command:parameterValue required="true">String</command:parameterValue>
+				</command:parameter>
+			</command:syntaxItem>
+		</command:syntax>
+		<command:parameters>
+			<command:parameter required="true" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="1" variableLength="false">
+				<maml:name>FavoriteNumber</maml:name>
+				<maml:description>
+					<maml:para />
+				</maml:description>
+				<command:parameterValue required="true" variableLength="false">Int32</command:parameterValue>
+				<dev:type>
+					<maml:name>Int32</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+			<command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="2" variableLength="false">
+				<maml:name>FavoritePet</maml:name>
+				<maml:description>
+					<maml:para />
+				</maml:description>
+				<command:parameterValue required="false" variableLength="false">String</command:parameterValue>
+				<dev:type>
+					<maml:name>String</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+		</command:parameters>
+		<command:inputTypes>
+			<command:inputType>
+				<dev:type>
+					<maml:name />
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:inputType>
+		</command:inputTypes>
+		<command:returnValues>
+			<command:returnValue>
+				<dev:type>
+					<maml:name />
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:returnValue>
+		</command:returnValues>
+		<command:terminatingErrors />
+		<command:nonTerminatingErrors />
+		<maml:alertSet>
+			<maml:title />
+			<maml:alert>
+				<maml:para>For more information, type "Get-Help Test-SampleCmdlet -detailed". For technical information, type "Get-Help Test-SampleCmdlet -full".</maml:para>
+			</maml:alert>
+		</maml:alertSet>
+		<command:examples />
+		<maml:relatedLinks>
+			<maml:navigationLink>
+				<maml:linkText>Online version:</maml:linkText>
+				<maml:uri />
+			</maml:navigationLink>
+		</maml:relatedLinks>
+	</command:command>
+</helpItems>

@@ -1,0 +1,36 @@
+{
+	"Booleans": [
+		true,
+		false
+	],
+	"Character": "\u0000",
+	"CharArray": [
+		"\"",
+		"\\",
+		"\/",
+		"\b",
+		"\f",
+		"\n",
+		"\r",
+		"\t"
+	],
+	"DateTime": "2024-01-02T03:04:05.0060000Z",
+	"DateTimeLocal": "2024-01-02T08:04:05.0070000Z",
+	"DateTimeNull": null,
+	"DateTimeOffset": "2024-01-02T03:04:05+00:15",
+	"DateTimeOffsetNull": null,
+	"DateTimeUtc": "2024-01-02T03:04:05.0080000Z",
+	"Guid": "8d6533aa-4103-4071-9341-1d2f64904f7a",
+	"InterfaceListString": [
+		null,
+		"foo",
+		"bar"
+	],
+	"ListString": [
+		"hello",
+		null,
+		"world"
+	],
+	"ShortGuid": "f071d3bc-0fa9-4d59-a44e-92e29cf98406",
+	"TextFormatEnum": 2
+}

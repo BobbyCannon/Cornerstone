@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<AssemblyTitle>Cornerstone.EntityFramework</AssemblyTitle>
+		<PackageId>Cornerstone.EntityFramework</PackageId>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<SignAssembly>true</SignAssembly>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Azure.Identity" Version="1.10.4" />
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.5" />
+		<PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+		<PackageReference Include="Microsoft.Data.Sqlite.Core" Version="8.0.2" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.32" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="3.1.32" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="3.1.32" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
+		<PackageReference Include="Microsoft.Data.Sqlite.Core" Version="7.0.14" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.14" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="7.0.14" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="7.0.14" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+		<PackageReference Include="Microsoft.Data.Sqlite.Core" Version="8.0.2" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.2" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="8.0.2" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.2" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Cornerstone\Cornerstone.csproj" />
+	</ItemGroup>
+</Project>
