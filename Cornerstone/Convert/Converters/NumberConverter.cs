@@ -32,6 +32,14 @@ public class NumberConverter : BaseConverter
 
 	#region Methods
 
+	/// <inheritdoc />
+	public override bool CanConvert(Type fromType, Type toType)
+	{
+		return base.CanConvert(fromType, toType)
+			|| (DateConverter.NumberTypes.Contains(fromType)
+				&& Activator.DateTypes.Contains(toType));
+	}
+
 	/// <summary>
 	/// Convert to Byte.
 	/// </summary>
@@ -39,7 +47,7 @@ public class NumberConverter : BaseConverter
 	/// <returns> The byte value. </returns>
 	public static byte ToByte(object value)
 	{
-		return Converter.ConvertTo<byte>(value);
+		return value.ConvertTo<byte>();
 	}
 
 	/// <summary>
@@ -49,7 +57,7 @@ public class NumberConverter : BaseConverter
 	/// <returns> The decimal value. </returns>
 	public static decimal ToDecimal(object value)
 	{
-		return Converter.ConvertTo<decimal>(value);
+		return value.ConvertTo<decimal>();
 	}
 
 	/// <summary>
@@ -59,7 +67,7 @@ public class NumberConverter : BaseConverter
 	/// <returns> The double value. </returns>
 	public static double ToDouble(object value)
 	{
-		return Converter.ConvertTo<double>(value);
+		return value.ConvertTo<double>();
 	}
 
 	/// <summary>
@@ -69,7 +77,7 @@ public class NumberConverter : BaseConverter
 	/// <returns> The short value. </returns>
 	public static short ToInt16(object value)
 	{
-		return Converter.ConvertTo<short>(value);
+		return value.ConvertTo<short>();
 	}
 
 	/// <summary>
@@ -79,7 +87,7 @@ public class NumberConverter : BaseConverter
 	/// <returns> The int value. </returns>
 	public static int ToInt32(object value)
 	{
-		return Converter.ConvertTo<int>(value);
+		return value.ConvertTo<int>();
 	}
 
 	/// <summary>
@@ -89,7 +97,7 @@ public class NumberConverter : BaseConverter
 	/// <returns> The long value. </returns>
 	public static long ToInt64(object value)
 	{
-		return Converter.ConvertTo<long>(value);
+		return value.ConvertTo<long>();
 	}
 
 	/// <summary>
@@ -99,7 +107,7 @@ public class NumberConverter : BaseConverter
 	/// <returns> The sbyte value. </returns>
 	public static sbyte ToSByte(object value)
 	{
-		return Converter.ConvertTo<sbyte>(value);
+		return value.ConvertTo<sbyte>();
 	}
 
 	/// <summary>
@@ -109,7 +117,7 @@ public class NumberConverter : BaseConverter
 	/// <returns> The float value. </returns>
 	public static float ToSingle(object value)
 	{
-		return Converter.ConvertTo<float>(value);
+		return value.ConvertTo<float>();
 	}
 
 	/// <summary>
@@ -119,7 +127,7 @@ public class NumberConverter : BaseConverter
 	/// <returns> The ushort value. </returns>
 	public static ushort ToUInt16(object value)
 	{
-		return Converter.ConvertTo<ushort>(value);
+		return value.ConvertTo<ushort>();
 	}
 
 	/// <summary>
@@ -129,7 +137,7 @@ public class NumberConverter : BaseConverter
 	/// <returns> The uint value. </returns>
 	public static uint ToUInt32(object value)
 	{
-		return Converter.ConvertTo<uint>(value);
+		return value.ConvertTo<uint>();
 	}
 
 	/// <summary>
@@ -139,7 +147,7 @@ public class NumberConverter : BaseConverter
 	/// <returns> The ulong value. </returns>
 	public static ulong ToUInt64(object value)
 	{
-		return Converter.ConvertTo<ulong>(value);
+		return value.ConvertTo<ulong>();
 	}
 
 	/// <inheritdoc />
@@ -166,7 +174,7 @@ public class NumberConverter : BaseConverter
 
 		if (Activator.GuidTypes.Contains(toType))
 		{
-			var number = Converter.ConvertTo<ulong>(fromValue);
+			var number = fromValue.ConvertTo<ulong>();
 			var bytes = new byte[16];
 			var hexValue = ulong.Parse(number.ToString(), NumberStyles.HexNumber);
 			BitConverter.GetBytes(hexValue).CopyTo(bytes, 0);
@@ -174,6 +182,12 @@ public class NumberConverter : BaseConverter
 			var guid = new Guid(bytes);
 			value = toType == typeof(ShortGuid) ? new ShortGuid(guid) : guid;
 			return true;
+		}
+
+		if (Activator.DateTypes.Contains(toType))
+		{
+			var number = fromValue.ConvertTo<ulong>();
+			return DateConverter.TryFromTicks(toType, number, out value);
 		}
 
 		if (Activator.StringTypes.Contains(toType))

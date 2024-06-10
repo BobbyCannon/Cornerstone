@@ -142,7 +142,7 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 	/// </summary>
 	public override void Add(T item)
 	{
-		InsertRange(Length, new[] { item }, 0, 1);
+		InsertRange(Length, [item], 0, 1);
 	}
 
 	/// <summary>
@@ -361,7 +361,7 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 	/// <remarks>
 	/// This method counts as a read access and may be called concurrently to other read accesses.
 	/// </remarks>
-	public int IndexOf(T item, int index, int length)
+	public override int IndexOf(T item, int index, int length)
 	{
 		if (!this.ValidRange(index, length))
 		{
@@ -397,39 +397,6 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 	public int IndexOfAny(T[] anyOf)
 	{
 		return IndexOfAny(anyOf, 0, Length);
-	}
-
-	/// <summary>
-	/// Gets the index of the first occurrence of any value in the provided values.
-	/// </summary>
-	/// <param name="anyOf"> The values to search for. </param>
-	/// <param name="index"> The index to start the search. </param>
-	/// <param name="length"> Length of the area to search. </param>
-	/// <returns> The index if found otherwise -1 if not found. </returns>
-	public int IndexOfAny(T[] anyOf, int index, int length)
-	{
-		if (!this.ValidRange(index, length))
-		{
-			return -1;
-		}
-
-		if (anyOf.Contains(this[index]))
-		{
-			return index;
-		}
-
-		for (var i = index; i < (index + length); i++)
-		{
-			for (var j = 0; j < anyOf.Length; j++)
-			{
-				if (Equals(this[i], anyOf[j]))
-				{
-					return i;
-				}
-			}
-		}
-
-		return -1;
 	}
 
 	/// <summary>
@@ -474,13 +441,16 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 		return -1;
 	}
 
-	/// <summary>
-	/// Inserts the item at the specified index in the buffer.
-	/// Runs in O(lg N).
-	/// </summary>
+	/// <inheritdoc />
 	public override void Insert(int index, T item)
 	{
-		InsertRange(index, new[] { item }, 0, 1);
+		InsertRange(index, [item], 0, 1);
+	}
+
+	/// <inheritdoc />
+	public override void InsertRange(int index, T[] items)
+	{
+		InsertRange(index, items, 0, items.Length);
 	}
 
 	/// <summary>
@@ -580,7 +550,7 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 	/// <param name="index"> The index to start removing from. </param>
 	/// <param name="length"> The length of elements to remove. </param>
 	/// <exception cref="ArgumentOutOfRangeException"> offset or length is outside the valid range. </exception>
-	public void RemoveRange(int index, int length)
+	public override void RemoveRange(int index, int length)
 	{
 		if (index > End)
 		{

@@ -16,8 +16,7 @@ public class GnsMessageTests : BaseMessageTests
 	[TestMethod]
 	public void ShouldParse()
 	{
-		ProcessParseScenarios(new (string sentance, GnsMessage expected)[]
-		{
+		ProcessParseScenarios([
 			(
 				"$GNGNS,014035.00,4332.69262,S,17235.48549,E,RR,13,0.9,25.63,11.24,,*70",
 				new GnsMessage
@@ -73,7 +72,7 @@ public class GnsMessageTests : BaseMessageTests
 					Checksum = "46"
 				}
 			)
-		});
+		]);
 	}
 
 	#endregion

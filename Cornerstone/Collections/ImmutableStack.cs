@@ -8,7 +8,7 @@ using System.Text;
 
 #endregion
 
-// ReSharper disable once CheckNamespace
+
 namespace Cornerstone.Collections;
 
 /// <summary>

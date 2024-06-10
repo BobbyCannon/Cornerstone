@@ -70,19 +70,17 @@ public class OrderByTests : CornerstoneUnitTest
 		var scenarios = new List<(OrderBy<ClientAccount>[] order, (string[] existing, string insert, int expected)[] results)>
 		{
 			(
-				new[]
-				{
+				[
 					new OrderBy<ClientAccount>(x => x.Name == "Zoe", true),
 					new OrderBy<ClientAccount>(x => x.Name == "Zane", true),
 					new OrderBy<ClientAccount>(x => x.Name)
-				},
-				new[]
-				{
-					(new[] { "Zane" }, "Zoe", 0),
-					(new[] { "Zoe" }, "Zane", 1),
-					(new[] { "Zoe", "Zane" }, "Bob", 2),
-					(new[] { "Zoe", "Zane", "Jack" }, "Chad", 2)
-				}
+				],
+				[
+					(["Zane"], "Zoe", 0),
+					(["Zoe"], "Zane", 1),
+					(["Zoe", "Zane"], "Bob", 2),
+					(["Zoe", "Zane", "Jack"], "Chad", 2)
+				]
 			)
 		};
 
@@ -120,18 +118,16 @@ public class OrderByTests : CornerstoneUnitTest
 		var scenarios = new List<(OrderBy<ClientAccount>[] order, (string[] unordered, string[] expected)[] results)>
 		{
 			(
-				new[]
-				{
+				[
 					new OrderBy<ClientAccount>(x => x.Name == "Zoe", true),
 					new OrderBy<ClientAccount>(x => x.Name == "Zane", true),
 					new OrderBy<ClientAccount>(x => x.Name)
-				},
-				new[]
-				{
-					(new[] { "Zane", "Zoe" }, new[] { "Zoe", "Zane" }),
-					(new[] { "Bob", "Zane", "Zoe" }, new[] { "Zoe", "Zane", "Bob" }),
-					(new[] { "Bob", "Zane", "Joe", "Zoe" }, new[] { "Zoe", "Zane", "Bob", "Joe" })
-				}
+				],
+				[
+					(["Zane", "Zoe"], ["Zoe", "Zane"]),
+					(["Bob", "Zane", "Zoe"], ["Zoe", "Zane", "Bob"]),
+					(["Bob", "Zane", "Joe", "Zoe"], ["Zoe", "Zane", "Bob", "Joe"])
+				]
 			)
 		};
 

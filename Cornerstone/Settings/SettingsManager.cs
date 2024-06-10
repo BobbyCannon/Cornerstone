@@ -8,6 +8,7 @@ using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
 using Cornerstone.Presentation.Managers;
+using PropertyChanged;
 
 #endregion
 
@@ -79,7 +80,7 @@ public abstract class SettingsManager<T, T2> : Manager
 	/// <summary>
 	/// Load the settings from storage.
 	/// </summary>
-	public override void Load(params object[] values)
+	public void Load()
 	{
 		using var repository = GetRepository();
 		var entities = repository.Load(LoadPredicate);
@@ -89,7 +90,7 @@ public abstract class SettingsManager<T, T2> : Manager
 			Load(entity);
 		}
 
-		base.Load();
+		//base.Load();
 		ResetHasChanges();
 	}
 
@@ -171,7 +172,7 @@ public abstract class SettingsManager<T, T2> : Manager
 		}
 		else
 		{
-			response = (Setting<T2>) typeof(Setting<,>).CreateInstanceOfGeneric(new[] { type, typeof(T2) }, name, defaultValue, GetDispatcher());
+			response = (Setting<T2>) typeof(Setting<,>).CreateInstanceOfGeneric([type, typeof(T2)], name, defaultValue, GetDispatcher());
 			update?.Invoke(response);
 			_trackedSettings.Add(name, response);
 		}
@@ -214,6 +215,7 @@ public abstract class SettingsManager<T, T2> : Manager
 	/// Triggered when set is called for a setting.
 	/// </summary>
 	/// <param name="name"> The name of setting that changed. </param>
+	[SuppressPropertyChangedWarnings]
 	protected virtual void OnSettingChanged(string name)
 	{
 		SettingChanged?.Invoke(this, name);

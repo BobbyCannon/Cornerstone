@@ -75,7 +75,7 @@ public class Timer : Bindable
 	{
 		_elapsed = _elapsed.Add(time);
 
-		TriggerPropertyChangedNotification(nameof(Elapsed));
+		NotifyOfPropertyChanged(nameof(Elapsed));
 	}
 
 	/// <summary>
@@ -120,7 +120,7 @@ public class Timer : Bindable
 		_elapsed = elapsed;
 		_startedOn = DateTime.MinValue;
 
-		TriggerPropertyChangedNotification(nameof(Elapsed));
+		NotifyOfPropertyChanged(nameof(Elapsed));
 	}
 
 	/// <summary>
@@ -140,7 +140,7 @@ public class Timer : Bindable
 		_elapsed = TimeSpan.Zero;
 		_startedOn = dateTime;
 
-		TriggerPropertyChangedNotification(nameof(Elapsed));
+		NotifyOfPropertyChanged(nameof(Elapsed));
 	}
 
 	/// <summary>
@@ -207,7 +207,7 @@ public class Timer : Bindable
 
 		_startedOn = DateTime.MinValue;
 
-		TriggerPropertyChangedNotification(nameof(Elapsed));
+		NotifyOfPropertyChanged(nameof(Elapsed));
 		return elapsed;
 	}
 

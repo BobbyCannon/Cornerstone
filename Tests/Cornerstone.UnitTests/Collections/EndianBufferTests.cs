@@ -80,7 +80,7 @@ public class EndianBufferTests : CornerstoneUnitTest
 		AreEqual(8, littleBuffer.ReadIndex);
 		AreEqual(8, littleBuffer.WriteIndex);
 
-		expected = new byte[] { 0xFF, 0xDC, 0xFF, 0xDC, 0x76, 0xFE, 0xDC, 0xBA, 0x00, 0x00 };
+		expected = [0xFF, 0xDC, 0xFF, 0xDC, 0x76, 0xFE, 0xDC, 0xBA, 0x00, 0x00];
 		littleBuffer.WriteIndex = 2;
 		IsTrue(littleBuffer.TryWriteInt16(-8961));
 		AreEqual(expected, littleBuffer.ToArray());
@@ -128,7 +128,7 @@ public class EndianBufferTests : CornerstoneUnitTest
 		AreEqual(-8961, littleBuffer.TryReadInt16(out var sValue) ? sValue : throw new Exception("Failed to read"));
 
 		// -8961 in big endian format
-		expected = new byte[] { 0xDC, 0xFF };
+		expected = [0xDC, 0xFF];
 		var bigBuffer = new BigEndianBuffer(expected.Length);
 		result = bigBuffer.TryWriteInt16(-8961);
 		IsTrue(result);
@@ -137,7 +137,7 @@ public class EndianBufferTests : CornerstoneUnitTest
 		AreEqual(-8961, bigBuffer.TryReadInt16(out sValue) ? sValue : throw new Exception("Failed to read"));
 
 		// 8961 (unsigned) in little endian format
-		expected = new byte[] { 0x01, 0x23 };
+		expected = [0x01, 0x23];
 		littleBuffer = new LittleEndianBuffer(expected.Length);
 		result = littleBuffer.TryWriteUInt16(8961);
 		IsTrue(result);
@@ -146,7 +146,7 @@ public class EndianBufferTests : CornerstoneUnitTest
 		AreEqual(8961, littleBuffer.TryReadUInt16(out var uValue) ? uValue : throw new Exception("Failed to read"));
 
 		// 8961 (unsigned) in big endian format
-		expected = new byte[] { 0x23, 0x01 };
+		expected = [0x23, 0x01];
 		bigBuffer = new BigEndianBuffer(expected.Length);
 		result = bigBuffer.TryWriteUInt16(8961);
 		IsTrue(result);
@@ -169,7 +169,7 @@ public class EndianBufferTests : CornerstoneUnitTest
 		AreEqual(-1732584193, littleBuffer.TryReadInt32(out var iValue) ? iValue : throw new Exception("Failed to read"));
 
 		// -1732584193 in big endian format
-		expected = new byte[] { 0x98, 0xBA, 0xDC, 0xFF };
+		expected = [0x98, 0xBA, 0xDC, 0xFF];
 		var bigBuffer = new BigEndianBuffer(expected.Length);
 		result = bigBuffer.TryWriteInt32(-1732584193);
 		IsTrue(result);
@@ -178,7 +178,7 @@ public class EndianBufferTests : CornerstoneUnitTest
 		AreEqual(-1732584193, bigBuffer.TryReadInt32(out iValue) ? iValue : throw new Exception("Failed to read"));
 
 		// 1732584193 (unsigned) in little endian format
-		expected = new byte[] { 0x01, 0x23, 0x45, 0x67 };
+		expected = [0x01, 0x23, 0x45, 0x67];
 		littleBuffer = new LittleEndianBuffer(expected.Length);
 		result = littleBuffer.TryWriteUInt32(1732584193);
 		IsTrue(result);
@@ -187,7 +187,7 @@ public class EndianBufferTests : CornerstoneUnitTest
 		AreEqual(1732584193u, littleBuffer.TryReadUInt32(out var uValue) ? uValue : throw new Exception("Failed to read"));
 
 		// 1732584193 (unsigned) in big endian format
-		expected = new byte[] { 0x67, 0x45, 0x23, 0x01 };
+		expected = [0x67, 0x45, 0x23, 0x01];
 		bigBuffer = new BigEndianBuffer(expected.Length);
 		result = bigBuffer.TryWriteUInt32(1732584193);
 		IsTrue(result);
@@ -209,7 +209,7 @@ public class EndianBufferTests : CornerstoneUnitTest
 		AreEqual(-4981827302456632065, littleBuffer.TryReadInt64(out var sValue) ? sValue : throw new Exception("Failed to read"));
 
 		// -4981827302456632065 in big endian format
-		expected = new byte[] { 0xBA, 0xDC, 0xFE, 0x76, 0x98, 0xBA, 0xDC, 0xFF };
+		expected = [0xBA, 0xDC, 0xFE, 0x76, 0x98, 0xBA, 0xDC, 0xFF];
 		var bigBuffer = new BigEndianBuffer(expected.Length);
 		result = bigBuffer.TryWriteInt64(-4981827302456632065);
 		IsTrue(result);
@@ -218,7 +218,7 @@ public class EndianBufferTests : CornerstoneUnitTest
 		AreEqual(-4981827302456632065, bigBuffer.TryReadInt64(out sValue) ? sValue : throw new Exception("Failed to read"));
 
 		// 4981827302456632065 (unsigned) in little endian format
-		expected = new byte[] { 0x01, 0x23, 0x45, 0x67, 0x89, 0x01, 0x23, 0x45 };
+		expected = [0x01, 0x23, 0x45, 0x67, 0x89, 0x01, 0x23, 0x45];
 		littleBuffer = new LittleEndianBuffer(expected.Length);
 		result = littleBuffer.TryWriteUInt64(4981827302456632065);
 		IsTrue(result);
@@ -227,7 +227,7 @@ public class EndianBufferTests : CornerstoneUnitTest
 		AreEqual(4981827302456632065u, littleBuffer.TryReadUInt64(out var uValue) ? uValue : throw new Exception("Failed to read"));
 
 		// 4981827302456632065 (unsigned) in big endian format
-		expected = new byte[] { 0x45, 0x23, 0x01, 0x89, 0x67, 0x45, 0x23, 0x01 };
+		expected = [0x45, 0x23, 0x01, 0x89, 0x67, 0x45, 0x23, 0x01];
 		bigBuffer = new BigEndianBuffer(expected.Length);
 		result = bigBuffer.TryWriteUInt64(4981827302456632065);
 		IsTrue(result);

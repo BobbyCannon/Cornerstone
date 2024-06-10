@@ -74,7 +74,7 @@ public class TypeExtensionsTests : CornerstoneUnitTest
 		var scenarios = new List<(Type child, Type parent)>
 		{
 			(typeof(ShortGuid), typeof(IComparable<>)),
-			(typeof(ShortGuid), typeof(IComparable<ShortGuid>))
+			(typeof(ShortGuid), typeof(IComparable<ShortGuid>)),
 		};
 
 		foreach (var scenario in scenarios)
@@ -91,7 +91,7 @@ public class TypeExtensionsTests : CornerstoneUnitTest
 		var scenarios = new List<(object child, Type parent)>
 		{
 			(new SortedDictionary<string, PartialUpdateValue>(), typeof(IDictionary<string, PartialUpdateValue>)),
-			(new ShortGuid(), typeof(IComparable<>)),
+			(new ShortGuid(), typeof(IComparable<>))
 		};
 
 		foreach (var scenario in scenarios)
@@ -99,6 +99,12 @@ public class TypeExtensionsTests : CornerstoneUnitTest
 			$"{scenario.child.GetType().FullName} => {scenario.parent.FullName}".Dump();
 			IsTrue(scenario.child.ImplementsType(scenario.parent));
 		}
+	}
+
+	[TestMethod]
+	public void ImplementsTypesForGenerics()
+	{
+		IsTrue(new ShortGuid().ImplementsType<IComparable>());
 	}
 
 	[TestMethod]

@@ -6,7 +6,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Windows.Forms;
 using Cornerstone.Attributes;
 using Cornerstone.Collections;
 using Cornerstone.Convert;
@@ -22,6 +21,7 @@ using Cornerstone.Serialization.Json.Converters;
 using Cornerstone.Serialization.Json.Values;
 using Cornerstone.Testing;
 using Cornerstone.Text;
+using Cornerstone.Text.Buffers;
 using Cornerstone.UnitTests.Resources;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -33,59 +33,6 @@ namespace Cornerstone.UnitTests.Serialization.Json;
 public class JsonSerializerTests : CornerstoneUnitTest
 {
 	#region Methods
-
-	[TestMethod]
-	public void Recursion()
-	{
-		var grandpa = new Person { Name = "Grandpa" };
-		var dad = new Person { Name = "Dad" };
-		var son = new Person { Name = "Son" };
-		var expected = @"{
-	""Children"": [
-		{
-			""Children"": [
-				{
-					""Children"": null,
-					""Name"": ""Son""
-				}
-			],
-			""Name"": ""Dad""
-		}
-	],
-	""Name"": ""Grandpa"",
-	""Parent"": null
-}";
-		var settings = new SerializationOptions
-		{
-			TextFormat = TextFormat.Indented
-		};
-
-		grandpa.Children = [dad];
-		dad.Parent = grandpa;
-		dad.Children = [son];
-		son.Parent = dad;
-
-		var actual = grandpa.ToJson(settings);
-		AreEqual(expected, actual);
-	}
-
-	[TestMethod]
-	public void Recursion2()
-	{
-		var dynamic = new
-		{
-			Name = "Parent",
-			Version = new Version(1,2,3,4),
-			Child = new {
-				Name = "Child",
-				Version = new Version(1,2,3,4)
-			}
-		};
-
-		var expected = "{\"Child\":{\"Name\":\"Child\",\"Version\":\"1.2.3.4\"},\"Name\":\"Parent\",\"Version\":\"1.2.3.4\"}";
-		var actual = dynamic.ToJson();
-		AreEqual(expected, actual);
-	}
 
 	[TestMethod]
 	public void ArrayOfBooleans()
@@ -247,6 +194,122 @@ public class JsonSerializerTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void Recursion()
+	{
+		var grandpa = new Person { Name = "Grandpa" };
+		var dad = new Person { Name = "Dad" };
+		var son = new Person { Name = "Son" };
+		var expected = @"{
+	""Children"": [
+		{
+			""Children"": [
+				{
+					""Children"": null,
+					""Name"": ""Son""
+				}
+			],
+			""Name"": ""Dad""
+		}
+	],
+	""Name"": ""Grandpa"",
+	""Parent"": null
+}";
+		var settings = new SerializationOptions
+		{
+			TextFormat = TextFormat.Indented
+		};
+
+		grandpa.Children = [dad];
+		dad.Parent = grandpa;
+		dad.Children = [son];
+		son.Parent = dad;
+
+		var actual = grandpa.ToJson(settings);
+		AreEqual(expected, actual);
+	}
+
+	[TestMethod]
+	public void Recursion2()
+	{
+		var dynamic = new
+		{
+			Name = "Parent",
+			Version = new Version(1, 2, 3, 4),
+			Child = new
+			{
+				Name = "Child",
+				Version = new Version(1, 2, 3, 4)
+			}
+		};
+
+		var expected = "{\"Child\":{\"Name\":\"Child\",\"Version\":\"1.2.3.4\"},\"Name\":\"Parent\",\"Version\":\"1.2.3.4\"}";
+		var actual = dynamic.ToJson();
+		AreEqual(expected, actual);
+	}
+
+	[TestMethod]
+	public void Recursion3()
+	{
+		var person1 = new Person { Name = "John" };
+		var person2 = new Person { Name = "Jane", Children = [person1] };
+
+		var options = new SerializationOptions { TextFormat = TextFormat.Indented };
+		var data = new
+		{
+			Person1 = person1,
+			Person2 = person2
+		};
+
+		var expected = """
+						{
+							"Person1": {
+								"Children": null,
+								"Name": "John",
+								"Parent": null
+							},
+							"Person2": {
+								"Children": [
+									{
+										"Children": null,
+										"Name": "John",
+										"Parent": null
+									}
+								],
+								"Name": "Jane",
+								"Parent": null
+							}
+						}
+						""";
+		var actual = data.ToJson(options);
+		AreEqual(expected, actual);
+
+		// Circular reference should not be serialized
+		person2.Parent = person1;
+
+		expected = """
+					{
+						"Person1": {
+							"Children": null,
+							"Name": "John",
+							"Parent": null
+						},
+						"Person2": {
+							"Children": [
+								{
+									"Children": null,
+									"Name": "John",
+									"Parent": null
+								}
+							],
+							"Name": "Jane"
+						}
+					}
+					""";
+		actual = data.ToJson(options);
+		AreEqual(expected, actual);
+	}
+
+	[TestMethod]
 	public void RunScenarios()
 	{
 		var scenarios = GetScenarios();
@@ -284,7 +347,7 @@ public class JsonSerializerTests : CornerstoneUnitTest
 	[TestMethod]
 	public void RunSingleScenario()
 	{
-		var scenario = GetScenarios()[0];
+		var scenario = GetScenarios()[75];
 
 		foreach (var serializer in GetSerializers())
 		{
@@ -547,20 +610,20 @@ public class JsonSerializerTests : CornerstoneUnitTest
 			new("72: UIntPtr?", UIntPtr.MinValue, typeof(UIntPtr?), "0"),
 			new("73: UIntPtr?", UIntPtr.MaxValue, typeof(UIntPtr?), "18446744073709551615"),
 			new("74: UIntPtr?", null, typeof(UIntPtr?), "null"),
-			new("75: IntPtr", IntPtr.MinValue, typeof(IntPtr), "-9223372036854775808"),
-			new("76: IntPtr", (IntPtr) 0, typeof(IntPtr), "0"),
-			new("77: IntPtr", IntPtr.MaxValue, typeof(IntPtr), "9223372036854775807"),
-			new("78: IntPtr?", IntPtr.MinValue, typeof(IntPtr?), "-9223372036854775808"),
-			new("79: IntPtr?", (IntPtr) 0, typeof(IntPtr?), "0"),
-			new("80: IntPtr?", IntPtr.MaxValue, typeof(IntPtr?), "9223372036854775807"),
-			new("81: IntPtr?", null, typeof(IntPtr?), "null"),
-			new("82: UIntPtr", UIntPtr.MinValue, typeof(UIntPtr), "0"),
-			new("83: UIntPtr", UIntPtr.MinValue, typeof(UIntPtr), "0"),
-			new("84: UIntPtr", UIntPtr.MaxValue, typeof(UIntPtr), "18446744073709551615"),
-			new("85: UIntPtr?", UIntPtr.MinValue, typeof(UIntPtr?), "0"),
-			new("86: UIntPtr?", UIntPtr.MinValue, typeof(UIntPtr?), "0"),
-			new("87: UIntPtr?", UIntPtr.MaxValue, typeof(UIntPtr?), "18446744073709551615"),
-			new("88: UIntPtr?", null, typeof(UIntPtr?), "null"),
+			new("75: Int128", Int128.MinValue, typeof(Int128), "-170141183460469231731687303715884105728"),
+			new("76: Int128", 0, typeof(Int128), "0"),
+			new("77: Int128", Int128.MaxValue, typeof(Int128), "170141183460469231731687303715884105727"),
+			new("78: Int128?", Int128.MinValue, typeof(Int128?), "-170141183460469231731687303715884105728"),
+			new("79: Int128?", 0, typeof(Int128?), "0"),
+			new("80: Int128?", Int128.MaxValue, typeof(Int128?), "170141183460469231731687303715884105727"),
+			new("81: Int128?", null, typeof(Int128?), "null"),
+			new("82: UInt128", UInt128.MinValue, typeof(UInt128), "0"),
+			new("83: UInt128", UInt128.MinValue, typeof(UInt128), "0"),
+			new("84: UInt128", UInt128.MaxValue, typeof(UInt128), "340282366920938463463374607431768211455"),
+			new("85: UInt128?", UInt128.MinValue, typeof(UInt128?), "0"),
+			new("86: UInt128?", UInt128.MinValue, typeof(UInt128?), "0"),
+			new("87: UInt128?", UInt128.MaxValue, typeof(UInt128?), "340282366920938463463374607431768211455"),
+			new("88: UInt128?", null, typeof(UInt128?), "null"),
 			new("89: decimal", decimal.MinValue, typeof(decimal), "-79228162514264337593543950335.0"),
 			new("90: decimal", (decimal) 0, typeof(decimal), "0.0"),
 			new("91: decimal", decimal.MaxValue, typeof(decimal), "79228162514264337593543950335.0"),
@@ -767,6 +830,7 @@ public class JsonSerializerTests : CornerstoneUnitTest
 		#region Properties
 
 		public Person[] Children { get; set; }
+
 		public string Name { get; set; }
 
 		public Person Parent { get; set; }

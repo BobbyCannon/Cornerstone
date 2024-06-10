@@ -3,13 +3,15 @@
 		<AssemblyTitle>Cornerstone.Automation</AssemblyTitle>
 		<PackageId>Cornerstone.Automation</PackageId>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<SignAssembly>true</SignAssembly>
+		<NoWarn>$(NoWarn);CS8002;</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
 		<EmbeddedResource Include="Cornerstone.Automation.js" />
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Interop.UIAutomationClient" Version="10.19041.0" />
-		<PackageReference Include="MSTest.TestFramework" Version="3.2.1" />
+		<PackageReference Include="MSTest.TestFramework" Version="3.3.1" />
 		<PackageReference Include="System.Management" Version="8.0.0" />
 	</ItemGroup>
 	<ItemGroup>

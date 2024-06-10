@@ -5,8 +5,8 @@ using Cornerstone.Runtime;
 
 #endregion
 
-// ReSharper disable once CheckNamespace
-namespace Cornerstone;
+
+namespace Cornerstone.Internal;
 
 /// <summary>
 /// Provides a method to combine a number of component values into a single device identifier string.

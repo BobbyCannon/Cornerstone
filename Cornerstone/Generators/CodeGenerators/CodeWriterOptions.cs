@@ -2,6 +2,7 @@
 
 using Cornerstone.Convert;
 using Cornerstone.Data;
+using Cornerstone.Internal;
 using Cornerstone.Serialization;
 using Cornerstone.Text;
 

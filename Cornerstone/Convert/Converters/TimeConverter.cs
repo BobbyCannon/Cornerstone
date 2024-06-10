@@ -35,7 +35,7 @@ public class TimeConverter : BaseConverter
 	/// <returns> The TimeSpan value. </returns>
 	public static TimeSpan ToTimeSpan(object value)
 	{
-		return Converter.ConvertTo<TimeSpan>(value);
+		return value.ConvertTo<TimeSpan>();
 	}
 
 	/// <inheritdoc />

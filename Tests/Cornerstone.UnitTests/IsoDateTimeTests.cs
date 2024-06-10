@@ -89,7 +89,7 @@ public class IsoDateTimeTests : CornerstoneUnitTest
 		foreach (var scenario in scenarios)
 		{
 			var actual = scenario.Key.FromJson<MyClass>();
-			Assert.AreEqual(scenario.Value, actual.Date);
+			AreEqual(scenario.Value, actual.Date);
 		}
 	}
 
@@ -97,7 +97,7 @@ public class IsoDateTimeTests : CornerstoneUnitTest
 	public void HashCode()
 	{
 		var iso = NewIsoDateTime("2022-08-23T19:13:45.2434501Z", "01:23:45.789");
-		Assert.AreEqual(-8868163, iso.GetHashCode());
+		AreEqual(-8868163, iso.GetHashCode());
 	}
 
 	[TestMethod]
@@ -107,14 +107,14 @@ public class IsoDateTimeTests : CornerstoneUnitTest
 
 		DateTime datetime = iso;
 		var expectedDateTime = DateTime.Parse("2022-08-23T19:13:45.2434501Z", null, DateTimeStyles.AdjustToUniversal);
-		Assert.AreEqual(expectedDateTime, datetime);
+		AreEqual(expectedDateTime, datetime);
 
 		var timespan = (TimeSpan) iso;
-		Assert.AreEqual(TimeSpan.Parse("01:23:45.789"), timespan);
+		AreEqual(TimeSpan.Parse("01:23:45.789"), timespan);
 
 		IsoDateTime isoDateTime = datetime;
-		Assert.AreEqual(iso.DateTime, isoDateTime.DateTime);
-		Assert.AreEqual(TimeSpan.Zero, isoDateTime.Duration);
+		AreEqual(iso.DateTime, isoDateTime.DateTime);
+		AreEqual(TimeSpan.Zero, isoDateTime.Duration);
 	}
 
 	[TestMethod]
@@ -218,10 +218,10 @@ public class IsoDateTimeTests : CornerstoneUnitTest
 		foreach (var scenario in scenarios)
 		{
 			var actual = IsoDateTime.ParseDuration(scenario.Value.start, scenario.Key);
-			Assert.AreEqual(scenario.Value.span, actual);
+			AreEqual(scenario.Value.span, actual);
 
 			var duration = IsoDateTime.ToDuration(scenario.Value.start, scenario.Value.span);
-			Assert.AreEqual(scenario.Key, duration);
+			AreEqual(scenario.Key, duration);
 		}
 	}
 
@@ -246,7 +246,7 @@ public class IsoDateTimeTests : CornerstoneUnitTest
 		foreach (var scenario in scenarios)
 		{
 			var actual = IsoDateTime.ToDuration(scenario.Value.start, scenario.Value.span);
-			Assert.AreEqual(scenario.Key, actual);
+			AreEqual(scenario.Key, actual);
 		}
 	}
 
@@ -271,7 +271,7 @@ public class IsoDateTimeTests : CornerstoneUnitTest
 
 		foreach (var scenario in scenarios)
 		{
-			Assert.AreEqual(scenario.Key, scenario.Value.ToString());
+			AreEqual(scenario.Key, scenario.Value.ToString());
 		}
 	}
 

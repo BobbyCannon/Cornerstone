@@ -34,7 +34,7 @@ public class InputBuilder
 	/// <param name="textInputAsKeyPresses"> Defaults the keyboard SendInput to send text as key presses if true. </param>
 	public InputBuilder(bool textInputAsKeyPresses = true)
 	{
-		_inputList = new List<InputTypeWithData>();
+		_inputList = [];
 
 		TextInputAsKeyPresses = textInputAsKeyPresses;
 	}
@@ -540,7 +540,7 @@ public class InputBuilder
 	}
 
 	/// <summary>
-	/// Add key strokes to input builder.
+	/// Add keystrokes to input builder.
 	/// </summary>
 	/// <param name="stroke"> </param>
 	/// <returns> This <see cref="InputBuilder" /> instance. </returns>

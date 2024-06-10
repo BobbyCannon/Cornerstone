@@ -16,8 +16,7 @@ public class GgaMessageTests : BaseMessageTests
 	[TestMethod]
 	public void TestMethodParse()
 	{
-		ProcessParseScenarios(new (string sentance, GgaMessage expected)[]
-		{
+		ProcessParseScenarios([
 			(
 				"$GNGGA,143718.00,4513.13793,N,01859.19704,E,1,05,1.86,108.1,M,38.1,M,,*40",
 				new GgaMessage
@@ -58,7 +57,7 @@ public class GgaMessageTests : BaseMessageTests
 					Checksum = "68"
 				}
 			)
-		});
+		]);
 	}
 
 	#endregion

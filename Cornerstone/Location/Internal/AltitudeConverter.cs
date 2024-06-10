@@ -4,8 +4,8 @@ using System.Runtime.CompilerServices;
 
 #endregion
 
-// ReSharper disable once CheckNamespace
-namespace Cornerstone.Location;
+
+namespace Cornerstone.Location.Internal;
 
 /// <summary>
 /// </summary>
@@ -83,7 +83,7 @@ internal static class AltitudeConverter
 		lng = col - i1;
 		lat = row - j1;
 
-		return new[] { i1, i2, j1, j2 };
+		return [i1, i2, j1, j2];
 	}
 
 	/// <summary>

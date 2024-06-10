@@ -69,20 +69,6 @@ public class LogListener : EventListener, INotifyPropertyChanged
 	#region Methods
 
 	/// <summary>
-	/// Create an instance of the log listener and start listening.
-	/// </summary>
-	/// <param name="sessionId"> The session of the log to monitor. </param>
-	/// <param name="level"> The level in which to log. </param>
-	/// <param name="initialize"> An optional initialize action. </param>
-	public static LogListener CreateSession(Guid sessionId, EventLevel level, Action<LogListener> initialize = null)
-	{
-		var logListener = new LogListener(sessionId, level);
-		initialize?.Invoke(logListener);
-		logListener.Start();
-		return logListener;
-	}
-
-	/// <summary>
 	/// Start listening for log events.
 	/// </summary>
 	public void Start()

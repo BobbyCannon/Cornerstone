@@ -1,6 +1,5 @@
 ﻿#region References
 
-using Cornerstone.Presentation.Managers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion

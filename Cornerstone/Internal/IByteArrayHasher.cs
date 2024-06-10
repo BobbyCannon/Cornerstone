@@ -1,5 +1,5 @@
-﻿// ReSharper disable once CheckNamespace
-namespace Cornerstone;
+﻿
+namespace Cornerstone.Internal;
 
 /// <summary>
 /// Provides functionality to hash a byte array.

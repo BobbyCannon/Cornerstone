@@ -534,7 +534,7 @@ public static class CmdletHelpGenerator
 			return;
 		}
 
-		var paragraphs = para.Split(new[] { "\r\n" }, StringSplitOptions.None);
+		var paragraphs = para.Split(["\r\n"], StringSplitOptions.None);
 		foreach (var p in paragraphs)
 		{
 			writer.WriteElementString("maml", "para", null, p);
@@ -660,7 +660,7 @@ public static class CmdletHelpGenerator
 				List<PropertyInfo> piList = null;
 				if (!parameterSets.ContainsKey(set))
 				{
-					piList = new List<PropertyInfo>();
+					piList = [];
 					parameterSets.Add(set, piList);
 				}
 				else
@@ -743,7 +743,7 @@ public static class CmdletHelpGenerator
 
 		public CmdletDetails()
 		{
-			CmdletExampleAttributes = new List<CmdletExampleAttribute>();
+			CmdletExampleAttributes = [];
 			ParameterAttributes = new Dictionary<PropertyInfo, ParameterAttribute>();
 		}
 

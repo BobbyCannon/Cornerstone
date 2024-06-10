@@ -13,6 +13,30 @@ public class StringExtensionsTests : CornerstoneUnitTest
 	#region Methods
 
 	[TestMethod]
+	public void CamelCaseMatch()
+	{
+		IsTrue("theQuickBrown".CamelCaseMatch("tqb"));
+		IsTrue("TheQuickBrown".CamelCaseMatch("tqb"));
+		IsTrue("The Quick Brown".CamelCaseMatch("tqb"));
+	}
+
+	[TestMethod]
+	public void EndsWithStartOf()
+	{
+		IsTrue("ABC".EndsWithStartOf("BC", out var match, false), match);
+		IsTrue("ABC".EndsWithStartOf("bc", out match, true), match);
+		IsTrue("ABC-123".EndsWithStartOf("bc-123", out match, true), match);
+		IsTrue("ABC-123".EndsWithStartOf("bC-123", out match, true), match);
+		IsTrue("ABC-123".EndsWithStartOf("Bc-123", out match, true), match);
+
+		IsTrue("cd 'C:\\Program Files\\Win".EndsWithStartOf("'C:\\Program Files\\Windows Defender'", out match, false));
+		AreEqual("'C:\\Program Files\\Win", match);
+
+		// These should not match and should not exception
+		((string) null).EndsWithStartOf(null, out _, false);
+	}
+
+	[TestMethod]
 	public void IndexOfAny()
 	{
 		//           0123 4 567

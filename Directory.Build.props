@@ -6,14 +6,12 @@
 		<Company>Bobby Cannon</Company>
 		<Authors>Bobby Cannon</Authors>
 		<Copyright>© Copyright 2014-2024</Copyright>
-		
-		<!-- Versions -->
-		<AssemblyVersion>1.0.4.1</AssemblyVersion>
-		<FileVersion>1.0.4.1</FileVersion>
-		<Version>1.0.4.1</Version>
-		
+		<AssemblyVersion>1.0.4</AssemblyVersion>
+		<FileVersion>$(AssemblyVersion)</FileVersion>
+		<Version>$(AssemblyVersion)-beta1</Version>
+		<AvaloniaVersion>11.1.0-beta2</AvaloniaVersion>
 		<LangVersion>latest</LangVersion>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<GenerateDocumentationFile>false</GenerateDocumentationFile>
 		<SignAssembly>false</SignAssembly>
 		<DelaySign>false</DelaySign>
 		<Description>Cornerstone in as development framework to help speed up and make building applications and systems much easier.</Description>
@@ -30,11 +28,10 @@
 		<SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
 		<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
 		<Nullable>disable</Nullable>
-		<NoWarn>$(NoWarn);CA1416;CS8625;MSB3277;NETSDK1206</NoWarn>
+		<NoWarn>$(NoWarn);CA1416;NETSDK1206;</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
 		<None Remove="FodyWeavers.xml" />
-		<None Include="$(SolutionDir)..\Cornerstone\FodyWeavers.xml" />
 		<None Include="$(SolutionDir)..\Cornerstone\License.txt">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
@@ -48,8 +45,12 @@
 			<PackagePath>\</PackagePath>
 		</None>
 	</ItemGroup>
-	<ItemGroup>
-		<PackageReference Include="Fody" Version="6.8.0" PrivateAssets="All" />
+	<ItemGroup Condition="$(MSBuildProjectName)!='Cornerstone.Build' AND $(MSBuildProjectName)!='Cornerstone.Build.Fody'">
+		<None Remove="FodyWeavers.xml" />
+		<None Include="$(SolutionDir)..\Cornerstone\FodyWeavers.xml" />
+		<PackageReference Include="Fody" Version="6.8.1" PrivateAssets="All" />
 		<PackageReference Include="PropertyChanged.Fody" Version="4.1.0" PrivateAssets="All" />
+		<ProjectReference Include="$(SolutionDir)..\Cornerstone\Cornerstone.Build\Cornerstone.Build.csproj" PrivateAssets="All" />
+		<WeaverFiles Include="$(SolutionDir)..\Cornerstone\Cornerstone.Build.Fody\bin\$(Configuration)\netstandard2.0\Cornerstone.Build.Fody.dll" />
 	</ItemGroup>
 </Project>

@@ -41,7 +41,7 @@ public class EnumConverterTests : ConverterTests<EnumConverter>
 		GenerateNewScenarios(
 			$"{nameof(EnumConverterTests)}.cs",
 			EnableFileUpdates || IsDebugging,
-			new[] { typeof(SampleEnum) },
+			[typeof(SampleEnum)],
 			ArrayExtensions.CombineArrays(
 				Activator.StringTypes
 			)
@@ -84,10 +84,10 @@ public class EnumConverterTests : ConverterTests<EnumConverter>
 			// </Scenarios>
 		};
 
-		response.Add(new TestScenario<byte, SampleEnum?>($"{response.Count} byte -> SampleEnum?", 9, SampleEnum.Nine));
-		response.Add(new TestScenario<ulong, SampleEnum?>($"{response.Count} ulong -> SampleEnum?", 10, SampleEnum.Ten));
-		response.Add(new TestScenario<string, SampleEnum?>($"{response.Count} string -> SampleEnum?", "8", SampleEnum.Eight));
-		response.Add(new TestScenario<string, SampleEnum?>($"{response.Count} string -> SampleEnum?", "Eight", SampleEnum.Eight));
+		response.Add(new TestScenario<byte, SampleEnum>($"{response.Count} byte -> SampleEnum?", 9, SampleEnum.Nine));
+		response.Add(new TestScenario<ulong, SampleEnum>($"{response.Count} ulong -> SampleEnum?", 10, SampleEnum.Ten));
+		response.Add(new TestScenario<string, SampleEnum>($"{response.Count} string -> SampleEnum?", "8", SampleEnum.Eight));
+		response.Add(new TestScenario<string, SampleEnum>($"{response.Count} string -> SampleEnum?", "Eight", SampleEnum.Eight));
 
 		return response.ToArray();
 	}

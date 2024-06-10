@@ -374,8 +374,8 @@ public class PropertyValidator<T> : PropertyValidator
 		if (typeof(T) == typeof(char))
 		{
 			return AddMinMaxRange(
-				Converter.ConvertTo<char>(minimum),
-				Converter.ConvertTo<char>(maximum),
+				minimum.ConvertTo<char>(),
+				maximum.ConvertTo<char>(),
 				(min, max) => excludeRangeValues
 					? x => (x > min) && (x < max)
 					: x => (x >= min) && (x <= max)
@@ -396,8 +396,8 @@ public class PropertyValidator<T> : PropertyValidator
 		if (typeof(T) == typeof(DateTime))
 		{
 			return AddMinMaxRange(
-				Converter.ConvertTo<DateTime>(minimum),
-				Converter.ConvertTo<DateTime>(maximum),
+				minimum.ConvertTo<DateTime>(),
+				maximum.ConvertTo<DateTime>(),
 				(min, max) => excludeRangeValues
 					? x => (x > min) && (x < max)
 					: x => (x >= min) && (x <= max), message
@@ -406,8 +406,8 @@ public class PropertyValidator<T> : PropertyValidator
 		if (typeof(T) == typeof(DateTimeOffset))
 		{
 			return AddMinMaxRange(
-				Converter.ConvertTo<DateTimeOffset>(minimum),
-				Converter.ConvertTo<DateTimeOffset>(maximum),
+				minimum.ConvertTo<DateTimeOffset>(),
+				maximum.ConvertTo<DateTimeOffset>(),
 				(min, max) => excludeRangeValues
 					? x => (x > min) && (x < max)
 					: x => (x >= min) && (x <= max)
@@ -417,8 +417,8 @@ public class PropertyValidator<T> : PropertyValidator
 		if (typeof(T) == typeof(TimeSpan))
 		{
 			return AddMinMaxRange(
-				Converter.ConvertTo<TimeSpan>(minimum),
-				Converter.ConvertTo<TimeSpan>(maximum),
+				minimum.ConvertTo<TimeSpan>(),
+				maximum.ConvertTo<TimeSpan>(),
 				(min, max) => excludeRangeValues
 					? x => (x > min) && (x < max)
 					: x => (x >= min) && (x <= max)
@@ -498,7 +498,7 @@ public class PropertyValidator<T> : PropertyValidator
 		}
 		if (typeof(T) == typeof(char))
 		{
-			return AddNoLessThan(Converter.ConvertTo<char>(minimum), min => x => x >= min, message) as PropertyValidator<T>;
+			return AddNoLessThan(minimum.ConvertTo<char>(), min => x => x >= min, message) as PropertyValidator<T>;
 		}
 		if (typeof(T) == typeof(string))
 		{
@@ -507,14 +507,14 @@ public class PropertyValidator<T> : PropertyValidator
 		if (typeof(T) == typeof(DateTime))
 		{
 			return AddNoLessThan(
-				Converter.ConvertTo<DateTime>(minimum),
+				minimum.ConvertTo<DateTime>(),
 				min => x => x.Kind == min.Kind ? x >= min : x.ToUtcDateTime() >= min.ToUtcDateTime(),
 				message
 			) as PropertyValidator<T>;
 		}
 		if (typeof(T) == typeof(DateTimeOffset))
 		{
-			return AddNoLessThan(Converter.ConvertTo<DateTimeOffset>(minimum), min => x => x >= min, message) as PropertyValidator<T>;
+			return AddNoLessThan(minimum.ConvertTo<DateTimeOffset>(), min => x => x >= min, message) as PropertyValidator<T>;
 		}
 		if (typeof(T) == typeof(TimeSpan))
 		{

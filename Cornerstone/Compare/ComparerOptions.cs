@@ -2,6 +2,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
+using Cornerstone.Extensions;
 
 #endregion
 
@@ -87,6 +89,16 @@ public struct ComparerOptions
 	/// The comparison to use for strings.
 	/// </summary>
 	public StringComparison StringComparison { get; set; }
+
+	#endregion
+
+	#region Methods
+
+	public void IgnoreProperty<T>(Expression<Func<T, object>> expression)
+	{
+		var name = expression.GetExpressionName();
+		PropertiesToIgnore.AddOrUpdate(typeof(T), () => [name], existing => existing.Combine([name]));
+	}
 
 	#endregion
 }

@@ -17,7 +17,7 @@ public class GsaMessage : NmeaMessage
 
 	public GsaMessage() : base(NmeaMessageType.GSA)
 	{
-		PrnsOfSatellitesUsedForFix = new List<int>();
+		PrnsOfSatellitesUsedForFix = [];
 	}
 
 	#endregion

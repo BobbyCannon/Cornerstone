@@ -16,8 +16,7 @@ public class RmcMessageTests : BaseMessageTests
 	[TestMethod]
 	public void TestMethodParse()
 	{
-		ProcessParseScenarios(new (string sentance, RmcMessage expected)[]
-		{
+		ProcessParseScenarios([
 			(
 				"$GNRMC,143718.00,A,4513.13793,N,01859.19704,E,0.050,,290719,,,A*65",
 				new RmcMessage
@@ -109,7 +108,7 @@ public class RmcMessageTests : BaseMessageTests
 					Checksum = "68"
 				}
 			)
-		});
+		]);
 	}
 
 	#endregion

@@ -25,8 +25,8 @@ public class ListComparer : BaseComparer
 	{
 		try
 		{
-			session.Add(expected);
-			session.Add(actual);
+			session.AddReference(expected);
+			session.AddReference(actual);
 
 			var list1 = ((IEnumerable) expected).Cast<object>().ToArray();
 			var list2 = ((IEnumerable) actual).Cast<object>().ToArray();
@@ -69,8 +69,8 @@ public class ListComparer : BaseComparer
 		}
 		finally
 		{
-			session.Remove(expected);
-			session.Remove(actual);
+			session.RemoveReference(expected);
+			session.RemoveReference(actual);
 		}
 	}
 

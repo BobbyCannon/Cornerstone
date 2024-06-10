@@ -16,8 +16,7 @@ public class VtgMessageTests : BaseMessageTests
 	[TestMethod]
 	public void TestMethodParse()
 	{
-		ProcessParseScenarios(new (string sentance, VtgMessage expected)[]
-		{
+		ProcessParseScenarios([
 			(
 				"$GPVTG,103.85,T,92.79,M,0.14,N,0.25,K,D*1E",
 				new VtgMessage
@@ -68,7 +67,7 @@ public class VtgMessageTests : BaseMessageTests
 					Checksum = "52"
 				}
 			)
-		});
+		]);
 	}
 
 	#endregion

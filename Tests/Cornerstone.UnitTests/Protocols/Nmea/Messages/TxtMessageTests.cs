@@ -16,8 +16,7 @@ public class TxtMessageTests : BaseMessageTests
 	[TestMethod]
 	public void TestMethodParse()
 	{
-		ProcessParseScenarios(new (string sentance, TxtMessage expected)[]
-		{
+		ProcessParseScenarios([
 			(
 				"$GNTXT,01,01,02,u-blox AG - www.u-blox.com*4E",
 				new TxtMessage
@@ -66,7 +65,7 @@ public class TxtMessageTests : BaseMessageTests
 					Checksum = "44"
 				}
 			)
-		});
+		]);
 	}
 
 	#endregion

@@ -63,5 +63,24 @@ public static class AssemblyExtensions
 			.Any(x => x.IsJITTrackingEnabled);
 	}
 
+	/// <summary>
+	/// Read the embedded file from the assembly.
+	/// </summary>
+	/// <param name="assembly"> The assembly to read from. </param>
+	/// <param name="path"> The path of the resource to read. </param>
+	/// <returns> The value that was read. </returns>
+	public static string ReadEmbeddedFile(this Assembly assembly, string path)
+	{
+		using var stream = assembly.GetManifestResourceStream(path);
+
+		if (stream == null)
+		{
+			throw new Exception("Embedded file not found.");
+		}
+
+		using var reader = new StreamReader(stream);
+		return reader.ReadToEnd();
+	}
+
 	#endregion
 }

@@ -334,6 +334,18 @@ public static class EnumExtensions
 	}
 
 	/// <summary>
+	/// Check the value to see if any flag is set.
+	/// </summary>
+	/// <typeparam name="T"> The type of the enum value. </typeparam>
+	/// <param name="value"> The value to check. </param>
+	/// <param name="flags"> The flags to check for. </param>
+	/// <returns> True if the value has any flag provided otherwise false. </returns>
+	public static bool HasAnyFlag<T>(this T value, params T[] flags) where T : Enum
+	{
+		return flags.Any(x => value.HasFlag(x));
+	}
+
+	/// <summary>
 	/// Returns true if the enum is flagged and is a single value.
 	/// </summary>
 	/// <param name="value"> The value to test. </param>

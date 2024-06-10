@@ -1,5 +1,5 @@
-﻿// ReSharper disable once CheckNamespace
-namespace Cornerstone;
+﻿
+namespace Cornerstone.Internal;
 
 /// <summary>
 /// Provides functionality to encode a byte array as a string.

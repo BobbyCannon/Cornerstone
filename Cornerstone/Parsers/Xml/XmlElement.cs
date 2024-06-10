@@ -8,8 +8,6 @@ using Cornerstone.Extensions;
 
 #endregion
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-
 namespace Cornerstone.Parsers.Xml;
 
 public class XmlElement : Notifiable
@@ -73,17 +71,6 @@ public class XmlElement : Notifiable
 			|| TrySetElementValue(name, value);
 	}
 
-	public bool TrySetElementValue(string name, string value)
-	{
-		var element = Elements.FirstOrDefault(x => string.Equals(x.ElementName, name, StringComparison.OrdinalIgnoreCase));
-		if (element == null)
-		{
-			return false;
-		}
-		element.ElementValue = value;
-		return true;
-	}
-
 	public void SetOrAddAttributeValue(string name, string value)
 	{
 		if (TrySetAttributeValue(name, value))
@@ -102,6 +89,17 @@ public class XmlElement : Notifiable
 			return false;
 		}
 		attribute.Value = value;
+		return true;
+	}
+
+	public bool TrySetElementValue(string name, string value)
+	{
+		var element = Elements.FirstOrDefault(x => string.Equals(x.ElementName, name, StringComparison.OrdinalIgnoreCase));
+		if (element == null)
+		{
+			return false;
+		}
+		element.ElementValue = value;
 		return true;
 	}
 

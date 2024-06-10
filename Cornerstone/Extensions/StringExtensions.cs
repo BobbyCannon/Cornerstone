@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mail;
@@ -47,6 +48,43 @@ public static class StringExtensions
 	}
 
 	/// <summary>
+	/// Check string for a camel case match.
+	/// </summary>
+	/// <param name="text"> The text to check. </param>
+	/// <param name="value"> The value to check. These characters don't have to be upper case. </param>
+	/// <returns> True if the value is a camel case match. </returns>
+	/// <remarks>
+	/// Ex. TheQuickFox would return true with [tqf] value.
+	/// </remarks>
+	public static bool CamelCaseMatch(this string text, string value)
+	{
+		// We take the first letter of the text regardless of whether it's upper case, so we match
+		// against camelCase text as well as PascalCase text ("cct" matches "camelCaseText")
+		var theFirstLetterOfEachWord = text
+			.Take(1)
+			.Concat(text.Skip(1).Where(char.IsUpper))
+			.ToList();
+		var i = 0;
+
+		foreach (var letter in theFirstLetterOfEachWord)
+		{
+			if (i > (value.Length - 1))
+			{
+				return true; // return true here for CamelCase partial match ("CQ" matches "CodeQualityAnalysis")
+			}
+
+			if (char.ToUpperInvariant(value[i]) != char.ToUpperInvariant(letter))
+			{
+				return false;
+			}
+
+			i++;
+		}
+
+		return i >= value.Length;
+	}
+
+	/// <summary>
 	/// Check to see if a string contains any of the provided characters.
 	/// </summary>
 	/// <param name="value"> The string value. </param>
@@ -67,6 +105,75 @@ public static class StringExtensions
 	public static bool ContainsAny(this string value, IEqualityComparer<char> comparer = null, params char[] characters)
 	{
 		return (characters.Length > 0) && value.Any(c => characters.Contains(c, comparer));
+	}
+
+	/// <summary>
+	/// Checks to see if the string (value) ends with start of the provided string.
+	/// </summary>
+	/// <param name="value"> The value to test. </param>
+	/// <param name="startOf"> The string to check against. </param>
+	/// <param name="match"> The match if found. </param>
+	/// <param name="ignoreCase"> Option to ignore case. </param>
+	/// <returns> True if a match was found otherwise false. </returns>
+	public static bool EndsWithStartOf(this string value, string startOf, out string match, bool ignoreCase)
+	{
+		if ((value == null) || (startOf == null))
+		{
+			match = null;
+			return false;
+		}
+
+		var equals = false;
+
+		for (var i = 0; i < value.Length; i++)
+		{
+			for (var j = 0; j < startOf.Length; j++)
+			{
+				if ((j + i) == value.Length)
+				{
+					match = value.Substring(i);
+					return true;
+				}
+
+				equals = value[i + j].Equals(startOf[j], ignoreCase);
+				if (!equals)
+				{
+					break;
+				}
+			}
+
+			if (equals)
+			{
+				match = value.Substring(i);
+				return true;
+			}
+		}
+
+		match = null;
+		return false;
+	}
+
+	/// <summary>
+	/// Compare char values with option to ignore case.
+	/// </summary>
+	/// <param name="value1"> The first value. </param>
+	/// <param name="value2"> The second value. </param>
+	/// <param name="ignoreCase"> Option to ignore case. </param>
+	/// <returns> True if the characters are equal otherwise false. </returns>
+	public static bool Equals(this char value1, char value2, bool ignoreCase)
+	{
+		if (value1.Equals(value2))
+		{
+			return true;
+		}
+
+		if (ignoreCase)
+		{
+			return (char.ToLowerInvariant(value1) == char.ToLowerInvariant(value2))
+				|| (char.ToUpperInvariant(value1) == char.ToUpperInvariant(value2));
+		}
+
+		return false;
 	}
 
 	/// <summary>
@@ -154,6 +261,40 @@ public static class StringExtensions
 		}
 
 		return bytes;
+	}
+
+	/// <summary>
+	/// Get the comparer for the comparison provided.
+	/// </summary>
+	/// <param name="comparison"> The string comparision type. </param>
+	/// <returns> The comparer for the comparison type. </returns>
+	public static IComparer GetComparer(this StringComparison comparison)
+	{
+		return comparison switch
+		{
+			StringComparison.CurrentCulture => StringComparer.CurrentCulture,
+			StringComparison.CurrentCultureIgnoreCase => StringComparer.CurrentCultureIgnoreCase,
+			StringComparison.Ordinal => StringComparer.Ordinal,
+			StringComparison.OrdinalIgnoreCase => StringComparer.OrdinalIgnoreCase,
+			StringComparison.InvariantCulture => StringComparer.InvariantCulture,
+			StringComparison.InvariantCultureIgnoreCase => StringComparer.InvariantCultureIgnoreCase,
+			_ => StringComparer.Ordinal
+		};
+	}
+
+	/// <summary>
+	/// Get the last index (offset) of the string value.
+	/// </summary>
+	/// <param name="value"> The value to process. </param>
+	/// <returns> Return the last index or otherwise -1. </returns>
+	public static int GetLastIndex(this string value)
+	{
+		if (string.IsNullOrEmpty(value))
+		{
+			return -1;
+		}
+
+		return value.Length - 1;
 	}
 
 	/// <summary>
@@ -269,6 +410,20 @@ public static class StringExtensions
 		{
 			return false;
 		}
+	}
+
+	/// <summary>
+	/// Replaces a specific character with a new value.
+	/// </summary>
+	/// <param name="input"> The input to process. </param>
+	/// <param name="index"> The index to update. </param>
+	/// <param name="value"> The value to replace with. </param>
+	/// <returns> The updated string. </returns>
+	public static string Replace(this string input, int index, char value)
+	{
+		var response = input.ToCharArray();
+		response[index] = value;
+		return new string(response);
 	}
 
 	/// <summary>

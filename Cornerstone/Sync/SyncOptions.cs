@@ -17,7 +17,7 @@ namespace Cornerstone.Sync;
 /// <summary>
 /// Represents options to be used during a sync.
 /// </summary>
-public class SyncOptions : CloneableBindable<SyncOptions>
+public class SyncOptions : Bindable<SyncOptions>
 {
 	#region Constants
 
@@ -266,7 +266,7 @@ public class SyncOptions : CloneableBindable<SyncOptions>
 		// Find the "ShouldFilterEntity" method so we can invoke it
 		var methods = filter.GetType().GetCachedMethods(BindingFlags.Public | BindingFlags.Instance);
 		var method = methods.First(x => x.Name == nameof(ShouldFilterIncomingEntity));
-		return (bool) method.Invoke(filter, new object[] { entity });
+		return (bool) method.Invoke(filter, [entity]);
 	}
 
 	/// <summary>

@@ -261,13 +261,42 @@ public static class Activator
 	}
 
 	/// <summary>
+	/// </summary>
+	/// <param name="type"> </param>
+	/// <returns> </returns>
+	public static bool IsNet7OrGreater(Type type)
+	{
+		var types = new List<Type>();
+
+		#if NET6_0_OR_GREATER
+		types.AddRange(
+			typeof(DateOnly),
+			typeof(DateOnly?),
+			typeof(TimeOnly),
+			typeof(TimeOnly?)
+		);
+		#endif
+
+		#if NET7_0_OR_GREATER
+		types.AddRange(
+			typeof(Int128),
+			typeof(Int128?),
+			typeof(UInt128),
+			typeof(UInt128?)
+		);
+		#endif
+
+		return types.Contains(type);
+	}
+
+	/// <summary>
 	/// Register a custom type activator.
 	/// </summary>
 	/// <typeparam name="T"> The type the factory is for. </typeparam>
 	/// <param name="factory"> The factory to create the type. </param>
 	public static void RegisterType<T>(Func<object[], T> factory)
 	{
-		_customActivators.AddOrUpdate(typeof(T), new GenericTypeActivator<T>(factory));
+		_customActivators.AddOrUpdate(typeof(T), new TypeActivator<T>(factory));
 	}
 
 	/// <summary>
@@ -305,11 +334,11 @@ public static class Activator
 		{
 			if (useCustomActivators && _customActivators.TryGetValue(type, out var activator))
 			{
-				response = activator.CreateInstance(arguments);
+				response = activator.CreateInstanceObject(arguments);
 			}
 			else if (_builtInActivators.TryGetValue(type, out activator))
 			{
-				response = activator.CreateInstance(arguments);
+				response = activator.CreateInstanceObject(arguments);
 			}
 			else if (type.IsArray)
 			{
@@ -354,34 +383,4 @@ public static class Activator
 	}
 
 	#endregion
-
-	/// <summary>
-	/// 
-	/// </summary>
-	/// <param name="type"></param>
-	/// <returns></returns>
-	public static bool IsNet7OrGreater(Type type)
-	{
-		var types = new List<Type>();
-
-		#if NET6_0_OR_GREATER
-		types.AddRange(
-			typeof(DateOnly),
-			typeof(DateOnly?),
-			typeof(TimeOnly),
-			typeof(TimeOnly?)
-		);
-		#endif
-
-		#if NET7_0_OR_GREATER
-		types.AddRange(
-			typeof(Int128),
-			typeof(Int128?),
-			typeof(UInt128),
-			typeof(UInt128?)
-		);
-		#endif
-
-		return types.Contains(type);
-	}
 }

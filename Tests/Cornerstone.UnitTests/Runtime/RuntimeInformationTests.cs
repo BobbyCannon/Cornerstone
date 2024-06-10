@@ -21,7 +21,7 @@ public class RuntimeInformationTests : CornerstoneUnitTest
 		#if (NET48)
 		AreEqual(new Version(4, 0, 30319, 42000), actual.DotNetRuntimeVersion);
 		#else
-		AreEqual(new Version(8, 0, 2), actual.DotNetRuntimeVersion);
+		AreEqual(new Version(8, 0, 5), actual.DotNetRuntimeVersion);
 		#endif
 
 		//GenerateAsserts(actual);

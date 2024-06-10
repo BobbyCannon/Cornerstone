@@ -26,7 +26,7 @@ public class PartialUpdateExtensionsTests : CornerstoneUnitTest
 		AreEqual(23, request.Get<int>("page"));
 
 		request.ParseQueryString("?options[]=foo&options[]=bar");
-		var actual = request.Get<string[]>("options");
+		var actual = request.Get<string[]>(name: "options");
 		AreEqual(new[] { "foo", "bar" }, actual);
 	}
 
@@ -43,7 +43,7 @@ public class PartialUpdateExtensionsTests : CornerstoneUnitTest
 	{
 		// Scenarios are cumulative so expect the next scenario to have the previous state
 		(Action<PagedRequest> update, string expected)[] scenarios =
-		{
+		[
 			(x => x.AddOrUpdate("options", new[] { "foo", "bar" }), "options[]=foo&options[]=bar"),
 			(x => x.Remove("options"), ""),
 			(_ => { }, ""),
@@ -64,7 +64,7 @@ public class PartialUpdateExtensionsTests : CornerstoneUnitTest
 			(x => x.Remove("FILTER"), "Page=2&PerPage=98"),
 			// Should be able to handle special (reserved, delimiters, etc) characters as key
 			(x => x.AddOrUpdate(";/?:@&=+$,<>#%\"{}|\"^[]`", "wow..."), "%3b%2f%3f%3a%40%26%3d%2b%24%2c%3c%3e%23%25%22%7b%7d%7c%22%5e%5b%5d%60=wow...&Page=2&PerPage=98")
-		};
+		];
 
 		var expected = new PagedRequest();
 
@@ -72,7 +72,7 @@ public class PartialUpdateExtensionsTests : CornerstoneUnitTest
 		{
 			scenario.expected.Dump();
 			scenario.update(expected);
-			Assert.AreEqual(scenario.expected, expected.ToQueryString());
+			AreEqual(scenario.expected, expected.ToQueryString());
 
 			var actual = new PagedRequest();
 			actual.ParseQueryString(scenario.expected);

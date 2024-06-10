@@ -138,7 +138,21 @@ public class ObjectJsonConverter : JsonConverter
 						continue;
 					}
 
-					info.SetValue(response, JsonSerializer.Convert(info.PropertyType, objectValue.Value));
+					var propertyType = info.PropertyType;
+
+					if (info.CanRead)
+					{
+						// todo: Use existing provided values?
+						var existingValue = info.GetValue(response);
+						if (existingValue != null)
+						{
+							propertyType = existingValue.GetType();
+						}
+
+						//JsonSerializer.Convert(existingValue, objectValue.Value);
+					}
+
+					info.SetValue(response, JsonSerializer.Convert(propertyType, objectValue.Value));
 				}
 				break;
 			}

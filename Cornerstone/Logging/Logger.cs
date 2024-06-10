@@ -8,7 +8,7 @@ using System.Diagnostics.Tracing;
 namespace Cornerstone.Logging;
 
 /// <summary>
-/// Represents a logger for Speedy.
+/// Represents a logger for Cornerstone.
 /// </summary>
 [EventSource(Name = LoggerName, Guid = LoggerGuid)]
 public sealed class Logger : EventSource
@@ -23,7 +23,7 @@ public sealed class Logger : EventSource
 	/// <summary>
 	/// The Name for the logger.
 	/// </summary>
-	public const string LoggerName = "Speedy.Logger";
+	public const string LoggerName = "Cornerstone.Logger";
 
 	#endregion
 

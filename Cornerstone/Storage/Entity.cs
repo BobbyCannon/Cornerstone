@@ -110,12 +110,6 @@ public abstract class Entity : Notifiable, IEntity
 	}
 
 	/// <inheritdoc />
-	public object DeepClone(int? maxDepth = null)
-	{
-		return this.DeepCloneUsingSerializer(maxDepth);
-	}
-
-	/// <inheritdoc />
 	public virtual void EntityAdded(DateTime utcNow)
 	{
 	}
@@ -144,21 +138,6 @@ public abstract class Entity : Notifiable, IEntity
 
 	/// <inheritdoc />
 	public abstract bool IdIsSet();
-
-	/// <inheritdoc />
-	public virtual object ShallowClone()
-	{
-		var test = GetRealType().CreateInstance();
-		if (test is Entity entity)
-		{
-			entity.UpdateWith(this);
-		}
-		else
-		{
-			test.UpdateWithUsingReflection(this);
-		}
-		return test;
-	}
 
 	/// <inheritdoc />
 	public bool ShouldProcessProperty(UpdateableAction action, string propertyName)

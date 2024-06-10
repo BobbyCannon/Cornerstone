@@ -16,30 +16,9 @@ public class LogEventArgs : EventArgs
 	#region Constructors
 
 	/// <summary>
-	/// Initializes a log event argument.
+	/// For serialization, do not use.
 	/// </summary>
 	public LogEventArgs() : this(null, DateTime.MinValue, EventLevel.Verbose, string.Empty)
-	{
-	}
-
-	/// <summary>
-	/// Initializes a log event argument.
-	/// </summary>
-	public LogEventArgs(string message) : this(null, TimeService.CurrentTime.UtcNow, EventLevel.Informational, message)
-	{
-	}
-
-	/// <summary>
-	/// Initializes a log event argument.
-	/// </summary>
-	public LogEventArgs(EventLevel level, string message) : this(null, TimeService.CurrentTime.UtcNow, level, message)
-	{
-	}
-
-	/// <summary>
-	/// Initializes a log event argument.
-	/// </summary>
-	public LogEventArgs(DateTime messagedOn, EventLevel level, string message) : this(null, messagedOn, level, message)
 	{
 	}
 
@@ -87,7 +66,7 @@ public class LogEventArgs : EventArgs
 	/// </summary>
 	/// <param name="includeDateTime"> Option to include messaged on in message. </param>
 	/// <param name="includeSessionId"> Option to include session ID in message. </param>
-	/// <param name="startedOn"> Optional to convert DateTime to Elapsed. Relative to provided value. </param>
+	/// <param name="startedOn"> Optional to convert [DateTime] to [Elapsed]. Relative to provided value. </param>
 	/// <returns> The formatted message. </returns>
 	public string GetDetailedMessage(bool includeDateTime = true, bool includeSessionId = false, DateTime? startedOn = null)
 	{

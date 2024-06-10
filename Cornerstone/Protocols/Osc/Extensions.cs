@@ -515,7 +515,7 @@ internal static class Extensions
 			}
 
 			// scan forward for the first control char ',', '[', '{', '"'
-			var controlChar = str.IndexOfAny(new[] { ',', '[', '{', '"' }, index);
+			var controlChar = str.IndexOfAny([',', '[', '{', '"'], index);
 
 			if (controlChar == -1)
 			{
@@ -561,7 +561,7 @@ internal static class Extensions
 
 					if (str[end] != ',')
 					{
-						controlChar = str.IndexOfAny(new[] { ',' }, end);
+						controlChar = str.IndexOfAny([','], end);
 
 						if (controlChar == -1)
 						{
@@ -598,7 +598,7 @@ internal static class Extensions
 
 					if (str[end] != ',')
 					{
-						controlChar = str.IndexOfAny(new[] { ',' }, end);
+						controlChar = str.IndexOfAny([','], end);
 
 						if (controlChar == -1)
 						{

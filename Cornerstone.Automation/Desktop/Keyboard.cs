@@ -1,11 +1,11 @@
 ﻿#region References
 
+using Cornerstone.Automation.Internal.Native;
 using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using Cornerstone.Automation.Internal.Native;
 
 #endregion
 
@@ -52,7 +52,7 @@ public class Keyboard : IDisposable
 
 	/// <summary>
 	/// Defaults the keyboard SendInput to send text as key presses if true.
-	/// Otherwise the send input will send the text as "
+	/// Otherwise, the send input will send the text as "
 	/// </summary>
 	public bool TextInputAsKeyPresses { get; set; }
 
@@ -190,7 +190,7 @@ public class Keyboard : IDisposable
 	/// <summary>
 	/// Calls the Input.SendInput method to simulate key up.
 	/// </summary>
-	/// <param name="keys"> The key(s) to lift up. </param>
+	/// <param name="keys"> The key(s) to release. </param>
 	public Keyboard KeyUp(params KeyboardKey[] keys)
 	{
 		if (keys.Length <= 0)
@@ -263,10 +263,10 @@ public class Keyboard : IDisposable
 	}
 
 	/// <summary>
-	/// Sends provided text and optional set of key strokes as input.
+	/// Sends provided text and optional set of keystrokes as input.
 	/// </summary>
 	/// <param name="text"> The text to be sent. </param>
-	/// <param name="keyStrokes"> An optional set of key strokes to be sent. </param>
+	/// <param name="keyStrokes"> An optional set of keystrokes to be sent. </param>
 	/// <returns> This <see cref="Keyboard" /> instance. </returns>
 	/// <exception cref="ArgumentException"> The text parameter is too long. </exception>
 	public Keyboard SendInput(string text, params KeyStroke[] keyStrokes)
@@ -275,11 +275,11 @@ public class Keyboard : IDisposable
 	}
 
 	/// <summary>
-	/// Sends provided text as input. Can delay with before sending an optional set of key strokes.
+	/// Sends provided text as input. Can delay with before sending an optional set of keystrokes.
 	/// </summary>
 	/// <param name="text"> The text to be sent. </param>
 	/// <param name="delay"> An optional delay to wait before sending the provided keys. </param>
-	/// <param name="keyStrokes"> An optional set of key strokes to be sent. </param>
+	/// <param name="keyStrokes"> An optional set of keystrokes to be sent. </param>
 	/// <returns> This <see cref="Keyboard" /> instance. </returns>
 	/// <exception cref="ArgumentException"> The text parameter is too long. </exception>
 	public Keyboard SendInput(string text, TimeSpan delay, params KeyStroke[] keyStrokes)
@@ -335,9 +335,9 @@ public class Keyboard : IDisposable
 	}
 
 	/// <summary>
-	/// Sends provided key strokes as input.
+	/// Sends provided keystrokes as input.
 	/// </summary>
-	/// <param name="keyStrokes"> The set of key strokes to be sent. </param>
+	/// <param name="keyStrokes"> The set of keystrokes to be sent. </param>
 	/// <returns> This <see cref="Keyboard" /> instance. </returns>
 	/// <exception cref="ArgumentException"> The text parameter is too long. </exception>
 	public Keyboard SendInput(params KeyStroke[] keyStrokes)

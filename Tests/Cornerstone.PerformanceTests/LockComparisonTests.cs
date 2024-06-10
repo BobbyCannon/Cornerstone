@@ -30,22 +30,20 @@ public class LockComparisonTests : BaseLockableTests
 
 		Console.WriteLine("Executing units: " + Environment.ProcessorCount);
 
-		Test(new[]
-			{
+		Test([
 				() => ReadUnlocked(iterations, incrementTimes),
 				() => WriteUnlocked(iterations, incrementTimes)
-			},
+			],
 			"Unlocked",
 			iterations, incrementTimes
 		);
 
 		foreach (var lockable in GetLocks())
 		{
-			Test(new[]
-				{
+			Test([
 					() => Read(lockable, iterations, incrementTimes),
 					() => Write(lockable, iterations, incrementTimes)
-				},
+				],
 				lockable.GetType().Name.Replace("ReaderWriterLock", ""),
 				iterations, incrementTimes
 			);

@@ -121,7 +121,7 @@ public struct OscRgba : IOscArgument, IEquatable<OscRgba>, IComparable<OscRgba>
 
 	public byte[] GetOscValueBytes()
 	{
-		return new[] { R, G, B, A };
+		return [R, G, B, A];
 	}
 
 	public string GetOscValueString()

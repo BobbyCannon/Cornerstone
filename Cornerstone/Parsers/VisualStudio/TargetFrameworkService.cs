@@ -9,8 +9,6 @@ using Cornerstone.Extensions;
 
 #endregion
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-
 namespace Cornerstone.Parsers.VisualStudio;
 
 public static class TargetFrameworkService
@@ -284,7 +282,7 @@ public static class TargetFrameworkService
 				{
 					targetFramework.Platform = platformFramework;
 				}
-				
+
 				if ((targetFramework.NetStandard == null)
 					&& (attribute.NetStandard != TargetFrameworkType.Unknown)
 					&& _baseFrameworksByType.TryGetValue(attribute.NetStandard, out var standardFramework))

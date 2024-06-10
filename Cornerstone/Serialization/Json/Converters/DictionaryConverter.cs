@@ -93,14 +93,22 @@ public class DictionaryConverter : JsonConverter
 
 		for (var index = 0; index < keys.Length; index++)
 		{
+			var key = keys[index];
+			var value = dictionary[key];
+
+			if (((value == null) && settings.IgnoreNullValues)
+				|| ((value == default) && settings.IgnoreDefaultValues))
+			{
+				continue;
+			}
+
 			if (!firstProperty)
 			{
 				consumer.WriteRawString(",");
 				textBuilder?.NewLine();
 			}
 
-			var key = keys[index];
-			consumer.WriteProperty(key.ToString(), dictionary[key]);
+			consumer.WriteProperty(key.ToString(), value);
 			firstProperty = false;
 		}
 

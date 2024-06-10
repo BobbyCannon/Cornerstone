@@ -11,8 +11,9 @@ internal class MinimumVisualStudioVersionParser : ISolutionTextParser<string>
 {
 	#region Constants
 
-	public const string Prefix = "MinimumVisualStudioVersion = ";
 	public const string Error = "A valid Minimum Visual Studio Version could not be found in the sln text.";
+
+	public const string Prefix = "MinimumVisualStudioVersion = ";
 
 	#endregion
 

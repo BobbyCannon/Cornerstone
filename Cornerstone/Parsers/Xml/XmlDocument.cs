@@ -1,6 +1,4 @@
-﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-
-#region References
+﻿#region References
 
 using System.IO;
 using System.Text;

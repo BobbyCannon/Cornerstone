@@ -78,7 +78,7 @@ public class AccountEntity : SyncEntity<int>
 
 	public IEnumerable<string> GetRoles()
 	{
-		return string.IsNullOrEmpty(Roles) ? Array.Empty<string>() : Roles.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries).Distinct().ToArray();
+		return string.IsNullOrEmpty(Roles) ? Array.Empty<string>() : Roles.Split([","], StringSplitOptions.RemoveEmptyEntries).Distinct().ToArray();
 	}
 
 	public bool InRole(params AccountRole[] roles)
@@ -98,7 +98,7 @@ public class AccountEntity : SyncEntity<int>
 	/// <returns> The array of roles. </returns>
 	public static IEnumerable<string> SplitRoles(string roles)
 	{
-		return roles?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries)
+		return roles?.Split([","], StringSplitOptions.RemoveEmptyEntries)
 			?? Array.Empty<string>();
 	}
 

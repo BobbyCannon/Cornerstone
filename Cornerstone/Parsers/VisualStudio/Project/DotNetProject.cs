@@ -12,8 +12,6 @@ using XmlElement = Cornerstone.Parsers.Xml.XmlElement;
 
 #endregion
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-
 namespace Cornerstone.Parsers.VisualStudio.Project;
 
 /// <summary>
@@ -179,7 +177,7 @@ public class DotNetProject : XmlDocument
 		{
 			return [TargetFrameworkService.GetByType(TargetFrameworkType.MonoAndroid)];
 		}
-		
+
 		if (ProjectTypes.Contains(DotNetProjectType.XamarinIos)
 			|| ProjectTypes.Contains(DotNetProjectType.XamarinIosBinding))
 		{

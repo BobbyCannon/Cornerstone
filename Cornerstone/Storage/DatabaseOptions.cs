@@ -12,7 +12,7 @@ namespace Cornerstone.Storage;
 /// <summary>
 /// Represents options for a Cornerstone database.
 /// </summary>
-public class DatabaseOptions : CloneableBindable<DatabaseOptions>
+public class DatabaseOptions : Notifiable<DatabaseOptions>
 {
 	#region Constructors
 

@@ -56,6 +56,14 @@ public class NumberCSharpGenerator : CSharpCodeGenerator
 			ulong sValue when sValue == ulong.MaxValue => "ulong.MaxValue",
 			ulong sValue when sValue == ulong.MinValue => "ulong.MinValue",
 			ulong sValue => requiresCast ? $"(ulong) {sValue}" : $"{sValue}",
+			#if (NET7_0_OR_GREATER)
+			Int128 sValue when sValue == Int128.MaxValue => "Int128.MaxValue",
+			Int128 sValue when sValue == Int128.MinValue => "Int128.MinValue",
+			Int128 sValue => requiresCast ? $"(Int128) {sValue}" : $"{sValue}",
+			UInt128 sValue when sValue == UInt128.MaxValue => "UInt128.MaxValue",
+			UInt128 sValue when sValue == UInt128.MinValue => "UInt128.MinValue",
+			UInt128 sValue => requiresCast ? $"(UInt128) {sValue}" : $"{sValue}",
+			#endif
 			#if (NET6_0_OR_GREATER)
 			IntPtr sValue when sValue == IntPtr.MaxValue => "IntPtr.MaxValue",
 			IntPtr sValue when sValue == IntPtr.MinValue => "IntPtr.MinValue",

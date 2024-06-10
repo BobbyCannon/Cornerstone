@@ -88,5 +88,33 @@ public static class TestExtensions
 		return json;
 	}
 
+	/// <summary>
+	/// Dump the item to the Console.WriteLine().
+	/// </summary>
+	/// <param name="item"> The item to dump. </param>
+	/// <param name="prefix"> An optional prefix. </param>
+	public static string DumpPrettyJson(this object item, string prefix = null)
+	{
+		if (!string.IsNullOrEmpty(prefix))
+		{
+			Console.Write(prefix);
+		}
+
+		if (item == null)
+		{
+			Console.WriteLine("null");
+			return "null";
+		}
+
+		var json = item.ToJson(new SerializationOptions
+		{
+			TextFormat = TextFormat.Indented,
+			EnumFormat = EnumFormat.Name
+		});
+
+		Console.WriteLine(json);
+		return json;
+	}
+
 	#endregion
 }

@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System.Runtime.CompilerServices;
 using Cornerstone.Attributes;
 using Cornerstone.Collections;
 
@@ -64,13 +65,13 @@ public class TargetFramework : TargetFrameworkMoniker
 	#region Methods
 
 	/// <inheritdoc />
-	protected override void OnPropertyChanged(string propertyName)
+	protected override void OnPropertyChanged([CallerMemberName] string propertyName = null)
 	{
 		switch (propertyName)
 		{
 			case nameof(Parent):
 			{
-				Parent.Children ??= new SpeedyList<TargetFramework>();
+				Parent.Children ??= [];
 				Parent.Children.Add(this);
 				break;
 			}

@@ -184,7 +184,7 @@ public abstract class Database : IDatabase
 		}
 		else
 		{
-			entityConfigurations = new List<IndexConfiguration>();
+			entityConfigurations = [];
 			EntityIndexConfigurations.Add(entityType, entityConfigurations);
 		}
 
@@ -214,7 +214,7 @@ public abstract class Database : IDatabase
 		{
 			var key = $"{typeof(T3).Name}-{collectionKey.GetExpressionName()}";
 			var repositoryFactory = GetRepository<T1, T2>();
-			OneToManyRelationships.AddIfMissing(key, () => new object[] { repositoryFactory, entity, entity.Compile(), foreignKey, foreignKey.Compile(), property });
+			OneToManyRelationships.AddIfMissing(key, () => [repositoryFactory, entity, entity.Compile(), foreignKey, foreignKey.Compile(), property]);
 		}
 
 		return property;
@@ -248,7 +248,7 @@ public abstract class Database : IDatabase
 		}
 		else
 		{
-			entityConfigurations = new List<IPropertyConfiguration>();
+			entityConfigurations = [];
 			EntityPropertyConfigurations.Add(typeofT, entityConfigurations);
 		}
 
@@ -284,7 +284,7 @@ public abstract class Database : IDatabase
 			}
 
 			Repositories.Values.ForEach(x => x.UpdateRelationships());
-			Repositories.Values.ForEach(x => x.AssignKeys(new List<IEntity>()));
+			Repositories.Values.ForEach(x => x.AssignKeys([]));
 			Repositories.Values.ForEach(x => x.ValidateEntities());
 			Repositories.Values.ForEach(x => x.UpdateRelationships());
 
@@ -420,11 +420,11 @@ public abstract class Database : IDatabase
 		var entityKey = entityProperties.First(x => x.Name == "Id").PropertyType;
 		var genericMethod = typeof(Database)
 			.GetCachedGenericMethod(nameof(BuildRelationship),
-				new[] { entityType, entityKey, collectionType, collectionKey },
-				new[] { entityType, typeof(IEnumerable), typeof(string) },
+				[entityType, entityKey, collectionType, collectionKey],
+				[entityType, typeof(IEnumerable), typeof(string)],
 				ReflectionExtensions.DefaultPrivateFlags
 			);
-		return (IEnumerable) genericMethod.Invoke(this, new object[] { entity, collection, key });
+		return (IEnumerable) genericMethod.Invoke(this, [entity, collection, key]);
 	}
 
 	/// <summary>
@@ -672,21 +672,21 @@ public abstract class Database : IDatabase
 				{
 					if (otherEntity.GetType() == entityType)
 					{
-						repositoryType.GetCachedMethod("InsertBefore").Invoke(repository, new object[] { otherEntity, entity });
+						repositoryType.GetCachedMethod("InsertBefore").Invoke(repository, [otherEntity, entity]);
 					}
 					else
 					{
 						// Still adding 400ms per 10000 items, why?
-						repositoryType.GetCachedMethod("Add", otherEntity.GetType()).Invoke(repository, new object[] { otherEntity });
+						repositoryType.GetCachedMethod("Add", otherEntity.GetType()).Invoke(repository, [otherEntity]);
 					}
 				}
 				else
 				{
 					// Check to see if the entity already exists.
-					var exists = (bool) repositoryType.GetCachedMethod("Contains").Invoke(repository, new object[] { otherEntity });
+					var exists = (bool) repositoryType.GetCachedMethod("Contains").Invoke(repository, [otherEntity]);
 					if (!exists)
 					{
-						repositoryType.GetCachedMethod("Add", otherEntity.GetType()).Invoke(repository, new object[] { otherEntity });
+						repositoryType.GetCachedMethod("Add", otherEntity.GetType()).Invoke(repository, [otherEntity]);
 					}
 				}
 

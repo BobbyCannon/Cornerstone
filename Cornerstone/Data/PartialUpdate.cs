@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Cornerstone.Convert;
 using Cornerstone.Exceptions;
 using Cornerstone.Extensions;
@@ -58,9 +59,9 @@ public class PartialUpdate<T> : PartialUpdate
 	public TProperty Get<TProperty>(Expression<Func<T, TProperty>> expression, TProperty defaultValue)
 	{
 		var propertyExpression = (MemberExpression) expression.Body;
-		return Get(propertyExpression.Member.Name, defaultValue);
+		return Get(defaultValue, propertyExpression.Member.Name);
 	}
-
+	
 	/// <summary>
 	/// Set a property for the update.
 	/// </summary>
@@ -69,7 +70,7 @@ public class PartialUpdate<T> : PartialUpdate
 	public void Set<TProperty>(Expression<Func<T, TProperty>> expression, TProperty value)
 	{
 		var propertyExpression = (MemberExpression) expression.Body;
-		Set(propertyExpression.Member.Name, value);
+		Set(value, propertyExpression.Member.Name);
 	}
 
 	/// <summary>
@@ -195,25 +196,21 @@ public class PartialUpdate : Bindable
 	/// <returns> The value if it was found otherwise default(T). </returns>
 	public T Get<T>(string name)
 	{
-		return TryGet<T>(name, out var value) ? value : Activator.CreateInstance<T>();
+		return Get(default(T), name);
 	}
-
+	
 	/// <summary>
 	/// Get the update for the provided name with a fallback default value if not found.
 	/// </summary>
 	/// <typeparam name="T"> The type to cast the value to. </typeparam>
-	/// <param name="name"> The name of the update. </param>
 	/// <param name="defaultValue"> A default value if update not available. </param>
+	/// <param name="name"> The name of the update. </param>
 	/// <returns> The value if it was found otherwise default(T). </returns>
-	public T Get<T>(string name, T defaultValue)
+	public T Get<T>(T defaultValue = default, [CallerMemberName] string name = "")
 	{
-		if (!_updates.ContainsKey(name))
-		{
-			return defaultValue;
-		}
-
-		var update = _updates[name];
-		return ConvertOrDefault(update, defaultValue);
+		return !_updates.TryGetValue(name, out var update)
+			? defaultValue
+			: ConvertOrDefault(update, defaultValue);
 	}
 
 	/// <summary>
@@ -238,9 +235,9 @@ public class PartialUpdate : Bindable
 	/// <summary>
 	/// Set a property for the update. The name must be available of the target value.
 	/// </summary>
-	/// <param name="name"> The name of the member to set. </param>
 	/// <param name="value"> The value of the member. </param>
-	public void Set<T>(string name, T value)
+	/// <param name="name"> The name of the member to set. </param>
+	public void Set<T>(T value, [CallerMemberName] string name = "")
 	{
 		var property = GetTargetProperty(name);
 		Set(name, value, property);
@@ -250,10 +247,10 @@ public class PartialUpdate : Bindable
 	/// Try to get the update for the provided name.
 	/// </summary>
 	/// <typeparam name="T"> The type to cast the value to. </typeparam>
-	/// <param name="name"> The name of the update. </param>
 	/// <param name="value"> The value read if successful. </param>
+	/// <param name="name"> The name of the update. </param>
 	/// <returns> True if the value was read otherwise false. </returns>
-	public bool TryGet<T>(string name, out T value)
+	public bool TryGet<T>(out T value, [CallerMemberName] string name = "")
 	{
 		if (_updates.TryGetValue(name, out var update))
 		{
@@ -267,10 +264,10 @@ public class PartialUpdate : Bindable
 	/// <summary>
 	/// Get the property value.
 	/// </summary>
-	/// <param name="name"> The name of the update. </param>
 	/// <param name="value"> The value that was retrieve or default value if not found. </param>
+	/// <param name="name"> The name of the update. </param>
 	/// <returns> True if the update was found otherwise false. </returns>
-	public bool TryGet(string name, out object value)
+	public bool TryGet(out object value, [CallerMemberName] string name = "")
 	{
 		try
 		{
@@ -288,6 +285,46 @@ public class PartialUpdate : Bindable
 			value = default;
 			return false;
 		}
+	}
+
+	/// <summary>
+	/// Update the PartialUpdate with an update.
+	/// </summary>
+	/// <param name="update"> The update to be applied. </param>
+	public virtual bool UpdateWith(PartialUpdate update)
+	{
+		return UpdateWith(update, UpdateableOptions.Empty);
+	}
+
+	/// <summary>
+	/// Update the PartialUpdate with an update.
+	/// </summary>
+	/// <param name="update"> The update to be applied. </param>
+	/// <param name="options"> The options for controlling the updating of the entity. </param>
+	public virtual bool UpdateWith(PartialUpdate update, UpdateableOptions options)
+	{
+		// If the update is null then there is nothing to do.
+		if (update == null)
+		{
+			return false;
+		}
+
+		foreach (var item in update._updates)
+		{
+			_updates.AddOrUpdate(item.Key, item.Value);
+		}
+
+		return true;
+	}
+
+	/// <inheritdoc />
+	public override bool UpdateWith(object update, UpdateableOptions options)
+	{
+		return update switch
+		{
+			PartialUpdate value => UpdateWith(value, options),
+			_ => base.UpdateWith(update, options)
+		};
 	}
 
 	/// <summary>
@@ -319,21 +356,6 @@ public class PartialUpdate : Bindable
 	}
 
 	/// <summary>
-	/// Gets a property information for this type.
-	/// The results are cached so the next query is much faster.
-	/// </summary>
-	/// <returns> The property for the target type or null if not found. </returns>
-	protected internal virtual PropertyInfo GetTargetProperty(string name)
-	{
-		if (GetTargetProperties().TryGetValue(name, out var value))
-		{
-			return value;
-		}
-
-		throw new NotSupportedException();
-	}
-
-	/// <summary>
 	/// Refresh the update collection for this partial update.
 	/// </summary>
 	protected internal virtual void RefreshUpdates()
@@ -352,6 +374,21 @@ public class PartialUpdate : Bindable
 			var value = property.GetValue(this);
 			AddOrUpdate(property.Name, property.PropertyType, value);
 		}
+	}
+
+	/// <summary>
+	/// Gets a property information for this type.
+	/// The results are cached so the next query is much faster.
+	/// </summary>
+	/// <returns> The property for the target type or null if not found. </returns>
+	protected virtual PropertyInfo GetTargetProperty(string name)
+	{
+		if (GetTargetProperties().TryGetValue(name, out var value))
+		{
+			return value;
+		}
+
+		throw new NotSupportedException();
 	}
 
 	/// <summary>
@@ -375,10 +412,10 @@ public class PartialUpdate : Bindable
 
 	private void Set(string name, object value, PropertyInfo property)
 	{
-		if (!property.CanWrite)
-		{
-			throw new CornerstoneException("The property cannot be set because it's not writable.");
-		}
+		//if (!property.CanWrite)
+		//{
+		//	throw new CornerstoneException("The property cannot be set because it's not writable.");
+		//}
 
 		if (property.PropertyType.IsNullable() && (value == null))
 		{

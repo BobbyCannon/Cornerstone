@@ -125,16 +125,16 @@ public class ByteSizeExtensionsTests : CornerstoneUnitTest
 
 		var scenarios = new (string name, string template)[]
 		{
-			("Bits", "public static ByteSize FromBits($TYPE$ value)\r\n{\r\n\treturn new ByteSize((double?) value / BitsInByte);\r\n}\r\n"),
-			("Bytes", "public static ByteSize FromBytes($TYPE$ value)\r\n{\r\n\treturn new ByteSize((double?) value);\r\n}\r\n"),
-			("FromKilobits", "public static ByteSize FromKilobits($TYPE$ value)\r\n{\r\n\treturn new ByteSize((double?) value * BytesInKilobit);\r\n}\r\n"),
-			("FromKilobytes", "public static ByteSize FromKilobytes($TYPE$ value)\r\n{\r\n\treturn new ByteSize((double?) value * BytesInKilobyte);\r\n}\r\n"),
-			("Megabits", "public static ByteSize FromMegabits($TYPE$ value)\r\n{\r\n\treturn new ByteSize((double?) value * BytesInMegabit);\r\n}\r\n"),
-			("Megabytes", "public static ByteSize FromMegabytes($TYPE$ value)\r\n{\r\n\treturn new ByteSize((double?) value * BytesInMegabyte);\r\n}\r\n"),
-			("Gigabits", "public static ByteSize FromGigabits($TYPE$ value)\r\n{\r\n\treturn new ByteSize((double?) value * BytesInGigabit);\r\n}\r\n"),
-			("Gigabytes", "public static ByteSize FromGigabytes($TYPE$ value)\r\n{\r\n\treturn new ByteSize((double?) value * BytesInGigabyte);\r\n}\r\n"),
-			("Terabits", "public static ByteSize FromTerabits($TYPE$ value)\r\n{\r\n\treturn new ByteSize((double?) value * BytesInTerabit);\r\n}\r\n"),
-			("Terabytes", "public static ByteSize FromTerabytes($TYPE$ value)\r\n{\r\n\treturn new ByteSize((double?) value * BytesInTerabyte);\r\n}\r\n")
+			("Bits", "public static ByteSize FromBits($TYPE$ value)\r\n{\r\n\treturn new ByteSize((decimal?) value / BitsInByte);\r\n}\r\n"),
+			("Bytes", "public static ByteSize FromBytes($TYPE$ value)\r\n{\r\n\treturn new ByteSize((decimal?) value);\r\n}\r\n"),
+			("FromKilobits", "public static ByteSize FromKilobits($TYPE$ value)\r\n{\r\n\treturn new ByteSize((decimal?) value * BytesInKilobit);\r\n}\r\n"),
+			("FromKilobytes", "public static ByteSize FromKilobytes($TYPE$ value)\r\n{\r\n\treturn new ByteSize((decimal?) value * BytesInKilobyte);\r\n}\r\n"),
+			("Megabits", "public static ByteSize FromMegabits($TYPE$ value)\r\n{\r\n\treturn new ByteSize((decimal?) value * BytesInMegabit);\r\n}\r\n"),
+			("Megabytes", "public static ByteSize FromMegabytes($TYPE$ value)\r\n{\r\n\treturn new ByteSize((decimal?) value * BytesInMegabyte);\r\n}\r\n"),
+			("Gigabits", "public static ByteSize FromGigabits($TYPE$ value)\r\n{\r\n\treturn new ByteSize((decimal?) value * BytesInGigabit);\r\n}\r\n"),
+			("Gigabytes", "public static ByteSize FromGigabytes($TYPE$ value)\r\n{\r\n\treturn new ByteSize((decimal?) value * BytesInGigabyte);\r\n}\r\n"),
+			("Terabits", "public static ByteSize FromTerabits($TYPE$ value)\r\n{\r\n\treturn new ByteSize((decimal?) value * BytesInTerabit);\r\n}\r\n"),
+			("Terabytes", "public static ByteSize FromTerabytes($TYPE$ value)\r\n{\r\n\treturn new ByteSize((decimal?) value * BytesInTerabyte);\r\n}\r\n")
 		};
 
 		var builder = new TextBuilder();
@@ -150,7 +150,7 @@ public class ByteSizeExtensionsTests : CornerstoneUnitTest
 
 				if (!type.IsNullableType())
 				{
-					codeMethod = codeMethod.Replace("(double?)", "(double)");
+					codeMethod = codeMethod.Replace("(decimal?)", "(decimal)");
 				}
 
 				if (Activator.IsNet7OrGreater(type))

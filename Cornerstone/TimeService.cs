@@ -26,7 +26,7 @@ public static class TimeService
 
 	static TimeService()
 	{
-		_providers = new SpeedyList<ITimeProvider>();
+		_providers = [];
 
 		RealTime = new TimeProvider(Guid.Parse("48E21BDA-9E7A-4767-8E3B-B218203C9A71"), () => DateTime.UtcNow);
 

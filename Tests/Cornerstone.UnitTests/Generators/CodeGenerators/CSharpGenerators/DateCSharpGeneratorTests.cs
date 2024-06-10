@@ -1,6 +1,5 @@
 #region References
 
-using System;
 using Cornerstone.Generators;
 using Cornerstone.Generators.CodeGenerators.CSharpGenerators;
 using Cornerstone.Testing;

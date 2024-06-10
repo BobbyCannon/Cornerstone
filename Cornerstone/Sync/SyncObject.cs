@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
+using Cornerstone.Internal;
 using Cornerstone.Serialization;
 using Cornerstone.Text;
 

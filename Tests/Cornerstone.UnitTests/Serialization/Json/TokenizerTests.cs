@@ -63,8 +63,13 @@ public class TokenizerTests : CornerstoneUnitTest
 	{
 		var scenarios = new Dictionary<string, string>
 		{
-			{ "\uFFFF", "\"\\uFFFF\"" },
+			{ "\"\\/", "\"\\\"\\\\\\/\"" },
+			{ "\f", "\"\\f\"" },
+			{ "\n", "\"\\n\"" },
+			{ "\n\r", "\"\\n\\r\"" },
+			{ "\b\f\n\r\t\u0000", "\"\\b\\f\\n\\r\\t\\u0000\"" },
 			{ "\"\\/\b\f\n\r\t\u0000", "\"\\\"\\\\\\/\\b\\f\\n\\r\\t\\u0000\"" },
+			{ "\uFFFF", "\"\\uFFFF\"" },
 			{ "'''\"'''", "\"'''\\\"'''\"" },
 		};
 

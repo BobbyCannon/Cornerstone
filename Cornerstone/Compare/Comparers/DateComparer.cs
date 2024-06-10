@@ -33,7 +33,7 @@ public class DateComparer : BaseComparer
 			#if !NETSTANDARD
 			case DateOnly eValue:
 			{
-				var aValue = Converter.ConvertTo<DateOnly>(actual);
+				var aValue = actual.ConvertTo<DateOnly>();
 				if (eValue.CompareTo(aValue) == 0)
 				{
 					return CompareResult.AreEqual;
@@ -43,7 +43,7 @@ public class DateComparer : BaseComparer
 			#endif
 			case DateTime eValue:
 			{
-				var aValue = Converter.ConvertTo<DateTime>(actual);
+				var aValue = actual.ConvertTo<DateTime>();
 				var eUtc = eValue.ToUtcDateTime();
 				var aUtc = aValue.ToUtcDateTime();
 				if (eUtc == aUtc)
@@ -54,7 +54,7 @@ public class DateComparer : BaseComparer
 			}
 			case DateTimeOffset eValue:
 			{
-				var aValue = Converter.ConvertTo<DateTimeOffset>(actual);
+				var aValue = actual.ConvertTo<DateTimeOffset>();
 				if (eValue.CompareTo(aValue) == 0)
 				{
 					return CompareResult.AreEqual;
@@ -63,7 +63,7 @@ public class DateComparer : BaseComparer
 			}
 			case IsoDateTime eValue:
 			{
-				var aValue = Converter.ConvertTo<IsoDateTime>(actual);
+				var aValue = actual.ConvertTo<IsoDateTime>();
 				if (eValue.CompareTo(aValue) == 0)
 				{
 					return CompareResult.AreEqual;
@@ -72,7 +72,7 @@ public class DateComparer : BaseComparer
 			}
 			case OscTimeTag eValue:
 			{
-				var aValue = Converter.ConvertTo<OscTimeTag>(actual);
+				var aValue = actual.ConvertTo<OscTimeTag>();
 				if (eValue.CompareTo(aValue) == 0)
 				{
 					return CompareResult.AreEqual;

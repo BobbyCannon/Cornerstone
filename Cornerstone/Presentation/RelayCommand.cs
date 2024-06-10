@@ -10,7 +10,8 @@ using System.Windows.Input;
 namespace Cornerstone.Presentation;
 
 /// <summary>
-/// A command whose sole purpose is to relay its functionality to other objects by invoking delegates. The default return value for the CanExecute method is 'true'.
+/// A command whose sole purpose is to relay its functionality to other objects by invoking delegates.
+/// The default return value for the CanExecute method is 'true'.
 /// </summary>
 public class RelayCommand : ICommand
 {
@@ -71,7 +72,7 @@ public class RelayCommand : ICommand
 			return false;
 		}
 
-		var result = _canExecuteCallback.Invoke(action, new[] { parameter });
+		var result = _canExecuteCallback.Invoke(action, [parameter]);
 		return result is true;
 	}
 
@@ -80,7 +81,7 @@ public class RelayCommand : ICommand
 	{
 		if (_executeReference.TryGetTarget(out var action))
 		{
-			_executeCallback.Invoke(action, new[] { parameter });
+			_executeCallback.Invoke(action, [parameter]);
 		}
 	}
 

@@ -2,7 +2,6 @@
 
 using Cornerstone.Data;
 using Cornerstone.Extensions;
-using Cornerstone.Storage;
 
 #endregion
 
@@ -11,7 +10,7 @@ namespace Cornerstone.Sync;
 /// <summary>
 /// Represents the options for a sync client
 /// </summary>
-public class SyncClientOptions : CloneableBindable<SyncClientOptions>
+public class SyncClientOptions : Notifiable<SyncClientOptions>
 {
 	#region Properties
 

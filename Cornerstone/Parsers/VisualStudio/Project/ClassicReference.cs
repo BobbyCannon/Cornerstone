@@ -6,8 +6,6 @@ using Cornerstone.Parsers.Xml;
 
 #endregion
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-
 namespace Cornerstone.Parsers.VisualStudio.Project;
 
 /// <summary>
@@ -40,7 +38,7 @@ public class ClassicReference : XmlElement
 	public string Include => GetAttributeValue(nameof(Include));
 
 	public string IncludeName => GetIncludeLookup().TryGetValue("Name", out var value) ? value : string.Empty;
-	
+
 	public string IncludeVersion => GetIncludeLookup().TryGetValue("Version", out var value) ? value : string.Empty;
 
 	#endregion

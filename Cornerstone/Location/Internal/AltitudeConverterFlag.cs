@@ -1,6 +1,6 @@
-﻿// ReSharper disable once CheckNamespace
+﻿
 
-namespace Cornerstone.Location;
+namespace Cornerstone.Location.Internal;
 
 /// <summary>
 /// Flags indicating conversions between heights above the geoid and heights above the ellipsoid.

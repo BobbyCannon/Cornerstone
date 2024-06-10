@@ -421,7 +421,7 @@ public abstract class Browser : ElementHost, IScrollableElement
 				using (var reader = new StreamReader(stream))
 				{
 					var data = reader.ReadToEnd();
-					var lines = data.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+					var lines = data.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
 					for (var i = 0; i < lines.Length; i++)
 					{
 						lines[i] = lines[i].Trim();
@@ -771,7 +771,7 @@ public abstract class Browser : ElementHost, IScrollableElement
 		}
 
 		var elements = JsonConvert.DeserializeObject<JArray>(data);
-		return elements?.Select(x => WebElement.Create(x, this, parent)).ToList() ?? new List<WebElement>();
+		return elements?.Select(x => WebElement.Create(x, this, parent)).ToList() ?? [];
 	}
 
 	/// <summary>

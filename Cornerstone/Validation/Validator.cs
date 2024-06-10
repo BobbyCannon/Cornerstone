@@ -144,8 +144,8 @@ public class Validator : Bindable
 	/// <param name="message"> The message of the exception. </param>
 	public static void ThrowException<T>(string message) where T : Exception, new()
 	{
-		var constructor = typeof(T).GetConstructor(new[] { typeof(string) });
-		var newException = (T) constructor?.Invoke(new object[] { message })
+		var constructor = typeof(T).GetConstructor([typeof(string)]);
+		var newException = (T) constructor?.Invoke([message])
 			?? new Exception("Failed to throw custom validator exception due to missing constructor...");
 		throw newException;
 	}
@@ -261,7 +261,7 @@ public class Validator : Bindable
 			}
 
 			var propertyValidator = validator.MemberValidators[i];
-			var foundUpdate = update.TryGet(propertyValidator.Info.Name, out var updateValue);
+			var foundUpdate = update.TryGet(out var updateValue, propertyValidator.Info.Name);
 
 			if (!foundUpdate)
 			{

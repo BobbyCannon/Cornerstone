@@ -3,14 +3,23 @@
 /// <inheritdoc />
 public class StringTypeActivator : TypeActivator<string>
 {
-	#region Methods
+	#region Constructors
 
 	/// <inheritdoc />
-	public override object CreateInstance(params object[] arguments)
+	public StringTypeActivator() : base(CreateInstanceInternal)
 	{
-		return arguments.Length > 0
-			? arguments[0].ToString()
-			: string.Empty;
+	}
+
+	#endregion
+
+	#region Methods
+
+	private static string CreateInstanceInternal(params object[] arguments)
+	{
+		return (arguments.Length > 0)
+			&& (arguments[0] is string sValue)
+				? sValue
+				: string.Empty;
 	}
 
 	#endregion

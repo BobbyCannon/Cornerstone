@@ -129,30 +129,6 @@ public static class CollectionExtensions
 	}
 
 	/// <summary>
-	/// Find the index of an item in a collection using the object.Equals method.
-	/// </summary>
-	/// <typeparam name="T"> The type of the object in the collection. </typeparam>
-	/// <param name="collection"> The collection to test. </param>
-	/// <param name="value"> The value of the item to search for. </param>
-	/// <returns> The index of the item or -1 if not found. </returns>
-	public static int IndexOf<T>(this IEnumerable<T> collection, T value)
-	{
-		var offset = 0;
-
-		foreach (var v in collection)
-		{
-			if (v.Equals(value))
-			{
-				return offset;
-			}
-
-			offset++;
-		}
-
-		return -1;
-	}
-
-	/// <summary>
 	/// Return items missing from the expected list.
 	/// </summary>
 	/// <param name="expected"> The expected list. </param>
@@ -342,7 +318,7 @@ public static class CollectionExtensions
 	{
 		return values is HashSet<T> hashSet
 			? new HashSet<T>(values.Union(additions), hashSet.Comparer)
-			: new HashSet<T>(values.Union(additions));
+			: [..values.Union(additions)];
 	}
 
 	/// <summary>

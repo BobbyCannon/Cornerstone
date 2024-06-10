@@ -1,7 +1,7 @@
 ﻿#region References
 
+using Cornerstone.Internal;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Sample.Shared.Storage.Server;
 
 #endregion
 

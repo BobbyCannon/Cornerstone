@@ -92,13 +92,13 @@ public static class RandomGenerator
 	/// A list of lorem ipsum words.
 	/// </summary>
 	public static readonly string[] LoremIpsumWords =
-	{
+	[
 		"lorem", "ipsum", "dolor", "sit", "amet", "consectetuer", "adipiscing", "elit", "sed", "do", "eiusmod", "tempor", "incididunt", "ut", "labore",
 		"et", "dolore", "magna", "aliqua", "enim", "ad", "minim", "veniam,", "quis", "nostrud", "exercitation", "ullamco", "laboris", "nisi",
 		"aliquip", "ex", "ea", "commodo", "consequat", "duis", "aute", "irure", "in", "reprehenderit", "voluptate", "velit", "esse", "cillum",
 		"eu", "fugiat", "nulla", "pariatur", "excepteur", "sint", "occaecat", "cupidatat", "non", "proident", "sunt", "culpa", "qui", "officia", "deserunt",
 		"mollit", "anim", "id", "est", "laborum"
-	};
+	];
 
 	private static readonly object _syncLockForRandom;
 

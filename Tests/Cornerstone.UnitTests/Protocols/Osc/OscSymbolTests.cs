@@ -21,8 +21,8 @@ public class OscSymbolTests : CornerstoneUnitTest
 		Assert.IsTrue(expected.Equals(actual));
 		// ReSharper disable once SuspiciousTypeConversion.Global
 		Assert.IsTrue(expected.Equals("Foo Bar"));
-		Assert.AreEqual(1716311859, expected.GetHashCode());
-		Assert.AreEqual(1716311859, actual.GetHashCode());
+		AreEqual(1716311859, expected.GetHashCode());
+		AreEqual(1716311859, actual.GetHashCode());
 	}
 
 	[TestMethod]
@@ -30,7 +30,7 @@ public class OscSymbolTests : CornerstoneUnitTest
 	{
 		var notExpected = new OscSymbol { Value = "Foo Bar" };
 		var actual = new OscSymbol("foo bar");
-		Assert.AreEqual(1715228275, actual.GetHashCode());
+		AreEqual(1715228275, actual.GetHashCode());
 		Assert.IsTrue(notExpected != actual);
 		// ReSharper disable once SuspiciousTypeConversion.Global
 		Assert.IsFalse(actual.Equals(true));

@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<SyntaxDefinition name="PowerShell" extensions=".ps1;.psm1;.psd1" xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
+	<Color name="Comment" foreground="#55B030" exampleText="// comment" />
+	<Color name="String" foreground="#D69D85" exampleText="string text = &quot;Hello, World!&quot;" />
+	<Color name="Char" foreground="#D69D85" exampleText="char linefeed = '\n';" />
+	<Color name="Punctuation" exampleText="a(b.c);" />
+	<Color name="NumberLiteral" foreground="#808080" exampleText="3.1415f" />
+	<Color name="Keywords" foreground="#4E9AD3" exampleText="if (a)" />
+	<Color name="Variable" foreground="#9CDCFE" exampleText="$param = 1" />
+	<Color name="ExceptionKeywords" foreground="#4E9AD3" />
+	<Color name="GotoKeywords" foreground="#4E9AD3" />
+	<Color foreground="Red" name="ReferenceTypes" />
+	<Color name="Syntax" foreground="#808080" exampleText='=' />
+	<Color name="Command" foreground="#02FDFF" exampleText="Invoke-Item" />
+	<Color name="CommandParameters" foreground="#78C4CF" exampleText="-ErrorAction" />
+	<Color name="CommandArgument" foreground="#9CDCFE" exampleText="Ignore" />
+	<Color name="Operators" foreground="#FF8515EA" exampleText="-eq" />
+
+	<RuleSet ignoreCase="true">
+		<Rule color="Punctuation">
+			[,.;()\[\]{}+\/%*&lt;&gt;^+~!|&amp;]+
+		</Rule>
+
+		<Span color="Comment">
+			<Begin>\#</Begin>
+		</Span>
+
+		<Span color="Comment" multiline="true">
+			<Begin>&lt;\#</Begin>
+			<End>\#&gt;</End>
+		</Span>
+
+		<Span color="String">
+			<Begin>"</Begin>
+			<End>"</End>
+			<RuleSet>
+				<!-- span for escape sequences -->
+				<Span begin="\\" end="." />
+			</RuleSet>
+		</Span>
+
+		<Span color="Char">
+			<Begin>'</Begin>
+			<End>'</End>
+			<RuleSet>
+				<!-- span for escape sequences -->
+				<Span begin="\\" end="." />
+			</RuleSet>
+		</Span>
+
+		<Span color="String" multiline="true">
+			<Begin color="String">@"</Begin>
+			<End>"@</End>
+			<RuleSet>
+				<!-- span for escape sequences -->
+				<Span begin='""' end="" />
+			</RuleSet>
+		</Span>
+
+		<Keywords color="Keywords">
+			<Word>while</Word>
+			<Word>param</Word>
+			<Word>end</Word>
+			<Word>define</Word>
+			<Word>else</Word>
+			<Word>from</Word>
+			<Word>foreach</Word>
+			<Word>var</Word>
+			<Word>dynamicparam</Word>
+			<Word>filter</Word>
+			<Word>dp</Word>
+			<Word>until</Word>
+			<Word>for</Word>
+			<Word>exit</Word>
+			<Word>switch</Word>
+			<Word>process</Word>
+			<Word>begin</Word>
+			<Word>elseif</Word>
+			<Word>if</Word>
+			<Word>in</Word>
+			<Word>data</Word>
+			<Word>class</Word>
+			<Word>using</Word>
+			<Word>function</Word>
+		</Keywords>
+
+		<Keywords color="ExceptionKeywords">
+			<Word>catch</Word>
+			<Word>finally</Word>
+			<Word>throw</Word>
+			<Word>trap</Word>
+			<Word>try</Word>
+		</Keywords>
+
+		<Keywords color="GotoKeywords">
+			<Word>break</Word>
+			<Word>continue</Word>
+			<Word>return</Word>
+		</Keywords>
+
+		<Keywords color="ReferenceTypes">
+			<Word>class</Word>
+		</Keywords>
+
+		<Keywords color="Operators">
+			<Word>-not</Word>
+			<Word>-band</Word>
+			<Word>-bor</Word>
+			<Word>-replace</Word>
+			<Word>-ireplace</Word>
+			<Word>-creplace</Word>
+			<Word>-and</Word>
+			<Word>-or</Word>
+			<Word>-is</Word>
+			<Word>-isnot</Word>
+			<Word>-as</Word>
+			<Word>-lt</Word>
+			<Word>-le</Word>
+			<Word>-gt</Word>
+			<Word>-ge</Word>
+			<Word>-eq</Word>
+			<Word>-ne</Word>
+			<Word>-contains</Word>
+			<Word>-notcontains</Word>
+			<Word>-like</Word>
+			<Word>-notlike</Word>
+			<Word>-match</Word>
+			<Word>-notmatch</Word>
+		</Keywords>
+
+		<Rule color="Variable">\$[\d\w_]+</Rule>
+		<RuleSet>
+			<Rule color="Command">
+				([\w]+-[\w]+)|(^[^\s]+)
+			</Rule>
+			<Rule color="CommandParameters">
+				([ ]-[\w]+)(:[\w]+)?
+			</Rule>
+			<Rule color="CommandArgument">
+				([^\s()]+)
+			</Rule>
+		</RuleSet>
+
+		<!-- Digits -->
+		<Rule color="NumberLiteral">
+			\b0[xX][0-9a-fA-F]+  # hex number
+			|
+			(	\b\d+(\.[0-9]+)?   #number with optional floating point
+			|	\.[0-9]+           #or just starting with floating point
+			)
+			([eE][+-]?[0-9]+)? # optional exponent
+		</Rule>
+	</RuleSet>
+</SyntaxDefinition>

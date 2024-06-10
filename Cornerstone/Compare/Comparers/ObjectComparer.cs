@@ -1,7 +1,6 @@
 ﻿#region References
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Cornerstone.Extensions;
 
@@ -33,8 +32,8 @@ public class ObjectComparer : BaseComparer
 	{
 		try
 		{
-			session.Add(expected);
-			session.Add(actual);
+			session.AddReference(expected);
+			session.AddReference(actual);
 
 			var expectedProperties = expected.GetCachedPropertyDictionary();
 			var actualProperties = actual.GetCachedPropertyDictionary();
@@ -98,8 +97,8 @@ public class ObjectComparer : BaseComparer
 		}
 		finally
 		{
-			session.Remove(expected);
-			session.Remove(actual);
+			session.RemoveReference(expected);
+			session.RemoveReference(actual);
 		}
 	}
 

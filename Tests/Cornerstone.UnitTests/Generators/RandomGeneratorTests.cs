@@ -41,7 +41,7 @@ public class RandomGeneratorTests : CornerstoneUnitTest
 		{
 			var actual = RandomGenerator.GetBytes(13);
 			actual.DumpJson();
-			Assert.AreEqual(13, actual.Length);
+			AreEqual(13, actual.Length);
 		}
 	}
 
@@ -78,7 +78,7 @@ public class RandomGeneratorTests : CornerstoneUnitTest
 		{
 			actual = RandomGenerator.GetPassword(24);
 			actual.ToUnsecureString().Dump();
-			Assert.AreEqual(24, actual.Length);
+			AreEqual(24, actual.Length);
 		}
 	}
 
@@ -122,10 +122,10 @@ public class RandomGeneratorTests : CornerstoneUnitTest
 			RandomGenerator.NextDateTime(DateTime.MinValue, DateTime.MaxValue);
 			var actual = RandomGenerator.NextDateTime(DateTime.MinValue, DateTime.MinValue);
 			actual.Dump();
-			Assert.AreEqual(DateTime.MinValue, actual);
+			AreEqual(DateTime.MinValue, actual);
 			actual = RandomGenerator.NextDateTime(DateTime.MaxValue, DateTime.MaxValue);
 			actual.Dump();
-			Assert.AreEqual(DateTime.MaxValue, actual);
+			AreEqual(DateTime.MaxValue, actual);
 			actual = RandomGenerator.NextDateTime(new DateTime(1970, 01, 01), new DateTime(2024, 01, 01));
 			actual.Dump();
 		}
@@ -151,10 +151,10 @@ public class RandomGeneratorTests : CornerstoneUnitTest
 		{
 			var actual = RandomGenerator.NextDecimal(64, 64);
 			actual.Dump();
-			Assert.AreEqual(64, actual);
+			AreEqual(64, actual);
 			actual = RandomGenerator.NextDecimal(-46, -46);
 			actual.Dump();
-			Assert.AreEqual(-46, actual);
+			AreEqual(-46, actual);
 		}
 	}
 
@@ -204,7 +204,7 @@ public class RandomGeneratorTests : CornerstoneUnitTest
 		{
 			var actual = RandomGenerator.NextDouble(10.0, 10.0);
 			actual.Dump();
-			Assert.AreEqual(10.0, actual);
+			AreEqual(10.0, actual);
 		}
 	}
 
@@ -233,7 +233,7 @@ public class RandomGeneratorTests : CornerstoneUnitTest
 		{
 			var actual = RandomGenerator.NextLong(48, 48);
 			actual.Dump();
-			Assert.AreEqual(48, actual);
+			AreEqual(48, actual);
 		}
 	}
 
@@ -253,7 +253,7 @@ public class RandomGeneratorTests : CornerstoneUnitTest
 		{
 			var actual = RandomGenerator.NextString(4, "a");
 			actual.Dump();
-			Assert.AreEqual("aaaa", actual);
+			AreEqual("aaaa", actual);
 		}
 	}
 
@@ -293,14 +293,14 @@ public class RandomGeneratorTests : CornerstoneUnitTest
 		for (var i = 0; i < LoopCount; i++)
 		{
 			var actual = new SecureString();
-			Assert.AreEqual(0, actual.Length);
+			AreEqual(0, actual.Length);
 			RandomGenerator.SetPassword(actual);
-			Assert.AreEqual(16, actual.Length);
+			AreEqual(16, actual.Length);
 			actual.ToUnsecureString().Dump();
 
 			actual = new SecureString();
 			RandomGenerator.SetPassword(actual, 14, false);
-			Assert.AreEqual(14, actual.Length);
+			AreEqual(14, actual.Length);
 			actual.ToUnsecureString().Dump();
 		}
 	}

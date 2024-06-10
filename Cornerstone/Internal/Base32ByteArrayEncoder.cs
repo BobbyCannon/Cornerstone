@@ -5,8 +5,8 @@ using System.Text;
 
 #endregion
 
-// ReSharper disable once CheckNamespace
-namespace Cornerstone;
+
+namespace Cornerstone.Internal;
 
 /// <summary>
 /// An implementation of <see cref="IByteArrayEncoder" /> that encodes byte arrays as Base32 strings.

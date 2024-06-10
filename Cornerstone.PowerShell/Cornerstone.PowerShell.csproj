@@ -9,17 +9,13 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<None Remove="Cornerstone.PowerShell-Help.xml" />
+		<None Remove="Cornerstone.PowerShell.ps1xml" />
 		<None Remove="Cornerstone.PowerShell.psd1" />
 	</ItemGroup>
 	<ItemGroup>
-	  <Content Include="Cornerstone.PowerShell.psd1">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	</ItemGroup>
-	<ItemGroup>
-		<Content Include="Cornerstone.PowerShell-Help.xml">
-		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</Content>
+		<EmbeddedResource Include="Cornerstone.PowerShell-Help.xml" />
+		<EmbeddedResource Include="Cornerstone.PowerShell.ps1xml" />
+		<EmbeddedResource Include="Cornerstone.PowerShell.psd1" />
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="NuGet.Packaging" Version="6.9.1" />

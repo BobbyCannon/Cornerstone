@@ -16,8 +16,7 @@ public class GsaMessageTests : BaseMessageTests
 	[TestMethod]
 	public void TestMethodParse()
 	{
-		ProcessParseScenarios(new (string sentance, GsaMessage expected)[]
-		{
+		ProcessParseScenarios([
 			(
 				"$GNGSA,A,3,01,18,32,08,11,,,,,,,,6.16,1.86,5.88*16",
 				new GsaMessage
@@ -73,7 +72,7 @@ public class GsaMessageTests : BaseMessageTests
 					Checksum = "0F"
 				}
 			)
-		});
+		]);
 	}
 
 	#endregion

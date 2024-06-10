@@ -50,8 +50,8 @@ public class PagedResults<T> : PartialUpdate<PagedResults<T>>, IPagedResults
     /// </summary>
     public string Filter
     {
-        get => Get(nameof(Filter), string.Empty);
-        set => Set(nameof(Filter), value);
+        get => Get(string.Empty, nameof(Filter));
+        set => Set(value, nameof(Filter));
     }
 
     /// <inheritdoc />
@@ -60,8 +60,8 @@ public class PagedResults<T> : PartialUpdate<PagedResults<T>>, IPagedResults
     /// <inheritdoc />
     public string Order
     {
-        get => Get(nameof(Order), string.Empty);
-        set => Set(nameof(Order), value);
+        get => Get(string.Empty, nameof(Order));
+        set => Set(value, nameof(Order));
     }
 
     /// <summary>
@@ -69,8 +69,8 @@ public class PagedResults<T> : PartialUpdate<PagedResults<T>>, IPagedResults
     /// </summary>
     public int Page
     {
-        get => Get(nameof(Page), PageDefault);
-        set => Set(nameof(Page), value);
+        get => Get(PageDefault, nameof(Page));
+        set => Set(value, nameof(Page));
     }
 
     /// <summary>
@@ -78,8 +78,8 @@ public class PagedResults<T> : PartialUpdate<PagedResults<T>>, IPagedResults
     /// </summary>
     public int PerPage
     {
-        get => Get(nameof(PerPage), PerPageDefault);
-        set => Set(nameof(PerPage), value);
+        get => Get(PerPageDefault, nameof(PerPage));
+        set => Set(value, nameof(PerPage));
     }
 
     /// <summary>
@@ -90,8 +90,8 @@ public class PagedResults<T> : PartialUpdate<PagedResults<T>>, IPagedResults
     /// <inheritdoc />
     public int TotalCount
     {
-        get => Get(nameof(TotalCount), 1);
-        set => Set(nameof(TotalCount), value);
+        get => Get(1, nameof(TotalCount));
+        set => Set(value, nameof(TotalCount));
     }
 
     /// <inheritdoc />
@@ -164,6 +164,15 @@ public class PagedResults<T> : PartialUpdate<PagedResults<T>>, IPagedResults
 
         return response;
     }
+
+	/// <summary>
+	/// Update the PagedResults with an update.
+	/// </summary>
+	/// <param name="update"> The update to be applied. </param>
+	public bool UpdateWith(PagedResults<T> update)
+	{
+		return UpdateWith(update, UpdateableAction.PartialUpdate);
+	}
 
 	/// <summary>
     /// Update the PagedResults with an update.

@@ -27,7 +27,7 @@ public class ClientSqlDatabase : ClientDatabase
 	#region Methods
 
 	/// <summary>
-	/// Update the options for default Speedy values. Ex. Migration History will be [system].[MigrationHistory] instead of [dbo].[__EFMigrationsHistory].
+	/// Update the options for default Cornerstone values. Ex. Migration History will be [system].[MigrationHistory] instead of [dbo].[__EFMigrationsHistory].
 	/// </summary>
 	/// <param name="builder"> The builder to set the options on. </param>
 	public static void UpdateOptions(SqlServerDbContextOptionsBuilder builder)

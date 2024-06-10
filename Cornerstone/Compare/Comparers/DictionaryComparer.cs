@@ -26,8 +26,8 @@ public class DictionaryComparer : BaseComparer
 	{
 		try
 		{
-			session.Add(expected);
-			session.Add(actual);
+			session.AddReference(expected);
+			session.AddReference(actual);
 
 			var expectedValue = (IDictionary) expected;
 			var actualValue = (IDictionary) actual;
@@ -39,8 +39,8 @@ public class DictionaryComparer : BaseComparer
 		}
 		finally
 		{
-			session.Remove(expected);
-			session.Remove(actual);
+			session.RemoveReference(expected);
+			session.RemoveReference(actual);
 		}
 	}
 

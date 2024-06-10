@@ -10,6 +10,8 @@ namespace Cornerstone.Presentation;
 /// <inheritdoc />
 public abstract class Dispatcher : IDispatcher
 {
+	#region Constructors
+
 	/// <summary>
 	/// Initialize the dispatcher.
 	/// </summary>
@@ -18,6 +20,8 @@ public abstract class Dispatcher : IDispatcher
 		// Enable dispatchers by default.
 		IsEnabled = true;
 	}
+
+	#endregion
 
 	#region Properties
 
@@ -105,7 +109,7 @@ public abstract class Dispatcher : IDispatcher
 /// <summary>
 /// Represents a dispatcher to help with handling dispatcher thread access.
 /// </summary>
-public interface IDispatcher : IDispatchable
+public interface IDispatcher
 {
 	#region Properties
 
@@ -118,6 +122,38 @@ public interface IDispatcher : IDispatchable
 	/// Returns true if dispatcher thread is enabled.
 	/// </summary>
 	bool IsEnabled { get; set; }
+
+	#endregion
+
+	#region Methods
+
+	/// <summary>
+	/// Run an action on the dispatching thread if available and required.
+	/// </summary>
+	/// <param name="action"> The action to be executed. </param>
+	/// <param name="priority"> An optional priority for the action. </param>
+	public void Dispatch(Action action, DispatcherPriority priority = DispatcherPriority.Normal);
+
+	/// <summary>
+	/// Run an action on the dispatching thread if available and required.
+	/// </summary>
+	/// <param name="action"> The action to be executed. </param>
+	/// <param name="priority"> An optional priority for the action. </param>
+	public T Dispatch<T>(Func<T> action, DispatcherPriority priority = DispatcherPriority.Normal);
+
+	/// <summary>
+	/// Run an action on the dispatching thread if available and required.
+	/// </summary>
+	/// <param name="action"> The action to be executed. </param>
+	/// <param name="priority"> An optional priority for the action. </param>
+	public Task DispatchAsync(Action action, DispatcherPriority priority = DispatcherPriority.Normal);
+
+	/// <summary>
+	/// Run an action on the dispatching thread if available and required.
+	/// </summary>
+	/// <param name="action"> The action to be executed. </param>
+	/// <param name="priority"> An optional priority for the action. </param>
+	public Task<T2> DispatchAsync<T2>(Func<T2> action, DispatcherPriority priority = DispatcherPriority.Normal);
 
 	#endregion
 }

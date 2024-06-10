@@ -406,7 +406,7 @@ public struct OscTimeTag : IOscArgument, IComparable<OscTimeTag>, IComparable, I
 		// Complete date plus hours, minutes, seconds and a decimal fraction of a second
 		//		YYYY-MM-DDThh:mm:ss.sTZD (eg 1997-07-16T19:20:30.45+01:00)
 		string[] formats =
-		{
+		[
 			"yyyy",
 			"yyyy-MM",
 			"yyyy-MM-dd",
@@ -428,7 +428,7 @@ public struct OscTimeTag : IOscArgument, IComparable<OscTimeTag>, IComparable, I
 			"yyyy-MM-ddTHH:mm:ss.fffff",
 			"yyyy-MM-ddTHH:mm:ss.ffffff",
 			"yyyy-MM-ddTHH:mm:ss.fffffff"
-		};
+		];
 
 		if (DateTime.TryParseExact(value, formats, provider, style, out var datetime))
 		{

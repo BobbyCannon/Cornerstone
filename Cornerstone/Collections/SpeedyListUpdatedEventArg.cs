@@ -1,14 +1,14 @@
 ﻿#region References
 
 using System;
-using System.Collections;
+using System.Collections.Generic;
 
 #endregion
 
 namespace Cornerstone.Collections;
 
 /// <inheritdoc />
-public class SpeedyListUpdatedEventArg : EventArgs
+public class SpeedyListUpdatedEventArg<T> : EventArgs
 {
 	#region Constructors
 
@@ -17,7 +17,7 @@ public class SpeedyListUpdatedEventArg : EventArgs
 	/// </summary>
 	/// <param name="added"> The items added. </param>
 	/// <param name="removed"> The items removed. </param>
-	public SpeedyListUpdatedEventArg(IList added, IList removed)
+	public SpeedyListUpdatedEventArg(IList<T> added, IList<T> removed)
 	{
 		Added = added;
 		Removed = removed;
@@ -30,12 +30,12 @@ public class SpeedyListUpdatedEventArg : EventArgs
 	/// <summary>
 	/// The items added.
 	/// </summary>
-	public IList Added { get; }
+	public IList<T> Added { get; }
 
 	/// <summary>
 	/// The items removed.
 	/// </summary>
-	public IList Removed { get; }
+	public IList<T> Removed { get; }
 
 	#endregion
 }

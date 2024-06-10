@@ -34,7 +34,7 @@ public abstract class SettingsFile<T> : PartialUpdate<T>
 	/// <summary>
 	/// For serialization, do not use.
 	/// </summary>
-	protected SettingsFile()
+	protected SettingsFile() : this(string.Empty, string.Empty, null)
 	{
 	}
 
@@ -111,7 +111,7 @@ public abstract class SettingsFile<T> : PartialUpdate<T>
 		FinalizeLoad();
 		ResetHasChanges();
 	}
-	
+
 	/// <summary>
 	/// Loads the settings from a json string.
 	/// </summary>

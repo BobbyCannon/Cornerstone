@@ -156,7 +156,7 @@ public abstract class LocationProvider<T, THorizontalLocation, TVerticalLocation
 }
 
 /// <summary>
-/// Represents a location provider using all Speedy data models.
+/// Represents a location provider using all Cornerstone data models.
 /// </summary>
 public interface ILocationProvider : ILocationProvider<Location, IHorizontalLocation, IVerticalLocation, LocationProviderSettings>
 {

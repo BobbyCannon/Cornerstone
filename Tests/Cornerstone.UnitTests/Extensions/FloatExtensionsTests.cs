@@ -9,45 +9,45 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Cornerstone.UnitTests.Extensions;
 
 [TestClass]
-public class FloatExtensionsTests
+public class FloatExtensionsTests : CornerstoneUnitTest
 {
 	#region Methods
 
 	[TestMethod]
 	public void Decrement()
 	{
-		Assert.AreEqual(0.0f, float.Epsilon.Decrement());
-		Assert.AreEqual(-1.2345f, 0.0.Decrement(1.2345f));
-		Assert.AreEqual(1.0345f, 1.2345f.Decrement(0.2f));
+		AreEqual(0.0f, float.Epsilon.Decrement());
+		AreEqual(-1.2345f, 0.0.Decrement(1.2345f));
+		AreEqual(1.0345f, 1.2345f.Decrement(0.2f));
 
 		var random = new Random();
 		var first = (float) random.NextDouble();
 		var increment = (float) random.NextDouble();
 
-		Assert.AreEqual(first - increment, first.Decrement(increment));
-		Assert.AreEqual(first, first.Decrement(float.NaN));
-		Assert.AreEqual(first, first.Decrement(float.PositiveInfinity));
-		Assert.AreEqual(first, first.Decrement(float.NegativeInfinity));
+		AreEqual(first - increment, first.Decrement(increment));
+		AreEqual(first, first.Decrement(float.NaN));
+		AreEqual(first, first.Decrement(float.PositiveInfinity));
+		AreEqual(first, first.Decrement(float.NegativeInfinity));
 	}
 
 	[TestMethod]
 	public void Increment()
 	{
-		Assert.AreEqual(float.Epsilon, 0.0f.Increment());
-		Assert.AreEqual(1.2345f, 0.0f.Increment(1.2345f));
-		Assert.AreEqual(3.4345002f, 2.2f.Increment(1.2345f));
+		AreEqual(float.Epsilon, 0.0f.Increment());
+		AreEqual(1.2345f, 0.0f.Increment(1.2345f));
+		AreEqual(3.4345002f, 2.2f.Increment(1.2345f));
 
 		var random = new Random();
 		var first = (float) random.NextDouble();
 		var increment = (float) random.NextDouble();
 
-		Assert.AreEqual(first + increment, first.Increment(increment));
-		Assert.AreEqual(first, first.Increment(float.NaN));
-		Assert.AreEqual(first, first.Increment(float.PositiveInfinity));
-		Assert.AreEqual(first, first.Increment(float.NegativeInfinity));
+		AreEqual(first + increment, first.Increment(increment));
+		AreEqual(first, first.Increment(float.NaN));
+		AreEqual(first, first.Increment(float.PositiveInfinity));
+		AreEqual(first, first.Increment(float.NegativeInfinity));
 
 		// Increment negative values
-		Assert.AreEqual(float.Epsilon * -1, 0.0f.Increment(float.Epsilon * -1.0f));
+		AreEqual(float.Epsilon * -1, 0.0f.Increment(float.Epsilon * -1.0f));
 	}
 
 	#endregion

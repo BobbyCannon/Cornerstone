@@ -55,7 +55,7 @@ public class DesktopElement : Element
 	/// </summary>
 	static DesktopElement()
 	{
-		_excludedProperties = new[] { nameof(Parent), nameof(Children), nameof(NativeElement), "Item", nameof(FocusedElement) };
+		_excludedProperties = [nameof(Parent), nameof(Children), nameof(NativeElement), "Item", nameof(FocusedElement)];
 	}
 
 	#endregion

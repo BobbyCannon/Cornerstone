@@ -1,0 +1,34 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:avaloniaEdit="clr-namespace:Cornerstone.Avalonia.AvaloniaEdit"
+		x:ClassModifier="internal">
+	<ControlTheme x:Key="{x:Type avaloniaEdit:TextEditor}" TargetType="avaloniaEdit:TextEditor">
+		<Setter Property="Background" Value="{StaticResource Brush.TextEditor.Background}"></Setter>
+		<Setter Property="Foreground" Value="{StaticResource Brush.TextEditor.Foreground}"></Setter>
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border Background="{TemplateBinding Background}"
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}">
+					<ScrollViewer Focusable="False"
+							Name="PART_ScrollViewer"
+							VerticalScrollBarVisibility="{TemplateBinding VerticalScrollBarVisibility}"
+							HorizontalScrollBarVisibility="{TemplateBinding HorizontalScrollBarVisibility}"
+							VerticalContentAlignment="Top"
+							HorizontalContentAlignment="Left"
+							Padding="{TemplateBinding Padding}" />
+				</Border>
+			</ControlTemplate>
+		</Setter>
+	</ControlTheme>
+	<Design.PreviewWith>
+		<avaloniaEdit:TextEditor
+				Height="500"
+				Width="400"
+				Text="this is&#x0a;a test for&#x0a;multiple"
+				CaretOffset="16"
+				>
+			
+		</avaloniaEdit:TextEditor>
+	</Design.PreviewWith>
+</ResourceDictionary>

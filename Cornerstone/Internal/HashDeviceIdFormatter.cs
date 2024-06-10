@@ -9,8 +9,8 @@ using Cornerstone.Runtime;
 
 #endregion
 
-// ReSharper disable once CheckNamespace
-namespace Cornerstone;
+
+namespace Cornerstone.Internal;
 
 /// <summary>
 /// An implementation of <see cref="IDeviceIdFormatter" /> that combines the components into a hash.

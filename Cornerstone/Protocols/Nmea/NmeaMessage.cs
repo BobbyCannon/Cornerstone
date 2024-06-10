@@ -19,7 +19,7 @@ public abstract class NmeaMessage
 
 	protected NmeaMessage(NmeaMessageType type)
 	{
-		Arguments = new List<string>();
+		Arguments = [];
 		Type = type;
 	}
 

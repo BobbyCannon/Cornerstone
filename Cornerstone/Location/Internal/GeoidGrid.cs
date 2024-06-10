@@ -1,6 +1,6 @@
-﻿// ReSharper disable once CheckNamespace
+﻿
 
-namespace Cornerstone.Location;
+namespace Cornerstone.Location.Internal;
 
 /// <summary>
 /// Represents the EGM85 Geoid Grid.

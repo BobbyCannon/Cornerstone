@@ -202,7 +202,7 @@ public sealed class JsonTokenizer
 					}
 					case 'n':
 					{
-						TemporaryBuffer.Append('\n');
+						TemporaryBuffer.Append("\n");
 						break;
 					}
 					case 'r':
