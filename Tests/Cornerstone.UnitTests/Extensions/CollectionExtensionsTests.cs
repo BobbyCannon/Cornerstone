@@ -8,7 +8,6 @@ using System.Diagnostics.CodeAnalysis;
 using Cornerstone.Collections;
 using Cornerstone.Extensions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Sample.Shared.Sync;
 
 #endregion
 

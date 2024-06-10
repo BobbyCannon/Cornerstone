@@ -739,7 +739,7 @@ public class OscMessage : OscPacket, IEnumerable<object>
 					{
 						return new OscError(TimeService.CurrentTime.UtcNow, OscError.Message.UnsupportedNestedArrays);
 					}
-					arguments = new List<object>(); // make arguments point to a new object array
+					arguments = []; // make arguments point to a new object array
 					break;
 
 				case ']':

@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Reflection;
 using Cornerstone.Compare;
 using Cornerstone.Text;
+using Cornerstone.Text.Buffers;
 
 #endregion
 
@@ -57,6 +58,18 @@ public abstract class ObjectConsumer<T>
 	#region Methods
 
 	/// <inheritdoc />
+	public void AddReference(object value)
+	{
+		_referenceTracker.AddReference(value);
+	}
+
+	/// <inheritdoc />
+	public bool AlreadyProcessed(object value)
+	{
+		return _referenceTracker.AlreadyProcessed(value);
+	}
+
+	/// <inheritdoc />
 	public abstract IObjectConsumer Boolean(bool value);
 
 	/// <inheritdoc />
@@ -67,6 +80,12 @@ public abstract class ObjectConsumer<T>
 
 	/// <inheritdoc />
 	public abstract IObjectConsumer Number(object value);
+
+	/// <inheritdoc />
+	public void RemoveReference(object value)
+	{
+		_referenceTracker.RemoveReference(value);
+	}
 
 	/// <summary>
 	/// Reset the consumer.
@@ -117,25 +136,6 @@ public abstract class ObjectConsumer<T>
 		Mode = mode;
 
 		_consumerModes.Enqueue(mode);
-	}
-
-	/// <inheritdoc />
-	public void AddReference(object value)
-	{
-		var type = value?.GetType();
-		if (type is not { IsClass: true } 
-			|| (type == typeof(string)))
-		{
-			return;
-		}
-
-		_referenceTracker.AddReference(value);
-	}
-
-	/// <inheritdoc />
-	public bool AlreadyProcessed(object value)
-	{
-		return _referenceTracker.AlreadyProcessed(value);
 	}
 
 	#endregion

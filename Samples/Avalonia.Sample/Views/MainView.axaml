@@ -1,0 +1,33 @@
+<controls:CornerstoneUserControl xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:vm="clr-namespace:Avalonia.Sample.ViewModels"
+		xmlns:controls="clr-namespace:Cornerstone.Avalonia.Controls;assembly=Cornerstone.Avalonia"
+		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+		x:Class="Avalonia.Sample.Views.MainView"
+		x:DataType="vm:MainViewModel">
+	<Design.DataContext>
+		<!-- This only sets the DataContext for the previewer in an IDE,
+         to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+		<vm:MainViewModel />
+	</Design.DataContext>
+
+	<TabControl>
+		<TabItem Header="Inputs">
+			<DockPanel LastChildFill="True">
+				<TextBox DockPanel.Dock="Top"
+						KeyDown="KeyInputOnKeyDown"
+						KeyUp="KeyInputOnKeyUp" />
+				<TextBox x:Name="KeyHistory"
+						AcceptsReturn="True"
+						TextWrapping="Wrap"
+						HorizontalAlignment="Stretch"
+						VerticalAlignment="Stretch"
+						TextAlignment="Start"
+						Height="NaN"
+						IsReadOnly="True" />
+			</DockPanel>
+		</TabItem>
+	</TabControl>
+</controls:CornerstoneUserControl>

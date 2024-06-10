@@ -44,5 +44,20 @@ public class ComparerOptionsTests : CornerstoneUnitTest
 		}
 	}
 
+	[TestMethod]
+	public void IgnorePropertyType()
+	{
+		var options = new ComparerOptions();
+		options.IgnoreProperty<ComparerTests.Person>(x => x.FullName);
+
+		var actual = options.PropertiesToIgnore;
+		var expected = new Dictionary<Type, string[]>
+		{
+			{ typeof(ComparerTests.Person), ["FullName"] }
+		};
+
+		AreEqual(expected, actual);
+	}
+
 	#endregion
 }

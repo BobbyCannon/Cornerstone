@@ -32,7 +32,7 @@ public class OscBundle : OscPacket, IEnumerable<OscPacket>
 
 	public OscBundle(DateTime timeTag, params OscPacket[] packets)
 	{
-		_packets = new List<OscPacket>();
+		_packets = [];
 
 		Time = timeTag;
 

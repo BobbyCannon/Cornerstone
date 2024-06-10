@@ -125,10 +125,13 @@ public class KeyboardState : IComparable<KeyboardState>, IComparable, IEquatable
 	/// <inheritdoc />
 	public bool Equals(KeyboardState state)
 	{
+		if (state == null)
+		{
+			return false;
+		}
+
 		return (Character == state.Character) &&
-			(IsAltPressed == state.IsAltPressed) &&
 			(IsCapsLockOn == state.IsCapsLockOn) &&
-			(IsControlPressed == state.IsControlPressed) &&
 			(IsLeftAltPressed == state.IsLeftAltPressed) &&
 			(IsLeftControlPressed == state.IsLeftControlPressed) &&
 			(IsLeftShiftPressed == state.IsLeftShiftPressed) &&
@@ -137,7 +140,6 @@ public class KeyboardState : IComparable<KeyboardState>, IComparable, IEquatable
 			(IsRightAltPressed == state.IsRightAltPressed) &&
 			(IsRightControlPressed == state.IsRightControlPressed) &&
 			(IsRightShiftPressed == state.IsRightShiftPressed) &&
-			(IsShiftPressed == state.IsShiftPressed) &&
 			(Key == state.Key);
 	}
 
@@ -167,9 +169,7 @@ public class KeyboardState : IComparable<KeyboardState>, IComparable, IEquatable
 	{
 		var hashCode = 777250742;
 		hashCode = (hashCode * -1521134295) + Character.GetHashCode();
-		hashCode = (hashCode * -1521134295) + IsAltPressed.GetHashCode();
 		hashCode = (hashCode * -1521134295) + IsCapsLockOn.GetHashCode();
-		hashCode = (hashCode * -1521134295) + IsControlPressed.GetHashCode();
 		hashCode = (hashCode * -1521134295) + IsLeftAltPressed.GetHashCode();
 		hashCode = (hashCode * -1521134295) + IsLeftControlPressed.GetHashCode();
 		hashCode = (hashCode * -1521134295) + IsLeftShiftPressed.GetHashCode();
@@ -178,7 +178,6 @@ public class KeyboardState : IComparable<KeyboardState>, IComparable, IEquatable
 		hashCode = (hashCode * -1521134295) + IsRightAltPressed.GetHashCode();
 		hashCode = (hashCode * -1521134295) + IsRightControlPressed.GetHashCode();
 		hashCode = (hashCode * -1521134295) + IsRightShiftPressed.GetHashCode();
-		hashCode = (hashCode * -1521134295) + IsShiftPressed.GetHashCode();
 		hashCode = (hashCode * -1521134295) + Key.GetHashCode();
 		return hashCode;
 	}
@@ -199,6 +198,26 @@ public class KeyboardState : IComparable<KeyboardState>, IComparable, IEquatable
 		if (IsRightShiftPressed)
 		{
 			response |= KeyboardModifier.RightShift;
+		}
+		
+		if (IsLeftControlPressed)
+		{
+			response |= KeyboardModifier.LeftControl;
+		}
+
+		if (IsRightControlPressed)
+		{
+			response |= KeyboardModifier.RightControl;
+		}
+
+		if (IsLeftAltPressed)
+		{
+			response |= KeyboardModifier.LeftAlt;
+		}
+
+		if (IsRightAltPressed)
+		{
+			response |= KeyboardModifier.RightAlt;
 		}
 
 		return response;

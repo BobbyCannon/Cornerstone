@@ -111,7 +111,7 @@ public struct OscMidi : IOscArgument, IEquatable<OscMidi>
 
 	public byte[] GetOscValueBytes()
 	{
-		return new[] { Port, Status, Data1, Data2 };
+		return [Port, Status, Data1, Data2];
 	}
 
 	public string GetOscValueString()

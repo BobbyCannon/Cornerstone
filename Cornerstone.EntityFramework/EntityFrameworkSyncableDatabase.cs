@@ -127,7 +127,7 @@ public abstract class EntityFrameworkSyncableDatabase : EntityFrameworkDatabase,
 		var method = setMethod.MakeGenericMethod(syncEntityType);
 		var entitySet = method.Invoke(this, null);
 		var repositoryType = typeof(EntityFrameworkSyncableRepository<,>).MakeGenericType(syncEntityType, idType);
-		repository = Activator.CreateInstance(repositoryType, this, entitySet) as ISyncableRepository;
+		repository = repositoryType.CreateInstance(this, entitySet) as ISyncableRepository;
 
 		_syncableRepositories.AddOrUpdate(syncEntityType.ToAssemblyName(), repository, (_, _) => repository);
 

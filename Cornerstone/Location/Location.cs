@@ -2,7 +2,6 @@
 
 using Cornerstone.Data;
 using Cornerstone.Presentation;
-using Cornerstone.Storage;
 
 #endregion
 
@@ -11,7 +10,7 @@ namespace Cornerstone.Location;
 /// <summary>
 /// Represents a full location from a LocationProvider. Contains horizontal and vertical location.
 /// </summary>
-public class Location : CloneableBindable<Location, ILocation<IHorizontalLocation, IVerticalLocation>>,
+public class Location : Bindable<Location>, ICloneable<ILocation<IHorizontalLocation, IVerticalLocation>>,
 	ILocation<IHorizontalLocation, IVerticalLocation>
 {
 	#region Constructors
@@ -55,7 +54,7 @@ public class Location : CloneableBindable<Location, ILocation<IHorizontalLocatio
 			VerticalLocation = VerticalLocation.DeepClone(maxDepth)
 		};
 
-		if (response is IChangeable changeable)
+		if (response is ITrackPropertyChanges changeable)
 		{
 			changeable.ResetHasChanges();
 		}
@@ -123,6 +122,18 @@ public class Location : CloneableBindable<Location, ILocation<IHorizontalLocatio
 			IVerticalLocation location => VerticalLocation.UpdateWith(location, options),
 			_ => base.UpdateWith(update, options)
 		};
+	}
+
+	/// <inheritdoc />
+	ILocation<IHorizontalLocation, IVerticalLocation> ICloneable<ILocation<IHorizontalLocation, IVerticalLocation>>.DeepClone(int? maxDepth)
+	{
+		return DeepClone(maxDepth);
+	}
+
+	/// <inheritdoc />
+	ILocation<IHorizontalLocation, IVerticalLocation> ICloneable<ILocation<IHorizontalLocation, IVerticalLocation>>.ShallowClone()
+	{
+		return DeepClone(0);
 	}
 
 	#endregion

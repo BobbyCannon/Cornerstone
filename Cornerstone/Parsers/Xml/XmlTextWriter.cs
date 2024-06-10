@@ -7,8 +7,6 @@ using Cornerstone.Text;
 
 #endregion
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-
 namespace Cornerstone.Parsers.Xml;
 
 /// <summary>
@@ -221,7 +219,7 @@ public class XmlTextBuilder : TextBuilder
 	public void WriteStartElement(string name)
 	{
 		PrepareForChildren(x => x.HasChildren = true);
-		
+
 		if (Length > 0)
 		{
 			NewLine();

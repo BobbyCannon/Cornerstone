@@ -16,8 +16,7 @@ public class GllMessageTests : BaseMessageTests
 	[TestMethod]
 	public void TestMethodParse()
 	{
-		ProcessParseScenarios(new (string sentance, GllMessage expected)[]
-		{
+		ProcessParseScenarios([
 			(
 				"$GNGLL,4513.13795,N,01859.19702,E,143717.00,A,A*72",
 				new GllMessage
@@ -31,7 +30,7 @@ public class GllMessageTests : BaseMessageTests
 					Checksum = "40"
 				}
 			)
-		});
+		]);
 	}
 
 	#endregion

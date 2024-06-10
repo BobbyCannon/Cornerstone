@@ -1,9 +1,9 @@
 ﻿#region References
 
-using Cornerstone.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Cornerstone.Extensions;
 
 #endregion
 
@@ -174,7 +174,7 @@ public class GapBuffer<T> : Buffer<T>
 	}
 
 	/// <summary>
-	/// Copies a range of items from the buffer to a the provided array.
+	/// Copies a range of items from the buffer to the provided array.
 	/// </summary>
 	/// <param name="array"> The array to copy to. </param>
 	/// <param name="arrayIndex"> The index in the array to start copying into. </param>
@@ -230,7 +230,7 @@ public class GapBuffer<T> : Buffer<T>
 	{
 		if (length <= 0)
 		{
-			return new GapBuffer<T>();
+			return [];
 		}
 
 		VerifyRange(index, length);
@@ -268,6 +268,30 @@ public class GapBuffer<T> : Buffer<T>
 		// Still here? Then there's no match anywhere.
 		return -1;
 	}
+	
+	/// <summary>
+	/// Gets the index of the first occurrence the item.
+	/// </summary>
+	/// <returns> The index if found otherwise -1 if not found. </returns>
+	public override int IndexOf(T item, int startIndex, int count)
+	{
+		// Search before the gap.
+		var foundAt = Array.IndexOf(_buffer, item, 0, _gapStartIndex);
+		if (foundAt > -1)
+		{
+			return foundAt;
+		}
+
+		// Still here? Search after the gap.
+		foundAt = Array.IndexOf(_buffer, item, _gapEndIndex, _buffer.Length - _gapEndIndex);
+		if (foundAt > -1)
+		{
+			return foundAt - GapSize;
+		}
+
+		// Still here? Then there's no match anywhere.
+		return -1;
+	}
 
 	/// <summary>
 	/// Gets the index of the first occurrence of any value in the provided values.
@@ -277,39 +301,6 @@ public class GapBuffer<T> : Buffer<T>
 	public int IndexOfAny(T[] anyOf)
 	{
 		return IndexOfAny(anyOf, 0, Count);
-	}
-
-	/// <summary>
-	/// Gets the index of the first occurrence of any value in the provided values.
-	/// </summary>
-	/// <param name="anyOf"> The values to search for. </param>
-	/// <param name="index"> The index to start the search. </param>
-	/// <param name="length"> Length of the area to search. </param>
-	/// <returns> The index if found otherwise -1 if not found. </returns>
-	public int IndexOfAny(T[] anyOf, int index, int length)
-	{
-		if (!this.ValidRange(index, length))
-		{
-			return -1;
-		}
-
-		if (anyOf.Contains(this[index]))
-		{
-			return index;
-		}
-
-		for (var i = index; i < (index + length); i++)
-		{
-			for (var j = 0; j < anyOf.Length; j++)
-			{
-				if (Equals(this[i], anyOf[j]))
-				{
-					return i;
-				}
-			}
-		}
-
-		return -1;
 	}
 
 	/// <summary>
@@ -409,7 +400,7 @@ public class GapBuffer<T> : Buffer<T>
 	/// <summary>
 	/// Inserts multiple items into the collection.
 	/// </summary>
-	public void InsertRange(int index, T[] items)
+	public override void InsertRange(int index, T[] items)
 	{
 		var i = index;
 		foreach (var item in items)
@@ -441,6 +432,21 @@ public class GapBuffer<T> : Buffer<T>
 		return -1;
 	}
 
+	public int Read(T[] buffer, int index, int count)
+	{
+		VerifyRange(index, count);
+
+		int n;
+
+		for (n = 0; n < count; n++)
+		{
+			var item = _buffer[index + n];
+			buffer[index + n] = item;
+		}
+
+		return n;
+	}
+
 	/// <inheritdoc />
 	public override bool Remove(T item)
 	{
@@ -470,7 +476,7 @@ public class GapBuffer<T> : Buffer<T>
 	/// <summary>
 	/// Removes multiple items at the specified position.
 	/// </summary>
-	public void RemoveRange(int index, int length)
+	public override void RemoveRange(int index, int length)
 	{
 		if (length < 1)
 		{

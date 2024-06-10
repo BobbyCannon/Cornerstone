@@ -24,15 +24,20 @@ public static class DictionaryExtensions
 	/// <typeparam name="T2"> The type of the value. </typeparam>
 	/// <param name="dictionary"> The dictionary to update. </param>
 	/// <param name="key"> The value of the key. </param>
-	/// <param name="action"> The value of the value. </param>
-	public static T2 AddIfMissing<T1, T2>(this IDictionary<T1, T2> dictionary, T1 key, Func<T2> action)
+	/// <param name="create"> The function to create a new value. </param>
+	public static T2 AddIfMissing<T1, T2>(this IDictionary<T1, T2> dictionary, T1 key, Func<T2> create)
 	{
+		if (dictionary is ConcurrentDictionary<T1, T2> concurrent)
+		{
+			return concurrent.GetOrAdd(key, create());
+		}
+
 		if (dictionary.TryGetValue(key, out var value1))
 		{
 			return value1;
 		}
 
-		var value = action();
+		var value = create();
 		dictionary.Add(key, value);
 		return value;
 	}
@@ -48,6 +53,11 @@ public static class DictionaryExtensions
 	[SuppressMessage("ReSharper", "CanSimplifyDictionaryLookupWithTryAdd")]
 	public static T2 AddOrUpdate<T1, T2>(this IDictionary<T1, T2> dictionary, T1 key, T2 value)
 	{
+		if (dictionary is ConcurrentDictionary<T1, T2> concurrent)
+		{
+			return concurrent.AddOrUpdate(key, _ => value, (_, _) => value);
+		}
+
 		if (dictionary.ContainsKey(key))
 		{
 			dictionary[key] = value;
@@ -59,41 +69,28 @@ public static class DictionaryExtensions
 	}
 
 	/// <summary>
-	/// Add or update a dictionary entry if the key is not found in the source.
-	/// </summary>
-	/// <typeparam name="T1"> The type of the key. </typeparam>
-	/// <typeparam name="T2"> The type of the value. </typeparam>
-	/// <param name="dictionary"> The dictionary to update. </param>
-	/// <param name="key"> The value of the key. </param>
-	/// <param name="source"> The dictionary for source values. </param>
-	public static void AddOrUpdate<T1, T2>(this IDictionary<T1, T2> dictionary, T1 key, IDictionary<T1, T2> source)
-	{
-		if (!source.ContainsKey(key))
-		{
-			return;
-		}
-
-		dictionary.AddOrUpdate(key, source[key]);
-	}
-
-	/// <summary>
 	/// Add or update a dictionary entry.
 	/// </summary>
 	/// <typeparam name="T1"> The type of the key. </typeparam>
 	/// <typeparam name="T2"> The type of the value. </typeparam>
 	/// <param name="dictionary"> The dictionary to update. </param>
 	/// <param name="key"> The value of the key. </param>
-	/// <param name="get"> The function to get the value. </param>
+	/// <param name="create"> The function to create a new value. </param>
 	/// <param name="update"> The function to update the value. </param>
-	public static T2 AddOrUpdate<T1, T2>(this IDictionary<T1, T2> dictionary, T1 key, Func<T2> get, Func<T2, T2> update)
+	public static T2 AddOrUpdate<T1, T2>(this IDictionary<T1, T2> dictionary, T1 key, Func<T2> create, Func<T2, T2> update)
 	{
+		if (dictionary is ConcurrentDictionary<T1, T2> concurrent)
+		{
+			return concurrent.AddOrUpdate(key, _ => create(), (_, v) => update(v));
+		}
+
 		if (dictionary.ContainsKey(key))
 		{
 			dictionary[key] = update(dictionary[key]);
 			return dictionary[key];
 		}
 
-		var item = get();
+		var item = create();
 		dictionary.Add(key, item);
 		return item;
 	}
@@ -101,14 +98,19 @@ public static class DictionaryExtensions
 	/// <summary>
 	/// Get a value if the key is found otherwise create a new item, add to dictionary, then return.
 	/// </summary>
-	/// <typeparam name="T"> The key type. </typeparam>
+	/// <typeparam name="T1"> The key type. </typeparam>
 	/// <typeparam name="T2"> The value type. </typeparam>
 	/// <param name="dictionary"> The dictionary to process. </param>
 	/// <param name="key"> The key value. </param>
 	/// <param name="create"> The function to create a new value. </param>
 	/// <returns> The found value or the added value. </returns>
-	public static T2 GetOrAdd<T, T2>(this IDictionary<T, T2> dictionary, T key, Func<T, T2> create)
+	public static T2 GetOrAdd<T1, T2>(this IDictionary<T1, T2> dictionary, T1 key, Func<T1, T2> create)
 	{
+		if (dictionary is ConcurrentDictionary<T1, T2> concurrent)
+		{
+			return concurrent.GetOrAdd(key, create);
+		}
+
 		if (dictionary.TryGetValue(key, out var values))
 		{
 			return values;
@@ -147,15 +149,15 @@ public static class DictionaryExtensions
 	}
 
 	/// <summary>
-	/// Reconcile one collection with another.
+	/// Reconcile one dictionary with another.
 	/// </summary>
 	/// <typeparam name="TKey"> The type of the key for the dictionary. </typeparam>
 	/// <typeparam name="TValue"> The type of the value for the dictionary. </typeparam>
-	/// <param name="dictionary"> The left collection. </param>
-	/// <param name="updates"> The right collection. </param>
+	/// <param name="dictionary"> The left dictionary. </param>
+	/// <param name="updates"> The right dictionary. </param>
 	public static void Reconcile<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, IDictionary<TKey, TValue> updates)
 	{
-		// Reconcile two collections
+		// Reconcile two dictionary
 		var keysToAdd = updates.Keys.Where(x => !dictionary.ContainsKey(x)).ToList();
 		var updateToBeApplied = updates
 			.Where(x => dictionary.ContainsKey(x.Key) && !Equals(dictionary[x.Key], updates[x.Key]))
@@ -164,6 +166,7 @@ public static class DictionaryExtensions
 
 		foreach (var key in keysToAdd)
 		{
+			// todo: should we clone?
 			dictionary.Add(key, updates[key]);
 		}
 

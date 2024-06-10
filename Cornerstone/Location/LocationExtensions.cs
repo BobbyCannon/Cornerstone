@@ -352,9 +352,9 @@ public static class LocationExtensions
 			return;
 		}
 
-		information.TriggerPropertyChangedNotification(nameof(ILocationInformation.HasHeading));
-		information.TriggerPropertyChangedNotification(nameof(ILocationInformation.HasSpeed));
-		information.TriggerPropertyChangedNotification(nameof(ILocationInformation.HasValue));
+		information.NotifyOfPropertyChanged(nameof(ILocationInformation.HasHeading));
+		information.NotifyOfPropertyChanged(nameof(ILocationInformation.HasSpeed));
+		information.NotifyOfPropertyChanged(nameof(ILocationInformation.HasValue));
 	}
 
 	/// <summary>

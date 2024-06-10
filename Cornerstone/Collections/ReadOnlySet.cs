@@ -82,7 +82,7 @@ public class ReadOnlySet<T> :
 
 	static ReadOnlySet()
 	{
-		Empty = new ReadOnlySet<T>();
+		Empty = [];
 	}
 
 	#endregion

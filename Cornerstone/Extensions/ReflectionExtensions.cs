@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Cornerstone.Internal;
 
 #endregion
 
@@ -42,6 +43,7 @@ public static class ReflectionExtensions
 	private static readonly ConcurrentDictionary<CacheKey, Type> _makeGenericTypes;
 	private static readonly ConcurrentDictionary<CacheKey, ParameterInfo[]> _methodParameters;
 	private static readonly ConcurrentDictionary<CacheKey, Type[]> _methodsGenericArgumentInfos;
+	private static readonly ConcurrentDictionary<CacheKey, ConstructorInfo[]> _typeConstructors;
 	private static readonly ConcurrentDictionary<CacheKey, Attribute> _typeCustomAttribute;
 	private static readonly ConcurrentDictionary<CacheKey, FieldInfo[]> _typeFieldInfos;
 	private static readonly ConcurrentDictionary<CacheKey, MethodInfo> _typeMethodInfos;
@@ -62,6 +64,7 @@ public static class ReflectionExtensions
 		_methodParameters = new ConcurrentDictionary<CacheKey, ParameterInfo[]>();
 		_methodsGenericArgumentInfos = new ConcurrentDictionary<CacheKey, Type[]>();
 		_typeCustomAttribute = new ConcurrentDictionary<CacheKey, Attribute>();
+		_typeConstructors = new ConcurrentDictionary<CacheKey, ConstructorInfo[]>();
 		_typeFieldInfos = new ConcurrentDictionary<CacheKey, FieldInfo[]>();
 		_typeMethodInfos = new ConcurrentDictionary<CacheKey, MethodInfo>();
 		_typeMethodsInfos = new ConcurrentDictionary<CacheKey, MethodInfo[]>();
@@ -73,6 +76,21 @@ public static class ReflectionExtensions
 	#endregion
 
 	#region Methods
+
+	/// <summary>
+	/// Get the constructors for a types.
+	/// The results are cached so the next query is much faster.
+	/// </summary>
+	/// <param name="type"> The type to get the generic arguments for. </param>
+	/// <param name="flags"> The flags used to query with. </param>
+	/// <returns> The method information with generics. </returns>
+	public static ConstructorInfo[] GetCachedConstructors(this Type type, BindingFlags? flags = null)
+	{
+		var typeFlags = flags ?? DefaultPublicFlags;
+		var label = $"{type.FullName}";
+		var key = new CacheKey(type, typeFlags, label);
+		return _typeConstructors.GetOrAdd(key, _ => type.GetConstructors(typeFlags));
+	}
 
 	/// <summary>
 	/// Gets a custom attribute for the provided type. The results are cached so the next query is much faster.
@@ -91,7 +109,7 @@ public static class ReflectionExtensions
 	/// </summary>
 	/// <param name="item"> The item to get the field for. </param>
 	/// <param name="name"> The type field name to locate. </param>
-	/// <param name="flags"> The flags used to query with. </param>
+	/// <param name="flags"> The flags used to query with. Defaults to <see cref="DefaultPrivateFlags" /> if not provided. </param>
 	/// <returns> The field information for the type. </returns>
 	public static FieldInfo GetCachedField(this object item, string name, BindingFlags? flags = null)
 	{
@@ -103,7 +121,7 @@ public static class ReflectionExtensions
 	/// </summary>
 	/// <param name="type"> The type to get the fields for. </param>
 	/// <param name="name"> The type field name to locate. </param>
-	/// <param name="flags"> The flags used to query with. </param>
+	/// <param name="flags"> The flags used to query with. Defaults to <see cref="DefaultPrivateFlags" /> if not provided. </param>
 	/// <returns> The field information for the type. </returns>
 	public static FieldInfo GetCachedField(this Type type, string name, BindingFlags? flags = null)
 	{
@@ -114,7 +132,7 @@ public static class ReflectionExtensions
 	/// Gets a list of fields for the provided item. The results are cached so the next query is much faster.
 	/// </summary>
 	/// <param name="item"> The item to get the fields for. </param>
-	/// <param name="flags"> The flags used to query with. </param>
+	/// <param name="flags"> The flags used to query with. Defaults to <see cref="DefaultPrivateFlags" /> if not provided. </param>
 	/// <returns> The list of field infos for the item. </returns>
 	public static IList<FieldInfo> GetCachedFields(this object item, BindingFlags? flags = null)
 	{
@@ -125,11 +143,11 @@ public static class ReflectionExtensions
 	/// Gets a list of fields for the provided type. The results are cached so the next query is much faster.
 	/// </summary>
 	/// <param name="type"> The type to get the fields for. </param>
-	/// <param name="flags"> The flags used to query with. </param>
+	/// <param name="flags"> The flags used to query with. Defaults to <see cref="DefaultPrivateFlags" /> if not provided. </param>
 	/// <returns> The list of field infos for the type. </returns>
 	public static IList<FieldInfo> GetCachedFields(this Type type, BindingFlags? flags = null)
 	{
-		var typeFlags = flags ?? DefaultPublicFlags;
+		var typeFlags = flags ?? DefaultPrivateFlags;
 		var key = new CacheKey(type ?? throw new InvalidOperationException(), typeFlags, null);
 		return _typeFieldInfos.GetOrAdd(key, _ => type.GetFields(typeFlags));
 	}
@@ -147,7 +165,8 @@ public static class ReflectionExtensions
 	}
 
 	/// <summary>
-	/// Gets a list of generic arguments for the provided method information. The results are cached so the next query is much faster.
+	/// Gets a list of generic arguments for the provided method information.
+	/// The results are cached so the next query is much faster.
 	/// </summary>
 	/// <param name="info"> The method information to get the generic arguments for. </param>
 	/// <param name="flags"> The flags used to query with. </param>
@@ -161,7 +180,8 @@ public static class ReflectionExtensions
 	}
 
 	/// <summary>
-	/// Get the type of a generic with the provided types. The results are cached so the next query is much faster.
+	/// Get a method info from a generic type with the provided method types.
+	/// The results are cached so the next query is much faster.
 	/// </summary>
 	/// <param name="type"> The type to get the generic arguments for. </param>
 	/// <param name="methodName"> The name of the method. </param>
@@ -233,13 +253,54 @@ public static class ReflectionExtensions
 	/// Searches for the specified public method whose parameters match the specified argument types.
 	/// The results are cached so the next query is much faster.
 	/// </summary>
+	/// <param name="value"> The value to get the methods for. </param>
+	/// <param name="name"> The string containing the name of the public method to get. </param>
+	/// <param name="parameterTypes"> An array of type objects representing the number, order, and type of the parameters for the method to get.-or- An empty array of type objects (as provided by the EmptyTypes field) to get a method that takes no parameters. </param>
+	/// <returns> An object representing the public method whose parameters match the specified argument types, if found; otherwise null. </returns>
+	public static MethodInfo GetCachedMethod(this object value, string name, params Type[] parameterTypes)
+	{
+		return GetCachedMethod(value?.GetType(), name, parameterTypes);
+	}
+
+	/// <summary>
+	/// Searches for the specified public method whose parameters match the specified argument types.
+	/// The results are cached so the next query is much faster.
+	/// </summary>
 	/// <param name="type"> The type to get the method for. </param>
 	/// <param name="name"> The string containing the name of the public method to get. </param>
 	/// <param name="parameterTypes"> An array of type objects representing the number, order, and type of the parameters for the method to get.-or- An empty array of type objects (as provided by the EmptyTypes field) to get a method that takes no parameters. </param>
 	/// <returns> An object representing the public method whose parameters match the specified argument types, if found; otherwise null. </returns>
 	public static MethodInfo GetCachedMethod(this Type type, string name, params Type[] parameterTypes)
 	{
-		var key = new CacheKey(type, DefaultPublicFlags, name);
+		return GetCachedMethod(type, name, DefaultPublicFlags, parameterTypes);
+	}
+
+	/// <summary>
+	/// Searches for the specified public method whose parameters match the specified argument types.
+	/// The results are cached so the next query is much faster.
+	/// </summary>
+	/// <param name="value"> The value to get the methods for. </param>
+	/// <param name="name"> The string containing the name of the public method to get. </param>
+	/// <param name="flags"> The flags used to query with. </param>
+	/// <param name="parameterTypes"> An array of type objects representing the number, order, and type of the parameters for the method to get.-or- An empty array of type objects (as provided by the EmptyTypes field) to get a method that takes no parameters. </param>
+	/// <returns> An object representing the public method whose parameters match the specified argument types, if found; otherwise null. </returns>
+	public static MethodInfo GetCachedMethod(this object value, string name, BindingFlags flags, params Type[] parameterTypes)
+	{
+		return GetCachedMethod(value?.GetType(), name, flags, parameterTypes);
+	}
+
+	/// <summary>
+	/// Searches for the specified public method whose parameters match the specified argument types.
+	/// The results are cached so the next query is much faster.
+	/// </summary>
+	/// <param name="type"> The type to get the method for. </param>
+	/// <param name="name"> The string containing the name of the public method to get. </param>
+	/// <param name="flags"> The flags used to query with. </param>
+	/// <param name="parameterTypes"> An array of type objects representing the number, order, and type of the parameters for the method to get.-or- An empty array of type objects (as provided by the EmptyTypes field) to get a method that takes no parameters. </param>
+	/// <returns> An object representing the public method whose parameters match the specified argument types, if found; otherwise null. </returns>
+	public static MethodInfo GetCachedMethod(this Type type, string name, BindingFlags flags, params Type[] parameterTypes)
+	{
+		var key = new CacheKey(type, flags, name);
 		return _typeMethodInfos.GetOrAdd(key, _ => parameterTypes.Any()
 			? type.GetMethod(name, parameterTypes)
 			: type.GetMethod(name)
@@ -525,6 +586,23 @@ public static class ReflectionExtensions
 				&& info.SetMethod.IsVirtual
 				&& !info.SetMethod.IsFinal
 				&& info.SetMethod.Attributes.HasFlag(MethodAttributes.VtableLayoutMask));
+	}
+
+	/// <summary>
+	/// Gets the public or private member using reflection.
+	/// </summary>
+	/// <param name="obj"> The target object. </param>
+	/// <param name="lookup"> The name lookup of the property to be updated. </param>
+	/// <param name="newValue"> The new value to be set. </param>
+	/// <returns> Old Value </returns>
+	public static T SetMemberValue<T>(this T obj, Expression<Func<T, object>> lookup, object newValue)
+	{
+		if (!lookup.TryGetPropertyName(out var name))
+		{
+			return obj;
+		}
+
+		return (T) SetMemberValue(obj, name, newValue);
 	}
 
 	/// <summary>

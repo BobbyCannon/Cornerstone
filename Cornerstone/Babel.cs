@@ -77,7 +77,7 @@ public class Babel
 	{
 		_currentDictionary.AddOrUpdate(key, _ => value, (_, _) => value);
 	}
-	
+
 	/// <summary>
 	/// Try to add a key to the current dictionary. If found the existing entry will be updated.
 	/// </summary>
@@ -183,6 +183,13 @@ public class Babel
 		AddOrUpdate("English", BabelKeys.SyncSessionAlreadyActive, "The sync session is already active.");
 		AddOrUpdate("English", BabelKeys.SyncSessionInvalid, "The sync session is invalid.");
 		AddOrUpdate("English", BabelKeys.SyncClientNotSupported, "The sync client is not supported.");
+
+		// Clipboard
+		AddOrUpdate("English", BabelKeys.ClipboardCouldNotBeOpened, "The clipboard could not be opened.");
+		AddOrUpdate("English", BabelKeys.ClipboardCouldNotBeClosed, "The clipboard could not be closed.");
+		AddOrUpdate("English", BabelKeys.ClipboardCouldNotBeCleared, "The clipboard could not be cleared.");
+		AddOrUpdate("English", BabelKeys.ClipboardCouldNotBeRead, "The clipboard could not be read.");
+		AddOrUpdate("English", BabelKeys.ClipboardCouldNotSetData, "The clipboard could not be written.");
 	}
 
 	#endregion

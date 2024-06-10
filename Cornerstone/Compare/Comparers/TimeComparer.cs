@@ -2,7 +2,6 @@
 
 using System;
 using Cornerstone.Convert;
-using Cornerstone.Extensions;
 
 #endregion
 
@@ -32,7 +31,7 @@ public class TimeComparer : BaseComparer
 			#if !NETSTANDARD
 			case TimeOnly eValue:
 			{
-				var aValue = Converter.ConvertTo<TimeOnly>(actual);
+				var aValue = actual.ConvertTo<TimeOnly>();
 				if (eValue.CompareTo(aValue) == 0)
 				{
 					return CompareResult.AreEqual;
@@ -42,7 +41,7 @@ public class TimeComparer : BaseComparer
 			#endif
 			case TimeSpan eValue:
 			{
-				var aValue = Converter.ConvertTo<TimeSpan>(actual);
+				var aValue = actual.ConvertTo<TimeSpan>();
 				if (eValue == aValue)
 				{
 					return CompareResult.AreEqual;

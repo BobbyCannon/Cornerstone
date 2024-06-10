@@ -2,6 +2,34 @@
 
 using System;
 using System.Linq;
+
+/* Unmerged change from project 'Cornerstone (net7.0)'
+Before:
+#if !NETSTANDARD
+After:
+using Cornerstone.Text.Buffers;
+
+#if !NETSTANDARD
+*/
+
+/* Unmerged change from project 'Cornerstone (net6.0)'
+Before:
+#if !NETSTANDARD
+After:
+using Cornerstone.Text.Buffers;
+
+#if !NETSTANDARD
+*/
+
+/* Unmerged change from project 'Cornerstone (net8.0)'
+Before:
+#if !NETSTANDARD
+After:
+using Cornerstone.Text.Buffers;
+
+#if !NETSTANDARD
+*/
+using Cornerstone.Text.Buffers;
 #if !NETSTANDARD
 using System.Diagnostics.CodeAnalysis;
 #endif

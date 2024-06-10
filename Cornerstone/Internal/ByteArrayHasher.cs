@@ -5,8 +5,8 @@ using System.Security.Cryptography;
 
 #endregion
 
-// ReSharper disable once CheckNamespace
-namespace Cornerstone;
+
+namespace Cornerstone.Internal;
 
 /// <summary>
 /// An implementation of <see cref="IByteArrayHasher" /> that uses an arbitrary <see cref="HashAlgorithm" />.

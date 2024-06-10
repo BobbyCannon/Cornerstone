@@ -23,7 +23,7 @@ public class ThreadSafeTests : CornerstoneUnitTest
 			//tasks.Add(new Task(() => actual--));
 			ThreadSafe.Decrement(ref actual, 1.0);
 		});
-		Assert.AreEqual(0, actual);
+		AreEqual(0, actual);
 	}
 
 	[TestMethod]
@@ -37,7 +37,7 @@ public class ThreadSafeTests : CornerstoneUnitTest
 			//tasks.Add(new Task(() => actual++));
 			ThreadSafe.Increment(ref actual, 1.0);
 		});
-		Assert.AreEqual(expected, actual);
+		AreEqual(expected, actual);
 	}
 
 	[TestMethod]
@@ -50,7 +50,7 @@ public class ThreadSafeTests : CornerstoneUnitTest
 			//tasks.Add(new Task(() => actual--));
 			ThreadSafe.Decrement(ref actual, 1.0f);
 		});
-		Assert.AreEqual(0, actual);
+		AreEqual(0, actual);
 	}
 
 	[TestMethod]
@@ -64,7 +64,7 @@ public class ThreadSafeTests : CornerstoneUnitTest
 			//tasks.Add(new Task(() => actual++));
 			ThreadSafe.Increment(ref actual, 1.0f);
 		});
-		Assert.AreEqual(expected, actual);
+		AreEqual(expected, actual);
 	}
 
 	[TestMethod]
@@ -79,7 +79,7 @@ public class ThreadSafeTests : CornerstoneUnitTest
 			ThreadSafe.Decrement(ref actual);
 		});
 
-		Assert.AreEqual(0, actual);
+		AreEqual(0, actual);
 	}
 
 	[TestMethod]
@@ -95,7 +95,7 @@ public class ThreadSafeTests : CornerstoneUnitTest
 			ThreadSafe.Increment(ref actual);
 		});
 
-		Assert.AreEqual(expected, actual);
+		AreEqual(expected, actual);
 	}
 
 	#endregion

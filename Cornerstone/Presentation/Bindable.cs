@@ -1,7 +1,7 @@
 ﻿#region References
 
+using System.Runtime.CompilerServices;
 using Cornerstone.Data;
-using Cornerstone.Extensions;
 
 #endregion
 
@@ -10,7 +10,41 @@ namespace Cornerstone.Presentation;
 /// <summary>
 /// Represents a bindable object for a UI bindings.
 /// </summary>
-public abstract class Bindable : Notifiable, IBindable
+public abstract class Bindable<T> : Bindable, ICloneable<T>
+{
+	#region Constructors
+
+	public Bindable() : this(null)
+	{
+	}
+
+	public Bindable(IDispatcher dispatcher) : base(dispatcher)
+	{
+	}
+
+	#endregion
+
+	#region Methods
+
+	/// <inheritdoc />
+	public virtual T DeepClone(int? maxDepth = null)
+	{
+		return Cloneable.DeepClone<T>(this, maxDepth);
+	}
+
+	/// <inheritdoc />
+	public T ShallowClone()
+	{
+		return DeepClone(0);
+	}
+
+	#endregion
+}
+
+/// <summary>
+/// Represents a bindable object for a UI bindings.
+/// </summary>
+public abstract class Bindable : Notifiable, IBindable, IDispatchable
 {
 	#region Fields
 
@@ -33,7 +67,7 @@ public abstract class Bindable : Notifiable, IBindable
 
 	#region Methods
 
-	/// <inheritdoc />
+	/// <inheritdoc cref="IDispatcher" />
 	public IDispatcher GetDispatcher()
 	{
 		return _dispatcher;
@@ -46,7 +80,7 @@ public abstract class Bindable : Notifiable, IBindable
 	}
 
 	/// <inheritdoc />
-	protected sealed override void OnPropertyChanged(string propertyName)
+	protected override void OnPropertyChanged([CallerMemberName] string propertyName = null)
 	{
 		// Ensure we have not paused property notifications
 		if ((propertyName == null) || !IsPropertyChangeNotificationsEnabled())

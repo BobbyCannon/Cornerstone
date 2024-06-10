@@ -26,7 +26,7 @@ public class SpeedyListTests : BaseCollectionTests
 	public void ProcessThenOrderWithParallelAction()
 	{
 		var list = new SpeedyList<int>();
-		list.OrderBy = new[] { new OrderBy<int>(x => x) };
+		list.OrderBy = [new OrderBy<int>(x => x)];
 
 		var expected = Enumerable.Range(1, 99).ToArray();
 		list.InitializeProfiler();
@@ -45,7 +45,7 @@ public class SpeedyListTests : BaseCollectionTests
 	public void ThreadSafeOrderedCollection()
 	{
 		var count = 1000;
-		var collection = new SpeedyList<int> { OrderBy = new[] { new OrderBy<int>(x => x) } };
+		var collection = new SpeedyList<int> { OrderBy = [new OrderBy<int>(x => x)] };
 		var options = new ParallelOptions { MaxDegreeOfParallelism = 32 };
 
 		Parallel.For(0, 1000, options, (x, _) => { collection.Add(x); });

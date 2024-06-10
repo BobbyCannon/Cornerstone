@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Cornerstone.Collections;
 
 #endregion
 
@@ -112,9 +111,11 @@ public class CsvReader
 	/// Convert the read line as an array.
 	/// </summary>
 	/// <returns> The array in a readonly form. </returns>
-	public ReadOnlySet<string> LineAsArray()
+	public string[] LineAsArray()
 	{
-		return new ReadOnlySet<string>(_fields.Select(x => x.GetValue(_buffer)));
+		return _fields
+			.Select(x => x.GetValue(_buffer))
+			.ToArray();
 	}
 
 	/// <summary>
@@ -125,7 +126,7 @@ public class CsvReader
 	{
 		if (_fields == null)
 		{
-			_fields = new List<CsvParsedField>();
+			_fields = [];
 			FieldsCount = 0;
 		}
 

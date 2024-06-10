@@ -132,7 +132,7 @@ public class Credential : Bindable, IDisposable, ICredential
 	public virtual void Load(AuthenticationHeaderValue value)
 	{
 		var credentialBytes = System.Convert.FromBase64String(value.Parameter ?? string.Empty);
-		var credentials = Encoding.UTF8.GetString(credentialBytes).Split(new[] { ':' }, 2);
+		var credentials = Encoding.UTF8.GetString(credentialBytes).Split([':'], 2);
 		UserName = credentials[0];
 		Password = credentials[1];
 	}
@@ -149,7 +149,7 @@ public class Credential : Bindable, IDisposable, ICredential
 		// Not required as Password is just an unsecure version of SecurePassword
 		//Password = string.Empty;
 
-		TriggerPropertyChangedNotification(nameof(Password));
+		NotifyOfPropertyChanged(nameof(Password));
 	}
 
 	/// <summary>

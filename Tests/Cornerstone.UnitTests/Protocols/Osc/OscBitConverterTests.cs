@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Cornerstone.UnitTests.Protocols.Osc;
 
 [TestClass]
-public class OscBitConverterTests
+public class OscBitConverterTests : CornerstoneUnitTest
 {
 	#region Methods
 
@@ -29,7 +29,7 @@ public class OscBitConverterTests
 		{
 			var bytes = OscBitConverter.GetBytes(scenario);
 			var actual = OscBitConverter.ToDecimal(bytes);
-			Assert.AreEqual(scenario, actual);
+			AreEqual(scenario, actual);
 		}
 	}
 
@@ -50,7 +50,7 @@ public class OscBitConverterTests
 		{
 			var bytes = OscBitConverter.GetBytes(scenario);
 			var actual = OscBitConverter.ToDouble(bytes);
-			Assert.AreEqual(scenario, actual);
+			AreEqual(scenario, actual);
 		}
 	}
 
@@ -71,7 +71,7 @@ public class OscBitConverterTests
 		{
 			var bytes = OscBitConverter.GetBytes(scenario);
 			var actual = OscBitConverter.ToFloat(bytes);
-			Assert.AreEqual(scenario, actual);
+			AreEqual(scenario, actual);
 		}
 	}
 
@@ -93,7 +93,7 @@ public class OscBitConverterTests
 		{
 			var bytes = OscBitConverter.GetBytes(scenario);
 			var actual = OscBitConverter.ToInt32(bytes);
-			Assert.AreEqual(scenario, actual);
+			AreEqual(scenario, actual);
 		}
 	}
 
@@ -115,7 +115,7 @@ public class OscBitConverterTests
 		{
 			var bytes = OscBitConverter.GetBytes(scenario);
 			var actual = OscBitConverter.ToInt64(bytes);
-			Assert.AreEqual(scenario, actual);
+			AreEqual(scenario, actual);
 		}
 	}
 
@@ -135,7 +135,7 @@ public class OscBitConverterTests
 		{
 			var bytes = OscBitConverter.GetBytes(scenario);
 			var actual = OscBitConverter.ToUInt32(bytes);
-			Assert.AreEqual(scenario, actual);
+			AreEqual(scenario, actual);
 		}
 	}
 
@@ -155,7 +155,7 @@ public class OscBitConverterTests
 		{
 			var bytes = OscBitConverter.GetBytes(scenario);
 			var actual = OscBitConverter.ToUInt64(bytes);
-			Assert.AreEqual(scenario, actual);
+			AreEqual(scenario, actual);
 		}
 	}
 

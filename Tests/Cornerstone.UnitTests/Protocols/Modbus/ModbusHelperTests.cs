@@ -10,7 +10,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Cornerstone.UnitTests.Protocols.Modbus;
 
 [TestClass]
-public class ModbusHelperTests
+public class ModbusHelperTests : CornerstoneUnitTest
 {
 	#region Methods
 
@@ -21,15 +21,15 @@ public class ModbusHelperTests
 		var crc = ModbusHelper.CalculateCrc(expected, 0, 6);
 		var crcH = ModbusHelper.High(crc);
 		var crcL = ModbusHelper.Low(crc);
-		Assert.AreEqual(0x71, crcL, new[] { crcL }.ToHexString());
-		Assert.AreEqual(0xCE, crcH, new[] { crcH }.ToHexString());
+		AreEqual(0x71, crcL, new[] { crcL }.ToHexString());
+		AreEqual(0xCE, crcH, new[] { crcH }.ToHexString());
 
-		expected = new byte[] { 0x01, 0x04, 0x02, 0x09, 0x96, 0x3F, 0x0E };
+		expected = [0x01, 0x04, 0x02, 0x09, 0x96, 0x3F, 0x0E];
 		crc = ModbusHelper.CalculateCrc(expected, 0, 5);
 		crcH = ModbusHelper.High(crc);
 		crcL = ModbusHelper.Low(crc);
-		Assert.AreEqual(0x3F, crcL, new[] { crcL }.ToHexString());
-		Assert.AreEqual(0x0E, crcH, new[] { crcH }.ToHexString());
+		AreEqual(0x3F, crcL, new[] { crcL }.ToHexString());
+		AreEqual(0x0E, crcH, new[] { crcH }.ToHexString());
 	}
 
 	[TestMethod]
@@ -59,7 +59,7 @@ public class ModbusHelperTests
 
 		foreach (var scenario in scenarios)
 		{
-			Assert.AreEqual(scenario.Value, ModbusHelper.CalculateLrc(scenario.Key));
+			AreEqual(scenario.Value, ModbusHelper.CalculateLrc(scenario.Key));
 		}
 	}
 

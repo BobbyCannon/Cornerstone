@@ -2,15 +2,17 @@
 
 using System;
 using System.IO;
-using System.Windows;
+using Cornerstone.Collections;
 using Cornerstone.Extensions;
 using Cornerstone.Newtonsoft;
 using Cornerstone.Runtime;
 using Cornerstone.Serialization;
 using Cornerstone.Testing;
 using Cornerstone.UnitTests.Resources;
+using Cornerstone.Windows;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
+using NUnit.Framework;
 using Sample.Shared.Storage.Client;
 using Sample.Shared.Storage.Server;
 
@@ -20,7 +22,21 @@ namespace Cornerstone.UnitTests;
 
 public abstract partial class CornerstoneUnitTest : CornerstoneTest
 {
+	#region Fields
+
+	private readonly SpeedyList<IDisposable> _disposables;
+
+	#endregion
+
 	#region Constructors
+
+	protected CornerstoneUnitTest()
+	{
+		_disposables = [];
+
+		DependencyInjector = new DependencyInjector();
+		SetupDependencyInjection();
+	}
 
 	static CornerstoneUnitTest()
 	{
@@ -28,11 +44,12 @@ public abstract partial class CornerstoneUnitTest : CornerstoneTest
 		var assemblyDirectory = assembly.GetAssemblyDirectory();
 
 		UnitTestsDirectory = assemblyDirectory.Parent?.Parent?.Parent?.FullName;
+		UnitTestsFilePath = Path.Join(UnitTestsDirectory, $"{new DirectoryInfo(UnitTestsDirectory).Name}.csproj");
 		SolutionDirectory = assemblyDirectory.Parent?.Parent?.Parent?.Parent?.Parent?.FullName;
 		TempDirectory = Path.Combine(Path.GetTempPath(), "Cornerstone.UnitTests");
 		EnableFileUpdates = false;
 
-		SetClipboardProvider(x => Clipboard.SetText(x ?? "null"));
+		SetClipboardService(new WindowsClipboardService());
 
 		// Initialize the newtonsoft serializer settings.
 		var jsonSettings = new JsonSerializerSettings();
@@ -45,6 +62,8 @@ public abstract partial class CornerstoneUnitTest : CornerstoneTest
 
 	#region Properties
 
+	public DependencyInjector DependencyInjector { get; }
+
 	public static bool EnableFileUpdates { get; }
 
 	public static string SolutionDirectory { get; }
@@ -53,15 +72,34 @@ public abstract partial class CornerstoneUnitTest : CornerstoneTest
 
 	public static string UnitTestsDirectory { get; }
 
+	public static string UnitTestsFilePath { get; }
+
 	#endregion
 
 	#region Methods
 
+	[TearDown]
+	[TestCleanup]
+	public override void TestCleanup()
+	{
+		_disposables.ForEach(x => x.Dispose());
+		_disposables.Clear();
+		base.TestCleanup();
+	}
+
+	[SetUp]
 	[TestInitialize]
 	public override void TestInitialize()
 	{
 		new DirectoryInfo(TempDirectory).SafeCreate();
 		base.TestInitialize();
+	}
+
+	protected T Disposable<T>(Func<T> getDisposable) where T : IDisposable
+	{
+		var response = getDisposable();
+		_disposables.Add(response);
+		return response;
 	}
 
 	protected T GetModel<T>(Action<T> update = null) where T : new()

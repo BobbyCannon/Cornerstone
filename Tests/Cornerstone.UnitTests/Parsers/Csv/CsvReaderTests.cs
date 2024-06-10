@@ -23,7 +23,7 @@ public class CsvReaderTests : CornerstoneUnitTest
 			o.Value2 = c[1];
 			return true;
 		});
-		Assert.AreEqual(4, l.Count);
+		AreEqual(4, l.Count);
 		AreEqual(new CsvValue("A", "B"), l[0]);
 		AreEqual(new CsvValue("a", "b"), l[1]);
 		AreEqual(new CsvValue("a1", "b1"), l[2]);
@@ -41,7 +41,7 @@ public class CsvReaderTests : CornerstoneUnitTest
 			o.Value3 = c[2];
 			return true;
 		});
-		Assert.AreEqual(2, l.Count);
+		AreEqual(2, l.Count);
 		AreEqual(new CsvValue("aaa", "bbb", "ccc"), l[0]);
 		AreEqual(new CsvValue("xxx", "yyy", "zzz"), l[1]);
 	}
@@ -59,7 +59,7 @@ public class CsvReaderTests : CornerstoneUnitTest
 			o.Value3 = c[2];
 			return true;
 		});
-		Assert.AreEqual(2, l.Count);
+		AreEqual(2, l.Count);
 		AreEqual(new CsvValue("aaa", "bbb", "ccc"), l[0]);
 		AreEqual(new CsvValue("xxx", "yyy", "zzz"), l[1]);
 	}
@@ -75,7 +75,7 @@ public class CsvReaderTests : CornerstoneUnitTest
 			o.Value3 = c[2];
 			return true;
 		});
-		Assert.AreEqual(2, l.Count);
+		AreEqual(2, l.Count);
 		AreEqual(new CsvValue("aaa", "bbb", "ccc"), l[0]);
 		AreEqual(new CsvValue("xxx", "yyy", "zzz"), l[1]);
 	}
@@ -92,7 +92,7 @@ public class CsvReaderTests : CornerstoneUnitTest
 			o.Value3 = c[2];
 			return true;
 		});
-		Assert.AreEqual(2, l.Count);
+		AreEqual(2, l.Count);
 		AreEqual(new CsvValue("aaa", "bbb", "ccc"), l[0]);
 		AreEqual(new CsvValue("xxx", "yyy", "zzz"), l[1]);
 	}
@@ -108,7 +108,7 @@ public class CsvReaderTests : CornerstoneUnitTest
 			o.Value3 = c[2];
 			return true;
 		});
-		Assert.AreEqual(3, l.Count);
+		AreEqual(3, l.Count);
 		AreEqual(new CsvValue("aaa", "bbb", "ccc"), l[0]);
 		AreEqual(new CsvValue("111", "222", "333"), l[1]);
 		AreEqual(new CsvValue("xxx", "yyy", "zzz"), l[2]);
@@ -125,7 +125,7 @@ public class CsvReaderTests : CornerstoneUnitTest
 			o.Value3 = c[2];
 			return true;
 		});
-		Assert.AreEqual(2, l.Count);
+		AreEqual(2, l.Count);
 		AreEqual(new CsvValue("aaa", "bbb", ""), l[0]);
 		AreEqual(new CsvValue("xxx", "yyy", ""), l[1]);
 	}
@@ -141,7 +141,7 @@ public class CsvReaderTests : CornerstoneUnitTest
 			o.Value3 = c[2];
 			return true;
 		});
-		Assert.AreEqual(2, l.Count);
+		AreEqual(2, l.Count);
 		AreEqual(new CsvValue("aaa ", "  bbb ", " ccc"), l[0]);
 		AreEqual(new CsvValue(" xxx", " yyy  ", "zzz "), l[1]);
 	}
@@ -157,7 +157,7 @@ public class CsvReaderTests : CornerstoneUnitTest
 			o.Value3 = c[2];
 			return true;
 		});
-		Assert.AreEqual(2, l.Count);
+		AreEqual(2, l.Count);
 		AreEqual(new CsvValue("aaa", "b\r\nbb", "ccc"), l[0]);
 		AreEqual(new CsvValue("xxx", "y, yy", "zzz"), l[1]);
 	}
@@ -173,7 +173,7 @@ public class CsvReaderTests : CornerstoneUnitTest
 			o.Value3 = c[2];
 			return true;
 		});
-		Assert.AreEqual(1, l.Count);
+		AreEqual(1, l.Count);
 		AreEqual(new CsvValue("aaa", "b\"bb", "ccc"), l[0]);
 	}
 
@@ -190,7 +190,7 @@ public class CsvReaderTests : CornerstoneUnitTest
 			o.Value3 = c[2];
 			return true;
 		});
-		Assert.AreEqual(2, l.Count);
+		AreEqual(2, l.Count);
 		AreEqual(new CsvValue("aaa", "bbb", "ccc"), l[0]);
 		AreEqual(new CsvValue("xxx", "y, yy", "zzz"), l[1]);
 	}
@@ -217,8 +217,8 @@ public class CsvReaderTests : CornerstoneUnitTest
 				o.Value1 = c[0];
 				return true;
 			});
-			Assert.AreEqual(1, l.Count);
-			Assert.AreEqual(scenario.Item2, l[0].Value1);
+			AreEqual(1, l.Count);
+			AreEqual(scenario.Item2, l[0].Value1);
 		}
 	}
 

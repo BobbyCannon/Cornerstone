@@ -49,7 +49,7 @@ public class Counter : ReaderWriterLockBindable
 	public void Decrement(int decrease = 1)
 	{
 		ThreadSafe.Decrement(ref _count, decrease);
-		TriggerPropertyChangedNotification(nameof(Value));
+		NotifyOfPropertyChanged(nameof(Value));
 	}
 
 	/// <summary>
@@ -59,7 +59,7 @@ public class Counter : ReaderWriterLockBindable
 	public void Increment(int increase = 1)
 	{
 		ThreadSafe.Increment(ref _count, increase);
-		TriggerPropertyChangedNotification(nameof(Value));
+		NotifyOfPropertyChanged(nameof(Value));
 	}
 
 	/// <summary>
@@ -68,7 +68,7 @@ public class Counter : ReaderWriterLockBindable
 	public void Reset()
 	{
 		ThreadSafe.Set(ref _count, 0);
-		TriggerPropertyChangedNotification(nameof(Value));
+		NotifyOfPropertyChanged(nameof(Value));
 	}
 
 	#endregion

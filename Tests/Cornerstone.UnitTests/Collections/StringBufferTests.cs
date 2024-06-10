@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Cornerstone.Collections;
 using Cornerstone.Testing;
 using Cornerstone.Text;
+using Cornerstone.Text.Buffers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
@@ -27,14 +28,14 @@ public class StringBufferTests : CornerstoneUnitTest
 	{
 		ForEachBuffers(x =>
 			{
-				var actual = x.GetString(2, 3);
+				var actual = x.SubString(2, 3);
 				AreEqual("cde", actual);
 
-				actual = x.GetString(5, 1);
+				actual = x.SubString(5, 1);
 				AreEqual("f", actual);
 
 				ExpectedException<IndexOutOfRangeException>(
-					() => x.GetString(6, 1),
+					() => x.SubString(6, 1),
 					Babel.Tower[BabelKeys.IndexOutOfRange]
 				);
 			},

@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ namespace Cornerstone.Profiling;
 /// <summary>
 /// The service to throttle work that supports cancellation.
 /// </summary>
-public class DebounceService : DebounceService<object>
+public class DebounceService<T> : DebounceService
 {
 	#region Constructors
 
@@ -22,8 +23,8 @@ public class DebounceService : DebounceService<object>
 	/// <param name="delay"> The amount of time before the action will trigger. </param>
 	/// <param name="action"> The action to debounce. </param>
 	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
-	public DebounceService(TimeSpan delay, Action<CancellationToken> action, ITimeProvider timeService = null)
-		: base(delay, (x, _) => action(x), timeService)
+	public DebounceService(TimeSpan delay, Action<CancellationToken, T> action, ITimeProvider timeService = null)
+		: base(delay, (x, v) => action(x, v is T tValue ? tValue : default), timeService)
 	{
 	}
 
@@ -34,10 +35,11 @@ public class DebounceService : DebounceService<object>
 	/// <summary>
 	/// Trigger the service. Will be trigger after the timespan.
 	/// </summary>
+	/// <param name="value"> The value to trigger with. </param>
 	/// <param name="force"> An optional flag to immediately trigger if true. Defaults to false. </param>
-	public void Trigger(bool force = false)
+	public void Trigger(T value, bool force = false)
 	{
-		Trigger(null, force);
+		base.Trigger(value, force);
 	}
 
 	#endregion
@@ -46,17 +48,18 @@ public class DebounceService : DebounceService<object>
 /// <summary>
 /// The service to throttle work that supports cancellation.
 /// </summary>
-public class DebounceService<T> : IDisposable
+public class DebounceService : IDisposable
 {
 	#region Fields
 
-	private readonly Action<CancellationToken, T> _action;
-	private T _data;
+	private readonly Action<CancellationToken, object> _action;
+	private object _data;
 	private readonly TimeSpan _delay;
 	private bool _force;
+	private static readonly ConcurrentDictionary<string, DebounceService> _globalServices;
 	private DateTime _requestedFor;
-	private BackgroundWorker _worker;
 	private readonly ITimeProvider _timeService;
+	private BackgroundWorker _worker;
 
 	#endregion
 
@@ -68,7 +71,18 @@ public class DebounceService<T> : IDisposable
 	/// <param name="delay"> The amount of time before the action will trigger. </param>
 	/// <param name="action"> The action to debounce. </param>
 	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
-	public DebounceService(TimeSpan delay, Action<CancellationToken, T> action, ITimeProvider timeService = null)
+	public DebounceService(TimeSpan delay, Action<CancellationToken> action, ITimeProvider timeService = null)
+		: this(delay, (token, _) => action(token), timeService)
+	{
+	}
+
+	/// <summary>
+	/// Create an instance of the service for debouncing an action.
+	/// </summary>
+	/// <param name="delay"> The amount of time before the action will trigger. </param>
+	/// <param name="action"> The action to debounce. </param>
+	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
+	public DebounceService(TimeSpan delay, Action<CancellationToken, object> action, ITimeProvider timeService = null)
 	{
 		_delay = delay;
 		_action = action;
@@ -80,9 +94,38 @@ public class DebounceService<T> : IDisposable
 		_worker.WorkerSupportsCancellation = true;
 	}
 
+	static DebounceService()
+	{
+		_globalServices = new ConcurrentDictionary<string, DebounceService>();
+	}
+
 	#endregion
 
 	#region Methods
+
+	/// <summary>
+	/// Globally track debouncing of an action.
+	/// </summary>
+	public static void Debounce(string id, Action<CancellationToken> action, int delay, bool force = false)
+	{
+		var service = _globalServices.GetOrAdd(id,
+			_ =>
+			{
+				var service = new DebounceService(TimeSpan.FromMilliseconds(delay), (token, _) => action(token));
+				return service;
+			});
+		service.Trigger(force);
+	}
+
+	/// <summary>
+	/// Globally track debouncing of an action.
+	/// </summary>
+	public static void Debounce<T>(string id, Action<CancellationToken, T> action, int delay, T value, bool force = false)
+	{
+		_globalServices.GetOrAdd(id,
+			_ => new DebounceService<T>(TimeSpan.FromMilliseconds(delay), action)
+		).Trigger(value, force);
+	}
 
 	/// <inheritdoc />
 	public void Dispose()
@@ -94,27 +137,10 @@ public class DebounceService<T> : IDisposable
 	/// <summary>
 	/// Trigger the service. Will be trigger after the timespan.
 	/// </summary>
-	/// <param name="value"> The value to trigger with. </param>
 	/// <param name="force"> An optional flag to immediately trigger if true. Defaults to false. </param>
-	public void Trigger(T value, bool force = false)
+	public void Trigger(bool force = false)
 	{
-		lock (_worker)
-		{
-			// Optionally turn on force
-			_force |= force;
-			_data = value;
-
-			// Queue up the next run
-			_requestedFor = _force
-				? _timeService.UtcNow
-				: _timeService.UtcNow + _delay;
-
-			// Start the worker if it's not running
-			if (_worker?.IsBusy != true)
-			{
-				_worker?.RunWorkerAsync();
-			}
-		}
+		Trigger(null, force);
 	}
 
 	/// <summary>
@@ -141,6 +167,32 @@ public class DebounceService<T> : IDisposable
 			worker.DoWork -= WorkerOnDoWork;
 
 			_worker = null;
+		}
+	}
+
+	/// <summary>
+	/// Trigger the service. Will be trigger after the timespan.
+	/// </summary>
+	/// <param name="value"> The value to trigger with. </param>
+	/// <param name="force"> An optional flag to immediately trigger if true. Defaults to false. </param>
+	protected void Trigger(object value, bool force = false)
+	{
+		lock (_worker)
+		{
+			// Optionally turn on force
+			_force |= force;
+			_data = value;
+
+			// Queue up the next run
+			_requestedFor = _force
+				? _timeService.UtcNow
+				: _timeService.UtcNow + _delay;
+
+			// Start the worker if it's not running
+			if (_worker?.IsBusy != true)
+			{
+				_worker?.RunWorkerAsync();
+			}
 		}
 	}
 

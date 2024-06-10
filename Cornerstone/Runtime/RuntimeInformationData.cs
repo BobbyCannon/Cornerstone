@@ -65,6 +65,9 @@ public struct RuntimeInformationData : IRuntimeInformation
 	/// <inheritdoc />
 	public Version DotNetRuntimeVersion { get; set; }
 
+	/// <inheritdoc />
+	public bool IsShuttingDown { get; set; }
+
 	#endregion
 
 	#region Methods

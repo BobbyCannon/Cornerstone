@@ -1,7 +1,10 @@
 ﻿#region References
 
+using System.ComponentModel;
 using System.Linq;
+using Avalonia;
 using Cornerstone.Extensions;
+using Cornerstone.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
@@ -18,24 +21,39 @@ public class ReflectionExtensionsTests : CornerstoneUnitTest
 	#region Methods
 
 	[TestMethod]
+	public void AvalonObjectPrivateHandler()
+	{
+		var type = typeof(AvaloniaObject);
+		var fields = type.GetCachedFields().Select(x => x.Name).ToArray();
+		fields.DumpJson();
+
+		var count = 0;
+		var ao = new AvaloniaObjectTest();
+		((INotifyPropertyChanged) ao).PropertyChanged += (_, _) => count++;
+		ao.Name = "Update";
+
+		AreEqual(1, count);
+	}
+
+	[TestMethod]
 	public void FieldTests()
 	{
-		var expected = new[] { "PublicField" };
+		var expected = new[] { "_privateField", "<PublicProperty>k__BackingField", "<PrivateProperty>k__BackingField" };
 		var type = typeof(ReflectionClassTest);
 		var fields = type.GetCachedFields().Select(x => x.Name).ToArray();
 		AreEqual(expected, fields);
 
-		expected = new[] { "_privateField", "<PublicProperty>k__BackingField", "<PrivateProperty>k__BackingField" };
-		fields = type.GetCachedFields(ReflectionExtensions.DefaultPrivateFlags).Select(x => x.Name).ToArray();
+		expected = ["PublicField"];
+		fields = type.GetCachedFields(ReflectionExtensions.DefaultPublicFlags).Select(x => x.Name).ToArray();
 		AreEqual(expected, fields);
 
 		var type2 = typeof(ReflectionStructTest);
-		expected = new[] { "PublicField2" };
+		expected = ["_privateField2", "<PublicProperty2>k__BackingField", "<PrivateProperty2>k__BackingField"];
 		fields = type2.GetCachedFields().Select(x => x.Name).ToArray();
 		AreEqual(expected, fields);
 
-		expected = new[] { "_privateField2", "<PublicProperty2>k__BackingField", "<PrivateProperty2>k__BackingField" };
-		fields = type2.GetCachedFields(ReflectionExtensions.DefaultPrivateFlags).Select(x => x.Name).ToArray();
+		expected = ["PublicField2"];
+		fields = type2.GetCachedFields(ReflectionExtensions.DefaultPublicFlags).Select(x => x.Name).ToArray();
 		AreEqual(expected, fields);
 	}
 
@@ -61,20 +79,20 @@ public class ReflectionExtensionsTests : CornerstoneUnitTest
 		AreEqual(expected[0], property.Name);
 
 		// From Type
-		expected = new[] { "PrivateProperty" };
+		expected = ["PrivateProperty"];
 		properties = type.GetCachedProperties(ReflectionExtensions.DefaultPrivateFlags).Select(x => x.Name).ToArray();
 		AreEqual(expected, properties);
 		property = type.GetCachedProperty(expected[0], ReflectionExtensions.DefaultPrivateFlags);
 		AreEqual(expected[0], property.Name);
 
 		// From Model
-		expected = new[] { "PrivateProperty" };
+		expected = ["PrivateProperty"];
 		properties = modelType.GetCachedProperties(ReflectionExtensions.DefaultPrivateFlags).Select(x => x.Name).ToArray();
 		AreEqual(expected, properties);
 		property = modelType.GetCachedProperty(expected[0], ReflectionExtensions.DefaultPrivateFlags);
 		AreEqual(expected[0], property.Name);
 	}
-	
+
 	[TestMethod]
 	public void PropertyTests2()
 	{
@@ -104,9 +122,25 @@ public class ReflectionExtensionsTests : CornerstoneUnitTest
 
 	#region Classes
 
-	public class ReflectionClassTest2 : ReflectionClassTest
+	public class AvaloniaObjectTest : AvaloniaObject
 	{
-		public new int PublicProperty { get; set; }
+		#region Properties
+
+		public string Name { get; set; }
+
+		#endregion
+
+		#region Methods
+
+		public void OnPropertyChanged(string propertyName)
+		{
+			var t = typeof(AvaloniaObject).GetCachedField("_inpcChanged");
+			var v = t.GetValue(this);
+			var h = v as PropertyChangedEventHandler;
+			h?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+		}
+
+		#endregion
 	}
 
 	public class ReflectionClassTest
@@ -132,6 +166,15 @@ public class ReflectionExtensionsTests : CornerstoneUnitTest
 		public void MethodOne()
 		{
 		}
+
+		#endregion
+	}
+
+	public class ReflectionClassTest2 : ReflectionClassTest
+	{
+		#region Properties
+
+		public new int PublicProperty { get; set; }
 
 		#endregion
 	}

@@ -73,6 +73,18 @@ public class StringConverter : BaseConverter
 			{ typeof(ushort).FullName, x => ushort.Parse(x) },
 			{ typeof(int?).FullName, x => int.Parse(x) },
 			{ typeof(int).FullName, x => int.Parse(x) },
+			{ typeof(uint?).FullName, x => uint.Parse(x) },
+			{ typeof(uint).FullName, x => uint.Parse(x) },
+			{ typeof(long?).FullName, x => long.Parse(x) },
+			{ typeof(long).FullName, x => long.Parse(x) },
+			{ typeof(ulong?).FullName, x => ulong.Parse(x) },
+			{ typeof(ulong).FullName, x => ulong.Parse(x) },
+			#if (NET7_0_OR_GREATER)
+			{ typeof(Int128?).FullName, x => Int128.Parse(x) },
+			{ typeof(Int128).FullName, x => Int128.Parse(x) },
+			{ typeof(UInt128?).FullName, x => UInt128.Parse(x) },
+			{ typeof(UInt128).FullName, x => UInt128.Parse(x) },
+			#endif
 			#if (NETSTANDARD)
 			{ typeof(IntPtr?).FullName, x => new IntPtr(int.Parse(x)) },
 			{ typeof(IntPtr).FullName, x => new IntPtr(int.Parse(x)) },
@@ -84,13 +96,6 @@ public class StringConverter : BaseConverter
 			{ typeof(UIntPtr?).FullName, x => UIntPtr.Parse(x) },
 			{ typeof(UIntPtr).FullName, x => UIntPtr.Parse(x) },
 			#endif
-			{ typeof(uint?).FullName, x => uint.Parse(x) },
-			{ typeof(uint).FullName, x => uint.Parse(x) },
-
-			{ typeof(long?).FullName, x => long.Parse(x) },
-			{ typeof(long).FullName, x => long.Parse(x) },
-			{ typeof(ulong?).FullName, x => ulong.Parse(x) },
-			{ typeof(ulong).FullName, x => ulong.Parse(x) },
 			{ typeof(decimal?).FullName, x => decimal.Parse(x) },
 			{ typeof(decimal).FullName, x => decimal.Parse(x) },
 			{ typeof(double?).FullName, x => double.Parse(x) },

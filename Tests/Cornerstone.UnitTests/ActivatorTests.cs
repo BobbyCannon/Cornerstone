@@ -58,7 +58,7 @@ public class ActivatorTests : CornerstoneUnitTest
 	{
 		var scenarios = new List<(object expected, Type type, Type[] genericTypes)>
 		{
-			(new List<ClientAccount>(), typeof(IList<>), new[] { typeof(ClientAccount) })
+			(new List<ClientAccount>(), typeof(IList<>), [typeof(ClientAccount)])
 			//	(new PartialUpdate<Account>(), typeof(PartialUpdate<>), new[] { typeof(Account) }),
 			//	(new PartialUpdate<PartialUpdate<int>>(), typeof(PartialUpdate<>), new[] { typeof(PartialUpdate<int>) })
 		};
@@ -116,6 +116,14 @@ public class ActivatorTests : CornerstoneUnitTest
 
 	#endregion
 
+	#region Interfaces
+
+	public interface IActivatorTest
+	{
+	}
+
+	#endregion
+
 	#region Classes
 
 	public class ActivatorTest : IActivatorTest
@@ -124,11 +132,15 @@ public class ActivatorTests : CornerstoneUnitTest
 
 	public class ActivatorTestActivator : TypeActivator<IActivatorTest, ActivatorTest>
 	{
+		#region Constructors
+
+		/// <inheritdoc />
+		public ActivatorTestActivator() : base(_ => new ActivatorTest())
+		{
+		}
+
+		#endregion
 	}
 
 	#endregion
-
-	public interface IActivatorTest
-	{
-	}
 }

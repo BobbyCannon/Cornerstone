@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System.Collections;
 using Cornerstone.Extensions;
 
 #endregion
@@ -25,8 +26,8 @@ public class TupleComparer : BaseComparer
 	{
 		try
 		{
-			session.Add(expected);
-			session.Add(actual);
+			session.AddReference(expected);
+			session.AddReference(actual);
 
 			var values1 = expected.GetValueTupleItemDictionary();
 			var values2 = actual.GetValueTupleItemDictionary();
@@ -38,8 +39,8 @@ public class TupleComparer : BaseComparer
 		}
 		finally
 		{
-			session.Remove(expected);
-			session.Remove(actual);
+			session.RemoveReference(expected);
+			session.RemoveReference(actual);
 		}
 	}
 

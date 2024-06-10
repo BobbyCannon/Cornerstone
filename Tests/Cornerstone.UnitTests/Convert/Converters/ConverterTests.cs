@@ -75,7 +75,7 @@ public abstract class ConverterTests<T> : CornerstoneUnitTest
 
 	protected void TestInvalidValues<T2>(params TestScenarioValue[] invalidValues) where T2 : Enum
 	{
-		TestInvalidValues(new[] { typeof(T2) }, invalidValues);
+		TestInvalidValues([typeof(T2)], invalidValues);
 	}
 
 	protected void TestInvalidValues(params TestScenarioValue[] invalidValues)

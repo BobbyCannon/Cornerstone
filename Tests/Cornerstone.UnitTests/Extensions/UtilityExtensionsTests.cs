@@ -30,7 +30,7 @@ public class UtilityExtensionsTests : CornerstoneUnitTest
 			}
 		}, 1000, 1);
 		watch.Stop();
-		Assert.AreEqual(3, count);
+		AreEqual(3, count);
 		Assert.IsTrue(watch.Elapsed.TotalMilliseconds > 1, watch.Elapsed.TotalMilliseconds.ToString());
 		Assert.IsTrue(watch.Elapsed.TotalMilliseconds < 10, watch.Elapsed.TotalMilliseconds.ToString());
 	}
@@ -67,8 +67,8 @@ public class UtilityExtensionsTests : CornerstoneUnitTest
 			return count;
 		}, 10, 1);
 		watch.Stop();
-		Assert.AreEqual(3, result);
-		Assert.AreEqual(3, count);
+		AreEqual(3, result);
+		AreEqual(3, count);
 		// had to reduce the min to 2.5 because I was getting number less than the expected min of 3. Ex. 2.9969
 		Assert.IsTrue(watch.Elapsed.TotalMilliseconds > 2.5, watch.Elapsed.TotalMilliseconds.ToString());
 		Assert.IsTrue(watch.Elapsed.TotalMilliseconds < 5, watch.Elapsed.TotalMilliseconds.ToString());
@@ -93,8 +93,8 @@ public class UtilityExtensionsTests : CornerstoneUnitTest
 			}, 4, 1), "Nope...");
 
 		watch.Stop();
-		Assert.AreEqual(0, result);
-		Assert.AreEqual(2, count);
+		AreEqual(0, result);
+		AreEqual(2, count);
 		Assert.IsTrue(watch.Elapsed.TotalMilliseconds > 1, watch.Elapsed.TotalMilliseconds.ToString());
 		Assert.IsTrue(watch.Elapsed.TotalMilliseconds < 20, watch.Elapsed.TotalMilliseconds.ToString());
 	}
@@ -103,10 +103,10 @@ public class UtilityExtensionsTests : CornerstoneUnitTest
 	public void UpdateIf()
 	{
 		var account = new ClientAccount();
-		Assert.AreEqual(null, account.Name);
+		AreEqual(null, account.Name);
 
 		account.IfThen(x => x.Name == null, x => x.Name = "John");
-		Assert.AreEqual("John", account.Name);
+		AreEqual("John", account.Name);
 	}
 
 	[TestMethod]
@@ -129,8 +129,8 @@ public class UtilityExtensionsTests : CornerstoneUnitTest
 
 		watch.Elapsed.Dump();
 
-		Assert.AreEqual(1, count);
-		Assert.AreEqual(true, actual);
+		AreEqual(1, count);
+		AreEqual(true, actual);
 	}
 
 	[TestMethod]
@@ -141,7 +141,7 @@ public class UtilityExtensionsTests : CornerstoneUnitTest
 		var result = UtilityExtensions.WaitUntil(() => ++count > 3, 10, 1);
 		watch.Stop();
 		Assert.IsTrue(result);
-		Assert.AreEqual(4, count);
+		AreEqual(4, count);
 		Assert.IsTrue(watch.Elapsed.TotalMilliseconds > 1, watch.Elapsed.TotalMilliseconds.ToString());
 		Assert.IsTrue(watch.Elapsed.TotalMilliseconds < 20, watch.Elapsed.TotalMilliseconds.ToString());
 	}
@@ -170,9 +170,9 @@ public class UtilityExtensionsTests : CornerstoneUnitTest
 
 		watch.Elapsed.Dump();
 
-		Assert.AreEqual(31, count);
-		Assert.AreEqual(new DateTime(2021, 06, 23, 09, 37, 30, DateTimeKind.Utc), UtcNow);
-		Assert.AreEqual(false, actual);
+		AreEqual(31, count);
+		AreEqual(new DateTime(2021, 06, 23, 09, 37, 30, DateTimeKind.Utc), UtcNow);
+		AreEqual(false, actual);
 	}
 
 	[TestMethod]
@@ -192,10 +192,10 @@ public class UtilityExtensionsTests : CornerstoneUnitTest
 			timeout, delay, minimum, this
 		);
 
-		Assert.AreEqual(11, count);
-		Assert.AreEqual(false, actual);
+		AreEqual(11, count);
+		AreEqual(false, actual);
 		// Time should be 10s (minimum) + one extra second (11 total) for the final loop
-		Assert.AreEqual(StartDateTime.Add(minimum).AddSeconds(1), UtcNow);
+		AreEqual(StartDateTime.Add(minimum).AddSeconds(1), UtcNow);
 	}
 
 	#endregion

@@ -86,7 +86,7 @@ public static class DatabaseExtensions
 				var propertyAnnotations = property.GetAnnotations();
 				var lambdaExpression = GetPropertyObjectExpression(entityBuilder.Metadata.ClrType, property.Name);
 				var propertyMethod = databasePropertyMethod.GetCachedMakeGenericMethod(entityBuilder.Metadata.ClrType, primaryKey);
-				var propertyConfiguration = (IPropertyConfiguration) propertyMethod.Invoke(database, new object[] { lambdaExpression });
+				var propertyConfiguration = (IPropertyConfiguration) propertyMethod.Invoke(database, [lambdaExpression]);
 
 				if (propertyConfiguration == null)
 				{
@@ -142,7 +142,7 @@ public static class DatabaseExtensions
 
 				// Get the configuration for the property
 				var method = databaseHasRequiredMethod.GetCachedMakeGenericMethod(firstType, secondType, thirdType, fourthType);
-				var configuration = (IPropertyConfiguration) method.Invoke(database, new object[] { foreignKey.IsRequired, firstParameter, secondParameter, thirdParameter });
+				var configuration = (IPropertyConfiguration) method.Invoke(database, [foreignKey.IsRequired, firstParameter, secondParameter, thirdParameter]);
 
 				switch (foreignKey.DeleteBehavior)
 				{

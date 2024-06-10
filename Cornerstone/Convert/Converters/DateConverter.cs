@@ -2,10 +2,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using Cornerstone.Collections;
 using Cornerstone.Exceptions;
 using Cornerstone.Extensions;
 using Cornerstone.Protocols.Osc;
+using Enumerable = System.Linq.Enumerable;
 
 #endregion
 
@@ -35,6 +36,8 @@ public class DateConverter : BaseConverter
 
 	static DateConverter()
 	{
+		NumberTypes = new ReadOnlySet<Type>(typeof(long), typeof(ulong));
+
 		_parsers = new Dictionary<string, Func<string, object>>
 		{
 			#if (NET6_0_OR_GREATER)
@@ -57,7 +60,25 @@ public class DateConverter : BaseConverter
 
 	#endregion
 
+	#region Properties
+
+	/// <summary>
+	/// Numbers that can be converted to DateTime.
+	/// </summary>
+	// ReSharper disable once CollectionNeverUpdated.Global
+	public static ReadOnlySet<Type> NumberTypes { get; }
+
+	#endregion
+
 	#region Methods
+
+	/// <inheritdoc />
+	public override bool CanConvert(Type fromType, Type toType)
+	{
+		return base.CanConvert(fromType, toType)
+			|| (FromTypes.Contains(fromType)
+				&& NumberTypes.Contains(toType));
+	}
 
 	/// <summary>
 	/// Convert to DateTime.
@@ -106,6 +127,31 @@ public class DateConverter : BaseConverter
 			|| base.TryConvertTo(from, fromType, toType, out value, options);
 	}
 
+	/// <summary>
+	/// Try to create the date from the tick value.
+	/// </summary>
+	/// <param name="toType"> The type to convert to. </param>
+	/// <param name="ticks"> The date in tick format. </param>
+	/// <param name="value"> The value if parsed. </param>
+	/// <returns> True if the date could be created by ticks otherwise false. </returns>
+	public static bool TryFromTicks(Type toType, ulong ticks, out object value)
+	{
+		if ((toType == typeof(DateTime)) || (toType == typeof(DateTime?)))
+		{
+			value = new DateTime((long) ticks);
+			return true;
+		}
+
+		if ((toType == typeof(OscTimeTag)) || (toType == typeof(OscTimeTag?)))
+		{
+			value = new OscTimeTag(ticks);
+			return true;
+		}
+
+		value = default;
+		return false;
+	}
+
 	private static bool TryConvert(object from, Type toType, out object value)
 	{
 		if (from == null)
@@ -117,9 +163,9 @@ public class DateConverter : BaseConverter
 		DateTime dateTime;
 		var timeSpan = TimeSpan.Zero;
 		var fromType = from.GetType();
-		var toString = Activator.StringTypes.Contains(toType);
+		var toString = Enumerable.Contains(Activator.StringTypes, toType);
 
-		if (Activator.StringTypes.Contains(fromType))
+		if (Enumerable.Contains(Activator.StringTypes, fromType))
 		{
 			var response = _parsers.TryGetValue(toType.FullName, out var parser);
 			value = parser?.Invoke(from.ToString());

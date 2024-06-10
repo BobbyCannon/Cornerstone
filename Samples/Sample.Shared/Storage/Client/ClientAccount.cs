@@ -117,7 +117,7 @@ public class ClientAccount : SyncEntity<int>, IAccountSync, IClientEntity
 	/// <returns> The array of roles. </returns>
 	public static IEnumerable<string> SplitRoles(string roles)
 	{
-		return roles != null ? roles.Split(new[] { ";" }, StringSplitOptions.RemoveEmptyEntries) : Array.Empty<string>();
+		return roles != null ? roles.Split([";"], StringSplitOptions.RemoveEmptyEntries) : Array.Empty<string>();
 	}
 
 	#endregion

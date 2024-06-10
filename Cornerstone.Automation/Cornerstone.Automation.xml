@@ -978,20 +978,20 @@
         </member>
         <member name="M:Cornerstone.Automation.Desktop.Keyboard.SendInput(System.String,Cornerstone.Automation.Desktop.KeyStroke[])">
             <summary>
-            Sends provided text and optional set of key strokes as input.
+            Sends provided text and optional set of keystrokes as input.
             </summary>
             <param name="text"> The text to be sent. </param>
-            <param name="keyStrokes"> An optional set of key strokes to be sent. </param>
+            <param name="keyStrokes"> An optional set of keystrokes to be sent. </param>
             <returns> This <see cref="T:Cornerstone.Automation.Desktop.Keyboard" /> instance. </returns>
             <exception cref="T:System.ArgumentException"> The text parameter is too long. </exception>
         </member>
         <member name="M:Cornerstone.Automation.Desktop.Keyboard.SendInput(System.String,System.TimeSpan,Cornerstone.Automation.Desktop.KeyStroke[])">
             <summary>
-            Sends provided text as input. Can delay with before sending an optional set of key strokes.
+            Sends provided text as input. Can delay with before sending an optional set of keystrokes.
             </summary>
             <param name="text"> The text to be sent. </param>
             <param name="delay"> An optional delay to wait before sending the provided keys. </param>
-            <param name="keyStrokes"> An optional set of key strokes to be sent. </param>
+            <param name="keyStrokes"> An optional set of keystrokes to be sent. </param>
             <returns> This <see cref="T:Cornerstone.Automation.Desktop.Keyboard" /> instance. </returns>
             <exception cref="T:System.ArgumentException"> The text parameter is too long. </exception>
         </member>
@@ -1012,9 +1012,9 @@
         </member>
         <member name="M:Cornerstone.Automation.Desktop.Keyboard.SendInput(Cornerstone.Automation.Desktop.KeyStroke[])">
             <summary>
-            Sends provided key strokes as input.
+            Sends provided keystrokes as input.
             </summary>
-            <param name="keyStrokes"> The set of key strokes to be sent. </param>
+            <param name="keyStrokes"> The set of keystrokes to be sent. </param>
             <returns> This <see cref="T:Cornerstone.Automation.Desktop.Keyboard" /> instance. </returns>
             <exception cref="T:System.ArgumentException"> The text parameter is too long. </exception>
         </member>
@@ -3036,7 +3036,7 @@
         </member>
         <member name="M:Cornerstone.Automation.Element.SendInput(System.String,System.TimeSpan,Cornerstone.Automation.Desktop.KeyboardKey[])">
             <summary>
-            Focus the element then sends provided text as input. Can delay with before sending an optional set of key strokes.
+            Focus the element then sends provided text as input. Can delay with before sending an optional set of keystrokes.
             </summary>
             <param name="text"> The value to type. </param>
             <param name="delay"> An optional delay before sending optional keys. </param>
@@ -3044,11 +3044,11 @@
         </member>
         <member name="M:Cornerstone.Automation.Element.SendInput(System.String,System.TimeSpan,Cornerstone.Automation.Desktop.KeyStroke[])">
             <summary>
-            Focus the element then sends provided text as input. Can delay with before sending an optional set of key strokes.
+            Focus the element then sends provided text as input. Can delay with before sending an optional set of keystrokes.
             </summary>
             <param name="text"> The text to be sent. </param>
             <param name="delay"> An optional delay to wait before sending the provided keys. </param>
-            <param name="keyStrokes"> An optional set of key strokes to be sent. </param>
+            <param name="keyStrokes"> An optional set of keystrokes to be sent. </param>
             <returns> This <see cref="T:Cornerstone.Automation.Element" /> instance. </returns>
             <exception cref="T:System.ArgumentException"> The text parameter is too long. </exception>
         </member>
@@ -3069,9 +3069,9 @@
         </member>
         <member name="M:Cornerstone.Automation.Element.SendInput(Cornerstone.Automation.Desktop.KeyStroke[])">
             <summary>
-            Focus the element then send the key strokes as input.
+            Focus the element then send the keystrokes as input.
             </summary>
-            <param name="keyStrokes"> An set of keyboard key strokes to send. </param>
+            <param name="keyStrokes"> An set of keyboard keystrokes to send. </param>
         </member>
         <member name="M:Cornerstone.Automation.Element.Sleep(System.TimeSpan)">
             <summary>
@@ -3783,7 +3783,7 @@
         </member>
         <member name="M:Cornerstone.Automation.InputBuilder.AddKeyStroke(Cornerstone.Automation.Desktop.KeyStroke)">
             <summary>
-            Add key strokes to input builder.
+            Add keystrokes to input builder.
             </summary>
             <param name="stroke"> </param>
             <returns> This <see cref="T:Cornerstone.Automation.InputBuilder" /> instance. </returns>

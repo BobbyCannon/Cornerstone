@@ -17,7 +17,7 @@ public class GsvMessage : NmeaMessage
 
 	public GsvMessage() : base(NmeaMessageType.GSV)
 	{
-		Satellites = new List<Satellite>();
+		Satellites = [];
 	}
 
 	#endregion

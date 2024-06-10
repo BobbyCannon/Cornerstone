@@ -19,14 +19,14 @@ public class ValidatorTests : CornerstoneUnitTest
 	public void HasMinMaxRange()
 	{
 		(Func<Validator, PropertyValidator> setup, object min, object max)[] scenarios =
-		{
+		[
 			(x => x.Property<Sample, DateTime>(p => p.Date1), min: DateTime.MinValue, max: DateTime.MaxValue),
 			//(x => x.Property<Sample, OscTimeTag>(p => p.TimeTag1), min: OscTimeTag.MinValue, max: OscTimeTag.MaxValue),
 			(x => x.Property<Sample, TimeSpan>(p => p.Elapsed), TimeSpan.MinValue, TimeSpan.MaxValue),
 			(x => x.Property<Sample, double>(p => p.Total), -123.456, 123.456),
 			(x => x.Property<Sample, float>(p => p.Precision), -654.321f, 654.321f),
 			(x => x.Property<Sample, decimal>(p => p.Price), -789.35m, 789.35m)
-		};
+		];
 
 		foreach (var scenario in scenarios)
 		{

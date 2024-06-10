@@ -1,0 +1,11 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<ResourceDictionary.MergedDictionaries>
+		<MergeResourceInclude Source="/AvaloniaEdit/TextEditor.axaml" />
+		<MergeResourceInclude Source="/AvaloniaEdit/Editing/TextArea.axaml" />
+		<MergeResourceInclude Source="/AvaloniaEdit/CodeCompletion/CompletionList.axaml" />
+		<MergeResourceInclude Source="/AvaloniaEdit/CodeCompletion/CompletionTipContentControl.axaml" />
+		<MergeResourceInclude Source="/AvaloniaEdit/CodeCompletion/InsightWindow.axaml" />
+		<MergeResourceInclude Source="/AvaloniaEdit/Search/SearchPanel.axaml" />
+	</ResourceDictionary.MergedDictionaries>
+</ResourceDictionary>

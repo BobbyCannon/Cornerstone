@@ -62,7 +62,7 @@ public class Firefox : Browser
 		_consoleActor = string.Empty;
 		_jsonSerializerSettings = new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() };
 		_messageBuffer = new FirefoxBuffer();
-		_responses = new List<dynamic>();
+		_responses = [];
 		_socketBuffer = new byte[FirefoxBuffer.InitialSize];
 	}
 

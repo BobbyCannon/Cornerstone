@@ -1,4 +1,6 @@
-﻿namespace Cornerstone.Presentation;
+﻿using System.Diagnostics;
+
+namespace Cornerstone.Presentation;
 
 /// <summary>
 /// Represents a view model.
@@ -65,6 +67,12 @@ public abstract class ViewModel : Bindable, IViewModel
 	/// <inheritdoc />
 	public virtual void Initialize()
 	{
+		if (IsInitialized)
+		{
+			Debugger.Break();
+			return;
+		}
+
 		IsInitialized = true;
 	}
 

@@ -68,7 +68,7 @@ public class JsonValueConverter : BaseConverter
 			}
 			case JsonArray jValue:
 			{
-				return 
+				return
 					DataTableConverter.ParseAsTable(toType, out value, jValue)
 					|| ParseAsArray(toType, out value, jValue)
 					|| ParseAsList(toType, out value, jValue);
@@ -84,6 +84,27 @@ public class JsonValueConverter : BaseConverter
 		}
 
 		return base.TryConvertTo(from, fromType, toType, out value, options);
+	}
+
+	private static Type[] GetGenericArgumentsRecursive(Type type)
+	{
+		while (type != null)
+		{
+			if (type.IsGenericType)
+			{
+				return type.GenericTypeArguments;
+			}
+
+			if (type.IsGenericTypeDefinition)
+			{
+				var definition = type.GetGenericTypeDefinition();
+				return definition.GenericTypeArguments;
+			}
+
+			type = type.BaseType;
+		}
+
+		return null;
 	}
 
 	private static bool ParseAsArray(Type toType, out object value, JsonArray jValue)
@@ -130,13 +151,16 @@ public class JsonValueConverter : BaseConverter
 
 	private static bool ParseAsList(Type toType, out object value, JsonArray jValue)
 	{
-		if (toType.IsGenericTypeDefinition && (toType == typeof(IList<>)))
+		if (toType.IsGenericTypeDefinition)
 		{
-			toType = typeof(List<object>);
-		}
-		else if (toType.GetGenericTypeDefinition() == typeof(IList<>))
-		{
-			toType = typeof(List<>).GetCachedMakeGenericType(toType.GenericTypeArguments);
+			if (toType == typeof(IList<>))
+			{
+				toType = typeof(List<object>);
+			}
+			else if (toType.GetGenericTypeDefinition() == typeof(IList<>))
+			{
+				toType = typeof(List<>).GetCachedMakeGenericType(toType.GenericTypeArguments);
+			}
 		}
 
 		if (!toType.ImplementsType<IList>())
@@ -146,7 +170,7 @@ public class JsonValueConverter : BaseConverter
 		}
 
 		var list = (IList) toType.CreateInstance();
-		var elementType = toType.GetGenericArguments().First();
+		var elementType = GetGenericArgumentsRecursive(toType).FirstOrDefault() ?? typeof(object);
 		for (var i = 0; i < jValue.Count; i++)
 		{
 			var iValue = jValue[i].ConvertTo(elementType);
@@ -164,11 +188,13 @@ public class JsonValueConverter : BaseConverter
 		foreach (var key in jValue.Keys)
 		{
 			var property = properties.FirstOrDefault(x => x.Name.Equals(key, StringComparison.OrdinalIgnoreCase));
-			if (property != null)
+			if ((property == null) || !property.CanWrite)
 			{
-				var pValue = jValue[key];
-				property.SetValue(response, pValue.ConvertTo(property.PropertyType));
+				continue;
 			}
+
+			var pValue = jValue[key];
+			property.SetValue(response, pValue.ConvertTo(property.PropertyType));
 		}
 
 		value = response;
@@ -195,7 +221,7 @@ public class JsonValueConverter : BaseConverter
 				response.AddOrUpdate(key, jValue[key]);
 				continue;
 			}
-			
+
 			var jKeyValue = jValue[key];
 			if (!jKeyValue.TryConvertTo(propertyInfo.PropertyType, out value))
 			{

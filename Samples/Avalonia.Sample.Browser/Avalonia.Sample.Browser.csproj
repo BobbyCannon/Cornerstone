@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net8.0-browser1.0</TargetFrameworks>
+		<RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+		<WasmMainJSPath>AppBundle\main.js</WasmMainJSPath>
+		<OutputType>Exe</OutputType>
+	</PropertyGroup>
+	<ItemGroup>
+		<WasmExtraFilesToDeploy Include="AppBundle\**" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Avalonia.Browser" Version="$(AvaloniaVersion)" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Avalonia.Sample\Avalonia.Sample.csproj" />
+	</ItemGroup>
+</Project>

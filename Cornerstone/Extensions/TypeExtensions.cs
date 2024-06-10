@@ -99,14 +99,14 @@ public static class TypeExtensions
 			case UpdateableAction.Updateable:
 			{
 				var properties = Cache.GetPropertyDictionary(type.GetRealTypeUsingReflection());
-				return new(properties.Keys);
+				return [..properties.Keys];
 			}
 			case UpdateableAction.UnwrapProxyEntity:
 			{
 				var realType = type.GetRealTypeUsingReflection();
 				var properties = Cache.GetPropertyDictionary(realType);
 				var virtuals = realType.GetVirtualPropertyNames();
-				return new(properties.Keys.Except(virtuals));
+				return [..properties.Keys.Except(virtuals)];
 			}
 			case UpdateableAction.Unknown:
 			case UpdateableAction.SyncIncomingAdd:
@@ -114,7 +114,7 @@ public static class TypeExtensions
 			case UpdateableAction.SyncOutgoing:
 			default:
 			{
-				return new();
+				return [];
 			}
 		}
 	}

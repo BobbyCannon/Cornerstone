@@ -5,8 +5,6 @@ using Cornerstone.Parsers.Xml;
 
 #endregion
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-
 namespace Cornerstone.Parsers.VisualStudio.Project;
 
 public class PackageReference : XmlElement
@@ -39,11 +37,6 @@ public class PackageReference : XmlElement
 
 	#region Methods
 
-	public bool UpdateVersion(string versionString)
-	{
-		return SetAttributeOrElementValue(nameof(Version), versionString);
-	}
-
 	/// <summary>
 	/// Compare the provided version to this package reference.
 	/// </summary>
@@ -66,6 +59,11 @@ public class PackageReference : XmlElement
 		}
 
 		return Version?.CompareTo(version) ?? -1;
+	}
+
+	public bool UpdateVersion(string versionString)
+	{
+		return SetAttributeOrElementValue(nameof(Version), versionString);
 	}
 
 	#endregion

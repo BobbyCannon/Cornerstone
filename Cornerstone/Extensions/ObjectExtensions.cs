@@ -29,12 +29,16 @@ public static class ObjectExtensions
 		if (maxDepth.HasValue)
 		{
 			var settings = new SerializationOptions { MaxDepth = maxDepth.Value };
-			var response = FromJson(item.ToJson(settings), item.GetRealTypeUsingReflection());
+			var json = item.ToJson(settings);
+			var realType = item.GetRealTypeUsingReflection();
+			var response = FromJson(json, realType);
 			return (T) response;
 		}
 		else
 		{
-			var response = FromJson(item.ToJson(), item.GetRealTypeUsingReflection());
+			var json = item.ToJson();
+			var realType = item.GetRealTypeUsingReflection();
+			var response = FromJson(json, realType);
 			return (T) response;
 		}
 	}
@@ -108,7 +112,7 @@ public static class ObjectExtensions
 	{
 		return value switch
 		{
-			ICloneable cloneable => (T) cloneable.ShallowClone(),
+			ICloneable cloneable => (T) cloneable.ShallowCloneObject(),
 			_ => DeepCloneUsingSerializer(value, 1)
 		};
 	}

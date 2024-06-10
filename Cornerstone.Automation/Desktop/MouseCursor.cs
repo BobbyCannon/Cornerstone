@@ -50,7 +50,7 @@ public class MouseCursor
 		ShapedCursor = new MouseCursor(StandardCursors.Ibeam);
 		Pointer = new MouseCursor(StandardCursors.Arrow);
 		Wait = new MouseCursor(StandardCursors.Wait);
-		_waitCursors = new List<MouseCursor> { DefaultAndWait, Wait };
+		_waitCursors = [DefaultAndWait, Wait];
 	}
 
 	private MouseCursor(int value)

@@ -2,7 +2,6 @@
 
 using Cornerstone.Protocols.Nmea;
 using Cornerstone.Testing;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
@@ -25,7 +24,7 @@ public abstract class BaseMessageTests : CornerstoneUnitTest
 			AreEqual(scenario.expected, actual);
 
 			scenario.expected.UpdateChecksum();
-			Assert.AreEqual(scenario.expected.ToString(), actual.ToString());
+			AreEqual(scenario.expected.ToString(), actual.ToString());
 		}
 	}
 

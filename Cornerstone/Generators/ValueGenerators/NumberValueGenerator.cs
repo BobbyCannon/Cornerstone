@@ -134,6 +134,18 @@ public class NumberValueGenerator : ValueGenerator
 		{
 			return new object[] { ulong.MinValue, (ulong) 0, ulong.MaxValue };
 		}
+		
+		#if NET7_0_OR_GREATER
+		if ((type == typeof(Int128)) || (type == typeof(Int128?)))
+		{
+			return new object[] { Int128.MinValue, (Int128) 0, Int128.MaxValue };
+		}
+
+		if ((type == typeof(UInt128)) || (type == typeof(UInt128?)))
+		{
+			return new object[] { UInt128.MinValue, (UInt128) 0, UInt128.MaxValue };
+		}
+		#endif
 
 		if ((type == typeof(IntPtr)) || (type == typeof(IntPtr?)))
 		{

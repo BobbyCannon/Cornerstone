@@ -32,7 +32,7 @@ public class IndexConfiguration
 	public IndexConfiguration(string name)
 	{
 		_name = name;
-		_properties = new List<IPropertyConfiguration>();
+		_properties = [];
 		_combinedPropertyNames = string.Join("", _properties.Select(x => x.MemberName));
 	}
 

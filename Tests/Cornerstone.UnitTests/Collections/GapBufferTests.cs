@@ -143,15 +143,15 @@ public class GapBufferTests : CornerstoneUnitTest
 		//                                0    1    2    3    4    5    6    7    8
 		var buffer = new GapBuffer<char>('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i');
 		IsTrue(buffer.Remove('a'));
-		Assert.AreEqual(8, buffer.Count);
+		AreEqual(8, buffer.Count);
 		AreEqual("bcdefghi", buffer.ToString());
 
 		IsTrue(buffer.Remove('i'));
-		Assert.AreEqual(7, buffer.Count);
+		AreEqual(7, buffer.Count);
 		AreEqual("bcdefgh", buffer.ToString());
 
 		IsFalse(buffer.Remove('z'));
-		Assert.AreEqual(7, buffer.Count);
+		AreEqual(7, buffer.Count);
 		AreEqual("bcdefgh", buffer.ToString());
 	}
 
@@ -161,16 +161,16 @@ public class GapBufferTests : CornerstoneUnitTest
 		//                                0    1    2    3    4    5    6    7    8
 		var buffer = new GapBuffer<char>('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i');
 		buffer.RemoveAt(0);
-		Assert.AreEqual(8, buffer.Count);
-		Assert.AreEqual('b', buffer[0]);
-		Assert.AreEqual('c', buffer[1]);
+		AreEqual(8, buffer.Count);
+		AreEqual('b', buffer[0]);
+		AreEqual('c', buffer[1]);
 		AreEqual("bcdefghi", buffer.ToString());
 		//        01234567
 
 		buffer.RemoveAt(1);
-		Assert.AreEqual(7, buffer.Count);
-		Assert.AreEqual('b', buffer[0]);
-		Assert.AreEqual('d', buffer[1]);
+		AreEqual(7, buffer.Count);
+		AreEqual('b', buffer[0]);
+		AreEqual('d', buffer[1]);
 		AreEqual("bdefghi", buffer.ToString());
 	}
 
@@ -198,11 +198,11 @@ public class GapBufferTests : CornerstoneUnitTest
 		//                                0    1    2    3    4    5    6    7    8
 		var buffer = new GapBuffer<char>('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i');
 		buffer.RemoveRange(3, 3);
-		Assert.AreEqual(6, buffer.Count);
+		AreEqual(6, buffer.Count);
 		AreEqual("abcghi", buffer.ToString());
 
 		buffer.RemoveRange(0, 0);
-		Assert.AreEqual(6, buffer.Count);
+		AreEqual(6, buffer.Count);
 		AreEqual("abcghi", buffer.ToString());
 	}
 

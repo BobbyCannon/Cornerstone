@@ -17,7 +17,7 @@ public struct HumanizeOptions : IHumanizeOptions
 	public HumanizeOptions()
 	{
 		MaxUnit = TimeUnit.Max;
-		MaxUnitSegments = int.MaxValue;
+		MaxUnitSegments = 1;
 		MinUnit = TimeUnit.Min;
 		Precision = 3;
 		WordFormat = WordFormat.Full;

@@ -59,7 +59,7 @@ public class AsciiChartService
 
 		var builder = new TextBuilder();
 		builder.Fill(' ', 0, (rows * columns) + ((rows - 1) * 2));
-		var labels = chart.Labels?.ToList() ?? new List<string>();
+		var labels = chart.Labels?.ToList() ?? [];
 		var labelMaxWidth = labels.Count > 0 ? labels.Max(x => x.Length) + 1 : 0;
 
 		foreach (var dataset in chart.Datasets)

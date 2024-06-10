@@ -219,7 +219,7 @@ public abstract class Element : ElementHost
 	}
 
 	/// <summary>
-	/// Focus the element then sends provided text as input. Can delay with before sending an optional set of key strokes.
+	/// Focus the element then sends provided text as input. Can delay with before sending an optional set of keystrokes.
 	/// </summary>
 	/// <param name="text"> The value to type. </param>
 	/// <param name="delay"> An optional delay before sending optional keys. </param>
@@ -233,11 +233,11 @@ public abstract class Element : ElementHost
 	}
 
 	/// <summary>
-	/// Focus the element then sends provided text as input. Can delay with before sending an optional set of key strokes.
+	/// Focus the element then sends provided text as input. Can delay with before sending an optional set of keystrokes.
 	/// </summary>
 	/// <param name="text"> The text to be sent. </param>
 	/// <param name="delay"> An optional delay to wait before sending the provided keys. </param>
-	/// <param name="keyStrokes"> An optional set of key strokes to be sent. </param>
+	/// <param name="keyStrokes"> An optional set of keystrokes to be sent. </param>
 	/// <returns> This <see cref="Element" /> instance. </returns>
 	/// <exception cref="ArgumentException"> The text parameter is too long. </exception>
 	public virtual Element SendInput(string text, TimeSpan delay, params KeyStroke[] keyStrokes)
@@ -276,9 +276,9 @@ public abstract class Element : ElementHost
 	}
 
 	/// <summary>
-	/// Focus the element then send the key strokes as input.
+	/// Focus the element then send the keystrokes as input.
 	/// </summary>
-	/// <param name="keyStrokes"> An set of keyboard key strokes to send. </param>
+	/// <param name="keyStrokes"> An set of keyboard keystrokes to send. </param>
 	public virtual Element SendInput(params KeyStroke[] keyStrokes)
 	{
 		Application.BringToFront();

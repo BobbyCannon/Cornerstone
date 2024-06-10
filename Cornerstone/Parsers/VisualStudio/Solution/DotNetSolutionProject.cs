@@ -47,11 +47,6 @@ public class DotNetSolutionProject : DotNetProject
 	public Guid Id { get; set; }
 
 	/// <summary>
-	/// True if the project supports "PackageReference" nuget.
-	/// </summary>
-	public bool SupportsPackageReferences => _supportsPackageReference ??= CheckIfSupportsPackageReferences();
-
-	/// <summary>
 	/// The name of the project.
 	/// </summary>
 	public string ProjectName { get; }
@@ -69,6 +64,11 @@ public class DotNetSolutionProject : DotNetProject
 	/// Relative project file location.
 	/// </summary>
 	public string RelativePath { get; set; }
+
+	/// <summary>
+	/// True if the project supports "PackageReference" nuget.
+	/// </summary>
+	public bool SupportsPackageReferences => _supportsPackageReference ??= CheckIfSupportsPackageReferences();
 
 	/// <summary>
 	/// Project type.

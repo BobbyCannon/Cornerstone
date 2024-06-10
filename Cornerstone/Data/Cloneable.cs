@@ -1,6 +1,6 @@
 ﻿#region References
 
-using Cornerstone.Extensions;
+using System;
 
 #endregion
 
@@ -12,30 +12,9 @@ public class Cloneable<T> : Notifiable, ICloneable<T>
 	#region Methods
 
 	/// <inheritdoc />
-	public T DeepClone(int? maxDepth = null)
+	public virtual T DeepClone(int? maxDepth = null)
 	{
-		var response = typeof(T).CreateInstance();
-
-		switch (response)
-		{
-			case IUpdateable updateable:
-			{
-				updateable.UpdateWith(this, UpdateableAction.Updateable);
-				break;
-			}
-			default:
-			{
-				response.UpdateWithUsingReflection(this);
-				break;
-			}
-		}
-
-		if (response is ITrackPropertyChanges changeable)
-		{
-			changeable.ResetHasChanges();
-		}
-
-		return (T) response;
+		return Cloneable.DeepClone<T>(this, maxDepth);
 	}
 
 	/// <inheritdoc />
@@ -45,15 +24,54 @@ public class Cloneable<T> : Notifiable, ICloneable<T>
 	}
 
 	/// <inheritdoc />
-	object ICloneable.DeepClone(int? maxDepth)
+	object ICloneable.DeepCloneObject(int? maxDepth)
 	{
 		return DeepClone(maxDepth);
 	}
 
 	/// <inheritdoc />
-	object ICloneable.ShallowClone()
+	object ICloneable.ShallowCloneObject()
 	{
 		return ShallowClone();
+	}
+
+	#endregion
+}
+
+internal class Cloneable
+{
+	#region Methods
+
+	public static T2 DeepClone<T2>(object oldValue, int? maxDepth = null)
+	{
+		var response = DeepClone(typeof(T2), oldValue, maxDepth);
+		return (T2) response;
+	}
+
+	public static object DeepClone(Type type, object oldValue, int? maxDepth = null)
+	{
+		var response = type.CreateInstance();
+
+		switch (response)
+		{
+			case IUpdateable updateable:
+			{
+				updateable.UpdateWith(oldValue, UpdateableAction.Updateable);
+				break;
+			}
+			default:
+			{
+				response.UpdateWithUsingReflection(oldValue);
+				break;
+			}
+		}
+
+		if (response is ITrackPropertyChanges changeable)
+		{
+			changeable.ResetHasChanges();
+		}
+
+		return response;
 	}
 
 	#endregion
@@ -71,13 +89,13 @@ public interface ICloneable<out T> : ICloneable
 	/// </summary>
 	/// <param name="maxDepth"> The max depth to clone. Defaults to null. </param>
 	/// <returns> The cloned objects. </returns>
-	new T DeepClone(int? maxDepth = null);
+	public T DeepClone(int? maxDepth = null);
 
 	/// <summary>
 	/// Shallow clone the item. No child items are cloned.
 	/// </summary>
 	/// <returns> The cloned objects. </returns>
-	new T ShallowClone();
+	public T ShallowClone();
 
 	#endregion
 }
@@ -94,13 +112,13 @@ public interface ICloneable
 	/// </summary>
 	/// <param name="maxDepth"> The max depth to clone. Defaults to null. </param>
 	/// <returns> The cloned objects. </returns>
-	public object DeepClone(int? maxDepth = null);
+	public object DeepCloneObject(int? maxDepth = null);
 
 	/// <summary>
 	/// Shallow clone the item. No child items are cloned.
 	/// </summary>
 	/// <returns> The cloned objects. </returns>
-	public object ShallowClone();
+	public object ShallowCloneObject();
 
 	#endregion
 }

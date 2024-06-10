@@ -241,13 +241,13 @@ public class SharedViewModel : ViewModel
 			LeftList.UpdateLock(GetLockable());
 			LeftList.Clear();
 			LeftList.Limit = UseLimit ? Limit : int.MaxValue;
-			LeftList.OrderBy = UseOrder ? new[] { new OrderBy<SelectionOption<int>>(x => x.Id) } : null;
+			LeftList.OrderBy = UseOrder ? [new OrderBy<SelectionOption<int>>(x => x.Id)] : null;
 			MiddleList.Clear();
 			MiddleList.Limit = UseLimit ? Limit : int.MaxValue;
-			MiddleList.OrderBy = UseOrder ? new[] { new OrderBy<SelectionOption<int>>(x => x.Id) } : null;
+			MiddleList.OrderBy = UseOrder ? [new OrderBy<SelectionOption<int>>(x => x.Id)] : null;
 			RightList.Clear();
 			RightList.Limit = UseLimit ? Limit : int.MaxValue;
-			RightList.OrderBy = UseOrder ? new[] { new OrderBy<SelectionOption<int>>(x => x.Id) } : null;
+			RightList.OrderBy = UseOrder ? [new OrderBy<SelectionOption<int>>(x => x.Id)] : null;
 
 			var total = NumberOfItems;
 			var minimum = Math.Max(10, (int) (total * 0.1));
@@ -260,9 +260,9 @@ public class SharedViewModel : ViewModel
 			var sources = new[] { LeftList, MiddleList, RightList };
 			var destinations = new Dictionary<SpeedyList<SelectionOption<int>>, SpeedyList<SelectionOption<int>>[]>
 			{
-				{ LeftList, new[] { MiddleList, RightList } },
-				{ MiddleList, new[] { LeftList, RightList } },
-				{ RightList, new[] { LeftList, MiddleList } }
+				{ LeftList, [MiddleList, RightList] },
+				{ MiddleList, [LeftList, RightList] },
+				{ RightList, [LeftList, MiddleList] }
 			};
 
 			try

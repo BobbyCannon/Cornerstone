@@ -31,7 +31,7 @@ public static class ProcessService
 
 	static ProcessService()
 	{
-		_extensions = new[] { ".exe", ".com" };
+		_extensions = [".exe", ".com"];
 		_query = "SELECT ProcessID, Name, CommandLine, ExecutablePath, Handle FROM Win32_Process";
 	}
 

@@ -9,7 +9,7 @@ namespace Cornerstone;
 /// <summary>
 /// Represents a globally unique identifier (GUID) with a shorter string value.
 /// </summary>
-public struct ShortGuid : IComparable<ShortGuid>
+public struct ShortGuid : IComparable<ShortGuid>, IComparable
 {
 	#region Fields
 
@@ -89,6 +89,12 @@ public struct ShortGuid : IComparable<ShortGuid>
 			return guidComparison;
 		}
 		return string.Compare(Value, other.Value, StringComparison.Ordinal);
+	}
+
+	/// <inheritdoc />
+	public int CompareTo(object obj)
+	{
+		return CompareTo(obj is ShortGuid guid ? guid : default);
 	}
 
 	/// <inheritdoc />

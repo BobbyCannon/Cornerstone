@@ -44,7 +44,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 		_currentKey = default;
 		_collectionChangeTracker = new CollectionChangeTracker();
 
-		Cache = new SpeedyList<EntityState<T, T2>>();
+		Cache = [];
 		Database = database;
 
 		UpdateCacheQuery();

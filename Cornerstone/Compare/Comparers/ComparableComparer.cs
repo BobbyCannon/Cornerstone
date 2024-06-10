@@ -56,7 +56,7 @@ public class ComparableComparer : BaseComparer
 			var type = typeof(IComparable<>);
 			var typed = type.MakeGenericType(expected.GetType());
 			var method = typed.GetMethod(nameof(IComparable.CompareTo));
-			var result = method?.Invoke(expected, new[] { actualValue });
+			var result = method?.Invoke(expected, [actualValue]);
 
 			if (result is 0)
 			{
@@ -64,7 +64,7 @@ public class ComparableComparer : BaseComparer
 			}
 		}
 
-		AddDifference(session, expected.ToString(), actual.ToString(), true);
+		AddDifference(session, expected.ToString(), actual.ToString(), true, message);
 
 		return CompareResult.NotEqual;
 	}

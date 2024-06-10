@@ -24,7 +24,7 @@ public class ReadOnlySetTests : CornerstoneUnitTest
 		IsNotNull(actual);
 		AreEqual(3, actual.Count);
 
-		var actual2 = new ReadOnlySet<int>(new[] { 1, 2, 3 }, new[] { 4, 5, 6 }, new[] { 7, 8, 9 });
+		var actual2 = new ReadOnlySet<int>([1, 2, 3], [4, 5, 6], [7, 8, 9]);
 		var expected2 = new ReadOnlySet<int>(1, 2, 3, 4, 5, 6, 7, 8, 9);
 		AreEqual(expected2, actual2);
 	}

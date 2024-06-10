@@ -48,6 +48,11 @@ public static class JsonSerializerSettingsExtensions
 		settings.Converters.Add(new ShortGuidConverter());
 		settings.Converters.Add(new VersionStringConverter());
 
+		#if NET7_0_OR_GREATER
+		settings.Converters.Add(new Int128TimeConverter());
+		settings.Converters.Add(new UInt128TimeConverter());
+		#endif
+
 		if (updates.EnumFormat == EnumFormat.Name)
 		{
 			settings.Converters.Add(new StringEnumConverter());

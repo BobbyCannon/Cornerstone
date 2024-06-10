@@ -77,12 +77,12 @@ public class BufferTests : CornerstoneUnitTest
 
 	private static IList<char>[] GetScenarios()
 	{
-		return new IList<char>[]
-		{
+		return
+		[
 			new RopeBuffer<char>(),
 			new GapBuffer<char>(),
 			new List<char>()
-		};
+		];
 	}
 
 	private Stopwatch StartTest<T>(T list) where T : IList<char>

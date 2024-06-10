@@ -28,7 +28,28 @@ public static class IntegerExtensions
 	/// <returns> The value within the provided ranges. </returns>
 	public static int EnsureRange(this int value, int min, int max)
 	{
-		return value < min ? min : value > max ? max : value;
+		EnsureRange(ref value, min, max);
+		return value;
+	}
+
+	/// <summary>
+	/// Ensure the value falls between the ranges.
+	/// </summary>
+	/// <param name="value"> The nullable int value. </param>
+	/// <param name="min"> The inclusive minimal value. </param>
+	/// <param name="max"> The inclusive maximum value. </param>
+	/// <returns> The value within the provided ranges. </returns>
+	public static void EnsureRange(ref int value, int min, int max)
+	{
+		if (value < min)
+		{
+			value = min;
+		}
+
+		if (value > max)
+		{
+			value = max;
+		}
 	}
 
 	/// <summary>

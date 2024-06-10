@@ -24,7 +24,7 @@ public class OscTimeTagTests : CornerstoneUnitTest
 		var expected = new OscTimeTag(datetime.Add(span));
 		var timetag = new OscTimeTag(datetime);
 
-		Assert.AreEqual(expected, timetag.Add(span));
+		AreEqual(expected, timetag.Add(span));
 	}
 
 	[TestMethod]
@@ -34,7 +34,7 @@ public class OscTimeTagTests : CornerstoneUnitTest
 		var time1 = OscTimeTag.FromDateTime(expected);
 		var time2 = new OscTimeTag(16136033268821655552);
 		Assert.IsTrue(time1 == time2);
-		Assert.AreEqual(time1, time2);
+		AreEqual(time1, time2);
 
 		time1 = OscTimeTag.MinValue;
 		time2 = OscTimeTag.MaxValue;
@@ -71,8 +71,8 @@ public class OscTimeTagTests : CornerstoneUnitTest
 			var actual = OscTimeTag.FromDateTime(e.Item1);
 			actual.ToString("O").Dump();
 
-			Assert.AreEqual(e.Item2, actual.Value);
-			Assert.AreEqual(e.Item3, actual.ToString());
+			AreEqual(e.Item2, actual.Value);
+			AreEqual(e.Item3, actual.ToString());
 		}
 	}
 
@@ -80,13 +80,13 @@ public class OscTimeTagTests : CornerstoneUnitTest
 	public void FromMillisecond()
 	{
 		var a = OscTimeTag.FromMilliseconds(1234);
-		Assert.AreEqual(1234, a.ToMilliseconds());
-		Assert.AreEqual("1900-01-01T00:00:01.2340000Z", a.ToString());
-		Assert.AreEqual(5299989643u, a.Value);
+		AreEqual(1234, a.ToMilliseconds());
+		AreEqual("1900-01-01T00:00:01.2340000Z", a.ToString());
+		AreEqual(5299989643u, a.Value);
 
 		a = new OscTimeTag(5299989643);
-		Assert.AreEqual(1234, a.ToMilliseconds());
-		Assert.AreEqual("1900-01-01T00:00:01.2340000Z", a.ToString());
+		AreEqual(1234, a.ToMilliseconds());
+		AreEqual("1900-01-01T00:00:01.2340000Z", a.ToString());
 	}
 
 	[TestMethod]
@@ -94,7 +94,7 @@ public class OscTimeTagTests : CornerstoneUnitTest
 	{
 		var time = OscTimeTag.FromDateTime(OscTimeTag.MinDateTime);
 		var actual = time.Value;
-		Assert.AreEqual(0u, actual);
+		AreEqual(0u, actual);
 	}
 
 	[TestMethod]
@@ -118,8 +118,8 @@ public class OscTimeTagTests : CornerstoneUnitTest
 	{
 		var span = new TimeSpan(0, 0, 0, 1, 234);
 		var t = OscTimeTag.FromTimeSpan(span);
-		Assert.AreEqual(5299989643u, t.Value);
-		Assert.AreEqual(1234, t.ToMilliseconds());
+		AreEqual(5299989643u, t.Value);
+		AreEqual(1234, t.ToMilliseconds());
 	}
 
 	[TestMethod]
@@ -139,50 +139,50 @@ public class OscTimeTagTests : CornerstoneUnitTest
 		{
 			var actual = new OscTimeTag(e.Item1);
 			actual.Value.Dump();
-			Assert.AreEqual(e.Item1, actual.Value);
-			Assert.AreEqual(e.Item2, actual.ToString());
+			AreEqual(e.Item1, actual.Value);
+			AreEqual(e.Item2, actual.ToString());
 		}
 	}
 
 	[TestMethod]
 	public void GetHashCodeShouldSucceed()
 	{
-		Assert.AreEqual(0, new OscTimeTag().GetHashCode());
-		Assert.AreEqual(0, OscTimeTag.MinValue.GetHashCode());
-		Assert.AreEqual(1895321856, new OscTimeTag(new DateTime(2020, 02, 14, 04, 35, 12, DateTimeKind.Utc)).GetHashCode());
-		Assert.AreEqual(1878481506, new OscTimeTag(16136033268821655552).GetHashCode());
-		Assert.AreEqual(2147483647, OscTimeTag.MaxValue.GetHashCode());
+		AreEqual(0, new OscTimeTag().GetHashCode());
+		AreEqual(0, OscTimeTag.MinValue.GetHashCode());
+		AreEqual(1895321856, new OscTimeTag(new DateTime(2020, 02, 14, 04, 35, 12, DateTimeKind.Utc)).GetHashCode());
+		AreEqual(1878481506, new OscTimeTag(16136033268821655552).GetHashCode());
+		AreEqual(2147483647, OscTimeTag.MaxValue.GetHashCode());
 	}
 
 	[TestMethod]
 	public void MaxValue()
 	{
 		var expected = new OscTimeTag(0xffffffffffffffff);
-		Assert.AreEqual(expected, OscTimeTag.MaxValue);
+		AreEqual(expected, OscTimeTag.MaxValue);
 	}
 
 	[TestMethod]
 	public void MinPreciseValue()
 	{
 		var expected1 = new OscTimeTag(1);
-		Assert.AreEqual(0.0000000002328306437080797375m, expected1.PreciseValue);
-		Assert.AreEqual(1m, expected1.Value);
-		Assert.AreEqual(599266080000000000, expected1.ToDateTime().Ticks);
+		AreEqual(0.0000000002328306437080797375m, expected1.PreciseValue);
+		AreEqual(1m, expected1.Value);
+		AreEqual(599266080000000000, expected1.ToDateTime().Ticks);
 
 		var expected2 = new OscTimeTag(2);
-		Assert.AreEqual(0.0000000004656612874161594751m, expected2.PreciseValue);
-		Assert.AreEqual(2u, expected2.Value);
-		Assert.AreEqual(599266080000000000, expected2.ToDateTime().Ticks);
+		AreEqual(0.0000000004656612874161594751m, expected2.PreciseValue);
+		AreEqual(2u, expected2.Value);
+		AreEqual(599266080000000000, expected2.ToDateTime().Ticks);
 
 		var expected = expected2 - expected1;
-		Assert.AreEqual(0, expected.Ticks);
+		AreEqual(0, expected.Ticks);
 	}
 
 	[TestMethod]
 	public void MinValue()
 	{
 		var expected = new OscTimeTag(0);
-		Assert.AreEqual(expected, OscTimeTag.MinValue);
+		AreEqual(expected, OscTimeTag.MinValue);
 	}
 
 	[TestMethod]
@@ -219,7 +219,7 @@ public class OscTimeTagTests : CornerstoneUnitTest
 
 		var timetag2 = datetime2.ToOscTimeTag();
 		timetag2.PreciseValue.Dump("precise2: ");
-		Assert.AreEqual(timetag.PreciseValue, timetag2.PreciseValue);
+		AreEqual(timetag.PreciseValue, timetag2.PreciseValue);
 	}
 
 	[TestMethod]
@@ -241,11 +241,11 @@ public class OscTimeTagTests : CornerstoneUnitTest
 		{
 			var actual = OscTimeTag.Parse(e.Item1);
 			actual.Value.Dump();
-			Assert.AreEqual(e.Item2, actual.Value);
-			Assert.AreEqual(e.Item3, actual.ToString());
+			AreEqual(e.Item2, actual.Value);
+			AreEqual(e.Item3, actual.ToString());
 
 			var actual2 = OscTimeTag.Parse(e.Item3);
-			Assert.AreEqual(actual, actual2);
+			AreEqual(actual, actual2);
 		}
 	}
 
@@ -257,38 +257,38 @@ public class OscTimeTagTests : CornerstoneUnitTest
 	public void PrecisionTests()
 	{
 		var value = OscTimeTag.MinValue;
-		Assert.AreEqual(0, value.PreciseValue);
+		AreEqual(0, value.PreciseValue);
 
 		value = OscTimeTag.FromTimeSpan(TimeSpan.Zero);
-		Assert.AreEqual(OscTimeTag.MinValue, value);
+		AreEqual(OscTimeTag.MinValue, value);
 
 		value = OscTimeTag.FromTicks(TimeSpan.FromMilliseconds(123).Ticks);
-		Assert.AreEqual(123, value.ToMilliseconds());
-		Assert.AreEqual(123, value.ToTimeSpan().TotalMilliseconds);
+		AreEqual(123, value.ToMilliseconds());
+		AreEqual(123, value.ToTimeSpan().TotalMilliseconds);
 
 		value = OscTimeTag.FromMilliseconds(123);
-		Assert.AreEqual(123, value.ToMilliseconds());
-		Assert.AreEqual(123, value.ToTimeSpan().TotalMilliseconds);
+		AreEqual(123, value.ToMilliseconds());
+		AreEqual(123, value.ToTimeSpan().TotalMilliseconds);
 
 		value = OscTimeTag.FromTicks(10000);
-		Assert.AreEqual(1, value.ToMilliseconds());
-		Assert.AreEqual(10000, value.ToTimeSpan().Ticks);
-		Assert.AreEqual(1, value.ToTimeSpan().TotalMilliseconds);
+		AreEqual(1, value.ToMilliseconds());
+		AreEqual(10000, value.ToTimeSpan().Ticks);
+		AreEqual(1, value.ToTimeSpan().TotalMilliseconds);
 
 		value = OscTimeTag.FromTicks(5000);
-		Assert.AreEqual(5000, value.ToTimeSpan().Ticks);
-		Assert.AreEqual(0.5, value.ToTimeSpan().TotalMilliseconds);
+		AreEqual(5000, value.ToTimeSpan().Ticks);
+		AreEqual(0.5, value.ToTimeSpan().TotalMilliseconds);
 		value = OscTimeTag.FromTicks(5001);
-		Assert.AreEqual(5001, value.ToTimeSpan().Ticks);
-		Assert.AreEqual(0.5001, value.ToTimeSpan().TotalMilliseconds);
+		AreEqual(5001, value.ToTimeSpan().Ticks);
+		AreEqual(0.5001, value.ToTimeSpan().TotalMilliseconds);
 
 		value = OscTimeTag.FromTicks(15000);
-		Assert.AreEqual(1.5, value.ToMilliseconds());
-		Assert.AreEqual(15000, value.ToTimeSpan().Ticks);
+		AreEqual(1.5, value.ToMilliseconds());
+		AreEqual(15000, value.ToTimeSpan().Ticks);
 		value = OscTimeTag.FromTicks(15001);
-		Assert.AreEqual(1.5001, value.ToMilliseconds());
-		Assert.AreEqual(15001, value.ToTimeSpan().Ticks);
-		Assert.AreEqual(1.5001, value.ToTimeSpan().TotalMilliseconds);
+		AreEqual(1.5001, value.ToMilliseconds());
+		AreEqual(15001, value.ToTimeSpan().Ticks);
+		AreEqual(1.5001, value.ToTimeSpan().TotalMilliseconds);
 	}
 
 	[TestMethod]
@@ -299,8 +299,8 @@ public class OscTimeTagTests : CornerstoneUnitTest
 		var t1 = new OscTimeTag(expected);
 		var t2 = new OscTimeTag(expected.Add(span));
 		var actual = t2 - t1;
-		Assert.AreEqual(123, actual.TotalMilliseconds);
-		Assert.AreEqual(t1, t2 - span);
+		AreEqual(123, actual.TotalMilliseconds);
+		AreEqual(t1, t2 - span);
 	}
 
 	[TestMethod]
@@ -313,7 +313,7 @@ public class OscTimeTagTests : CornerstoneUnitTest
 		dateTime1.ToString("O").Dump();
 		dateTime2.ToString("O").Dump();
 
-		Assert.AreEqual(dateTime1, dateTime2);
+		AreEqual(dateTime1, dateTime2);
 	}
 
 	[TestMethod]
@@ -325,7 +325,7 @@ public class OscTimeTagTests : CornerstoneUnitTest
 
 		time.Dump();
 		time2.Dump();
-		Assert.AreEqual(time.ToString(), time2.ToString());
+		AreEqual(time.ToString(), time2.ToString());
 
 		time = OscTimeTag.Now;
 		text = time.ToString();
@@ -333,38 +333,38 @@ public class OscTimeTagTests : CornerstoneUnitTest
 
 		time.Dump();
 		time2.Dump();
-		Assert.AreEqual(time.ToString(), time2.ToString());
+		AreEqual(time.ToString(), time2.ToString());
 	}
 
 	[TestMethod]
 	public void ToMillisecond()
 	{
 		var t = OscTimeTag.FromMilliseconds(1234f);
-		Assert.AreEqual(1234, t.ToMilliseconds());
-		Assert.AreEqual(5299989643u, t.Value);
-		Assert.AreEqual("1900-01-01T00:00:01.2340000Z", t.ToString());
+		AreEqual(1234, t.ToMilliseconds());
+		AreEqual(5299989643u, t.Value);
+		AreEqual("1900-01-01T00:00:01.2340000Z", t.ToString());
 
 		t = OscTimeTag.FromMilliseconds(1000f);
-		Assert.AreEqual(1000, t.ToMilliseconds());
-		Assert.AreEqual(4294967296u, t.Value);
-		Assert.AreEqual("1900-01-01T00:00:01.0000000Z", t.ToString());
+		AreEqual(1000, t.ToMilliseconds());
+		AreEqual(4294967296u, t.Value);
+		AreEqual("1900-01-01T00:00:01.0000000Z", t.ToString());
 
-		Assert.AreEqual(1000, t.ToMilliseconds());
-		Assert.AreEqual(4294967296u, t.Value);
-		Assert.AreEqual("1900-01-01T00:00:01.0000000Z", t.ToString());
+		AreEqual(1000, t.ToMilliseconds());
+		AreEqual(4294967296u, t.Value);
+		AreEqual("1900-01-01T00:00:01.0000000Z", t.ToString());
 
 		t = OscTimeTag.FromMilliseconds(1001f);
-		Assert.AreEqual(1001, t.ToMilliseconds());
-		Assert.AreEqual(4299262263u, t.Value);
-		Assert.AreEqual("1900-01-01T00:00:01.0010000Z", t.ToString());
+		AreEqual(1001, t.ToMilliseconds());
+		AreEqual(4299262263u, t.Value);
+		AreEqual("1900-01-01T00:00:01.0010000Z", t.ToString());
 	}
 
 	[TestMethod]
 	public void ToMinimalDate()
 	{
 		var actual = new OscTimeTag(0);
-		Assert.AreEqual(OscTimeTag.MinValue, actual);
-		Assert.AreEqual(OscTimeTag.MinDateTime, actual.ToDateTime());
+		AreEqual(OscTimeTag.MinValue, actual);
+		AreEqual(OscTimeTag.MinDateTime, actual.ToDateTime());
 	}
 
 	[TestMethod]
@@ -372,7 +372,7 @@ public class OscTimeTagTests : CornerstoneUnitTest
 	{
 		var time = new OscTimeTag(5304284610u);
 		time.Value.Dump();
-		Assert.AreEqual(1235, time.ToMilliseconds());
+		AreEqual(1235, time.ToMilliseconds());
 	}
 
 	#endregion

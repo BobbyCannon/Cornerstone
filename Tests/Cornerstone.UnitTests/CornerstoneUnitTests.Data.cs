@@ -18,34 +18,6 @@ public partial class CornerstoneUnitTest
 {
 	#region Methods
 
-	protected ISyncableDatabaseProvider<IClientDatabase> GetClientDatabaseProvider()
-	{
-		return new ClientMemoryDatabaseProvider();
-	}
-
-	protected LogListener GetLogListener()
-	{
-		return MemoryLogListener.CreateSession(Guid.NewGuid(), EventLevel.Verbose);
-	}
-
-	protected ClientAccount GetClientAccount(string name, Guid? syncId = null, Action<ClientAccount> update = null)
-	{
-		var response = new ClientAccount
-		{
-			Name = name,
-			EmailAddress = $"{name}@domain.com",
-			Roles = string.Empty,
-			SyncId = syncId ?? Guid.NewGuid()
-		};
-		update?.Invoke(response);
-		return response;
-	}
-
-	protected ISyncableDatabaseProvider<IServerDatabase> GetServerDatabaseProvider()
-	{
-		return new ServerMemoryDatabaseProvider();
-	}
-
 	protected AccountSync GetAccountSync(Action<AccountSync> update = null)
 	{
 		var response = new AccountSync
@@ -73,6 +45,39 @@ public partial class CornerstoneUnitTest
 		};
 		update?.Invoke(response);
 		return response;
+	}
+
+	protected ClientAccount GetClientAccount(string name, Guid? syncId = null, Action<ClientAccount> update = null)
+	{
+		var response = new ClientAccount
+		{
+			Name = name,
+			EmailAddress = $"{name}@domain.com",
+			Roles = string.Empty,
+			SyncId = syncId ?? Guid.NewGuid()
+		};
+		update?.Invoke(response);
+		return response;
+	}
+
+	protected ISyncableDatabaseProvider<IClientDatabase> GetClientDatabaseProvider()
+	{
+		return new ClientMemoryDatabaseProvider();
+	}
+
+	protected LogListener GetLogListener()
+	{
+		return MemoryLogListener.CreateSession(Guid.NewGuid(), EventLevel.Verbose);
+	}
+
+	protected ISyncableDatabaseProvider<IServerDatabase> GetServerDatabaseProvider()
+	{
+		return new ServerMemoryDatabaseProvider();
+	}
+
+	protected virtual void SetupDependencyInjection()
+	{
+		DependencyInjector.AddTransient(RuntimeInformation);
 	}
 
 	#endregion

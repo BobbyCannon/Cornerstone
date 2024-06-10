@@ -1,4 +1,4 @@
-﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+﻿
 
 namespace Cornerstone;
 
@@ -36,5 +36,12 @@ public enum BabelKeys
 	SyncOptionsInvalid = 14,
 	SyncSessionAlreadyActive = 15,
 	SyncSessionInvalid = 16,
-	SyncClientNotSupported = 17
+	SyncClientNotSupported = 17,
+
+	// Clipboard
+	ClipboardCouldNotBeOpened = 18,
+	ClipboardCouldNotBeClosed = 19,
+	ClipboardCouldNotBeCleared = 20,
+	ClipboardCouldNotBeRead = 21,
+	ClipboardCouldNotSetData = 22
 }

@@ -8,6 +8,7 @@ using Cornerstone.Serialization.Consumer;
 using Cornerstone.Serialization.Json.Converters;
 using Cornerstone.Serialization.Json.Values;
 using Cornerstone.Text;
+using Cornerstone.Text.Buffers;
 using Cornerstone.Text.Human;
 
 #endregion
@@ -203,6 +204,8 @@ public sealed class TextJsonConsumer : ObjectConsumer<ISerializationOptions>, IO
 
 		var converter = JsonSerializer.GetConverter(value.GetType());
 		converter.Append(value, value.GetType(), this, Settings);
+
+		RemoveReference(value);
 		
 		return this;
 	}
@@ -223,7 +226,7 @@ public sealed class TextJsonConsumer : ObjectConsumer<ISerializationOptions>, IO
 	{
 		if (Settings.NamingConvention == NamingConvention.CamelCase)
 		{
-			name = StringFormatter.ToCamelCase(name);
+			name = name.ToCamelCase();
 		}
 
 		WriteRawString($"\"{name}\"{(Settings.TextFormat != TextFormat.None ? ": " : ":")}");

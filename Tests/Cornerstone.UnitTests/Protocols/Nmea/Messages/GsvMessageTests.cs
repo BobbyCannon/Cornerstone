@@ -16,8 +16,7 @@ public class GsvMessageTests : BaseMessageTests
 	[TestMethod]
 	public void TestMethodParse()
 	{
-		ProcessParseScenarios(new (string sentance, GsvMessage expected)[]
-		{
+		ProcessParseScenarios([
 			(
 				"$GPGSV,3,1,10,01,50,304,26,03,24,245,16,08,56,204,28,10,21,059,20*77",
 				new GsvMessage
@@ -70,7 +69,7 @@ public class GsvMessageTests : BaseMessageTests
 					Checksum = "79"
 				}
 			)
-		});
+		]);
 	}
 
 	#endregion

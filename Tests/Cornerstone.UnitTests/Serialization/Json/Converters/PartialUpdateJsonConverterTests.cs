@@ -46,8 +46,8 @@ public class PartialUpdateJsonConverterTests : JsonConverterTest<PartialUpdateJs
 
 		public Guid Id
 		{
-			get => Get<Guid>(nameof(Id));
-			set => Set(nameof(Id), value);
+			get => Get<Guid>();
+			set => Set(value);
 		}
 
 		#endregion

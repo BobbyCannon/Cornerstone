@@ -64,7 +64,7 @@ internal static class NativeScreen
 	{
 		#region Fields
 
-		public readonly ArrayList screens = new ArrayList();
+		public readonly ArrayList screens = [];
 
 		#endregion
 

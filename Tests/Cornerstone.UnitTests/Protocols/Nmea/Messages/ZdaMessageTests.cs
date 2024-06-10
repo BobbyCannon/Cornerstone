@@ -16,8 +16,7 @@ public class ZdaMessageTests : BaseMessageTests
 	[TestMethod]
 	public void TestMethodParse()
 	{
-		ProcessParseScenarios(new (string sentance, ZdaMessage expected)[]
-		{
+		ProcessParseScenarios([
 			(
 				"$GPZDA,172809.45,12,07,1996,00,00*61",
 				new ZdaMessage
@@ -60,7 +59,7 @@ public class ZdaMessageTests : BaseMessageTests
 					Checksum = "6E"
 				}
 			)
-		});
+		]);
 	}
 
 	#endregion

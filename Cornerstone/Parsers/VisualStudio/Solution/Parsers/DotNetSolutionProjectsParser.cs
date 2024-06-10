@@ -33,21 +33,6 @@ internal class DotNetSolutionProjectsParser
 		return list;
 	}
 
-	private DotNetSolutionProject LoadSolutionProject(DotNetSolution solution, Match match)
-	{
-		var projectTypeId = new Guid(match.Groups["TypeId"].Value);
-		var project = new DotNetSolutionProject(solution, match.Groups["Name"].Value)
-		{
-			Type = ProjectTypeIds.ToEnum(projectTypeId),
-			TypeId = projectTypeId,
-			RelativePath = match.Groups["Path"].Value,
-			Id = new Guid(match.Groups["Id"].Value),
-			ProjectSections = CreateProjectSections(match)
-		};
-		project.Load();
-		return project;
-	}
-
 	private static DotNetSolutionProjectSection CreateProjectSection(string record)
 	{
 		var header = record.Substring(0, record.IndexOf('\n')).Trim();
@@ -105,6 +90,21 @@ internal class DotNetSolutionProjectsParser
 		var type = Regex.Match(header, @" = (?<Type>.*)$").Groups[1].Value;
 
 		return ProjectSectionTypeConverter.ConvertToType(type);
+	}
+
+	private DotNetSolutionProject LoadSolutionProject(DotNetSolution solution, Match match)
+	{
+		var projectTypeId = new Guid(match.Groups["TypeId"].Value);
+		var project = new DotNetSolutionProject(solution, match.Groups["Name"].Value)
+		{
+			Type = ProjectTypeIds.ToEnum(projectTypeId),
+			TypeId = projectTypeId,
+			RelativePath = match.Groups["Path"].Value,
+			Id = new Guid(match.Groups["Id"].Value),
+			ProjectSections = CreateProjectSections(match)
+		};
+		project.Load();
+		return project;
 	}
 
 	#endregion

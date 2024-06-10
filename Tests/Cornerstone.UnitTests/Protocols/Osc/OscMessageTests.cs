@@ -22,7 +22,7 @@ public class OscMessageTests : CornerstoneUnitTest
 	{
 		var command = "/";
 		var message = (OscError) OscPacket.Parse(command);
-		Assert.AreEqual(OscError.Message.InvalidMessageAddress, message.Code);
+		AreEqual(OscError.Message.InvalidMessageAddress, message.Code);
 	}
 
 	[TestMethod]
@@ -38,8 +38,8 @@ public class OscMessageTests : CornerstoneUnitTest
 
 		var message = packet as OscMessage;
 		Assert.IsNotNull(message);
-		Assert.AreEqual("8d337ca7-8f05-45c8-83f5-dcd5b7bc5725", message.Arguments[0]);
-		Assert.AreEqual("Dawson\'s Body Shop", message.Arguments[1]);
+		AreEqual("8d337ca7-8f05-45c8-83f5-dcd5b7bc5725", message.Arguments[0]);
+		AreEqual("Dawson\'s Body Shop", message.Arguments[1]);
 	}
 
 	[TestMethod]
@@ -58,7 +58,7 @@ public class OscMessageTests : CornerstoneUnitTest
 	{
 		var command = "name";
 		var message = (OscError) OscPacket.Parse(command);
-		Assert.AreEqual(OscError.Message.InvalidMessageAddress, message.Code);
+		AreEqual(OscError.Message.InvalidMessageAddress, message.Code);
 	}
 
 	[TestMethod]
@@ -66,7 +66,7 @@ public class OscMessageTests : CornerstoneUnitTest
 	{
 		var command = "/name";
 		var message = (OscMessage) OscPacket.Parse(command);
-		Assert.AreEqual("/name", message.Address);
+		AreEqual("/name", message.Address);
 	}
 
 	[TestMethod]
@@ -83,9 +83,9 @@ public class OscMessageTests : CornerstoneUnitTest
 		{
 			var command = $"/system/time, {{ Time: {e.Key} }}";
 			var message = (OscMessage) OscPacket.Parse(command);
-			Assert.AreEqual("/system/time", message.Address);
-			Assert.AreEqual(1, message.Arguments.Count);
-			Assert.AreEqual(e.Value, ((OscTimeTag) message.Arguments[0]).Value);
+			AreEqual("/system/time", message.Address);
+			AreEqual(1, message.Arguments.Count);
+			AreEqual(e.Value, (OscTimeTag) message.Arguments[0]);
 		}
 	}
 
@@ -96,9 +96,9 @@ public class OscMessageTests : CornerstoneUnitTest
 		var expected = new OscMessage("/update", "This is \"a quote\". -John");
 		var actual = (OscMessage) OscPacket.Parse(data);
 
-		Assert.AreEqual(expected.Address, actual.Address);
-		Assert.AreEqual(expected.Arguments.Count, actual.Arguments.Count);
-		Assert.AreEqual(expected.Arguments[0], actual.Arguments[0]);
+		AreEqual(expected.Address, actual.Address);
+		AreEqual(expected.Arguments.Count, actual.Arguments.Count);
+		AreEqual(expected.Arguments[0], actual.Arguments[0]);
 	}
 
 	[TestMethod]
@@ -115,7 +115,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		//actualMessage.Arguments[0].Dump();
 
 		var actualTime = actualMessage.GetArgument<string>(0).FromJson<OscTimeTag>();
-		Assert.AreEqual(time, actualTime);
+		AreEqual(time, actualTime);
 	}
 
 	[TestMethod]
@@ -146,7 +146,7 @@ public class OscMessageTests : CornerstoneUnitTest
 
 		message = new OscMessage("/a", false);
 		//                         /     a                 ,     F
-		expected = new byte[] { 0x2F, 0x61, 0x00, 0x00, 0x2C, 0x46, 0x00, 0x00 };
+		expected = [0x2F, 0x61, 0x00, 0x00, 0x2C, 0x46, 0x00, 0x00];
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
@@ -168,7 +168,7 @@ public class OscMessageTests : CornerstoneUnitTest
 
 		message = new OscMessage("/a", new byte[] { 0, 1, 1, 2, 3, 5, 8 });
 		//                         /     a                 ,     i                                   8     0     1     1     2     3     5     8
-		expected = new byte[] { 0x2F, 0x61, 0x00, 0x00, 0x2C, 0x62, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x00, 0x01, 0x01, 0x02, 0x03, 0x05, 0x08, 0x00 };
+		expected = [0x2F, 0x61, 0x00, 0x00, 0x2C, 0x62, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x00, 0x01, 0x01, 0x02, 0x03, 0x05, 0x08, 0x00];
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
@@ -192,7 +192,7 @@ public class OscMessageTests : CornerstoneUnitTest
 
 		message = new OscMessage("/a", decimal.MinValue);
 		//                         /     a                 ,     M                 1                                                                                        16
-		expected = new byte[] { 0x2F, 0x61, 0x00, 0x00, 0x2C, 0x4D, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+		expected = [0x2F, 0x61, 0x00, 0x00, 0x2C, 0x4D, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
 		actual = message.ToByteArray();
 		actual.Select(x => $"0x{x:X2}, ").Dump();
 		AreEqual(expected, actual);
@@ -203,7 +203,7 @@ public class OscMessageTests : CornerstoneUnitTest
 
 		message = new OscMessage("/a", decimal.MaxValue);
 		//                         /     a                 ,     M                 1                                                                                        16
-		expected = new byte[] { 0x2F, 0x61, 0x00, 0x00, 0x2C, 0x4D, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+		expected = [0x2F, 0x61, 0x00, 0x00, 0x2C, 0x4D, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
 		actual = message.ToByteArray();
 		actual.Select(x => $"0x{x:X2}, ").Dump();
 		AreEqual(expected, actual);
@@ -229,7 +229,7 @@ public class OscMessageTests : CornerstoneUnitTest
 
 		message = new OscMessage("/a", int.MinValue);
 		//                         /     a                 ,     i                 1                 4
-		expected = new byte[] { 0x2F, 0x61, 0x00, 0x00, 0x2C, 0x69, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00 };
+		expected = [0x2F, 0x61, 0x00, 0x00, 0x2C, 0x69, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00];
 		actual = message.ToByteArray();
 		actual.Select(x => $"0x{x:X2}, ").Dump();
 		AreEqual(expected, actual);
@@ -240,7 +240,7 @@ public class OscMessageTests : CornerstoneUnitTest
 
 		message = new OscMessage("/a", int.MaxValue);
 		//                         /     a                 ,     i                 1                 4
-		expected = new byte[] { 0x2F, 0x61, 0x00, 0x00, 0x2C, 0x69, 0x00, 0x00, 0x7F, 0xFF, 0xFF, 0xFF };
+		expected = [0x2F, 0x61, 0x00, 0x00, 0x2C, 0x69, 0x00, 0x00, 0x7F, 0xFF, 0xFF, 0xFF];
 		actual = message.ToByteArray();
 		actual.Select(x => $"0x{x:X2}, ").Dump();
 		AreEqual(expected, actual);
@@ -264,7 +264,7 @@ public class OscMessageTests : CornerstoneUnitTest
 
 		message = new OscMessage("/a", "1");
 		//                         /     a                 ,     s                 1
-		expected = new byte[] { 0x2F, 0x61, 0x00, 0x00, 0x2C, 0x73, 0x00, 0x00, 0x31, 0x00, 0x00, 0x00 };
+		expected = [0x2F, 0x61, 0x00, 0x00, 0x2C, 0x73, 0x00, 0x00, 0x31, 0x00, 0x00, 0x00];
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
@@ -273,7 +273,7 @@ public class OscMessageTests : CornerstoneUnitTest
 
 		message = new OscMessage("/a", "123");
 		//                         /     a                 ,     s                 1     2     3
-		expected = new byte[] { 0x2F, 0x61, 0x00, 0x00, 0x2C, 0x73, 0x00, 0x00, 0x31, 0x32, 0x33, 0x00 };
+		expected = [0x2F, 0x61, 0x00, 0x00, 0x2C, 0x73, 0x00, 0x00, 0x31, 0x32, 0x33, 0x00];
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
@@ -282,7 +282,7 @@ public class OscMessageTests : CornerstoneUnitTest
 
 		message = new OscMessage("/a", "1234");
 		//                         /     a                 ,     s                 1     2     3     4
-		expected = new byte[] { 0x2F, 0x61, 0x00, 0x00, 0x2C, 0x73, 0x00, 0x00, 0x31, 0x32, 0x33, 0x34, 0x00, 0x00, 0x00, 0x00 };
+		expected = [0x2F, 0x61, 0x00, 0x00, 0x2C, 0x73, 0x00, 0x00, 0x31, 0x32, 0x33, 0x34, 0x00, 0x00, 0x00, 0x00];
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
@@ -291,7 +291,7 @@ public class OscMessageTests : CornerstoneUnitTest
 
 		message = new OscMessage("/a", "12345");
 		//                         /     a                 ,     s                 1     2     3     4     5
-		expected = new byte[] { 0x2F, 0x61, 0x00, 0x00, 0x2C, 0x73, 0x00, 0x00, 0x31, 0x32, 0x33, 0x34, 0x35, 0x00, 0x00, 0x00 };
+		expected = [0x2F, 0x61, 0x00, 0x00, 0x2C, 0x73, 0x00, 0x00, 0x31, 0x32, 0x33, 0x34, 0x35, 0x00, 0x00, 0x00];
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
@@ -346,7 +346,7 @@ public class OscMessageTests : CornerstoneUnitTest
 
 		message = new OscMessage("/a", 23, "12345");
 		//                         /     a                 ,     i     s                            23     1     2     3     4     5
-		expected = new byte[] { 0x2F, 0x61, 0x00, 0x00, 0x2C, 0x69, 0x73, 0x00, 0x00, 0x00, 0x00, 0x17, 0x31, 0x32, 0x33, 0x34, 0x35, 0x00, 0x00, 0x00 };
+		expected = [0x2F, 0x61, 0x00, 0x00, 0x2C, 0x69, 0x73, 0x00, 0x00, 0x00, 0x00, 0x17, 0x31, 0x32, 0x33, 0x34, 0x35, 0x00, 0x00, 0x00];
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
@@ -355,23 +355,23 @@ public class OscMessageTests : CornerstoneUnitTest
 
 		message = new OscMessage("/a", 23, Guid.Parse("0354FF2E-508C-4CF6-8BEA-2A2870E78A9B"));
 		//                         /     a                 ,     i     s                            23     0     3     5     4     F     F     2     E     -     5     0     8     C     -     4     C     F     6     -     8     B     E     A     -     2     A     2     8     7     0     E     7     8     A     9     B
-		expected = new byte[] { 0x2F, 0x61, 0x00, 0x00, 0x2C, 0x69, 0x73, 0x00, 0x00, 0x00, 0x00, 0x17, 0x30, 0x33, 0x35, 0x34, 0x66, 0x66, 0x32, 0x65, 0x2D, 0x35, 0x30, 0x38, 0x63, 0x2D, 0x34, 0x63, 0x66, 0x36, 0x2D, 0x38, 0x62, 0x65, 0x61, 0x2D, 0x32, 0x61, 0x32, 0x38, 0x37, 0x30, 0x65, 0x37, 0x38, 0x61, 0x39, 0x62, 0x00, 0x00, 0x00, 0x00 };
-		actual = message.ToByteArray();
-		AreEqual(expected, actual);
-		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
-		Assert.AreEqual(message[0], actualMessage[0]);
-		Assert.AreEqual(message[1].ToString(), actualMessage[1]);
-
-		message = new OscMessage("/a", new byte[] { 0, 1, 1, 2, 3, 5, 8, 13 }, Guid.Parse("0354FF2E-508C-4CF6-8BEA-2A2870E78A9B"));
-		//                         /     a                 ,     i     s                             8     0     1     1     2     3     5     8    13     0     3     5     4     F     F     2     E     -     5     0     8     C     -     4     C     F     6     -     8     B     E     A     -     2     A     2     8     7     0     E     7     8     A     9     B
-		expected = new byte[] { 0x2F, 0x61, 0x00, 0x00, 0x2C, 0x62, 0x73, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x01, 0x01, 0x02, 0x03, 0x05, 0x08, 0x0D, 0x30, 0x33, 0x35, 0x34, 0x66, 0x66, 0x32, 0x65, 0x2D, 0x35, 0x30, 0x38, 0x63, 0x2D, 0x34, 0x63, 0x66, 0x36, 0x2D, 0x38, 0x62, 0x65, 0x61, 0x2D, 0x32, 0x61, 0x32, 0x38, 0x37, 0x30, 0x65, 0x37, 0x38, 0x61, 0x39, 0x62, 0x00, 0x00, 0x00, 0x00 };
+		expected = [0x2F, 0x61, 0x00, 0x00, 0x2C, 0x69, 0x73, 0x00, 0x00, 0x00, 0x00, 0x17, 0x30, 0x33, 0x35, 0x34, 0x66, 0x66, 0x32, 0x65, 0x2D, 0x35, 0x30, 0x38, 0x63, 0x2D, 0x34, 0x63, 0x66, 0x36, 0x2D, 0x38, 0x62, 0x65, 0x61, 0x2D, 0x32, 0x61, 0x32, 0x38, 0x37, 0x30, 0x65, 0x37, 0x38, 0x61, 0x39, 0x62, 0x00, 0x00, 0x00, 0x00];
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
 		Assert.IsNotNull(actualMessage);
 		AreEqual(message[0], actualMessage[0]);
-		Assert.AreEqual(message[1].ToString(), actualMessage[1]);
+		AreEqual(message[1].ToString(), actualMessage[1]);
+
+		message = new OscMessage("/a", new byte[] { 0, 1, 1, 2, 3, 5, 8, 13 }, Guid.Parse("0354FF2E-508C-4CF6-8BEA-2A2870E78A9B"));
+		//                         /     a                 ,     i     s                             8     0     1     1     2     3     5     8    13     0     3     5     4     F     F     2     E     -     5     0     8     C     -     4     C     F     6     -     8     B     E     A     -     2     A     2     8     7     0     E     7     8     A     9     B
+		expected = [0x2F, 0x61, 0x00, 0x00, 0x2C, 0x62, 0x73, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x01, 0x01, 0x02, 0x03, 0x05, 0x08, 0x0D, 0x30, 0x33, 0x35, 0x34, 0x66, 0x66, 0x32, 0x65, 0x2D, 0x35, 0x30, 0x38, 0x63, 0x2D, 0x34, 0x63, 0x66, 0x36, 0x2D, 0x38, 0x62, 0x65, 0x61, 0x2D, 0x32, 0x61, 0x32, 0x38, 0x37, 0x30, 0x65, 0x37, 0x38, 0x61, 0x39, 0x62, 0x00, 0x00, 0x00, 0x00];
+		actual = message.ToByteArray();
+		AreEqual(expected, actual);
+		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
+		Assert.IsNotNull(actualMessage);
+		AreEqual(message[0], actualMessage[0]);
+		AreEqual(message[1].ToString(), actualMessage[1]);
 	}
 
 	[TestMethod]
@@ -397,7 +397,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		var actual = message.ToString();
 
 		actual.Escape().Dump();
-		Assert.AreEqual(expected, actual);
+		AreEqual(expected, actual);
 
 		ValidateOscMessage(OscPacket.Parse(actual) as OscMessage, false);
 	}
@@ -425,12 +425,12 @@ public class OscMessageTests : CornerstoneUnitTest
 		{
 			var message = new OscMessage("/update", item.Key);
 			var actual = message.ToString();
-			Assert.AreEqual(item.Value, actual);
+			AreEqual(item.Value, actual);
 
 			var actualMessage = OscPacket.Parse(item.Value) as OscMessage;
 			Assert.IsNotNull(actualMessage);
-			Assert.AreEqual(1, actualMessage.Arguments.Count);
-			Assert.AreEqual(item.Key, actualMessage.Arguments[0]);
+			AreEqual(1, actualMessage.Arguments.Count);
+			AreEqual(item.Key, actualMessage.Arguments[0]);
 		}
 	}
 
@@ -470,47 +470,47 @@ public class OscMessageTests : CornerstoneUnitTest
 	{
 		var index = 0;
 		Assert.IsNotNull(actual);
-		Assert.AreEqual("/Address", actual.Address);
-		Assert.AreEqual(26, actual.Arguments.Count);
-		Assert.AreEqual(123, actual.Arguments[index++]);
-		Assert.AreEqual((uint) 456, actual.Arguments[index++]);
-		Assert.AreEqual("Boom", actual.Arguments[index++]);
+		AreEqual("/Address", actual.Address);
+		AreEqual(26, actual.Arguments.Count);
+		AreEqual(123, actual.Arguments[index++]);
+		AreEqual((uint) 456, actual.Arguments[index++]);
+		AreEqual("Boom", actual.Arguments[index++]);
 		AreEqual(new byte[] { 1, 2, 3 }, actual.Arguments[index++]);
-		Assert.AreEqual((long) 321, actual.Arguments[index++]);
-		Assert.AreEqual((ulong) 654, actual.Arguments[index++]);
-		Assert.AreEqual(new OscTimeTag(new DateTime(2019, 1, 20, 07, 53, 56, DateTimeKind.Utc)).Value, actual.Arguments[index]);
-		Assert.AreEqual(16136018769012064256, (ulong) actual.Arguments[index++]);
-		Assert.AreEqual(new OscTimeTag(new DateTime(2019, 1, 20, 08, 50, 12, DateTimeKind.Utc)), actual.Arguments[index]);
-		Assert.AreEqual(16136033268821655552, ((OscTimeTag) actual.Arguments[index++]).Value);
+		AreEqual((long) 321, actual.Arguments[index++]);
+		AreEqual((ulong) 654, actual.Arguments[index++]);
+		AreEqual(new OscTimeTag(new DateTime(2019, 1, 20, 07, 53, 56, DateTimeKind.Utc)).Value, actual.Arguments[index]);
+		AreEqual(16136018769012064256, (ulong) actual.Arguments[index++]);
+		AreEqual(new OscTimeTag(new DateTime(2019, 1, 20, 08, 50, 12, DateTimeKind.Utc)), actual.Arguments[index]);
+		AreEqual(16136033268821655552, ((OscTimeTag) actual.Arguments[index++]).Value);
 		AreEqual(new object[] { true, 123, "fox", null }, actual.Arguments[index++]);
-		Assert.AreEqual('A', actual.Arguments[index++]);
-		Assert.AreEqual(true, actual.Arguments[index++]);
-		Assert.AreEqual(false, actual.Arguments[index++]);
-		Assert.AreEqual(123.45f, actual.Arguments[index++]);
+		AreEqual('A', actual.Arguments[index++]);
+		AreEqual(true, actual.Arguments[index++]);
+		AreEqual(false, actual.Arguments[index++]);
+		AreEqual(123.45f, actual.Arguments[index++]);
 
 		if (allInfinityTheSame)
 		{
-			Assert.AreEqual(double.PositiveInfinity, actual.Arguments[index++]);
-			Assert.AreEqual(double.PositiveInfinity, actual.Arguments[index++]);
+			AreEqual(double.PositiveInfinity, actual.Arguments[index++]);
+			AreEqual(double.PositiveInfinity, actual.Arguments[index++]);
 		}
 		else
 		{
-			Assert.AreEqual(float.PositiveInfinity, actual.Arguments[index++]);
-			Assert.AreEqual(float.NegativeInfinity, actual.Arguments[index++]);
+			AreEqual(float.PositiveInfinity, actual.Arguments[index++]);
+			AreEqual(float.NegativeInfinity, actual.Arguments[index++]);
 		}
 
-		Assert.AreEqual(null, actual.Arguments[index++]);
-		Assert.AreEqual(54.321d, actual.Arguments[index++]);
-		Assert.AreEqual(double.PositiveInfinity, actual.Arguments[index++]);
-		Assert.AreEqual(allInfinityTheSame ? double.PositiveInfinity : double.NegativeInfinity, actual.Arguments[index++]);
-		Assert.AreEqual(12345.67890123m, actual.Arguments[index++]);
-		Assert.AreEqual(decimal.MinValue, actual.Arguments[index++]);
-		Assert.AreEqual(decimal.MaxValue, actual.Arguments[index++]);
-		Assert.AreEqual(new OscSymbol("Test"), actual.Arguments[index++]);
-		Assert.AreEqual(new OscRgba(1, 2, 3, 4), actual.Arguments[index++]);
-		Assert.AreEqual(new OscMidi(80, 76, 42, 24), actual.Arguments[index++]);
-		Assert.AreEqual(new TimeSpan(12, 34, 56, 43, 1234), actual.Arguments[index]);
-		Assert.AreEqual(new TimeSpan(12, 34, 56, 43, 1234).Ticks, ((TimeSpan) actual.Arguments[index]).Ticks);
+		AreEqual(null, actual.Arguments[index++]);
+		AreEqual(54.321d, actual.Arguments[index++]);
+		AreEqual(double.PositiveInfinity, actual.Arguments[index++]);
+		AreEqual(allInfinityTheSame ? double.PositiveInfinity : double.NegativeInfinity, actual.Arguments[index++]);
+		AreEqual(12345.67890123m, actual.Arguments[index++]);
+		AreEqual(decimal.MinValue, actual.Arguments[index++]);
+		AreEqual(decimal.MaxValue, actual.Arguments[index++]);
+		AreEqual(new OscSymbol("Test"), actual.Arguments[index++]);
+		AreEqual(new OscRgba(1, 2, 3, 4), actual.Arguments[index++]);
+		AreEqual(new OscMidi(80, 76, 42, 24), actual.Arguments[index++]);
+		AreEqual(new TimeSpan(12, 34, 56, 43, 1234), actual.Arguments[index]);
+		AreEqual(new TimeSpan(12, 34, 56, 43, 1234).Ticks, ((TimeSpan) actual.Arguments[index]).Ticks);
 	}
 
 	#endregion

@@ -72,14 +72,8 @@ public class DictionaryConverterTests : JsonConverterTest<DictionaryConverter>
 			// <Scenarios>
 			new("0 Dictionary<string, int>", new Dictionary<string, int>
 			{
-				{
-					"One",
-					1
-				},
-				{
-					"Two",
-					2
-				}
+				{ "One", 1 },
+				{ "Two", 2 }
 			}, typeof(Dictionary<string, int>), "{\"One\":1,\"Two\":2}"),
 			// </Scenarios>
 		};

@@ -5,8 +5,8 @@ using Cornerstone.Extensions;
 
 #endregion
 
-// ReSharper disable once CheckNamespace
-namespace Cornerstone;
+
+namespace Cornerstone.Internal;
 
 /// <summary>
 /// Generate hashcode for many items

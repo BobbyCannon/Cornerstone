@@ -1,6 +1,4 @@
-﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-
-namespace Cornerstone.Parsers.Xml;
+﻿namespace Cornerstone.Parsers.Xml;
 
 public class XmlComment : XmlElement
 {

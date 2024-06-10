@@ -15,7 +15,7 @@ namespace Cornerstone.Location;
 /// Represents location information for a device.
 /// </summary>
 public abstract class LocationInformation<T>
-	: CloneableBindable<T>, ILocationInformation
+	: Bindable<T>, ILocationInformation
 	where T : ILocationInformation
 {
 	#region Constructors

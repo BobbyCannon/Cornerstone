@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Cornerstone.Extensions;
 using Cornerstone.Parsers;
 using Cornerstone.Parsers.Json;
 using Cornerstone.Serialization.Consumer;
@@ -10,7 +11,7 @@ using Cornerstone.Serialization.Json.Consumers;
 using Cornerstone.Serialization.Json.Converters;
 using Cornerstone.Serialization.Json.Values;
 using Cornerstone.Storage;
-using Cornerstone.Text;
+using Cornerstone.Text.Buffers;
 
 #endregion
 
@@ -54,7 +55,7 @@ public class JsonSerializer : IJsonSerializer
 
 	static JsonSerializer()
 	{
-		_cache = new MemoryCache<Type, IJsonConverter>();
+		_cache = [];
 		_customConverters = new List<IJsonConverter>();
 		_converters = new List<IJsonConverter>
 			{
@@ -89,6 +90,11 @@ public class JsonSerializer : IJsonSerializer
 	/// <returns> The instance of the object. </returns>
 	public static object Convert(Type type, JsonValue jsonValue)
 	{
+		if (type.IsNullable() && jsonValue is JsonNull or null)
+		{
+			return null;
+		}
+
 		var converter = GetConverter(type);
 		return converter.ConvertTo(type, jsonValue);
 	}

@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Cornerstone.UnitTests.Protocols.Nmea;
 
 [TestClass]
-public class LocationTests
+public class LocationTests : CornerstoneUnitTest
 {
 	#region Methods
 
@@ -20,7 +20,7 @@ public class LocationTests
 	{
 		var l = new NmeaLocation("02436.77459", "E");
 		var d = l.ToDecimal();
-		Assert.AreEqual("24.61291", d.ToString("0.00000"));
+		AreEqual("24.61291", d.ToString("0.00000"));
 	}
 
 	[TestMethod]
@@ -28,7 +28,7 @@ public class LocationTests
 	{
 		var l = new NmeaLocation("", "");
 		var d = l.ToDecimal();
-		Assert.AreEqual(-1, d);
+		AreEqual(-1, d);
 	}
 
 	/// <summary>
@@ -39,7 +39,7 @@ public class LocationTests
 	{
 		var l = new NmeaLocation("4036.82924", "N");
 		var d = l.ToDecimal();
-		Assert.AreEqual("40.613821", d.ToString("0.000000"));
+		AreEqual("40.613821", d.ToString("0.000000"));
 	}
 
 	[TestMethod]
@@ -47,7 +47,7 @@ public class LocationTests
 	{
 		var l = new NmeaLocation("4036.82924", "S");
 		var d = l.ToDecimal();
-		Assert.AreEqual("-40.61382", d.ToString("0.00000"));
+		AreEqual("-40.61382", d.ToString("0.00000"));
 	}
 
 	[TestMethod]
@@ -55,7 +55,7 @@ public class LocationTests
 	{
 		var l = new NmeaLocation("02436.77459", "W");
 		var d = l.ToDecimal();
-		Assert.AreEqual("-24.61291", d.ToString("0.00000"));
+		AreEqual("-24.61291", d.ToString("0.00000"));
 	}
 
 	#endregion

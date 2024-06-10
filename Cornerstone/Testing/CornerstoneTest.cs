@@ -8,7 +8,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading;
 using Cornerstone.Attributes;
 using Cornerstone.Compare;
 using Cornerstone.Convert;
@@ -38,7 +37,7 @@ public abstract partial class CornerstoneTest : ITimeProvider
 {
 	#region Fields
 
-	private static Action<string> _clipboardProvider;
+	private static IClipboardService _clipboard;
 	private DateTime? _currentDateTime;
 	private readonly ITimeProvider _timeService;
 
@@ -106,11 +105,11 @@ public abstract partial class CornerstoneTest : ITimeProvider
 	/// <param name="expected"> The value that is expected. </param>
 	/// <param name="actual"> The value to compare with expected. </param>
 	/// <param name="message"> An optional prefix to include with the assert message. </param>
-	/// <param name="settings"> The settings for the compare session. </param>
+	/// <param name="options"> The settings for the compare session. </param>
 	/// <param name="configure"> Optional configuration before the session processes. </param>
-	public void AreEqual(object expected, object actual, TextBuilder message, ComparerOptions? settings = null, Action<CompareSession<object, object>> configure = null)
+	public void AreEqual(object expected, object actual, TextBuilder message, ComparerOptions? options = null, Action<CompareSession<object, object>> configure = null)
 	{
-		AreEqual(expected, actual, () => message?.ToString(), settings, configure);
+		AreEqual(expected, actual, () => message?.ToString(), options, configure);
 	}
 
 	/// <summary>
@@ -119,11 +118,11 @@ public abstract partial class CornerstoneTest : ITimeProvider
 	/// <param name="expected"> The value that is expected. </param>
 	/// <param name="actual"> The value to compare with expected. </param>
 	/// <param name="message"> An optional prefix to include with the assert message. </param>
-	/// <param name="settings"> The settings for the compare session. </param>
+	/// <param name="options"> The settings for the compare session. </param>
 	/// <param name="configure"> Optional configuration before the session processes. </param>
-	public void AreEqual(object expected, object actual, string message = null, ComparerOptions? settings = null, Action<CompareSession<object, object>> configure = null)
+	public void AreEqual(object expected, object actual, string message = null, ComparerOptions? options = null, Action<CompareSession<object, object>> configure = null)
 	{
-		AreEqual(expected, actual, () => message, settings, configure);
+		AreEqual(expected, actual, () => message, options, configure);
 	}
 
 	/// <summary>
@@ -134,11 +133,11 @@ public abstract partial class CornerstoneTest : ITimeProvider
 	/// <param name="expected"> The value that is expected. </param>
 	/// <param name="actual"> The value to compare with expected. </param>
 	/// <param name="message"> An optional prefix to include with the assert message. </param>
-	/// <param name="settings"> The settings for the compare session. </param>
+	/// <param name="options"> The settings for the compare session. </param>
 	/// <param name="configure"> Optional configuration before the session processes. </param>
-	public void AreEqual<T, T2>(T expected, T2 actual, Func<string> message = null, ComparerOptions? settings = null, Action<CompareSession<T, T2>> configure = null)
+	public static void AreEqual<T, T2>(T expected, T2 actual, Func<string> message = null, ComparerOptions? options = null, Action<CompareSession<T, T2>> configure = null)
 	{
-		var session = Comparer.StartSession(expected, actual, settings);
+		var session = Comparer.StartSession(expected, actual, options);
 		configure?.Invoke(session);
 		session.Compare();
 		session.Assert(CompareResult.AreEqual, message?.Invoke());
@@ -171,30 +170,7 @@ public abstract partial class CornerstoneTest : ITimeProvider
 	[ExcludeFromCodeCoverage]
 	public static T CopyToClipboard<T>(T value)
 	{
-		var thread = new Thread(() =>
-		{
-			try
-			{
-				_clipboardProvider.Invoke(value?.ToString() ?? string.Empty);
-			}
-			catch
-			{
-				// Ignore the clipboard set issue...
-			}
-		});
-
-		#if (NET6_0_OR_GREATER)
-		if (OperatingSystem.IsWindows())
-		{
-			thread.SetApartmentState(ApartmentState.STA);
-		}
-		#else
-		thread.SetApartmentState(ApartmentState.STA);
-		#endif
-
-		thread.Start();
-		thread.Join();
-
+		_clipboard.SetTextAsync(value?.ToString() ?? string.Empty);
 		return value;
 	}
 
@@ -374,7 +350,7 @@ public abstract partial class CornerstoneTest : ITimeProvider
 	public void IsFalse([DoesNotReturnIf(true)] bool condition, string message = null)
 	#else
 	public void IsFalse(bool condition, string message = null)
-	#endif
+		#endif
 	{
 		if (condition)
 		{
@@ -391,7 +367,7 @@ public abstract partial class CornerstoneTest : ITimeProvider
 	public void IsNotNull([NotNull] object condition, string message = null)
 	#else
 	public void IsNotNull(object condition, string message = null)
-	#endif
+		#endif
 	{
 		if (condition == null)
 		{
@@ -430,6 +406,25 @@ public abstract partial class CornerstoneTest : ITimeProvider
 	}
 
 	/// <summary>
+	/// Validates that the actual is not equal to the expected in any way.
+	/// </summary>
+	/// <typeparam name="T"> The data type of the expected value. </typeparam>
+	/// <typeparam name="T2"> The data type of the actual value. </typeparam>
+	/// <param name="expected"> The value that is expected. </param>
+	/// <param name="actual"> The value to compare with expected. </param>
+	/// <param name="message"> An optional prefix to include with the assert message. </param>
+	/// <param name="settings"> The settings for the compare session. </param>
+	/// <param name="configure"> Optional configuration before the session processes. </param>
+	public void NothingIsEqual<T, T2>(T expected, T2 actual, Func<string> message = null, ComparerOptions? settings = null, Action<CompareSession<T, T2>> configure = null)
+	{
+		//var session = Comparer.StartSession(expected, actual, settings);
+		//configure?.Invoke(session);
+		//session.Compare();
+		//session.Assert(CompareResult.AreNotEqual, message?.Invoke());
+		throw new NotImplementedException();
+	}
+
+	/// <summary>
 	/// Reset the current time to the provided time or back to real time.
 	/// </summary>
 	/// <param name="currentTime"> An optional current time to reset to otherwise back to DateTime.UtcNow and Now. </param>
@@ -441,10 +436,10 @@ public abstract partial class CornerstoneTest : ITimeProvider
 	/// <summary>
 	/// Sets the clipboard provider.
 	/// </summary>
-	/// <param name="provider"> The provider to be set. </param>
-	public static void SetClipboardProvider(Action<string> provider)
+	/// <param name="clipboard"> The provider to be set. </param>
+	public static void SetClipboardService(IClipboardService clipboard)
 	{
-		_clipboardProvider = provider;
+		_clipboard = clipboard;
 	}
 
 	/// <summary>
@@ -455,6 +450,13 @@ public abstract partial class CornerstoneTest : ITimeProvider
 	{
 		_currentDateTime = value.ToUtcDateTime();
 		return UtcNow;
+	}
+
+	/// <summary>
+	/// Cleanup the test.
+	/// </summary>
+	public virtual void TestCleanup()
+	{
 	}
 
 	/// <summary>
@@ -563,6 +565,13 @@ public abstract partial class CornerstoneTest : ITimeProvider
 	}
 
 	/// <summary>
+	/// Configure the dependencies for the tests.
+	/// </summary>
+	protected virtual void ConfigureDependencies()
+	{
+	}
+
+	/// <summary>
 	/// Generate the from and to test strings.
 	/// </summary>
 	/// <param name="converter"> The converter to process the types. </param>
@@ -593,7 +602,7 @@ public abstract partial class CornerstoneTest : ITimeProvider
 	{
 		var builder = new StringBuilder();
 		var declaredOnly = !type.IsDirectDescendantOf(typeof(Bindable))
-			&& !type.IsDirectDescendantOf(typeof(CloneableBindable<>))
+			&& !type.IsDirectDescendantOf(typeof(Bindable<>))
 			&& !type.IsDirectDescendantOf(typeof(SyncEntity<>))
 			&& !type.IsDirectDescendantOf(typeof(SyncEntity<>))
 			&& !type.IsDirectDescendantOf(typeof(CreatedEntity<>))
@@ -875,6 +884,11 @@ public override bool UpdateWith(object update, UpdateableOptions options)
 				return nextDecimal;
 			}
 
+			if (Activator.DateTypes.Contains(toType))
+			{
+				return BestValueForTestingAsDate(fromType, toType, ref nextDecimal);
+			}
+
 			if (Activator.GuidTypes.Contains(toType)
 				|| Activator.StringTypes.Contains(toType))
 			{
@@ -1017,7 +1031,7 @@ public override bool UpdateWith(object update, UpdateableOptions options)
 		// Add indentation to new scenarios
 		newScenarios = string.Join(Environment.NewLine,
 			newScenarios
-				.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+				.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries)
 				.Select(x => $"{indent}{x}")
 		);
 		newScenarios += Environment.NewLine + indent;

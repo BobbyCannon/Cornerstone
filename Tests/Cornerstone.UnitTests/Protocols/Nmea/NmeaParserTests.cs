@@ -1222,13 +1222,13 @@ public class NmeaParserTests : CornerstoneUnitTest
 		}
 
 		var count = prefixes.Length * types.Length;
-		Assert.AreEqual(count, scenarios.Length);
+		AreEqual(count, scenarios.Length);
 
 		foreach (var scenario in scenarios)
 		{
 			var actual = NmeaParser.ExtractPrefixAndType(scenario.sentance);
-			Assert.AreEqual(scenario.prefix, actual.prefix, scenario.sentance);
-			Assert.AreEqual(scenario.type, actual.type, scenario.sentance);
+			AreEqual(scenario.prefix, actual.prefix, scenario.sentance);
+			AreEqual(scenario.type, actual.type, scenario.sentance);
 		}
 	}
 
@@ -1240,16 +1240,16 @@ public class NmeaParserTests : CornerstoneUnitTest
 		var n = parser.Parse(m) as GgaMessage;
 
 		Assert.IsNotNull(n);
-		Assert.AreEqual(143718.00, n.Time);
-		Assert.AreEqual("45.21896550", n.Latitude.ToString());
-		Assert.AreEqual("18.98661733", n.Longitude.ToString());
-		Assert.AreEqual("1", n.FixQuality);
-		Assert.AreEqual(5, n.NumberOfSatellites);
-		Assert.AreEqual(1.86, n.HorizontalDilutionOfPrecision);
-		Assert.AreEqual(108.1, n.Altitude);
-		Assert.AreEqual(38.1, n.HeightOfGeoid);
-		Assert.AreEqual(string.Empty, n.SecondsSinceLastUpdateDgps);
-		Assert.AreEqual(string.Empty, n.StationIdNumberDgps);
+		AreEqual(143718.00, n.Time);
+		AreEqual("45.21896550", n.Latitude.ToString());
+		AreEqual("18.98661733", n.Longitude.ToString());
+		AreEqual("1", n.FixQuality);
+		AreEqual(5, n.NumberOfSatellites);
+		AreEqual(1.86, n.HorizontalDilutionOfPrecision);
+		AreEqual(108.1, n.Altitude);
+		AreEqual(38.1, n.HeightOfGeoid);
+		AreEqual(string.Empty, n.SecondsSinceLastUpdateDgps);
+		AreEqual(string.Empty, n.StationIdNumberDgps);
 	}
 
 	#endregion

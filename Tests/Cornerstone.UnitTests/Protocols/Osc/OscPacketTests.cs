@@ -23,9 +23,9 @@ public class OscPacketTests : CornerstoneUnitTest
 		var data = new byte[] { 0x2F, 0x74, 0x65, 0x73, 0x74, 0x00, 0x00, 0x00, 0x2C, 0x54, 0x00, 0x00 };
 		var actual = (OscMessage) OscPacket.Parse(data);
 
-		Assert.AreEqual("/test", actual.Address);
-		Assert.AreEqual(1, actual.Arguments.Count);
-		Assert.AreEqual(true, actual.Arguments[0]);
+		AreEqual("/test", actual.Address);
+		AreEqual(1, actual.Arguments.Count);
+		AreEqual(true, actual.Arguments[0]);
 	}
 
 	[TestMethod]
@@ -34,9 +34,9 @@ public class OscPacketTests : CornerstoneUnitTest
 		var data = new byte[] { 0x2F, 0x74, 0x65, 0x73, 0x74, 0x00, 0x00, 0x00, 0x2C, 0x49, 0x00, 0x00 };
 		var actual = (OscMessage) OscPacket.Parse(data);
 
-		Assert.AreEqual("/test", actual.Address);
-		Assert.AreEqual(1, actual.Arguments.Count);
-		Assert.AreEqual(double.PositiveInfinity, actual.Arguments[0]);
+		AreEqual("/test", actual.Address);
+		AreEqual(1, actual.Arguments.Count);
+		AreEqual(double.PositiveInfinity, actual.Arguments[0]);
 	}
 
 	[TestMethod]
@@ -45,9 +45,9 @@ public class OscPacketTests : CornerstoneUnitTest
 		var data = new byte[] { 0x2F, 0x74, 0x65, 0x73, 0x74, 0x00, 0x00, 0x00, 0x2C, 0x49, 0x00, 0x00 };
 		var actual = (OscMessage) OscPacket.Parse(data);
 
-		Assert.AreEqual("/test", actual.Address);
-		Assert.AreEqual(1, actual.Arguments.Count);
-		Assert.AreEqual(double.PositiveInfinity, actual.Arguments[0]);
+		AreEqual("/test", actual.Address);
+		AreEqual(1, actual.Arguments.Count);
+		AreEqual(double.PositiveInfinity, actual.Arguments[0]);
 	}
 
 	[TestMethod]
@@ -98,10 +98,10 @@ public class OscPacketTests : CornerstoneUnitTest
 		var actual = packet as OscMessage;
 
 		Assert.IsNotNull(actual);
-		Assert.AreEqual("/command", actual.Address);
-		Assert.AreEqual(2, actual.Arguments.Count);
-		Assert.AreEqual("value1, value2", actual.Arguments[0]);
-		Assert.AreEqual(0.1234, actual.Arguments[1]);
+		AreEqual("/command", actual.Address);
+		AreEqual(2, actual.Arguments.Count);
+		AreEqual("value1, value2", actual.Arguments[0]);
+		AreEqual(0.1234, actual.Arguments[1]);
 	}
 
 	[TestMethod]
@@ -111,15 +111,15 @@ public class OscPacketTests : CornerstoneUnitTest
 		var actualString = message.ToString();
 		var command = "/command,1234.5678d";
 
-		Assert.AreEqual(command, actualString);
+		AreEqual(command, actualString);
 
 		var packet = OscPacket.Parse(TimeService.CurrentTime.UtcNow, command, CultureInfo.CurrentCulture);
 		var actual = packet as OscMessage;
 
 		Assert.IsNotNull(actual);
-		Assert.AreEqual("/command", actual.Address);
-		Assert.AreEqual(1, actual.Arguments.Count);
-		Assert.AreEqual(1234.5678, actual.Arguments[0]);
+		AreEqual("/command", actual.Address);
+		AreEqual(1, actual.Arguments.Count);
+		AreEqual(1234.5678, actual.Arguments[0]);
 	}
 
 	[TestMethod]
@@ -148,18 +148,18 @@ public class OscPacketTests : CornerstoneUnitTest
 			var actual = packet as OscMessage;
 
 			Assert.IsNotNull(actual);
-			Assert.AreEqual("/command", actual.Address);
-			Assert.AreEqual(2, actual.Arguments.Count);
-			Assert.AreEqual("value1, value2", actual.Arguments[0]);
-			Assert.AreEqual(0.1234, actual.Arguments[1]);
+			AreEqual("/command", actual.Address);
+			AreEqual(2, actual.Arguments.Count);
+			AreEqual("value1, value2", actual.Arguments[0]);
+			AreEqual(0.1234, actual.Arguments[1]);
 		}
 
-		commands = new[]
-		{
+		commands =
+		[
 			"/command,0.1234d,\"value1, value2\"",
 			"/command, 0.1234d, \"value1, value2\"",
 			"/command,  0.1234d,  \"value1, value2\""
-		};
+		];
 
 		foreach (var command in commands)
 		{
@@ -167,10 +167,10 @@ public class OscPacketTests : CornerstoneUnitTest
 			var actual = packet as OscMessage;
 
 			Assert.IsNotNull(actual);
-			Assert.AreEqual("/command", actual.Address);
-			Assert.AreEqual(2, actual.Arguments.Count);
-			Assert.AreEqual(0.1234, actual.Arguments[0]);
-			Assert.AreEqual("value1, value2", actual.Arguments[1]);
+			AreEqual("/command", actual.Address);
+			AreEqual(2, actual.Arguments.Count);
+			AreEqual(0.1234, actual.Arguments[0]);
+			AreEqual("value1, value2", actual.Arguments[1]);
 		}
 	}
 
@@ -190,9 +190,9 @@ public class OscPacketTests : CornerstoneUnitTest
 		{
 			var command = $"/system/time, {item.Key}";
 			var message = (OscMessage) OscPacket.Parse(command);
-			Assert.AreEqual("/system/time", message.Address);
-			Assert.AreEqual(1, message.Arguments.Count);
-			Assert.AreEqual(item.Value, ((OscSymbol) message.Arguments[0]).Value);
+			AreEqual("/system/time", message.Address);
+			AreEqual(1, message.Arguments.Count);
+			AreEqual(item.Value, ((OscSymbol) message.Arguments[0]).Value);
 		}
 	}
 
@@ -210,9 +210,9 @@ public class OscPacketTests : CornerstoneUnitTest
 		{
 			var command = $"/system/time, {{ Time: {e.Key} }}";
 			var message = (OscMessage) OscPacket.Parse(command);
-			Assert.AreEqual("/system/time", message.Address);
-			Assert.AreEqual(1, message.Arguments.Count);
-			Assert.AreEqual(e.Value, ((OscTimeTag) message.Arguments[0]).Value);
+			AreEqual("/system/time", message.Address);
+			AreEqual(1, message.Arguments.Count);
+			AreEqual(e.Value, (OscTimeTag) message.Arguments[0]);
 		}
 	}
 
@@ -220,25 +220,25 @@ public class OscPacketTests : CornerstoneUnitTest
 	public void ParseUnknownCommand()
 	{
 		var message = (OscMessage) OscPacket.Parse("/some/command/name, {{ Unknown: FooBar }}");
-		Assert.AreEqual("/some/command/name", message.Address);
-		Assert.AreEqual(1, message.Arguments.Count);
-		Assert.AreEqual("FooBar", message.Arguments[0]);
+		AreEqual("/some/command/name", message.Address);
+		AreEqual(1, message.Arguments.Count);
+		AreEqual("FooBar", message.Arguments[0]);
 
 		message = (OscMessage) OscPacket.Parse("/some/command/name, {{Unknown: FooBar}}");
-		Assert.AreEqual("/some/command/name", message.Address);
-		Assert.AreEqual(1, message.Arguments.Count);
-		Assert.AreEqual("FooBar", message.Arguments[0]);
+		AreEqual("/some/command/name", message.Address);
+		AreEqual(1, message.Arguments.Count);
+		AreEqual("FooBar", message.Arguments[0]);
 
 		message = (OscMessage) OscPacket.Parse("/some/command/name,{{Unknown:FooBar}}");
-		Assert.AreEqual("/some/command/name", message.Address);
-		Assert.AreEqual(1, message.Arguments.Count);
-		Assert.AreEqual("FooBar", message.Arguments[0]);
+		AreEqual("/some/command/name", message.Address);
+		AreEqual(1, message.Arguments.Count);
+		AreEqual("FooBar", message.Arguments[0]);
 
 		message = (OscMessage) OscPacket.Parse("/some/command/name,foo bar ,32");
-		Assert.AreEqual("/some/command/name", message.Address);
-		Assert.AreEqual(2, message.Arguments.Count);
-		Assert.AreEqual(new OscSymbol("foo bar"), message.Arguments[0]);
-		Assert.AreEqual(32, message.Arguments[1]);
+		AreEqual("/some/command/name", message.Address);
+		AreEqual(2, message.Arguments.Count);
+		AreEqual(new OscSymbol("foo bar"), message.Arguments[0]);
+		AreEqual(32, message.Arguments[1]);
 	}
 
 	[TestMethod]
@@ -271,16 +271,16 @@ public class OscPacketTests : CornerstoneUnitTest
 		// The non-hex version
 		var expected = "/command,123,456u,4321L,8765U,12.34f,123.456d,\"123456\",True,False,{ Blob: 0x000102 },[-123,456u,-4321L,8765U,-12.34f,-123.456d,True,False],{ Time: 2021-02-17T09:18:41.8420000Z },{ Time: 2021-02-17T09:18:41.8420000Z }";
 		var actualString = oscMessage.ToString();
-		Assert.AreEqual(expected, actualString);
+		AreEqual(expected, actualString);
 		var actualMessage = OscPacket.Parse(expected) as OscMessage;
-		AreEqual(oscMessage, actualMessage, settings: comparerSettings);
+		AreEqual(oscMessage, actualMessage, options: comparerSettings);
 
 		// The hex version
 		expected = "/command,0x0000007B,0x000001C8u,0x00000000000010E1L,0x000000000000223DU,12.34f,123.456d,\"123456\",True,False,{ Blob: 0x000102 },[0xFFFFFF85,0x000001C8u,0xFFFFFFFFFFFFEF1FL,0x000000000000223DU,-12.34f,-123.456d,True,False],{ Time: 2021-02-17T09:18:41.8420000Z },{ Time: 2021-02-17T09:18:41.8420000Z }";
 		actualString = oscMessage.ToHexString();
-		Assert.AreEqual(expected, actualString);
+		AreEqual(expected, actualString);
 		actualMessage = OscPacket.Parse(expected) as OscMessage;
-		AreEqual(oscMessage, actualMessage, settings: comparerSettings);
+		AreEqual(oscMessage, actualMessage, options: comparerSettings);
 	}
 
 	[TestMethod]
@@ -290,7 +290,7 @@ public class OscPacketTests : CornerstoneUnitTest
 		var expected = "/command,0x0000007B,0x00000000000004D2L";
 		var actualString = oscMessage.ToHexString();
 
-		Assert.AreEqual(expected, actualString);
+		AreEqual(expected, actualString);
 
 		var actualMessage = OscPacket.Parse(expected) as OscMessage;
 		AreEqual(oscMessage, actualMessage, nameof(OscMessage.Time));
@@ -299,7 +299,7 @@ public class OscPacketTests : CornerstoneUnitTest
 		expected = "/command,0x80000000,0x8000000000000000L";
 		actualString = oscMessage.ToHexString();
 
-		Assert.AreEqual(expected, actualString);
+		AreEqual(expected, actualString);
 
 		actualMessage = OscPacket.Parse(expected) as OscMessage;
 		AreEqual(oscMessage, actualMessage, nameof(OscMessage.Time));
@@ -308,7 +308,7 @@ public class OscPacketTests : CornerstoneUnitTest
 		expected = "/command,0x7FFFFFFF,0x7FFFFFFFFFFFFFFFL";
 		actualString = oscMessage.ToHexString();
 
-		Assert.AreEqual(expected, actualString);
+		AreEqual(expected, actualString);
 
 		actualMessage = OscPacket.Parse(expected) as OscMessage;
 		AreEqual(oscMessage, actualMessage, nameof(OscMessage.Time));

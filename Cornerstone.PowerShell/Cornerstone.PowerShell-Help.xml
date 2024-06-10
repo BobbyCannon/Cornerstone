@@ -15,39 +15,29 @@
 		<command:syntax>
 			<command:syntaxItem>
 				<maml:name>Convert-NumberUnits</maml:name>
+				<command:parameter required="true" position="3">
+					<maml:name>OutputUnit</maml:name>
+					<command:parameterValue required="true">Bit | Byte | Kilobit | Kilobyte | Megabit | Megabyte | Gigabit | Gigabyte | Terabit | Terabyte</command:parameterValue>
+				</command:parameter>
+				<command:parameter required="false" position="4">
+					<maml:name>OutputUnitFormat</maml:name>
+					<command:parameterValue required="true">Unknown | Full | Abbreviation</command:parameterValue>
+				</command:parameter>
 				<command:parameter required="true" position="1">
 					<maml:name>Value</maml:name>
-					<command:parameterValue required="true">Double</command:parameterValue>
+					<command:parameterValue required="true">Decimal</command:parameterValue>
 				</command:parameter>
 				<command:parameter required="true" position="2">
 					<maml:name>ValueUnit</maml:name>
-					<command:parameterValue required="true">Bit | Byte | Kilobyte | Megabyte | Gigabyte | Terabyte</command:parameterValue>
-				</command:parameter>
-				<command:parameter required="true" position="3">
-					<maml:name>OutputUnit</maml:name>
-					<command:parameterValue required="true">Bit | Byte | Kilobyte | Megabyte | Gigabyte | Terabyte</command:parameterValue>
+					<command:parameterValue required="true">Bit | Byte | Kilobit | Kilobyte | Megabit | Megabyte | Gigabit | Gigabyte | Terabit | Terabyte</command:parameterValue>
 				</command:parameter>
 			</command:syntaxItem>
 		</command:syntax>
 		<command:parameters>
-			<command:parameter required="true" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="1" variableLength="false">
-				<maml:name>Value</maml:name>
+			<command:parameter required="true" globbing="false" pipelineInput="true (ByPropertyName)" position="3" variableLength="false">
+				<maml:name>OutputUnit</maml:name>
 				<maml:description>
-					<maml:para>The number value.</maml:para>
-				</maml:description>
-				<command:parameterValue required="true" variableLength="false">Double</command:parameterValue>
-				<dev:type>
-					<maml:name>Double</maml:name>
-					<maml:uri />
-					<maml:description>
-						<maml:para />
-					</maml:description>
-				</dev:type>
-			</command:parameter>
-			<command:parameter required="true" globbing="false" pipelineInput="true (ByPropertyName)" position="2" variableLength="false">
-				<maml:name>ValueUnit</maml:name>
-				<maml:description>
-					<maml:para>The number's unit value.</maml:para>
+					<maml:para>The desired output unit.</maml:para>
 				</maml:description>
 				<command:parameterValue required="true" variableLength="false">ByteUnit</command:parameterValue>
 				<dev:type>
@@ -58,10 +48,38 @@
 					</maml:description>
 				</dev:type>
 			</command:parameter>
-			<command:parameter required="true" globbing="false" pipelineInput="true (ByPropertyName)" position="3" variableLength="false">
-				<maml:name>OutputUnit</maml:name>
+			<command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="4" variableLength="false">
+				<maml:name>OutputUnitFormat</maml:name>
 				<maml:description>
-					<maml:para>The desired output unit.</maml:para>
+					<maml:para>The desired output unit word format.</maml:para>
+				</maml:description>
+				<command:parameterValue required="false" variableLength="false">WordFormat</command:parameterValue>
+				<dev:type>
+					<maml:name>WordFormat</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+			<command:parameter required="true" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="1" variableLength="false">
+				<maml:name>Value</maml:name>
+				<maml:description>
+					<maml:para>The number value.</maml:para>
+				</maml:description>
+				<command:parameterValue required="true" variableLength="false">Decimal</command:parameterValue>
+				<dev:type>
+					<maml:name>Decimal</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+			<command:parameter required="true" globbing="false" pipelineInput="true (ByPropertyName)" position="2" variableLength="false">
+				<maml:name>ValueUnit</maml:name>
+				<maml:description>
+					<maml:para>The number's unit value.</maml:para>
 				</maml:description>
 				<command:parameterValue required="true" variableLength="false">ByteUnit</command:parameterValue>
 				<dev:type>
@@ -106,26 +124,8 @@
 		<command:examples>
 			<command:example>
 				<maml:title>------------------EXAMPLE------------------</maml:title>
-				<dev:code>Get-RuntimeInformation | Format-List
-
-ApplicationBitness            : X64
-ApplicationDataLocation       : C:\Users\Account\AppData\Local\Console
-ApplicationFileName           : BobsToolbox.Console.exe
-ApplicationFilePath           : C:\Workspaces\Console\Console\bin\x64\Debug\net8.0-windows\Console.exe
-ApplicationIsDevelopmentBuild : True
-ApplicationIsElevated         : True
-ApplicationLocation           : C:\Workspaces\Console\Console\bin\x64\Debug\net8.0-windows
-ApplicationName               : Console
-ApplicationVersion            : 1.2.3.4
-DeviceId                      : ABC123
-DeviceManufacturer            : Microsoft
-DeviceModel                   : Surface
-DeviceName                    : MyComputer
-DevicePlatform                : Windows
-DevicePlatformBitness         : X64
-DevicePlatformVersion         : 10.0.22621.0
-DeviceType                    : Desktop
-
+				<dev:code>Convert-NumberUnits -Value 16 -ValueUnit Bit -OutputUnit Byte
+2 bytes
 </dev:code>
 				<dev:remarks>
 					<maml:para />
@@ -190,7 +190,7 @@ DeviceType                    : Desktop
 
 ApplicationBitness            : X64
 ApplicationDataLocation       : C:\Users\Account\AppData\Local\Console
-ApplicationFileName           : BobsToolbox.Console.exe
+ApplicationFileName           : Cornerstone.Console.exe
 ApplicationFilePath           : C:\Workspaces\Console\Console\bin\x64\Debug\net8.0-windows\Console.exe
 ApplicationIsDevelopmentBuild : True
 ApplicationIsElevated         : True
@@ -204,8 +204,289 @@ DeviceName                    : MyComputer
 DevicePlatform                : Windows
 DevicePlatformBitness         : X64
 DevicePlatformVersion         : 10.0.22621.0
-DeviceType                    : Desktop
-
+DeviceType                    : Desktop</dev:code>
+				<dev:remarks>
+					<maml:para />
+				</dev:remarks>
+			</command:example>
+		</command:examples>
+		<maml:relatedLinks>
+			<maml:navigationLink>
+				<maml:linkText>Online version:</maml:linkText>
+				<maml:uri />
+			</maml:navigationLink>
+		</maml:relatedLinks>
+	</command:command>
+	<command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/1" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:gl="http://schemas.falchionconsulting.com/maml/gl/2013/02" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10">
+		<command:details>
+			<command:name>Get-WindowsCredential</command:name>
+			<gl:group>Security</gl:group>
+			<maml:description>
+				<maml:para>Gets a credential from the Windows Credential Manager.</maml:para>
+			</maml:description>
+			<command:verb>Get</command:verb>
+			<command:noun>WindowsCredential</command:noun>
+		</command:details>
+		<maml:description>
+			<maml:para>Gets a credential from the Windows Credential Manager.</maml:para>
+		</maml:description>
+		<command:syntax>
+			<command:syntaxItem>
+				<maml:name>Get-WindowsCredential</maml:name>
+				<command:parameter required="true" position="1">
+					<maml:name>Name</maml:name>
+					<command:parameterValue required="true">String</command:parameterValue>
+				</command:parameter>
+			</command:syntaxItem>
+		</command:syntax>
+		<command:parameters>
+			<command:parameter required="true" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="1" variableLength="false">
+				<maml:name>Name</maml:name>
+				<maml:description>
+					<maml:para>The name of the credential to read. Will use the selected credential if the name is provided.</maml:para>
+				</maml:description>
+				<command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+				<dev:type>
+					<maml:name>String</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+		</command:parameters>
+		<command:inputTypes>
+			<command:inputType>
+				<dev:type>
+					<maml:name />
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:inputType>
+		</command:inputTypes>
+		<command:returnValues>
+			<command:returnValue>
+				<dev:type>
+					<maml:name />
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:returnValue>
+		</command:returnValues>
+		<command:terminatingErrors />
+		<command:nonTerminatingErrors />
+		<maml:alertSet>
+			<maml:title />
+			<maml:alert>
+				<maml:para>For more information, type "Get-Help Get-WindowsCredential -detailed". For technical information, type "Get-Help Get-WindowsCredential -full".</maml:para>
+			</maml:alert>
+		</maml:alertSet>
+		<command:examples>
+			<command:example>
+				<maml:title>------------------EXAMPLE------------------</maml:title>
+				<dev:code>Get-WindowsCredential -Name "Online Bank"
+# ex.
+# UserName                     Password
+# --------                     --------
+# John Doe System.Security.SecureString
+</dev:code>
+				<dev:remarks>
+					<maml:para>Gets the windows credential by name.</maml:para>
+				</dev:remarks>
+			</command:example>
+		</command:examples>
+		<maml:relatedLinks>
+			<maml:navigationLink>
+				<maml:linkText>Online version:</maml:linkText>
+				<maml:uri />
+			</maml:navigationLink>
+		</maml:relatedLinks>
+	</command:command>
+	<command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/1" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:gl="http://schemas.falchionconsulting.com/maml/gl/2013/02" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10">
+		<command:details>
+			<command:name>Measure-DownloadTime</command:name>
+			<gl:group>Utility</gl:group>
+			<maml:description>
+				<maml:para>Calculate the download time base on size and speed.</maml:para>
+			</maml:description>
+			<command:verb>Measure</command:verb>
+			<command:noun>DownloadTime</command:noun>
+		</command:details>
+		<maml:description>
+			<maml:para>Calculate the download time base on size and speed.</maml:para>
+		</maml:description>
+		<command:syntax>
+			<command:syntaxItem>
+				<maml:name>Measure-DownloadTime</maml:name>
+				<command:parameter required="true" position="1">
+					<maml:name>Data</maml:name>
+					<command:parameterValue required="true">Decimal</command:parameterValue>
+				</command:parameter>
+				<command:parameter required="true" position="2">
+					<maml:name>DataUnit</maml:name>
+					<command:parameterValue required="true">Bit | Byte | Kilobit | Kilobyte | Megabit | Megabyte | Gigabit | Gigabyte | Terabit | Terabyte</command:parameterValue>
+				</command:parameter>
+				<command:parameter required="false" position="named">
+					<maml:name>OutputMaxUnit</maml:name>
+					<command:parameterValue required="true">Min | Ticks | Nanosecond | Microsecond | Millisecond | Second | Minute | Hour | Day | Week | Month | Year | Max</command:parameterValue>
+				</command:parameter>
+				<command:parameter required="false" position="named">
+					<maml:name>OutputMinUnit</maml:name>
+					<command:parameterValue required="true">Min | Ticks | Nanosecond | Microsecond | Millisecond | Second | Minute | Hour | Day | Week | Month | Year | Max</command:parameterValue>
+				</command:parameter>
+				<command:parameter required="false" position="named">
+					<maml:name>OutputUnitFormat</maml:name>
+					<command:parameterValue required="true">Unknown | Full | Abbreviation</command:parameterValue>
+				</command:parameter>
+				<command:parameter required="true" position="3">
+					<maml:name>Rate</maml:name>
+					<command:parameterValue required="true">Decimal</command:parameterValue>
+				</command:parameter>
+				<command:parameter required="true" position="4">
+					<maml:name>RateUnit</maml:name>
+					<command:parameterValue required="true">Bit | Byte | Kilobit | Kilobyte | Megabit | Megabyte | Gigabit | Gigabyte | Terabit | Terabyte</command:parameterValue>
+				</command:parameter>
+			</command:syntaxItem>
+		</command:syntax>
+		<command:parameters>
+			<command:parameter required="true" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="1" variableLength="false">
+				<maml:name>Data</maml:name>
+				<maml:description>
+					<maml:para>The size of data.</maml:para>
+				</maml:description>
+				<command:parameterValue required="true" variableLength="false">Decimal</command:parameterValue>
+				<dev:type>
+					<maml:name>Decimal</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+			<command:parameter required="true" globbing="false" pipelineInput="true (ByPropertyName)" position="2" variableLength="false">
+				<maml:name>DataUnit</maml:name>
+				<maml:description>
+					<maml:para>The data unit value.</maml:para>
+				</maml:description>
+				<command:parameterValue required="true" variableLength="false">ByteUnit</command:parameterValue>
+				<dev:type>
+					<maml:name>ByteUnit</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+			<command:parameter required="false" globbing="false" pipelineInput="false" position="named" variableLength="false">
+				<maml:name>OutputMaxUnit</maml:name>
+				<maml:description>
+					<maml:para />
+				</maml:description>
+				<command:parameterValue required="false" variableLength="false">TimeUnit</command:parameterValue>
+				<dev:type>
+					<maml:name>TimeUnit</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+			<command:parameter required="false" globbing="false" pipelineInput="false" position="named" variableLength="false">
+				<maml:name>OutputMinUnit</maml:name>
+				<maml:description>
+					<maml:para />
+				</maml:description>
+				<command:parameterValue required="false" variableLength="false">TimeUnit</command:parameterValue>
+				<dev:type>
+					<maml:name>TimeUnit</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+			<command:parameter required="false" globbing="false" pipelineInput="false" position="named" variableLength="false">
+				<maml:name>OutputUnitFormat</maml:name>
+				<maml:description>
+					<maml:para />
+				</maml:description>
+				<command:parameterValue required="false" variableLength="false">WordFormat</command:parameterValue>
+				<dev:type>
+					<maml:name>WordFormat</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+			<command:parameter required="true" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="3" variableLength="false">
+				<maml:name>Rate</maml:name>
+				<maml:description>
+					<maml:para>The rate of transfer value.</maml:para>
+				</maml:description>
+				<command:parameterValue required="true" variableLength="false">Decimal</command:parameterValue>
+				<dev:type>
+					<maml:name>Decimal</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+			<command:parameter required="true" globbing="false" pipelineInput="true (ByPropertyName)" position="4" variableLength="false">
+				<maml:name>RateUnit</maml:name>
+				<maml:description>
+					<maml:para>The rate unit value.</maml:para>
+				</maml:description>
+				<command:parameterValue required="true" variableLength="false">ByteUnit</command:parameterValue>
+				<dev:type>
+					<maml:name>ByteUnit</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+		</command:parameters>
+		<command:inputTypes>
+			<command:inputType>
+				<dev:type>
+					<maml:name />
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:inputType>
+		</command:inputTypes>
+		<command:returnValues>
+			<command:returnValue>
+				<dev:type>
+					<maml:name />
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:returnValue>
+		</command:returnValues>
+		<command:terminatingErrors />
+		<command:nonTerminatingErrors />
+		<maml:alertSet>
+			<maml:title />
+			<maml:alert>
+				<maml:para>For more information, type "Get-Help Measure-DownloadTime -detailed". For technical information, type "Get-Help Measure-DownloadTime -full".</maml:para>
+			</maml:alert>
+		</maml:alertSet>
+		<command:examples>
+			<command:example>
+				<maml:title>------------------EXAMPLE------------------</maml:title>
+				<dev:code>Convert-NumberUnits -Value 16 -ValueUnit Bit -OutputUnit Byte
+2 bytes
 </dev:code>
 				<dev:remarks>
 					<maml:para />

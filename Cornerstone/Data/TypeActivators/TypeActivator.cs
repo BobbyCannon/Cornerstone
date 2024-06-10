@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using Cornerstone.Threading;
 
 #endregion
 
@@ -10,21 +11,36 @@ namespace Cornerstone.Data.TypeActivators;
 /// Allows assigning an interface to a specific implementation.
 /// </summary>
 /// <typeparam name="T"> The interface type. </typeparam>
+public class TypeActivator<T> : TypeActivator<T, T>
+{
+	#region Constructors
+
+	/// <summary>
+	/// Create an instance of the type activator.
+	/// </summary>
+	/// <param name="activator"> The activator for the type. </param>
+	public TypeActivator(Func<object[], T> activator) : base(activator)
+	{
+	}
+
+	#endregion
+}
+
+/// <summary>
+/// Allows assigning an interface to a specific implementation.
+/// </summary>
+/// <typeparam name="T"> The interface type. </typeparam>
 /// <typeparam name="T2"> The implementation type. </typeparam>
-public class TypeActivator<T, T2> : TypeActivator where T2 : T
+public class TypeActivator<T, T2> : TypeActivator
 {
 	#region Fields
 
 	private readonly Func<object[], T2> _activator;
+	private T2 _currentValue;
 
 	#endregion
 
 	#region Constructors
-
-	/// <inheritdoc />
-	public TypeActivator() : this(null)
-	{
-	}
 
 	/// <inheritdoc />
 	public TypeActivator(Func<object[], T2> activator) : base(typeof(T))
@@ -36,55 +52,55 @@ public class TypeActivator<T, T2> : TypeActivator where T2 : T
 
 	#region Methods
 
-	/// <inheritdoc />
-	public override object CreateInstance(params object[] arguments)
-	{
-		return _activator != null
-			? _activator.Invoke(arguments)
-			: Activator.CreateInstanceInternal(false, typeof(T2), arguments);
-	}
-
-	#endregion
-}
-
-/// <summary>
-/// Allows assigning an interface to a specific implementation.
-/// </summary>
-/// <typeparam name="T"> The interface type. </typeparam>
-public class TypeActivator<T> : TypeActivator
-{
-	#region Fields
-
-	private readonly Func<object[], T> _activator;
-
-	#endregion
-
-	#region Constructors
-
-	/// <inheritdoc />
-	public TypeActivator() : this(null)
-	{
-	}
-
 	/// <summary>
-	/// Create an instance of the type activator.
+	/// Create an instance of the Type.
 	/// </summary>
-	/// <param name="activator"> The activator for the type. </param>
-	public TypeActivator(Func<object[], T> activator) : base(typeof(T))
+	/// <param name="arguments"> The value of the arguments. </param>
+	/// <returns> The new instances of the type. </returns>
+	public T2 CreateInstance(params object[] arguments)
 	{
-		_activator = activator;
+		Lock.EnterReadLock();
+
+		try
+		{
+			if ((Lifetime == TypeLifetime.Singleton)
+				&& (_currentValue != null))
+			{
+				return _currentValue;
+			}
+		}
+		finally
+		{
+			Lock.ExitReadLock();
+		}
+
+		Lock.EnterWriteLock();
+
+		try
+		{
+			if ((Lifetime == TypeLifetime.Singleton)
+				&& (_currentValue != null))
+			{
+				return _currentValue;
+			}
+
+			var response = _activator.Invoke(arguments);
+			if (Lifetime == TypeLifetime.Singleton)
+			{
+				_currentValue = response;
+			}
+			return response;
+		}
+		finally
+		{
+			Lock.ExitWriteLock();
+		}
 	}
 
-	#endregion
-
-	#region Methods
-
 	/// <inheritdoc />
-	public override object CreateInstance(params object[] arguments)
+	public sealed override object CreateInstanceObject(params object[] arguments)
 	{
-		return _activator != null
-			? _activator.Invoke(arguments)
-			: Activator.CreateInstanceInternal(false, Type, arguments);
+		return CreateInstance(arguments);
 	}
 
 	#endregion
@@ -93,7 +109,7 @@ public class TypeActivator<T> : TypeActivator
 /// <summary>
 /// Allows assigning an interface to a specific implementation.
 /// </summary>
-public class TypeActivator
+public abstract class TypeActivator
 {
 	#region Constructors
 
@@ -101,8 +117,9 @@ public class TypeActivator
 	/// Create an instance of the type activator.
 	/// </summary>
 	/// <param name="type"> The type this activator is for. </param>
-	public TypeActivator(Type type)
+	protected TypeActivator(Type type)
 	{
+		Lock = new ReaderWriterLockTiny();
 		Type = type;
 	}
 
@@ -115,6 +132,21 @@ public class TypeActivator
 	/// </summary>
 	public Type Type { get; }
 
+	/// <summary>
+	/// The lock for handling singleton creation.
+	/// </summary>
+	protected ReaderWriterLockTiny Lock { get; }
+
+	/// <summary>
+	/// True if this activator is for dependency injection.
+	/// </summary>
+	internal bool ForDependencyInjection { get; set; }
+
+	/// <summary>
+	/// This is the lifetime of the value. It is how long the value will live.
+	/// </summary>
+	internal TypeLifetime Lifetime { get; set; }
+
 	#endregion
 
 	#region Methods
@@ -124,10 +156,7 @@ public class TypeActivator
 	/// </summary>
 	/// <param name="arguments"> The value of the arguments. </param>
 	/// <returns> The new instances of the type. </returns>
-	public virtual object CreateInstance(params object[] arguments)
-	{
-		return Activator.CreateInstanceInternal(false, Type, arguments);
-	}
+	public abstract object CreateInstanceObject(params object[] arguments);
 
 	#endregion
 }

@@ -23,7 +23,7 @@ public class NumberJsonConverter : JsonConverter
 	public NumberJsonConverter() : base(
 		ArrayExtensions.CombineArrays(
 			Activator.NumberTypes,
-			new[] { typeof(JsonNumber) }
+			[typeof(JsonNumber)]
 		))
 	{
 	}
@@ -65,6 +65,10 @@ public class NumberJsonConverter : JsonConverter
 			uint cValue => cValue.ToString(),
 			long cValue => cValue.ToString(),
 			ulong cValue => cValue.ToString(),
+			#if NET7_0_OR_GREATER
+			Int128 cValue => ToJson(cValue),
+			UInt128 cValue => ToJson(cValue),
+			#endif
 			decimal cValue => ToJson(cValue),
 			double cValue => ToJson(cValue),
 			float cValue => ToJson(cValue),
@@ -86,13 +90,27 @@ public class NumberJsonConverter : JsonConverter
 		return ptr.ToUInt64().ToString();
 	}
 
-	internal static string ToJson(decimal value)
+	#if NET7_0_OR_GREATER
+
+	internal static string ToJson(Int128 cValue)
 	{
-		var text = value.ToString("G", CultureInfo.InvariantCulture);
-		return text.IndexOfAny(new[] { '.', 'E', 'N', 'I' }) >= 0 ? text : text + ".0";
+		return cValue.ToString();
 	}
 
-	internal static string ToJson(float value)
+	internal static string ToJson(UInt128 cValue)
+	{
+		return cValue.ToString();
+	}
+
+	#endif
+
+	private static string ToJson(decimal value)
+	{
+		var text = value.ToString("G", CultureInfo.InvariantCulture);
+		return text.IndexOfAny(['.', 'E', 'N', 'I']) >= 0 ? text : text + ".0";
+	}
+
+	private static string ToJson(float value)
 	{
 		if (float.IsNaN(value))
 		{
@@ -110,10 +128,10 @@ public class NumberJsonConverter : JsonConverter
 		#endif
 
 		var text = value.ToString("R", CultureInfo.InvariantCulture);
-		return text.IndexOfAny(new[] { '.', 'E', 'N' }) >= 0 ? text : text + ".0";
+		return text.IndexOfAny(['.', 'E', 'N']) >= 0 ? text : text + ".0";
 	}
 
-	internal static string ToJson(double value)
+	private static string ToJson(double value)
 	{
 		if (double.IsNaN(value))
 		{
@@ -133,7 +151,7 @@ public class NumberJsonConverter : JsonConverter
 		#endif
 
 		var text = value.ToString("R", CultureInfo.InvariantCulture);
-		return text.IndexOfAny(new[] { '.', 'E', 'N' }) >= 0 ? text : text + ".0";
+		return text.IndexOfAny(['.', 'E', 'N']) >= 0 ? text : text + ".0";
 	}
 
 	#endregion

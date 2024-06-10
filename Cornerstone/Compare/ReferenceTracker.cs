@@ -32,24 +32,32 @@ public class ReferenceTracker : IReferenceTracker
 
 	#region Methods
 
+	/// <inheritdoc />
+	public void AddReference(object value)
+	{
+		var type = value?.GetType();
+		if (type is not { IsClass: true }
+			|| (type == typeof(string)))
+		{
+			return;
+		}
+
+
+		_references.Add(value);
+	}
+
+	/// <inheritdoc />
+	public void RemoveReference(object value)
+	{
+		_references.Remove(value);
+	}
+
 	/// <summary>
 	/// Clear all the current references
 	/// </summary>
 	public void Clear()
 	{
 		_references.Clear();
-	}
-
-	/// <summary>
-	/// Add reference to the session.
-	/// </summary>
-	/// <param name="value"> The value to track as a reference. </param>
-	internal void Add(object value)
-	{
-		if (value != null)
-		{
-			_references.Add(value);
-		}
 	}
 
 	internal bool CheckReference(object expected, object expectedValue, object actual, object actualValue)
@@ -66,28 +74,17 @@ public class ReferenceTracker : IReferenceTracker
 	}
 
 	/// <summary>
-	/// Remove the reference from the session.
-	/// </summary>
-	/// <param name="value"> The reference to remove. </param>
-	internal void Remove(object value)
-	{
-		_references.Remove(value);
-	}
-
-	/// <inheritdoc />
-	void IReferenceTracker.AddReference(object value)
-	{
-		_references.Add(value);
-	}
-
-	/// <summary>
 	/// Check to see if a value is a current reference.
 	/// </summary>
 	/// <param name="value"> The value to be checked. </param>
 	/// <returns> True if the value is a reference otherwise false. </returns>
-	bool IReferenceTracker.AlreadyProcessed(object value)
+	public bool AlreadyProcessed(object value)
 	{
-		return _references.Any(x => ReferenceEquals(x, value));
+		return _references.Any(x =>
+		{
+			var response = ReferenceEquals(x, value);
+			return response;
+		});
 	}
 
 	#endregion
@@ -101,14 +98,20 @@ internal interface IReferenceTracker
 	/// Add a reference to track.
 	/// </summary>
 	/// <param name="value"> The value to track. </param>
-	internal void AddReference(object value);
+	void AddReference(object value);
+
+	/// <summary>
+	/// Remove a reference to track.
+	/// </summary>
+	/// <param name="value"> The value to track. </param>
+	void RemoveReference(object value);
 
 	/// <summary>
 	/// Check to see if a value is a current reference.
 	/// </summary>
 	/// <param name="value"> The value to be checked. </param>
 	/// <returns> True if the value is a reference otherwise false. </returns>
-	internal bool AlreadyProcessed(object value);
+	bool AlreadyProcessed(object value);
 
 	/// <summary>
 	/// Clear all the current references

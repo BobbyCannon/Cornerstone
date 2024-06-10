@@ -18,8 +18,8 @@ public class PagedRequestTests : CornerstoneUnitTest
 	public void Cleanup()
 	{
 		var actual = new PagedRequest { Page = 0, PerPage = 1001 };
-		Assert.AreEqual(0, actual.Page);
-		Assert.AreEqual(1001, actual.PerPage);
+		AreEqual(0, actual.Page);
+		AreEqual(1001, actual.PerPage);
 
 		actual.Cleanup();
 
@@ -44,20 +44,20 @@ public class PagedRequestTests : CornerstoneUnitTest
 		var actual = request.ToJson();
 		var expected = "{\"Filter\":\"\",\"Order\":\"\",\"Page\":1,\"PerPage\":10}";
 		actual.Escape().Dump();
-		Assert.AreEqual(expected, actual);
+		AreEqual(expected, actual);
 
 		request = new PagedRequest { Page = 2, PerPage = 11 };
 		actual = request.ToRawJson();
 		expected = "{\"Filter\":\"\",\"Order\":\"\",\"Page\":2,\"PerPage\":11}";
 		actual.Escape().Dump();
-		Assert.AreEqual(expected, actual);
+		AreEqual(expected, actual);
 
 		request.AddOrUpdate("Filter", "frogs");
 
 		actual = request.ToRawJson();
 		expected = "{\"Filter\":\"frogs\",\"Order\":\"\",\"Page\":2,\"PerPage\":11}";
 		actual.Escape().Dump();
-		Assert.AreEqual(expected, actual);
+		AreEqual(expected, actual);
 	}
 
 	[TestMethod]

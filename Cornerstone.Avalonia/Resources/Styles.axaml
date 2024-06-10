@@ -1,0 +1,189 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Style Selector="Button">
+		<Setter Property="Background" Value="{DynamicResource Brush.Contents}" />
+		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="BorderBrush" Value="{DynamicResource Brush.Border0}" />
+		<Setter Property="FontFamily" Value="{DynamicResource DejaVuSansMono}" />
+		<Setter Property="FontSize" Value="14" />
+		<Setter Property="Padding" Value="8,0" />
+		<Setter Property="Opacity" Value="1" />
+		<Setter Property="Height" Value="32" />
+		<Setter Property="TextBlock.LineHeight" Value="{StaticResource FontSizeNormal}" />
+		<Setter Property="TextBlock.LineSpacing" Value="0" />
+		<Setter Property="HorizontalContentAlignment" Value="Center" />
+		<Setter Property="VerticalContentAlignment" Value="Center" />
+
+		<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{TemplateBinding Background}" />
+			<Setter Property="BorderThickness" Value="1" />
+			<Setter Property="BorderBrush" Value="{DynamicResource Brush.Border0}" />
+			<Setter Property="Opacity" Value="0.8" />
+		</Style>
+	</Style>
+
+	<Style Selector="Button.NoDescendants">
+		<Setter Property="Padding" Value="8,1,8,0" />
+	</Style>
+	<Style Selector="Button.Accent">
+		<Setter Property="Background" Value="{DynamicResource Brush.Accent}" />
+		<Setter Property="Foreground" Value="{DynamicResource Brush.Accent.Foreground}" />
+		<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{StaticResource Brush.Accent.Hovered}" />
+		</Style>
+	</Style>
+
+	<Style Selector="ToggleButton">
+		<Setter Property="Background" Value="{DynamicResource Brush.Contents}" />
+		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="BorderBrush" Value="{DynamicResource Brush.Border0}" />
+		<Setter Property="FontFamily" Value="{DynamicResource DejaVuSansMono}" />
+		<Setter Property="FontSize" Value="14" />
+		<Setter Property="Padding" Value="8,0" />
+		<Setter Property="Opacity" Value="1" />
+		<Setter Property="Height" Value="32" />
+		<Setter Property="TextBlock.LineHeight" Value="{StaticResource FontSizeNormal}" />
+		<Setter Property="TextBlock.LineSpacing" Value="0" />
+		<Setter Property="HorizontalContentAlignment" Value="Center" />
+		<Setter Property="VerticalContentAlignment" Value="Center" />
+
+		<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{TemplateBinding Background}" />
+			<Setter Property="BorderThickness" Value="1" />
+			<Setter Property="BorderBrush" Value="{DynamicResource Brush.Border0}" />
+			<Setter Property="Opacity" Value="0.8" />
+		</Style>
+	</Style>
+
+	<Style Selector="ComboBox">
+		<Style.Resources>
+			<Thickness x:Key="ComboBoxDropdownBorderPadding">4,0</Thickness>
+			<Thickness x:Key="ComboBoxItemThemePadding">6,4</Thickness>
+			<SolidColorBrush x:Key="ComboBoxItemBackground" Color="{DynamicResource Color.Contents}" />
+			<SolidColorBrush x:Key="ComboBoxItemBackgroundPressed" Color="{DynamicResource Color.Accent.Pressed}" />
+			<SolidColorBrush x:Key="ComboBoxItemBackgroundPointerOver" Color="{DynamicResource Color.Accent.Hovered}" />
+			<SolidColorBrush x:Key="ComboBoxItemBackgroundSelected" Color="{DynamicResource Color.Accent}" />
+			<SolidColorBrush x:Key="ComboBoxItemBackgroundSelectedPressed" Color="{DynamicResource Color.Accent.Pressed}" />
+			<SolidColorBrush x:Key="ComboBoxItemBackgroundSelectedPointerOver" Color="{DynamicResource Color.Accent.Hovered}" />
+			<SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="{DynamicResource Color.Contents}" />
+			<SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="{DynamicResource Color.Border0}" />
+		</Style.Resources>
+
+		<Setter Property="Background" Value="{DynamicResource Brush.Contents}" />
+		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="BorderBrush" Value="{DynamicResource Brush.Border0}" />
+		<Setter Property="CornerRadius" Value="{DynamicResource CornerRadiusHalf}" />
+		<Setter Property="Padding" Value="8,0" />
+		<Setter Property="MinHeight" Value="32" />
+		<Setter Property="Height" Value="32" />
+		<Setter Property="FontFamily" Value="{StaticResource DejaVuSansMono}" />
+		<Setter Property="FontSize" Value="14" />
+		<Setter Property="HorizontalContentAlignment" Value="Stretch" />
+		<Setter Property="VerticalContentAlignment" Value="Center" />
+
+		<Style Selector="^ /template/ Popup#PART_Popup">
+			<Setter Property="Placement" Value="BottomEdgeAlignedLeft" />
+			<Setter Property="VerticalOffset" Value="2" />
+		</Style>
+		<Style Selector="^:pointerover /template/ Border#Background">
+			<Setter Property="BorderBrush" Value="{DynamicResource Brush.Border0}" />
+		</Style>
+		<Style Selector="^:disabled">
+			<Setter Property="Opacity" Value=".6" />
+		</Style>
+		<Style Selector="^:disabled /template/ Border#Background">
+			<Setter Property="Background" Value="Transparent" />
+		</Style>
+	</Style>
+	<Style Selector="ComboBoxItem">
+		<Setter Property="Background" Value="{DynamicResource Brush.Contents}" />
+		<Setter Property="CornerRadius" Value="{DynamicResource CornerRadiusHalf}" />
+		<Setter Property="FontFamily" Value="{StaticResource DejaVuSansMono}" />
+		<Setter Property="FontSize" Value="14" />
+		<Setter Property="MinHeight" Value="32" />
+	</Style>
+
+	<Style Selector="NumericUpDown">
+		<Setter Property="FontFamily" Value="{StaticResource DejaVuSansMono}" />
+		<Setter Property="FontSize" Value="14" />
+		<Setter Property="CornerRadius" Value="{DynamicResource CornerRadiusHalf}" />
+		<Setter Property="Padding" Value="8,0" />
+		<Setter Property="MinHeight" Value="32" />
+		<Setter Property="Height" Value="32" />
+		<Setter Property="VerticalContentAlignment" Value="Center" />
+		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="BorderBrush" Value="{DynamicResource Brush.Border0}" />
+		<Setter Property="Background" Value="{DynamicResource Brush.Contents}" />
+	</Style>
+
+	<Style Selector="TextBox">
+		<Setter Property="CornerRadius" Value="{DynamicResource CornerRadiusHalf}" />
+		<Setter Property="FontFamily" Value="{StaticResource DejaVuSansMono}" />
+		<Setter Property="FontSize" Value="15" />
+		<Setter Property="Padding" Value="8,6" />
+		<Setter Property="MinHeight" Value="32" />
+		<Setter Property="Height" Value="32" />
+		<Setter Property="VerticalContentAlignment" Value="Top" />
+		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="BorderBrush" Value="{DynamicResource Brush.Border0}" />
+		<Setter Property="Background" Value="{DynamicResource Brush.Contents}" />
+		<Setter Property="ContextFlyout">
+			<Setter.Value>
+				<MenuFlyout>
+					<MenuItem Header="{StaticResource Text.Cut}"
+							Command="{Binding $parent[TextBox].Cut}"
+							IsEnabled="{Binding $parent[TextBox].CanCut}"
+							InputGesture="{x:Static TextBox.CutGesture}">
+						<MenuItem.Icon>
+							<Path Width="11" Height="11"
+									Data="{StaticResource Icons.Cut}"
+									VerticalAlignment="Center" />
+						</MenuItem.Icon>
+					</MenuItem>
+
+					<MenuItem Header="{StaticResource Text.Copy}"
+							Command="{Binding $parent[TextBox].Copy}"
+							IsEnabled="{Binding $parent[TextBox].CanCopy}"
+							InputGesture="{x:Static TextBox.CopyGesture}">
+						<MenuItem.Icon>
+							<Path Width="11" Height="11"
+									Data="{StaticResource Icons.Copy}"
+									VerticalAlignment="Center" />
+						</MenuItem.Icon>
+					</MenuItem>
+
+					<MenuItem Header="{StaticResource Text.Paste}"
+							Command="{Binding $parent[TextBox].Paste}"
+							IsEnabled="{Binding $parent[TextBox].CanPaste}"
+							InputGesture="{x:Static TextBox.PasteGesture}">
+						<MenuItem.Icon>
+							<Path Width="11" Height="11"
+									Data="{StaticResource Icons.Paste}"
+									VerticalAlignment="Center" />
+						</MenuItem.Icon>
+					</MenuItem>
+				</MenuFlyout>
+			</Setter.Value>
+		</Setter>
+		<Style Selector="^:pointerover /template/ Border#PART_BorderElement">
+			<Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}" />
+			<Setter Property="Background" Value="{DynamicResource Brush.Contents}" />
+		</Style>
+		<Style Selector="^ /template/ TextBlock#PART_Watermark">
+			<Setter Property="Margin" Value="0,-1,0,0" />
+		</Style>
+		<Style Selector="^:focus /template/ Border#PART_BorderElement">
+			<Setter Property="BorderThickness" Value="1" />
+			<Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}" />
+			<Setter Property="Background" Value="{DynamicResource Brush.Contents}" />
+		</Style>
+		<Style Selector="^:disabled /template/ Border#PART_BorderElement">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="Opacity" Value=".6" />
+		</Style>
+	</Style>
+
+	<Design.PreviewWith>
+		<ContentControl Template="{DynamicResource SampleControls}" />
+	</Design.PreviewWith>
+</Styles>

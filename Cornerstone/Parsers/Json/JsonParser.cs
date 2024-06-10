@@ -8,8 +8,22 @@ using Cornerstone.Serialization.Json.Values;
 
 namespace Cornerstone.Parsers.Json;
 
-internal static class JsonParser
+public class JsonParser : Parser<JsonParserOptions>
 {
+	#region Constructors
+
+	/// <inheritdoc />
+	public JsonParser() : base(new JsonParserOptions())
+	{
+	}
+
+	/// <inheritdoc />
+	public JsonParser(JsonParserOptions options) : base(options)
+	{
+	}
+
+	#endregion
+
 	#region Methods
 
 	public static void ParseArray(JsonTokenizer tokenizer, IObjectConsumer consumer, ISerializationOptions settings = null)

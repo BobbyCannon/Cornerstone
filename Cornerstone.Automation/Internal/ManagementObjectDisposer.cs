@@ -23,7 +23,7 @@ internal class ManagementObjectDisposer : IDisposable
 
 	public ManagementObjectDisposer()
 	{
-		_disposables = new List<IDisposable>();
+		_disposables = [];
 	}
 
 	#endregion

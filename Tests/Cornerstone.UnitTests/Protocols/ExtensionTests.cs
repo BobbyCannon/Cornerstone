@@ -12,7 +12,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Cornerstone.UnitTests.Protocols;
 
 [TestClass]
-public class ExtensionTests
+public class ExtensionTests : CornerstoneUnitTest
 {
 	#region Methods
 
@@ -21,11 +21,11 @@ public class ExtensionTests
 	{
 		var actual = "123456789"u8.ToArray().CalculateCrc16(CrcType.Kermit);
 		actual.ToString("X4").Dump();
-		Assert.AreEqual(0x2189, actual);
+		AreEqual(0x2189, actual);
 
 		actual = "123456789"u8.ToArray().CalculateCrc16(CrcType.Xmodem);
 		actual.ToString("X4").Dump();
-		Assert.AreEqual(0x31C3, actual);
+		AreEqual(0x31C3, actual);
 	}
 
 	[TestMethod]
@@ -36,7 +36,7 @@ public class ExtensionTests
 		foreach (var item in items)
 		{
 			item.Key.Escape().Dump();
-			Assert.AreEqual(item.Key, item.Value.Escape());
+			AreEqual(item.Key, item.Value.Escape());
 		}
 
 		// One way escapes
@@ -49,7 +49,7 @@ public class ExtensionTests
 		foreach (var item in items)
 		{
 			item.Key.Escape().Dump();
-			Assert.AreEqual(item.Key, item.Value.Escape());
+			AreEqual(item.Key, item.Value.Escape());
 		}
 	}
 
@@ -61,7 +61,7 @@ public class ExtensionTests
 		foreach (var item in items)
 		{
 			(item.Key + " / " + item.Key.Unescape() + " : " + item.Value + " / " + item.Value.Escape()).Dump();
-			Assert.AreEqual(item.Value, item.Key.Unescape());
+			AreEqual(item.Value, item.Key.Unescape());
 		}
 
 		"\r\nSpecial Cases\r\n".Dump();
@@ -77,7 +77,7 @@ public class ExtensionTests
 		foreach (var item in items)
 		{
 			(item.Key + " / " + item.Key.Unescape() + " : " + item.Value + " / " + item.Value.Escape()).Dump();
-			Assert.AreEqual(item.Value, item.Key.Unescape());
+			AreEqual(item.Value, item.Key.Unescape());
 		}
 	}
 

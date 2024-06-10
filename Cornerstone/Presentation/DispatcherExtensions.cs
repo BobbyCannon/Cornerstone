@@ -85,9 +85,8 @@ public static class DispatcherExtensions
 	/// <returns> True if on the dispatcher thread otherwise false. </returns>
 	public static bool ShouldDispatch(this IDispatcher dispatcher)
 	{
-		return dispatcher.IsEnabled
-			&& !dispatcher.IsDispatcherThread;
+		return dispatcher is { IsEnabled: true, IsDispatcherThread: false };
 	}
-
+	
 	#endregion
 }
