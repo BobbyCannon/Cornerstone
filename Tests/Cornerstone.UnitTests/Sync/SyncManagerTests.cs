@@ -40,6 +40,8 @@ public class SyncManagerTests : CornerstoneUnitTest
 		serverClient.IncomingConverter = manager.GetIncomingConverter();
 		serverClient.OutgoingConverter = manager.GetOutgoingConverter();
 
+		IncrementTime(ticks: 1);
+
 		var result = manager.SyncAll();
 		AreEqual(0, result.SyncIssues.Count, string.Join("\r\n", result.SyncIssues.Select(x => x.Message)));
 		IsTrue(result.SyncSuccessful);

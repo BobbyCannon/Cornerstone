@@ -166,14 +166,22 @@ public class Babel
 		AddOrUpdate("English", BabelKeys.IndexOutOfRange, "The index is out of range.");
 		AddOrUpdate("English", BabelKeys.IndexAndLengthOutOfRange, "The index + length is out of range.");
 
-		// Authentication
+		// Authentication / Authorization
 		AddOrUpdate("English", BabelKeys.AuthenticationFailed, "The credentials failed to authenticate. Please try again.");
-
-		// Authorization
-		AddOrUpdate("English", BabelKeys.Unauthorized, "The request does not have sufficient privileges for this operation.");
+		AddOrUpdate("English", BabelKeys.NotAuthorized, "The request does not have sufficient privileges for this operation.");
 
 		// Encryption
+		AddOrUpdate("English", BabelKeys.EncryptionFailed, "The value was not able to be encrypted.");
 		AddOrUpdate("English", BabelKeys.DecryptionFailed, "The value was not able to be decrypted.");
+		AddOrUpdate("English", BabelKeys.NewPasswordEntriesDoNotMatch, "The new password values do not match.");
+		AddOrUpdate("English", BabelKeys.PasswordIsInvalid, "The password is not correct.");
+
+		// Secure Vault
+		AddOrUpdate("English", BabelKeys.VaultCredentialNotFound, "The vault credential could not be found.");
+		AddOrUpdate("English", BabelKeys.VaultCredentialUserNameRequired, "The vault credential UserName is required.");
+		AddOrUpdate("English", BabelKeys.VaultCredentialPasswordRequired, "The vault credential Password is required.");
+		AddOrUpdate("English", BabelKeys.VaultIsAlreadyOpen, "The vault is already open.");
+		AddOrUpdate("English", BabelKeys.VaultIsNotOpen, "The vault is not currently open.");
 
 		// Services
 		AddOrUpdate("English", BabelKeys.TimeServiceLocked, "The time service has been locked and cannot change.");

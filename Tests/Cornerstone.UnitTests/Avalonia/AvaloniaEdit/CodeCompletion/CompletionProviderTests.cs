@@ -15,6 +15,7 @@ public class CompletionProviderTests : CornerstoneUnitTest
 	[TestMethod]
 	public void GetCompletionPrefix()
 	{
+		AreEqual("-Cr", CompletionProvider.GetCompletionPrefix("$credential = Get-Credential\r\nProtect-String -Cr", "-Credential"));
 		AreEqual(".\\", CompletionProvider.GetCompletionPrefix("cd .\\", "C:\\Program Files"));
 		AreEqual("C:\\Prog", CompletionProvider.GetCompletionPrefix("cd C:\\Prog", "C:\\Program Files"));
 		AreEqual("[Guid", CompletionProvider.GetCompletionPrefix("Write-Host [Guid", "[guid]"));

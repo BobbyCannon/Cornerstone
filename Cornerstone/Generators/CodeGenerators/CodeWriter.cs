@@ -145,7 +145,25 @@ public abstract class CodeWriter<T> : ObjectConsumer<T>, ICodeWriter
 		for (var index = 0; index < properties.Count; index++)
 		{
 			var property = properties[index];
-			WriteProperty(property, property.GetValue(value));
+			var propertyValue = property.GetValue(value);
+
+			if (Settings.IgnoreDefaultValues
+				&& (propertyValue?.IsDefaultValue() == true))
+			{
+				continue;
+			}
+			if (Settings.IgnoreNullValues
+				&& (propertyValue == null))
+			{
+				continue;
+			}
+			if (Settings.IgnoreReadOnly
+				&& !property.CanWrite)
+			{
+				continue;
+			}
+
+			WriteProperty(property, propertyValue);
 
 			if (index != lastIndex)
 			{

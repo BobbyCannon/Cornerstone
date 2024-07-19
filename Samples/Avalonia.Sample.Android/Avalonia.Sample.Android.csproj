@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
 		<TargetFrameworks>net8.0-android</TargetFrameworks>
-		<SupportedOSPlatformVersion>21</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion>34</SupportedOSPlatformVersion>
 		<ApplicationId>com.cornerstone.AvaloniaTest</ApplicationId>
 		<ApplicationVersion>1</ApplicationVersion>
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
@@ -16,6 +16,8 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Avalonia.Android" Version="$(AvaloniaVersion)" />
+		<PackageReference Include="Mapsui.Avalonia" Version="5.0.0-beta.2" />
+		<PackageReference Include="Mapsui.Android" Version="5.0.0-beta.2" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Avalonia.Sample\Avalonia.Sample.csproj" />

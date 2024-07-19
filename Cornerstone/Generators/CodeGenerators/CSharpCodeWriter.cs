@@ -86,16 +86,11 @@ public class CSharpCodeWriter : CodeWriter<ICodeWriterOptions>
 	/// Convert the value to CSharp code.
 	/// </summary>
 	/// <param name="value"> The value to write. </param>
-	/// <param name="language"> The language to generate. </param>
 	/// <param name="options"> Optional settings. </param>
 	/// <returns> The CSharp code. </returns>
-	public static string GenerateCode(object value, CodeLanguage language = CodeLanguage.CSharp, ICodeWriterOptions options = null)
+	public static string GenerateCode(object value, ICodeWriterOptions options = null)
 	{
-		var writer = language switch
-		{
-			CodeLanguage.CSharp => new CSharpCodeWriter(options),
-			_ => new CSharpCodeWriter(options)
-		};
+		var writer = new CSharpCodeWriter(options);
 		writer.AppendObject(value);
 		return writer.ToString();
 	}

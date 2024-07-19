@@ -1,6 +1,5 @@
 ﻿#region References
 
-using System;
 using Cornerstone.Avalonia.AvaloniaEdit.Highlighting;
 using Cornerstone.Text.Document;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -36,9 +35,7 @@ public class HtmlClipboardTests : CornerstoneUnitTest
 	{
 		var segment = new TextSegment { StartOffset = 0, Length = document.TextLength };
 		var html = HtmlClipboard.CreateHtmlFragment(document, highlighter, segment, new HtmlOptions());
-		AreEqual("<span style=\"color: #569cd6; \">using</span> System.Text;<br>" + Environment.NewLine +
-			"&nbsp;&nbsp;&nbsp;&nbsp;<span style=\"color: #569cd6; \">string</span> " +
-			"text = <span style=\"color: #dcdcaa; \">SomeMethod</span>();", html);
+		AreEqual("<span style=\"color: #569cd6; \">using</span>&nbsp;System.Text;<br>\r\n&nbsp;&nbsp;&nbsp;&nbsp;<span style=\"color: #569cd6; \">string</span>&nbsp;textt==<span style=\"color: #dcdcaa; \">SomeMethod</span>();", html);
 	}
 
 	[TestMethod]

@@ -1,0 +1,53 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		mc:Ignorable="d"
+		x:Class="Avalonia.Sample.Tabs.TabContextMenu">
+	<StackPanel
+			Margin="8"
+			VerticalAlignment="Top"
+			HorizontalAlignment="Left"
+			Orientation="Vertical"
+			Spacing="8">
+		<StackPanel.Resources>
+			<ControlTemplate x:Key="Test" TargetType="ContextMenu">
+				<ContextMenu>
+					<MenuItem Header="Standard _Menu Item" />
+					<MenuItem Header="Disabled" IsEnabled="False" />
+					<Separator />
+					<MenuItem Header="Menu with _Submenu">
+						<MenuItem Header="Submenu _1" />
+						<MenuItem Header="Submenu _2" />
+					</MenuItem>
+					<MenuItem Header="Menu Item with _Icon">
+						<MenuItem.Icon>
+							<TextBlock Text="😀" />
+						</MenuItem.Icon>
+					</MenuItem>
+					<MenuItem Header="Menu Item with _Checkbox">
+						<MenuItem.Icon>
+							<CheckBox BorderThickness="0" IsHitTestVisible="False" IsChecked="True" />
+						</MenuItem.Icon>
+					</MenuItem>
+				</ContextMenu>
+			</ControlTemplate>
+		</StackPanel.Resources>
+		<Border
+				Background="{DynamicResource UiTheme05}"
+				Width="400"
+				Height="200"
+				CornerRadius="4">
+			<Border.ContextMenu>
+				<ContextMenu Template="{StaticResource Test}" />
+			</Border.ContextMenu>
+			<TextBlock
+					Text="Right click to show context menu."
+					HorizontalAlignment="Center"
+					VerticalAlignment="Center" />
+		</Border>
+		<ContextMenu Template="{StaticResource Test}"
+				Margin="0,20,0,0" />
+	</StackPanel>
+</UserControl>

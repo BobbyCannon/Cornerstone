@@ -1,0 +1,20 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<SolidColorBrush x:Key="ColorViewRadioButtonForeground" Color="#0077FA" />
+	<SolidColorBrush x:Key="ColorViewRadioButtonBackground" Color="White" />
+	<SolidColorBrush x:Key="ColorViewRadioButtonPointeroverBackground" Opacity="0.09" Color="#2E3238" />
+	<SolidColorBrush x:Key="ColorViewRadioButtonPressedBackground" Opacity="0.13" Color="#2E3238" />
+	<SolidColorBrush x:Key="ColorViewRadioButtonCheckedForeground" Color="White" />
+	<SolidColorBrush x:Key="ColorViewRadioButtonCheckedBackground" Color="#0077FA" />
+	<SolidColorBrush x:Key="ColorViewRadioButtonCheckedPointeroverBackground" Color="#0062D6" />
+	<SolidColorBrush x:Key="ColorViewRadioButtonCheckedPressedBackground" Color="#004FB3" />
+
+	<SolidColorBrush x:Key="ColorViewTabItemSelectedForeground" Color="#0077FA" />
+
+	<SolidColorBrush x:Key="ColorSliderDefaultBorderBrush" Color="Black" />
+	<SolidColorBrush x:Key="ColorSliderLightBorderBrush" Color="White" />
+	<SolidColorBrush x:Key="ColorSliderDarkBorderBrush" Color="#E4000000" />
+
+	<SolidColorBrush x:Key="ColorSpectrumBorderBrush" Opacity="0.08" Color="#1C1F23" />
+
+	<BoxShadows x:Key="ColorPreviewerMainBoxShadow">0 0 14 0 #1A000000</BoxShadows>
+</ResourceDictionary>

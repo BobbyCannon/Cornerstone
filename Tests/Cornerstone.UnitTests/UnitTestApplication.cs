@@ -52,13 +52,28 @@ public class UnitTestApplication : Application
 	{
 		var styles = new[]
 		{
-			new ResourceInclude(new Uri("avares://Cornerstone.Avalonia")) { Source = new Uri("AvaloniaEdit/Themes/Base.xaml", UriKind.Relative) },
-			new ResourceInclude(new Uri("avares://Cornerstone.Avalonia")) { Source = new Uri("Resources/Themes.axaml", UriKind.Relative) }
+			new StyleInclude(new Uri("avares://Cornerstone.Avalonia"))
+			{
+				Source = new Uri("/AvaloniaEdit/Themes/AvaloniaEdit.xaml", UriKind.Relative)
+			}
 		};
 
 		foreach (var style in styles)
 		{
-			Current?.Resources.MergedDictionaries.Add(style);
+			Current?.Styles.Add(style);
+		}
+		
+		var resources = new[]
+		{
+			new ResourceInclude(new Uri("avares://Cornerstone.Avalonia"))
+			{
+				Source = new Uri("/Resources/Theme.axaml", UriKind.Relative)
+			}
+		};
+
+		foreach (var resource in resources)
+		{
+			Current?.Resources.MergedDictionaries.Add(resource);
 		}
 	}
 

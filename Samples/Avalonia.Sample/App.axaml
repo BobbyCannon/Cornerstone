@@ -1,19 +1,10 @@
 <avalonia:CornerstoneApplication xmlns="https://github.com/avaloniaui"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		xmlns:avalonia="clr-namespace:Cornerstone.Avalonia;assembly=Cornerstone.Avalonia"
-		x:Class="Avalonia.Sample.App"
-		RequestedThemeVariant="Dark">
-	<avalonia:CornerstoneApplication.Resources>
-		<ResourceDictionary>
-			<ResourceDictionary.MergedDictionaries>
-				<ResourceInclude Source="avares://Cornerstone.Avalonia/Resources/Themes.axaml" />
-			</ResourceDictionary.MergedDictionaries>
-		</ResourceDictionary>
-	</avalonia:CornerstoneApplication.Resources>
+		x:Class="Avalonia.Sample.App">
 	<avalonia:CornerstoneApplication.Styles>
-		<FluentTheme />
-		<StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
-		<StyleInclude Source="avares://Cornerstone.Avalonia/Resources/Styles.axaml" />
-		<StyleInclude Source="avares://Cornerstone.Avalonia/AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
+		<CornerstoneTheme ThemeColor="Blue" />
+		<StyleInclude Source="avares://Cornerstone.Avalonia.DataGrid/Index.axaml" />
+		<StyleInclude Source="avares://Cornerstone.Avalonia.ColorPicker/Index.axaml" />
 	</avalonia:CornerstoneApplication.Styles>
 </avalonia:CornerstoneApplication>

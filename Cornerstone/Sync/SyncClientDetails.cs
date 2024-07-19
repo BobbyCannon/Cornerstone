@@ -47,7 +47,7 @@ public class SyncClientDetails : Bindable, ISyncClientDetails
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
 	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public virtual bool UpdateWith(ISyncClientDetails update, UpdateableOptions options)
+	public virtual bool UpdateWith(ISyncClientDetails update, IncludeExcludeOptions options)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -82,7 +82,7 @@ public class SyncClientDetails : Bindable, ISyncClientDetails
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, UpdateableOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeOptions options)
 	{
 		return update switch
 		{

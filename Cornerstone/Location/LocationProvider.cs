@@ -91,17 +91,17 @@ public abstract class LocationProvider<T, THorizontalLocation, TVerticalLocation
 	public abstract Task<T> GetCurrentLocationAsync(TimeSpan? timeout = null, CancellationToken? cancelToken = null);
 
 	/// <inheritdoc />
-	public override bool ShouldUpdate(T value, T update, UpdateableOptions options)
+	public override bool ShouldUpdate(T update, IncludeExcludeOptions options)
 	{
-		return ComparerForHorizontal.ShouldUpdate(value.HorizontalLocation, update.HorizontalLocation)
-			|| ComparerForVertical.ShouldUpdate(value.VerticalLocation, update.VerticalLocation);
+		return ComparerForHorizontal.ShouldUpdate(CurrentValue.HorizontalLocation, update.HorizontalLocation)
+			|| ComparerForVertical.ShouldUpdate(CurrentValue.VerticalLocation, update.VerticalLocation);
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(ref T value, T update, UpdateableOptions options)
+	public override bool UpdateWith(T update, IncludeExcludeOptions options)
 	{
-		return value.HorizontalLocation.UpdateWith(update.HorizontalLocation, options)
-			& value.VerticalLocation.UpdateWith(update.VerticalLocation, options);
+		return CurrentValue.HorizontalLocation.UpdateWith(update.HorizontalLocation, options)
+			& CurrentValue.VerticalLocation.UpdateWith(update.VerticalLocation, options);
 	}
 
 	/// <summary>

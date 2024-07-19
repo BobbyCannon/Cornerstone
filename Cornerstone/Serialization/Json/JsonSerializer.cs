@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Parsers;
 using Cornerstone.Parsers.Json;
@@ -96,16 +97,15 @@ public class JsonSerializer : IJsonSerializer
 		}
 
 		var converter = GetConverter(type);
-		return converter.ConvertTo(type, jsonValue);
+		var response = converter.ConvertTo(type, jsonValue);
+		(response as ITrackPropertyChanges)?.ResetHasChanges();
+		return response;
 	}
 
 	/// <inheritdoc />
 	public T FromJson<T>(string value, ISerializationOptions settings = null)
 	{
-		var result = Parse(value, settings);
-		var type = typeof(T);
-		var converter = GetConverter(type);
-		return (T) converter.ConvertTo(type, result);
+		return (T) FromJson(value, typeof(T), settings);
 	}
 
 	/// <inheritdoc />
@@ -113,7 +113,9 @@ public class JsonSerializer : IJsonSerializer
 	{
 		var result = Parse(value, settings);
 		var converter = GetConverter(type);
-		return converter.ConvertTo(type, result);
+		var response = converter.ConvertTo(type, result);
+		(response as ITrackPropertyChanges)?.ResetHasChanges();
+		return response;
 	}
 
 	/// <summary>

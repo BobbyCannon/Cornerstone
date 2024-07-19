@@ -1,0 +1,169 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Avalonia.Sample.Tabs"
+		mc:Ignorable="d"  d:DesignHeight="400"
+		x:Class="Avalonia.Sample.Tabs.TabSpeedyList"
+		x:DataType="tabs:TabSpeedyList">
+	<DockPanel LastChildFill="True">
+		<Border DockPanel.Dock="Top"
+				BorderBrush="{DynamicResource ButtonBorderBrush}"
+				BorderThickness="0,0,0,1"
+				Margin="0,0,0,10">
+			<StackPanel
+					Orientation="Horizontal"
+					Margin="10">
+				<TextBox Text="{Binding NumberOfItems, Mode=TwoWay}"
+						IsReadOnly="false"
+						TextAlignment="Center"
+						Padding="10,2" />
+				<ComboBox ItemsSource="{Binding TestLoopValues, Mode=OneTime}"
+						SelectedItem="{Binding SelectedTestLoopValue, Mode=TwoWay}"
+						DisplayMemberBinding="{Binding Name}"
+						MinWidth="100" />
+
+				<TextBox Text="{Binding NumberOfThreads, Mode=OneWay}"
+						IsReadOnly="True"
+						TextAlignment="Center" />
+				<Button Content="+"
+						Command="{Binding NumberOfThreadsCommand, Mode=OneWay}"
+						CommandParameter="+"
+						Padding="10,2" />
+				<Button Content="-"
+						Command="{Binding NumberOfThreadsCommand, Mode=OneWay}"
+						CommandParameter="-"
+						Padding="10,2" />
+				<CheckBox Margin="10,0"
+						IsChecked="{Binding UseOrder, Mode=TwoWay}">
+					<Label Content="Order" />
+				</CheckBox>
+				<CheckBox Margin="10,0"
+						IsChecked="{Binding UseLimit, Mode=TwoWay}">
+					<Label Content="Limit" />
+				</CheckBox>
+				<TextBox Text="{Binding Limit, Mode=TwoWay}"
+						IsReadOnly="false"
+						TextAlignment="Center"
+						Padding="10,2"
+						Margin="0,2,10,2" />
+				<ComboBox ItemsSource="{Binding ThrottleDelayValues, Mode=OneTime}"
+						SelectedItem="{Binding SelectedThrottleDelay, Mode=TwoWay}"
+						DisplayMemberBinding="{Binding Name}" />
+				<CheckBox Margin="10,0"
+						IsChecked="{Binding LoopTest, Mode=TwoWay}">
+					<Label Content="Loop Test" />
+				</CheckBox>
+
+				<ComboBox ItemsSource="{Binding ReaderWriterLockValues, Mode=OneTime}"
+						SelectedItem="{Binding SelectedReaderWriterLock, Mode=TwoWay}"
+						DisplayMemberBinding="{Binding Name}" />
+
+				<Button Command="{Binding RandomizeCommand, Mode=OneTime}"
+						Margin="10,0,0,0">
+					<Grid>
+						<Label Content="Randomize" IsVisible="{Binding !IsRunning}" />
+						<Label Content="Cancel" IsVisible="{Binding IsRunning}" />
+					</Grid>
+				</Button>
+
+				<Button Command="{Binding ClearCommand, Mode=OneTime}"
+						Margin="10,0,0,0"
+						IsEnabled="{Binding !IsRunning}">
+					<Label Content="Clear" />
+				</Button>
+			</StackPanel>
+		</Border>
+		<Grid ColumnDefinitions="*,*,*">
+			<Grid Grid.Column="0" RowDefinitions="*,Auto,Auto">
+				<ListBox Grid.Row="0"
+						x:Name="LeftListBox"
+						ItemsSource="{Binding LeftList, Mode=OneWay}">
+					<ListBox.ItemTemplate>
+						<DataTemplate>
+							<TextBlock Text="{Binding Name}" />
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
+				<ListBox Grid.Row="0" ItemsSource="{Binding LeftList.Filtered, Mode=OneWay}"
+						IsVisible="{Binding ListFilterForLeft, Mode=OneWay, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+					<ListBox.ItemTemplate>
+						<DataTemplate>
+							<TextBlock Text="{Binding Name}" />
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
+				<StackPanel Grid.Row="1" Orientation="Horizontal">
+					<TextBlock Text="Count" />
+					<TextBlock Text="{Binding LeftList.Count, Mode=OneWay}"
+							IsVisible="{Binding ListFilterForLeft, Mode=OneWay, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
+					<TextBlock Text="{Binding LeftList.Filtered.Count, Mode=OneWay}"
+							IsVisible="{Binding ListFilterForLeft, Mode=OneWay, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+				</StackPanel>
+				<TextBox Grid.Row="2"
+						Watermark="Filter Left"
+						Text="{Binding ListFilterForLeft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+			</Grid>
+			<Grid Grid.Column="1" RowDefinitions="*,Auto,Auto">
+				<ListBox Grid.Row="0" x:Name="MiddleListBox"
+						ItemsSource="{Binding MiddleList, Mode=OneWay}">
+					<ListBox.ItemTemplate>
+						<DataTemplate>
+							<TextBlock Text="{Binding Name}" />
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
+				<ListBox Grid.Row="0" 
+						ItemsSource="{Binding MiddleList.Filtered, Mode=OneWay}"
+						IsVisible="{Binding ListFilterForMiddle, Mode=OneWay, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+					<ListBox.ItemTemplate>
+						<DataTemplate>
+							<TextBlock Text="{Binding Name}" />
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
+				<StackPanel Grid.Row="1" Orientation="Horizontal">
+					<TextBlock Text="Count" />
+					<TextBlock Text="{Binding MiddleList.Count, Mode=OneWay}"
+							IsVisible="{Binding ListFilterForMiddle, Mode=OneWay, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
+					<TextBlock Text="{Binding MiddleList.Filtered.Count, Mode=OneWay}"
+							IsVisible="{Binding ListFilterForMiddle, Mode=OneWay, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+				</StackPanel>
+				<TextBox Grid.Row="2"
+						Watermark="Filter Middle"
+						Text="{Binding ListFilterForMiddle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+			</Grid>
+			<Grid Grid.Column="2" RowDefinitions="*,Auto,Auto">
+				<ListBox Grid.Row="0"
+						x:Name="RightListBox"
+						ItemsSource="{Binding RightList, Mode=OneWay}">
+					<ListBox.ItemTemplate>
+						<DataTemplate>
+							<TextBlock Text="{Binding Name}" />
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
+				<ListBox Grid.Row="0" 
+						ItemsSource="{Binding RightList.Filtered, Mode=OneWay}"
+						IsVisible="{Binding ListFilterForRight, Mode=OneWay, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+					<ListBox.ItemTemplate>
+						<DataTemplate>
+							<TextBlock Text="{Binding Name}" />
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
+				<StackPanel Grid.Row="1" Orientation="Horizontal">
+					<TextBlock Text="Count" />
+					<TextBlock Text="{Binding RightList.Count, Mode=OneWay}"
+							IsVisible="{Binding ListFilterForRight, Mode=OneWay, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
+					<TextBlock Text="{Binding RightList.Filtered.Count, Mode=OneWay}"
+							IsVisible="{Binding ListFilterForRight, Mode=OneWay, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+				</StackPanel>
+				<TextBox Grid.Row="2"
+						Watermark="Filter Right"
+						Text="{Binding ListFilterForRight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+			</Grid>
+		</Grid>
+	</DockPanel>
+</UserControl>

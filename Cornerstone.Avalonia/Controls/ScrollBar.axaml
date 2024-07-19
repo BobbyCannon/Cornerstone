@@ -1,0 +1,177 @@
+<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+
+	<Design.PreviewWith>
+		<Border Padding="20">
+			<StackPanel Spacing="10">
+				<ScrollBar Orientation="Horizontal"
+						Width="200"
+						HorizontalAlignment="Left" />
+				<ScrollBar
+						Orientation="Vertical"
+						Height="100"
+						HorizontalAlignment="Right" />
+
+				<ScrollViewer
+						Width="200"
+						Height="200"
+						HorizontalScrollBarVisibility="Visible"
+						VerticalScrollBarVisibility="Visible">
+
+					<Border Width="400"
+							Height="400">
+						<Border.Background>
+							<VisualBrush TileMode="Tile"
+									SourceRect="0,0,40,40"
+									DestinationRect="0,0,40,40"
+									Stretch="None">
+								<VisualBrush.Visual>
+									<Canvas Width="40" Height="40">
+										<Rectangle Canvas.Left="0" Canvas.Top="0" Width="20" Height="20"
+												Fill="{StaticResource Red05}" />
+										<Rectangle Canvas.Left="20" Canvas.Top="0" Width="20" Height="20"
+												Fill="{StaticResource Green05}" />
+										<Rectangle Canvas.Left="0" Canvas.Top="20" Width="20" Height="20"
+												Fill="{StaticResource Blue06}" />
+										<Rectangle Canvas.Left="20" Canvas.Top="20" Width="20" Height="20"
+												Fill="{StaticResource Yellow05}" />
+									</Canvas>
+								</VisualBrush.Visual>
+							</VisualBrush>
+						</Border.Background>
+					</Border>
+				</ScrollViewer>
+			</StackPanel>
+		</Border>
+	</Design.PreviewWith>
+
+	<ControlTheme x:Key="ScrollBarRepeatButton" TargetType="{x:Type RepeatButton}">
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="Foreground" Value="Gray" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}">
+					<ContentPresenter
+							HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+							VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+							Content="{TemplateBinding Content}"
+							Foreground="{TemplateBinding Foreground}" />
+				</Border>
+			</ControlTemplate>
+		</Setter>
+	</ControlTheme>
+	<ControlTheme x:Key="{x:Type ScrollBar}" TargetType="ScrollBar">
+		<Setter Property="AllowAutoHide" Value="True" />
+		<Setter Property="Cursor" Value="Arrow" />
+		<Style Selector="^:horizontal">
+			<Setter Property="Background" Value="{DynamicResource ScrollBarBackground}" />
+			<Setter Property="Height" Value="4" />
+			<Setter Property="CornerRadius" Value="{DynamicResource ScrollBarCornerRadius}" />
+			<Setter Property="Template">
+				<ControlTemplate>
+					<Border x:Name="Root"
+							Background="{TemplateBinding Background}"
+							CornerRadius="{TemplateBinding CornerRadius}"
+							Height="{DynamicResource ScrollBarThumbThickness}"
+							VerticalAlignment="Center"
+							UseLayoutRounding="False">
+						<Grid ColumnDefinitions="Auto,*,Auto">
+							<Track Grid.Column="1"
+									Maximum="{TemplateBinding Maximum}"
+									Minimum="{TemplateBinding Minimum}"
+									Orientation="{TemplateBinding Orientation}"
+									ViewportSize="{TemplateBinding ViewportSize}"
+									Value="{TemplateBinding Value, Mode=TwoWay}">
+								<Track.DecreaseButton>
+									<RepeatButton Name="PART_PageUpButton"
+											Focusable="False"
+											Theme="{DynamicResource ScrollBarRepeatButton}"
+											HorizontalAlignment="Stretch" />
+								</Track.DecreaseButton>
+								<Track.IncreaseButton>
+									<RepeatButton Name="PART_PageDownButton"
+											Focusable="False"
+											Theme="{DynamicResource ScrollBarRepeatButton}"
+											HorizontalAlignment="Stretch" />
+								</Track.IncreaseButton>
+								<Thumb Name="Thumb" />
+							</Track>
+						</Grid>
+					</Border>
+				</ControlTemplate>
+			</Setter>
+		</Style>
+		<Style Selector="^:vertical">
+			<Setter Property="Background" Value="{DynamicResource ScrollBarBackground}" />
+			<Setter Property="Width" Value="4" />
+			<Setter Property="CornerRadius" Value="{DynamicResource ScrollBarCornerRadius}" />
+			<Setter Property="Template">
+				<ControlTemplate>
+					<Border x:Name="Root"
+							Background="{TemplateBinding Background}"
+							CornerRadius="{TemplateBinding CornerRadius}"
+							Width="{DynamicResource ScrollBarThumbThickness}"
+							HorizontalAlignment="Center"
+							UseLayoutRounding="False">
+						<Track IsDirectionReversed="True"
+								Maximum="{TemplateBinding Maximum}"
+								Minimum="{TemplateBinding Minimum}"
+								Orientation="{TemplateBinding Orientation}"
+								ViewportSize="{TemplateBinding ViewportSize}"
+								Value="{TemplateBinding Value, Mode=TwoWay}">
+							<Track.DecreaseButton>
+								<RepeatButton Name="PART_PageUpButton"
+										Focusable="False"
+										Theme="{DynamicResource ScrollBarRepeatButton}"
+										VerticalAlignment="Stretch" />
+							</Track.DecreaseButton>
+							<Track.IncreaseButton>
+								<RepeatButton Name="PART_PageDownButton"
+										Focusable="False"
+										Theme="{DynamicResource ScrollBarRepeatButton}"
+										VerticalAlignment="Stretch" />
+							</Track.IncreaseButton>
+							<Thumb Name="Thumb" />
+						</Track>
+					</Border>
+				</ControlTemplate>
+			</Setter>
+		</Style>
+		<Style Selector="^ /template/ Thumb#Thumb">
+			<Setter Property="Background" Value="{DynamicResource ScrollBarThumbBackground}" />
+			<Setter Property="CornerRadius" Value="{DynamicResource ScrollBarCornerRadius}" />
+			<Setter Property="Template">
+				<Setter.Value>
+					<ControlTemplate>
+						<Border Background="{TemplateBinding Background}"
+								CornerRadius="{TemplateBinding CornerRadius}" />
+					</ControlTemplate>
+				</Setter.Value>
+			</Setter>
+		</Style>
+		<Style Selector="^ /template/ Thumb#Thumb:pointerover">
+			<Setter Property="Background" Value="{DynamicResource ScrollBarThumbBackgroundPointerOver}" />
+		</Style>
+		<Style Selector="^ /template/ Thumb#Thumb:pressed">
+			<Setter Property="Background" Value="{DynamicResource ScrollBarThumbBackgroundPressed}" />
+		</Style>
+		<Style Selector="^:horizontal /template/ Thumb#Thumb">
+			<Setter Property="MinWidth" Value="24" />
+			<Setter Property="Height" Value="{DynamicResource ScrollBarThumbThickness}" />
+		</Style>
+		<Style Selector="^:vertical /template/ Thumb#Thumb">
+			<Setter Property="MinHeight" Value="24" />
+			<Setter Property="Width" Value="{DynamicResource ScrollBarThumbThickness}" />
+		</Style>
+		<Style Selector="^[IsExpanded=true]">
+			<Style Selector="^:horizontal">
+				<Setter Property="Height" Value="{StaticResource ScrollBarThickness}" />
+			</Style>
+			<Style Selector="^:vertical">
+				<Setter Property="Width" Value="{StaticResource ScrollBarThickness}" />
+			</Style>
+		</Style>
+	</ControlTheme>
+</ResourceDictionary>

@@ -81,16 +81,16 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 		AvaloniaProperty.Register<TextArea, bool>(nameof(RightClickMovesCaret));
 
 	/// <summary>
-	/// The <see cref="SelectionBorder" /> property.
-	/// </summary>
-	public static readonly StyledProperty<Pen> SelectionBorderProperty =
-		AvaloniaProperty.Register<TextArea, Pen>(nameof(SelectionBorder));
-
-	/// <summary>
 	/// The <see cref="SelectionBackground" /> property.
 	/// </summary>
 	public static readonly StyledProperty<IBrush> SelectionBackgroundProperty =
 		AvaloniaProperty.Register<TextArea, IBrush>(nameof(SelectionBackground));
+
+	/// <summary>
+	/// The <see cref="SelectionBorder" /> property.
+	/// </summary>
+	public static readonly StyledProperty<Pen> SelectionBorderProperty =
+		AvaloniaProperty.Register<TextArea, Pen>(nameof(SelectionBorder));
 
 	/// <summary>
 	/// The <see cref="SelectionCornerRadius" /> property.
@@ -367,21 +367,21 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 	}
 
 	/// <summary>
-	/// Gets/Sets the pen used for the border of the selection.
-	/// </summary>
-	public Pen SelectionBorder
-	{
-		get => GetValue(SelectionBorderProperty);
-		set => SetValue(SelectionBorderProperty, value);
-	}
-
-	/// <summary>
 	/// Gets/Sets the background brush used for the selection.
 	/// </summary>
 	public IBrush SelectionBackground
 	{
 		get => GetValue(SelectionBackgroundProperty);
 		set => SetValue(SelectionBackgroundProperty, value);
+	}
+
+	/// <summary>
+	/// Gets/Sets the pen used for the border of the selection.
+	/// </summary>
+	public Pen SelectionBorder
+	{
+		get => GetValue(SelectionBorderProperty);
+		set => SetValue(SelectionBorderProperty, value);
 	}
 
 	/// <summary>
@@ -657,6 +657,11 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 		}
 	}
 
+	protected internal void MoveCaret(CaretMovementType direction)
+	{
+		CaretNavigationCommandHandler.MoveCaret(this, direction);
+	}
+
 	protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
 	{
 		base.OnApplyTemplate(e);
@@ -748,11 +753,6 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 		TextEntering?.Invoke(this, e);
 	}
 
-	internal void OnTextInputFromTextEditor(TextInputEventArgs e)
-	{
-		OnTextInput(e);
-	}
-
 	protected override void OnTextInput(TextInputEventArgs e)
 	{
 		base.OnTextInput(e);
@@ -810,6 +810,11 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 	internal void OnTextCopied(TextEventArgs e)
 	{
 		TextCopied?.Invoke(this, e);
+	}
+
+	internal void OnTextInputFromTextEditor(TextInputEventArgs e)
+	{
+		OnTextInput(e);
 	}
 
 	internal void RemoveChild(Visual visual)

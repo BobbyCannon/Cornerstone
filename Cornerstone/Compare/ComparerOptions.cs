@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using Cornerstone.Data;
 using Cornerstone.Extensions;
 
 #endregion
@@ -25,7 +26,7 @@ public struct ComparerOptions
 		ignoreMissingProperties: false,
 		ignoreObjectTypes: true,
 		stringComparison: StringComparison.CurrentCulture,
-		propertiesToIgnore: new())
+		includeExcludeOptions: new())
 	{
 	}
 
@@ -37,16 +38,17 @@ public struct ComparerOptions
 	/// <param name="ignoreMissingProperties"> Option to ignore missing properties. </param>
 	/// <param name="ignoreObjectTypes"> Option to ignore the property type. </param>
 	/// <param name="stringComparison"> The default comparison for comparing strings. </param>
-	/// <param name="propertiesToIgnore"> An optional set of properties to ignore per type. </param>
+	/// <param name="includeExcludeOptions"> An optional set of included or excluded properties. </param>
 	public ComparerOptions(double doubleTolerance, float floatTolerance, bool ignoreMissingProperties,
-		bool ignoreObjectTypes, StringComparison stringComparison, Dictionary<Type, string[]> propertiesToIgnore)
+		bool ignoreObjectTypes, StringComparison stringComparison,
+		Dictionary<Type, IncludeExcludeOptions> includeExcludeOptions)
 	{
 		DoubleTolerance = doubleTolerance;
 		FloatTolerance = floatTolerance;
 		IgnoreMissingProperties = ignoreMissingProperties;
 		IgnoreObjectTypes = ignoreObjectTypes;
+		IncludeExcludeOptions = includeExcludeOptions ?? new();
 		StringComparison = stringComparison;
-		PropertiesToIgnore = propertiesToIgnore ?? new();
 	}
 
 	#endregion
@@ -81,9 +83,9 @@ public struct ComparerOptions
 	public bool IgnoreObjectTypes { get; set; }
 
 	/// <summary>
-	/// Properties to ignore per type.
+	/// Include / Exclude options for each type.
 	/// </summary>
-	public Dictionary<Type, string[]> PropertiesToIgnore { get; set; }
+	public Dictionary<Type, IncludeExcludeOptions> IncludeExcludeOptions { get; set; }
 
 	/// <summary>
 	/// The comparison to use for strings.
@@ -97,7 +99,11 @@ public struct ComparerOptions
 	public void IgnoreProperty<T>(Expression<Func<T, object>> expression)
 	{
 		var name = expression.GetExpressionName();
-		PropertiesToIgnore.AddOrUpdate(typeof(T), () => [name], existing => existing.Combine([name]));
+
+		IncludeExcludeOptions.AddOrUpdate(typeof(T),
+			() => new IncludeExcludeOptions(null, [name]),
+			existing => existing.WithMoreExclusions(name)
+		);
 	}
 
 	#endregion

@@ -66,7 +66,7 @@ public class MemoryCache<TKey, TValue> : ICollection<MemoryCacheItem<TKey, TValu
 	/// <param name="timeService"> The service to use for date and time. </param>
 	public MemoryCache(TimeSpan defaultTimeout, ITimeProvider timeService = null)
 	{
-		_timeService = timeService ?? TimeService.CurrentTime;
+		_timeService = timeService ?? TimeService.RealTime;
 		_dictionary = new Dictionary<TKey, MemoryCacheItem<TKey, TValue>>();
 
 		DefaultTimeout = defaultTimeout;

@@ -4,10 +4,7 @@ using System;
 using System.Net.Http.Headers;
 using System.Security;
 using System.Text;
-using Cornerstone.Data;
 using Cornerstone.Extensions;
-using Cornerstone.Presentation;
-using Cornerstone.Web;
 
 #endregion
 
@@ -30,8 +27,9 @@ public class TokenCredential : Credential
 	/// <summary>
 	/// Creates an instance of the credential.
 	/// </summary>
-	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public TokenCredential(IDispatcher dispatcher) : this(string.Empty, dispatcher)
+	/// <param name="password"> The token of the credential. </param>
+	public TokenCredential(string password)
+		: this(password?.ToSecureString())
 	{
 	}
 
@@ -39,19 +37,8 @@ public class TokenCredential : Credential
 	/// Creates an instance of the credential.
 	/// </summary>
 	/// <param name="password"> The token of the credential. </param>
-	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public TokenCredential(string password, IDispatcher dispatcher = null)
-		: this(password?.ToSecureString(), dispatcher)
-	{
-	}
-
-	/// <summary>
-	/// Creates an instance of the credential.
-	/// </summary>
-	/// <param name="password"> The token of the credential. </param>
-	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public TokenCredential(SecureString password, IDispatcher dispatcher = null)
-		: base(string.Empty, password, dispatcher)
+	public TokenCredential(SecureString password)
+		: base(string.Empty, password)
 	{
 	}
 

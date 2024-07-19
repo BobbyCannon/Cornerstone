@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO.Ports;
 using Cornerstone.Compare;
+using Cornerstone.Data;
 using Cornerstone.Protocols.Osc;
 using Cornerstone.Testing;
 using Cornerstone.UnitTests.Protocols.Samples;
@@ -22,9 +23,9 @@ public class OscCommandTests : CornerstoneUnitTest
 	{
 		ComparerOptions = new ComparerOptions
 		{
-			PropertiesToIgnore = new Dictionary<Type, string[]>
+			IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeOptions>
 			{
-				{ typeof(TestOscCommand), [nameof(OscCommand.HasBeenRead), nameof(OscCommand.HasBeenUpdated)] }
+				{ typeof(TestOscCommand), new IncludeExcludeOptions(null, [nameof(OscCommand.HasBeenRead), nameof(OscCommand.HasBeenUpdated)]) }
 			}
 		};
 	}
@@ -105,9 +106,9 @@ public class OscCommandTests : CornerstoneUnitTest
 	{
 		var comparerSettings = new ComparerOptions
 		{
-			PropertiesToIgnore = new Dictionary<Type, string[]>
+			IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeOptions>
 			{
-				{ typeof(TestOscCommand), [nameof(OscCommand.HasBeenRead), nameof(OscCommand.HasBeenUpdated)] }
+				{ typeof(TestOscCommand), new IncludeExcludeOptions(null, [nameof(OscCommand.HasBeenRead), nameof(OscCommand.HasBeenUpdated)]) }
 			}
 		};
 

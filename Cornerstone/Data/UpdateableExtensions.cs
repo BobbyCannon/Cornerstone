@@ -1,8 +1,11 @@
 ﻿#region References
 
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Cornerstone.Attributes;
+using Cornerstone.Compare;
 using Cornerstone.Extensions;
 
 #endregion
@@ -35,26 +38,12 @@ public static class UpdateableExtensions
 	/// <param name="update"> The update to be tested. </param>
 	/// <param name="options"> The options for controlling the updating of the value. </param>
 	/// <returns> True if the update should be applied otherwise false. </returns>
-	public static bool ShouldUpdate(this IUpdateable value, object update, UpdateableOptions options)
+	public static bool ShouldUpdate(this IUpdateable value, object update, IncludeExcludeOptions options)
 	{
-		return !Equals(value, update);
-	}
-
-	/// <summary>
-	/// Allows updating of one type to another based on member Name and Type.
-	/// </summary>
-	/// <param name="value"> The value to be updated. </param>
-	/// <param name="update"> The source of the updates. </param>
-	/// <param name="exclusions"> An optional list of members to exclude. </param>
-	/// <returns> True if the update was applied otherwise false. </returns>
-	public static bool UpdateWith(this object value, object update, params string[] exclusions)
-	{
-		if (value is IUpdateable updateable)
+		return !Comparer.Compare(value, update, new ComparerOptions
 		{
-			updateable.UpdateWith(update, UpdateableOptions.FromExclusions(exclusions));
-		}
-
-		return UpdateWithUsingReflection(value, update, UpdateableOptions.FromExclusions(exclusions));
+			IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeOptions> { { value?.GetType(), options } }
+		});
 	}
 
 	/// <summary>
@@ -64,7 +53,7 @@ public static class UpdateableExtensions
 	/// <param name="update"> The source of the updates. </param>
 	/// <param name="options"> The options for controlling the updating of the value. </param>
 	/// <returns> True if the update was applied otherwise false. </returns>
-	public static bool UpdateWith(this object value, object update, UpdateableOptions options)
+	public static bool UpdateWith(this object value, object update, IncludeExcludeOptions options)
 	{
 		if (value is IUpdateable updateable)
 		{
@@ -81,9 +70,43 @@ public static class UpdateableExtensions
 	/// <param name="update"> The source of the updates. </param>
 	/// <param name="exclusions"> An optional list of members to exclude. </param>
 	/// <returns> True if the update was applied otherwise false. </returns>
+	public static bool UpdateWithExcept(this object value, object update, params string[] exclusions)
+	{
+		if (value is IUpdateable updateable)
+		{
+			updateable.UpdateWith(update, IncludeExcludeOptions.FromExclusions(exclusions));
+		}
+
+		return UpdateWithUsingReflection(value, update, IncludeExcludeOptions.FromExclusions(exclusions));
+	}
+	
+	/// <summary>
+	/// Allows updating of one type to another based on member Name and Type.
+	/// </summary>
+	/// <param name="value"> The value to be updated. </param>
+	/// <param name="update"> The source of the updates. </param>
+	/// <param name="including"> A list of properties to include. </param>
+	/// <returns> True if the update was applied otherwise false. </returns>
+	public static bool UpdateWithOnly(this object value, object update, params string[] including)
+	{
+		if (value is IUpdateable updateable)
+		{
+			updateable.UpdateWith(update, IncludeExcludeOptions.OnlyIncluding(including));
+		}
+
+		return UpdateWithUsingReflection(value, update, IncludeExcludeOptions.OnlyIncluding(including));
+	}
+
+	/// <summary>
+	/// Allows updating of one type to another based on member Name and Type.
+	/// </summary>
+	/// <param name="value"> The value to be updated. </param>
+	/// <param name="update"> The source of the updates. </param>
+	/// <param name="exclusions"> An optional list of members to exclude. </param>
+	/// <returns> True if the update was applied otherwise false. </returns>
 	internal static bool UpdateWithUsingReflection(this object value, object update, params string[] exclusions)
 	{
-		return UpdateWithUsingReflection(value, update, UpdateableOptions.FromExclusions(exclusions));
+		return UpdateWithUsingReflection(value, update, IncludeExcludeOptions.FromExclusions(exclusions));
 	}
 
 	/// <summary>
@@ -93,7 +116,7 @@ public static class UpdateableExtensions
 	/// <param name="update"> The source of the updates. </param>
 	/// <param name="options"> The options for controlling the updating of the value. </param>
 	/// <returns> True if the update was applied otherwise false. </returns>
-	internal static bool UpdateWithUsingReflection(this object value, object update, UpdateableOptions options)
+	internal static bool UpdateWithUsingReflection(this object value, object update, IncludeExcludeOptions options)
 	{
 		if ((value == null) || (update == null))
 		{

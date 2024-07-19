@@ -13,7 +13,7 @@ namespace Cornerstone.Runtime;
 /// <summary>
 /// Results of a process run.
 /// </summary>
-public class ProcessDetails : Updateable<ProcessDetails>
+public class ProcessDetails : Bindable<ProcessDetails>
 {
 	#region Constructors
 
@@ -96,6 +96,16 @@ public class ProcessDetails : Updateable<ProcessDetails>
 	/// The working directory when the process was started.
 	/// </summary>
 	public string WorkingDirectory { get; set; }
+
+	#endregion
+
+	#region Methods
+
+	/// <inheritdoc />
+	public override bool UpdateWith(ProcessDetails update, IncludeExcludeOptions options)
+	{
+		return this.UpdateWithUsingReflection(update, options);
+	}
 
 	#endregion
 }

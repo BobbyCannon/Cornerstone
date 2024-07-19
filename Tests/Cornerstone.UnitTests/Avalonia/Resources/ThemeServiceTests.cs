@@ -22,10 +22,10 @@ public class ThemeServiceTests : UnitTestApplication
 	[AvaloniaTest]
 	public void ExtractColors()
 	{
-		var theme = new ResourceInclude(new Uri("avares://Cornerstone.Avalonia")) { Source = new Uri("Resources/Themes.axaml", UriKind.Relative) };
-		var dictionary = (ResourceDictionary) theme.Loaded.ThemeDictionaries[ThemeVariant.Dark];
+		//var theme = new ResourceInclude(new Uri("avares://Cornerstone.Avalonia")) { Source = new Uri("Resources/Themes.axaml", UriKind.Relative) };
+		//var dictionary = (ResourceDictionary) theme.Loaded.ThemeDictionaries[ThemeVariant.Dark];
 
-		dictionary.Keys.OrderBy(x=> x).DumpPrettyJson();
+		//dictionary.Keys.OrderBy(x=> x).DumpPrettyJson();
 	}
 
 	#endregion

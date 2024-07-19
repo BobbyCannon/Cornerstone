@@ -27,6 +27,29 @@ public static class AvaloniaExtensions
 		return new KeyBinding { Command = command, Gesture = gesture };
 	}
 
+	public static T FindParent<T>(this StyledElement element, bool includeSelf = false)
+		where T : class
+	{
+		if (element is null)
+		{
+			return null;
+		}
+
+		var parent = includeSelf ? element : element.Parent;
+
+		while (parent != null)
+		{
+			if (parent is T result)
+			{
+				return result;
+			}
+
+			parent = parent.Parent;
+		}
+
+		return null;
+	}
+
 	public static TopLevel GetTopLevel(this Application app)
 	{
 		switch (app?.ApplicationLifetime)

@@ -1,7 +1,7 @@
 ﻿#region References
 
 using System;
-using System.Linq;
+using Cornerstone.Data;
 using Cornerstone.Extensions;
 
 #endregion
@@ -44,7 +44,7 @@ public class ObjectComparer : BaseComparer
 				return CompareResult.AreEqual;
 			}
 
-			var propertiesToExclude = session.Options.PropertiesToIgnore?.TryGetValue(expected.GetType(), out var p) == true ? p : Array.Empty<string>();
+			var propertiesToExclude = session.Options.IncludeExcludeOptions?.TryGetValue(expected.GetType(), out var p) == true ? p : IncludeExcludeOptions.Empty;
 
 			// Cycle through properties
 			foreach (var expectedProperty in expectedProperties)
@@ -63,7 +63,7 @@ public class ObjectComparer : BaseComparer
 				}
 
 				if (!expectedProperty.Value.CanRead
-					|| propertiesToExclude.Contains(expectedProperty.Key, System.StringComparer.OrdinalIgnoreCase))
+					|| !propertiesToExclude.ShouldProcessProperty(expectedProperty.Key))
 				{
 					continue;
 				}

@@ -9,14 +9,17 @@
 		<GenerateDocumentationFile>false</GenerateDocumentationFile>
 	</PropertyGroup>
 	<ItemGroup>
+	  <None Remove="Serialization\Json\Converters\nauh5cmr.5f3~" />
+	</ItemGroup>
+	<ItemGroup>
 		<PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
 		<PackageReference Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
 		<PackageReference Include="Avalonia.Themes.Simple" Version="$(AvaloniaVersion)" />
 		<PackageReference Include="Avalonia.Headless.NUnit" Version="$(AvaloniaVersion)" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
 		<PackageReference Include="Moq" Version="4.20.70" />
-		<PackageReference Include="MSTest.TestAdapter" Version="3.3.1" />
-		<PackageReference Include="MSTest.TestFramework" Version="3.3.1" />
+		<PackageReference Include="MSTest.TestAdapter" Version="3.4.3" />
+		<PackageReference Include="MSTest.TestFramework" Version="3.4.3" />
 		<PackageReference Include="NUnit" Version="4.1.0" />
 		<PackageReference Include="System.IO.Ports" Version="8.0.0" />
 	</ItemGroup>

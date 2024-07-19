@@ -7,8 +7,6 @@ using System.Text;
 using Cornerstone.Attributes;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
-using Cornerstone.Presentation;
-using Cornerstone.Storage;
 using Cornerstone.Web;
 
 #endregion
@@ -18,7 +16,7 @@ namespace Cornerstone.Net;
 /// <summary>
 /// Represents a credential for a client.
 /// </summary>
-public class Credential : Bindable, IDisposable, ICredential
+public class Credential : Notifiable, IDisposable, ICredential
 {
 	#region Constructors
 
@@ -33,9 +31,10 @@ public class Credential : Bindable, IDisposable, ICredential
 	/// <summary>
 	/// Creates an instance of the credential.
 	/// </summary>
-	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public Credential(IDispatcher dispatcher)
-		: this(string.Empty, (SecureString) null, dispatcher)
+	/// <param name="username"> The username of the credential. </param>
+	/// <param name="password"> The password of the credential. </param>
+	public Credential(string username, string password)
+		: this(username, password?.ToSecureString())
 	{
 	}
 
@@ -44,20 +43,7 @@ public class Credential : Bindable, IDisposable, ICredential
 	/// </summary>
 	/// <param name="username"> The username of the credential. </param>
 	/// <param name="password"> The password of the credential. </param>
-	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public Credential(string username, string password, IDispatcher dispatcher = null)
-		: this(username, password?.ToSecureString(), dispatcher)
-	{
-	}
-
-	/// <summary>
-	/// Creates an instance of the credential.
-	/// </summary>
-	/// <param name="username"> The username of the credential. </param>
-	/// <param name="password"> The password of the credential. </param>
-	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public Credential(string username, SecureString password, IDispatcher dispatcher = null)
-		: base(dispatcher)
+	public Credential(string username, SecureString password)
 	{
 		UserName = username ?? string.Empty;
 		SecurePassword = password?.Copy();
@@ -157,7 +143,7 @@ public class Credential : Bindable, IDisposable, ICredential
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
 	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public virtual bool UpdateWith(ICredential update, UpdateableOptions options)
+	public virtual bool UpdateWith(ICredential update, IncludeExcludeOptions options)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -182,7 +168,7 @@ public class Credential : Bindable, IDisposable, ICredential
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, UpdateableOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeOptions options)
 	{
 		return update switch
 		{
@@ -216,6 +202,8 @@ public class Credential : Bindable, IDisposable, ICredential
 /// </summary>
 public interface ICredential
 {
+	#region Properties
+
 	/// <summary>
 	/// Represents the password for the credential.
 	/// </summary>
@@ -230,6 +218,10 @@ public interface ICredential
 	/// Represents the username for the credential.
 	/// </summary>
 	string UserName { get; set; }
+
+	#endregion
+
+	#region Methods
 
 	/// <summary>
 	/// Gets the credential as an authentication header value.
@@ -251,4 +243,6 @@ public interface ICredential
 	/// Reset the credential.
 	/// </summary>
 	void Reset();
+
+	#endregion
 }

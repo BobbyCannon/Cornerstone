@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Cornerstone.Compare;
+using Cornerstone.Data;
 using Cornerstone.Protocols.Osc;
 using Cornerstone.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -262,9 +263,9 @@ public class OscPacketTests : CornerstoneUnitTest
 
 		var comparerSettings = new ComparerOptions
 		{
-			PropertiesToIgnore = new Dictionary<Type, string[]>
+			IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeOptions>
 			{
-				{ typeof(OscMessage), [nameof(OscMessage.Time)] }
+				{ typeof(OscMessage), new IncludeExcludeOptions(null, [nameof(OscMessage.Time)]) }
 			}
 		};
 

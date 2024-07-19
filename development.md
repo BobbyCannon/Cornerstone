@@ -1,7 +1,8 @@
 # Cornerstone
 
-Cornerstone in as development framework to help speed up and make building applications and systems
-much easier.
+Ideas
+
+- Ability to track sync times (some auto table for tracking Client/Server LastSyncedOn)
 
 ## Database Migrations
 

@@ -139,7 +139,7 @@ public class NmeaParser
 						return null;
 					}
 					p.Parse(sentence);
-					p.ReceivedOn = timestamp ?? TimeService.CurrentTime.UtcNow;
+					p.ReceivedOn = timestamp ?? TimeService.RealTime.UtcNow;
 					return p;
 				}
 			}

@@ -7,41 +7,49 @@ namespace Cornerstone;
 /// </summary>
 public enum BabelKeys
 {
-	Unknown = 0,
-	GeneralError = 1,
-	HttpBadRequest = 2,
-	NotFound = 3,
-	NotInitialized = 4,
+	Unknown,
+	GeneralError,
+	HttpBadRequest,
+	NotFound,
+	NotInitialized,
 
 	// Validation
-	ArgumentInvalid = 5,
-	ArgumentIsNull = 6,
-	ArgumentOutOfRange = 7,
-	IndexOutOfRange = 8,
-	IndexAndLengthOutOfRange = 9,
+	ArgumentInvalid,
+	ArgumentIsNull,
+	ArgumentOutOfRange,
+	IndexOutOfRange,
+	IndexAndLengthOutOfRange,
 
-	// Authentication
-	AuthenticationFailed = 10,
-
-	// Authorization
-	Unauthorized = 11,
+	// Authentication / Authorization
+	AuthenticationFailed,
+	NotAuthorized,
 
 	// Security
-	DecryptionFailed = 12,
+	EncryptionFailed,
+	DecryptionFailed,
+	NewPasswordEntriesDoNotMatch,
+	PasswordIsInvalid,
+	
+	// Secure Vault
+	VaultCredentialNotFound,
+	VaultCredentialUserNameRequired,
+	VaultCredentialPasswordRequired,
+	VaultIsAlreadyOpen,
+	VaultIsNotOpen,
 
 	// Services
-	TimeServiceLocked = 13,
+	TimeServiceLocked,
 
 	// Sync
-	SyncOptionsInvalid = 14,
-	SyncSessionAlreadyActive = 15,
-	SyncSessionInvalid = 16,
-	SyncClientNotSupported = 17,
+	SyncOptionsInvalid,
+	SyncSessionAlreadyActive,
+	SyncSessionInvalid,
+	SyncClientNotSupported,
 
 	// Clipboard
-	ClipboardCouldNotBeOpened = 18,
-	ClipboardCouldNotBeClosed = 19,
-	ClipboardCouldNotBeCleared = 20,
-	ClipboardCouldNotBeRead = 21,
-	ClipboardCouldNotSetData = 22
+	ClipboardCouldNotBeOpened,
+	ClipboardCouldNotBeClosed,
+	ClipboardCouldNotBeCleared,
+	ClipboardCouldNotBeRead,
+	ClipboardCouldNotSetData,
 }

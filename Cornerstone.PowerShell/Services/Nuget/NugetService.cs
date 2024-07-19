@@ -259,7 +259,7 @@ public static class NugetService
 
 				var packageReferences = itemGroup
 					.PackageReferences
-					.Where(x => x.Include.StartsWith(nugetPrefix, StringComparison.OrdinalIgnoreCase))
+					.Where(x => x?.Include?.StartsWith(nugetPrefix, StringComparison.OrdinalIgnoreCase) ?? false)
 					.ToList();
 
 				if (packageReferences.Any())

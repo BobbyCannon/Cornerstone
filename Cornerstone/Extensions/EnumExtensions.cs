@@ -109,7 +109,8 @@ public static class EnumExtensions
 					Description = displayAttribute?.Description
 						?? descriptionAttribute?.Description
 						?? enumValue.ToString(),
-					GroupName = displayAttribute?.GroupName ?? string.Empty,
+					DisplayOrder = displayAttribute?.GetOrder() ?? 0,
+					GroupName = displayAttribute?.GetGroupName() ?? string.Empty,
 					IsFlaggedValue = isFlaggedType && enumValue.IsSingleFlagEnum(),
 					Name = displayAttribute?.Name ?? enumValue.ToString(),
 					NumericValue = enumValue.ConvertTo(type.GetEnumUnderlyingType()),
@@ -422,6 +423,11 @@ public static class EnumExtensions
 		/// Priority is [DisplayAttribute].Description, [DescriptionAttribute].Description, enum.ToString()
 		/// </remarks>
 		public string Description { get; set; }
+
+		/// <summary>
+		/// The display order of the values.
+		/// </summary>
+		public int DisplayOrder { get; set; }
 
 		/// <summary>
 		/// An optional group name.

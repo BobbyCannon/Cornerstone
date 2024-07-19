@@ -33,7 +33,7 @@ public sealed class TextDocument : IDocument, INotifyPropertyChanged
 	private int _beginUpdateCount;
 	private readonly StringGapBuffer _buffer;
 	private WeakReference _cachedText;
-	private string _fileName;
+	private FileInfo _fileInfo;
 	private bool _fireTextChanged;
 	private bool _inDocumentChanging;
 	private readonly LineManager _lineManager;
@@ -88,14 +88,14 @@ public sealed class TextDocument : IDocument, INotifyPropertyChanged
 	#region Properties
 
 	/// <inheritdoc />
-	public string FileName
+	public FileInfo FileInfo
 	{
-		get => _fileName;
+		get => _fileInfo;
 		set
 		{
-			if (_fileName != value)
+			if (_fileInfo != value)
 			{
-				_fileName = value;
+				_fileInfo = value;
 				OnFileNameChanged(EventArgs.Empty);
 			}
 		}

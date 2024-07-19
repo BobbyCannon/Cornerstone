@@ -23,6 +23,7 @@ using Cornerstone.Avalonia.AvaloniaEdit.Rendering;
 using Cornerstone.Avalonia.AvaloniaEdit.Search;
 using Cornerstone.Avalonia.AvaloniaEdit.Utils;
 using Cornerstone.Avalonia.Controls;
+using Cornerstone.Avalonia.Extensions;
 using Cornerstone.Internal;
 using Cornerstone.Presentation;
 using Cornerstone.Text.Document;
@@ -189,8 +190,6 @@ public class TextEditor : CornerstoneTemplatedControl, ITextEditorComponent
 
 		textArea[!BackgroundProperty] = this[!BackgroundProperty];
 
-		AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Bubble);
-		AddHandler(KeyUpEvent, OnPreviewKeyUp, RoutingStrategies.Bubble);
 		AddHandler(PointerWheelChangedEvent, OnPointerWheelChanged, RoutingStrategies.Tunnel);
 	}
 
@@ -225,7 +224,7 @@ public class TextEditor : CornerstoneTemplatedControl, ITextEditorComponent
 	/// <summary>
 	/// Gets if text in editor can be cut
 	/// </summary>
-	public bool CanCut => ApplicationCommands.Cut.CanExecute(null, this);
+	public bool CanCut => ApplicationCommands.Cut.CanExecute(null, TextArea);
 
 	/// <summary>
 	/// Gets if selected text in editor can be deleted
@@ -338,7 +337,7 @@ public class TextEditor : CornerstoneTemplatedControl, ITextEditorComponent
 	/// Setting this property will replace the
 	/// <see cref="TextArea.ReadOnlySectionProvider"> TextArea.ReadOnlySectionProvider </see>.
 	/// </summary>
-	public virtual bool IsReadOnly
+	public bool IsReadOnly
 	{
 		get => GetValue(IsReadOnlyProperty);
 		set => SetValue(IsReadOnlyProperty, value);
@@ -614,7 +613,7 @@ public class TextEditor : CornerstoneTemplatedControl, ITextEditorComponent
 	{
 		if (CanCut)
 		{
-			ApplicationCommands.Cut.Execute(null, this);
+			ApplicationCommands.Cut.Execute(null, TextArea);
 		}
 	}
 
@@ -747,7 +746,7 @@ public class TextEditor : CornerstoneTemplatedControl, ITextEditorComponent
 		var writer = encoding != null ? new StreamWriter(stream, encoding) : new StreamWriter(stream);
 		document?.WriteTextTo(writer);
 		writer.Flush();
-		
+
 		// do not close the stream
 		IsModified = false;
 	}
@@ -980,6 +979,11 @@ public class TextEditor : CornerstoneTemplatedControl, ITextEditorComponent
 		return new HighlightingColorizer(highlightingDefinition);
 	}
 
+	protected virtual string GetCompletionText()
+	{
+		return Document.GetText(0, CaretOffset);
+	}
+
 	protected TextDocument GetDocument()
 	{
 		var document = Document;
@@ -995,6 +999,11 @@ public class TextEditor : CornerstoneTemplatedControl, ITextEditorComponent
 		return IsReadOnly
 			? ReadOnlySectionDocument.Instance
 			: NoReadOnlySections.Instance;
+	}
+
+	protected void MoveCaret(CaretMovementType direction)
+	{
+		TextArea.MoveCaret(direction);
 	}
 
 	protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -1090,38 +1099,6 @@ public class TextEditor : CornerstoneTemplatedControl, ITextEditorComponent
 		base.OnKeyDown(e);
 	}
 
-	protected virtual string GetCompletionText()
-	{
-		return Document.GetText(0, CaretOffset);
-	}
-
-	private void CompletionWindowOnClosed(object sender, EventArgs e)
-	{
-		if (sender is not CompletionWindow completionWindow)
-		{
-			return;
-		}
-
-		completionWindow.Closed -= CompletionWindowOnClosed;
-
-		if (completionWindow == CompletionWindow)
-		{
-			// Only clear if the windows closing is our window
-			// it may have been replaced with a different autocomplete?
-			CompletionWindow = null;
-		}
-	}
-
-	private void CompletionWindowOpen(string prefix, ICompletionData[] suggestions)
-	{
-		CompletionWindowOnClosed(CompletionWindow, EventArgs.Empty);
-
-		CompletionWindow = new CompletionWindow(TextArea, prefix, null, suggestions);
-		CompletionWindow.Closed += CompletionWindowOnClosed;
-		CompletionWindow.Show();
-	}
-
-
 	/// <summary>
 	/// Raises the <see cref="OptionChanged" /> event.
 	/// </summary>
@@ -1146,25 +1123,6 @@ public class TextEditor : CornerstoneTemplatedControl, ITextEditorComponent
 				e.Handled = true;
 			}
 		}
-	}
-
-	/// <inheritdoc />
-	protected override void OnTextInput(TextInputEventArgs e)
-	{
-		if (!e.Handled)
-		{
-			TextArea.OnTextInputFromTextEditor(e);
-			e.Handled = true;
-		}
-		base.OnTextInput(e);
-	}
-
-	protected virtual void OnPreviewKeyDown(object sender, KeyEventArgs e)
-	{
-	}
-
-	protected virtual void OnPreviewKeyUp(object sender, KeyEventArgs e)
-	{
 	}
 
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -1198,6 +1156,17 @@ public class TextEditor : CornerstoneTemplatedControl, ITextEditorComponent
 		TextChanged?.Invoke(this, e);
 	}
 
+	/// <inheritdoc />
+	protected override void OnTextInput(TextInputEventArgs e)
+	{
+		if (!e.Handled)
+		{
+			TextArea.OnTextInputFromTextEditor(e);
+			e.Handled = true;
+		}
+		base.OnTextInput(e);
+	}
+
 	protected void SetSyntaxHighlighterByExtension(string fileExtension)
 	{
 		if (string.IsNullOrWhiteSpace(fileExtension))
@@ -1211,6 +1180,32 @@ public class TextEditor : CornerstoneTemplatedControl, ITextEditorComponent
 		{
 			SyntaxHighlighting = definition;
 		}
+	}
+
+	private void CompletionWindowOnClosed(object sender, EventArgs e)
+	{
+		if (sender is not CompletionWindow completionWindow)
+		{
+			return;
+		}
+
+		completionWindow.Closed -= CompletionWindowOnClosed;
+
+		if (completionWindow == CompletionWindow)
+		{
+			// Only clear if the windows closing is our window
+			// it may have been replaced with a different autocomplete?
+			CompletionWindow = null;
+		}
+	}
+
+	private void CompletionWindowOpen(string prefix, ICompletionData[] suggestions)
+	{
+		CompletionWindowOnClosed(CompletionWindow, EventArgs.Empty);
+
+		CompletionWindow = new CompletionWindow(TextArea, prefix, null, suggestions);
+		CompletionWindow.Closed += CompletionWindowOnClosed;
+		CompletionWindow.Show();
 	}
 
 	object IServiceProvider.GetService(Type serviceType)

@@ -90,7 +90,7 @@ public class JsonConverterTest<T> : JsonConverterTest
 				"new(\"{0} {1}\", {2}, typeof({1}), \"{3}\"),",
 				scenarioIndex++,
 				CSharpCodeWriter.GetCodeTypeName(value.GetType()),
-				CSharpCodeWriter.GenerateCode(value, CodeLanguage.CSharp, writerSettings),
+				CSharpCodeWriter.GenerateCode(value, writerSettings),
 				json.Escape()
 			);
 

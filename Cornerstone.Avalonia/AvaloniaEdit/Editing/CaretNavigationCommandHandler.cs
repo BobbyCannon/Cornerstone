@@ -18,7 +18,7 @@ using LogicalDirection = Cornerstone.Text.Document.LogicalDirection;
 
 namespace Cornerstone.Avalonia.AvaloniaEdit.Editing;
 
-internal enum CaretMovementType
+public enum CaretMovementType
 {
 	None,
 	CharLeft,
@@ -384,7 +384,7 @@ internal static class CaretNavigationCommandHandler
 		return caretPosition;
 	}
 
-	private static void MoveCaret(TextArea textArea, CaretMovementType direction)
+	public static void MoveCaret(TextArea textArea, CaretMovementType direction)
 	{
 		var desiredXPos = textArea.Caret.DesiredXPos;
 		textArea.Caret.Position = GetNewCaretPosition(textArea.TextView, textArea.Caret.Position, direction, textArea.Selection.EnableVirtualSpace, ref desiredXPos);

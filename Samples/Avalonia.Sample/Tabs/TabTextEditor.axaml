@@ -1,0 +1,22 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:avaloniaEdit="clr-namespace:Cornerstone.Avalonia.AvaloniaEdit;assembly=Cornerstone.Avalonia"
+		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+		x:Class="Avalonia.Sample.Tabs.TabTextEditor">
+	<DockPanel LastChildFill="True">
+		<ThemeVariantScope DockPanel.Dock="Top"
+				RequestedThemeVariant="Light">
+			<StackPanel Margin="10">
+				<Button>should be light theme</Button>
+			</StackPanel>
+		</ThemeVariantScope>
+		<avaloniaEdit:TextEditor
+				BorderBrush="{DynamicResource ButtonBorderBrush}"
+				BorderThickness="0,1,0,0"
+				Text="The quick brown fox jumped"
+				ShowLineNumbers="True" />
+	</DockPanel>
+</UserControl>

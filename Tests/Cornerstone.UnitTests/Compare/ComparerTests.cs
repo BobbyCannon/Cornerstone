@@ -1,6 +1,9 @@
 ﻿#region References
 
+using System;
 using System.Collections.Generic;
+using Cornerstone.Compare;
+using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -34,6 +37,26 @@ public class ComparerTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void ExcludePropertyOnDirectObject()
+	{
+		var expected = new Person { FirstName = "Foo", LastName = "Bar", Address = new Address { Line1 = "Main Street", Number = 123 }, Parent = new Person { FirstName = "Hello", LastName = "World" } };
+		var actual = new Person { FirstName = "Foo", LastName = "Bar", Address = new Address { Line1 = "Main Street", Number = 123 }, Parent = new Person { FirstName = "Hello", LastName = "World" } };
+		IsTrue(Comparer.Compare(expected, actual));
+
+		expected.FirstName = "foo";
+		IsFalse(Comparer.Compare(expected, actual));
+		IsTrue(Comparer.Compare(expected, actual,
+			new ComparerOptions
+			{
+				IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeOptions>
+				{
+					{ typeof(Person), IncludeExcludeOptions.FromExclusions(nameof(Person.FirstName), nameof(Person.FullName)) }
+				}
+			})
+		);
+	}
+
+	[TestMethod]
 	public void Recursion()
 	{
 		var actual = new Person { FirstName = "Frank" };
@@ -58,6 +81,7 @@ public class ComparerTests : CornerstoneUnitTest
 		#region Properties
 
 		public string Line1 { get; set; }
+		
 		public int Number { get; set; }
 
 		public IEnumerable<Person> Owner { get; set; }

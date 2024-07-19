@@ -1,0 +1,87 @@
+<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+	<Design.PreviewWith>
+		<StackPanel
+				Margin="8"
+				VerticalAlignment="Top"
+				HorizontalAlignment="Left"
+				Orientation="Vertical"
+				Spacing="8">
+			<StackPanel.Resources>
+				<ControlTemplate x:Key="Test" TargetType="ContextMenu">
+					<ContextMenu>
+						<MenuItem Header="Standard _Menu Item" />
+						<MenuItem Header="Disabled" IsEnabled="False" />
+						<Separator />
+						<MenuItem Header="Menu with _Submenu">
+							<MenuItem Header="Submenu _1" />
+							<MenuItem Header="Submenu _2" />
+						</MenuItem>
+						<MenuItem Header="Menu Item with _Icon">
+							<MenuItem.Icon>
+								<TextBlock Text="😀" />
+							</MenuItem.Icon>
+						</MenuItem>
+						<MenuItem Header="Menu Item with _Checkbox">
+							<MenuItem.Icon>
+								<CheckBox BorderThickness="0" IsHitTestVisible="False" IsChecked="True" />
+							</MenuItem.Icon>
+						</MenuItem>
+					</ContextMenu>
+				</ControlTemplate>
+			</StackPanel.Resources>
+			<Border
+					Background="{DynamicResource UiTheme05}"
+					Width="400"
+					Height="200"
+					CornerRadius="8">
+				<Border.ContextMenu>
+					<ContextMenu Template="{StaticResource Test}" />
+				</Border.ContextMenu>
+				<TextBlock
+						Text="Right click to show context menu."
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center" />
+			</Border>
+			<ContextMenu Template="{StaticResource Test}"
+					Margin="0,8,0,0" />
+		</StackPanel>
+	</Design.PreviewWith>
+	<ControlTheme x:Key="{x:Type ContextMenu}" TargetType="ContextMenu">
+		<Setter Property="Background" Value="{DynamicResource MenuFlyoutPresenterBackground}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource MenuFlyoutPresenterBorderBrush}" />
+		<Setter Property="BorderThickness" Value="{DynamicResource MenuFlyoutPresenterBorderThemeThickness}" />
+		<Setter Property="CornerRadius" Value="{DynamicResource FlyoutCornerRadius}" />
+		<Setter Property="MaxWidth" Value="{DynamicResource FlyoutThemeMaxWidth}" />
+		<Setter Property="MinHeight" Value="{DynamicResource MenuFlyoutThemeMinHeight}" />
+		<Setter Property="Padding" Value="{DynamicResource MenuFlyoutPresenterThemePadding}" />
+		<Setter Property="HorizontalAlignment" Value="Stretch" />
+		<Setter Property="TextBlock.FontSize" Value="{DynamicResource TextEditorFontSize}" />
+		<Setter Property="TextBlock.FontWeight" Value="Normal" />
+		<Setter Property="WindowManagerAddShadowHint" Value="False" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border
+						Background="{TemplateBinding Background}"
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}"
+						Padding="{TemplateBinding Padding}"
+						MaxWidth="{TemplateBinding MaxWidth}"
+						MinHeight="{TemplateBinding MinHeight}"
+						HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
+						CornerRadius="{TemplateBinding CornerRadius}">
+					<ScrollViewer Theme="{StaticResource MenuScrollViewer}">
+						<ItemsPresenter
+								Name="PART_ItemsPresenter"
+								ItemsPanel="{TemplateBinding ItemsPanel}"
+								Margin="{DynamicResource MenuFlyoutScrollerMargin}"
+								KeyboardNavigation.TabNavigation="Continue"
+								Grid.IsSharedSizeScope="True" />
+					</ScrollViewer>
+				</Border>
+			</ControlTemplate>
+		</Setter>
+	</ControlTheme>
+</ResourceDictionary>

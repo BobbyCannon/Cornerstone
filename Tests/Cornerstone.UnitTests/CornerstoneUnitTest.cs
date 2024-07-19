@@ -34,7 +34,7 @@ public abstract partial class CornerstoneUnitTest : CornerstoneTest
 	{
 		_disposables = [];
 
-		DependencyInjector = new DependencyInjector();
+		Dependencies = new DependencyInjector();
 		SetupDependencyInjection();
 	}
 
@@ -62,7 +62,7 @@ public abstract partial class CornerstoneUnitTest : CornerstoneTest
 
 	#region Properties
 
-	public DependencyInjector DependencyInjector { get; }
+	public DependencyInjector Dependencies { get; }
 
 	public static bool EnableFileUpdates { get; }
 

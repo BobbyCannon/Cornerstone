@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Cornerstone.Collections;
+using Cornerstone.Data;
 using Cornerstone.Exceptions;
 using Cornerstone.Extensions;
 using Cornerstone.Sync;
@@ -235,6 +236,12 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	}
 
 	/// <inheritdoc />
+	public void ApplyChangesTo(object destination)
+	{
+		throw new NotImplementedException();
+	}
+
+	/// <inheritdoc />
 	public IEnumerator<T> GetEnumerator()
 	{
 		return _query.GetEnumerator();
@@ -256,11 +263,11 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	/// <inheritdoc />
 	public bool HasChanges()
 	{
-		return HasChanges(Array.Empty<string>());
+		return HasChanges(IncludeExcludeOptions.Empty);
 	}
 
 	/// <inheritdoc />
-	public bool HasChanges(params string[] exclusions)
+	public bool HasChanges(IncludeExcludeOptions options)
 	{
 		return GetChanges().Any();
 	}

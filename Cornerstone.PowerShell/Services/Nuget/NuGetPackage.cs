@@ -10,7 +10,7 @@ using Cornerstone.Extensions;
 
 namespace Cornerstone.PowerShell.Services.Nuget;
 
-public class NugetPackage : Cloneable<NugetPackage>
+public class NugetPackage : Notifiable<NugetPackage>
 {
 	#region Constructors
 
@@ -45,17 +45,8 @@ public class NugetPackage : Cloneable<NugetPackage>
 	/// Update the NugetPackage with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	public virtual bool UpdateWith(NugetPackage update)
-	{
-		return UpdateWith(update, UpdateableOptions.Empty);
-	}
-
-	/// <summary>
-	/// Update the NugetPackage with an update.
-	/// </summary>
-	/// <param name="update"> The update to be applied. </param>
 	/// <param name="options"> The options for controlling the updating of the entity. </param>
-	public virtual bool UpdateWith(NugetPackage update, UpdateableOptions options)
+	public override bool UpdateWith(NugetPackage update, IncludeExcludeOptions options)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -78,17 +69,7 @@ public class NugetPackage : Cloneable<NugetPackage>
 			this.IfThen(_ => options.ShouldProcessProperty(nameof(Versions)), x => x.Versions.Reconcile(update.Versions));
 		}
 
-		return base.UpdateWith(update, options);
-	}
-
-	/// <inheritdoc />
-	public override bool UpdateWith(object update, UpdateableOptions options)
-	{
-		return update switch
-		{
-			NugetPackage value => UpdateWith(value, options),
-			_ => base.UpdateWith(update, options)
-		};
+		return true;
 	}
 
 	#endregion

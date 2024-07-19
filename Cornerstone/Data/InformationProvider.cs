@@ -16,7 +16,7 @@ namespace Cornerstone.Data;
 /// Represents a provider of device information.
 /// </summary>
 public abstract class InformationProvider<T>
-	: Updateable<T>, IInformationProvider<T>, IDisposable
+	: Bindable<T>, IInformationProvider<T>, IDisposable
 	where T : IBindable, IUpdateable, new()
 {
 	#region Constructors

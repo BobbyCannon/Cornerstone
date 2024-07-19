@@ -73,14 +73,14 @@ public class Setting<T, T2> : Setting<T2>
 	}
 
 	/// <inheritdoc />
-	public override bool HasChanges(params string[] exclusions)
+	public override bool HasChanges(IncludeExcludeOptions options)
 	{
 		if (Data is ITrackPropertyChanges changeable && changeable.HasChanges())
 		{
 			return true;
 		}
 
-		return base.HasChanges(exclusions);
+		return base.HasChanges(options);
 	}
 
 	/// <inheritdoc />
@@ -107,7 +107,7 @@ public class Setting<T, T2> : Setting<T2>
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
 	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public virtual bool UpdateWith(Setting<T, T2> update, UpdateableOptions options)
+	public virtual bool UpdateWith(Setting<T, T2> update, IncludeExcludeOptions options)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -132,7 +132,7 @@ public class Setting<T, T2> : Setting<T2>
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, UpdateableOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeOptions options)
 	{
 		return update switch
 		{
@@ -234,7 +234,7 @@ public class Setting<T> : SyncEntity<T>, ISetting
 	/// <param name="update"> The update to be applied. </param>
 	public virtual bool UpdateWith(Setting<T> update)
 	{
-		return UpdateWith(update, UpdateableOptions.Empty);
+		return UpdateWith(update, IncludeExcludeOptions.Empty);
 	}
 
 	/// <summary>
@@ -242,7 +242,7 @@ public class Setting<T> : SyncEntity<T>, ISetting
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
 	/// <param name="options"> The options for controlling the updating of the entity. </param>
-	public virtual bool UpdateWith(Setting<T> update, UpdateableOptions options)
+	public virtual bool UpdateWith(Setting<T> update, IncludeExcludeOptions options)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -283,7 +283,7 @@ public class Setting<T> : SyncEntity<T>, ISetting
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, UpdateableOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeOptions options)
 	{
 		return update switch
 		{

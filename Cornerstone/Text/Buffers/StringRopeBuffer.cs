@@ -47,9 +47,9 @@ public class StringRopeBuffer : RopeBuffer<char>, IStringBuffer
 	}
 
 	/// <inheritdoc />
-	public IStringBuffer DeepClone(int? maxDepth = null)
+	public IStringBuffer DeepClone(int? maxDepth = null, IncludeExcludeOptions options = null)
 	{
-		return ShallowClone();
+		return ShallowClone(options);
 	}
 
 	/// <inheritdoc />
@@ -102,7 +102,7 @@ public class StringRopeBuffer : RopeBuffer<char>, IStringBuffer
 	}
 
 	/// <inheritdoc />
-	public IStringBuffer ShallowClone()
+	public IStringBuffer ShallowClone(IncludeExcludeOptions options = null)
 	{
 		return new StringRopeBuffer(ToString());
 	}
@@ -126,15 +126,15 @@ public class StringRopeBuffer : RopeBuffer<char>, IStringBuffer
 	}
 
 	/// <inheritdoc />
-	object ICloneable.DeepCloneObject(int? maxDepth)
+	object ICloneable.DeepCloneObject(int? maxDepth, IncludeExcludeOptions options)
 	{
-		return DeepClone(maxDepth);
+		return DeepClone(maxDepth, options);
 	}
 
 	/// <inheritdoc />
-	object ICloneable.ShallowCloneObject()
+	object ICloneable.ShallowCloneObject(IncludeExcludeOptions options)
 	{
-		return ShallowClone();
+		return ShallowClone(options);
 	}
 
 	#endregion

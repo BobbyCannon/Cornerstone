@@ -85,6 +85,24 @@ public static class StringExtensions
 	}
 
 	/// <summary>
+	/// Combine the values into a single delimited string.
+	/// </summary>
+	/// <param name="values"> The values to combine. </param>
+	/// <param name="delimiter"> The delimiter to combine with. </param>
+	/// <param name="distinct"> Option to distinct the values. Defaults to true. </param>
+	/// <returns> The values combine into a single delimited string. </returns>
+	public static string CombineArray(this IEnumerable<string> values, string delimiter = ",", bool distinct = true)
+	{
+		return values != null
+			? $"{delimiter}{string.Join(delimiter,
+				distinct
+					? values.Distinct().OrderBy(x => x)
+					: values.OrderBy(x => x)
+			)}{delimiter}"
+			: delimiter + delimiter;
+	}
+
+	/// <summary>
 	/// Check to see if a string contains any of the provided characters.
 	/// </summary>
 	/// <param name="value"> The string value. </param>
@@ -125,17 +143,21 @@ public static class StringExtensions
 
 		var equals = false;
 
-		for (var i = 0; i < value.Length; i++)
+		for (var length = startOf.Length; length >= 0; length--)
 		{
-			for (var j = 0; j < startOf.Length; j++)
+			for (var offset = 0; offset < length; offset++)
 			{
-				if ((j + i) == value.Length)
+				var a = startOf[length - offset - 1];
+				var valueOffset = value.Length - offset - 1;
+				if (valueOffset < 0)
 				{
-					match = value.Substring(i);
-					return true;
+					match = null;
+					return false;
 				}
 
-				equals = value[i + j].Equals(startOf[j], ignoreCase);
+				var b = value[value.Length - offset - 1];
+				equals = b.Equals(a, ignoreCase);
+
 				if (!equals)
 				{
 					break;
@@ -144,7 +166,7 @@ public static class StringExtensions
 
 			if (equals)
 			{
-				match = value.Substring(i);
+				match = value.Substring(value.Length - length);
 				return true;
 			}
 		}
@@ -424,6 +446,17 @@ public static class StringExtensions
 		var response = input.ToCharArray();
 		response[index] = value;
 		return new string(response);
+	}
+
+	/// <summary>
+	/// Splits the values into an array using the delimiter
+	/// </summary>
+	/// <param name="value"> The roles for the account. </param>
+	/// <param name="delimiter"> The delimiter to split on </param>
+	/// <returns> The array of values. </returns>
+	public static string[] SplitIntoArray(this string value, string delimiter = ",")
+	{
+		return value?.Split([delimiter], StringSplitOptions.RemoveEmptyEntries) ?? [];
 	}
 
 	/// <summary>

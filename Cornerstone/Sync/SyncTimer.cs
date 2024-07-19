@@ -61,7 +61,7 @@ public class SyncTimer : AverageTimer
 	/// <param name="update"> The update to be applied. </param>
 	public virtual bool UpdateWith(SyncTimer update)
 	{
-		return UpdateWith(update, UpdateableOptions.Empty);
+		return UpdateWith(update, IncludeExcludeOptions.Empty);
 	}
 
 	/// <summary>
@@ -69,7 +69,7 @@ public class SyncTimer : AverageTimer
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
 	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public virtual bool UpdateWith(SyncTimer update, UpdateableOptions options)
+	public virtual bool UpdateWith(SyncTimer update, IncludeExcludeOptions options)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -96,7 +96,7 @@ public class SyncTimer : AverageTimer
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, UpdateableOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeOptions options)
 	{
 		return update switch
 		{

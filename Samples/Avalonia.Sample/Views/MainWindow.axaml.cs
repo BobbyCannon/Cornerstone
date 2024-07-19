@@ -1,8 +1,10 @@
 ﻿#region References
 
+using System;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Avalonia.Threading;
+using Avalonia.Sample.ViewModels;
+using Cornerstone.Avalonia;
 using Cornerstone.Avalonia.Controls;
 
 #endregion
@@ -13,38 +15,76 @@ public partial class MainWindow : CornerstoneWindow
 {
 	#region Constructors
 
-	public MainWindow()
+	public MainWindow() : this(ViewModelProviderForDesignMode.Get<MainViewModel>())
 	{
-		InitializeComponent();
-
-		Dispatcher.UIThread.Invoke(() => WindowState = WindowState.Maximized);
-		
 	}
+
+	public MainWindow(MainViewModel viewModel)
+	{
+		ViewModel = viewModel;
+		DataContext = viewModel;
+		MainView = new MainView(ViewModel);
+
+		InitializeComponent();
+	}
+
+	#endregion
+
+	#region Properties
+
+	public MainView MainView { get; }
+
+	public MainViewModel ViewModel { get; }
 
 	#endregion
 
 	#region Methods
 
-	private void ButtonToggleMaximize(object sender, RoutedEventArgs e)
+	protected override void OnClosing(WindowClosingEventArgs e)
 	{
-		WindowState = WindowState == WindowState.Maximized
-			? WindowState.Normal
-			: WindowState.Maximized;
+		CornerstoneRuntimeInformation.Instance.Shutdown();
+		CornerstoneDispatcher.Instance.IsEnabled = false;
+
+		ViewModel.Uninitialize();
+		ViewModel.ApplicationSettings.MainWindowLocation.UpdateWith(GetWindowLocation());
+		ViewModel.ApplicationSettings.Save();
+
+		base.OnClosing(e);
 	}
 
 	/// <inheritdoc />
-	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+	protected override void OnInitialized()
 	{
-		switch (change.Property.Name)
+		if (Design.IsDesignMode)
 		{
-			case nameof(WindowState):
-			{
-				MainView.AddHistory($"Window State: {WindowState}");
-				break;
-			}
+			// more changes?
 		}
 
-		base.OnPropertyChanged(change);
+		if (ViewModel.RuntimeInformation.ApplicationIsElevated)
+		{
+			Title += " (administrator)";
+		}
+
+		base.OnInitialized();
+	}
+
+	/// <inheritdoc />
+	protected override void OnLoaded(RoutedEventArgs e)
+	{
+		CornerstoneRuntimeInformation.Instance.CompleteLoad();
+		base.OnLoaded(e);
+	}
+
+	/// <inheritdoc />
+	protected override void OnOpened(EventArgs e)
+	{
+		// Prevent the designer from null referencing
+		if ((ViewModel?.ApplicationSettings?.MainWindowLocation != null) && !Design.IsDesignMode)
+		{
+			RestoreWindowLocation(ViewModel.ApplicationSettings.MainWindowLocation);
+		}
+
+		base.OnOpened(e);
 	}
 
 	#endregion

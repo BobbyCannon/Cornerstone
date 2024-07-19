@@ -179,7 +179,7 @@ public class PagedResults<T> : PartialUpdate<PagedResults<T>>, IPagedResults
     /// </summary>
     /// <param name="update"> The update to be applied. </param>
     /// <param name="options"> The options for controlling the updating of the value. </param>
-    public bool UpdateWith(PagedResults<T> update, UpdateableOptions options)
+    public bool UpdateWith(PagedResults<T> update, IncludeExcludeOptions options)
     {
         // If the update is null then there is nothing to do.
         if (update == null)
@@ -212,7 +212,7 @@ public class PagedResults<T> : PartialUpdate<PagedResults<T>>, IPagedResults
     }
 
     /// <inheritdoc />
-    public override bool UpdateWith(object update, UpdateableOptions options)
+    public override bool UpdateWith(object update, IncludeExcludeOptions options)
     {
         return update switch
         {

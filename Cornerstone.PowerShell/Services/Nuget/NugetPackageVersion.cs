@@ -6,12 +6,11 @@ using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Parsers.VisualStudio;
 
-
 #endregion
 
 namespace Cornerstone.PowerShell.Services.Nuget;
 
-public class NugetPackageVersion : Cloneable<NugetPackageVersion>
+public class NugetPackageVersion : Notifiable<NugetPackageVersion>
 {
 	#region Properties
 
@@ -29,17 +28,8 @@ public class NugetPackageVersion : Cloneable<NugetPackageVersion>
 	/// Update the NugetPackageVersion with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	public virtual bool UpdateWith(NugetPackageVersion update)
-	{
-		return UpdateWith(update, UpdateableOptions.Empty);
-	}
-
-	/// <summary>
-	/// Update the NugetPackageVersion with an update.
-	/// </summary>
-	/// <param name="update"> The update to be applied. </param>
 	/// <param name="options"> The options for controlling the updating of the entity. </param>
-	public virtual bool UpdateWith(NugetPackageVersion update, UpdateableOptions options)
+	public override bool UpdateWith(NugetPackageVersion update, IncludeExcludeOptions options)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -62,17 +52,7 @@ public class NugetPackageVersion : Cloneable<NugetPackageVersion>
 			this.IfThen(_ => options.ShouldProcessProperty(nameof(VersionString)), x => x.VersionString = update.VersionString);
 		}
 
-		return base.UpdateWith(update, options);
-	}
-
-	/// <inheritdoc />
-	public override bool UpdateWith(object update, UpdateableOptions options)
-	{
-		return update switch
-		{
-			NugetPackageVersion value => UpdateWith(value, options),
-			_ => base.UpdateWith(update, options)
-		};
+		return true;
 	}
 
 	#endregion

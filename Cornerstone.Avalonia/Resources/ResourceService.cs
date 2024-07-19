@@ -2,8 +2,8 @@
 
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Shapes;
 using Avalonia.Media;
+using Path = Avalonia.Controls.Shapes.Path;
 
 #endregion
 
@@ -25,9 +25,15 @@ public static class ResourceService
 		return response;
 	}
 
-	public static Brush GetBrush(string key)
+	public static T Get<T>(string key)
 	{
-		var response = Application.Current?.FindResource(key) as Brush;
+		var resource = Application.Current?.FindResource(key);
+		return resource is T response ? response : default;
+	}
+
+	public static IBrush GetBrush(string key)
+	{
+		var response = Application.Current?.FindResource(key) as IBrush;
 		return response;
 	}
 

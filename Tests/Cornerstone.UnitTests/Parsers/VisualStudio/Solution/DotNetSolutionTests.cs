@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Cornerstone.Compare;
+using Cornerstone.Data;
 using Cornerstone.Parsers.VisualStudio.Solution;
 using Cornerstone.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -109,16 +110,16 @@ EndGlobal
 		AreEqual(projects, solution.Projects, null,
 			new ComparerOptions
 			{
-				PropertiesToIgnore = new Dictionary<Type, string[]>
+				IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeOptions>
 				{
 					{
 						typeof(DotNetSolutionProject),
-						[
+						new IncludeExcludeOptions(null, [
 							nameof(DotNetSolutionProject.Attributes),
 							nameof(DotNetSolutionProject.Elements),
 							nameof(DotNetSolutionProject.ItemGroups),
 							nameof(DotNetSolutionProject.TargetFrameworks)
-						]
+						])
 					}
 				}
 			}

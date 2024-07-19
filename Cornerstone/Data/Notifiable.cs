@@ -9,7 +9,6 @@ using System.Runtime.CompilerServices;
 using Cornerstone.Collections;
 using Cornerstone.Extensions;
 using Cornerstone.Internal;
-
 #if !NETSTANDARD
 using System.Diagnostics.CodeAnalysis;
 #endif
@@ -21,20 +20,65 @@ namespace Cornerstone.Data;
 /// <summary>
 /// Represents a notifiable object.
 /// </summary>
-public abstract class Notifiable<T> : Notifiable, ICloneable<T>
+public abstract class Notifiable<T> : Notifiable, ICloneable<T>, IUpdateable<T>
 {
 	#region Methods
 
 	/// <inheritdoc />
-	public virtual T DeepClone(int? maxDepth = null)
+	public virtual T DeepClone(int? maxDepth = null, IncludeExcludeOptions options = null)
 	{
-		return Cloneable.DeepClone<T>(maxDepth);
+		return (T) this.DeepCloneUsingUpdateWith(typeof(T), maxDepth, options);
 	}
 
 	/// <inheritdoc />
-	public T ShallowClone()
+	public T ShallowClone(IncludeExcludeOptions options = null)
 	{
-		return DeepClone(0);
+		return DeepClone(0, options);
+	}
+
+	/// <inheritdoc />
+	public virtual bool ShouldUpdate(T update, IncludeExcludeOptions options)
+	{
+		return UpdateableExtensions.ShouldUpdate(this, update, options);
+	}
+
+	/// <inheritdoc />
+	public bool TryUpdateWith(T update)
+	{
+		return TryUpdateWith(update, IncludeExcludeOptions.Empty);
+	}
+
+	/// <inheritdoc />
+	public bool TryUpdateWith(T update, IncludeExcludeOptions options)
+	{
+		return ShouldUpdate(update, options)
+			&& UpdateWith(update, options);
+	}
+
+	/// <inheritdoc />
+	public bool UpdateWith(T update)
+	{
+		return UpdateWith(update, IncludeExcludeOptions.Empty);
+	}
+
+	/// <inheritdoc />
+	public bool UpdateWith(T update, UpdateableAction action)
+	{
+		var options = Cache.GetOptions(GetRealType(), action);
+		return UpdateWith(update, options);
+	}
+
+	/// <inheritdoc />
+	public abstract bool UpdateWith(T update, IncludeExcludeOptions options);
+
+	/// <inheritdoc />
+	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	{
+		return update switch
+		{
+			T value => UpdateWith(value, options),
+			_ => base.UpdateWith(update, options)
+		};
 	}
 
 	#endregion
@@ -71,9 +115,15 @@ public abstract class Notifiable : INotifiable, IUpdateable, ICloneable, IUpdate
 	#region Methods
 
 	/// <inheritdoc />
-	public virtual object DeepCloneObject(int? maxDepth = null)
+	public void ApplyChangesTo(object destination)
 	{
-		return Cloneable.DeepClone(GetRealType(), this, maxDepth);
+		destination.UpdateWithOnly(this, _changedProperties.Keys.ToArray());
+	}
+
+	/// <inheritdoc />
+	public virtual object DeepCloneObject(int? maxDepth = null, IncludeExcludeOptions options = null)
+	{
+		return this.DeepCloneUsingUpdateWith(GetRealType(), maxDepth, options);
 	}
 
 	/// <inheritdoc />
@@ -109,7 +159,7 @@ public abstract class Notifiable : INotifiable, IUpdateable, ICloneable, IUpdate
 	}
 
 	/// <inheritdoc />
-	public UpdateableOptions GetUpdateableOptions(UpdateableAction action)
+	public IncludeExcludeOptions GetUpdateableOptions(UpdateableAction action)
 	{
 		return Cache.GetOptions(GetRealType(), action);
 	}
@@ -117,13 +167,13 @@ public abstract class Notifiable : INotifiable, IUpdateable, ICloneable, IUpdate
 	/// <inheritdoc />
 	public bool HasChanges()
 	{
-		return HasChanges([]);
+		return HasChanges(IncludeExcludeOptions.Empty);
 	}
 
 	/// <inheritdoc />
-	public virtual bool HasChanges(params string[] exclusions)
+	public virtual bool HasChanges(IncludeExcludeOptions options)
 	{
-		return _changedProperties.Any(x => !exclusions.Contains(x.Key));
+		return _changedProperties.Any(x => options.ShouldProcessProperty(x.Key));
 	}
 
 	/// <inheritdoc />
@@ -168,13 +218,13 @@ public abstract class Notifiable : INotifiable, IUpdateable, ICloneable, IUpdate
 	}
 
 	/// <inheritdoc />
-	public object ShallowCloneObject()
+	public object ShallowCloneObject(IncludeExcludeOptions options = null)
 	{
-		return DeepCloneObject(0);
+		return DeepCloneObject(0, options);
 	}
 
 	/// <inheritdoc />
-	public virtual bool ShouldUpdate(object update, UpdateableOptions options)
+	public virtual bool ShouldUpdate(object update, IncludeExcludeOptions options)
 	{
 		return UpdateableExtensions.ShouldUpdate(this, update, options);
 	}
@@ -182,11 +232,11 @@ public abstract class Notifiable : INotifiable, IUpdateable, ICloneable, IUpdate
 	/// <inheritdoc />
 	public bool TryUpdateWith(object update)
 	{
-		return TryUpdateWith(update, UpdateableOptions.Empty);
+		return TryUpdateWith(update, IncludeExcludeOptions.Empty);
 	}
 
 	/// <inheritdoc />
-	public bool TryUpdateWith(object update, UpdateableOptions options)
+	public bool TryUpdateWith(object update, IncludeExcludeOptions options)
 	{
 		return ShouldUpdate(update, options)
 			&& UpdateWith(update, options);
@@ -195,7 +245,7 @@ public abstract class Notifiable : INotifiable, IUpdateable, ICloneable, IUpdate
 	/// <inheritdoc />
 	public bool UpdateWith(object update)
 	{
-		return UpdateWith(update, UpdateableOptions.Empty);
+		return UpdateWith(update, IncludeExcludeOptions.Empty);
 	}
 
 	/// <inheritdoc />
@@ -206,7 +256,7 @@ public abstract class Notifiable : INotifiable, IUpdateable, ICloneable, IUpdate
 	}
 
 	/// <inheritdoc />
-	public virtual bool UpdateWith(object update, UpdateableOptions options)
+	public virtual bool UpdateWith(object update, IncludeExcludeOptions options)
 	{
 		return this.UpdateWithUsingReflection(update, options);
 	}

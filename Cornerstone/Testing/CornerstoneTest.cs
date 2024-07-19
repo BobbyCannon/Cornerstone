@@ -431,6 +431,8 @@ public abstract partial class CornerstoneTest : ITimeProvider
 	public void ResetCurrentTime(DateTime? currentTime = null)
 	{
 		_currentDateTime = currentTime;
+
+		TimeService.Reset(this);
 	}
 
 	/// <summary>
@@ -603,6 +605,8 @@ public abstract partial class CornerstoneTest : ITimeProvider
 		var builder = new StringBuilder();
 		var declaredOnly = !type.IsDirectDescendantOf(typeof(Bindable))
 			&& !type.IsDirectDescendantOf(typeof(Bindable<>))
+			&& !type.IsDirectDescendantOf(typeof(Notifiable))
+			&& !type.IsDirectDescendantOf(typeof(Notifiable<>))
 			&& !type.IsDirectDescendantOf(typeof(SyncEntity<>))
 			&& !type.IsDirectDescendantOf(typeof(SyncEntity<>))
 			&& !type.IsDirectDescendantOf(typeof(CreatedEntity<>))
@@ -626,17 +630,8 @@ public abstract partial class CornerstoneTest : ITimeProvider
 /// Update the {type.Name.Replace("`1", "").Replace("`2", "")} with an update.
 /// </summary>
 /// <param name=""update""> The update to be applied. </param>
-public virtual bool UpdateWith({type.ToCSharpCode()} update)
-{{");
-		builder.AppendLine("\treturn UpdateWith(update, UpdateableOptions.Empty);");
-		builder.AppendLine("}");
-		builder.AppendLine();
-		builder.AppendLine($@"/// <summary>
-/// Update the {type.Name.Replace("`1", "").Replace("`2", "")} with an update.
-/// </summary>
-/// <param name=""update""> The update to be applied. </param>
 /// <param name=""options""> The options for controlling the updating of the entity. </param>
-public virtual bool UpdateWith({type.ToCSharpCode()} update, UpdateableOptions options)
+public override bool UpdateWith({type.ToCSharpCode()} update, IncludeExcludeOptions options)
 {{");
 		builder.AppendLine("\t// If the update is null then there is nothing to do.");
 		builder.AppendLine("\tif (update == null)\r\n\t{\r\n\t\treturn false;\r\n\t}\r\n");
@@ -731,16 +726,7 @@ public virtual bool UpdateWith({type.ToCSharpCode()} update, UpdateableOptions o
 
 		builder.AppendLine("\t}\r\n");
 		builder.AppendLine(declaredOnly ? "\treturn base.UpdateWith(update, options);" : "\treturn true;");
-		builder.AppendLine("}\r\n");
-		builder.AppendLine($@"/// <inheritdoc />
-public override bool UpdateWith(object update, UpdateableOptions options)
-{{
-	return update switch
-	{{
-		{type.ToCSharpCode()} value => UpdateWith(value, options),
-		_ => base.UpdateWith(update, options)
-	}};
-}}");
+		builder.AppendLine("}");
 
 		return builder;
 	}

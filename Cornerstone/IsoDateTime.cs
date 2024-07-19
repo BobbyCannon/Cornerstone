@@ -143,7 +143,7 @@ public struct IsoDateTime : IComparable<IsoDateTime>, IComparable, IEquatable<Is
 	/// <param name="service"> The time service to use for comparison otherwise uses <see cref="TimeService.CurrentTime" />. </param>
 	public bool IsExpired(ITimeProvider service = null)
 	{
-		return (service ?? TimeService.CurrentTime).UtcNow > ExpiresAfter;
+		return (service ?? TimeService.RealTime).UtcNow > ExpiresAfter;
 	}
 
 	/// <summary>

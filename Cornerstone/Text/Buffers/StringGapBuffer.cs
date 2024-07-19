@@ -52,7 +52,7 @@ public class StringGapBuffer : GapBuffer<char>, ICloneable<StringGapBuffer>, ISt
 	}
 
 	/// <inheritdoc />
-	public StringGapBuffer DeepClone(int? maxDepth = null)
+	public StringGapBuffer DeepClone(int? maxDepth = null, IncludeExcludeOptions options = null)
 	{
 		return new StringGapBuffer(ToString());
 	}
@@ -133,9 +133,9 @@ public class StringGapBuffer : GapBuffer<char>, ICloneable<StringGapBuffer>, ISt
 	}
 
 	/// <inheritdoc />
-	public StringGapBuffer ShallowClone()
+	public StringGapBuffer ShallowClone(IncludeExcludeOptions options = null)
 	{
-		return DeepClone();
+		return DeepClone(0, options);
 	}
 
 	/// <inheritdoc />
@@ -157,27 +157,27 @@ public class StringGapBuffer : GapBuffer<char>, ICloneable<StringGapBuffer>, ISt
 	}
 
 	/// <inheritdoc />
-	IStringBuffer ICloneable<IStringBuffer>.DeepClone(int? maxDepth)
+	IStringBuffer ICloneable<IStringBuffer>.DeepClone(int? maxDepth, IncludeExcludeOptions options)
 	{
-		return DeepClone();
+		return DeepClone(maxDepth, options);
 	}
 
 	/// <inheritdoc />
-	object ICloneable.DeepCloneObject(int? maxDepth)
+	object ICloneable.DeepCloneObject(int? maxDepth, IncludeExcludeOptions options)
 	{
-		return DeepClone(maxDepth);
+		return DeepClone(maxDepth, options);
 	}
 
 	/// <inheritdoc />
-	IStringBuffer ICloneable<IStringBuffer>.ShallowClone()
+	IStringBuffer ICloneable<IStringBuffer>.ShallowClone(IncludeExcludeOptions options)
 	{
-		return ShallowClone();
+		return ShallowClone(options);
 	}
 
 	/// <inheritdoc />
-	object ICloneable.ShallowCloneObject()
+	object ICloneable.ShallowCloneObject(IncludeExcludeOptions options)
 	{
-		return ShallowClone();
+		return ShallowClone(options);
 	}
 
 	#endregion
