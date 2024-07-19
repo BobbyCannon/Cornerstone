@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using Cornerstone.Extensions;
 
 #endregion
 

@@ -20,21 +20,6 @@ public static class CollectionExtensions
 	#region Methods
 
 	/// <summary>
-	/// Add model to the set.
-	/// </summary>
-	/// <typeparam name="T"> The type of the items in the collection. </typeparam>
-	/// <param name="set"> The set to add items to. </param>
-	public static void AddModel<T>(this ISet<string> set)
-	{
-		var properties = typeof(T)
-			.GetCachedProperties()
-			.Select(x => x.Name)
-			.ToList();
-
-		set.AddRange(properties);
-	}
-
-	/// <summary>
 	/// Add multiple items to a collection
 	/// </summary>
 	/// <typeparam name="T"> The type of the items in the collection. </typeparam>

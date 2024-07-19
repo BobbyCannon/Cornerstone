@@ -586,7 +586,7 @@ public static class LocationExtensions
 	/// <param name="location"> The location to be updated. </param>
 	/// <param name="update"> The new location. </param>
 	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public static void Update(this IBasicLocation location, IBasicLocation update, UpdateableOptions options)
+	public static void Update(this IBasicLocation location, IBasicLocation update, IncludeExcludeOptions options)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -667,7 +667,7 @@ public static class LocationExtensions
 	/// <param name="location"> The location to update. </param>
 	/// <param name="update"> The update to be applied. </param>
 	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public static bool UpdateWith(this IBasicLocation location, IBasicLocation update, UpdateableOptions options)
+	public static bool UpdateWith(this IBasicLocation location, IBasicLocation update, IncludeExcludeOptions options)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -701,7 +701,7 @@ public static class LocationExtensions
 	/// <param name="location"> The location to update. </param>
 	/// <param name="update"> The update to be applied. </param>
 	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public static bool UpdateWith(this IBasicLocation location, ILocation<IHorizontalLocation, IVerticalLocation> update, UpdateableOptions options)
+	public static bool UpdateWith(this IBasicLocation location, ILocation<IHorizontalLocation, IVerticalLocation> update, IncludeExcludeOptions options)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -733,7 +733,7 @@ public static class LocationExtensions
 	/// <param name="location"> The location to update. </param>
 	/// <param name="update"> The update to be applied. </param>
 	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public static bool UpdateWith(this IBasicLocation location, IMinimalHorizontalLocation update, UpdateableOptions options)
+	public static bool UpdateWith(this IBasicLocation location, IMinimalHorizontalLocation update, IncludeExcludeOptions options)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -763,7 +763,7 @@ public static class LocationExtensions
 	/// <param name="location"> The location to update. </param>
 	/// <param name="update"> The update to be applied. </param>
 	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public static bool UpdateWith(this IBasicLocation location, IMinimalVerticalLocation update, UpdateableOptions options)
+	public static bool UpdateWith(this IBasicLocation location, IMinimalVerticalLocation update, IncludeExcludeOptions options)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)

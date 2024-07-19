@@ -51,12 +51,26 @@ public static class TestExtensions
 	}
 
 	/// <summary>
-	/// Dump the item to the Console.WriteLine().
+	/// Dump the item as CSharp code to the Console.WriteLine().
 	/// </summary>
 	/// <param name="item"> The item to dump. </param>
-	public static string DumpJson(this object item)
+	/// <param name="prefix"> An optional prefix. </param>
+	public static string DumpCSharp(this object item, string prefix = null)
 	{
-		return DumpJson(item, null);
+		if (!string.IsNullOrEmpty(prefix))
+		{
+			Console.Write(prefix);
+		}
+
+		if (item == null)
+		{
+			Console.WriteLine("null");
+			return "null";
+		}
+
+		var code = item.ToCSharp();
+		Console.WriteLine(code);
+		return code;
 	}
 
 	/// <summary>
@@ -64,7 +78,7 @@ public static class TestExtensions
 	/// </summary>
 	/// <param name="item"> The item to dump. </param>
 	/// <param name="prefix"> An optional prefix. </param>
-	public static string DumpJson(this object item, string prefix)
+	public static string DumpJson(this object item, string prefix = null)
 	{
 		if (!string.IsNullOrEmpty(prefix))
 		{

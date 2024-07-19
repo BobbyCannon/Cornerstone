@@ -66,7 +66,7 @@ public class HorizontalLocation : LocationInformation<IHorizontalLocation>, IHor
 	#region Methods
 
 	/// <inheritdoc />
-	public override IHorizontalLocation DeepClone(int? maxDepth = null)
+	public override IHorizontalLocation DeepClone(int? maxDepth = null, IncludeExcludeOptions options = null)
 	{
 		var response = new HorizontalLocation(GetDispatcher());
 		response.UpdateWith(this);
@@ -74,7 +74,7 @@ public class HorizontalLocation : LocationInformation<IHorizontalLocation>, IHor
 	}
 
 	/// <inheritdoc />
-	public override bool ShouldUpdate(object update, UpdateableOptions options)
+	public override bool ShouldUpdate(object update, IncludeExcludeOptions options)
 	{
 		return update switch
 		{
@@ -90,7 +90,7 @@ public class HorizontalLocation : LocationInformation<IHorizontalLocation>, IHor
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
 	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public override bool UpdateWith(IHorizontalLocation update, UpdateableOptions options)
+	public override bool UpdateWith(IHorizontalLocation update, IncludeExcludeOptions options)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -115,7 +115,7 @@ public class HorizontalLocation : LocationInformation<IHorizontalLocation>, IHor
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, UpdateableOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeOptions options)
 	{
 		return update switch
 		{

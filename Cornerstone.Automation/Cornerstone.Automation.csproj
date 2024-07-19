@@ -11,7 +11,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Interop.UIAutomationClient" Version="10.19041.0" />
-		<PackageReference Include="MSTest.TestFramework" Version="3.3.1" />
+		<PackageReference Include="MSTest.TestFramework" Version="3.4.3" />
 		<PackageReference Include="System.Management" Version="8.0.0" />
 	</ItemGroup>
 	<ItemGroup>

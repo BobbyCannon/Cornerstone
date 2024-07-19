@@ -318,7 +318,7 @@ public class CompletionList : TemplatedControl
 	{
 		if (itemText == null)
 		{
-			throw new ArgumentNullException(nameof(itemText), "ICompletionData.Text returned null");
+			return -1;
 		}
 
 		// Qualities: (lower better)

@@ -9,7 +9,7 @@ using Cornerstone.Profiling;
 namespace Cornerstone.Sync;
 
 /// <summary>
-/// Profiler for a the sync client
+/// Profiler for the sync client
 /// </summary>
 public class SyncClientProfiler
 {

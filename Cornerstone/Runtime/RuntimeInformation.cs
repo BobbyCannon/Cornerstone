@@ -115,6 +115,9 @@ public class RuntimeInformation : Bindable, IReadOnlyDictionary<string, object>,
 	public Version DotNetRuntimeVersion => GetOrCache<Version>(nameof(DotNetRuntimeVersion));
 
 	/// <inheritdoc />
+	public bool IsLoaded { get; private set; }
+
+	/// <inheritdoc />
 	public bool IsShuttingDown { get; private set; }
 
 	/// <inheritdoc />
@@ -208,7 +211,15 @@ public class RuntimeInformation : Bindable, IReadOnlyDictionary<string, object>,
 	}
 
 	/// <summary>
-	/// Mark the runtime as shutting down.
+	/// Mark the application as loaded;
+	/// </summary>
+	public void CompleteLoad()
+	{
+		IsLoaded = true;
+	}
+	
+	/// <summary>
+	/// Mark the application as shutting down.
 	/// </summary>
 	public void Shutdown()
 	{
@@ -558,6 +569,11 @@ public interface IRuntimeInformation : ISyncClientDetails
 	/// The DotNet runtime version.
 	/// </summary>
 	Version DotNetRuntimeVersion { get; }
+
+	/// <summary>
+	/// The flag to track when the application has been loaded.
+	/// </summary>
+	bool IsLoaded { get; }
 
 	/// <summary>
 	/// The flag to track when the application is shutting down.

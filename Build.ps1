@@ -45,8 +45,6 @@ try
 		exit $LASTEXITCODE
 	}
 	
-	& "NuGet.exe" pack "$scriptPath\Cornerstone.Uwp\Cornerstone.Uwp.nuspec" -Prop Configuration="$Configuration" -Version $nugetVersion -OutputDirectory "$scriptPath\Cornerstone.Uwp\bin\$Configuration\"
-
 	Write-Host
 	Write-Host "Build: " $watch.Elapsed -ForegroundColor Yellow
 }

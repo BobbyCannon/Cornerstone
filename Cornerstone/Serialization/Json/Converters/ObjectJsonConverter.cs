@@ -84,7 +84,7 @@ public class ObjectJsonConverter : JsonConverter
 				continue;
 			}
 
-			if (settings.IgnoreDefaultValues && (propertyValue == default))
+			if (settings.IgnoreDefaultValues && propertyValue.IsDefaultValue())
 			{
 				continue;
 			}

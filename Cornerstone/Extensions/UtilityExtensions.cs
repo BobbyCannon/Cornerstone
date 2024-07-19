@@ -178,7 +178,7 @@ public static class UtilityExtensions
 			return true;
 		}
 
-		var timer = Timer.StartNewTimer(timeService ?? TimeService.CurrentTime);
+		var timer = Timer.StartNewTimer(timeService ?? TimeService.RealTime);
 		var shouldDelay = delay.Ticks > 0;
 
 		while (((timer.Elapsed < timeout) || (timer.Elapsed < minimum)) && (timer.Elapsed < maximum))

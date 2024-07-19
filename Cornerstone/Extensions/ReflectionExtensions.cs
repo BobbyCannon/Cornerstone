@@ -602,7 +602,8 @@ public static class ReflectionExtensions
 			return obj;
 		}
 
-		return (T) SetMemberValue(obj, name, newValue);
+		SetMemberValue(obj, name, newValue);
+		return obj;
 	}
 
 	/// <summary>

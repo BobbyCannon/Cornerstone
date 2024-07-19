@@ -1,7 +1,6 @@
 ﻿#region References
 
 using System;
-using Cornerstone.Extensions;
 using Cornerstone.Runtime;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

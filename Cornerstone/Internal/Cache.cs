@@ -68,7 +68,7 @@ internal static class Cache
 	/// <typeparam name="T"> </typeparam>
 	/// <param name="action"> </param>
 	/// <returns> </returns>
-	public static UpdateableOptions GetOptions<T>(UpdateableAction action)
+	public static IncludeExcludeOptions GetOptions<T>(UpdateableAction action)
 	{
 		return GetOptions(typeof(T), action);
 	}
@@ -79,22 +79,22 @@ internal static class Cache
 	/// <param name="type"> </param>
 	/// <param name="action"> </param>
 	/// <returns> </returns>
-	public static UpdateableOptions GetOptions(Type type, UpdateableAction action)
+	public static IncludeExcludeOptions GetOptions(Type type, UpdateableAction action)
 	{
 		var realType = type.GetRealTypeUsingReflection();
 		if (!realType.ImplementsType<IUpdateable>())
 		{
-			return UpdateableOptions.Empty;
+			return IncludeExcludeOptions.Empty;
 		}
 
 		if (UpdateableActionOptionsPerType.TryGetValue(realType, out var actionOptions))
 		{
 			return actionOptions.TryGetValue(action, out var options)
 				? options
-				: UpdateableOptions.Empty;
+				: IncludeExcludeOptions.Empty;
 		}
 
-		return UpdateableOptions.Empty;
+		return IncludeExcludeOptions.Empty;
 	}
 
 	/// <summary>

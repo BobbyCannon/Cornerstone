@@ -6,7 +6,6 @@ using System.Security;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Net;
-using Cornerstone.Presentation;
 
 #endregion
 
@@ -30,9 +29,10 @@ public class WebCredential : Credential
 	/// <summary>
 	/// Creates an instance of the web credential.
 	/// </summary>
-	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public WebCredential(IDispatcher dispatcher)
-		: this(string.Empty, string.Empty, dispatcher)
+	/// <param name="username"> The username of the credential. </param>
+	/// <param name="password"> The password of the credential. </param>
+	public WebCredential(string username, string password)
+		: this(username, password?.ToSecureString())
 	{
 	}
 
@@ -41,20 +41,8 @@ public class WebCredential : Credential
 	/// </summary>
 	/// <param name="username"> The username of the credential. </param>
 	/// <param name="password"> The password of the credential. </param>
-	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public WebCredential(string username, string password, IDispatcher dispatcher = null)
-		: this(username, password?.ToSecureString(), dispatcher)
-	{
-	}
-
-	/// <summary>
-	/// Creates an instance of the web credential.
-	/// </summary>
-	/// <param name="username"> The username of the credential. </param>
-	/// <param name="password"> The password of the credential. </param>
-	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public WebCredential(string username, SecureString password, IDispatcher dispatcher = null)
-		: base(username, password, dispatcher)
+	public WebCredential(string username, SecureString password)
+		: base(username, password)
 	{
 	}
 
@@ -100,7 +88,7 @@ public class WebCredential : Credential
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
 	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public virtual bool UpdateWith(WebCredential update, UpdateableOptions options)
+	public virtual bool UpdateWith(WebCredential update, IncludeExcludeOptions options)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -123,7 +111,7 @@ public class WebCredential : Credential
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, UpdateableOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeOptions options)
 	{
 		return update switch
 		{

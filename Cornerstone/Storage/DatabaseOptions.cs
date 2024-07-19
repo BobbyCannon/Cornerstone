@@ -79,7 +79,7 @@ public class DatabaseOptions : Notifiable<DatabaseOptions>
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
 	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public virtual bool UpdateWith(DatabaseOptions update, UpdateableOptions options)
+	public override bool UpdateWith(DatabaseOptions update, IncludeExcludeOptions options)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -111,16 +111,6 @@ public class DatabaseOptions : Notifiable<DatabaseOptions>
 		}
 
 		return true;
-	}
-
-	/// <inheritdoc />
-	public override bool UpdateWith(object update, UpdateableOptions options)
-	{
-		return update switch
-		{
-			DatabaseOptions value => UpdateWith(value, options),
-			_ => base.UpdateWith(update, options)
-		};
 	}
 
 	#endregion

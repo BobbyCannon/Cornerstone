@@ -88,7 +88,7 @@ public class SettingsFileTests : CornerstoneUnitTest
 		/// <param name="update"> The update to be applied. </param>
 		public virtual bool UpdateWith(SampleSettings update)
 		{
-			return UpdateWith(update, UpdateableOptions.Empty);
+			return UpdateWith(update, IncludeExcludeOptions.Empty);
 		}
 
 		/// <summary>
@@ -96,7 +96,7 @@ public class SettingsFileTests : CornerstoneUnitTest
 		/// </summary>
 		/// <param name="update"> The update to be applied. </param>
 		/// <param name="options"> The options for controlling the updating of the entity. </param>
-		public virtual bool UpdateWith(SampleSettings update, UpdateableOptions options)
+		public virtual bool UpdateWith(SampleSettings update, IncludeExcludeOptions options)
 		{
 			// If the update is null then there is nothing to do.
 			if (update == null)
@@ -121,7 +121,7 @@ public class SettingsFileTests : CornerstoneUnitTest
 		}
 
 		/// <inheritdoc />
-		public override bool UpdateWith(object update, UpdateableOptions options)
+		public override bool UpdateWith(object update, IncludeExcludeOptions options)
 		{
 			return update switch
 			{

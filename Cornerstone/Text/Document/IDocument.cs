@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.IO;
 
 #endregion
 
@@ -16,10 +17,10 @@ public interface IDocument : ITextSource, IServiceProvider
 	#region Properties
 
 	/// <summary>
-	/// Gets the name of the file the document is stored in.
+	/// Gets the info of the file the document is stored in.
 	/// Could also be a non-existent dummy file name or null if no name has been set.
 	/// </summary>
-	string FileName { get; }
+	FileInfo FileInfo { get; }
 
 	/// <summary>
 	/// Gets the number of lines in the document.

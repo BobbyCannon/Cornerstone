@@ -71,7 +71,7 @@ public static class ExtensionMethods
 	}
 
 	/// <summary>
-	/// Forces the value to stay between mininum and maximum.
+	/// Forces the value to stay between minimum and maximum.
 	/// </summary>
 	/// <returns>
 	/// minimum, if value is less than minimum.
@@ -84,7 +84,7 @@ public static class ExtensionMethods
 	}
 
 	/// <summary>
-	/// Forces the value to stay between mininum and maximum.
+	/// Forces the value to stay between minimum and maximum.
 	/// </summary>
 	/// <returns>
 	/// minimum, if value is less than minimum.
@@ -101,10 +101,12 @@ public static class ExtensionMethods
 	/// </summary>
 	public static Typeface CreateTypeface(this Control fe)
 	{
-		return new Typeface(fe.GetValue(TextElement.FontFamilyProperty),
+		return new Typeface(
+			fe.GetValue(TextElement.FontFamilyProperty),
 			fe.GetValue(TextElement.FontStyleProperty),
 			fe.GetValue(TextElement.FontWeightProperty),
-			fe.GetValue(TextElement.FontStretchProperty));
+			fe.GetValue(TextElement.FontStretchProperty)
+		);
 	}
 	///// <summary>
 	///// Gets the value of the attribute, or null if the attribute does not exist.

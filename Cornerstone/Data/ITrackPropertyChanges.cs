@@ -14,28 +14,34 @@ public interface ITrackPropertyChanges
 	#region Methods
 
 	/// <summary>
+	/// Apply the changes to this object to the provided destination object.
+	/// </summary>
+	/// <param name="destination"> The object to update. </param>
+	void ApplyChangesTo(object destination);
+
+	/// <summary>
 	/// Get the list of changed properties.
 	/// </summary>
 	/// <returns> The list of changed property in a read only set. </returns>
-	public ReadOnlySet<string> GetChangedProperties();
+	ReadOnlySet<string> GetChangedProperties();
 
 	/// <summary>
 	/// Determines if the object has changes.
 	/// </summary>
 	/// <returns> True if the object has changes otherwise false. </returns>
-	public bool HasChanges();
+	bool HasChanges();
 
 	/// <summary>
 	/// Determines if the object has changes.
 	/// </summary>
-	/// <param name="exclusions"> An optional set of exclusions. </param>
+	/// <param name="options"> An optional set of options. </param>
 	/// <returns> True if the object has changes otherwise false. </returns>
-	public bool HasChanges(params string[] exclusions);
+	bool HasChanges(IncludeExcludeOptions options);
 
 	/// <summary>
 	/// Reset the "has changes" state.
 	/// </summary>
-	public void ResetHasChanges();
+	void ResetHasChanges();
 
 	#endregion
 }

@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System;
 using Cornerstone.Presentation;
 
 #endregion
@@ -24,6 +25,14 @@ public class ProfilerService : DetailedTimer
 	#endregion
 
 	#region Methods
+
+	public static T Benchmark<T>(Func<T> action, out TimeSpan time)
+	{
+		var timer = StartNewTimer();
+		var response = timer.Time(action);
+		time = timer.Elapsed;
+		return response;
+	}
 
 	/// <inheritdoc />
 	protected override DetailedTimer CreateTimer(string name)

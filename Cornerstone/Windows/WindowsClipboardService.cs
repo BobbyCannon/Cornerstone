@@ -2,9 +2,13 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Security;
+using System.Threading;
 using System.Threading.Tasks;
+using Cornerstone.Extensions;
 using Cornerstone.Internal;
 using Cornerstone.Presentation;
+using Cornerstone.Profiling;
 
 #endregion
 
@@ -29,53 +33,80 @@ public class WindowsClipboardService : IClipboardService
 
 	#endregion
 
+	#region Fields
+
+	private readonly DebounceService _clearDebounce;
+
+	#endregion
+
+	#region Constructors
+
+	public WindowsClipboardService()
+	{
+		_clearDebounce = new DebounceService(TimeSpan.FromSeconds(5), _ => ClearAsync());
+	}
+
+	#endregion
+
 	#region Methods
 
 	/// <inheritdoc />
-	public async Task ClearAsync()
+	public Task ClearAsync()
 	{
-		using (await OpenClipboard())
-		{
-			EmptyClipboard();
-		}
+		using var clipboard = OpenClipboard();
+		EmptyClipboard();
+		return Task.CompletedTask;
 	}
 
 	/// <inheritdoc />
-	public async Task<string> GetTextAsync()
+	public Task<string> GetTextAsync()
 	{
-		using (await OpenClipboard())
+		using var clipboard = OpenClipboard();
+		var hText = GetClipboardData(_unicodeTextFormat);
+		if (hText == IntPtr.Zero)
 		{
-			var hText = GetClipboardData(_unicodeTextFormat);
-			if (hText == IntPtr.Zero)
-			{
-				return null;
-			}
-
-			var pText = GlobalLock(hText);
-			if (pText == IntPtr.Zero)
-			{
-				return null;
-			}
-
-			var rv = Marshal.PtrToStringUni(pText);
-			GlobalUnlock(hText);
-			return rv;
+			return Task.FromResult<string>(null);
 		}
+
+		var pText = GlobalLock(hText);
+		if (pText == IntPtr.Zero)
+		{
+			return Task.FromResult<string>(null);
+		}
+
+		var rv = Marshal.PtrToStringUni(pText);
+		GlobalUnlock(hText);
+		return Task.FromResult(rv);
 	}
 
 	/// <inheritdoc />
-	public async Task SetTextAsync(string text)
+	public Task SetTextAsync(string text)
 	{
-		using (await OpenClipboard())
-		{
-			EmptyClipboard();
+		using var clipboard = OpenClipboard();
+		EmptyClipboard();
 
-			if (text is not null)
-			{
-				var hGlobal = Marshal.StringToHGlobalUni(text);
-				SetClipboardData(_unicodeTextFormat, hGlobal);
-			}
+		if (text is not null)
+		{
+			var hGlobal = Marshal.StringToHGlobalUni(text);
+			SetClipboardData(_unicodeTextFormat, hGlobal);
 		}
+
+		return Task.CompletedTask;
+	}
+
+	/// <inheritdoc />
+	public Task SetTextAsync(SecureString text)
+	{
+		using var clipboard = OpenClipboard();
+		EmptyClipboard();
+
+		if (text is not null)
+		{
+			var hGlobal = Marshal.StringToHGlobalUni(text.ToUnsecureString());
+			SetClipboardData(_unicodeTextFormat, hGlobal);
+		}
+
+		return Task.CompletedTask;
 	}
 
 	[DllImport("user32.dll")]
@@ -93,7 +124,7 @@ public class WindowsClipboardService : IClipboardService
 	[DllImport("kernel32.dll", ExactSpelling = true)]
 	private static extern bool GlobalUnlock(IntPtr handle);
 
-	private static async Task<IDisposable> OpenClipboard()
+	private static IDisposable OpenClipboard()
 	{
 		var i = _oleRetryCount;
 
@@ -103,7 +134,7 @@ public class WindowsClipboardService : IClipboardService
 			{
 				throw new TimeoutException("Timeout opening clipboard.");
 			}
-			await Task.Delay(100);
+			Thread.Sleep(100);
 		}
 
 		return Disposable.Create(() => CloseClipboard());

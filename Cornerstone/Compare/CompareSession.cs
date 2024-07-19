@@ -55,6 +55,16 @@ public class CompareSession<T, T2> : CompareSession
 	/// <param name="prefix"> An optional prefix for the difference message. </param>
 	public void Assert(CompareResult expectedResult, string prefix = null)
 	{
+		Assert(expectedResult, () => prefix);
+	}
+
+	/// <summary>
+	/// Assert if the <see cref="CompareSession.Result" /> does not match the expected result.
+	/// </summary>
+	/// <param name="expectedResult"> The expected result. </param>
+	/// <param name="prefix"> An optional prefix for the difference message. </param>
+	public void Assert(CompareResult expectedResult, Func<string> prefix = null)
+	{
 		if (Result == expectedResult)
 		{
 			return;
@@ -64,7 +74,7 @@ public class CompareSession<T, T2> : CompareSession
 		{
 			Differences.Insert(0, Environment.NewLine);
 			Differences.Insert(0, Environment.NewLine);
-			Differences.Insert(0, prefix);
+			Differences.Insert(0, prefix.Invoke());
 		}
 		else if (Differences.Length == 0)
 		{

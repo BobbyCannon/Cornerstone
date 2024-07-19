@@ -1,0 +1,119 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+		x:Class="Avalonia.Sample.Tabs.TabExpander">
+	<StackPanel
+			Orientation="Vertical"
+			Margin="8"
+			Spacing="8">
+		<Expander
+				IsExpanded="False"
+				Width="400">
+			<Expander.HeaderTemplate>
+				<DataTemplate>
+					<TextBox Watermark="enter data here" />
+				</DataTemplate>
+			</Expander.HeaderTemplate>
+			<StackPanel Orientation="Vertical" Spacing="8">
+				<Label Content="Content Line 1" />
+				<Label Content="Content Line 2" />
+				<Label Content="Content Line 3" />
+				<Label Content="Content Line 4" />
+				<Label Content="Content Line 5" />
+				<Label Content="Content Line 6" />
+				<TextBox Text="Text Content" />
+			</StackPanel>
+		</Expander>
+		<Expander
+				Header="Expand Down (Custom Background)"
+				ExpandDirection="Down"
+				Background="{DynamicResource UiTheme02}"
+				Width="400">
+			<StackPanel Orientation="Vertical" Spacing="8">
+				<Label Content="Content Line 1" />
+				<Label Content="Content Line 2" />
+				<Label Content="Content Line 3" />
+				<Label Content="Content Line 4" />
+				<Label Content="Content Line 5" />
+				<Label Content="Content Line 6" />
+				<TextBox Text="Text Content" />
+			</StackPanel>
+		</Expander>
+		<Expander
+				Header="Expand Up"
+				ExpandDirection="Up"
+				Width="400">
+			<StackPanel Orientation="Vertical" Spacing="8">
+				<Label Content="Content Line 1" />
+				<Label Content="Content Line 2" />
+				<Label Content="Content Line 3" />
+				<Label Content="Content Line 4" />
+				<Label Content="Content Line 5" />
+				<Label Content="Content Line 6" />
+				<TextBox Text="Text Content" />
+			</StackPanel>
+		</Expander>
+		<Expander
+				Header="Expand Left"
+				ExpandDirection="Left"
+				IsExpanded="True"
+				Width="400">
+			<StackPanel Orientation="Vertical" Spacing="8">
+				<Label Content="Content Line 1" />
+				<Label Content="Content Line 2" />
+				<Label Content="Content Line 3" />
+				<Label Content="Content Line 4" />
+				<Label Content="Content Line 5" />
+				<Label Content="Content Line 6" />
+				<TextBox Text="Text Content" />
+			</StackPanel>
+		</Expander>
+		<Expander
+				Header="Expand Right"
+				ExpandDirection="Right"
+				IsExpanded="True"
+				Width="400">
+			<StackPanel Orientation="Vertical" Spacing="8">
+				<Label Content="Content Line 1" />
+				<Label Content="Content Line 2" />
+				<Label Content="Content Line 3" />
+				<Label Content="Content Line 4" />
+				<Label Content="Content Line 5" />
+				<Label Content="Content Line 6" />
+				<TextBox Text="Text Content" />
+			</StackPanel>
+		</Expander>
+		<Expander
+				Header="Disabled (Collapsed)"
+				IsEnabled="False"
+				Width="400">
+			<StackPanel Orientation="Vertical" Spacing="8">
+				<Label Content="Content Line 1" />
+				<Label Content="Content Line 2" />
+				<Label Content="Content Line 3" />
+				<Label Content="Content Line 4" />
+				<Label Content="Content Line 5" />
+				<Label Content="Content Line 6" />
+				<TextBox Text="Text Content" />
+			</StackPanel>
+		</Expander>
+		<Expander
+				Header="Disabled (Expanded)"
+				IsEnabled="False"
+				IsExpanded="True"
+				Width="400">
+			<StackPanel Orientation="Vertical" Spacing="8">
+				<Label Content="Content Line 1" />
+				<Label Content="Content Line 2" />
+				<Label Content="Content Line 3" />
+				<Label Content="Content Line 4" />
+				<Label Content="Content Line 5" />
+				<Label Content="Content Line 6" />
+				<TextBox Text="Text Content" />
+			</StackPanel>
+		</Expander>
+	</StackPanel>
+</UserControl>

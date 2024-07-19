@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Cornerstone.Compare;
+using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -27,7 +28,7 @@ public class ComparerOptionsTests : CornerstoneUnitTest
 			{ nameof(ComparerOptions.IgnoreObjectTypes), true },
 			{ nameof(ComparerOptions.IgnoreMissingProperties), false },
 			{ nameof(ComparerOptions.StringComparison), StringComparison.CurrentCulture },
-			{ nameof(ComparerOptions.PropertiesToIgnore), new Dictionary<Type, string[]>() }
+			{ nameof(ComparerOptions.IncludeExcludeOptions), new Dictionary<Type, string[]>() }
 		};
 
 		var properties = actual.GetType().GetCachedProperties().OrderBy(x => x.Name).ToList();
@@ -50,10 +51,10 @@ public class ComparerOptionsTests : CornerstoneUnitTest
 		var options = new ComparerOptions();
 		options.IgnoreProperty<ComparerTests.Person>(x => x.FullName);
 
-		var actual = options.PropertiesToIgnore;
-		var expected = new Dictionary<Type, string[]>
+		var actual = options.IncludeExcludeOptions;
+		var expected = new Dictionary<Type, IncludeExcludeOptions>
 		{
-			{ typeof(ComparerTests.Person), ["FullName"] }
+			{ typeof(ComparerTests.Person), new IncludeExcludeOptions(null, ["FullName"]) }
 		};
 
 		AreEqual(expected, actual);

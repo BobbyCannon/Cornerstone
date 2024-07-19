@@ -18,6 +18,23 @@ public static class ExpressionExtensions
 	#region Methods
 
 	/// <summary>
+	/// Creates an expression that represents a conditional AND operation that evaluates the second operand only if the first operand evaluates to true.
+	/// </summary>
+	/// <typeparam name="T"> The type used in the expression. </typeparam>
+	/// <param name="left"> An Expression to set the Left property equal to. </param>
+	/// <param name="right"> An Expression to set the Right property equal to. </param>
+	/// <returns> The updated expression. </returns>
+	public static Expression<Func<T, bool>> AndAlso<T>(this Expression<Func<T, bool>> left, Expression<Func<T, bool>> right)
+	{
+		var parameter = Expression.Parameter(typeof(T));
+		var leftVisitor = new ReplaceExpressionVisitor(left.Parameters[0], parameter);
+		var vLeft = leftVisitor.Visit(left.Body);
+		var rightVisitor = new ReplaceExpressionVisitor(right.Parameters[0], parameter);
+		var vRight = rightVisitor.Visit(right.Body);
+		return Expression.Lambda<Func<T, bool>>(Expression.AndAlso(vLeft, vRight), parameter);
+	}
+
+	/// <summary>
 	/// Specifies additional related data to be further included based on a related type that was just included.
 	/// </summary>
 	/// <typeparam name="T"> The type of entity being queried. </typeparam>
@@ -55,6 +72,39 @@ public static class ExpressionExtensions
 
 		name = null;
 		return false;
+	}
+
+	#endregion
+
+	#region Classes
+
+	private class ReplaceExpressionVisitor : ExpressionVisitor
+	{
+		#region Fields
+
+		private readonly Expression _newValue;
+		private readonly Expression _oldValue;
+
+		#endregion
+
+		#region Constructors
+
+		public ReplaceExpressionVisitor(Expression oldValue, Expression newValue)
+		{
+			_oldValue = oldValue;
+			_newValue = newValue;
+		}
+
+		#endregion
+
+		#region Methods
+
+		public override Expression Visit(Expression node)
+		{
+			return node == _oldValue ? _newValue : base.Visit(node);
+		}
+
+		#endregion
 	}
 
 	#endregion

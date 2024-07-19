@@ -144,13 +144,13 @@ public class LineManagerTests : CornerstoneUnitTest
 	[TestMethod]
 	public void GetCharAt0EmptyDocument()
 	{
-		NUnitAssert.Throws<ArgumentOutOfRangeException>(() => _document.GetCharAt(0));
+		NUnitAssert.Throws<IndexOutOfRangeException>(() => _document.GetCharAt(0));
 	}
 
 	[TestMethod]
 	public void GetCharAtEndOffset()
 	{
-		NUnitAssert.Throws<ArgumentOutOfRangeException>(() =>
+		NUnitAssert.Throws<IndexOutOfRangeException>(() =>
 		{
 			_document.Text = "a\nb";
 			_document.GetCharAt(_document.TextLength);
@@ -160,7 +160,7 @@ public class LineManagerTests : CornerstoneUnitTest
 	[TestMethod]
 	public void GetCharAtNegativeOffset()
 	{
-		NUnitAssert.Throws<ArgumentOutOfRangeException>(() =>
+		NUnitAssert.Throws<IndexOutOfRangeException>(() =>
 		{
 			_document.Text = "a\nb";
 			_document.GetCharAt(-1);

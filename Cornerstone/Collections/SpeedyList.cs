@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
+using Cornerstone.Data;
 using Cornerstone.Presentation;
 using Cornerstone.Threading;
 using PropertyChanged;
@@ -414,7 +415,7 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 	}
 
 	/// <inheritdoc />
-	public override bool HasChanges(params string[] exclusions)
+	public override bool HasChanges(IncludeExcludeOptions options)
 	{
 		return _hasChanges;
 	}

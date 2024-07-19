@@ -1,16 +1,25 @@
 ﻿#region References
 
 using System;
+using System.Diagnostics;
+using System.IO;
+using System.Text;
+using Avalonia.Sample.ViewModels;
+using Cornerstone.Avalonia;
+using Cornerstone.Extensions;
+using Cornerstone.Runtime;
 
 #endregion
 
 namespace Avalonia.Sample.Desktop;
 
-internal class Program
+public class Program
 {
 	#region Methods
 
-	// Avalonia configuration, don't remove; also used by visual designer.
+	/// <summary>
+	/// Avalonia configuration, don't remove; also used by visual designer.
+	/// </summary>
 	public static AppBuilder BuildAvaloniaApp()
 	{
 		return AppBuilder.Configure<App>()
@@ -19,13 +28,42 @@ internal class Program
 			.LogToTrace();
 	}
 
-	// Initialization code. Don't use any Avalonia, third-party APIs or any
-	// SynchronizationContext-reliant code before AppMain is called: things aren't initialized
-	// yet and stuff might break.
+	/// <summary>
+	/// Initialization code. Don't use any Avalonia, third-party APIs or any
+	/// SynchronizationContext-reliant code before AppMain is called: things aren't initialized
+	/// yet and stuff might break.
+	/// </summary>
 	[STAThread]
 	public static void Main(string[] args)
 	{
-		BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+		try
+		{
+			BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+		}
+		catch (Exception ex)
+		{
+			Debugger.Break();
+
+			var runtimeInformation = CornerstoneApplication.GetService<IRuntimeInformation>();
+			var builder = new StringBuilder();
+
+			builder.Append("Crash: ");
+			builder.AppendLine(ex.Message);
+			builder.AppendLine(ex.StackTrace);
+
+			builder.AppendLine("----------------------------");
+			builder.AppendLine(runtimeInformation.ToString());
+			builder.AppendLine("----------------------------");
+
+			var directory = Path.Combine(runtimeInformation.ApplicationDataLocation, "CrashLogs");
+			new DirectoryInfo(directory).SafeCreate();
+
+			var file = Path.Combine(directory, $"Crash-{DateTime.Now.Ticks:D20}.log");
+			File.WriteAllText(file, builder.ToString());
+
+			var viewModel = CornerstoneApplication.GetService<MainViewModel>();
+			viewModel.Uninitialize();
+		}
 	}
 
 	#endregion

@@ -23,13 +23,13 @@ public class DependencyInjector
 {
 	#region Fields
 
-	private static readonly ConcurrentDictionary<Type, TypeActivator> _factories;
+	private readonly ConcurrentDictionary<Type, TypeActivator> _factories;
 
 	#endregion
 
 	#region Constructors
 
-	static DependencyInjector()
+	public DependencyInjector()
 	{
 		// Dependency Injection configurations
 		_factories = new();
@@ -94,7 +94,7 @@ public class DependencyInjector
 			}
 		);
 	}
-	
+
 	/// <summary>
 	/// Add a provider for a singleton of the provided type.
 	/// </summary>
@@ -169,7 +169,7 @@ public class DependencyInjector
 		var type = typeof(T);
 		return (T) GetInstance(type);
 	}
-	
+
 	/// <summary>
 	/// Get an instance of the object. This instance is limited to the configured
 	/// Singleton / Transient services.
@@ -212,7 +212,7 @@ public class DependencyInjector
 
 			return primaryConstructor.Invoke(primaryArguments);
 		}
-		
+
 		var emptyConstructor = constructors.FirstOrDefault(x => x.GetParameters().Length <= 0);
 		if (emptyConstructor != null)
 		{
@@ -232,12 +232,12 @@ public class DependencyInjector
 		if (availableConstructor.Count != 1)
 		{
 			throw new DependencyInjectorConstructorException(availableConstructor.Count == 0
-					? "An injectable constructor could not be found."
+					? $"An injectable constructor could not be found for {type?.FullName}."
 					: "Too many injectable constructor was found.",
 				type?.FullName ?? string.Empty
 			);
 		}
-		
+
 		var constructor = availableConstructor[0];
 		var arguments = constructor
 			.GetParameters()

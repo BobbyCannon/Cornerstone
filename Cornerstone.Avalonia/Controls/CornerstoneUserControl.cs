@@ -11,6 +11,19 @@ namespace Cornerstone.Avalonia.Controls;
 
 public class CornerstoneUserControl<T> : CornerstoneUserControl
 {
+	#region Constructors
+
+	public CornerstoneUserControl() : this(default)
+	{
+	}
+
+	public CornerstoneUserControl(T viewModel)
+	{
+		ViewModel = viewModel;
+	}
+
+	#endregion
+
 	#region Properties
 
 	public T ViewModel
@@ -43,7 +56,7 @@ public class CornerstoneUserControl : UserControl, IDispatchable
 		return CornerstoneApplication.GetService<T>();
 	}
 
-	public void OnPropertyChanged(string propertyName)
+	public virtual void OnPropertyChanged(string propertyName)
 	{
 		_propertyChangedHandler ??= this.GetPropertyChangedHandler();
 		_propertyChangedHandler?.Invoke(this, new PropertyChangedEventArgs(propertyName));

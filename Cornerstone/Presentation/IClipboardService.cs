@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System.Security;
 using System.Threading.Tasks;
 
 #endregion
@@ -29,6 +30,12 @@ public interface IClipboardService
 	/// </summary>
 	/// <param name="text"> The text to set. </param>
 	public Task SetTextAsync(string text);
+
+	/// <summary>
+	/// Update the clipboard with the provided secure text. Clipboard will be cleared after a short delay.
+	/// </summary>
+	/// <param name="text"> The text to set. </param>
+	public Task SetTextAsync(SecureString text);
 
 	#endregion
 }

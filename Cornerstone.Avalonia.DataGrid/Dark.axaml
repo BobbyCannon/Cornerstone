@@ -1,0 +1,77 @@
+<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:collections="clr-namespace:System.Collections;assembly=System.Runtime">
+	<Design.PreviewWith>
+		<StackPanel>
+			<DataGrid 
+					CanUserSortColumns="False"
+					CanUserResizeColumns="False"
+					AreRowGroupHeadersFrozen="True"
+					Height="150"
+					Width="300"
+					IsReadOnly="True">
+				<DataGrid.Columns >
+					<DataGridTextColumn Header="Name" Binding="{ReflectionBinding Path=Name}" />
+					<DataGridTextColumn Header="Tag" Binding="{ReflectionBinding Path=Tag}" />
+				</DataGrid.Columns>
+				<DataGrid.ItemsSource>
+					<collections:ArrayList>
+						<Menu Name="Menu1" Tag="1" />
+						<Menu Name="Menu2" Tag="2" />
+						<Menu Name="Menu3" Tag="3" />
+					</collections:ArrayList>
+				</DataGrid.ItemsSource>
+			</DataGrid>
+			<DataGrid 
+					CanUserSortColumns="False"
+					CanUserResizeColumns="False"
+					AreRowGroupHeadersFrozen="True"
+					Height="150"
+					Width="300"
+					IsReadOnly="True"
+					IsEnabled="False">
+				<DataGrid.Columns >
+					<DataGridTextColumn Header="Name" Binding="{ReflectionBinding Path=Name}" />
+					<DataGridTextColumn Header="Tag" Binding="{ReflectionBinding Path=Tag}" />
+				</DataGrid.Columns>
+				<DataGrid.ItemsSource>
+					<collections:ArrayList>
+						<Menu Name="Menu4" Tag="4" />
+						<Menu Name="Menu5" Tag="5" />
+						<Menu Name="Menu6" Tag="6" />
+					</collections:ArrayList>
+				</DataGrid.ItemsSource>
+			</DataGrid>
+		</StackPanel>
+	</Design.PreviewWith>
+
+	<SolidColorBrush x:Key="DataGridLineBrush" Color="{DynamicResource UiTheme05}" />
+
+	<SolidColorBrush x:Key="DataGridCellBackground" Color="Transparent" />
+	<SolidColorBrush x:Key="DataGridCellFocusBorderBrush" Color="{DynamicResource UiTheme05}" />
+	<SolidColorBrush x:Key="DataGridCellCurrentBorderBrush" Color="{DynamicResource UiTextTheme09}" />
+	<SolidColorBrush x:Key="DataGridCellErrorBrush" Color="#6C090B" />
+
+	<SolidColorBrush x:Key="DataGridColumnHeaderForeground" Color="{DynamicResource UiTextTheme02}" />
+	<SolidColorBrush x:Key="DataGridColumnHeaderBackground" Color="Transparent" />
+	<SolidColorBrush x:Key="DataGridColumnHeaderBackgroundPointerOver" Color="{DynamicResource UiTheme01}" />
+	<SolidColorBrush x:Key="DataGridColumnHeaderBackgroundPressed" Color="{DynamicResource UiTheme00}" />
+
+	<SolidColorBrush x:Key="DataGridRowBackground" Color="Transparent" />
+	<SolidColorBrush x:Key="DataGridRowBackgroundPointerOver" Color="{DynamicResource UiTheme01}" />
+	<SolidColorBrush x:Key="DataGridRowBackgroundError" Color="#6C090B" />
+
+	<SolidColorBrush x:Key="DataGridDetailsPresenterBackground" Color="Transparent" />
+
+	<SolidColorBrush x:Key="DataGridRowSelectedBackground" Color="{DynamicResource UiTheme00}" />
+	<SolidColorBrush x:Key="DataGridRowSelectedBackgroundPointerOver" Color="{DynamicResource UiTheme01}" />
+	<SolidColorBrush x:Key="DataGridRowSelectedBackgroundPressed" Color="{DynamicResource UiTheme00}" />
+	<SolidColorBrush x:Key="DataGridRowGroupHeaderExpandIconForeground" Color="{DynamicResource UiTheme00}" />
+	<SolidColorBrush x:Key="DataGridRowGroupHeaderBackground" Color="{DynamicResource UiTheme00}" />
+
+	<SolidColorBrush x:Key="DataGridRowGroupHeaderCurrentBorderBrush" Color="{DynamicResource UiTheme05}" />
+
+	<SolidColorBrush x:Key="DataGridBackground" Color="{DynamicResource UiTheme02}" Opacity="1" />
+	<SolidColorBrush x:Key="DataGridDisabledBackground" Color="{DynamicResource UiTheme03}" Opacity="0.5" />
+</ResourceDictionary>

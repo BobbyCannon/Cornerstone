@@ -18,8 +18,8 @@
 		<EmbeddedResource Include="Cornerstone.PowerShell.psd1" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="NuGet.Packaging" Version="6.9.1" />
-		<PackageReference Include="NuGet.Protocol" Version="6.9.1" />
+		<PackageReference Include="NuGet.Packaging" Version="6.10.0" />
+		<PackageReference Include="NuGet.Protocol" Version="6.10.0" />
 		<PackageReference Include="PowerShellStandard.Library" Version="5.1.1">
 			<PrivateAssets>All</PrivateAssets>
 		</PackageReference>

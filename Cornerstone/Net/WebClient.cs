@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using Cornerstone.Data;
 using Cornerstone.Exceptions;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
@@ -134,9 +135,9 @@ public class WebClient : Bindable, IWebClient
 	#region Methods
 
 	/// <inheritdoc />
-	public virtual object DeepClone(int? maxDepth = null)
+	public virtual object DeepClone(int? maxDepth = null, IncludeExcludeOptions options = null)
 	{
-		return ShallowClone();
+		return ShallowClone(options);
 	}
 
 	/// <summary>
@@ -335,7 +336,7 @@ public class WebClient : Bindable, IWebClient
 	}
 
 	/// <inheritdoc />
-	public virtual object ShallowClone()
+	public virtual object ShallowClone(IncludeExcludeOptions options = null)
 	{
 		return new WebClient(BaseUri, Timeout, Credential, Proxy, GetDispatcher());
 	}

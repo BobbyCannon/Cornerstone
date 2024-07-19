@@ -9,13 +9,21 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
-		<PackageReference Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
 		<PackageReference Include="Avalonia.Controls.DataGrid" Version="$(AvaloniaVersion)" />
 		<PackageReference Include="Avalonia.Fonts.Inter" Version="$(AvaloniaVersion)" />
-		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+		<PackageReference Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
 		<PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="$(AvaloniaVersion)" />
+		<PackageReference Include="Avalonia.Xaml.Behaviors" Version="$(AvaloniaVersion)" />
+		<PackageReference Include="Mapsui" Version="5.0.0-beta.2" />
+		<PackageReference Include="Mapsui.Avalonia" Version="5.0.0-beta.2" />
+		<PackageReference Include="LiveChartsCore.SkiaSharpView.Avalonia" Version="2.0.0-rc2" />
+		<PackageReference Include="ScottPlot.Avalonia" Version="5.0.36" />
 	</ItemGroup>
 	<ItemGroup>
+		<ProjectReference Include="..\..\Cornerstone.Avalonia.ColorPicker\Cornerstone.Avalonia.ColorPicker.csproj" />
+		<ProjectReference Include="..\..\Cornerstone.Avalonia.DataGrid\Cornerstone.Avalonia.DataGrid.csproj" />
 		<ProjectReference Include="..\..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
+		<ProjectReference Include="..\Sample.Client.Data\Sample.Client.Data.csproj" />
+		<ProjectReference Include="..\Sample.Shared\Sample.Shared.csproj" />
 	</ItemGroup>
 </Project>

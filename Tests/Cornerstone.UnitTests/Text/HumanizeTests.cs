@@ -4,7 +4,6 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using Cornerstone.Convert;
 using Cornerstone.Data.Times;
-using Cornerstone.Generators;
 using Cornerstone.Generators.CodeGenerators;
 using Cornerstone.Testing;
 using Cornerstone.Text;
@@ -89,7 +88,7 @@ public class HumanizeTests : CornerstoneUnitTest
 		foreach (var settings in combinations)
 		{
 			// public TestScenario(string name, object from, Type fromType, object to, Type toType)
-			var settingsCode = CSharpCodeWriter.GenerateCode(settings, CodeLanguage.CSharp, codeSettings);
+			var settingsCode = CSharpCodeWriter.GenerateCode(settings, codeSettings);
 			var line = string.Format(
 				"new(\r\n\t\"{0}: {1}\",\r\n\t{2},\r\n\ttypeof({1}),\r\n\t\"{3}\",\r\n\ttypeof(string)\r\n),",
 				scenarioIndex++,

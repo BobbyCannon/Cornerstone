@@ -29,6 +29,17 @@ public static class DateTimeExtensions
 	#region Methods
 
 	/// <summary>
+	/// Returns the max date of the two dates.
+	/// </summary>
+	/// <param name="first"> The first date. </param>
+	/// <param name="second"> The second date. </param>
+	/// <returns> </returns>
+	public static DateTime Max(DateTime first, DateTime second)
+	{
+		return first >= second ? first : second;
+	}
+
+	/// <summary>
 	/// Return the start of the month.
 	/// </summary>
 	/// <param name="date"> The date to get the start of. </param>
@@ -55,11 +66,8 @@ public static class DateTimeExtensions
 	/// <returns> The date time value. </returns>
 	public static DateTime ToUtcDateTime(this string value)
 	{
-		if (value
-			is "0001-01-01T12:00:00"
-			or "0001-01-01T12:00:00+00:00"
-			or "0001-01-01T00:00:00"
-			or "0001-01-01T00:00:00+00:00")
+		if (value.StartsWith("0001-01-01T12:00:00")
+			|| value.StartsWith("0001-01-01T00:00:00"))
 		{
 			return DateTime.MinValue;
 		}
@@ -137,7 +145,6 @@ public static class DateTimeExtensions
 	#endregion
 
 	#if (!NETSTANDARD)
-
 	/// <summary>
 	/// Return the start of the month.
 	/// </summary>

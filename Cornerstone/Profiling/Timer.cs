@@ -45,7 +45,7 @@ public class Timer : Bindable
 	public Timer(ITimeProvider timeService, IDispatcher dispatcher) : base(dispatcher)
 	{
 		_elapsed = TimeSpan.Zero;
-		_timeService = timeService ?? TimeService.CurrentTime;
+		_timeService = timeService ?? TimeService.RealTime;
 		_startedOn = DateTime.MinValue;
 	}
 

@@ -26,7 +26,6 @@ public abstract class SettingsManager<T, T2> : Manager
 
 	private readonly string _category;
 	private IList<PropertyInfo> _properties;
-	private readonly UpdateableOptions _settingOptions;
 	private readonly IDictionary<string, Setting<T2>> _trackedSettings;
 
 	#endregion
@@ -42,7 +41,6 @@ public abstract class SettingsManager<T, T2> : Manager
 	{
 		_category = category;
 		_trackedSettings = new Dictionary<string, Setting<T2>>();
-		_settingOptions = new UpdateableOptions(UpdateableAction.Updateable, [nameof(Setting<T>.Value)], null, true);
 	}
 
 	#endregion
@@ -65,16 +63,16 @@ public abstract class SettingsManager<T, T2> : Manager
 	public abstract ISettingsRepository<T, T2> GetRepository();
 
 	/// <inheritdoc />
-	public override bool HasChanges(params string[] exclusions)
+	public override bool HasChanges(IncludeExcludeOptions options)
 	{
-		return exclusions.Any()
+		return options.IsEmpty()
 			? _trackedSettings
 				.Values
-				.Where(x => !exclusions.Contains(x.Name))
-				.Any(x => x.HasChanges(exclusions))
+				.Any(x => x.HasChanges())
 			: _trackedSettings
 				.Values
-				.Any(x => x.HasChanges());
+				.Where(x => options.ShouldProcessProperty(x.Name))
+				.Any(x => x.HasChanges(options));
 	}
 
 	/// <summary>
@@ -92,14 +90,6 @@ public abstract class SettingsManager<T, T2> : Manager
 
 		//base.Load();
 		ResetHasChanges();
-	}
-
-	/// <summary>
-	/// Reset the settings back to default value.
-	/// </summary>
-	public override void Uninitialize()
-	{
-		_trackedSettings.ForEach(x => x.Value.ResetToDefault());
 	}
 
 	/// <inheritdoc />
@@ -124,6 +114,14 @@ public abstract class SettingsManager<T, T2> : Manager
 		repository.SaveChanges();
 
 		ResetHasChanges();
+	}
+
+	/// <summary>
+	/// Reset the settings back to default value.
+	/// </summary>
+	public override void Uninitialize()
+	{
+		_trackedSettings.ForEach(x => x.Value.ResetToDefault());
 	}
 
 	/// <summary>

@@ -2,6 +2,8 @@
 
 using System;
 using Cornerstone.Data;
+using Cornerstone.Generators.CodeGenerators;
+using Cornerstone.Internal;
 using Cornerstone.Serialization;
 using Cornerstone.Storage;
 using ICloneable = Cornerstone.Data.ICloneable;
@@ -24,14 +26,18 @@ public static class ObjectExtensions
 	/// <param name="item"> The item to clone. </param>
 	/// <param name="maxDepth"> The max depth to clone. Defaults to null. </param>
 	/// <returns> The clone of the item. </returns>
-	public static T DeepCloneUsingSerializer<T>(this T item, int? maxDepth = null)
+	public static T DeepCloneUsingSerializer<T>(this T item, int? maxDepth = null, IncludeExcludeOptions options = null)
 	{
 		if (maxDepth.HasValue)
 		{
-			var settings = new SerializationOptions { MaxDepth = maxDepth.Value };
+			var settings = new SerializationOptions
+			{
+				MaxDepth = maxDepth.Value
+			};
 			var json = item.ToJson(settings);
 			var realType = item.GetRealTypeUsingReflection();
 			var response = FromJson(json, realType);
+			(response as ITrackPropertyChanges)?.ResetHasChanges();
 			return (T) response;
 		}
 		else
@@ -39,6 +45,7 @@ public static class ObjectExtensions
 			var json = item.ToJson();
 			var realType = item.GetRealTypeUsingReflection();
 			var response = FromJson(json, realType);
+			(response as ITrackPropertyChanges)?.ResetHasChanges();
 			return (T) response;
 		}
 	}
@@ -54,10 +61,57 @@ public static class ObjectExtensions
 		if (maxDepth.HasValue)
 		{
 			var settings = new SerializationOptions { MaxDepth = maxDepth.Value };
-			return FromJson(item.ToJson(settings), item.GetRealTypeUsingReflection());
+			var deepResponse = FromJson(item.ToJson(settings), item.GetRealTypeUsingReflection());
+			(deepResponse as ITrackPropertyChanges)?.ResetHasChanges();
+			return deepResponse;
 		}
 
-		return FromJson(item.ToJson(), item.GetRealTypeUsingReflection());
+		var response = FromJson(item.ToJson(), item.GetRealTypeUsingReflection());
+		(response as ITrackPropertyChanges)?.ResetHasChanges();
+		return response;
+	}
+
+	public static T DeepCloneUsingUpdateWith<T>(this T value, int? maxDepth = null, IncludeExcludeOptions options = null)
+	{
+		return (T) DeepCloneUsingUpdateWith(value, typeof(T), maxDepth, options);
+	}
+
+	public static object DeepCloneUsingUpdateWith(this object value, int? maxDepth = null, IncludeExcludeOptions options = null)
+	{
+		if (value == null)
+		{
+			return null;
+		}
+
+		var type = value.GetType();
+		return DeepCloneUsingUpdateWith(value, type, maxDepth, options);
+	}
+
+	public static object DeepCloneUsingUpdateWith(this object value, Type type, int? maxDepth = null, IncludeExcludeOptions options = null)
+	{
+		var response = type.CreateInstance();
+
+		switch (response)
+		{
+			case IUpdateable updateable:
+			{
+				var allOptions = Cache.GetOptions(type, UpdateableAction.Updateable).WithMoreOptions(options);
+				updateable.UpdateWith(value, allOptions);
+				break;
+			}
+			default:
+			{
+				response.UpdateWithUsingReflection(value, options);
+				break;
+			}
+		}
+
+		if (response is ITrackPropertyChanges changeable)
+		{
+			changeable.ResetHasChanges();
+		}
+
+		return response;
 	}
 
 	/// <summary>
@@ -103,18 +157,60 @@ public static class ObjectExtensions
 	}
 
 	/// <summary>
+	/// Check to see if the value is default value.
+	/// </summary>
+	/// <param name="value"> The value to test. </param>
+	/// <returns> True if the value is default value otherwise false. </returns>
+	public static bool IsDefaultValue(this object value)
+	{
+		if (value == null)
+		{
+			return true;
+		}
+
+		var t = value.GetType();
+		if (!t.IsValueType)
+		{
+			return false;
+		}
+
+		var i = t.CreateInstance();
+		return Equals(i, value);
+	}
+
+	/// <summary>
 	/// Global shallow clone. If the object is ICloneable then the interface implementation will be used.
 	/// </summary>
 	/// <typeparam name="T"> The type of the object </typeparam>
-	/// <param name="value"> </param>
-	/// <returns> </returns>
-	public static T ShallowClone<T>(this T value)
+	/// <param name="value"> The value to clone. </param>
+	/// <param name="options"> An optional set of included or excluded properties. </param>
+	/// <returns> The cloned value. </returns>
+	public static T ShallowClone<T>(this T value, IncludeExcludeOptions options = null)
 	{
-		return value switch
+		var response = value switch
 		{
-			ICloneable cloneable => (T) cloneable.ShallowCloneObject(),
-			_ => DeepCloneUsingSerializer(value, 1)
+			ICloneable cloneable => (T) cloneable.ShallowCloneObject(options),
+			_ => DeepCloneUsingSerializer(value, 0)
 		};
+
+		if (response is ITrackPropertyChanges trackable)
+		{
+			trackable.ResetHasChanges();
+		}
+
+		return response;
+	}
+
+	/// <summary>
+	/// Convert an option to CSharp code.
+	/// </summary>
+	/// <typeparam name="T"> The type of the value. </typeparam>
+	/// <param name="value"> The value to convert. </param>
+	/// <param name="options"> The option for converting. </param>
+	/// <returns> The object in CSharp code format. </returns>
+	public static string ToCSharp<T>(this T value, ICodeWriterOptions options = null)
+	{
+		return CSharpCodeWriter.GenerateCode(value, options);
 	}
 
 	/// <summary>
@@ -181,6 +277,8 @@ public static class ObjectExtensions
 		}
 
 		notifiable?.EnablePropertyChangeNotifications();
+		notifiable?.ResetHasChanges();
+
 		return response;
 	}
 

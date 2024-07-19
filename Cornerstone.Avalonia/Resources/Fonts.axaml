@@ -1,0 +1,46 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Design.PreviewWith>
+		<StackPanel Spacing="10">
+			<TextBlock Classes="Header"
+					Foreground="{DynamicResource Blue06}"
+					FontSize="22"
+					Text="Dynamic Resource" />
+			<TextBlock FontFamily="{DynamicResource DejaVuSansMono}"
+					FontSize="22"
+					Text="DejaVuSansMono: 0oO1LlIi"/>
+			<TextBlock FontFamily="{DynamicResource OpenSansLight}"
+					FontSize="22"
+					Text="OpenSanLight: The quick brown foxed jumped..."/>
+			<TextBlock FontFamily="{DynamicResource OpenSansRegular}"
+					FontSize="22"
+					Text="OpenSansRegular: The quick brown foxed jumped..."/>
+			<TextBlock FontFamily="{DynamicResource OpenSansSemibold}"
+					FontSize="22"
+					Text="OpenSansSemibold: The quick brown foxed jumped..."/>
+				
+			<TextBlock Classes="Header"
+					Foreground="{DynamicResource Blue06}"
+					FontSize="22"
+					Text="x:Static" />
+			<TextBlock FontFamily="{x:Static CornerstoneTheme.DejaVuSansMono}"
+					FontSize="22"
+					Text="DejaVuSansMono: 0oO1LlIi"/>
+			<TextBlock FontFamily="{x:Static CornerstoneTheme.OpenSansLight}"
+					FontSize="22"
+					Text="OpenSanLight: The quick brown foxed jumped..."/>
+			<TextBlock FontFamily="{x:Static CornerstoneTheme.OpenSansRegular}"
+					FontSize="22"
+					Text="OpenSansRegular: The quick brown foxed jumped..."/>
+			<TextBlock FontFamily="{x:Static CornerstoneTheme.OpenSansSemibold}"
+					FontSize="22"
+					Text="OpenSansSemibold: The quick brown foxed jumped..."/>
+		</StackPanel>
+	</Design.PreviewWith>
+
+	<FontFamily x:Key="DejaVuSansMono">avares://Cornerstone.Avalonia/Assets/Fonts/DejaVuSansMono.ttf#DejaVu Sans Mono</FontFamily>
+	<FontFamily x:Key="OpenSansLight">avares://Cornerstone.Avalonia/Assets/Fonts/OpenSans-Light.ttf#Open Sans</FontFamily>
+	<FontFamily x:Key="OpenSansRegular">avares://Cornerstone.Avalonia/Assets/Fonts/OpenSans-Regular.ttf#Open Sans</FontFamily>
+	<FontFamily x:Key="OpenSansSemibold">avares://Cornerstone.Avalonia/Assets/Fonts/OpenSans-Semibold.ttf#Open Sans</FontFamily>
+
+</ResourceDictionary>

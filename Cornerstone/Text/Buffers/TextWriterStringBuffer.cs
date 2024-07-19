@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Cornerstone.Data;
 using ICloneable = Cornerstone.Data.ICloneable;
 
 #endregion
@@ -94,7 +95,7 @@ public class TextWriterStringBuffer : IStringBuffer
 	}
 
 	/// <inheritdoc />
-	public IStringBuffer DeepClone(int? maxDepth = null)
+	public IStringBuffer DeepClone(int? maxDepth = null, IncludeExcludeOptions options = null)
 	{
 		throw new NotImplementedException();
 	}
@@ -190,7 +191,7 @@ public class TextWriterStringBuffer : IStringBuffer
 	}
 
 	/// <inheritdoc />
-	public IStringBuffer ShallowClone()
+	public IStringBuffer ShallowClone(IncludeExcludeOptions options = null)
 	{
 		throw new NotImplementedException();
 	}
@@ -224,7 +225,7 @@ public class TextWriterStringBuffer : IStringBuffer
 	}
 
 	/// <inheritdoc />
-	object ICloneable.DeepCloneObject(int? maxDepth)
+	object ICloneable.DeepCloneObject(int? maxDepth, IncludeExcludeOptions options)
 	{
 		return DeepClone(maxDepth);
 	}
@@ -236,9 +237,9 @@ public class TextWriterStringBuffer : IStringBuffer
 	}
 
 	/// <inheritdoc />
-	object ICloneable.ShallowCloneObject()
+	object ICloneable.ShallowCloneObject(IncludeExcludeOptions options)
 	{
-		return ShallowClone();
+		return ShallowClone(options);
 	}
 
 	#endregion

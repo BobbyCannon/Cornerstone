@@ -243,7 +243,10 @@ public class JsonSerializerTests : CornerstoneUnitTest
 		};
 
 		var expected = "{\"Child\":{\"Name\":\"Child\",\"Version\":\"1.2.3.4\"},\"Name\":\"Parent\",\"Version\":\"1.2.3.4\"}";
-		var actual = dynamic.ToJson();
+		var actual = dynamic.ToJson(new SerializationOptions
+		{
+			IgnoreReadOnly = false
+		});
 		AreEqual(expected, actual);
 	}
 

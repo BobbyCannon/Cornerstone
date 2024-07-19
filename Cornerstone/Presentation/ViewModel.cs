@@ -1,11 +1,15 @@
-﻿using System.Diagnostics;
+﻿#region References
+
+using System.Diagnostics;
+
+#endregion
 
 namespace Cornerstone.Presentation;
 
 /// <summary>
 /// Represents a view model.
 /// </summary>
-public abstract class ViewModel<T> : ViewModel
+public abstract class ViewModel<T> : ViewModel, IViewModel<T>
 {
 	#region Constructors
 
@@ -23,9 +27,7 @@ public abstract class ViewModel<T> : ViewModel
 
 	#region Properties
 
-	/// <summary>
-	/// Gets or sets the ID of the view.
-	/// </summary>
+	/// <inheritdoc />
 	public T Id { get; set; }
 
 	#endregion
@@ -81,6 +83,18 @@ public abstract class ViewModel : Bindable, IViewModel
 	{
 		IsInitialized = false;
 	}
+
+	#endregion
+}
+
+public interface IViewModel<T> : IViewModel
+{
+	#region Properties
+
+	/// <summary>
+	/// Gets or sets the ID of the view.
+	/// </summary>
+	public T Id { get; set; }
 
 	#endregion
 }

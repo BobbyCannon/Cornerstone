@@ -162,6 +162,10 @@ public class JsonValueConverter : BaseConverter
 				toType = typeof(List<>).GetCachedMakeGenericType(toType.GenericTypeArguments);
 			}
 		}
+		else if (toType.ImplementsType(typeof(IList<>)) && (toType.GenericTypeArguments.Length > 0))
+		{
+			toType = typeof(List<>).GetCachedMakeGenericType(toType.GenericTypeArguments);
+		}
 
 		if (!toType.ImplementsType<IList>())
 		{

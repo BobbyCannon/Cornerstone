@@ -80,7 +80,7 @@ public class CodeGeneratorTests<T> : CornerstoneUnitTest
         {
             // public TestScenario(string name, object from, Type fromType, object to, Type toType)
             var type = value.GetType();
-            var code = CSharpCodeWriter.GenerateCode(value, CodeLanguage.CSharp, settings);
+            var code = CSharpCodeWriter.GenerateCode(value, settings);
             var line = string.Format(
                 "new(\"{0}: {1}\", {2}, typeof({1}), \"{3}\", typeof(string)),",
                 scenarioIndex++,

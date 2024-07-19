@@ -25,9 +25,9 @@ public static class CodeGenerator
 	{
 		DefaultWriterOptions = new CodeWriterOptions
 		{
-			IgnoreDefaultValues = false,
-			IgnoreNullValues = false,
-			IgnoreReadOnly = false,
+			IgnoreDefaultValues = true,
+			IgnoreNullValues = true,
+			IgnoreReadOnly = true,
 			MaxDepth = int.MaxValue,
 			NamingConvention = NamingConvention.PascalCase,
 			OutputMode = CodeWriterMode.Instance,

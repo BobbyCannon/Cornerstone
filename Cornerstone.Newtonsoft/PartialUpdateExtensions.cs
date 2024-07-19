@@ -28,7 +28,7 @@ public static class PartialUpdateExtensions
 	/// <param name="json"> The JSON containing the partial update. </param>
 	/// <param name="options"> The options for the partial update. </param>
 	/// <returns> The partial update. </returns>
-	public static PartialUpdate<T> FromJson<T>(string json, UpdateableOptions options = null)
+	public static PartialUpdate<T> FromJson<T>(string json, IncludeExcludeOptions options = null)
 	{
 		if (string.IsNullOrWhiteSpace(json))
 		{
@@ -45,7 +45,7 @@ public static class PartialUpdateExtensions
 	/// <param name="json"> The JSON containing the partial update. </param>
 	/// <param name="options"> The options for the partial update. </param>
 	/// <returns> The partial update. </returns>
-	public static PartialUpdate FromJson(Type type, string json, UpdateableOptions options = null)
+	public static PartialUpdate FromJson(Type type, string json, IncludeExcludeOptions options = null)
 	{
 		if (string.IsNullOrWhiteSpace(json))
 		{
@@ -64,7 +64,7 @@ public static class PartialUpdateExtensions
 	/// <param name="reader"> The JSON containing the partial update. </param>
 	/// <param name="options"> The options for the partial update. </param>
 	/// <returns> The partial update. </returns>
-	public static PartialUpdate FromJson(this Type type, JsonReader reader, UpdateableOptions options = null)
+	public static PartialUpdate FromJson(this Type type, JsonReader reader, IncludeExcludeOptions options = null)
 	{
 		var update = CreatePartialUpdateInstance(type);
 		return LoadJson(update, reader, options);
@@ -80,7 +80,7 @@ public static class PartialUpdateExtensions
 		return (PartialUpdate) typeof(PartialUpdate<>).CreateInstanceOfGeneric([type]);
 	}
 
-	private static PartialUpdate LoadJson(PartialUpdate partialUpdate, JsonReader reader, UpdateableOptions options)
+	private static PartialUpdate LoadJson(PartialUpdate partialUpdate, JsonReader reader, IncludeExcludeOptions options)
 	{
 		if (reader.TokenType == JsonToken.StartArray)
 		{

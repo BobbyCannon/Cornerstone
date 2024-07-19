@@ -2,6 +2,8 @@
 
 using System.Runtime.CompilerServices;
 using Cornerstone.Data;
+using Cornerstone.Extensions;
+using Cornerstone.Internal;
 
 #endregion
 
@@ -10,7 +12,7 @@ namespace Cornerstone.Presentation;
 /// <summary>
 /// Represents a bindable object for a UI bindings.
 /// </summary>
-public abstract class Bindable<T> : Bindable, ICloneable<T>
+public abstract class Bindable<T> : Bindable, ICloneable<T>, IUpdateable<T>
 {
 	#region Constructors
 
@@ -27,15 +29,60 @@ public abstract class Bindable<T> : Bindable, ICloneable<T>
 	#region Methods
 
 	/// <inheritdoc />
-	public virtual T DeepClone(int? maxDepth = null)
+	public virtual T DeepClone(int? maxDepth = null, IncludeExcludeOptions options = null)
 	{
-		return Cloneable.DeepClone<T>(this, maxDepth);
+		return (T) this.DeepCloneUsingUpdateWith(typeof(T), maxDepth, options);
 	}
 
 	/// <inheritdoc />
-	public T ShallowClone()
+	public T ShallowClone(IncludeExcludeOptions options = null)
 	{
-		return DeepClone(0);
+		return DeepClone(0, options);
+	}
+
+	/// <inheritdoc />
+	public virtual bool ShouldUpdate(T update, IncludeExcludeOptions options)
+	{
+		return UpdateableExtensions.ShouldUpdate(this, update, options);
+	}
+
+	/// <inheritdoc />
+	public bool TryUpdateWith(T update)
+	{
+		return TryUpdateWith(update, IncludeExcludeOptions.Empty);
+	}
+
+	/// <inheritdoc />
+	public bool TryUpdateWith(T update, IncludeExcludeOptions options)
+	{
+		return ShouldUpdate(update, options)
+			&& UpdateWith(update, options);
+	}
+
+	/// <inheritdoc />
+	public bool UpdateWith(T update)
+	{
+		return UpdateWith(update, IncludeExcludeOptions.Empty);
+	}
+
+	/// <inheritdoc />
+	public bool UpdateWith(T update, UpdateableAction action)
+	{
+		var options = Cache.GetOptions(GetRealType(), action);
+		return UpdateWith(update, options);
+	}
+
+	/// <inheritdoc />
+	public abstract bool UpdateWith(T update, IncludeExcludeOptions options);
+
+	/// <inheritdoc />
+	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	{
+		return update switch
+		{
+			T value => UpdateWith(value, options),
+			_ => base.UpdateWith(update, options)
+		};
 	}
 
 	#endregion

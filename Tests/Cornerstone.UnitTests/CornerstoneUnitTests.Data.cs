@@ -77,7 +77,7 @@ public partial class CornerstoneUnitTest
 
 	protected virtual void SetupDependencyInjection()
 	{
-		DependencyInjector.AddTransient(RuntimeInformation);
+		Dependencies.AddTransient(RuntimeInformation);
 	}
 
 	#endregion

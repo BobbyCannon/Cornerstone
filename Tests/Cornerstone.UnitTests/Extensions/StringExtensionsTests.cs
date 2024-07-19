@@ -23,17 +23,19 @@ public class StringExtensionsTests : CornerstoneUnitTest
 	[TestMethod]
 	public void EndsWithStartOf()
 	{
-		IsTrue("ABC".EndsWithStartOf("BC", out var match, false), match);
-		IsTrue("ABC".EndsWithStartOf("bc", out match, true), match);
-		IsTrue("ABC-123".EndsWithStartOf("bc-123", out match, true), match);
-		IsTrue("ABC-123".EndsWithStartOf("bC-123", out match, true), match);
-		IsTrue("ABC-123".EndsWithStartOf("Bc-123", out match, true), match);
-
-		IsTrue("cd 'C:\\Program Files\\Win".EndsWithStartOf("'C:\\Program Files\\Windows Defender'", out match, false));
+		IsTrue("cd 'C:\\Program Files\\Win".EndsWithStartOf("'C:\\Program Files\\Windows Defender'", out var match, false));
 		AreEqual("'C:\\Program Files\\Win", match);
+
+		IsTrue("ABC".EndsWithStartOf("BCD", out match, false), match);
+		IsTrue("ABC".EndsWithStartOf("bcd", out match, true), match);
+		IsTrue("ABC-123".EndsWithStartOf("bc-1234", out match, true), match);
+		IsTrue("ABC-123".EndsWithStartOf("bC-1234", out match, true), match);
+		IsTrue("ABC-123".EndsWithStartOf("Bc-1234", out match, true), match);
 
 		// These should not match and should not exception
 		((string) null).EndsWithStartOf(null, out _, false);
+
+		IsFalse("CD".EndsWithStartOf("BCD", out match, false), match);
 	}
 
 	[TestMethod]
