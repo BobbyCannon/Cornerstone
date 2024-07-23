@@ -3,9 +3,6 @@
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		xmlns:generic="using:System.Collections.Generic"
 		x:ClassModifier="internal">
-
-	<!-- Design preview. -->
-
 	<Design.PreviewWith>
 		<Border Padding="20">
 			<AutoCompleteBox Width="200">
@@ -24,13 +21,7 @@
 			</AutoCompleteBox>
 		</Border>
 	</Design.PreviewWith>
-
-	<!-- AutoCompleteBox control theme. -->
-
 	<ControlTheme x:Key="{x:Type AutoCompleteBox}" TargetType="AutoCompleteBox">
-
-		<!-- Default property setters. -->
-
 		<Setter Property="VerticalAlignment" Value="Top" />
 		<Setter Property="Foreground" Value="{DynamicResource TextBoxForeground}" />
 		<Setter Property="Background" Value="{DynamicResource TextBoxBackground}" />
@@ -40,19 +31,9 @@
 		<Setter Property="FontSize" Value="{DynamicResource StandardFontSize}" />
 		<Setter Property="Padding" Value="{DynamicResource TextBoxPadding}" />
 		<Setter Property="MaxDropDownHeight" Value="{DynamicResource AutoCompleteListMaxHeight}" />
-
-		<!-- Template. -->
-
 		<Setter Property="Template">
-
 			<ControlTemplate>
-
-				<!-- Layout grid. -->
-
 				<Grid Name="PART_LayoutRoot">
-
-					<!-- Text search box. -->
-
 					<TextBox
 							Name="PART_TextBox"
 							Watermark="{TemplateBinding Watermark}"
@@ -68,9 +49,6 @@
 							Padding="{TemplateBinding Padding}"
 							Margin="0"
 							DataValidationErrors.Errors="{TemplateBinding (DataValidationErrors.Errors)}" />
-
-					<!-- Search result popup. -->
-
 					<Popup
 							Name="PART_Popup"
 							WindowManagerAddShadowHint="False"
@@ -78,9 +56,6 @@
 							MaxHeight="{TemplateBinding MaxDropDownHeight}"
 							IsLightDismissEnabled="True"
 							PlacementTarget="{TemplateBinding}">
-
-						<!-- Search result border. -->
-
 						<Border
 								Name="PART_SuggestionsContainer"
 								Padding="{DynamicResource AutoCompleteListMargin}"
@@ -88,26 +63,16 @@
 								BorderBrush="{DynamicResource AutoCompleteBoxSuggestionsListBorderBrush}"
 								Background="{DynamicResource AutoCompleteBoxSuggestionsListBackground}"
 								CornerRadius="{DynamicResource AutoCompleteBoxSuggestionsListCorerRadius}">
-
-							<!-- Search result list. -->
-
 							<ListBox
 									Name="PART_SelectingItemsControl"
 									BorderThickness="0"
 									Background="Transparent"
 									ItemTemplate="{TemplateBinding ItemTemplate}"
 									Margin="{DynamicResource AutoCompleteListPadding}" />
-
 						</Border>
-
 					</Popup>
-
 				</Grid>
-
 			</ControlTemplate>
-
 		</Setter>
-
 	</ControlTheme>
-
 </ResourceDictionary>

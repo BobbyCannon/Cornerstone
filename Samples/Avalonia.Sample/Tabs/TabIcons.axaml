@@ -6,7 +6,7 @@
 		xmlns:fontAwesome="clr-namespace:Avalonia.Sample.FontAwesome"
 		xmlns:converters="clr-namespace:Avalonia.Sample.Converters"
 		xmlns:tabs="clr-namespace:Avalonia.Sample.Tabs"
-		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+		mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="300"
 		x:Class="Avalonia.Sample.Tabs.TabIcons"
 		x:DataType="tabs:TabIconsModel"
 		x:Name="Sample">

@@ -3,6 +3,7 @@
 using System;
 using System.Threading;
 using Cornerstone.Presentation;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -22,7 +23,7 @@ public class DebounceService : DebounceService<object>
 	/// <param name="action"> The action to debounce. </param>
 	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
 	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public DebounceService(TimeSpan interval, Action<CancellationToken> action, ITimeProvider timeService = null, IDispatcher dispatcher = null)
+	public DebounceService(TimeSpan interval, Action<CancellationToken> action, IDateTimeProvider timeService = null, IDispatcher dispatcher = null)
 		: base(interval, (x, _) => action(x), timeService, dispatcher)
 	{
 	}
@@ -57,7 +58,7 @@ public class DebounceService<T> : DebounceOrThrottleService<T>
 	/// <param name="action"> The action to throttle. </param>
 	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
 	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public DebounceService(TimeSpan interval, Action<CancellationToken, T> action, ITimeProvider timeService = null, IDispatcher dispatcher = null)
+	public DebounceService(TimeSpan interval, Action<CancellationToken, T> action, IDateTimeProvider timeService = null, IDispatcher dispatcher = null)
 		: base(interval, action, timeService, dispatcher)
 	{
 	}

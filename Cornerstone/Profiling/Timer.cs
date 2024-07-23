@@ -2,6 +2,7 @@
 
 using System;
 using Cornerstone.Presentation;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -16,7 +17,7 @@ public class Timer : Bindable
 
 	private TimeSpan _elapsed;
 	private DateTime _startedOn;
-	private readonly ITimeProvider _timeService;
+	private readonly IDateTimeProvider _timeService;
 
 	#endregion
 
@@ -33,7 +34,7 @@ public class Timer : Bindable
 	/// Initializes an instance of the timer.
 	/// </summary>
 	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
-	public Timer(ITimeProvider timeService) : this(timeService, null)
+	public Timer(IDateTimeProvider timeService) : this(timeService, null)
 	{
 	}
 
@@ -42,7 +43,7 @@ public class Timer : Bindable
 	/// </summary>
 	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
 	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public Timer(ITimeProvider timeService, IDispatcher dispatcher) : base(dispatcher)
+	public Timer(IDateTimeProvider timeService, IDispatcher dispatcher) : base(dispatcher)
 	{
 		_elapsed = TimeSpan.Zero;
 		_timeService = timeService ?? TimeService.RealTime;
@@ -173,7 +174,7 @@ public class Timer : Bindable
 	/// Creates a timer and starts it running.
 	/// </summary>
 	/// <returns> The new timer that is currently running. </returns>
-	public static Timer StartNewTimer(ITimeProvider timeService = null)
+	public static Timer StartNewTimer(IDateTimeProvider timeService = null)
 	{
 		var timer = new Timer(timeService, null);
 		timer.Start();

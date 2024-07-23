@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Threading;
 using Cornerstone.Collections;
 using Cornerstone.Presentation;
+using Cornerstone.Runtime;
 using PropertyChanged;
 using DependsOn2 = PropertyChanging.DependsOnAttribute;
 
@@ -22,7 +23,7 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	private readonly Action<CancellationToken, T> _action;
 	private CancellationTokenSource _cancellationTokenSource;
 	private bool _force;
-	private readonly ITimeProvider _timeService;
+	private readonly IDateTimeProvider _timeService;
 	private BackgroundWorker _worker;
 	private readonly object _workerLock;
 
@@ -37,7 +38,7 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	/// <param name="action"> The action to throttle. </param>
 	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
 	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	protected DebounceOrThrottleService(TimeSpan interval, Action<CancellationToken, T> action, ITimeProvider timeService = null, IDispatcher dispatcher = null) : base(dispatcher)
+	protected DebounceOrThrottleService(TimeSpan interval, Action<CancellationToken, T> action, IDateTimeProvider timeService = null, IDispatcher dispatcher = null) : base(dispatcher)
 	{
 		AllowTriggerDuringProcessing = false;
 		Interval = interval;
@@ -122,16 +123,25 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	/// </summary>
 	protected internal DateTime CurrentTime => _timeService.UtcNow;
 
-	protected DateTime LastTriggerProcessed { get; set; }
+	/// <summary>
+	/// The Date / Time the service was triggered on.
+	/// </summary>
+	protected internal DateTime TriggerOnDateTime { get; set; }
 
+	/// <summary>
+	/// The Date / Time the service was last processed on.
+	/// </summary>
+	protected DateTime LastTriggerProcessedOn { get; set; }
+
+	/// <summary>
+	/// The next Date / Time to trigger on.
+	/// </summary>
 	protected abstract DateTime NextTriggerDate { get; }
 
 	/// <summary>
 	/// The queue for the data.
 	/// </summary>
 	protected ISpeedyQueue<T> Queue { get; }
-
-	protected internal DateTime TriggerOnDateTime { get; set; }
 
 	#endregion
 
@@ -244,7 +254,7 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 			{
 				_force = false;
 
-				LastTriggerProcessed = TriggerOnDateTime;
+				LastTriggerProcessedOn = TriggerOnDateTime;
 				IsProcessing = true;
 
 				if (!Queue.TryDequeue(out var data))

@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -15,7 +16,7 @@ public class MemoryCacheItem<TKey, TValue>
 
 	private readonly MemoryCache<TKey, TValue> _cache;
 	private readonly TimeSpan? _timeout;
-	private readonly ITimeProvider _timeService;
+	private readonly IDateTimeProvider _timeService;
 
 	#endregion
 
@@ -29,7 +30,7 @@ public class MemoryCacheItem<TKey, TValue>
 	/// <param name="value"> The value of the item. </param>
 	/// <param name="timeout"> The timeout of the item. </param>
 	/// <param name="timeService"> The service to use for date and time. </param>
-	public MemoryCacheItem(MemoryCache<TKey, TValue> cache, TKey key, TValue value, TimeSpan? timeout, ITimeProvider timeService)
+	public MemoryCacheItem(MemoryCache<TKey, TValue> cache, TKey key, TValue value, TimeSpan? timeout, IDateTimeProvider timeService)
 	{
 		_cache = cache;
 		_timeout = timeout;

@@ -1,7 +1,8 @@
 <avalonia:CornerstoneApplication xmlns="https://github.com/avaloniaui"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		xmlns:avalonia="clr-namespace:Cornerstone.Avalonia;assembly=Cornerstone.Avalonia"
-		x:Class="Avalonia.Sample.App">
+		x:Class="Avalonia.Sample.App"
+		RequestedThemeVariant="Dark">
 	<avalonia:CornerstoneApplication.Styles>
 		<CornerstoneTheme ThemeColor="Blue" />
 		<StyleInclude Source="avares://Cornerstone.Avalonia.DataGrid/Index.axaml" />

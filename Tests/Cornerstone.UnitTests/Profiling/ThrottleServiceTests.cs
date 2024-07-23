@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Threading;
 using Cornerstone.Extensions;
 using Cornerstone.Profiling;
+using Cornerstone.Runtime;
 using Cornerstone.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -357,7 +358,7 @@ public class ThrottleServiceTests : CornerstoneUnitTest
 		});
 	}
 
-	private void ForEachService<T>(TimeSpan interval, Action<CancellationToken, T> work, ITimeProvider timeProvider, Action<ThrottleService<T>> action)
+	private void ForEachService<T>(TimeSpan interval, Action<CancellationToken, T> work, IDateTimeProvider timeProvider, Action<ThrottleService<T>> action)
 	{
 		foreach (var service in GetServices(interval, work, timeProvider))
 		{
@@ -372,13 +373,13 @@ public class ThrottleServiceTests : CornerstoneUnitTest
 		}
 	}
 
-	private IEnumerable<ThrottleService> GetServices(TimeSpan interval, Action<CancellationToken> action, ITimeProvider timeService)
+	private IEnumerable<ThrottleService> GetServices(TimeSpan interval, Action<CancellationToken> action, IDateTimeProvider timeService)
 	{
 		yield return new ThrottleService(interval, action, timeService);
 		//yield return new ThrottleServiceAsync(interval, c => Task.Run(() => action(c)), useTimeService);
 	}
 
-	private IEnumerable<ThrottleService<T>> GetServices<T>(TimeSpan interval, Action<CancellationToken, T> action, ITimeProvider timeService)
+	private IEnumerable<ThrottleService<T>> GetServices<T>(TimeSpan interval, Action<CancellationToken, T> action, IDateTimeProvider timeService)
 	{
 		yield return new ThrottleService<T>(interval, action, timeService);
 		//yield return new ThrottleServiceAsync<T>(interval, (c, t) => Task.Run(() => action(c, t)), useTimeService).Dump();

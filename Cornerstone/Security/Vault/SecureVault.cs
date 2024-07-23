@@ -116,6 +116,14 @@ public abstract class SecureVault<T> : SecureVault, IViewModel
 
 	public abstract string Encrypt(SecureString value, SecureString password);
 
+	public virtual void ExportVault()
+	{
+	}
+	
+	public virtual void ImportVault()
+	{
+	}
+
 	/// <summary>
 	/// Get the password unencrypted but in a secure string object.
 	/// </summary>

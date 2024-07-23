@@ -160,11 +160,14 @@
 		</avalonia:CartesianChart>
 		<avalonia:CartesianChart 
 				x:Name="Chart2"
+				DockPanel.Dock="Top"
 				Margin="20"
+				Height="320"
 				Series="{Binding Series2}"
 				XAxes="{Binding XAxes}"
 				YAxes="{Binding YAxes}"
 				ZoomMode="None">
 		</avalonia:CartesianChart>
+		<Grid></Grid>
 	</DockPanel>  
 </UserControl>

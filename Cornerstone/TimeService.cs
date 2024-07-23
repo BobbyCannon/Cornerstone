@@ -3,8 +3,7 @@
 using System;
 using Cornerstone.Collections;
 using Cornerstone.Extensions;
-using Cornerstone.Storage;
-using TimeProvider = Cornerstone.Runtime.TimeProvider;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -18,7 +17,7 @@ public static class TimeService
 	#region Fields
 
 	private static bool _locked;
-	private static readonly SpeedyList<ITimeProvider> _providers;
+	private static readonly SpeedyList<IDateTimeProvider> _providers;
 
 	#endregion
 
@@ -28,8 +27,10 @@ public static class TimeService
 	{
 		_providers = [];
 
-		RealTime = new TimeProvider(Guid.Parse("48E21BDA-9E7A-4767-8E3B-B218203C9A71"), () => DateTime.UtcNow);
+		var realTime = new DateTimeProvider(Guid.Parse("48E21BDA-9E7A-4767-8E3B-B218203C9A71"), () => DateTime.UtcNow);
+		realTime.LockProvider();
 
+		RealTime = realTime;
 		Reset();
 	}
 
@@ -40,12 +41,12 @@ public static class TimeService
 	/// <summary>
 	/// Represents the time service last provider.
 	/// </summary>
-	public static ITimeProvider CurrentTime => _providers.LastOrDefault() ?? RealTime;
+	public static IDateTimeProvider CurrentTime => _providers.LastOrDefault() ?? RealTime;
 
 	/// <summary>
 	/// Represents the systems real time (DateTime.Now / DateTime.UtcNow).
 	/// </summary>
-	public static ITimeProvider RealTime { get; }
+	public static IDateTimeProvider RealTime { get; }
 
 	#endregion
 
@@ -76,14 +77,14 @@ public static class TimeService
 	/// <summary>
 	/// Add a new DateTime provider onto the stack.
 	/// </summary>
-	public static TimeProvider PushProvider(Func<DateTime> provider)
+	public static IDateTimeProvider PushProvider(Func<DateTime> provider)
 	{
 		if (_locked)
 		{
 			throw new InvalidOperationException(Babel.Tower[BabelKeys.TimeServiceLocked]);
 		}
 
-		var response = new TimeProvider(provider);
+		var response = new DateTimeProvider(provider);
 		_providers.Add(response);
 		return response;
 	}
@@ -91,7 +92,7 @@ public static class TimeService
 	/// <summary>
 	/// Add a new DateTime provider onto the stack.
 	/// </summary>
-	public static void PushProvider(ITimeProvider provider)
+	public static void PushProvider(IDateTimeProvider provider)
 	{
 		if (_locked)
 		{
@@ -117,7 +118,7 @@ public static class TimeService
 	/// <summary>
 	/// Remove the provider from the stack
 	/// </summary>
-	public static void RemoveProvider(ITimeProvider provider)
+	public static void RemoveProvider(IDateTimeProvider provider)
 	{
 		if (_locked)
 		{
@@ -130,7 +131,7 @@ public static class TimeService
 	/// <summary>
 	/// Resets the providers to the default values.
 	/// </summary>
-	public static void Reset(ITimeProvider provider = null)
+	public static void Reset(IDateTimeProvider provider = null)
 	{
 		if (_locked)
 		{
@@ -144,26 +145,6 @@ public static class TimeService
 			_providers.Add(provider);
 		}
 	}
-
-	#endregion
-}
-
-/// <summary>
-/// Represents the service to provide time. Allows control for when the system is being tested.
-/// </summary>
-public interface ITimeProvider : IProvider
-{
-	#region Properties
-
-	/// <summary>
-	/// Gets the DateTime in local time.
-	/// </summary>
-	public DateTime Now { get; }
-
-	/// <summary>
-	/// Gets the DateTime in UTC.
-	/// </summary>
-	public DateTime UtcNow { get; }
 
 	#endregion
 }

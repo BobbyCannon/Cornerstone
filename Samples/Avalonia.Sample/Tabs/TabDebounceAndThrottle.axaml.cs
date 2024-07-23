@@ -95,7 +95,7 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 		DataContext = this;
 
 		InitializeComponent();
-
+		
 		_secondsTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Background, TimerTick) { IsEnabled = false };
 	}
 

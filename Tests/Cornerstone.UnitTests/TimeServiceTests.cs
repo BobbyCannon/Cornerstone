@@ -3,8 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Cornerstone.Runtime;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using TimeProvider = Cornerstone.Runtime.TimeProvider;
 
 #endregion
 
@@ -33,15 +33,15 @@ public class TimeServiceTests : CornerstoneUnitTest
 		TimeService.Reset();
 
 		var start = TimeService.CurrentTime.UtcNow;
-		var provider1 = new TimeProvider(
+		var provider1 = new DateTimeProvider(
 			Guid.Parse("2B5ED0B5-7ED5-4613-88F2-389F6835958C"),
 			new DateTime(2022, 08, 26, 02, 44, 00, DateTimeKind.Utc)
 		);
-		var provider2 = new TimeProvider(
+		var provider2 = new DateTimeProvider(
 			Guid.Parse("16F0EE1E-2EEF-41D7-AA2C-102439A0CCD9"),
 			new DateTime(2022, 08, 26, 02, 44, 01, DateTimeKind.Utc)
 		);
-		var provider3 = new TimeProvider(
+		var provider3 = new DateTimeProvider(
 			Guid.Parse("E5F864BB-1578-4D21-9475-C166F876485F"),
 			new DateTime(2022, 08, 26, 02, 44, 02, DateTimeKind.Utc)
 		);
@@ -100,9 +100,9 @@ public class TimeServiceTests : CornerstoneUnitTest
 			{
 				() => TimeService.PushProvider(() => new DateTime(2022, 12, 16)),
 				() => TimeService.PushProvider(() => new DateTime(2022, 12, 16)),
-				() => TimeService.PushProvider(new TimeProvider(Guid.NewGuid(), StartDateTime)),
+				() => TimeService.PushProvider(new DateTimeProvider(Guid.NewGuid(), StartDateTime)),
 				() => TimeService.RemoveProvider(Guid.NewGuid()),
-				() => TimeService.RemoveProvider(new TimeProvider(Guid.NewGuid(), StartDateTime)),
+				() => TimeService.RemoveProvider(new DateTimeProvider(Guid.NewGuid(), StartDateTime)),
 				TimeService.PopProvider,
 				TimeService.PopProvider,
 				() => TimeService.Reset()

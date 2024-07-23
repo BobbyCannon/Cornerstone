@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Cornerstone.Collections;
 using Cornerstone.Compare;
 using Cornerstone.Extensions;
 using Cornerstone.Serialization.Consumer;
@@ -92,9 +93,19 @@ public class ArrayJsonConverter : JsonConverter
 				}
 
 				if (type.ImplementsType<IList>()
-					|| type.ImplementsType(typeof(IList<>)))
+					|| type.ImplementsType(typeof(IList<>))
+					|| type.ImplementsType(typeof(ISpeedyList<>)))
 				{
 					return ProcessList(type, jsonArray);
+				}
+
+				if (type.ImplementsType<IEnumerable>()
+					|| type.ImplementsType(typeof(IEnumerable<>)))
+				{
+					var arg = type.GetGenericArguments()[0];
+					var listType = typeof(List<>);
+					listType = listType.MakeGenericType(arg);
+					return ProcessList(listType, jsonArray);
 				}
 
 				return ProcessArray(type, jsonArray);
