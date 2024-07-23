@@ -20,11 +20,15 @@
 					VerticalAlignment="Center"
 					Content="Clear Button"
 					Width="{StaticResource LabelWidth}" />
-			<TextBox
+			<TextBox x:Name="TextBox1"
 					Text="You can clear me"
 					Classes="ClearButton"
 					Margin="4"
 					Width="{StaticResource TextBoxWidth}" />
+			
+			<TextBlock
+					Text="{Binding ElementName=TextBox1, Path=Bounds.Height}"
+					Margin="4,10,4,0" />
 		</StackPanel>
 		<StackPanel Orientation="Horizontal">
 			<Label

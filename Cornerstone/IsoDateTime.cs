@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using Cornerstone.Extensions;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -141,7 +142,7 @@ public struct IsoDateTime : IComparable<IsoDateTime>, IComparable, IEquatable<Is
 	/// means you must be greater than expired on to be considered expired.
 	/// </summary>
 	/// <param name="service"> The time service to use for comparison otherwise uses <see cref="TimeService.CurrentTime" />. </param>
-	public bool IsExpired(ITimeProvider service = null)
+	public bool IsExpired(IDateTimeProvider service = null)
 	{
 		return (service ?? TimeService.RealTime).UtcNow > ExpiresAfter;
 	}

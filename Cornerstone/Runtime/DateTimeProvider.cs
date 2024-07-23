@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using Cornerstone.Storage;
 
 #endregion
 
@@ -9,7 +10,7 @@ namespace Cornerstone.Runtime;
 /// <summary>
 /// Represents a time provider
 /// </summary>
-public class TimeProvider : ITimeProvider
+public class DateTimeProvider : IDateTimeProvider
 {
 	#region Fields
 
@@ -22,25 +23,25 @@ public class TimeProvider : ITimeProvider
 	#region Constructors
 
 	/// <summary>
-	/// Initialize an provider for date time.
+	/// Initialize a provider for date time.
 	/// </summary>
-	public TimeProvider(Func<DateTime> provider)
+	public DateTimeProvider(Func<DateTime> provider)
 		: this(Guid.NewGuid(), provider)
 	{
 	}
 
 	/// <summary>
-	/// Initialize an provider for date time.
+	/// Initialize a provider for date time.
 	/// </summary>
-	public TimeProvider(Guid providerId, DateTime dateTime)
+	public DateTimeProvider(Guid providerId, DateTime dateTime)
 		: this(providerId, () => dateTime)
 	{
 	}
 
 	/// <summary>
-	/// Initialize an provider for date time.
+	/// Initialize a provider for date time.
 	/// </summary>
-	public TimeProvider(Guid providerId, Func<DateTime> provider)
+	public DateTimeProvider(Guid providerId, Func<DateTime> provider)
 	{
 		_provider = provider;
 		_providerId = providerId;
@@ -67,7 +68,7 @@ public class TimeProvider : ITimeProvider
 	}
 
 	/// <summary>
-	/// Lock the provider to not allow the time service to changed. Once locked
+	/// Lock the provider to not allow the time service to change. Once locked
 	/// the provider can no longer be changes or updated.
 	/// </summary>
 	public void LockProvider()
@@ -88,6 +89,26 @@ public class TimeProvider : ITimeProvider
 
 		_provider = () => time;
 	}
+
+	#endregion
+}
+
+/// <summary>
+/// Represents the service to provide time. Allows control for when the system is being tested.
+/// </summary>
+public interface IDateTimeProvider : IProvider
+{
+	#region Properties
+
+	/// <summary>
+	/// Gets the DateTime in local time.
+	/// </summary>
+	public DateTime Now { get; }
+
+	/// <summary>
+	/// Gets the DateTime in UTC.
+	/// </summary>
+	public DateTime UtcNow { get; }
 
 	#endregion
 }

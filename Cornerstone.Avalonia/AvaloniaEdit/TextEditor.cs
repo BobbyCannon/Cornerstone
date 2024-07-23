@@ -512,7 +512,6 @@ public class TextEditor : CornerstoneTemplatedControl, ITextEditorComponent
 			// - reset it to the beginning.
 			CaretOffset = 0;
 			document.UndoStack.ClearAll();
-			SyntaxHighlighting = null;
 		}
 	}
 
@@ -951,6 +950,21 @@ public class TextEditor : CornerstoneTemplatedControl, ITextEditorComponent
 		SetSyntaxHighlighterByExtension(fileInfo.Extension);
 	}
 
+	public void SetSyntaxHighlighterByExtension(string fileExtension)
+	{
+		if (string.IsNullOrWhiteSpace(fileExtension))
+		{
+			return;
+		}
+
+		var definition = HighlightingManager.Instance.GetDefinitionByExtension(fileExtension);
+
+		if (definition != null)
+		{
+			SyntaxHighlighting = definition;
+		}
+	}
+
 	/// <summary>
 	/// Undoes the most recent command.
 	/// </summary>
@@ -1165,21 +1179,6 @@ public class TextEditor : CornerstoneTemplatedControl, ITextEditorComponent
 			e.Handled = true;
 		}
 		base.OnTextInput(e);
-	}
-
-	protected void SetSyntaxHighlighterByExtension(string fileExtension)
-	{
-		if (string.IsNullOrWhiteSpace(fileExtension))
-		{
-			return;
-		}
-
-		var definition = HighlightingManager.Instance?.GetDefinitionByExtension(fileExtension);
-
-		if (definition != null)
-		{
-			SyntaxHighlighting = definition;
-		}
 	}
 
 	private void CompletionWindowOnClosed(object sender, EventArgs e)

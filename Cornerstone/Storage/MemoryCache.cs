@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using Cornerstone.Extensions;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -30,7 +31,7 @@ public class MemoryCache : MemoryCache<string, object>
 	/// </summary>
 	/// <param name="defaultTimeout"> The default timeout of new entries. </param>
 	/// <param name="timeService"> The service to use for date and time. </param>
-	public MemoryCache(TimeSpan defaultTimeout, ITimeProvider timeService = null)
+	public MemoryCache(TimeSpan defaultTimeout, IDateTimeProvider timeService = null)
 		: base(defaultTimeout, timeService)
 	{
 	}
@@ -46,7 +47,7 @@ public class MemoryCache<TKey, TValue> : ICollection<MemoryCacheItem<TKey, TValu
 	#region Fields
 
 	private readonly Dictionary<TKey, MemoryCacheItem<TKey, TValue>> _dictionary;
-	private readonly ITimeProvider _timeService;
+	private readonly IDateTimeProvider _timeService;
 
 	#endregion
 
@@ -64,7 +65,7 @@ public class MemoryCache<TKey, TValue> : ICollection<MemoryCacheItem<TKey, TValu
 	/// </summary>
 	/// <param name="defaultTimeout"> The default timeout of new entries. </param>
 	/// <param name="timeService"> The service to use for date and time. </param>
-	public MemoryCache(TimeSpan defaultTimeout, ITimeProvider timeService = null)
+	public MemoryCache(TimeSpan defaultTimeout, IDateTimeProvider timeService = null)
 	{
 		_timeService = timeService ?? TimeService.RealTime;
 		_dictionary = new Dictionary<TKey, MemoryCacheItem<TKey, TValue>>();

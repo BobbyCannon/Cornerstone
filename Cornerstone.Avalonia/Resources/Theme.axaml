@@ -552,6 +552,7 @@
 	<SolidColorBrush x:Key="TextEditorBackgroundDisabled" Color="{DynamicResource UiTheme02}" />
 	<SolidColorBrush x:Key="TextEditorForeground" Color="{DynamicResource UiTextTheme00}" />
 	<SolidColorBrush x:Key="TextEditorForegroundDisabled" Color="{DynamicResource UiTextTheme05}" />
+	<SolidColorBrush x:Key="TextEditorBorderBrush" Color="{DynamicResource UiTheme05}" />
 	
 	<x:Double x:Key="TextEditorFontSize">14</x:Double>
 

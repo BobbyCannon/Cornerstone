@@ -5,8 +5,12 @@
 	<ControlTheme x:Key="{x:Type avaloniaEdit:TextEditor}" TargetType="avaloniaEdit:TextEditor">
 		<Setter Property="Background" Value="{DynamicResource TextEditorBackground}" />
 		<Setter Property="Foreground" Value="{DynamicResource TextEditorForeground}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource TextEditorBorderBrush}" />
+		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="Padding" Value="8" />
 		<Setter Property="FontFamily" Value="{DynamicResource DejaVuSansMono}" />
 		<Setter Property="FontSize" Value="{DynamicResource TextEditorFontSize}" />
+		<Setter Property="ShowLineNumbers" Value="True" />
 		<Setter Property="ContextMenu">
 			<Setter.Value>
 				<ContextMenu>

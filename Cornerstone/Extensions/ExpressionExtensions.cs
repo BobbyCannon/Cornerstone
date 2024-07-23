@@ -35,6 +35,23 @@ public static class ExpressionExtensions
 	}
 
 	/// <summary>
+	/// Creates an expression that represents a conditional OR operation.
+	/// </summary>
+	/// <typeparam name="T"> The type used in the expression. </typeparam>
+	/// <param name="left"> An Expression to set the Left property equal to. </param>
+	/// <param name="right"> An Expression to set the Right property equal to. </param>
+	/// <returns> The updated expression. </returns>
+	public static Expression<Func<T, bool>> Or<T>(this Expression<Func<T, bool>> left, Expression<Func<T, bool>> right)
+	{
+		var parameter = Expression.Parameter(typeof(T));
+		var leftVisitor = new ReplaceExpressionVisitor(left.Parameters[0], parameter);
+		var vLeft = leftVisitor.Visit(left.Body);
+		var rightVisitor = new ReplaceExpressionVisitor(right.Parameters[0], parameter);
+		var vRight = rightVisitor.Visit(right.Body);
+		return Expression.Lambda<Func<T, bool>>(Expression.Or(vLeft, vRight), parameter);
+	}
+
+	/// <summary>
 	/// Specifies additional related data to be further included based on a related type that was just included.
 	/// </summary>
 	/// <typeparam name="T"> The type of entity being queried. </typeparam>

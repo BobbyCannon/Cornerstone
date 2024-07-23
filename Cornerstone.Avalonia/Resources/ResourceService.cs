@@ -33,8 +33,14 @@ public static class ResourceService
 
 	public static IBrush GetBrush(string key)
 	{
-		var response = Application.Current?.FindResource(key) as IBrush;
-		return response;
+		return Get<IBrush>(key);
+	}
+
+	public static Color GetColor(string key)
+	{
+		return TryGet(key, out var value, Colors.Black)
+			? value
+			: Colors.Black;
 	}
 
 	public static FontFamily GetFontFamily(string key)
@@ -47,6 +53,24 @@ public static class ResourceService
 	{
 		var response = Application.Current?.FindResource(key) as StreamGeometry;
 		return response;
+	}
+
+	public static bool TryGet<T>(string key, out T value, T defaultValue = default)
+	{
+		if (!Application.Current.TryGetResource(key, out var found))
+		{
+			value = defaultValue;
+			return false;
+		}
+
+		if (found == null)
+		{
+			value = defaultValue;
+			return false;
+		}
+
+		value = (T) found;
+		return true;
 	}
 
 	#endregion

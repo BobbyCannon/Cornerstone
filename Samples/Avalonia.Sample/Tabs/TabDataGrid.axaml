@@ -4,7 +4,7 @@
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:tabs="clr-namespace:Avalonia.Sample.Tabs"
-		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="400"
+		mc:Ignorable="d"
 		x:Class="Avalonia.Sample.Tabs.TabDataGrid"
 		x:DataType="tabs:TabDataGrid">
 	<StackPanel
@@ -38,6 +38,7 @@
 				CanUserSortColumns="False"
 				CanUserResizeColumns="False"
 				GridLinesVisibility="None"
+				MinHeight="320"
 				IsReadOnly="True">
 			<DataGrid.Columns>
 				<DataGridTextColumn Header="Name" Binding="{Binding Name}" />

@@ -8,8 +8,8 @@
 		<Copyright>© Copyright 2014</Copyright>
 		<AssemblyVersion>1.0.4</AssemblyVersion>
 		<FileVersion>$(AssemblyVersion)</FileVersion>
-		<Version>$(AssemblyVersion)-rc1</Version>
-		<AvaloniaVersion>11.1.0-rc1</AvaloniaVersion>
+		<Version>$(AssemblyVersion)</Version>
+		<AvaloniaVersion>11.1.0</AvaloniaVersion>
 		<LangVersion>latest</LangVersion>
 		<GenerateDocumentationFile>false</GenerateDocumentationFile>
 		<SignAssembly>false</SignAssembly>

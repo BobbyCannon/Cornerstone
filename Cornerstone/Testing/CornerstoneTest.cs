@@ -24,7 +24,6 @@ using Cornerstone.Settings;
 using Cornerstone.Storage;
 using Cornerstone.Sync;
 using Cornerstone.Text;
-using TimeProvider = Cornerstone.Runtime.TimeProvider;
 
 #endregion
 
@@ -33,13 +32,13 @@ namespace Cornerstone.Testing;
 /// <summary>
 /// The base test for the Cornerstone framework.
 /// </summary>
-public abstract partial class CornerstoneTest : ITimeProvider
+public abstract partial class CornerstoneTest : IDateTimeProvider
 {
 	#region Fields
 
 	private static IClipboardService _clipboard;
 	private DateTime? _currentDateTime;
-	private readonly ITimeProvider _timeService;
+	private readonly IDateTimeProvider _dateTimeProvider;
 
 	#endregion
 
@@ -50,7 +49,7 @@ public abstract partial class CornerstoneTest : ITimeProvider
 	/// </summary>
 	protected CornerstoneTest()
 	{
-		_timeService = new TimeProvider(
+		_dateTimeProvider = new DateTimeProvider(
 			Guid.Parse("9C20125A-8E7A-428C-BA1C-9BDB72B7A543"),
 			() => _currentDateTime ?? DateTime.UtcNow
 		);
@@ -75,7 +74,7 @@ public abstract partial class CornerstoneTest : ITimeProvider
 	public static bool IsDebugging => Debugger.IsAttached;
 
 	/// <inheritdoc />
-	public DateTime Now => _timeService.Now;
+	public DateTime Now => _dateTimeProvider.Now;
 
 	/// <summary>
 	/// Represents test runtime information.
@@ -88,7 +87,7 @@ public abstract partial class CornerstoneTest : ITimeProvider
 	public static DateTime StartDateTime { get; set; }
 
 	/// <inheritdoc />
-	public DateTime UtcNow => _timeService.UtcNow;
+	public DateTime UtcNow => _dateTimeProvider.UtcNow;
 
 	/// <summary>
 	/// The timeout to use when waiting for a test state to be hit.
@@ -240,7 +239,7 @@ public abstract partial class CornerstoneTest : ITimeProvider
 	/// <inheritdoc />
 	public Guid GetProviderId()
 	{
-		return _timeService.GetProviderId();
+		return _dateTimeProvider.GetProviderId();
 	}
 
 	/// <summary>
@@ -272,7 +271,7 @@ public abstract partial class CornerstoneTest : ITimeProvider
 	/// <param name="ticks"> The ticks to increment by. </param>
 	public DateTime IncrementTime(int years = 0, int months = 0, int days = 0, int hours = 0, int minutes = 0, int seconds = 0, int milliseconds = 0, int microseconds = 0, long ticks = 0)
 	{
-		var currentTime = _timeService.UtcNow;
+		var currentTime = _dateTimeProvider.UtcNow;
 
 		if (years != 0)
 		{
@@ -330,7 +329,7 @@ public abstract partial class CornerstoneTest : ITimeProvider
 	/// <param name="value"> The value to increment by. </param>
 	public void IncrementTime(TimeSpan value)
 	{
-		var provider = _timeService;
+		var provider = _dateTimeProvider;
 		if (provider == null)
 		{
 			return;

@@ -4,6 +4,7 @@ using System;
 using Cornerstone.Collections;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -32,7 +33,7 @@ public class DetailedTimer : Timer
 	/// <param name="parent"> The parent timer. </param>
 	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
 	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public DetailedTimer(string name, DetailedTimer parent, ITimeProvider timeService, IDispatcher dispatcher)
+	public DetailedTimer(string name, DetailedTimer parent, IDateTimeProvider timeService, IDispatcher dispatcher)
 		: base(timeService, dispatcher)
 	{
 		Name = name;
