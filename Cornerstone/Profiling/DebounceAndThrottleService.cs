@@ -3,9 +3,11 @@
 using System;
 using System.ComponentModel;
 using System.Threading;
+using System.Threading.Tasks;
 using Cornerstone.Collections;
 using Cornerstone.Presentation;
 using Cornerstone.Runtime;
+using Cornerstone.Threading;
 using PropertyChanged;
 using DependsOn2 = PropertyChanging.DependsOnAttribute;
 
@@ -25,7 +27,6 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	private bool _force;
 	private readonly IDateTimeProvider _timeService;
 	private BackgroundWorker _worker;
-	private readonly object _workerLock;
 
 	#endregion
 
@@ -42,14 +43,14 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	{
 		AllowTriggerDuringProcessing = false;
 		Interval = interval;
-		TriggerOnDateTime = DateTime.MinValue;
+		Lock = new ReaderWriterLockTiny();
+		TriggeredOn = DateTime.MinValue;
 		Queue = new SpeedyQueue<T> { Limit = 1 };
+		Queue.QueueChanged += QueueOnQueueChanged;
 
 		_action = action;
 		_timeService = timeService ?? TimeService.RealTime;
-		_workerLock = new object();
 		_worker = new BackgroundWorker();
-		_worker.RunWorkerCompleted += WorkerOnRunWorkerCompleted;
 		_worker.DoWork += WorkerOnDoWork;
 		_worker.WorkerSupportsCancellation = true;
 		_worker.RunWorkerAsync();
@@ -99,6 +100,11 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	public bool IsTriggeredAndReadyToProcess => IsTriggered && IsReadyToProcess;
 
 	/// <summary>
+	/// The Date / Time the service was last processed on.
+	/// </summary>
+	public DateTime LastProcessedOn { get; protected set; }
+
+	/// <summary>
 	/// Number of items in the queue.
 	/// </summary>
 	public int QueueCount => Queue.Count;
@@ -119,19 +125,19 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	public abstract TimeSpan TimeToNextTrigger { get; }
 
 	/// <summary>
+	/// The Date / Time the service was triggered on.
+	/// </summary>
+	public DateTime TriggeredOn { get; protected set; }
+
+	/// <summary>
 	/// The current time for the throttle.
 	/// </summary>
 	protected internal DateTime CurrentTime => _timeService.UtcNow;
 
 	/// <summary>
-	/// The Date / Time the service was triggered on.
+	/// Lock for tracking worker / reset process.
 	/// </summary>
-	protected internal DateTime TriggerOnDateTime { get; set; }
-
-	/// <summary>
-	/// The Date / Time the service was last processed on.
-	/// </summary>
-	protected DateTime LastTriggerProcessedOn { get; set; }
+	protected ReaderWriterLockTiny Lock { get; }
 
 	/// <summary>
 	/// The next Date / Time to trigger on.
@@ -141,7 +147,7 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	/// <summary>
 	/// The queue for the data.
 	/// </summary>
-	protected ISpeedyQueue<T> Queue { get; }
+	protected SpeedyQueue<T> Queue { get; }
 
 	#endregion
 
@@ -160,6 +166,30 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	{
 		Dispose(true);
 		GC.SuppressFinalize(this);
+	}
+
+	/// <summary>
+	/// Reset the throttle service
+	/// </summary>
+	public async void Reset()
+	{
+		await Task.Run(() =>
+		{
+			try
+			{
+				Lock.EnterWriteLock();
+
+				_force = false;
+
+				Queue.Clear();
+				LastProcessedOn = DateTime.MinValue;
+				TriggeredOn = DateTime.MinValue;
+			}
+			finally
+			{
+				Lock.ExitWriteLock();
+			}
+		});
 	}
 
 	/// <summary>
@@ -187,10 +217,9 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 		_force |= force;
 
 		Queue.Enqueue(value);
-		TriggerOnDateTime = NextTriggerDate;
+		TriggeredOn = NextTriggerDate;
 
 		OnPropertyChanged(nameof(IsTriggered));
-		StartWorker();
 	}
 
 	/// <summary>
@@ -199,11 +228,12 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	/// <param name="disposing"> True if disposing and false if otherwise. </param>
 	protected virtual void Dispose(bool disposing)
 	{
-		lock (_workerLock)
+		try
 		{
-			var worker = _worker;
+			Queue.QueueChanged -= QueueOnQueueChanged;
 
-			if (!disposing || (worker == null))
+			var worker = _worker;
+			if (worker == null)
 			{
 				return;
 			}
@@ -213,28 +243,19 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 				worker.CancelAsync();
 			}
 
-			worker.RunWorkerCompleted -= WorkerOnRunWorkerCompleted;
 			worker.DoWork -= WorkerOnDoWork;
-
+			worker.Dispose();
+		}
+		finally
+		{
 			_worker = null;
 		}
 	}
 
-	private void ClearQueue()
+	private void QueueOnQueueChanged(object sender, EventArgs e)
 	{
-		Queue.Clear();
-	}
-
-	private void StartWorker()
-	{
-		//lock (_workerLock)
-		//{
-		//	// Start the worker if it's not running
-		//	if (_worker?.IsBusy != true)
-		//	{
-		//		_worker?.RunWorkerAsync();
-		//	}
-		//}
+		OnPropertyChanged(nameof(IsTriggered));
+		OnPropertyChanged(nameof(QueueCount));
 	}
 
 	private void WorkerOnDoWork(object sender, DoWorkEventArgs e)
@@ -252,9 +273,11 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 
 			try
 			{
+				Lock.EnterWriteLock();
+
 				_force = false;
 
-				LastTriggerProcessedOn = TriggerOnDateTime;
+				LastProcessedOn = TriggeredOn;
 				IsProcessing = true;
 
 				if (!Queue.TryDequeue(out var data))
@@ -269,7 +292,7 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 				if (!Queue.IsEmpty)
 				{
 					// Queue up the next run
-					TriggerOnDateTime = NextTriggerDate;
+					TriggeredOn = NextTriggerDate;
 				}
 			}
 			finally
@@ -278,18 +301,9 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 				_cancellationTokenSource = null;
 
 				IsProcessing = false;
+				Lock.ExitWriteLock();
 			}
 		}
-	}
-
-	private void WorkerOnRunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-	{
-		if (!IsTriggered)
-		{
-			return;
-		}
-
-		StartWorker();
 	}
 
 	#endregion

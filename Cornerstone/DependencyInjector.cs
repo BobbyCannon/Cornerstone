@@ -186,6 +186,15 @@ public class DependencyInjector
 	}
 
 	/// <summary>
+	/// Import the factories from another set of dependency injectors.
+	/// </summary>
+	/// <param name="dependencyInjector"> The dependencies settings to import. </param>
+	public void Import(DependencyInjector dependencyInjector)
+	{
+		_factories.AddRange(dependencyInjector._factories);
+	}
+
+	/// <summary>
 	/// Lock the injector where no other types can be configured.
 	/// </summary>
 	public void Lock()

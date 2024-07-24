@@ -74,7 +74,7 @@ public class ThrottleService<T> : DebounceOrThrottleService<T>
 	{
 		get
 		{
-			if (TriggerOnDateTime == DateTime.MinValue)
+			if (TriggeredOn == DateTime.MinValue)
 			{
 				return TimeSpan.Zero;
 			}
@@ -82,12 +82,12 @@ public class ThrottleService<T> : DebounceOrThrottleService<T>
 			// Edge case that probably will never happen unless time is being
 			// controlled but if trigger on is exactly current time then the delay
 			// and the queue is empty then we should consider the trigger processed
-			if ((TriggerOnDateTime == CurrentTime) && Queue.IsEmpty)
+			if ((TriggeredOn == CurrentTime) && Queue.IsEmpty)
 			{
 				return Interval;
 			}
 
-			var e = TriggerOnDateTime - CurrentTime;
+			var e = TriggeredOn - CurrentTime;
 			if (e <= TimeSpan.Zero)
 			{
 				return TimeSpan.Zero;
@@ -97,26 +97,29 @@ public class ThrottleService<T> : DebounceOrThrottleService<T>
 		}
 	}
 
+	/// <summary>
+	/// Calculate the next trigger date.
+	/// </summary>
 	protected override DateTime NextTriggerDate
 	{
 		get
 		{
-			if (TriggerOnDateTime == DateTime.MinValue)
+			if (TriggeredOn == DateTime.MinValue)
 			{
 				return CurrentTime;
 			}
 
-			if ((TriggerOnDateTime > CurrentTime)
-				|| (LastTriggerProcessedOn < TriggerOnDateTime))
+			if ((TriggeredOn > CurrentTime)
+				|| (LastProcessedOn < TriggeredOn))
 			{
-				return TriggerOnDateTime;
+				return TriggeredOn;
 			}
 
-			var timeSinceLastTrigger = CurrentTime - TriggerOnDateTime;
+			var timeSinceLastTrigger = CurrentTime - TriggeredOn;
 			if ((timeSinceLastTrigger == TimeSpan.Zero)
-				&& (LastTriggerProcessedOn == TriggerOnDateTime))
+				&& (LastProcessedOn == TriggeredOn))
 			{
-				return LastTriggerProcessedOn + Interval;
+				return LastProcessedOn + Interval;
 			}
 
 			if (timeSinceLastTrigger < Interval)

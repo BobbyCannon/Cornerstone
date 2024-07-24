@@ -17,34 +17,7 @@ public static class HtmlClipboard
 	#region Methods
 
 	/// <summary>
-	/// Sets the TextDataFormat.Html on the data object to the specified html fragment.
-	/// This helper methods takes care of creating the necessary CF_HTML header.
-	/// </summary>
-	//public static void SetHtml(DataObject dataObject, string htmlFragment)
-	//{
-	//	if (dataObject == null)
-	//		throw new ArgumentNullException("dataObject");
-	//	if (htmlFragment == null)
-	//		throw new ArgumentNullException("htmlFragment");
-
-	//	string htmlStart = @"<!DOCTYPE HTML PUBLIC ""-//W3C//DTD HTML 4.0 Transitional//EN"">" + Environment.NewLine
-	//		+ "<HTML>" + Environment.NewLine
-	//		+ "<BODY>" + Environment.NewLine
-	//		+ "<!--StartFragment-->" + Environment.NewLine;
-	//	string htmlEnd = "<!--EndFragment-->" + Environment.NewLine + "</BODY>" + Environment.NewLine + "</HTML>" + Environment.NewLine;
-	//	string dummyHeader = BuildHeader(0, 0, 0, 0);
-	//	// the offsets are stored as UTF-8 bytes (see CF_HTML documentation)
-	//	int startHTML = dummyHeader.Length;
-	//	int startFragment = startHTML + htmlStart.Length;
-	//	int endFragment = startFragment + Encoding.UTF8.GetByteCount(htmlFragment);
-	//	int endHTML = endFragment + htmlEnd.Length;
-	//	string cf_html = BuildHeader(startHTML, endHTML, startFragment, endFragment) + htmlStart + htmlFragment + htmlEnd;
-	//	Debug.WriteLine(cf_html);
-	//	dataObject.SetText(cf_html, TextDataFormat.Html);
-	//}
-
-	/// <summary>
-	/// Creates a HTML fragment from a part of a document.
+	/// Creates an HTML fragment from a part of a document.
 	/// </summary>
 	/// <param name="document"> The document to create HTML from. </param>
 	/// <param name="highlighter"> The highlighter used to highlight the document. <c> null </c> is valid and will create HTML without any highlighting. </param>

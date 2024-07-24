@@ -33,7 +33,7 @@ public class ThrottleServiceTests : CornerstoneUnitTest
 		{
 			actual.Clear();
 
-			service.SetMemberValue(x => x.TriggerOnDateTime, StartDateTime.AddSeconds(-1));
+			service.SetMemberValue(x => x.TriggeredOn, StartDateTime.AddSeconds(-1));
 			service.QueueTriggers = true;
 			service.Trigger(1);
 			service.Trigger(2);

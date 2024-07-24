@@ -74,7 +74,7 @@ public class DebounceService<T> : DebounceOrThrottleService<T>
 	{
 		get
 		{
-			var elapsed = CurrentTime - TriggerOnDateTime;
+			var elapsed = CurrentTime - TriggeredOn;
 			if (elapsed <= TimeSpan.Zero)
 			{
 				return TimeSpan.Zero;

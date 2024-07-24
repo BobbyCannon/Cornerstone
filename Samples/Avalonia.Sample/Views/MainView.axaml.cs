@@ -1,7 +1,9 @@
 ﻿#region References
 
 using System.Linq;
+using Avalonia.Interactivity;
 using Avalonia.Sample.ViewModels;
+using Cornerstone.Avalonia;
 using Cornerstone.Avalonia.Controls;
 
 #endregion
@@ -32,6 +34,8 @@ public partial class MainView : CornerstoneUserControl
 
 	#endregion
 
+	#region Methods
+
 	/// <inheritdoc />
 	protected override void OnInitialized()
 	{
@@ -39,4 +43,13 @@ public partial class MainView : CornerstoneUserControl
 			?? ViewModel.Tabs.FirstOrDefault();
 		base.OnInitialized();
 	}
+
+	/// <inheritdoc />
+	protected override void OnLoaded(RoutedEventArgs e)
+	{
+		CornerstoneRuntimeInformation.Instance.CompleteLoad();
+		base.OnLoaded(e);
+	}
+
+	#endregion
 }

@@ -7,7 +7,9 @@ using System.Text;
 using Avalonia.Sample.ViewModels;
 using Cornerstone.Avalonia;
 using Cornerstone.Extensions;
+using Cornerstone.Location;
 using Cornerstone.Runtime;
+using Cornerstone.Windows;
 
 #endregion
 
@@ -22,6 +24,9 @@ public class Program
 	/// </summary>
 	public static AppBuilder BuildAvaloniaApp()
 	{
+		var locationProvider = new WindowsLocationProvider(null);
+		CornerstoneApplication.PlatformDependencies.AddSingleton<ILocationProvider>(() => locationProvider);
+
 		return AppBuilder.Configure<App>()
 			.UsePlatformDetect()
 			.WithInterFont()
@@ -38,6 +43,7 @@ public class Program
 	{
 		try
 		{
+			
 			BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 		}
 		catch (Exception ex)

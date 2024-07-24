@@ -3,6 +3,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Cornerstone;
@@ -95,7 +96,7 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 		DataContext = this;
 
 		InitializeComponent();
-		
+
 		_secondsTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Background, TimerTick) { IsEnabled = false };
 	}
 
@@ -115,6 +116,8 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 
 	public SpeedyList<DateTimePoint> Throttles { get; set; }
 
+	public bool WorkCanCancel { get; set; }
+
 	public int WorkDelay { get; set; }
 
 	public Axis[] XAxes { get; }
@@ -132,9 +135,21 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 	/// <inheritdoc />
 	protected override void OnLoaded(RoutedEventArgs e)
 	{
-		_secondsTimer.IsEnabled = true;
-		_secondsTimer.Start();
+		Task.Run(() =>
+		{
+			// Delay the start of the background timer.
+			Thread.Sleep(1000);
+			_secondsTimer.IsEnabled = true;
+		});
+		
 		base.OnLoaded(e);
+	}
+
+	/// <inheritdoc />
+	protected override void OnUnloaded(RoutedEventArgs e)
+	{
+		_secondsTimer.IsEnabled = false;
+		base.OnUnloaded(e);
 	}
 
 	private void AppendText(string message)
@@ -160,7 +175,7 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 
 		while (watch.Elapsed.TotalSeconds < WorkDelay)
 		{
-			if (arg1.IsCancellationRequested && Debounce.AllowTriggerDuringProcessing)
+			if (arg1.IsCancellationRequested && WorkCanCancel)
 			{
 				AppendText("* Debounce\r\n");
 				return;
@@ -178,6 +193,11 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 	{
 		DebounceRequests.Add(new DateTimePoint(TimeService.RealTime.Now, 1));
 		Debounce.Trigger(1);
+	}
+
+	private void DebounceResetOnClick(object sender, RoutedEventArgs e)
+	{
+		Debounce.Reset();
 	}
 
 	private static string Formatter(DateTime date)
@@ -217,7 +237,7 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 
 		while (watch.Elapsed.TotalSeconds < WorkDelay)
 		{
-			if (arg1.IsCancellationRequested && Throttle.AllowTriggerDuringProcessing)
+			if (arg1.IsCancellationRequested && WorkCanCancel)
 			{
 				AppendText("* Throttle\r\n");
 				return;
@@ -235,6 +255,11 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 	{
 		ThrottleRequests.Add(new DateTimePoint(TimeService.RealTime.Now, 2));
 		Throttle.Trigger(2);
+	}
+
+	private void ThrottleResetOnClick(object sender, RoutedEventArgs e)
+	{
+		Throttle.Reset();
 	}
 
 	private void TimerTick(object sender, EventArgs e)

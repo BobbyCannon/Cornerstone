@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
-		<TargetFrameworks>net8.0</TargetFrameworks>
+		<TargetFrameworks>net8.0-windows10.0.19041.0</TargetFrameworks>
 		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
 		<ApplicationManifest>app.manifest</ApplicationManifest>
 	</PropertyGroup>
@@ -13,6 +13,8 @@
 		<ProjectReference Include="..\..\Cornerstone.Avalonia.ColorPicker\Cornerstone.Avalonia.ColorPicker.csproj" />
 		<ProjectReference Include="..\..\Cornerstone.Avalonia.DataGrid\Cornerstone.Avalonia.DataGrid.csproj" />
 		<ProjectReference Include="..\..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
+		<ProjectReference Include="..\..\Cornerstone.Windows\Cornerstone.Windows.csproj" />
+		<ProjectReference Include="..\..\Cornerstone\Cornerstone.csproj" />
 		<ProjectReference Include="..\Avalonia.Sample\Avalonia.Sample.csproj" />
 	</ItemGroup>
 </Project>

@@ -5,8 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Avalonia.Input;
-using Cornerstone.Avalonia.AvaloniaEdit.Highlighting;
-using Cornerstone.Avalonia.AvaloniaEdit.Utils;
 using Cornerstone.Internal;
 using Cornerstone.Text.Document;
 
@@ -145,27 +143,6 @@ public abstract class Selection
 		}
 		return Create(textArea, segment.Offset, segment.EndOffset);
 	}
-
-	// TODO: html
-	/// <summary>
-	/// Creates a HTML fragment for the selected text.
-	/// </summary>
-	//public string CreateHtmlFragment(HtmlOptions options)
-	//{
-	//	if (options == null)
-	//		throw new ArgumentNullException("options");
-	//	IHighlighter highlighter = textArea.GetService(typeof(IHighlighter)) as IHighlighter;
-	//	StringBuilder html = new StringBuilder();
-	//	bool first = true;
-	//	foreach (ISegment selectedSegment in this.Segments) {
-	//		if (first)
-	//			first = false;
-	//		else
-	//			html.AppendLine("<br>");
-	//		html.Append(HtmlClipboard.CreateHtmlFragment(textArea.Document, highlighter, selectedSegment, options));
-	//	}
-	//	return html.ToString();
-	//}
 
 	/// <inheritdoc />
 	public abstract override bool Equals(object obj);

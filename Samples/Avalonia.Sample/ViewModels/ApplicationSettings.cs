@@ -1,5 +1,6 @@
 ﻿#region References
 
+using Avalonia.Controls;
 using Avalonia.Sample.Tabs;
 using Cornerstone.Attributes;
 using Cornerstone.Avalonia;
@@ -45,6 +46,12 @@ public class ApplicationSettings : SettingsFile<ApplicationSettings>
 	public string SelectedTabName
 	{
 		get => Get(TabThemes.HeaderName);
+		set => Set(value);
+	}
+
+	public Dock SelectedTabPlacement
+	{
+		get => Get(Dock.Left);
 		set => Set(value);
 	}
 

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net6.0-windows10.0.19041.0;net7.0-windows10.0.19041.0;net8.0-windows10.0.19041.0</TargetFrameworks>
+		<AssemblyTitle>Cornerstone.Windows</AssemblyTitle>
+		<PackageId>Cornerstone.Windows</PackageId>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<SignAssembly>true</SignAssembly>
+	</PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Cornerstone\Cornerstone.csproj" />
+	</ItemGroup>
+</Project>

@@ -10,6 +10,11 @@
 		x:Class="Avalonia.Sample.Tabs.TabDebounceAndThrottle"
 		x:DataType="tabs:TabDebounceAndThrottle">
 	<DockPanel>
+		<DockPanel.Styles>
+			<Style Selector="WrapPanel > TextBlock">
+				<Setter Property="VerticalAlignment" Value="Center" />
+			</Style>
+		</DockPanel.Styles>
 		<Border DockPanel.Dock="Right"
 				Background="{DynamicResource TextEditorBackground}"
 				BorderBrush="{DynamicResource ButtonBorderBrush}"
@@ -19,11 +24,11 @@
 						Grid.Row="0"
 						Text="Log"
 						HorizontalAlignment="Center"
-						Margin="0,10"/>
+						Margin="0,10" />
 				<avaloniaEdit:TextEditor
 						Grid.Row="1"
 						x:Name="Log"
-						Background="{DynamicResource TextEditorBackground}" 
+						Background="{DynamicResource TextEditorBackground}"
 						Margin="10"
 						WordWrap="True" />
 				<StackPanel Grid.Row="2"
@@ -45,16 +50,18 @@
 					Click="DebounceCancelOnClick">
 				Cancel
 			</Button>
-			<ToggleSwitch
-					IsChecked="{ReflectionBinding Debounce.AllowTriggerDuringProcessing, Mode=TwoWay}"
-					OnContent="Allow Trigger During Processing"
-					OffContent="Allow Trigger During Processing"
-					Margin="0,0,20,0" />
+			<Button Margin="0,0,10,0"
+					Width="100"
+					Click="DebounceResetOnClick">
+				Reset
+			</Button>
 			<NumericUpDown
 					Minimum="1"
 					Maximum="10"
 					Increment="1"
 					Margin="0,0,20,0"
+					MinWidth="260"
+					HorizontalContentAlignment="Right"
 					Value="{ReflectionBinding Debounce.Interval, Mode=TwoWay, Converter={StaticResource TimeSpanConverter}}">
 				<NumericUpDown.InnerLeftContent>
 					<TextBlock Text="Debounce Interval" />
@@ -63,6 +70,32 @@
 					<TextBlock Text="secs" />
 				</NumericUpDown.InnerRightContent>
 			</NumericUpDown>
+			<ToggleSwitch
+					IsChecked="{ReflectionBinding Debounce.AllowTriggerDuringProcessing, Mode=TwoWay}"
+					OnContent="Allow Trigger During Processing"
+					OffContent="Allow Trigger During Processing"
+					Margin="0,0,20,0" />
+		</WrapPanel>
+		<WrapPanel DockPanel.Dock="Top"
+				Orientation="Horizontal">
+			<TextBlock Text="Debounce"
+					Foreground="{DynamicResource ColorTheme03}"
+					MinWidth="90"
+					Padding="10,0,10,0" />
+			<CheckBox IsChecked="{ReflectionBinding Debounce.IsTriggered, Mode=OneWay}"
+					IsEnabled="False"
+					Margin="0,0,10,0">
+				Is Triggered
+			</CheckBox>
+			<CheckBox IsChecked="{ReflectionBinding Debounce.IsProcessing, Mode=OneWay}"
+					IsEnabled="False"
+					Margin="0,0,10,0">
+				Is Processing
+			</CheckBox>
+			<TextBlock Text="Last Triggered" Margin="0,0,10,0" Foreground="{x:Static ColorPalette.Grey01}" />
+			<TextBlock Text="{ReflectionBinding Debounce.TriggeredOn, Mode=OneWay}" />
+			<TextBlock Text="Last Processed" Margin="20,0,10,0" Foreground="{x:Static ColorPalette.Grey01}" />
+			<TextBlock Text="{ReflectionBinding Debounce.LastProcessedOn, Mode=OneWay}" />
 		</WrapPanel>
 		<WrapPanel DockPanel.Dock="Top" Orientation="Horizontal">
 			<Button Margin="0,0,10,0"
@@ -75,6 +108,26 @@
 					Click="ThrottleCancelOnClick">
 				Cancel
 			</Button>
+			<Button Margin="0,0,10,0"
+					Width="100"
+					Click="ThrottleResetOnClick">
+				Reset
+			</Button>
+			<NumericUpDown
+					Minimum="1"
+					Maximum="10"
+					Increment="1"
+					Margin="0,0,20,0"
+					MinWidth="260"
+					HorizontalContentAlignment="Right"
+					Value="{ReflectionBinding Throttle.Interval, Mode=TwoWay, Converter={StaticResource TimeSpanConverter}}">
+				<NumericUpDown.InnerLeftContent>
+					<TextBlock Text="Throttle Interval" />
+				</NumericUpDown.InnerLeftContent>
+				<NumericUpDown.InnerRightContent>
+					<TextBlock Text="secs" />
+				</NumericUpDown.InnerRightContent>
+			</NumericUpDown>
 			<ToggleSwitch
 					IsChecked="{ReflectionBinding Throttle.AllowTriggerDuringProcessing, Mode=TwoWay}"
 					OnContent="Allow Trigger During Processing"
@@ -85,38 +138,12 @@
 					OnContent="Queue Triggers"
 					OffContent="Queue Triggers"
 					Margin="0,0,20,0" />
-			<NumericUpDown
-					Minimum="1"
-					Maximum="10"
-					Increment="1"
-					Margin="0,0,10,0"
-					Value="{ReflectionBinding Throttle.Interval, Mode=TwoWay, Converter={StaticResource TimeSpanConverter}}">
-				<NumericUpDown.InnerLeftContent>
-					<TextBlock Text="Throttle Interval" />
-				</NumericUpDown.InnerLeftContent>
-				<NumericUpDown.InnerRightContent>
-					<TextBlock Text="secs" />
-				</NumericUpDown.InnerRightContent>
-			</NumericUpDown>
 		</WrapPanel>
-		<WrapPanel DockPanel.Dock="Top"
-				Orientation="Horizontal">
-			<TextBlock Text="Debounce"
-					Foreground="{DynamicResource ColorTheme03}"
-					Padding="10,6,10,0" />
-			<CheckBox IsChecked="{ReflectionBinding Debounce.IsTriggered, Mode=OneWay}"
-					IsEnabled="False"
-					Margin="0,0,10,0">
-				Is Triggered
-			</CheckBox>
-			<CheckBox IsChecked="{ReflectionBinding Debounce.IsProcessing, Mode=OneWay}"
-					IsEnabled="False"
-					Margin="0,0,10,0">
-				Is Processing
-			</CheckBox>
+		<WrapPanel DockPanel.Dock="Top">
 			<TextBlock Text="Throttle"
 					Foreground="{DynamicResource ColorTheme03}"
-					Padding="10,6,10,0" />
+					Padding="10,0,10,0"
+					MinWidth="90" />
 			<CheckBox IsChecked="{ReflectionBinding Throttle.IsTriggered, Mode=OneWay}"
 					IsEnabled="False"
 					Margin="0,0,10,0">
@@ -127,18 +154,19 @@
 					Margin="0,0,10,0">
 				Is Processing
 			</CheckBox>
-			<NumericUpDown 
-					Value="{ReflectionBinding Throttle.Count, Mode=OneWay}"
-					IsEnabled="False"
-					ShowButtonSpinner="False"
-					Margin="0,0,10,0"
-					Height="32"
-					Width="42"
-					IsVisible="False" />
+			<TextBlock Text="Last Triggered" Margin="0,0,10,0" Foreground="{x:Static ColorPalette.Grey01}" />
+			<TextBlock Text="{ReflectionBinding Throttle.TriggeredOn, Mode=OneWay}" />
+			<TextBlock Text="Last Processed" Margin="20,0,10,0" Foreground="{x:Static ColorPalette.Grey01}" />
+			<TextBlock Text="{ReflectionBinding Throttle.LastProcessedOn, Mode=OneWay}" />
+		</WrapPanel>
+		<WrapPanel DockPanel.Dock="Top">
 			<NumericUpDown
 					Minimum="1"
 					Maximum="10"
 					Increment="1"
+					Margin="0,0,10,0"
+					MinWidth="220"
+					HorizontalContentAlignment="Right"
 					Value="{Binding WorkDelay, Mode=TwoWay}">
 				<NumericUpDown.InnerLeftContent>
 					<TextBlock Text="Work Time" />
@@ -147,8 +175,13 @@
 					<TextBlock Text="secs" />
 				</NumericUpDown.InnerRightContent>
 			</NumericUpDown>
+			<ToggleSwitch
+					IsChecked="{Binding WorkCanCancel, Mode=TwoWay}"
+					OnContent="Allow Work To Cancel"
+					OffContent="Allow Work To Cancel"
+					Margin="0,0,20,0" />
 		</WrapPanel>
-		<avalonia:CartesianChart 
+		<avalonia:CartesianChart
 				x:Name="Chart"
 				DockPanel.Dock="Top"
 				Margin="20"
@@ -156,9 +189,8 @@
 				Series="{Binding Series}"
 				XAxes="{Binding XAxes}"
 				YAxes="{Binding YAxes}"
-				ZoomMode="None">
-		</avalonia:CartesianChart>
-		<avalonia:CartesianChart 
+				ZoomMode="None" />
+		<avalonia:CartesianChart
 				x:Name="Chart2"
 				DockPanel.Dock="Top"
 				Margin="20"
@@ -166,8 +198,7 @@
 				Series="{Binding Series2}"
 				XAxes="{Binding XAxes}"
 				YAxes="{Binding YAxes}"
-				ZoomMode="None">
-		</avalonia:CartesianChart>
-		<Grid></Grid>
-	</DockPanel>  
+				ZoomMode="None" />
+		<Grid />
+	</DockPanel>
 </UserControl>

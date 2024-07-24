@@ -6,9 +6,12 @@
 		xmlns:avalonia="clr-namespace:Mapsui.UI.Avalonia;assembly=Mapsui.UI.Avalonia"
 		mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="400"
 		x:Class="Avalonia.Sample.Tabs.TabMapsui">
-	<Grid>
+	<DockPanel>
+		<StackPanel DockPanel.Dock="Bottom">
+			<TextBlock Text="{ReflectionBinding ElementName=MapControl, Path=Map.Navigator.Viewport.CenterX}" />
+		</StackPanel>
 		<avalonia:MapControl x:Name="MapControl"
 				VerticalAlignment="Stretch"
 				HorizontalAlignment="Stretch" />
-	</Grid>
+	</DockPanel>
 </UserControl>
