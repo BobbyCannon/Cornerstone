@@ -1,10 +1,12 @@
 ﻿#region References
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Cornerstone.Presentation;
 using Cornerstone.Threading;
+using PropertyChanged;
 
 #endregion
 
@@ -16,7 +18,6 @@ public class SpeedyQueue<T> : ReaderWriterLockBindable, ISpeedyQueue<T>, IEnumer
 	#region Fields
 
 	private int _limit;
-
 	private readonly List<T> _list;
 
 	#endregion
@@ -113,6 +114,7 @@ public class SpeedyQueue<T> : ReaderWriterLockBindable, ISpeedyQueue<T>, IEnumer
 		finally
 		{
 			ExitWriteLock();
+			OnQueueChanged();
 		}
 	}
 
@@ -130,6 +132,7 @@ public class SpeedyQueue<T> : ReaderWriterLockBindable, ISpeedyQueue<T>, IEnumer
 		finally
 		{
 			ExitWriteLock();
+			OnQueueChanged();
 		}
 	}
 
@@ -174,7 +177,17 @@ public class SpeedyQueue<T> : ReaderWriterLockBindable, ISpeedyQueue<T>, IEnumer
 		finally
 		{
 			ExitWriteLock();
+			OnQueueChanged();
 		}
+	}
+
+	/// <summary>
+	/// Triggers the QueueChanged event.
+	/// </summary>
+	[SuppressPropertyChangedWarnings]
+	protected virtual void OnQueueChanged()
+	{
+		QueueChanged?.Invoke(this, EventArgs.Empty);
 	}
 
 	/// <inheritdoc />
@@ -191,6 +204,15 @@ public class SpeedyQueue<T> : ReaderWriterLockBindable, ISpeedyQueue<T>, IEnumer
 			_list.RemoveAt(index);
 		}
 	}
+
+	#endregion
+
+	#region Events
+
+	/// <summary>
+	/// The queue has changed.
+	/// </summary>
+	public event EventHandler QueueChanged;
 
 	#endregion
 }

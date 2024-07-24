@@ -12,6 +12,57 @@ using Cornerstone.Presentation;
 
 namespace Cornerstone.Location;
 
+/// <inheritdoc cref="ILocationProvider" />
+public class LocationProvider : LocationProvider<Location, IHorizontalLocation, IVerticalLocation, LocationProviderSettings>, ILocationProvider
+{
+	#region Constructors
+
+	/// <inheritdoc />
+	public LocationProvider() : base(null)
+	{
+	}
+
+	/// <inheritdoc />
+	public LocationProvider(IDispatcher dispatcher) : base(dispatcher)
+	{
+	}
+
+	#endregion
+
+	#region Properties
+
+	/// <inheritdoc />
+	public override string ProviderName => "Sample.Provider";
+
+	#endregion
+
+	#region Methods
+
+	/// <inheritdoc />
+	public override Task<Location> GetCurrentLocationAsync(TimeSpan? timeout = null, CancellationToken? cancelToken = null)
+	{
+		return Task.FromResult(new Location
+		{
+			HorizontalLocation = new HorizontalLocation(),
+			VerticalLocation = new VerticalLocation()
+		});
+	}
+
+	/// <inheritdoc />
+	public override Task StartMonitoringAsync()
+	{
+		return Task.CompletedTask;
+	}
+
+	/// <inheritdoc />
+	public override Task StopMonitoringAsync()
+	{
+		return Task.CompletedTask;
+	}
+
+	#endregion
+}
+
 /// <summary>
 /// Represents a location provider.
 /// </summary>

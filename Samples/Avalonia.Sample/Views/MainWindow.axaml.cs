@@ -69,13 +69,6 @@ public partial class MainWindow : CornerstoneWindow
 	}
 
 	/// <inheritdoc />
-	protected override void OnLoaded(RoutedEventArgs e)
-	{
-		CornerstoneRuntimeInformation.Instance.CompleteLoad();
-		base.OnLoaded(e);
-	}
-
-	/// <inheritdoc />
 	protected override void OnOpened(EventArgs e)
 	{
 		// Prevent the designer from null referencing

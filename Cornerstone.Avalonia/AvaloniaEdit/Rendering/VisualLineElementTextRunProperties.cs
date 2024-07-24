@@ -36,14 +36,10 @@ public class VisualLineElementTextRunProperties : TextRunProperties, ICloneable
 
 	#region Constructors
 
-	//TextEffectCollection textEffects;
-	//TextRunTypographyProperties typographyProperties;
-	//NumberSubstitution numberSubstitution;
-
 	/// <summary>
 	/// Creates a new VisualLineElementTextRunProperties instance that copies its values
 	/// from the specified <paramref name="textRunProperties" />.
-	/// For the <see cref="TextDecorations" /> and <see cref="TextEffects" /> collections, deep copies
+	/// For the <see cref="TextDecorations" /> and TextEffects collections, deep copies
 	/// are created if those collections are not frozen.
 	/// </summary>
 	public VisualLineElementTextRunProperties(TextRunProperties textRunProperties)

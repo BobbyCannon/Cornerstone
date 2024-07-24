@@ -8,7 +8,6 @@ using Avalonia.Sample.Tabs;
 using Avalonia.Sample.ViewModels;
 using Avalonia.Sample.Views;
 using Cornerstone.Avalonia;
-using Cornerstone.Runtime;
 
 #endregion
 

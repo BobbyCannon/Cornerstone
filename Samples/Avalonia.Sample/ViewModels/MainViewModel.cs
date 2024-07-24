@@ -1,13 +1,19 @@
 ﻿#region References
 
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
+using System.Threading;
 using System.Timers;
 using Avalonia.Controls;
 using Avalonia.Sample.Tabs;
 using Cornerstone.Avalonia;
+using Cornerstone.Location;
 using Cornerstone.Presentation;
+using Cornerstone.Profiling;
 using Cornerstone.Runtime;
+using Timer = System.Timers.Timer;
 
 #endregion
 
@@ -17,6 +23,8 @@ public class MainViewModel : ViewModel
 {
 	#region Fields
 
+	private readonly ThrottleService _saveThrottle;
+
 	private readonly Timer _themeCycleTimer;
 
 	#endregion
@@ -24,14 +32,17 @@ public class MainViewModel : ViewModel
 	#region Constructors
 
 	public MainViewModel(ApplicationSettings applicationSettings,
+		ILocationProvider locationProvider,
 		IRuntimeInformation runtimeInformation,
 		IDispatcher dispatcher) : base(dispatcher)
 	{
 		ApplicationSettings = applicationSettings;
+		LocationProvider = locationProvider;
 		RuntimeInformation = runtimeInformation;
 
 		_themeCycleTimer = new Timer(1000);
 		_themeCycleTimer.Elapsed += OnThemeCycleTimerElapsed;
+		_saveThrottle = new ThrottleService(TimeSpan.FromSeconds(1), ThrottledSave);
 
 		if (ApplicationSettings.CycleThemes)
 		{
@@ -60,6 +71,7 @@ public class MainViewModel : ViewModel
 			new TabItemViewModel(TabGridSplitter.HeaderName, new TabGridSplitter()),
 			new TabItemViewModel(TabIcons.HeaderName, new TabIcons()),
 			new TabItemViewModel(TabListBox.HeaderName, new TabListBox()),
+			new TabItemViewModel(TabLocationProvider.HeaderName, new TabLocationProvider()),
 			new TabItemViewModel(TabMapsui.HeaderName, new TabMapsui()),
 			new TabItemViewModel(TabNotificationCard.HeaderName, new TabNotificationCard()),
 			new TabItemViewModel(TabNumericUpDown.HeaderName, new TabNumericUpDown()),
@@ -73,8 +85,14 @@ public class MainViewModel : ViewModel
 			new TabItemViewModel(TabTextEditor.HeaderName, new TabTextEditor()),
 			new TabItemViewModel(TabToggleSwitch.HeaderName, new TabToggleSwitch()),
 			new TabItemViewModel(TabToolTip.HeaderName, new TabToolTip()),
-			new TabItemViewModel(TabTreeView.HeaderName, new TabTreeView()),
+			new TabItemViewModel(TabTreeView.HeaderName, new TabTreeView())
 		];
+
+		var tab = Tabs.FirstOrDefault(x => x.Header == ApplicationSettings.SelectedTabName);
+		if (tab != null)
+		{
+			SelectedTab = tab;
+		}
 	}
 
 	#endregion
@@ -83,11 +101,11 @@ public class MainViewModel : ViewModel
 
 	public ApplicationSettings ApplicationSettings { get; }
 
+	public ILocationProvider LocationProvider { get; }
+
 	public IRuntimeInformation RuntimeInformation { get; }
 
 	public TabItemViewModel SelectedTab { get; set; }
-
-	public Dock SelectedTabPlacement { get; set; }
 
 	public ObservableCollection<TabItemViewModel> Tabs { get; }
 
@@ -144,11 +162,18 @@ public class MainViewModel : ViewModel
 				break;
 			}
 		}
+
+		_saveThrottle.Trigger();
 	}
 
 	private void OnThemeCycleTimerElapsed(object sender, ElapsedEventArgs args)
 	{
 		this.Dispatch(() => { ApplicationSettings.ThemeColor = Theme.GetNextThemeColor(ApplicationSettings.ThemeColor); });
+	}
+
+	private void ThrottledSave(CancellationToken obj)
+	{
+		ApplicationSettings.Save();
 	}
 
 	#endregion

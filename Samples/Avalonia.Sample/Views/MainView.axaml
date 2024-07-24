@@ -9,8 +9,9 @@
 		x:DataType="vm:MainViewModel">
 	<DockPanel LastChildFill="True">
 		<Grid DockPanel.Dock="Top"
-				ColumnDefinitions="*,*,*">
-			<StackPanel Grid.Column="0" Orientation="Horizontal">
+				ColumnDefinitions="*,Auto,*">
+			<WrapPanel Grid.Column="0"
+					Orientation="Horizontal">
 				<TextBlock Padding="10,6" FontSize="16">
 					Tab:
 				</TextBlock>
@@ -29,15 +30,16 @@
 					Tab Placement:
 				</TextBlock>
 				<ComboBox x:Name="TabLocation"
-						SelectedItem="{Binding SelectedTabPlacement, Mode=TwoWay}">
+						SelectedItem="{Binding ApplicationSettings.SelectedTabPlacement, Mode=TwoWay}">
 					<Dock>Left</Dock>
 					<Dock>Top</Dock>
 					<Dock>Right</Dock>
 					<Dock>Bottom</Dock>
 				</ComboBox>
-			</StackPanel>
-			<StackPanel Grid.Column="1" />
-			<StackPanel Grid.Column="2"
+			</WrapPanel>
+			<WrapPanel Grid.Column="1"
+					Orientation="Horizontal" />
+			<WrapPanel Grid.Column="2"
 					Orientation="Horizontal"
 					HorizontalAlignment="Right">
 				<ToggleSwitch
@@ -50,12 +52,12 @@
 						OnContent="Cycle Themes"
 						OffContent="Cycle Themes"
 						Margin="0,0,10,0" />
-			</StackPanel>
+			</WrapPanel>
 		</Grid>
 		<TabControl x:Name="Tabs"
 				ItemsSource="{Binding Tabs, Mode=OneWay}"
 				SelectedItem="{Binding SelectedTab, Mode=TwoWay}"
-				TabStripPlacement="{Binding SelectedTabPlacement, Mode=TwoWay}"
+				TabStripPlacement="{Binding ApplicationSettings.SelectedTabPlacement, Mode=TwoWay}"
 				Margin="0,10,0,0">
 			<TabControl.ItemTemplate>
 				<DataTemplate>

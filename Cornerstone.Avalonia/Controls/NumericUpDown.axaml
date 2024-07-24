@@ -35,6 +35,16 @@
 						<TextBlock Text="Bar" />
 					</NumericUpDown.InnerLeftContent>
 				</NumericUpDown>
+				<NumericUpDown Value="5"
+						HorizontalContentAlignment="Right"
+						Watermark="Delay">
+					<NumericUpDown.InnerLeftContent>
+						<TextBlock Text="Bar" />
+					</NumericUpDown.InnerLeftContent>
+					<NumericUpDown.InnerRightContent>
+						<TextBlock Text="sec" />
+					</NumericUpDown.InnerRightContent>
+				</NumericUpDown>
 			</StackPanel>
 		</Border>
 	</Design.PreviewWith>

@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net8.0-android</TargetFrameworks>
+		<AssemblyTitle>Cornerstone.Android</AssemblyTitle>
+		<PackageId>Cornerstone.Android</PackageId>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<SignAssembly>true</SignAssembly>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Maui.Essentials" Version="8.0.70" />
+		<PackageReference Include="Xamarin.AndroidX.AppCompat" Version="1.7.0.1" />
+		<PackageReference Include="Xamarin.GooglePlayServices.Location" Version="121.3.0" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Cornerstone\Cornerstone.csproj" />
+	</ItemGroup>
+</Project>
