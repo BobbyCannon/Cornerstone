@@ -3,7 +3,7 @@
 		<OutputType>Exe</OutputType>
 		<TargetFrameworks>net8.0-android</TargetFrameworks>
 		<SupportedOSPlatformVersion>34</SupportedOSPlatformVersion>
-		<ApplicationId>com.cornerstone.AvaloniaTest</ApplicationId>
+		<ApplicationId>com.cornerstone.avalonia.sample</ApplicationId>
 		<ApplicationVersion>1</ApplicationVersion>
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
 		<AndroidPackageFormat>apk</AndroidPackageFormat>
@@ -21,6 +21,8 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\Cornerstone.Android\Cornerstone.Android.csproj" />
+		<ProjectReference Include="..\..\Cornerstone.Avalonia.Android\Cornerstone.Avalonia.Android.csproj" />
+		<ProjectReference Include="..\..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
 		<ProjectReference Include="..\Avalonia.Sample\Avalonia.Sample.csproj" />
 	</ItemGroup>
 </Project>

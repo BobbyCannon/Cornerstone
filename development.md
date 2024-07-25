@@ -12,13 +12,21 @@ Add-Migration InitialDatabase -Project Sample.Server.Data.Sqlite -StartupProject
 Add-Migration InitialDatabase -Project Sample.Client.Data.Sql -StartupProject Cornerstone.IntegrationTests
 Add-Migration InitialDatabase -Project Sample.Client.Data.Sqlite -StartupProject Cornerstone.IntegrationTests
 
+
+# Platform Links
+
+## Android
+
+[App Manifest](https://developer.android.com/guide/topics/manifest/manifest-intro)
+
+[WebView](https://developer.android.com/develop/ui/views/layout/webapps/webview)
+
+## Windows
+
+[WebView2](https://learn.microsoft.com/en-us/microsoft-edge/webview2)
+
+
 # Reference Links
-
-## Avalonia
-
-[Styles, Control Themes, etc](https://docs.avaloniaui.net/docs/guides/styles-and-resources/setter-precedence)
-
-[CherylUI (nice UI)](https://github.com/kikipoulet/CherylUI)
 
 ## Nuget Details
 

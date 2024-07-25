@@ -83,7 +83,7 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 
 		_customXAxis = new DateTimeAxis(TimeSpan.FromSeconds(1), Formatter)
 		{
-			CustomSeparators = GetSeparators(),
+			CustomSeparators = GetSeparators(TimeService.RealTime.Now),
 			AnimationsSpeed = TimeSpan.FromMilliseconds(0),
 			SeparatorsPaint = new SolidColorPaint(SKColors.White.WithAlpha(100)),
 			ShowSeparatorLines = true,
@@ -209,18 +209,16 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 			: $"{secsAgo:N0}s ago";
 	}
 
-	private double[] GetSeparators()
+	private double[] GetSeparators(DateTime from)
 	{
-		var now = TimeService.RealTime.Now;
-
 		return
 		[
-			now.AddSeconds(-25).Ticks,
-			now.AddSeconds(-20).Ticks,
-			now.AddSeconds(-15).Ticks,
-			now.AddSeconds(-10).Ticks,
-			now.AddSeconds(-5).Ticks,
-			now.Ticks
+			from.AddSeconds(-25).Ticks,
+			from.AddSeconds(-20).Ticks,
+			from.AddSeconds(-15).Ticks,
+			from.AddSeconds(-10).Ticks,
+			from.AddSeconds(-5).Ticks,
+			from.Ticks
 		];
 	}
 
@@ -264,24 +262,26 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 
 	private void TimerTick(object sender, EventArgs e)
 	{
+		var currentTime = TimeService.RealTime.Now;
+
 		try
 		{
-			var currentTime = TimeService.RealTime.Now;
-
 			DebounceRequests.Add(new DateTimePoint(currentTime, 0));
 			Debounces.Add(new DateTimePoint(currentTime, Debounce.IsProcessing ? 1 : 0));
 
 			ThrottleRequests.Add(new DateTimePoint(currentTime, 0));
 			Throttles.Add(new DateTimePoint(currentTime, Throttle.IsProcessing ? 2 : 0));
 
-			var min = currentTime - TimeSpan.FromSeconds(25);
+			var min = currentTime.AddSeconds(-25);
 			DebounceRequests.RemoveWhere(x => x.DateTime < min);
+			Debounces.RemoveWhere(x => x.DateTime < min);
 			ThrottleRequests.RemoveWhere(x => x.DateTime < min);
+			Throttles.RemoveWhere(x => x.DateTime < min);
 		}
 		finally
 		{
 			// we need to update the separators every time we add a new point 
-			_customXAxis.CustomSeparators = GetSeparators();
+			_customXAxis.CustomSeparators = GetSeparators(currentTime);
 		}
 	}
 

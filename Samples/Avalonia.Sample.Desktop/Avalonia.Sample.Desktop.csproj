@@ -12,9 +12,11 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\Cornerstone.Avalonia.ColorPicker\Cornerstone.Avalonia.ColorPicker.csproj" />
 		<ProjectReference Include="..\..\Cornerstone.Avalonia.DataGrid\Cornerstone.Avalonia.DataGrid.csproj" />
+		<ProjectReference Include="..\..\Cornerstone.Avalonia.Windows\Cornerstone.Avalonia.Windows.csproj" />
 		<ProjectReference Include="..\..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
 		<ProjectReference Include="..\..\Cornerstone.Windows\Cornerstone.Windows.csproj" />
 		<ProjectReference Include="..\..\Cornerstone\Cornerstone.csproj" />
+		<ProjectReference Include="..\..\Microsoft.Web.WebView2.Core\Microsoft.Web.WebView2.Core.csproj" />
 		<ProjectReference Include="..\Avalonia.Sample\Avalonia.Sample.csproj" />
 	</ItemGroup>
 </Project>

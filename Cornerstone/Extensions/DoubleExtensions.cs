@@ -14,7 +14,7 @@ public static class DoubleExtensions
 	#region Methods
 
 	/// <summary>
-	/// Decrement an double by a value or double.Epsilon if not provided.
+	/// Decrement a double by a value or double.Epsilon if not provided.
 	/// </summary>
 	/// <param name="value"> The value to be decremented. </param>
 	/// <param name="decrease"> An optional value to decrement. The value defaults to the smallest possible value. </param>
@@ -46,7 +46,7 @@ public static class DoubleExtensions
 	}
 
 	/// <summary>
-	/// Increment an double by a value or double.Epsilon if not provided.
+	/// Increment a double by a value or double.Epsilon if not provided.
 	/// </summary>
 	/// <param name="value"> The value to be incremented. </param>
 	/// <param name="increase"> An optional increase. The value defaults to the smallest possible value. </param>
@@ -71,13 +71,29 @@ public static class DoubleExtensions
 	/// </summary>
 	/// <param name="d1"> The value to compare to. </param>
 	/// <param name="d2"> The value to compare. </param>
-	/// <param name="precisionFactor"> The precision factor of double.Epsilon. Defaults to 1. </param>
 	/// <returns>
 	/// True if the values are equal or close to being equal.
 	/// </returns>
-	public static bool IsEqual(this double d1, double d2, uint precisionFactor = 1)
+	public static bool IsEqual(this double d1, double d2)
 	{
-		return Math.Abs(d1 - d2) < (precisionFactor * double.Epsilon);
+		// In case they are Infinities (then epsilon check does not work)
+		if (d1 == d2)
+		{
+			return true;
+		}
+		var eps = (Math.Abs(d1) + Math.Abs(d2) + 10.0) * double.Epsilon;
+		var delta = d1 - d2;
+		return (-eps < delta) && (eps > delta);
+	}
+
+	/// <summary>
+	/// IsZero - Returns whether the double is "close" to 0.  Same as AreClose(double, 0),
+	/// but this is faster.
+	/// </summary>
+	/// <param name="value"> The double to compare to 0. </param>
+	public static bool IsZero(double value)
+	{
+		return Math.Abs(value) < (10.0 * double.Epsilon);
 	}
 
 	/// <summary>

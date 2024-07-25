@@ -3,10 +3,9 @@
 using Android.App;
 using Android.Content.PM;
 using Avalonia.Android;
-using Avalonia.Controls;
-using Avalonia.Sample.ViewModels;
 using Cornerstone.Android;
 using Cornerstone.Avalonia;
+using Cornerstone.Avalonia.Android;
 using Cornerstone.Location;
 
 #endregion
@@ -14,7 +13,7 @@ using Cornerstone.Location;
 namespace Avalonia.Sample.Android;
 
 [Activity(
-	Label = "Avalonia.Sample.Android",
+	Label = "Cornerstone Sample",
 	Theme = "@style/MyTheme.NoActionBar",
 	Icon = "@drawable/icon",
 	MainLauncher = true,
@@ -27,7 +26,9 @@ public class MainActivity : AvaloniaMainActivity<App>
 	{
 		var locationProvider = new AndroidLocationProvider(this);
 		CornerstoneApplication.PlatformDependencies.AddSingleton<ILocationProvider>(() => locationProvider);
-		var response = base.CustomizeAppBuilder(builder).WithInterFont();
+		var response = base.CustomizeAppBuilder(builder)
+			.WithInterFont()
+			.UseAndroidWebView();
 		return response;
 	}
 

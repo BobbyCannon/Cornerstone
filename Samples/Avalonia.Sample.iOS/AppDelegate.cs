@@ -1,7 +1,9 @@
-﻿using Avalonia;
-using Avalonia.iOS;
+﻿#region References
 
+using Avalonia.iOS;
 using Foundation;
+
+#endregion
 
 namespace Avalonia.Sample.iOS;
 
@@ -9,11 +11,15 @@ namespace Avalonia.Sample.iOS;
 // User Interface of the application, as well as listening (and optionally responding) to 
 // application events from iOS.
 [Register("AppDelegate")]
-public partial class AppDelegate : AvaloniaAppDelegate<App>
+public class AppDelegate : AvaloniaAppDelegate<App>
 {
-    protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
-    {
-        return base.CustomizeAppBuilder(builder)
-            .WithInterFont();
-    }
+	#region Methods
+
+	protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
+	{
+		return base.CustomizeAppBuilder(builder)
+			.WithInterFont();
+	}
+
+	#endregion
 }
