@@ -24,12 +24,12 @@
 		<RepositoryType>git</RepositoryType>
 		<RepositoryUrl>https://github.com/BobbyCannon/Cornerstone</RepositoryUrl>
 		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 		<SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
 		<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>disable</Nullable>
-		<NoWarn>$(NoWarn);CA1416;NETSDK1206;</NoWarn>
+		<NoWarn>$(NoWarn);CA1416;NETSDK1206;NU1900;</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
 		<None Remove="FodyWeavers.xml" />

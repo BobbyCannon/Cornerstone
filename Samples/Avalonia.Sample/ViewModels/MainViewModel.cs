@@ -54,6 +54,7 @@ public class MainViewModel : ViewModel
 			new TabItemViewModel(TabThemes.HeaderName, new TabThemes(this)),
 			new TabItemViewModel(TabAdornerLayer.HeaderName, new TabAdornerLayer()),
 			new TabItemViewModel(TabAutoCompleteBox.HeaderName, new TabAutoCompleteBox()),
+			new TabItemViewModel(TabBrowser.HeaderName, new TabBrowser()),
 			new TabItemViewModel(TabButton.HeaderName, new TabButton()),
 			new TabItemViewModel(TabButtonSpinner.HeaderName, new TabButtonSpinner()),
 			new TabItemViewModel(TabCalendar.HeaderName, new TabCalendar()),

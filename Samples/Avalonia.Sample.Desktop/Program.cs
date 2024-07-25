@@ -6,6 +6,7 @@ using System.IO;
 using System.Text;
 using Avalonia.Sample.ViewModels;
 using Cornerstone.Avalonia;
+using Cornerstone.Avalonia.Windows;
 using Cornerstone.Extensions;
 using Cornerstone.Location;
 using Cornerstone.Runtime;
@@ -30,7 +31,8 @@ public class Program
 		return AppBuilder.Configure<App>()
 			.UsePlatformDetect()
 			.WithInterFont()
-			.LogToTrace();
+			.LogToTrace()
+			.UseWindowWebView();
 	}
 
 	/// <summary>
@@ -43,7 +45,6 @@ public class Program
 	{
 		try
 		{
-			
 			BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 		}
 		catch (Exception ex)
