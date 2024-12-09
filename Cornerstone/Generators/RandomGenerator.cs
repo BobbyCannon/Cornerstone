@@ -3,10 +3,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
+using Cornerstone.Extensions;
 using Cornerstone.Text;
+using Cornerstone.Text.Human;
 
 #endregion
 
@@ -20,17 +23,17 @@ public static class RandomGenerator
 	#region Constants
 
 	/// <summary>
-	/// All characters including Alphabet, Numbers, Symbols, NonPrintable
+	/// All characters including Alphabet, Numbers, Symbol, NonPrintable
 	/// </summary>
 	public const string AllCharacters = AlphabetAndNumbers + Symbols + NonPrintable;
 
 	/// <summary>
-	/// The full alphabet with lower and upper cased versions.
+	/// The full alphabet with lower and upper-cased versions.
 	/// </summary>
 	public const string Alphabet = AlphabetLowerOnly + AlphabetUpperOnly;
 
 	/// <summary>
-	/// The full alphabet with lower / upper cased versions and numbers.
+	/// The full alphabet with lower / upper-cased versions and numbers.
 	/// </summary>
 	public const string AlphabetAndNumbers = Alphabet + Numbers;
 
@@ -40,17 +43,17 @@ public static class RandomGenerator
 	public const string AlphabetLowerOnly = "abcdefghijklmnopqrstuvwxyz";
 
 	/// <summary>
-	/// The full alphabet with lower / upper cased versions, numbers, and symbols
+	/// The full alphabet with lower / upper-cased versions, numbers, and symbols
 	/// </summary>
 	public const string AlphabetNumbersAndSymbols = Alphabet + Numbers + Symbols;
 
 	/// <summary>
-	/// The full alphabet with only upper cased versions.
+	/// The full alphabet with only upper-cased versions.
 	/// </summary>
 	public const string AlphabetUpperOnly = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 	/// <summary>
-	/// The full alphabet with only upper cased versions and numbers.
+	/// The full alphabet with only upper-cased versions and numbers.
 	/// </summary>
 	public const string AlphabetUpperOnlyAndNumbers = AlphabetUpperOnly + Numbers;
 
@@ -60,7 +63,7 @@ public static class RandomGenerator
 	public const string FullTable = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F\x20\x21\x22\x23\x24\x25\x26\x27\x28\x29\x2A\x2B\x2C\x2D\x2E\x2F\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x3A\x3B\x3C\x3D\x3E\x3F\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4A\x4B\x4C\x4D\x4E\x4F\x50\x51\x52\x53\x54\x55\x56\x57\x58\x59\x5A\x5B\x5C\x5D\x5E\x5F\x60\x61\x62\x63\x64\x65\x66\x67\x68\x69\x6A\x6B\x6C\x6D\x6E\x6F\x70\x71\x72\x73\x74\x75\x76\x77\x78\x79\x7A\x7B\x7C\x7D\x7E\x7F\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8A\x8B\x8C\x8D\x8E\x8F\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9A\x9B\x9C\x9D\x9E\x9F\xA0\xA1\xA2\xA3\xA4\xA5\xA6\xA7\xA8\xA9\xAA\xAB\xAC\xAD\xAE\xAF\xB0\xB1\xB2\xB3\xB4\xB5\xB6\xB7\xB8\xB9\xBA\xBB\xBC\xBD\xBE\xBF\xC0\xC1\xC2\xC3\xC4\xC5\xC6\xC7\xC8\xC9\xCA\xCB\xCC\xCD\xCE\xCF\xD0\xD1\xD2\xD3\xD4\xD5\xD6\xD7\xD8\xD9\xDA\xDB\xDC\xDD\xDE\xDF\xE0\xE1\xE2\xE3\xE4\xE5\xE6\xE7\xE8\xE9\xEA\xEB\xEC\xED\xEE\xEF\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\xFA\xFB\xFC\xFD\xFE\xFF";
 
 	/// <summary>
-	/// A subset of non printable characters. Not an exhaustive list.
+	/// A subset of non-printable characters. Not an exhaustive list.
 	/// </summary>
 	public const string NonPrintable = "\r\n\x1B\a\f\t\v";
 
@@ -78,6 +81,16 @@ public static class RandomGenerator
 
 	#region Fields
 
+	private static string[] _animals;
+	private static string[] _colors;
+	private static string[] _cities;
+	private static string[] _firstNames;
+	private static string[] _lastNames;
+	private static string[] _stateAbbreviations;
+	private static string[] _states;
+	private static string[] _streets;
+	private static string[] _streetTypes;
+
 	/// <summary>
 	/// The full array of characters for <see cref="Alphabet" />
 	/// </summary>
@@ -87,6 +100,14 @@ public static class RandomGenerator
 	/// The full array of characters for <see cref="AlphabetAndNumbers" />
 	/// </summary>
 	public static readonly char[] AlphabetAndNumbersCharacters = AlphabetAndNumbers.ToArray();
+
+	/// <summary>
+	/// A list of domains.
+	/// </summary>
+	public static readonly string[] Domains =
+	[
+		"live.com", "google.com", "outlook.com", "yahoo.com"
+	];
 
 	/// <summary>
 	/// A list of lorem ipsum words.
@@ -108,7 +129,7 @@ public static class RandomGenerator
 
 	static RandomGenerator()
 	{
-		#if NETSTANDARD
+		#if NETSTANDARD2_0
 		_oldRandom = new Random();
 		_rng = RandomNumberGenerator.Create();
 		#endif
@@ -137,6 +158,55 @@ public static class RandomGenerator
 		return response;
 	}
 
+	public static string GetCity()
+	{
+		if (_cities == null)
+		{
+			LoadCities();
+		}
+
+		return GetItem(_cities);
+	}
+
+	public static string GetAnimal()
+	{
+		LoadAnimalList();
+		return GetItem(_animals);
+	}
+
+	public static string GetColor()
+	{
+		LoadColors();
+		return GetItem(_colors);
+	}
+
+	public static string GetEmailAddress(string name = null, string domain = null)
+	{
+		name ??= GetFirstName();
+		domain ??= GetItem(Domains);
+		return $"{name.Replace(" ", ".")}@{domain}".ToLower();
+	}
+
+	public static string GetFirstName()
+	{
+		if (_firstNames == null)
+		{
+			LoadFirstNames();
+		}
+
+		return GetItem(_firstNames);
+	}
+
+	public static string GetFullName()
+	{
+		return $"{GetFirstName()} {GetLastName()}";
+	}
+
+	public static string GetFullStreet()
+	{
+		return $"{NextInteger(1, 10000)} {GetStreet()} {GetStreetSuffix()}";
+	}
+
 	/// <summary>
 	/// Gets a random item from a list.
 	/// </summary>
@@ -159,16 +229,25 @@ public static class RandomGenerator
 		return items.Count <= 0 ? default : items[NextInteger(0, items.Count)];
 	}
 
+	public static string GetLastName()
+	{
+		if (_lastNames == null)
+		{
+			LoadLastNames();
+		}
+
+		return GetItem(_lastNames);
+	}
+
 	/// <summary>
 	/// Get a random password.
 	/// </summary>
-	/// <param name="length"> The length to get. Defaults to 16. </param>
-	/// <param name="excludeSymbols"> Optional exclude symbols. Defaults to true. </param>
-	/// <returns> </returns>
-	public static SecureString GetPassword(int length = 16, bool excludeSymbols = true)
+	/// <param name="settings"> The password settings. </param>
+	/// <returns> The password as a secure string. </returns>
+	public static SecureString GetPassword(PasswordSettings settings = null)
 	{
 		var response = new SecureString();
-		SetPassword(response, length, excludeSymbols);
+		SetPassword(response, settings);
 		return response;
 	}
 
@@ -201,6 +280,36 @@ public static class RandomGenerator
 		return formatted
 			? $"({areaCode}) {start}-{end}"
 			: $"{areaCode}{start}{end}";
+	}
+
+	public static string GetState(bool abbreviation = false)
+	{
+		if (_states == null)
+		{
+			LoadStates();
+		}
+
+		return abbreviation ? GetItem(_stateAbbreviations) : GetItem(_states);
+	}
+
+	public static string GetStreet()
+	{
+		if (_streets == null)
+		{
+			LoadStreets();
+		}
+
+		return GetItem(_streets);
+	}
+
+	public static string GetStreetSuffix()
+	{
+		if (_streetTypes == null)
+		{
+			LoadStreetTypes();
+		}
+
+		return GetItem(_streetTypes);
 	}
 
 	/// <summary>
@@ -275,68 +384,6 @@ public static class RandomGenerator
 	public static byte NextByte()
 	{
 		return (byte) NextInteger(byte.MinValue, byte.MaxValue);
-	}
-
-	/// <summary>
-	/// Returns a random sbyte value.
-	/// </summary>
-	/// <returns> The random sbyte value. </returns>
-	public static sbyte NextSignedByte()
-	{
-		return (sbyte) NextInteger(sbyte.MinValue, sbyte.MaxValue);
-	}
-
-	/// <summary>
-	/// Returns a random short value.
-	/// </summary>
-	/// <returns> The random short value. </returns>
-	public static short NextShort()
-	{
-		return (short) NextInteger(short.MinValue, short.MaxValue);
-	}
-
-	/// <summary>
-	/// Returns a random ushort value.
-	/// </summary>
-	/// <returns> The random ushort value. </returns>
-	public static ushort NextUnsignedShort()
-	{
-		return (ushort) NextInteger(ushort.MinValue, ushort.MaxValue);
-	}
-
-	/// <summary>
-	/// Returns a random timespan that is within a specified range.
-	/// </summary>
-	/// <returns>
-	/// A timespan greater than or equal to minValue and less than maxValue; that is, the range of return
-	/// values includes minValue but not maxValue. If minValue equals maxValue, minValue is returned.
-	/// </returns>
-	public static TimeSpan NextTimeSpan()
-	{
-		return NextTimeSpan(TimeSpan.MinValue, TimeSpan.MaxValue);
-	}
-
-	/// <summary>
-	/// Returns a random timespan that is within a specified range.
-	/// </summary>
-	/// <param name="minimumInclusive"> The inclusive lower bound of the random number returned. </param>
-	/// <param name="maximumExclusive"> The exclusive maximumExclusive bound of the random number returned. </param>
-	/// <returns>
-	/// A timespan greater than or equal to minValue and less than maxValue; that is, the range of return
-	/// values includes minValue but not maxValue. If minValue equals maxValue, minValue is returned.
-	/// </returns>
-	public static TimeSpan NextTimeSpan(TimeSpan minimumInclusive, TimeSpan maximumExclusive)
-	{
-		if (maximumExclusive <= minimumInclusive)
-		{
-			return minimumInclusive;
-		}
-
-		lock (_syncLockForRandom)
-		{
-			var ticks = NextLong(minimumInclusive.Ticks, maximumExclusive.Ticks);
-			return new TimeSpan(ticks);
-		}
 	}
 
 	/// <summary>
@@ -510,6 +557,24 @@ public static class RandomGenerator
 	}
 
 	/// <summary>
+	/// Returns a random short value.
+	/// </summary>
+	/// <returns> The random short value. </returns>
+	public static short NextShort()
+	{
+		return (short) NextInteger(short.MinValue, short.MaxValue);
+	}
+
+	/// <summary>
+	/// Returns a random sbyte value.
+	/// </summary>
+	/// <returns> The random sbyte value. </returns>
+	public static sbyte NextSignedByte()
+	{
+		return (sbyte) NextInteger(sbyte.MinValue, sbyte.MaxValue);
+	}
+
+	/// <summary>
 	/// Generate a random string value.
 	/// </summary>
 	/// <param name="length"> The length of the string to create. </param>
@@ -552,6 +617,41 @@ public static class RandomGenerator
 		}
 
 		return result.ToString();
+	}
+
+	/// <summary>
+	/// Returns a random timespan that is within a specified range.
+	/// </summary>
+	/// <returns>
+	/// A timespan greater than or equal to minValue and less than maxValue; that is, the range of return
+	/// values includes minValue but not maxValue. If minValue equals maxValue, minValue is returned.
+	/// </returns>
+	public static TimeSpan NextTimeSpan()
+	{
+		return NextTimeSpan(TimeSpan.MinValue, TimeSpan.MaxValue);
+	}
+
+	/// <summary>
+	/// Returns a random timespan that is within a specified range.
+	/// </summary>
+	/// <param name="minimumInclusive"> The inclusive lower bound of the random number returned. </param>
+	/// <param name="maximumExclusive"> The exclusive maximumExclusive bound of the random number returned. </param>
+	/// <returns>
+	/// A timespan greater than or equal to minValue and less than maxValue; that is, the range of return
+	/// values includes minValue but not maxValue. If minValue equals maxValue, minValue is returned.
+	/// </returns>
+	public static TimeSpan NextTimeSpan(TimeSpan minimumInclusive, TimeSpan maximumExclusive)
+	{
+		if (maximumExclusive <= minimumInclusive)
+		{
+			return minimumInclusive;
+		}
+
+		lock (_syncLockForRandom)
+		{
+			var ticks = NextLong(minimumInclusive.Ticks, maximumExclusive.Ticks);
+			return new TimeSpan(ticks);
+		}
 	}
 
 	/// <summary>
@@ -608,6 +708,15 @@ public static class RandomGenerator
 	}
 
 	/// <summary>
+	/// Returns a random ushort value.
+	/// </summary>
+	/// <returns> The random ushort value. </returns>
+	public static ushort NextUnsignedShort()
+	{
+		return (ushort) NextInteger(ushort.MinValue, ushort.MaxValue);
+	}
+
+	/// <summary>
 	/// Populate an array of char.
 	/// </summary>
 	/// <param name="data"> The array to populate. </param>
@@ -643,15 +752,54 @@ public static class RandomGenerator
 	/// Set a random password to the provided builder.
 	/// </summary>
 	/// <param name="secureString"> The builder to be updated. </param>
-	/// <param name="length"> The length to get. Defaults to 16. </param>
-	/// <param name="excludeSymbols"> Optional exclude symbols. Defaults to true. </param>
+	/// <param name="settings"> The settings for the new password. </param>
 	/// <returns> </returns>
-	public static void SetPassword(SecureString secureString, int length = 16, bool excludeSymbols = true)
+	public static void SetPassword(SecureString secureString, PasswordSettings settings = null)
 	{
+		settings ??= new PasswordSettings();
+
+		if (settings.UseWords)
+		{
+			SetPasswordUsingWords(secureString, settings);
+		}
+		else
+		{
+			SetPasswordUsingRandomCharacters(secureString, settings);
+		}
+	}
+
+	private static void SetPasswordUsingWords(SecureString secureString, PasswordSettings settings)
+	{
+		var color = GetColor();
+		var animal = GetAnimal();
+		secureString.Append(color.ToPascalCase());
+
+		if (settings.UseWordSeparator)
+		{
+			secureString.AppendChar(settings.WordSeparator);
+		}
+
+		secureString.Append(animal.ToPascalCase());
+
+		if (settings.UseWordSeparator)
+		{
+			secureString.AppendChar(settings.WordSeparator);
+		}
+
+		if (settings.AppendNumberToWords)
+		{
+			var remainingSize = Math.Max(2, settings.MinLength - secureString.Length);
+			var maxValue = (int) Math.Pow(10, remainingSize);
+			secureString.Append(NextInteger(0, maxValue).ToString(new string('0', remainingSize)));
+		}
+	}
+
+	private static void SetPasswordUsingRandomCharacters(SecureString secureString, PasswordSettings settings)
+	{
+		var buffer = new char[settings.MinLength];
 		var nextCharacter = char.MinValue;
 		var lastCharacter = nextCharacter;
-		var buffer = new char[length];
-		var characters = excludeSymbols ? AlphabetAndNumbers : AlphabetNumbersAndSymbols;
+		var characters = settings.UseSymbols ? AlphabetNumbersAndSymbols : AlphabetAndNumbers;
 		var uppercaseCount = 0;
 		var lowercaseCount = 0;
 		var count = 0;
@@ -660,7 +808,7 @@ public static class RandomGenerator
 
 		try
 		{
-			while (count < length)
+			while (count < buffer.Length)
 			{
 				nextCharacter = characters[NextInteger(0, characters.Length - 1)];
 				while (nextCharacter == lastCharacter)
@@ -708,6 +856,18 @@ public static class RandomGenerator
 	}
 
 	/// <summary>
+	/// Get a random password as an Unsecure string.
+	/// </summary>
+	/// <param name="settings"> The settings for the new password. </param>
+	/// <returns> </returns>
+	public static string GetPasswordAsUnsecureString(PasswordSettings settings = null)
+	{
+		using var secureString = new SecureString();
+		SetPassword(secureString, settings);
+		return secureString.ToUnsecureString();
+	}
+
+	/// <summary>
 	/// Shuffle a list of items into a random order.
 	/// </summary>
 	/// <typeparam name="T"> The type of the items in the list. </typeparam>
@@ -745,9 +905,107 @@ public static class RandomGenerator
 		return response;
 	}
 
+	private static void LoadCities()
+	{
+		if (_cities is { Length: > 0 })
+		{
+			return;
+		}
+
+		var assembly = Assembly.GetExecutingAssembly();
+		var resourceName = "Cornerstone.Resources.City.txt";
+		_cities = assembly.GetManifestResourceStream(resourceName).ReadString().Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).ToArray();
+	}
+
+	private static void LoadFirstNames()
+	{
+		if (_firstNames is { Length: > 0 })
+		{
+			return;
+		}
+
+		var assembly = Assembly.GetExecutingAssembly();
+		var resourceName = "Cornerstone.Resources.FirstNames.txt";
+		_firstNames = assembly.GetManifestResourceStream(resourceName).ReadString().Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries).ToArray();
+	}
+
+	private static void LoadLastNames()
+	{
+		if (_lastNames is { Length: > 0 })
+		{
+			return;
+		}
+
+		var assembly = Assembly.GetExecutingAssembly();
+		var resourceName = "Cornerstone.Resources.LastNames.txt";
+		_lastNames = assembly.GetManifestResourceStream(resourceName).ReadString().Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries).ToArray();
+	}
+
+	private static void LoadStates()
+	{
+		if (_states is { Length: > 0 })
+		{
+			return;
+		}
+
+		var assembly = Assembly.GetExecutingAssembly();
+		var resourceName = "Cornerstone.Resources.States.txt";
+		var lines = assembly.GetManifestResourceStream(resourceName).ReadString().Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries).ToArray();
+		_states = lines.Select(x => x.Substring(0, x.IndexOf(","))).ToArray();
+		_stateAbbreviations = lines.Select(x => x.Substring(x.IndexOf(", ") + 2)).ToArray();
+	}
+
+	private static void LoadStreets()
+	{
+		if (_streets is { Length: > 0 })
+		{
+			return;
+		}
+
+		var assembly = Assembly.GetExecutingAssembly();
+		var resourceName = "Cornerstone.Resources.Streets.txt";
+		_streets = assembly.GetManifestResourceStream(resourceName).ReadString().Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries).ToArray();
+	}
+
+	private static void LoadStreetTypes()
+	{
+		if (_streetTypes is { Length: > 0 })
+		{
+			return;
+		}
+
+		var assembly = Assembly.GetExecutingAssembly();
+		var resourceName = "Cornerstone.Resources.StreetTypes.txt";
+		_streetTypes = assembly.GetManifestResourceStream(resourceName).ReadString().Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries).ToArray();
+	}
+
+	private static void LoadColors()
+	{
+		if (_colors is { Length: > 0 })
+		{
+			return;
+		}
+
+		var assembly = Assembly.GetExecutingAssembly();
+		var resourceName = "Cornerstone.Resources.Colors.txt";
+		_colors = assembly.GetManifestResourceStream(resourceName).ReadString().Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
+	}
+
+	private static void LoadAnimalList()
+	{
+		if (_animals is { Length: > 0 })
+		{
+			return;
+		}
+
+		var assembly = Assembly.GetExecutingAssembly();
+		var resourceName = "Cornerstone.Resources.Animals.txt";
+		_animals = assembly.GetManifestResourceStream(resourceName).ReadString().Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
+	}
+
 	#endregion
 
-	#if NETSTANDARD
+	#if NETSTANDARD2_0
 	private static readonly Random _oldRandom;
 	private static readonly RandomNumberGenerator _rng;
 	#endif

@@ -3,6 +3,8 @@
 using System;
 using System.Globalization;
 using System.Text;
+using Cornerstone.Collections;
+using Cornerstone.Text;
 using Cornerstone.Text.Document;
 
 #endregion
@@ -21,10 +23,10 @@ public static class HtmlClipboard
 	/// </summary>
 	/// <param name="document"> The document to create HTML from. </param>
 	/// <param name="highlighter"> The highlighter used to highlight the document. <c> null </c> is valid and will create HTML without any highlighting. </param>
-	/// <param name="segment"> The part of the document to create HTML for. You can pass <c> null </c> to create HTML for the whole document. </param>
+	/// <param name="range"> The part of the document to create HTML for. You can pass <c> null </c> to create HTML for the whole document. </param>
 	/// <param name="options"> The options for the HTML creation. </param>
 	/// <returns> HTML code for the document part. </returns>
-	public static string CreateHtmlFragment(IDocument document, IHighlighter highlighter, ISegment segment, HtmlOptions options)
+	public static string CreateHtmlFragment(ITextEditorDocument document, IHighlighter highlighter, IRange range, HtmlOptions options)
 	{
 		if (document == null)
 		{
@@ -38,15 +40,15 @@ public static class HtmlClipboard
 		{
 			throw new ArgumentException("Highlighter does not belong to the specified document.");
 		}
-		if (segment == null)
+		if (range == null)
 		{
-			segment = new SimpleSegment(0, document.TextLength);
+			range = new SimpleRange(0, document.TextLength);
 		}
 
 		var html = new StringBuilder();
-		var segmentEndOffset = segment.EndOffset;
-		var line = document.GetLineByOffset(segment.Offset);
-		while ((line != null) && (line.Offset < segmentEndOffset))
+		var segmentEndOffset = range.EndIndex;
+		var line = document.GetLineByOffset(range.StartIndex);
+		while ((line != null) && (line.StartIndex < segmentEndOffset))
 		{
 			// ReSharper disable once UnusedVariable
 			var highlightedLine = highlighter != null ? highlighter.HighlightLine(line.LineNumber) : new HighlightedLine(document, line);
@@ -55,8 +57,8 @@ public static class HtmlClipboard
 				html.AppendLine("<br>");
 			}
 			// TODO: html
-			var s = segment.GetOverlap(line);
-			html.Append(highlightedLine.ToHtml(s.Offset, s.EndOffset, options));
+			var s = range.GetOverlap(line);
+			html.Append(highlightedLine.ToHtml(s.Offset, s.EndIndex, options));
 			line = line.NextLine;
 		}
 		return html.ToString();

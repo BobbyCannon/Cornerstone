@@ -35,3 +35,6 @@ are just great and just needed to be shared.
 * [Romzetron.Avalonia](https://github.com/Romzetron/Romzetron.Avalonia)
 * [Avalonia.WebView](https://github.com/MicroSugarDeveloperOrg/Avalonia.WebView)
 * [nodify-avalonia](https://github.com/BAndysc/nodify-avalonia)
+* [Weak Event Listener](https://github.com/davidmilligan/WeakEventListener/blob/master/Readme.md)
+* [SukiUI](https://github.com/kikipoulet/SukiUI/tree/2b1e46958e679d277d4ec4e31b2a6b2f6cf124d7)
+* [UpDock](https://github.com/jupahe64/Avalonia.UpDock)

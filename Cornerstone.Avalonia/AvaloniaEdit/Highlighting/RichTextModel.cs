@@ -83,7 +83,7 @@ public sealed class RichTextModel
 			var endPos = Math.Min(endOffset, GetEnd(index));
 			yield return new HighlightedSection
 			{
-				Offset = pos,
+				StartIndex = pos,
 				Length = endPos - pos,
 				Color = _stateChanges[index].Clone()
 			};

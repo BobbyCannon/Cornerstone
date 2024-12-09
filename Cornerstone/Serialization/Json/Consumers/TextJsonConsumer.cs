@@ -18,7 +18,7 @@ namespace Cornerstone.Serialization.Json.Consumers;
 /// <summary>
 /// JSON text consumer.
 /// </summary>
-public sealed class TextJsonConsumer : ObjectConsumer<ISerializationOptions>, IObjectConsumer
+public sealed class TextJsonConsumer : ObjectConsumer<ISerializationSettings>, IObjectConsumer
 {
 	#region Fields
 
@@ -35,13 +35,13 @@ public sealed class TextJsonConsumer : ObjectConsumer<ISerializationOptions>, IO
 	}
 
 	/// <inheritdoc />
-	public TextJsonConsumer(ISerializationOptions settings)
+	public TextJsonConsumer(ISerializationSettings settings)
 		: this(new StringGapBuffer(), settings)
 	{
 	}
 
 	/// <inheritdoc />
-	public TextJsonConsumer(IStringBuffer buffer, ISerializationOptions settings)
+	public TextJsonConsumer(IStringBuffer buffer, ISerializationSettings settings)
 		: base(buffer, settings)
 	{
 		_arrayOrObjectStack = new Stack<bool>();

@@ -25,7 +25,7 @@
 						Text="Log"
 						HorizontalAlignment="Center"
 						Margin="0,10" />
-				<avaloniaEdit:TextEditor
+				<avaloniaEdit:TextEditorControl
 						Grid.Row="1"
 						x:Name="Log"
 						Background="{DynamicResource TextEditorBackground}"
@@ -79,7 +79,7 @@
 		<WrapPanel DockPanel.Dock="Top"
 				Orientation="Horizontal">
 			<TextBlock Text="Debounce"
-					Foreground="{DynamicResource ColorTheme03}"
+					Foreground="{DynamicResource ThemeColor03}"
 					MinWidth="90"
 					Padding="10,0,10,0" />
 			<CheckBox IsChecked="{ReflectionBinding Debounce.IsTriggered, Mode=OneWay}"
@@ -92,9 +92,9 @@
 					Margin="0,0,10,0">
 				Is Processing
 			</CheckBox>
-			<TextBlock Text="Last Triggered" Margin="0,0,10,0" Foreground="{x:Static ColorPalette.Grey01}" />
+			<TextBlock Text="Last Triggered" Margin="0,0,10,0" Foreground="{DynamicResource Gray01}" />
 			<TextBlock Text="{ReflectionBinding Debounce.TriggeredOn, Mode=OneWay}" />
-			<TextBlock Text="Last Processed" Margin="20,0,10,0" Foreground="{x:Static ColorPalette.Grey01}" />
+			<TextBlock Text="Last Processed" Margin="20,0,10,0" Foreground="{DynamicResource Gray01}" />
 			<TextBlock Text="{ReflectionBinding Debounce.LastProcessedOn, Mode=OneWay}" />
 		</WrapPanel>
 		<WrapPanel DockPanel.Dock="Top" Orientation="Horizontal">
@@ -141,7 +141,7 @@
 		</WrapPanel>
 		<WrapPanel DockPanel.Dock="Top">
 			<TextBlock Text="Throttle"
-					Foreground="{DynamicResource ColorTheme03}"
+					Foreground="{DynamicResource ThemeColor03}"
 					Padding="10,0,10,0"
 					MinWidth="90" />
 			<CheckBox IsChecked="{ReflectionBinding Throttle.IsTriggered, Mode=OneWay}"
@@ -154,9 +154,9 @@
 					Margin="0,0,10,0">
 				Is Processing
 			</CheckBox>
-			<TextBlock Text="Last Triggered" Margin="0,0,10,0" Foreground="{x:Static ColorPalette.Grey01}" />
+			<TextBlock Text="Last Triggered" Margin="0,0,10,0" Foreground="{DynamicResource Gray01}" />
 			<TextBlock Text="{ReflectionBinding Throttle.TriggeredOn, Mode=OneWay}" />
-			<TextBlock Text="Last Processed" Margin="20,0,10,0" Foreground="{x:Static ColorPalette.Grey01}" />
+			<TextBlock Text="Last Processed" Margin="20,0,10,0" Foreground="{DynamicResource Gray01}" />
 			<TextBlock Text="{ReflectionBinding Throttle.LastProcessedOn, Mode=OneWay}" />
 		</WrapPanel>
 		<WrapPanel DockPanel.Dock="Top">

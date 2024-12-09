@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
-using Cornerstone.Collections;
 using Cornerstone.Data.TypeActivators;
 using Cornerstone.Extensions;
 using Cornerstone.Testing;
@@ -33,7 +32,7 @@ public class ActivatorTests : CornerstoneUnitTest
 			("3", new List<int>(), typeof(IList<int>)),
 			("4", new List<int>(), typeof(List<int>)),
 			("5", new HashSet<int>(), typeof(ISet<int>)),
-			("6", new ReadOnlySet<int>(), typeof(ReadOnlySet<int>)),
+			("6", new Cornerstone.Collections.ReadOnlySet<int>(), typeof(Cornerstone.Collections.ReadOnlySet<int>)),
 			("7", new Dictionary<string, int>(), typeof(IDictionary<string, int>)),
 			("8", new Collection<int>(), typeof(Collection<int>)),
 			("9", Array.Empty<int>(), typeof(int[])),
@@ -41,7 +40,7 @@ public class ActivatorTests : CornerstoneUnitTest
 			("11", new Nullable<int>(), typeof(int?)),
 			("12", new Nullable<EnumExtensions.EnumDetails>(), typeof(EnumExtensions.EnumDetails?)),
 			#if (!NET48)
-			("13", new ReadOnlySet<int>(), typeof(IReadOnlySet<int>)),
+			("13", new Cornerstone.Collections.ReadOnlySet<int>(), typeof(IReadOnlySet<int>)),
 			#endif
 		};
 

@@ -1,0 +1,132 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	
+	<Style Selector="Border.ToolBar">
+		<Setter Property="Background" Value="{DynamicResource Background02}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource ControlBorder}" />
+		<Setter Property="BorderThickness" Value="0,0,0,1" />
+		<Setter Property="Height" Value="32" />
+		<Style Selector="^ > Grid">
+			<Style Selector="^ > StackPanel:nth-child(1)">
+				<Setter Property="Grid.Column" Value="0" />
+				<Setter Property="HorizontalAlignment" Value="Left" />
+				<Setter Property="Orientation" Value="Horizontal" />
+			</Style>
+			<Style Selector="^ > StackPanel:nth-child(2)">
+				<Setter Property="Grid.Column" Value="1" />
+				<Setter Property="HorizontalAlignment" Value="Center" />
+				<Setter Property="Orientation" Value="Horizontal" />
+			</Style>
+			<Style Selector="^ > StackPanel:nth-child(3)">
+				<Setter Property="Grid.Column" Value="2" />
+				<Setter Property="HorizontalAlignment" Value="Right" />
+				<Setter Property="Orientation" Value="Horizontal" />
+			</Style>
+		</Style>
+		<Style Selector="^ TextBlock.Label">
+			<Setter Property="FontSize" Value="14" />
+			<Setter Property="Margin" Value="12,0,6,0" />
+		</Style>
+		<Style Selector="^ TextBlock.Value">
+			<Setter Property="FontSize" Value="14" />
+			<Setter Property="Margin" Value="0" />
+		</Style>
+		<Style Selector="^ Button">
+			<Setter Property="Height" Value="32" />
+			<Setter Property="Width" Value="32" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+			<Style Selector="^.Icon Path">
+				<Setter Property="Height" Value="14" />
+				<Setter Property="Width" Value="14" />
+			</Style>
+			<Style Selector="^.Icon PathIcon">
+				<Setter Property="Height" Value="14" />
+				<Setter Property="Width" Value="14" />
+			</Style>
+		</Style>
+		<Style Selector="^ TextBox">
+			<Setter Property="Height" Value="32" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+		<Style Selector="^ ToggleButton">
+			<Setter Property="Height" Value="32" />
+			<Setter Property="Width" Value="32" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+			<Style Selector="^.Icon Path">
+				<Setter Property="Height" Value="14" />
+				<Setter Property="Width" Value="14" />
+			</Style>
+			<Style Selector="^.Icon PathIcon">
+				<Setter Property="Height" Value="14" />
+				<Setter Property="Width" Value="14" />
+			</Style>
+		</Style>
+		<Style Selector="^ ToggleSwitch">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="Margin" Value="0" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+	</Style>
+
+	<Design.PreviewWith>
+		<StackPanel Width="520">
+			<Border Classes="ToolBar">
+				<Grid>
+					<StackPanel>
+						<Button Classes="Icon">
+							<Path Data="{StaticResource FontAwesome.Asterisk.Solid}" />
+						</Button>
+						<Button Classes="Icon">
+							<PathIcon Data="{StaticResource FontAwesome.Asterisk.Solid}" />
+						</Button>
+						<ToggleSwitch>
+
+						</ToggleSwitch>
+					</StackPanel>
+					<StackPanel>
+						<ToggleButton Classes="Icon" IsChecked="True">
+							<Path Data="{StaticResource FontAwesome.Asterisk.Solid}" />
+						</ToggleButton>
+						<ToggleButton Classes="Icon" IsChecked="True">
+							<PathIcon Data="{StaticResource FontAwesome.Asterisk.Solid}" />
+						</ToggleButton>
+						<TextBox></TextBox>
+					</StackPanel>
+					<StackPanel>
+						<ToggleSwitch />
+					</StackPanel>
+				</Grid>
+			</Border>
+			<Border Classes="ToolBar"
+					Height="48">
+				<Grid>
+					<StackPanel>
+						<Button Classes="Icon">
+							<Path Data="{StaticResource FontAwesome.Asterisk.Solid}" />
+						</Button>
+						<Button Classes="Icon">
+							<PathIcon Data="{StaticResource FontAwesome.Asterisk.Solid}" />
+						</Button>
+						<ToggleSwitch>
+
+						</ToggleSwitch>
+					</StackPanel>
+					<StackPanel>
+						<ToggleButton Classes="Icon" IsChecked="True">
+							<Path Data="{StaticResource FontAwesome.Asterisk.Solid}" />
+						</ToggleButton>
+						<ToggleButton Classes="Icon" IsChecked="True">
+							<PathIcon Data="{StaticResource FontAwesome.Asterisk.Solid}" />
+						</ToggleButton>
+						<TextBox Text="Quick Brown" />
+					</StackPanel>
+					<StackPanel>
+						<ToggleSwitch />
+					</StackPanel>
+				</Grid>
+			</Border>
+			<Grid Height="80">
+			</Grid>
+		</StackPanel>
+	</Design.PreviewWith>
+</Styles>

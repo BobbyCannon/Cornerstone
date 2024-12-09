@@ -973,74 +973,74 @@
 					IsEnabled="False"
 					Flyout="{StaticResource SharedMenuFlyout}" />
 
-			<!-- Blue Grey button. -->
+			<!-- Blue Gray button. -->
 
 			<Button
 					Grid.Row="14" Grid.Column="0"
-					Theme.Color="BlueGrey"
-					Content="Blue Grey" />
+					Theme.Color="BlueGray"
+					Content="Blue Gray" />
 
 			<Button
 					Grid.Row="14" Grid.Column="1"
-					Theme.Color="BlueGrey"
-					Content="Blue Grey (Disabled)"
+					Theme.Color="BlueGray"
+					Content="Blue Gray (Disabled)"
 					IsEnabled="False" />
 
 			<ToggleButton
 					Grid.Row="14" Grid.Column="2"
-					Theme.Color="BlueGrey"
-					x:Name="BlueGreyToggleButton"
+					Theme.Color="BlueGray"
+					x:Name="BlueGrayToggleButton"
 					Classes="ToggleText"
 					IsChecked="True"
 					IsThreeState="True" />
 
 			<ToggleButton
 					Grid.Row="14" Grid.Column="3"
-					Theme.Color="BlueGrey"
-					Content="{Binding #BlueGreyToggleButton.Content}"
-					IsChecked="{Binding #BlueGreyToggleButton.IsChecked}"
+					Theme.Color="BlueGray"
+					Content="{Binding #BlueGrayToggleButton.Content}"
+					IsChecked="{Binding #BlueGrayToggleButton.IsChecked}"
 					IsEnabled="False"
 					IsThreeState="True" />
 
 			<DropDownButton
 					Grid.Row="14" Grid.Column="4"
-					Theme.Color="BlueGrey"
-					Content="BlueGrey"
+					Theme.Color="BlueGray"
+					Content="BlueGray"
 					Flyout="{StaticResource SharedMenuFlyout}" />
 
 			<DropDownButton
 					Grid.Row="14" Grid.Column="5"
-					Theme.Color="BlueGrey"
-					Content="BlueGrey (Disabled)"
+					Theme.Color="BlueGray"
+					Content="BlueGray (Disabled)"
 					IsEnabled="False"
 					Flyout="{StaticResource SharedMenuFlyout}" />
 
 			<SplitButton
 					Grid.Row="14" Grid.Column="6"
-					Theme.Color="BlueGrey"
-					Content="BlueGrey"
+					Theme.Color="BlueGray"
+					Content="BlueGray"
 					Flyout="{StaticResource SharedMenuFlyout}" />
 
 			<SplitButton
 					Grid.Row="14" Grid.Column="7"
-					Theme.Color="BlueGrey"
-					Content="BlueGrey (Disabled)"
+					Theme.Color="BlueGray"
+					Content="BlueGray (Disabled)"
 					IsEnabled="False"
 					Flyout="{StaticResource SharedMenuFlyout}" />
 
 			<ToggleSplitButton
 					Grid.Row="14" Grid.Column="8"
-					Theme.Color="BlueGrey"
-					x:Name="BlueGreyToggleSplitButton"
+					Theme.Color="BlueGray"
+					x:Name="BlueGrayToggleSplitButton"
 					Content="Checked"
 					IsChecked="True"
 					Flyout="{StaticResource SharedMenuFlyout}" />
 
 			<ToggleSplitButton
 					Grid.Row="14" Grid.Column="9"
-					Theme.Color="BlueGrey"
-					Content="{Binding #BlueGreyToggleSplitButton.Content}"
-					IsChecked="{Binding #BlueGreyToggleSplitButton.IsChecked}"
+					Theme.Color="BlueGray"
+					Content="{Binding #BlueGrayToggleSplitButton.Content}"
+					IsChecked="{Binding #BlueGrayToggleSplitButton.IsChecked}"
 					IsEnabled="False"
 					Flyout="{StaticResource SharedMenuFlyout}" />
 

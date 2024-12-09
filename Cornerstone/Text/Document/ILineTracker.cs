@@ -24,7 +24,7 @@ public interface ILineTracker
 
 	/// <summary>
 	/// Notifies the line tracker that a document change (a single change, not a change group) has completed.
-	/// This method gets called after the change has been performed, but before the <see cref="TextDocument.Changed" /> event
+	/// This method gets called after the change has been performed, but before the <see cref="TextEditorDocument.Changed" /> event
 	/// is raised.
 	/// </summary>
 	void ChangeComplete(DocumentChangeEventArgs e);

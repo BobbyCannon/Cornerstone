@@ -18,7 +18,6 @@ public class ClientSqlDatabaseProvider : DatabaseProvider<IClientDatabase>
 	#region Constructors
 
 	public ClientSqlDatabaseProvider(string connectionString)
-		: base(new DatabaseOptions())
 	{
 		_connectionString = connectionString;
 	}
@@ -28,9 +27,9 @@ public class ClientSqlDatabaseProvider : DatabaseProvider<IClientDatabase>
 	#region Methods
 
 	/// <inheritdoc />
-	protected override IClientDatabase GetDatabaseFromProvider(DatabaseOptions options)
+	protected override IClientDatabase GetDatabaseFromProvider()
 	{
-		return ClientSqlDatabase.UseSqlServer(_connectionString, options);
+		return ClientSqlDatabase.UseSqlServer(_connectionString);
 	}
 
 	#endregion

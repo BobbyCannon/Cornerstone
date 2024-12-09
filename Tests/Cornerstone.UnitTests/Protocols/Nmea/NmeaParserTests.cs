@@ -1241,8 +1241,8 @@ public class NmeaParserTests : CornerstoneUnitTest
 
 		Assert.IsNotNull(n);
 		AreEqual(143718.00, n.Time);
-		AreEqual("45.21896550", n.Latitude.ToString());
-		AreEqual("18.98661733", n.Longitude.ToString());
+		AreEqual("45.2189655", n.Latitude.ToString());
+		AreEqual("18.986617333333333333333333333", n.Longitude.ToString());
 		AreEqual("1", n.FixQuality);
 		AreEqual(5, n.NumberOfSatellites);
 		AreEqual(1.86, n.HorizontalDilutionOfPrecision);

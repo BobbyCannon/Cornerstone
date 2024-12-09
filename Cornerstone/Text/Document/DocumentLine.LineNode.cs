@@ -15,7 +15,7 @@ partial class DocumentLine
 	/// Currently, DocumentLine takes 36 bytes on x86 (8 byte object overhead, 3 pointers, 3 ints, and another DWORD
 	/// for the small fields).
 	/// TODO: a possible optimization would be to combine 'totalLength' and the small fields into a single uint.
-	/// delimiterSize takes only two bits, the two bools take another two bits; so there's still 
+	/// delimiterSize takes only two bits, the two bools take another two bits; so there's still
 	/// 28 bits left for totalLength. 268435455 characters per line should be enough for everyone :)
 	/// </summary>
 	internal bool Color { get; set; }

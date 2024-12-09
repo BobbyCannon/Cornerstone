@@ -3,7 +3,7 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Cornerstone.Avalonia;
-using Cornerstone.Avalonia.Controls;
+using Cornerstone.Presentation;
 
 #endregion
 
@@ -19,13 +19,12 @@ public partial class TabIcons : CornerstoneUserControl<TabIconsModel>
 
 	#region Constructors
 
-	public TabIcons() : this(GetService<TabIconsModel>())
+	public TabIcons() : this(GetService<TabIconsModel>(), null)
 	{
 	}
 
-	public TabIcons(TabIconsModel model)
+	public TabIcons(TabIconsModel viewModel, IDispatcher dispatcher) : base(viewModel, dispatcher)
 	{
-		DataContext = model;
 		InitializeComponent();
 	}
 

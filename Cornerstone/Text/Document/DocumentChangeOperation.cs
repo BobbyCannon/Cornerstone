@@ -14,13 +14,13 @@ internal sealed class DocumentChangeOperation : IUndoableOperationWithContext
 	#region Fields
 
 	private readonly DocumentChangeEventArgs _change;
-	private readonly TextDocument _document;
+	private readonly TextEditorDocument _document;
 
 	#endregion
 
 	#region Constructors
 
-	public DocumentChangeOperation(TextDocument document, DocumentChangeEventArgs change)
+	public DocumentChangeOperation(TextEditorDocument document, DocumentChangeEventArgs change)
 	{
 		_document = document;
 		_change = change;

@@ -86,15 +86,13 @@ internal class SyncableRepository<T, T2> : Repository<T, T2>, ISyncableRepositor
 	/// <inheritdoc />
 	public ISyncEntity ReadByPrimaryId(object primaryId)
 	{
-		var state = Cache.FirstOrDefault(x => Equals(x.Entity.Id, primaryId));
-		return state?.Entity;
+		return (ISyncEntity) Read(primaryId);
 	}
 
 	/// <inheritdoc />
 	public ISyncEntity ReadByPrimaryId(T2 primaryId)
 	{
-		var state = Cache.FirstOrDefault(x => Equals(x.Entity.Id, primaryId));
-		return state?.Entity;
+		return Read(primaryId);
 	}
 
 	/// <inheritdoc />
@@ -117,13 +115,13 @@ internal class SyncableRepository<T, T2> : Repository<T, T2>, ISyncableRepositor
 
 		// If we have never synced, meaning we are syncing from DateTime.MinValue, and
 		// the repository has a filter that say we should skip deleted item on initial sync.
-		// The "SyncEntity.IsDeleted" is a soft deleted flag that suggest an item is deleted
-		// but it still exist in the database. If an item is "soft deleted" we will normally
+		// The "SyncEntity.IsDeleted" is a soft-deleted flag that suggest an item is deleted,
+		// but it still exists in the database. If an item is "soft deleted" we will normally
 		// still sync the item to allow the clients (non-server) to have the opportunity to
 		// hard delete the item on their end.
 		if ((since == DateTime.MinValue) && (filter?.SkipDeletedItemsOnInitialSync == true))
 		{
-			// We can skip soft deleted items that we will hard deleted on clients anyways
+			// We can skip soft deleted items that will be hard deleted on clients anyway
 			query = query.Where(x => !x.IsDeleted);
 		}
 
@@ -136,8 +134,7 @@ internal class SyncableRepository<T, T2> : Repository<T, T2>, ISyncableRepositor
 	/// <inheritdoc />
 	ISyncEntity ISyncableRepository.Read(Guid syncId)
 	{
-		var state = Cache.FirstOrDefault(x => x.Entity.SyncId == syncId);
-		return state?.Entity;
+		return Read(syncId);
 	}
 
 	/// <inheritdoc />
@@ -150,12 +147,11 @@ internal class SyncableRepository<T, T2> : Repository<T, T2>, ISyncableRepositor
 
 		if (filter is SyncRepositoryFilter<T> { HasLookupFilter: true } srf)
 		{
-			return Cache.Select(x => x.Entity).AsQueryable().FirstOrDefault(srf.LookupFilter.Invoke(entity));
+			return FirstOrDefault(srf.LookupFilter.Invoke(entity));
 		}
 
 		var syncId = syncEntity.GetEntitySyncId();
-		var state = Cache.FirstOrDefault(x => Equals(x.Entity.SyncId, syncId));
-		return state?.Entity;
+		return Read(syncId);
 	}
 
 	#endregion

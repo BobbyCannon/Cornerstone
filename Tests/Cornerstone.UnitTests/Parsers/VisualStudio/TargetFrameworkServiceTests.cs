@@ -51,13 +51,13 @@ public class TargetFrameworkServiceTests : CornerstoneUnitTest
 	{
 		var scenarios = new (string current, string suggested)[]
 		{
-			("net8.0-windows10.0.19041.0", "net8.0-windows10.0.19041.0"),
-			("net8.0-windows10.0.19041.0", "net8.0-windows"),
-			("net8.0-windows", "net8.0"),
-			("net8.0", "net8.0"),
-			("net8.0", "netstandard2.1"),
-			("net8.0", "netstandard2.0"),
-			("net8.0", "netstandard1.4"),
+			("net9.0-windows10.0.19041.0", "net9.0-windows10.0.19041.0"),
+			("net9.0-windows10.0.19041.0", "net9.0-windows"),
+			("net9.0-windows", "net9.0"),
+			("net9.0", "net9.0"),
+			("net9.0", "netstandard2.1"),
+			("net9.0", "netstandard2.0"),
+			("net9.0", "netstandard1.4"),
 			("net5.0", "netstandard1.1")
 		};
 
@@ -106,9 +106,9 @@ public class TargetFrameworkServiceTests : CornerstoneUnitTest
 	[TestMethod]
 	public void GetOrAddFramework()
 	{
-		var actual = TargetFrameworkService.GetOrAddFramework("net8.0-windows10.0.19041.0");
-		AreEqual("net8.0-windows10.0.19041.0", actual.Moniker);
-		AreEqual("net8.0", actual.PlatformMoniker);
+		var actual = TargetFrameworkService.GetOrAddFramework("net9.0-windows10.0.19041.0");
+		AreEqual("net9.0-windows10.0.19041.0", actual.Moniker);
+		AreEqual("net9.0", actual.PlatformMoniker);
 		AreEqual("windows", actual.OperatingSystem);
 		AreEqual("10.0.19041.0", actual.OperatingSystemVersion);
 		AreEqual(TargetFrameworkType.Net8Windows, actual.Type);
@@ -122,7 +122,7 @@ public class TargetFrameworkServiceTests : CornerstoneUnitTest
 	{
 		var expected = new[]
 		{
-			TargetFrameworkService.GetOrAddFramework("net8.0"),
+			TargetFrameworkService.GetOrAddFramework("net9.0"),
 			TargetFrameworkService.GetOrAddFramework("net7.0"),
 			TargetFrameworkService.GetOrAddFramework("net6.0-windows"),
 			TargetFrameworkService.GetByType(TargetFrameworkType.Net11)
@@ -131,7 +131,7 @@ public class TargetFrameworkServiceTests : CornerstoneUnitTest
 		var unordered = new[]
 		{
 			TargetFrameworkService.GetByType(TargetFrameworkType.Net11),
-			TargetFrameworkService.GetOrAddFramework("net8.0"),
+			TargetFrameworkService.GetOrAddFramework("net9.0"),
 			TargetFrameworkService.GetOrAddFramework("net6.0-windows"),
 			TargetFrameworkService.GetOrAddFramework("net7.0")
 		};

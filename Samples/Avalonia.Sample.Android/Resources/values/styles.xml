@@ -7,6 +7,9 @@
 		<item name="android:windowActionBar">false</item>
 		<item name="android:windowBackground">@drawable/splashScreen</item>
 		<item name="android:windowSplashScreenAnimatedIcon">@drawable/splashScreen</item>
-		<item name="android:windowNoTitle">true</item>
+		<item name="android:windowNoTitle">false</item>
+		<item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+		<item name="android:windowTranslucentStatus">true</item>
+		<item name="android:windowTranslucentNavigation">true</item>
 	</style>
 </resources>

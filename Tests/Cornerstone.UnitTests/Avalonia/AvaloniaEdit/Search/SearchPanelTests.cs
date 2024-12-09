@@ -72,7 +72,7 @@ public class SearchPanelTests : BaseTextEditorTests
 
 		var textEditor = CreateEditor();
 		textEditor.Text = "hello world world";
-		textEditor.CaretOffset = 17;
+		textEditor.TextArea.Caret.Offset = 17;
 
 		textEditor.SearchPanel.SearchPattern = "world";
 		textEditor.SearchPanel.Open();
@@ -90,7 +90,7 @@ public class SearchPanelTests : BaseTextEditorTests
 
 		var textEditor = CreateEditor();
 		textEditor.Text = "hello world";
-		textEditor.CaretOffset = 6;
+		textEditor.TextArea.Caret.Offset = 6;
 
 		textEditor.SearchPanel.SearchPattern = "hello";
 		textEditor.SearchPanel.Open();
@@ -107,7 +107,7 @@ public class SearchPanelTests : BaseTextEditorTests
 
 		var textEditor = CreateEditor();
 		textEditor.Text = "hello world lovely";
-		textEditor.CaretOffset = 12;
+		textEditor.TextArea.Caret.Offset = 12;
 
 		textEditor.SearchPanel.SearchPattern = "world";
 		textEditor.SearchPanel.Open();
@@ -125,7 +125,7 @@ public class SearchPanelTests : BaseTextEditorTests
 		var textEditor = CreateEditor();
 		textEditor.Text = "hello world world";
 
-		textEditor.CaretOffset = 6;
+		textEditor.TextArea.Caret.Offset = 6;
 
 		textEditor.SearchPanel.SearchPattern = "world";
 		textEditor.SearchPanel.Open();
@@ -159,7 +159,7 @@ public class SearchPanelTests : BaseTextEditorTests
 
 		var textEditor = CreateEditor();
 		textEditor.Text = "hello world world world";
-		textEditor.CaretOffset = 6;
+		textEditor.TextArea.Caret.Offset = 6;
 
 		textEditor.SearchPanel.SearchPattern = "world";
 		textEditor.SearchPanel.ReplacePattern = "universe";
@@ -179,7 +179,7 @@ public class SearchPanelTests : BaseTextEditorTests
 		var textEditor = CreateEditor();
 		textEditor.Text = "hello world";
 
-		textEditor.CaretOffset = 6;
+		textEditor.TextArea.Caret.Offset = 6;
 
 		textEditor.SearchPanel.SearchPattern = "world";
 		textEditor.SearchPanel.ReplacePattern = "universe";
@@ -197,7 +197,7 @@ public class SearchPanelTests : BaseTextEditorTests
 
 		var textEditor = CreateEditor();
 		textEditor.Text = "hello world world";
-		textEditor.CaretOffset = 6;
+		textEditor.TextArea.Caret.Offset = 6;
 
 		textEditor.SearchPanel.SearchPattern = "world";
 		textEditor.SearchPanel.ReplacePattern = "universe";
@@ -215,9 +215,9 @@ public abstract class BaseTextEditorTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	protected static TextEditor CreateEditor()
+	protected static TextEditorControl CreateEditor()
 	{
-		var textEditor = new TextEditor();
+		var textEditor = new TextEditorControl();
 		var window = new Window { Content = textEditor };
 		window.Show();
 		textEditor.ApplyTemplate();

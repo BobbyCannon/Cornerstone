@@ -436,7 +436,7 @@ public class OscMessageTests : CornerstoneUnitTest
 
 	private OscMessage GetOscMessage()
 	{
-		var message = new OscMessage(TimeService.CurrentTime.UtcNow, "/Address");
+		var message = new OscMessage(UtcNow, "/Address");
 		message.Arguments.Add(123);
 		message.Arguments.Add((uint) 456);
 		message.Arguments.Add("Boom");

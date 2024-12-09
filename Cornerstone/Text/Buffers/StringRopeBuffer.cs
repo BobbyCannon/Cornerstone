@@ -1,8 +1,12 @@
 ﻿#region References
 
+using System;
 using System.IO;
+using System.Linq;
 using Cornerstone.Collections;
 using Cornerstone.Data;
+using Cornerstone.Extensions;
+using ICloneable = Cornerstone.Data.ICloneable;
 
 #endregion
 
@@ -34,50 +38,31 @@ public class StringRopeBuffer : RopeBuffer<char>, IStringBuffer
 
 	#region Methods
 
-	/// <inheritdoc />
-	public void Append(char value)
+	public void Add(string value)
 	{
-		Add(value);
+		base.Add(value);
 	}
 
 	/// <inheritdoc />
-	public void Append(string value)
+	public IStringBuffer DeepClone(int? maxDepth = null, IncludeExcludeSettings settings = null)
 	{
-		AddRange(value);
-	}
-
-	/// <inheritdoc />
-	public IStringBuffer DeepClone(int? maxDepth = null, IncludeExcludeOptions options = null)
-	{
-		return ShallowClone(options);
+		return ShallowClone(settings);
 	}
 
 	/// <inheritdoc />
 	public void Insert(int index, string value)
 	{
-		InsertRange(index, value);
+		Insert(index, value.ToCharArray());
 	}
 
 	/// <inheritdoc />
 	public void Insert(int index, IStringBuffer value)
 	{
-		InsertRange(index, value);
+		base.Insert(index, value);
 	}
 
 	/// <inheritdoc />
-	public void Insert(int index, char[] value, int valueStart, int valueLength)
-	{
-		InsertRange(index, value, valueStart, valueLength);
-	}
-
-	/// <inheritdoc />
-	public void Insert(int index, string value, int valueStart, int valueLength)
-	{
-		InsertRange(index, value.ToCharArray(), valueStart, valueLength);
-	}
-
-	/// <inheritdoc />
-	public int LastIndexOf(string item, int index)
+	public int LastIndexOf(int index, string item)
 	{
 		var itemIndex = item.Length - 1;
 
@@ -101,16 +86,65 @@ public class StringRopeBuffer : RopeBuffer<char>, IStringBuffer
 		return -1;
 	}
 
+	public bool Match(int index, string desired, StringComparison comparisonType)
+	{
+		var length = desired.Length;
+
+		VerifyRange(index, length);
+
+		var comparer = comparisonType.GetComparer();
+
+		for (var i = 0; i < length; i++)
+		{
+			if (comparer.Compare(this[index + i], desired[i]) != 0)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	/// <inheritdoc />
-	public IStringBuffer ShallowClone(IncludeExcludeOptions options = null)
+	public bool MatchAny(int index, char[] values, StringComparison comparison, out int length)
+	{
+		VerifyRange(index);
+
+		var comparer = comparison.GetComparer();
+		var offset = index;
+		var matches = 0;
+
+		while (offset <= Count)
+		{
+			if (values.Any(x => comparer.Compare(x, this[offset]) == 0))
+			{
+				matches++;
+				continue;
+			}
+
+			break;
+		}
+
+		length = matches;
+		return matches > 0;
+	}
+
+	/// <inheritdoc />
+	public IStringBuffer ShallowClone(IncludeExcludeSettings settings = null)
 	{
 		return new StringRopeBuffer(ToString());
 	}
 
 	/// <inheritdoc />
+	public string SubString(int index)
+	{
+		var length = Count - index;
+		return SubString(index, length);
+	}
+
 	public string SubString(int index, int length)
 	{
-		return new string(GetRange(index, length).ToArray());
+		return new string(base.Read(index, length));
 	}
 
 	/// <inheritdoc />
@@ -122,19 +156,19 @@ public class StringRopeBuffer : RopeBuffer<char>, IStringBuffer
 	/// <inheritdoc />
 	public void WriteTo(TextWriter writer, int index, int length)
 	{
-		writer.Write(SubString(index, length));
+		writer.Write(Read(index, length));
 	}
 
 	/// <inheritdoc />
-	object ICloneable.DeepCloneObject(int? maxDepth, IncludeExcludeOptions options)
+	object ICloneable.DeepCloneObject(int? maxDepth, IncludeExcludeSettings settings)
 	{
-		return DeepClone(maxDepth, options);
+		return DeepClone(maxDepth, settings);
 	}
 
 	/// <inheritdoc />
-	object ICloneable.ShallowCloneObject(IncludeExcludeOptions options)
+	object ICloneable.ShallowCloneObject(IncludeExcludeSettings settings)
 	{
-		return ShallowClone(options);
+		return ShallowClone(settings);
 	}
 
 	#endregion

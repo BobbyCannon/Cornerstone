@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Avalonia.Input;
+using Cornerstone.Collections;
+using Cornerstone.Data;
 using Cornerstone.Internal;
 using Cornerstone.Text.Document;
 
@@ -15,7 +17,7 @@ namespace Cornerstone.Avalonia.AvaloniaEdit.Editing;
 /// <summary>
 /// Base class for selections.
 /// </summary>
-public abstract class Selection
+public abstract class Selection : Notifiable
 {
 	#region Constructors
 
@@ -34,7 +36,7 @@ public abstract class Selection
 	/// <summary>
 	/// Gets whether virtual space is enabled for this selection.
 	/// </summary>
-	public virtual bool EnableVirtualSpace => TextArea.Options.EnableVirtualSpace;
+	public virtual bool EnableVirtualSpace => TextArea.Settings.EnableVirtualSpace;
 
 	/// <summary>
 	/// Gets the end position of the selection.
@@ -53,12 +55,12 @@ public abstract class Selection
 	{
 		get
 		{
-			var surroundingSegment = SurroundingSegment;
+			var surroundingSegment = SurroundingRange;
 			if (surroundingSegment == null)
 			{
 				return false;
 			}
-			var start = surroundingSegment.Offset;
+			var start = surroundingSegment.StartIndex;
 			var end = start + surroundingSegment.Length;
 			var document = TextArea.Document;
 			if (document == null)
@@ -77,7 +79,7 @@ public abstract class Selection
 	/// <summary>
 	/// Gets the selected text segments.
 	/// </summary>
-	public abstract IEnumerable<SelectionSegment> Segments { get; }
+	public abstract IEnumerable<SelectionRange> Segments { get; }
 
 	/// <summary>
 	/// Gets the start position of the selection.
@@ -88,7 +90,7 @@ public abstract class Selection
 	/// Gets the smallest segment that contains all segments in this selection.
 	/// May return null if the selection is empty.
 	/// </summary>
-	public abstract ISegment SurroundingSegment { get; }
+	public abstract IRange SurroundingRange { get; }
 
 	internal TextArea TextArea { get; }
 
@@ -110,7 +112,7 @@ public abstract class Selection
 			return false;
 		}
 
-		return SurroundingSegment.Contains(offset, 0) &&
+		return SurroundingRange.Contains(offset, 0) &&
 			Segments.Any(s => s.Contains(offset, 0));
 	}
 
@@ -135,13 +137,25 @@ public abstract class Selection
 	/// <summary>
 	/// Creates a new simple selection that selects the text in the specified segment.
 	/// </summary>
-	public static Selection Create(TextArea textArea, ISegment segment)
+	public static Selection Create(TextArea textArea, IRange range)
 	{
-		if (segment == null)
+		if (range == null)
 		{
-			throw new ArgumentNullException(nameof(segment));
+			throw new ArgumentNullException(nameof(range));
 		}
-		return Create(textArea, segment.Offset, segment.EndOffset);
+		return Create(textArea, range.StartIndex, range.EndIndex);
+	}
+
+	/// <summary>
+	/// Creates a data object containing the selection's text.
+	/// </summary>
+	public virtual DataObject CreateDataObject(TextArea textArea)
+	{
+		var data = new DataObject();
+		// Ensure we use the appropriate newline sequence for the OS
+		var text = TextUtilities.NormalizeNewLines(GetText(), Environment.NewLine);
+		data.Set(DataFormats.Text, text);
+		return data;
 	}
 
 	/// <inheritdoc />
@@ -221,11 +235,11 @@ public abstract class Selection
 			if (colDiff > 0)
 			{
 				var additionalSpaces = "";
-				if (!TextArea.Options.ConvertTabsToSpaces && (lineText.Trim('\t').Length == 0))
+				if (!TextArea.Settings.ConvertTabsToSpaces && (lineText.Trim('\t').Length == 0))
 				{
-					var tabCount = colDiff / TextArea.Options.IndentationSize;
+					var tabCount = colDiff / TextArea.Settings.IndentationSize;
 					additionalSpaces = new string('\t', tabCount);
-					colDiff -= tabCount * TextArea.Options.IndentationSize;
+					colDiff -= tabCount * TextArea.Settings.IndentationSize;
 				}
 				additionalSpaces += new string(' ', colDiff);
 				return additionalSpaces + newText;
@@ -261,16 +275,4 @@ public abstract class Selection
 	}
 
 	#endregion
-
-	/// <summary>
-	/// Creates a data object containing the selection's text.
-	/// </summary>
-	public virtual DataObject CreateDataObject(TextArea textArea)
-	{
-		var data = new DataObject();
-		// Ensure we use the appropriate newline sequence for the OS
-		var text = TextUtilities.NormalizeNewLines(GetText(), Environment.NewLine);
-		data.Set(DataFormats.Text, text);
-		return data;
-	}
 }

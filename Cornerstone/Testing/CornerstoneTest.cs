@@ -54,19 +54,29 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 			() => _currentDateTime ?? DateTime.UtcNow
 		);
 		_currentDateTime = StartDateTime;
-
-		RuntimeInformation = new RuntimeInformation();
 	}
 
 	static CornerstoneTest()
 	{
 		// Default start date
 		StartDateTime = new DateTime(2000, 01, 02, 03, 04, 00, DateTimeKind.Utc);
+		ClearDatabaseQuery = """
+							EXEC sp_MSForEachTable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL'
+							EXEC sp_MSForEachTable 'ALTER TABLE ? DISABLE TRIGGER ALL'
+							EXEC sp_MSForEachTable 'SET QUOTED_IDENTIFIER ON; IF ''?'' NOT LIKE ''%MigrationHistory%'' AND ''?'' NOT LIKE ''%MigrationsHistory%'' DELETE FROM ?'
+							EXEC sp_MSforeachtable 'ALTER TABLE ? ENABLE TRIGGER ALL'
+							EXEC sp_MSForEachTable 'ALTER TABLE ? CHECK CONSTRAINT ALL'
+							EXEC sp_MSForEachTable 'IF OBJECTPROPERTY(object_id(''?''), ''TableHasIdentity'') = 1 DBCC CHECKIDENT (''?'', RESEED, 0)'
+							""";
+
+		RuntimeInformation = new RuntimeInformation();
 	}
 
 	#endregion
 
 	#region Properties
+
+	public static string ClearDatabaseQuery { get; }
 
 	/// <summary>
 	/// Returns true if the debugger is attached.
@@ -75,11 +85,6 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 
 	/// <inheritdoc />
 	public DateTime Now => _dateTimeProvider.Now;
-
-	/// <summary>
-	/// Represents test runtime information.
-	/// </summary>
-	public IRuntimeInformation RuntimeInformation { get; }
 
 	/// <summary>
 	/// Represents the Cornerstone test time.
@@ -92,7 +97,12 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// <summary>
 	/// The timeout to use when waiting for a test state to be hit.
 	/// </summary>
-	public static TimeSpan WaitTimeout => TimeSpan.FromMilliseconds(IsDebugging ? 1000000 : 1000);
+	public static TimeSpan WaitTimeout => TimeSpan.FromMilliseconds(IsDebugging ? 1000000 : 5000);
+
+	/// <summary>
+	/// Represents test runtime information.
+	/// </summary>
+	private static IRuntimeInformation RuntimeInformation { get; }
 
 	#endregion
 
@@ -104,11 +114,11 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// <param name="expected"> The value that is expected. </param>
 	/// <param name="actual"> The value to compare with expected. </param>
 	/// <param name="message"> An optional prefix to include with the assert message. </param>
-	/// <param name="options"> The settings for the compare session. </param>
+	/// <param name="settings"> The settings for the compare session. </param>
 	/// <param name="configure"> Optional configuration before the session processes. </param>
-	public void AreEqual(object expected, object actual, TextBuilder message, ComparerOptions? options = null, Action<CompareSession<object, object>> configure = null)
+	public void AreEqual(object expected, object actual, TextBuilder message, ComparerSettings? settings = null, Action<CompareSession<object, object>> configure = null)
 	{
-		AreEqual(expected, actual, () => message?.ToString(), options, configure);
+		AreEqual(expected, actual, () => message?.ToString(), settings, configure);
 	}
 
 	/// <summary>
@@ -117,29 +127,11 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// <param name="expected"> The value that is expected. </param>
 	/// <param name="actual"> The value to compare with expected. </param>
 	/// <param name="message"> An optional prefix to include with the assert message. </param>
-	/// <param name="options"> The settings for the compare session. </param>
+	/// <param name="settings"> The settings for the compare session. </param>
 	/// <param name="configure"> Optional configuration before the session processes. </param>
-	public void AreEqual(object expected, object actual, string message = null, ComparerOptions? options = null, Action<CompareSession<object, object>> configure = null)
+	public void AreEqual(object expected, object actual, string message = null, ComparerSettings? settings = null, Action<CompareSession<object, object>> configure = null)
 	{
-		AreEqual(expected, actual, () => message, options, configure);
-	}
-
-	/// <summary>
-	/// Validates that the actual is equal to the expected. If they are not equal a <see cref="CompareException" /> is thrown.
-	/// </summary>
-	/// <typeparam name="T"> The data type of the expected value. </typeparam>
-	/// <typeparam name="T2"> The data type of the actual value. </typeparam>
-	/// <param name="expected"> The value that is expected. </param>
-	/// <param name="actual"> The value to compare with expected. </param>
-	/// <param name="message"> An optional prefix to include with the assert message. </param>
-	/// <param name="options"> The settings for the compare session. </param>
-	/// <param name="configure"> Optional configuration before the session processes. </param>
-	public static void AreEqual<T, T2>(T expected, T2 actual, Func<string> message = null, ComparerOptions? options = null, Action<CompareSession<T, T2>> configure = null)
-	{
-		var session = Comparer.StartSession(expected, actual, options);
-		configure?.Invoke(session);
-		session.Compare();
-		session.Assert(CompareResult.AreEqual, message?.Invoke());
+		AreEqual(expected, actual, () => message, settings, configure);
 	}
 
 	/// <summary>
@@ -152,12 +144,43 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// <param name="message"> An optional prefix to include with the assert message. </param>
 	/// <param name="settings"> The settings for the compare session. </param>
 	/// <param name="configure"> Optional configuration before the session processes. </param>
-	public void AreNotEqual<T, T2>(T expected, T2 actual, string message = null, ComparerOptions? settings = null, Action<CompareSession<T, T2>> configure = null)
+	public static void AreEqual<T, T2>(T expected, T2 actual, Func<string> message = null, ComparerSettings? settings = null, Action<CompareSession<T, T2>> configure = null)
+	{
+		var session = Compare(expected, actual, settings, configure);
+		session.Assert(CompareResult.AreEqual, message);
+	}
+
+	/// <summary>
+	/// Validates that the actual is equal to the expected. If they are not equal a <see cref="CompareException" /> is thrown.
+	/// </summary>
+	/// <typeparam name="T"> The data type of the expected value. </typeparam>
+	/// <typeparam name="T2"> The data type of the actual value. </typeparam>
+	/// <param name="expected"> The value that is expected. </param>
+	/// <param name="actual"> The value to compare with expected. </param>
+	/// <param name="message"> An optional prefix to include with the assert message. </param>
+	/// <param name="settings"> The settings for the compare session. </param>
+	/// <param name="configure"> Optional configuration before the session processes. </param>
+	public static void AreNotEqual<T, T2>(T expected, T2 actual, string message = null, ComparerSettings? settings = null, Action<CompareSession<T, T2>> configure = null)
+	{
+		var session = Compare(expected, actual, settings, configure);
+		session.Assert(CompareResult.NotEqual, message);
+	}
+
+	/// <summary>
+	/// Compare two objects.
+	/// </summary>
+	/// <typeparam name="T"> The data type of the expected value. </typeparam>
+	/// <typeparam name="T2"> The data type of the actual value. </typeparam>
+	/// <param name="expected"> The value that is expected. </param>
+	/// <param name="actual"> The value to compare with expected. </param>
+	/// <param name="settings"> The settings for the compare session. </param>
+	/// <param name="configure"> Optional configuration before the session processes. </param>
+	public static CompareSession<T, T2> Compare<T, T2>(T expected, T2 actual, ComparerSettings? settings = null, Action<CompareSession<T, T2>> configure = null)
 	{
 		var session = Comparer.StartSession(expected, actual, settings);
 		configure?.Invoke(session);
 		session.Compare();
-		session.Assert(CompareResult.NotEqual, message);
+		return session;
 	}
 
 	/// <summary>
@@ -381,9 +404,19 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// <param name="message"> The message is shown in test results. </param>
 	public void IsNull(object condition, string message = null)
 	{
+		IsNull(condition, () => message);
+	}
+
+	/// <summary>
+	/// Tests whether the specified condition is null and throws an exception if the condition is not null.
+	/// </summary>
+	/// <param name="condition"> The condition the test expects to be null. </param>
+	/// <param name="message"> The message is shown in test results. </param>
+	public void IsNull(object condition, Func<string> message)
+	{
 		if (condition != null)
 		{
-			throw new CornerstoneException(message ?? "The condition was incorrectly not null and should have been null.");
+			throw new CornerstoneException(message?.Invoke() ?? "The condition was incorrectly not null and should have been null.");
 		}
 	}
 
@@ -414,7 +447,7 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// <param name="message"> An optional prefix to include with the assert message. </param>
 	/// <param name="settings"> The settings for the compare session. </param>
 	/// <param name="configure"> Optional configuration before the session processes. </param>
-	public void NothingIsEqual<T, T2>(T expected, T2 actual, Func<string> message = null, ComparerOptions? settings = null, Action<CompareSession<T, T2>> configure = null)
+	public void NothingIsEqual<T, T2>(T expected, T2 actual, Func<string> message = null, ComparerSettings? settings = null, Action<CompareSession<T, T2>> configure = null)
 	{
 		//var session = Comparer.StartSession(expected, actual, settings);
 		//configure?.Invoke(session);
@@ -430,8 +463,6 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	public void ResetCurrentTime(DateTime? currentTime = null)
 	{
 		_currentDateTime = currentTime;
-
-		TimeService.Reset(this);
 	}
 
 	/// <summary>
@@ -579,13 +610,13 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// <param name="fromType"> The [from] type. </param>
 	/// <param name="toType"> The [to] type. </param>
 	/// <param name="value"> The value to use for conversion. </param>
-	/// <param name="options"> The options for converting. </param>
+	/// <param name="settings"> The settings for converting. </param>
 	/// <returns> The from and to string. </returns>
-	protected static (string from, string to) GenerateConvertTestString(BaseConverter converter, Type fromType, Type toType, object value, IConverterOptions options = null)
+	protected static (string from, string to) GenerateConvertTestString(BaseConverter converter, Type fromType, Type toType, object value, IConverterSettings settings = null)
 	{
 		var from = value.ConvertTo(fromType);
 
-		if (!converter.TryConvertTo(from, fromType, toType, out var to, options))
+		if (!converter.TryConvertTo(from, fromType, toType, out var to, settings))
 		{
 			throw new NotSupportedException("The converter does not support this type.");
 		}
@@ -594,6 +625,156 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 			CSharpCodeWriter.GenerateCode(from),
 			CSharpCodeWriter.GenerateCode(to)
 		);
+	}
+
+	/// <summary>
+	/// Generate the Equals.
+	/// </summary>
+	protected static TextBuilder GenerateEquals(Type type)
+	{
+		var builder = new TextBuilder();
+		var properties = type
+			.GetCachedProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.Instance)
+			.Where(x => x.GetCustomAttribute<ComputedPropertyAttribute>() == null)
+			.OrderBy(x => x.Name)
+			.ToList();
+
+		builder.AppendLine($$"""
+							/// <inheritdoc />
+							public bool Equals({{type.GetCodeTypeName()}} state)
+							{
+								if (state == null)
+								{
+									return false;
+								}
+							
+								return
+							""");
+
+		for (var index = 0; index < properties.Count; index++)
+		{
+			var p = properties[index];
+
+			builder.AppendLine(
+				index < (properties.Count - 1)
+					? $"\t\t({p.Name} == state.{p.Name}) &&"
+					: $"\t\t({p.Name} == state.{p.Name});"
+				);
+		}
+
+		builder.AppendLine("}");
+		return builder;
+	}
+	
+	/// <summary>
+	/// Generate the HashCode.
+	/// </summary>
+	protected static TextBuilder GenerateHashCode(Type type)
+	{
+		var builder = new TextBuilder();
+		var properties = type
+			.GetCachedProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.Instance)
+			.Where(x => x.GetCustomAttribute<ComputedPropertyAttribute>() == null)
+			.OrderBy(x => x.Name)
+			.ToList();
+
+		builder.AppendLine("""
+							/// <inheritdoc />
+							public override int GetHashCode()
+							{
+								var hashCode = HashCodeCalculator.Combine(
+							""");
+
+		builder.PushIndent();
+		builder.PushIndent();
+
+		for (var index = 0; index < properties.Count; index++)
+		{
+			var p = properties[index];
+
+			builder.Append(
+				index < (properties.Count - 1)
+					? $"{p.Name}, "
+					: $"{p.Name}"
+			);
+
+			if ((index > 0) && ((index % 4) == 0))
+			{
+				builder.AppendLine();
+			}
+		}
+
+		if ((properties.Count % 4) != 0)
+		{
+			builder.AppendLine();
+		}
+
+		builder.PopIndent();
+		builder.AppendLine("""
+							);
+								return hashCode;
+							}
+							""");
+		return builder;
+	}
+
+	/// <summary>
+	/// Generate the GetDefaultIncludedProperties.
+	/// </summary>
+	protected static StringBuilder GenerateGetDefaultIncludedProperties(Type type)
+	{
+		var builder = new StringBuilder();
+		var syncEntity = new SyncEntity<int>();
+		var properties = type
+			.GetCachedProperties(BindingFlags.CreateInstance | BindingFlags.Public | BindingFlags.Instance)
+			.Where(p => p.CanRead && p.CanWrite && !p.IsVirtual())
+			.OrderBy(x => x.Name)
+			.ToList();
+
+		var propertyLine = "\"" + string.Join("\", \"", properties.Select(x => x.Name)) + "\"";
+		builder.AppendLine("""
+							/// <inheritdoc />
+							public override HashSet<string> GetDefaultIncludedProperties(UpdateableAction action)
+							{
+								var response = base.GetDefaultIncludedProperties(action);
+								
+								return action switch
+								{
+							""");
+
+		var enumDetails = EnumExtensions.GetEnumValues(UpdateableAction.Unknown);
+
+		foreach (var d in enumDetails)
+		{
+			string section;
+			if (d.IsSyncAction())
+			{
+				var exceptions = syncEntity.GetDefaultIncludedProperties(d);
+				if (d == UpdateableAction.SyncIncomingModified)
+				{
+					exceptions.Add(nameof(ISyncEntity.SyncId));
+				}
+
+				var syncPropertyLine = "\"" + string.Join("\", \"", properties
+					.Where(p => (p.Name != "Id") && !exceptions.Contains(p.Name))
+					.Select(x => x.Name)) + "\"";
+				section = $"		UpdateableAction.{d} => response.AddRange({syncPropertyLine}),";
+			}
+			else
+			{
+				section = $"		UpdateableAction.{d} => response.AddRange({propertyLine}),";
+			}
+
+			builder.AppendLine(section);
+		}
+
+		builder.AppendLine("""
+									_ => response
+								};
+							}
+							""");
+
+		return builder;
 	}
 
 	/// <summary>
@@ -629,21 +810,15 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 /// Update the {type.Name.Replace("`1", "").Replace("`2", "")} with an update.
 /// </summary>
 /// <param name=""update""> The update to be applied. </param>
-/// <param name=""options""> The options for controlling the updating of the entity. </param>
-public override bool UpdateWith({type.ToCSharpCode()} update, IncludeExcludeOptions options)
+/// <param name=""settings""> The settings for controlling the updating of the entity. </param>
+public override bool UpdateWith({type.GetCodeTypeName()} update, IncludeExcludeSettings settings)
 {{");
 		builder.AppendLine("\t// If the update is null then there is nothing to do.");
 		builder.AppendLine("\tif (update == null)\r\n\t{\r\n\t\treturn false;\r\n\t}\r\n");
 		builder.AppendLine("\t// ****** You can use GenerateUpdateWith to update this ******");
 		builder.AppendLine();
-		builder.AppendLine("\tif ((options == null) || options.IsEmpty())");
+		builder.AppendLine("\tif ((settings == null) || settings.IsEmpty())");
 		builder.AppendLine("\t{");
-
-		bool isGenericList(Type typeToCheck)
-		{
-			return typeToCheck.IsGenericType
-				&& typeToCheck.GetGenericTypeDefinition().IsEnumerable();
-		}
 
 		foreach (var p in properties)
 		{
@@ -660,7 +835,7 @@ public override bool UpdateWith({type.ToCSharpCode()} update, IncludeExcludeOpti
 				continue;
 			}
 
-			if (isGenericList(p.PropertyType))
+			if (IsGenericList(p.PropertyType))
 			{
 				builder.AppendLine($"\t\t{p.Name}.Reconcile(update.{p.Name});");
 				continue;
@@ -699,19 +874,19 @@ public override bool UpdateWith({type.ToCSharpCode()} update, IncludeExcludeOpti
 
 			if (p.PropertyType.IsArray && p.CanWrite)
 			{
-				builder.AppendLine($"\t\tthis.IfThen(_ => options.ShouldProcessProperty(nameof({p.Name})), x => x.{p.Name} = update.{p.Name});");
+				builder.AppendLine($"\t\tthis.IfThen(_ => settings.ShouldProcessProperty(nameof({p.Name})), x => x.{p.Name} = update.{p.Name});");
 				continue;
 			}
 
-			if (isGenericList(p.PropertyType))
+			if (IsGenericList(p.PropertyType))
 			{
-				builder.AppendLine($"\t\tthis.IfThen(_ => options.ShouldProcessProperty(nameof({p.Name})), x => x.{p.Name}.Reconcile(update.{p.Name}));");
+				builder.AppendLine($"\t\tthis.IfThen(_ => settings.ShouldProcessProperty(nameof({p.Name})), x => x.{p.Name}.Reconcile(update.{p.Name}));");
 				continue;
 			}
 
 			if (p.PropertyType.ImplementsType<IUpdateable>())
 			{
-				builder.AppendLine($"\t\tthis.IfThen(_ => options.ShouldProcessProperty(nameof({p.Name})), x => x.{p.Name}.UpdateWith(update.{p.Name}));");
+				builder.AppendLine($"\t\tthis.IfThen(_ => settings.ShouldProcessProperty(nameof({p.Name})), x => x.{p.Name}.UpdateWith(update.{p.Name}));");
 				continue;
 			}
 
@@ -720,14 +895,30 @@ public override bool UpdateWith({type.ToCSharpCode()} update, IncludeExcludeOpti
 				continue;
 			}
 
-			builder.AppendLine($"\t\tthis.IfThen(_ => options.ShouldProcessProperty(nameof({p.Name})), x => x.{p.Name} = update.{p.Name});");
+			builder.AppendLine($"\t\tthis.IfThen(_ => settings.ShouldProcessProperty(nameof({p.Name})), x => x.{p.Name} = update.{p.Name});");
 		}
 
 		builder.AppendLine("\t}\r\n");
-		builder.AppendLine(declaredOnly ? "\treturn base.UpdateWith(update, options);" : "\treturn true;");
+		builder.AppendLine(declaredOnly ? "\treturn base.UpdateWith(update, settings);" : "\treturn true;");
 		builder.AppendLine("}");
+		builder.AppendLine();
+		builder.AppendLine($@"/// <inheritdoc />
+public override bool UpdateWith(object update, IncludeExcludeSettings settings)
+{{
+	return update switch
+	{{
+		{type.GetCodeTypeName()} value => UpdateWith(value, settings),
+		_ => base.UpdateWith(update, settings)
+	}};
+}}");
 
 		return builder;
+
+		bool IsGenericList(Type typeToCheck)
+		{
+			return typeToCheck.IsGenericType
+				&& typeToCheck.GetGenericTypeDefinition().IsEnumerable();
+		}
 	}
 
 	/// <summary>
@@ -1063,7 +1254,7 @@ public override bool UpdateWith({type.ToCSharpCode()} update, IncludeExcludeOpti
 					.ToHashSet();
 			}
 
-			var expectedProperties = attribute.Expected.ToHashSet();
+			var expectedProperties = attribute?.Expected.ToHashSet();
 			var missingProperties = properties.Except(expectedProperties).ToList();
 			var missingExpected = expectedProperties.Except(properties).ToList();
 

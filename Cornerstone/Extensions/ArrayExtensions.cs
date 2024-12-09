@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 #endregion
 
@@ -15,6 +16,31 @@ namespace Cornerstone.Extensions;
 public static class ArrayExtensions
 {
 	#region Methods
+
+	/// <summary>
+	/// Check index and length to ensure it is within bounds of the array.
+	/// </summary>
+	/// <param name="array"> The array to check. </param>
+	/// <param name="index"> The index to start in the array. </param>
+	/// <param name="length"> The length to the end index of the array. </param>
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public static void BoundsCheckArray<T>(this T[] array, int index, int length)
+	{
+		if (array == null)
+		{
+			throw new ArgumentNullException(nameof(array));
+		}
+
+		if ((index < 0) || (index >= array.Length))
+		{
+			throw new IndexOutOfRangeException(Babel.Tower[BabelKeys.IndexOutOfRange]);
+		}
+
+		if ((length < 0) || ((index + length) > array.Length))
+		{
+			throw new IndexOutOfRangeException(Babel.Tower[BabelKeys.IndexAndLengthOutOfRange]);
+		}
+	}
 
 	/// <summary>
 	/// Combine many arrays into a single arrays.

@@ -3,17 +3,18 @@
 using System;
 using System.Diagnostics;
 using System.Globalization;
+using Cornerstone.Collections;
 
 #endregion
 
 namespace Cornerstone.Text.Document;
 
 /// <summary>
-/// Represents a line inside a <see cref="TextDocument" />.
+/// Represents a line inside a <see cref="TextEditorDocument" />.
 /// </summary>
 /// <remarks>
 /// <para>
-/// The <see cref="TextDocument.Lines" /> collection contains one DocumentLine instance
+/// The <see cref="TextEditorDocument.Lines" /> collection contains one DocumentLine instance
 /// for every line in the document. This collection is read-only to user code and is automatically
 /// updated to reflect the current document content.
 /// </para>
@@ -31,7 +32,7 @@ public sealed partial class DocumentLine : IDocumentLine
 	#if DEBUG
 	// Required for thread safety check which is done only in debug builds.
 	// To save space, we don't store the document reference in release builds as we don't need it there.
-	private readonly TextDocument _document;
+	private readonly TextEditorDocument _document;
 	#endif
 
 	private bool _isDeleted;
@@ -42,7 +43,7 @@ public sealed partial class DocumentLine : IDocumentLine
 
 	#region Constructors
 
-	internal DocumentLine(TextDocument document)
+	internal DocumentLine(TextEditorDocument document)
 	{
 		#if DEBUG
 		Debug.Assert(document != null);
@@ -84,8 +85,8 @@ public sealed partial class DocumentLine : IDocumentLine
 	/// Runtime: O(log n)
 	/// </summary>
 	/// <exception cref="InvalidOperationException"> The line was deleted. </exception>
-	/// <remarks> EndOffset = <see cref="Offset" /> + <see cref="Length" />. </remarks>
-	public int EndOffset => Offset + Length;
+	/// <remarks> EndOffset = <see cref="StartIndex" /> + <see cref="Length" />. </remarks>
+	public int EndIndex => StartIndex + Length;
 
 	/// <summary>
 	/// Gets if this line was deleted from the document.
@@ -160,23 +161,6 @@ public sealed partial class DocumentLine : IDocumentLine
 	}
 
 	/// <summary>
-	/// Gets the starting offset of the line in the document's text.
-	/// Runtime: O(log n)
-	/// </summary>
-	/// <exception cref="InvalidOperationException"> The line was deleted. </exception>
-	public int Offset
-	{
-		get
-		{
-			if (IsDeleted)
-			{
-				throw new InvalidOperationException();
-			}
-			return DocumentLineTree.GetOffsetFromNode(this);
-		}
-	}
-
-	/// <summary>
 	/// Gets the previous line in the document.
 	/// </summary>
 	/// <returns> The line before this line, or null if this is the first line. </returns>
@@ -199,6 +183,23 @@ public sealed partial class DocumentLine : IDocumentLine
 				// we are on the way up from the left part, don't output node again
 			} while ((node != null) && (node.Left == oldNode));
 			return node;
+		}
+	}
+
+	/// <summary>
+	/// Gets the starting offset of the line in the document's text.
+	/// Runtime: O(log n)
+	/// </summary>
+	/// <exception cref="InvalidOperationException"> The line was deleted. </exception>
+	public int StartIndex
+	{
+		get
+		{
+			if (IsDeleted)
+			{
+				throw new InvalidOperationException();
+			}
+			return DocumentLineTree.GetOffsetFromNode(this);
 		}
 	}
 
@@ -240,7 +241,7 @@ public sealed partial class DocumentLine : IDocumentLine
 		}
 		return string.Format(
 			CultureInfo.InvariantCulture,
-			"[DocumentLine Number={0} Offset={1} Length={2}]", LineNumber, Offset, Length);
+			"[DocumentLine Number={0} Offset={1} Length={2}]", LineNumber, StartIndex, Length);
 	}
 
 	[Conditional("DEBUG")]
@@ -255,9 +256,9 @@ public sealed partial class DocumentLine : IDocumentLine
 }
 
 /// <summary>
-/// A line inside a <see cref="IDocument" />.
+/// A line inside a <see cref="ITextEditorDocument" />.
 /// </summary>
-public interface IDocumentLine : ISegment
+public interface IDocumentLine : IRange
 {
 	#region Properties
 

@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -155,6 +156,70 @@ public class StringFormatterTests : CornerstoneUnitTest
 			//$"{i} : {key} >> {scenarios[key]}".Dump();
 
 			AreEqual(scenarios[key], key.ToSentenceCase());
+		}
+	}
+
+	[TestMethod]
+	public void ToSpeechForDay()
+	{
+		var scenarios = new Dictionary<DateTime, string>
+		{
+			{ new DateTime(2024, 11, 06, 21, 28, 45), "Today is Wednesday, November 6th" },
+			{ new DateTime(2024, 11, 02, 21, 28, 45), "Today is Saturday, November 2nd" }
+		};
+
+		//CSharpCodeWriter.ToCodeString(GetTestScenarios().ToDictionary(x => x, StringFormatter.ToCamelCase)).Dump();
+
+		var keys = scenarios.Keys.ToList();
+
+		for (var i = 0; i < keys.Count; i++)
+		{
+			var key = keys[i];
+
+			//$"{i} : {key} >> {scenarios[key]}".Dump();
+
+			AreEqual(scenarios[key], key.ToSpeechForDay());
+		}
+	}
+
+	[TestMethod]
+	public void ToSpeechForTime()
+	{
+		var scenarios = new Dictionary<DateTime, string>
+		{
+			{ new DateTime(2024, 11, 06, 21, 28, 45), "4:28 PM" },
+			{ new DateTime(2024, 11, 06, 08, 02, 45), "3:02 AM" }
+		};
+
+		//CSharpCodeWriter.ToCodeString(GetTestScenarios().ToDictionary(x => x, StringFormatter.ToCamelCase)).Dump();
+
+		var keys = scenarios.Keys.ToList();
+
+		for (var i = 0; i < keys.Count; i++)
+		{
+			var key = keys[i];
+
+			//$"{i} : {key} >> {scenarios[key]}".Dump();
+
+			AreEqual(scenarios[key], key.ToSpeechForTime());
+		}
+	}
+
+	[TestMethod]
+	public void ToSpeechForTimeSpan()
+	{
+		var scenarios = new (string expected, TimeSpan input)[]
+		{
+			("1 Hour and 2 Minutes", new TimeSpan(01, 02, 12)),
+			("1 Minute and 45 Seconds", new TimeSpan(00, 01, 45))
+		};
+
+		//CSharpCodeWriter.ToCodeString(GetTestScenarios().ToDictionary(x => x, StringFormatter.ToCamelCase)).Dump();
+
+		foreach (var scenario in scenarios)
+		{
+			scenario.expected.Dump();
+			AreEqual(scenario.expected, scenario.input.ToSpeechForTime());
 		}
 	}
 

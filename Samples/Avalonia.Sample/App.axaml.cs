@@ -45,16 +45,24 @@ public class App : CornerstoneApplication
 		var viewModel = GetService<MainViewModel>();
 		viewModel.Initialize();
 
+		if ((viewModel.RuntimeInformation.DotNetRuntimeVersion.Major >= 9)
+			&& viewModel.ApplicationSettings.SelectedTabName
+				is TabMapsui.HeaderName
+				or TabLocationProvider.HeaderName)
+		{
+			viewModel.ApplicationSettings.SelectedTabName = TabThemes.HeaderName;
+		}
+
 		switch (ApplicationLifetime)
 		{
 			case IClassicDesktopStyleApplicationLifetime desktop:
 			{
-				desktop.MainWindow = new MainWindow(viewModel);
+				desktop.MainWindow = new MainWindow(viewModel, GetDispatcher());
 				break;
 			}
 			case ISingleViewApplicationLifetime singleViewPlatform:
 			{
-				singleViewPlatform.MainView = new MainView(viewModel);
+				singleViewPlatform.MainView = new MainView(viewModel, GetDispatcher());
 				break;
 			}
 		}
@@ -64,13 +72,13 @@ public class App : CornerstoneApplication
 
 	/// <inheritdoc />
 	/// <remarks>
-	/// <see cref="ViewModelProviderForDesignMode" />
+	/// <see cref="DesignModeDependencyProvider" />
 	/// </remarks>
 	public override void RegisterServices()
 	{
-		Dependencies.AddSingleton<ApplicationSettings>();
-		Dependencies.AddSingleton<MainViewModel>();
-		Dependencies.AddSingleton<TabIconsModel>();
+		DependencyProvider.AddSingleton<ApplicationSettings>();
+		DependencyProvider.AddSingleton<MainViewModel>();
+		DependencyProvider.AddSingleton<TabIconsModel>();
 
 		base.RegisterServices();
 	}

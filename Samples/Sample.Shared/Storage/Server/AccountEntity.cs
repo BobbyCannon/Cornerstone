@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Cornerstone.Data;
+using Cornerstone.Extensions;
 using Cornerstone.Sync;
 
 #endregion
@@ -59,26 +61,21 @@ public class AccountEntity : SyncEntity<int>
 
 	#region Methods
 
-	/// <summary>
-	/// Combine the roles into a custom format for server side storage.
-	/// This format is different from the client format just to show that
-	/// client and server formats can be different.
-	/// </summary>
-	/// <param name="roles"> The roles for the account. </param>
-	/// <returns> The roles in the server storage format. </returns>
-	public static string CombineRoles(IEnumerable<string> roles)
+	/// <inheritdoc />
+	public override HashSet<string> GetDefaultIncludedProperties(UpdateableAction action)
 	{
-		return roles != null ? $",{string.Join(",", roles)}," : ",,";
-	}
+		var response = base.GetDefaultIncludedProperties(action);
 
-	public string GetCookieValue()
-	{
-		return $"{Id};{Name}";
-	}
+		switch (action)
+		{
+			case UpdateableAction.SyncOutgoing:
+			{
+				response.Add(nameof(EmailAddress), nameof(Name), nameof(Roles));
+				break;
+			}
+		}
 
-	public IEnumerable<string> GetRoles()
-	{
-		return string.IsNullOrEmpty(Roles) ? Array.Empty<string>() : Roles.Split([","], StringSplitOptions.RemoveEmptyEntries).Distinct().ToArray();
+		return response;
 	}
 
 	public bool InRole(params AccountRole[] roles)
@@ -88,18 +85,7 @@ public class AccountEntity : SyncEntity<int>
 
 	public bool InRole(string roleName)
 	{
-		return GetRoles().Any(x => x.Equals(roleName, StringComparison.OrdinalIgnoreCase));
-	}
-
-	/// <summary>
-	/// Splits the roles from the custom format into an array.
-	/// </summary>
-	/// <param name="roles"> The roles for the account. </param>
-	/// <returns> The array of roles. </returns>
-	public static IEnumerable<string> SplitRoles(string roles)
-	{
-		return roles?.Split([","], StringSplitOptions.RemoveEmptyEntries)
-			?? Array.Empty<string>();
+		return Roles.SplitIntoArray().Any(x => x.Equals(roleName, StringComparison.OrdinalIgnoreCase));
 	}
 
 	#endregion

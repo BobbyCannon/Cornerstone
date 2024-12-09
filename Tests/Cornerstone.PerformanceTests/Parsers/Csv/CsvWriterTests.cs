@@ -20,13 +20,13 @@ public class CsvWriterTests : CornerstoneUnitTest
 	public void StreamWrite()
 	{
 		using var stringWriter = new StringWriter();
-		var writer = new CsvWriter(new CsvOptions(), "First,Name", "Age", "Enabled");
+		var writer = new CsvWriter(new CsvConverterSettings(), "First,Name", "Age", "Enabled");
 		writer.WriteHeaders(stringWriter);
 		writer.WriteLine(stringWriter, "Bobby", 21, true);
 		stringWriter.ToString().Dump();
 
 		using var stringReader = new StringReader(stringWriter.ToString());
-		var reader = new CsvReader(stringReader, new CsvOptions());
+		var reader = new CsvReader(stringReader, new CsvConverterSettings());
 		IsTrue(reader.Read());
 		AreEqual(writer.Headers, reader.LineAsArray());
 		IsTrue(reader.Read());

@@ -20,3 +20,4 @@ Debug/
 Release/
 _ReSharper.Caches/
 **/hs_err_*.log
+_gsdata_/

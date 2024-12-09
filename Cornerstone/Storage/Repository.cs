@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -9,6 +10,7 @@ using Cornerstone.Collections;
 using Cornerstone.Data;
 using Cornerstone.Exceptions;
 using Cornerstone.Extensions;
+using Cornerstone.Runtime;
 using Cornerstone.Sync;
 
 #endregion
@@ -25,11 +27,13 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 {
 	#region Fields
 
-	internal SpeedyList<EntityState<T, T2>> Cache;
+	private SpeedyList<EntityState<T, T2>> _cache;
 	private readonly CollectionChangeTracker _collectionChangeTracker;
 	private T2 _currentKey;
+	private ConcurrentDictionary<T2, EntityState<T, T2>> _primaryLookup;
 	private IQueryable<T> _query;
-	private readonly Type _type;
+	private ConcurrentDictionary<Guid, EntityState<T, T2>> _secondaryLookup;
+	private readonly Type _typeofT;
 
 	#endregion
 
@@ -41,11 +45,13 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	/// <param name="database"> The database this repository is for. </param>
 	public Repository(Database database)
 	{
-		_type = typeof(T);
+		_typeofT = typeof(T);
 		_currentKey = default;
 		_collectionChangeTracker = new CollectionChangeTracker();
+		_primaryLookup = new ConcurrentDictionary<T2, EntityState<T, T2>>();
+		_secondaryLookup = new ConcurrentDictionary<Guid, EntityState<T, T2>>();
+		_cache = [];
 
-		Cache = [];
 		Database = database;
 
 		UpdateCacheQuery();
@@ -56,7 +62,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	#region Properties
 
 	/// <inheritdoc />
-	public int Count => Cache.Count(x => x.State != EntityStateType.Added);
+	public int Count => _cache.Count(x => x.State != EntityStateType.Added);
 
 	/// <inheritdoc />
 	public bool IsReadOnly => false;
@@ -92,19 +98,20 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 			return;
 		}
 
-		if (Cache.Any(x => entity == x.Entity))
+		if (_cache.FirstOrDefault(x => ReferenceEquals(entity, x.Entity)) != null)
 		{
 			return;
 		}
 
-		var duplicateId = Cache.FirstOrDefault(x => !x.Entity.Id.Equals(default(T2)) && Equals(x.Entity.Id, entity.Id));
-		if (duplicateId != null)
+		var duplicateId = !entity.Id.Equals(default(T2)) && _primaryLookup.ContainsKey(entity.Id);
+		if (duplicateId)
 		{
-			throw new InvalidOperationException($"The instance of entity type '{typeof(T).Name}' cannot be tracked because another instance with the same key value is already being tracked.");
+			throw new InvalidOperationException($"The instance of entity type '{_typeofT.Name}' cannot be tracked because another instance with the same key value is already being tracked.");
 		}
 
-		Cache.Add(new EntityState<T, T2>(this, entity, CloneEntity(entity), EntityStateType.Added));
-		OnUpdateEntityRelationships(entity);
+		var entityState = _cache.Add(new EntityState<T, T2>(this, entity, CloneEntity(entity), EntityStateType.Added));
+
+		OnUpdateEntityRelationships(entityState);
 	}
 
 	/// <inheritdoc />
@@ -116,11 +123,11 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 			return;
 		}
 
-		var foundItem = Cache.FirstOrDefault(x => Equals(x.Entity.Id, entity.Id));
+		var foundItem = _cache.FirstOrDefault(x => Equals(x.Entity.Id, entity.Id));
 		if (foundItem == null)
 		{
-			Cache.Add(new EntityState<T, T2>(this, entity, CloneEntity(entity), EntityStateType.Unmodified));
-			OnUpdateEntityRelationships(entity);
+			var entityState = _cache.Add(new EntityState<T, T2>(this, entity, CloneEntity(entity), EntityStateType.Unmodified));
+			OnUpdateEntityRelationships(entityState);
 			return;
 		}
 
@@ -140,6 +147,12 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 		}
 
 		AddOrUpdate(myEntity);
+	}
+
+	/// <inheritdoc />
+	public void ApplyChangesTo(object destination)
+	{
+		throw new NotImplementedException();
 	}
 
 	/// <inheritdoc />
@@ -169,24 +182,24 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 			return;
 		}
 
-		var maintainedEntity = Database.Options.UnmaintainedEntities.All(x => x != entity.GetType());
-		var maintainSyncId = maintainedEntity && Database.Options.MaintainSyncId;
+		var maintainedEntity = Database.DatabaseSettings.UnmaintainedEntities.All(x => x != entity.GetType());
+		var maintainSyncId = maintainedEntity && Database.DatabaseSettings.MaintainSyncId;
 
 		if (maintainSyncId && (syncableEntity.SyncId == Guid.Empty))
 		{
 			syncableEntity.SyncId = Guid.NewGuid();
 		}
 
-		if ((syncableEntity.SyncId != Guid.Empty) && (Database is ISyncableDatabase syncableDatabase))
+		if ((syncableEntity.SyncId != Guid.Empty) && Database is ISyncableDatabase syncableDatabase)
 		{
-			syncableDatabase.KeyCache?.AddEntityId(typeof(T), syncableEntity.SyncId, item.Id);
+			syncableDatabase.KeyCache?.AddEntityId(_typeofT, syncableEntity.SyncId, item.Id);
 		}
 	}
 
 	/// <inheritdoc />
 	public void AssignKeys(List<IEntity> processed)
 	{
-		foreach (var entityState in Cache)
+		foreach (var entityState in _cache)
 		{
 			AssignKey(entityState.Entity, processed);
 		}
@@ -205,7 +218,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	/// <returns> True if the entity exist or false it otherwise. </returns>
 	public bool Contains(T entity)
 	{
-		return Cache.Any(x => entity == x.Entity) || _query.Any(x => Equals(x.Id, entity.Id));
+		return _cache.Any(x => entity == x.Entity) || _query.Any(x => Equals(x.Id, entity.Id));
 	}
 
 	/// <inheritdoc />
@@ -218,7 +231,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	/// <inheritdoc />
 	public int DiscardChanges()
 	{
-		var response = Cache.Count;
+		var response = _cache.Count;
 		ResetCache();
 		return response;
 	}
@@ -236,12 +249,6 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	}
 
 	/// <inheritdoc />
-	public void ApplyChangesTo(object destination)
-	{
-		throw new NotImplementedException();
-	}
-
-	/// <inheritdoc />
 	public IEnumerator<T> GetEnumerator()
 	{
 		return _query.GetEnumerator();
@@ -254,7 +261,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	/// <returns> </returns>
 	public IQueryable<T> GetRawQueryable(Func<T, bool> filter)
 	{
-		return Cache
+		return _cache
 			.Select(x => x.Entity)
 			.Where(filter)
 			.AsQueryable();
@@ -263,11 +270,11 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	/// <inheritdoc />
 	public bool HasChanges()
 	{
-		return HasChanges(IncludeExcludeOptions.Empty);
+		return HasChanges(IncludeExcludeSettings.Empty);
 	}
 
 	/// <inheritdoc />
-	public bool HasChanges(IncludeExcludeOptions options)
+	public bool HasChanges(IncludeExcludeSettings settings)
 	{
 		return GetChanges().Any();
 	}
@@ -308,20 +315,20 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	/// <param name="targetEntity"> The entity to locate insert point. </param>
 	public void InsertBefore(T entity, T targetEntity)
 	{
-		if (Cache.Any(x => entity == x.Entity))
+		if (_cache.Any(x => entity == x.Entity))
 		{
 			return;
 		}
 
-		var state = Cache.FirstOrDefault(x => x.Entity == targetEntity);
-		var indexOf = Cache.IndexOf(state);
+		var state = _cache.FirstOrDefault(x => x.Entity == targetEntity);
+		var indexOf = _cache.IndexOf(state);
 
 		if (indexOf < 0)
 		{
 			throw new ArgumentException("Could not find the target entity", nameof(targetEntity));
 		}
 
-		Cache.Insert(indexOf, new EntityState<T, T2>(this, entity, CloneEntity(entity), EntityStateType.Added));
+		_cache.Insert(indexOf, new EntityState<T, T2>(this, entity, CloneEntity(entity), EntityStateType.Added));
 	}
 
 	/// <inheritdoc />
@@ -337,21 +344,30 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	/// <returns> The entity or null. </returns>
 	public T Read(T2 id)
 	{
-		var state = Cache.FirstOrDefault(x => Equals(x.Entity.Id, id));
-		return state?.Entity;
+		return _primaryLookup.TryGetValue(id, out var value) ? value.Entity : null;
+	}
+
+	/// <summary>
+	/// Get entity by secondary ID.
+	/// </summary>
+	/// <param name="id"> </param>
+	/// <returns> The entity or null. </returns>
+	public T Read(Guid id)
+	{
+		return _secondaryLookup.TryGetValue(id, out var value) ? value.Entity : null;
 	}
 
 	/// <inheritdoc />
 	public bool Remove(T2 id)
 	{
-		var state = Cache.FirstOrDefault(x => Equals(x.Entity.Id, id));
+		var state = _cache.FirstOrDefault(x => Equals(x.Entity.Id, id));
 
 		if (state == null)
 		{
 			var instance = Activator.CreateInstance<T>();
 			instance.Id = id;
 			state = new EntityState<T, T2>(this, instance, CloneEntity(instance), EntityStateType.Removed);
-			Cache.Add(state);
+			_cache.Add(state);
 		}
 
 		state.State = EntityStateType.Removed;
@@ -375,7 +391,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	/// <inheritdoc />
 	public int Remove(Expression<Func<T, bool>> filter)
 	{
-		return Cache
+		return _cache
 			.Select(x => x.Entity)
 			.Where(filter.Compile())
 			.Select(Remove)
@@ -406,18 +422,18 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 			return 0;
 		}
 
-		var now = TimeService.CurrentTime.UtcNow;
+		var now = DateTimeProvider.RealTime.UtcNow;
 
-		foreach (var entry in Cache.ToList())
+		foreach (var entry in _cache.ToList())
 		{
 			var entity = entry.Entity;
 			var createdEntity = entity as ICreatedEntity;
 			var modifiableEntity = entity as IModifiableEntity;
 			var syncableEntity = entity as ISyncEntity;
-			var maintainedEntity = Database.Options.UnmaintainedEntities.All(x => x != entry.Entity.GetType());
-			var maintainCreatedOnDate = maintainedEntity && Database.Options.MaintainCreatedOn;
-			var maintainModifiedOnDate = maintainedEntity && Database.Options.MaintainModifiedOn;
-			var maintainSyncId = maintainedEntity && Database.Options.MaintainSyncId;
+			var maintainedEntity = Database.DatabaseSettings.UnmaintainedEntities.All(x => x != entry.Entity.GetType());
+			var maintainCreatedOnDate = maintainedEntity && Database.DatabaseSettings.MaintainCreatedOn;
+			var maintainModifiedOnDate = maintainedEntity && Database.DatabaseSettings.MaintainModifiedOn;
+			var maintainSyncId = maintainedEntity && Database.DatabaseSettings.MaintainSyncId;
 
 			switch (entry.State)
 			{
@@ -489,7 +505,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 				}
 				case EntityStateType.Removed:
 				{
-					if ((syncableEntity != null) && !Database.Options.PermanentSyncEntityDeletions)
+					if ((syncableEntity != null) && !Database.DatabaseSettings.PermanentSyncEntityDeletions)
 					{
 						syncableEntity.IsDeleted = true;
 						syncableEntity.ModifiedOn = now;
@@ -546,23 +562,31 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	/// <inheritdoc />
 	public void UpdateRelationships()
 	{
-		Cache.ToList().ForEach(x => OnUpdateEntityRelationships(x.Entity));
+		_cache.ToList().ForEach(OnUpdateEntityRelationships);
 	}
 
 	/// <inheritdoc />
 	public void ValidateEntities()
 	{
-		Cache.Where(x => (x.State == EntityStateType.Added) || (x.State == EntityStateType.Modified))
+		_cache.Where(x => x.State is EntityStateType.Added or EntityStateType.Modified)
 			.ToList()
 			.ForEach(x => OnValidateEntity(x.Entity));
 
-		Cache.Where(x => x.State == EntityStateType.Added)
+		_cache.Where(x => x.State == EntityStateType.Added)
 			.ToList()
 			.ForEach(x => OnAddingEntity(x.Entity));
 
-		Cache.Where(x => x.State == EntityStateType.Removed)
+		_cache.Where(x => x.State == EntityStateType.Removed)
 			.ToList()
 			.ForEach(x => OnDeletingEntity(x.Entity));
+	}
+
+	protected T FirstOrDefault(Expression<Func<T, bool>> invoke)
+	{
+		return _cache
+			.Select(x => x.Entity)
+			.AsQueryable()
+			.FirstOrDefault(invoke);
 	}
 
 	/// <summary>
@@ -597,7 +621,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	/// Occurs when an entity relationships are updated.
 	/// </summary>
 	/// <param name="obj"> The entity that was updated. </param>
-	protected virtual void OnUpdateEntityRelationships(T obj)
+	protected virtual void OnUpdateEntityRelationships(EntityState<T, T2> obj)
 	{
 		UpdateEntityRelationships?.Invoke(obj);
 	}
@@ -614,19 +638,19 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 
 	internal bool AnyNew(object entity, Func<T, bool> func)
 	{
-		return Cache.Any(x => !ReferenceEquals(x.Entity, entity) && func(x.OldEntity));
+		return _cache.Any(x => !ReferenceEquals(x.Entity, entity) && func(x.OldEntity));
 	}
 
 	private T CloneEntity(T entity)
 	{
-		var constructorInfo = _type.GetConstructor(Type.EmptyTypes);
+		var constructorInfo = _typeofT.GetCachedConstructor(Type.EmptyTypes);
 		if (constructorInfo == null)
 		{
 			throw new CornerstoneException("Failed to create new instance...");
 		}
 
 		var response = (T) constructorInfo.Invoke(null);
-		var properties = EntityState.GetStateProperties(_type).ToList();
+		var properties = EntityState.GetStateProperties(_typeofT).ToList();
 
 		foreach (var property in properties)
 		{
@@ -635,7 +659,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 		}
 
 		var enumerableType = typeof(IEnumerable);
-		var collectionRelationships = _type
+		var collectionRelationships = _typeofT
 			.GetCachedProperties()
 			.Where(x => x.IsVirtual())
 			.Where(x => enumerableType.IsAssignableFrom(x.PropertyType))
@@ -663,12 +687,12 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	private IEnumerable<EntityState<T, T2>> GetChanges()
 	{
 		// Make sure we are not missing anything...
-		foreach (var item in Cache.Where(x => x.State == EntityStateType.Unmodified))
+		foreach (var item in _cache.Where(x => x.State == EntityStateType.Unmodified))
 		{
 			item.RefreshState();
 		}
 
-		return Cache
+		return _cache
 			.Where(x => x.State != EntityStateType.Unmodified)
 			.ToList();
 	}
@@ -683,7 +707,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	{
 		entityState.ResetEvents();
 
-		Cache?.Remove(entityState);
+		_cache?.Remove(entityState);
 
 		var keyCache = (Database as ISyncableDatabase)?.KeyCache;
 		if (keyCache == null)
@@ -704,19 +728,19 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 
 	private void ResetCache()
 	{
-		Cache?
+		_cache?
 			.Where(x => x.State == EntityStateType.Added)
 			.ToList()
 			.ForEach(RemoveFromCache);
 
-		Cache?
+		_cache?
 			.ToList()
 			.ForEach(x => { x.Reset(); });
 	}
 
 	private void UpdateCacheQuery()
 	{
-		_query = Cache
+		_query = _cache
 			.Where(x => x.State != EntityStateType.Added)
 			.Select(x => x.Entity)
 			.AsQueryable();
@@ -744,7 +768,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	/// <summary>
 	/// Occurs when an entity relationships are updated.
 	/// </summary>
-	internal event Action<T> UpdateEntityRelationships;
+	internal event Action<EntityState<T, T2>> UpdateEntityRelationships;
 
 	/// <summary>
 	/// Occurs when an entity is being validated.

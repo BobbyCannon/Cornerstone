@@ -8,7 +8,7 @@ using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
 using Cornerstone.Presentation.Managers;
-using PropertyChanged;
+using Cornerstone.Weaver;
 
 #endregion
 
@@ -63,16 +63,16 @@ public abstract class SettingsManager<T, T2> : Manager
 	public abstract ISettingsRepository<T, T2> GetRepository();
 
 	/// <inheritdoc />
-	public override bool HasChanges(IncludeExcludeOptions options)
+	public override bool HasChanges(IncludeExcludeSettings settings)
 	{
-		return options.IsEmpty()
+		return settings.IsEmpty()
 			? _trackedSettings
 				.Values
 				.Any(x => x.HasChanges())
 			: _trackedSettings
 				.Values
-				.Where(x => options.ShouldProcessProperty(x.Name))
-				.Any(x => x.HasChanges(options));
+				.Where(x => settings.ShouldProcessProperty(x.Name))
+				.Any(x => x.HasChanges(settings));
 	}
 
 	/// <summary>
@@ -213,7 +213,7 @@ public abstract class SettingsManager<T, T2> : Manager
 	/// Triggered when set is called for a setting.
 	/// </summary>
 	/// <param name="name"> The name of setting that changed. </param>
-	[SuppressPropertyChangedWarnings]
+
 	protected virtual void OnSettingChanged(string name)
 	{
 		SettingChanged?.Invoke(this, name);

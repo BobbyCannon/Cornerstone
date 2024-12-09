@@ -163,7 +163,7 @@
 
 		<!-- Default property setters. -->
 
-		<Setter Property="Background" Value="{DynamicResource UiTheme06}" />
+		<Setter Property="Background" Value="{DynamicResource Background06}" />
 		<Setter Property="VerticalAlignment" Value="Top" />
 		<Setter Property="Height" Value="22" />
 		<Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -203,7 +203,7 @@
 
 		<!-- Default property setters. -->
 
-		<Setter Property="Background" Value="{DynamicResource UiTheme06}" />
+		<Setter Property="Background" Value="{DynamicResource Background06}" />
 		<Setter Property="VerticalAlignment" Value="Bottom" />
 		<Setter Property="Height" Value="22" />
 		<Setter Property="HorizontalAlignment" Value="Stretch" />

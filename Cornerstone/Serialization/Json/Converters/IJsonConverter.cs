@@ -30,7 +30,7 @@ public interface IJsonConverter
 	/// contents of the given value.
 	/// </param>
 	/// <param name="settings"> </param>
-	void Append(object value, Type valueType, IObjectConsumer consumer, ISerializationOptions settings);
+	void Append(object value, Type valueType, IObjectConsumer consumer, ISerializationSettings settings);
 
 	/// <summary>
 	/// Determine if the converter can covert the provided type.
@@ -58,7 +58,7 @@ public interface IJsonConverter
 	/// </param>
 	/// <param name="settings"> The settings for serializing. </param>
 	/// <returns> The JSON for the provided value. </returns>
-	string GetJsonString(object value, ISerializationOptions settings);
+	string GetJsonString(object value, ISerializationSettings settings);
 
 	/// <summary>
 	/// Return the types the value converter supports.

@@ -20,16 +20,18 @@ using Avalonia.Media.TextFormatting;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Cornerstone.Avalonia.AvaloniaEdit.Utils;
+using Cornerstone.Collections;
 using Cornerstone.Internal;
+using Cornerstone.Text;
 using Cornerstone.Text.Document;
-using PropertyChanged;
+using Cornerstone.Weaver;
 
 #endregion
 
 namespace Cornerstone.Avalonia.AvaloniaEdit.Rendering;
 
 /// <summary>
-/// A virtualizing panel producing+showing <see cref="VisualLine" />s for a <see cref="TextDocument" />.
+/// A virtualizing panel producing+showing <see cref="VisualLine" />s for a <see cref="TextEditorDocument" />.
 /// This is the heart of the text editor, this class controls the text rendering process.
 /// Taken as a standalone control, it's a text viewer without any editing capability.
 /// </summary>
@@ -53,8 +55,8 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 	/// <summary>
 	/// Document property.
 	/// </summary>
-	public static readonly StyledProperty<TextDocument> DocumentProperty =
-		AvaloniaProperty.Register<TextView, TextDocument>(nameof(Document));
+	public static readonly StyledProperty<TextEditorDocument> DocumentProperty =
+		AvaloniaProperty.Register<TextView, TextEditorDocument>(nameof(Document));
 
 	/// <summary>
 	/// LinkTextBackgroundBrush dependency property.
@@ -81,10 +83,10 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 		AvaloniaProperty.Register<TextView, IBrush>(nameof(NonPrintableCharacterBrush), new SolidColorBrush(Color.FromArgb(145, 128, 128, 128)));
 
 	/// <summary>
-	/// Options property.
+	/// Settings property.
 	/// </summary>
-	public static readonly StyledProperty<TextEditorOptions> OptionsProperty =
-		AvaloniaProperty.Register<TextView, TextEditorOptions>(nameof(Options));
+	public static readonly StyledProperty<TextEditorSettings> SettingsProperty =
+		AvaloniaProperty.Register<TextView, TextEditorSettings>(nameof(Settings));
 
 	/// <summary>
 	/// The PointerHover event.
@@ -115,7 +117,7 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 
 	/// <summary>
 	/// The pen used to draw the column ruler.
-	/// <seealso cref="TextEditorOptions.ShowColumnRulers" />
+	/// <seealso cref="TextEditorSettings.ShowColumnRulers" />
 	/// </summary>
 	public static readonly StyledProperty<IPen> ColumnRulerPenProperty =
 		AvaloniaProperty.Register<TextView, IPen>("ColumnRulerBrush", CreateFrozenPen(new SolidColorBrush(Color.FromArgb(90, 128, 128, 128))));
@@ -146,7 +148,7 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 	private double _defaultBaseline; // Baseline of a line containing 'x'. Used for TextTop/TextBottom calculation.
 	private double _defaultLineHeight; // Height of a line containing 'x'. Used for scrolling.
 	private bool _defaultTextMetricsValid;
-	private TextDocument _document;
+	private TextEditorDocument _document;
 	private readonly ObserveAddRemoveCollection<VisualLineElementGenerator> _elementGenerators;
 	private TextFormatter _formatter;
 	private HeightTree _heightTree;
@@ -211,7 +213,7 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 		Services = new ServiceContainer();
 		Services.AddService(this);
 		Layers = new LayerCollection(this);
-		Options = new TextEditorOptions();
+		Settings = new TextEditorSettings();
 		TextLayer = new TextLayer(this);
 		Margin = new Thickness();
 
@@ -224,7 +226,7 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 	{
 		ClipToBoundsProperty.OverrideDefaultValue<TextView>(true);
 		FocusableProperty.OverrideDefaultValue<TextView>(false);
-		OptionsProperty.Changed.Subscribe(OnOptionsChanged);
+		SettingsProperty.Changed.Subscribe(OnOptionsChanged);
 		DocumentProperty.Changed.Subscribe(OnDocumentChanged);
 	}
 
@@ -239,7 +241,7 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 
 	/// <summary>
 	/// Gets/Sets the pen used to draw the column ruler.
-	/// <seealso cref="TextEditorOptions.ShowColumnRulers" />
+	/// <seealso cref="TextEditorSettings.ShowColumnRulers" />
 	/// </summary>
 	public IPen ColumnRulerPen
 	{
@@ -295,7 +297,7 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 	/// <summary>
 	/// Gets/Sets the document displayed by the text editor.
 	/// </summary>
-	public TextDocument Document
+	public TextEditorDocument Document
 	{
 		get => GetValue(DocumentProperty);
 		set => SetValue(DocumentProperty, value);
@@ -383,10 +385,10 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 	/// <summary>
 	/// Gets/Sets the options used by the text editor.
 	/// </summary>
-	public TextEditorOptions Options
+	public TextEditorSettings Settings
 	{
-		get => GetValue(OptionsProperty);
-		set => SetValue(OptionsProperty, value);
+		get => GetValue(SettingsProperty);
+		set => SetValue(SettingsProperty, value);
 	}
 
 	/// <summary>
@@ -677,7 +679,7 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 			throw ThrowUtil.NoDocumentAssigned();
 		}
 		var line = GetVisualLineFromVisualTop(visualPosition.Y);
-		return line?.GetTextViewPosition(visualPosition, Options.EnableVirtualSpace);
+		return line?.GetTextViewPosition(visualPosition, Settings.EnableVirtualSpace);
 	}
 
 	/// <summary>
@@ -697,7 +699,7 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 			throw ThrowUtil.NoDocumentAssigned();
 		}
 		var line = GetVisualLineFromVisualTop(visualPosition.Y);
-		return line?.GetTextViewPositionFloor(visualPosition, Options.EnableVirtualSpace);
+		return line?.GetTextViewPositionFloor(visualPosition, Settings.EnableVirtualSpace);
 	}
 
 	/// <summary>
@@ -780,8 +782,8 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 		var visualColumn = position.VisualColumn;
 		if (visualColumn < 0)
 		{
-			var offset = (documentLine.Offset + position.Column) - 1;
-			visualColumn = visualLine.GetVisualColumn(offset - visualLine.FirstDocumentLine.Offset);
+			var offset = (documentLine.StartIndex + position.Column) - 1;
+			visualColumn = visualLine.GetVisualColumn(offset - visualLine.FirstDocumentLine.StartIndex);
 		}
 		return visualLine.GetVisualPosition(visualColumn, position.IsAtEndOfLine, yPositionMode);
 	}
@@ -973,8 +975,8 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 		for (var i = 0; i < _allVisualLines.Count; i++)
 		{
 			var visualLine = _allVisualLines[i];
-			var lineStart = visualLine.FirstDocumentLine.Offset;
-			var lineEnd = visualLine.LastDocumentLine.Offset + visualLine.LastDocumentLine.TotalLength;
+			var lineStart = visualLine.FirstDocumentLine.StartIndex;
+			var lineEnd = visualLine.LastDocumentLine.StartIndex + visualLine.LastDocumentLine.TotalLength;
 			if (offset <= lineEnd)
 			{
 				changedSomethingBeforeOrInLine = true;
@@ -1000,11 +1002,11 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 	/// Causes the text editor to redraw all lines overlapping with the specified segment.
 	/// Does nothing if segment is null.
 	/// </summary>
-	public void Redraw(ISegment segment)
+	public void Redraw(IRange range)
 	{
-		if (segment != null)
+		if (range != null)
 		{
-			Redraw(segment.Offset, segment.Length);
+			Redraw(range.StartIndex, range.Length);
 		}
 	}
 
@@ -1024,7 +1026,7 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 			var length = 0;
 			foreach (var element in line.Elements)
 			{
-				if ((currentBrush == null) || !currentBrush.Equals(element.BackgroundBrush))
+				if ((currentBrush == null) || !currentBrush.Equals(element.Background03))
 				{
 					if (currentBrush != null)
 					{
@@ -1046,7 +1048,7 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 					}
 					startVc = element.VisualColumn;
 					length = element.DocumentLength;
-					currentBrush = element.BackgroundBrush;
+					currentBrush = element.Background03;
 				}
 				else
 				{
@@ -1194,7 +1196,7 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 
 		maxWidth += AdditionalHorizontalScrollAmount;
 		var heightTreeHeight = DocumentHeight;
-		var options = Options;
+		var options = Settings;
 		var desiredHeight = Math.Min(availableSize.Height, heightTreeHeight);
 		double extraHeightToAllowScrollBelowDocument = 0;
 		if (options.AllowScrollBelowDocument)
@@ -1223,14 +1225,14 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 	/// <summary>
 	/// Raises the <see cref="OptionChanged" /> event.
 	/// </summary>
-	[SuppressPropertyChangedWarnings]
+
 	protected virtual void OnOptionChanged(PropertyChangedEventArgs e)
 	{
 		OptionChanged?.Invoke(this, e);
 
-		if (Options.ShowColumnRulers)
+		if (Settings.ShowColumnRulers)
 		{
-			_columnRulerRenderer.SetRuler(Options.ColumnRulerPositions, ColumnRulerPen);
+			_columnRulerRenderer.SetRuler(Settings.ColumnRulerPositions, ColumnRulerPen);
 		}
 		else
 		{
@@ -1315,7 +1317,7 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 		}
 		if (change.Property == ColumnRulerPenProperty)
 		{
-			_columnRulerRenderer.SetRuler(Options.ColumnRulerPositions, ColumnRulerPen);
+			_columnRulerRenderer.SetRuler(Settings.ColumnRulerPositions, ColumnRulerPen);
 		}
 		if (change.Property == CurrentLineBorderProperty)
 		{
@@ -1412,7 +1414,7 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 				generator = null;
 			}
 		}
-		generator?.FetchOptions(Options);
+		generator?.FetchOptions(Settings);
 	}
 
 	private void BackgroundRenderer_Added(IBackgroundRenderer renderer)
@@ -1499,7 +1501,7 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 			{
 				paragraphProperties.firstLineInParagraph = false;
 
-				var options = Options;
+				var options = Settings;
 				double indentation = 0;
 				if (options.InheritWordWrapIndentation)
 				{
@@ -1685,7 +1687,7 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 		{
 			defaultTextRunProperties = defaultTextRunProperties,
 			textWrapping = _canHorizontallyScroll ? TextWrapping.NoWrap : TextWrapping.Wrap,
-			tabSize = Options.IndentationSize * WideSpaceWidth
+			tabSize = Settings.IndentationSize * WideSpaceWidth
 		};
 	}
 
@@ -1823,14 +1825,14 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 		Redraw(e.Offset, e.RemovalLength);
 	}
 
-	[SuppressPropertyChangedWarnings]
+
 	private static void OnDocumentChanged(AvaloniaPropertyChangedEventArgs e)
 	{
-		(e.Sender as TextView)?.OnDocumentChanged((TextDocument) e.OldValue, (TextDocument) e.NewValue);
+		(e.Sender as TextView)?.OnDocumentChanged((TextEditorDocument) e.OldValue, (TextEditorDocument) e.NewValue);
 	}
 
-	[SuppressPropertyChangedWarnings]
-	private void OnDocumentChanged(TextDocument oldValue, TextDocument newValue)
+
+	private void OnDocumentChanged(TextEditorDocument oldValue, TextEditorDocument newValue)
 	{
 		if (oldValue != null)
 		{
@@ -1855,14 +1857,14 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 		DocumentChanged?.Invoke(this, new DocumentChangedEventArgs(oldValue, newValue));
 	}
 
-	[SuppressPropertyChangedWarnings]
+
 	private static void OnOptionsChanged(AvaloniaPropertyChangedEventArgs e)
 	{
-		(e.Sender as TextView)?.OnOptionsChanged((TextEditorOptions) e.OldValue, (TextEditorOptions) e.NewValue);
+		(e.Sender as TextView)?.OnOptionsChanged((TextEditorSettings) e.OldValue, (TextEditorSettings) e.NewValue);
 	}
 
-	[SuppressPropertyChangedWarnings]
-	private void OnOptionsChanged(TextEditorOptions oldValue, TextEditorOptions newValue)
+
+	private void OnOptionsChanged(TextEditorSettings oldValue, TextEditorSettings newValue)
 	{
 		if (oldValue != null)
 		{
@@ -2003,7 +2005,7 @@ public class TextView : Control, ITextEditorComponent, ILogicalScrollable
 
 	private void UpdateBuiltinElementGeneratorsFromOptions()
 	{
-		var options = Options;
+		var options = Settings;
 
 		//			AddRemoveDefaultElementGeneratorOnDemand(ref newLineElementGenerator, options.ShowEndOfLine);
 		AddRemoveDefaultElementGeneratorOnDemand(ref _singleCharacterElementGenerator, options.ShowBoxForControlCharacters || options.ShowSpaces || options.ShowTabs);

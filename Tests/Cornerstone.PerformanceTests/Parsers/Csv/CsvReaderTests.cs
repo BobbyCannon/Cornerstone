@@ -22,7 +22,7 @@ public class CsvReaderTests : CornerstoneUnitTest
 		var accountsPath = $@"{UnitTestsDirectory}\Resources\Accounts.csv";
 		var textToStream = File.ReadAllText(accountsPath);
 		using var stringReader = new StringReader(textToStream);
-		var options = new CsvOptions { HasHeader = true, Delimiter = ',' };
+		var options = new CsvConverterSettings { HasHeader = true, Delimiter = ',' };
 		var csvReader = new CsvReader(stringReader, options);
 
 		AreEqual(0, csvReader.FieldsCount);

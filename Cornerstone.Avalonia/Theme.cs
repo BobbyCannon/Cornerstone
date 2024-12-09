@@ -7,14 +7,13 @@ using Avalonia.Controls;
 using Avalonia.Data.Converters;
 using Avalonia.Styling;
 using Cornerstone.Extensions;
-using PropertyChanged;
+using Cornerstone.Weaver;
 
 #endregion
 
 namespace Cornerstone.Avalonia;
 
 [DoNotNotify]
-[PropertyChanging.DoNotNotify]
 public abstract class Theme : Styles
 {
 	#region Fields

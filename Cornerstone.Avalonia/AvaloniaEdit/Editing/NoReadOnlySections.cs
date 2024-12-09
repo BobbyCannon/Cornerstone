@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Cornerstone.Avalonia.AvaloniaEdit.Utils;
+using Cornerstone.Collections;
+using Cornerstone.Text;
 using Cornerstone.Text.Document;
 
 #endregion
@@ -28,14 +30,14 @@ internal sealed class NoReadOnlySections : IReadOnlySectionProvider
 		return true;
 	}
 
-	public IEnumerable<ISegment> GetDeletableSegments(ISegment segment)
+	public IEnumerable<IRange> GetDeletableSegments(IRange range)
 	{
-		if (segment == null)
+		if (range == null)
 		{
-			throw new ArgumentNullException(nameof(segment));
+			throw new ArgumentNullException(nameof(range));
 		}
 		// the segment is always deletable
-		return ExtensionMethods.Sequence(segment);
+		return ExtensionMethods.Sequence(range);
 	}
 
 	#endregion
@@ -59,9 +61,9 @@ internal sealed class ReadOnlySectionDocument : IReadOnlySectionProvider
 		return false;
 	}
 
-	public IEnumerable<ISegment> GetDeletableSegments(ISegment segment)
+	public IEnumerable<IRange> GetDeletableSegments(IRange range)
 	{
-		return Enumerable.Empty<ISegment>();
+		return [];
 	}
 
 	#endregion

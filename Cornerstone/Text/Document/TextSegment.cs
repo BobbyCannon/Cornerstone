@@ -2,6 +2,7 @@
 
 using System;
 using System.Diagnostics;
+using Cornerstone.Collections;
 
 #endregion
 
@@ -12,7 +13,7 @@ namespace Cornerstone.Text.Document;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A <see cref="TextSegment" /> can be stand-alone or part of a <see cref="TextSegmentCollection{T}" />.
+/// A <see cref="TextRange" /> can be stand-alone or part of a <see cref="TextSegmentCollection{T}" />.
 /// If the segment is stored inside a TextSegmentCollection, its Offset and Length will be updated by that collection.
 /// </para>
 /// <para>
@@ -27,16 +28,16 @@ namespace Cornerstone.Text.Document;
 /// Segments with length 0 will never expand due to document changes, and they move as <c> AfterInsertion </c>.
 /// </para>
 /// <para>
-/// Thread-safety: a TextSegmentCollection that is connected to a <see cref="TextDocument" /> may only be used on that document's owner thread.
+/// Thread-safety: a TextSegmentCollection that is connected to a <see cref="TextEditorDocument" /> may only be used on that document's owner thread.
 /// A disconnected TextSegmentCollection is safe for concurrent reads, but concurrent access is not safe when there are writes.
 /// Keep in mind that reading the Offset properties of a text segment inside the collection is a read access on the
 /// collection; and setting an Offset property of a text segment is a write access on the collection.
 /// </para>
 /// </remarks>
-/// <seealso cref="ISegment" />
-/// <seealso cref="AnchorSegment" />
+/// <seealso cref="IRange" />
+/// <seealso cref="AnchorRange" />
 /// <seealso cref="TextSegmentCollection{T}" />
-public class TextSegment : ISegment
+public class TextRange : IRange
 {
 	#region Properties
 
@@ -46,7 +47,7 @@ public class TextSegment : ISegment
 	/// <remarks>
 	/// Setting the end offset will change the length, the start offset will stay constant.
 	/// </remarks>
-	public int EndOffset
+	public int EndIndex
 	{
 		get => StartOffset + Length;
 		set
@@ -162,9 +163,9 @@ public class TextSegment : ISegment
 	/// </summary>
 	internal int DistanceToMaxEnd { get; set; }
 
-	internal TextSegment Left { get; set; }
+	internal TextRange Left { get; set; }
 
-	internal TextSegment LeftMost
+	internal TextRange LeftMost
 	{
 		get
 		{
@@ -183,12 +184,12 @@ public class TextSegment : ISegment
 	internal int NodeLength { get; set; }
 
 	internal ISegmentTree OwnerTree { get; set; }
-	internal TextSegment Parent { get; set; }
+	internal TextRange Parent { get; set; }
 
 	/// <summary>
 	/// Gets the inorder predecessor of the node.
 	/// </summary>
-	internal TextSegment Predecessor
+	internal TextRange Predecessor
 	{
 		get
 		{
@@ -197,7 +198,7 @@ public class TextSegment : ISegment
 				return Left.RightMost;
 			}
 			var node = this;
-			TextSegment oldNode;
+			TextRange oldNode;
 			do
 			{
 				oldNode = node;
@@ -208,9 +209,9 @@ public class TextSegment : ISegment
 		}
 	}
 
-	internal TextSegment Right { get; set; }
+	internal TextRange Right { get; set; }
 
-	internal TextSegment RightMost
+	internal TextRange RightMost
 	{
 		get
 		{
@@ -231,7 +232,7 @@ public class TextSegment : ISegment
 	/// <summary>
 	/// Gets the inorder successor of the node.
 	/// </summary>
-	internal TextSegment Successor
+	internal TextRange Successor
 	{
 		get
 		{
@@ -240,7 +241,7 @@ public class TextSegment : ISegment
 				return Right.LeftMost;
 			}
 			var node = this;
-			TextSegment oldNode;
+			TextRange oldNode;
 			do
 			{
 				oldNode = node;
@@ -256,7 +257,7 @@ public class TextSegment : ISegment
 	/// </summary>
 	internal int TotalNodeLength { get; set; } // totalNodeLength = nodeLength + left.totalNodeLength + right.totalNodeLength
 
-	int ISegment.Offset => StartOffset;
+	int IRange.StartIndex => StartOffset;
 
 	#endregion
 
@@ -265,7 +266,7 @@ public class TextSegment : ISegment
 	/// <inheritdoc />
 	public override string ToString()
 	{
-		return $"[{GetType().Name} Offset={StartOffset} Length={Length} EndOffset={EndOffset}]";
+		return $"[{GetType().Name} Offset={StartOffset} Length={Length} EndOffset={EndIndex}]";
 	}
 
 	/// <summary>

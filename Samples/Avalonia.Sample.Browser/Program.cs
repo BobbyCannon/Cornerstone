@@ -1,12 +1,11 @@
 ﻿#region References
 
-using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using Avalonia.Browser;
+using Cornerstone.Avalonia;
+using Cornerstone.Location;
 
 #endregion
-
-[assembly: SupportedOSPlatform("browser")]
 
 namespace Avalonia.Sample.Browser;
 
@@ -21,6 +20,11 @@ internal class Program
 
 	private static async Task Main(string[] args)
 	{
+		var locationProvider = new LocationProvider();
+		var dependencyProvider = CornerstoneApplication.DependencyProvider;
+
+		dependencyProvider.AddSingleton<ILocationProvider>(() => locationProvider);
+
 		await BuildAvaloniaApp()
 			.WithInterFont()
 			.StartBrowserAppAsync("out");

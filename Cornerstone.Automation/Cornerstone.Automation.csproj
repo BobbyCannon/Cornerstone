@@ -1,5 +1,6 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
+		<TargetFrameworks>net9.0-windows10.0.19041.0</TargetFrameworks>
 		<AssemblyTitle>Cornerstone.Automation</AssemblyTitle>
 		<PackageId>Cornerstone.Automation</PackageId>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -11,11 +12,12 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Interop.UIAutomationClient" Version="10.19041.0" />
-		<PackageReference Include="MSTest.TestFramework" Version="3.4.3" />
-		<PackageReference Include="System.Management" Version="8.0.0" />
+		<PackageReference Include="MSTest.TestFramework" Version="3.6.3" />
+		<PackageReference Include="System.Management" Version="9.0.0" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Cornerstone.Newtonsoft\Cornerstone.Newtonsoft.csproj" />
+		<ProjectReference Include="..\Cornerstone.Windows\Cornerstone.Windows.csproj" />
 		<ProjectReference Include="..\Cornerstone\Cornerstone.csproj" />
 	</ItemGroup>
 </Project>

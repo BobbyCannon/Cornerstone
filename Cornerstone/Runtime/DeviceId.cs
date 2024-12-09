@@ -35,6 +35,11 @@ public class DeviceId
 	public IDictionary<string, IDeviceIdComponent> Components { get; }
 
 	/// <summary>
+	/// Gets or sets the vendor ID.
+	/// </summary>
+	public static string VendorId { get; set; }
+
+	/// <summary>
 	/// Gets or sets the formatter to use.
 	/// </summary>
 	internal IDeviceIdFormatter Formatter { get; set; }
@@ -81,6 +86,15 @@ public class DeviceId
 	public DeviceId AddUserName()
 	{
 		return AddComponent("UserName", new DeviceIdComponent(Environment.UserName));
+	}
+
+	/// <summary>
+	/// Adds the vendor ID to the device identifier.
+	/// </summary>
+	/// <returns> The <see cref="DeviceId" /> instance. </returns>
+	public DeviceId AddVendorId()
+	{
+		return AddComponent("VendorId", new DeviceIdComponent(VendorId));
 	}
 
 	/// <summary>

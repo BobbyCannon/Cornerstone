@@ -35,7 +35,7 @@ public class LineNumberMargin : AbstractMargin
 	protected int MaxLineNumberLength;
 
 	private bool _selecting;
-	private AnchorSegment _selectionStart;
+	private AnchorRange _selectionStart;
 
 	#endregion
 
@@ -86,6 +86,11 @@ public class LineNumberMargin : AbstractMargin
 
 			foreach (var line in textView.VisualLines)
 			{
+				if (line.FirstDocumentLine.IsDeleted)
+				{
+					continue;
+				}
+
 				var lineNumber = line.FirstDocumentLine.LineNumber;
 				var text = TextFormatterFactory.CreateFormattedText(
 					this,
@@ -117,7 +122,7 @@ public class LineNumberMargin : AbstractMargin
 	}
 
 	/// <inheritdoc />
-	protected override void OnDocumentChanged(TextDocument oldDocument, TextDocument newDocument)
+	protected override void OnDocumentChanged(TextEditorDocument oldDocument, TextEditorDocument newDocument)
 	{
 		if (oldDocument != null)
 		{
@@ -166,12 +171,12 @@ public class LineNumberMargin : AbstractMargin
 			if (e.Pointer.Captured == this)
 			{
 				_selecting = true;
-				_selectionStart = new AnchorSegment(Document, currentSeg.Offset, currentSeg.Length);
+				_selectionStart = new AnchorRange(Document, currentSeg.Offset, currentSeg.Length);
 				if (e.KeyModifiers.HasFlag(KeyModifiers.Shift))
 				{
 					if (TextArea.Selection is SimpleSelection simpleSelection)
 					{
-						_selectionStart = new AnchorSegment(Document, simpleSelection.SurroundingSegment);
+						_selectionStart = new AnchorRange(Document, simpleSelection.SurroundingRange);
 					}
 				}
 				TextArea.Selection = Selection.Create(TextArea, _selectionStart);
@@ -216,21 +221,21 @@ public class LineNumberMargin : AbstractMargin
 		return arg2;
 	}
 
-	private void ExtendSelection(SimpleSegment currentSeg)
+	private void ExtendSelection(SimpleRange currentSeg)
 	{
-		if (currentSeg.Offset < _selectionStart.Offset)
+		if (currentSeg.Offset < _selectionStart.StartIndex)
 		{
 			TextArea.Caret.Offset = currentSeg.Offset;
-			TextArea.Selection = Selection.Create(TextArea, currentSeg.Offset, _selectionStart.Offset + _selectionStart.Length);
+			TextArea.Selection = Selection.Create(TextArea, currentSeg.Offset, _selectionStart.StartIndex + _selectionStart.Length);
 		}
 		else
 		{
 			TextArea.Caret.Offset = currentSeg.Offset + currentSeg.Length;
-			TextArea.Selection = Selection.Create(TextArea, _selectionStart.Offset, currentSeg.Offset + currentSeg.Length);
+			TextArea.Selection = Selection.Create(TextArea, _selectionStart.StartIndex, currentSeg.Offset + currentSeg.Length);
 		}
 	}
 
-	private SimpleSegment GetTextLineSegment(PointerEventArgs e)
+	private SimpleRange GetTextLineSegment(PointerEventArgs e)
 	{
 		var pos = e.GetPosition(TextView);
 		pos = new Point(0, pos.Y.CoerceValue(0, TextView.Bounds.Height) + TextView.VerticalOffset);
@@ -242,14 +247,14 @@ public class LineNumberMargin : AbstractMargin
 		var tl = vl.GetTextLineByVisualYPosition(pos.Y);
 		var visualStartColumn = vl.GetTextLineVisualStartColumn(tl);
 		var visualEndColumn = visualStartColumn + tl.Length;
-		var relStart = vl.FirstDocumentLine.Offset;
+		var relStart = vl.FirstDocumentLine.StartIndex;
 		var startOffset = vl.GetRelativeOffset(visualStartColumn) + relStart;
 		var endOffset = vl.GetRelativeOffset(visualEndColumn) + relStart;
-		if (endOffset == (vl.LastDocumentLine.Offset + vl.LastDocumentLine.Length))
+		if (endOffset == (vl.LastDocumentLine.StartIndex + vl.LastDocumentLine.Length))
 		{
 			endOffset += vl.LastDocumentLine.DelimiterLength;
 		}
-		return new SimpleSegment(startOffset, endOffset - startOffset);
+		return new SimpleRange(startOffset, endOffset - startOffset);
 	}
 
 	private void OnDocumentLineCountChanged(object sender, EventArgs e)

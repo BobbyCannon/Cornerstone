@@ -6,7 +6,7 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Cornerstone.Avalonia.AvaloniaEdit.Rendering;
 using Cornerstone.Avalonia.AvaloniaEdit.Utils;
-using PropertyChanged;
+using Cornerstone.Weaver;
 
 #endregion
 

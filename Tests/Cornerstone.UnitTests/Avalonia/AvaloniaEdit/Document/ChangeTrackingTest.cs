@@ -16,7 +16,7 @@ public class ChangeTrackingTest : CornerstoneUnitTest
 	[TestMethod]
 	public void BackwardChanges()
 	{
-		var document = new TextDocument("initial text");
+		var document = new TextEditorDocument("initial text");
 		var snapshot1 = document.CreateSnapshot();
 		document.Replace(0, 7, "nw");
 		document.Insert(1, "e");
@@ -33,7 +33,7 @@ public class ChangeTrackingTest : CornerstoneUnitTest
 	[TestMethod]
 	public void ForwardChanges()
 	{
-		var document = new TextDocument("initial text");
+		var document = new TextEditorDocument("initial text");
 		var snapshot1 = document.CreateSnapshot();
 		document.Replace(0, 7, "nw");
 		document.Insert(1, "e");
@@ -51,7 +51,7 @@ public class ChangeTrackingTest : CornerstoneUnitTest
 	[TestMethod]
 	public void NoChanges()
 	{
-		var document = new TextDocument("initial text");
+		var document = new TextEditorDocument("initial text");
 		var snapshot1 = document.CreateSnapshot();
 		var snapshot2 = document.CreateSnapshot();
 		AreEqual(0, snapshot1.Version.CompareAge(snapshot2.Version));

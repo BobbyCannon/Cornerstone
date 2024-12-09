@@ -1,0 +1,111 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:controls="clr-namespace:Cornerstone.Avalonia.Controls"
+		xmlns:presentation="clr-namespace:Cornerstone.Presentation;assembly=Cornerstone">
+	<Design.PreviewWith>
+		<Border MinWidth="600" MinHeight="600">
+			<Grid RowDefinitions="Auto,*,*">
+				<StackPanel Orientation="Horizontal"
+						Spacing="10"
+						Margin="10">
+					<ToggleSwitch x:Name="IsOpen"
+							IsChecked="True"
+							OnContent="Is Open"
+							OffContent="Is Open" />
+					<ToggleSwitch x:Name="LightDismiss"
+							OnContent="Light Dismiss"
+							OffContent="Light Dismiss" />
+				</StackPanel>
+				<ThemeVariantScope Grid.Row="1"
+						RequestedThemeVariant="Light">
+					<ConnectionStringBuilder x:Name="Builder"
+							DatabaseType="Memory"
+							IsBuilderOpen="{Binding ElementName=IsOpen, Path=IsChecked, Mode=TwoWay}"
+							IsLightDismissEnabled="{Binding ElementName=LightDismiss, Path=IsChecked, Mode=TwoWay}"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Top"/>
+				</ThemeVariantScope>
+				<ThemeVariantScope Grid.Row="2"
+						RequestedThemeVariant="Dark">
+					<ConnectionStringBuilder x:Name="Builder2"
+							DatabaseType="Memory"
+							IsBuilderOpen="{Binding ElementName=Builder, Path=IsBuilderOpen, Mode=TwoWay}"
+							IsLightDismissEnabled="{Binding ElementName=Builder, Path=IsLightDismissEnabled, Mode=TwoWay}"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Top"/>
+				</ThemeVariantScope>
+			</Grid>
+		</Border>
+	</Design.PreviewWith>
+	<ControlTheme x:Key="{x:Type controls:ConnectionStringBuilder}"
+			TargetType="controls:ConnectionStringBuilder">
+		<Setter Property="Background" Value="{DynamicResource Background04}" />
+		<Setter Property="Padding" Value="0" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Grid>
+					<ToggleButton x:Name="Button"
+							Content="Configure"
+							IsChecked="{TemplateBinding IsBuilderOpen, Mode=TwoWay}" />
+					<Popup
+							Grid.Column="0"
+							Name="PART_Popup"
+							InheritsTransform="True"
+							IsLightDismissEnabled="{TemplateBinding IsLightDismissEnabled, Mode=TwoWay}"
+							IsOpen="{TemplateBinding IsBuilderOpen, Mode=TwoWay}"
+							MinWidth="{Binding Bounds.Width, RelativeSource={RelativeSource TemplatedParent}}"
+							PlacementTarget="Button"
+							Placement="BottomEdgeAlignedLeft"
+							WindowManagerAddShadowHint="False">
+						<Border
+								x:Name="PopupBorder"
+								Background="{DynamicResource Background04}"
+								BorderBrush="{DynamicResource ComboBoxDropDownBorderBrush}"
+								BorderThickness="{DynamicResource ComboBoxDropdownBorderThickness}"
+								Padding="8"
+								HorizontalAlignment="Stretch"
+								CornerRadius="{DynamicResource ComboBoxDropdownCornerRadius}">
+							<Border.Styles>
+								<Style Selector="TextBlock.Label">
+									<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+									<Setter Property="VerticalAlignment" Value="Center" />
+									<Setter Property="Margin" Value="0,0,12,0" />
+								</Style>
+							</Border.Styles>
+							<Grid ColumnDefinitions="Auto,*"
+									RowDefinitions="*,*,*,*,*">
+								<TextBlock Grid.Column="0" Grid.Row="0"
+										Classes="Label"
+										Text="Database" />
+								<ComboBox Grid.Column="1" Grid.Row="0"
+										ItemsSource="{x:Static ConnectionStringBuilder.DatabaseTypes}"
+										SelectedValue="{TemplateBinding DatabaseType, Mode=TwoWay}"
+										x:DataType="presentation:SelectionOption"
+										DisplayMemberBinding="{Binding Name}"
+										SelectedValueBinding="{Binding Id}"
+										MinWidth="180" />
+								<TextBlock Grid.Column="0" Grid.Row="1"
+										Classes="Label"
+										Text="Server" />
+								<TextBox Grid.Column="1" Grid.Row="1" />
+								<CheckBox Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="2" Content="Windows Authentication" />
+
+								<TextBlock Grid.Column="0" Grid.Row="3"
+										Classes="Label"
+										Text="User Name" />
+								<TextBox Grid.Column="1" Grid.Row="3" />
+								<TextBlock Grid.Column="0" Grid.Row="4"
+										Classes="Label"
+										Text="Password" />
+								<TextBox Grid.Column="1" Grid.Row="4"
+										PasswordChar="•"
+										Classes="RevealPasswordButton" />
+							</Grid>
+						</Border>
+					</Popup>
+				</Grid>
+			</ControlTemplate>
+		</Setter>
+	</ControlTheme>
+
+</ResourceDictionary>

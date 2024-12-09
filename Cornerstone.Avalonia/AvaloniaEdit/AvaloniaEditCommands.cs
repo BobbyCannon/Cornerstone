@@ -23,6 +23,7 @@ public static class AvaloniaEditCommands
 		ConvertToLowercase = new(nameof(ConvertToLowercase));
 		ConvertToTitleCase = new(nameof(ConvertToTitleCase));
 		ConvertToUppercase = new(nameof(ConvertToUppercase));
+		DeleteLine = new(nameof(DeleteLine), new KeyGesture(Key.Delete, KeyModifiers.Shift));
 		DuplicateLine = new(nameof(DuplicateLine), new KeyGesture(Key.D, KeyModifiers.Control));
 		IndentSelection = new(nameof(IndentSelection), new KeyGesture(Key.I, KeyModifiers.Control));
 		InvertCase = new(nameof(InvertCase));
@@ -72,6 +73,12 @@ public static class AvaloniaEditCommands
 
 	/// <summary>
 	/// Deletes the current line.
+	/// The default shortcut is Shift+Delete.
+	/// </summary>
+	public static RoutedCommand DeleteLine { get; }
+
+	/// <summary>
+	/// Duplicates the current line.
 	/// The default shortcut is Ctrl+D.
 	/// </summary>
 	public static RoutedCommand DuplicateLine { get; }

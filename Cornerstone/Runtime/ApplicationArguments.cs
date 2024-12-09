@@ -3,8 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
-
+using Cornerstone.Collections;
 
 #endregion
 
@@ -24,13 +23,19 @@ public class ApplicationArguments
 
 	#region Constructors
 
-	public ApplicationArguments(string commandPrefix = "-")
+	public ApplicationArguments() : this("-")
+	{
+
+	}
+
+	public ApplicationArguments(string commandPrefix)
 	{
 		_commandPrefix = string.IsNullOrEmpty(commandPrefix) ? "-" : commandPrefix;
 		_parsedArguments = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-		CommandsProcessed = [];
-		OtherValues = new List<string>();
+		CommandsProcessed = new SpeedyList<string>();
+		OtherValues = new SpeedyList<string>();
+		Raw = new SpeedyList<string>();
 	}
 
 	#endregion
@@ -39,7 +44,7 @@ public class ApplicationArguments
 
 	public IReadOnlyList<string> Commands => _parsedArguments.Keys.ToList();
 
-	public List<string> CommandsProcessed { get; }
+	public ISpeedyList<string> CommandsProcessed { get; }
 
 	public int Count => _parsedArguments.Count;
 
@@ -63,9 +68,9 @@ public class ApplicationArguments
 		}
 	}
 
-	public IList<string> OtherValues { get; }
+	public SpeedyList<string> OtherValues { get; }
 
-	public IList<string> Raw { get; set; }
+	public SpeedyList<string> Raw { get; }
 
 	#endregion
 
@@ -142,7 +147,7 @@ public class ApplicationArguments
 
 	public void Parse(IList<string> arguments)
 	{
-		Raw = arguments;
+		Raw.Load(arguments);
 
 		for (var i = 0; i < arguments.Count; i++)
 		{

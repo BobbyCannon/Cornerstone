@@ -30,7 +30,7 @@ public class RandomGeneratorTests : CornerstoneUnitTest
 	{
 		for (var i = 0; i < LoopCount; i++)
 		{
-			RandomGenerator.NextDecimal(0, 20, scale: 6).Dump();
+			RandomGenerator.NextDecimal(0, 20, 6).Dump();
 		}
 	}
 
@@ -42,6 +42,38 @@ public class RandomGeneratorTests : CornerstoneUnitTest
 			var actual = RandomGenerator.GetBytes(13);
 			actual.DumpJson();
 			AreEqual(13, actual.Length);
+		}
+	}
+
+	[TestMethod]
+	public void GetEmailAddress()
+	{
+		for (var i = 0; i < 6; i++)
+		{
+			RandomGenerator.GetEmailAddress().Dump();
+		}
+
+		RandomGenerator.GetEmailAddress("John Doe").Dump(prefix: "\r\nName: ");
+		RandomGenerator.GetEmailAddress(null, "test.com").Dump(prefix: "\r\nDomain: ");
+	}
+
+	[TestMethod]
+	public void GetFullName()
+	{
+		for (var i = 0; i < LoopCount; i++)
+		{
+			RandomGenerator.GetFirstName().Dump();
+			RandomGenerator.GetLastName().Dump();
+			RandomGenerator.GetFullName().Dump();
+		}
+	}
+
+	[TestMethod]
+	public void GetFullStreet()
+	{
+		for (var i = 0; i < LoopCount; i++)
+		{
+			RandomGenerator.GetFullStreet().Dump();
 		}
 	}
 
@@ -71,12 +103,17 @@ public class RandomGeneratorTests : CornerstoneUnitTest
 	[TestMethod]
 	public void GetPassword()
 	{
-		var actual = RandomGenerator.GetPassword(24, false);
+		var settings = new PasswordSettings
+		{
+			MinLength = 24,
+			UseSymbols = false
+		};
+		var actual = RandomGenerator.GetPassword(settings);
 		actual.ToUnsecureString().Dump();
 
 		for (var i = 0; i < LoopCount; i++)
 		{
-			actual = RandomGenerator.GetPassword(24);
+			actual = RandomGenerator.GetPassword(settings);
 			actual.ToUnsecureString().Dump();
 			AreEqual(24, actual.Length);
 		}
@@ -298,10 +335,13 @@ public class RandomGeneratorTests : CornerstoneUnitTest
 			AreEqual(16, actual.Length);
 			actual.ToUnsecureString().Dump();
 
+			var settings = new PasswordSettings { MinLength = 14, UseSymbols = false, UseWords = true };
 			actual = new SecureString();
-			RandomGenerator.SetPassword(actual, 14, false);
-			AreEqual(14, actual.Length);
+			RandomGenerator.SetPassword(actual, settings);
+			IsTrue(actual.Length >= 14);
 			actual.ToUnsecureString().Dump();
+
+			string.Empty.Dump();
 		}
 	}
 

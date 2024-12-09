@@ -19,7 +19,7 @@ public class DatabaseKeyCache
 {
 	#region Fields
 
-	private readonly ConcurrentDictionary<Type, MemoryCache> _cachedEntityId;
+	private readonly ConcurrentDictionary<Type, MemoryCache<string, object>> _cachedEntityId;
 	private readonly TimeSpan _cacheTimeout;
 
 	#endregion
@@ -39,10 +39,10 @@ public class DatabaseKeyCache
 	/// <param name="cacheTimeout"> The timeout for removing an item from the cache. </param>
 	public DatabaseKeyCache(TimeSpan cacheTimeout)
 	{
-		_cachedEntityId = new ConcurrentDictionary<Type, MemoryCache>();
+		_cachedEntityId = new ConcurrentDictionary<Type, MemoryCache<string, object>>();
 		_cacheTimeout = cacheTimeout;
 
-		SyncEntitiesToCache = Array.Empty<Type>();
+		SyncEntitiesToCache = [];
 	}
 
 	#endregion
@@ -107,7 +107,7 @@ public class DatabaseKeyCache
 			return;
 		}
 
-		var cache = _cachedEntityId.GetOrAdd(type, _ => new MemoryCache(_cacheTimeout));
+		var cache = _cachedEntityId.GetOrAdd(type, _ => new MemoryCache<string, object>(_cacheTimeout));
 		cache.Set(syncId.ToString(), id);
 	}
 
@@ -157,7 +157,7 @@ public class DatabaseKeyCache
 	/// <returns> The ID of the entity. </returns>
 	public object GetEntityId(Type type, object syncId)
 	{
-		var cache = _cachedEntityId.GetOrAdd(type, _ => new MemoryCache(_cacheTimeout));
+		var cache = _cachedEntityId.GetOrAdd(type, _ => new MemoryCache<string, object>(_cacheTimeout));
 		return cache.TryGet(syncId.ToString(), out var cachedItem) ? cachedItem.Value : null;
 	}
 
@@ -220,7 +220,7 @@ public class DatabaseKeyCache
 	/// <param name="types"> The types to be loaded. </param>
 	public void LoadKeysIntoCache(ISyncableDatabase database, params Type[] types)
 	{
-		var syncOptions = new SyncOptions();
+		var syncOptions = new SyncSettings();
 		var repositories = database.GetSyncableRepositories(syncOptions).ToList();
 
 		foreach (var type in types)
@@ -345,7 +345,7 @@ public class DatabaseKeyCache
 	/// <param name="cache"> The cache to add the keys to. </param>
 	/// <param name="syncId"> The sync ID of the entity. </param>
 	/// <param name="id"> The ID of the entity. </param>
-	private void AddEntityId(MemoryCache cache, object syncId, object id)
+	private void AddEntityId(MemoryCache<string, object> cache, object syncId, object id)
 	{
 		if (id == null)
 		{
@@ -355,9 +355,9 @@ public class DatabaseKeyCache
 		cache.Set(syncId.ToString(), id);
 	}
 
-	private MemoryCache CreateCache(Type type)
+	private MemoryCache<string, object> CreateCache(Type type)
 	{
-		return _cachedEntityId.GetOrAdd(type, _ => new MemoryCache(_cacheTimeout));
+		return _cachedEntityId.GetOrAdd(type, _ => new MemoryCache<string, object>(_cacheTimeout));
 	}
 
 	#endregion

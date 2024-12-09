@@ -130,6 +130,11 @@ public class TabIconsModel : ViewModel
 
 	public void Save()
 	{
+		if (FontAwesome.IconLookup == null)
+		{
+			return;
+		}
+
 		var icons = FontAwesome.IconLookup.Select(x => x.Key).ToArray();
 		var json = icons.ToJson();
 		File.WriteAllText(_settingsPath, json, Encoding.UTF8);

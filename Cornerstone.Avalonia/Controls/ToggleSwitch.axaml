@@ -9,6 +9,7 @@
 		<StackPanel Margin="20" Width="250" Spacing="24">
 			<StackPanel Spacing="12">
 				<ToggleSwitch />
+				<ToggleSwitch  Background="Red"/>
 				<ToggleSwitch IsChecked="True" />
 				<ToggleSwitch
 						HorizontalContentAlignment="Left"
@@ -27,21 +28,13 @@
 		</StackPanel>
 	</Design.PreviewWith>
 
-	<!-- Button control theme. -->
-
 	<ControlTheme x:Key="{x:Type ToggleSwitch}" TargetType="ToggleSwitch">
-
-		<!-- Default property setters. -->
-
 		<Setter Property="Foreground" Value="{DynamicResource ToggleSwitchContentForeground}" />
 		<Setter Property="HorizontalAlignment" Value="Left" />
 		<Setter Property="VerticalAlignment" Value="Center" />
 		<Setter Property="HorizontalContentAlignment" Value="Left" />
 		<Setter Property="VerticalContentAlignment" Value="Center" />
 		<Setter Property="FontSize" Value="{DynamicResource StandardThemeFontSize}" />
-
-		<!-- Transitions. -->
-
 		<Setter Property="KnobTransitions">
 			<Transitions>
 				<DoubleTransition
@@ -51,12 +44,9 @@
 			</Transitions>
 		</Setter>
 
-		<!-- Template. -->
 		<Setter Property="Template">
 			<ControlTemplate>
-				<!-- Main layout grid. -->
 				<Grid Background="{TemplateBinding Background}" RowDefinitions="Auto,*">
-					<!-- Content. -->
 					<ContentPresenter
 							x:Name="PART_ContentPresenter"
 							Grid.Row="0"
@@ -65,20 +55,15 @@
 							ContentTemplate="{TemplateBinding ContentTemplate}"
 							Margin="{DynamicResource ToggleSwitchTopHeaderMargin}"
 							RecognizesAccessKey="True" />
-
-					<!-- Toggle layout grid. -->
-					<Grid
-							Grid.Row="1"
+					<Grid Grid.Row="1"
 							MinWidth="{DynamicResource ToggleSwitchThemeMinWidth}"
 							HorizontalAlignment="Left"
 							VerticalAlignment="Top">
-
 						<Grid.RowDefinitions>
-							<RowDefinition Height="{DynamicResource ToggleSwitchPreContentMargin}" />
 							<RowDefinition Height="Auto" />
-							<RowDefinition Height="{DynamicResource ToggleSwitchPostContentMargin}" />
+							<RowDefinition Height="Auto" />
+							<RowDefinition Height="Auto" />
 						</Grid.RowDefinitions>
-
 						<Grid.ColumnDefinitions>
 							<ColumnDefinition Width="Auto" />
 							<ColumnDefinition Width="12" MaxWidth="12" />
@@ -86,8 +71,7 @@
 						</Grid.ColumnDefinitions>
 
 						<!-- Switch area grid. -->
-						<Grid
-								x:Name="SwitchAreaGrid"
+						<Grid x:Name="SwitchAreaGrid"
 								Grid.RowSpan="3"
 								Grid.ColumnSpan="3"
 								Background="{DynamicResource ToggleSwitchContainerBackground}"
@@ -486,22 +470,22 @@
 
 		</Style>
 
-		<!-- Blue Grey theme. -->
+		<!-- Blue Gray theme. -->
 
-		<Style Selector="^[(Theme.Color)=BlueGrey]">
+		<Style Selector="^[(Theme.Color)=BlueGray]">
 
 			<Style Selector="^ /template/ Border#SwitchKnobBounds">
-				<Setter Property="Background" Value="{DynamicResource BlueGrey05}" />
+				<Setter Property="Background" Value="{DynamicResource BlueGray05}" />
 			</Style>
 
 			<Style Selector="^:disabled">
 
 				<Style Selector="^ /template/ Border#SwitchKnobBounds">
-					<Setter Property="Background" Value="{DynamicResource BlueGrey03}" />
+					<Setter Property="Background" Value="{DynamicResource BlueGray03}" />
 				</Style>
 
 				<Style Selector="^ /template/ Ellipse#SwitchKnobOn">
-					<Setter Property="Fill" Value="{DynamicResource BlueGrey01}" />
+					<Setter Property="Fill" Value="{DynamicResource BlueGray01}" />
 				</Style>
 
 			</Style>

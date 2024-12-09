@@ -75,18 +75,6 @@ public class ClientAccount : SyncEntity<int>, IAccountSync, IClientEntity
 
 	#region Methods
 
-	/// <summary>
-	/// Combine the roles into a custom format for client side storage.
-	/// This format is different from the server format just to show that
-	/// client and server formats can be different.
-	/// </summary>
-	/// <param name="roles"> The roles for the account. </param>
-	/// <returns> The roles in client storage format. </returns>
-	public static string CombineRoles(IEnumerable<string> roles)
-	{
-		return roles != null ? $";{string.Join(";", roles)};" : ";;";
-	}
-
 	/// <inheritdoc />
 	public override HashSet<string> GetDefaultIncludedProperties(UpdateableAction action)
 	{
@@ -102,22 +90,12 @@ public class ClientAccount : SyncEntity<int>, IAccountSync, IClientEntity
 					.GetCachedProperties()
 					.Select(x => x.Name)
 					.ToList();
-				response.AddRange(syncProperties);
+				response.Add(syncProperties);
 				break;
 			}
 		}
 
 		return response;
-	}
-
-	/// <summary>
-	/// Splits the roles from the custom format into an array.
-	/// </summary>
-	/// <param name="roles"> The roles for the account. </param>
-	/// <returns> The array of roles. </returns>
-	public static IEnumerable<string> SplitRoles(string roles)
-	{
-		return roles != null ? roles.Split([";"], StringSplitOptions.RemoveEmptyEntries) : Array.Empty<string>();
 	}
 
 	#endregion

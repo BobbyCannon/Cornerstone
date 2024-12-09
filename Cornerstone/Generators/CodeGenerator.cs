@@ -23,7 +23,7 @@ public static class CodeGenerator
 	/// </summary>
 	static CodeGenerator()
 	{
-		DefaultWriterOptions = new CodeWriterOptions
+		DefaultWriterSettings = new CodeWriterSettings
 		{
 			IgnoreDefaultValues = true,
 			IgnoreNullValues = true,
@@ -42,7 +42,7 @@ public static class CodeGenerator
 	/// <summary>
 	/// The default settings for writing code.
 	/// </summary>
-	public static CodeWriterOptions DefaultWriterOptions { get; }
+	public static CodeWriterSettings DefaultWriterSettings { get; }
 
 	#endregion
 

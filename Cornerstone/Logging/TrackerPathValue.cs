@@ -112,9 +112,10 @@ public class TrackerPathValue : Notifiable, IEquatable<TrackerPathValue>, ITrack
 /// <summary>
 /// Represents a value for a tracker path.
 /// </summary>
-
 public interface ITrackerPathValue
 {
+	#region Properties
+
 	/// <summary>
 	/// Gets or sets the name.
 	/// </summary>
@@ -124,4 +125,6 @@ public interface ITrackerPathValue
 	/// Gets or sets the value.
 	/// </summary>
 	string Value { get; set; }
+
+	#endregion
 }

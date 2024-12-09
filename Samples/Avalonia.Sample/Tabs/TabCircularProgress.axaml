@@ -3,13 +3,12 @@
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-		mc:Ignorable="d"
+		mc:Ignorable="d" d:DesignWidth="400"
 		x:Class="Avalonia.Sample.Tabs.TabCircularProgress">
-	<Grid ColumnDefinitions="Auto,*">
-		<StackPanel
+	<Grid RowDefinitions="Auto,*">
+		<WrapPanel Orientation="Horizontal"
 				HorizontalAlignment="Left"
 				VerticalAlignment="Top"
-				Spacing="10"
 				Margin="20">
 			<CircularProgress
 					x:Name="Progress"
@@ -18,16 +17,20 @@
 					Width="100"
 					Height="100"
 					Value="63" />
-			<Slider Value="{Binding #Progress.Value, Mode=TwoWay}"
-					Maximum="{Binding #Progress.Maximum}"
-					Minimum="{Binding #Progress.Minimum}" />
-			<CheckBox IsChecked="{Binding #Progress.ShowProgressText, Mode=TwoWay}"
-					Content="Show Progress Text" />
-			<CheckBox IsChecked="{Binding #Progress.IsIndeterminate, Mode=TwoWay}"
-					Content="Indeterminate" />
-		</StackPanel>
-		<ItemsControl 
-				Grid.Column="1"
+			<StackPanel 
+					Spacing="10"
+					Margin="20">
+				<Slider Value="{Binding #Progress.Value, Mode=TwoWay}"
+						Maximum="{Binding #Progress.Maximum}"
+						Minimum="{Binding #Progress.Minimum}"
+						Width="160"/>
+				<CheckBox IsChecked="{Binding #Progress.ShowProgressText, Mode=TwoWay}"
+						Content="Show Progress Text" />
+				<CheckBox IsChecked="{Binding #Progress.IsIndeterminate, Mode=TwoWay}"
+						Content="Indeterminate" />
+			</StackPanel>
+		</WrapPanel>
+		<ItemsControl Grid.Row="1"
 				ItemsSource="{x:Static Theme.ColorsWithCurrent}"
 				Margin="10,0,0,0">
 			<ItemsControl.ItemsPanel>

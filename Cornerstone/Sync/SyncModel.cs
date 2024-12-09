@@ -84,7 +84,7 @@ public class SyncModel : Entity, ISyncEntity
 		//
 		var response = base.GetDefaultIncludedProperties(action);
 		var properties = GetRealType().GetCachedProperties();
-		response.AddRange(properties.Select(x => x.Name));
+		response.Add(properties.Select(x => x.Name));
 		return response;
 	}
 

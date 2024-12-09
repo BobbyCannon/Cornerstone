@@ -6,6 +6,7 @@ using Cornerstone.Collections;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -28,7 +29,7 @@ public class AverageTimer : Bindable
 	/// <summary>
 	/// Instantiate the average service.
 	/// </summary>
-	public AverageTimer() : this(0, null)
+	public AverageTimer() : this(0, null, null)
 	{
 	}
 
@@ -36,7 +37,15 @@ public class AverageTimer : Bindable
 	/// Instantiate the average service.
 	/// </summary>
 	/// <param name="limit"> The maximum amount of values to average. </param>
-	public AverageTimer(int limit) : this(limit, null)
+	public AverageTimer(int limit) : this(limit, null, null)
+	{
+	}
+
+	/// <summary>
+	/// Instantiate the average service.
+	/// </summary>
+	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
+	public AverageTimer(IDateTimeProvider timeProvider) : this(0, timeProvider, null)
 	{
 	}
 
@@ -44,7 +53,7 @@ public class AverageTimer : Bindable
 	/// Instantiate the average service.
 	/// </summary>
 	/// <param name="dispatcher"> The dispatcher. </param>
-	public AverageTimer(IDispatcher dispatcher) : this(0, dispatcher)
+	public AverageTimer(IDispatcher dispatcher) : this(0, null, dispatcher)
 	{
 	}
 
@@ -52,11 +61,12 @@ public class AverageTimer : Bindable
 	/// Instantiate the average service.
 	/// </summary>
 	/// <param name="limit"> The maximum amount of values to average. </param>
+	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <param name="dispatcher"> The dispatcher. </param>
-	public AverageTimer(int limit, IDispatcher dispatcher) : base(dispatcher)
+	public AverageTimer(int limit, IDateTimeProvider timeProvider, IDispatcher dispatcher) : base(dispatcher)
 	{
-		_collection = new SpeedyList<long> { Limit = limit };
-		_timer = new Timer();
+		_collection = new SpeedyList<long>(dispatcher) { Limit = limit };
+		_timer = new Timer(timeProvider, dispatcher);
 	}
 
 	#endregion
@@ -124,7 +134,7 @@ public class AverageTimer : Bindable
 	/// </summary>
 	public void Start()
 	{
-		Start(TimeService.CurrentTime.UtcNow);
+		Start(_timer.GetCurrentTime());
 	}
 
 	/// <summary>
@@ -144,7 +154,7 @@ public class AverageTimer : Bindable
 	/// </summary>
 	public void Stop()
 	{
-		Stop(TimeService.CurrentTime.UtcNow);
+		Stop(_timer.GetCurrentTime());
 	}
 
 	/// <summary>
@@ -223,15 +233,15 @@ public class AverageTimer : Bindable
 	/// <param name="update"> The update to be applied. </param>
 	public virtual bool UpdateWith(AverageTimer update)
 	{
-		return UpdateWith(update, IncludeExcludeOptions.Empty);
+		return UpdateWith(update, IncludeExcludeSettings.Empty);
 	}
 
 	/// <summary>
 	/// Update the AverageTimer with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public virtual bool UpdateWith(AverageTimer update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	public virtual bool UpdateWith(AverageTimer update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -241,7 +251,7 @@ public class AverageTimer : Bindable
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			Average = update.Average;
 			Count = update.Count;
@@ -249,9 +259,9 @@ public class AverageTimer : Bindable
 		}
 		else
 		{
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Average)), x => x.Average = update.Average);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Count)), x => x.Count = update.Count);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Samples)), x => x.Samples = update.Samples);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Average)), x => x.Average = update.Average);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Count)), x => x.Count = update.Count);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Samples)), x => x.Samples = update.Samples);
 		}
 
 		_collection.Reconcile(update._collection);
@@ -261,12 +271,12 @@ public class AverageTimer : Bindable
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
-			AverageTimer value => UpdateWith(value, options),
-			_ => base.UpdateWith(update, options)
+			AverageTimer value => UpdateWith(value, settings),
+			_ => base.UpdateWith(update, settings)
 		};
 	}
 

@@ -1,8 +1,7 @@
 ﻿#region References
 
 using Avalonia;
-using Cornerstone.Avalonia.AvaloniaWebView.Core;
-using Cornerstone.Avalonia.AvaloniaWebView.Shared;
+using Cornerstone.Avalonia.AvaloniaWebView;
 
 #endregion
 
@@ -12,12 +11,12 @@ public static class AppBuilderExtensions
 {
 	#region Methods
 
-	public static AppBuilder UseAndroidWebView(this AppBuilder builder)
+	public static AppBuilder UseCornerstoneAndroid(this AppBuilder builder)
 	{
-		return builder.AfterPlatformServicesSetup(app =>
+		return builder.AfterPlatformServicesSetup(_ =>
 		{
-			CornerstoneApplication.PlatformDependencies.AddSingleton<IViewHandlerProvider, ViewHandlerProvider>();
-			CornerstoneApplication.PlatformDependencies.AddSingleton<IPlatformBlazorWebViewProvider, BlazorWebViewHandlerProvider>();
+			var dependencyProvider = CornerstoneApplication.DependencyProvider;
+			dependencyProvider.AddTransient<IWebViewAdapter, WebViewAdapter>();
 		});
 	}
 

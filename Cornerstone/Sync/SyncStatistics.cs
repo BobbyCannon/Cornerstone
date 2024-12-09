@@ -87,8 +87,8 @@ public class SyncStatistics : Bindable<SyncStatistics>
 	/// Update the SyncStatistics with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public override bool UpdateWith(SyncStatistics update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	public override bool UpdateWith(SyncStatistics update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -98,7 +98,7 @@ public class SyncStatistics : Bindable<SyncStatistics>
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			AppliedChanges = update.AppliedChanges;
 			AppliedCorrections = update.AppliedCorrections;
@@ -108,11 +108,11 @@ public class SyncStatistics : Bindable<SyncStatistics>
 		}
 		else
 		{
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(AppliedChanges)), x => x.AppliedChanges = update.AppliedChanges);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(AppliedCorrections)), x => x.AppliedCorrections = update.AppliedCorrections);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Changes)), x => x.Changes = update.Changes);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Corrections)), x => x.Corrections = update.Corrections);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(IndividualProcessCount)), x => x.IndividualProcessCount = update.IndividualProcessCount);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(AppliedChanges)), x => x.AppliedChanges = update.AppliedChanges);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(AppliedCorrections)), x => x.AppliedCorrections = update.AppliedCorrections);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Changes)), x => x.Changes = update.Changes);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Corrections)), x => x.Corrections = update.Corrections);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(IndividualProcessCount)), x => x.IndividualProcessCount = update.IndividualProcessCount);
 		}
 
 		return true;

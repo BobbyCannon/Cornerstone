@@ -924,7 +924,7 @@ public abstract class OscCommand : Bindable
 	/// <summary>
 	/// Converts the OscCommand into an OscBundle.
 	/// </summary>
-	/// <param name="time"> On optional time for the bundle. Defaults to TimeService.CurrentTime.UtcNow. </param>
+	/// <param name="time"> On optional time for the bundle. Defaults to DateTimeProvider.RealTime.UtcNow. </param>
 	/// <returns> The OscBundle containing this OscCommand as an OscMessage. </returns>
 	public virtual OscBundle ToBundle(DateTime? time = null)
 	{

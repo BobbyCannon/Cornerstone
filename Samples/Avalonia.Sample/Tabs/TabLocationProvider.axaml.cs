@@ -2,7 +2,7 @@
 
 using System;
 using Avalonia.Interactivity;
-using Cornerstone.Avalonia.Controls;
+using Cornerstone.Avalonia;
 using Cornerstone.Data;
 using Cornerstone.Location;
 using Mapsui;
@@ -90,16 +90,6 @@ public partial class TabLocationProvider : CornerstoneUserControl
 	private async void RefreshLocation()
 	{
 		await LocationProvider.GetCurrentLocationAsync(TimeSpan.FromSeconds(1));
-	}
-
-	private async void StartMonitoringOnClick(object sender, RoutedEventArgs e)
-	{
-		await LocationProvider.StartMonitoringAsync();
-	}
-
-	private async void StopMonitoringOnClick(object sender, RoutedEventArgs e)
-	{
-		await LocationProvider.StopMonitoringAsync();
 	}
 
 	#endregion

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -33,7 +34,7 @@ public class OscMessage : OscPacket, IEnumerable<object>
 	/// single entry array.
 	/// </remarks>
 	public OscMessage(string address, params object[] args)
-		: this(TimeService.CurrentTime.UtcNow, address, null, args)
+		: this(DateTimeProvider.RealTime.UtcNow, address, null, args)
 	{
 	}
 
@@ -116,7 +117,7 @@ public class OscMessage : OscPacket, IEnumerable<object>
 	/// <returns> The message for the address and arguments. </returns>
 	public static OscMessage FromObjectArray(string address, IEnumerable<object> args)
 	{
-		return FromObjectArray(TimeService.CurrentTime.UtcNow, address, args);
+		return FromObjectArray(DateTimeProvider.RealTime.UtcNow, address, args);
 	}
 
 	/// <summary>
@@ -587,7 +588,7 @@ public class OscMessage : OscPacket, IEnumerable<object>
 
 		if ((index % 4) != 0)
 		{
-			return new OscError(TimeService.CurrentTime.UtcNow, OscError.Message.InvalidMessageAddressMisAligned);
+			return new OscError(DateTimeProvider.RealTime.UtcNow, OscError.Message.InvalidMessageAddressMisAligned);
 		}
 
 		// Get type tags
@@ -737,7 +738,7 @@ public class OscMessage : OscPacket, IEnumerable<object>
 				case '[':
 					if (arguments != mainArray)
 					{
-						return new OscError(TimeService.CurrentTime.UtcNow, OscError.Message.UnsupportedNestedArrays);
+						return new OscError(DateTimeProvider.RealTime.UtcNow, OscError.Message.UnsupportedNestedArrays);
 					}
 					arguments = []; // make arguments point to a new object array
 					break;
@@ -765,7 +766,7 @@ public class OscMessage : OscPacket, IEnumerable<object>
 
 					if (!parsed)
 					{
-						return new OscError(TimeService.CurrentTime.UtcNow, OscError.Message.UnknownTagType, type);
+						return new OscError(DateTimeProvider.RealTime.UtcNow, OscError.Message.UnknownTagType, type);
 					}
 
 					break;
@@ -797,7 +798,7 @@ public class OscMessage : OscPacket, IEnumerable<object>
 	{
 		if (string.IsNullOrWhiteSpace(value))
 		{
-			return new OscError(TimeService.CurrentTime.UtcNow, OscError.Message.InvalidParseOscPacketInput);
+			return new OscError(DateTimeProvider.RealTime.UtcNow, OscError.Message.InvalidParseOscPacketInput);
 		}
 
 		var index = value.IndexOf(',');
@@ -812,12 +813,12 @@ public class OscMessage : OscPacket, IEnumerable<object>
 
 		if (string.IsNullOrWhiteSpace(address))
 		{
-			return new OscError(TimeService.CurrentTime.UtcNow, OscError.Message.InvalidMessageAddressWasEmpty);
+			return new OscError(DateTimeProvider.RealTime.UtcNow, OscError.Message.InvalidMessageAddressWasEmpty);
 		}
 
 		if (OscAddress.IsValidAddress(address) == false)
 		{
-			return new OscError(TimeService.CurrentTime.UtcNow, OscError.Message.InvalidMessageAddress);
+			return new OscError(DateTimeProvider.RealTime.UtcNow, OscError.Message.InvalidMessageAddress);
 		}
 
 		var arguments = new List<object>();
@@ -828,7 +829,7 @@ public class OscMessage : OscPacket, IEnumerable<object>
 		}
 		catch (Exception ex)
 		{
-			return new OscError(TimeService.CurrentTime.UtcNow, OscError.Message.FailedParsingArguments, ex.Message);
+			return new OscError(DateTimeProvider.RealTime.UtcNow, OscError.Message.FailedParsingArguments, ex.Message);
 		}
 
 		return new OscMessage(time, address, arguments.ToArray());

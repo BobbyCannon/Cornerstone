@@ -2,7 +2,9 @@
 
 using Avalonia.Media;
 using Cornerstone.Avalonia.AvaloniaEdit.Editing;
+using Cornerstone.Collections;
 using Cornerstone.Data;
+using Cornerstone.Text;
 using Cornerstone.Text.Document;
 
 #endregion
@@ -48,9 +50,9 @@ public class CompletionData : Notifiable, ICompletionData
 	#region Methods
 
 	/// <inheritdoc />
-	public virtual void Complete(TextArea textArea, ISegment completionSegment)
+	public virtual void Complete(TextArea textArea, IRange completionRange)
 	{
-		textArea.Document.Replace(completionSegment, CompletionText);
+		textArea.Document.Replace(completionRange, CompletionText);
 
 		if (CaretOffset != 0)
 		{
@@ -114,11 +116,11 @@ public interface ICompletionData
 	/// Perform the completion.
 	/// </summary>
 	/// <param name="textArea"> The text area on which completion is performed. </param>
-	/// <param name="completionSegment">
+	/// <param name="completionRange">
 	/// The text segment that was used by the completion window if
 	/// the user types (segment between CompletionWindow.StartOffset and CompletionWindow.EndOffset).
 	/// </param>
-	void Complete(TextArea textArea, ISegment completionSegment);
+	void Complete(TextArea textArea, IRange completionRange);
 
 	#endregion
 }

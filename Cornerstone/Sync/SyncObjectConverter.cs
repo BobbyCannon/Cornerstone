@@ -14,10 +14,9 @@ namespace Cornerstone.Sync;
 /// </summary>
 /// <typeparam name="TSyncModel"> The sync entity type to convert from. </typeparam>
 /// <typeparam name="TSyncEntity"> The sync entity type to convert to. </typeparam>
-/// <typeparam name="TSyncKey"> The primary key of the entity to convert to. </typeparam>
-public class SyncObjectIncomingConverter<TSyncModel, TSyncEntity, TSyncKey> : SyncObjectIncomingConverter
-	where TSyncModel : SyncModel
-	where TSyncEntity : SyncEntity<TSyncKey>
+public class SyncObjectIncomingConverter<TSyncModel, TSyncEntity> : SyncObjectIncomingConverter
+	where TSyncModel : class, ISyncEntity
+	where TSyncEntity : class, ISyncEntity
 {
 	#region Fields
 
@@ -56,13 +55,13 @@ public class SyncObjectIncomingConverter<TSyncModel, TSyncEntity, TSyncKey> : Sy
 	/// <inheritdoc />
 	public override SyncObject Convert(SyncObject syncObject)
 	{
-		return IncomingConvert<TSyncModel, TSyncEntity, TSyncKey>(syncObject, _convert, UpdateableAction.SyncOutgoing);
+		return IncomingConvert(syncObject, _convert, UpdateableAction.SyncOutgoing);
 	}
 
 	/// <inheritdoc />
 	public override bool Update(ISyncEntity source, ISyncEntity destination, SyncObjectStatus status)
 	{
-		return Update<TSyncEntity, TSyncKey>((TSyncEntity) source, (TSyncEntity) destination, _update,
+		return Update((TSyncEntity) source, (TSyncEntity) destination, _update,
 			status == SyncObjectStatus.Added
 				? UpdateableAction.SyncIncomingAdd
 				: UpdateableAction.SyncIncomingModified,
@@ -77,11 +76,10 @@ public class SyncObjectIncomingConverter<TSyncModel, TSyncEntity, TSyncKey> : Sy
 /// Represents an outgoing object converter.
 /// </summary>
 /// <typeparam name="TSyncEntity"> The sync entity type to convert from. </typeparam>
-/// <typeparam name="TSyncKey"> The primary key of the entity to convert from. </typeparam>
 /// <typeparam name="TSyncModel"> The sync model type to convert to. </typeparam>
-public class SyncObjectOutgoingConverter<TSyncEntity, TSyncKey, TSyncModel> : SyncObjectOutgoingConverter
-	where TSyncEntity : SyncEntity<TSyncKey>
-	where TSyncModel : SyncModel
+public class SyncObjectOutgoingConverter<TSyncEntity, TSyncModel> : SyncObjectOutgoingConverter
+	where TSyncEntity : class, ISyncEntity
+	where TSyncModel : class, ISyncEntity
 {
 	#region Fields
 
@@ -117,7 +115,7 @@ public class SyncObjectOutgoingConverter<TSyncEntity, TSyncKey, TSyncModel> : Sy
 	/// <inheritdoc />
 	public override SyncObject Convert(SyncObject syncObject)
 	{
-		return OutgoingConvert<TSyncEntity, TSyncKey, TSyncModel>(syncObject, _convert, UpdateableAction.SyncOutgoing);
+		return OutgoingConvert<TSyncEntity, TSyncModel>(syncObject, _convert, UpdateableAction.SyncOutgoing);
 	}
 
 	/// <inheritdoc />
@@ -265,14 +263,13 @@ public abstract class SyncObjectConverter
 	/// </summary>
 	/// <typeparam name="TSyncModel"> The sync model type to convert from. </typeparam>
 	/// <typeparam name="TSyncEntity"> The sync entity type to convert to. </typeparam>
-	/// <typeparam name="TSyncKey"> The primary key of the entity to convert to. </typeparam>
 	/// <param name="syncObject"> The sync object to be converted. </param>
 	/// <param name="convert"> An optional convert method to do some additional conversion. </param>
 	/// <param name="action"> The type of the action this convert is for. </param>
 	/// <returns> The converted sync entity in a sync object format. </returns>
-	protected static SyncObject IncomingConvert<TSyncModel, TSyncEntity, TSyncKey>(SyncObject syncObject, Action<TSyncModel, TSyncEntity> convert, UpdateableAction action)
-		where TSyncModel : SyncModel
-		where TSyncEntity : SyncEntity<TSyncKey>
+	protected static SyncObject IncomingConvert<TSyncModel, TSyncEntity>(SyncObject syncObject, Action<TSyncModel, TSyncEntity> convert, UpdateableAction action)
+		where TSyncModel : class, ISyncEntity
+		where TSyncEntity : class, ISyncEntity
 	{
 		var source = syncObject.ToSyncEntity<TSyncModel>();
 		var destination = System.Activator.CreateInstance<TSyncEntity>();
@@ -291,20 +288,19 @@ public abstract class SyncObjectConverter
 		response.Status = syncObject.Status;
 		return response;
 	}
-	
+
 	/// <summary>
 	/// Convert this sync object to a different sync object
 	/// </summary>
-	/// <typeparam name="TSyncEntity"> The sync entity type to convert to. </typeparam>
-	/// <typeparam name="TSyncKey"> The primary key of the entity to convert to. </typeparam>
-	/// <typeparam name="TSyncModel"> The sync entity type to convert from. </typeparam>
+	/// <typeparam name="TSyncEntity"> The sync type to convert from. </typeparam>
+	/// <typeparam name="TSyncModel"> The sync type to convert to. </typeparam>
 	/// <param name="syncObject"> The sync object to be converted. </param>
 	/// <param name="convert"> An optional convert method to do some additional conversion. </param>
 	/// <param name="action"> The type of the action this convert is for. </param>
 	/// <returns> The converted sync entity in a sync object format. </returns>
-	protected static SyncObject OutgoingConvert<TSyncEntity, TSyncKey, TSyncModel>(SyncObject syncObject, Action<TSyncEntity, TSyncModel> convert, UpdateableAction action)
-		where TSyncEntity : SyncEntity<TSyncKey>
-		where TSyncModel : SyncModel
+	protected static SyncObject OutgoingConvert<TSyncEntity, TSyncModel>(SyncObject syncObject, Action<TSyncEntity, TSyncModel> convert, UpdateableAction action)
+		where TSyncEntity : class, ISyncEntity
+		where TSyncModel : class, ISyncEntity
 	{
 		var source = syncObject.ToSyncEntity<TSyncEntity>();
 		var destination = System.Activator.CreateInstance<TSyncModel>();
@@ -328,15 +324,14 @@ public abstract class SyncObjectConverter
 	/// Updates this sync object with another object.
 	/// </summary>
 	/// <typeparam name="T1"> The sync entity type to process. </typeparam>
-	/// <typeparam name="T2"> The primary key of the sync entity. </typeparam>
 	/// <param name="source"> The entity with the updates. </param>
 	/// <param name="destination"> The destination sync entity to be updated. </param>
 	/// <param name="update"> The function to do the updating. </param>
 	/// <param name="action"> The type of the action this update is for. </param>
 	/// <param name="status"> The status of the update. </param>
 	/// <returns> Return true if the entity was updated and should be saved. </returns>
-	protected static bool Update<T1, T2>(T1 source, T1 destination, Func<T1, T1, Action, SyncObjectStatus, bool> update, UpdateableAction action, SyncObjectStatus status)
-		where T1 : SyncEntity<T2>
+	protected static bool Update<T1>(T1 source, T1 destination, Func<T1, T1, Action, SyncObjectStatus, bool> update, UpdateableAction action, SyncObjectStatus status)
+		where T1 : ISyncEntity
 	{
 		destination ??= System.Activator.CreateInstance<T1>();
 

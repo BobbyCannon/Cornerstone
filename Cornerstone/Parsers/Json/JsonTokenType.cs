@@ -1,6 +1,4 @@
-﻿
-
-namespace Cornerstone.Parsers.Json;
+﻿namespace Cornerstone.Parsers.Json;
 
 public enum JsonTokenType
 {
@@ -16,5 +14,7 @@ public enum JsonTokenType
 	NumberInteger = 9,
 	NumberUnsignedInteger = 10,
 	Boolean = 11,
-	Null = 12
+	Null = 12,
+	Whitespace = 13,
+	NewLine = 14
 }

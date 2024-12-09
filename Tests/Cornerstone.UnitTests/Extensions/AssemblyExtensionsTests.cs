@@ -20,7 +20,7 @@ public class AssemblyExtensionsTests : CornerstoneUnitTest
 		//	.Assembly
 		//	.GetAssemblyDirectory();
 
-		//var expected = $"{SolutionDirectory}\\Cornerstone.UnitTests\\bin\\Debug\\net8.0-windows10.0.19041.0";
+		//var expected = $"{SolutionDirectory}\\Cornerstone.UnitTests\\bin\\Debug\\net9.0-windows10.0.19041.0";
 		//AreEqual(UnitTestsDirectory, actual.FullName);
 	}
 

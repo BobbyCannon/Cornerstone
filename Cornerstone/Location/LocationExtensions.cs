@@ -585,8 +585,8 @@ public static class LocationExtensions
 	/// </summary>
 	/// <param name="location"> The location to be updated. </param>
 	/// <param name="update"> The new location. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public static void Update(this IBasicLocation location, IBasicLocation update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	public static void Update(this IBasicLocation location, IBasicLocation update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -596,7 +596,7 @@ public static class LocationExtensions
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			location.Altitude = update.Altitude;
 			location.AltitudeReference = update.AltitudeReference;
@@ -605,10 +605,10 @@ public static class LocationExtensions
 		}
 		else
 		{
-			location.IfThen(_ => options.ShouldProcessProperty(nameof(IBasicLocation.Altitude)), x => x.Altitude = update.Altitude);
-			location.IfThen(_ => options.ShouldProcessProperty(nameof(IBasicLocation.AltitudeReference)), x => x.AltitudeReference = update.AltitudeReference);
-			location.IfThen(_ => options.ShouldProcessProperty(nameof(IBasicLocation.Latitude)), x => x.Latitude = update.Latitude);
-			location.IfThen(_ => options.ShouldProcessProperty(nameof(IBasicLocation.Longitude)), x => x.Longitude = update.Longitude);
+			location.IfThen(_ => settings.ShouldProcessProperty(nameof(IBasicLocation.Altitude)), x => x.Altitude = update.Altitude);
+			location.IfThen(_ => settings.ShouldProcessProperty(nameof(IBasicLocation.AltitudeReference)), x => x.AltitudeReference = update.AltitudeReference);
+			location.IfThen(_ => settings.ShouldProcessProperty(nameof(IBasicLocation.Latitude)), x => x.Latitude = update.Latitude);
+			location.IfThen(_ => settings.ShouldProcessProperty(nameof(IBasicLocation.Longitude)), x => x.Longitude = update.Longitude);
 		}
 	}
 
@@ -666,8 +666,8 @@ public static class LocationExtensions
 	/// </summary>
 	/// <param name="location"> The location to update. </param>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public static bool UpdateWith(this IBasicLocation location, IBasicLocation update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	public static bool UpdateWith(this IBasicLocation location, IBasicLocation update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -677,7 +677,7 @@ public static class LocationExtensions
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			location.Latitude = update.Latitude;
 			location.Longitude = update.Longitude;
@@ -686,10 +686,10 @@ public static class LocationExtensions
 		}
 		else
 		{
-			location.IfThen(_ => options.ShouldProcessProperty(nameof(IBasicLocation.Latitude)), x => x.Latitude = update.Latitude);
-			location.IfThen(_ => options.ShouldProcessProperty(nameof(IBasicLocation.Longitude)), x => x.Longitude = update.Longitude);
-			location.IfThen(_ => options.ShouldProcessProperty(nameof(IBasicLocation.Altitude)), x => x.Altitude = update.Altitude);
-			location.IfThen(_ => options.ShouldProcessProperty(nameof(IBasicLocation.AltitudeReference)), x => x.AltitudeReference = update.AltitudeReference);
+			location.IfThen(_ => settings.ShouldProcessProperty(nameof(IBasicLocation.Latitude)), x => x.Latitude = update.Latitude);
+			location.IfThen(_ => settings.ShouldProcessProperty(nameof(IBasicLocation.Longitude)), x => x.Longitude = update.Longitude);
+			location.IfThen(_ => settings.ShouldProcessProperty(nameof(IBasicLocation.Altitude)), x => x.Altitude = update.Altitude);
+			location.IfThen(_ => settings.ShouldProcessProperty(nameof(IBasicLocation.AltitudeReference)), x => x.AltitudeReference = update.AltitudeReference);
 		}
 
 		return true;
@@ -700,8 +700,8 @@ public static class LocationExtensions
 	/// </summary>
 	/// <param name="location"> The location to update. </param>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public static bool UpdateWith(this IBasicLocation location, ILocation<IHorizontalLocation, IVerticalLocation> update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	public static bool UpdateWith(this IBasicLocation location, ILocation<IHorizontalLocation, IVerticalLocation> update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -711,7 +711,7 @@ public static class LocationExtensions
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			location.Latitude = update.HorizontalLocation.Latitude;
 			location.Longitude = update.HorizontalLocation.Longitude;
@@ -720,8 +720,8 @@ public static class LocationExtensions
 		}
 		else
 		{
-			location.IfThen(_ => options.ShouldProcessProperty(nameof(IBasicLocation.Latitude)), x => x.Latitude = update.HorizontalLocation.Latitude);
-			location.IfThen(_ => options.ShouldProcessProperty(nameof(IBasicLocation.Longitude)), x => x.Longitude = update.HorizontalLocation.Longitude);
+			location.IfThen(_ => settings.ShouldProcessProperty(nameof(IBasicLocation.Latitude)), x => x.Latitude = update.HorizontalLocation.Latitude);
+			location.IfThen(_ => settings.ShouldProcessProperty(nameof(IBasicLocation.Longitude)), x => x.Longitude = update.HorizontalLocation.Longitude);
 		}
 
 		return true;
@@ -732,8 +732,8 @@ public static class LocationExtensions
 	/// </summary>
 	/// <param name="location"> The location to update. </param>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public static bool UpdateWith(this IBasicLocation location, IMinimalHorizontalLocation update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	public static bool UpdateWith(this IBasicLocation location, IMinimalHorizontalLocation update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -743,15 +743,15 @@ public static class LocationExtensions
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			location.Latitude = update.Latitude;
 			location.Longitude = update.Longitude;
 		}
 		else
 		{
-			location.IfThen(_ => options.ShouldProcessProperty(nameof(IBasicLocation.Latitude)), x => x.Latitude = update.Latitude);
-			location.IfThen(_ => options.ShouldProcessProperty(nameof(IBasicLocation.Longitude)), x => x.Longitude = update.Longitude);
+			location.IfThen(_ => settings.ShouldProcessProperty(nameof(IBasicLocation.Latitude)), x => x.Latitude = update.Latitude);
+			location.IfThen(_ => settings.ShouldProcessProperty(nameof(IBasicLocation.Longitude)), x => x.Longitude = update.Longitude);
 		}
 
 		return true;
@@ -762,8 +762,8 @@ public static class LocationExtensions
 	/// </summary>
 	/// <param name="location"> The location to update. </param>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public static bool UpdateWith(this IBasicLocation location, IMinimalVerticalLocation update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	public static bool UpdateWith(this IBasicLocation location, IMinimalVerticalLocation update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -773,15 +773,15 @@ public static class LocationExtensions
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			location.Altitude = update.Altitude;
 			location.AltitudeReference = update.AltitudeReference;
 		}
 		else
 		{
-			location.IfThen(_ => options.ShouldProcessProperty(nameof(IBasicLocation.Altitude)), x => x.Altitude = update.Altitude);
-			location.IfThen(_ => options.ShouldProcessProperty(nameof(IBasicLocation.AltitudeReference)), x => x.AltitudeReference = update.AltitudeReference);
+			location.IfThen(_ => settings.ShouldProcessProperty(nameof(IBasicLocation.Altitude)), x => x.Altitude = update.Altitude);
+			location.IfThen(_ => settings.ShouldProcessProperty(nameof(IBasicLocation.AltitudeReference)), x => x.AltitudeReference = update.AltitudeReference);
 		}
 
 		return true;

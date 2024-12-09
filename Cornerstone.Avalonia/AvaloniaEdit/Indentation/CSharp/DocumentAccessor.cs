@@ -45,7 +45,7 @@ public sealed class TextDocumentAccessor : IDocumentAccessor
 {
 	#region Fields
 
-	private readonly TextDocument _doc;
+	private readonly TextEditorDocument _doc;
 	private DocumentLine _line;
 
 	private bool _lineDirty;
@@ -61,7 +61,7 @@ public sealed class TextDocumentAccessor : IDocumentAccessor
 	/// <summary>
 	/// Creates a new TextDocumentAccessor.
 	/// </summary>
-	public TextDocumentAccessor(TextDocument document)
+	public TextDocumentAccessor(TextEditorDocument document)
 	{
 		_doc = document ?? throw new ArgumentNullException(nameof(document));
 		_minLine = 1;
@@ -71,7 +71,7 @@ public sealed class TextDocumentAccessor : IDocumentAccessor
 	/// <summary>
 	/// Creates a new TextDocumentAccessor that indents only a part of the document.
 	/// </summary>
-	public TextDocumentAccessor(TextDocument document, int minLine, int maxLine)
+	public TextDocumentAccessor(TextEditorDocument document, int minLine, int maxLine)
 	{
 		_doc = document ?? throw new ArgumentNullException(nameof(document));
 		_minLine = minLine;

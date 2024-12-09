@@ -10,10 +10,10 @@ public abstract class Parser<T> : Parser
 	/// <summary>
 	/// Initialize the parser.
 	/// </summary>
-	/// <param name="options"> The options for the parser. </param>
-	protected Parser(T options)
+	/// <param name="settings"> The options for the parser. </param>
+	protected Parser(T settings)
 	{
-		Options = options;
+		Settings = settings;
 	}
 
 	#endregion
@@ -23,7 +23,7 @@ public abstract class Parser<T> : Parser
 	/// <summary>
 	/// The options for the parser.
 	/// </summary>
-	public T Options { get; }
+	public T Settings { get; }
 
 	#endregion
 }

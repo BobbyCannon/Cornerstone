@@ -3,6 +3,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Mail;
 using System.Runtime.CompilerServices;
@@ -21,31 +22,6 @@ namespace Cornerstone.Extensions;
 public static class StringExtensions
 {
 	#region Methods
-
-	/// <summary>
-	/// Calculate an MD5 hash for the string.
-	/// </summary>
-	/// <param name="input"> The string to hash. </param>
-	/// <returns> The MD5 formatted hash for the input. </returns>
-	public static string CalculateMd5Hash(this string input)
-	{
-		// Calculate MD5 hash from input.
-		var inputBytes = Encoding.ASCII.GetBytes(input);
-
-		// Calculate MD5 hash from input.
-		var md5 = MD5.Create();
-		var hash = md5.ComputeHash(inputBytes);
-
-		// Convert byte array to hex string.
-		var sb = new StringBuilder();
-		foreach (var item in hash)
-		{
-			sb.Append(item.ToString("X2"));
-		}
-
-		// Return the MD5 string.
-		return sb.ToString().ToLower();
-	}
 
 	/// <summary>
 	/// Check string for a camel case match.
@@ -460,6 +436,17 @@ public static class StringExtensions
 	}
 
 	/// <summary>
+	/// Convert stream to a base 64 string.
+	/// </summary>
+	/// <param name="stream"> The data to be converted. </param>
+	/// <returns> The base 64 encoded string. </returns>
+	public static string ToBase64String(this Stream stream)
+	{
+		var data = stream.ReadByteArray();
+		return data.ToBase64String();
+	}
+
+	/// <summary>
 	/// Convert string to a base 64 string.
 	/// </summary>
 	/// <param name="data"> The data to be converted. </param>
@@ -497,6 +484,31 @@ public static class StringExtensions
 		var hexString = BitConverter.ToString(data, startIndex ?? 0, length ?? data.Length);
 		hexString = (prefix ?? "") + hexString.Replace("-", (delimiter ?? "") + (prefix ?? ""));
 		return hexString;
+	}
+
+	/// <summary>
+	/// Calculate an MD5 hash for the string.
+	/// </summary>
+	/// <param name="input"> The string to hash. </param>
+	/// <returns> The MD5 formatted hash for the input. </returns>
+	public static string ToMd5HashHexString(this string input)
+	{
+		// Calculate MD5 hash from input.
+		var inputBytes = Encoding.ASCII.GetBytes(input);
+
+		// Calculate MD5 hash from input.
+		var md5 = MD5.Create();
+		var hash = md5.ComputeHash(inputBytes);
+
+		// Convert byte array to hex string.
+		var sb = new StringBuilder();
+		foreach (var item in hash)
+		{
+			sb.Append(item.ToString("X2"));
+		}
+
+		// Return the MD5 string.
+		return sb.ToString().ToLower();
 	}
 
 	/// <summary>

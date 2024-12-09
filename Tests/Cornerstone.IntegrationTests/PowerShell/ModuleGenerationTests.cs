@@ -24,7 +24,7 @@ public class ModuleGenerationTests : CornerstoneUnitTest
 		}
 
 		// C:\Workspaces\EpicSolution\Cornerstone\Cornerstone.PowerShell\Cornerstone.PowerShell-Help.xml
-		var path = Path.Join(SolutionDirectory, "Cornerstone.PowerShell", "Cornerstone.PowerShell-Help.xml");
+		var path = Path.Join(SolutionDirectory, "BobsToolbox.PowerShell", "BobsToolbox.PowerShell-Help.xml");
 		IsTrue(File.Exists(path), $"Not Found: {path}");
 
 		var assembly = typeof(CmdletHelpGenerator).Assembly;

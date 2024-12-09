@@ -1,6 +1,8 @@
 ﻿#region References
 
-using System.Globalization;
+using Cornerstone.Data;
+using Cornerstone.Extensions;
+using Cornerstone.Parsers.Html;
 using Cornerstone.Serialization.Json.Values;
 
 #endregion
@@ -10,68 +12,95 @@ namespace Cornerstone.Parsers.Json;
 /// <summary>
 /// Represents the data for a JSON token.
 /// </summary>
-public struct JsonTokenData : ITokenData<JsonTokenType>
+public class JsonTokenData : TokenData<JsonTokenData, JsonTokenType>
 {
 	#region Properties
 
-	/// <summary>
-	/// The boolean value if the current token is a boolean.
-	/// </summary>
-	public bool BooleanValue { get; set; }
-
-	/// <summary>
-	/// The float value if the current token is a float.
-	/// </summary>
-	public double FloatValue { get; set; }
-
-	/// <summary>
-	/// The number value if the current token is a number.
-	/// </summary>
-	public long IntegerValue { get; set; }
-
-	/// <inheritdoc />
-	public int LineNumber { get; set; }
-
-	/// <inheritdoc />
-	public int Position { get; set; }
-
-	/// <summary>
-	/// The string value if the current token is a string.
-	/// </summary>
-	public string StringValue { get; set; }
-
-	/// <inheritdoc />
-	public JsonTokenType Type { get; set; }
-
-	/// <summary>
-	/// The unsigned number value if the current token is an unsigned number.
-	/// </summary>
-	public ulong UnsignedIntegerValue { get; set; }
+	public bool IsPropertyName { get; set; }
 
 	#endregion
 
 	#region Methods
 
-	/// <inheritdoc />
-	public override string ToString()
+	/// <summary>
+	/// Get the contents of the string. Ex. "Foo\" Bar" => Foo \" Bar
+	/// </summary>
+	/// <returns> The string in an unescaped format. </returns>
+	public string GetStringValue()
 	{
-		return Type switch
+		return JsonString.Unescape(this);
+	}
+
+	/// <summary>
+	/// Update the JsonTokenData with an update.
+	/// </summary>
+	/// <param name="update"> The update to be applied. </param>
+	/// <param name="settings"> The settings for controlling the updating of the entity. </param>
+	public override bool UpdateWith(JsonTokenData update, IncludeExcludeSettings settings)
+	{
+		// If the update is null then there is nothing to do.
+		if (update == null)
 		{
-			JsonTokenType.NumberFloat => FloatValue.ToString(CultureInfo.InvariantCulture),
-			JsonTokenType.NumberInteger => IntegerValue.ToString(CultureInfo.InvariantCulture),
-			JsonTokenType.NumberUnsignedInteger => UnsignedIntegerValue.ToString(CultureInfo.InvariantCulture),
-			JsonTokenType.String => JsonString.EscapeWithQuotes(StringValue),
-			JsonTokenType.Boolean => BooleanValue ? "true" : "false",
-			JsonTokenType.Colon => ":",
-			JsonTokenType.Comma => ",",
-			JsonTokenType.Null => "null",
-			JsonTokenType.CurlyOpen => "{",
-			JsonTokenType.CurlyClose => "}",
-			JsonTokenType.SquaredOpen => "[",
-			JsonTokenType.SquaredClose => "]",
-			JsonTokenType.None => "end of stream",
-			_ => Type.ToString()
+			return false;
+		}
+
+		// ****** You can use GenerateUpdateWith to update this ******
+
+		if ((settings == null) || settings.IsEmpty())
+		{
+			IsPropertyName = update.IsPropertyName;
+		}
+		else
+		{
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(IsPropertyName)), x => x.IsPropertyName = update.IsPropertyName);
+		}
+
+		return base.UpdateWith(update, settings);
+	}
+
+	/// <inheritdoc />
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
+	{
+		return update switch
+		{
+			JsonTokenData value => UpdateWith(value, settings),
+			_ => base.UpdateWith(update, settings)
 		};
+	}
+
+	/// <inheritdoc />
+	public override void WriteTo(CodeSyntaxHtmlWriter writer)
+	{
+		var value = ToString();
+
+		switch (Type)
+		{
+			case JsonTokenType.Boolean:
+			{
+				writer.WriteSpan(value, SyntaxColor.Keyword);
+				return;
+			}
+			case JsonTokenType.NumberFloat:
+			case JsonTokenType.NumberInteger:
+			case JsonTokenType.NumberUnsignedInteger:
+			{
+				writer.WriteSpan(value, SyntaxColor.Number);
+				return;
+			}
+			case JsonTokenType.String:
+			{
+				writer.WriteSpan(value, IsPropertyName
+					? SyntaxColor.Method
+					: SyntaxColor.String
+				);
+				return;
+			}
+			default:
+			{
+				writer.WriteRaw(value);
+				return;
+			}
+		}
 	}
 
 	#endregion

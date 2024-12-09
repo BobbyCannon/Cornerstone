@@ -2140,18 +2140,18 @@
         </member>
         <member name="T:Cornerstone.Automation.Desktop.KeyStroke">
             <summary>
-            Represents a key stroke.
+            Represents a keystroke.
             </summary>
         </member>
         <member name="M:Cornerstone.Automation.Desktop.KeyStroke.#ctor(Cornerstone.Automation.Desktop.KeyboardKey)">
             <summary>
-            Initializes an instance of a key stroke.
+            Initializes an instance of a keystroke.
             </summary>
             <param name="key"> The key to be processed. </param>
         </member>
         <member name="M:Cornerstone.Automation.Desktop.KeyStroke.#ctor(Cornerstone.Automation.Desktop.KeyboardModifier,Cornerstone.Automation.Desktop.KeyboardKey)">
             <summary>
-            Initializes an instance of a key stroke.
+            Initializes an instance of a keystroke.
             </summary>
             <param name="modifier"> An optional modifier. </param>
             <param name="key"> The key to be processed. </param>
@@ -3632,7 +3632,7 @@
         </member>
         <member name="M:Cornerstone.Automation.InputBuilder.Add(Cornerstone.Automation.Desktop.KeyStroke[])">
             <summary>
-            Add key stroke to the input builder.
+            Add keystroke to the input builder.
             </summary>
             <param name="strokes"> The stroke(s) to add. </param>
             <returns> This <see cref="T:Cornerstone.Automation.InputBuilder" /> instance. </returns>
@@ -4291,7 +4291,7 @@
         </member>
         <member name="P:Cornerstone.Automation.Tests.SpeedyTest.CurrentTime">
             <summary>
-            Represents the current time returned by TimeService.CurrentTime.UtcNow;
+            Represents the current time returned by DateTimeProvider.RealTime.UtcNow;
             </summary>
         </member>
         <member name="P:Cornerstone.Automation.Tests.SpeedyTest.IsDebugging">
@@ -4301,7 +4301,7 @@
         </member>
         <member name="P:Cornerstone.Automation.Tests.SpeedyTest.StartDateTime">
             <summary>
-            Represents the current time returned by TimeService.CurrentTime.UtcNow;
+            Represents the current time returned by DateTimeProvider.RealTime.UtcNow;
             </summary>
         </member>
         <member name="P:Cornerstone.Automation.Tests.SpeedyTest.WaitTimeout">
@@ -4499,7 +4499,7 @@
             <see cref="P:Cornerstone.Automation.Tests.SpeedyTest.WaitTimeout" /> property with a delay of 10ms.
             </summary>
             <param name="action"> The action to call. </param>
-            <param name="useTimeService"> An optional flag to use the TimeService instead of DateTime. Defaults to false to use DateTime. </param>
+            <param name="useTimeService"> An optional flag to use the DateTimeProvider.RealTime instead of DateTime. Defaults to false to use DateTime. </param>
             <returns> Returns true of the call completed successfully or false if it timed out. </returns>
         </member>
         <member name="M:Cornerstone.Automation.Tests.SpeedyTest.Wait(System.Func{System.Boolean},System.Int32,System.Int32,System.Boolean)">
@@ -4510,7 +4510,7 @@
             <param name="action"> The action to call. </param>
             <param name="timeout"> The timeout to attempt the action. This value is in milliseconds. </param>
             <param name="delay"> The delay in between actions. This value is in milliseconds. </param>
-            <param name="useTimeService"> An optional flag to use the TimeService instead of DateTime. Defaults to false to use DateTime. </param>
+            <param name="useTimeService"> An optional flag to use the DateTimeProvider.RealTime instead of DateTime. Defaults to false to use DateTime. </param>
             <returns> Returns true of the call completed successfully or false if it timed out. </returns>
         </member>
         <member name="M:Cornerstone.Automation.Tests.SpeedyTest.Wait(System.Func{System.Boolean},System.TimeSpan,System.TimeSpan,System.TimeSpan,System.TimeSpan,System.Boolean)">
@@ -4522,7 +4522,7 @@
             <param name="delay"> The delay between checks. </param>
             <param name="minimum"> The minimal time to wait. </param>
             <param name="maximum"> The maximum time to wait. </param>
-            <param name="useTimeService"> An optional flag to use the TimeService instead of DateTime. Defaults to false to use DateTime. </param>
+            <param name="useTimeService"> An optional flag to use the DateTimeProvider.RealTime instead of DateTime. Defaults to false to use DateTime. </param>
             <returns> True if the wait was completed, false if the wait was cancelled. </returns>
         </member>
         <member name="M:Cornerstone.Automation.Tests.SpeedyTest.GetDefaultValue(System.Reflection.PropertyInfo,System.Func{System.Reflection.PropertyInfo,System.Object})">

@@ -13,7 +13,7 @@ internal sealed class CurrentLineHighlightRenderer : IBackgroundRenderer
 {
 	#region Fields
 
-	public static readonly Color DefaultBackground = Color.FromArgb(0xFF, 0, 0, 0);
+	public static readonly Color DefaultBackground = Color.FromArgb(0x55, 0, 0, 0);
 	public static readonly Color DefaultBorder = Color.FromArgb(0x34, 0xCC, 0xCC, 0xCC);
 
 	private int _line;
@@ -63,7 +63,7 @@ internal sealed class CurrentLineHighlightRenderer : IBackgroundRenderer
 
 	public void Draw(TextView textView, DrawingContext drawingContext)
 	{
-		if (!_textView.Options.HighlightCurrentLine)
+		if (!_textView.Settings.HighlightCurrentLine)
 		{
 			return;
 		}

@@ -22,7 +22,7 @@ public interface ICodeStringProvider
 	/// <param name="language"> Optional format for generating code. Defaults to CSharp. </param>
 	/// <param name="settings"> Optional settings to use when creating the code string. </param>
 	/// <returns> The object as a code text format. </returns>
-	TextBuilder ToCodeString(bool asNullable = false, TextBuilder builder = null, CodeLanguage language = CodeLanguage.CSharp, CodeWriterOptions? settings = null);
+	TextBuilder ToCodeString(bool asNullable = false, TextBuilder builder = null, CodeLanguage language = CodeLanguage.CSharp, CodeWriterSettings? settings = null);
 
 	#endregion
 }

@@ -46,7 +46,7 @@ public class DebounceServiceTests : CornerstoneUnitTest
 		watch.Stop();
 
 		// Should never be greater than 100 ms +- 10/15ms, if so it's locked with
-		// TimeService and the wait expired.
+		// DateTimeProvider.RealTime and the wait expired.
 		IsTrue(result, "The wait timed out... it should not have...");
 		IsFalse(watch.Elapsed.TotalMilliseconds > 250);
 		watch.Elapsed.Dump();
@@ -58,13 +58,13 @@ public class DebounceServiceTests : CornerstoneUnitTest
 		var actual = new List<int>();
 		var delay = TimeSpan.FromMilliseconds(25);
 
-		void work(CancellationToken token, int data)
+		void Work(CancellationToken token, int data)
 		{
 			Console.WriteLine(data);
 			actual.Add(data);
 		}
 
-		using var service = new DebounceService<int>(delay, work, this);
+		using var service = new DebounceService<int>(delay, Work, this);
 		actual.Clear();
 
 		service.Trigger(1);
@@ -86,13 +86,13 @@ public class DebounceServiceTests : CornerstoneUnitTest
 		var actual = new List<int>();
 		var delay = TimeSpan.FromMilliseconds(25);
 
-		void work(CancellationToken token, int data)
+		void Work(CancellationToken token, int data)
 		{
 			Console.WriteLine(data);
 			actual.Add(data);
 		}
 
-		using var service = new DebounceService<int>(delay, work, this);
+		using var service = new DebounceService<int>(delay, Work, this);
 		actual.Clear();
 
 		service.Trigger(1);
@@ -121,12 +121,12 @@ public class DebounceServiceTests : CornerstoneUnitTest
 		var actual = new List<int>();
 		var count = 1;
 
-		void work(CancellationToken token, int value)
+		void Work(CancellationToken token, int value)
 		{
 			actual.Add(count++);
 		}
 
-		using var service = new DebounceService<int>(TimeSpan.FromSeconds(10), work, this);
+		using var service = new DebounceService<int>(TimeSpan.FromSeconds(10), Work, this);
 		count = 1;
 		actual.Clear();
 		service.Trigger(1);
@@ -164,7 +164,7 @@ public class DebounceServiceTests : CornerstoneUnitTest
 		var expected = new List<int> { 1 };
 		DebounceService<int> currentService = null;
 
-		void work(CancellationToken token, int data)
+		void Work(CancellationToken token, int data)
 		{
 			if (data == 1)
 			{
@@ -175,7 +175,7 @@ public class DebounceServiceTests : CornerstoneUnitTest
 			actual.Add(data);
 		}
 
-		using var service = new DebounceService<int>(TimeSpan.FromMilliseconds(25), work);
+		using var service = new DebounceService<int>(TimeSpan.FromMilliseconds(25), Work);
 		// ReSharper disable once RedundantAssignment
 		currentService = service;
 		actual.Clear();

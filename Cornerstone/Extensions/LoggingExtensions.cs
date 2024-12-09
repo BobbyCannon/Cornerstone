@@ -81,7 +81,7 @@ public static class LoggingExtensions
 			? args.Payload[2] as DateTime? ?? default
 			: default;
 
-		var sessionId = GuidConverter.TryToGuid(args.Payload[0], out var guid) ? guid : (Guid?) null;
+		var sessionId = GuidConverter.TryToGuid(args.Payload[0], out var guid) ? guid : Guid.Empty;
 		var message = args.GetMessage();
 
 		return new LogEventArgs(sessionId, messagedOn, args.Level, message);

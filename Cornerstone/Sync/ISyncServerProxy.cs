@@ -34,8 +34,8 @@ public interface ISyncServerProxy
 	/// Starts the sync session.
 	/// </summary>
 	/// <param name="sessionId"> The ID of the sync session. </param>
-	/// <param name="options"> The options for the sync session. </param>
-	SyncSessionStart BeginSync(Guid sessionId, SyncOptions options);
+	/// <param name="settings"> The options for the sync session. </param>
+	SyncSessionStart BeginSync(Guid sessionId, SyncSettings settings);
 
 	/// <summary>
 	/// Ends the sync session.

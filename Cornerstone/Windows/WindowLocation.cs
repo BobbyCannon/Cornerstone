@@ -7,8 +7,6 @@ using Cornerstone.Extensions;
 
 namespace Cornerstone.Windows;
 
-
-
 /// <summary>
 /// Represents a window location.
 /// </summary>
@@ -62,15 +60,15 @@ public class WindowLocation : Notifiable
 	/// <param name="update"> The update to be applied. </param>
 	public virtual bool UpdateWith(WindowLocation update)
 	{
-		return UpdateWith(update, IncludeExcludeOptions.Empty);
+		return UpdateWith(update, IncludeExcludeSettings.Empty);
 	}
 
 	/// <summary>
 	/// Update the WindowLocation with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public virtual bool UpdateWith(WindowLocation update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	public virtual bool UpdateWith(WindowLocation update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -80,7 +78,7 @@ public class WindowLocation : Notifiable
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			Height = update.Height;
 			Left = update.Left;
@@ -90,23 +88,23 @@ public class WindowLocation : Notifiable
 		}
 		else
 		{
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Height)), x => x.Height = update.Height);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Left)), x => x.Left = update.Left);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Top)), x => x.Top = update.Top);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Maximized)), x => x.Maximized = update.Maximized);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Width)), x => x.Width = update.Width);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Height)), x => x.Height = update.Height);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Left)), x => x.Left = update.Left);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Top)), x => x.Top = update.Top);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Maximized)), x => x.Maximized = update.Maximized);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Width)), x => x.Width = update.Width);
 		}
 
 		return true;
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
-			WindowLocation value => UpdateWith(value, options),
-			_ => base.UpdateWith(update, options)
+			WindowLocation value => UpdateWith(value, settings),
+			_ => base.UpdateWith(update, settings)
 		};
 	}
 

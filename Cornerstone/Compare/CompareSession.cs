@@ -23,8 +23,8 @@ public class CompareSession<T, T2> : CompareSession
 	/// </summary>
 	/// <param name="expected"> The value that is expected. </param>
 	/// <param name="actual"> The value to compare with expected. </param>
-	/// <param name="options"> The settings for the compare session. </param>
-	public CompareSession(T expected, T2 actual, ComparerOptions options) : base(options)
+	/// <param name="settings"> The settings for the compare session. </param>
+	public CompareSession(T expected, T2 actual, ComparerSettings settings) : base(settings)
 	{
 		Actual = actual;
 		Expected = expected;
@@ -107,18 +107,18 @@ public class CompareSession : ReferenceTracker
 	/// <summary>
 	/// Initialize a new compare session.
 	/// </summary>
-	public CompareSession() : this(new ComparerOptions())
+	public CompareSession() : this(new ComparerSettings())
 	{
 	}
 
 	/// <summary>
 	/// Initialize a new compare session.
 	/// </summary>
-	/// <param name="options"> The settings for the compare session. </param>
-	public CompareSession(ComparerOptions options)
+	/// <param name="settings"> The settings for the compare session. </param>
+	public CompareSession(ComparerSettings settings)
 	{
 		Differences = new TextBuilder();
-		Options = options;
+		Settings = settings;
 		Result = CompareResult.Inconclusive;
 	}
 
@@ -134,7 +134,7 @@ public class CompareSession : ReferenceTracker
 	/// <summary>
 	/// The settings for the compare session.
 	/// </summary>
-	public ComparerOptions Options { get; }
+	public ComparerSettings Settings { get; }
 
 	/// <summary>
 	/// The final results of the comparison.
@@ -173,7 +173,7 @@ public class CompareSession : ReferenceTracker
 	/// <param name="actual"> </param>
 	/// <param name="message"> </param>
 	/// <returns> </returns>
-	internal static void InternalProcess<T, T2>(CompareSession session, T expected, T2 actual, string message = null)
+	internal static void InternalProcess<T, T2>(CompareSession session, T expected, T2 actual, Func<string> message = null)
 	{
 		if (Equals(expected, default(T)) && Equals(actual, default(T2)))
 		{

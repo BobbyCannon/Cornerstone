@@ -58,7 +58,7 @@ public class MeasureDownloadTimeUnitCmdlet : PSCmdlet
 	protected override void ProcessRecord()
 	{
 		var downloadTime = new DownloadTime(ByteSize.From(Data, DataUnit), ByteSize.From(Rate, RateUnit));
-		var options = new HumanizeOptions
+		var options = new HumanizeSettings
 		{
 			MaxUnit = OutputMaxUnit,
 			MinUnit = OutputMinUnit,

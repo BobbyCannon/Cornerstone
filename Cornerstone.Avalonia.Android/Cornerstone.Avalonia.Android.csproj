@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFrameworks>net8.0-android</TargetFrameworks>
+		<TargetFrameworks>net9.0-android</TargetFrameworks>
 		<GenerateDocumentationFile>false</GenerateDocumentationFile>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<SignAssembly>true</SignAssembly>
@@ -9,6 +9,7 @@
 		<PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
 	</ItemGroup>
 	<ItemGroup>
+	  <ProjectReference Include="..\Cornerstone.Android\Cornerstone.Android.csproj" />
 	  <ProjectReference Include="..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
 	  <ProjectReference Include="..\Cornerstone\Cornerstone.csproj" />
 	</ItemGroup>

@@ -7,7 +7,7 @@ using Cornerstone.Avalonia.AvaloniaEdit.Rendering;
 using Cornerstone.Avalonia.AvaloniaEdit.Utils;
 using Cornerstone.Avalonia.Controls;
 using Cornerstone.Text.Document;
-using PropertyChanged;
+using Cornerstone.Weaver;
 
 #endregion
 
@@ -55,7 +55,7 @@ public abstract class AbstractMargin : CornerstoneControl, ITextViewConnect
 	/// <summary>
 	/// Gets the document associated with the margin.
 	/// </summary>
-	public TextDocument Document { get; private set; }
+	public TextEditorDocument Document { get; private set; }
 
 	/// <summary>
 	/// Gets/sets the text view for which line numbers are displayed.
@@ -76,7 +76,7 @@ public abstract class AbstractMargin : CornerstoneControl, ITextViewConnect
 	/// <summary>
 	/// Called when the <see cref="Document" /> is changing.
 	/// </summary>
-	protected virtual void OnDocumentChanged(TextDocument oldDocument, TextDocument newDocument)
+	protected virtual void OnDocumentChanged(TextEditorDocument oldDocument, TextEditorDocument newDocument)
 	{
 		Document = newDocument;
 	}

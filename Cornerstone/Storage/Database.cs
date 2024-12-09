@@ -25,6 +25,7 @@ public abstract class Database : IDatabase
 
 	private readonly CollectionChangeTracker _collectionChangeTracker;
 	private int _saveChangeCount;
+	private Assembly _mappingAssembly;
 
 	#endregion
 
@@ -33,14 +34,14 @@ public abstract class Database : IDatabase
 	/// <summary>
 	/// Initializes an instance of the database class.
 	/// </summary>
-	/// <param name="options"> The options for this database. </param>
-	protected Database(DatabaseOptions options)
+	/// <param name="settings"> The options for this database. </param>
+	protected Database(DatabaseSettings settings)
 	{
 		_collectionChangeTracker = new CollectionChangeTracker();
 
 		IndexConfigurations = new Dictionary<string, IndexConfiguration>();
 		OneToManyRelationships = new Dictionary<string, object[]>();
-		Options = options?.DeepClone() ?? new DatabaseOptions();
+		DatabaseSettings = settings?.DeepClone() ?? new DatabaseSettings();
 		EntityIndexConfigurations = new Dictionary<Type, List<IndexConfiguration>>();
 		EntityPropertyConfigurations = new Dictionary<Type, List<IPropertyConfiguration>>();
 		PropertyConfigurations = new Dictionary<string, IPropertyConfiguration>();
@@ -55,7 +56,7 @@ public abstract class Database : IDatabase
 	public bool IsDisposed { get; private set; }
 
 	/// <inheritdoc />
-	public DatabaseOptions Options { get; }
+	public DatabaseSettings DatabaseSettings { get; }
 
 	internal bool HasBeenConfiguredViaMapping { get; set; }
 
@@ -118,9 +119,9 @@ public abstract class Database : IDatabase
 	/// </summary>
 	public virtual Assembly GetMappingAssembly()
 	{
-		return GetType().Assembly;
+		return _mappingAssembly ??= GetType().Assembly;
 	}
-
+	
 	/// <summary>
 	/// Gets a read only repository for the provided type.
 	/// </summary>
@@ -412,7 +413,7 @@ public abstract class Database : IDatabase
 		assign.Compile().Invoke(obj, value);
 	}
 
-	private IEnumerable BuildRelationship(Type entityType, Type collectionType, IEntity entity, IEnumerable collection, string key)
+	private IRelationshipRepository BuildRelationship(Type entityType, Type collectionType, IEntity entity, IEnumerable collection, string key)
 	{
 		var collectionTypeProperties = collectionType.GetCachedProperties();
 		var collectionKey = collectionTypeProperties.First(x => x.Name == "Id").PropertyType;
@@ -424,7 +425,7 @@ public abstract class Database : IDatabase
 				[entityType, typeof(IEnumerable), typeof(string)],
 				ReflectionExtensions.DefaultPrivateFlags
 			);
-		return (IEnumerable) genericMethod.Invoke(this, [entity, collection, key]);
+		return (IRelationshipRepository) genericMethod.Invoke(this, [entity, collection, key]);
 	}
 
 	/// <summary>
@@ -582,10 +583,12 @@ public abstract class Database : IDatabase
 	}
 
 	[SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
-	private void UpdateEntityCollectionRelationships(IEntity entity)
+	private void UpdateEntityCollectionRelationships<T,T2>(EntityState<T,T2> entityState)
+		where T : Entity<T2>
 	{
 		var enumerableType = typeof(IEnumerable);
-		var entityType = entity.GetType();
+		var entityType = typeof(T);
+		var entity = entityState.Entity;
 		var collectionRelationships = entityType
 			.GetCachedVirtualProperties()
 			.Where(x => enumerableType.IsAssignableFrom(x.PropertyType))
@@ -603,20 +606,11 @@ public abstract class Database : IDatabase
 
 			// Converts the relationship to a relationship (filtered) repository.
 			var currentCollection = (IEnumerable<IEntity>) relationship.GetValue(entity, null);
-			var currentCollectionType = currentCollection.GetType();
 
-			if (typeof(IRelationshipRepository).IsAssignableFrom(currentCollectionType))
+			if (currentCollection is IRelationshipRepository or null)
 			{
 				// We are already a relationship repository so just update the relationships
 				continue;
-			}
-
-			// Add any existing entities to the new filtered collection.
-			foreach (var item in currentCollection)
-			{
-				//relationshipFilter.AddOrUpdate(item);
-				UpdateEntityChildRelationships(item, entity);
-				UpdateEntityDirectRelationships(item);
 			}
 
 			// See if the entity has a relationship filter.
@@ -638,79 +632,91 @@ public abstract class Database : IDatabase
 		}
 	}
 
-	private void UpdateEntityDirectRelationships(IEntity entity)
+	private void UpdateEntityDirectRelationships<T,T2>(EntityState<T, T2> entityState)
+		where T : Entity<T2>
 	{
 		var baseType = typeof(IEntity);
-		var entityType = entity.GetType();
+		var currentEntity = entityState.Entity;
+		var oldEntity = entityState.OldEntity;
+		var entityType = typeof(T);
 		var entityProperties = entityType.GetCachedProperties();
-		var entityRelationships = entityType.GetCachedVirtualProperties().Where(x => baseType.IsAssignableFrom(x.PropertyType)).ToList();
+		var entityRelationships = entityType
+			.GetCachedVirtualProperties()
+			.Where(x => baseType.IsAssignableFrom(x.PropertyType))
+			.ToList();
 
 		foreach (var entityRelationship in entityRelationships)
 		{
-			var otherEntity = entityRelationship.GetValue(entity, null) as IEntity;
+			var currentRelationshipEntity = entityRelationship.GetValue(currentEntity, null) as IEntity;
+			var oldRelationshipEntity = entityRelationship.GetValue(oldEntity, null) as IEntity;
+
 			var entityRelationshipIdProperty = entityProperties.FirstOrDefault(x => x.Name == (entityRelationship.Name + "Id"));
 
-			if ((otherEntity == null) && (entityRelationshipIdProperty != null))
+			if ((currentRelationshipEntity == null)
+				&& (entityRelationshipIdProperty != null))
 			{
-				var otherEntityId = entityRelationshipIdProperty.GetValue(entity, null);
+				var otherEntityId = entityRelationshipIdProperty.GetValue(currentEntity, null);
 				var defaultValue = entityRelationshipIdProperty.PropertyType.CreateInstance();
 
-				if (!Equals(otherEntityId, defaultValue) && Repositories.ContainsKey(entityRelationship.PropertyType.ToAssemblyName()))
+				if (!Equals(otherEntityId, defaultValue)
+					&& Repositories.ContainsKey(entityRelationship.PropertyType.ToAssemblyName()))
 				{
 					var repository = Repositories[entityRelationship.PropertyType.ToAssemblyName()];
-					otherEntity = (IEntity) repository.Read(otherEntityId);
-					entityRelationship.SetValue(entity, otherEntity, null);
+					currentRelationshipEntity = (IEntity) repository.Read(otherEntityId);
+					entityRelationship.SetValue(currentEntity, currentRelationshipEntity, null);
 				}
 			}
-			else if ((otherEntity != null) && (entityRelationshipIdProperty != null))
+			else if ((currentRelationshipEntity != null)
+					&& (entityRelationshipIdProperty != null))
 			{
 				var repository = Repositories[entityRelationship.PropertyType.ToAssemblyName()];
 				var repositoryType = repository.GetType();
 
 				// Check to see if this is a new child entity.
-				if (!otherEntity.IdIsSet())
+				if (!currentRelationshipEntity.IdIsSet())
 				{
-					if (otherEntity.GetType() == entityType)
+					if (currentRelationshipEntity.GetType() == entityType)
 					{
-						repositoryType.GetCachedMethod("InsertBefore").Invoke(repository, [otherEntity, entity]);
+						repositoryType.GetCachedMethod("InsertBefore").Invoke(repository, [currentRelationshipEntity, currentEntity]);
 					}
 					else
 					{
 						// Still adding 400ms per 10000 items, why?
-						repositoryType.GetCachedMethod("Add", otherEntity.GetType()).Invoke(repository, [otherEntity]);
+						repositoryType.GetCachedMethod("Add", currentRelationshipEntity.GetType()).Invoke(repository, [currentRelationshipEntity]);
 					}
 				}
 				else
 				{
 					// Check to see if the entity already exists.
-					var exists = (bool) repositoryType.GetCachedMethod("Contains").Invoke(repository, [otherEntity]);
+					var exists = (bool) repositoryType.GetCachedMethod("Contains").Invoke(repository, [currentRelationshipEntity]);
 					if (!exists)
 					{
-						repositoryType.GetCachedMethod("Add", otherEntity.GetType()).Invoke(repository, [otherEntity]);
+						repositoryType.GetCachedMethod("Add", currentRelationshipEntity.GetType()).Invoke(repository, [currentRelationshipEntity]);
 					}
 				}
 
-				var otherEntityProperties = otherEntity.GetType().GetCachedProperties();
+				var otherEntityProperties = currentRelationshipEntity.GetType().GetCachedProperties();
 				var otherEntityIdProperty = otherEntityProperties.FirstOrDefault(x => x.Name == "Id");
-				var entityId = entityRelationshipIdProperty.GetValue(entity, null);
-				var otherId = otherEntityIdProperty?.GetValue(otherEntity);
+				var entityId = entityRelationshipIdProperty.GetValue(currentEntity, null);
+				var otherId = otherEntityIdProperty?.GetValue(currentRelationshipEntity);
 
 				if (!Equals(entityId, otherId))
 				{
 					// resets entityId to entity.Id if it does not match
-					entityRelationshipIdProperty.SetValue(entity, otherId, null);
+					entityRelationshipIdProperty.SetValue(currentEntity, otherId, null);
 				}
 
 				var entityRelationshipSyncIdProperty = entityProperties.FirstOrDefault(x => x.Name == (entityRelationship.Name + "SyncId"));
 
-				if (entityRelationship.GetValue(entity, null) is ISyncEntity syncEntity && (entityRelationshipSyncIdProperty != null))
+				if (entityRelationship.GetValue(currentEntity, null) is ISyncEntity syncEntity
+					&& (entityRelationshipSyncIdProperty != null))
 				{
-					var otherEntitySyncId = (Guid?) entityRelationshipSyncIdProperty.GetValue(entity, null);
+					var otherEntitySyncId = (Guid?) entityRelationshipSyncIdProperty.GetValue(currentEntity, null);
 					var syncEntitySyncId = syncEntity.GetEntitySyncId();
 					if (otherEntitySyncId != syncEntitySyncId)
 					{
 						// resets entitySyncId to entity.SyncId if it does not match
-						entityRelationshipSyncIdProperty.SetValue(entity, syncEntitySyncId, null);
+						entityRelationshipSyncIdProperty.SetValue(currentEntity, syncEntitySyncId, null);
 					}
 				}
 			}
@@ -760,15 +766,15 @@ public abstract class Database : IDatabase
 		_collectionChangeTracker.Update(tracker);
 	}
 
-	private protected void RepositoryUpdateEntityRelationships(IEntity entity)
+	private protected void RepositoryUpdateEntityRelationships<T, T2>(EntityState<T,T2> entityState) where T : Entity<T2>
 	{
-		UpdateEntityDirectRelationships(entity);
-		UpdateEntityCollectionRelationships(entity);
+		UpdateEntityDirectRelationships(entityState);
+		UpdateEntityCollectionRelationships(entityState);
 	}
 
 	private protected void RepositoryValidateEntity<T, T2>(T entity, IRepository<T, T2> repository) where T : Entity<T2>
 	{
-		if (Options.DisableEntityValidations)
+		if (DatabaseSettings.DisableEntityValidations)
 		{
 			return;
 		}
@@ -781,7 +787,7 @@ public abstract class Database : IDatabase
 			{
 				if (configuration is PropertyConfiguration<T, T2> validation)
 				{
-					validation.Validate(entity, repository);
+					validation.Validate(entity);
 				}
 			}
 		}
@@ -825,7 +831,7 @@ public interface IDatabase : IDisposable
 	/// <summary>
 	/// Gets the options for this database.
 	/// </summary>
-	DatabaseOptions Options { get; }
+	DatabaseSettings DatabaseSettings { get; }
 
 	#endregion
 

@@ -66,13 +66,13 @@ internal sealed class SnippetInputHandler : TextAreaStackedInputHandler
 	[SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
 	private IActiveElement FindNextEditableElement(int offset, bool backwards)
 	{
-		var elements = _context.ActiveElements.Where(e => e.IsEditable && (e.Segment != null));
+		var elements = _context.ActiveElements.Where(e => e.IsEditable && (e.Range != null));
 		if (backwards)
 		{
 			elements = elements.Reverse();
 			foreach (var element in elements)
 			{
-				if (offset > element.Segment.EndOffset)
+				if (offset > element.Range.EndIndex)
 				{
 					return element;
 				}
@@ -82,7 +82,7 @@ internal sealed class SnippetInputHandler : TextAreaStackedInputHandler
 		{
 			foreach (var element in elements)
 			{
-				if (offset < element.Segment.Offset)
+				if (offset < element.Range.StartIndex)
 				{
 					return element;
 				}
@@ -95,8 +95,8 @@ internal sealed class SnippetInputHandler : TextAreaStackedInputHandler
 	{
 		if (element != null)
 		{
-			TextArea.Selection = Selection.Create(TextArea, element.Segment);
-			TextArea.Caret.Offset = element.Segment.EndOffset;
+			TextArea.Selection = Selection.Create(TextArea, element.Range);
+			TextArea.Caret.Offset = element.Range.EndIndex;
 		}
 	}
 

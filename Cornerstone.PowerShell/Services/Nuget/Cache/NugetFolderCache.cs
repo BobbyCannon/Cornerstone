@@ -3,6 +3,7 @@
 using System;
 using System.IO;
 using Cornerstone.Extensions;
+using Cornerstone.Runtime;
 using Cornerstone.Serialization;
 using Cornerstone.Text;
 
@@ -57,7 +58,7 @@ public class NugetFolderCache : NugetMemoryCache
 		}
 
 		package = base.AddOrUpdate(packageId, NugetService.QueryForPackage);
-		var settings = new SerializationOptions { TextFormat = TextFormat.Indented };
+		var settings = new SerializationSettings { TextFormat = TextFormat.Indented };
 		var packageJson = package.ToJson(settings);
 		File.WriteAllText(cacheFilePath, packageJson);
 		return package;
@@ -70,7 +71,7 @@ public class NugetFolderCache : NugetMemoryCache
 			return false;
 		}
 
-		var cachePassedTime = TimeService.CurrentTime.UtcNow - package.UpdatedOn;
+		var cachePassedTime = DateTimeProvider.RealTime.UtcNow - package.UpdatedOn;
 		return cachePassedTime < CacheRefreshPeriod;
 	}
 

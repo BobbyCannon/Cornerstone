@@ -45,8 +45,8 @@ public class NugetPackage : Notifiable<NugetPackage>
 	/// Update the NugetPackage with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the entity. </param>
-	public override bool UpdateWith(NugetPackage update, IncludeExcludeOptions options)
+	/// <param name="settings> The options for controlling the updating of the entity. </param>
+	public override bool UpdateWith(NugetPackage update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -56,7 +56,7 @@ public class NugetPackage : Notifiable<NugetPackage>
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			PackageId = update.PackageId;
 			UpdatedOn = update.UpdatedOn;
@@ -64,9 +64,9 @@ public class NugetPackage : Notifiable<NugetPackage>
 		}
 		else
 		{
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(PackageId)), x => x.PackageId = update.PackageId);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(UpdatedOn)), x => x.UpdatedOn = update.UpdatedOn);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Versions)), x => x.Versions.Reconcile(update.Versions));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(PackageId)), x => x.PackageId = update.PackageId);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(UpdatedOn)), x => x.UpdatedOn = update.UpdatedOn);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Versions)), x => x.Versions.Reconcile(update.Versions));
 		}
 
 		return true;

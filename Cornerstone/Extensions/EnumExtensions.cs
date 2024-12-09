@@ -47,7 +47,7 @@ public static class EnumExtensions
 	/// <returns> The value with the flagged cleared. </returns>
 	public static T ClearFlag<T>(this T value, T flag) where T : Enum
 	{
-		return value.SetFlag(flag, false);
+		return value.UpdateFlag(flag, false);
 	}
 
 	/// <summary>
@@ -371,33 +371,10 @@ public static class EnumExtensions
 	/// <returns> The value with the flagged set. </returns>
 	public static T SetFlag<T>(this T value, T flag) where T : Enum
 	{
-		return value.SetFlag(flag, true);
+		return value.UpdateFlag(flag, true);
 	}
 
-	/// <summary>
-	/// Set the "flagged" enum value based on the provided update value state.
-	/// </summary>
-	/// <typeparam name="T"> The type of the enum value. </typeparam>
-	/// <param name="value"> The value to update. </param>
-	/// <param name="update"> The source of update. </param>
-	/// <param name="flags"> The flags to be read then set. </param>
-	/// <returns> The value with the flagged set or cleared based on the update value. </returns>
-	public static T UpdateFlag<T>(this T value, T update, T flags) where T : Enum
-	{
-		var flagValues = flags.GetFlaggedValues();
-		var response = value;
-
-		foreach (var flag in flagValues)
-		{
-			response = update.HasFlag(flag)
-				? response.SetFlag(flag)
-				: response.ClearFlag(flag);
-		}
-
-		return response;
-	}
-
-	private static T SetFlag<T>(this T value, T flag, bool set) where T : Enum
+	private static T UpdateFlag<T>(this T value, T flag, bool set) where T : Enum
 	{
 		var eValue = System.Convert.ToUInt64(value);
 		var eFlag = System.Convert.ToUInt64(flag);
@@ -470,7 +447,7 @@ public static class EnumExtensions
 		#region Methods
 
 		/// <inheritdoc />
-		public TextBuilder ToCodeString(bool asNullable = false, TextBuilder builder = null, CodeLanguage language = CodeLanguage.CSharp, CodeWriterOptions? settings = null)
+		public TextBuilder ToCodeString(bool asNullable = false, TextBuilder builder = null, CodeLanguage language = CodeLanguage.CSharp, CodeWriterSettings? settings = null)
 		{
 			builder ??= new TextBuilder();
 

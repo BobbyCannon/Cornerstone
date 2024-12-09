@@ -16,7 +16,7 @@ using Avalonia.VisualTree;
 using Cornerstone.Avalonia.AvaloniaEdit.Editing;
 using Cornerstone.Avalonia.AvaloniaEdit.Rendering;
 using Cornerstone.Text.Document;
-using PropertyChanged;
+using Cornerstone.Weaver;
 
 #endregion
 
@@ -30,7 +30,7 @@ public class CompletionWindowBase : Popup
 {
 	#region Fields
 
-	private TextDocument _document;
+	private TextEditorDocument _document;
 
 	private InputHandler _myInputHandler;
 

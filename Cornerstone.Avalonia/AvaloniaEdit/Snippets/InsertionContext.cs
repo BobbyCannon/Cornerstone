@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Cornerstone.Avalonia.AvaloniaEdit.Editing;
+using Cornerstone.Collections;
+using Cornerstone.Text;
 using Cornerstone.Text.Document;
 
 #endregion
@@ -26,7 +28,7 @@ public class InsertionContext
 	private readonly List<IActiveElement> _registeredElements = [];
 
 	private readonly int _startPosition;
-	private AnchorSegment _wholeSnippetAnchor;
+	private AnchorRange _wholeSnippetAnchor;
 
 	#endregion
 
@@ -44,9 +46,9 @@ public class InsertionContext
 		_startPosition = insertionPosition;
 
 		var startLine = Document.GetLineByOffset(insertionPosition);
-		var indentation = TextUtilities.GetWhitespaceAfter(Document, startLine.Offset);
-		Indentation = Document.GetText(indentation.Offset, Math.Min(indentation.EndOffset, insertionPosition) - indentation.Offset);
-		Tab = textArea.Options.IndentationString;
+		var indentation = TextUtilities.GetWhitespaceAfter(Document, startLine.StartIndex);
+		Indentation = Document.GetText(indentation.StartIndex, Math.Min(indentation.EndIndex, insertionPosition) - indentation.StartIndex);
+		Tab = textArea.Settings.IndentationString;
 
 		LineTerminator = TextUtilities.GetNewLineFromDocument(Document, startLine.LineNumber);
 	}
@@ -63,7 +65,7 @@ public class InsertionContext
 	/// <summary>
 	/// Gets the text document.
 	/// </summary>
-	public TextDocument Document { get; }
+	public TextEditorDocument Document { get; }
 
 	/// <summary>
 	/// Gets the indentation at the insertion position.
@@ -94,7 +96,7 @@ public class InsertionContext
 		{
 			if (_wholeSnippetAnchor != null)
 			{
-				return _wholeSnippetAnchor.Offset;
+				return _wholeSnippetAnchor.StartIndex;
 			}
 			return _startPosition;
 		}
@@ -173,14 +175,14 @@ public class InsertionContext
 		using (Document.RunUpdate())
 		{
 			var textOffset = 0;
-			SimpleSegment segment;
-			while ((segment = NewLineFinder.NextNewLine(text, textOffset)) != SegmentExtensions.Invalid)
+			SimpleRange range;
+			while ((range = NewLineFinder.NextNewLine(text, textOffset)) != SegmentExtensions.Invalid)
 			{
-				var insertString = text.Substring(textOffset, segment.Offset - textOffset)
+				var insertString = text.Substring(textOffset, range.Offset - textOffset)
 					+ LineTerminator + Indentation;
 				Document.Insert(InsertionPosition, insertString);
 				InsertionPosition += insertString.Length;
-				textOffset = segment.EndOffset;
+				textOffset = range.EndIndex;
 			}
 			var remainingInsertString = text.Substring(textOffset);
 			Document.Insert(InsertionPosition, remainingInsertString);
@@ -191,21 +193,21 @@ public class InsertionContext
 	/// <summary>
 	/// Adds existing segments as snippet elements.
 	/// </summary>
-	public void Link(ISegment mainElement, ISegment[] boundElements)
+	public void Link(IRange mainElement, IRange[] boundElements)
 	{
 		var main = new SnippetReplaceableTextElement { Text = Document.GetText(mainElement) };
-		RegisterActiveElement(main, new ReplaceableActiveElement(this, mainElement.Offset, mainElement.EndOffset));
+		RegisterActiveElement(main, new ReplaceableActiveElement(this, mainElement.StartIndex, mainElement.EndIndex));
 		foreach (var boundElement in boundElements)
 		{
 			var bound = new SnippetBoundElement { TargetElement = main };
-			var start = Document.CreateAnchor(boundElement.Offset);
+			var start = Document.CreateAnchor(boundElement.StartIndex);
 			start.MovementType = AnchorMovementType.BeforeInsertion;
 			start.SurviveDeletion = true;
-			var end = Document.CreateAnchor(boundElement.EndOffset);
+			var end = Document.CreateAnchor(boundElement.EndIndex);
 			end.MovementType = AnchorMovementType.BeforeInsertion;
 			end.SurviveDeletion = true;
 
-			RegisterActiveElement(bound, new BoundActiveElement(this, main, bound, new AnchorSegment(start, end)));
+			RegisterActiveElement(bound, new BoundActiveElement(this, main, bound, new AnchorRange(start, end)));
 		}
 	}
 
@@ -229,7 +231,7 @@ public class InsertionContext
 
 		_currentStatus = Status.RaisingInsertionCompleted;
 		var endPosition = InsertionPosition;
-		_wholeSnippetAnchor = new AnchorSegment(Document, _startPosition, endPosition - _startPosition);
+		_wholeSnippetAnchor = new AnchorRange(Document, _startPosition, endPosition - _startPosition);
 		TextDocumentWeakEventManager.UpdateFinished.AddHandler(Document, OnUpdateFinished);
 		_deactivateIfSnippetEmpty = endPosition != _startPosition;
 

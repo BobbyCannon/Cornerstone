@@ -26,7 +26,7 @@ public class JsonSerializationTests : CornerstoneUnitTest
 		var expected = GetExpected();
 		File.WriteAllText(filePath,
 			//JsonConvert.SerializeObject(expected, Formatting.Indented)
-			expected.ToJson(new SerializationOptions { TextFormat = TextFormat.Indented })
+			expected.ToJson(new SerializationSettings { TextFormat = TextFormat.Indented })
 		);
 
 		var json = File.ReadAllText(filePath);

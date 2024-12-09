@@ -211,7 +211,7 @@ public class CornerstoneColorDarkPalette : IColorPalette
 			Color.FromUInt32(0xFFFFF9ED)
 		},
 		{
-			//Grey
+			//Gray
 			Color.FromUInt32(0xFF1C1F23),
 			Color.FromUInt32(0xFF2E3238),
 			Color.FromUInt32(0xFF41464C),

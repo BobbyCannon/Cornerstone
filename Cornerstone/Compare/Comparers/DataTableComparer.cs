@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System;
 using System.Data;
 
 #endregion
@@ -21,7 +22,7 @@ public class DataTableComparer : BaseComparer
 	}
 
 	/// <inheritdoc />
-	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, string message)
+	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, Func<string> message)
 	{
 		try
 		{
@@ -48,7 +49,7 @@ public class DataTableComparer : BaseComparer
 		if (expected.Rows.Count != actual.Rows.Count)
 		{
 			AddDifference(session, expected.Rows.Count.ToString(), actual.Rows.Count.ToString(),
-				true, "The data table row counts are different."
+				true, () => "The data table row counts are different."
 			);
 			return;
 		}
@@ -80,7 +81,7 @@ public class DataTableComparer : BaseComparer
 		if (expected.ItemArray.Length != actual.ItemArray.Length)
 		{
 			AddDifference(session, expected.ItemArray.Length.ToString(), actual.ItemArray.Length.ToString(),
-				true, "The data table row column lengths are different."
+				true, () => "The data table row column lengths are different."
 			);
 			return;
 		}

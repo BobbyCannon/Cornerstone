@@ -27,7 +27,7 @@ public class TargetFrameworkAttribute : CornerstoneAttribute
 
 	/// <summary>
 	/// The operating system portion of the moniker.
-	/// Ex. net8.0-windows -> windows, net8.0-ios -> ios, net8.0 -> ""
+	/// Ex. net9.0-windows -> windows, net9.0-ios -> ios, net9.0 -> ""
 	/// </summary>
 	/// <remarks>
 	/// We don't track all OperatingSystemVersions because they'd be too many.

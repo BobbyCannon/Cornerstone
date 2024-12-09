@@ -4,6 +4,7 @@ using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
 using Cornerstone.Profiling;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -19,7 +20,7 @@ public class SyncTimer : AverageTimer
 	/// <summary>
 	/// Initializes an instance of the class.
 	/// </summary>
-	public SyncTimer() : base(10,  null)
+	public SyncTimer() : base(10, null, null)
 	{
 	}
 
@@ -27,8 +28,9 @@ public class SyncTimer : AverageTimer
 	/// Initializes an instance of the class.
 	/// </summary>
 	/// <param name="limit"> Optional limit of syncs to average. </param>
+	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public SyncTimer(int limit, IDispatcher dispatcher) : base(limit,  dispatcher)
+	public SyncTimer(int limit, IDateTimeProvider timeProvider, IDispatcher dispatcher) : base(limit, timeProvider, dispatcher)
 	{
 	}
 
@@ -61,15 +63,15 @@ public class SyncTimer : AverageTimer
 	/// <param name="update"> The update to be applied. </param>
 	public virtual bool UpdateWith(SyncTimer update)
 	{
-		return UpdateWith(update, IncludeExcludeOptions.Empty);
+		return UpdateWith(update, IncludeExcludeSettings.Empty);
 	}
 
 	/// <summary>
 	/// Update the SyncTimer with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public virtual bool UpdateWith(SyncTimer update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	public virtual bool UpdateWith(SyncTimer update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -79,7 +81,7 @@ public class SyncTimer : AverageTimer
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			CancelledSyncs = update.CancelledSyncs;
 			FailedSyncs = update.FailedSyncs;
@@ -87,22 +89,22 @@ public class SyncTimer : AverageTimer
 		}
 		else
 		{
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(CancelledSyncs)), x => x.CancelledSyncs = update.CancelledSyncs);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(FailedSyncs)), x => x.FailedSyncs = update.FailedSyncs);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(SuccessfulSyncs)), x => x.SuccessfulSyncs = update.SuccessfulSyncs);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(CancelledSyncs)), x => x.CancelledSyncs = update.CancelledSyncs);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(FailedSyncs)), x => x.FailedSyncs = update.FailedSyncs);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(SuccessfulSyncs)), x => x.SuccessfulSyncs = update.SuccessfulSyncs);
 		}
 
-		return base.UpdateWith(update, options);
+		return base.UpdateWith(update, settings);
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
-			SyncTimer value => UpdateWith(value, options),
-			AverageTimer value => UpdateWith(value, options),
-			_ => base.UpdateWith(update, options)
+			SyncTimer value => UpdateWith(value, settings),
+			AverageTimer value => UpdateWith(value, settings),
+			_ => base.UpdateWith(update, settings)
 		};
 	}
 

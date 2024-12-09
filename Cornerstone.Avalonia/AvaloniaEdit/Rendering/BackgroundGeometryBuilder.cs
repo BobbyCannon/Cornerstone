@@ -8,6 +8,8 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using Cornerstone.Avalonia.AvaloniaEdit.Editing;
 using Cornerstone.Avalonia.AvaloniaEdit.Utils;
+using Cornerstone.Collections;
+using Cornerstone.Text;
 using Cornerstone.Text.Document;
 
 #endregion
@@ -147,14 +149,14 @@ public sealed class BackgroundGeometryBuilder
 	/// <summary>
 	/// Adds the specified segment to the geometry.
 	/// </summary>
-	public void AddSegment(TextView textView, ISegment segment)
+	public void AddSegment(TextView textView, IRange range)
 	{
 		if (textView == null)
 		{
 			throw new ArgumentNullException("textView");
 		}
 		var pixelSize = PixelSnapHelpers.GetPixelSize(textView);
-		foreach (var r in GetRectsForSegment(textView, segment, ExtendToFullWidthAtLineEnd))
+		foreach (var r in GetRectsForSegment(textView, range, ExtendToFullWidthAtLineEnd))
 		{
 			AddRectangle(pixelSize, r);
 		}
@@ -196,17 +198,17 @@ public sealed class BackgroundGeometryBuilder
 	/// This method usually returns one rectangle for each line inside the segment
 	/// (but potentially more, e.g. when bidirectional text is involved).
 	/// </summary>
-	public static IEnumerable<Rect> GetRectsForSegment(TextView textView, ISegment segment, bool extendToFullWidthAtLineEnd = false)
+	public static IEnumerable<Rect> GetRectsForSegment(TextView textView, IRange range, bool extendToFullWidthAtLineEnd = false)
 	{
 		if (textView == null)
 		{
 			throw new ArgumentNullException("textView");
 		}
-		if (segment == null)
+		if (range == null)
 		{
-			throw new ArgumentNullException("segment");
+			throw new ArgumentNullException("range");
 		}
-		return GetRectsForSegmentImpl(textView, segment, extendToFullWidthAtLineEnd);
+		return GetRectsForSegmentImpl(textView, range, extendToFullWidthAtLineEnd);
 	}
 
 	/// <summary>
@@ -243,10 +245,10 @@ public sealed class BackgroundGeometryBuilder
 		}
 	}
 
-	private static IEnumerable<Rect> GetRectsForSegmentImpl(TextView textView, ISegment segment, bool extendToFullWidthAtLineEnd)
+	private static IEnumerable<Rect> GetRectsForSegmentImpl(TextView textView, IRange range, bool extendToFullWidthAtLineEnd)
 	{
-		var segmentStart = segment.Offset;
-		var segmentEnd = segment.Offset + segment.Length;
+		var segmentStart = range.StartIndex;
+		var segmentEnd = range.StartIndex + range.Length;
 
 		segmentStart = segmentStart.CoerceValue(0, textView.Document.TextLength);
 		segmentEnd = segmentEnd.CoerceValue(0, textView.Document.TextLength);
@@ -254,11 +256,11 @@ public sealed class BackgroundGeometryBuilder
 		TextViewPosition start;
 		TextViewPosition end;
 
-		if (segment is SelectionSegment)
+		if (range is SelectionRange)
 		{
-			var sel = (SelectionSegment) segment;
-			start = new TextViewPosition(textView.Document.GetLocation(sel.StartOffset), sel.StartVisualColumn);
-			end = new TextViewPosition(textView.Document.GetLocation(sel.EndOffset), sel.EndVisualColumn);
+			var sel = (SelectionRange) range;
+			start = new TextViewPosition(textView.Document.GetLocation(sel.StartIndex), sel.StartVisualColumn);
+			end = new TextViewPosition(textView.Document.GetLocation(sel.EndIndex), sel.EndVisualColumn);
 		}
 		else
 		{
@@ -268,12 +270,12 @@ public sealed class BackgroundGeometryBuilder
 
 		foreach (var vl in textView.VisualLines)
 		{
-			var vlStartOffset = vl.FirstDocumentLine.Offset;
+			var vlStartOffset = vl.FirstDocumentLine.StartIndex;
 			if (vlStartOffset > segmentEnd)
 			{
 				break;
 			}
-			var vlEndOffset = vl.LastDocumentLine.Offset + vl.LastDocumentLine.Length;
+			var vlEndOffset = vl.LastDocumentLine.StartIndex + vl.LastDocumentLine.Length;
 			if (vlEndOffset < segmentStart)
 			{
 				continue;

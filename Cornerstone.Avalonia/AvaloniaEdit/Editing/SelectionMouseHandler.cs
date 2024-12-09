@@ -8,7 +8,9 @@ using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Input;
 using Cornerstone.Avalonia.AvaloniaEdit.Utils;
+using Cornerstone.Collections;
 using Cornerstone.Extensions;
+using Cornerstone.Text;
 using Cornerstone.Text.Document;
 
 #endregion
@@ -33,7 +35,7 @@ internal sealed class SelectionMouseHandler : ITextAreaInputHandler
 	private bool _enableTextDragDrop;
 	private SelectionMode _mode;
 	private Point _possibleDragStartMousePos;
-	private AnchorSegment _startWord;
+	private AnchorRange _startWord;
 
 	#endregion
 
@@ -62,7 +64,7 @@ internal sealed class SelectionMouseHandler : ITextAreaInputHandler
 		//textArea.QueryCursor += textArea_QueryCursor;
 		TextArea.OptionChanged += TextAreaOptionChanged;
 
-		_enableTextDragDrop = TextArea.Options.EnableTextDragDrop;
+		_enableTextDragDrop = TextArea.Settings.EnableTextDragDrop;
 		if (_enableTextDragDrop)
 		{
 			AttachDragDrop();
@@ -138,11 +140,11 @@ internal sealed class SelectionMouseHandler : ITextAreaInputHandler
 			if ((newWord != SegmentExtensions.Invalid) && (_startWord != null))
 			{
 				TextArea.Selection = Selection.Create(TextArea,
-					Math.Min(newWord.Offset, _startWord.Offset),
-					Math.Max(newWord.EndOffset, _startWord.EndOffset));
+					Math.Min(newWord.Offset, _startWord.StartIndex),
+					Math.Max(newWord.EndIndex, _startWord.EndIndex));
 
 				// moves caret to start or end of selection
-				TextArea.Caret.Offset = newWord.Offset < _startWord.Offset ? newWord.Offset : Math.Max(newWord.EndOffset, _startWord.EndOffset);
+				TextArea.Caret.Offset = newWord.Offset < _startWord.StartIndex ? newWord.Offset : Math.Max(newWord.EndIndex, _startWord.EndIndex);
 			}
 		}
 		TextArea.Caret.BringCaretToView(5.0);
@@ -176,7 +178,7 @@ internal sealed class SelectionMouseHandler : ITextAreaInputHandler
 		return DragDropEffects.None;
 	}
 
-	private SimpleSegment GetLineAtMousePosition(PointerEventArgs e)
+	private SimpleRange GetLineAtMousePosition(PointerEventArgs e)
 	{
 		var textView = TextArea.TextView;
 		if (textView == null)
@@ -195,7 +197,7 @@ internal sealed class SelectionMouseHandler : ITextAreaInputHandler
 		pos += textView.ScrollOffset;
 		var line = textView.GetVisualLineFromVisualTop(pos.Y);
 		return (line != null) && (line.TextLines != null)
-			? new SimpleSegment(line.StartOffset, line.LastDocumentLine.EndOffset - line.StartOffset)
+			? new SimpleRange(line.StartOffset, line.LastDocumentLine.EndIndex - line.StartOffset)
 			: SegmentExtensions.Invalid;
 	}
 
@@ -226,7 +228,7 @@ internal sealed class SelectionMouseHandler : ITextAreaInputHandler
 		if ((line != null) && (line.TextLines != null))
 		{
 			visualColumn = line.GetVisualColumn(pos, TextArea.Selection.EnableVirtualSpace, out isAtEndOfLine);
-			return line.GetRelativeOffset(visualColumn) + line.FirstDocumentLine.Offset;
+			return line.GetRelativeOffset(visualColumn) + line.FirstDocumentLine.StartIndex;
 		}
 		isAtEndOfLine = false;
 		return -1;
@@ -254,12 +256,12 @@ internal sealed class SelectionMouseHandler : ITextAreaInputHandler
 		if ((line != null) && (line.TextLines != null))
 		{
 			visualColumn = line.GetVisualColumn(line.TextLines.First(), pos.X, TextArea.Selection.EnableVirtualSpace);
-			return line.GetRelativeOffset(visualColumn) + line.FirstDocumentLine.Offset;
+			return line.GetRelativeOffset(visualColumn) + line.FirstDocumentLine.StartIndex;
 		}
 		return -1;
 	}
 
-	private SimpleSegment GetWordAtMousePosition(PointerEventArgs e)
+	private SimpleRange GetWordAtMousePosition(PointerEventArgs e)
 	{
 		var textView = TextArea.TextView;
 		if (textView == null)
@@ -290,10 +292,10 @@ internal sealed class SelectionMouseHandler : ITextAreaInputHandler
 			{
 				wordEndVc = line.VisualLength;
 			}
-			var relOffset = line.FirstDocumentLine.Offset;
+			var relOffset = line.FirstDocumentLine.StartIndex;
 			var wordStartOffset = line.GetRelativeOffset(wordStartVc) + relOffset;
 			var wordEndOffset = line.GetRelativeOffset(wordEndVc) + relOffset;
-			return new SimpleSegment(wordStartOffset, wordEndOffset - wordStartOffset);
+			return new SimpleRange(wordStartOffset, wordEndOffset - wordStartOffset);
 		}
 		return SegmentExtensions.Invalid;
 	}
@@ -304,7 +306,7 @@ internal sealed class SelectionMouseHandler : ITextAreaInputHandler
 		Debugger.Break();
 	}
 
-	private void SetCaretOffsetToMousePosition(PointerEventArgs e, ISegment allowedSegment = null)
+	private void SetCaretOffsetToMousePosition(PointerEventArgs e, IRange allowedRange = null)
 	{
 		int visualColumn;
 		bool isAtEndOfLine;
@@ -319,9 +321,9 @@ internal sealed class SelectionMouseHandler : ITextAreaInputHandler
 			offset = GetOffsetFromMousePosition(e, out visualColumn, out isAtEndOfLine);
 		}
 
-		if (allowedSegment != null)
+		if (allowedRange != null)
 		{
-			offset = offset.CoerceValue(allowedSegment.Offset, allowedSegment.EndOffset);
+			offset = offset.CoerceValue(allowedRange.StartIndex, allowedRange.EndIndex);
 		}
 
 		if (offset >= 0)
@@ -341,12 +343,12 @@ internal sealed class SelectionMouseHandler : ITextAreaInputHandler
 
 		var dataObject = TextArea.Selection.CreateDataObject(TextArea);
 		var allowedEffects = DragDropEffects.Move;
-		var deleteOnMove = TextArea.Selection.Segments.Select(s => new AnchorSegment(TextArea.Document, s)).ToList();
+		var deleteOnMove = TextArea.Selection.Segments.Select(s => new AnchorRange(TextArea.Document, s)).ToList();
 
-		foreach (ISegment s in deleteOnMove)
+		foreach (IRange s in deleteOnMove)
 		{
 			var result = TextArea.GetDeletableSegments(s);
-			if ((result.Length != 1) || (result[0].Offset != s.Offset) || (result[0].EndOffset != s.EndOffset))
+			if ((result.Length != 1) || (result[0].StartIndex != s.StartIndex) || (result[0].EndIndex != s.EndIndex))
 			{
 				allowedEffects &= ~DragDropEffects.Move;
 			}
@@ -399,9 +401,9 @@ internal sealed class SelectionMouseHandler : ITextAreaInputHandler
 			TextArea.Document.BeginUpdate();
 			try
 			{
-				foreach (ISegment s in deleteOnMove)
+				foreach (IRange s in deleteOnMove)
 				{
-					TextArea.Document.Remove(s.Offset, s.Length);
+					TextArea.Document.Remove(s.StartIndex, s.Length);
 				}
 			}
 			finally
@@ -536,7 +538,7 @@ internal sealed class SelectionMouseHandler : ITextAreaInputHandler
 
 				if (TextArea.CapturePointer(e.Pointer))
 				{
-					if (modifiers.HasFlag(KeyModifiers.Alt) && TextArea.Options.EnableRectangularSelection)
+					if (modifiers.HasFlag(KeyModifiers.Alt) && TextArea.Settings.EnableRectangularSelection)
 					{
 						_mode = SelectionMode.Rectangular;
 						if (shift && TextArea.Selection is RectangleSelection)
@@ -562,7 +564,7 @@ internal sealed class SelectionMouseHandler : ITextAreaInputHandler
 					}
 					else
 					{
-						SimpleSegment startWord;
+						SimpleRange startWord;
 						if (e.ClickCount == 3)
 						{
 							_mode = SelectionMode.WholeLine;
@@ -582,20 +584,20 @@ internal sealed class SelectionMouseHandler : ITextAreaInputHandler
 						}
 						if (shift && !TextArea.Selection.IsEmpty)
 						{
-							if (startWord.Offset < TextArea.Selection.SurroundingSegment.Offset)
+							if (startWord.Offset < TextArea.Selection.SurroundingRange.StartIndex)
 							{
 								TextArea.Selection = TextArea.Selection.SetEndpoint(new TextViewPosition(TextArea.Document.GetLocation(startWord.Offset)));
 							}
-							else if (startWord.EndOffset > TextArea.Selection.SurroundingSegment.EndOffset)
+							else if (startWord.EndIndex > TextArea.Selection.SurroundingRange.EndIndex)
 							{
-								TextArea.Selection = TextArea.Selection.SetEndpoint(new TextViewPosition(TextArea.Document.GetLocation(startWord.EndOffset)));
+								TextArea.Selection = TextArea.Selection.SetEndpoint(new TextViewPosition(TextArea.Document.GetLocation(startWord.EndIndex)));
 							}
-							_startWord = new AnchorSegment(TextArea.Document, TextArea.Selection.SurroundingSegment);
+							_startWord = new AnchorRange(TextArea.Document, TextArea.Selection.SurroundingRange);
 						}
 						else
 						{
-							TextArea.Selection = Selection.Create(TextArea, startWord.Offset, startWord.EndOffset);
-							_startWord = new AnchorSegment(TextArea.Document, startWord.Offset, startWord.Length);
+							TextArea.Selection = Selection.Create(TextArea, startWord.Offset, startWord.EndIndex);
+							_startWord = new AnchorRange(TextArea.Document, startWord.Offset, startWord.Length);
 						}
 					}
 				}
@@ -622,7 +624,7 @@ internal sealed class SelectionMouseHandler : ITextAreaInputHandler
 			case SelectionMode.WholeWord:
 			case SelectionMode.WholeLine:
 			case SelectionMode.Rectangular:
-				if (TextArea.Options.ExtendSelectionOnMouseUp)
+				if (TextArea.Settings.ExtendSelectionOnMouseUp)
 				{
 					ExtendSelectionToMouse(e);
 				}
@@ -663,7 +665,7 @@ internal sealed class SelectionMouseHandler : ITextAreaInputHandler
 
 	private void TextAreaOptionChanged(object sender, PropertyChangedEventArgs e)
 	{
-		var newEnableTextDragDrop = TextArea.Options.EnableTextDragDrop;
+		var newEnableTextDragDrop = TextArea.Settings.EnableTextDragDrop;
 		if (newEnableTextDragDrop != _enableTextDragDrop)
 		{
 			_enableTextDragDrop = newEnableTextDragDrop;

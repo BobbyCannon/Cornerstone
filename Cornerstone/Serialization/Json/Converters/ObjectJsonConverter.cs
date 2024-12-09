@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Collections;
 using System.Linq;
 using System.Reflection;
 using Cornerstone.Attributes;
@@ -24,7 +25,7 @@ public class ObjectJsonConverter : JsonConverter
 	#region Methods
 
 	/// <inheritdoc />
-	public override void Append(object value, Type valueType, IObjectConsumer consumer, ISerializationOptions settings)
+	public override void Append(object value, Type valueType, IObjectConsumer consumer, ISerializationSettings settings)
 	{
 		if (value == null)
 		{
@@ -133,26 +134,36 @@ public class ObjectJsonConverter : JsonConverter
 						continue;
 					}
 
-					if (!info.CanWrite)
-					{
-						continue;
-					}
-
 					var propertyType = info.PropertyType;
+					object existingValue = null;
 
 					if (info.CanRead)
 					{
 						// todo: Use existing provided values?
-						var existingValue = info.GetValue(response);
+						existingValue = info.GetValue(response);
 						if (existingValue != null)
 						{
 							propertyType = existingValue.GetType();
 						}
-
-						//JsonSerializer.Convert(existingValue, objectValue.Value);
 					}
 
-					info.SetValue(response, JsonSerializer.Convert(propertyType, objectValue.Value));
+					var incomingValue = JsonSerializer.Convert(propertyType, objectValue.Value);
+
+					if (!info.CanWrite)
+					{
+						// Add collection reconciliation support
+						if (existingValue is IList existingList
+							&& incomingValue is IEnumerable incomingList)
+						{
+							CollectionExtensions.Add(existingList, incomingList);
+						}
+
+						// Add IUpdateable support for read only support
+
+						continue;
+					}
+
+					info.SetValue(response, incomingValue);
 				}
 				break;
 			}
@@ -162,7 +173,7 @@ public class ObjectJsonConverter : JsonConverter
 	}
 
 	/// <inheritdoc />
-	public override string GetJsonString(object value, ISerializationOptions settings)
+	public override string GetJsonString(object value, ISerializationSettings settings)
 	{
 		var consumer = new TextJsonConsumer(settings);
 		Append(value, value?.GetType(), consumer, settings);

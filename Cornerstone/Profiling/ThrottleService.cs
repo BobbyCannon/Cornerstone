@@ -21,10 +21,10 @@ public class ThrottleService : ThrottleService<object>
 	/// </summary>
 	/// <param name="interval"> The amount of time before the action will trigger. </param>
 	/// <param name="action"> The action to throttle. </param>
-	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
+	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public ThrottleService(TimeSpan interval, Action<CancellationToken> action, IDateTimeProvider timeService = null, IDispatcher dispatcher = null)
-		: base(interval, (x, _) => action(x), timeService, dispatcher)
+	public ThrottleService(TimeSpan interval, Action<CancellationToken> action, IDateTimeProvider timeProvider = null, IDispatcher dispatcher = null)
+		: base(interval, (x, _) => action(x), timeProvider, dispatcher)
 	{
 	}
 
@@ -56,10 +56,10 @@ public class ThrottleService<T> : DebounceOrThrottleService<T>
 	/// </summary>
 	/// <param name="interval"> The amount of time between each trigger. </param>
 	/// <param name="action"> The action to throttle. </param>
-	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
+	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public ThrottleService(TimeSpan interval, Action<CancellationToken, T> action, IDateTimeProvider timeService = null, IDispatcher dispatcher = null)
-		: base(interval, action, timeService, dispatcher)
+	public ThrottleService(TimeSpan interval, Action<CancellationToken, T> action, IDateTimeProvider timeProvider = null, IDispatcher dispatcher = null)
+		: base(interval, action, timeProvider, dispatcher)
 	{
 	}
 

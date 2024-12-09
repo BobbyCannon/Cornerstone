@@ -3,7 +3,7 @@
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		x:ClassModifier="internal">
 	<Design.PreviewWith>
-		<Border Padding="10">
+		<Border Padding="10" Width="300">
 			<TabStrip>
 				<TabStripItem>Leaf</TabStripItem>
 				<TabStripItem IsSelected="True">Arch</TabStripItem>
@@ -168,11 +168,11 @@
 			</Style>
 		</Style>
 
-		<!-- Blue Grey highlight color. -->
+		<!-- Blue Gray highlight color. -->
 
-		<Style Selector="^[(Theme.Color)=BlueGrey]">
+		<Style Selector="^[(Theme.Color)=BlueGray]">
 			<Style Selector="^:selected /template/ Border#PART_Highlight">
-				<Setter Property="Background" Value="{DynamicResource BlueGrey07}" />
+				<Setter Property="Background" Value="{DynamicResource BlueGray07}" />
 			</Style>
 		</Style>
 	</ControlTheme>

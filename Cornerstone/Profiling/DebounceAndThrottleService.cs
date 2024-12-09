@@ -8,8 +8,7 @@ using Cornerstone.Collections;
 using Cornerstone.Presentation;
 using Cornerstone.Runtime;
 using Cornerstone.Threading;
-using PropertyChanged;
-using DependsOn2 = PropertyChanging.DependsOnAttribute;
+using Cornerstone.Weaver;
 
 #endregion
 
@@ -25,7 +24,7 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	private readonly Action<CancellationToken, T> _action;
 	private CancellationTokenSource _cancellationTokenSource;
 	private bool _force;
-	private readonly IDateTimeProvider _timeService;
+	private readonly IDateTimeProvider _timeProvider;
 	private BackgroundWorker _worker;
 
 	#endregion
@@ -37,9 +36,9 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	/// </summary>
 	/// <param name="interval"> The amount of time between each trigger. </param>
 	/// <param name="action"> The action to throttle. </param>
-	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
+	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	protected DebounceOrThrottleService(TimeSpan interval, Action<CancellationToken, T> action, IDateTimeProvider timeService = null, IDispatcher dispatcher = null) : base(dispatcher)
+	protected DebounceOrThrottleService(TimeSpan interval, Action<CancellationToken, T> action, IDateTimeProvider timeProvider = null, IDispatcher dispatcher = null) : base(dispatcher)
 	{
 		AllowTriggerDuringProcessing = false;
 		Interval = interval;
@@ -49,7 +48,7 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 		Queue.QueueChanged += QueueOnQueueChanged;
 
 		_action = action;
-		_timeService = timeService ?? TimeService.RealTime;
+		_timeProvider = timeProvider ?? DateTimeProvider.RealTime;
 		_worker = new BackgroundWorker();
 		_worker.DoWork += WorkerOnDoWork;
 		_worker.WorkerSupportsCancellation = true;
@@ -88,15 +87,12 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	/// <summary>
 	/// True if the throttle service has been triggered.
 	/// </summary>
-	[DependsOn(nameof(IsProcessing))]
-	[DependsOn2(nameof(IsProcessing))]
 	public bool IsTriggered => !Queue.IsEmpty;
 
 	/// <summary>
 	/// The throttle is triggered and the delay has expired, so it is ready to process.
 	/// </summary>
 	[DependsOn(nameof(IsTriggered), nameof(IsReadyToProcess))]
-	[DependsOn2(nameof(IsTriggered), nameof(IsReadyToProcess))]
 	public bool IsTriggeredAndReadyToProcess => IsTriggered && IsReadyToProcess;
 
 	/// <summary>
@@ -132,7 +128,7 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	/// <summary>
 	/// The current time for the throttle.
 	/// </summary>
-	protected internal DateTime CurrentTime => _timeService.UtcNow;
+	protected internal DateTime CurrentTime => _timeProvider.UtcNow;
 
 	/// <summary>
 	/// Lock for tracking worker / reset process.

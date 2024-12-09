@@ -20,7 +20,7 @@ public interface ITextRunConstructionContext
 	/// <summary>
 	/// Gets the text document.
 	/// </summary>
-	TextDocument Document { get; }
+	TextEditorDocument Document { get; }
 
 	/// <summary>
 	/// Gets the global text run properties.

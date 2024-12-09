@@ -1,13 +1,18 @@
 ﻿#region References
 
 using System;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.IO;
 using System.Security;
 using System.Threading.Tasks;
-using System.Windows.Input;
 using Cornerstone.Collections;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
+using Cornerstone.Parsers.Csv;
 using Cornerstone.Presentation;
+using Cornerstone.Profiling;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -22,6 +27,8 @@ public abstract class SecureVault<T> : SecureVault, IViewModel
 	#region Fields
 
 	private readonly SpeedyList<T> _credentials;
+	private readonly DebounceService _credentialsOrderDebounce;
+	private readonly IWeakEventManager _weakEventManager;
 
 	#endregion
 
@@ -30,25 +37,28 @@ public abstract class SecureVault<T> : SecureVault, IViewModel
 	/// <summary>
 	/// Creates an instance of the vault.
 	/// </summary>
-	protected SecureVault(IWindowsHelloService windowsHelloService, IDispatcher dispatcher)
+	protected SecureVault(IWindowsHelloService windowsHelloService, IDateTimeProvider timeProvider, IWeakEventManager weakEventManager, IDispatcher dispatcher, params OrderBy<T>[] orderBy)
 	{
-		_credentials = new SpeedyList<T>(dispatcher, new OrderBy<T>(x => x.Name)) { FilterCheck = FilterCheck };
+		_credentials = new SpeedyList<T>(dispatcher, orderBy.Length > 0 ? orderBy : [new OrderBy<T>(x => x.Name)]) { FilterCheck = FilterCheck };
+		_credentialsOrderDebounce = new DebounceService(TimeSpan.FromSeconds(1), _ => _credentials.Order()) { AllowTriggerDuringProcessing = true };
+
+		_weakEventManager = weakEventManager;
+		_weakEventManager.Add<SpeedyList<T>, SpeedyListUpdatedEventArg<T>>(_credentials, nameof(_credentials.ListUpdated), CredentialsOnListUpdated);
 
 		Credentials = new ReadOnlySpeedyList<T>(_credentials);
+		CredentialsFiltered = _credentials.Filtered;
 		WindowsHelloService = windowsHelloService;
+		TimeProvider = timeProvider;
 		HasWindowsHelloServiceBeenSetup = false;
-
-		// Commands
-		ClearFilterCommand = new RelayCommand(_ => FilterText = string.Empty);
 	}
 
 	#endregion
 
 	#region Properties
 
-	public ICommand ClearFilterCommand { get; }
-
 	public ReadOnlySpeedyList<T> Credentials { get; }
+	
+	public ReadOnlyObservableCollection<T> CredentialsFiltered { get; }
 
 	public virtual bool Exists => true;
 
@@ -61,6 +71,8 @@ public abstract class SecureVault<T> : SecureVault, IViewModel
 	public bool IsOpen => MasterPassword != null;
 
 	public T ItemBeingEdited { get; private set; }
+
+	public IDateTimeProvider TimeProvider { get; }
 
 	public IWindowsHelloService WindowsHelloService { get; }
 
@@ -119,10 +131,6 @@ public abstract class SecureVault<T> : SecureVault, IViewModel
 	public virtual void ExportVault()
 	{
 	}
-	
-	public virtual void ImportVault()
-	{
-	}
 
 	/// <summary>
 	/// Get the password unencrypted but in a secure string object.
@@ -132,10 +140,36 @@ public abstract class SecureVault<T> : SecureVault, IViewModel
 	public abstract SecureString GetPassword(T credential);
 
 	/// <inheritdoc />
-	public override bool HasChanges(IncludeExcludeOptions options)
+	public override bool HasChanges(IncludeExcludeSettings settings)
 	{
-		return base.HasChanges(options)
+		return base.HasChanges(settings)
 			|| _credentials.HasChanges();
+	}
+
+	public virtual void ImportVault(string filePath)
+	{
+		var content = File.ReadAllText(filePath);
+		var credentials = CsvReader.ReadContent<T>(content,
+			new CsvConverterSettings { Delimiter = ',', HasHeader = true },
+			(item, x) =>
+			{
+				// url	username	password	totp	extra	name	grouping	fav
+				item.Name = x["name"];
+				item.UserName = x["username"];
+				item.Uri = x["url"];
+				item.Group = x["grouping"];
+				item.Notes += x["extra"];
+				item.PasswordChange = x["password"];
+				item.Id = Guid.NewGuid();
+
+				return true;
+			}
+		);
+
+		foreach (var credential in credentials)
+		{
+			ImportCredential(credential);
+		}
 	}
 
 	public virtual void Initialize()
@@ -224,7 +258,7 @@ public abstract class SecureVault<T> : SecureVault, IViewModel
 
 	public void StartEditing(T credential)
 	{
-		ItemBeingEdited = credential.ShallowClone(EditOptions);
+		ItemBeingEdited = credential.ShallowClone(EditSettings);
 	}
 
 	public virtual void Uninitialize()
@@ -248,16 +282,27 @@ public abstract class SecureVault<T> : SecureVault, IViewModel
 		{
 			if (ReadCredential(credential.Id, out var credentialToUpdate))
 			{
-				credentialToUpdate.UpdateWith(credential, EditOptions);
-				credentialToUpdate.ModifiedOn = TimeService.CurrentTime.UtcNow;
-				UpdatePassword(credentialToUpdate, credential);
+				credentialToUpdate.UpdateWith(credential, EditSettings);
+				credentialToUpdate.ModifiedOn = TimeProvider.UtcNow;
+
+				if (!string.IsNullOrWhiteSpace(credential.PasswordChange))
+				{
+					UpdatePassword(credentialToUpdate, credential.PasswordChange.ToSecureString());
+				}
+
 				return true;
 			}
 
-			credentialToUpdate = credential.ShallowClone(EditOptions);
-			credentialToUpdate.CreatedOn = TimeService.CurrentTime.UtcNow;
-			credentialToUpdate.ModifiedOn = TimeService.CurrentTime.UtcNow;
-			UpdatePassword(credentialToUpdate, credential);
+			credentialToUpdate = credential.ShallowClone(EditSettings);
+			credentialToUpdate.Id = Guid.NewGuid();
+			credentialToUpdate.CreatedOn = TimeProvider.UtcNow;
+			credentialToUpdate.ModifiedOn = TimeProvider.UtcNow;
+
+			if (!string.IsNullOrWhiteSpace(credential.PasswordChange))
+			{
+				UpdatePassword(credentialToUpdate, credential.PasswordChange.ToSecureString());
+			}
+
 			_credentials.Add(credentialToUpdate);
 			return true;
 		}
@@ -293,7 +338,7 @@ public abstract class SecureVault<T> : SecureVault, IViewModel
 		{
 			case nameof(FilterText):
 			{
-				//Credentials.RefreshFilter();
+				_credentials.RefreshFilter();
 				break;
 			}
 		}
@@ -323,15 +368,24 @@ public abstract class SecureVault<T> : SecureVault, IViewModel
 	/// Update the password.
 	/// </summary>
 	/// <param name="credential"> The credential to update. </param>
-	/// <param name="update"> The credential update. </param>
-	protected abstract void UpdatePassword(T credential, T update);
-
-	/// <summary>
-	/// Update the password.
-	/// </summary>
-	/// <param name="credential"> The credential to update. </param>
 	/// <param name="password"> The new password. </param>
 	protected abstract void UpdatePassword(T credential, SecureString password);
+
+	private void CredentialPropertyChanged(object sender, PropertyChangedEventArgs e)
+	{
+		_credentialsOrderDebounce.Trigger();
+	}
+
+	private void CredentialsOnListUpdated(object sender, SpeedyListUpdatedEventArg<T> e)
+	{
+		if (e.Added != null)
+		{
+			foreach (var item in e.Added)
+			{
+				_weakEventManager.AddPropertyChanged(item, CredentialPropertyChanged);
+			}
+		}
+	}
 
 	/// <summary>
 	/// The check to filter credentials view.
@@ -346,6 +400,11 @@ public abstract class SecureVault<T> : SecureVault, IViewModel
 			|| (arg.Group?.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0);
 	}
 
+	private void ImportCredential(T credential)
+	{
+		// Don't just write, try to import on URI, username, etc
+	}
+
 	#endregion
 }
 
@@ -355,10 +414,11 @@ public abstract class SecureVault : Notifiable
 
 	static SecureVault()
 	{
-		EditOptions = new IncludeExcludeOptions(
+		EditSettings = new IncludeExcludeSettings(
 			[
 				nameof(ISecureVaultCredential.Group),
 				nameof(ISecureVaultCredential.Id),
+				nameof(ISecureVaultCredential.IsFavorite),
 				nameof(ISecureVaultCredential.Name),
 				nameof(ISecureVaultCredential.Notes),
 				nameof(ISecureVaultCredential.Uri),
@@ -372,7 +432,7 @@ public abstract class SecureVault : Notifiable
 
 	#region Properties
 
-	protected static IncludeExcludeOptions EditOptions { get; }
+	protected static IncludeExcludeSettings EditSettings { get; }
 
 	#endregion
 

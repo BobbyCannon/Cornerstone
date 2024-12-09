@@ -71,7 +71,7 @@ internal interface IBuiltinElementGenerator
 {
 	#region Methods
 
-	void FetchOptions(TextEditorOptions options);
+	void FetchOptions(TextEditorSettings settings);
 
 	#endregion
 }

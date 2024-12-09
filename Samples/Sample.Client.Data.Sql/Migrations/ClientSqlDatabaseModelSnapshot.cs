@@ -17,7 +17,7 @@ namespace Sample.Client.Data.Sql.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.0")
+                .HasAnnotation("ProductVersion", "9.0.0")
                 .HasAnnotation("Proxies:ChangeTracking", false)
                 .HasAnnotation("Proxies:CheckEquality", false)
                 .HasAnnotation("Proxies:LazyLoading", true)
@@ -34,11 +34,11 @@ namespace Sample.Client.Data.Sql.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<long>("AddressId")
+                    b.Property<long?>("AddressId")
                         .HasColumnType("bigint")
                         .HasColumnName("AccountAddressId");
 
-                    b.Property<Guid>("AddressSyncId")
+                    b.Property<Guid?>("AddressSyncId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("AccountAddressSyncId");
 
@@ -254,8 +254,7 @@ namespace Sample.Client.Data.Sql.Migrations
                     b.HasOne("Sample.Shared.Storage.Client.ClientAddress", "Address")
                         .WithMany("Accounts")
                         .HasForeignKey("AddressId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Address");
                 });

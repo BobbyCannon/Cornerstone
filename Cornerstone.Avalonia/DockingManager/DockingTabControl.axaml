@@ -1,0 +1,196 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<Styles.Resources>
+		<ResourceDictionary>
+			<DataTemplate x:Key="TabPopup2" DataType="TabPopup">
+				<Border Background="{DynamicResource Background02}"
+						BorderBrush="{Binding BorderBrush}"
+						BorderThickness="1,0,1,1"
+						CornerRadius="0,0,8,8">
+					<Border.Effect>
+						<DropShadowEffect BlurRadius="8"
+								OffsetX="0"
+								OffsetY="0"
+								Color="Black"
+								Opacity=".5" />
+					</Border.Effect>
+					<StackPanel Margin="14"
+							Orientation="Vertical">
+						<!-- Popup Widget -->
+						<ContentPresenter
+								Content="{Binding ControlForView}"
+								IsHitTestVisible="{Binding !InProgress}" />
+
+						<!-- Options -->
+						<StackPanel Margin="0,14,0,0"
+								Orientation="Horizontal"
+								HorizontalAlignment="Right"
+								IsVisible="{Binding ShowButtons}">
+							<Button
+									MinWidth="80"
+									IsEnabled="{Binding OkButtonEnabled}"
+									Content="Ok"
+									Command="{Binding StartProcess}"/>
+							<Button
+									MinWidth="80"
+									Margin="8,0,0,0"
+									IsEnabled="{Binding CancelButtonEnabled}"
+									Content="Cancel"
+									Command="{Binding Cancel}"/>
+						</StackPanel>
+
+						<!-- Running -->
+						<StackPanel Orientation="Vertical"
+								IsVisible="{Binding InProgress}">
+							<Rectangle Height="1"
+									Margin="0,8,0,0"
+									HorizontalAlignment="Stretch"
+									Fill="{DynamicResource ControlBorder}" />
+							<StackPanel Orientation="Horizontal"
+									Margin="0,8"
+									HorizontalAlignment="Center">
+								<Path Width="16" Height="16"
+										Classes="Waiting"
+										Data="{StaticResource Icons.Waiting}"
+										Fill="{DynamicResource ThemeColor06}"
+										IsVisible="{Binding InProgress}" />
+								<TextBlock Margin="6,0,0,0"
+										FontSize="14"
+										Text="Running" />
+							</StackPanel>
+							<TextBlock HorizontalAlignment="Stretch"
+									TextWrapping="Wrap"
+									FontSize="14"
+									FontStyle="Italic"
+									Text="{Binding ProgressDescription}"
+									IsVisible="{Binding ProgressDescription, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+							<ProgressBar Margin="0,8,0,0"
+									HorizontalAlignment="Stretch"
+									IsIndeterminate="True"
+									Background="{DynamicResource Foreground09}"
+									Foreground="{DynamicResource ThemeColor06}"
+									Minimum="0"
+									Maximum="100" />
+						</StackPanel>
+					</StackPanel>
+				</Border>
+			</DataTemplate>
+
+			<ControlTheme x:Key="{x:Type DockingTabControl}"
+					TargetType="DockingTabControl"
+					BasedOn="{StaticResource {x:Type TabControl}}">
+				<Setter Property="Background" Value="{DynamicResource TabControlBackground}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource TabControlBorder}" />
+
+				<Setter Property="Template">
+					<ControlTemplate>
+						<!-- Layout grid. -->
+						<Grid RowDefinitions="Auto,*,Auto"
+								ColumnDefinitions="Auto,*,Auto"
+								Margin="{TemplateBinding Margin}">
+							<!-- Content area container and background. -->
+							<Border Grid.Row="1" Grid.Column="1"
+									Background="{TemplateBinding Background}"
+									BorderBrush="{TemplateBinding BorderBrush}"
+									BorderThickness="1"
+									CornerRadius="4"
+									Padding="0">
+
+								<Grid>
+									<!-- Content. -->
+									<ContentPresenter Name="PART_SelectedContentHost"
+											Margin="{TemplateBinding Padding}"
+											HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+											VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+											Content="{TemplateBinding SelectedContent}"
+											ContentTemplate="{TemplateBinding SelectedContentTemplate}" />
+
+									<Grid DataContext="{TemplateBinding SelectedContent}"
+											Background="{DynamicResource Background02}"
+											HorizontalAlignment="Center"
+											VerticalAlignment="Top"
+											IsVisible="{ReflectionBinding Popup, Converter={x:Static ObjectConverters.IsNotNull}}">
+										<Grid Width="500"
+												HorizontalAlignment="Center"
+												VerticalAlignment="Top">
+											<ContentControl Content="{ReflectionBinding Popup}"
+													ContentTemplate="{StaticResource TabPopup2}" />
+										</Grid>
+									</Grid>
+								</Grid>
+							</Border>
+
+							<!-- TabItem header. -->
+							<ScrollViewer Name="PART_ScrollViewer"
+									Grid.Row="0" Grid.Column="0">
+								<Grid ColumnDefinitions="Auto,Auto">
+									<ItemsPresenter Grid.Column="0"
+											Name="PART_ItemsPresenter"
+											ItemsPanel="{TemplateBinding ItemsPanel}" />
+									<Button Grid.Column="1"
+											Classes="Icon"
+											Command="{TemplateBinding NewTabCommand}"
+											IsVisible="{TemplateBinding NewTabCommand, Converter={x:Static ObjectConverters.IsNotNull}}">
+										<PathIcon Data="{StaticResource Icons.Plus}" />
+									</Button>
+								</Grid>
+							</ScrollViewer>
+						</Grid>
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Style Selector="DockingTabControl:not(:active) DockableTabItem">
+		<Style Selector="^:selected /template/ Border#PART_Highlight" />
+		<Style Selector="^ /template/ Button#PART_CloseButton">
+			<Setter Property="IsVisible" Value="False" />
+		</Style>
+		<Style Selector="^:selected /template/ Button#PART_CloseButton">
+			<Setter Property="IsVisible" Value="False" />
+		</Style>
+	</Style>
+
+	<Style Selector="DockingTabControl:active DockableTabItem">
+		<Style Selector="^:selected /template/ Border#PART_Highlight">
+			<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
+		</Style>
+		<Style Selector="^ /template/ Button#PART_CloseButton">
+			<Setter Property="IsVisible" Value="False" />
+		</Style>
+		<Style Selector="^:selected /template/ Button#PART_CloseButton">
+			<Setter Property="IsVisible" Value="True" />
+		</Style>
+	</Style>
+
+	<Design.PreviewWith>
+		<DockPanel Width="600" Height="600">
+			<DockingTabControl DockPanel.Dock="Top" Height="100" />
+			<DockingTabControl DockPanel.Dock="Top" Height="300">
+				<DockableTabItem>
+					<DockableTabItem.TabModel>
+						<DockableTabModel Header="aoeu222" IsSelected="True">
+							<DockableTabModel.Popup>
+								<TabPopup ProgressDescription="I'm running stuff"
+										IsDestructive="True"
+										ShowButtons="True"
+										InProgress="True" />
+							</DockableTabModel.Popup>
+						</DockableTabModel>
+					</DockableTabItem.TabModel>
+				</DockableTabItem>
+				<DockableTabItem Header="Test" />
+			</DockingTabControl>
+			<DockingTabControl DockPanel.Dock="Bottom" Height="100" TabStripPlacement="Bottom">
+				<DockableTabItem>
+					<DockableTabItem.TabModel>
+						<DockableTabModel Header="aoeu222" IsSelected="True" />
+					</DockableTabItem.TabModel>
+				</DockableTabItem>
+				<DockableTabItem Header="Test" />
+			</DockingTabControl>
+		</DockPanel>
+	</Design.PreviewWith>
+</Styles>

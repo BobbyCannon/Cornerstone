@@ -32,7 +32,7 @@ public abstract class CodeWriterTest<T> : CornerstoneUnitTest
 
 	protected void GenerateNewScenarios(string fileName, bool enableTestScenarioCreation, params Type[] types)
 	{
-		if (RuntimeInformation.DotNetRuntimeVersion.Major <= 4)
+		if (GetRuntimeInformation().DotNetRuntimeVersion.Major <= 4)
 		{
 			// Do NOT generate scenarios on .NET48
 			"We do not generate scenarios on .NET48".Dump();

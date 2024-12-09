@@ -2,6 +2,8 @@
 
 #endregion
 
+using Cornerstone.Collections;
+using Cornerstone.Text;
 using Cornerstone.Text.Document;
 
 namespace Cornerstone.Avalonia.AvaloniaEdit.Snippets;
@@ -21,7 +23,7 @@ public interface IActiveElement
 	/// <summary>
 	/// Gets the segment associated with this element. May be null.
 	/// </summary>
-	ISegment Segment { get; }
+	IRange Range { get; }
 
 	#endregion
 

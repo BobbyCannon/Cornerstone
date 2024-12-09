@@ -26,7 +26,7 @@ internal static class Cache
 		SettableProperties = new ConcurrentDictionary<Type, ReadOnlySet<PropertyInfo>>();
 		SettablePropertiesPublicOnly = new ConcurrentDictionary<Type, ReadOnlySet<PropertyInfo>>();
 		PropertyDictionaryForType = new ConcurrentDictionary<Type, IReadOnlyDictionary<string, PropertyInfo>>();
-		UpdateableActionOptionsPerType = new ConcurrentDictionary<Type, ConcurrentDictionary<UpdateableAction, UpdateableOptions>>();
+		UpdateableActionOptionsPerType = new ConcurrentDictionary<Type, ConcurrentDictionary<UpdateableAction, UpdateableSettings>>();
 		UpdateableActionTypes = EnumExtensions.GetAllEnumDetails<UpdateableAction>();
 	}
 
@@ -52,7 +52,7 @@ internal static class Cache
 	/// <summary>
 	/// The cache all types with all action options.
 	/// </summary>
-	private static ConcurrentDictionary<Type, ConcurrentDictionary<UpdateableAction, UpdateableOptions>> UpdateableActionOptionsPerType { get; }
+	private static ConcurrentDictionary<Type, ConcurrentDictionary<UpdateableAction, UpdateableSettings>> UpdateableActionOptionsPerType { get; }
 
 	/// <summary>
 	/// A list of all updateable actions.
@@ -68,7 +68,7 @@ internal static class Cache
 	/// <typeparam name="T"> </typeparam>
 	/// <param name="action"> </param>
 	/// <returns> </returns>
-	public static IncludeExcludeOptions GetOptions<T>(UpdateableAction action)
+	public static IncludeExcludeSettings GetOptions<T>(UpdateableAction action)
 	{
 		return GetOptions(typeof(T), action);
 	}
@@ -79,22 +79,22 @@ internal static class Cache
 	/// <param name="type"> </param>
 	/// <param name="action"> </param>
 	/// <returns> </returns>
-	public static IncludeExcludeOptions GetOptions(Type type, UpdateableAction action)
+	public static IncludeExcludeSettings GetOptions(Type type, UpdateableAction action)
 	{
 		var realType = type.GetRealTypeUsingReflection();
 		if (!realType.ImplementsType<IUpdateable>())
 		{
-			return IncludeExcludeOptions.Empty;
+			return IncludeExcludeSettings.Empty;
 		}
 
 		if (UpdateableActionOptionsPerType.TryGetValue(realType, out var actionOptions))
 		{
 			return actionOptions.TryGetValue(action, out var options)
 				? options
-				: IncludeExcludeOptions.Empty;
+				: IncludeExcludeSettings.Empty;
 		}
 
-		return IncludeExcludeOptions.Empty;
+		return IncludeExcludeSettings.Empty;
 	}
 
 	/// <summary>
@@ -142,7 +142,7 @@ internal static class Cache
 
 		var properties = GetPropertyDictionary(realType).Keys;
 		var typeOptions = UpdateableActionOptionsPerType.GetOrAdd(realType,
-			_ => new ConcurrentDictionary<UpdateableAction, UpdateableOptions>());
+			_ => new ConcurrentDictionary<UpdateableAction, UpdateableSettings>());
 
 		foreach (var actionType in UpdateableActionTypes.Keys)
 		{
@@ -155,7 +155,7 @@ internal static class Cache
 			{
 				var included = value.GetDefaultIncludedProperties(x);
 				var excluded = properties.Except(included).ToList();
-				return new UpdateableOptions(x, included, excluded);
+				return new UpdateableSettings(x, included, excluded);
 			});
 		}
 	}

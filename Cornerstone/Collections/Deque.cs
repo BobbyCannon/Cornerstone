@@ -22,6 +22,10 @@ internal sealed class Deque<T> : ICollection<T>
 	private int _head;
 	private int _tail;
 
+	#endregion
+
+	#region Constructors
+
 	public Deque()
 	{
 		_arr = [];
@@ -61,9 +65,10 @@ internal sealed class Deque<T> : ICollection<T>
 	public void Clear()
 	{
 		_arr = [];
-		Count = 0;
 		_head = 0;
 		_tail = 0;
+
+		Count = 0;
 	}
 
 	/// <inheritdoc />
@@ -125,7 +130,7 @@ internal sealed class Deque<T> : ICollection<T>
 	/// <summary>
 	/// Pops an element from the end of the deque.
 	/// </summary>
-	public T PopBack()
+	public T PopEnd()
 	{
 		if (Count == 0)
 		{
@@ -169,7 +174,7 @@ internal sealed class Deque<T> : ICollection<T>
 	/// Adds an element to the end of the deque.
 	/// </summary>
 	[SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "PushBack")]
-	public void PushBack(T item)
+	public void PushEnd(T item)
 	{
 		if (Count == _arr.Length)
 		{
@@ -206,7 +211,7 @@ internal sealed class Deque<T> : ICollection<T>
 
 	void ICollection<T>.Add(T item)
 	{
-		PushBack(item);
+		PushEnd(item);
 	}
 
 	IEnumerator IEnumerable.GetEnumerator()

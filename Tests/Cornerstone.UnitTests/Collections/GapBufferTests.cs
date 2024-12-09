@@ -11,25 +11,15 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Cornerstone.UnitTests.Collections;
 
+/// <summary>
+/// All shared IBuffer interfaces are tested in <see cref="BufferTests" />.
+/// </summary>
 [TestClass]
 [SuppressMessage("ReSharper", "StringLiteralTypo")]
 [SuppressMessage("ReSharper", "CollectionNeverUpdated.Local")]
 public class GapBufferTests : CornerstoneUnitTest
 {
 	#region Methods
-
-	[TestMethod]
-	public void Clear()
-	{
-		//                                0    1    2    3    4    5    6    7    8
-		var buffer = new GapBuffer<char>('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i');
-		AreEqual(9, buffer.Count);
-		AreEqual(GapBuffer<char>.DefaultCapacity, buffer.Capacity);
-
-		buffer.Clear();
-		AreEqual(0, buffer.Count);
-		AreEqual(GapBuffer<char>.DefaultCapacity, buffer.Capacity);
-	}
 
 	[TestMethod]
 	public void Constructors()
@@ -108,21 +98,6 @@ public class GapBufferTests : CornerstoneUnitTest
 		AreEqual("ba", buffer.ToString());
 
 		ExpectedException<IndexOutOfRangeException>(() => buffer[-1] = 'c', Babel.Tower[BabelKeys.IndexOutOfRange]);
-	}
-
-	[TestMethod]
-	public void IndexOf()
-	{
-		//                                0    1    2    3    4    5    6    7    8
-		var buffer = new GapBuffer<char>('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i');
-		AreEqual(9, buffer.Count);
-		AreEqual(0, buffer.IndexOf('a'));
-		AreEqual(5, buffer.IndexOf('f'));
-
-		buffer.RemoveAt(0);
-		AreEqual(8, buffer.Count);
-		AreEqual(-1, buffer.IndexOf('a'));
-		AreEqual(4, buffer.IndexOf('f'));
 	}
 
 	[TestMethod]
@@ -210,9 +185,12 @@ public class GapBufferTests : CornerstoneUnitTest
 	[SuppressMessage("ReSharper", "UseObjectOrCollectionInitializer")]
 	public void ResizeGap()
 	{
-		var buffer = new GapBuffer<int>(0);
-		buffer.Add(1);
+		var buffer = new GapBuffer<string>(0);
+		AreEqual(buffer.Capacity, 0);
+		AreEqual(buffer.Count, 0);
+		buffer.Add("foo");
 		AreEqual(GapBuffer<char>.DefaultCapacity, buffer.Capacity);
+		AreEqual(buffer.Count, 1);
 	}
 
 	[TestMethod]

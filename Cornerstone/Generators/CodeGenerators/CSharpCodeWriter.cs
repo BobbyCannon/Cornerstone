@@ -15,7 +15,7 @@ using Cornerstone.Text;
 namespace Cornerstone.Generators.CodeGenerators;
 
 /// <inheritdoc />
-public class CSharpCodeWriter : CodeWriter<ICodeWriterOptions>
+public class CSharpCodeWriter : CodeWriter<ICodeWriterSettings>
 {
 	#region Fields
 
@@ -28,13 +28,13 @@ public class CSharpCodeWriter : CodeWriter<ICodeWriterOptions>
 
 	/// <inheritdoc />
 	public CSharpCodeWriter()
-		: this(new CodeWriterOptions { TextFormat = TextFormat.Indented })
+		: this(new CodeWriterSettings { TextFormat = TextFormat.Indented })
 	{
 	}
 
 	/// <inheritdoc />
-	public CSharpCodeWriter(ICodeWriterOptions options)
-		: base(options ?? Generators.CodeGenerator.DefaultWriterOptions)
+	public CSharpCodeWriter(ICodeWriterSettings settings)
+		: base(settings ?? Generators.CodeGenerator.DefaultWriterSettings)
 	{
 	}
 
@@ -86,11 +86,11 @@ public class CSharpCodeWriter : CodeWriter<ICodeWriterOptions>
 	/// Convert the value to CSharp code.
 	/// </summary>
 	/// <param name="value"> The value to write. </param>
-	/// <param name="options"> Optional settings. </param>
+	/// <param name="settings"> Optional settings. </param>
 	/// <returns> The CSharp code. </returns>
-	public static string GenerateCode(object value, ICodeWriterOptions options = null)
+	public static string GenerateCode(object value, ICodeWriterSettings settings = null)
 	{
-		var writer = new CSharpCodeWriter(options);
+		var writer = new CSharpCodeWriter(settings);
 		writer.AppendObject(value);
 		return writer.ToString();
 	}
@@ -129,6 +129,28 @@ public class CSharpCodeWriter : CodeWriter<ICodeWriterOptions>
 
 		var genericArguments = type.GetGenericArguments();
 		return $"{typeName}<{string.Join(", ", genericArguments.Select(GetCodeTypeName))}>";
+	}
+
+	/// <summary>
+	/// Converts MethodInfo to the code type. Ex. Build&lt;T1, T2&gt; or Build&lt;Account, int&gt;
+	/// </summary>
+	/// <param name="info"> The MethodInfo to convert. </param>
+	/// <returns> The method info in a CSharp code format. </returns>
+	public static string GetCodeTypeName(MethodInfo info)
+	{
+		if (info.IsGenericMethodDefinition)
+		{
+			var genericArguments = info.GetGenericArguments();
+			return $"{info.Name}<{string.Join(", ", genericArguments.Select(GetCodeTypeName))}>";
+		}
+		
+		if (info.IsGenericMethod)
+		{
+			var genericArguments = info.GetGenericArguments();
+			return $"{info.Name}<{string.Join(", ", genericArguments.Select(GetCodeTypeName))}>";
+		}
+
+		return info.Name;
 	}
 
 	/// <inheritdoc />
@@ -200,7 +222,7 @@ public class CSharpCodeWriter : CodeWriter<ICodeWriterOptions>
 			{
 				WriteRawString(name);
 				WriteRawString(" = ");
-				AppendObject(value);
+				WritePropertyValue(value);
 				WriteRawString(",");
 				NewLine();
 				break;
@@ -227,7 +249,7 @@ public class CSharpCodeWriter : CodeWriter<ICodeWriterOptions>
 			{
 				WriteRawString(info.Name);
 				WriteRawString(" = ");
-				AppendObject(value);
+				WritePropertyValue(value);
 				break;
 			}
 		}

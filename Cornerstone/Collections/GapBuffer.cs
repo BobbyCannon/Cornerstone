@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Cornerstone.Extensions;
 
 #endregion
@@ -55,7 +56,7 @@ public class GapBuffer<T> : Buffer<T>
 	{
 		if (value != null)
 		{
-			AddRange(value);
+			Add(value);
 		}
 	}
 
@@ -71,7 +72,7 @@ public class GapBuffer<T> : Buffer<T>
 	/// </summary>
 	public GapBuffer(int capacity, params T[] value) : this(capacity)
 	{
-		AddRange(value);
+		Add(value);
 	}
 
 	/// <summary>
@@ -87,18 +88,21 @@ public class GapBuffer<T> : Buffer<T>
 
 	#region Properties
 
-	/// <summary> Amount of physical space currently allocated. </summary>
+	/// <summary>
+	/// Amount of physical space currently allocated.
+	/// </summary>
 	public int Capacity => _buffer.Length;
 
-	/// <summary> Current size of the collection. </summary>
+	/// <inheritdoc />
 	public override int Count => _buffer.Length - GapSize;
 
 	/// <inheritdoc />
 	public override bool IsReadOnly => false;
 
-	/// <summary> Get/set the entry at the specified position. </summary>
+	/// <inheritdoc />
 	public override T this[int index]
 	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		get
 		{
 			VerifyRange(index);
@@ -118,29 +122,16 @@ public class GapBuffer<T> : Buffer<T>
 		}
 	}
 
-	/// <summary> The size of the movable gap. </summary>
+	/// <summary>
+	/// The size of the movable gap.
+	/// </summary>
 	private int GapSize => _gapEndIndex - _gapStartIndex;
 
 	#endregion
 
 	#region Methods
 
-	/// <summary> Add an item to the end of the collection. </summary>
-	public override void Add(T item)
-	{
-		Insert(Count, item);
-	}
-
-	/// <summary> Adds multiple items to the end of the collection. </summary>
-	public void AddRange(IEnumerable<T> items)
-	{
-		foreach (var item in items)
-		{
-			Add(item);
-		}
-	}
-
-	/// <summary> Clears the collection. </summary>
+	/// <inheritdoc />
 	public override void Clear()
 	{
 		Array.Clear(_buffer, 0, _buffer.Length);
@@ -220,35 +211,7 @@ public class GapBuffer<T> : Buffer<T>
 		}
 	}
 
-	/// <summary>
-	/// Get a range from the buffer.
-	/// </summary>
-	/// <param name="index"> The start index to read from. </param>
-	/// <param name="length"> The length of text to read. </param>
-	/// <returns> The buffer read. </returns>
-	public GapBuffer<T> GetRange(int index, int length)
-	{
-		if (length <= 0)
-		{
-			return [];
-		}
-
-		VerifyRange(index, length);
-
-		var buffer = new T[length];
-
-		for (var i = 0; i < length; i++)
-		{
-			buffer[i] = this[i + index];
-		}
-
-		return new GapBuffer<T>(buffer);
-	}
-
-	/// <summary>
-	/// Gets the index of the first occurrence the item.
-	/// </summary>
-	/// <returns> The index if found otherwise -1 if not found. </returns>
+	/// <inheritdoc />
 	public override int IndexOf(T item)
 	{
 		// Search before the gap.
@@ -268,22 +231,44 @@ public class GapBuffer<T> : Buffer<T>
 		// Still here? Then there's no match anywhere.
 		return -1;
 	}
-	
-	/// <summary>
-	/// Gets the index of the first occurrence the item.
-	/// </summary>
-	/// <returns> The index if found otherwise -1 if not found. </returns>
-	public override int IndexOf(T item, int startIndex, int count)
+
+	/// <inheritdoc />
+	public override int IndexOf(T item, int startIndex, int length)
 	{
-		// Search before the gap.
-		var foundAt = Array.IndexOf(_buffer, item, 0, _gapStartIndex);
-		if (foundAt > -1)
+		int foundAt;
+
+		VerifyRange(startIndex, length);
+
+		// Start index is after the first gap
+		if (startIndex >= _gapStartIndex)
 		{
-			return foundAt;
+			foundAt = Array.IndexOf(_buffer, item, startIndex + GapSize, length);
+			if (foundAt > -1)
+			{
+				return foundAt - GapSize;
+			}
+		}
+		
+		// Search before the gap.
+		if ((startIndex >= 0) && (startIndex < _gapStartIndex))
+		{
+			foundAt = Array.IndexOf(_buffer, item, startIndex, length);
+			if (foundAt > -1)
+			{
+				return foundAt;
+			}
+
+			var difference = _gapStartIndex - startIndex;
+			length -= difference;
+		}
+		
+		if ((length <= 0) || (_gapEndIndex == Capacity))
+		{
+			return -1;
 		}
 
 		// Still here? Search after the gap.
-		foundAt = Array.IndexOf(_buffer, item, _gapEndIndex, _buffer.Length - _gapEndIndex);
+		foundAt = Array.IndexOf(_buffer, item, _gapEndIndex, length);
 		if (foundAt > -1)
 		{
 			return foundAt - GapSize;
@@ -291,16 +276,6 @@ public class GapBuffer<T> : Buffer<T>
 
 		// Still here? Then there's no match anywhere.
 		return -1;
-	}
-
-	/// <summary>
-	/// Gets the index of the first occurrence of any value in the provided values.
-	/// </summary>
-	/// <param name="anyOf"> The values to search for. </param>
-	/// <returns> The index if found otherwise -1 if not found. </returns>
-	public int IndexOfAny(T[] anyOf)
-	{
-		return IndexOfAny(anyOf, 0, Count);
 	}
 
 	/// <summary>
@@ -345,9 +320,7 @@ public class GapBuffer<T> : Buffer<T>
 		return -1;
 	}
 
-	/// <summary>
-	/// Inserts an item into the collection
-	/// </summary>
+	/// <inheritdoc />
 	public override void Insert(int index, T item)
 	{
 		if ((index < 0) || (index > Count))
@@ -363,18 +336,7 @@ public class GapBuffer<T> : Buffer<T>
 	}
 
 	/// <summary>
-	/// Inserts multiple items from a subset of items into the collection.
-	/// </summary>
-	public void Insert(int index, T[] values, int valueStart, int valueLength)
-	{
-		for (var i = 0; i < valueLength; i++)
-		{
-			Insert(index + i, values[valueStart + i]);
-		}
-	}
-
-	/// <summary>
-	/// Inserts multiple items into the collection.
+	/// Inserts multiple items into the buffer.
 	/// </summary>
 	public void Insert(int index, GapBuffer<T> buffer)
 	{
@@ -386,9 +348,9 @@ public class GapBuffer<T> : Buffer<T>
 	}
 
 	/// <summary>
-	/// Inserts multiple items into the collection.
+	/// Inserts multiple items into the buffer.
 	/// </summary>
-	public void InsertRange(int index, IEnumerable<T> items)
+	public override void Insert(int index, T[] items)
 	{
 		var i = index;
 		foreach (var item in items)
@@ -398,9 +360,9 @@ public class GapBuffer<T> : Buffer<T>
 	}
 
 	/// <summary>
-	/// Inserts multiple items into the collection.
+	/// Inserts multiple items into the buffer.
 	/// </summary>
-	public override void InsertRange(int index, T[] items)
+	public void InsertRange(int index, IEnumerable<T> items)
 	{
 		var i = index;
 		foreach (var item in items)
@@ -432,21 +394,6 @@ public class GapBuffer<T> : Buffer<T>
 		return -1;
 	}
 
-	public int Read(T[] buffer, int index, int count)
-	{
-		VerifyRange(index, count);
-
-		int n;
-
-		for (n = 0; n < count; n++)
-		{
-			var item = _buffer[index + n];
-			buffer[index + n] = item;
-		}
-
-		return n;
-	}
-
 	/// <inheritdoc />
 	public override bool Remove(T item)
 	{
@@ -460,9 +407,7 @@ public class GapBuffer<T> : Buffer<T>
 		return true;
 	}
 
-	/// <summary>
-	/// Removes the item at the specified position.
-	/// </summary>
+	/// <inheritdoc />
 	public override void RemoveAt(int index)
 	{
 		VerifyRange(index);
@@ -473,9 +418,7 @@ public class GapBuffer<T> : Buffer<T>
 		_gapEndIndex++;
 	}
 
-	/// <summary>
-	/// Removes multiple items at the specified position.
-	/// </summary>
+	/// <inheritdoc />
 	public override void RemoveRange(int index, int length)
 	{
 		if (length < 1)
@@ -511,7 +454,9 @@ public class GapBuffer<T> : Buffer<T>
 		return new string(buffer);
 	}
 
-	/// <summary> Repositions the gap in the buffer. </summary>
+	/// <summary>
+	/// Repositions the gap in the buffer.
+	/// </summary>
 	private void MoveGap(int index)
 	{
 		if (index == _gapStartIndex)
@@ -551,7 +496,9 @@ public class GapBuffer<T> : Buffer<T>
 		}
 	}
 
-	/// <summary> Resizes the gap in the buffer. </summary>
+	/// <summary>
+	/// Resizes the gap in the buffer.
+	/// </summary>
 	private void ResizeGap(int requiredGapSize)
 	{
 		if (requiredGapSize <= GapSize)

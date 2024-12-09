@@ -23,9 +23,9 @@ public abstract class CSharpCodeGenerator : CodeGenerator
 	#region Methods
 
 	/// <inheritdoc />
-	public override string GenerateCode(Type type, object value, ICodeWriterOptions options)
+	public override string GenerateCode(Type type, object value, ICodeWriterSettings settings)
 	{
-		var builder = new CSharpCodeWriter(options);
+		var builder = new CSharpCodeWriter(settings);
 		AppendCode(builder, type, value);
 		return builder.ToString();
 	}

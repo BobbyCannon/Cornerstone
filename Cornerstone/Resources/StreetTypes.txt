@@ -1,0 +1,11 @@
+Alley
+Bypass
+Court
+Lane
+Park
+Place
+Road
+Square
+Street
+Terrace
+Yard

@@ -8,7 +8,9 @@ using Avalonia;
 using Avalonia.Input;
 using Cornerstone.Avalonia.AvaloniaEdit.Utils;
 using Cornerstone.Avalonia.Input;
+using Cornerstone.Collections;
 using Cornerstone.Internal;
+using Cornerstone.Text;
 using Cornerstone.Text.Document;
 
 #endregion
@@ -81,11 +83,11 @@ public sealed class RectangleSelection : Selection
 
 	private readonly int _bottomRightOffset;
 
-	private TextDocument _document;
+	private TextEditorDocument _document;
 	private readonly int _endLine;
 	private readonly double _endXPos;
 
-	private readonly List<SelectionSegment> _segments = [];
+	private readonly List<SelectionRange> _segments = [];
 	private readonly int _startLine;
 	private readonly double _startXPos;
 	private readonly int _topLeftOffset;
@@ -106,8 +108,8 @@ public sealed class RectangleSelection : Selection
 		_startXPos = GetXPos(textArea, start);
 		_endXPos = GetXPos(textArea, end);
 		CalculateSegments();
-		_topLeftOffset = _segments.First().StartOffset;
-		_bottomRightOffset = _segments.Last().EndOffset;
+		_topLeftOffset = _segments.First().StartIndex;
+		_bottomRightOffset = _segments.Last().EndIndex;
 
 		StartPosition = start;
 		EndPosition = end;
@@ -122,8 +124,8 @@ public sealed class RectangleSelection : Selection
 		_startXPos = startXPos;
 		_endXPos = GetXPos(textArea, end);
 		CalculateSegments();
-		_topLeftOffset = _segments.First().StartOffset;
-		_bottomRightOffset = _segments.Last().EndOffset;
+		_topLeftOffset = _segments.First().StartIndex;
+		_bottomRightOffset = _segments.Last().EndIndex;
 
 		StartPosition = GetStart();
 		EndPosition = end;
@@ -138,8 +140,8 @@ public sealed class RectangleSelection : Selection
 		_startXPos = GetXPos(textArea, start);
 		_endXPos = endXPos;
 		CalculateSegments();
-		_topLeftOffset = _segments.First().StartOffset;
-		_bottomRightOffset = _segments.Last().EndOffset;
+		_topLeftOffset = _segments.First().StartIndex;
+		_bottomRightOffset = _segments.Last().EndIndex;
 
 		StartPosition = start;
 		EndPosition = GetEnd();
@@ -162,13 +164,13 @@ public sealed class RectangleSelection : Selection
 	}
 
 	/// <inheritdoc />
-	public override IEnumerable<SelectionSegment> Segments => _segments;
+	public override IEnumerable<SelectionRange> Segments => _segments;
 
 	/// <inheritdoc />
 	public override TextViewPosition StartPosition { get; }
 
 	/// <inheritdoc />
-	public override ISegment SurroundingSegment => new SimpleSegment(_topLeftOffset, _bottomRightOffset - _topLeftOffset);
+	public override IRange SurroundingRange => new SimpleRange(_topLeftOffset, _bottomRightOffset - _topLeftOffset);
 
 	#endregion
 
@@ -332,10 +334,10 @@ public sealed class RectangleSelection : Selection
 			var startVc = vl.GetVisualColumn(new Point(_startXPos, 0), true);
 			var endVc = vl.GetVisualColumn(new Point(_endXPos, 0), true);
 
-			var baseOffset = vl.FirstDocumentLine.Offset;
+			var baseOffset = vl.FirstDocumentLine.StartIndex;
 			var startOffset = baseOffset + vl.GetRelativeOffset(startVc);
 			var endOffset = baseOffset + vl.GetRelativeOffset(endVc);
-			_segments.Add(new SelectionSegment(startOffset, startVc, endOffset, endVc));
+			_segments.Add(new SelectionRange(startOffset, startVc, endOffset, endVc));
 
 			nextLine = vl.LastDocumentLine.NextLine;
 		} while ((nextLine != null) && (nextLine.LineNumber <= Math.Max(_startLine, _endLine)));
@@ -346,9 +348,9 @@ public sealed class RectangleSelection : Selection
 		var segment = _startLine < _endLine ? _segments.Last() : _segments.First();
 		if (_startXPos < _endXPos)
 		{
-			return new TextViewPosition(_document.GetLocation(segment.EndOffset), segment.EndVisualColumn);
+			return new TextViewPosition(_document.GetLocation(segment.EndIndex), segment.EndVisualColumn);
 		}
-		return new TextViewPosition(_document.GetLocation(segment.StartOffset), segment.StartVisualColumn);
+		return new TextViewPosition(_document.GetLocation(segment.StartIndex), segment.StartVisualColumn);
 	}
 
 	private TextViewPosition GetStart()
@@ -356,9 +358,9 @@ public sealed class RectangleSelection : Selection
 		var segment = _startLine < _endLine ? _segments.First() : _segments.Last();
 		if (_startXPos < _endXPos)
 		{
-			return new TextViewPosition(_document.GetLocation(segment.StartOffset), segment.StartVisualColumn);
+			return new TextViewPosition(_document.GetLocation(segment.StartIndex), segment.StartVisualColumn);
 		}
-		return new TextViewPosition(_document.GetLocation(segment.EndOffset), segment.EndVisualColumn);
+		return new TextViewPosition(_document.GetLocation(segment.EndIndex), segment.EndVisualColumn);
 	}
 
 	private int GetVisualColumnFromXPos(int line, double xPos)
@@ -385,26 +387,27 @@ public sealed class RectangleSelection : Selection
 		}
 	}
 
-	private void ReplaceSingleLineText(TextArea textArea, SelectionSegment lineSegment, string newText, out int insertionLength)
+	private void ReplaceSingleLineText(TextArea textArea, SelectionRange lineRange, string newText, out int insertionLength)
 	{
-		if (lineSegment.Length == 0)
+		if (lineRange.Length == 0)
 		{
-			if ((newText.Length > 0) && textArea.ReadOnlySectionProvider.CanInsert(lineSegment.StartOffset))
+			if ((newText.Length > 0) && textArea.ReadOnlySectionProvider.CanInsert(lineRange.StartIndex))
 			{
-				newText = AddSpacesIfRequired(newText, new TextViewPosition(_document.GetLocation(lineSegment.StartOffset), lineSegment.StartVisualColumn), new TextViewPosition(_document.GetLocation(lineSegment.EndOffset), lineSegment.EndVisualColumn));
-				textArea.Document.Insert(lineSegment.StartOffset, newText);
+				newText = AddSpacesIfRequired(newText, new TextViewPosition(_document.GetLocation(lineRange.StartIndex), lineRange.StartVisualColumn), new TextViewPosition(_document.GetLocation(lineRange.EndIndex), lineRange.EndVisualColumn));
+				textArea.Document.Insert(lineRange.StartIndex, newText);
 			}
 		}
 		else
 		{
-			var segmentsToDelete = textArea.GetDeletableSegments(lineSegment);
+			var segmentsToDelete = textArea.GetDeletableSegments(lineRange);
 			for (var i = segmentsToDelete.Length - 1; i >= 0; i--)
 			{
 				if (i == (segmentsToDelete.Length - 1))
 				{
-					if ((segmentsToDelete[i].Offset == SurroundingSegment.Offset) && (segmentsToDelete[i].Length == SurroundingSegment.Length))
+					if ((segmentsToDelete[i].StartIndex == SurroundingRange.StartIndex)
+						&& (segmentsToDelete[i].Length == SurroundingRange.Length))
 					{
-						newText = AddSpacesIfRequired(newText, new TextViewPosition(_document.GetLocation(lineSegment.StartOffset), lineSegment.StartVisualColumn), new TextViewPosition(_document.GetLocation(lineSegment.EndOffset), lineSegment.EndVisualColumn));
+						newText = AddSpacesIfRequired(newText, new TextViewPosition(_document.GetLocation(lineRange.StartIndex), lineRange.StartVisualColumn), new TextViewPosition(_document.GetLocation(lineRange.EndIndex), lineRange.EndVisualColumn));
 					}
 					textArea.Document.Replace(segmentsToDelete[i], newText);
 				}

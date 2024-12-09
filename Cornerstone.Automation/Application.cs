@@ -10,8 +10,8 @@ using System.Threading;
 using Cornerstone.Automation.Desktop;
 using Cornerstone.Automation.Desktop.Elements;
 using Cornerstone.Automation.Internal;
-using Cornerstone.Automation.Internal.Native;
 using Cornerstone.Extensions;
+using Cornerstone.Windows.Native;
 using Interop.UIAutomationClient;
 
 #endregion

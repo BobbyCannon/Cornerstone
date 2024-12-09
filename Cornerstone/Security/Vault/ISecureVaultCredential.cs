@@ -1,18 +1,13 @@
 ﻿#region References
 
 using System;
-using Cornerstone.Data;
-using Cornerstone.Presentation;
+using System.ComponentModel;
 
 #endregion
 
 namespace Cornerstone.Security.Vault;
 
-public interface ISecureVaultCredentialView : ISecureVaultCredential, IViewModel<Guid>, ITrackPropertyChanges
-{
-}
-
-public interface ISecureVaultCredential
+public interface ISecureVaultCredential : INotifyPropertyChanged
 {
 	#region Properties
 
@@ -27,11 +22,15 @@ public interface ISecureVaultCredential
 	/// </summary>
 	public Guid Id { get; set; }
 
+	public bool IsFavorite { get; set; }
+
 	public DateTime ModifiedOn { get; set; }
 
 	public string Name { get; set; }
 
 	public string Notes { get; set; }
+
+	public string PasswordChange { get; set; }
 
 	public DateTime PasswordChangedOn { get; set; }
 

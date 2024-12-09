@@ -6,8 +6,9 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using Cornerstone.Automation.Desktop;
 using Cornerstone.Automation.Web.Elements;
+using Cornerstone.Input;
+using Cornerstone.Windows;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Font = Cornerstone.Automation.Web.Elements.Font;
@@ -455,7 +456,7 @@ public class WebElement : Element
 		var clickX = Location.X + x + (Width > 0 ? Width / 2 : 0);
 		var clickY = Location.Y + y + (Height > 0 ? Height / 2 : 0);
 
-		Input.Mouse.LeftButtonClick(clickX, clickY);
+		WindowsInput.Mouse.LeftButtonClick(clickX, clickY);
 		return this;
 	}
 
@@ -465,14 +466,14 @@ public class WebElement : Element
 		var clickX = Location.X + x + (Width > 0 ? Width / 2 : 0);
 		var clickY = Location.Y + y + (Height > 0 ? Height / 2 : 0);
 
-		Input.Mouse.MiddleButtonClick(clickX, clickY);
+		WindowsInput.Mouse.MiddleButtonClick(clickX, clickY);
 		return this;
 	}
 
 	/// <inheritdoc />
 	public override Element MoveMouseTo(int x = 0, int y = 0)
 	{
-		Input.Mouse.MoveTo(Location.X + x, Location.Y + y);
+		WindowsInput.Mouse.MoveTo(Location.X + x, Location.Y + y);
 		return this;
 	}
 
@@ -499,7 +500,7 @@ public class WebElement : Element
 		var clickX = Location.X + x + (Width > 0 ? Width / 2 : 0);
 		var clickY = Location.Y + y + (Height > 0 ? Height / 2 : 0);
 
-		Input.Mouse.RightButtonClick(clickX, clickY);
+		WindowsInput.Mouse.RightButtonClick(clickX, clickY);
 		return this;
 	}
 
@@ -517,7 +518,7 @@ public class WebElement : Element
 	{
 		Browser.Focus();
 		Focus();
-		Input.Keyboard.SendInput(text);
+		WindowsInput.Keyboard.SendInput(text);
 		return this;
 	}
 
@@ -526,7 +527,7 @@ public class WebElement : Element
 	{
 		Browser.Focus();
 		Focus();
-		Input.Keyboard.SendInput(text, keys);
+		WindowsInput.Keyboard.SendInput(text, keys);
 		return this;
 	}
 
@@ -535,7 +536,7 @@ public class WebElement : Element
 	{
 		Browser.Focus();
 		Focus();
-		Input.Keyboard.SendInput(text, delay, keys);
+		WindowsInput.Keyboard.SendInput(text, delay, keys);
 		return this;
 	}
 
@@ -544,7 +545,7 @@ public class WebElement : Element
 	{
 		Browser.Focus();
 		Focus();
-		Input.Keyboard.SendInput(text, delay, keyStrokes);
+		WindowsInput.Keyboard.SendInput(text, delay, keyStrokes);
 		return this;
 	}
 
@@ -553,7 +554,7 @@ public class WebElement : Element
 	{
 		Browser.Focus();
 		Focus();
-		Input.Keyboard.SendInput(keys);
+		WindowsInput.Keyboard.SendInput(keys);
 		return this;
 	}
 
@@ -562,7 +563,7 @@ public class WebElement : Element
 	{
 		Browser.Focus();
 		Focus();
-		Input.Keyboard.SendInput(modifiers, keys);
+		WindowsInput.Keyboard.SendInput(modifiers, keys);
 		return this;
 	}
 
@@ -571,7 +572,7 @@ public class WebElement : Element
 	{
 		Browser.Focus();
 		Focus();
-		Input.Keyboard.SendInput(keyStrokes);
+		WindowsInput.Keyboard.SendInput(keyStrokes);
 		return this;
 	}
 

@@ -21,11 +21,11 @@ public class OscCommandTests : CornerstoneUnitTest
 
 	public OscCommandTests()
 	{
-		ComparerOptions = new ComparerOptions
+		ComparerSettings = new ComparerSettings
 		{
-			IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeOptions>
+			IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeSettings>
 			{
-				{ typeof(TestOscCommand), new IncludeExcludeOptions(null, [nameof(OscCommand.HasBeenRead), nameof(OscCommand.HasBeenUpdated)]) }
+				{ typeof(TestOscCommand), new IncludeExcludeSettings(null, [nameof(OscCommand.HasBeenRead), nameof(OscCommand.HasBeenUpdated)]) }
 			}
 		};
 	}
@@ -34,7 +34,7 @@ public class OscCommandTests : CornerstoneUnitTest
 
 	#region Properties
 
-	public ComparerOptions ComparerOptions { get; }
+	public ComparerSettings ComparerSettings { get; }
 
 	#endregion
 
@@ -104,11 +104,11 @@ public class OscCommandTests : CornerstoneUnitTest
 	[TestMethod]
 	public void ToFromByteArray()
 	{
-		var comparerSettings = new ComparerOptions
+		var comparerSettings = new ComparerSettings
 		{
-			IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeOptions>
+			IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeSettings>
 			{
-				{ typeof(TestOscCommand), new IncludeExcludeOptions(null, [nameof(OscCommand.HasBeenRead), nameof(OscCommand.HasBeenUpdated)]) }
+				{ typeof(TestOscCommand), new IncludeExcludeSettings(null, [nameof(OscCommand.HasBeenRead), nameof(OscCommand.HasBeenUpdated)]) }
 			}
 		};
 
@@ -116,7 +116,7 @@ public class OscCommandTests : CornerstoneUnitTest
 		var expected = new byte[] { 0x2F, 0x74, 0x65, 0x73, 0x74, 0x00, 0x00, 0x00, 0x2C, 0x69, 0x48, 0x73, 0x69, 0x74, 0x66, 0x64, 0x63, 0x62, 0x54, 0x73, 0x75, 0x68, 0x70, 0x69, 0x69, 0x69, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x17, 0x4A, 0x6F, 0x68, 0x6E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14, 0xBC, 0x2A, 0x37, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0xA3, 0x85, 0x1F, 0x40, 0x64, 0x8A, 0x3D, 0x70, 0xA3, 0xD7, 0x0A, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x08, 0x00, 0x01, 0x01, 0x02, 0x03, 0x05, 0x08, 0x0D, 0x65, 0x33, 0x39, 0x36, 0x36, 0x32, 0x30, 0x32, 0x2D, 0x34, 0x30, 0x66, 0x61, 0x2D, 0x34, 0x34, 0x33, 0x64, 0x2D, 0x62, 0x32, 0x31, 0x66, 0x2D, 0x65, 0x31, 0x35, 0x32, 0x38, 0x61, 0x31, 0x65, 0x36, 0x64, 0x66, 0x65, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x69, 0x76, 0x85, 0x18, 0x00, 0x00, 0x00, 0x00, 0x02, 0xFF, 0xFF, 0x80, 0x00, 0x00, 0x00, 0xFF, 0xFF };
 		var actual = command.ToMessage().ToByteArray();
 		actual.Dump();
-		AreEqual(expected, actual, options: comparerSettings);
+		AreEqual(expected, actual, settings: comparerSettings);
 
 		var actualMessage = OscPacket.Parse(command.Time, actual) as OscMessage;
 		Assert.IsNotNull(actualMessage, "Failed to parse the byte data.");
@@ -124,7 +124,7 @@ public class OscCommandTests : CornerstoneUnitTest
 		var actualCommand = new TestOscCommand();
 		actualCommand.Load(actualMessage);
 
-		AreEqual(command, actualCommand, options: comparerSettings);
+		AreEqual(command, actualCommand, settings: comparerSettings);
 	}
 
 	[TestMethod]
@@ -144,7 +144,7 @@ public class OscCommandTests : CornerstoneUnitTest
 		Assert.IsNotNull(actualMessage);
 		var actualCommand = new TestOscCommand();
 		actualCommand.Load(actualMessage);
-		AreEqual(command, actualCommand, options: ComparerOptions);
+		AreEqual(command, actualCommand, settings: ComparerSettings);
 
 		command = GetTestCommand();
 		command.Version = 2;
@@ -158,7 +158,7 @@ public class OscCommandTests : CornerstoneUnitTest
 		Assert.IsNotNull(actualMessage);
 		actualCommand = new TestOscCommand();
 		actualCommand.Load(actualMessage);
-		AreEqual(command, actualCommand, options: ComparerOptions);
+		AreEqual(command, actualCommand, settings: ComparerSettings);
 
 		command = GetTestCommand();
 		command.Version = 3;
@@ -169,7 +169,7 @@ public class OscCommandTests : CornerstoneUnitTest
 		Assert.IsNotNull(actualMessage);
 		actualCommand = new TestOscCommand();
 		actualCommand.Load(actualMessage);
-		AreEqual(command, actualCommand, options: ComparerOptions);
+		AreEqual(command, actualCommand, settings: ComparerSettings);
 	}
 
 	[TestMethod]

@@ -136,23 +136,10 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 
 	#region Methods
 
-	/// <summary>
-	/// Appends the item at the end of the buffer.
-	/// Runs in O(lg N).
-	/// </summary>
+	/// <inheritdoc />
 	public override void Add(T item)
 	{
-		InsertRange(Length, [item], 0, 1);
-	}
-
-	/// <summary>
-	/// Appends multiple elements to the end of this buffer.
-	/// Runs in O(lg N + M), where N is the length of this buffer and M is the number of new elements.
-	/// </summary>
-	/// <exception cref="ArgumentNullException"> newElements is null. </exception>
-	public void AddRange(IEnumerable<T> newElements)
-	{
-		InsertRange(Length, newElements);
+		Insert(Length, [item], 0, 1);
 	}
 
 	/// <summary>
@@ -160,9 +147,9 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 	/// Runs in O(lg N + lg M), plus a per-node cost as if <c> newElements.Clone() </c> was called.
 	/// </summary>
 	/// <exception cref="ArgumentNullException"> newElements is null. </exception>
-	public void AddRange(RopeBuffer<T> newElements)
+	public void Add(RopeBuffer<T> newElements)
 	{
-		InsertRange(Length, newElements);
+		Insert(Length, newElements);
 	}
 
 	/// <summary>
@@ -170,25 +157,12 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 	/// Runs in O(lg N + M), where N is the length of this buffer and M is the number of new elements.
 	/// </summary>
 	/// <exception cref="ArgumentNullException"> array is null. </exception>
-	public void AddRange(T[] array)
+	public void Add(T[] array, int arrayIndex, int count)
 	{
-		InsertRange(Length, array, 0, array.Length);
+		Insert(Length, array, arrayIndex, count);
 	}
 
-	/// <summary>
-	/// Appends new elements to the end of this buffer.
-	/// Runs in O(lg N + M), where N is the length of this buffer and M is the number of new elements.
-	/// </summary>
-	/// <exception cref="ArgumentNullException"> array is null. </exception>
-	public void AddRange(T[] array, int arrayIndex, int count)
-	{
-		InsertRange(Length, array, arrayIndex, count);
-	}
-
-	/// <summary>
-	/// Resets the buffer to an empty list.
-	/// Runs in O(1).
-	/// </summary>
+	/// <inheritdoc />
 	public override void Clear()
 	{
 		InternalReset();
@@ -253,31 +227,19 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 		var result = new RopeBuffer<T>();
 		foreach (var r in ropes)
 		{
-			result.AddRange(r);
+			result.Add(r);
 		}
 
 		return result;
 	}
 
-	/// <summary>
-	/// Searches the item in the buffer.
-	/// Runs in O(N).
-	/// </summary>
-	/// <remarks>
-	/// This method counts as a read access and may be called concurrently to other read accesses.
-	/// </remarks>
+	/// <inheritdoc />
 	public override bool Contains(T item)
 	{
 		return IndexOf(item) >= 0;
 	}
 
-	/// <summary>
-	/// Copies the whole content of the buffer into the specified array.
-	/// Runs in O(N).
-	/// </summary>
-	/// <remarks>
-	/// This method counts as a read access and may be called concurrently to other read accesses.
-	/// </remarks>
+	/// <inheritdoc />
 	public override void CopyTo(T[] array, int arrayIndex)
 	{
 		CopyTo(0, array, arrayIndex, Length);
@@ -293,15 +255,11 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 	public void CopyTo(int index, T[] array, int arrayIndex, int count)
 	{
 		VerifyRange(index, count);
-		BoundsCheckArray(array, arrayIndex, count);
+		array.BoundsCheckArray(arrayIndex, count);
 		Root.CopyTo(index, array, arrayIndex, count);
 	}
 
-	/// <summary>
-	/// Retrieves an enumerator to iterate through the buffer.
-	/// The enumerator will reflect the state of the buffer from the GetEnumerator() call, further modifications
-	/// to the buffer will not be visible to the enumerator.
-	/// </summary>
+	/// <inheritdoc />
 	/// <remarks>
 	/// This method counts as a read access and may be called concurrently to other read accesses.
 	/// </remarks>
@@ -311,38 +269,7 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 		return Enumerate(Root);
 	}
 
-	/// <summary>
-	/// Creates a new buffer and initializes it with a part of this buffer.
-	/// Runs in O(lg N) plus a per-node cost as if <c> this.Clone() </c> was called.
-	/// </summary>
-	/// <exception cref="ArgumentOutOfRangeException"> offset or length is outside the valid range. </exception>
-	/// <remarks>
-	/// This method counts as a read access and may be called concurrently to other read accesses.
-	/// </remarks>
-	public RopeBuffer<T> GetRange(int index, int count)
-	{
-		VerifyRange(index, count);
-		var newBuffer = Clone();
-		var endIndex = index + count;
-		var endLength = newBuffer.Length - endIndex;
-
-		if (endLength > 0)
-		{
-			newBuffer.InternalRemove(endIndex, endLength);
-		}
-
-		if (index > 0)
-		{
-			newBuffer.InternalRemove(0, index);
-		}
-
-		return newBuffer;
-	}
-
-	/// <summary>
-	/// Finds the first occurrence of item.
-	/// </summary>
-	/// <returns> The index of the first occurrence of item, or -1 if it cannot be found. </returns>
+	/// <inheritdoc />
 	/// <remarks>
 	/// This method counts as a read access and may be called concurrently to other read accesses.
 	/// </remarks>
@@ -351,13 +278,7 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 		return IndexOf(item, 0, Length);
 	}
 
-	/// <summary>
-	/// Gets the index of the first occurrence the specified item.
-	/// </summary>
-	/// <param name="item"> Item to search for. </param>
-	/// <param name="index"> Start index of the search. </param>
-	/// <param name="length"> Length of the area to search. </param>
-	/// <returns> The first index where the item was found; or -1 if no occurrence was found. </returns>
+	/// <inheritdoc />
 	/// <remarks>
 	/// This method counts as a read access and may be called concurrently to other read accesses.
 	/// </remarks>
@@ -387,16 +308,6 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 		}
 
 		return -1;
-	}
-
-	/// <summary>
-	/// Gets the index of the first occurrence of any value in the provided values.
-	/// </summary>
-	/// <param name="anyOf"> The values to search for. </param>
-	/// <returns> The index if found otherwise -1 if not found. </returns>
-	public int IndexOfAny(T[] anyOf)
-	{
-		return IndexOfAny(anyOf, 0, Length);
 	}
 
 	/// <summary>
@@ -444,45 +355,13 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 	/// <inheritdoc />
 	public override void Insert(int index, T item)
 	{
-		InsertRange(index, [item], 0, 1);
+		Insert(index, [item], 0, 1);
 	}
 
 	/// <inheritdoc />
-	public override void InsertRange(int index, T[] items)
+	public override void Insert(int index, T[] items)
 	{
-		InsertRange(index, items, 0, items.Length);
-	}
-
-	/// <summary>
-	/// Inserts new elements into this buffer.
-	/// Runs in O(lg N + M), where N is the length of this buffer and M is the number of new elements.
-	/// </summary>
-	/// <exception cref="ArgumentNullException"> newElements is null. </exception>
-	/// <exception cref="ArgumentOutOfRangeException"> index or length is outside the valid range. </exception>
-	public void InsertRange(int start, IEnumerable<T> values)
-	{
-		DoReplace(start, 0, values);
-	}
-
-	/// <summary>
-	/// Inserts new elements into this buffer.
-	/// Runs in O(lg N + M), where N is the length of this buffer and M is the number of new elements.
-	/// </summary>
-	/// <exception cref="ArgumentNullException"> newElements is null. </exception>
-	/// <exception cref="ArgumentOutOfRangeException"> index or length is outside the valid range. </exception>
-	public void InsertRange(int start, T[] array, int arrayIndex, int count)
-	{
-		if ((start < 0) || (start > Length))
-		{
-			throw new ArgumentOutOfRangeException(nameof(start), start, $"0 <= index <= {Length}");
-		}
-
-		BoundsCheckArray(array, arrayIndex, count);
-
-		if (count > 0)
-		{
-			DoReplace(start, 0, array, arrayIndex, count);
-		}
+		Insert(index, items, 0, items.Length);
 	}
 
 	/// <summary>
@@ -520,9 +399,31 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 		return -1;
 	}
 
-	/// <summary>
-	/// Removes the first occurrence of an item from the buffer.
-	/// </summary>
+	/// <inheritdoc />
+	/// <remarks>
+	/// This method counts as a read access and may be called concurrently to other read accesses.
+	/// </remarks>
+	public override T[] Read(int index, int length)
+	{
+		VerifyRange(index, length);
+		var newBuffer = Clone();
+		var endIndex = index + length;
+		var endLength = newBuffer.Length - endIndex;
+
+		if (endLength > 0)
+		{
+			newBuffer.InternalRemove(endIndex, endLength);
+		}
+
+		if (index > 0)
+		{
+			newBuffer.InternalRemove(0, index);
+		}
+
+		return newBuffer.ToArray();
+	}
+
+	/// <inheritdoc />
 	public override bool Remove(T item)
 	{
 		var index = IndexOf(item);
@@ -535,21 +436,13 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 		return false;
 	}
 
-	/// <summary>
-	/// Removes a single item from the buffer.
-	/// </summary>
-	/// <param name="index"> The index to remove the item from. </param>
+	/// <inheritdoc />
 	public override void RemoveAt(int index)
 	{
 		RemoveRange(index, 1);
 	}
 
-	/// <summary>
-	/// Removes a range of elements from the buffer.
-	/// </summary>
-	/// <param name="index"> The index to start removing from. </param>
-	/// <param name="length"> The length of elements to remove. </param>
-	/// <exception cref="ArgumentOutOfRangeException"> offset or length is outside the valid range. </exception>
+	/// <inheritdoc />
 	public override void RemoveRange(int index, int length)
 	{
 		if (index > End)
@@ -562,19 +455,52 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 			length = (End - index) + 1;
 		}
 
-		DoReplace(index, length, Array.Empty<T>());
+		base.Replace(index, length, Array.Empty<T>());
 	}
 
-	/// <summary>
-	/// Replaces a range of elements from the buffer.
-	/// </summary>
-	/// <param name="index"> The index to start removing from. </param>
-	/// <param name="length"> The length of elements to remove. </param>
-	/// <param name="values"> The values to be inserted. </param>
-	/// <exception cref="ArgumentOutOfRangeException"> offset or length is outside the valid range. </exception>
-	public void Replace(int index, int length, IEnumerable<T> values)
+	/// <inheritdoc />
+	public override void Replace(int index, int length, IEnumerable<T> values)
 	{
-		DoReplace(index, length, values);
+		switch (values)
+		{
+			case RopeBuffer<T> buffer:
+			{
+				Replace(index, length, buffer);
+				return;
+			}
+			default:
+			{
+				var array = values.ToArray();
+				Replace(index, length, array, 0, array.Length);
+				return;
+			}
+		}
+	}
+
+	/// <inheritdoc />
+	public override void Replace(int index, int length, T[] values, int valueStart, int valueLength)
+	{
+		if (length > 0)
+		{
+			VerifyRange(index, length);
+		}
+
+		if (valueLength > 0)
+		{
+			values.BoundsCheckArray(valueStart, valueLength);
+		}
+
+		if (length > 0)
+		{
+			InternalRemove(index, length);
+		}
+
+		if (valueLength > 0)
+		{
+			InternalInsert(index, values, valueStart, valueLength);
+		}
+
+		ResetState();
 	}
 
 	/// <summary>
@@ -584,7 +510,7 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 	public void Reset(RopeBuffer<T> values)
 	{
 		InternalReset();
-		DoReplace(0, 0, values);
+		Replace(0, 0, values);
 	}
 
 	/// <summary>
@@ -594,7 +520,7 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 	public void Reset(IEnumerable<T> values)
 	{
 		InternalReset();
-		DoReplace(0, 0, values);
+		Replace(0, 0, values);
 	}
 
 	/// <summary>
@@ -606,7 +532,7 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 	public void Reset(T[] values, int offset, int length)
 	{
 		InternalReset();
-		DoReplace(0, 0, values, offset, length);
+		Replace(0, 0, values, offset, length);
 	}
 
 	/// <summary>
@@ -638,14 +564,7 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 		return arr;
 	}
 
-	/// <summary>
-	/// Creates a string from the buffer. Runs in O(N).
-	/// </summary>
-	/// <returns>
-	/// A string consisting of all elements in the buffer as comma-separated list in {}.
-	/// As a special case, Buffer&lt;char&gt; will return its contents as string without any additional
-	/// separators or braces, so it can be used like StringBuilder.ToString().
-	/// </returns>
+	/// <inheritdoc />
 	/// <remarks>
 	/// This method counts as a read access and may be called concurrently to other read accesses.
 	/// </remarks>
@@ -682,7 +601,44 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 		return b.ToString();
 	}
 
-	internal ImmutableStack<BufferCacheEntry> FindNodeUsingCache(int index)
+	/// <inheritdoc />
+	object ICloneable.Clone()
+	{
+		return Clone();
+	}
+
+	private static IEnumerator<T> Enumerate(RopeBufferNode<T> node)
+	{
+		var stack = new Stack<RopeBufferNode<T>>();
+		while (node != null)
+		{
+			// go to leftmost node, pushing the right parts that we'll have to visit later
+			while (node.contents == null)
+			{
+				if (node.height == 0)
+				{
+					// go down into function nodes
+					node = node.GetContentNode();
+					continue;
+				}
+
+				Debug.Assert(node.right != null);
+				stack.Push(node.right);
+				node = node.left;
+			}
+
+			// yield contents of leaf node
+			for (var i = 0; i < node.length; i++)
+			{
+				yield return node.contents[i];
+			}
+
+			// go up to the next node not visited yet
+			node = stack.Count > 0 ? stack.Pop() : null;
+		}
+	}
+
+	private ImmutableStack<BufferCacheEntry> FindNodeUsingCache(int index)
 	{
 		Debug.Assert((index >= 0) && (index < Length));
 
@@ -746,102 +702,6 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 		return stack;
 	}
 
-	object ICloneable.Clone()
-	{
-		return Clone();
-	}
-
-	private void DoReplace(int index, int length, IEnumerable<T> values)
-	{
-		switch (values)
-		{
-			case RopeBuffer<T> buffer:
-			{
-				DoReplace(index, length, buffer);
-				return;
-			}
-			default:
-			{
-				var array = values.ToArray();
-				DoReplace(index, length, array, 0, array.Length);
-				return;
-			}
-		}
-	}
-
-	private void DoReplace(int index, int length, T[] values, int valueStart, int valueLength)
-	{
-		if (length > 0)
-		{
-			VerifyRange(index, length);
-		}
-
-		if (valueLength > 0)
-		{
-			BoundsCheckArray(values, valueStart, valueLength);
-		}
-
-		if (length > 0)
-		{
-			InternalRemove(index, length);
-		}
-
-		if (valueLength > 0)
-		{
-			InternalInsert(index, values, valueStart, valueLength);
-		}
-
-		ResetState();
-	}
-
-	private void DoReplace(int index, int length, RopeBuffer<T> buffer)
-	{
-		VerifyRange(index, length);
-
-		if (length > 0)
-		{
-			InternalRemove(index, length);
-		}
-
-		if (buffer.Length > 0)
-		{
-			InternalInsert(index, buffer);
-		}
-
-		ResetState();
-	}
-
-	private static IEnumerator<T> Enumerate(RopeBufferNode<T> node)
-	{
-		var stack = new Stack<RopeBufferNode<T>>();
-		while (node != null)
-		{
-			// go to leftmost node, pushing the right parts that we'll have to visit later
-			while (node.contents == null)
-			{
-				if (node.height == 0)
-				{
-					// go down into function nodes
-					node = node.GetContentNode();
-					continue;
-				}
-
-				Debug.Assert(node.right != null);
-				stack.Push(node.right);
-				node = node.left;
-			}
-
-			// yield contents of leaf node
-			for (var i = 0; i < node.length; i++)
-			{
-				yield return node.contents[i];
-			}
-
-			// go up to the next node not visited yet
-			node = stack.Count > 0 ? stack.Pop() : null;
-		}
-	}
-
 	private void InternalInsert(int index, IEnumerable<T> values)
 	{
 		switch (values)
@@ -874,6 +734,23 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 	private void InternalReset()
 	{
 		Root = RopeBufferNode<T>.EmptyBufferNode;
+	}
+
+	private void Replace(int index, int length, RopeBuffer<T> buffer)
+	{
+		VerifyRange(index, length);
+
+		if (length > 0)
+		{
+			InternalRemove(index, length);
+		}
+
+		if (buffer.Length > 0)
+		{
+			InternalInsert(index, buffer);
+		}
+
+		ResetState();
 	}
 
 	private void ResetState()

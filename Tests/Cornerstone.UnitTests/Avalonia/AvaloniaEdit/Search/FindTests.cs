@@ -23,7 +23,7 @@ public class FindTests : CornerstoneUnitTest
 		var results = strategy.FindAll(text, 0, text.TextLength).ToArray();
 
 		AreEqual(1, results.Length, "One result should be found!");
-		AreEqual("result           // find ".Length, results[0].Offset);
+		AreEqual("result           // find ".Length, results[0].StartIndex);
 		AreEqual("me".Length, results[0].Length);
 	}
 
@@ -35,7 +35,7 @@ public class FindTests : CornerstoneUnitTest
 		var results = strategy.FindAll(text, 0, text.TextLength).ToArray();
 
 		AreEqual(1, results.Length, "One result should be found!");
-		AreEqual(0, results[0].Offset);
+		AreEqual(0, results[0].StartIndex);
 		AreEqual("result".Length, results[0].Length);
 	}
 
@@ -47,7 +47,7 @@ public class FindTests : CornerstoneUnitTest
 		var results = strategy.FindAll(text, 0, text.TextLength).ToArray();
 
 		AreEqual(1, results.Length, "One result should be found!");
-		AreEqual("name=\"Find".Length, results[0].Offset);
+		AreEqual("name=\"Find".Length, results[0].StartIndex);
 		AreEqual("AllTests".Length, results[0].Length);
 	}
 
@@ -99,7 +99,7 @@ public class FindTests : CornerstoneUnitTest
 		var results = strategy.FindAll(text, 0, text.TextLength).ToArray();
 
 		AreEqual(1, results.Length, "One result should be found!");
-		AreEqual(".".Length, results[0].Offset);
+		AreEqual(".".Length, results[0].StartIndex);
 		AreEqual("Text".Length, results[0].Length);
 	}
 
@@ -111,7 +111,7 @@ public class FindTests : CornerstoneUnitTest
 		var results = strategy.FindAll(text, 0, text.TextLength).ToArray();
 
 		AreEqual(1, results.Length, "One result should be found!");
-		AreEqual("            ".Length, results[0].Offset);
+		AreEqual("            ".Length, results[0].StartIndex);
 		AreEqual("// find".Length, results[0].Length);
 	}
 

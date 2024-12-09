@@ -50,11 +50,11 @@ public static class Converter
 	/// </summary>
 	/// <typeparam name="T"> The type to convert to. </typeparam>
 	/// <param name="from"> The original type. </param>
-	/// <param name="options"> The options for converting. </param>
+	/// <param name="settings"> The options for converting. </param>
 	/// <returns> The new type. </returns>
-	public static T ConvertTo<T>(this object from, IConverterOptions options = null)
+	public static T ConvertTo<T>(this object from, IConverterSettings settings = null)
 	{
-		return (T) ConvertTo(from, typeof(T), options);
+		return (T) ConvertTo(from, typeof(T), settings);
 	}
 
 	/// <summary>
@@ -62,9 +62,9 @@ public static class Converter
 	/// </summary>
 	/// <param name="from"> The original type. </param>
 	/// <param name="toType"> The type to convert to. </param>
-	/// <param name="options"> The options for converting. </param>
+	/// <param name="settings"> The options for converting. </param>
 	/// <returns> The new type. </returns>
-	public static object ConvertTo(this object from, Type toType, IConverterOptions options = null)
+	public static object ConvertTo(this object from, Type toType, IConverterSettings settings = null)
 	{
 		if (toType == typeof(object))
 		{
@@ -81,7 +81,7 @@ public static class Converter
 			throw new ArgumentNullException(nameof(from));
 		}
 
-		if (from.TryConvertTo(toType, out var value, options))
+		if (from.TryConvertTo(toType, out var value, settings))
 		{
 			return value;
 		}
@@ -109,16 +109,16 @@ public static class Converter
 		to = default;
 		return false;
 	}
-
+	
 	/// <summary>
 	/// Try to convert from one type to another.
 	/// </summary>
 	/// <param name="from"> The original type. </param>
 	/// <param name="toType"> The type to convert to. </param>
 	/// <param name="to"> The new type. </param>
-	/// <param name="options"> The options for converting. </param>
+	/// <param name="settings"> The options for converting. </param>
 	/// <returns> True if the object was converted otherwise false. </returns>
-	public static bool TryConvertTo(this object from, Type toType, out object to, IConverterOptions options = null)
+	public static bool TryConvertTo(this object from, Type toType, out object to, IConverterSettings settings = null)
 	{
 		if ((from != null) && (from.GetType() == toType))
 		{
@@ -150,7 +150,7 @@ public static class Converter
 		// Get the converter then try to convert
 		if (_converters.TryGetValue(fromType, toType, x => x.CanConvert(fromType, toType), out var converter))
 		{
-			return converter.TryConvertTo(from, fromType, toType, out to, options);
+			return converter.TryConvertTo(from, fromType, toType, out to, settings);
 		}
 
 		// From / To converter not found

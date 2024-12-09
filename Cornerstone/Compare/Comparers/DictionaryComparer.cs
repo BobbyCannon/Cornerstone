@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System;
 using System.Collections;
 using Cornerstone.Extensions;
 
@@ -22,7 +23,7 @@ public class DictionaryComparer : BaseComparer
 	}
 
 	/// <inheritdoc />
-	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, string message)
+	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, Func<string> message)
 	{
 		try
 		{
@@ -52,7 +53,7 @@ public class DictionaryComparer : BaseComparer
 		if (length != actual.Keys.Count)
 		{
 			AddDifference(session, length.ToString(), actual.Count.ToString(),
-				true, "The dictionary lengths are different."
+				true, () => "The dictionary lengths are different."
 			);
 			return;
 		}
@@ -67,7 +68,7 @@ public class DictionaryComparer : BaseComparer
 		{
 			if (!actual.Contains(key))
 			{
-				AddDifference(session, key.ToString(), string.Empty, true, "Key missing in actual dictionary.");
+				AddDifference(session, key.ToString(), string.Empty, true, () => "Key missing in actual dictionary.");
 				return;
 			}
 

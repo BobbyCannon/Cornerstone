@@ -21,7 +21,7 @@ public class DictionaryCSharpGeneratorTests : CodeGeneratorTests<DictionaryCShar
 	public void GenerateScenarios()
 	{
 		GenerateNewScenarios(
-			$@"CSharpGenerators\{nameof(DictionaryCSharpGeneratorTests)}.cs",
+			$@"Generators\CodeGenerators\CSharpGenerators\{nameof(DictionaryCSharpGeneratorTests)}.cs",
 			EnableFileUpdates || IsDebugging,
 			new Dictionary<string, int> { { "a", 1 }, { "b", 2 } }
 		);
@@ -31,12 +31,12 @@ public class DictionaryCSharpGeneratorTests : CodeGeneratorTests<DictionaryCShar
 	public void RunScenarios()
 	{
 		var scenarios = GetScenarios();
-		var settings = CodeGenerator.DefaultWriterOptions;
+		var settings = CodeGenerator.DefaultWriterSettings;
 
 		foreach (var scenario in scenarios)
 		{
 			var actual = Generator.GenerateCode(scenario.From.Type, scenario.From.Value, settings);
-			AreEqual(scenario.To.Value, actual, scenario.Name);
+			AreEqual(scenario.To.Value, actual, () => scenario.Name);
 		}
 	}
 
@@ -58,7 +58,7 @@ public class DictionaryCSharpGeneratorTests : CodeGeneratorTests<DictionaryCShar
 }";
 		AreEqual(expected, actual);
 
-		var settings = new CodeWriterOptions { TextFormat = TextFormat.Spaced };
+		var settings = new CodeWriterSettings { TextFormat = TextFormat.Spaced };
 		actual = generator.GenerateCode(dictionary.GetType(), dictionary, settings);
 		expected = "new Dictionary<string, int> { { \"a\", 1 }, { \"b\", 2 } }";
 		AreEqual(expected, actual);

@@ -1,16 +1,14 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
 	<PropertyGroup>
-		<TargetFrameworks>net8.0-browser1.0</TargetFrameworks>
-		<RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
-		<WasmMainJSPath>AppBundle\main.js</WasmMainJSPath>
+		<TargetFrameworks>net9.0-browser</TargetFrameworks>
 		<OutputType>Exe</OutputType>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<TrimMode>copyused</TrimMode>
+		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
 	</PropertyGroup>
 	<ItemGroup>
-		<WasmExtraFilesToDeploy Include="AppBundle\**" />
-	</ItemGroup>
-	<ItemGroup>
 		<PackageReference Include="Avalonia.Browser" Version="$(AvaloniaVersion)" />
+		<PackageReference Include="System.Private.Uri" Version="4.3.2" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Avalonia.Sample\Avalonia.Sample.csproj" />

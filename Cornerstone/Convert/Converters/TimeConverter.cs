@@ -39,7 +39,7 @@ public class TimeConverter : BaseConverter
 	}
 
 	/// <inheritdoc />
-	public override bool TryConvertTo(object from, Type fromType, Type toType, out object value, IConverterOptions options = null)
+	public override bool TryConvertTo(object from, Type fromType, Type toType, out object value, IConverterSettings settings = null)
 	{
 		if (from == null)
 		{
@@ -80,7 +80,7 @@ public class TimeConverter : BaseConverter
 			default:
 			{
 				// Should never get here, code coverage won't like this.
-				return base.TryConvertTo(from, fromType, toType, out value, options);
+				return base.TryConvertTo(from, fromType, toType, out value, settings);
 			}
 		}
 
@@ -98,7 +98,7 @@ public class TimeConverter : BaseConverter
 		}
 
 		// Should never get here, code coverage won't like this.
-		return base.TryConvertTo(from, fromType, toType, out value, options);
+		return base.TryConvertTo(from, fromType, toType, out value, settings);
 	}
 
 	#endregion

@@ -38,8 +38,6 @@ public static class FontAwesomeProcessor
 
 	public static void GenerateAvaloniaStyles(FontAwesomeManager manager, string outputDirectory)
 	{
-		//<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-		//		<StreamGeometry x:Key="Icons.Window.Minimize">M0 0M1024 1024 M960 544H64a32 32 0 1 1 0-64h896a32 32 0 1 1 0 64</StreamGeometry>
 		var outputFile = Path.Combine(outputDirectory, "FontAwesomeIcons.axaml");
 
 		_content.Clear();

@@ -67,7 +67,7 @@ public class GuidConverter : BaseConverter
 	}
 
 	/// <inheritdoc />
-	public override bool TryConvertTo(object from, Type fromType, Type toType, out object value, IConverterOptions options = null)
+	public override bool TryConvertTo(object from, Type fromType, Type toType, out object value, IConverterSettings settings = null)
 	{
 		if (from == null)
 		{
@@ -92,7 +92,7 @@ public class GuidConverter : BaseConverter
 		if (fromGuid == null)
 		{
 			// from value was not a Guid
-			return base.TryConvertTo(from, fromType, toType, out value, options);
+			return base.TryConvertTo(from, fromType, toType, out value, settings);
 		}
 
 		if ((toType == typeof(Guid)) || (toType == typeof(Guid?)))
@@ -113,7 +113,7 @@ public class GuidConverter : BaseConverter
 			return true;
 		}
 
-		return base.TryConvertTo(from, fromType, toType, out value, options);
+		return base.TryConvertTo(from, fromType, toType, out value, settings);
 	}
 
 	/// <summary>

@@ -148,7 +148,7 @@ public class FoldingMargin : AbstractMargin
 		var pixelSize = PixelSnapHelpers.GetPixelSize(this);
 		foreach (var m in _markers)
 		{
-			var visualColumn = m.VisualLine.GetVisualColumn(m.FoldingSection.StartOffset - m.VisualLine.FirstDocumentLine.Offset);
+			var visualColumn = m.VisualLine.GetVisualColumn(m.FoldingSection.StartOffset - m.VisualLine.FirstDocumentLine.StartIndex);
 			var textLine = m.VisualLine.GetTextLine(visualColumn);
 			var yPos = m.VisualLine.GetTextLineVisualYPosition(textLine, VisualYPosition.TextMiddle) - TextView.VerticalOffset;
 			yPos -= m.DesiredSize.Height / 2;
@@ -182,8 +182,8 @@ public class FoldingMargin : AbstractMargin
 		{
 			foreach (var line in TextView.VisualLines)
 			{
-				var fs = FoldingManager.GetNextFolding(line.FirstDocumentLine.Offset);
-				if (fs?.StartOffset <= (line.LastDocumentLine.Offset + line.LastDocumentLine.Length))
+				var fs = FoldingManager.GetNextFolding(line.FirstDocumentLine.StartIndex);
+				if (fs?.StartOffset <= (line.LastDocumentLine.StartIndex + line.LastDocumentLine.Length))
 				{
 					var m = new FoldingMarginMarker
 					{
@@ -216,13 +216,13 @@ public class FoldingMargin : AbstractMargin
 	/// </summary>
 	private void CalculateFoldLinesForFoldingsActiveAtStart(List<TextLine> allTextLines, Pen[] colors, Pen[] endMarker)
 	{
-		var viewStartOffset = TextView.VisualLines[0].FirstDocumentLine.Offset;
-		var viewEndOffset = TextView.VisualLines.Last().LastDocumentLine.EndOffset;
+		var viewStartOffset = TextView.VisualLines[0].FirstDocumentLine.StartIndex;
+		var viewEndOffset = TextView.VisualLines.Last().LastDocumentLine.EndIndex;
 		var foldings = FoldingManager.GetFoldingsContaining(viewStartOffset);
 		var maxEndOffset = 0;
 		foreach (var fs in foldings)
 		{
-			var end = fs.EndOffset;
+			var end = fs.EndIndex;
 			if ((end <= viewEndOffset) && !fs.IsFolded)
 			{
 				var textLineNr = GetTextLineIndexFromOffset(allTextLines, end);
@@ -263,7 +263,7 @@ public class FoldingMargin : AbstractMargin
 	{
 		foreach (var marker in _markers)
 		{
-			var end = marker.FoldingSection.EndOffset;
+			var end = marker.FoldingSection.EndIndex;
 			var endTextLineNr = GetTextLineIndexFromOffset(allTextLines, end);
 			if (!marker.FoldingSection.IsFolded && (endTextLineNr >= 0))
 			{
@@ -342,7 +342,7 @@ public class FoldingMargin : AbstractMargin
 		var vl = TextView.GetVisualLine(lineNumber);
 		if (vl != null)
 		{
-			var relOffset = offset - vl.FirstDocumentLine.Offset;
+			var relOffset = offset - vl.FirstDocumentLine.StartIndex;
 			var line = vl.GetTextLine(vl.GetVisualColumn(relOffset));
 			return textLines.IndexOf(line);
 		}
@@ -362,7 +362,7 @@ public class FoldingMargin : AbstractMargin
 		{
 			m = margin;
 		}
-		else if (e.Sender is TextEditor editor)
+		else if (e.Sender is TextEditorControl editor)
 		{
 			m = editor.TextArea.LeftMargins.FirstOrDefault(c => c is FoldingMargin) as FoldingMargin;
 		}

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Cornerstone.Avalonia.Controls;
+using Cornerstone.Avalonia;
 using Cornerstone.Collections;
 using Cornerstone.Extensions;
 using Cornerstone.Generators;
@@ -74,10 +74,9 @@ public partial class TabSpeedyList : CornerstoneUserControl
 
 		// Commands
 		ClearCommand = new RelayCommand(_ => Clear());
-		NumberOfThreadsCommand = new RelayCommand(ChangeNumberOfThreads);
 		RandomizeCommand = new RelayCommand(_ => Randomize());
+		
 		DataContext = this;
-
 		InitializeComponent();
 	}
 
@@ -112,8 +111,6 @@ public partial class TabSpeedyList : CornerstoneUserControl
 	public int NumberOfItems { get; set; }
 
 	public int NumberOfThreads { get; set; }
-
-	public ICommand NumberOfThreadsCommand { get; }
 
 	public int Progress { get; set; }
 
@@ -196,25 +193,6 @@ public partial class TabSpeedyList : CornerstoneUserControl
 		base.OnPropertyChanged(propertyName);
 	}
 
-
-	private void ChangeNumberOfThreads(object obj)
-	{
-		switch (obj?.ToString())
-		{
-			case "-":
-			{
-				NumberOfThreads = Math.Max(1, NumberOfThreads -= 1);
-				break;
-			}
-			case "+":
-			default:
-			{
-				NumberOfThreads = Math.Min(32, NumberOfThreads += 1);
-				break;
-			}
-		}
-	}
-
 	private void Clear()
 	{
 		LeftList.Clear();
@@ -239,7 +217,7 @@ public partial class TabSpeedyList : CornerstoneUserControl
 			return;
 		}
 
-		Task.Run(Run)
+		Task.Run(Process, CancellationToken.None)
 			.ContinueWith(_ =>
 			{
 				if (LoopTest && !CancellationPending)
@@ -249,7 +227,7 @@ public partial class TabSpeedyList : CornerstoneUserControl
 			});
 	}
 
-	private void Run()
+	private void Process()
 	{
 		IsRunning = true;
 		CancellationPending = false;
@@ -280,7 +258,7 @@ public partial class TabSpeedyList : CornerstoneUserControl
 			MiddleList.Load(Enumerable.Range(total + 1, total).Select(x => new SelectionOption<int>(x, x.ToString())));
 			RightList.Load(Enumerable.Range((total * 2) + 1, total).Select(x => new SelectionOption<int>(x, x.ToString())));
 
-			var actions = EnumExtensions.GetEnumValues<SharedViewModel.ListAction>();
+			var actions = EnumExtensions.GetEnumValues<SampleViewModel.ListAction>();
 			var sources = new[] { LeftList, MiddleList, RightList };
 			var destinations = new Dictionary<SpeedyList<SelectionOption<int>>, SpeedyList<SelectionOption<int>>[]>
 			{
@@ -314,12 +292,12 @@ public partial class TabSpeedyList : CornerstoneUserControl
 						{
 							switch (action)
 							{
-								case SharedViewModel.ListAction.Insert:
+								case SampleViewModel.ListAction.Insert:
 								{
 									destination.Insert(0, item);
 									break;
 								}
-								case SharedViewModel.ListAction.Add:
+								case SampleViewModel.ListAction.Add:
 								default:
 								{
 									destination.Add(item);

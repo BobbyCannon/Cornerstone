@@ -85,9 +85,9 @@ public class HighlightingEngine
 	/// state for the beginning of this line. After highlighting has completed,
 	/// <see cref="CurrentSpanStack" /> will be updated to represent the state after the line.
 	/// </summary>
-	public HighlightedLine HighlightLine(IDocument document, IDocumentLine line)
+	public HighlightedLine HighlightLine(ITextEditorDocument document, IDocumentLine line)
 	{
-		_lineStartOffset = line.Offset;
+		_lineStartOffset = line.StartIndex;
 		_lineText = document.GetText(line);
 		try
 		{
@@ -109,7 +109,7 @@ public class HighlightingEngine
 	/// state for the beginning of this line. After highlighting has completed,
 	/// <see cref="CurrentSpanStack" /> will be updated to represent the state after the line.
 	/// </summary>
-	public void ScanLine(IDocument document, IDocumentLine line)
+	public void ScanLine(ITextEditorDocument document, IDocumentLine line)
 	{
 		//this.lineStartOffset = line.Offset; not necessary for scanning
 		_lineText = document.GetText(line);
@@ -313,7 +313,7 @@ public class HighlightingEngine
 		var s = _highlightedSectionStack.Pop();
 		if (s != null)
 		{
-			s.Length = (_position + _lineStartOffset) - s.Offset;
+			s.Length = (_position + _lineStartOffset) - s.StartIndex;
 			if (s.Length == 0)
 			{
 				_highlightedLine.Sections.Remove(s);
@@ -336,7 +336,7 @@ public class HighlightingEngine
 			_highlightedSectionStack.Push(null);
 		}
 		else if ((_lastPoppedSection != null) && Equals(_lastPoppedSection.Color, color)
-				&& ((_lastPoppedSection.Offset + _lastPoppedSection.Length) == (_position + _lineStartOffset)))
+				&& ((_lastPoppedSection.StartIndex + _lastPoppedSection.Length) == (_position + _lineStartOffset)))
 		{
 			_highlightedSectionStack.Push(_lastPoppedSection);
 			_lastPoppedSection = null;
@@ -345,7 +345,7 @@ public class HighlightingEngine
 		{
 			var hs = new HighlightedSection
 			{
-				Offset = _position + _lineStartOffset,
+				StartIndex = _position + _lineStartOffset,
 				Color = color
 			};
 			_highlightedLine.Sections.Add(hs);

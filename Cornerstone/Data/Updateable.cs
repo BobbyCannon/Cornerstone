@@ -18,9 +18,9 @@ public interface IUpdateable<in T> : IUpdateable
 	/// Determine if the update should be applied.
 	/// </summary>
 	/// <param name="update"> The update to be tested. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
 	/// <returns> True if the update should be applied otherwise false. </returns>
-	bool ShouldUpdate(T update, IncludeExcludeOptions options);
+	bool ShouldUpdate(T update, IncludeExcludeSettings settings);
 
 	/// <summary>
 	/// Try to apply an update to the provided value.
@@ -33,9 +33,9 @@ public interface IUpdateable<in T> : IUpdateable
 	/// Try to apply an update to the provided value.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
 	/// <returns> True if the update was applied otherwise false. </returns>
-	bool TryUpdateWith(T update, IncludeExcludeOptions options);
+	bool TryUpdateWith(T update, IncludeExcludeSettings settings);
 
 	/// <summary>
 	/// Allows updating of one type to another based on member Name and Type.
@@ -56,9 +56,9 @@ public interface IUpdateable<in T> : IUpdateable
 	/// Allows updating of one type to another based on member Name and Type.
 	/// </summary>
 	/// <param name="update"> The source of the update. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
 	/// <returns> True if the update was applied otherwise false. </returns>
-	bool UpdateWith(T update, IncludeExcludeOptions options);
+	bool UpdateWith(T update, IncludeExcludeSettings settings);
 
 	#endregion
 }
@@ -81,9 +81,9 @@ public interface IUpdateable
 	/// Determine if the update should be applied.
 	/// </summary>
 	/// <param name="update"> The update to be tested. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
 	/// <returns> True if the update should be applied otherwise false. </returns>
-	bool ShouldUpdate(object update, IncludeExcludeOptions options);
+	bool ShouldUpdate(object update, IncludeExcludeSettings settings);
 
 	/// <summary>
 	/// Try to apply an update to the provided value.
@@ -96,9 +96,9 @@ public interface IUpdateable
 	/// Try to apply an update to the provided value.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
 	/// <returns> True if the update was applied otherwise false. </returns>
-	bool TryUpdateWith(object update, IncludeExcludeOptions options);
+	bool TryUpdateWith(object update, IncludeExcludeSettings settings);
 
 	/// <summary>
 	/// Allows updating of one type to another based on member Name and Type.
@@ -119,9 +119,9 @@ public interface IUpdateable
 	/// Allows updating of one type to another based on member Name and Type.
 	/// </summary>
 	/// <param name="update"> The source of the update. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
 	/// <returns> True if the update was applied otherwise false. </returns>
-	bool UpdateWith(object update, IncludeExcludeOptions options);
+	bool UpdateWith(object update, IncludeExcludeSettings settings);
 
 	#endregion
 }

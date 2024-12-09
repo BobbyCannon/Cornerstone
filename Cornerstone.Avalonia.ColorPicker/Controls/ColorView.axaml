@@ -7,6 +7,38 @@
 		xmlns:pc="using:Avalonia.Controls.Primitives.Converters"
 		xmlns:primitives="using:Avalonia.Controls.Primitives"
 		x:CompileBindings="True">
+
+	<Design.PreviewWith>
+		<StackPanel>
+			<ToggleSwitch IsChecked="{Binding ElementName=ColorView, Path=IsColorSpectrumVisible}"
+					OnContent="IsColorSpectrumVisible"
+					OffContent="IsColorSpectrumVisible" />
+			<ToggleSwitch IsChecked="{Binding ElementName=ColorView, Path=IsColorPaletteVisible}"
+					OnContent="IsColorPaletteVisible"
+					OffContent="IsColorPaletteVisible" />
+			<ColorView x:Name="ColorView" Color="Red" />
+			<ToggleSwitch IsChecked="{Binding ElementName=ColorView, Path=IsAccentColorsVisible}"
+					OnContent="IsAccentColorsVisible"
+					OffContent="IsAccentColorsVisible" />
+			<ToggleSwitch IsChecked="{Binding ElementName=ColorView, Path=IsAlphaVisible}"
+					OnContent="IsAlphaVisible"
+					OffContent="IsAlphaVisible" />
+			<ToggleSwitch IsChecked="{Binding ElementName=ColorView, Path=IsColorComponentsVisible}"
+					OnContent="IsColorComponentsVisible"
+					OffContent="IsColorComponentsVisible" />
+			
+			<ToggleSwitch IsChecked="{Binding ElementName=ColorView, Path=IsColorPreviewVisible}"
+					OnContent="IsColorPreviewVisible"
+					OffContent="IsColorPreviewVisible" />
+			<ToggleSwitch IsChecked="{Binding ElementName=ColorView, Path=IsColorModelVisible}"
+					OnContent="IsColorModelVisible"
+					OffContent="IsColorModelVisible" />
+			<ToggleSwitch IsChecked="{Binding ElementName=ColorView, Path=IsColorSpectrumSliderVisible}"
+					OnContent="IsColorSpectrumSliderVisible"
+					OffContent="IsColorSpectrumSliderVisible" />
+		</StackPanel>
+	</Design.PreviewWith>
+
 	<!--  Add Resources Here  -->
 	<pc:ContrastBrushConverter x:Key="ContrastBrushConverter" />
 	<converters:ColorToDisplayNameConverter x:Key="ColorToDisplayNameConverter" />

@@ -68,7 +68,7 @@ public abstract class DocumentColorizingTransformer : ColorizingTransformer
 		CurrentContext = context ?? throw new ArgumentNullException(nameof(context));
 
 		_currentDocumentLine = context.VisualLine.FirstDocumentLine;
-		_firstLineStart = _currentDocumentLineStartOffset = _currentDocumentLine.Offset;
+		_firstLineStart = _currentDocumentLineStartOffset = _currentDocumentLine.StartIndex;
 		_currentDocumentLineEndOffset = _currentDocumentLineStartOffset + _currentDocumentLine.Length;
 		var currentDocumentLineTotalEndOffset = _currentDocumentLineStartOffset + _currentDocumentLine.TotalLength;
 
@@ -86,7 +86,7 @@ public abstract class DocumentColorizingTransformer : ColorizingTransformer
 				if (elementOffset >= currentDocumentLineTotalEndOffset)
 				{
 					_currentDocumentLine = context.Document.GetLineByOffset(elementOffset);
-					_currentDocumentLineStartOffset = _currentDocumentLine.Offset;
+					_currentDocumentLineStartOffset = _currentDocumentLine.StartIndex;
 					_currentDocumentLineEndOffset = _currentDocumentLineStartOffset + _currentDocumentLine.Length;
 					currentDocumentLineTotalEndOffset = _currentDocumentLineStartOffset + _currentDocumentLine.TotalLength;
 					ColorizeLine(_currentDocumentLine);

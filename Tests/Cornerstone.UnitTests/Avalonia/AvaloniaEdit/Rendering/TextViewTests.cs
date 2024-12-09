@@ -15,7 +15,7 @@ public class TextViewTests : CornerstoneUnitTest
 	#region Constants
 
 	// https://github.com/AvaloniaUI/Avalonia/blob/master/src/Headless/Avalonia.Headless/HeadlessPlatformStubs.cs#L126
-	private const int _headlessGlyphAdvance = 8;
+	private const int HeadlessGlyphAdvance = 8;
 
 	#endregion
 
@@ -25,12 +25,12 @@ public class TextViewTests : CornerstoneUnitTest
 	public void VisualLineShouldCreateOneTextLinesWhenNotWrapping()
 	{
 		var textView = new TextView();
-		var document = new TextDocument("hello world".ToCharArray());
+		var document = new TextEditorDocument("hello world".ToCharArray());
 
 		textView.Document = document;
 		textView.EnsureVisualLines();
 		((ILogicalScrollable) textView).CanHorizontallyScroll = false;
-		textView.Width = _headlessGlyphAdvance * 500;
+		textView.Width = HeadlessGlyphAdvance * 500;
 
 		textView.Measure(Size.Infinity);
 
@@ -44,12 +44,12 @@ public class TextViewTests : CornerstoneUnitTest
 	public void VisualLineShouldCreateTwoTextLinesWhenWrapping()
 	{
 		var textView = new TextView();
-		var document = new TextDocument("hello world".ToCharArray());
+		var document = new TextEditorDocument("hello world".ToCharArray());
 
 		textView.Document = document;
 
 		((ILogicalScrollable) textView).CanHorizontallyScroll = false;
-		textView.Width = _headlessGlyphAdvance * 8;
+		textView.Width = HeadlessGlyphAdvance * 8;
 		textView.Measure(Size.Infinity);
 
 		var visualLine = textView.GetOrConstructVisualLine(document.Lines[0]);

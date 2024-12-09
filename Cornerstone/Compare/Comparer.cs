@@ -37,7 +37,7 @@ public static class Comparer
 			new ObjectComparer()
 		];
 
-		Options = new ComparerOptions();
+		Settings = new ComparerSettings();
 	}
 
 	#endregion
@@ -52,7 +52,7 @@ public static class Comparer
 	/// <summary>
 	/// The default settings when starting a session.
 	/// </summary>
-	public static ComparerOptions Options { get; }
+	public static ComparerSettings Settings { get; }
 
 	#endregion
 
@@ -65,7 +65,7 @@ public static class Comparer
 	/// <param name="actual"> The actual value to compare to expected. </param>
 	/// <param name="settings"> The settings for the compare session. </param>
 	/// <returns> True if the values are equal otherwise false. </returns>
-	public static bool Compare(object expected, object actual, ComparerOptions? settings = null)
+	public static bool Compare(object expected, object actual, ComparerSettings? settings = null)
 	{
 		var session = StartSession(expected, actual, settings);
 		session.Compare();
@@ -75,9 +75,9 @@ public static class Comparer
 	/// <summary>
 	/// Starts a new sync session.
 	/// </summary>
-	public static CompareSession<T, T2> StartSession<T, T2>(T expected, T2 actual, ComparerOptions? settings = null)
+	public static CompareSession<T, T2> StartSession<T, T2>(T expected, T2 actual, ComparerSettings? settings = null)
 	{
-		return new CompareSession<T, T2>(expected, actual, settings ?? Options);
+		return new CompareSession<T, T2>(expected, actual, settings ?? Settings);
 	}
 
 	#endregion

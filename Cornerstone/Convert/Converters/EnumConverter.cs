@@ -43,7 +43,7 @@ public class EnumConverter : BaseConverter
 	}
 
 	/// <inheritdoc />
-	public override bool TryConvertTo(object from, Type fromType, Type toType, out object value, IConverterOptions options = null)
+	public override bool TryConvertTo(object from, Type fromType, Type toType, out object value, IConverterSettings settings = null)
 	{
 		if (from == null)
 		{
@@ -66,7 +66,7 @@ public class EnumConverter : BaseConverter
 		{
 			if (Activator.StringTypes.Contains(toType))
 			{
-				var enumString = options?.EnumFormat == EnumFormat.Value
+				var enumString = settings?.EnumFormat == EnumFormat.Value
 					? ((Enum) from).ToString("D")
 					: ((Enum) from).ToString();
 				value = toType.CreateInstance(enumString);
@@ -107,7 +107,7 @@ public class EnumConverter : BaseConverter
 			}
 		}
 
-		return base.TryConvertTo(from, fromType, toType, out value, options);
+		return base.TryConvertTo(from, fromType, toType, out value, settings);
 	}
 
 	#endregion

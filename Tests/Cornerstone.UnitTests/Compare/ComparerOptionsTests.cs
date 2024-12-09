@@ -13,22 +13,22 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Cornerstone.UnitTests.Compare;
 
 [TestClass]
-public class ComparerOptionsTests : CornerstoneUnitTest
+public class ComparerSettingsTests : CornerstoneUnitTest
 {
 	#region Methods
 
 	[TestMethod]
 	public void Defaults()
 	{
-		var actual = new ComparerOptions();
+		var actual = new ComparerSettings();
 		var expected = new Dictionary<string, object>
 		{
-			{ nameof(ComparerOptions.DoubleTolerance), double.Epsilon },
-			{ nameof(ComparerOptions.FloatTolerance), float.Epsilon },
-			{ nameof(ComparerOptions.IgnoreObjectTypes), true },
-			{ nameof(ComparerOptions.IgnoreMissingProperties), false },
-			{ nameof(ComparerOptions.StringComparison), StringComparison.CurrentCulture },
-			{ nameof(ComparerOptions.IncludeExcludeOptions), new Dictionary<Type, string[]>() }
+			{ nameof(ComparerSettings.DoubleTolerance), double.Epsilon },
+			{ nameof(ComparerSettings.FloatTolerance), float.Epsilon },
+			{ nameof(ComparerSettings.IgnoreObjectTypes), true },
+			{ nameof(ComparerSettings.IgnoreMissingProperties), false },
+			{ nameof(ComparerSettings.StringComparison), StringComparison.CurrentCulture },
+			{ nameof(ComparerSettings.IncludeExcludeOptions), new Dictionary<Type, string[]>() }
 		};
 
 		var properties = actual.GetType().GetCachedProperties().OrderBy(x => x.Name).ToList();
@@ -48,13 +48,13 @@ public class ComparerOptionsTests : CornerstoneUnitTest
 	[TestMethod]
 	public void IgnorePropertyType()
 	{
-		var options = new ComparerOptions();
+		var options = new ComparerSettings();
 		options.IgnoreProperty<ComparerTests.Person>(x => x.FullName);
 
 		var actual = options.IncludeExcludeOptions;
-		var expected = new Dictionary<Type, IncludeExcludeOptions>
+		var expected = new Dictionary<Type, IncludeExcludeSettings>
 		{
-			{ typeof(ComparerTests.Person), new IncludeExcludeOptions(null, ["FullName"]) }
+			{ typeof(ComparerTests.Person), new IncludeExcludeSettings(null, ["FullName"]) }
 		};
 
 		AreEqual(expected, actual);

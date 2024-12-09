@@ -2,6 +2,8 @@
 
 #endregion
 
+using Cornerstone.Collections;
+using Cornerstone.Text;
 using Cornerstone.Text.Document;
 
 namespace Cornerstone.Avalonia.AvaloniaEdit.Snippets;
@@ -40,7 +42,7 @@ public sealed class SnippetAnchorElement : SnippetElement
 		var start = context.Document.CreateAnchor(context.InsertionPosition);
 		start.MovementType = AnchorMovementType.BeforeInsertion;
 		start.SurviveDeletion = true;
-		var segment = new AnchorSegment(start, start);
+		var segment = new AnchorRange(start, start);
 		context.RegisterActiveElement(this, new AnchorElement(segment, Name, context));
 	}
 
@@ -56,7 +58,7 @@ public sealed class AnchorElement : IActiveElement
 
 	private readonly InsertionContext _context;
 
-	private AnchorSegment _segment;
+	private AnchorRange _range;
 
 	#endregion
 
@@ -65,9 +67,9 @@ public sealed class AnchorElement : IActiveElement
 	/// <summary>
 	/// Creates a new AnchorElement.
 	/// </summary>
-	public AnchorElement(AnchorSegment segment, string name, InsertionContext context)
+	public AnchorElement(AnchorRange range, string name, InsertionContext context)
 	{
-		_segment = segment;
+		_range = range;
 		_context = context;
 		Name = name;
 	}
@@ -85,23 +87,23 @@ public sealed class AnchorElement : IActiveElement
 	public string Name { get; }
 
 	/// <inheritdoc />
-	public ISegment Segment => _segment;
+	public IRange Range => _range;
 
 	/// <summary>
 	/// Gets or sets the text at the anchor.
 	/// </summary>
 	public string Text
 	{
-		get => _context.Document.GetText(_segment);
+		get => _context.Document.GetText(_range);
 		set
 		{
-			var offset = _segment.Offset;
-			var length = _segment.Length;
+			var offset = _range.StartIndex;
+			var length = _range.Length;
 			_context.Document.Replace(offset, length, value);
 			if (length == 0)
 			{
 				// replacing an empty anchor segment with text won't enlarge it, so we have to recreate it
-				_segment = new AnchorSegment(_context.Document, offset, value.Length);
+				_range = new AnchorRange(_context.Document, offset, value.Length);
 			}
 		}
 	}

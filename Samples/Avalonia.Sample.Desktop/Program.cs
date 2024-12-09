@@ -8,7 +8,6 @@ using Avalonia.Sample.ViewModels;
 using Cornerstone.Avalonia;
 using Cornerstone.Avalonia.Windows;
 using Cornerstone.Extensions;
-using Cornerstone.Location;
 using Cornerstone.Runtime;
 using Cornerstone.Windows;
 
@@ -25,14 +24,17 @@ public class Program
 	/// </summary>
 	public static AppBuilder BuildAvaloniaApp()
 	{
-		var locationProvider = new WindowsLocationProvider(null);
-		CornerstoneApplication.PlatformDependencies.AddSingleton<ILocationProvider>(() => locationProvider);
+		var dependencyProvider = CornerstoneApplication.DependencyProvider;
 
-		return AppBuilder.Configure<App>()
+		WindowsPlatform.Initialize(dependencyProvider);
+
+		var response = AppBuilder.Configure<App>()
 			.UsePlatformDetect()
 			.WithInterFont()
 			.LogToTrace()
-			.UseWindowWebView();
+			.UseCornerstoneWindows();
+
+		return response;
 	}
 
 	/// <summary>

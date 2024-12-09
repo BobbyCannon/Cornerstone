@@ -12,7 +12,7 @@ namespace Cornerstone.Avalonia.AvaloniaEdit.Folding;
 /// <summary>
 /// A section that can be folded.
 /// </summary>
-public sealed class FoldingSection : TextSegment
+public sealed class FoldingSection : TextRange
 {
 	#region Fields
 
@@ -62,7 +62,7 @@ public sealed class FoldingSection : TextSegment
 	/// <summary>
 	/// Gets the content of the collapsed lines as text.
 	/// </summary>
-	public string TextContent => _manager.Document.GetText(StartOffset, EndOffset - StartOffset);
+	public string TextContent => _manager.Document.GetText(StartOffset, EndIndex - StartOffset);
 
 	/// <summary>
 	/// Gets/Sets the text used to display the collapsed version of the folding section.
@@ -109,7 +109,7 @@ public sealed class FoldingSection : TextSegment
 		// It is possible that StartOffset/EndOffset get set to invalid values via the property setters in TextSegment,
 		// so we coerce those values into the valid range.
 		var startLine = _manager.Document.GetLineByOffset(StartOffset.CoerceValue(0, _manager.Document.TextLength));
-		var endLine = _manager.Document.GetLineByOffset(EndOffset.CoerceValue(0, _manager.Document.TextLength));
+		var endLine = _manager.Document.GetLineByOffset(EndIndex.CoerceValue(0, _manager.Document.TextLength));
 		if (startLine == endLine)
 		{
 			RemoveCollapsedLineSection();

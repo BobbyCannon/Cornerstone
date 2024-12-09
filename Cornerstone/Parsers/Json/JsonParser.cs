@@ -8,17 +8,17 @@ using Cornerstone.Serialization.Json.Values;
 
 namespace Cornerstone.Parsers.Json;
 
-public class JsonParser : Parser<JsonParserOptions>
+public class JsonParser : Parser<JsonParserSettings>
 {
 	#region Constructors
 
 	/// <inheritdoc />
-	public JsonParser() : base(new JsonParserOptions())
+	public JsonParser() : base(new JsonParserSettings())
 	{
 	}
 
 	/// <inheritdoc />
-	public JsonParser(JsonParserOptions options) : base(options)
+	public JsonParser(JsonParserSettings settings) : base(settings)
 	{
 	}
 
@@ -26,18 +26,18 @@ public class JsonParser : Parser<JsonParserOptions>
 
 	#region Methods
 
-	public static void ParseArray(JsonTokenizer tokenizer, IObjectConsumer consumer, ISerializationOptions settings = null)
+	public static void ParseArray(JsonTokenizer tokenizer, IObjectConsumer consumer, ISerializationSettings settings = null)
 	{
-		tokenizer.MoveNext(); // skip '['
+		tokenizer.ParseNextUntilNotWhitespaceAndNewLines(); // skip '['
 
 		if (tokenizer.CurrentToken.Type == JsonTokenType.None)
 		{
-			throw new ParserException($"Unexpected end of stream reached while parsing array in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.Position}.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.Position);
+			throw new ParserException($"Unexpected end of stream reached while parsing array in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.ColumnNumber}.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.ColumnNumber);
 		}
 
 		if (tokenizer.CurrentToken.Type == JsonTokenType.SquaredClose)
 		{
-			tokenizer.MoveNext(); // skip ']'
+			tokenizer.ParseNextUntilNotWhitespaceAndNewLines(); // skip ']'
 			consumer.CompleteObject();
 			return;
 		}
@@ -46,100 +46,118 @@ public class JsonParser : Parser<JsonParserOptions>
 		{
 			// parse value
 			ParseValue(tokenizer, consumer, settings);
+		
+			tokenizer.SkipWhitespaceOrNewLines();
 
 			if (tokenizer.CurrentToken.Type == JsonTokenType.Comma)
 			{
-				tokenizer.MoveNext();
+				tokenizer.ParseNextUntilNotWhitespaceAndNewLines();
 			}
 			else if (tokenizer.CurrentToken.Type == JsonTokenType.SquaredClose)
 			{
-				tokenizer.MoveNext(); // skip ']'
+				tokenizer.ParseNextUntilNotWhitespaceAndNewLines(); // skip ']'
 				consumer.CompleteObject();
 				return;
 			}
 			else if (tokenizer.CurrentToken.Type == JsonTokenType.None)
 			{
-				throw new ParserException($"Unexpected end of stream reached while parsing array in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.Position}.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.Position);
+				throw new ParserException($"Unexpected end of stream reached while parsing array in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.ColumnNumber}.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.ColumnNumber);
 			}
 			else
 			{
-				throw new ParserException($"Unexpected token in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.Position}. Either ']' or ',' was expected.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.Position);
+				throw new ParserException($"Unexpected token in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.ColumnNumber}. Either ']' or ',' was expected.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.ColumnNumber);
 			}
 		}
 	}
 
-	public static void ParseObject(JsonTokenizer tokenizer, IObjectConsumer consumer, ISerializationOptions settings = null)
+	public static void ParseObject(JsonTokenizer tokenizer, IObjectConsumer consumer, ISerializationSettings settings = null)
 	{
 		if (consumer is not JsonObject jsonObject)
 		{
 			return;
 		}
 
-		tokenizer.MoveNext(); // skip '{'
+		tokenizer.ParseNext(); // skip '{'
 
 		if (tokenizer.CurrentToken.Type == JsonTokenType.CurlyClose)
 		{
-			tokenizer.MoveNext(); // skip '}'
+			tokenizer.ParseNext(); // skip '}'
 			jsonObject.CompleteObject();
 			return;
 		}
 
 		for (;;)
 		{
-			if (tokenizer.CurrentToken.Type == JsonTokenType.None)
+			if (tokenizer.CurrentToken.Type
+				is JsonTokenType.Whitespace
+				or JsonTokenType.NewLine)
 			{
-				throw new ParserException($"Unexpected end of stream reached while parsing object in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.Position}.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.Position);
-			}
-
-			if (tokenizer.CurrentToken.Type != JsonTokenType.String)
-			{
-				throw new ParserException($"Unexpected token in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.Position}. Property name was expected.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.Position);
-			}
-
-			// expect string literal
-			jsonObject.PropertyName(tokenizer.CurrentToken.StringValue);
-
-			// expect ':'
-			tokenizer.MoveNext();
-			if (tokenizer.CurrentToken.Type == JsonTokenType.None)
-			{
-				throw new ParserException($"Unexpected end of stream reached while parsing object in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.Position}.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.Position);
-			}
-			if (tokenizer.CurrentToken.Type != JsonTokenType.Colon)
-			{
-				throw new ParserException($"Unexpected token in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.Position}. ':' was expected.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.Position);
-			}
-
-			// parse value
-			tokenizer.MoveNext(); // skip ':'
-			ParseValue(tokenizer, jsonObject, settings);
-
-			if (tokenizer.CurrentToken.Type == JsonTokenType.None)
-			{
-				throw new ParserException($"Unexpected end of stream reached while parsing object in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.Position}.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.Position);
+				tokenizer.ParseNextUntilNotWhitespaceAndNewLines();
+				continue;
 			}
 
 			if (tokenizer.CurrentToken.Type == JsonTokenType.CurlyClose)
 			{
-				tokenizer.MoveNext(); // skip '}'
+				tokenizer.ParseNext(); // skip '}'
+				jsonObject.CompleteObject();
+				return;
+			}
+
+			if (tokenizer.CurrentToken.Type == JsonTokenType.None)
+			{
+				throw new ParserException($"Unexpected end of stream reached while parsing object in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.ColumnNumber}.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.ColumnNumber);
+			}
+
+			if (tokenizer.CurrentToken.Type != JsonTokenType.String)
+			{
+				throw new ParserException($"Unexpected token in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.ColumnNumber}. Property name was expected.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.ColumnNumber);
+			}
+
+			// expect string literal
+			jsonObject.PropertyName(tokenizer.CurrentToken.GetStringValue());
+
+			// expect ':'
+			tokenizer.ParseNextUntilNotWhitespaceAndNewLines();
+			if (tokenizer.CurrentToken.Type == JsonTokenType.None)
+			{
+				throw new ParserException($"Unexpected end of stream reached while parsing object in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.ColumnNumber}.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.ColumnNumber);
+			}
+			if (tokenizer.CurrentToken.Type != JsonTokenType.Colon)
+			{
+				throw new ParserException($"Unexpected token in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.ColumnNumber}. ':' was expected.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.ColumnNumber);
+			}
+
+			// parse value
+			tokenizer.ParseNextUntilNotWhitespaceAndNewLines(); // skip ':'
+			ParseValue(tokenizer, jsonObject, settings);
+			tokenizer.SkipWhitespaceOrNewLines();
+
+			if (tokenizer.CurrentToken.Type == JsonTokenType.None)
+			{
+				throw new ParserException($"Unexpected end of stream reached while parsing object in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.ColumnNumber}.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.ColumnNumber);
+			}
+
+			if (tokenizer.CurrentToken.Type == JsonTokenType.CurlyClose)
+			{
+				tokenizer.ParseNextUntilNotWhitespaceAndNewLines(); // skip '}'
 				jsonObject.CompleteObject();
 				return;
 			}
 
 			if (tokenizer.CurrentToken.Type != JsonTokenType.Comma)
 			{
-				throw new ParserException($"Unexpected token in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.Position}. Either '}}' or ',' was expected.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.Position);
+				throw new ParserException($"Unexpected token in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.ColumnNumber}. Either '}}' or ',' was expected.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.ColumnNumber);
 			}
 
-			tokenizer.MoveNext(); // skip ','
+			tokenizer.ParseNextUntilNotWhitespaceAndNewLines(); // skip ','
 		}
 	}
 
-	public static void ParseValue(JsonTokenizer tokenizer, IObjectConsumer consumer, ISerializationOptions settings = null)
+	public static void ParseValue(JsonTokenizer tokenizer, IObjectConsumer consumer, ISerializationSettings settings = null)
 	{
 		if (tokenizer.CurrentToken.Type == JsonTokenType.None)
 		{
-			throw new ParserException($"Unexpected end of stream reached in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.Position}.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.Position);
+			throw new ParserException($"Unexpected end of stream reached in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.ColumnNumber}.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.ColumnNumber);
 		}
 
 		if (tokenizer.CurrentToken.Type == JsonTokenType.CurlyOpen)
@@ -155,34 +173,40 @@ public class JsonParser : Parser<JsonParserOptions>
 
 		if (tokenizer.CurrentToken.Type == JsonTokenType.String)
 		{
-			consumer.String(tokenizer.CurrentToken.StringValue);
+			consumer.String(tokenizer.CurrentToken.GetStringValue());
 		}
 		else if (tokenizer.CurrentToken.Type == JsonTokenType.Boolean)
 		{
-			consumer.Boolean(tokenizer.CurrentToken.BooleanValue);
+			consumer.Boolean((bool) tokenizer.CurrentToken.Value);
 		}
 		else if (tokenizer.CurrentToken.Type == JsonTokenType.NumberInteger)
 		{
-			consumer.Number(tokenizer.CurrentToken.IntegerValue);
+			consumer.Number((long) tokenizer.CurrentToken.Value);
 		}
 		else if (tokenizer.CurrentToken.Type == JsonTokenType.NumberUnsignedInteger)
 		{
-			consumer.Number(tokenizer.CurrentToken.UnsignedIntegerValue);
+			consumer.Number((ulong) tokenizer.CurrentToken.Value);
 		}
 		else if (tokenizer.CurrentToken.Type == JsonTokenType.NumberFloat)
 		{
-			consumer.Number(tokenizer.CurrentToken.FloatValue);
+			consumer.Number((double) tokenizer.CurrentToken.Value);
 		}
 		else if (tokenizer.CurrentToken.Type == JsonTokenType.Null)
 		{
 			consumer.Null();
 		}
+		else if (tokenizer.CurrentToken.Type
+				is JsonTokenType.Whitespace
+				or JsonTokenType.NewLine)
+		{
+			// Nothing to do
+		}
 		else
 		{
-			throw new ParserException($"Expected value in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.Position}, but found '{tokenizer.CurrentToken}'.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.Position);
+			throw new ParserException($"Expected value in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.ColumnNumber}, but found '{tokenizer.CurrentToken}'.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.ColumnNumber);
 		}
 
-		tokenizer.MoveNext(); // skip value literal
+		tokenizer.ParseNext(); // skip value literal
 	}
 
 	#endregion

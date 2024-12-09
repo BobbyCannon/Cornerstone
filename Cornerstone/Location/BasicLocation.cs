@@ -173,15 +173,15 @@ public class BasicLocation
 	/// <param name="update"> The update to be applied. </param>
 	public virtual bool UpdateWith(IBasicLocation update)
 	{
-		return UpdateWith(update, IncludeExcludeOptions.Empty);
+		return UpdateWith(update, IncludeExcludeSettings.Empty);
 	}
 
 	/// <summary>
 	/// Update the BasicLocation with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public virtual bool UpdateWith(IBasicLocation update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	public virtual bool UpdateWith(IBasicLocation update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -191,7 +191,7 @@ public class BasicLocation
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			Altitude = update.Altitude;
 			AltitudeReference = update.AltitudeReference;
@@ -200,23 +200,23 @@ public class BasicLocation
 		}
 		else
 		{
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Altitude)), x => x.Altitude = update.Altitude);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(AltitudeReference)), x => x.AltitudeReference = update.AltitudeReference);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Latitude)), x => x.Latitude = update.Latitude);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Longitude)), x => x.Longitude = update.Longitude);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Altitude)), x => x.Altitude = update.Altitude);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(AltitudeReference)), x => x.AltitudeReference = update.AltitudeReference);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Latitude)), x => x.Latitude = update.Latitude);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Longitude)), x => x.Longitude = update.Longitude);
 		}
 
 		return true;
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
-			BasicLocation location => UpdateWith(location, options),
-			IBasicLocation location => UpdateWith(location, options),
-			_ => base.UpdateWith(update, options)
+			BasicLocation location => UpdateWith(location, settings),
+			IBasicLocation location => UpdateWith(location, settings),
+			_ => base.UpdateWith(update, settings)
 		};
 	}
 

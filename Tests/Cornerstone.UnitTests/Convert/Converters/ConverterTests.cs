@@ -44,7 +44,7 @@ public abstract class ConverterTests<T> : CornerstoneUnitTest
 
 	protected void GenerateNewScenarios(string fileName, bool enableTestScenarioCreation, Type[] fromTypes, Type[] toTypes)
 	{
-		if (RuntimeInformation.DotNetRuntimeVersion.Major <= 4)
+		if (GetRuntimeInformation().DotNetRuntimeVersion.Major <= 4)
 		{
 			// Do NOT generate scenarios on .NET48
 			"We do not generate scenarios on .NET48".Dump();
@@ -85,7 +85,7 @@ public abstract class ConverterTests<T> : CornerstoneUnitTest
 
 	protected void TestScenarios(params TestScenario[] scenarios)
 	{
-		var setting = Comparer.Options;
+		var setting = Comparer.Settings;
 		setting.DoubleTolerance = 0.01d;
 		setting.FloatTolerance = 0.01f;
 

@@ -66,7 +66,7 @@ public class HorizontalLocation : LocationInformation<IHorizontalLocation>, IHor
 	#region Methods
 
 	/// <inheritdoc />
-	public override IHorizontalLocation DeepClone(int? maxDepth = null, IncludeExcludeOptions options = null)
+	public override IHorizontalLocation DeepClone(int? maxDepth = null, IncludeExcludeSettings settings = null)
 	{
 		var response = new HorizontalLocation(GetDispatcher());
 		response.UpdateWith(this);
@@ -74,7 +74,7 @@ public class HorizontalLocation : LocationInformation<IHorizontalLocation>, IHor
 	}
 
 	/// <inheritdoc />
-	public override bool ShouldUpdate(object update, IncludeExcludeOptions options)
+	public override bool ShouldUpdate(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
@@ -89,8 +89,8 @@ public class HorizontalLocation : LocationInformation<IHorizontalLocation>, IHor
 	/// Update the HorizontalLocation with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public override bool UpdateWith(IHorizontalLocation update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	public override bool UpdateWith(IHorizontalLocation update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -100,29 +100,29 @@ public class HorizontalLocation : LocationInformation<IHorizontalLocation>, IHor
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			Latitude = update.Latitude;
 			Longitude = update.Longitude;
 		}
 		else
 		{
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Latitude)), x => x.Latitude = update.Latitude);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Longitude)), x => x.Longitude = update.Longitude);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Latitude)), x => x.Latitude = update.Latitude);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Longitude)), x => x.Longitude = update.Longitude);
 		}
 
-		return base.UpdateWith(update, options);
+		return base.UpdateWith(update, settings);
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
-			HorizontalLocation value => UpdateWith(value, options),
-			IHorizontalLocation value => UpdateWith(value, options),
-			ILocation<IHorizontalLocation, IVerticalLocation> value => UpdateWith(value.HorizontalLocation, options),
-			_ => base.UpdateWith(update, options)
+			HorizontalLocation value => UpdateWith(value, settings),
+			IHorizontalLocation value => UpdateWith(value, settings),
+			ILocation<IHorizontalLocation, IVerticalLocation> value => UpdateWith(value.HorizontalLocation, settings),
+			_ => base.UpdateWith(update, settings)
 		};
 	}
 

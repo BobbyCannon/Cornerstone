@@ -4,43 +4,93 @@
 		xmlns:sys="using:System"
 		x:ClassModifier="internal">
 	<Design.PreviewWith>
-		<Border Padding="20">
-			<StackPanel Spacing="10">
-				<ComboBox PlaceholderText="Select an item">
-					<ComboBoxItem>Item 1</ComboBoxItem>
-					<ComboBoxItem>Item 2</ComboBoxItem>
-				</ComboBox>
-				<ComboBox
-						IsEnabled="False"
-						Width="200"
-						SelectedIndex="1"
-						HorizontalContentAlignment="Center">
-					<ComboBoxItem>Item 1</ComboBoxItem>
-					<ComboBoxItem>Item 2</ComboBoxItem>
-				</ComboBox>
-				<ComboBox PlaceholderText="Error">
-					<DataValidationErrors.Error>
-						<sys:Exception>
-							<x:Arguments>
-								<x:String>Error</x:String>
-							</x:Arguments>
-						</sys:Exception>
-					</DataValidationErrors.Error>
-				</ComboBox>
-			</StackPanel>
-		</Border>
+		<StackPanel Orientation="Horizontal">
+			<Border Padding="20">
+				<StackPanel Spacing="10">
+					<ComboBox x:Name="Item"
+							PlaceholderText="Select an item"
+							MinWidth="160"
+							IsDropDownOpen="True">
+						<ComboBoxItem>Item 1</ComboBoxItem>
+						<ComboBoxItem>Item 2</ComboBoxItem>
+					</ComboBox>
+					<ComboBox PlaceholderText="(disabled)"
+							IsEnabled="False"
+							MinWidth="160">
+						<ComboBoxItem>Item 1</ComboBoxItem>
+						<ComboBoxItem>Item 2</ComboBoxItem>
+					</ComboBox>
+					<ComboBox x:Name="Item2"
+							Width="200"
+							SelectedIndex="1"
+							HorizontalContentAlignment="Center">
+						<ComboBoxItem>Item 1</ComboBoxItem>
+						<ComboBoxItem>Item 2</ComboBoxItem>
+					</ComboBox>
+					<ComboBox PlaceholderText="Error">
+						<ComboBoxItem>Item 1</ComboBoxItem>
+						<ComboBoxItem>Item 2</ComboBoxItem>
+						<DataValidationErrors.Error>
+							<sys:Exception>
+								<x:Arguments>
+									<x:String>Error</x:String>
+								</x:Arguments>
+							</sys:Exception>
+						</DataValidationErrors.Error>
+					</ComboBox>
+				</StackPanel>
+			</Border>
+			<ThemeVariantScope RequestedThemeVariant="Light">
+				<Border Padding="20">
+					<StackPanel Spacing="10">
+						<ComboBox PlaceholderText="Select an item"
+								MinWidth="160"
+								IsDropDownOpen="{Binding ElementName=Item, Path=IsDropDownOpen, Mode=TwoWay}"
+								SelectedIndex="{Binding ElementName=Item, Path=SelectedIndex, Mode=TwoWay}">
+							<ComboBoxItem>Item 1</ComboBoxItem>
+							<ComboBoxItem>Item 2</ComboBoxItem>
+						</ComboBox>
+						<ComboBox PlaceholderText="(disabled)"
+								IsEnabled="False"
+								MinWidth="160">
+							<ComboBoxItem>Item 1</ComboBoxItem>
+							<ComboBoxItem>Item 2</ComboBoxItem>
+						</ComboBox>
+						<ComboBox 
+								IsDropDownOpen="{Binding ElementName=Item2, Path=IsDropDownOpen, Mode=TwoWay}"
+								Width="200"
+								SelectedIndex="{Binding ElementName=Item2, Path=SelectedIndex, Mode=TwoWay}"
+								HorizontalContentAlignment="Center">
+							<ComboBoxItem>Item 1</ComboBoxItem>
+							<ComboBoxItem>Item 2</ComboBoxItem>
+						</ComboBox>
+						<ComboBox PlaceholderText="Error">
+							<ComboBoxItem>Item 1</ComboBoxItem>
+							<ComboBoxItem>Item 2</ComboBoxItem>
+							<DataValidationErrors.Error>
+								<sys:Exception>
+									<x:Arguments>
+										<x:String>Error</x:String>
+									</x:Arguments>
+								</sys:Exception>
+							</DataValidationErrors.Error>
+						</ComboBox>
+					</StackPanel>
+				</Border>
+			</ThemeVariantScope>
+		</StackPanel>
+		
 	</Design.PreviewWith>
 
 	<Thickness x:Key="ComboBoxTopHeaderMargin">0,0,0,4</Thickness>
 	<x:Int32 x:Key="ComboBoxPopupMaxNumberOfItems">15</x:Int32>
 	<x:Int32 x:Key="ComboBoxPopupMaxNumberOfItemsThatCanBeShownOnOneSide">7</x:Int32>
 
-	<Thickness x:Key="ComboBoxPadding">12,5,0,7</Thickness>
-	<Thickness x:Key="ComboBoxEditableTextPadding">11,5,32,6</Thickness>
+	<Thickness x:Key="ComboBoxPadding">10,0,0,0</Thickness>
+	<Thickness x:Key="ComboBoxEditableTextPadding">10,0,0,0</Thickness>
 	<x:Double x:Key="ComboBoxMinHeight">32</x:Double>
 
 	<ControlTheme x:Key="{x:Type ComboBox}" TargetType="ComboBox">
-		<Setter Property="Padding" Value="{DynamicResource ComboBoxPadding}" />
 		<Setter Property="FocusAdorner" Value="{x:Null}" />
 		<Setter Property="MaxDropDownHeight" Value="504" />
 		<Setter Property="Foreground" Value="{DynamicResource ComboBoxForeground}" />
@@ -50,17 +100,23 @@
 		<Setter Property="CornerRadius" Value="{DynamicResource ComboBoxCornerRadius}" />
 		<Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
 		<Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
-		<Setter Property="MinHeight" Value="{DynamicResource ComboBoxMinHeight}" />
+		<Setter Property="FontSize" Value="{DynamicResource StandardFontSize}" />
+		<Setter Property="Margin" Value="0" />
+		<Setter Property="Padding" Value="{DynamicResource ComboBoxPadding}" />
+		<Setter Property="MinHeight" Value="{StaticResource ComboBoxMinHeight}" />
 		<Setter Property="HorizontalContentAlignment" Value="Stretch" />
 		<Setter Property="VerticalContentAlignment" Value="Center" />
 		<Setter Property="HorizontalAlignment" Value="Left" />
 		<Setter Property="VerticalAlignment" Value="Top" />
-		<Setter Property="FontSize" Value="{DynamicResource StandardFontSize}" />
 		<Setter Property="PlaceholderForeground" Value="{DynamicResource ComboBoxPlaceHolderForeground}" />
 		<Setter Property="Template">
 			<ControlTemplate>
-				<DataValidationErrors>
-					<Grid ColumnDefinitions="*,32">
+				<DataValidationErrors
+						HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
+						VerticalAlignment="{TemplateBinding VerticalAlignment}">
+					<Grid ColumnDefinitions="*,32"
+							MinHeight="{TemplateBinding MinHeight}"
+							MinWidth="{TemplateBinding MinWidth}">
 						<Border
 								x:Name="Background"
 								Grid.Column="0"

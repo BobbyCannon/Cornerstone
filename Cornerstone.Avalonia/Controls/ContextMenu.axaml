@@ -29,11 +29,16 @@
 								<CheckBox BorderThickness="0" IsHitTestVisible="False" IsChecked="True" />
 							</MenuItem.Icon>
 						</MenuItem>
+						<MenuItem Header="_About">
+							<MenuItem.Icon>
+								<PathIcon Data="{StaticResource FontAwesome.Question.Solid}"/>
+							</MenuItem.Icon>
+						</MenuItem>
 					</ContextMenu>
 				</ControlTemplate>
 			</StackPanel.Resources>
 			<Border
-					Background="{DynamicResource UiTheme05}"
+					Background="{DynamicResource Background05}"
 					Width="400"
 					Height="200"
 					CornerRadius="8">
@@ -47,6 +52,14 @@
 			</Border>
 			<ContextMenu Template="{StaticResource Test}"
 					Margin="0,8,0,0" />
+			<ContextMenu>
+				<MenuItem Header="Add Group">
+					<MenuItem.Icon>
+						<Path Width="12" Height="12"
+								Data="{DynamicResource Icons.Folder.Add}" />
+					</MenuItem.Icon>
+				</MenuItem>
+			</ContextMenu>
 		</StackPanel>
 	</Design.PreviewWith>
 	<ControlTheme x:Key="{x:Type ContextMenu}" TargetType="ContextMenu">
@@ -55,7 +68,6 @@
 		<Setter Property="BorderThickness" Value="{DynamicResource MenuFlyoutPresenterBorderThemeThickness}" />
 		<Setter Property="CornerRadius" Value="{DynamicResource FlyoutCornerRadius}" />
 		<Setter Property="MaxWidth" Value="{DynamicResource FlyoutThemeMaxWidth}" />
-		<Setter Property="MinHeight" Value="{DynamicResource MenuFlyoutThemeMinHeight}" />
 		<Setter Property="Padding" Value="{DynamicResource MenuFlyoutPresenterThemePadding}" />
 		<Setter Property="HorizontalAlignment" Value="Stretch" />
 		<Setter Property="TextBlock.FontSize" Value="{DynamicResource TextEditorFontSize}" />

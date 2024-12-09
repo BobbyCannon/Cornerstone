@@ -67,9 +67,16 @@ public static class DateTimeExtensions
 	public static DateTime ToUtcDateTime(this string value)
 	{
 		if (value.StartsWith("0001-01-01T12:00:00")
-			|| value.StartsWith("0001-01-01T00:00:00"))
+			|| value.StartsWith("0001-01-01T00:00:00")
+			|| value.StartsWith("0001-01-01 00:00:00"))
 		{
 			return DateTime.MinValue;
+		}
+
+		if (value.StartsWith("9999-12-31T23:59:59.9999999")
+			|| value.StartsWith("9999-12-31 23:59:59.9999999"))
+		{
+			return DateTime.MaxValue;
 		}
 
 		return DateTime.Parse(value, null, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
@@ -100,6 +107,24 @@ public static class DateTimeExtensions
 			DateTimeKind.Unspecified when unspecifiedIsUtc => DateTime.SpecifyKind(value, DateTimeKind.Utc),
 			DateTimeKind.Unspecified => value.ToUniversalTime(),
 			DateTimeKind.Local => value.ToUniversalTime(),
+			_ => value
+		};
+	}
+
+	/// <summary>
+	/// Converts the date time to its Local <see cref="T:System.DateTime"> </see> equivalent. Assumes
+	/// "Unknown" is already local.
+	/// </summary>
+	/// <param name="value"> The date time value. </param>
+	/// <param name="unspecifiedIsLocalTime"> Assumes "Unspecified" kind is already local value. </param>
+	/// <returns> The date time value. </returns>
+	public static DateTime ToLocalTime(this DateTime value, bool unspecifiedIsLocalTime = true)
+	{
+		return value.Kind switch
+		{
+			DateTimeKind.Unspecified when unspecifiedIsLocalTime => DateTime.SpecifyKind(value, DateTimeKind.Local),
+			DateTimeKind.Unspecified => value.ToLocalTime(),
+			DateTimeKind.Utc => value.ToLocalTime(),
 			_ => value
 		};
 	}

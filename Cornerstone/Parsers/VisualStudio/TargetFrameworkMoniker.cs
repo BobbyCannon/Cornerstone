@@ -44,32 +44,32 @@ public class TargetFrameworkMoniker : Notifiable, ITargetFrameworkMoniker
 
 	/// <summary>
 	/// Target Framework Moniker (TFM)
-	/// ex. netcoreapp3.1, netstandard2.0, net462, net8.0-windows10.19041.0
+	/// ex. netcoreapp3.1, netstandard2.0, net462, net9.0-windows10.19041.0
 	/// </summary>
 	public string Moniker { get; set; }
 
 	/// <summary>
 	/// Any OS-specific binding. Supported in .NET 5+.
-	/// Ex. net8.0-windows -> windows, net8.0-android12.0 -> android
+	/// Ex. net9.0-windows -> windows, net9.0-android12.0 -> android
 	/// </summary>
 	public string OperatingSystem { get; set; }
 
 	/// <summary>
 	/// The operating system version.
-	/// Ex. net8.0-windows10.0.19041.0 -> "10.0.19041.0", net8.0-android12.0 -> 12.0
+	/// Ex. net9.0-windows10.0.19041.0 -> "10.0.19041.0", net9.0-android12.0 -> 12.0
 	/// </summary>
 	public string OperatingSystemVersion { get; set; }
 
 	/// <summary>
 	/// The platform moniker.
-	/// Ex. net8.0-windows -> net8.0
+	/// Ex. net9.0-windows -> net9.0
 	/// </summary>
 	public string PlatformMoniker { get; set; }
 
 	/// <summary>
 	/// The type moniker.
-	/// Ex. net8.0-windows10.0.19041.0 -> net8.0-windows
-	/// Ex. net8.0-windows -> net8.0-windows
+	/// Ex. net9.0-windows10.0.19041.0 -> net9.0-windows
+	/// Ex. net9.0-windows -> net9.0-windows
 	/// </summary>
 	public string TypeMoniker { get; set; }
 
@@ -102,15 +102,15 @@ public class TargetFrameworkMoniker : Notifiable, ITargetFrameworkMoniker
 	/// <param name="update"> The update to be applied. </param>
 	public virtual bool UpdateWith(TargetFrameworkMoniker update)
 	{
-		return UpdateWith(update, IncludeExcludeOptions.Empty);
+		return UpdateWith(update, IncludeExcludeSettings.Empty);
 	}
 
 	/// <summary>
 	/// Update the TargetFrameworkMoniker with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the entity. </param>
-	public virtual bool UpdateWith(ITargetFrameworkMoniker update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the entity. </param>
+	public virtual bool UpdateWith(ITargetFrameworkMoniker update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -120,7 +120,7 @@ public class TargetFrameworkMoniker : Notifiable, ITargetFrameworkMoniker
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			Moniker = update.Moniker;
 			OperatingSystem = update.OperatingSystem;
@@ -130,24 +130,24 @@ public class TargetFrameworkMoniker : Notifiable, ITargetFrameworkMoniker
 		}
 		else
 		{
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Moniker)), x => x.Moniker = update.Moniker);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(OperatingSystem)), x => x.OperatingSystem = update.OperatingSystem);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(OperatingSystemVersion)), x => x.OperatingSystemVersion = update.OperatingSystemVersion);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(PlatformMoniker)), x => x.PlatformMoniker = update.PlatformMoniker);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(TypeMoniker)), x => x.TypeMoniker = update.TypeMoniker);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Moniker)), x => x.Moniker = update.Moniker);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(OperatingSystem)), x => x.OperatingSystem = update.OperatingSystem);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(OperatingSystemVersion)), x => x.OperatingSystemVersion = update.OperatingSystemVersion);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(PlatformMoniker)), x => x.PlatformMoniker = update.PlatformMoniker);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(TypeMoniker)), x => x.TypeMoniker = update.TypeMoniker);
 		}
 
-		return base.UpdateWith(update, options);
+		return base.UpdateWith(update, settings);
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
-			TargetFrameworkMoniker value => UpdateWith(value, options),
-			ITargetFrameworkMoniker value => UpdateWith(value, options),
-			_ => base.UpdateWith(update, options)
+			TargetFrameworkMoniker value => UpdateWith(value, settings),
+			ITargetFrameworkMoniker value => UpdateWith(value, settings),
+			_ => base.UpdateWith(update, settings)
 		};
 	}
 
@@ -185,32 +185,32 @@ public interface ITargetFrameworkMoniker
 
 	/// <summary>
 	/// Target Framework Moniker (TFM)
-	/// ex. netcoreapp3.1, netstandard2.0, net462, net8.0-windows10.19041.0
+	/// ex. netcoreapp3.1, netstandard2.0, net462, net9.0-windows10.19041.0
 	/// </summary>
 	string Moniker { get; set; }
 
 	/// <summary>
 	/// Any OS-specific binding. Supported in .NET 5+.
-	/// Ex. net8.0-windows -> windows, net8.0-android12.0 -> android
+	/// Ex. net9.0-windows -> windows, net9.0-android12.0 -> android
 	/// </summary>
 	string OperatingSystem { get; set; }
 
 	/// <summary>
 	/// The operating system version.
-	/// Ex. net8.0-windows10.0.19041.0 -> "10.0.19041.0", net8.0-android12.0 -> 12.0
+	/// Ex. net9.0-windows10.0.19041.0 -> "10.0.19041.0", net9.0-android12.0 -> 12.0
 	/// </summary>
 	string OperatingSystemVersion { get; set; }
 
 	/// <summary>
 	/// The platform moniker.
-	/// Ex. net8.0-windows -> net8.0
+	/// Ex. net9.0-windows -> net9.0
 	/// </summary>
 	string PlatformMoniker { get; set; }
 
 	/// <summary>
 	/// The type moniker.
-	/// Ex. net8.0-windows10.0.19041.0 -> net8.0-windows
-	/// Ex. net8.0-windows -> net8.0-windows
+	/// Ex. net9.0-windows10.0.19041.0 -> net9.0-windows
+	/// Ex. net9.0-windows -> net9.0-windows
 	/// </summary>
 	string TypeMoniker { get; set; }
 

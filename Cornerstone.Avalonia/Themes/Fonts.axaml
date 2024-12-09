@@ -1,0 +1,34 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Design.PreviewWith>
+		<StackPanel Spacing="10">
+			<TextBlock Classes="Header" Text="Using: x:Static" />
+			<TextBlock FontFamily="{x:Static CornerstoneTheme.DejaVuSansMono}"
+					FontSize="22"
+					Text="DejaVu Sans Mono : 0oO1LlIi The quick brown foxed jumped..."/>
+			<TextBlock FontFamily="{x:Static CornerstoneTheme.DejaVuSansLight}"
+					FontSize="22"
+					Text="DejaVu Sans Light   : 0oO1LlIi The quick brown foxed jumped..."/>
+			
+			<TextBlock Classes="Header" Text="Using: Dynamic Resource" />
+			<TextBlock FontFamily="{DynamicResource DejaVuSansMono}"
+					FontSize="22"
+					Text="DejaVu Sans Mono : 0oO1LlIi"/>
+			<TextBlock FontFamily="{DynamicResource DejaVuSansLight}"
+					FontSize="22"
+					Text="DejaVu Sans Light   : 0oO1LlIi"/>
+			
+			<TextBlock Classes="Header" Text="Using: Static Resource" />
+			<TextBlock FontFamily="{StaticResource DejaVuSansMono}"
+					FontSize="22"
+					Text="DejaVu Sans Mono : 0oO1LlIi"/>
+			<TextBlock FontFamily="{StaticResource DejaVuSansLight}"
+					FontSize="22"
+					Text="DejaVu Sans Light   : 0oO1LlIi"/>
+		</StackPanel>
+	</Design.PreviewWith>
+
+	<FontFamily x:Key="DejaVuSansMono">avares://Cornerstone.Avalonia/Assets/Fonts/DejaVuSansMono.ttf#DejaVu Sans Mono</FontFamily>
+	<FontFamily x:Key="DejaVuSansLight">avares://Cornerstone.Avalonia/Assets/Fonts/DejaVuSansLight.ttf#DejaVu Sans Light</FontFamily>
+
+</ResourceDictionary>

@@ -21,7 +21,7 @@ public class DictionaryConverter : JsonConverter
 	#region Methods
 
 	/// <inheritdoc />
-	public override void Append(object value, Type valueType, IObjectConsumer consumer, ISerializationOptions settings)
+	public override void Append(object value, Type valueType, IObjectConsumer consumer, ISerializationSettings settings)
 	{
 		if (value == null)
 		{
@@ -59,7 +59,7 @@ public class DictionaryConverter : JsonConverter
 	}
 
 	/// <inheritdoc />
-	public override string GetJsonString(object value, ISerializationOptions settings)
+	public override string GetJsonString(object value, ISerializationSettings settings)
 	{
 		var consumer = new TextJsonConsumer(settings);
 		Append(value, value?.GetType(), consumer, settings);
@@ -72,7 +72,7 @@ public class DictionaryConverter : JsonConverter
 	/// <param name="dictionary"> The dictionary to serialize. </param>
 	/// <param name="settings"> The serializer settings. </param>
 	/// <returns> The dictionary in JSON format. </returns>
-	public static string ToJson(IDictionary dictionary, ISerializationOptions settings)
+	public static string ToJson(IDictionary dictionary, ISerializationSettings settings)
 	{
 		var consumer = new TextJsonConsumer(settings);
 		WriteDictionary(consumer, dictionary, settings);
@@ -85,7 +85,7 @@ public class DictionaryConverter : JsonConverter
 	/// <param name="consumer"> The consumer to write to. </param>
 	/// <param name="dictionary"> The dictionary to write. </param>
 	/// <param name="settings"> </param>
-	public static void WriteDictionary(IObjectConsumer consumer, IDictionary dictionary, ISerializationOptions settings)
+	public static void WriteDictionary(IObjectConsumer consumer, IDictionary dictionary, ISerializationSettings settings)
 	{
 		var keys = dictionary.Keys.ToObjectArray();
 		var textBuilder = consumer as ITextBuilder;

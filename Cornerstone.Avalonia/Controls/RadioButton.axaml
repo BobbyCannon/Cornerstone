@@ -345,20 +345,20 @@
 
 		</Style>
 
-		<!-- Blue Grey theme state. -->
+		<!-- Blue Gray theme state. -->
 
-		<Style Selector="^[(Theme.Color)=BlueGrey]">
+		<Style Selector="^[(Theme.Color)=BlueGray]">
 
 			<Style Selector="^ /template/ Ellipse#CheckOuterEllipse">
-				<Setter Property="Fill" Value="{DynamicResource BlueGrey07}" />
+				<Setter Property="Fill" Value="{DynamicResource BlueGray07}" />
 			</Style>
 
 			<Style Selector="^:disabled /template/ Ellipse#CheckOuterEllipse">
-				<Setter Property="Fill" Value="{DynamicResource BlueGrey03}" />
+				<Setter Property="Fill" Value="{DynamicResource BlueGray03}" />
 			</Style>
 
 			<Style Selector="^:disabled /template/ Ellipse#CheckInnerEllipse">
-				<Setter Property="Fill" Value="{DynamicResource BlueGrey01}" />
+				<Setter Property="Fill" Value="{DynamicResource BlueGray01}" />
 			</Style>
 
 		</Style>

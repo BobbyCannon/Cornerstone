@@ -4,7 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Cornerstone.Avalonia.AvaloniaEdit.Utils;
+using Cornerstone.Collections;
 using Cornerstone.Internal;
+using Cornerstone.Text;
 using Cornerstone.Text.Document;
 
 #endregion
@@ -27,11 +29,11 @@ internal sealed class EmptySelection : Selection
 
 	public override int Length => 0;
 
-	public override IEnumerable<SelectionSegment> Segments => [];
+	public override IEnumerable<SelectionRange> Segments => [];
 
 	public override TextViewPosition StartPosition => new(TextLocation.Empty);
 
-	public override ISegment SurroundingSegment => null;
+	public override IRange SurroundingRange => null;
 
 	#endregion
 

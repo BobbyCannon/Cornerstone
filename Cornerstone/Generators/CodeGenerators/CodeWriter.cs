@@ -10,7 +10,7 @@ namespace Cornerstone.Generators.CodeGenerators;
 
 /// <inheritdoc cref="ICodeWriter" />
 public abstract class CodeWriter<T> : ObjectConsumer<T>, ICodeWriter
-	where T : ICodeWriterOptions
+	where T : ICodeWriterSettings
 {
 	#region Constructors
 
@@ -20,6 +20,12 @@ public abstract class CodeWriter<T> : ObjectConsumer<T>, ICodeWriter
 	protected CodeWriter(T settings) : base(settings)
 	{
 	}
+
+	#endregion
+
+	#region Properties
+
+	public bool WritingPropertyValue { get; protected set; }
 
 	#endregion
 
@@ -70,6 +76,10 @@ public abstract class CodeWriter<T> : ObjectConsumer<T>, ICodeWriter
 		switch (Mode)
 		{
 			case ObjectConsumerMode.Array:
+			{
+				Append("]");
+				break;
+			}
 			case ObjectConsumerMode.Object:
 			{
 				Append("}");
@@ -140,15 +150,23 @@ public abstract class CodeWriter<T> : ObjectConsumer<T>, ICodeWriter
 
 		StartObject(valueType);
 
-		var lastIndex = properties.Count - 1;
+		var hasProperties = false;
 
 		for (var index = 0; index < properties.Count; index++)
 		{
-			var property = properties[index];
-			var propertyValue = property.GetValue(value);
+			var propertyInfo = properties[index];
+			if (propertyInfo.GetIndexParameters().Length > 0)
+			{
+				// Property is an indexer
+				continue;
+			}
+
+			var propertyValue = propertyInfo.GetValue(value);
 
 			if (Settings.IgnoreDefaultValues
-				&& (propertyValue?.IsDefaultValue() == true))
+				&& ((propertyValue?.IsDefaultValue() == true)
+					|| (propertyInfo.PropertyType.IsNullable()
+						&& (propertyValue == null))))
 			{
 				continue;
 			}
@@ -158,20 +176,22 @@ public abstract class CodeWriter<T> : ObjectConsumer<T>, ICodeWriter
 				continue;
 			}
 			if (Settings.IgnoreReadOnly
-				&& !property.CanWrite)
+				&& !propertyInfo.CanWrite)
 			{
 				continue;
 			}
 
-			WriteProperty(property, propertyValue);
-
-			if (index != lastIndex)
+			if (hasProperties)
 			{
 				WriteRawString(",");
+				NewLine();
 			}
 
-			NewLine();
+			WriteProperty(propertyInfo, propertyValue);
+			hasProperties = true;
 		}
+
+		NewLine();
 
 		CompleteObject();
 		return this;
@@ -184,6 +204,13 @@ public abstract class CodeWriter<T> : ObjectConsumer<T>, ICodeWriter
 		return this;
 	}
 
+	protected void WritePropertyValue(object value)
+	{
+		WritingPropertyValue = true;
+		AppendObject(value);
+		WritingPropertyValue = false;
+	}
+
 	#endregion
 }
 
@@ -192,6 +219,15 @@ public abstract class CodeWriter<T> : ObjectConsumer<T>, ICodeWriter
 /// </summary>
 public interface ICodeWriter : ITextBuilder
 {
+	#region Properties
+
+	/// <summary>
+	/// True if a property value is being written.
+	/// </summary>
+	bool WritingPropertyValue { get; }
+
+	#endregion
+
 	#region Methods
 
 	/// <summary>

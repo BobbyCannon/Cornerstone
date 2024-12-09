@@ -25,7 +25,7 @@ public class ThreadSafeTests : CornerstoneUnitTest
 		});
 		AreEqual(0, actual);
 	}
-
+	
 	[TestMethod]
 	public void ThreadSafeDoubleIncrement()
 	{
@@ -87,6 +87,64 @@ public class ThreadSafeTests : CornerstoneUnitTest
 	{
 		var expected = 10000;
 		var actual = 0;
+
+		Parallel.For(0, expected, _ =>
+		{
+			// The comment will fail
+			//tasks.Add(new Task(() => actual--));
+			ThreadSafe.Increment(ref actual);
+		});
+
+		AreEqual(expected, actual);
+	}
+
+	[TestMethod]
+	public void ThreadSafeLongDecrement()
+	{
+		long actual = 10000;
+		Parallel.For(0, 10000, _ =>
+		{
+			// The comment will fail
+			//tasks.Add(new Task(() => actual--));
+			ThreadSafe.Decrement(ref actual);
+		});
+		AreEqual(0, actual);
+	}
+
+	[TestMethod]
+	public void ThreadSafeLongIncrement()
+	{
+		var expected = 10000;
+		long actual = 0;
+
+		Parallel.For(0, expected, _ =>
+		{
+			// The comment will fail
+			//tasks.Add(new Task(() => actual--));
+			ThreadSafe.Increment(ref actual);
+		});
+
+		AreEqual(expected, actual);
+	}
+
+	[TestMethod]
+	public void ThreadSafeUlongDecrement()
+	{
+		ulong actual = 10000;
+		Parallel.For(0, 10000, _ =>
+		{
+			// The comment will fail
+			//tasks.Add(new Task(() => actual--));
+			ThreadSafe.Decrement(ref actual);
+		});
+		AreEqual(0, actual);
+	}
+
+	[TestMethod]
+	public void ThreadSafeUlongIncrement()
+	{
+		var expected = 10000;
+		ulong actual = 0;
 
 		Parallel.For(0, expected, _ =>
 		{

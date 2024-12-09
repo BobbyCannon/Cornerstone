@@ -17,10 +17,17 @@ public class ServerSqliteDatabase : ServerDatabase
 		// Default constructor needed for Add-Migration
 	}
 
-	public ServerSqliteDatabase(DbContextOptions<ServerDatabase> contextOptions, DatabaseOptions options, DatabaseKeyCache keyCache)
-		: base(contextOptions, options, keyCache)
+	public ServerSqliteDatabase(DbContextOptions<ServerDatabase> contextOptions, DatabaseSettings settings, DatabaseKeyCache keyCache)
+		: base(contextOptions, settings, keyCache)
 	{
 	}
+
+	#endregion
+
+	#region Properties
+
+	/// <inheritdoc />
+	public override string[] SyncOrder { get; }
 
 	#endregion
 
@@ -35,12 +42,12 @@ public class ServerSqliteDatabase : ServerDatabase
 		builder.MigrationsHistoryTable("MigrationHistory", "system");
 	}
 
-	public static ServerSqliteDatabase UseSqlite(string connectionString = null, DatabaseOptions options = null, DatabaseKeyCache keyCache = null)
+	public static ServerSqliteDatabase UseSqlite(string connectionString = null, DatabaseSettings settings = null, DatabaseKeyCache keyCache = null)
 	{
 		connectionString ??= GetConnectionString();
 
 		var builder = new DbContextOptionsBuilder<ServerDatabase>();
-		return new ServerSqliteDatabase(builder.UseSqlite(connectionString, UpdateOptions).Options, options, keyCache);
+		return new ServerSqliteDatabase(builder.UseSqlite(connectionString, UpdateOptions).Options, settings, keyCache);
 	}
 
 	protected override void ConfigureDatabaseOptions(DbContextOptionsBuilder options)

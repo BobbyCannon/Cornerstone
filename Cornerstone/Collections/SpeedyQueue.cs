@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Cornerstone.Presentation;
 using Cornerstone.Threading;
-using PropertyChanged;
+using Cornerstone.Weaver;
 
 #endregion
 
@@ -39,6 +39,7 @@ public class SpeedyQueue<T> : ReaderWriterLockBindable, ISpeedyQueue<T>, IEnumer
 	public SpeedyQueue(IReaderWriterLock readerWriterLock, IDispatcher dispatcher) : base(readerWriterLock, dispatcher)
 	{
 		_list = new List<T>();
+		_limit = 0;
 	}
 
 	#endregion
@@ -119,7 +120,7 @@ public class SpeedyQueue<T> : ReaderWriterLockBindable, ISpeedyQueue<T>, IEnumer
 	}
 
 	/// <inheritdoc />
-	public void Enqueue(T value)
+	public T Enqueue(T value)
 	{
 		try
 		{
@@ -128,6 +129,8 @@ public class SpeedyQueue<T> : ReaderWriterLockBindable, ISpeedyQueue<T>, IEnumer
 			_list.Add(value);
 
 			InternalEnforceLimit(true);
+
+			return value;
 		}
 		finally
 		{
@@ -181,6 +184,34 @@ public class SpeedyQueue<T> : ReaderWriterLockBindable, ISpeedyQueue<T>, IEnumer
 		}
 	}
 
+	/// <inheritdoc />
+	public bool TryPeek(out T value)
+	{
+		if (IsEmpty)
+		{
+			value = default;
+			return false;
+		}
+
+		try
+		{
+			EnterReadLock();
+
+			if (_list.Count <= 0)
+			{
+				value = default;
+				return false;
+			}
+
+			value = _list[0];
+			return true;
+		}
+		finally
+		{
+			ExitReadLock();
+		}
+	}
+
 	/// <summary>
 	/// Triggers the QueueChanged event.
 	/// </summary>
@@ -198,6 +229,11 @@ public class SpeedyQueue<T> : ReaderWriterLockBindable, ISpeedyQueue<T>, IEnumer
 
 	private void InternalEnforceLimit(bool start)
 	{
+		if (_limit <= 0)
+		{
+			return;
+		}
+
 		while (_list.Count > Limit)
 		{
 			var index = start ? 0 : _list.Count - 1;
@@ -254,14 +290,22 @@ public interface ISpeedyQueue<T>
 	/// Adds an object to the queue.
 	/// </summary>
 	/// <param name="value"> The value to be added. </param>
-	void Enqueue(T value);
+	T Enqueue(T value);
 
 	/// <summary>
-	/// Tries to remove and return the object at the beginning of the concurrent queue.
+	/// Tries to read and remove the first item at the beginning of the queue.
 	/// </summary>
 	/// <param name="value"> The value that was dequeued. </param>
-	/// <returns> Returns true if a value was dequeued otherwise false. </returns>
+	/// <returns> Returns true if a value was read and dequeued otherwise false. </returns>
 	bool TryDequeue(out T value);
+
+	/// <summary>
+	/// Tries to read the first item at the beginning of the queue.
+	/// The item is not removed from the queue.
+	/// </summary>
+	/// <param name="value"> The value that is next in the queue. </param>
+	/// <returns> Returns true if a value was read otherwise false. </returns>
+	bool TryPeek(out T value);
 
 	#endregion
 }

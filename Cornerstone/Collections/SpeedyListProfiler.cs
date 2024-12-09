@@ -8,16 +8,16 @@ using Cornerstone.Profiling;
 namespace Cornerstone.Collections;
 
 /// <inheritdoc />
-public class SpeedyListProfiler : ProfilerService
+public class SpeedyListProfiler : DetailedTimer
 {
 	#region Constructors
 
 	/// <inheritdoc />
-	public SpeedyListProfiler(IDispatcher dispatcher) : base(dispatcher)
+	public SpeedyListProfiler(IDispatcher dispatcher) : base("Speedy List Profiler", dispatcher)
 	{
-		AddedCount = new Counter(null, dispatcher);
-		OrderCount = new Counter(null, dispatcher);
-		RemovedCount = new Counter(null, dispatcher);
+		AddedCount = new Counter(dispatcher);
+		OrderCount = new Counter(dispatcher);
+		RemovedCount = new Counter(dispatcher);
 	}
 
 	#endregion

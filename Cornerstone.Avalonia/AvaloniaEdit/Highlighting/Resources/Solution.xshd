@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<SyntaxDefinition name="Solution" extensions=".sln" xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
+	<!-- Green -->
+	<Color name="Comment" foreground="#57A64A" exampleText="# comment" />
+	<Color name="Guid" foreground="#57A64A" exampleText="{dee45213-9356-486f-9653-942c16ce420f}" />
+	
+	<Color name="Bool" foreground="#569CD6" exampleText="true | false" />
+	<Color name="Number" foreground="#B5CEA8" exampleText="3.14" />
+	<Color name="String" foreground="#D69D85" exampleText="" />
+	<Color name="Null" foreground="Olive" exampleText="" />
+	<Color name="Punctuation" foreground="#808080" />
+
+	<RuleSet name="String">
+		<Span begin="\\" end="." />
+	</RuleSet>
+
+	<RuleSet name="Expression">
+		<Keywords color="Bool">
+			<Word>true</Word>
+			<Word>false</Word>
+		</Keywords>
+		<Keywords color="Null">
+			<Word>null</Word>
+		</Keywords>
+		<Span color="String" ruleSet="String">
+			<Begin>"</Begin>
+			<End>"</End>
+		</Span>
+		<Span color="String" ruleSet="String">
+			<Begin>'</Begin>
+			<End>'</End>
+		</Span>
+		<Span color="Guid" ruleSet="String">
+			<Begin>{</Begin>
+			<End>}</End>
+		</Span>
+		<Rule color="Number">
+			\b0[xX][0-9a-fA-F]+|(\b\d+(\.[0-9]+)?|\.[0-9]+)([eE][+-]?[0-9]+)?
+		</Rule>
+	</RuleSet>
+
+	<RuleSet>
+		<Import ruleSet="Expression" />
+	</RuleSet>
+</SyntaxDefinition>

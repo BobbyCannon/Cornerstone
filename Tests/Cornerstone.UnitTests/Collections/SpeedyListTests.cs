@@ -41,19 +41,19 @@ public class SpeedyListTests : BaseCollectionTests
 	public void AddRange()
 	{
 		var list = new SpeedyList<int>();
-		list.AddRange(8, 4, 6, 2);
+		list.Add(8, 4, 6, 2);
 		AreEqual(new[] { 8, 4, 6, 2 }, list.ToArray());
 
-		list.AddRange(5, 7, 3, 1);
+		list.Add(5, 7, 3, 1);
 		AreEqual(new[] { 8, 4, 6, 2, 5, 7, 3, 1 }, list.ToArray());
 
 		list.Clear();
 		list.OrderBy = [new OrderBy<int>()];
 
-		list.AddRange(8, 4, 6, 2);
+		list.Add(8, 4, 6, 2);
 		AreEqual(new[] { 2, 4, 6, 8 }, list.ToArray());
 
-		list.AddRange(5, 7, 3, 1);
+		list.Add(5, 7, 3, 1);
 		AreEqual(new[] { 1, 2, 3, 4, 5, 6, 7, 8 }, list.ToArray());
 	}
 
@@ -62,7 +62,7 @@ public class SpeedyListTests : BaseCollectionTests
 	{
 		var list = new SpeedyList<string>();
 		list.OrderBy = [new OrderBy<string>(x => x)];
-		list.AddRange("b", "d", "c", "a");
+		list.Add("b", "d", "c", "a");
 		AreEqual(new[] { "a", "b", "c", "d" }, list.ToArray());
 	}
 
@@ -105,7 +105,7 @@ public class SpeedyListTests : BaseCollectionTests
 		AreEqual(0, list.Profiler.AddedCount.Value);
 		AreEqual(0, list.Profiler.RemovedCount.Value);
 
-		list.AddRange(1, 2, 3, 4, 5, 6, 7, 8);
+		list.Add(1, 2, 3, 4, 5, 6, 7, 8);
 		AreEqual(8, list.Count);
 		AreEqual(8, list.Profiler.AddedCount.Value);
 		AreEqual(0, list.Profiler.RemovedCount.Value);
@@ -127,20 +127,20 @@ public class SpeedyListTests : BaseCollectionTests
 		var changes = 0;
 		var list = new SpeedyList<string>();
 
-		void onListOnCollectionChanged(object o, NotifyCollectionChangedEventArgs notifyCollectionChangedEventArgs)
+		void OnListOnCollectionChanged(object o, NotifyCollectionChangedEventArgs notifyCollectionChangedEventArgs)
 		{
 			changes++;
 		}
 
 		try
 		{
-			list.CollectionChanged += onListOnCollectionChanged;
+			list.CollectionChanged += OnListOnCollectionChanged;
 			list.Clear();
 			AreEqual(0, changes);
 		}
 		finally
 		{
-			list.CollectionChanged -= onListOnCollectionChanged;
+			list.CollectionChanged -= OnListOnCollectionChanged;
 		}
 	}
 
@@ -154,7 +154,7 @@ public class SpeedyListTests : BaseCollectionTests
 		list.Add(new ClientAccount());
 		list.Add(new ClientAccount());
 
-		void onListUpdated(object _, SpeedyListUpdatedEventArg<ClientAccount> args)
+		void OnListUpdated(object _, SpeedyListUpdatedEventArg<ClientAccount> args)
 		{
 			if (args.Added != null)
 			{
@@ -166,15 +166,15 @@ public class SpeedyListTests : BaseCollectionTests
 			}
 		}
 
-		void onListOnCollectionChanged(object _, NotifyCollectionChangedEventArgs args)
+		void OnListOnCollectionChanged(object _, NotifyCollectionChangedEventArgs args)
 		{
 			actual.Add(args);
 		}
 
 		try
 		{
-			list.CollectionChanged += onListOnCollectionChanged;
-			list.ListUpdated += onListUpdated;
+			list.CollectionChanged += OnListOnCollectionChanged;
+			list.ListUpdated += OnListUpdated;
 			list.Clear();
 
 			AreEqual(1, actual.Count);
@@ -183,8 +183,8 @@ public class SpeedyListTests : BaseCollectionTests
 		}
 		finally
 		{
-			list.CollectionChanged -= onListOnCollectionChanged;
-			list.ListUpdated -= onListUpdated;
+			list.CollectionChanged -= OnListOnCollectionChanged;
+			list.ListUpdated -= OnListUpdated;
 		}
 
 		var actualEvent = actual[0];
@@ -298,7 +298,7 @@ public class SpeedyListTests : BaseCollectionTests
 		{
 			DistinctCheck = string.Equals
 		};
-		collection.AddRange("test", "test", "test", "test");
+		collection.Add("test", "test", "test", "test");
 		AreEqual(1, collection.Count);
 		AreEqual("test", collection[0]);
 	}
@@ -335,9 +335,8 @@ public class SpeedyListTests : BaseCollectionTests
 	[TestMethod]
 	public void FilterCollectionShouldFilter()
 	{
-		var list = new SpeedyList<int>
+		var list = new SpeedyList<int>(null, new OrderBy<int>(x => x))
 		{
-			OrderBy = [new OrderBy<int>(x => x)],
 			FilterCheck = x => (x % 3) == 0
 		};
 
@@ -386,16 +385,16 @@ public class SpeedyListTests : BaseCollectionTests
 			FilterCheck = x => !x.IsDeleted
 		};
 
-		list.Add(new ClientAccount { Name = "John", IsDeleted = false });
-		list.Add(new ClientAccount { Name = "Jack", IsDeleted = false });
-		list.Add(new ClientAccount { Name = "Ann", IsDeleted = false });
+		var a1 = list.Add(new ClientAccount { Name = "John", IsDeleted = false });
+		var a2 = list.Add(new ClientAccount { Name = "Jack", IsDeleted = false });
+		var a3 = list.Add(new ClientAccount { Name = "Adam", IsDeleted = false });
 
 		AreEqual(3, list.Filtered.Count);
-		AreEqual(new[] { "Ann", "Jack", "John" },
+		AreEqual(new[] { "Adam", "Jack", "John" },
 			list.Filtered.Select(x => x.Name).ToArray()
 		);
 
-		list[0].IsDeleted = true;
+		a3.IsDeleted = true;
 		list.RefreshFilter();
 
 		AreEqual(2, list.Filtered.Count);
@@ -403,11 +402,12 @@ public class SpeedyListTests : BaseCollectionTests
 			list.Filtered.Select(x => x.Name).ToArray()
 		);
 
-		list[0].IsDeleted = false;
+		a3.IsDeleted = false;
+		a3.Name = "Zack";
 		list.RefreshFilter();
 
 		AreEqual(3, list.Filtered.Count);
-		AreEqual(new[] { "Ann", "Jack", "John" },
+		AreEqual(new[] { "Jack", "John", "Zack" },
 			list.Filtered.Select(x => x.Name).ToArray()
 		);
 	}
@@ -634,20 +634,20 @@ public class SpeedyListTests : BaseCollectionTests
 		var changeCount = 0;
 		var itemsCount = 0;
 
-		void onListUpdated(object sender, SpeedyListUpdatedEventArg<int> args)
+		void OnListUpdated(object sender, SpeedyListUpdatedEventArg<int> args)
 		{
 			itemsCount += args.Added.Count;
 		}
 
-		void onListOnCollectionChanged(object sender, NotifyCollectionChangedEventArgs args)
+		void OnListOnCollectionChanged(object sender, NotifyCollectionChangedEventArgs args)
 		{
 			changeCount++;
 			itemsCount += args.NewItems?.Count ?? 0;
 			IsNull(args.OldItems);
 		}
 
-		list.CollectionChanged += onListOnCollectionChanged;
-		list.ListUpdated += onListUpdated;
+		list.CollectionChanged += OnListOnCollectionChanged;
+		list.ListUpdated += OnListUpdated;
 
 		try
 		{
@@ -659,11 +659,11 @@ public class SpeedyListTests : BaseCollectionTests
 			AreEqual(1, changeCount);
 			AreEqual(6, itemsCount);
 
-			list.CollectionChanged -= onListOnCollectionChanged;
-			list.ListUpdated -= onListUpdated;
+			list.CollectionChanged -= OnListOnCollectionChanged;
+			list.ListUpdated -= OnListUpdated;
 			list.Clear();
-			list.CollectionChanged += onListOnCollectionChanged;
-			list.ListUpdated += onListUpdated;
+			list.CollectionChanged += OnListOnCollectionChanged;
+			list.ListUpdated += OnListUpdated;
 
 			changeCount = 0;
 			itemsCount = 0;
@@ -677,8 +677,8 @@ public class SpeedyListTests : BaseCollectionTests
 		}
 		finally
 		{
-			list.CollectionChanged -= onListOnCollectionChanged;
-			list.ListUpdated -= onListUpdated;
+			list.CollectionChanged -= OnListOnCollectionChanged;
+			list.ListUpdated -= OnListUpdated;
 		}
 	}
 
@@ -772,7 +772,7 @@ public class SpeedyListTests : BaseCollectionTests
 		var collection = new TestSpeedyList<int>();
 		var actual = new List<string>();
 
-		void onCollectionOnPropertyChanged(object sender, PropertyChangedEventArgs args)
+		void OnCollectionOnPropertyChanged(object sender, PropertyChangedEventArgs args)
 		{
 			actual.Add(args.PropertyName);
 		}
@@ -780,7 +780,7 @@ public class SpeedyListTests : BaseCollectionTests
 		try
 		{
 			// will cause default property changes
-			collection.PropertyChanged += onCollectionOnPropertyChanged;
+			collection.PropertyChanged += OnCollectionOnPropertyChanged;
 			collection.Add(1);
 			AreEqual(new[] { "Count" }, actual.ToArray(), () => actual.DumpJson());
 
@@ -791,7 +791,7 @@ public class SpeedyListTests : BaseCollectionTests
 		}
 		finally
 		{
-			collection.PropertyChanged -= onCollectionOnPropertyChanged;
+			collection.PropertyChanged -= OnCollectionOnPropertyChanged;
 		}
 	}
 
@@ -966,7 +966,7 @@ public class SpeedyListTests : BaseCollectionTests
 		var list = new SpeedyList<int>();
 		AreEqual(0, list.Count);
 
-		list.AddRange(1, 2, 3, 4);
+		list.Add(1, 2, 3, 4);
 		AreEqual(4, list.Count);
 		AreEqual(new[] { 1, 2, 3, 4 }, list.ToArray());
 

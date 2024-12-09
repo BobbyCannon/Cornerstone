@@ -24,7 +24,7 @@ public class JsonSerializer : IJsonSerializer
 	#region Fields
 
 	private static readonly MemoryCache<Type, IJsonConverter> _cache;
-	private readonly Func<ISerializationOptions, IObjectConsumer> _consumerProvider;
+	private readonly Func<ISerializationSettings, IObjectConsumer> _consumerProvider;
 	private static readonly IReadOnlyList<IJsonConverter> _converters;
 	private static readonly IList<IJsonConverter> _customConverters;
 
@@ -40,7 +40,7 @@ public class JsonSerializer : IJsonSerializer
 	/// <summary>
 	/// Initialize the JSON serializer.
 	/// </summary>
-	public JsonSerializer(TextWriterStringBuffer buffer)
+	public JsonSerializer(IStringBuffer buffer)
 		: this(x => new TextJsonConsumer(buffer, x))
 	{
 	}
@@ -49,7 +49,7 @@ public class JsonSerializer : IJsonSerializer
 	/// Initialize the JSON serializer.
 	/// </summary>
 	/// <param name="consumerProvider"> The consumer to use when serializing. </param>
-	public JsonSerializer(Func<ISerializationOptions, IObjectConsumer> consumerProvider)
+	public JsonSerializer(Func<ISerializationSettings, IObjectConsumer> consumerProvider)
 	{
 		_consumerProvider = consumerProvider;
 	}
@@ -64,6 +64,7 @@ public class JsonSerializer : IJsonSerializer
 				new NumberJsonConverter(),
 				new EnumJsonConverter(),
 				new StringJsonConverter(),
+				new DataTableConverter(),
 				new DateJsonConverter(),
 				new DictionaryConverter(),
 				new TimeJsonConverter(),
@@ -103,13 +104,13 @@ public class JsonSerializer : IJsonSerializer
 	}
 
 	/// <inheritdoc />
-	public T FromJson<T>(string value, ISerializationOptions settings = null)
+	public T FromJson<T>(string value, ISerializationSettings settings = null)
 	{
 		return (T) FromJson(value, typeof(T), settings);
 	}
 
 	/// <inheritdoc />
-	public object FromJson(string value, Type type, ISerializationOptions settings = null)
+	public object FromJson(string value, Type type, ISerializationSettings settings = null)
 	{
 		var result = Parse(value, settings);
 		var converter = GetConverter(type);
@@ -158,18 +159,19 @@ public class JsonSerializer : IJsonSerializer
 	/// <param name="json"> The JSON string. </param>
 	/// <param name="settings"> The settings to be used. </param>
 	/// <returns> The deserialized object. </returns>
-	public static JsonValue Parse(string json, ISerializationOptions settings = null)
+	public static JsonValue Parse(string json, ISerializationSettings settings = null)
 	{
 		var consumer = new JsonValueJsonConsumer();
 		using var reader = new StringReader(json);
-		var tokenizer = new JsonTokenizer(reader);
-		tokenizer.MoveNext();
+		var tokenizer = new JsonTokenizer();
+		tokenizer.Add(reader.ReadToEnd());
+		tokenizer.ParseNext();
 
 		JsonParser.ParseValue(tokenizer, consumer, settings);
 
 		if (tokenizer.CurrentToken.Type != JsonTokenType.None)
 		{
-			throw new ParserException($"Unexpected input data '{tokenizer.CurrentToken}' after end of JSON entity in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.Position}.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.Position);
+			throw new ParserException($"Unexpected input data '{tokenizer.CurrentToken}' after end of JSON entity in line {tokenizer.CurrentToken.LineNumber} at position {tokenizer.CurrentToken.ColumnNumber}.", tokenizer.CurrentToken.LineNumber, tokenizer.CurrentToken.ColumnNumber);
 		}
 
 		return consumer.Result;
@@ -190,7 +192,7 @@ public class JsonSerializer : IJsonSerializer
 	}
 
 	/// <inheritdoc />
-	public string ToJson<T>(T value, ISerializationOptions settings = null)
+	public string ToJson<T>(T value, ISerializationSettings settings = null)
 	{
 		if (value == null)
 		{
@@ -203,7 +205,7 @@ public class JsonSerializer : IJsonSerializer
 	}
 
 	/// <inheritdoc />
-	public string ToJson(object value, Type type, ISerializationOptions settings = null)
+	public string ToJson(object value, Type type, ISerializationSettings settings = null)
 	{
 		if (value == null)
 		{

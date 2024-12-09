@@ -73,14 +73,14 @@ public class Setting<T, T2> : Setting<T2>
 	}
 
 	/// <inheritdoc />
-	public override bool HasChanges(IncludeExcludeOptions options)
+	public override bool HasChanges(IncludeExcludeSettings settings)
 	{
 		if (Data is ITrackPropertyChanges changeable && changeable.HasChanges())
 		{
 			return true;
 		}
 
-		return base.HasChanges(options);
+		return base.HasChanges(settings);
 	}
 
 	/// <inheritdoc />
@@ -106,8 +106,8 @@ public class Setting<T, T2> : Setting<T2>
 	/// Update the Setting with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public virtual bool UpdateWith(Setting<T, T2> update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	public virtual bool UpdateWith(Setting<T, T2> update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -117,28 +117,28 @@ public class Setting<T, T2> : Setting<T2>
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			Data = update.Data;
 			Value = update.Value;
 		}
 		else
 		{
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Data)), x => x.Data = update.Data);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Value)), x => x.Value = update.Value);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Data)), x => x.Data = update.Data);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Value)), x => x.Value = update.Value);
 		}
 
 		return true;
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
-			Setting<T, T2> value => UpdateWith(value, options),
-			Setting<T2> value => UpdateWith(value, options),
-			_ => base.UpdateWith(update, options)
+			Setting<T, T2> value => UpdateWith(value, settings),
+			Setting<T2> value => UpdateWith(value, settings),
+			_ => base.UpdateWith(update, settings)
 		};
 	}
 
@@ -234,15 +234,15 @@ public class Setting<T> : SyncEntity<T>, ISetting
 	/// <param name="update"> The update to be applied. </param>
 	public virtual bool UpdateWith(Setting<T> update)
 	{
-		return UpdateWith(update, IncludeExcludeOptions.Empty);
+		return UpdateWith(update, IncludeExcludeSettings.Empty);
 	}
 
 	/// <summary>
 	/// Update the Setting with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the entity. </param>
-	public virtual bool UpdateWith(Setting<T> update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the entity. </param>
+	public virtual bool UpdateWith(Setting<T> update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -252,7 +252,7 @@ public class Setting<T> : SyncEntity<T>, ISetting
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			CanSync = update.CanSync;
 			Category = update.Category;
@@ -267,28 +267,28 @@ public class Setting<T> : SyncEntity<T>, ISetting
 		}
 		else
 		{
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(CanSync)), x => x.CanSync = update.CanSync);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Category)), x => x.Category = update.Category);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(CreatedOn)), x => x.CreatedOn = update.CreatedOn);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(ExpiresOn)), x => x.ExpiresOn = update.ExpiresOn);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Id)), x => x.Id = update.Id);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(IsDeleted)), x => x.IsDeleted = update.IsDeleted);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(ModifiedOn)), x => x.ModifiedOn = update.ModifiedOn);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Name)), x => x.Name = update.Name);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(SyncId)), x => x.SyncId = update.SyncId);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Value)), x => x.Value = update.Value);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(CanSync)), x => x.CanSync = update.CanSync);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Category)), x => x.Category = update.Category);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(CreatedOn)), x => x.CreatedOn = update.CreatedOn);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(ExpiresOn)), x => x.ExpiresOn = update.ExpiresOn);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Id)), x => x.Id = update.Id);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(IsDeleted)), x => x.IsDeleted = update.IsDeleted);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(ModifiedOn)), x => x.ModifiedOn = update.ModifiedOn);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Name)), x => x.Name = update.Name);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(SyncId)), x => x.SyncId = update.SyncId);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Value)), x => x.Value = update.Value);
 		}
 
 		return true;
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
-			Setting<T> value => UpdateWith(value, options),
-			_ => base.UpdateWith(update, options)
+			Setting<T> value => UpdateWith(value, settings),
+			_ => base.UpdateWith(update, settings)
 		};
 	}
 

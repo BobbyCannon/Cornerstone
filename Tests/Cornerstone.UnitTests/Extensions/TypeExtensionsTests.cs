@@ -128,7 +128,7 @@ public class TypeExtensionsTests : CornerstoneUnitTest
 			typeof(DateTime),
 			typeof(int),
 			typeof(double),
-			typeof(ComparerOptions)
+			typeof(ComparerSettings)
 		};
 
 		foreach (var type in nonNullableTypes)

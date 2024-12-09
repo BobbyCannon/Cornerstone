@@ -44,7 +44,7 @@ public class JsonValueConverter : BaseConverter
 	}
 
 	/// <inheritdoc />
-	public override bool TryConvertTo(object from, Type fromType, Type toType, out object value, IConverterOptions options = null)
+	public override bool TryConvertTo(object from, Type fromType, Type toType, out object value, IConverterSettings settings = null)
 	{
 		if (from == null)
 		{
@@ -83,28 +83,7 @@ public class JsonValueConverter : BaseConverter
 			}
 		}
 
-		return base.TryConvertTo(from, fromType, toType, out value, options);
-	}
-
-	private static Type[] GetGenericArgumentsRecursive(Type type)
-	{
-		while (type != null)
-		{
-			if (type.IsGenericType)
-			{
-				return type.GenericTypeArguments;
-			}
-
-			if (type.IsGenericTypeDefinition)
-			{
-				var definition = type.GetGenericTypeDefinition();
-				return definition.GenericTypeArguments;
-			}
-
-			type = type.BaseType;
-		}
-
-		return null;
+		return base.TryConvertTo(from, fromType, toType, out value, settings);
 	}
 
 	private static bool ParseAsArray(Type toType, out object value, JsonArray jValue)
@@ -174,7 +153,7 @@ public class JsonValueConverter : BaseConverter
 		}
 
 		var list = (IList) toType.CreateInstance();
-		var elementType = GetGenericArgumentsRecursive(toType).FirstOrDefault() ?? typeof(object);
+		var elementType = toType.GetGenericArgumentsRecursive()?.FirstOrDefault() ?? typeof(object);
 		for (var i = 0; i < jValue.Count; i++)
 		{
 			var iValue = jValue[i].ConvertTo(elementType);
@@ -242,6 +221,7 @@ public class JsonValueConverter : BaseConverter
 			if (propertyValue is IList list && value is IEnumerable enumerable)
 			{
 				list.Reconcile(enumerable);
+				
 				continue;
 			}
 

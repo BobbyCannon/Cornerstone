@@ -13,7 +13,7 @@ using Cornerstone.Avalonia.AvaloniaEdit.Utils;
 using Cornerstone.Avalonia.Input;
 using Cornerstone.Collections;
 using Cornerstone.Text.Document;
-using PropertyChanged;
+using Cornerstone.Weaver;
 
 #endregion
 
@@ -27,44 +27,39 @@ public class SearchPanel : TemplatedControl, IRoutedCommandHandler
 {
 	#region Fields
 
-	public static readonly StyledProperty<bool> IsReplaceModeProperty =
-		AvaloniaProperty.Register<SearchPanel, bool>(nameof(IsReplaceMode));
+	public static readonly StyledProperty<bool> IsReplaceModeProperty;
 
 	/// <summary>
 	/// Dependency property for <see cref="MatchCase" />.
 	/// </summary>
-	public static readonly StyledProperty<bool> MatchCaseProperty =
-		AvaloniaProperty.Register<SearchPanel, bool>(nameof(MatchCase));
+	public static readonly StyledProperty<bool> MatchCaseProperty;
 
-	public static readonly StyledProperty<string> ReplacePatternProperty =
-		AvaloniaProperty.Register<SearchPanel, string>(nameof(ReplacePattern));
+	public static readonly StyledProperty<string> ReplacePatternProperty;
 
 	/// <summary>
 	/// Dependency property for <see cref="SearchPattern" />.
 	/// </summary>
-	public static readonly StyledProperty<string> SearchPatternProperty =
-		AvaloniaProperty.Register<SearchPanel, string>(nameof(SearchPattern), "");
+	public static readonly StyledProperty<string> SearchPatternProperty;
 
 	/// <summary>
 	/// Dependency property for <see cref="UseRegex" />.
 	/// </summary>
-	public static readonly StyledProperty<bool> UseRegexProperty =
-		AvaloniaProperty.Register<SearchPanel, bool>(nameof(UseRegex));
+	public static readonly StyledProperty<bool> UseRegexProperty;
 
 	/// <summary>
 	/// Dependency property for <see cref="WholeWords" />.
 	/// </summary>
-	public static readonly StyledProperty<bool> WholeWordsProperty =
-		AvaloniaProperty.Register<SearchPanel, bool>(nameof(WholeWords));
+	public static readonly StyledProperty<bool> WholeWordsProperty;
 
 	private Border _border;
-	private TextDocument _currentDocument;
+	private TextEditorDocument _currentDocument;
 	private int _currentSearchResultIndex;
 	private SearchInputHandler _handler;
 
 	private Panel _messageView;
 	private TextBlock _messageViewContent;
 	private SearchResultBackgroundRenderer _renderer;
+	private TextBox _replaceTextBox;
 	private TextBox _searchTextBox;
 
 	private ISearchStrategy _strategy;
@@ -83,6 +78,13 @@ public class SearchPanel : TemplatedControl, IRoutedCommandHandler
 
 	static SearchPanel()
 	{
+		IsReplaceModeProperty = AvaloniaProperty.Register<SearchPanel, bool>(nameof(IsReplaceMode));
+		MatchCaseProperty = AvaloniaProperty.Register<SearchPanel, bool>(nameof(MatchCase));
+		ReplacePatternProperty = AvaloniaProperty.Register<SearchPanel, string>(nameof(ReplacePattern));
+		SearchPatternProperty = AvaloniaProperty.Register<SearchPanel, string>(nameof(SearchPattern), "");
+		UseRegexProperty = AvaloniaProperty.Register<SearchPanel, bool>(nameof(UseRegex));
+		WholeWordsProperty = AvaloniaProperty.Register<SearchPanel, bool>(nameof(WholeWords));
+
 		UseRegexProperty.Changed.Subscribe(SearchPatternChangedCallback);
 		MatchCaseProperty.Changed.Subscribe(SearchPatternChangedCallback);
 		WholeWordsProperty.Changed.Subscribe(SearchPatternChangedCallback);
@@ -135,7 +137,7 @@ public class SearchPanel : TemplatedControl, IRoutedCommandHandler
 		set => SetValue(SearchPatternProperty, value);
 	}
 
-	public TextEditor TextEditor { get; private set; }
+	public TextEditorControl TextEditor { get; private set; }
 
 	/// <summary>
 	/// Gets/sets whether the search pattern should be interpreted as regular expression.
@@ -220,7 +222,7 @@ public class SearchPanel : TemplatedControl, IRoutedCommandHandler
 	/// Creates a SearchPanel and installs it to the TextEditor's TextArea.
 	/// </summary>
 	/// <remarks> This is a convenience wrapper. </remarks>
-	public static SearchPanel Install(TextEditor editor)
+	public static SearchPanel Install(TextEditorControl editor)
 	{
 		if (editor == null)
 		{
@@ -284,7 +286,7 @@ public class SearchPanel : TemplatedControl, IRoutedCommandHandler
 		var document = _textArea.Document;
 		using (document.RunUpdate())
 		{
-			var segments = _renderer.CurrentResults.OrderByDescending(x => x.EndOffset).ToArray();
+			var segments = _renderer.CurrentResults.OrderByDescending(x => x.EndIndex).ToArray();
 			foreach (var textSegment in segments)
 			{
 				document.Replace(textSegment.StartOffset, textSegment.Length,
@@ -301,6 +303,7 @@ public class SearchPanel : TemplatedControl, IRoutedCommandHandler
 		}
 
 		FindNext(Math.Max(_textArea.Caret.Offset - _textArea.Selection.Length, 0));
+
 		if (!_textArea.Selection.IsEmpty)
 		{
 			_textArea.Selection.ReplaceSelectionWithText(ReplacePattern ?? string.Empty);
@@ -339,6 +342,7 @@ public class SearchPanel : TemplatedControl, IRoutedCommandHandler
 		base.OnApplyTemplate(e);
 		_border = e.NameScope.Find<Border>("PART_Border");
 		_searchTextBox = e.NameScope.Find<TextBox>("PART_searchTextBox");
+		_replaceTextBox = e.NameScope.Find<TextBox>("ReplaceBox");
 		_messageView = e.NameScope.Find<Panel>("PART_MessageView");
 		_messageViewContent = e.NameScope.Find<TextBlock>("PART_MessageContent");
 	}
@@ -371,7 +375,7 @@ public class SearchPanel : TemplatedControl, IRoutedCommandHandler
 		SearchOptionsChanged?.Invoke(this, e);
 	}
 
-	private void AttachInternal(TextEditor textEditor)
+	private void AttachInternal(TextEditorControl textEditor)
 	{
 		TextEditor = textEditor;
 		_textArea = textEditor.TextArea;
@@ -471,6 +475,7 @@ public class SearchPanel : TemplatedControl, IRoutedCommandHandler
 		switch (e.Key)
 		{
 			case Key.Enter:
+			{
 				e.Handled = true;
 				if (e.KeyModifiers.HasFlag(KeyModifiers.Shift))
 				{
@@ -481,10 +486,26 @@ public class SearchPanel : TemplatedControl, IRoutedCommandHandler
 					FindNext();
 				}
 				break;
+			}
 			case Key.Escape:
+			{
 				e.Handled = true;
 				Close();
 				break;
+			}
+			case Key.Tab:
+			{
+				e.Handled = true;
+				if (_searchTextBox.IsFocused && IsReplaceMode)
+				{
+					_replaceTextBox.Focus();
+				}
+				else if (!_searchTextBox.IsFocused)
+				{
+					_searchTextBox.Focus();
+				}
+				break;
+			}
 		}
 	}
 
@@ -496,10 +517,10 @@ public class SearchPanel : TemplatedControl, IRoutedCommandHandler
 		}
 	}
 
-	private void SelectResult(TextSegment result)
+	private void SelectResult(TextRange result)
 	{
-		_textArea.Caret.Offset = result.EndOffset;
-		_textArea.Selection = Selection.Create(_textArea, result.StartOffset, result.EndOffset);
+		_textArea.Caret.Offset = result.EndIndex;
+		_textArea.Selection = Selection.Create(_textArea, result.StartOffset, result.EndIndex);
 
 		var distanceToViewBorder = _border == null ? Caret.MinimumDistanceToViewBorder : _border.Bounds.Height + _textArea.TextView.DefaultLineHeight;
 		_textArea.Caret.BringCaretToView(distanceToViewBorder);

@@ -25,16 +25,17 @@ public static class ObjectExtensions
 	/// <typeparam name="T"> The type to clone. </typeparam>
 	/// <param name="item"> The item to clone. </param>
 	/// <param name="maxDepth"> The max depth to clone. Defaults to null. </param>
+	/// <param name="settings"> The include / exclude settings. </param>
 	/// <returns> The clone of the item. </returns>
-	public static T DeepCloneUsingSerializer<T>(this T item, int? maxDepth = null, IncludeExcludeOptions options = null)
+	public static T DeepCloneUsingSerializer<T>(this T item, int? maxDepth = null, IncludeExcludeSettings settings = null)
 	{
 		if (maxDepth.HasValue)
 		{
-			var settings = new SerializationOptions
+			var serializationSettings = new SerializationSettings
 			{
 				MaxDepth = maxDepth.Value
 			};
-			var json = item.ToJson(settings);
+			var json = item.ToJson(serializationSettings);
 			var realType = item.GetRealTypeUsingReflection();
 			var response = FromJson(json, realType);
 			(response as ITrackPropertyChanges)?.ResetHasChanges();
@@ -60,7 +61,7 @@ public static class ObjectExtensions
 	{
 		if (maxDepth.HasValue)
 		{
-			var settings = new SerializationOptions { MaxDepth = maxDepth.Value };
+			var settings = new SerializationSettings { MaxDepth = maxDepth.Value };
 			var deepResponse = FromJson(item.ToJson(settings), item.GetRealTypeUsingReflection());
 			(deepResponse as ITrackPropertyChanges)?.ResetHasChanges();
 			return deepResponse;
@@ -71,12 +72,12 @@ public static class ObjectExtensions
 		return response;
 	}
 
-	public static T DeepCloneUsingUpdateWith<T>(this T value, int? maxDepth = null, IncludeExcludeOptions options = null)
+	public static T DeepCloneUsingUpdateWith<T>(this T value, int? maxDepth = null, IncludeExcludeSettings settings = null)
 	{
-		return (T) DeepCloneUsingUpdateWith(value, typeof(T), maxDepth, options);
+		return (T) DeepCloneUsingUpdateWith(value, typeof(T), maxDepth, settings);
 	}
 
-	public static object DeepCloneUsingUpdateWith(this object value, int? maxDepth = null, IncludeExcludeOptions options = null)
+	public static object DeepCloneUsingUpdateWith(this object value, int? maxDepth = null, IncludeExcludeSettings settings = null)
 	{
 		if (value == null)
 		{
@@ -84,10 +85,10 @@ public static class ObjectExtensions
 		}
 
 		var type = value.GetType();
-		return DeepCloneUsingUpdateWith(value, type, maxDepth, options);
+		return DeepCloneUsingUpdateWith(value, type, maxDepth, settings);
 	}
 
-	public static object DeepCloneUsingUpdateWith(this object value, Type type, int? maxDepth = null, IncludeExcludeOptions options = null)
+	public static object DeepCloneUsingUpdateWith(this object value, Type type, int? maxDepth = null, IncludeExcludeSettings settings = null)
 	{
 		var response = type.CreateInstance();
 
@@ -95,13 +96,13 @@ public static class ObjectExtensions
 		{
 			case IUpdateable updateable:
 			{
-				var allOptions = Cache.GetOptions(type, UpdateableAction.Updateable).WithMoreOptions(options);
+				var allOptions = Cache.GetOptions(type, UpdateableAction.Updateable).WithMoreOptions(settings);
 				updateable.UpdateWith(value, allOptions);
 				break;
 			}
 			default:
 			{
-				response.UpdateWithUsingReflection(value, options);
+				response.UpdateWithUsingReflection(value, settings);
 				break;
 			}
 		}
@@ -121,7 +122,7 @@ public static class ObjectExtensions
 	/// <param name="value"> The JSON data to deserialize. </param>
 	/// <param name="settings"> The settings for deserializing. </param>
 	/// <returns> The deserialized object. </returns>
-	public static T FromJson<T>(this string value, ISerializationOptions settings = null)
+	public static T FromJson<T>(this string value, ISerializationSettings settings = null)
 	{
 		return Serializer.Instance.FromJson<T>(value, settings);
 	}
@@ -133,7 +134,7 @@ public static class ObjectExtensions
 	/// <param name="type"> The type to convert into. </param>
 	/// <param name="settings"> The settings for deserializing. </param>
 	/// <returns> The deserialized object. </returns>
-	public static object FromJson(this string value, Type type, ISerializationOptions settings = null)
+	public static object FromJson(this string value, Type type, ISerializationSettings settings = null)
 	{
 		return Serializer.Instance.FromJson(value, type, settings);
 	}
@@ -183,15 +184,25 @@ public static class ObjectExtensions
 	/// </summary>
 	/// <typeparam name="T"> The type of the object </typeparam>
 	/// <param name="value"> The value to clone. </param>
-	/// <param name="options"> An optional set of included or excluded properties. </param>
+	/// <param name="settings"> An optional set of included or excluded properties. </param>
 	/// <returns> The cloned value. </returns>
-	public static T ShallowClone<T>(this T value, IncludeExcludeOptions options = null)
+	public static T ShallowClone<T>(this T value, IncludeExcludeSettings settings = null)
 	{
-		var response = value switch
+		T response;
+
+		if (value is IUpdateable)
 		{
-			ICloneable cloneable => (T) cloneable.ShallowCloneObject(options),
-			_ => DeepCloneUsingSerializer(value, 0)
-		};
+			response = Activator.CreateInstance<T>();
+			response.UpdateWith(value, settings);
+		}
+		else
+		{
+			response = value switch
+			{
+				ICloneable cloneable => (T) cloneable.ShallowCloneObject(settings),
+				_ => DeepCloneUsingSerializer(value, 0)
+			};
+		}
 
 		if (response is ITrackPropertyChanges trackable)
 		{
@@ -206,11 +217,11 @@ public static class ObjectExtensions
 	/// </summary>
 	/// <typeparam name="T"> The type of the value. </typeparam>
 	/// <param name="value"> The value to convert. </param>
-	/// <param name="options"> The option for converting. </param>
+	/// <param name="settings"> The option for converting. </param>
 	/// <returns> The object in CSharp code format. </returns>
-	public static string ToCSharp<T>(this T value, ICodeWriterOptions options = null)
+	public static string ToCSharp<T>(this T value, ICodeWriterSettings settings = null)
 	{
-		return CSharpCodeWriter.GenerateCode(value, options);
+		return CSharpCodeWriter.GenerateCode(value, settings);
 	}
 
 	/// <summary>
@@ -220,7 +231,7 @@ public static class ObjectExtensions
 	/// <param name="value"> The value to serialize. </param>
 	/// <param name="settings"> The settings for serializing. </param>
 	/// <returns> The object in string format. </returns>
-	public static string ToJson<T>(this T value, ISerializationOptions settings = null)
+	public static string ToJson<T>(this T value, ISerializationSettings settings = null)
 	{
 		return Serializer.Instance.ToJson(value, settings);
 	}
@@ -232,7 +243,7 @@ public static class ObjectExtensions
 	/// <param name="valueType"> The type of the value. </param>
 	/// <param name="settings"> The settings for serializing. </param>
 	/// <returns> The object in string format. </returns>
-	public static string ToJson(this object value, Type valueType, ISerializationOptions settings = null)
+	public static string ToJson(this object value, Type valueType, ISerializationSettings settings = null)
 	{
 		return Serializer.Instance.ToJson(value, valueType, settings);
 	}
@@ -244,7 +255,7 @@ public static class ObjectExtensions
 	/// <param name="value"> The value to serialize. </param>
 	/// <param name="settings"> The settings for serializing. </param>
 	/// <returns> The object in string format. </returns>
-	public static string ToRawJson<T>(this T value, ISerializationOptions settings = null)
+	public static string ToRawJson<T>(this T value, ISerializationSettings settings = null)
 	{
 		// todo: disable reference values
 		return Serializer.Instance.ToJson(value, settings);

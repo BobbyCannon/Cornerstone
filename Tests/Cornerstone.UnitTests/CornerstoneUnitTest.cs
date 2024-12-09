@@ -8,13 +8,10 @@ using Cornerstone.Newtonsoft;
 using Cornerstone.Runtime;
 using Cornerstone.Serialization;
 using Cornerstone.Testing;
-using Cornerstone.UnitTests.Resources;
 using Cornerstone.Windows;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using NUnit.Framework;
-using Sample.Shared.Storage.Client;
-using Sample.Shared.Storage.Server;
 
 #endregion
 
@@ -34,8 +31,7 @@ public abstract partial class CornerstoneUnitTest : CornerstoneTest
 	{
 		_disposables = [];
 
-		Dependencies = new DependencyInjector();
-		SetupDependencyInjection();
+		Dependencies = new DependencyProvider("Unit Test");
 	}
 
 	static CornerstoneUnitTest()
@@ -47,6 +43,9 @@ public abstract partial class CornerstoneUnitTest : CornerstoneTest
 		UnitTestsFilePath = Path.Join(UnitTestsDirectory, $"{new DirectoryInfo(UnitTestsDirectory).Name}.csproj");
 		SolutionDirectory = assemblyDirectory.Parent?.Parent?.Parent?.Parent?.Parent?.FullName;
 		TempDirectory = Path.Combine(Path.GetTempPath(), "Cornerstone.UnitTests");
+		
+		// Test settings
+		EnableBrowserSamples = false;
 		EnableFileUpdates = false;
 
 		SetClipboardService(new WindowsClipboardService());
@@ -62,7 +61,12 @@ public abstract partial class CornerstoneUnitTest : CornerstoneTest
 
 	#region Properties
 
-	public DependencyInjector Dependencies { get; }
+	public DependencyProvider Dependencies { get; }
+
+	/// <summary>
+	/// Allows test data be displayed in the browser.
+	/// </summary>
+	public static bool EnableBrowserSamples { get; }
 
 	public static bool EnableFileUpdates { get; }
 
@@ -91,60 +95,31 @@ public abstract partial class CornerstoneUnitTest : CornerstoneTest
 	[TestInitialize]
 	public override void TestInitialize()
 	{
+		SetupDependencyInjection();
 		new DirectoryInfo(TempDirectory).SafeCreate();
 		base.TestInitialize();
+	}
+
+	/// <summary>
+	/// Dump the value to the console.
+	/// </summary>
+	/// <param name="value"> The value to process. </param>
+	/// <param name="prefix"> An optional prefix to the dump. </param>
+	public static T WriteLine<T>(T value, string prefix = null)
+	{
+		if (prefix != null)
+		{
+			Console.Write(prefix);
+		}
+
+		Console.WriteLine(value);
+		return value;
 	}
 
 	protected T Disposable<T>(Func<T> getDisposable) where T : IDisposable
 	{
 		var response = getDisposable();
 		_disposables.Add(response);
-		return response;
-	}
-
-	protected T GetModel<T>(Action<T> update = null) where T : new()
-	{
-		var response = new T();
-
-		switch (response)
-		{
-			case AddressEntity sValue:
-			{
-				sValue.City = "City";
-				sValue.Line1 = "Line1";
-				sValue.Line2 = "Line2";
-				sValue.Postal = "Postal";
-				sValue.State = "State";
-				break;
-			}
-			case ClientAccount sValue:
-			{
-				sValue.EmailAddress = "john@doe.com";
-				sValue.Name = "John Doe";
-				sValue.LastClientUpdate = DateTime.MinValue;
-				break;
-			}
-			case ClientAddress sValue:
-			{
-				sValue.City = "City";
-				sValue.Line1 = "Line1";
-				sValue.Line2 = "Line2";
-				sValue.Postal = "Postal";
-				sValue.State = "State";
-				break;
-			}
-			case SampleAccount sValue:
-			{
-				sValue.EmailAddress = "john@doe.com";
-				sValue.FirstName = "John";
-				sValue.LastName = "Doe";
-				sValue.LastClientUpdate = DateTime.MinValue;
-				break;
-			}
-		}
-
-		update?.Invoke(response);
-
 		return response;
 	}
 

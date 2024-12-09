@@ -1,6 +1,8 @@
 ﻿#region References
 
 using System.Collections.Generic;
+using Cornerstone.Collections;
+using Cornerstone.Text;
 using Cornerstone.Text.Document;
 
 #endregion
@@ -28,7 +30,7 @@ public interface IReadOnlySectionProvider
 	/// For replacements, the last segment being returned will be replaced with the new text. If an empty list is returned,
 	/// no replacement will be done.
 	/// </remarks>
-	IEnumerable<ISegment> GetDeletableSegments(ISegment segment);
+	IEnumerable<IRange> GetDeletableSegments(IRange range);
 
 	#endregion
 }

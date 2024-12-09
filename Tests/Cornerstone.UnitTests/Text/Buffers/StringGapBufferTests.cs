@@ -24,9 +24,9 @@ public class StringGapBufferTests : CornerstoneUnitTest
 
 		foreach (var buffer in buffers)
 		{
-			AreEqual(4, buffer.LastIndexOf("quick", 9));
-			AreEqual(4, buffer.LastIndexOf("quick", 8));
-			AreEqual(-1, buffer.LastIndexOf("quick", 7));
+			AreEqual(4, buffer.LastIndexOf(9, "quick"));
+			AreEqual(4, buffer.LastIndexOf(8, "quick"));
+			AreEqual(-1, buffer.LastIndexOf(7, "quick"));
 		}
 	}
 

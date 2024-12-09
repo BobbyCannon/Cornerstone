@@ -20,23 +20,23 @@ public class DownloadTimeTests : CornerstoneUnitTest
 	{
 		AreEqual("1 Second", new DownloadTime(ByteRate.Cellular2G, ByteRate.Cellular2G).Humanize());
 		AreEqual("1 s", new DownloadTime(ByteRate.Cellular2G, ByteRate.Cellular2G)
-			.Humanize(new HumanizeOptions { WordFormat = WordFormat.Abbreviation })
+			.Humanize(new HumanizeSettings { WordFormat = WordFormat.Abbreviation })
 		);
 		AreEqual("2.796 Minutes", new DownloadTime(ByteSize.FromMegabytes(1), ByteRate.Cellular2G)
-			.Humanize(new HumanizeOptions { MinUnit = TimeUnit.Minute })
+			.Humanize(new HumanizeSettings { MinUnit = TimeUnit.Minute })
 		);
 		AreEqual("2.796 m", new DownloadTime(ByteSize.FromMegabytes(1), ByteRate.Cellular2G)
-			.Humanize(new HumanizeOptions { MinUnit = TimeUnit.Minute, WordFormat = WordFormat.Abbreviation })
+			.Humanize(new HumanizeSettings { MinUnit = TimeUnit.Minute, WordFormat = WordFormat.Abbreviation })
 		);
 		AreEqual("167.772 s", new DownloadTime(ByteSize.FromMegabytes(1), ByteRate.Cellular2G)
-			.Humanize(new HumanizeOptions { MaxUnit = TimeUnit.Second, MinUnit = TimeUnit.Second, WordFormat = WordFormat.Abbreviation })
+			.Humanize(new HumanizeSettings { MaxUnit = TimeUnit.Second, MinUnit = TimeUnit.Second, WordFormat = WordFormat.Abbreviation })
 		);
 		AreEqual("200 Milliseconds", new DownloadTime(ByteSize.FromMegabytes(1), ByteRate.Cellular3G).Humanize());
 		AreEqual("200 ms", new DownloadTime(ByteSize.FromMegabytes(1), ByteRate.Cellular3G)
-			.Humanize(new HumanizeOptions { WordFormat = WordFormat.Abbreviation })
+			.Humanize(new HumanizeSettings { WordFormat = WordFormat.Abbreviation })
 		);
 		AreEqual("0.2 s", new DownloadTime(ByteSize.FromMegabytes(1), ByteRate.Cellular3G)
-			.Humanize(new HumanizeOptions { MinUnit = TimeUnit.Second, WordFormat = WordFormat.Abbreviation })
+			.Humanize(new HumanizeSettings { MinUnit = TimeUnit.Second, WordFormat = WordFormat.Abbreviation })
 		);
 	}
 

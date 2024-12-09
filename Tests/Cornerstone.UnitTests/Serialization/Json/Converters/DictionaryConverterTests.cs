@@ -34,7 +34,7 @@ public class DictionaryConverterTests : JsonConverterTest<DictionaryConverter>
 			{ "One", 1 },
 			{ "Two", 2 }
 		};
-		var settings = new SerializationOptions
+		var settings = new SerializationSettings
 		{
 			NamingConvention = NamingConvention.PascalCase,
 			TextFormat = TextFormat.Indented

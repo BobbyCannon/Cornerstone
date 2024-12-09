@@ -35,7 +35,7 @@ public static class JsonSerializerSettingsExtensions
 	/// <param name="settings"> The Newtonsoft settings to update. </param>
 	/// <param name="updates"> The desired Cornerstone settings. </param>
 	/// <param name="setAsDefault"> Use the updated settings as default. </param>
-	public static void InitializeSettings(this JsonSerializerSettings settings, ISerializationOptions updates, bool setAsDefault)
+	public static void InitializeSettings(this JsonSerializerSettings settings, ISerializationSettings updates, bool setAsDefault)
 	{
 		settings.UpdateSettings(updates);
 
@@ -72,7 +72,7 @@ public static class JsonSerializerSettingsExtensions
 	/// <remarks>
 	/// https://www.newtonsoft.com/json/help/html/Properties_T_Newtonsoft_Json_JsonSerializerSettings.htm
 	/// </remarks>
-	public static void UpdateSettings(this JsonSerializerSettings settings, ISerializationOptions updates)
+	public static void UpdateSettings(this JsonSerializerSettings settings, ISerializationSettings updates)
 	{
 		settings.ContractResolver = new JsonContractResolver(updates.NamingConvention);
 		settings.DefaultValueHandling = updates.IgnoreDefaultValues ? DefaultValueHandling.Ignore : DefaultValueHandling.Populate;

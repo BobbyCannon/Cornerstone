@@ -121,10 +121,10 @@ public class DateConverter : BaseConverter
 	}
 
 	/// <inheritdoc />
-	public override bool TryConvertTo(object from, Type fromType, Type toType, out object value, IConverterOptions options = null)
+	public override bool TryConvertTo(object from, Type fromType, Type toType, out object value, IConverterSettings settings = null)
 	{
 		return TryConvert(from, toType, out value)
-			|| base.TryConvertTo(from, fromType, toType, out value, options);
+			|| base.TryConvertTo(from, fromType, toType, out value, settings);
 	}
 
 	/// <summary>

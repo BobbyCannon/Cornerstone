@@ -1,11 +1,11 @@
 ﻿#region References
 
 using Cornerstone.EntityFramework;
+using Cornerstone.Extensions;
 using Cornerstone.Storage;
 using Cornerstone.Sync;
 using Sample.Shared.Storage;
 using Sample.Shared.Storage.Client;
-using Sample.Shared.Sync;
 
 #endregion
 
@@ -21,7 +21,7 @@ public class ClientMemoryDatabase : SyncableDatabase, IClientDatabase
 	}
 
 	/// <inheritdoc />
-	public ClientMemoryDatabase(DatabaseOptions options, DatabaseKeyCache keyCache) : base(options, keyCache)
+	public ClientMemoryDatabase(DatabaseSettings settings, DatabaseKeyCache keyCache) : base(settings, keyCache)
 	{
 		Accounts = GetSyncableRepository<ClientAccount, int>();
 		Addresses = GetSyncableRepository<ClientAddress, long>();
@@ -38,6 +38,22 @@ public class ClientMemoryDatabase : SyncableDatabase, IClientDatabase
 
 	/// <inheritdoc />
 	public ISyncableRepository<ClientAddress, long> Addresses { get; }
+
+	/// <inheritdoc />
+	public override string[] SyncOrder => GetSyncOrder();
+
+	#endregion
+
+	#region Methods
+
+	public static string[] GetSyncOrder()
+	{
+		return
+		[
+			typeof(ClientAccount).ToAssemblyName(),
+			typeof(ClientAddress).ToAssemblyName()
+		];
+	}
 
 	#endregion
 }

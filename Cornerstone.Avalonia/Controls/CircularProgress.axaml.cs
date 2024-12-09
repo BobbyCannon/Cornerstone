@@ -3,7 +3,6 @@
 using Avalonia;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
-using Cornerstone.Avalonia.Extensions;
 
 #endregion
 

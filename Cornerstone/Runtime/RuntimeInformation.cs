@@ -2,13 +2,15 @@
 
 using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Security.Principal;
 using System.Text;
+using Cornerstone.Data.Bytes;
 using Cornerstone.Extensions;
 using Cornerstone.Internal.Windows;
 using Cornerstone.Presentation;
@@ -21,11 +23,13 @@ namespace Cornerstone.Runtime;
 /// <summary>
 /// Gets information about the current runtime.
 /// </summary>
-public class RuntimeInformation : Bindable, IReadOnlyDictionary<string, object>, IRuntimeInformation
+public class RuntimeInformation : Bindable, IRuntimeInformation
 {
 	#region Fields
 
-	private readonly ConcurrentDictionary<string, object> _cache;
+	private Assembly _applicationAssembly;
+	private readonly SortedDictionary<string, object> _cache;
+	private static readonly SortedDictionary<string, object> _platformOverrides;
 	private readonly SortedDictionary<string, PropertyInfo> _propertyAccessors;
 	private readonly SortedDictionary<string, MethodInfo> _propertyMethods;
 
@@ -46,11 +50,16 @@ public class RuntimeInformation : Bindable, IReadOnlyDictionary<string, object>,
 	/// <param name="dispatcher"> The optional dispatcher to use. </param>
 	public RuntimeInformation(IDispatcher dispatcher) : base(dispatcher)
 	{
-		_cache = new ConcurrentDictionary<string, object>();
+		_cache = new SortedDictionary<string, object>();
 		_propertyAccessors = new SortedDictionary<string, PropertyInfo>();
 		_propertyMethods = new SortedDictionary<string, MethodInfo>();
 
 		SetupPropertyAccessors();
+	}
+
+	static RuntimeInformation()
+	{
+		_platformOverrides = new SortedDictionary<string, object>();
 	}
 
 	#endregion
@@ -88,10 +97,16 @@ public class RuntimeInformation : Bindable, IReadOnlyDictionary<string, object>,
 	public int Count => _cache.Count;
 
 	/// <inheritdoc />
+	public Size DeviceDisplaySize => GetOrCache<Size>(nameof(DeviceDisplaySize));
+
+	/// <inheritdoc />
 	public string DeviceId => GetOrCache<string>(nameof(DeviceId));
 
 	/// <inheritdoc />
 	public string DeviceManufacturer => GetOrCache<string>(nameof(DeviceManufacturer));
+
+	/// <inheritdoc />
+	public ByteSize DeviceMemory => GetOrCache<ByteSize>(nameof(DeviceMemory));
 
 	/// <inheritdoc />
 	public string DeviceModel => GetOrCache<string>(nameof(DeviceModel));
@@ -133,6 +148,14 @@ public class RuntimeInformation : Bindable, IReadOnlyDictionary<string, object>,
 
 	#region Methods
 
+	/// <summary>
+	/// Mark the application as loaded;
+	/// </summary>
+	public void CompleteLoad()
+	{
+		IsLoaded = true;
+	}
+
 	/// <inheritdoc />
 	public bool ContainsKey(string key)
 	{
@@ -142,10 +165,21 @@ public class RuntimeInformation : Bindable, IReadOnlyDictionary<string, object>,
 	/// <summary>
 	/// Gets the entry / calling assembly.
 	/// </summary>
-	public static Assembly GetApplicationAssembly()
+	public Assembly GetApplicationAssembly()
 	{
-		return Assembly.GetEntryAssembly()
-			?? Assembly.GetCallingAssembly();
+		if (_applicationAssembly != null)
+		{
+			return _applicationAssembly;
+		}
+
+		var entryAssembly = Assembly.GetEntryAssembly();
+		if (entryAssembly != null)
+		{
+			return entryAssembly;
+		}
+
+		var response = Assembly.GetCallingAssembly();
+		return response;
 	}
 
 	/// <inheritdoc />
@@ -195,15 +229,31 @@ public class RuntimeInformation : Bindable, IReadOnlyDictionary<string, object>,
 	/// </summary>
 	public void ResetCache(string name)
 	{
-		_cache.TryRemove(name, out _);
+		_cache.Remove(name);
+	}
+
+	public void SetApplicationAssembly(Assembly assembly)
+	{
+		_applicationAssembly = assembly;
+
+		ResetCache();
+	}
+
+	/// <summary>
+	/// Set an override for the property value.
+	/// </summary>
+	/// <typeparam name="T"> </typeparam>
+	/// <param name="property"> </param>
+	/// <param name="value"> </param>
+	/// <returns> </returns>
+	public void SetOverride<T>(Expression<Func<IRuntimeInformation, object>> property, T value)
+	{
+		_cache.AddOrUpdate(property.GetExpressionName(), value);
 	}
 
 	/// <summary>
 	/// Set an override for the value.
 	/// </summary>
-	/// <typeparam name="T"> </typeparam>
-	/// <param name="name"> </param>
-	/// <param name="value"> </param>
 	/// <returns> </returns>
 	public void SetOverride<T>(string name, T value)
 	{
@@ -211,13 +261,21 @@ public class RuntimeInformation : Bindable, IReadOnlyDictionary<string, object>,
 	}
 
 	/// <summary>
-	/// Mark the application as loaded;
+	/// Set a global override for the value.
 	/// </summary>
-	public void CompleteLoad()
+	public static void SetPlatformOverride<T>(Expression<Func<IRuntimeInformation, object>> property, T value)
 	{
-		IsLoaded = true;
+		_platformOverrides.AddOrUpdate(property.GetExpressionName(), value);
 	}
-	
+
+	/// <summary>
+	/// Set a global override for the value.
+	/// </summary>
+	public static void SetPlatformOverride<T>(string name, T value)
+	{
+		_platformOverrides.AddOrUpdate(name, value);
+	}
+
 	/// <summary>
 	/// Mark the application as shutting down.
 	/// </summary>
@@ -275,13 +333,8 @@ public class RuntimeInformation : Bindable, IReadOnlyDictionary<string, object>,
 	/// </summary>
 	protected virtual string GetApplicationFilePath()
 	{
-		var path = GetApplicationAssembly().Location;
-
-		if (string.IsNullOrWhiteSpace(path))
-		{
-			// This is to support PublishSingleFile because Location (above) will be empty
-			path = Path.Combine(AppContext.BaseDirectory, GetApplicationName() + ".exe");
-		}
+		// This is to support PublishSingleFile because Location (above) will be empty
+		var path = Path.Combine(AppContext.BaseDirectory, GetApplicationName() + ".exe");
 
 		if (path.EndsWith(".dll"))
 		{
@@ -320,7 +373,8 @@ public class RuntimeInformation : Bindable, IReadOnlyDictionary<string, object>,
 	/// </summary>
 	protected virtual string GetApplicationName()
 	{
-		return GetApplicationAssembly()?.GetName().Name;
+		var app = GetApplicationAssembly();
+		return app?.GetName().Name;
 	}
 
 	/// <summary>
@@ -332,18 +386,35 @@ public class RuntimeInformation : Bindable, IReadOnlyDictionary<string, object>,
 	}
 
 	/// <summary>
+	/// The file name of the application.
+	/// </summary>
+	protected virtual Size GetDeviceDisplaySize()
+	{
+		return Size.Empty;
+	}
+
+	/// <summary>
 	/// The ID of the device.
 	/// </summary>
 	protected virtual string GetDeviceId()
 	{
-		return new DeviceId()
-			.AddMachineName()
-			.AddUserName()
-			.AddMachineGuid()
-			.AddSystemUuid()
-			.AddMotherboardSerialNumber()
-			.AddSystemDriveSerialNumber()
-			.ToString();
+		return DevicePlatform switch
+		{
+			DevicePlatform.Windows => new DeviceId()
+				.AddMachineName()
+				.AddUserName()
+				.AddMachineGuid()
+				.AddSystemUuid()
+				.AddMotherboardSerialNumber()
+				.AddSystemDriveSerialNumber()
+				.ToString(),
+			_ => Runtime.DeviceId.VendorId
+				?? new DeviceId()
+					.AddMachineName()
+					.AddUserName()
+					.AddVendorId()
+					.ToString()
+		};
 	}
 
 	/// <summary>
@@ -358,6 +429,14 @@ public class RuntimeInformation : Bindable, IReadOnlyDictionary<string, object>,
 		}
 
 		return string.Empty;
+	}
+
+	/// <summary>
+	/// The memory of the device.
+	/// </summary>
+	protected virtual ByteSize GetDeviceMemory()
+	{
+		return ByteSize.FromBytes(0);
 	}
 
 	/// <summary>
@@ -464,6 +543,11 @@ public class RuntimeInformation : Bindable, IReadOnlyDictionary<string, object>,
 	/// <returns> The value by the name provided. </returns>
 	protected T GetOrCache<T>(string name)
 	{
+		if (_platformOverrides.TryGetValue(name, out var platformValue))
+		{
+			return (T) _cache.GetOrAdd(name, _ => platformValue);
+		}
+
 		return (T) _cache.GetOrAdd(name, _ => _propertyMethods[name].Invoke(this, null));
 	}
 
@@ -476,7 +560,12 @@ public class RuntimeInformation : Bindable, IReadOnlyDictionary<string, object>,
 	/// <returns> The value by the name provided. </returns>
 	protected T GetOrCache<T>(string name, Func<T> valueFactory)
 	{
-		return (T) _cache.GetOrAdd(name, valueFactory.Invoke());
+		if (_platformOverrides.TryGetValue(name, out var platformValue))
+		{
+			return (T) _cache.GetOrAdd(name, _ => platformValue);
+		}
+
+		return (T) _cache.GetOrAdd(name, _ => valueFactory.Invoke());
 	}
 
 	/// <inheritdoc />
@@ -511,7 +600,7 @@ public class RuntimeInformation : Bindable, IReadOnlyDictionary<string, object>,
 /// <summary>
 /// Gets information about the current runtime.
 /// </summary>
-public interface IRuntimeInformation : ISyncClientDetails
+public interface IRuntimeInformation : IReadOnlyDictionary<string, object>, ISyncClientDetails
 {
 	#region Properties
 
@@ -551,9 +640,19 @@ public interface IRuntimeInformation : ISyncClientDetails
 	string ApplicationLocation { get; }
 
 	/// <summary>
+	/// The display size of the device.
+	/// </summary>
+	Size DeviceDisplaySize { get; }
+
+	/// <summary>
 	/// The name of the device manufacturer.
 	/// </summary>
 	string DeviceManufacturer { get; }
+
+	/// <summary>
+	/// The size of the device's memory.
+	/// </summary>
+	ByteSize DeviceMemory { get; }
 
 	/// <summary>
 	/// The model of the device.

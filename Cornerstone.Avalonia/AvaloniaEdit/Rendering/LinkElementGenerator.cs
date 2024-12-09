@@ -13,7 +13,7 @@ namespace Cornerstone.Avalonia.AvaloniaEdit.Rendering;
 /// </summary>
 /// <remarks>
 /// This element generator can be easily enabled and configured using the
-/// <see cref="TextEditorOptions" />.
+/// <see cref="TextEditorSettings" />.
 /// </remarks>
 public class LinkElementGenerator : VisualLineElementGenerator, IBuiltinElementGenerator
 {
@@ -114,14 +114,14 @@ public class LinkElementGenerator : VisualLineElementGenerator, IBuiltinElementG
 		return Uri.IsWellFormedUriString(targetUrl, UriKind.Absolute) ? new Uri(targetUrl) : null;
 	}
 
-	void IBuiltinElementGenerator.FetchOptions(TextEditorOptions options)
+	void IBuiltinElementGenerator.FetchOptions(TextEditorSettings settings)
 	{
-		RequireControlModifierForClick = options.RequireControlModifierForHyperlinkClick;
+		RequireControlModifierForClick = settings.RequireControlModifierForHyperlinkClick;
 	}
 
 	private Match GetMatch(int startOffset, out int matchOffset)
 	{
-		var endOffset = CurrentContext.VisualLine.LastDocumentLine.EndOffset;
+		var endOffset = CurrentContext.VisualLine.LastDocumentLine.EndIndex;
 		var relevantText = CurrentContext.GetText(startOffset, endOffset - startOffset);
 		var m = _linkRegex.Match(relevantText.Text, relevantText.Offset, relevantText.Count);
 		matchOffset = m.Success ? (m.Index - relevantText.Offset) + startOffset : -1;
@@ -138,7 +138,7 @@ public class LinkElementGenerator : VisualLineElementGenerator, IBuiltinElementG
 /// </summary>
 /// <remarks>
 /// This element generator can be easily enabled and configured using the
-/// <see cref="TextEditorOptions" />.
+/// <see cref="TextEditorSettings" />.
 /// </remarks>
 internal sealed class MailLinkElementGenerator : LinkElementGenerator
 {

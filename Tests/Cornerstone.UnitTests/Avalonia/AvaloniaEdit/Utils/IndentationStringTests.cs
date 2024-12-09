@@ -15,7 +15,7 @@ public class IndentationStringTests : CornerstoneUnitTest
 	[TestMethod]
 	public void IndentWith4Spaces()
 	{
-		var options = new TextEditorOptions { IndentationSize = 4, ConvertTabsToSpaces = true };
+		var options = new TextEditorSettings { IndentationSize = 4, ConvertTabsToSpaces = true };
 		AreEqual("    ", options.IndentationString);
 		AreEqual("   ", options.GetIndentationString(2));
 		AreEqual("  ", options.GetIndentationString(3));
@@ -27,7 +27,7 @@ public class IndentationStringTests : CornerstoneUnitTest
 	[TestMethod]
 	public void IndentWithSingleTab()
 	{
-		var options = new TextEditorOptions { IndentationSize = 4, ConvertTabsToSpaces = false };
+		var options = new TextEditorSettings { IndentationSize = 4, ConvertTabsToSpaces = false };
 		AreEqual("\t", options.IndentationString);
 		AreEqual("\t", options.GetIndentationString(2));
 		AreEqual("\t", options.GetIndentationString(3));

@@ -25,7 +25,7 @@ public class Snippet : SnippetContainerElement
 			throw new ArgumentNullException(nameof(textArea));
 		}
 
-		var selection = textArea.Selection.SurroundingSegment;
+		var selection = textArea.Selection.SurroundingRange;
 		var insertionPosition = textArea.Caret.Offset;
 
 		if (selection != null) // if something is selected
@@ -33,7 +33,7 @@ public class Snippet : SnippetContainerElement
 			// because caret could be at end of selection or anywhere inside.
 			// Removal of the selected text causes the caret position to be invalid.
 		{
-			insertionPosition = selection.Offset + TextUtilities.GetWhitespaceAfter(textArea.Document, selection.Offset).Length;
+			insertionPosition = selection.StartIndex + TextUtilities.GetWhitespaceAfter(textArea.Document, selection.StartIndex).Length;
 		}
 
 		var context = new InsertionContext(textArea, insertionPosition);
@@ -42,7 +42,7 @@ public class Snippet : SnippetContainerElement
 		{
 			if (selection != null)
 			{
-				textArea.Document.Remove(insertionPosition, selection.EndOffset - insertionPosition);
+				textArea.Document.Remove(insertionPosition, selection.EndIndex - insertionPosition);
 			}
 			Insert(context);
 			context.RaiseInsertionCompleted(EventArgs.Empty);

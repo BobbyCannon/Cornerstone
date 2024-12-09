@@ -142,8 +142,8 @@ public class Credential : Notifiable, IDisposable, ICredential
 	/// Update the Credential with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public virtual bool UpdateWith(ICredential update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	public virtual bool UpdateWith(ICredential update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -153,30 +153,30 @@ public class Credential : Notifiable, IDisposable, ICredential
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			SecurePassword = update.SecurePassword?.Copy();
 			UserName = update.UserName;
 		}
 		else
 		{
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(SecurePassword)), x => x.SecurePassword = update.SecurePassword?.Copy());
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(UserName)), x => x.UserName = update.UserName);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(SecurePassword)), x => x.SecurePassword = update.SecurePassword?.Copy());
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(UserName)), x => x.UserName = update.UserName);
 		}
 
 		return true;
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
-			TokenCredential credential => UpdateWith(credential, options),
-			WebCredential credential => UpdateWith(credential, options),
-			Credential credential => UpdateWith(credential, options),
-			ICredential credential => UpdateWith(credential, options),
-			_ => base.UpdateWith(update, options)
+			TokenCredential credential => UpdateWith(credential, settings),
+			WebCredential credential => UpdateWith(credential, settings),
+			Credential credential => UpdateWith(credential, settings),
+			ICredential credential => UpdateWith(credential, settings),
+			_ => base.UpdateWith(update, settings)
 		};
 	}
 

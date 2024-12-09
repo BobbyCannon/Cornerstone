@@ -1,10 +1,7 @@
 ﻿#region References
 
 using System;
-using System.Collections.Generic;
 using Cornerstone.Collections;
-using Cornerstone.Testing;
-using Cornerstone.Text;
 using Cornerstone.Text.Buffers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -75,7 +72,7 @@ public class StringBufferTests : CornerstoneUnitTest
 			//123 4 567
 			"abc\r\ndef"
 		);
-		
+
 		ForEachBuffers(x =>
 			{
 				AreEqual(-1, x.IndexOfAnyReverse(['\r'], 7));
@@ -84,27 +81,6 @@ public class StringBufferTests : CornerstoneUnitTest
 			},
 			string.Empty
 		);
-	}
-
-	private void ForEachBuffers(Action<IStringBuffer> action, string value)
-	{
-		ForEachBuffers(action, value.ToCharArray());
-	}
-
-	private void ForEachBuffers(Action<IStringBuffer> action, params char[] value)
-	{
-		var buffers = GetBuffers(value);
-		foreach (var buffer in buffers)
-		{
-			buffer.GetType().FullName.Dump();
-			action(buffer);
-		}
-	}
-
-	private IEnumerable<IStringBuffer> GetBuffers(params char[] values)
-	{
-		yield return new StringGapBuffer(values);
-		yield return new StringRopeBuffer(values);
 	}
 
 	#endregion

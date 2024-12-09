@@ -92,8 +92,8 @@ public class BindableTests : CornerstoneUnitTest
 		/// Update the TestClass with an update.
 		/// </summary>
 		/// <param name="update"> The update to be applied. </param>
-		/// <param name="options"> The options for controlling the updating of the entity. </param>
-		public override bool UpdateWith(TestClass update, IncludeExcludeOptions options)
+		/// <param name="settings> The options for controlling the updating of the entity. </param>
+		public override bool UpdateWith(TestClass update, IncludeExcludeSettings settings)
 		{
 			// If the update is null then there is nothing to do.
 			if (update == null)
@@ -103,15 +103,15 @@ public class BindableTests : CornerstoneUnitTest
 
 			// ****** You can use GenerateUpdateWith to update this ******
 
-			if ((options == null) || options.IsEmpty())
+			if ((settings == null) || settings.IsEmpty())
 			{
 				Age = update.Age;
 				Name = update.Name;
 			}
 			else
 			{
-				this.IfThen(_ => options.ShouldProcessProperty(nameof(Age)), x => x.Age = update.Age);
-				this.IfThen(_ => options.ShouldProcessProperty(nameof(Name)), x => x.Name = update.Name);
+				this.IfThen(_ => settings.ShouldProcessProperty(nameof(Age)), x => x.Age = update.Age);
+				this.IfThen(_ => settings.ShouldProcessProperty(nameof(Name)), x => x.Name = update.Name);
 			}
 
 			return true;

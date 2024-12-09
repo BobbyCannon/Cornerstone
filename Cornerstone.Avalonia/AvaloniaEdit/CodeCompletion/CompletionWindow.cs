@@ -6,6 +6,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Cornerstone.Avalonia.AvaloniaEdit.Editing;
+using Cornerstone.Collections;
 using Cornerstone.Text.Document;
 
 #endregion
@@ -128,29 +129,30 @@ public class CompletionWindow : CompletionWindowBase
 		}
 	}
 
-	internal ISegment GetSegment(ICompletionData item)
+	internal IRange GetSegment(ICompletionData item)
 	{
 		if (item == null)
 		{
 			return null;
 		}
 
-		var startOffset = StartOffset - CompletionList.Prefix.Length;
+		var prefix = CompletionList.Prefix ?? string.Empty;
+		var startOffset = StartOffset - prefix.Length;
 		var nextCharacterIndex = EndOffset;
 
 		if ((TextArea.Document.TextLength <= nextCharacterIndex)
 			|| !item.CompletionText.StartsWith(CompletionList.Prefix))
 		{
-			return new AnchorSegment(TextArea.Document, startOffset, EndOffset - startOffset);
+			return new AnchorRange(TextArea.Document, startOffset, EndOffset - startOffset);
 		}
 
-		var extra = item.CompletionText.Substring(CompletionList.Prefix.Length);
+		var extra = item.CompletionText.Substring(prefix.Length);
 		if ((extra.Length > 0) && (TextArea.Document.GetCharAt(nextCharacterIndex) == extra.Last()))
 		{
-			return new AnchorSegment(TextArea.Document, startOffset, (EndOffset - startOffset) + 1);
+			return new AnchorRange(TextArea.Document, startOffset, (EndOffset - startOffset) + 1);
 		}
 
-		return new AnchorSegment(TextArea.Document, startOffset, EndOffset - startOffset);
+		return new AnchorRange(TextArea.Document, startOffset, EndOffset - startOffset);
 	}
 
 	private void AttachEvents()

@@ -3,10 +3,11 @@
 using System;
 using System.Drawing;
 using System.Linq;
-using Cornerstone.Automation.Desktop;
 using Cornerstone.Automation.Web;
 using Cornerstone.Collections;
+using Cornerstone.Parsers.Html;
 using Cornerstone.Sync;
+using Cornerstone.Windows;
 
 #endregion
 
@@ -27,6 +28,37 @@ public static class Extensions
 	public static int Count(this BrowserType type)
 	{
 		return type.GetTypeArray().Length;
+	}
+
+	public static void DumpInBrowser(this string value, BrowserType browsers)
+	{
+		var html = value;
+		if (html == null)
+		{
+			return;
+		}
+
+		foreach (var browser in Browser.AttachOrCreate(browsers))
+		{
+			try
+			{
+				browser.AutoClose = false;
+
+				if (html.IndexOf("</html>", StringComparison.OrdinalIgnoreCase) >= 0)
+				{
+					browser.SetHtml(html);
+				}
+				else
+				{
+					html = HtmlWriter.WrapHtmlSnippet(html);
+					browser.SetHtml(html);
+				}
+			}
+			finally
+			{
+				browser.Dispose();
+			}
+		}
 	}
 
 	/// <summary>
@@ -115,6 +147,20 @@ public static class Extensions
 		return types.Where(type => (browserType & type) == type).ToArray();
 	}
 
+	/// <summary>
+	/// Converts the issue list into a good assert message.
+	/// </summary>
+	/// <param name="issues"> The issues. </param>
+	/// <returns> The assert message. </returns>
+	public static string ToAssertMessage(this SpeedyList<SyncIssue> issues)
+	{
+		return issues is not { Count: > 0 }
+			? string.Empty
+			: string.Join(Environment.NewLine,
+				issues.Select(x => $"{x.IssueType} : {x.Message}")
+			);
+	}
+
 	private static Size CalculateBrowserSize(bool useSecondaryMonitor, BrowserType[] browserTypes, BrowserResizeType resizeType, out int leftOffset, out int topOffset)
 	{
 		var screen = useSecondaryMonitor
@@ -167,20 +213,6 @@ public static class Extensions
 		var x = leftOffset + (xOffset * size.Width);
 		var y = topOffset + (yOffset * size.Height);
 		return new Point(x, y);
-	}
-
-	/// <summary>
-	/// Converts the issue list into a good assert message.
-	/// </summary>
-	/// <param name="issues"> The issues. </param>
-	/// <returns> The assert message. </returns>
-	public static string ToAssertMessage(this SpeedyList<SyncIssue> issues)
-	{
-		return issues is not { Count: > 0 }
-			? string.Empty
-			: string.Join(Environment.NewLine,
-				issues.Select(x => $"{x.IssueType} : {x.Message}")
-			);
 	}
 
 	#endregion

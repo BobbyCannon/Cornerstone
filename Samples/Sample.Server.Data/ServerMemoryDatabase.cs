@@ -1,6 +1,7 @@
 ﻿#region References
 
 using Cornerstone.EntityFramework;
+using Cornerstone.Extensions;
 using Cornerstone.Storage;
 using Cornerstone.Sync;
 using Sample.Shared.Storage;
@@ -20,7 +21,7 @@ public class ServerMemoryDatabase : SyncableDatabase, IServerDatabase
 	}
 
 	/// <inheritdoc />
-	public ServerMemoryDatabase(DatabaseOptions options, DatabaseKeyCache keyCache) : base(options, keyCache)
+	public ServerMemoryDatabase(DatabaseSettings settings, DatabaseKeyCache keyCache) : base(settings, keyCache)
 	{
 		Accounts = GetSyncableRepository<AccountEntity, int>();
 		Addresses = GetSyncableRepository<AddressEntity, long>();
@@ -73,10 +74,28 @@ public class ServerMemoryDatabase : SyncableDatabase, IServerDatabase
 	public ISyncableRepository<SettingEntity, long> Settings { get; }
 
 	/// <inheritdoc />
+	public override string[] SyncOrder => GetSyncOrder();
+
+	/// <inheritdoc />
 	public IRepository<TrackerPathConfigurationEntity, int> TrackerPathConfigurations { get; }
 
 	/// <inheritdoc />
 	public IRepository<TrackerPathEntity, long> TrackerPaths { get; }
+
+	#endregion
+
+	#region Methods
+
+	public static string[] GetSyncOrder()
+	{
+		return
+		[
+			typeof(AccountEntity).ToAssemblyName(),
+			typeof(AddressEntity).ToAssemblyName(),
+			typeof(LogEventEntity).ToAssemblyName(),
+			typeof(SettingEntity).ToAssemblyName()
+		];
+	}
 
 	#endregion
 }

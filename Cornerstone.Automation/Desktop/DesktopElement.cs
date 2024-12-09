@@ -10,9 +10,10 @@ using System.Threading;
 using Cornerstone.Automation.Desktop.Elements;
 using Cornerstone.Automation.Desktop.Pattern;
 using Cornerstone.Automation.Internal;
-using Cornerstone.Automation.Internal.Native;
 using Cornerstone.Exceptions;
 using Cornerstone.Extensions;
+using Cornerstone.Windows;
+using Cornerstone.Windows.Native;
 using Interop.UIAutomationClient;
 #if NET48
 using Image = Cornerstone.Automation.Desktop.Elements.Image;
@@ -168,7 +169,7 @@ public class DesktopElement : Element
 	public override Element Click(int x = 0, int y = 0, bool refresh = true)
 	{
 		var point = GetClickablePoint(x, y);
-		Input.Mouse.LeftButtonClick(point);
+		WindowsInput.Mouse.LeftButtonClick(point);
 		return this;
 	}
 
@@ -186,7 +187,7 @@ public class DesktopElement : Element
 	/// <returns> The element if found or null if not found. </returns>
 	public static DesktopElement FromCursor()
 	{
-		var point = Input.Mouse.GetCursorPosition();
+		var point = WindowsInput.Mouse.GetCursorPosition();
 		return FromPoint(point);
 	}
 
@@ -241,7 +242,7 @@ public class DesktopElement : Element
 	public override Element LeftClick(int x = 0, int y = 0)
 	{
 		var point = GetClickablePoint(x, y);
-		Input.Mouse.LeftButtonClick(point);
+		WindowsInput.Mouse.LeftButtonClick(point);
 		Thread.Sleep(100);
 		return this;
 	}
@@ -250,7 +251,7 @@ public class DesktopElement : Element
 	public override Element MiddleClick(int x = 0, int y = 0)
 	{
 		var point = GetClickablePoint(x, y);
-		Input.Mouse.MiddleButtonClick(point);
+		WindowsInput.Mouse.MiddleButtonClick(point);
 		Thread.Sleep(100);
 		return this;
 	}
@@ -259,7 +260,7 @@ public class DesktopElement : Element
 	public override Element MoveMouseTo(int x = 0, int y = 0)
 	{
 		var point = GetClickablePoint(x, y);
-		Input.Mouse.MoveTo(point);
+		WindowsInput.Mouse.MoveTo(point);
 		Thread.Sleep(100);
 		return this;
 	}
@@ -285,7 +286,7 @@ public class DesktopElement : Element
 	public override Element RightClick(int x = 0, int y = 0)
 	{
 		var point = GetClickablePoint(x, y);
-		Input.Mouse.RightButtonClick(point);
+		WindowsInput.Mouse.RightButtonClick(point);
 		Thread.Sleep(100);
 		return this;
 	}
@@ -323,7 +324,7 @@ public class DesktopElement : Element
 
 		// Pause before sending keyboard input.
 		Thread.Sleep(100);
-		Input.Keyboard.SendInput(value);
+		WindowsInput.Keyboard.SendInput(value);
 		return this;
 	}
 

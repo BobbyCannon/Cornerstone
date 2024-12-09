@@ -19,15 +19,15 @@ public interface ICloneable<out T> : ICloneable
 	/// Deep clone the item with child relationships. Default level is -1 which means clone full hierarchy of children.
 	/// </summary>
 	/// <param name="maxDepth"> The max depth to clone. Defaults to null. </param>
-	/// <param name="options"> An optional set of included or excluded properties. </param>
+	/// <param name="settings"> An optional set of included or excluded properties. </param>
 	/// <returns> The cloned objects. </returns>
-	public T DeepClone(int? maxDepth = null, IncludeExcludeOptions options = null);
+	public T DeepClone(int? maxDepth = null, IncludeExcludeSettings settings = null);
 
 	/// <summary>
 	/// Shallow clone the item. No child items are cloned.
 	/// </summary>
 	/// <returns> The cloned objects. </returns>
-	public T ShallowClone(IncludeExcludeOptions options = null);
+	public T ShallowClone(IncludeExcludeSettings settings = null);
 
 	#endregion
 }
@@ -43,16 +43,16 @@ public interface ICloneable
 	/// Deep clone the item with child relationships. Default level is -1 which means clone full hierarchy of children.
 	/// </summary>
 	/// <param name="maxDepth"> The max depth to clone. Defaults to null. </param>
-	/// <param name="options"> An optional set of included or excluded properties. </param>
+	/// <param name="settings"> An optional set of included or excluded properties. </param>
 	/// <returns> The cloned objects. </returns>
-	public object DeepCloneObject(int? maxDepth = null, IncludeExcludeOptions options = null);
+	public object DeepCloneObject(int? maxDepth = null, IncludeExcludeSettings settings = null);
 
 	/// <summary>
 	/// Shallow clone the item. No child items are cloned.
 	/// </summary>
-	/// <param name="options"> An optional set of included or excluded properties. </param>
+	/// <param name="settings"> An optional set of included or excluded properties. </param>
 	/// <returns> The cloned objects. </returns>
-	public object ShallowCloneObject(IncludeExcludeOptions options = null);
+	public object ShallowCloneObject(IncludeExcludeSettings settings = null);
 
 	#endregion
 }

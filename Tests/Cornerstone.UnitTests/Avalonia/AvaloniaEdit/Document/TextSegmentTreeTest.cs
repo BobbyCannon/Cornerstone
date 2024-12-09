@@ -16,9 +16,9 @@ public class TextSegmentTreeTest : CornerstoneUnitTest
 {
 	#region Fields
 
-	private List<TestTextSegment> _expectedSegments;
+	private List<TestTextRange> _expectedSegments;
 	private static Random _random;
-	private TextSegmentCollection<TestTextSegment> _tree;
+	private TextSegmentCollection<TestTextRange> _tree;
 
 	#endregion
 
@@ -35,8 +35,8 @@ public class TextSegmentTreeTest : CornerstoneUnitTest
 	[TestMethod]
 	public void FindFirstSegmentWithStartAfter()
 	{
-		var s1 = new TestTextSegment(5, 10);
-		var s2 = new TestTextSegment(10, 10);
+		var s1 = new TestTextRange(5, 10);
+		var s2 = new TestTextRange(10, 10);
 		_tree.Add(s1);
 		_tree.Add(s2);
 		ClassicAssert.AreSame(s1, _tree.FindFirstSegmentWithStartAfter(-100));
@@ -53,16 +53,16 @@ public class TextSegmentTreeTest : CornerstoneUnitTest
 	[TestMethod]
 	public void FindFirstSegmentWithStartAfterWithDuplicates()
 	{
-		var s1 = new TestTextSegment(5, 10);
-		var s1b = new TestTextSegment(5, 7);
-		var s2 = new TestTextSegment(10, 10);
-		var s2b = new TestTextSegment(10, 7);
+		var s1 = new TestTextRange(5, 10);
+		var s1B = new TestTextRange(5, 7);
+		var s2 = new TestTextRange(10, 10);
+		var s2B = new TestTextRange(10, 7);
 		_tree.Add(s1);
-		_tree.Add(s1b);
+		_tree.Add(s1B);
 		_tree.Add(s2);
-		_tree.Add(s2b);
-		ClassicAssert.AreSame(s1b, _tree.GetNextSegment(s1));
-		ClassicAssert.AreSame(s2b, _tree.GetNextSegment(s2));
+		_tree.Add(s2B);
+		ClassicAssert.AreSame(s1B, _tree.GetNextSegment(s1));
+		ClassicAssert.AreSame(s2B, _tree.GetNextSegment(s2));
 		ClassicAssert.AreSame(s1, _tree.FindFirstSegmentWithStartAfter(-100));
 		ClassicAssert.AreSame(s1, _tree.FindFirstSegmentWithStartAfter(0));
 		ClassicAssert.AreSame(s1, _tree.FindFirstSegmentWithStartAfter(4));
@@ -77,10 +77,10 @@ public class TextSegmentTreeTest : CornerstoneUnitTest
 	[TestMethod]
 	public void FindFirstSegmentWithStartAfterWithDuplicates2()
 	{
-		var s1 = new TestTextSegment(5, 1);
-		var s2 = new TestTextSegment(5, 2);
-		var s3 = new TestTextSegment(5, 3);
-		var s4 = new TestTextSegment(5, 4);
+		var s1 = new TestTextRange(5, 1);
+		var s2 = new TestTextRange(5, 2);
+		var s3 = new TestTextRange(5, 3);
+		var s4 = new TestTextRange(5, 4);
 		_tree.Add(s1);
 		_tree.Add(s2);
 		_tree.Add(s3);
@@ -307,10 +307,10 @@ public class TextSegmentTreeTest : CornerstoneUnitTest
 		_expectedSegments = [];
 	}
 
-	private TestTextSegment AddSegment(int offset, int length)
+	private TestTextRange AddSegment(int offset, int length)
 	{
 		//			Console.WriteLine("Add " + offset + ", " + length);
-		var s = new TestTextSegment(offset, length);
+		var s = new TestTextRange(offset, length);
 		_tree.Add(s);
 		_expectedSegments.Add(s);
 		return s;
@@ -337,7 +337,7 @@ public class TextSegmentTreeTest : CornerstoneUnitTest
 		}
 	}
 
-	private void RemoveSegment(TestTextSegment s)
+	private void RemoveSegment(TestTextRange s)
 	{
 		//			Console.WriteLine("Remove " + s);
 		_expectedSegments.Remove(s);
@@ -346,8 +346,8 @@ public class TextSegmentTreeTest : CornerstoneUnitTest
 
 	private void TestRetrieval(int offset, int length)
 	{
-		var actual = new HashSet<TestTextSegment>(_tree.FindOverlappingSegments(offset, length));
-		var expected = new HashSet<TestTextSegment>();
+		var actual = new HashSet<TestTextRange>(_tree.FindOverlappingSegments(offset, length));
+		var expected = new HashSet<TestTextRange>();
 		foreach (var e in _expectedSegments)
 		{
 			if ((e.ExpectedOffset + e.ExpectedLength) < offset)
@@ -368,7 +368,7 @@ public class TextSegmentTreeTest : CornerstoneUnitTest
 
 	#region Classes
 
-	private class TestTextSegment : TextSegment
+	private class TestTextRange : TextRange
 	{
 		#region Fields
 
@@ -378,7 +378,7 @@ public class TextSegmentTreeTest : CornerstoneUnitTest
 
 		#region Constructors
 
-		public TestTextSegment(int expectedOffset, int expectedLength)
+		public TestTextRange(int expectedOffset, int expectedLength)
 		{
 			ExpectedOffset = expectedOffset;
 			ExpectedLength = expectedLength;

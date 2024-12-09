@@ -24,7 +24,7 @@ internal sealed class XmlFoldStart : NewFolding
 }
 
 /// <summary>
-/// Determines folds for an xml string in the editor.
+/// Determines folds for a xml string in the editor.
 /// </summary>
 public class XmlFoldingStrategy
 {
@@ -43,7 +43,7 @@ public class XmlFoldingStrategy
 	/// <summary>
 	/// Create <see cref="NewFolding" />s for the specified document.
 	/// </summary>
-	public IEnumerable<NewFolding> CreateNewFoldings(TextDocument document, out int firstErrorOffset)
+	public IEnumerable<NewFolding> CreateNewFoldings(TextEditorDocument document, out int firstErrorOffset)
 	{
 		try
 		{
@@ -60,7 +60,7 @@ public class XmlFoldingStrategy
 	/// <summary>
 	/// Create <see cref="NewFolding" />s for the specified document.
 	/// </summary>
-	public IEnumerable<NewFolding> CreateNewFoldings(TextDocument document, XmlReader reader, out int firstErrorOffset)
+	public IEnumerable<NewFolding> CreateNewFoldings(TextEditorDocument document, XmlReader reader, out int firstErrorOffset)
 	{
 		var stack = new Stack<XmlFoldStart>();
 		var foldMarkers = new List<NewFolding>();
@@ -109,7 +109,7 @@ public class XmlFoldingStrategy
 	/// <summary>
 	/// Create <see cref="NewFolding" />s for the specified document and updates the folding manager with them.
 	/// </summary>
-	public void UpdateFoldings(FoldingManager manager, TextDocument document)
+	public void UpdateFoldings(FoldingManager manager, TextEditorDocument document)
 	{
 		var foldings = CreateNewFoldings(document, out var firstErrorOffset);
 		manager.UpdateFoldings(foldings, firstErrorOffset);
@@ -122,7 +122,7 @@ public class XmlFoldingStrategy
 	/// The text displayed when the comment is folded is the first
 	/// line of the comment.
 	/// </remarks>
-	private static void CreateCommentFold(TextDocument document, List<NewFolding> foldMarkers, XmlReader reader)
+	private static void CreateCommentFold(TextEditorDocument document, List<NewFolding> foldMarkers, XmlReader reader)
 	{
 		var comment = reader.Value;
 		if (comment != null)
@@ -146,14 +146,14 @@ public class XmlFoldingStrategy
 	/// Create an element fold if the start and end tag are on
 	/// different lines.
 	/// </summary>
-	private static void CreateElementFold(TextDocument document, List<NewFolding> foldMarkers, XmlReader reader, XmlFoldStart foldStart)
+	private static void CreateElementFold(TextEditorDocument document, List<NewFolding> foldMarkers, XmlReader reader, XmlFoldStart foldStart)
 	{
 		var lineInfo = (IXmlLineInfo) reader;
 		var endLine = lineInfo.LineNumber;
 		if (endLine > foldStart.StartLine)
 		{
 			var endCol = lineInfo.LinePosition + reader.Name.Length + 1;
-			foldStart.EndOffset = document.GetOffset(endLine, endCol);
+			foldStart.EndIndex = document.GetOffset(endLine, endCol);
 			foldMarkers.Add(foldStart);
 		}
 	}
@@ -161,7 +161,7 @@ public class XmlFoldingStrategy
 	/// <summary>
 	/// Creates an XmlFoldStart for the start tag of an element.
 	/// </summary>
-	private XmlFoldStart CreateElementFoldStart(TextDocument document, XmlReader reader)
+	private XmlFoldStart CreateElementFoldStart(TextEditorDocument document, XmlReader reader)
 	{
 		// Take off 1 from the offset returned
 		// from the xml since it points to the start
@@ -219,7 +219,7 @@ public class XmlFoldingStrategy
 		return text.ToString();
 	}
 
-	private static int GetOffset(TextDocument document, XmlReader reader)
+	private static int GetOffset(TextEditorDocument document, XmlReader reader)
 	{
 		if (reader is IXmlLineInfo info && info.HasLineInfo())
 		{

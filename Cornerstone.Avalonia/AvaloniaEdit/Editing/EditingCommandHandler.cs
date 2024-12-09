@@ -10,6 +10,7 @@ using Avalonia.Input;
 using Cornerstone.Avalonia.AvaloniaEdit.Utils;
 using Cornerstone.Avalonia.Extensions;
 using Cornerstone.Avalonia.Input;
+using Cornerstone.Collections;
 using Cornerstone.Text.Document;
 
 #endregion
@@ -55,6 +56,7 @@ internal class EditingCommandHandler
 		AddBinding(ApplicationCommands.Paste, OnPaste, CanPaste);
 
 		AddBinding(AvaloniaEditCommands.ToggleOverstrike, OnToggleOverstrike);
+		AddBinding(AvaloniaEditCommands.DeleteLine, OnDeleteLine);
 		AddBinding(AvaloniaEditCommands.DuplicateLine, OnDuplicateLine);
 
 		AddBinding(AvaloniaEditCommands.RemoveLeadingWhitespace, OnRemoveLeadingWhitespace);
@@ -107,8 +109,8 @@ internal class EditingCommandHandler
 			// convert text back to correct newlines for this document
 			var newLine = TextUtilities.GetNewLineFromDocument(textArea.Document, textArea.Caret.Line);
 			text = TextUtilities.NormalizeNewLines(text, newLine);
-			text = textArea.Options.ConvertTabsToSpaces
-				? text.Replace("\t", new string(' ', textArea.Options.IndentationSize))
+			text = textArea.Settings.ConvertTabsToSpaces
+				? text.Replace("\t", new string(' ', textArea.Settings.IndentationSize))
 				: text;
 			return text;
 		}
@@ -136,7 +138,7 @@ internal class EditingCommandHandler
 		var textArea = GetTextArea(target);
 		if (textArea?.Document != null)
 		{
-			args.CanExecute = textArea.Options.CutCopyWholeLine || !textArea.Selection.IsEmpty;
+			args.CanExecute = textArea.Settings.CutCopyWholeLine || !textArea.Selection.IsEmpty;
 			args.Handled = true;
 		}
 	}
@@ -147,7 +149,7 @@ internal class EditingCommandHandler
 		var textArea = GetTextArea(target);
 		if (textArea?.Document != null)
 		{
-			args.CanExecute = (textArea.Options.CutCopyWholeLine || !textArea.Selection.IsEmpty) && !textArea.IsReadOnly;
+			args.CanExecute = (textArea.Settings.CutCopyWholeLine || !textArea.Selection.IsEmpty) && !textArea.IsReadOnly;
 			args.Handled = true;
 		}
 	}
@@ -175,11 +177,11 @@ internal class EditingCommandHandler
 	private static void ConvertCase(Func<string, string> transformText, object target, ExecutedRoutedEventArgs args)
 	{
 		TransformSelectedSegments(
-			delegate(TextArea textArea, ISegment segment)
+			delegate(TextArea textArea, IRange segment)
 			{
 				var oldText = textArea.Document.GetText(segment);
 				var newText = transformText(oldText);
-				textArea.Document.Replace(segment.Offset, segment.Length, newText,
+				textArea.Document.Replace(segment.StartIndex, segment.Length, newText,
 					OffsetChangeMappingType.CharacterReplace);
 			}, target, args, DefaultSegmentType.WholeDocument);
 	}
@@ -189,13 +191,13 @@ internal class EditingCommandHandler
 		ConvertSpacesToTabs(textArea, TextUtilities.GetLeadingWhitespace(textArea.Document, line));
 	}
 
-	private static void ConvertSpacesToTabs(TextArea textArea, ISegment segment)
+	private static void ConvertSpacesToTabs(TextArea textArea, IRange range)
 	{
 		var document = textArea.Document;
-		var endOffset = segment.EndOffset;
-		var indentationSize = textArea.Options.IndentationSize;
+		var endOffset = range.EndIndex;
+		var indentationSize = textArea.Settings.IndentationSize;
 		var spacesCount = 0;
-		for (var offset = segment.Offset; offset < endOffset; offset++)
+		for (var offset = range.StartIndex; offset < endOffset; offset++)
 		{
 			if (document.GetCharAt(offset) == ' ')
 			{
@@ -221,12 +223,12 @@ internal class EditingCommandHandler
 		ConvertTabsToSpaces(textArea, TextUtilities.GetLeadingWhitespace(textArea.Document, line));
 	}
 
-	private static void ConvertTabsToSpaces(TextArea textArea, ISegment segment)
+	private static void ConvertTabsToSpaces(TextArea textArea, IRange range)
 	{
 		var document = textArea.Document;
-		var endOffset = segment.EndOffset;
-		var indentationString = new string(' ', textArea.Options.IndentationSize);
-		for (var offset = segment.Offset; offset < endOffset; offset++)
+		var endOffset = range.EndIndex;
+		var indentationString = new string(' ', textArea.Settings.IndentationSize);
+		for (var offset = range.StartIndex; offset < endOffset; offset++)
 		{
 			if (document.GetCharAt(offset) == '\t')
 			{
@@ -249,7 +251,7 @@ internal class EditingCommandHandler
 
 	private static bool CopyWholeLine(TextArea textArea, DocumentLine line)
 	{
-		ISegment wholeLine = new SimpleSegment(line.Offset, line.TotalLength);
+		IRange wholeLine = new SimpleRange(line.StartIndex, line.TotalLength);
 		var text = textArea.Document.GetText(wholeLine);
 		// Ignore empty line copy
 		if (string.IsNullOrEmpty(text))
@@ -351,7 +353,7 @@ internal class EditingCommandHandler
 		var textArea = GetTextArea(target);
 		if (textArea?.Document != null)
 		{
-			if (textArea.Selection.IsEmpty && textArea.Options.CutCopyWholeLine)
+			if (textArea.Selection.IsEmpty && textArea.Settings.CutCopyWholeLine)
 			{
 				var currentLine = textArea.Document.GetLineByNumber(textArea.Caret.Line);
 				CopyWholeLine(textArea, currentLine);
@@ -369,14 +371,14 @@ internal class EditingCommandHandler
 		var textArea = GetTextArea(target);
 		if (textArea?.Document != null)
 		{
-			if (textArea.Selection.IsEmpty && textArea.Options.CutCopyWholeLine)
+			if (textArea.Selection.IsEmpty && textArea.Settings.CutCopyWholeLine)
 			{
 				var currentLine = textArea.Document.GetLineByNumber(textArea.Caret.Line);
 				if (CopyWholeLine(textArea, currentLine))
 				{
 					var segmentsToDelete =
 						textArea.GetDeletableSegments(
-							new SimpleSegment(currentLine.Offset, currentLine.TotalLength));
+							new SimpleRange(currentLine.StartIndex, currentLine.TotalLength));
 					for (var i = segmentsToDelete.Length - 1; i >= 0; i--)
 					{
 						textArea.Document.Remove(segmentsToDelete[i]);
@@ -405,7 +407,7 @@ internal class EditingCommandHandler
 				if (textArea.Selection.IsEmpty)
 				{
 					var startPos = textArea.Caret.Position;
-					var enableVirtualSpace = textArea.Options.EnableVirtualSpace;
+					var enableVirtualSpace = textArea.Settings.EnableVirtualSpace;
 					// When pressing delete; don't move the caret further into virtual space - instead delete the newline
 					if (caretMovement == CaretMovementType.CharRight)
 					{
@@ -440,6 +442,29 @@ internal class EditingCommandHandler
 		};
 	}
 
+	private static void OnDeleteLine(object target, ExecutedRoutedEventArgs args)
+	{
+		var textArea = GetTextArea(target);
+		if (textArea?.Document == null)
+		{
+			return;
+		}
+
+		var line = textArea.Document.GetLineByNumber(textArea.Caret.Line);
+		if (textArea.ReadOnlySectionProvider.CanInsert(line.StartIndex))
+		{
+			textArea.Document.Remove(line);
+		}
+
+		var segment = textArea.ReadOnlySectionProvider.GetDeletableSegments(line).FirstOrDefault();
+		if (segment != null)
+		{
+			textArea.Document.Remove(segment);
+		}
+
+		args.Handled = true;
+	}
+
 	private static void OnDuplicateLine(object target, ExecutedRoutedEventArgs args)
 	{
 		var textArea = GetTextArea(target);
@@ -461,7 +486,7 @@ internal class EditingCommandHandler
 			: textArea.Selection.GetText();
 
 		var offset = textArea.Selection.Length == 0
-			? textArea.Document.GetLineByNumber(textArea.Caret.Line).EndOffset
+			? textArea.Document.GetLineByNumber(textArea.Caret.Line).EndIndex
 			: Math.Max(startOffset, endOffset);
 
 		textArea.Document.Insert(offset, textArea.Selection.Length == 0 ? Environment.NewLine + text : text);
@@ -504,9 +529,9 @@ internal class EditingCommandHandler
 				}
 				else
 				{
-					start = textArea.Document.GetLineByOffset(textArea.Selection.SurroundingSegment.Offset)
+					start = textArea.Document.GetLineByOffset(textArea.Selection.SurroundingRange.StartIndex)
 						.LineNumber;
-					end = textArea.Document.GetLineByOffset(textArea.Selection.SurroundingSegment.EndOffset)
+					end = textArea.Document.GetLineByOffset(textArea.Selection.SurroundingRange.EndIndex)
 						.LineNumber;
 				}
 				textArea.IndentationStrategy.IndentLines(textArea.Document, start, end);
@@ -590,21 +615,21 @@ internal class EditingCommandHandler
 			{
 				if (textArea.Selection.IsMultiline)
 				{
-					var segment = textArea.Selection.SurroundingSegment;
-					var start = textArea.Document.GetLineByOffset(segment.Offset);
-					var end = textArea.Document.GetLineByOffset(segment.EndOffset);
+					var segment = textArea.Selection.SurroundingRange;
+					var start = textArea.Document.GetLineByOffset(segment.StartIndex);
+					var end = textArea.Document.GetLineByOffset(segment.EndIndex);
 					// don't include the last line if no characters on it are selected
-					if ((start != end) && (end.Offset == segment.EndOffset))
+					if ((start != end) && (end.StartIndex == segment.EndIndex))
 					{
 						end = end.PreviousLine;
 					}
 					var current = start;
 					while (true)
 					{
-						var offset = current.Offset;
+						var offset = current.StartIndex;
 						if (textArea.ReadOnlySectionProvider.CanInsert(offset))
 						{
-							textArea.Document.Replace(offset, 0, textArea.Options.IndentationString,
+							textArea.Document.Replace(offset, 0, textArea.Settings.IndentationString,
 								OffsetChangeMappingType.KeepAnchorBeforeInsertion);
 						}
 						if (current == end)
@@ -616,7 +641,7 @@ internal class EditingCommandHandler
 				}
 				else
 				{
-					var indentationString = textArea.Options.GetIndentationString(textArea.Caret.Column);
+					var indentationString = textArea.Settings.GetIndentationString(textArea.Caret.Column);
 					textArea.ReplaceSelectionWithText(indentationString);
 				}
 			}
@@ -628,7 +653,7 @@ internal class EditingCommandHandler
 	private static void OnToggleOverstrike(object target, ExecutedRoutedEventArgs args)
 	{
 		var textArea = GetTextArea(target);
-		if ((textArea != null) && textArea.Options.AllowToggleOverstrikeMode)
+		if ((textArea != null) && textArea.Settings.AllowToggleOverstrikeMode)
 		{
 			textArea.OverstrikeMode = !textArea.OverstrikeMode;
 		}
@@ -636,8 +661,8 @@ internal class EditingCommandHandler
 
 	private static void RemoveLineIndent(TextArea textArea, DocumentLine line)
 	{
-		var offset = line.Offset;
-		var s = TextUtilities.GetSingleIndentationSegment(textArea.Document, offset, textArea.Options.IndentationSize);
+		var offset = line.StartIndex;
+		var s = TextUtilities.GetSingleIndentationSegment(textArea.Document, offset, textArea.Settings.IndentationSize);
 		if (s.Length <= 0)
 		{
 			return;
@@ -646,7 +671,7 @@ internal class EditingCommandHandler
 		s = textArea.GetDeletableSegments(s).FirstOrDefault();
 		if (s is { Length: > 0 })
 		{
-			textArea.Document.Remove(s.Offset, s.Length);
+			textArea.Document.Remove(s.StartIndex, s.Length);
 		}
 	}
 
@@ -694,11 +719,11 @@ internal class EditingCommandHandler
 				}
 				else
 				{
-					var segment = textArea.Selection.SurroundingSegment;
-					start = textArea.Document.GetLineByOffset(segment.Offset);
-					end = textArea.Document.GetLineByOffset(segment.EndOffset);
+					var segment = textArea.Selection.SurroundingRange;
+					start = textArea.Document.GetLineByOffset(segment.StartIndex);
+					end = textArea.Document.GetLineByOffset(segment.EndIndex);
 					// don't include the last line if no characters on it are selected
-					if ((start != end) && (end.Offset == segment.EndOffset))
+					if ((start != end) && (end.StartIndex == segment.EndIndex))
 					{
 						end = end.PreviousLine;
 					}
@@ -721,7 +746,7 @@ internal class EditingCommandHandler
 	/// <summary>
 	/// Calls transformLine on all writable segment in the selected range.
 	/// </summary>
-	private static void TransformSelectedSegments(Action<TextArea, ISegment> transformSegment, object target,
+	private static void TransformSelectedSegments(Action<TextArea, IRange> transformSegment, object target,
 		ExecutedRoutedEventArgs args, DefaultSegmentType defaultSegmentType)
 	{
 		var textArea = GetTextArea(target);
@@ -729,12 +754,12 @@ internal class EditingCommandHandler
 		{
 			using (textArea.Document.RunUpdate())
 			{
-				IEnumerable<ISegment> segments;
+				IEnumerable<IRange> segments;
 				if (textArea.Selection.IsEmpty)
 				{
 					if (defaultSegmentType == DefaultSegmentType.CurrentLine)
 					{
-						segments = new ISegment[] { textArea.Document.GetLineByNumber(textArea.Caret.Line) };
+						segments = new IRange[] { textArea.Document.GetLineByNumber(textArea.Caret.Line) };
 					}
 					else if (defaultSegmentType == DefaultSegmentType.WholeDocument)
 					{

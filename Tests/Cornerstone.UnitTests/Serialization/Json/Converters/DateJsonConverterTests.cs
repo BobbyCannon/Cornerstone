@@ -58,7 +58,7 @@ public class DateJsonConverterTests : JsonConverterTest<DateJsonConverter>
 		foreach (var scenario in scenarios)
 		{
 			var actual = Converter.GetJsonString(scenario.Value, settings);
-			AreEqual(scenario.Expected, actual, scenario.Name);
+			AreEqual(scenario.Expected, actual, () => scenario.Name);
 		}
 	}
 
@@ -68,7 +68,7 @@ public class DateJsonConverterTests : JsonConverterTest<DateJsonConverter>
 		var scenario = GetScenarios()[13];
 		var settings = Serializer.DefaultSettings;
 		var actual = Converter.GetJsonString(scenario.Value, settings);
-		AreEqual(scenario.Expected, actual, scenario.Name);
+		AreEqual(scenario.Expected, actual, () => scenario.Name);
 	}
 
 	private SerializationScenario[] GetScenarios()

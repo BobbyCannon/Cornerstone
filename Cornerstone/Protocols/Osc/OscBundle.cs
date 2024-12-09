@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Cornerstone.Extensions;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -26,7 +27,7 @@ public class OscBundle : OscPacket, IEnumerable<OscPacket>
 	#region Constructors
 
 	public OscBundle(params OscPacket[] packets)
-		: this(TimeService.CurrentTime.UtcNow, packets)
+		: this(DateTimeProvider.RealTime.UtcNow, packets)
 	{
 	}
 
@@ -185,7 +186,7 @@ public class OscBundle : OscPacket, IEnumerable<OscPacket>
 
 		if ((bundleTag != "#bundle\0") && (bundleTag != "+bundle\0"))
 		{
-			return new OscError(TimeService.CurrentTime.UtcNow, OscError.Message.InvalidBundle);
+			return new OscError(DateTimeProvider.RealTime.UtcNow, OscError.Message.InvalidBundle);
 		}
 
 		var isExtended = bundleTag == "+bundle\0";
@@ -209,7 +210,7 @@ public class OscBundle : OscPacket, IEnumerable<OscPacket>
 			if (!(packet is OscMessage message))
 			{
 				// Should never get here but just in case
-				return new OscError(TimeService.CurrentTime.UtcNow, OscError.Message.InvalidParsedMessage);
+				return new OscError(DateTimeProvider.RealTime.UtcNow, OscError.Message.InvalidParsedMessage);
 			}
 
 			message.Time = timeTag;
@@ -230,7 +231,7 @@ public class OscBundle : OscPacket, IEnumerable<OscPacket>
 
 			if (readCrc != calculatedCrc)
 			{
-				return new OscError(TimeService.CurrentTime.UtcNow, OscError.Message.InvalidBundleCrc);
+				return new OscError(DateTimeProvider.RealTime.UtcNow, OscError.Message.InvalidBundleCrc);
 			}
 		}
 
@@ -247,7 +248,7 @@ public class OscBundle : OscPacket, IEnumerable<OscPacket>
 	{
 		if (string.IsNullOrWhiteSpace(value))
 		{
-			return new OscError(TimeService.CurrentTime.UtcNow, OscError.Message.InvalidParseOscPacketInput);
+			return new OscError(DateTimeProvider.RealTime.UtcNow, OscError.Message.InvalidParseOscPacketInput);
 		}
 
 		var start = 0;
@@ -255,14 +256,14 @@ public class OscBundle : OscPacket, IEnumerable<OscPacket>
 
 		if (end <= start)
 		{
-			return new OscError(TimeService.CurrentTime.UtcNow, OscError.Message.InvalidBundleStart);
+			return new OscError(DateTimeProvider.RealTime.UtcNow, OscError.Message.InvalidBundleStart);
 		}
 
 		var ident = value.Substring(start, end - start).Trim();
 
 		if (!"#bundle".Equals(ident, StringComparison.InvariantCulture) && !"+bundle".Equals(ident, StringComparison.InvariantCulture))
 		{
-			return new OscError(TimeService.CurrentTime.UtcNow, OscError.Message.InvalidBundleIdent, ident);
+			return new OscError(DateTimeProvider.RealTime.UtcNow, OscError.Message.InvalidBundleIdent, ident);
 		}
 
 		start = end + 1;
@@ -294,7 +295,7 @@ public class OscBundle : OscPacket, IEnumerable<OscPacket>
 
 		if (string.IsNullOrWhiteSpace(gap) == false)
 		{
-			return new OscError(TimeService.CurrentTime.UtcNow, OscError.Message.InvalidParsedMessageArray, gap);
+			return new OscError(DateTimeProvider.RealTime.UtcNow, OscError.Message.InvalidParsedMessageArray, gap);
 		}
 
 		start = end;
@@ -317,7 +318,7 @@ public class OscBundle : OscPacket, IEnumerable<OscPacket>
 
 			if ((gap.Equals(",") == false) && (string.IsNullOrWhiteSpace(gap) == false))
 			{
-				return new OscError(TimeService.CurrentTime.UtcNow, OscError.Message.InvalidParsedMessageArray, gap);
+				return new OscError(DateTimeProvider.RealTime.UtcNow, OscError.Message.InvalidParsedMessageArray, gap);
 			}
 
 			start = end;

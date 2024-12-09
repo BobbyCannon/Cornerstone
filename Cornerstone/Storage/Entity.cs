@@ -7,7 +7,7 @@ using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Internal;
 using Cornerstone.Sync;
-using PropertyChanged;
+using Cornerstone.Weaver;
 using ICloneable = Cornerstone.Data.ICloneable;
 
 #endregion

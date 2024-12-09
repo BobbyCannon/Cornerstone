@@ -15,39 +15,12 @@ namespace Cornerstone.Storage;
 /// <summary>
 /// Represent a memory cache.
 /// </summary>
-public class MemoryCache : MemoryCache<string, object>
-{
-	#region Constructors
-
-	/// <summary>
-	/// Initializes a memory cache with a default 15 timeout.
-	/// </summary>
-	public MemoryCache() : this(TimeSpan.FromMinutes(15))
-	{
-	}
-
-	/// <summary>
-	/// Initializes a memory cache.
-	/// </summary>
-	/// <param name="defaultTimeout"> The default timeout of new entries. </param>
-	/// <param name="timeService"> The service to use for date and time. </param>
-	public MemoryCache(TimeSpan defaultTimeout, IDateTimeProvider timeService = null)
-		: base(defaultTimeout, timeService)
-	{
-	}
-
-	#endregion
-}
-
-/// <summary>
-/// Represent a memory cache.
-/// </summary>
 public class MemoryCache<TKey, TValue> : ICollection<MemoryCacheItem<TKey, TValue>>, ICollection, INotifyCollectionChanged
 {
 	#region Fields
 
 	private readonly Dictionary<TKey, MemoryCacheItem<TKey, TValue>> _dictionary;
-	private readonly IDateTimeProvider _timeService;
+	private readonly IDateTimeProvider _timeProvider;
 
 	#endregion
 
@@ -64,10 +37,10 @@ public class MemoryCache<TKey, TValue> : ICollection<MemoryCacheItem<TKey, TValu
 	/// Initializes a memory cache.
 	/// </summary>
 	/// <param name="defaultTimeout"> The default timeout of new entries. </param>
-	/// <param name="timeService"> The service to use for date and time. </param>
-	public MemoryCache(TimeSpan defaultTimeout, IDateTimeProvider timeService = null)
+	/// <param name="timeProvider"> The service to use for date and time. </param>
+	public MemoryCache(TimeSpan defaultTimeout, IDateTimeProvider timeProvider = null)
 	{
-		_timeService = timeService ?? TimeService.RealTime;
+		_timeProvider = timeProvider ?? DateTimeProvider.RealTime;
 		_dictionary = new Dictionary<TKey, MemoryCacheItem<TKey, TValue>>();
 
 		DefaultTimeout = defaultTimeout;
@@ -202,7 +175,7 @@ public class MemoryCache<TKey, TValue> : ICollection<MemoryCacheItem<TKey, TValu
 			foreach (var value in _dictionary)
 			{
 				// See remark in method summary.
-				//value.Value.LastAccessed = TimeService.Instance.UtcNow;
+				//value.Value.LastAccessed = DateTimeProvider.RealTime.Instance.UtcNow;
 				yield return value.Value;
 			}
 		}
@@ -269,13 +242,13 @@ public class MemoryCache<TKey, TValue> : ICollection<MemoryCacheItem<TKey, TValu
 		lock (SyncRoot)
 		{
 			item = _dictionary.AddOrUpdate(key,
-				() => new MemoryCacheItem<TKey, TValue>(this, key, value, timeout, _timeService),
+				() => new MemoryCacheItem<TKey, TValue>(this, key, value, timeout, _timeProvider),
 				x =>
 				{
 					updated = true;
 					x.Key = key;
 					x.Value = value;
-					x.LastAccessed = _timeService.UtcNow;
+					x.LastAccessed = _timeProvider.UtcNow;
 					return x;
 				}
 			);
@@ -303,7 +276,7 @@ public class MemoryCache<TKey, TValue> : ICollection<MemoryCacheItem<TKey, TValu
 				return false;
 			}
 
-			if (cachedItem.ExpirationDate <= _timeService.UtcNow)
+			if (cachedItem.ExpirationDate <= _timeProvider.UtcNow)
 			{
 				value = null;
 				Remove(cachedItem);
@@ -311,7 +284,7 @@ public class MemoryCache<TKey, TValue> : ICollection<MemoryCacheItem<TKey, TValu
 			}
 
 			value = cachedItem;
-			value.LastAccessed = _timeService.UtcNow;
+			value.LastAccessed = _timeProvider.UtcNow;
 			return true;
 		}
 	}

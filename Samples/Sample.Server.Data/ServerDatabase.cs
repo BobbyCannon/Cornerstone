@@ -25,8 +25,8 @@ public abstract class ServerDatabase : EntityFrameworkSyncableDatabase, IServerD
 		// Default constructor needed for Add-Migration
 	}
 
-	protected ServerDatabase(DbContextOptions contextOptions, DatabaseOptions options, DatabaseKeyCache keyCache)
-		: base(contextOptions, options, keyCache)
+	protected ServerDatabase(DbContextOptions contextOptions, DatabaseSettings settings, DatabaseKeyCache keyCache)
+		: base(contextOptions, settings, keyCache)
 	{
 	}
 

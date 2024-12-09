@@ -14,13 +14,13 @@ public sealed class WeakLineTracker : ILineTracker
 	#region Fields
 
 	private readonly WeakReference _targetObject;
-	private TextDocument _textDocument;
+	private TextEditorDocument _textDocument;
 
 	#endregion
 
 	#region Constructors
 
-	private WeakLineTracker(TextDocument textDocument, ILineTracker targetTracker)
+	private WeakLineTracker(TextEditorDocument textDocument, ILineTracker targetTracker)
 	{
 		_textDocument = textDocument;
 		_targetObject = new WeakReference(targetTracker);
@@ -47,7 +47,7 @@ public sealed class WeakLineTracker : ILineTracker
 	/// A weak reference to the target tracker will be used, and the WeakLineTracker will deregister itself
 	/// when the target tracker is garbage collected.
 	/// </summary>
-	public static WeakLineTracker Register(TextDocument textDocument, ILineTracker targetTracker)
+	public static WeakLineTracker Register(TextEditorDocument textDocument, ILineTracker targetTracker)
 	{
 		if (textDocument == null)
 		{

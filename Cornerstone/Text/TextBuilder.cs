@@ -2,33 +2,6 @@
 
 using System;
 using System.Linq;
-
-/* Unmerged change from project 'Cornerstone (net7.0)'
-Before:
-#if !NETSTANDARD
-After:
-using Cornerstone.Text.Buffers;
-
-#if !NETSTANDARD
-*/
-
-/* Unmerged change from project 'Cornerstone (net6.0)'
-Before:
-#if !NETSTANDARD
-After:
-using Cornerstone.Text.Buffers;
-
-#if !NETSTANDARD
-*/
-
-/* Unmerged change from project 'Cornerstone (net8.0)'
-Before:
-#if !NETSTANDARD
-After:
-using Cornerstone.Text.Buffers;
-
-#if !NETSTANDARD
-*/
 using Cornerstone.Text.Buffers;
 #if !NETSTANDARD
 using System.Diagnostics.CodeAnalysis;
@@ -41,7 +14,7 @@ namespace Cornerstone.Text;
 /// <summary>
 /// Represents a plain text builder.
 /// </summary>
-public class TextBuilder : TextBuilder<ITextBuilderOptions>
+public class TextBuilder : TextBuilder<ITextBuilderSettings>
 {
 	#region Constructors
 
@@ -55,21 +28,21 @@ public class TextBuilder : TextBuilder<ITextBuilderOptions>
 	/// <summary>
 	/// Initialize the document.
 	/// </summary>
-	public TextBuilder(string text) : this(text, new TextBuilderOptions())
+	public TextBuilder(string text) : this(text, new TextBuilderSettings())
 	{
 	}
 
 	/// <summary>
 	/// Initialize the document.
 	/// </summary>
-	public TextBuilder(ITextBuilderOptions options) : this(string.Empty, options)
+	public TextBuilder(ITextBuilderSettings settings) : this(string.Empty, settings)
 	{
 	}
 
 	/// <summary>
 	/// Initialize the document.
 	/// </summary>
-	public TextBuilder(string text, ITextBuilderOptions options) : base(text, options)
+	public TextBuilder(string text, ITextBuilderSettings settings) : base(text, settings)
 	{
 	}
 
@@ -80,7 +53,7 @@ public class TextBuilder : TextBuilder<ITextBuilderOptions>
 /// Represents a plain text builder.
 /// </summary>
 public class TextBuilder<T> : ITextBuilder
-	where T : ITextBuilderOptions
+	where T : ITextBuilderSettings
 {
 	#region Fields
 
@@ -95,21 +68,29 @@ public class TextBuilder<T> : ITextBuilder
 	/// <summary>
 	/// Initialize the document.
 	/// </summary>
-	public TextBuilder(string text, T options)
-		: this(new StringGapBuffer(text), options)
+	public TextBuilder(string text, T settings)
+		: this(new StringGapBuffer(text), settings)
 	{
 	}
 
 	/// <summary>
 	/// Initialize the document.
 	/// </summary>
-	public TextBuilder(IStringBuffer buffer, T options)
+	public TextBuilder(IStringBuffer buffer, T settings)
+		: this(new StringGapBuffer(buffer), settings)
+	{
+	}
+
+	/// <summary>
+	/// Initialize the document.
+	/// </summary>
+	public TextBuilder(StringGapBuffer buffer, T settings)
 	{
 		_buffer = buffer ?? new StringGapBuffer();
 		_currentIndent = new StringGapBuffer();
 		_endsWithNewline = false;
 
-		Settings = options ?? Activator.CreateInstance<T>();
+		Settings = settings ?? Activator.CreateInstance<T>();
 		IndentToken = '\t';
 		IndentCount = 1;
 		NewLineToken = Environment.NewLine;
@@ -163,30 +144,6 @@ public class TextBuilder<T> : ITextBuilder
 	}
 
 	/// <summary>
-	/// Append the value.
-	/// </summary>
-	/// <param name="array"> The array that contains the data to append. </param>
-	/// <param name="arrayIndex"> The start index in the array. </param>
-	/// <param name="arrayCount"> The amount of data to append. </param>
-	/// <returns> The text document. </returns>
-	public void Append(string array, int arrayIndex, int arrayCount)
-	{
-		InternalUpdate(_buffer.Count, array, arrayIndex, arrayCount, false);
-	}
-
-	/// <summary>
-	/// Append the value.
-	/// </summary>
-	/// <param name="array"> The array that contains the data to append. </param>
-	/// <param name="arrayIndex"> The start index in the array. </param>
-	/// <param name="arrayCount"> The amount of data to append. </param>
-	/// <returns> The text document. </returns>
-	public void Append(char[] array, int arrayIndex, int arrayCount)
-	{
-		InternalUpdate(_buffer.Count, array, arrayIndex, arrayCount, false);
-	}
-
-	/// <summary>
 	/// Append the value with a <see cref="NewLineToken" />.
 	/// </summary>
 	/// <param name="value"> The value to append to the document. </param>
@@ -200,9 +157,18 @@ public class TextBuilder<T> : ITextBuilder
 	/// <summary>
 	/// Append the value with a <see cref="NewLineToken" />.
 	/// </summary>
+	/// <returns> The text document. </returns>
+	public ITextBuilder AppendLine()
+	{
+		return NewLine();
+	}
+
+	/// <summary>
+	/// Append the value with a <see cref="NewLineToken" />.
+	/// </summary>
 	/// <param name="value"> The value to append to the document. </param>
 	/// <returns> The text document. </returns>
-	public ITextBuilder AppendLine(string value = null)
+	public ITextBuilder AppendLine(string value)
 	{
 		InternalUpdate(_buffer.Count, value, true);
 		return this;
@@ -225,7 +191,7 @@ public class TextBuilder<T> : ITextBuilder
 	/// </summary>
 	/// <param name="value"> The value to append to the document. </param>
 	/// <returns> The text document. </returns>
-	public TextBuilder<T> AppendLineThenPopIndent(string value = null)
+	public ITextBuilder AppendLineThenPopIndent(string value = null)
 	{
 		InternalUpdate(_buffer.Count, value, true);
 		PopIndent();
@@ -324,6 +290,18 @@ public class TextBuilder<T> : ITextBuilder
 	}
 
 	/// <summary>
+	/// Decrease indent then append the value with a <see cref="NewLineToken" />.
+	/// </summary>
+	/// <param name="value"> The value to append to the document. </param>
+	/// <returns> The text document. </returns>
+	public ITextBuilder PopIndentThenAppendLine(string value = null)
+	{
+		PopIndent();
+		InternalUpdate(_buffer.Count, value, true);
+		return this;
+	}
+
+	/// <summary>
 	/// Increases indent.
 	/// </summary>
 	public ITextBuilder PushIndent()
@@ -341,9 +319,10 @@ public class TextBuilder<T> : ITextBuilder
 	/// </summary>
 	/// <param name="index"> The index to start removing from. </param>
 	/// <param name="length"> The length of text to remove. </param>
-	public void Remove(int index, int length)
+	public ITextBuilder Remove(int index, int length)
 	{
 		_buffer.RemoveRange(index, length);
+		return this;
 	}
 
 	/// <summary>
@@ -425,48 +404,6 @@ public class TextBuilder<T> : ITextBuilder
 		}
 	}
 
-	private void InternalUpdate(int index, char[] array, int arrayIndex, int arrayCount, bool newLine)
-	{
-		if ((_currentIndent.Count > 0) && _endsWithNewline)
-		{
-			_buffer.Insert(index, _currentIndent.ToString());
-			index += _currentIndent.Count;
-			_endsWithNewline = false;
-		}
-
-		if (array != null)
-		{
-			_buffer.Insert(index, array, arrayIndex, arrayCount);
-			_endsWithNewline = false;
-		}
-
-		if (newLine)
-		{
-			InternalNewLine(index + (array?.Length ?? 0));
-		}
-	}
-
-	private void InternalUpdate(int index, string array, int arrayIndex, int arrayCount, bool newLine)
-	{
-		if ((_currentIndent.Count > 0) && _endsWithNewline)
-		{
-			_buffer.Insert(index, _currentIndent);
-			index += _currentIndent.Count;
-			_endsWithNewline = false;
-		}
-
-		if (array != null)
-		{
-			_buffer.Insert(index, array, arrayIndex, arrayCount);
-			_endsWithNewline = false;
-		}
-
-		if (newLine)
-		{
-			InternalNewLine(index + (array?.Length ?? 0));
-		}
-	}
-
 	private void InternalUpdate(int index, string value, bool newLine)
 	{
 		if (value is { Length: > 0 })
@@ -517,9 +454,22 @@ public interface ITextBuilder
 	/// <summary>
 	/// Append the value then a newline.
 	/// </summary>
+	/// <returns> The text document. </returns>
+	ITextBuilder AppendLine();
+
+	/// <summary>
+	/// Append the value then a newline.
+	/// </summary>
 	/// <param name="value"> The value to append to the document. </param>
 	/// <returns> The text document. </returns>
 	ITextBuilder AppendLine(string value);
+
+	/// <summary>
+	/// Append the value with a <see cref="NewLineToken" /> then decrease indent.
+	/// </summary>
+	/// <param name="value"> The value to append to the document. </param>
+	/// <returns> The text document. </returns>
+	ITextBuilder AppendLineThenPopIndent(string value = null);
 
 	/// <summary>
 	/// Append the value with a newline then increment indent.
@@ -544,6 +494,13 @@ public interface ITextBuilder
 	/// Decrease indent.
 	/// </summary>
 	ITextBuilder PopIndent();
+
+	/// <summary>
+	/// Decrease indent then append the value with a <see cref="NewLineToken" />.
+	/// </summary>
+	/// <param name="value"> The value to append to the document. </param>
+	/// <returns> The text document. </returns>
+	ITextBuilder PopIndentThenAppendLine(string value = null);
 
 	/// <summary>
 	/// Increases indent.

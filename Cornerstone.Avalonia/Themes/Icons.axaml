@@ -1,0 +1,65 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<StreamGeometry x:Key="Icons.File.Add">M683 85l213 213v598a42 42 0 01-42 42H170A43 43 0 01128 896V128C128 104 147 85 170 85H683zm-213 384H341v85h128v128h85v-128h128v-85h-128V341h-85v128z</StreamGeometry>
+	<StreamGeometry x:Key="Icons.Orientation">M1231 0v372H120V0zM1352 484v56H0v-56zM1147 939H205V737h942v203M1231 1024V652H120V1024z</StreamGeometry>
+	<StreamGeometry x:Key="Icons.Plus">m186 532 287 0 0 287c0 11 9 20 20 20s20-9 20-20l0-287 287 0c11 0 20-9 20-20s-9-20-20-20l-287 0 0-287c0-11-9-20-20-20s-20 9-20 20l0 287-287 0c-11 0-20 9-20 20s9 20 20 20z</StreamGeometry>
+	<StreamGeometry x:Key="Icons.Search">M702 677 590 565a148 148 0 10-25 27L676 703zm-346-200a115 115 0 11115 115A115 115 0 01355 478z</StreamGeometry>
+	<StreamGeometry x:Key="Icons.Waiting">M812 864h-29V654c0-21-11-40-28-52l-133-88 134-89c18-12 28-31 28-52V164h28c18 0 32-14 32-32s-14-32-32-32H212c-18 0-32 14-32 32s14 32 32 32h30v210c0 21 11 40 28 52l133 88-134 89c-18 12-28 31-28 52V864H212c-18 0-32 14-32 32s14 32 32 32h600c18 0 32-14 32-32s-14-32-32-32zM441 566c18-12 28-31 28-52s-11-40-28-52L306 373V164h414v209l-136 90c-18 12-28 31-28 52 0 21 11 40 28 52l135 89V695c-9-7-20-13-32-19-30-15-93-41-176-41-63 0-125 14-175 38-12 6-22 12-31 18v-36l136-90z</StreamGeometry>
+	<StreamGeometry x:Key="Icons.Window.Minimize">M0 0M1024 1024 M960 544H64a32 32 0 1 1 0-64h896a32 32 0 1 1 0 64</StreamGeometry>
+	<StreamGeometry x:Key="Icons.Window.Maximize">M153 154h768v768h-768v-768zm64 64v640h640v-640h-640z</StreamGeometry>
+	<StreamGeometry x:Key="Icons.Window.Restore">M256 128l0 192L64 320l0 576 704 0 0-192 192 0L960 128 256 128zM704 832 128 832 128 384l576 0L704 832zM896 640l-128 0L768 320 320 320 320 192l576 0L896 640z</StreamGeometry>
+	<StreamGeometry x:Key="Icons.Window.Close">M519 459 222 162a37 37 0 10-52 52l297 297L169 809a37 37 0 1052 52l297-297 297 297a37 37 0 1052-52l-297-297 297-297a37 37 0 10-52-52L519 459z</StreamGeometry>
+
+	<Design.PreviewWith>
+		<WrapPanel MaxWidth="400" ItemWidth="200">
+			<WrapPanel.Styles>
+				<Style Selector="Path.Icon" >
+					<Setter Property="Height" Value="32" />
+					<Setter Property="Width" Value="32" />
+					<Setter Property="Margin" Value="8" />
+				</Style>
+				<Style Selector="TextBlock.IconHeader" >
+					<Setter Property="HorizontalAlignment" Value="Center" />
+					<Setter Property="Margin" Value="0,0,0,20" />
+				</Style>
+			</WrapPanel.Styles>
+			<!-- Generated Code -->
+			<StackPanel>
+				<Path Classes="Icon" Data="{StaticResource Icons.File.Add}" ToolTip.Tip="Icons.File.Add" />
+				<TextBlock Classes="IconHeader" Text="Icons.File.Add"></TextBlock>
+			</StackPanel>
+			<StackPanel>
+				<Path Classes="Icon" Data="{StaticResource Icons.Orientation}" ToolTip.Tip="Icons.Orientation" />
+				<TextBlock Classes="IconHeader" Text="Icons.Orientation"></TextBlock>
+			</StackPanel>
+			<StackPanel>
+				<Path Classes="Icon" Data="{StaticResource Icons.Plus}" ToolTip.Tip="Icons.Plus" />
+				<TextBlock Classes="IconHeader" Text="Icons.Plus"></TextBlock>
+			</StackPanel>
+			<StackPanel>
+				<Path Classes="Icon" Data="{StaticResource Icons.Search}" ToolTip.Tip="Icons.Search" />
+				<TextBlock Classes="IconHeader" Text="Icons.Search"></TextBlock>
+			</StackPanel>
+			<StackPanel>
+				<Path Classes="Icon" Data="{StaticResource Icons.Waiting}" ToolTip.Tip="Icons.Waiting" />
+				<TextBlock Classes="IconHeader" Text="Icons.Waiting"></TextBlock>
+			</StackPanel>
+			<StackPanel>
+				<Path Classes="Icon" Data="{StaticResource Icons.Window.Minimize}" ToolTip.Tip="Icons.Window.Minimize" />
+				<TextBlock Classes="IconHeader" Text="Icons.Window.Minimize"></TextBlock>
+			</StackPanel>
+			<StackPanel>
+				<Path Classes="Icon" Data="{StaticResource Icons.Window.Maximize}" ToolTip.Tip="Icons.Window.Maximize" />
+				<TextBlock Classes="IconHeader" Text="Icons.Window.Maximize"></TextBlock>
+			</StackPanel>
+			<StackPanel>
+				<Path Classes="Icon" Data="{StaticResource Icons.Window.Restore}" ToolTip.Tip="Icons.Window.Restore" />
+				<TextBlock Classes="IconHeader" Text="Icons.Window.Restore"></TextBlock>
+			</StackPanel>
+			<StackPanel>
+				<Path Classes="Icon" Data="{StaticResource Icons.Window.Close}" ToolTip.Tip="Icons.Window.Close" />
+				<TextBlock Classes="IconHeader" Text="Icons.Window.Close"></TextBlock>
+			</StackPanel>
+			<!-- /Generated Code -->
+		</WrapPanel>
+	</Design.PreviewWith>
+</ResourceDictionary>

@@ -2,6 +2,7 @@
 
 using System;
 using System.IO;
+using Cornerstone.Collections;
 
 #endregion
 
@@ -94,13 +95,13 @@ public class StringTextSource : ITextSource
 	}
 
 	/// <inheritdoc />
-	public string GetText(ISegment segment)
+	public string GetText(IRange range)
 	{
-		if (segment == null)
+		if (range == null)
 		{
-			throw new ArgumentNullException(nameof(segment));
+			throw new ArgumentNullException(nameof(range));
 		}
-		return Text.Substring(segment.Offset, segment.Length);
+		return Text.Substring(range.StartIndex, range.Length);
 	}
 
 	/// <inheritdoc />

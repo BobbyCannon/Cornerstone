@@ -6,6 +6,7 @@ using System.Reflection;
 using Cornerstone.Compare;
 using Cornerstone.Exceptions;
 using Cornerstone.Extensions;
+using Cornerstone.Runtime;
 using Cornerstone.Storage;
 using Cornerstone.Sync;
 using Microsoft.EntityFrameworkCore;
@@ -40,26 +41,31 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 		_collectionChangeTracker = new CollectionChangeTracker();
 
 		DbContextOptions = null;
-		Options = new DatabaseOptions();
+		DatabaseSettings = new DatabaseSettings();
 	}
 
 	/// <summary>
 	/// Initializes an instance of the database.
 	/// </summary>
 	/// <param name="startup"> The startup options for this database. </param>
-	/// <param name="options"> The options for this database. </param>
-	protected EntityFrameworkDatabase(DbContextOptions startup, DatabaseOptions options)
+	/// <param name="settings"> The options for this database. </param>
+	protected EntityFrameworkDatabase(DbContextOptions startup, DatabaseSettings settings)
 		: base(startup)
 	{
 		_collectionChangeTracker = new CollectionChangeTracker();
 
 		DbContextOptions = startup;
-		Options = options ?? new DatabaseOptions();
+		DatabaseSettings = settings ?? new DatabaseSettings();
 	}
 
 	#endregion
 
 	#region Properties
+
+	/// <summary>
+	/// Gets the options for this database.
+	/// </summary>
+	public DatabaseSettings DatabaseSettings { get; }
 
 	/// <summary>
 	/// Gets the database context options for this database.
@@ -68,11 +74,6 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 
 	/// <inheritdoc />
 	public bool IsDisposed { get; private set; }
-
-	/// <summary>
-	/// Gets the options for this database.
-	/// </summary>
-	public DatabaseOptions Options { get; }
 
 	#endregion
 
@@ -507,11 +508,11 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 		var createdEntity = entity as ICreatedEntity;
 		var modifiableEntity = entity as IModifiableEntity;
 		var syncableEntity = entity as ISyncEntity;
-		var maintainedEntity = Options.UnmaintainedEntities.All(x => x != entry.Entity.GetType());
-		var maintainCreatedOnDate = maintainedEntity && Options.MaintainCreatedOn;
-		var maintainModifiedOnDate = maintainedEntity && Options.MaintainModifiedOn;
-		var maintainSyncId = maintainedEntity && Options.MaintainSyncId;
-		var now = TimeService.CurrentTime.UtcNow;
+		var maintainedEntity = DatabaseSettings.UnmaintainedEntities.All(x => x != entry.Entity.GetType());
+		var maintainCreatedOnDate = maintainedEntity && DatabaseSettings.MaintainCreatedOn;
+		var maintainModifiedOnDate = maintainedEntity && DatabaseSettings.MaintainModifiedOn;
+		var maintainSyncId = maintainedEntity && DatabaseSettings.MaintainSyncId;
+		var now = DateTimeProvider.RealTime.UtcNow;
 
 		// Check to see if the entity was added.
 		switch (entry.State)
@@ -598,7 +599,7 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 			}
 			case EntityState.Deleted:
 			{
-				if ((syncableEntity != null) && !Options.PermanentSyncEntityDeletions)
+				if ((syncableEntity != null) && !DatabaseSettings.PermanentSyncEntityDeletions)
 				{
 					syncableEntity.IsDeleted = true;
 					syncableEntity.ModifiedOn = now;

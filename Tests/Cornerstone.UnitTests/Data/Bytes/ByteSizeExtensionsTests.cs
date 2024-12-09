@@ -513,7 +513,7 @@ public class ByteSizeExtensionsTests : CornerstoneUnitTest
 
 		foreach (var type in Activator.NumberTypes)
 		{
-			var line = $"AreEqual(scenario.Key, (({type.ToCSharpCode()}) scenario.Value).{name}());";
+			var line = $"AreEqual(scenario.Key, (({type.GetCodeTypeName()}) scenario.Value).{name}());";
 			builder.AppendLine(line);
 		}
 

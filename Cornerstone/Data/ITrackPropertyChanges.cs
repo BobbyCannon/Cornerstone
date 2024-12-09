@@ -34,9 +34,9 @@ public interface ITrackPropertyChanges
 	/// <summary>
 	/// Determines if the object has changes.
 	/// </summary>
-	/// <param name="options"> An optional set of options. </param>
+	/// <param name="settings"> An optional set of options. </param>
 	/// <returns> True if the object has changes otherwise false. </returns>
-	bool HasChanges(IncludeExcludeOptions options);
+	bool HasChanges(IncludeExcludeSettings settings);
 
 	/// <summary>
 	/// Reset the "has changes" state.

@@ -7,7 +7,7 @@
 	<!-- Design preview. -->
 
 	<Design.PreviewWith>
-		<Border  Width="320">
+		<Border Width="220">
 			<StackPanel HorizontalAlignment="Left">
 				<MenuItem Header="_Standard" />
 				<MenuItem IsSelected="True" Header="Selected" />
@@ -24,6 +24,11 @@
 				<MenuItem Header="With CheckBox (unchecked)">
 					<MenuItem.Icon>
 						<CheckBox IsChecked="False" />
+					</MenuItem.Icon>
+				</MenuItem>
+				<MenuItem Header="_About">
+					<MenuItem.Icon>
+						<PathIcon Data="{StaticResource FontAwesome.Question.Solid}" />
 					</MenuItem.Icon>
 				</MenuItem>
 				<MenuItem Header="Input Gesture" InputGesture="Ctrl+G" />
@@ -70,7 +75,7 @@
 	<ControlTheme x:Key="{x:Type MenuItem}" TargetType="MenuItem">
 		<Setter Property="Background" Value="{DynamicResource MenuFlyoutItemBackground}" />
 		<Setter Property="Foreground" Value="{DynamicResource MenuFlyoutItemForeground}" />
-		<!--  Narrow padding should be used for mouse input, when non-narrow one should be used for touch input in future.  -->
+		<!--  Narrow padding should be used for mouse input, when non-narrow one should be used for touch input in the future.  -->
 		<Setter Property="Padding" Value="{DynamicResource MenuFlyoutItemPaddingNarrow}" />
 		<Setter Property="FontSize" Value="{DynamicResource StandardFontSize}" />
 		<Setter Property="CornerRadius" Value="{DynamicResource MenuFlyoutItemCornerRadius}" />
@@ -112,7 +117,6 @@
 							<TextBlock
 									x:Name="PART_InputGestureText"
 									Grid.Column="2"
-									Classes="CaptionTextBlockStyle"
 									Margin="{DynamicResource MenuInputGestureTextMargin}"
 									Text="{TemplateBinding InputGesture, Converter={StaticResource KeyGestureConverter}}"
 									HorizontalAlignment="Right"
@@ -144,7 +148,7 @@
 								BorderThickness="{DynamicResource MenuFlyoutPresenterBorderThemeThickness}"
 								Padding="{DynamicResource MenuFlyoutPresenterThemePadding}"
 								MaxWidth="{DynamicResource FlyoutThemeMaxWidth}"
-								MinHeight="{DynamicResource MenuFlyoutThemeMinHeight}"
+								MinHeight="32"
 								HorizontalAlignment="Stretch"
 								CornerRadius="{DynamicResource FlyoutCornerRadius}">
 							<ScrollViewer Theme="{StaticResource MenuScrollViewer}">

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Cornerstone.Compare;
 using Cornerstone.Data;
 using Cornerstone.Protocols.Osc;
+using Cornerstone.Runtime;
 using Cornerstone.Testing;
 using Cornerstone.UnitTests;
 using Cornerstone.UnitTests.Protocols;
@@ -22,11 +23,11 @@ public class SampleOscCommandTests : CornerstoneUnitTest
 
 	public SampleOscCommandTests()
 	{
-		ComparerOptions = new ComparerOptions
+		ComparerSettings = new ComparerSettings
 		{
-			IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeOptions>
+			IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeSettings>
 			{
-				{ typeof(SampleOscCommand), new IncludeExcludeOptions(null, [nameof(SampleOscCommand.Time), nameof(SampleOscCommand.HasBeenRead), nameof(SampleOscCommand.HasBeenUpdated)]) }
+				{ typeof(SampleOscCommand), new IncludeExcludeSettings(null, [nameof(SampleOscCommand.Time), nameof(SampleOscCommand.HasBeenRead), nameof(SampleOscCommand.HasBeenUpdated)]) }
 			}
 		};
 	}
@@ -35,7 +36,7 @@ public class SampleOscCommandTests : CornerstoneUnitTest
 
 	#region Properties
 
-	private ComparerOptions ComparerOptions { get; }
+	private ComparerSettings ComparerSettings { get; }
 
 	#endregion
 
@@ -102,7 +103,7 @@ public class SampleOscCommandTests : CornerstoneUnitTest
 			Assert.AreEqual(expected, actual);
 
 			TimeZoneHelper.SetSystemTimeZone("Central Standard Time");
-			var value = TimeService.CurrentTime.UtcNow.IsDaylightSavingTime() ? 3 : 2;
+			var value = DateTimeProvider.RealTime.UtcNow.IsDaylightSavingTime() ? 3 : 2;
 
 			command = new SampleOscCommand
 			{
@@ -113,7 +114,7 @@ public class SampleOscCommandTests : CornerstoneUnitTest
 			Assert.AreEqual(expected, actual);
 
 			TimeZoneHelper.SetSystemTimeZone("Eastern Standard Time");
-			value = TimeService.CurrentTime.UtcNow.IsDaylightSavingTime() ? 4 : 3;
+			value = DateTimeProvider.RealTime.UtcNow.IsDaylightSavingTime() ? 4 : 3;
 
 			command = new SampleOscCommand
 			{

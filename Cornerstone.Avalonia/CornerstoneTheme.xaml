@@ -1,21 +1,22 @@
 ﻿<Styles x:Class="Cornerstone.Avalonia.CornerstoneTheme"
 		xmlns="https://github.com/avaloniaui"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-
-	<!-- Style resources. -->
 	<Styles.Resources>
 		<ResourceDictionary>
+			<ResourceDictionary.ThemeDictionaries>
+				<ResourceInclude x:Key="Light" Source="avares://Cornerstone.Avalonia/Themes/Theme.Light.axaml" />
+				<ResourceInclude x:Key="Dark" Source="avares://Cornerstone.Avalonia/Themes/Theme.Dark.axaml" />
+				<ResourceInclude x:Key="Default" Source="avares://Cornerstone.Avalonia/Themes/Theme.Dark.axaml" />
+			</ResourceDictionary.ThemeDictionaries>
 			<ResourceDictionary.MergedDictionaries>
-				<ResourceInclude Source="/Resources/BoxShadows.xaml" />
-				<ResourceInclude Source="/Resources/FontAwesomeIcons.axaml" />
-				<ResourceInclude Source="/Resources/Fonts.axaml" />
-				<ResourceInclude Source="/Resources/FullPalette.xaml" />
-				<ResourceInclude Source="/Resources/Theme.axaml" />
+				<ResourceInclude Source="avares://Cornerstone.Avalonia/Themes/BoxShadows.xaml" />
+				<ResourceInclude Source="avares://Cornerstone.Avalonia/Themes/FontAwesomeIcons.axaml" />
+				<ResourceInclude Source="avares://Cornerstone.Avalonia/Themes/Fonts.axaml" />
+				<ResourceInclude Source="avares://Cornerstone.Avalonia/Themes/FullPalette.xaml" />
+				<ResourceInclude Source="avares://Cornerstone.Avalonia/Themes/Icons.axaml" />
+				<ResourceInclude Source="avares://Cornerstone.Avalonia/Themes/Theme.axaml" />
 			</ResourceDictionary.MergedDictionaries>
 		</ResourceDictionary>
 	</Styles.Resources>
-	
-	<!-- Include all control styles. -->
-	<StyleInclude Source="/Resources/Controls.xaml" />
-	<StyleInclude Source="/AvaloniaEdit/Themes/AvaloniaEdit.xaml" />
+	<StyleInclude Source="avares://Cornerstone.Avalonia/Themes/Controls.xaml" />
 </Styles>

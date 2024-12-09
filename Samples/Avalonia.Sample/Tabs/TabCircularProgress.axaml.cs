@@ -1,5 +1,6 @@
 #region References
 
+using Cornerstone.Avalonia;
 using Cornerstone.Avalonia.Controls;
 
 #endregion

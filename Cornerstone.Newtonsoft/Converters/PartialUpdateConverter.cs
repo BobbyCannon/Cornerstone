@@ -79,7 +79,7 @@ public class PartialUpdateConverter : JsonConverter
 	{
 		if (value is PartialUpdate update)
 		{
-			var expando = update.GetDictionary();
+			var expando = update.ToDictionary();
 			serializer.Serialize(writer, expando);
 		}
 	}

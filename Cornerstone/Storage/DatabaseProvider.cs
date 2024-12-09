@@ -5,26 +5,6 @@
 /// </summary>
 public abstract class DatabaseProvider<T> : IDatabaseProvider<T> where T : IDatabase
 {
-	#region Constructors
-
-	/// <summary>
-	/// Initialize the database provider.
-	/// </summary>
-	/// <param name="options"> The database options. </param>
-	protected DatabaseProvider(DatabaseOptions options)
-	{
-		Options = options ?? new DatabaseOptions();
-	}
-
-	#endregion
-
-	#region Properties
-
-	/// <inheritdoc />
-	public DatabaseOptions Options { get; set; }
-
-	#endregion
-
 	#region Methods
 
 	/// <summary>
@@ -45,32 +25,19 @@ public abstract class DatabaseProvider<T> : IDatabaseProvider<T> where T : IData
 	/// <inheritdoc />
 	public T GetDatabase()
 	{
-		return GetDatabaseFromProvider(Options.DeepClone());
-	}
-
-	/// <inheritdoc />
-	public T GetDatabase(DatabaseOptions options)
-	{
-		return GetDatabaseFromProvider(options);
+		return GetDatabaseFromProvider();
 	}
 
 	/// <summary>
 	/// Gets an instance of the database from the provider.
 	/// </summary>
-	/// <param name="options"> The database options to use for the new database instance. </param>
 	/// <returns> The database instance. </returns>
-	protected abstract T GetDatabaseFromProvider(DatabaseOptions options);
+	protected abstract T GetDatabaseFromProvider();
 
 	/// <inheritdoc />
 	IDatabase IDatabaseProvider.GetDatabase()
 	{
-		return GetDatabase(Options.DeepClone());
-	}
-
-	/// <inheritdoc />
-	IDatabase IDatabaseProvider.GetDatabase(DatabaseOptions options)
-	{
-		return GetDatabase(options);
+		return GetDatabase();
 	}
 
 	#endregion
@@ -90,13 +57,6 @@ public interface IDatabaseProvider<out T> : IDatabaseProvider
 	/// <returns> The database instance. </returns>
 	new T GetDatabase();
 
-	/// <summary>
-	/// Gets an instance of the database.
-	/// </summary>
-	/// <param name="options"> The database options to use for the new database instance. </param>
-	/// <returns> The database instance. </returns>
-	new T GetDatabase(DatabaseOptions options);
-
 	#endregion
 }
 
@@ -105,15 +65,6 @@ public interface IDatabaseProvider<out T> : IDatabaseProvider
 /// </summary>
 public interface IDatabaseProvider
 {
-	#region Properties
-
-	/// <summary>
-	/// Gets or sets the options for the database provider.
-	/// </summary>
-	DatabaseOptions Options { get; set; }
-
-	#endregion
-
 	#region Methods
 
 	/// <summary>
@@ -121,13 +72,6 @@ public interface IDatabaseProvider
 	/// </summary>
 	/// <returns> The database instance. </returns>
 	IDatabase GetDatabase();
-
-	/// <summary>
-	/// Gets an instance of the database.
-	/// </summary>
-	/// <param name="options"> The database options to use for the new database instance. </param>
-	/// <returns> The database instance. </returns>
-	IDatabase GetDatabase(DatabaseOptions options);
 
 	#endregion
 }

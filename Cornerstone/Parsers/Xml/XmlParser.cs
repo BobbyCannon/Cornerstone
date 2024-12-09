@@ -11,7 +11,7 @@ namespace Cornerstone.Parsers.Xml;
 /// <summary>
 /// Represents a parser for XML.
 /// </summary>
-public class XmlParser : Parser<XmlParserOptions>
+public class XmlParser : Parser<XmlParserSettings>
 {
 	#region Fields
 
@@ -23,12 +23,12 @@ public class XmlParser : Parser<XmlParserOptions>
 	#region Constructors
 
 	/// <inheritdoc />
-	public XmlParser() : this(new XmlParserOptions())
+	public XmlParser() : this(new XmlParserSettings())
 	{
 	}
 
 	/// <inheritdoc />
-	public XmlParser(XmlParserOptions options) : base(options)
+	public XmlParser(XmlParserSettings settings) : base(settings)
 	{
 	}
 
@@ -69,21 +69,21 @@ public class XmlParser : Parser<XmlParserOptions>
 	/// <summary>
 	/// </summary>
 	/// <param name="text"> </param>
-	/// <param name="options"> </param>
+	/// <param name="settings"> </param>
 	/// <returns> </returns>
-	public static string Format(string text, XmlParserOptions options = null)
+	public static string Format(string text, XmlParserSettings settings = null)
 	{
-		options ??= new XmlParserOptions();
+		settings ??= new XmlParserSettings();
 
 		var xws = new XmlWriterSettings
 		{
 			Indent = true,
-			IndentChars = new string(options.IndentCharacter, options.IndentionCount),
+			IndentChars = new string(settings.IndentCharacter, settings.IndentionCount),
 			NewLineChars = "\r\n",
-			OmitXmlDeclaration = options.OmitXmlDeclaration
+			OmitXmlDeclaration = settings.OmitXmlDeclaration
 		};
 
-		if (options.Minify)
+		if (settings.Minify)
 		{
 			xws.Indent = false;
 		}

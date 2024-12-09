@@ -29,40 +29,40 @@ public abstract class Bindable<T> : Bindable, ICloneable<T>, IUpdateable<T>
 	#region Methods
 
 	/// <inheritdoc />
-	public virtual T DeepClone(int? maxDepth = null, IncludeExcludeOptions options = null)
+	public virtual T DeepClone(int? maxDepth = null, IncludeExcludeSettings settings = null)
 	{
-		return (T) this.DeepCloneUsingUpdateWith(typeof(T), maxDepth, options);
+		return (T) this.DeepCloneUsingUpdateWith(typeof(T), maxDepth, settings);
 	}
 
 	/// <inheritdoc />
-	public T ShallowClone(IncludeExcludeOptions options = null)
+	public T ShallowClone(IncludeExcludeSettings settings = null)
 	{
-		return DeepClone(0, options);
+		return DeepClone(0, settings);
 	}
 
 	/// <inheritdoc />
-	public virtual bool ShouldUpdate(T update, IncludeExcludeOptions options)
+	public virtual bool ShouldUpdate(T update, IncludeExcludeSettings settings)
 	{
-		return UpdateableExtensions.ShouldUpdate(this, update, options);
+		return UpdateableExtensions.ShouldUpdate(this, update, settings);
 	}
 
 	/// <inheritdoc />
 	public bool TryUpdateWith(T update)
 	{
-		return TryUpdateWith(update, IncludeExcludeOptions.Empty);
+		return TryUpdateWith(update, IncludeExcludeSettings.Empty);
 	}
 
 	/// <inheritdoc />
-	public bool TryUpdateWith(T update, IncludeExcludeOptions options)
+	public bool TryUpdateWith(T update, IncludeExcludeSettings settings)
 	{
-		return ShouldUpdate(update, options)
-			&& UpdateWith(update, options);
+		return ShouldUpdate(update, settings)
+			&& UpdateWith(update, settings);
 	}
 
 	/// <inheritdoc />
 	public bool UpdateWith(T update)
 	{
-		return UpdateWith(update, IncludeExcludeOptions.Empty);
+		return UpdateWith(update, IncludeExcludeSettings.Empty);
 	}
 
 	/// <inheritdoc />
@@ -73,15 +73,15 @@ public abstract class Bindable<T> : Bindable, ICloneable<T>, IUpdateable<T>
 	}
 
 	/// <inheritdoc />
-	public abstract bool UpdateWith(T update, IncludeExcludeOptions options);
+	public abstract bool UpdateWith(T update, IncludeExcludeSettings settings);
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
-			T value => UpdateWith(value, options),
-			_ => base.UpdateWith(update, options)
+			T value => UpdateWith(value, settings),
+			_ => base.UpdateWith(update, settings)
 		};
 	}
 

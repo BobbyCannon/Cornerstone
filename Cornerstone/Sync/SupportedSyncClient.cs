@@ -51,15 +51,15 @@ public class SupportedSyncClient : Bindable, ISupportedSyncClient
 	/// <param name="update"> The update to be applied. </param>
 	public virtual bool UpdateWith(SupportedSyncClient update)
 	{
-		return UpdateWith(update, IncludeExcludeOptions.Empty);
+		return UpdateWith(update, IncludeExcludeSettings.Empty);
 	}
 
 	/// <summary>
 	/// Update the SupportedSyncClient with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public virtual bool UpdateWith(SupportedSyncClient update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	public virtual bool UpdateWith(SupportedSyncClient update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -69,7 +69,7 @@ public class SupportedSyncClient : Bindable, ISupportedSyncClient
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			ApplicationName = update.ApplicationName;
 			ApplicationVersion = update.ApplicationVersion;
@@ -78,23 +78,23 @@ public class SupportedSyncClient : Bindable, ISupportedSyncClient
 		}
 		else
 		{
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(ApplicationName)), x => x.ApplicationName = update.ApplicationName);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(ApplicationVersion)), x => x.ApplicationVersion = update.ApplicationVersion);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(DevicePlatform)), x => x.DevicePlatform = update.DevicePlatform);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(DeviceType)), x => x.DeviceType = update.DeviceType);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(ApplicationName)), x => x.ApplicationName = update.ApplicationName);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(ApplicationVersion)), x => x.ApplicationVersion = update.ApplicationVersion);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(DevicePlatform)), x => x.DevicePlatform = update.DevicePlatform);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(DeviceType)), x => x.DeviceType = update.DeviceType);
 		}
 
 		return true;
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
-			SupportedSyncClient value => UpdateWith(value, options),
-			ISupportedSyncClient value => UpdateWith(value, options),
-			_ => base.UpdateWith(update, options)
+			SupportedSyncClient value => UpdateWith(value, settings),
+			ISupportedSyncClient value => UpdateWith(value, settings),
+			_ => base.UpdateWith(update, settings)
 		};
 	}
 

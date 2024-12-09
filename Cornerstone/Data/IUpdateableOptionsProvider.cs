@@ -10,7 +10,7 @@ public interface IUpdateableOptionsProvider
 	/// <summary>
 	/// Get options for the updateable type.
 	/// </summary>
-	public IncludeExcludeOptions GetUpdateableOptions(UpdateableAction action);
+	public IncludeExcludeSettings GetUpdateableOptions(UpdateableAction action);
 
 	#endregion
 }

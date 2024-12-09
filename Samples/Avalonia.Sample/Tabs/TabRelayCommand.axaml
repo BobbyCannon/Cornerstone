@@ -1,0 +1,30 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Avalonia.Sample.Tabs"
+		mc:Ignorable="d" d:DesignHeight="300"
+		x:Class="Avalonia.Sample.Tabs.TabRelayCommand"
+		x:DataType="tabs:TabRelayCommand">
+	<DockPanel>
+		<WrapPanel DockPanel.Dock="Top"
+				Margin="8"
+				VerticalAlignment="Top"
+				HorizontalAlignment="Left"
+				Orientation="Horizontal">
+			<ToggleSwitch OffContent="Cannot Execute"
+					OnContent="Can Execute"
+					IsChecked="{Binding CanExecute, Mode=TwoWay}">
+			</ToggleSwitch>
+			<Button Margin="20,0"
+					Command="{Binding ProcessCommand}">
+				Button
+			</Button>
+			<ToggleButton Command="{Binding ProcessCommand}">
+				Toggle
+			</ToggleButton>
+		</WrapPanel>
+		<TextEditorControl Name="Editor" />
+	</DockPanel>
+</UserControl>

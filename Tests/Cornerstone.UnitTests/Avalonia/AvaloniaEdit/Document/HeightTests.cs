@@ -14,8 +14,8 @@ public class HeightTests : CornerstoneUnitTest
 {
 	#region Fields
 
-	private TextDocument document;
-	private HeightTree heightTree;
+	private TextEditorDocument _document;
+	private HeightTree _heightTree;
 
 	#endregion
 
@@ -24,12 +24,12 @@ public class HeightTests : CornerstoneUnitTest
 	[TestInitialize]
 	public void Setup()
 	{
-		document = new TextDocument();
-		document.Text = "1\n2\n3\n4\n5\n6\n7\n8\n9\n10";
-		heightTree = new HeightTree(document, 10);
-		foreach (var line in document.Lines)
+		_document = new TextEditorDocument();
+		_document.Text = "1\n2\n3\n4\n5\n6\n7\n8\n9\n10";
+		_heightTree = new HeightTree(_document, 10);
+		foreach (var line in _document.Lines)
 		{
-			heightTree.SetHeight(line, line.LineNumber);
+			_heightTree.SetHeight(line, line.LineNumber);
 		}
 	}
 
@@ -42,28 +42,28 @@ public class HeightTests : CornerstoneUnitTest
 	[TestMethod]
 	public void TestHeightChanged()
 	{
-		heightTree.SetHeight(document.GetLineByNumber(4), 100);
+		_heightTree.SetHeight(_document.GetLineByNumber(4), 100);
 		CheckHeights();
 	}
 
 	[TestMethod]
 	public void TestLinesInserted()
 	{
-		document.Insert(0, "x\ny\n");
-		heightTree.SetHeight(document.Lines[0], 100);
-		heightTree.SetHeight(document.Lines[1], 1000);
-		heightTree.SetHeight(document.Lines[2], 10000);
+		_document.Insert(0, "x\ny\n");
+		_heightTree.SetHeight(_document.Lines[0], 100);
+		_heightTree.SetHeight(_document.Lines[1], 1000);
+		_heightTree.SetHeight(_document.Lines[2], 10000);
 		CheckHeights();
 	}
 
 	[TestMethod]
 	public void TestLinesRemoved()
 	{
-		document.Remove(5, 4);
+		_document.Remove(5, 4);
 		CheckHeights();
 	}
 
-	internal static void CheckHeights(TextDocument document, HeightTree heightTree)
+	internal static void CheckHeights(TextEditorDocument document, HeightTree heightTree)
 	{
 		var heights = document.Lines.Select(l => heightTree.GetIsCollapsed(l.LineNumber) ? 0 : heightTree.GetHeight(l)).ToArray();
 		var visualPositions = new double[document.LineCount + 1];
@@ -80,7 +80,7 @@ public class HeightTests : CornerstoneUnitTest
 
 	private void CheckHeights()
 	{
-		CheckHeights(document, heightTree);
+		CheckHeights(_document, _heightTree);
 	}
 
 	#endregion

@@ -34,7 +34,7 @@ public abstract class CodeGenerator : ICodeGenerator
 	public abstract void AppendCode(ICodeWriter codeWriter, Type type, object value);
 
 	/// <inheritdoc />
-	public abstract string GenerateCode(Type type, object value, ICodeWriterOptions options);
+	public abstract string GenerateCode(Type type, object value, ICodeWriterSettings settings);
 
 	/// <inheritdoc />
 	public Type[] GetSupportedTypes()
@@ -72,9 +72,9 @@ public interface ICodeGenerator
 	/// </summary>
 	/// <param name="type"> The type to be converted to code. </param>
 	/// <param name="value"> The value to generate code for. </param>
-	/// <param name="options"> The settings for generating the code. </param>
+	/// <param name="settings"> The settings for generating the code. </param>
 	/// <returns> The code version of the value. </returns>
-	string GenerateCode(Type type, object value, ICodeWriterOptions options);
+	string GenerateCode(Type type, object value, ICodeWriterSettings settings);
 
 	/// <summary>
 	/// Return the types the value generator supports.

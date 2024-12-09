@@ -191,22 +191,22 @@
 				<Setter Property="Theme.Color" Value="Current" />
 			</Style>
 			<Style Selector="^ /template/ Border#SeparatorBorder">
-				<Setter Property="BorderBrush" Value="{DynamicResource ColorTheme08}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource ThemeColor08}" />
 			</Style>
 			<Style Selector="^:checked /template/ Border#SeparatorBorder">
-				<Setter Property="BorderBrush" Value="{DynamicResource ColorTheme09}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource ThemeColor09}" />
 			</Style>
 			<Style Selector="^:disabled /template/ Border#SeparatorBorder">
-				<Setter Property="BorderBrush" Value="{DynamicResource ColorTheme04}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource ThemeColor04}" />
 			</Style>
 			<Style Selector="^:disabled:checked /template/ Border#SeparatorBorder">
-				<Setter Property="BorderBrush" Value="{DynamicResource ColorTheme05}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource ThemeColor05}" />
 			</Style>
 			<Style Selector="^:flyout-open /template/ Border#SeparatorBorder">
-				<Setter Property="BorderBrush" Value="{DynamicResource ColorTheme06}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource ThemeColor06}" />
 			</Style>
 			<Style Selector="^:flyout-open:checked /template/ Border#SeparatorBorder">
-				<Setter Property="BorderBrush" Value="{DynamicResource ColorTheme07}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource ThemeColor07}" />
 			</Style>
 		</Style>
 		
@@ -609,36 +609,36 @@
 
 		</Style>
 
-		<!-- Blue Grey theme. -->
+		<!-- Blue Gray theme. -->
 
-		<Style Selector="^[(Theme.Color)=BlueGrey]">
+		<Style Selector="^[(Theme.Color)=BlueGray]">
 
 			<Style Selector="^ /template/ Button">
-				<Setter Property="Theme.Color" Value="BlueGrey" />
+				<Setter Property="Theme.Color" Value="BlueGray" />
 			</Style>
 
 			<Style Selector="^ /template/ Border#SeparatorBorder">
-				<Setter Property="BorderBrush" Value="{DynamicResource BlueGrey08}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BlueGray08}" />
 			</Style>
 
 			<Style Selector="^:checked /template/ Border#SeparatorBorder">
-				<Setter Property="BorderBrush" Value="{DynamicResource BlueGrey09}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BlueGray09}" />
 			</Style>
 
 			<Style Selector="^:disabled /template/ Border#SeparatorBorder">
-				<Setter Property="BorderBrush" Value="{DynamicResource BlueGrey04}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BlueGray04}" />
 			</Style>
 
 			<Style Selector="^:disabled:checked /template/ Border#SeparatorBorder">
-				<Setter Property="BorderBrush" Value="{DynamicResource BlueGrey05}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BlueGray05}" />
 			</Style>
 
 			<Style Selector="^:flyout-open /template/ Border#SeparatorBorder">
-				<Setter Property="BorderBrush" Value="{DynamicResource BlueGrey06}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BlueGray06}" />
 			</Style>
 
 			<Style Selector="^:flyout-open:checked /template/ Border#SeparatorBorder">
-				<Setter Property="BorderBrush" Value="{DynamicResource BlueGrey07}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BlueGray07}" />
 			</Style>
 
 		</Style>
@@ -719,36 +719,36 @@
 		<!-- Current theme. -->
 
 		<Style Selector="^[(Theme.Color)=Current]">
-			<Setter Property="Background" Value="{DynamicResource ColorTheme07}" />
-			<Setter Property="Foreground" Value="{DynamicResource White}" />
+			<Setter Property="Background" Value="{DynamicResource ThemeColor07}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 			<Style Selector="^:pointerover">
-				<Setter Property="Background" Value="{DynamicResource ColorTheme06}" />
+				<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
 			</Style>
 			<Style Selector="^:pressed">
-				<Setter Property="Background" Value="{DynamicResource ColorTheme06}" />
+				<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
 			</Style>
 			<Style Selector="^:disabled">
-				<Setter Property="Background" Value="{DynamicResource ColorTheme03}" />
-				<Setter Property="Foreground" Value="{DynamicResource ColorTheme01}" />
+				<Setter Property="Background" Value="{DynamicResource ThemeColor03}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeColor01}" />
 			</Style>
 			<Style Selector="^[Tag=flyout-open] /template/ ContentPresenter">
-				<Setter Property="Background" Value="{DynamicResource ColorTheme05}" />
+				<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
 			</Style>
 			<Style Selector="^[Tag=checked]">
-				<Setter Property="Background" Value="{DynamicResource ColorTheme08}" />
+				<Setter Property="Background" Value="{DynamicResource ThemeColor08}" />
 				<Style Selector="^:pointerover">
-					<Setter Property="Background" Value="{DynamicResource ColorTheme07}" />
+					<Setter Property="Background" Value="{DynamicResource ThemeColor07}" />
 				</Style>
 				<Style Selector="^:pressed">
-					<Setter Property="Background" Value="{DynamicResource ColorTheme07}" />
+					<Setter Property="Background" Value="{DynamicResource ThemeColor07}" />
 				</Style>
 				<Style Selector="^:disabled">
-					<Setter Property="Background" Value="{DynamicResource ColorTheme04}" />
-					<Setter Property="Foreground" Value="{DynamicResource ColorTheme01}" />
+					<Setter Property="Background" Value="{DynamicResource ThemeColor04}" />
+					<Setter Property="Foreground" Value="{DynamicResource ThemeColor01}" />
 				</Style>
 			</Style>
 			<Style Selector="^[Tag=checked-flyout-open]">
-				<Setter Property="Background" Value="{DynamicResource ColorTheme06}" />
+				<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
 			</Style>
 		</Style>
 		
@@ -757,7 +757,7 @@
 		<Style Selector="^[(Theme.Color)=Red]">
 
 			<Setter Property="Background" Value="{DynamicResource Red07}" />
-			<Setter Property="Foreground" Value="{DynamicResource White}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Red06}" />
@@ -806,7 +806,7 @@
 		<Style Selector="^[(Theme.Color)=Pink]">
 
 			<Setter Property="Background" Value="{DynamicResource Pink07}" />
-			<Setter Property="Foreground" Value="{DynamicResource White}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Pink06}" />
@@ -855,7 +855,7 @@
 		<Style Selector="^[(Theme.Color)=Purple]">
 
 			<Setter Property="Background" Value="{DynamicResource Purple07}" />
-			<Setter Property="Foreground" Value="{DynamicResource White}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Purple06}" />
@@ -904,7 +904,7 @@
 		<Style Selector="^[(Theme.Color)=DeepPurple]">
 
 			<Setter Property="Background" Value="{DynamicResource DeepPurple07}" />
-			<Setter Property="Foreground" Value="{DynamicResource White}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource DeepPurple06}" />
@@ -953,7 +953,7 @@
 		<Style Selector="^[(Theme.Color)=Indigo]">
 
 			<Setter Property="Background" Value="{DynamicResource Indigo07}" />
-			<Setter Property="Foreground" Value="{DynamicResource White}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Indigo06}" />
@@ -1002,7 +1002,7 @@
 		<Style Selector="^[(Theme.Color)=Blue]">
 
 			<Setter Property="Background" Value="{DynamicResource Blue07}" />
-			<Setter Property="Foreground" Value="{DynamicResource White}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Blue06}" />
@@ -1051,7 +1051,7 @@
 		<Style Selector="^[(Theme.Color)=Teal]">
 
 			<Setter Property="Background" Value="{DynamicResource Teal07}" />
-			<Setter Property="Foreground" Value="{DynamicResource White}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Teal06}" />
@@ -1100,7 +1100,7 @@
 		<Style Selector="^[(Theme.Color)=Green]">
 
 			<Setter Property="Background" Value="{DynamicResource Green07}" />
-			<Setter Property="Foreground" Value="{DynamicResource White}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Green06}" />
@@ -1149,7 +1149,7 @@
 		<Style Selector="^[(Theme.Color)=Amber]">
 
 			<Setter Property="Background" Value="{DynamicResource Amber07}" />
-			<Setter Property="Foreground" Value="{DynamicResource White}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Amber06}" />
@@ -1198,7 +1198,7 @@
 		<Style Selector="^[(Theme.Color)=Orange]">
 
 			<Setter Property="Background" Value="{DynamicResource Orange07}" />
-			<Setter Property="Foreground" Value="{DynamicResource White}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Orange06}" />
@@ -1247,7 +1247,7 @@
 		<Style Selector="^[(Theme.Color)=DeepOrange]">
 
 			<Setter Property="Background" Value="{DynamicResource DeepOrange07}" />
-			<Setter Property="Foreground" Value="{DynamicResource White}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource DeepOrange06}" />
@@ -1296,7 +1296,7 @@
 		<Style Selector="^[(Theme.Color)=Brown]">
 
 			<Setter Property="Background" Value="{DynamicResource Brown07}" />
-			<Setter Property="Foreground" Value="{DynamicResource White}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Brown06}" />
@@ -1340,51 +1340,51 @@
 
 		</Style>
 
-		<!-- Blue Grey theme. -->
+		<!-- Blue Gray theme. -->
 
-		<Style Selector="^[(Theme.Color)=BlueGrey]">
+		<Style Selector="^[(Theme.Color)=BlueGray]">
 
-			<Setter Property="Background" Value="{DynamicResource BlueGrey07}" />
-			<Setter Property="Foreground" Value="{DynamicResource White}" />
+			<Setter Property="Background" Value="{DynamicResource BlueGray07}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 
 			<Style Selector="^:pointerover">
-				<Setter Property="Background" Value="{DynamicResource BlueGrey06}" />
+				<Setter Property="Background" Value="{DynamicResource BlueGray06}" />
 			</Style>
 
 			<Style Selector="^:pressed">
-				<Setter Property="Background" Value="{DynamicResource BlueGrey06}" />
+				<Setter Property="Background" Value="{DynamicResource BlueGray06}" />
 			</Style>
 
 			<Style Selector="^:disabled">
-				<Setter Property="Background" Value="{DynamicResource BlueGrey03}" />
-				<Setter Property="Foreground" Value="{DynamicResource BlueGrey01}" />
+				<Setter Property="Background" Value="{DynamicResource BlueGray03}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueGray01}" />
 			</Style>
 
 			<Style Selector="^[Tag=flyout-open] /template/ ContentPresenter">
-				<Setter Property="Background" Value="{DynamicResource BlueGrey05}" />
+				<Setter Property="Background" Value="{DynamicResource BlueGray05}" />
 			</Style>
 
 			<Style Selector="^[Tag=checked]">
 
-				<Setter Property="Background" Value="{DynamicResource BlueGrey08}" />
+				<Setter Property="Background" Value="{DynamicResource BlueGray08}" />
 
 				<Style Selector="^:pointerover">
-					<Setter Property="Background" Value="{DynamicResource BlueGrey07}" />
+					<Setter Property="Background" Value="{DynamicResource BlueGray07}" />
 				</Style>
 
 				<Style Selector="^:pressed">
-					<Setter Property="Background" Value="{DynamicResource BlueGrey07}" />
+					<Setter Property="Background" Value="{DynamicResource BlueGray07}" />
 				</Style>
 
 				<Style Selector="^:disabled">
-					<Setter Property="Background" Value="{DynamicResource BlueGrey04}" />
-					<Setter Property="Foreground" Value="{DynamicResource BlueGrey01}" />
+					<Setter Property="Background" Value="{DynamicResource BlueGray04}" />
+					<Setter Property="Foreground" Value="{DynamicResource BlueGray01}" />
 				</Style>
 
 			</Style>
 
 			<Style Selector="^[Tag=checked-flyout-open]">
-				<Setter Property="Background" Value="{DynamicResource BlueGrey06}" />
+				<Setter Property="Background" Value="{DynamicResource BlueGray06}" />
 			</Style>
 
 		</Style>

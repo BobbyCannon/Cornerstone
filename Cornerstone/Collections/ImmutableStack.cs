@@ -8,7 +8,6 @@ using System.Text;
 
 #endregion
 
-
 namespace Cornerstone.Collections;
 
 /// <summary>
@@ -18,119 +17,120 @@ namespace Cornerstone.Collections;
 [ExcludeFromCodeCoverage]
 public sealed class ImmutableStack<T> : IEnumerable<T>
 {
-    #region Fields
+	#region Fields
 
-    /// <summary>
-    /// Gets the empty stack instance.
-    /// </summary>
-    public static readonly ImmutableStack<T> Empty = new();
-    private readonly ImmutableStack<T> _next;
-    private readonly T _value;
+	/// <summary>
+	/// Gets the empty stack instance.
+	/// </summary>
+	public static readonly ImmutableStack<T> Empty = new();
 
-    #endregion
+	private readonly ImmutableStack<T> _next;
+	private readonly T _value;
 
-    #region Constructors
+	#endregion
 
-    private ImmutableStack()
-    {
-    }
+	#region Constructors
 
-    private ImmutableStack(T value, ImmutableStack<T> next)
-    {
-        _value = value ?? throw new ArgumentNullException(nameof(value));
-        _next = next;
-    }
+	private ImmutableStack()
+	{
+	}
 
-    #endregion
+	private ImmutableStack(T value, ImmutableStack<T> next)
+	{
+		_value = value ?? throw new ArgumentNullException(nameof(value));
+		_next = next;
+	}
 
-    #region Properties
+	#endregion
 
-    /// <summary>
-    /// Gets if this stack is empty.
-    /// </summary>
-    public bool IsEmpty => _next == null;
+	#region Properties
 
-    #endregion
+	/// <summary>
+	/// Gets if this stack is empty.
+	/// </summary>
+	public bool IsEmpty => _next == null;
 
-    #region Methods
+	#endregion
 
-    /// <summary>
-    /// Gets an enumerator that iterates through the stack top-to-bottom.
-    /// </summary>
-    public IEnumerator<T> GetEnumerator()
-    {
-        var t = this;
-        while (!t.IsEmpty)
-        {
-            yield return t._value;
-            t = t._next;
-        }
-    }
+	#region Methods
 
-    /// <summary>
-    /// Gets the item on the top of the stack.
-    /// </summary>
-    /// <exception cref="InvalidOperationException"> The stack is empty. </exception>
-    public T Peek()
-    {
-        if (IsEmpty)
-        {
-            throw new InvalidOperationException("Operation not valid on empty stack.");
-        }
+	/// <summary>
+	/// Gets an enumerator that iterates through the stack top-to-bottom.
+	/// </summary>
+	public IEnumerator<T> GetEnumerator()
+	{
+		var t = this;
+		while (!t.IsEmpty)
+		{
+			yield return t._value;
+			t = t._next;
+		}
+	}
 
-        return _value;
-    }
+	/// <summary>
+	/// Gets the item on the top of the stack.
+	/// </summary>
+	/// <exception cref="InvalidOperationException"> The stack is empty. </exception>
+	public T Peek()
+	{
+		if (IsEmpty)
+		{
+			throw new InvalidOperationException("Operation not valid on empty stack.");
+		}
 
-    /// <summary>
-    /// Gets the item on the top of the stack.
-    /// Returns <c> default(T) </c> if the stack is empty.
-    /// </summary>
-    public T PeekOrDefault()
-    {
-        return _value;
-    }
+		return _value;
+	}
 
-    /// <summary>
-    /// Gets the stack with the top item removed.
-    /// </summary>
-    /// <exception cref="InvalidOperationException"> The stack is empty. </exception>
-    public ImmutableStack<T> Pop()
-    {
-        if (IsEmpty)
-        {
-            throw new InvalidOperationException("Operation not valid on empty stack.");
-        }
+	/// <summary>
+	/// Gets the item on the top of the stack.
+	/// Returns <c> default(T) </c> if the stack is empty.
+	/// </summary>
+	public T PeekOrDefault()
+	{
+		return _value;
+	}
 
-        return _next;
-    }
+	/// <summary>
+	/// Gets the stack with the top item removed.
+	/// </summary>
+	/// <exception cref="InvalidOperationException"> The stack is empty. </exception>
+	public ImmutableStack<T> Pop()
+	{
+		if (IsEmpty)
+		{
+			throw new InvalidOperationException("Operation not valid on empty stack.");
+		}
 
-    /// <summary>
-    /// Pushes an item on the stack. This does not modify the stack itself, but returns a new
-    /// one with the value pushed.
-    /// </summary>
-    public ImmutableStack<T> Push(T item)
-    {
-        return new ImmutableStack<T>(item, this);
-    }
+		return _next;
+	}
 
-    /// <inheritdoc />
-    public override string ToString()
-    {
-        var b = new StringBuilder("[Stack");
-        foreach (var val in this)
-        {
-            b.Append(' ');
-            b.Append(val);
-        }
+	/// <summary>
+	/// Pushes an item on the stack. This does not modify the stack itself, but returns a new
+	/// one with the value pushed.
+	/// </summary>
+	public ImmutableStack<T> Push(T item)
+	{
+		return new ImmutableStack<T>(item, this);
+	}
 
-        b.Append(']');
-        return b.ToString();
-    }
+	/// <inheritdoc />
+	public override string ToString()
+	{
+		var b = new StringBuilder("[Stack");
+		foreach (var val in this)
+		{
+			b.Append(' ');
+			b.Append(val);
+		}
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+		b.Append(']');
+		return b.ToString();
+	}
 
-    #endregion
+	IEnumerator IEnumerable.GetEnumerator()
+	{
+		return GetEnumerator();
+	}
+
+	#endregion
 }

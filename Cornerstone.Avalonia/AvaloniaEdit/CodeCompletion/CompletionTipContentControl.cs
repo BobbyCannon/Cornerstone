@@ -1,7 +1,7 @@
 #region References
 
 using Avalonia.Controls;
-using PropertyChanged;
+using Cornerstone.Weaver;
 
 #endregion
 

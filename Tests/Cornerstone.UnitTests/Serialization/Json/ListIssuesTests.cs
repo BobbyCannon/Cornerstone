@@ -101,17 +101,21 @@ public class SubTestSettings : Notifiable
 
 	public static SubTestSettings Create()
 	{
-		return new SubTestSettings
+		var response = new SubTestSettings
 		{
 			Id = 1,
-			SubIds = new SpeedyList<Guid>(null, null,
-				new Guid("36053E69-48B2-4348-B42B-A64431FCB4CE"),
-				new Guid("0DC60E35-06DB-4CA9-98D7-0DFFB1E07E3B"),
-				new Guid("AC68E8B0-C75F-4A9E-A5AA-4D90CA780ADD"))
+			SubIds = new SpeedyList<Guid>
 			{
 				DistinctCheck = (x, y) => x.Equals(y)
 			}
 		};
+		response.SubIds.Add(
+			new Guid("36053E69-48B2-4348-B42B-A64431FCB4CE"),
+			new Guid("0DC60E35-06DB-4CA9-98D7-0DFFB1E07E3B"),
+			new Guid("AC68E8B0-C75F-4A9E-A5AA-4D90CA780ADD")
+		);
+
+		return response;
 	}
 
 	/// <inheritdoc />

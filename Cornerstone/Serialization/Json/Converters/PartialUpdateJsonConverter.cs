@@ -19,7 +19,7 @@ public class PartialUpdateJsonConverter : JsonConverter
 	#region Methods
 
 	/// <inheritdoc />
-	public override void Append(object value, Type valueType, IObjectConsumer consumer, ISerializationOptions settings)
+	public override void Append(object value, Type valueType, IObjectConsumer consumer, ISerializationSettings settings)
 	{
 		consumer.WriteRawString(GetJsonString(value, settings));
 	}
@@ -44,10 +44,10 @@ public class PartialUpdateJsonConverter : JsonConverter
 	}
 
 	/// <inheritdoc />
-	public override string GetJsonString(object value, ISerializationOptions settings)
+	public override string GetJsonString(object value, ISerializationSettings settings)
 	{
 		var pValue = (PartialUpdate) value;
-		var dictionary = pValue.GetDictionary();
+		var dictionary = pValue.ToDictionary();
 		return dictionary.ToJson(settings);
 	}
 

@@ -4,10 +4,119 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
+using System.Text;
+using Cornerstone.Collections;
 
 #endregion
 
 namespace Cornerstone.Text.Document;
+
+partial class TextUtilities
+{
+	#region Methods
+
+	/// <summary>
+	/// Finds the next new line character starting at offset.
+	/// </summary>
+	/// <param name="text"> The text source to search in. </param>
+	/// <param name="offset"> The starting offset for the search. </param>
+	/// <param name="newLineType"> The string representing the new line that was found, or null if no new line was found. </param>
+	/// <returns>
+	/// The position of the first new line starting at or after <paramref name="offset" />,
+	/// or -1 if no new line was found.
+	/// </returns>
+	public static int FindNextNewLine(ITextSource text, int offset, out string newLineType)
+	{
+		if (text == null)
+		{
+			throw new ArgumentNullException(nameof(text));
+		}
+		if ((offset < 0) || (offset > text.TextLength))
+		{
+			throw new ArgumentOutOfRangeException(nameof(offset), offset, "offset is outside of text source");
+		}
+		var s = NewLineFinder.NextNewLine(text, offset);
+		if (s == SegmentExtensions.Invalid)
+		{
+			newLineType = null;
+			return -1;
+		}
+		if (s.Length == 2)
+		{
+			newLineType = "\r\n";
+		}
+		else if (text.GetCharAt(s.Offset) == '\n')
+		{
+			newLineType = "\n";
+		}
+		else
+		{
+			newLineType = "\r";
+		}
+		return s.Offset;
+	}
+
+	/// <summary>
+	/// Gets the newline sequence used in the document at the specified line.
+	/// </summary>
+	public static string GetNewLineFromDocument(ITextEditorDocument document, int lineNumber)
+	{
+		var line = document.GetLineByNumber(lineNumber);
+		if (line.DelimiterLength == 0)
+		{
+			// at the end of the document, there's no line delimiter, so use the delimiter
+			// from the previous line
+			line = line.PreviousLine;
+			if (line == null)
+			{
+				return Environment.NewLine;
+			}
+		}
+		return document.GetText(line.StartIndex + line.Length, line.DelimiterLength);
+	}
+
+	/// <summary>
+	/// Gets whether the specified string is a newline sequence.
+	/// </summary>
+	public static bool IsNewLine(string newLine)
+	{
+		return (newLine == "\r\n") || (newLine == "\n") || (newLine == "\r");
+	}
+
+	/// <summary>
+	/// Normalizes all new lines in <paramref name="input" /> to be <paramref name="newLine" />.
+	/// </summary>
+	public static string NormalizeNewLines(string input, string newLine)
+	{
+		if (input == null)
+		{
+			return null;
+		}
+		if (!IsNewLine(newLine))
+		{
+			throw new ArgumentException("newLine must be one of the known newline sequences");
+		}
+		var ds = NewLineFinder.NextNewLine(input, 0);
+		if (ds == SegmentExtensions.Invalid) // text does not contain any new lines
+		{
+			return input;
+		}
+		var b = new StringBuilder(input.Length);
+		var lastEndOffset = 0;
+		do
+		{
+			b.Append(input, lastEndOffset, ds.Offset - lastEndOffset);
+			b.Append(newLine);
+			lastEndOffset = ds.EndIndex;
+			ds = NewLineFinder.NextNewLine(input, lastEndOffset);
+		} while (ds != SegmentExtensions.Invalid);
+		// remaining string (after last newline)
+		b.Append(input, lastEndOffset, input.Length - lastEndOffset);
+		return b.ToString();
+	}
+
+	#endregion
+}
 
 public enum LogicalDirection
 {
@@ -132,13 +241,13 @@ public static partial class TextUtilities
 	[SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "Whitespace")]
 	[SuppressMessage("Microsoft.Design", "CA1011:ConsiderPassingBaseTypesAsParameters",
 		Justification = "Parameter cannot be ITextSource because it must belong to the DocumentLine")]
-	public static ISegment GetLeadingWhitespace(TextDocument document, DocumentLine documentLine)
+	public static IRange GetLeadingWhitespace(TextEditorDocument document, DocumentLine documentLine)
 	{
 		if (documentLine == null)
 		{
 			throw new ArgumentNullException(nameof(documentLine));
 		}
-		return GetWhitespaceAfter(document, documentLine.Offset);
+		return GetWhitespaceAfter(document, documentLine.StartIndex);
 	}
 
 	/// <summary>
@@ -273,7 +382,7 @@ public static partial class TextUtilities
 	/// If there is no indentation character at the specified <paramref name="offset" />,
 	/// an empty segment is returned.
 	/// </returns>
-	public static ISegment GetSingleIndentationSegment(ITextSource textSource, int offset, int indentationSize)
+	public static IRange GetSingleIndentationSegment(ITextSource textSource, int offset, int indentationSize)
 	{
 		if (textSource == null)
 		{
@@ -287,7 +396,7 @@ public static partial class TextUtilities
 			{
 				if (pos == offset)
 				{
-					return new SimpleSegment(offset, 1);
+					return new SimpleRange(offset, 1);
 				}
 				break;
 			}
@@ -305,7 +414,7 @@ public static partial class TextUtilities
 			// continue only if c==' ' and (pos-offset)<tabSize
 			pos++;
 		}
-		return new SimpleSegment(offset, pos - offset);
+		return new SimpleRange(offset, pos - offset);
 	}
 
 	/// <summary>
@@ -314,18 +423,18 @@ public static partial class TextUtilities
 	[SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "Whitespace")]
 	[SuppressMessage("Microsoft.Design", "CA1011:ConsiderPassingBaseTypesAsParameters",
 		Justification = "Parameter cannot be ITextSource because it must belong to the DocumentLine")]
-	public static ISegment GetTrailingWhitespace(TextDocument document, DocumentLine documentLine)
+	public static IRange GetTrailingWhitespace(TextEditorDocument document, DocumentLine documentLine)
 	{
 		if (documentLine == null)
 		{
 			throw new ArgumentNullException(nameof(documentLine));
 		}
-		var segment = GetWhitespaceBefore(document, documentLine.EndOffset);
+		var segment = GetWhitespaceBefore(document, documentLine.EndIndex);
 		// If the whole line consists of whitespace, we consider all of it as leading whitespace,
 		// so return an empty segment as trailing whitespace.
-		if (segment.Offset == documentLine.Offset)
+		if (segment.StartIndex == documentLine.StartIndex)
 		{
-			return new SimpleSegment(documentLine.EndOffset, 0);
+			return new SimpleRange(documentLine.EndIndex, 0);
 		}
 		return segment;
 	}
@@ -337,7 +446,7 @@ public static partial class TextUtilities
 	/// <param name="offset"> The offset where the whitespace starts. </param>
 	/// <returns> The segment containing the whitespace. </returns>
 	[SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "Whitespace")]
-	public static ISegment GetWhitespaceAfter(ITextSource textSource, int offset)
+	public static IRange GetWhitespaceAfter(ITextSource textSource, int offset)
 	{
 		if (textSource == null)
 		{
@@ -352,7 +461,7 @@ public static partial class TextUtilities
 				break;
 			}
 		}
-		return new SimpleSegment(offset, pos - offset);
+		return new SimpleRange(offset, pos - offset);
 	}
 
 	/// <summary>
@@ -362,7 +471,7 @@ public static partial class TextUtilities
 	/// <param name="offset"> The offset where the whitespace ends. </param>
 	/// <returns> The segment containing the whitespace. </returns>
 	[SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "Whitespace")]
-	public static ISegment GetWhitespaceBefore(ITextSource textSource, int offset)
+	public static IRange GetWhitespaceBefore(ITextSource textSource, int offset)
 	{
 		if (textSource == null)
 		{
@@ -378,7 +487,7 @@ public static partial class TextUtilities
 			}
 		}
 		pos++; // go back the one character that isn't whitespace
-		return new SimpleSegment(pos, offset - pos);
+		return new SimpleRange(pos, offset - pos);
 	}
 
 	private static CharacterClass GetCharacterClass(char highSurrogate, char lowSurrogate)

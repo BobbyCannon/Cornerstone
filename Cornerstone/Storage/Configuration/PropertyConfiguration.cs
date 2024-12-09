@@ -146,8 +146,7 @@ public class PropertyConfiguration<T, T2> : IPropertyConfiguration where T : Ent
 	/// Validates the entity using this configuration.
 	/// </summary>
 	/// <param name="entity"> The entity to validate. </param>
-	/// <param name="entityRepository"> The repository of entities. </param>
-	public void Validate(object entity, IRepository<T, T2> entityRepository)
+	public void Validate(object entity)
 	{
 		if (!(entity is T typedEntity))
 		{

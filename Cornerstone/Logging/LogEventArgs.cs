@@ -2,7 +2,6 @@
 
 using System;
 using System.Diagnostics.Tracing;
-using System.Text;
 
 #endregion
 
@@ -18,14 +17,14 @@ public class LogEventArgs : EventArgs
 	/// <summary>
 	/// For serialization, do not use.
 	/// </summary>
-	public LogEventArgs() : this(null, DateTime.MinValue, EventLevel.Verbose, string.Empty)
+	public LogEventArgs() : this(Guid.Empty, DateTime.MinValue, EventLevel.Verbose, string.Empty)
 	{
 	}
 
 	/// <summary>
 	/// Initializes a log event argument.
 	/// </summary>
-	public LogEventArgs(Guid? sessionId, DateTime messagedOn, EventLevel level, string message)
+	public LogEventArgs(Guid sessionId, DateTime messagedOn, EventLevel level, string message)
 	{
 		SessionId = sessionId;
 		MessagedOn = messagedOn;
@@ -55,7 +54,7 @@ public class LogEventArgs : EventArgs
 	/// <summary>
 	/// The session this message was captured on.
 	/// </summary>
-	public Guid? SessionId { get; set; }
+	public Guid SessionId { get; set; }
 
 	#endregion
 
@@ -72,7 +71,7 @@ public class LogEventArgs : EventArgs
 	{
 		if (!includeDateTime || (MessagedOn == default))
 		{
-			return includeSessionId && SessionId.HasValue
+			return includeSessionId && (SessionId != Guid.Empty)
 				? $"{SessionId} {Level} : {Message}"
 				: $"{Level} : {Message}";
 		}
@@ -80,12 +79,12 @@ public class LogEventArgs : EventArgs
 		if ((startedOn != null) && (startedOn > DateTime.MinValue))
 		{
 			var elapsed = MessagedOn - startedOn;
-			return includeSessionId && SessionId.HasValue
+			return includeSessionId && (SessionId != Guid.Empty)
 				? $"{elapsed:c} - {SessionId} {Level} : {Message}"
 				: $"{elapsed:c} - {Level} : {Message}";
 		}
 
-		return includeSessionId && SessionId.HasValue
+		return includeSessionId && (SessionId != Guid.Empty)
 			? $"{MessagedOn:O} - {SessionId} {Level} : {Message}"
 			: $"{MessagedOn:O} - {Level} : {Message}";
 	}

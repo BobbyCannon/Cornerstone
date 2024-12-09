@@ -11,7 +11,7 @@
 
 		<Setter Property="Background" Value="{x:Null}" />
 		<Setter Property="TransparencyLevelHint" Value="Transparent" />
-		<Setter Property="Foreground" Value="{DynamicResource White}" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 		<Setter Property="FontSize" Value="{DynamicResource StandardFontSize}" />
 		<Setter Property="FontFamily" Value="{DynamicResource OpenSansRegular}" />
 

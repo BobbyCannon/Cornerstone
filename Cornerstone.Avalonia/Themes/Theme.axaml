@@ -1,0 +1,237 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:system="clr-namespace:System;assembly=System.Runtime"
+		xmlns:converters="clr-namespace:Cornerstone.Avalonia.Converters">
+	<Design.PreviewWith>
+		<StackPanel>
+			<StackPanel Orientation="Horizontal" Spacing="10">
+				<NumericUpDown Value="123" />
+				<ComboBox x:Name="Item"
+						PlaceholderText="Select an item">
+					<ComboBoxItem>Item 1</ComboBoxItem>
+					<ComboBoxItem>Item 2</ComboBoxItem>
+				</ComboBox>
+				<ComboBox x:Name="Item2"
+						SelectedIndex="1"
+						PlaceholderText="Select an item">
+					<ComboBoxItem>Item 1</ComboBoxItem>
+					<ComboBoxItem>Item 2</ComboBoxItem>
+				</ComboBox>
+			</StackPanel>
+			<StackPanel Orientation="Horizontal" Spacing="10">
+				<Button>aoeu</Button>
+				<SplitButton>aoeu</SplitButton>
+			</StackPanel>
+		</StackPanel>
+
+	</Design.PreviewWith>
+
+	<converters:TimeSpanConverter x:Key="TimeSpanConverter" />
+	<x:Double x:Key="StandardFontSize">14</x:Double>
+
+	<!-- AutoCompleteBox resources. -->
+	<x:Double x:Key="AutoCompleteListMaxHeight">350</x:Double>
+	<Thickness x:Key="AutoCompleteListMargin">0</Thickness>
+	<Thickness x:Key="AutoCompleteListPadding">0</Thickness>
+	<Thickness x:Key="AutoCompleteListBorderThickness">1</Thickness>
+	<CornerRadius x:Key="AutoCompleteBoxSuggestionsListCorerRadius">4</CornerRadius>
+
+	<!-- Button resources. -->
+	<Thickness x:Key="ButtonBorderThickness">1</Thickness>
+	<Thickness x:Key="ButtonPadding">8,0,8,1</Thickness>
+	<CornerRadius x:Key="ButtonCornerRadius">4</CornerRadius>
+
+	<!-- Calendar resources. -->
+	<CornerRadius x:Key="CalendarViewCornerRadius">8</CornerRadius>
+
+	<!-- CalendarDatePicker resources. -->
+	<Thickness x:Key="CalendarDatePickerPadding">8,8,34,8</Thickness>
+
+	<!-- CircularProgress resources. -->
+	<system:Int32 x:Key="CircularProgressStrokeThickness">8</system:Int32>
+
+	<!-- ComboBox resources. -->
+	<Thickness x:Key="ComboBoxBorderThickness">1</Thickness>
+	<Thickness x:Key="ComboBoxPadding">8,0</Thickness>
+	<CornerRadius x:Key="ComboBoxCornerRadius">4</CornerRadius>
+
+	<!-- ComboBoxDropDown resources. -->
+	<Thickness x:Key="ComboBoxDropdownBorderThickness">1</Thickness>
+	<Thickness x:Key="ComboBoxDropdownBorderPadding">4</Thickness>
+	<CornerRadius x:Key="ComboBoxDropdownCornerRadius">8</CornerRadius>
+
+	<!-- ComboBoxItem resources. -->
+	<Thickness x:Key="ComboBoxItemPadding">8,0</Thickness>
+	<Thickness x:Key="ComboBoxItemMargin">0,1</Thickness>
+	<CornerRadius x:Key="ComboBoxItemCornerRadius">4</CornerRadius>
+
+	<!-- DatePicker resources. -->
+	<x:Double x:Key="DatePickerMinWidth">296</x:Double>
+	<x:Double x:Key="DatePickerMaxWidth">456</x:Double>
+
+	<!-- TimePicker resources. -->
+	<x:Double x:Key="TimePickerMinWidth">242</x:Double>
+	<x:Double x:Key="TimePickerMaxWidth">456</x:Double>
+
+	<!-- DateTimePicker resources. -->
+	<Thickness x:Key="DateTimePickerFlyoutItemPadding">8,4</Thickness>
+	<Thickness x:Key="DateTimePickerFlyoutMonthPadding">8,4</Thickness>
+	<Thickness x:Key="DateTimePickerHostPadding">8,4</Thickness>
+	<Thickness x:Key="DateTimePickerHostMonthPadding">8,4</Thickness>
+	<x:Double x:Key="DateTimePickerSpacerWidth">1</x:Double>
+
+	<!-- DateTimePickerButton resources. -->
+	<Thickness x:Key="DateTimePickerButtonBorderThickness">0</Thickness>
+	<Thickness x:Key="DateTimePickerButtonPadding">8</Thickness>
+	<CornerRadius x:Key="DateTimePickerButtonCornerRadius">4</CornerRadius>
+
+	<!-- DateTimePickerFlyout resources. -->
+	<Thickness x:Key="DateTimePickerFlyoutBorderThickness">1</Thickness>
+	<Thickness x:Key="DateTimePickerFlyoutBorderPadding">4</Thickness>
+	<CornerRadius x:Key="DateTimePickerFlyoutCornerRadius">8</CornerRadius>
+
+	<!-- DateTimePickerFlyoutButton resources. -->
+	<Thickness x:Key="DateTimePickerFlyoutButtonBorderThickness">0</Thickness>
+	<Thickness x:Key="DateTimePickerFlyoutButtonPadding">8</Thickness>
+	<CornerRadius x:Key="DateTimePickerFlyoutButtonCornerRadius">4</CornerRadius>
+	<x:Double x:Key="DateTimePickerFlyoutPresenterHighlightHeight">40</x:Double>
+	<x:Double x:Key="DateTimePickerFlyoutPresenterItemHeight">40</x:Double>
+	<x:Double x:Key="DateTimePickerFlyoutAcceptDismissHostGridHeight">33</x:Double>
+
+	<!-- Expander resources. -->
+	<x:Double x:Key="ExpanderMinHeight">32</x:Double>
+	<Thickness x:Key="ExpanderArrowMargin">8,0,0,0</Thickness>
+	<Thickness x:Key="ExpanderArrowMarginRight">0,0,8,0</Thickness>
+	<x:Double x:Key="ExpanderArrowButtonSize">20</x:Double>
+
+	<CornerRadius x:Key="ExpanderHeaderCornerRadius">4</CornerRadius>
+	<Thickness x:Key="ExpanderHeaderBorderThickness">1</Thickness>
+	<Thickness x:Key="ExpanderHeaderPadding">8</Thickness>
+	<HorizontalAlignment x:Key="ExpanderHeaderHorizontalContentAlignment">Stretch</HorizontalAlignment>
+	<VerticalAlignment x:Key="ExpanderHeaderVerticalContentAlignment">Center</VerticalAlignment>
+
+	<CornerRadius x:Key="ExpanderContentCornerRadius">0,0,4,4</CornerRadius>
+	<Thickness x:Key="ExpanderContentBorderThickness">1,0,1,1</Thickness>
+	<Thickness x:Key="ExpanderContentPadding">8</Thickness>
+	<Thickness x:Key="ExpanderContentLeftBorderThickness">1,1,0,1</Thickness>
+	<Thickness x:Key="ExpanderContentUpBorderThickness">1,1,1,0</Thickness>
+	<Thickness x:Key="ExpanderContentRightBorderThickness">0,1,1,1</Thickness>
+	<Thickness x:Key="ExpanderContentDownBorderThickness">1,0,1,1</Thickness>
+
+	<CornerRadius x:Key="ExpanderTopCornerRadius">4,4,0,0</CornerRadius>
+	<CornerRadius x:Key="ExpanderBottomCornerRadius">0,0,4,4</CornerRadius>
+	<CornerRadius x:Key="ExpanderLeftCornerRadius">4,0,0,4</CornerRadius>
+	<CornerRadius x:Key="ExpanderRightCornerRadius">0,4,4,0</CornerRadius>
+
+	<!-- FlyoutPresenter resources. -->
+	<Thickness x:Key="FlyoutBorderThemeThickness">1</Thickness>
+	<Thickness x:Key="FlyoutContentThemePadding">12</Thickness>
+	<x:Double x:Key="FlyoutThemeMinWidth">96</x:Double>
+	<x:Double x:Key="FlyoutThemeMaxWidth">450</x:Double>
+	<x:Double x:Key="FlyoutThemeMinHeight">40</x:Double>
+	<x:Double x:Key="FlyoutThemeMaxHeight">750</x:Double>
+	<CornerRadius x:Key="FlyoutCornerRadius">0</CornerRadius>
+	<Thickness x:Key="FlyoutPresenterThemePadding">4</Thickness>
+
+	<!-- ListBox resources. -->
+	<Thickness x:Key="ListBoxBorderThickness">0</Thickness>
+	<CornerRadius x:Key="ListBoxCornerRadius">0</CornerRadius>
+
+	<!-- ListBoxItem resources. -->
+	<Thickness x:Key="ListBoxItemPadding">0</Thickness>
+	<Thickness x:Key="ListBoxItemMargin">0</Thickness>
+	<Thickness x:Key="ListBoxItemFirstItemMargin">0</Thickness>
+	<Thickness x:Key="ListBoxItemLastItemMargin">0</Thickness>
+	<CornerRadius x:Key="ListBoxItemCornerRadius">0</CornerRadius>
+
+	<!-- MenuBar resources. -->
+	<x:Double x:Key="MenuBarHeight">28</x:Double>
+	<Thickness x:Key="MenuBarPadding">0</Thickness>
+	<Thickness x:Key="MenuBarBorderThickness">0,0,0,1</Thickness>
+	<Thickness x:Key="MenuBarItemPadding">8,0</Thickness>
+
+	<!-- MenuFlyout resources. -->
+	<x:Double x:Key="MenuFlyoutSeparatorHeight">1</x:Double>
+	<Thickness x:Key="MenuFlyoutSeparatorPadding">0,4</Thickness>
+	<Thickness x:Key="MenuFlyoutItemPaddingNarrow">8,2</Thickness>
+	<CornerRadius x:Key="MenuFlyoutItemCornerRadius">0</CornerRadius>
+	<Thickness x:Key="MenuFlyoutPresenterBorderThemeThickness">1</Thickness>
+	<Thickness x:Key="MenuFlyoutPresenterThemePadding">0</Thickness>
+	<Thickness x:Key="MenuFlyoutScrollerMargin">0</Thickness>
+	<x:Double x:Key="MenuFlyoutSubItemPopupHorizontalOffset">0</x:Double>
+	<x:Double x:Key="MenuFlyoutSubItemPopupVerticalOffset">-4</x:Double>
+
+	<!-- NotificationCard resources. -->
+	<CornerRadius x:Key="NotificationCardCornerRadius">4</CornerRadius>
+	<Thickness x:Key="NotificationCardPadding">8</Thickness>
+
+	<!-- ProgressBar resources. -->
+	<Thickness x:Key="ProgressBarBorderThickness">0</Thickness>
+	<CornerRadius x:Key="ProgressBarCornerRadius">4</CornerRadius>
+
+	<!-- RepeatButton resources. -->
+	<Thickness x:Key="RepeatButtonBorderThickness">0</Thickness>
+	<CornerRadius x:Key="RepeatButtonCornerRadius">4</CornerRadius>
+	<Thickness x:Key="RepeatButtonPadding">6</Thickness>
+
+	<!-- ScrollBar resources. -->
+	<x:Double x:Key="ScrollBarThickness">10</x:Double>
+	<x:Double x:Key="ScrollBarThumbThickness">10</x:Double>
+	<CornerRadius x:Key="ScrollBarCornerRadius">4</CornerRadius>
+
+	<!-- Slider resources. -->
+	<x:Double x:Key="SliderHorizontalHeight">20</x:Double>
+	<x:Double x:Key="SliderVerticalWidth">20</x:Double>
+	<x:Double x:Key="SliderTrackHeight">8</x:Double>
+	<x:Double x:Key="SliderHorizontalThumbWidth">20</x:Double>
+	<x:Double x:Key="SliderHorizontalThumbHeight">20</x:Double>
+	<x:Double x:Key="SliderVerticalThumbWidth">20</x:Double>
+	<x:Double x:Key="SliderVerticalThumbHeight">20</x:Double>
+	<x:Double x:Key="SliderOutsideTickBarHeight">6</x:Double>
+	<Thickness x:Key="SliderBorderThickness">0</Thickness>
+	<Thickness x:Key="SliderTopHeaderMargin">0,0,0,4</Thickness>
+	<GridLength x:Key="SliderPreContentMargin">16</GridLength>
+	<GridLength x:Key="SliderPostContentMargin">16</GridLength>
+	<CornerRadius x:Key="SliderCornerRadius">4</CornerRadius>
+	<CornerRadius x:Key="SliderThumbCornerRadius">10</CornerRadius>
+
+	<!-- SplitButton resources. -->
+	<Thickness x:Key="SplitButtonBorderThickness">1</Thickness>
+	<x:Double x:Key="SplitButtonPrimaryButtonSize">32</x:Double>
+	<x:Double x:Key="SplitButtonSecondaryButtonSize">36</x:Double>
+	<x:Double x:Key="SplitButtonSeparatorWidth">1</x:Double>
+	<x:Double x:Key="SplitButtonMinHeight">32</x:Double>
+
+	<!-- TextBox resources. -->
+	<Thickness x:Key="TextBoxBorderThickness">1</Thickness>
+	<Thickness x:Key="TextBoxBorderThicknessFocused">1</Thickness>
+	<CornerRadius x:Key="TextBoxCornerRadius">4</CornerRadius>
+	<Thickness x:Key="TextBoxPadding">8,0</Thickness>
+
+	<!-- TextEditor resources. -->
+	<x:Double x:Key="TextEditorFontSize">14</x:Double>
+
+	<!-- ToggleButton resources. -->
+	<Thickness x:Key="ToggleButtonBorderThickness">1</Thickness>
+	<Thickness x:Key="ToggleButtonPadding">8,0</Thickness>
+
+	<!-- ToggleSwitch resources. -->
+	<Thickness x:Key="ToggleSwitchTopHeaderMargin">0,0,0,4</Thickness>
+	<GridLength x:Key="ToggleSwitchPreContentMargin">8</GridLength>
+	<GridLength x:Key="ToggleSwitchPostContentMargin">8</GridLength>
+	<x:Double x:Key="ToggleSwitchThemeMinWidth">0</x:Double>
+
+	<!-- ToolTip resources. -->
+	<Thickness x:Key="ToolTipBorderThemeThickness">1</Thickness>
+	<Thickness x:Key="ToolTipBorderThemePadding">10,8</Thickness>
+	<CornerRadius x:Key="ToolTipCornerRadius">8</CornerRadius>
+	<x:Double x:Key="ToolTipContentMaxWidth">320</x:Double>
+
+	<!-- TreeViewItem resources. -->
+	<Thickness x:Key="TreeViewItemPadding">0</Thickness>
+	<Thickness x:Key="TreeViewItemMargin">0</Thickness>
+	<Thickness x:Key="TreeViewItemFirstItemMargin">0</Thickness>
+	<Thickness x:Key="TreeViewItemLastItemMargin">0</Thickness>
+	<CornerRadius x:Key="TreeViewItemCornerRadius">4</CornerRadius>
+
+</ResourceDictionary>

@@ -3,7 +3,7 @@
 using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Media;
-using PropertyChanged;
+using Cornerstone.Weaver;
 
 #endregion
 

@@ -3,16 +3,35 @@
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		x:ClassModifier="internal">
 	<Design.PreviewWith>
-		<Border Padding="10">
-			<Menu Width="500">
-				<MenuItem Header="_Standard">
-					<MenuItem Header="E_xit" />
-				</MenuItem>
-				<MenuItem Header="Selected" IsSelected="True" IsChecked="True" />
-				<MenuItem Header="Disabled" IsEnabled="False" />
-			</Menu>
+		<Border Padding="10" Width="300">
+			<StackPanel>
+				<Menu>
+					<MenuItem Header="_Standard">
+						<MenuItem Header="_File" />
+						<MenuItem Header="E_xit" />
+					</MenuItem>
+					<MenuItem Header="Selected" IsSelected="True" IsChecked="True" />
+					<MenuItem Header="Disabled" IsEnabled="False" />
+					<MenuItem Header="Item 1" />
+					<MenuItem Header="Item 2" />
+					<MenuItem Header="Item 3" />
+					<MenuItem Header="Item 4" />
+					<MenuItem Header="Item 5" />
+					<MenuItem Header="Item 6" />
+					<MenuItem Header="Item 7" />
+				</Menu>
+				<ContextMenu Margin="0,40,0,0">
+					<MenuItem Header="Add Group">
+						<MenuItem.Icon>
+							<Path Width="12" Height="12"
+									Data="{DynamicResource Icons.Folder.Add}" />
+						</MenuItem.Icon>
+					</MenuItem>
+				</ContextMenu>
+			</StackPanel>
 		</Border>
 	</Design.PreviewWith>
+
 	<ControlTheme x:Key="TopLevelMenuItem" TargetType="MenuItem">
 		<Setter Property="Background" Value="{DynamicResource MenuBarBackground}" />
 		<Setter Property="Foreground" Value="{DynamicResource MenuFlyoutItemForeground}" />
@@ -51,7 +70,6 @@
 									BorderThickness="{DynamicResource MenuFlyoutPresenterBorderThemeThickness}"
 									Padding="{DynamicResource MenuFlyoutPresenterThemePadding}"
 									MaxWidth="{DynamicResource FlyoutThemeMaxWidth}"
-									MinHeight="{DynamicResource MenuFlyoutThemeMinHeight}"
 									HorizontalAlignment="Stretch"
 									CornerRadius="{DynamicResource FlyoutCornerRadius}">
 								<ScrollViewer Theme="{StaticResource MenuScrollViewer}">
@@ -113,7 +131,7 @@
 							Name="PART_ItemsPresenter"
 							ItemsPanel="{TemplateBinding ItemsPanel}"
 							VerticalAlignment="Stretch"
-							Margin="8,0,0,0"
+							Margin="0,0,0,0"
 							KeyboardNavigation.TabNavigation="Continue" />
 				</Border>
 			</ControlTemplate>

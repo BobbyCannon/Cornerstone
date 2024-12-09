@@ -40,7 +40,7 @@ public class GuidValueGenerator : ValueGenerator
 
 		if ((type == typeof(Guid)) || (type == typeof(Guid?)))
 		{
-			return response.AddRange(
+			return response.Add(
 				Guid.Empty,
 				Guid.Parse("6DCEFB3F-4B1C-40FD-827E-58D31767E4A8"),
 				Guid.Parse("00000000-0000-0000-0000-000000000001"),
@@ -50,7 +50,7 @@ public class GuidValueGenerator : ValueGenerator
 
 		if ((type == typeof(ShortGuid)) || (type == typeof(ShortGuid?)))
 		{
-			return response.AddRange(
+			return response.Add(
 				ShortGuid.Empty,
 				ShortGuid.Parse("6DCEFB3F-4B1C-40FD-827E-58D31767E4A8"),
 				ShortGuid.Parse("00000000-0000-0000-0000-000000000001"),

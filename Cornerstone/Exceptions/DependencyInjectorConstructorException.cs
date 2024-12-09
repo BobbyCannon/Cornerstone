@@ -8,7 +8,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Cornerstone.Exceptions;
 
 /// <summary>
-/// Represents an exception for the <see cref="DependencyInjector" /> when trying to create an object.
+/// Represents an exception for the <see cref="DependencyProvider" /> when trying to create an object.
 /// </summary>
 [Serializable]
 [ExcludeFromCodeCoverage]

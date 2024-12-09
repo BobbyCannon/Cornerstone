@@ -15,7 +15,7 @@ public class DocumentTextWriter : TextWriter
 {
 	#region Fields
 
-	private readonly IDocument _document;
+	private readonly ITextEditorDocument _document;
 
 	#endregion
 
@@ -24,7 +24,7 @@ public class DocumentTextWriter : TextWriter
 	/// <summary>
 	/// Creates a new DocumentTextWriter that inserts into document, starting at insertionOffset.
 	/// </summary>
-	public DocumentTextWriter(IDocument document, int insertionOffset)
+	public DocumentTextWriter(ITextEditorDocument document, int insertionOffset)
 	{
 		InsertionOffset = insertionOffset;
 		_document = document ?? throw new ArgumentNullException(nameof(document));
@@ -36,7 +36,7 @@ public class DocumentTextWriter : TextWriter
 		if (line != null)
 		{
 			// ReSharper disable once VirtualMemberCallInConstructor
-			NewLine = document.GetText(line.EndOffset, line.DelimiterLength);
+			NewLine = document.GetText(line.EndIndex, line.DelimiterLength);
 		}
 	}
 

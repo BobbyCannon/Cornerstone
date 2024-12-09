@@ -1,6 +1,7 @@
 #region References
 
 using Avalonia.Interactivity;
+using Cornerstone.Avalonia;
 using Cornerstone.Avalonia.AvaloniaEdit.Highlighting;
 using Cornerstone.Avalonia.Controls;
 

@@ -1,10 +1,20 @@
-﻿namespace Cornerstone.Benchmark
+﻿#region References
+
+using BenchmarkDotNet.Running;
+
+#endregion
+
+namespace Cornerstone.Benchmark;
+
+public class Program
 {
-	internal class Program
+	#region Methods
+
+	private static void Main(string[] args)
 	{
-		static void Main(string[] args)
-		{
-			Console.WriteLine("Hello, World!");
-		}
+		BenchmarkRunner.Run<SpeedyDictionaryBenchmark>(args: args);
+		//BenchmarkRunner.Run<SpeedyListBenchmark>(args: args);
 	}
+
+	#endregion
 }

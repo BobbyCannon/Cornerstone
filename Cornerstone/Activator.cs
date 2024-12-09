@@ -269,7 +269,7 @@ public static class Activator
 		var types = new List<Type>();
 
 		#if NET6_0_OR_GREATER
-		types.AddRange(
+		types.Add(
 			typeof(DateOnly),
 			typeof(DateOnly?),
 			typeof(TimeOnly),
@@ -278,7 +278,7 @@ public static class Activator
 		#endif
 
 		#if NET7_0_OR_GREATER
-		types.AddRange(
+		types.Add(
 			typeof(Int128),
 			typeof(Int128?),
 			typeof(UInt128),

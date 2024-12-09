@@ -1,0 +1,23 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Avalonia.Sample.Tabs"
+		mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
+		x:Class="Avalonia.Sample.Tabs.TabWeakEvents"
+		x:DataType="tabs:TabWeakEvents">
+	<DockPanel>
+		<StackPanel DockPanel.Dock="Top"
+				Orientation="Horizontal"
+				Margin="10">
+			<CheckBox Name="Context"
+					IsChecked="{Binding ContextRunning, Mode=TwoWay}">
+				Enable Context
+			</CheckBox>
+			<Button Margin="10,0,0,0" Click="RegularTriggerOnClick">Regular Trigger</Button>
+			<Button Margin="10,0,0,0" Click="WeakTriggerOnClick">Weak Trigger</Button>
+		</StackPanel>
+		<TextEditorControl Name="Log" IsReadOnly="True" />
+	</DockPanel>
+</UserControl>

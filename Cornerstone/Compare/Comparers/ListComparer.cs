@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System;
 using System.Collections;
 using System.Linq;
 
@@ -21,7 +22,7 @@ public class ListComparer : BaseComparer
 	}
 
 	/// <inheritdoc />
-	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, string message)
+	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, Func<string> message)
 	{
 		try
 		{
@@ -34,7 +35,7 @@ public class ListComparer : BaseComparer
 
 			if (length != list2.Length)
 			{
-				AddDifference(session, length.ToString(), list2.Length.ToString(), true, $"The {message} collection lengths are different.");
+				AddDifference(session, length.ToString(), list2.Length.ToString(), true, () => $"The {message?.Invoke()} collection lengths are different.");
 				return CompareResult.NotEqual;
 			}
 
@@ -55,7 +56,7 @@ public class ListComparer : BaseComparer
 					continue;
 				}
 
-				CompareSession.InternalProcess(session, expectedValue, actualValue);
+				CompareSession.InternalProcess(session, expectedValue, actualValue, () => $"Array index [{i}] does not match.");
 
 				// See if we have hit an issue.
 				if (session.Result == CompareResult.NotEqual)

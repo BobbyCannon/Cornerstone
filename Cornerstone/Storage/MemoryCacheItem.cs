@@ -16,7 +16,7 @@ public class MemoryCacheItem<TKey, TValue>
 
 	private readonly MemoryCache<TKey, TValue> _cache;
 	private readonly TimeSpan? _timeout;
-	private readonly IDateTimeProvider _timeService;
+	private readonly IDateTimeProvider _timeProvider;
 
 	#endregion
 
@@ -29,16 +29,16 @@ public class MemoryCacheItem<TKey, TValue>
 	/// <param name="key"> The key of the item. </param>
 	/// <param name="value"> The value of the item. </param>
 	/// <param name="timeout"> The timeout of the item. </param>
-	/// <param name="timeService"> The service to use for date and time. </param>
-	public MemoryCacheItem(MemoryCache<TKey, TValue> cache, TKey key, TValue value, TimeSpan? timeout, IDateTimeProvider timeService)
+	/// <param name="timeProvider"> The service to use for date and time. </param>
+	public MemoryCacheItem(MemoryCache<TKey, TValue> cache, TKey key, TValue value, TimeSpan? timeout, IDateTimeProvider timeProvider)
 	{
 		_cache = cache;
 		_timeout = timeout;
-		_timeService = timeService;
+		_timeProvider = timeProvider;
 
 		Key = key;
 		Value = value;
-		CreatedOn = timeService.UtcNow;
+		CreatedOn = timeProvider.UtcNow;
 		LastAccessed = CreatedOn;
 	}
 
@@ -64,7 +64,7 @@ public class MemoryCacheItem<TKey, TValue>
 	/// <summary>
 	/// Indicates if the item has expired.
 	/// </summary>
-	public bool HasExpired => _timeService.UtcNow >= ExpirationDate;
+	public bool HasExpired => _timeProvider.UtcNow >= ExpirationDate;
 
 	/// <summary>
 	/// The key of the item.

@@ -6,7 +6,6 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Timers;
-using Avalonia.Controls;
 using Avalonia.Sample.Tabs;
 using Cornerstone.Avalonia;
 using Cornerstone.Location;
@@ -24,20 +23,19 @@ public class MainViewModel : ViewModel
 	#region Fields
 
 	private readonly ThrottleService _saveThrottle;
-
 	private readonly Timer _themeCycleTimer;
 
 	#endregion
 
 	#region Constructors
 
-	public MainViewModel(ApplicationSettings applicationSettings,
-		ILocationProvider locationProvider,
-		IRuntimeInformation runtimeInformation,
-		IDispatcher dispatcher) : base(dispatcher)
+	public MainViewModel(ApplicationSettings applicationSettings, ILocationProvider locationProvider, IDateTimeProvider timeProvider,
+		IRuntimeInformation runtimeInformation, IDispatcher dispatcher)
+		: base(dispatcher)
 	{
 		ApplicationSettings = applicationSettings;
 		LocationProvider = locationProvider;
+		TimeProvider = timeProvider;
 		RuntimeInformation = runtimeInformation;
 
 		_themeCycleTimer = new Timer(1000);
@@ -51,7 +49,6 @@ public class MainViewModel : ViewModel
 
 		Tabs =
 		[
-			new TabItemViewModel(TabThemes.HeaderName, new TabThemes(this)),
 			new TabItemViewModel(TabAdornerLayer.HeaderName, new TabAdornerLayer()),
 			new TabItemViewModel(TabAutoCompleteBox.HeaderName, new TabAutoCompleteBox()),
 			new TabItemViewModel(TabBrowser.HeaderName, new TabBrowser()),
@@ -62,31 +59,44 @@ public class MainViewModel : ViewModel
 			new TabItemViewModel(TabCarousel.HeaderName, new TabCarousel()),
 			new TabItemViewModel(TabCheckBox.HeaderName, new TabCheckBox()),
 			new TabItemViewModel(TabCircularProgress.HeaderName, new TabCircularProgress()),
-			new TabItemViewModel(TabComboBox.HeaderName, new TabComboBox()),
-			new TabItemViewModel(TabContextMenu.HeaderName, new TabContextMenu()),
+			new TabItemViewModel(TabComboBox.HeaderName, new TabComboBox(dispatcher)),
+			new TabItemViewModel(TabConnectionStringBuilder.HeaderName, new TabConnectionStringBuilder()),
+			new TabItemViewModel(TabDatabases.HeaderName, new TabDatabases()),
 			new TabItemViewModel(TabDataGrid.HeaderName, new TabDataGrid()),
 			new TabItemViewModel(TabDateTimePicker.HeaderName, new TabDateTimePicker()),
-			new TabItemViewModel(TabDebounceAndThrottle.HeaderName, new TabDebounceAndThrottle()),
+			new TabItemViewModel(TabDebounceAndThrottle.HeaderName, new TabDebounceAndThrottle(timeProvider, dispatcher)),
+			new TabItemViewModel(TabDockingManager.HeaderName, new TabDockingManager()),
 			new TabItemViewModel(TabExpander.HeaderName, new TabExpander()),
 			new TabItemViewModel(TabFlyout.HeaderName, new TabFlyout()),
 			new TabItemViewModel(TabGridSplitter.HeaderName, new TabGridSplitter()),
 			new TabItemViewModel(TabIcons.HeaderName, new TabIcons()),
+			new TabItemViewModel(TabInputs.HeaderName, new TabInputs()),
 			new TabItemViewModel(TabListBox.HeaderName, new TabListBox()),
 			new TabItemViewModel(TabLocationProvider.HeaderName, new TabLocationProvider()),
 			new TabItemViewModel(TabMapsui.HeaderName, new TabMapsui()),
+			new TabItemViewModel(TabMenu.HeaderName, new TabMenu()),
+			new TabItemViewModel(TabNmea.HeaderName, new TabNmea()),
 			new TabItemViewModel(TabNotificationCard.HeaderName, new TabNotificationCard()),
 			new TabItemViewModel(TabNumericUpDown.HeaderName, new TabNumericUpDown()),
+			new TabItemViewModel(TabProfiling.HeaderName, new TabProfiling(this)),
 			new TabItemViewModel(TabProgressBar.HeaderName, new TabProgressBar()),
 			new TabItemViewModel(TabRadioButton.HeaderName, new TabRadioButton()),
+			new TabItemViewModel(TabRelayCommand.HeaderName, new TabRelayCommand()),
+			new TabItemViewModel(TabRuntimeInformation.HeaderName, new TabRuntimeInformation(this)),
 			new TabItemViewModel(TabScrollViewer.HeaderName, new TabScrollViewer()),
 			new TabItemViewModel(TabSlider.HeaderName, new TabSlider()),
 			new TabItemViewModel(TabSpeedyList.HeaderName, new TabSpeedyList()),
+			new TabItemViewModel(TabSyncManager.HeaderName, new TabSyncManager(timeProvider, runtimeInformation, dispatcher)),
 			new TabItemViewModel(TabTabControl.HeaderName, new TabTabControl()),
 			new TabItemViewModel(TabTextBox.HeaderName, new TabTextBox()),
 			new TabItemViewModel(TabTextEditor.HeaderName, new TabTextEditor()),
+			new TabItemViewModel(TabThemes.HeaderName, new TabThemes(this, dispatcher)),
+			new TabItemViewModel(TabThemeVariantScope.HeaderName, new TabThemeVariantScope()),
+			new TabItemViewModel(TabToggleButton.HeaderName, new TabToggleButton()),
 			new TabItemViewModel(TabToggleSwitch.HeaderName, new TabToggleSwitch()),
 			new TabItemViewModel(TabToolTip.HeaderName, new TabToolTip()),
-			new TabItemViewModel(TabTreeView.HeaderName, new TabTreeView())
+			new TabItemViewModel(TabTreeView.HeaderName, new TabTreeView()),
+			new TabItemViewModel(TabWeakEvents.HeaderName, new TabWeakEvents())
 		];
 
 		var tab = Tabs.FirstOrDefault(x => x.Header == ApplicationSettings.SelectedTabName);
@@ -110,6 +120,8 @@ public class MainViewModel : ViewModel
 
 	public ObservableCollection<TabItemViewModel> Tabs { get; }
 
+	public IDateTimeProvider TimeProvider { get; }
+
 	#endregion
 
 	#region Methods
@@ -124,6 +136,9 @@ public class MainViewModel : ViewModel
 	/// <inheritdoc />
 	public override void Uninitialize()
 	{
+		_themeCycleTimer.Enabled = false;
+		_themeCycleTimer.Close();
+
 		ApplicationSettings.PropertyChanged -= ApplicationSettingsOnPropertyChanged;
 		base.Uninitialize();
 	}
@@ -176,26 +191,6 @@ public class MainViewModel : ViewModel
 	{
 		ApplicationSettings.Save();
 	}
-
-	#endregion
-}
-
-public class TabItemViewModel
-{
-	#region Constructors
-
-	public TabItemViewModel(string header, UserControl content)
-	{
-		Header = header;
-		Content = content;
-	}
-
-	#endregion
-
-	#region Properties
-
-	public UserControl Content { get; }
-	public string Header { get; }
 
 	#endregion
 }

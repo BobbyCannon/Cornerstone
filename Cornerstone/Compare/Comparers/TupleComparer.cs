@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System;
 using System.Collections;
 using Cornerstone.Extensions;
 
@@ -22,7 +23,7 @@ public class TupleComparer : BaseComparer
 	}
 
 	/// <inheritdoc />
-	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, string message)
+	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, Func<string> message)
 	{
 		try
 		{
