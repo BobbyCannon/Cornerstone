@@ -48,7 +48,7 @@ public class ProcessRunner
 		{
 			try
 			{
-				Details.StartedOn = TimeService.CurrentTime.UtcNow;
+				Details.StartedOn = DateTimeProvider.RealTime.UtcNow;
 
 				process.Start();
 			}
@@ -74,7 +74,7 @@ public class ProcessRunner
 		}
 		finally
 		{
-			Details.StoppedOn = TimeService.CurrentTime.UtcNow;
+			Details.StoppedOn = DateTimeProvider.RealTime.UtcNow;
 		}
 
 		return response;
@@ -95,7 +95,7 @@ public class ProcessRunner
 
 		try
 		{
-			Details.StartedOn = TimeService.CurrentTime.UtcNow;
+			Details.StartedOn = DateTimeProvider.RealTime.UtcNow;
 
 			process.OutputDataReceived += OnProcOnOutputDataReceived;
 			process.ErrorDataReceived += OnProcessOnErrorDataReceived;
@@ -130,7 +130,7 @@ public class ProcessRunner
 		}
 		finally
 		{
-			Details.StoppedOn = TimeService.CurrentTime.UtcNow;
+			Details.StoppedOn = DateTimeProvider.RealTime.UtcNow;
 
 			process.OutputDataReceived -= OnProcOnOutputDataReceived;
 			process.ErrorDataReceived -= OnProcessOnErrorDataReceived;

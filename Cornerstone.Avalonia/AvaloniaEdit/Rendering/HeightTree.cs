@@ -30,7 +30,7 @@ internal sealed class HeightTree : ILineTracker, IDisposable
 
 	private double _defaultLineHeight;
 
-	private readonly TextDocument _document;
+	private readonly TextEditorDocument _document;
 
 	private bool _inRemoval;
 	private List<HeightTreeNode> _nodesToCheckForMerging;
@@ -41,7 +41,7 @@ internal sealed class HeightTree : ILineTracker, IDisposable
 
 	#region Constructors
 
-	public HeightTree(TextDocument document, double defaultLineHeight)
+	public HeightTree(TextEditorDocument document, double defaultLineHeight)
 	{
 		_document = document;
 		_weakLineTracker = WeakLineTracker.Register(document, this);

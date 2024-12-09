@@ -1,0 +1,57 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:avalonia="clr-namespace:Mapsui.UI.Avalonia;assembly=Mapsui.UI.Avalonia"
+		xmlns:tabs="clr-namespace:Avalonia.Sample.Tabs"
+		xmlns:converters="clr-namespace:Cornerstone.Avalonia.Converters;assembly=Cornerstone.Avalonia"
+		mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="400"
+		x:Class="Avalonia.Sample.Tabs.TabNmea"
+		x:DataType="tabs:TabNmea">
+	<DockPanel>
+		<StackPanel DockPanel.Dock="Top" 
+				Height="32"
+				Margin="0,0,0,6"
+				Orientation="Horizontal">
+			<ToggleSwitch IsChecked="{Binding EnableAddingLine, Mode=TwoWay}"
+					IsEnabled="{Binding IsRunning, Converter={x:Static BoolConverters.Not}}"
+					OnContent="Stop Adding Line"
+					OffContent="Add Lines"
+					Margin="6,0,0,0" />
+			<ComboBox ItemsSource="{Binding Lines}"
+					SelectedItem="{Binding SelectedLine, Mode=TwoWay}"
+					IsEnabled="{Binding IsRunning, Converter={x:Static BoolConverters.Not}}"
+					IsVisible="{Binding Lines.Count, Converter={x:Static converters:IntegerConverters.IsGreaterThanZero}}">
+				<ComboBox.ItemTemplate>
+					<DataTemplate>
+						<TextBlock Text="{Binding Name}"></TextBlock>
+					</DataTemplate>
+				</ComboBox.ItemTemplate>
+			</ComboBox>
+			<Button Content="Remove"
+					Click="RemoveButtonOnClick"
+					IsEnabled="{Binding IsRunning, Converter={x:Static BoolConverters.Not}}"
+					IsVisible="{Binding SelectedLine, Converter={x:Static ObjectConverters.IsNotNull}}"
+					Margin="6,0,0,0" />
+			<Button Content="Play"
+					Click="PlayButtonOnClick"
+					IsVisible="{Binding SelectedLine, Converter={x:Static ObjectConverters.IsNotNull}}"
+					IsEnabled="{Binding IsRunning, Converter={x:Static BoolConverters.Not}}"
+					Margin="6,0,0,0" />
+			<Button Content="Stop"
+					Click="StopButtonOnClick"
+					IsVisible="{Binding SelectedLine, Converter={x:Static ObjectConverters.IsNotNull}}"
+					IsEnabled="{Binding IsRunning}"
+					Margin="6,0,0,0" />
+		</StackPanel>
+		<ProgressBar DockPanel.Dock="Top"
+				Minimum="0" Maximum="100"
+				Value="{Binding Progress}" />
+		<avalonia:MapControl x:Name="MapControl"
+				PointerPressed="MapControlOnPointerPressed"
+				PointerMoved="MapControlOnPointerMoved"
+				VerticalAlignment="Stretch"
+				HorizontalAlignment="Stretch" />
+	</DockPanel>
+</UserControl>

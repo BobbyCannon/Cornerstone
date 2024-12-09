@@ -5,6 +5,7 @@ using Avalonia.Interactivity;
 using Avalonia.Sample.ViewModels;
 using Cornerstone.Avalonia;
 using Cornerstone.Avalonia.Controls;
+using Cornerstone.Presentation;
 
 #endregion
 
@@ -20,11 +21,11 @@ public partial class TabThemes : CornerstoneUserControl<MainViewModel>
 
 	#region Constructors
 
-	public TabThemes() : this(GetService<MainViewModel>())
+	public TabThemes() : this(DesignModeDependencyProvider.Get<MainViewModel>(), null)
 	{
 	}
 
-	public TabThemes(MainViewModel mainViewModel) : base(mainViewModel)
+	public TabThemes(MainViewModel viewModel, IDispatcher dispatcher) : base(viewModel, dispatcher)
 	{
 		InitializeComponent();
 	}

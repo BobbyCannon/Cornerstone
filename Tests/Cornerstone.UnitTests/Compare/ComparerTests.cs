@@ -46,11 +46,11 @@ public class ComparerTests : CornerstoneUnitTest
 		expected.FirstName = "foo";
 		IsFalse(Comparer.Compare(expected, actual));
 		IsTrue(Comparer.Compare(expected, actual,
-			new ComparerOptions
+			new ComparerSettings
 			{
-				IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeOptions>
+				IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeSettings>
 				{
-					{ typeof(Person), IncludeExcludeOptions.FromExclusions(nameof(Person.FirstName), nameof(Person.FullName)) }
+					{ typeof(Person), IncludeExcludeSettings.FromExclusions(nameof(Person.FirstName), nameof(Person.FullName)) }
 				}
 			})
 		);

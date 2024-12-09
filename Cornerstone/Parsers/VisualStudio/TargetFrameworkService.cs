@@ -314,7 +314,7 @@ public static class TargetFrameworkService
 		}
 
 		var children = parent.Children;
-		collection.AddRange(children);
+		collection.Add(children);
 
 		foreach (var child in children)
 		{

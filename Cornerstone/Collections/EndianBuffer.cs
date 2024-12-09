@@ -169,6 +169,23 @@ public abstract class EndianBuffer
 	#region Methods
 
 	/// <summary>
+	/// Load full array into the buffer.
+	/// </summary>
+	/// <param name="buffer"> The buffer to load. </param>
+	/// <exception cref="ArgumentException"> The buffer length is invalid. </exception>
+	public void LoadBuffer(byte[] buffer)
+	{
+		if (buffer.Length != _buffer.Length)
+		{
+			throw new ArgumentException("The buffer length is invalid.", nameof(Buffer));
+		}
+
+		Array.Copy(buffer, 0, _buffer, 0, buffer.Length);
+
+		_lastWroteIndex = _buffer.Length;
+	}
+
+	/// <summary>
 	/// Read the value from the buffer.
 	/// </summary>
 	/// <param name="index"> The index to start reading from. </param>
@@ -788,23 +805,6 @@ public abstract class EndianBuffer
 		{
 			throw new CornerstoneException("Failed to write the uint64 value.");
 		}
-	}
-
-	/// <summary>
-	/// Load full array into the buffer.
-	/// </summary>
-	/// <param name="buffer"> The buffer to load. </param>
-	/// <exception cref="ArgumentException"> The buffer length is invalid. </exception>
-	protected void LoadBuffer(byte[] buffer)
-	{
-		if (buffer.Length != _buffer.Length)
-		{
-			throw new ArgumentException("The buffer length is invalid.", nameof(Buffer));
-		}
-
-		Array.Copy(buffer, 0, _buffer, 0, buffer.Length);
-
-		_lastWroteIndex = _buffer.Length;
 	}
 
 	/// <summary>

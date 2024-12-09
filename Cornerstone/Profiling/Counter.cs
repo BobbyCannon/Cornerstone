@@ -10,7 +10,7 @@ namespace Cornerstone.Profiling;
 /// <summary>
 /// Represents a counter for profiling.
 /// </summary>
-public class Counter : ReaderWriterLockBindable
+public class Counter : Bindable
 {
 	#region Fields
 
@@ -23,9 +23,8 @@ public class Counter : ReaderWriterLockBindable
 	/// <summary>
 	/// Instantiate the counter for profiling.
 	/// </summary>
-	/// <param name="readerWriterLock"> An optional lock. Defaults to <see cref="ReaderWriterLockTiny" /> if non provided. </param>
 	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public Counter(IReaderWriterLock readerWriterLock = null, IDispatcher dispatcher = null) : base(readerWriterLock, dispatcher)
+	public Counter(IDispatcher dispatcher = null) : base(dispatcher)
 	{
 	}
 

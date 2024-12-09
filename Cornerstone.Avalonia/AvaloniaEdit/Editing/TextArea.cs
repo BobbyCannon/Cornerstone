@@ -18,12 +18,11 @@ using Avalonia.Threading;
 using Cornerstone.Avalonia.AvaloniaEdit.Indentation;
 using Cornerstone.Avalonia.AvaloniaEdit.Rendering;
 using Cornerstone.Avalonia.AvaloniaEdit.Utils;
-using Cornerstone.Avalonia.Controls;
 using Cornerstone.Avalonia.Input;
 using Cornerstone.Collections;
 using Cornerstone.Internal;
 using Cornerstone.Text.Document;
-using PropertyChanged;
+using Cornerstone.Weaver;
 
 #endregion
 
@@ -40,69 +39,54 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 	/// <summary>
 	/// Document property.
 	/// </summary>
-	public static readonly StyledProperty<TextDocument> DocumentProperty
-		= TextView.DocumentProperty.AddOwner<TextArea>();
+	public static readonly StyledProperty<TextEditorDocument> DocumentProperty;
 
 	/// <summary>
 	/// IndentationStrategy property.
 	/// </summary>
-	public static readonly StyledProperty<IIndentationStrategy> IndentationStrategyProperty =
-		AvaloniaProperty.Register<TextArea, IIndentationStrategy>(nameof(IndentationStrategy), new DefaultIndentationStrategy());
+	public static readonly StyledProperty<IIndentationStrategy> IndentationStrategyProperty;
 
-	public static readonly DirectProperty<TextArea, ObservableCollection<Control>> LeftMarginsProperty
-		= AvaloniaProperty.RegisterDirect<TextArea, ObservableCollection<Control>>(nameof(LeftMargins),
-			c => c.LeftMargins);
+	public static readonly DirectProperty<TextArea, ObservableCollection<Control>> LeftMarginsProperty;
 
 	/// <summary>
 	/// Defines the <see cref="IScrollable.Offset" /> property.
 	/// </summary>
-	public static readonly DirectProperty<TextArea, Vector> OffsetProperty =
-		AvaloniaProperty.RegisterDirect<TextArea, Vector>(
-			nameof(IScrollable.Offset),
-			o => (o as IScrollable).Offset,
-			(o, v) => (o as IScrollable).Offset = v);
-
-	/// <summary>
-	/// Options property.
-	/// </summary>
-	public static readonly StyledProperty<TextEditorOptions> OptionsProperty
-		= TextView.OptionsProperty.AddOwner<TextArea>();
+	public static readonly DirectProperty<TextArea, Vector> OffsetProperty;
 
 	/// <summary>
 	/// The <see cref="OverstrikeMode" /> dependency property.
 	/// </summary>
-	public static readonly StyledProperty<bool> OverstrikeModeProperty =
-		AvaloniaProperty.Register<TextArea, bool>(nameof(OverstrikeMode));
+	public static readonly StyledProperty<bool> OverstrikeModeProperty;
 
 	/// <summary>
 	/// The <see cref="RightClickMovesCaret" /> property.
 	/// </summary>
-	public static readonly StyledProperty<bool> RightClickMovesCaretProperty =
-		AvaloniaProperty.Register<TextArea, bool>(nameof(RightClickMovesCaret));
+	public static readonly StyledProperty<bool> RightClickMovesCaretProperty;
 
 	/// <summary>
 	/// The <see cref="SelectionBackground" /> property.
 	/// </summary>
-	public static readonly StyledProperty<IBrush> SelectionBackgroundProperty =
-		AvaloniaProperty.Register<TextArea, IBrush>(nameof(SelectionBackground));
+	public static readonly StyledProperty<IBrush> SelectionBackgroundProperty;
 
 	/// <summary>
 	/// The <see cref="SelectionBorder" /> property.
 	/// </summary>
-	public static readonly StyledProperty<Pen> SelectionBorderProperty =
-		AvaloniaProperty.Register<TextArea, Pen>(nameof(SelectionBorder));
+	public static readonly StyledProperty<Pen> SelectionBorderProperty;
 
 	/// <summary>
 	/// The <see cref="SelectionCornerRadius" /> property.
 	/// </summary>
-	public static readonly StyledProperty<double> SelectionCornerRadiusProperty =
-		AvaloniaProperty.Register<TextArea, double>(nameof(SelectionCornerRadius), 3.0);
+	public static readonly StyledProperty<double> SelectionCornerRadiusProperty;
 
 	/// <summary>
 	/// The <see cref="SelectionForeground" /> property.
 	/// </summary>
-	public static readonly StyledProperty<IBrush> SelectionForegroundProperty =
-		AvaloniaProperty.Register<TextArea, IBrush>(nameof(SelectionForeground));
+	public static readonly StyledProperty<IBrush> SelectionForegroundProperty;
+
+	/// <summary>
+	/// Settings property.
+	/// </summary>
+	public static readonly StyledProperty<TextEditorSettings> SettingsProperty;
 
 	internal readonly Selection EmptySelection;
 	private ITextAreaInputHandler _activeInputHandler;
@@ -146,7 +130,7 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 		LeftMargins = [];
 		StackedInputHandlers = System.Collections.Immutable.ImmutableStack<TextAreaStackedInputHandler>.Empty;
 		TextView = textView;
-		Options = textView.Options;
+		Settings = textView.Settings;
 
 		_selection = EmptySelection = new EmptySelection(this);
 
@@ -154,7 +138,7 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 		textView.LineTransformers.Add(new SelectionColorizer(this));
 		textView.InsertLayer(new SelectionLayer(this), KnownLayer.Selection, LayerInsertionPosition.Replace);
 
-		Caret = new Caret(this);
+		Caret = new Caret(this, GetDispatcher());
 		Caret.PositionChanged += (sender, e) => RequestSelectionValidation();
 		Caret.PositionChanged += CaretPositionChanged;
 
@@ -167,11 +151,22 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 
 	static TextArea()
 	{
-		KeyboardNavigation.TabNavigationProperty.OverrideDefaultValue<TextArea>(KeyboardNavigationMode.None);
+		DocumentProperty = TextView.DocumentProperty.AddOwner<TextArea>();
 		FocusableProperty.OverrideDefaultValue<TextArea>(true);
+		IndentationStrategyProperty = AvaloniaProperty.Register<TextArea, IIndentationStrategy>(nameof(IndentationStrategy), new DefaultIndentationStrategy());
+		LeftMarginsProperty = AvaloniaProperty.RegisterDirect<TextArea, ObservableCollection<Control>>(nameof(LeftMargins), c => c.LeftMargins);
+		OffsetProperty = AvaloniaProperty.RegisterDirect<TextArea, Vector>(nameof(IScrollable.Offset), o => (o as IScrollable).Offset, (o, v) => (o as IScrollable).Offset = v);
+		SettingsProperty = TextView.SettingsProperty.AddOwner<TextArea>();
+		OverstrikeModeProperty = AvaloniaProperty.Register<TextArea, bool>(nameof(OverstrikeMode));
+		RightClickMovesCaretProperty = AvaloniaProperty.Register<TextArea, bool>(nameof(RightClickMovesCaret));
+		SelectionBackgroundProperty = AvaloniaProperty.Register<TextArea, IBrush>(nameof(SelectionBackground));
+		SelectionBorderProperty = AvaloniaProperty.Register<TextArea, Pen>(nameof(SelectionBorder));
+		SelectionCornerRadiusProperty = AvaloniaProperty.Register<TextArea, double>(nameof(SelectionCornerRadius), 3.0);
+		SelectionForegroundProperty = AvaloniaProperty.Register<TextArea, IBrush>(nameof(SelectionForeground));
+		KeyboardNavigation.TabNavigationProperty.OverrideDefaultValue<TextArea>(KeyboardNavigationMode.None);
 
 		DocumentProperty.Changed.Subscribe(OnDocumentChanged);
-		OptionsProperty.Changed.Subscribe(OnOptionsChanged);
+		SettingsProperty.Changed.Subscribe(OnOptionsChanged);
 
 		AffectsArrange<TextArea>(OffsetProperty);
 		AffectsRender<TextArea>(OffsetProperty);
@@ -247,7 +242,7 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 	/// <summary>
 	/// Gets/Sets the document displayed by the text editor.
 	/// </summary>
-	public TextDocument Document
+	public TextEditorDocument Document
 	{
 		get => GetValue(DocumentProperty);
 		set => SetValue(DocumentProperty, value);
@@ -271,15 +266,6 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 	/// Gets the collection of margins displayed to the left of the text view.
 	/// </summary>
 	public ObservableCollection<Control> LeftMargins { get; }
-
-	/// <summary>
-	/// Gets/Sets the document displayed by the text editor.
-	/// </summary>
-	public TextEditorOptions Options
-	{
-		get => GetValue(OptionsProperty);
-		set => SetValue(OptionsProperty, value);
-	}
 
 	/// <summary>
 	/// Gets/Sets whether overstrike mode is active.
@@ -331,21 +317,26 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 			{
 				if (TextView != null)
 				{
-					var oldSegment = _selection.SurroundingSegment;
-					var newSegment = value.SurroundingSegment;
-					if (!Selection.EnableVirtualSpace && _selection is SimpleSelection && value is SimpleSelection && (oldSegment != null) && (newSegment != null))
+					var oldSegment = _selection.SurroundingRange;
+					var newSegment = value.SurroundingRange;
+
+					if (!Selection.EnableVirtualSpace
+						&& _selection is SimpleSelection
+						&& value is SimpleSelection
+						&& (oldSegment != null)
+						&& (newSegment != null))
 					{
 						// perf optimization:
 						// When a simple selection changes, don't redraw the whole selection, but only the changed parts.
-						var oldSegmentOffset = oldSegment.Offset;
-						var newSegmentOffset = newSegment.Offset;
+						var oldSegmentOffset = oldSegment.StartIndex;
+						var newSegmentOffset = newSegment.StartIndex;
 						if (oldSegmentOffset != newSegmentOffset)
 						{
 							TextView.Redraw(Math.Min(oldSegmentOffset, newSegmentOffset),
 								Math.Abs(oldSegmentOffset - newSegmentOffset));
 						}
-						var oldSegmentEndOffset = oldSegment.EndOffset;
-						var newSegmentEndOffset = newSegment.EndOffset;
+						var oldSegmentEndOffset = oldSegment.EndIndex;
+						var newSegmentEndOffset = newSegment.EndIndex;
 						if (oldSegmentEndOffset != newSegmentEndOffset)
 						{
 							TextView.Redraw(Math.Min(oldSegmentEndOffset, newSegmentEndOffset),
@@ -359,6 +350,7 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 					}
 				}
 				_selection = value;
+				OnPropertyChanged(nameof(Selection));
 				SelectionChanged?.Invoke(this, EventArgs.Empty);
 				// a selection change causes commands like copy/paste/etc. to change status
 				//CommandManager.InvalidateRequerySuggested();
@@ -400,6 +392,15 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 	{
 		get => GetValue(SelectionForegroundProperty);
 		set => SetValue(SelectionForegroundProperty, value);
+	}
+
+	/// <summary>
+	/// Gets/Sets the document displayed by the text editor.
+	/// </summary>
+	public TextEditorSettings Settings
+	{
+		get => GetValue(SettingsProperty);
+		set => SetValue(SettingsProperty, value);
 	}
 
 	/// <summary>
@@ -552,7 +553,7 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 			{
 				if (OverstrikeMode
 					&& Selection.IsEmpty
-					&& (Document.GetLineByNumber(Caret.Line).EndOffset > Caret.Offset))
+					&& (Document.GetLineByNumber(Caret.Line).EndIndex > Caret.Offset))
 				{
 					EditingCommands.SelectRightByCharacter.Execute(null, this);
 				}
@@ -783,24 +784,24 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 		InvalidateArrange();
 	}
 
-	internal ISegment[] GetDeletableSegments(ISegment segment)
+	internal IRange[] GetDeletableSegments(IRange range)
 	{
-		var deletableSegments = ReadOnlySectionProvider.GetDeletableSegments(segment);
+		var deletableSegments = ReadOnlySectionProvider.GetDeletableSegments(range);
 		if (deletableSegments == null)
 		{
 			throw new InvalidOperationException("ReadOnlySectionProvider.GetDeletableSegments returned null");
 		}
 		var array = deletableSegments.ToArray();
-		var lastIndex = segment.Offset;
+		var lastIndex = range.StartIndex;
 		foreach (var t in array)
 		{
-			if (t.Offset < lastIndex)
+			if (t.StartIndex < lastIndex)
 			{
 				throw new InvalidOperationException("ReadOnlySectionProvider returned incorrect segments (outside of input segment / wrong order)");
 			}
-			lastIndex = t.EndOffset;
+			lastIndex = t.EndIndex;
 		}
-		if (lastIndex > segment.EndOffset)
+		if (lastIndex > range.EndIndex)
 		{
 			throw new InvalidOperationException("ReadOnlySectionProvider returned incorrect segments (outside of input segment / wrong order)");
 		}
@@ -903,7 +904,7 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 
 	private void HideMouseCursor()
 	{
-		if (Options.HideCursorWhileTyping && !_isMouseCursorHidden && IsPointerOver)
+		if (Settings.HideCursorWhileTyping && !_isMouseCursorHidden && IsPointerOver)
 		{
 			_isMouseCursorHidden = true;
 		}
@@ -929,10 +930,10 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 
 	private static void OnDocumentChanged(AvaloniaPropertyChangedEventArgs e)
 	{
-		(e.Sender as TextArea)?.OnDocumentChanged((TextDocument) e.OldValue, (TextDocument) e.NewValue);
+		(e.Sender as TextArea)?.OnDocumentChanged((TextEditorDocument) e.OldValue, (TextEditorDocument) e.NewValue);
 	}
 
-	private void OnDocumentChanged(TextDocument oldValue, TextDocument newValue)
+	private void OnDocumentChanged(TextEditorDocument oldValue, TextEditorDocument newValue)
 	{
 		if (oldValue != null)
 		{
@@ -977,16 +978,16 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 
 	private static void OnOptionsChanged(AvaloniaPropertyChangedEventArgs e)
 	{
-		(e.Sender as TextArea)?.OnOptionsChanged((TextEditorOptions) e.OldValue, (TextEditorOptions) e.NewValue);
+		(e.Sender as TextArea)?.OnOptionsChanged((TextEditorSettings) e.OldValue, (TextEditorSettings) e.NewValue);
 	}
 
-	private void OnOptionsChanged(TextEditorOptions oldValue, TextEditorOptions newValue)
+	private void OnOptionsChanged(TextEditorSettings oldValue, TextEditorSettings newValue)
 	{
 		if (oldValue != null)
 		{
 			PropertyChangedWeakEventManager.RemoveHandler(oldValue, OnOptionChanged);
 		}
-		TextView.Options = newValue;
+		TextView.Settings = newValue;
 		if (newValue != null)
 		{
 			PropertyChangedWeakEventManager.AddHandler(newValue, OnOptionChanged);
@@ -1038,7 +1039,7 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 			{
 				var line = Document.GetLineByNumber(Caret.Line);
 				var deletable = GetDeletableSegments(line);
-				if ((deletable.Length == 1) && (deletable[0].Offset == line.Offset) && (deletable[0].Length == line.Length))
+				if ((deletable.Length == 1) && (deletable[0].StartIndex == line.StartIndex) && (deletable[0].Length == line.Length))
 				{
 					// use indentation strategy only if the line is not read-only
 					IndentationStrategy.IndentLine(Document, line);
@@ -1249,7 +1250,7 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 
 				var documentLine = _textArea.Document.GetLineByNumber(lineIndex);
 
-				var text = _textArea.Document.GetText(documentLine.Offset, documentLine.Length);
+				var text = _textArea.Document.GetText(documentLine.StartIndex, documentLine.Length);
 
 				return text;
 			}

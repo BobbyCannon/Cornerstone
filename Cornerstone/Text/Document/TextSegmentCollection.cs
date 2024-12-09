@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
+using Cornerstone.Collections;
 using Cornerstone.Internal;
 
 #endregion
@@ -22,9 +23,9 @@ internal interface ISegmentTree
 {
 	#region Methods
 
-	void Add(TextSegment s);
-	void Remove(TextSegment s);
-	void UpdateAugmentedData(TextSegment s);
+	void Add(TextRange s);
+	void Remove(TextRange s);
+	void UpdateAugmentedData(TextRange s);
 
 	#endregion
 }
@@ -36,10 +37,10 @@ internal interface ISegmentTree
 /// </para>
 /// </summary>
 /// <remarks>
-/// <inheritdoc cref="TextSegment" />
+/// <inheritdoc cref="TextRange" />
 /// </remarks>
-/// <see cref="TextSegment" />
-public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree where T : TextSegment
+/// <see cref="TextRange" />
+public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree where T : TextRange
 {
 	#region Constants
 
@@ -71,7 +72,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 	// FindFirstSegmentWithStartAfter is O(m + lg n) with m being the number of segments at the same offset as the result segment
 	// FindIntersectingSegments is O(m + lg n) with m being the number of intersecting segments.
 
-	private TextSegment _root;
+	private TextRange _root;
 
 	#endregion
 
@@ -92,7 +93,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 	/// that will be added to the tree belong. When the document changes, the
 	/// position of the text segments will be updated accordingly.
 	/// </param>
-	public TextSegmentCollection(TextDocument textDocument)
+	public TextSegmentCollection(TextEditorDocument textDocument)
 	{
 		if (textDocument == null)
 		{
@@ -193,7 +194,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		}
 	}
 
-	public void Disconnect(TextDocument textDocument)
+	public void Disconnect(TextEditorDocument textDocument)
 	{
 		if (_isConnectedToDocument)
 		{
@@ -236,13 +237,13 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 	/// Returns a new collection containing the results of the query.
 	/// This means it is safe to modify the TextSegmentCollection while iterating through the result collection.
 	/// </returns>
-	public ReadOnlyCollection<T> FindOverlappingSegments(ISegment segment)
+	public ReadOnlyCollection<T> FindOverlappingSegments(IRange range)
 	{
-		if (segment == null)
+		if (range == null)
 		{
-			throw new ArgumentNullException(nameof(segment));
+			throw new ArgumentNullException(nameof(range));
 		}
-		return FindOverlappingSegments(segment.Offset, segment.Length);
+		return FindOverlappingSegments(range.StartIndex, range.Length);
 	}
 
 	/// <summary>
@@ -410,12 +411,12 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		#endif
 	}
 
-	void ISegmentTree.Add(TextSegment s)
+	void ISegmentTree.Add(TextRange s)
 	{
 		AddSegment(s);
 	}
 
-	private void AddSegment(TextSegment node)
+	private void AddSegment(TextRange node)
 	{
 		var insertionOffset = node.StartOffset;
 		node.DistanceToMaxEnd = node.SegmentLength;
@@ -445,7 +446,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		CheckProperties();
 	}
 
-	private void Disconnect(TextSegment s, int offset)
+	private void Disconnect(TextRange s, int offset)
 	{
 		s.Left = s.Right = s.Parent = null;
 		s.OwnerTree = null;
@@ -457,7 +458,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 	/// Finds the node at the specified offset.
 	/// After the method has run, offset is relative to the beginning of the returned node.
 	/// </summary>
-	private TextSegment FindNode(ref int offset)
+	private TextRange FindNode(ref int offset)
 	{
 		var n = _root;
 		while (true)
@@ -488,7 +489,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		}
 	}
 
-	private void FindOverlappingSegments(List<T> results, TextSegment node, int low, int high)
+	private void FindOverlappingSegments(List<T> results, TextRange node, int low, int high)
 	{
 		// low and high are relative to node.LeftMost startpos (not node.LeftMost.Offset)
 		if (high < 0)
@@ -534,7 +535,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		}
 	}
 
-	private void FixTreeOnDelete(TextSegment node, TextSegment parentNode)
+	private void FixTreeOnDelete(TextRange node, TextRange parentNode)
 	{
 		Debug.Assert((node == null) || (node.Parent == parentNode));
 		if (parentNode == null)
@@ -622,7 +623,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		}
 	}
 
-	private void FixTreeOnInsert(TextSegment node)
+	private void FixTreeOnInsert(TextRange node)
 	{
 		Debug.Assert(node != null);
 		Debug.Assert(node.Color == Red);
@@ -691,7 +692,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		}
 	}
 
-	private static bool GetColor(TextSegment node)
+	private static bool GetColor(TextRange node)
 	{
 		return (node != null) && node.Color;
 	}
@@ -701,7 +702,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		return GetEnumerator();
 	}
 
-	private void InsertAsLeft(TextSegment parentNode, TextSegment newNode)
+	private void InsertAsLeft(TextRange parentNode, TextRange newNode)
 	{
 		Debug.Assert(parentNode.Left == null);
 		parentNode.Left = newNode;
@@ -711,7 +712,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		FixTreeOnInsert(newNode);
 	}
 
-	private void InsertAsRight(TextSegment parentNode, TextSegment newNode)
+	private void InsertAsRight(TextRange parentNode, TextRange newNode)
 	{
 		Debug.Assert(parentNode.Right == null);
 		parentNode.Right = newNode;
@@ -721,7 +722,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		FixTreeOnInsert(newNode);
 	}
 
-	private void InsertBefore(TextSegment node, TextSegment newNode)
+	private void InsertBefore(TextRange node, TextRange newNode)
 	{
 		if (node.Left == null)
 		{
@@ -743,14 +744,14 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		// enlarge segments that contain offset (excluding those that have offset as endpoint)
 		foreach (var segment in FindSegmentsContaining(offset))
 		{
-			if ((segment.StartOffset < offset) && (offset < segment.EndOffset))
+			if ((segment.StartOffset < offset) && (offset < segment.EndIndex))
 			{
 				segment.Length += length;
 			}
 		}
 
 		// move start offsets of all segments >= offset
-		TextSegment node = FindFirstSegmentWithStartAfter(offset);
+		TextRange node = FindFirstSegmentWithStartAfter(offset);
 		if (node != null)
 		{
 			node.NodeLength += length;
@@ -774,12 +775,12 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		}
 	}
 
-	void ISegmentTree.Remove(TextSegment s)
+	void ISegmentTree.Remove(TextRange s)
 	{
 		RemoveSegment(s);
 	}
 
-	private void RemoveNode(TextSegment removedNode)
+	private void RemoveNode(TextRange removedNode)
 	{
 		if ((removedNode.Left != null) && (removedNode.Right != null))
 		{
@@ -832,7 +833,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		}
 	}
 
-	private void RemoveSegment(TextSegment s)
+	private void RemoveSegment(TextRange s)
 	{
 		var oldOffset = s.StartOffset;
 		var successor = s.Successor;
@@ -849,7 +850,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		CheckProperties();
 	}
 
-	private void ReplaceNode(TextSegment replacedNode, TextSegment newNode)
+	private void ReplaceNode(TextRange replacedNode, TextRange newNode)
 	{
 		if (replacedNode.Parent == null)
 		{
@@ -882,7 +883,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		{
 			if (segment.StartOffset <= offset)
 			{
-				if (segment.EndOffset >= (offset + change.RemovalLength))
+				if (segment.EndIndex >= (offset + change.RemovalLength))
 				{
 					// Replacement inside segment: adjust segment length
 					segment.Length += change.InsertionLength - change.RemovalLength;
@@ -898,7 +899,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 			{
 				// Replacement starting in front of text segment and running into segment.
 				// Keep segment.EndOffset constant and move segment.StartOffset to the end of the replacement
-				var remainingLength = segment.EndOffset - (offset + change.RemovalLength);
+				var remainingLength = segment.EndIndex - (offset + change.RemovalLength);
 				RemoveSegment(segment);
 				segment.StartOffset = offset + change.RemovalLength;
 				segment.Length = Math.Max(0, remainingLength);
@@ -906,7 +907,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 			}
 		}
 		// move start offsets of all segments > offset
-		TextSegment node = FindFirstSegmentWithStartAfter(offset + 1);
+		TextRange node = FindFirstSegmentWithStartAfter(offset + 1);
 		if (node != null)
 		{
 			Debug.Assert(node.NodeLength >= change.RemovalLength);
@@ -915,7 +916,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		}
 	}
 
-	private void RotateLeft(TextSegment p)
+	private void RotateLeft(TextRange p)
 	{
 		// let q be p's right child
 		var q = p.Right;
@@ -937,7 +938,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		UpdateAugmentedData(q);
 	}
 
-	private void RotateRight(TextSegment p)
+	private void RotateRight(TextRange p)
 	{
 		// let q be p's left child
 		var q = p.Left;
@@ -959,12 +960,12 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		UpdateAugmentedData(q);
 	}
 
-	private static TextSegment Sibling(TextSegment node)
+	private static TextRange Sibling(TextRange node)
 	{
 		return node == node.Parent.Left ? node.Parent.Right : node.Parent.Left;
 	}
 
-	private static TextSegment Sibling(TextSegment node, TextSegment parentNode)
+	private static TextRange Sibling(TextRange node, TextRange parentNode)
 	{
 		Debug.Assert((node == null) || (node.Parent == parentNode));
 		if (node == parentNode.Left)
@@ -974,7 +975,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		return parentNode.Left;
 	}
 
-	private void UpdateAugmentedData(TextSegment node)
+	private void UpdateAugmentedData(TextRange node)
 	{
 		var totalLength = node.NodeLength;
 		var distanceToMaxEnd = node.SegmentLength;
@@ -1022,7 +1023,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		}
 	}
 
-	void ISegmentTree.UpdateAugmentedData(TextSegment node)
+	void ISegmentTree.UpdateAugmentedData(TextRange node)
 	{
 		UpdateAugmentedData(node);
 	}
@@ -1045,7 +1046,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 
 	#if DEBUG
 
-	private void CheckProperties(TextSegment node)
+	private void CheckProperties(TextRange node)
 	{
 		var totalLength = node.NodeLength;
 		var distanceToMaxEnd = node.SegmentLength;
@@ -1075,7 +1076,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 	5. Every simple path from a node to a descendant leaf contains the same number of black nodes. (Not counting the leaf node.)
 	*/
 	[SuppressMessage("ReSharper", "UnusedParameter.Local")]
-	private static void CheckNodeProperties(TextSegment node, TextSegment parentNode, bool parentColor, int blackCount, ref int expectedBlackCount)
+	private static void CheckNodeProperties(TextRange node, TextRange parentNode, bool parentColor, int blackCount, ref int expectedBlackCount)
 	{
 		if (node == null)
 		{
@@ -1108,7 +1109,7 @@ public sealed class TextSegmentCollection<T> : ICollection<T>, ISegmentTree wher
 		CheckNodeProperties(node.Right, node, node.Color, blackCount, ref expectedBlackCount);
 	}
 
-	private static void AppendTreeToString(TextSegment node, StringBuilder b, int indent)
+	private static void AppendTreeToString(TextRange node, StringBuilder b, int indent)
 	{
 		b.Append(node.Color == Red ? "RED   " : "BLACK ");
 		b.AppendLine(node + node.ToDebugString());

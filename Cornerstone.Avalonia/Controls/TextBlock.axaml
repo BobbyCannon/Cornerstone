@@ -1,0 +1,71 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<Style Selector="TextBlock">
+		<!-- Current (selected) theme. -->
+		<Style Selector="^[(Theme.Color)=Current]">
+			<Setter Property="Foreground" Value="{DynamicResource ThemeColor05}" />
+		</Style>
+	</Style>
+	
+	<Style Selector="TextBlock.Header">
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansLight}" />
+		<Setter Property="FontSize" Value="24" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="VerticalAlignment" Value="Center" />
+	</Style>
+	
+	<Style Selector="TextBlock.SubHeader">
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansLight}" />
+		<Setter Property="FontSize" Value="20" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="VerticalAlignment" Value="Center" />
+	</Style>
+	
+	<Style Selector="TextBlock.GroupHeader">
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansLight}" />
+		<Setter Property="FontSize" Value="16" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="VerticalAlignment" Value="Center" />
+	</Style>
+	
+	<Style Selector="TextBlock.Monospace">
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+		<Setter Property="VerticalAlignment" Value="Center" />
+	</Style>
+	<Style Selector="TextBlock.Mono">
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+		<Setter Property="VerticalAlignment" Value="Center" />
+	</Style>
+	<Style Selector="TextBlock.MonoLight">
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansLight}" />
+		<Setter Property="VerticalAlignment" Value="Center" />
+	</Style>
+	<Style Selector="TextBlock.MonoThin">
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansLight}" />
+		<Setter Property="VerticalAlignment" Value="Center" />
+	</Style>
+	
+	<Design.PreviewWith>
+		<StackPanel Width="320"
+				Margin="10">
+			<StackPanel>
+				<TextBlock Classes="Header" Text="This is a test" />
+				<TextBlock Classes="Header MonoThin" Text="This is a test" />
+				<TextBlock Classes="SubHeader" Text="This is a test" />
+				<TextBlock Classes="SubHeader MonoThin" Text="This is a test" />
+				
+				<TextBlock Classes="GroupHeader" Text="This is a test" />
+				<TextBlock Classes="GroupHeader MonoThin" Text="This is a test" />
+				
+				<TextBlock Text="The quick brown fox jumped over the lazy dog's back."
+						TextWrapping="Wrap"
+						Margin="10"/>
+				
+				<TextBlock Classes="Mono" Text="Regular Monospaced." />
+				<TextBlock Classes="MonoLight" Text="  Light Monospaced." />
+				<TextBlock Classes="MonoThin" Text="   Thin Monospaced." />
+			</StackPanel>
+		</StackPanel>
+	</Design.PreviewWith>
+</Styles>

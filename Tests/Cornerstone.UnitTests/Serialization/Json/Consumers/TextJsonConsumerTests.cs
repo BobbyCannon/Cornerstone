@@ -19,19 +19,19 @@ public class TextJsonConsumerTests : CornerstoneUnitTest
 	[TestMethod]
 	public void Indented()
 	{
-		var scenarios = new Dictionary<string, ISerializationOptions>
+		var scenarios = new Dictionary<string, ISerializationSettings>
 		{
 			{
 				"{\r\n\t\"Age\": 21,\r\n\t\"Name\": \"John Doe\"\r\n}",
-				new SerializationOptions { TextFormat = TextFormat.Indented }
+				new SerializationSettings { TextFormat = TextFormat.Indented }
 			},
 			{
 				"{\"Age\":21,\"Name\":\"John Doe\"}",
-				new SerializationOptions { TextFormat = TextFormat.None }
+				new SerializationSettings { TextFormat = TextFormat.None }
 			},
 			{
 				"{\"age\":21,\"name\":\"John Doe\"}",
-				new SerializationOptions { NamingConvention = NamingConvention.CamelCase }
+				new SerializationSettings { NamingConvention = NamingConvention.CamelCase }
 			}
 		};
 

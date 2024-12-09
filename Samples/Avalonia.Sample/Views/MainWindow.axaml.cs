@@ -2,10 +2,9 @@
 
 using System;
 using Avalonia.Controls;
-using Avalonia.Interactivity;
 using Avalonia.Sample.ViewModels;
 using Cornerstone.Avalonia;
-using Cornerstone.Avalonia.Controls;
+using Cornerstone.Presentation;
 
 #endregion
 
@@ -15,15 +14,15 @@ public partial class MainWindow : CornerstoneWindow
 {
 	#region Constructors
 
-	public MainWindow() : this(ViewModelProviderForDesignMode.Get<MainViewModel>())
+	public MainWindow() : this(DesignModeDependencyProvider.Get<MainViewModel>(), null)
 	{
 	}
 
-	public MainWindow(MainViewModel viewModel)
+	public MainWindow(MainViewModel viewModel, IDispatcher dispatcher) : base(dispatcher)
 	{
 		ViewModel = viewModel;
 		DataContext = viewModel;
-		MainView = new MainView(ViewModel);
+		MainView = new MainView(ViewModel, dispatcher);
 
 		InitializeComponent();
 	}
@@ -42,7 +41,7 @@ public partial class MainWindow : CornerstoneWindow
 
 	protected override void OnClosing(WindowClosingEventArgs e)
 	{
-		CornerstoneRuntimeInformation.Instance.Shutdown();
+		CornerstoneApplication.RuntimeInformation.Shutdown();
 		CornerstoneDispatcher.Instance.IsEnabled = false;
 
 		ViewModel.Uninitialize();

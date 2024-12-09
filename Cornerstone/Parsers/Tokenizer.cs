@@ -1,6 +1,11 @@
 ﻿#region References
 
-using System.IO;
+using System.Collections.Generic;
+using System.Linq;
+using Cornerstone.Parsers.CSharp;
+using Cornerstone.Parsers.Html;
+using Cornerstone.Parsers.Json;
+using Cornerstone.Parsers.Markdown;
 using Cornerstone.Text;
 
 #endregion
@@ -12,81 +17,66 @@ namespace Cornerstone.Parsers;
 /// </summary>
 /// <typeparam name="T"> The data for a token. </typeparam>
 /// <typeparam name="T2"> The type for the token. </typeparam>
-public abstract class Tokenizer<T, T2>
-	where T : ITokenData<T2>
+public abstract class Tokenizer<T, T2> : Tokenizer
+	where T : TokenData<T, T2>, new()
 {
-	#region Constants
-
-	private const int _bufferSize = 1024;
-
-	#endregion
-
-	#region Fields
-
-	internal T CurrentToken;
-	internal T NextToken;
-	private readonly char[] _buffer;
-	private readonly TextReader _textReader;
-
-	#endregion
-
 	#region Constructors
 
 	/// <summary>
 	/// Initialize the tokenizer.
 	/// </summary>
-	/// <param name="reader"> The reader for text. </param>
-	protected Tokenizer(TextReader reader)
+	protected Tokenizer()
 	{
-		_buffer = new char[_bufferSize];
-		BufferEnd = _bufferSize + 1;
-		TemporaryBuffer = new TextBuilder();
-		_textReader = reader;
-
-		var read = _textReader.ReadBlock(_buffer, 0, _bufferSize);
-		if (read < _bufferSize)
-		{
-			BufferEnd = read;
-		}
+		CurrentToken = new T();
+		CurrentToken.SetDocument(this);
 	}
 
 	#endregion
 
 	#region Properties
 
-	/// <summary>
-	/// The end of the buffer.
-	/// </summary>
-	protected int BufferEnd { get; private set; }
-
-	/// <summary>
-	/// The index of the column for the current line.
-	/// </summary>
-	protected int ColumnIndex { get; private set; }
-
-	/// <summary>
-	/// The current character index.
-	/// </summary>
-	protected int CurrentIndex { get; private set; }
-
-	/// <summary>
-	/// The current number of a line.
-	/// </summary>
-	protected int LineNumber { get; private set; } = 1;
-
-	/// <summary>
-	/// Represents a temporary buffer to use during tokenizing.
-	/// </summary>
-	protected TextBuilder TemporaryBuffer { get; }
+	public T CurrentToken { get; }
 
 	#endregion
 
 	#region Methods
 
 	/// <summary>
-	/// Move to the next token.
+	/// Read all tokens.
 	/// </summary>
-	public abstract void MoveNext();
+	public virtual IEnumerable<T> GetTokens()
+	{
+		while (ParseNext())
+		{
+			var token = CurrentToken.ShallowClone();
+			token.SetDocument(this);
+			yield return token;
+		}
+	}
+
+	/// <inheritdoc />
+	public override string ToCodeSyntaxHtml(bool includeHtml = false)
+	{
+		var writer = new CodeSyntaxHtmlWriter();
+		var tokens = GetTokens().ToList();
+
+		if (includeHtml)
+		{
+			writer.Start();
+		}
+
+		foreach (var t in tokens)
+		{
+			t.WriteTo(writer);
+		}
+
+		if (includeHtml)
+		{
+			writer.Stop();
+		}
+
+		return writer.ToString();
+	}
 
 	/// <summary>
 	/// Expect the next characters should match the provided expected values.
@@ -98,14 +88,14 @@ public abstract class Tokenizer<T, T2>
 		{
 			var c = NextChar();
 
-			if ((c == 0) && (CurrentIndex >= BufferEnd))
+			if ((c == 0) && (StartIndex >= Length))
 			{
-				throw new ParserException($"Unexpected end of stream reached while '{expected}' was expected in line {LineNumber} at position {ColumnIndex}.", LineNumber, ColumnIndex);
+				throw new ParserException($"Unexpected end of stream reached while '{expected}' was expected in line {LineNumber} at position {ColumnNumber}.", LineNumber, ColumnNumber);
 			}
 
 			if (c != expected[i])
 			{
-				throw new ParserException($"Expected '{expected}' at position {ColumnIndex} in line {LineNumber}, but found '{expected.Substring(0, i) + c}'.", LineNumber, ColumnIndex);
+				throw new ParserException($"Expected '{expected}' at position {ColumnNumber} in line {LineNumber}, but found '{expected.Substring(0, i) + c}'.", LineNumber, ColumnNumber);
 			}
 		}
 	}
@@ -113,39 +103,89 @@ public abstract class Tokenizer<T, T2>
 	/// <summary>
 	/// Checks to see if the character is whitespace.
 	/// </summary>
-	protected bool IsWhitespace(char c)
+	protected bool IsNewLine(char c)
 	{
-		return c is ' ' or '\t' or '\r' or '\n';
+		return c is '\r' or '\n';
 	}
 
 	/// <summary>
-	/// Gets the next character in the buffer.
+	/// Checks to see if the character is whitespace.
 	/// </summary>
-	/// <returns> The next character. </returns>
-	protected char NextChar()
+	protected bool IsWhitespace(char c)
 	{
-		if (CurrentIndex >= BufferEnd)
-		{
-			return (char) 0;
-		}
-
-		var c = _buffer[CurrentIndex++];
-
-		ColumnIndex++;
-
-		if (CurrentIndex == _bufferSize)
-		{
-			ReadNextChunk();
-		}
-
-		if (c == '\n')
-		{
-			LineNumber++;
-			ColumnIndex = 0;
-		}
-
-		return c;
+		return c is ' ' or '\t';
 	}
+
+	protected void ParseNewLines()
+	{
+		ParseUntilNot('\r', '\n');
+	}
+
+	/// <summary>
+	/// Parse a string out of the buffer.
+	/// </summary>
+	/// <param name="quote"> The quote character. </param>
+	/// <returns> The string parsed. </returns>
+	protected abstract void ParseString(char quote);
+
+	protected void ParseUntil(params char[] expected)
+	{
+		for (;;)
+		{
+			var c = PeekChar();
+
+			if (expected.Any(x => x == c))
+			{
+				break;
+			}
+
+			NextChar();
+		}
+	}
+
+	protected void ParseUntilNot(params char[] expected)
+	{
+		for (;;)
+		{
+			var c = PeekChar();
+
+			if (expected.Any(x => x == c))
+			{
+				NextChar();
+				continue;
+			}
+
+			break;
+		}
+	}
+
+	protected void ParseWhitespace()
+	{
+		ParseUntilNot(' ', '\t');
+	}
+
+	#endregion
+}
+
+public abstract class Tokenizer : TextDocument
+{
+	#region Methods
+
+	public static Tokenizer GetByName(string language)
+	{
+		return language?.ToLower().Trim() switch
+		{
+			"csharp" => new CSharpTokenizer(),
+			"json" => new JsonTokenizer(),
+			"markdown" => new MarkdownTokenizer(),
+			_ => null
+		};
+	}
+
+	/// <summary>
+	/// Parse to the next token.
+	/// </summary>
+	public abstract bool ParseNext();
 
 	/// <summary>
 	/// Parse a number from the character.
@@ -153,7 +193,7 @@ public abstract class Tokenizer<T, T2>
 	/// <param name="character"> The character to process. </param>
 	/// <param name="multiplier"> The multiplier to shift the value. </param>
 	/// <returns> The number. </returns>
-	protected uint ParseSingleNumber(char character, uint multiplier)
+	public static uint ParseSingleNumber(char character, uint multiplier)
 	{
 		uint response = character switch
 		{
@@ -165,38 +205,47 @@ public abstract class Tokenizer<T, T2>
 		return response;
 	}
 
-	/// <summary>
-	/// Parse a string out of the buffer.
-	/// </summary>
-	/// <param name="quote"> The quote character. </param>
-	/// <returns> The string parsed. </returns>
-	protected abstract string ParseString(char quote);
-
-	/// <summary>
-	/// Peek the next char.
-	/// </summary>
-	/// <returns> The character if found otherwise null character (0). </returns>
-	protected char PeekChar()
+	public static uint ParseUnicode(char c1, char c2, char c3, char c4)
 	{
-		if (CurrentIndex >= BufferEnd)
-		{
-			return (char) 0;
-		}
+		var p1 = ParseSingleNumber(c1, 0x1000);
+		var p2 = ParseSingleNumber(c2, 0x0100);
+		var p3 = ParseSingleNumber(c3, 0x0010);
+		var p4 = ParseSingleNumber(c4, 0x0001);
 
-		return _buffer[CurrentIndex];
+		return p1 + p2 + p3 + p4;
 	}
 
 	/// <summary>
-	/// Refill the buffer with more data.
+	/// Convert the content to HTML representation.
 	/// </summary>
-	protected void ReadNextChunk()
+	/// <returns> The HTML display version of the value. </returns>
+	public abstract string ToCodeSyntaxHtml(bool includeHtml = false);
+
+	/// <summary>
+	/// Convert the content to HTML representation.
+	/// </summary>
+	/// <typeparam name="T"> The tokenizer type. </typeparam>
+	/// <param name="value"> The value to process into code syntax html. </param>
+	/// <param name="includeHtml"> Include html element with sample css. </param>
+	/// <returns> The HTML display version of the value. </returns>
+	public static string ToCodeSyntaxHtml<T>(string value, bool includeHtml = false)
+		where T : Tokenizer, new()
 	{
-		CurrentIndex = 0;
-		var read = _textReader.ReadBlock(_buffer, 0, _bufferSize);
-		if (read < _bufferSize)
+		var tokenizer = new T();
+		tokenizer.Add(value);
+		return tokenizer.ToCodeSyntaxHtml(includeHtml);
+	}
+
+	public static string ToCodeSyntaxHtml(string language, string code)
+	{
+		var tokenizer = GetByName(language);
+		if (tokenizer == null)
 		{
-			BufferEnd = read;
+			return code;
 		}
+
+		tokenizer.Add(code);
+		return tokenizer.ToCodeSyntaxHtml(includeHtml: false);
 	}
 
 	#endregion

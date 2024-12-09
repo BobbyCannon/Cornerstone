@@ -6,27 +6,27 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Media;
 using Avalonia.Styling;
-using PropertyChanged;
+using Cornerstone.Weaver;
 
 #endregion
 
 namespace Cornerstone.Avalonia;
 
 [DoNotNotify]
-[PropertyChanging.DoNotNotify]
 public class CornerstoneTheme : Style
 {
 	#region Fields
 
-	public static readonly StyledProperty<ThemeColor> ColorThemeProperty = AvaloniaProperty.Register<CornerstoneTheme, ThemeColor>(nameof(ThemeColor), ThemeColor.Blue);
+	public static readonly StyledProperty<ThemeColor> ThemeColorProperty = AvaloniaProperty.Register<CornerstoneTheme, ThemeColor>(nameof(ThemeColor), ThemeColor.Blue);
 
 	private ResourceInclude _colorTheme;
 	private readonly ResourceInclude _colorThemeAmber;
 	private readonly ResourceInclude _colorThemeBlue;
-	private readonly ResourceInclude _colorThemeBlueGrey;
+	private readonly ResourceInclude _colorThemeBlueGray;
 	private readonly ResourceInclude _colorThemeBrown;
 	private readonly ResourceInclude _colorThemeDeepOrange;
 	private readonly ResourceInclude _colorThemeDeepPurple;
+	private readonly ResourceInclude _colorThemeGray;
 	private readonly ResourceInclude _colorThemeGreen;
 	private readonly ResourceInclude _colorThemeIndigo;
 	private readonly ResourceInclude _colorThemeOrange;
@@ -39,30 +39,36 @@ public class CornerstoneTheme : Style
 
 	#region Constructors
 
-	public CornerstoneTheme(IServiceProvider sp = null)
+	public CornerstoneTheme() : this(null)
+	{
+	}
+
+	public CornerstoneTheme(IServiceProvider sp)
 	{
 		AvaloniaXamlLoader.Load(sp, this);
 
-		var uriAmber = new Uri("avares://Cornerstone.Avalonia/Resources/Color/ColorThemeAmber.xaml");
-		var uriBlue = new Uri("avares://Cornerstone.Avalonia/Resources/Color/ColorThemeBlue.xaml");
-		var uriBlueGrey = new Uri("avares://Cornerstone.Avalonia/Resources/Color/ColorThemeBlueGrey.xaml");
-		var uriBrown = new Uri("avares://Cornerstone.Avalonia/Resources/Color/ColorThemeBrown.xaml");
-		var uriDeepOrange = new Uri("avares://Cornerstone.Avalonia/Resources/Color/ColorThemeDeepOrange.xaml");
-		var uriDeepPurple = new Uri("avares://Cornerstone.Avalonia/Resources/Color/ColorThemeDeepPurple.xaml");
-		var uriGreen = new Uri("avares://Cornerstone.Avalonia/Resources/Color/ColorThemeGreen.xaml");
-		var uriIndigo = new Uri("avares://Cornerstone.Avalonia/Resources/Color/ColorThemeIndigo.xaml");
-		var uriOrange = new Uri("avares://Cornerstone.Avalonia/Resources/Color/ColorThemeOrange.xaml");
-		var uriPink = new Uri("avares://Cornerstone.Avalonia/Resources/Color/ColorThemePink.xaml");
-		var uriPurple = new Uri("avares://Cornerstone.Avalonia/Resources/Color/ColorThemePurple.xaml");
-		var uriRed = new Uri("avares://Cornerstone.Avalonia/Resources/Color/ColorThemeRed.xaml");
-		var uriTeal = new Uri("avares://Cornerstone.Avalonia/Resources/Color/ColorThemeTeal.xaml");
+		var uriAmber = new Uri("avares://Cornerstone.Avalonia/Themes/Color/ThemeColorAmber.xaml");
+		var uriBlue = new Uri("avares://Cornerstone.Avalonia/Themes/Color/ThemeColorBlue.xaml");
+		var uriBlueGray = new Uri("avares://Cornerstone.Avalonia/Themes/Color/ThemeColorBlueGray.xaml");
+		var uriBrown = new Uri("avares://Cornerstone.Avalonia/Themes/Color/ThemeColorBrown.xaml");
+		var uriDeepOrange = new Uri("avares://Cornerstone.Avalonia/Themes/Color/ThemeColorDeepOrange.xaml");
+		var uriDeepPurple = new Uri("avares://Cornerstone.Avalonia/Themes/Color/ThemeColorDeepPurple.xaml");
+		var uriGray = new Uri("avares://Cornerstone.Avalonia/Themes/Color/ThemeColorGray.xaml");
+		var uriGreen = new Uri("avares://Cornerstone.Avalonia/Themes/Color/ThemeColorGreen.xaml");
+		var uriIndigo = new Uri("avares://Cornerstone.Avalonia/Themes/Color/ThemeColorIndigo.xaml");
+		var uriOrange = new Uri("avares://Cornerstone.Avalonia/Themes/Color/ThemeColorOrange.xaml");
+		var uriPink = new Uri("avares://Cornerstone.Avalonia/Themes/Color/ThemeColorPink.xaml");
+		var uriPurple = new Uri("avares://Cornerstone.Avalonia/Themes/Color/ThemeColorPurple.xaml");
+		var uriRed = new Uri("avares://Cornerstone.Avalonia/Themes/Color/ThemeColorRed.xaml");
+		var uriTeal = new Uri("avares://Cornerstone.Avalonia/Themes/Color/ThemeColorTeal.xaml");
 
 		_colorThemeAmber = new ResourceInclude(uriAmber) { Source = uriAmber };
 		_colorThemeBlue = new ResourceInclude(uriBlue) { Source = uriBlue };
-		_colorThemeBlueGrey = new ResourceInclude(uriBlueGrey) { Source = uriBlueGrey };
+		_colorThemeBlueGray = new ResourceInclude(uriBlueGray) { Source = uriBlueGray };
 		_colorThemeBrown = new ResourceInclude(uriBrown) { Source = uriBrown };
 		_colorThemeDeepOrange = new ResourceInclude(uriDeepOrange) { Source = uriDeepOrange };
 		_colorThemeDeepPurple = new ResourceInclude(uriDeepPurple) { Source = uriDeepPurple };
+		_colorThemeGray = new ResourceInclude(uriGreen) { Source = uriGray };
 		_colorThemeGreen = new ResourceInclude(uriGreen) { Source = uriGreen };
 		_colorThemeIndigo = new ResourceInclude(uriIndigo) { Source = uriIndigo };
 		_colorThemeOrange = new ResourceInclude(uriOrange) { Source = uriOrange };
@@ -71,15 +77,13 @@ public class CornerstoneTheme : Style
 		_colorThemeRed = new ResourceInclude(uriRed) { Source = uriRed };
 		_colorThemeTeal = new ResourceInclude(uriTeal) { Source = uriTeal };
 
-		SelectColorTheme(ThemeColor.Blue);
+		SelectThemeColor(ThemeColor.Blue);
 	}
 
 	static CornerstoneTheme()
 	{
+		DejaVuSansLight = new("avares://Cornerstone.Avalonia/Assets/Fonts/DejaVuSansLight.ttf#DejaVu Sans Light");
 		DejaVuSansMono = new("avares://Cornerstone.Avalonia/Assets/Fonts/DejaVuSansMono.ttf#DejaVu Sans Mono");
-		OpenSansLight = new("avares://Cornerstone.Avalonia/Assets/Fonts/OpenSans-Light.ttf#Open Sans");
-		OpenSansRegular = new("avares://Cornerstone.Avalonia/Assets/Fonts/OpenSans-Regular.ttf#Open Sans");
-		OpenSansSemibold = new("avares://Cornerstone.Avalonia/Assets/Fonts/OpenSans-Semibold.ttf#Open Sans");
 	}
 
 	#endregion
@@ -88,19 +92,15 @@ public class CornerstoneTheme : Style
 
 	public static FontFamily DejaVuSansMono { get; }
 
-	public static FontFamily OpenSansLight { get; }
-
-	public static FontFamily OpenSansRegular { get; }
-
-	public static FontFamily OpenSansSemibold { get; }
+	public static FontFamily DejaVuSansLight { get; }
 
 	public ThemeColor ThemeColor
 	{
-		get => GetValue(ColorThemeProperty);
+		get => GetValue(ThemeColorProperty);
 		set
 		{
-			SetValue(ColorThemeProperty, value);
-			SelectColorTheme(value);
+			SetValue(ThemeColorProperty, value);
+			SelectThemeColor(value);
 		}
 	}
 
@@ -108,16 +108,17 @@ public class CornerstoneTheme : Style
 
 	#region Methods
 
-	public void SelectColorTheme(ThemeColor themeColor)
+	public void SelectThemeColor(ThemeColor themeColor)
 	{
-		var newColorTheme = themeColor switch
+		var newThemeColor = themeColor switch
 		{
 			ThemeColor.Amber => _colorThemeAmber,
 			ThemeColor.Blue => _colorThemeBlue,
-			ThemeColor.BlueGrey => _colorThemeBlueGrey,
+			ThemeColor.BlueGray => _colorThemeBlueGray,
 			ThemeColor.Brown => _colorThemeBrown,
 			ThemeColor.DeepOrange => _colorThemeDeepOrange,
 			ThemeColor.DeepPurple => _colorThemeDeepPurple,
+			ThemeColor.Gray => _colorThemeGray,
 			ThemeColor.Green => _colorThemeGreen,
 			ThemeColor.Indigo => _colorThemeIndigo,
 			ThemeColor.Orange => _colorThemeOrange,
@@ -128,7 +129,7 @@ public class CornerstoneTheme : Style
 			_ => _colorThemeBlue
 		};
 
-		if (newColorTheme == _colorTheme)
+		if (newThemeColor == _colorTheme)
 		{
 			return;
 		}
@@ -138,9 +139,9 @@ public class CornerstoneTheme : Style
 			Resources.MergedDictionaries.Remove(_colorTheme);
 		}
 
-		Resources.MergedDictionaries.Insert(0, newColorTheme);
+		Resources.MergedDictionaries.Insert(0, newThemeColor);
 
-		_colorTheme = newColorTheme;
+		_colorTheme = newThemeColor;
 	}
 
 	#endregion

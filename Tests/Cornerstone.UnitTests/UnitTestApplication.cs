@@ -4,10 +4,11 @@ using System;
 using Avalonia;
 using Avalonia.Headless;
 using Avalonia.Markup.Xaml.Styling;
-using Avalonia.Media;
+using Avalonia.Styling;
 using Avalonia.Themes.Simple;
+using Cornerstone.Avalonia;
 using Cornerstone.UnitTests;
-using PropertyChanged;
+using Cornerstone.Weaver;
 
 #endregion
 
@@ -29,17 +30,18 @@ public class UnitTestApplication : Application
 	{
 		var builder = AppBuilder
 			.Configure<UnitTestApplication>()
-			.With(new FontManagerOptions
-			{
-				DefaultFamilyName = "Default",
-				FontFallbacks =
-				[
-					new FontFallback
-					{
-						FontFamily = new FontFamily("Default")
-					}
-				]
-			})
+			//.With(new FontManagerOptions
+			//{
+			//	DefaultFamilyName = "Default",
+			//	FontFallbacks =
+			//	[
+			//		new FontFallback
+			//		{
+			//			FontFamily = new FontFamily("Default")
+			//		}
+			//	]
+			//})
+			.WithCornerstoneFont()
 			.UseHeadless(new AvaloniaHeadlessPlatformOptions
 			{
 				UseHeadlessDrawing = true
@@ -48,13 +50,19 @@ public class UnitTestApplication : Application
 		return builder;
 	}
 
+
 	public static void InitializeStyles()
 	{
+		//
+		// NOTE: Do not add Cornerstone theme, fonts break
+		//
+		//Source = new Uri("/CornerstoneTheme.xaml", UriKind.Relative)
+
 		var styles = new[]
 		{
 			new StyleInclude(new Uri("avares://Cornerstone.Avalonia"))
 			{
-				Source = new Uri("/AvaloniaEdit/Themes/AvaloniaEdit.xaml", UriKind.Relative)
+				Source = new Uri("/AvaloniaEdit/Themes/AvaloniaEdit.axaml", UriKind.Relative)
 			}
 		};
 
@@ -62,19 +70,28 @@ public class UnitTestApplication : Application
 		{
 			Current?.Styles.Add(style);
 		}
-		
+
 		var resources = new[]
 		{
-			new ResourceInclude(new Uri("avares://Cornerstone.Avalonia"))
-			{
-				Source = new Uri("/Resources/Theme.axaml", UriKind.Relative)
-			}
+			new ResourceInclude(new Uri("avares://Cornerstone.Avalonia")) { Source = new Uri("/Themes/Theme.axaml", UriKind.Relative) },
+			new ResourceInclude(new Uri("avares://Cornerstone.Avalonia")) { Source = new Uri("/Themes/Theme.Dark.axaml", UriKind.Relative) },
+			new ResourceInclude(new Uri("avares://Cornerstone.Avalonia")) { Source = new Uri("/Themes/Theme.Shared.axaml", UriKind.Relative) }
 		};
 
 		foreach (var resource in resources)
 		{
 			Current?.Resources.MergedDictionaries.Add(resource);
 		}
+	}
+	
+	public static void InitializeCornerstoneTheme()
+	{
+		Current.Styles.Clear();
+		Current.Styles.Add(new StyleInclude(new Uri("avares://Cornerstone.Avalonia"))
+		{
+			Source = new Uri("/CornerstoneTheme.xaml", UriKind.Relative)
+		});
+		Current.RequestedThemeVariant = ThemeVariant.Dark;
 	}
 
 	#endregion

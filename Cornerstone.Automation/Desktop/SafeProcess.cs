@@ -3,7 +3,7 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
-using Cornerstone.Automation.Internal.Native;
+using Cornerstone.Windows.Native;
 
 #endregion
 

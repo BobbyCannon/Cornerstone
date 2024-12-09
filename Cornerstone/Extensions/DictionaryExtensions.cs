@@ -117,7 +117,7 @@ public static class DictionaryExtensions
 		}
 
 		var response = create(key);
-		dictionary.Add(key, response);
+		dictionary.AddOrUpdate(key, response);
 		return response;
 	}
 

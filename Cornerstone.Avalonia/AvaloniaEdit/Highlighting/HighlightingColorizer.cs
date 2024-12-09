@@ -80,7 +80,7 @@ public class HighlightingColorizer : DocumentColorizingTransformer
 			var b = color.Background.GetBrush(context);
 			if (b != null)
 			{
-				element.BackgroundBrush = b;
+				element.Background03 = b;
 			}
 		}
 		if ((color.FontStyle != null) || (color.FontWeight != null) || (color.FontFamily != null))
@@ -165,7 +165,7 @@ public class HighlightingColorizer : DocumentColorizingTransformer
 				{
 					continue;
 				}
-				ChangeLinePart(section.Offset, section.Offset + section.Length,
+				ChangeLinePart(section.StartIndex, section.StartIndex + section.Length,
 					visualLineElement => ApplyColorToElement(visualLineElement, section.Color));
 			}
 		}
@@ -175,7 +175,7 @@ public class HighlightingColorizer : DocumentColorizingTransformer
 	/// <summary>
 	/// Creates the IHighlighter instance for the specified text document.
 	/// </summary>
-	protected virtual IHighlighter CreateHighlighter(TextView textView, TextDocument document)
+	protected virtual IHighlighter CreateHighlighter(TextView textView, TextEditorDocument document)
 	{
 		if (_definition != null)
 		{
@@ -349,8 +349,8 @@ public class HighlightingColorizer : DocumentColorizingTransformer
 			// decides to re-highlight some section based on external feedback (e.g. semantic highlighting).
 			var fromLine = _textView.Document.GetLineByNumber(fromLineNumber);
 			var toLine = _textView.Document.GetLineByNumber(toLineNumber);
-			var startOffset = fromLine.Offset;
-			_textView.Redraw(startOffset, toLine.EndOffset - startOffset);
+			var startOffset = fromLine.StartIndex;
+			_textView.Redraw(startOffset, toLine.EndIndex - startOffset);
 		}
 
 		/*

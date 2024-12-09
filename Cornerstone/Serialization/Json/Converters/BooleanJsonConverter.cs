@@ -26,7 +26,7 @@ public class BooleanJsonConverter : JsonConverter
 	#region Methods
 
 	/// <inheritdoc />
-	public override void Append(object value, Type valueType, IObjectConsumer consumer, ISerializationOptions settings)
+	public override void Append(object value, Type valueType, IObjectConsumer consumer, ISerializationSettings settings)
 	{
 		if (value is bool bValue)
 		{
@@ -50,7 +50,7 @@ public class BooleanJsonConverter : JsonConverter
 	}
 
 	/// <inheritdoc />
-	public override string GetJsonString(object value, ISerializationOptions settings)
+	public override string GetJsonString(object value, ISerializationSettings settings)
 	{
 		if (value is bool bValue)
 		{

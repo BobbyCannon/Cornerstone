@@ -21,13 +21,13 @@ public class EnumComparer : BaseComparer
 	}
 
 	/// <inheritdoc />
-	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, string message)
+	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, Func<string> message)
 	{
 		var expectedValue = (Enum) expected;
 
 		if (!actual.TryConvertTo(expectedValue.GetType(), out var actualValue))
 		{
-			AddDifference(session, expectedValue.GetType().FullName, actualValue?.GetType().FullName, true, "Failed to convert actual to Enum type.");
+			AddDifference(session, expectedValue.GetType().FullName, actualValue?.GetType().FullName, true, () => "Failed to convert actual to Enum type.");
 			return CompareResult.NotEqual;
 		}
 

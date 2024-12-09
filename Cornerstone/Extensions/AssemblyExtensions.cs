@@ -34,13 +34,7 @@ public static class AssemblyExtensions
 	/// <returns> The directory path for the assembly. </returns>
 	public static string GetAssemblyPath(this Assembly assembly)
 	{
-		var response =
-			#if (NET6_0_OR_GREATER)
-			Path.GetDirectoryName(assembly.Location)
-			#else
-			Path.GetDirectoryName(assembly.CodeBase)
-			#endif
-			?? AppContext.BaseDirectory;
+		var response = AppContext.BaseDirectory;
 
 		if (response.StartsWith("file:\\"))
 		{
@@ -64,12 +58,12 @@ public static class AssemblyExtensions
 	}
 
 	/// <summary>
-	/// Read the embedded file from the assembly.
+	/// Read the embedded binary file from the assembly.
 	/// </summary>
 	/// <param name="assembly"> The assembly to read from. </param>
 	/// <param name="path"> The path of the resource to read. </param>
 	/// <returns> The value that was read. </returns>
-	public static string ReadEmbeddedFile(this Assembly assembly, string path)
+	public static byte[] ReadEmbeddedBinary(this Assembly assembly, string path)
 	{
 		using var stream = assembly.GetManifestResourceStream(path);
 
@@ -78,8 +72,25 @@ public static class AssemblyExtensions
 			throw new Exception("Embedded file not found.");
 		}
 
-		using var reader = new StreamReader(stream);
-		return reader.ReadToEnd();
+		return stream.ReadByteArray();
+	}
+
+	/// <summary>
+	/// Read the embedded text file from the assembly.
+	/// </summary>
+	/// <param name="assembly"> The assembly to read from. </param>
+	/// <param name="path"> The path of the resource to read. </param>
+	/// <returns> The value that was read. </returns>
+	public static string ReadEmbeddedText(this Assembly assembly, string path)
+	{
+		using var stream = assembly.GetManifestResourceStream(path);
+
+		if (stream == null)
+		{
+			throw new Exception("Embedded file not found.");
+		}
+
+		return stream.ReadString();
 	}
 
 	#endregion

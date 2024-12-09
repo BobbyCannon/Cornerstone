@@ -1,3 +1,5 @@
+using System;
+
 #pragma warning disable 1591
 
 namespace Cornerstone.Protocols.Nmea;
@@ -28,15 +30,52 @@ public class NmeaLocation
 	#region Methods
 
 	/// <summary>
+	/// </summary>
+	/// <returns> The NMEA location. </returns>
+	public static NmeaLocation FromLatitude(decimal value)
+	{
+		return Parse(value, latitude: true);
+	}
+	
+	/// <summary>
+	/// </summary>
+	/// <returns> The NMEA location. </returns>
+	public static NmeaLocation FromLongitude(decimal value)
+	{
+		return Parse(value, latitude: false);
+	}
+
+	private static NmeaLocation Parse(decimal value, bool latitude)
+	{
+		var isNegative = value < 0;
+		value = Math.Abs(value);
+		var degrees = (int)value;
+		value = (value - degrees) * 60;
+		var minutes = (int)value;
+		value = Math.Round((value - minutes) * 100000.0m, MidpointRounding.AwayFromZero);
+		var seconds = (int)value;
+
+		// NmeaLocation("4036.82924", "S")
+		// -40.61382
+		// -1 for W and S
+		return new NmeaLocation(
+			$"{degrees:D3}{minutes:D2}.{seconds:D5}",
+			isNegative
+				? (latitude ? "S" : "W")
+				: (latitude ? "N" : "E")
+		);
+	}
+
+	/// <summary>
 	/// XXYY.YYYY = XX + (YYYYYY / 600000) graden.
 	/// (d)dd + (mm.mmmm/60) (* -1 for W and S)
 	/// </summary>
 	/// <returns> </returns>
-	public double ToDecimal()
+	public decimal ToDecimal()
 	{
 		if (string.IsNullOrEmpty(Degree) || string.IsNullOrEmpty(Indicator))
 		{
-			return -1;
+			return 0;
 		}
 
 		// ddmm.mmmm
@@ -49,14 +88,13 @@ public class NmeaLocation
 		// indicators
 		var nesw = Indicator;
 		var plusMinus = (nesw == "S") || (nesw == "W") ? -1 : 1;
-
-		var result = (System.Convert.ToDouble(dd) + (System.Convert.ToDouble(minute) / 60.0)) * plusMinus;
-		return result;
+		var value = (System.Convert.ToDecimal(dd) + (System.Convert.ToDecimal(minute) / 60.0m)) * plusMinus;
+		return value;
 	}
 
 	public override string ToString()
 	{
-		return ToDecimal().ToString("N8");
+		return ToDecimal().ToString();
 	}
 
 	#endregion

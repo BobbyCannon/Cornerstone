@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Reflection;
 using Cornerstone.Extensions;
+using Cornerstone.Text;
 
 #endregion
 
@@ -27,31 +28,51 @@ public class ListCSharpGenerator : CSharpCodeGenerator
 	public override void AppendCode(ICodeWriter codeWriter, Type type, object value)
 	{
 		var list = ((IEnumerable) value).IterateList();
+		var writer = (CSharpCodeWriter) codeWriter;
 
 		if (list.Count <= 0)
 		{
-			codeWriter.Append($"new {CSharpCodeWriter.GetCodeTypeName(type)}()");
+			writer.Append(writer.WritingPropertyValue ? "[]" : $"new {CSharpCodeWriter.GetCodeTypeName(type)}()");
 			return;
 		}
 
 		var lastIndex = list.Count - 1;
-		codeWriter.AppendLine($"new {CSharpCodeWriter.GetCodeTypeName(type)}");
-		codeWriter.AppendLineThenPushIndent('{');
+
+		if (writer.WritingPropertyValue)
+		{
+			if (writer.Settings.TextFormat == TextFormat.Indented)
+			{
+				writer.AppendLine("[");
+			}
+			else
+			{
+				writer.Append("[");
+			}
+		}
+		else
+		{
+			writer.AppendLine($"new {CSharpCodeWriter.GetCodeTypeName(type)}");
+			writer.AppendLineThenPushIndent('{');
+		}
 
 		for (var index = 0; index <= lastIndex; index++)
 		{
 			var item = list[index];
-			codeWriter.AppendObject(item);
+			writer.AppendObject(item);
 
 			if (index != lastIndex)
 			{
-				codeWriter.AppendLine(",");
+				writer.AppendLine(",");
 			}
 		}
 
-		codeWriter.NewLine();
-		codeWriter.PopIndent();
-		codeWriter.Append("}");
+		if (writer.Settings.TextFormat == TextFormat.Indented)
+		{
+			writer.NewLine();
+			writer.PopIndent();
+		}
+
+		writer.Append(writer.WritingPropertyValue ? "]" : "}");
 	}
 
 	/// <inheritdoc />

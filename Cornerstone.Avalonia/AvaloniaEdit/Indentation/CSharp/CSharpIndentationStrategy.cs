@@ -30,9 +30,9 @@ public class CSharpIndentationStrategy : DefaultIndentationStrategy
 	/// <summary>
 	/// Creates a new CSharpIndentationStrategy and initializes the settings using the text editor options.
 	/// </summary>
-	public CSharpIndentationStrategy(TextEditorOptions options)
+	public CSharpIndentationStrategy(TextEditorSettings settings)
 	{
-		IndentationString = options.IndentationString;
+		IndentationString = settings.IndentationString;
 	}
 
 	#endregion
@@ -81,7 +81,7 @@ public class CSharpIndentationStrategy : DefaultIndentationStrategy
 	}
 
 	/// <inheritdoc cref="IIndentationStrategy.IndentLine" />
-	public override void IndentLine(TextDocument document, DocumentLine line)
+	public override void IndentLine(TextEditorDocument document, DocumentLine line)
 	{
 		var lineNr = line.LineNumber;
 		var acc = new TextDocumentAccessor(document, lineNr, lineNr);
@@ -96,7 +96,7 @@ public class CSharpIndentationStrategy : DefaultIndentationStrategy
 	}
 
 	/// <inheritdoc cref="IIndentationStrategy.IndentLines" />
-	public override void IndentLines(TextDocument document, int beginLine, int endLine)
+	public override void IndentLines(TextEditorDocument document, int beginLine, int endLine)
 	{
 		Indent(new TextDocumentAccessor(document, beginLine, endLine), true);
 	}

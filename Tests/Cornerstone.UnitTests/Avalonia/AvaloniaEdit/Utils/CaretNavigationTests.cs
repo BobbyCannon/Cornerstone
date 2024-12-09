@@ -35,7 +35,7 @@ public class CaretNavigationTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
-	public void DetectWordBordersOutsideBMP()
+	public void DetectWordBordersOutsideBmp()
 	{
 		var c = " a\U0001D49Eb ";
 		AreEqual(1, GetNextCaretStop(c, 0, CaretPositioningMode.WordBorder));
@@ -46,7 +46,7 @@ public class CaretNavigationTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
-	public void DetectWordBordersOutsideBMP2()
+	public void DetectWordBordersOutsideBmp2()
 	{
 		var c = " \U0001D49E\U0001D4AA ";
 		AreEqual(1, GetNextCaretStop(c, 0, CaretPositioningMode.WordBorder));
@@ -81,7 +81,7 @@ public class CaretNavigationTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
-	public void SingleCharacterOutsideBMP()
+	public void SingleCharacterOutsideBmp()
 	{
 		var c = "\U0001D49E";
 		AreEqual(2, GetNextCaretStop(c, 0, CaretPositioningMode.Normal));

@@ -22,7 +22,7 @@ public class DataTableConverter : JsonConverter
 	#region Methods
 
 	/// <inheritdoc />
-	public override void Append(object value, Type valueType, IObjectConsumer consumer, ISerializationOptions settings)
+	public override void Append(object value, Type valueType, IObjectConsumer consumer, ISerializationSettings settings)
 	{
 		if (value == null)
 		{
@@ -61,7 +61,7 @@ public class DataTableConverter : JsonConverter
 	}
 
 	/// <inheritdoc />
-	public override string GetJsonString(object value, ISerializationOptions settings)
+	public override string GetJsonString(object value, ISerializationSettings settings)
 	{
 		var consumer = new TextJsonConsumer(settings);
 		Append(value, value?.GetType(), consumer, settings);
@@ -74,7 +74,7 @@ public class DataTableConverter : JsonConverter
 	/// <param name="dataTable"> The data table to serialize. </param>
 	/// <param name="settings"> The serializer settings. </param>
 	/// <returns> The data table in JSON format. </returns>
-	public static string ToJson(DataTable dataTable, ISerializationOptions settings)
+	public static string ToJson(DataTable dataTable, ISerializationSettings settings)
 	{
 		var consumer = new TextJsonConsumer(settings);
 		WriteDataTable(consumer, dataTable, settings);
@@ -87,7 +87,7 @@ public class DataTableConverter : JsonConverter
 	/// <param name="consumer"> The consumer to write to. </param>
 	/// <param name="dataTable"> The data table to write. </param>
 	/// <param name="settings"> </param>
-	public static void WriteDataTable(IObjectConsumer consumer, DataTable dataTable, ISerializationOptions settings)
+	public static void WriteDataTable(IObjectConsumer consumer, DataTable dataTable, ISerializationSettings settings)
 	{
 		var firstRow = true;
 		var textBuilder = consumer as ITextBuilder;

@@ -1,10 +1,46 @@
 ﻿#region References
 
+using System;
 using Cornerstone.Storage;
 
 #endregion
 
 namespace Cornerstone.Sync;
+
+public class SyncableDatabaseProvider2<T> : SyncableDatabaseProvider<T>
+	where T : ISyncableDatabase
+{
+	#region Fields
+
+	private readonly Func<T> _databaseProvider;
+
+	#endregion
+
+	#region Constructors
+
+	public SyncableDatabaseProvider2(Func<T> databaseProvider)
+	{
+		_databaseProvider = databaseProvider;
+	}
+
+	#endregion
+
+	#region Methods
+
+	/// <inheritdoc />
+	protected override T GetDatabaseFromProvider()
+	{
+		return _databaseProvider.Invoke();
+	}
+
+	#endregion
+
+	/// <inheritdoc />
+	public override string[] GetSyncOrder()
+	{
+		throw new NotImplementedException();
+	}
+}
 
 /// <summary>
 /// Represents a sync database provider.
@@ -13,15 +49,6 @@ public abstract class SyncableDatabaseProvider<T>
 	: DatabaseProvider<T>, ISyncableDatabaseProvider<T>
 	where T : ISyncableDatabase
 {
-	#region Constructors
-
-	/// <inheritdoc />
-	protected SyncableDatabaseProvider(DatabaseOptions options) : base(options)
-	{
-	}
-
-	#endregion
-
 	#region Methods
 
 	/// <inheritdoc />
@@ -29,6 +56,9 @@ public abstract class SyncableDatabaseProvider<T>
 	{
 		return GetDatabase();
 	}
+
+	/// <inheritdoc />
+	public abstract string[] GetSyncOrder();
 
 	/// <inheritdoc />
 	ISyncableDatabase ISyncableDatabaseProvider.GetSyncableDatabase()
@@ -69,6 +99,12 @@ public interface ISyncableDatabaseProvider : IDatabaseProvider
 	/// </summary>
 	/// <returns> The database instance. </returns>
 	ISyncableDatabase GetSyncableDatabase();
+
+	/// <summary>
+	/// Gets the order in which to sync entities.
+	/// </summary>
+	/// <returns> </returns>
+	string[] GetSyncOrder();
 
 	#endregion
 }

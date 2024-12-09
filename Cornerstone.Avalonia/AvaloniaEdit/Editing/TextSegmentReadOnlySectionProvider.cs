@@ -3,7 +3,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Cornerstone.Collections;
+using Cornerstone.Text;
 using Cornerstone.Text.Document;
+using TextRange = Cornerstone.Text.Document.TextRange;
 
 #endregion
 
@@ -13,14 +16,14 @@ namespace Cornerstone.Avalonia.AvaloniaEdit.Editing;
 /// Implementation for <see cref="IReadOnlySectionProvider" /> that stores the segments
 /// in a <see cref="TextSegmentCollection{T}" />.
 /// </summary>
-public class TextSegmentReadOnlySectionProvider<T> : IReadOnlySectionProvider where T : TextSegment
+public class TextSegmentReadOnlySectionProvider<T> : IReadOnlySectionProvider where T : TextRange
 {
 	#region Constructors
 
 	/// <summary>
 	/// Creates a new TextSegmentReadOnlySectionProvider instance for the specified document.
 	/// </summary>
-	public TextSegmentReadOnlySectionProvider(TextDocument textDocument)
+	public TextSegmentReadOnlySectionProvider(TextEditorDocument textDocument)
 	{
 		Segments = new TextSegmentCollection<T>(textDocument);
 	}
@@ -52,43 +55,43 @@ public class TextSegmentReadOnlySectionProvider<T> : IReadOnlySectionProvider wh
 	public virtual bool CanInsert(int offset)
 	{
 		return Segments.FindSegmentsContaining(offset)
-			.All(segment => (segment.StartOffset >= offset) || (offset >= segment.EndOffset));
+			.All(segment => (segment.StartOffset >= offset) || (offset >= segment.EndIndex));
 	}
 
 	/// <summary>
 	/// Gets the deletable segments inside the given segment.
 	/// </summary>
-	public virtual IEnumerable<ISegment> GetDeletableSegments(ISegment segment)
+	public virtual IEnumerable<IRange> GetDeletableSegments(IRange range)
 	{
-		if (segment == null)
+		if (range == null)
 		{
-			throw new ArgumentNullException(nameof(segment));
+			throw new ArgumentNullException(nameof(range));
 		}
 
-		if ((segment.Length == 0) && CanInsert(segment.Offset))
+		if ((range.Length == 0) && CanInsert(range.StartIndex))
 		{
-			yield return segment;
+			yield return range;
 			yield break;
 		}
 
-		var readonlyUntil = segment.Offset;
-		foreach (var ts in Segments.FindOverlappingSegments(segment))
+		var readonlyUntil = range.StartIndex;
+		foreach (var ts in Segments.FindOverlappingSegments(range))
 		{
 			var start = ts.StartOffset;
 			var end = start + ts.Length;
 			if (start > readonlyUntil)
 			{
-				yield return new SimpleSegment(readonlyUntil, start - readonlyUntil);
+				yield return new SimpleRange(readonlyUntil, start - readonlyUntil);
 			}
 			if (end > readonlyUntil)
 			{
 				readonlyUntil = end;
 			}
 		}
-		var endOffset = segment.EndOffset;
+		var endOffset = range.EndIndex;
 		if (readonlyUntil < endOffset)
 		{
-			yield return new SimpleSegment(readonlyUntil, endOffset - readonlyUntil);
+			yield return new SimpleRange(readonlyUntil, endOffset - readonlyUntil);
 		}
 	}
 

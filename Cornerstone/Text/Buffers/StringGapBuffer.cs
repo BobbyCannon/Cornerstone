@@ -26,7 +26,7 @@ public class StringGapBuffer : GapBuffer<char>, ICloneable<StringGapBuffer>, ISt
 	}
 
 	/// <inheritdoc />
-	public StringGapBuffer(IEnumerable<char> value) : this(new string(value.ToArray()))
+	public StringGapBuffer(IEnumerable<char> value) : this(value == null ? string.Empty : new string(value.ToArray()))
 	{
 	}
 
@@ -40,19 +40,13 @@ public class StringGapBuffer : GapBuffer<char>, ICloneable<StringGapBuffer>, ISt
 	#region Methods
 
 	/// <inheritdoc />
-	public void Append(char value)
+	public virtual void Add(string value)
 	{
-		Add(value);
+		base.Add(value);
 	}
 
 	/// <inheritdoc />
-	public virtual void Append(string value)
-	{
-		AddRange(value);
-	}
-
-	/// <inheritdoc />
-	public StringGapBuffer DeepClone(int? maxDepth = null, IncludeExcludeOptions options = null)
+	public StringGapBuffer DeepClone(int? maxDepth = null, IncludeExcludeSettings settings = null)
 	{
 		return new StringGapBuffer(ToString());
 	}
@@ -86,13 +80,7 @@ public class StringGapBuffer : GapBuffer<char>, ICloneable<StringGapBuffer>, ISt
 	}
 
 	/// <inheritdoc />
-	public void Insert(int index, string value, int valueStart, int valueLength)
-	{
-		Insert(index, value.ToCharArray(), valueStart, valueLength);
-	}
-
-	/// <inheritdoc />
-	public int LastIndexOf(string item, int index)
+	public int LastIndexOf(int index, string item)
 	{
 		var itemIndex = item.Length - 1;
 
@@ -132,16 +120,91 @@ public class StringGapBuffer : GapBuffer<char>, ICloneable<StringGapBuffer>, ISt
 		return -1;
 	}
 
-	/// <inheritdoc />
-	public StringGapBuffer ShallowClone(IncludeExcludeOptions options = null)
+	public bool Match(int index, char value)
 	{
-		return DeepClone(0, options);
+		VerifyRange(index);
+
+		if (this[index] == value)
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	/// <inheritdoc />
+	public bool Match(int index, string value, StringComparison comparisonType)
+	{
+		var length = value.Length;
+
+		VerifyRange(index);
+
+		var comparer = comparisonType.GetComparer();
+
+		for (var i = 0; i < length; i++)
+		{
+			var offset = index + i;
+			if (offset >= Count)
+			{
+				return false;
+			}
+
+			if (comparer.Compare(this[offset], value[i]) != 0)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/// <inheritdoc />
+	public bool MatchAny(int index, char[] values, StringComparison comparison, out int length)
+	{
+		VerifyRange(index);
+
+		var comparer = comparison.GetComparer();
+		var offset = index;
+		var matches = 0;
+
+		while (offset <= Count)
+		{
+			if (values.Any(x => comparer.Compare(x, this[offset]) == 0))
+			{
+				matches++;
+				continue;
+			}
+
+			break;
+		}
+
+		length = matches;
+		return matches > 0;
+	}
+
+	/// <inheritdoc />
+	public StringGapBuffer ShallowClone(IncludeExcludeSettings settings = null)
+	{
+		return DeepClone(0, settings);
+	}
+
+	/// <inheritdoc />
+	public string SubString(int index)
+	{
+		var length = Count - index;
+		return SubString(index, length);
 	}
 
 	/// <inheritdoc />
 	public string SubString(int index, int length)
 	{
-		return new string(GetRange(index, length).ToArray());
+		if (length == 0)
+		{
+			return string.Empty;
+		}
+
+		VerifyRange(index, length);
+		return new string(Read(index, length).ToArray());
 	}
 
 	/// <inheritdoc />
@@ -157,27 +220,27 @@ public class StringGapBuffer : GapBuffer<char>, ICloneable<StringGapBuffer>, ISt
 	}
 
 	/// <inheritdoc />
-	IStringBuffer ICloneable<IStringBuffer>.DeepClone(int? maxDepth, IncludeExcludeOptions options)
+	IStringBuffer ICloneable<IStringBuffer>.DeepClone(int? maxDepth, IncludeExcludeSettings settings)
 	{
-		return DeepClone(maxDepth, options);
+		return DeepClone(maxDepth, settings);
 	}
 
 	/// <inheritdoc />
-	object ICloneable.DeepCloneObject(int? maxDepth, IncludeExcludeOptions options)
+	object ICloneable.DeepCloneObject(int? maxDepth, IncludeExcludeSettings settings)
 	{
-		return DeepClone(maxDepth, options);
+		return DeepClone(maxDepth, settings);
 	}
 
 	/// <inheritdoc />
-	IStringBuffer ICloneable<IStringBuffer>.ShallowClone(IncludeExcludeOptions options)
+	IStringBuffer ICloneable<IStringBuffer>.ShallowClone(IncludeExcludeSettings settings)
 	{
-		return ShallowClone(options);
+		return ShallowClone(settings);
 	}
 
 	/// <inheritdoc />
-	object ICloneable.ShallowCloneObject(IncludeExcludeOptions options)
+	object ICloneable.ShallowCloneObject(IncludeExcludeSettings settings)
 	{
-		return ShallowClone(options);
+		return ShallowClone(settings);
 	}
 
 	#endregion

@@ -3,14 +3,24 @@
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		x:ClassModifier="internal">
 	<Design.PreviewWith>
-		<Border Padding="0" Width="200">
-			<ListBox Margin="10">
-				<ListBoxItem IsEnabled="False">Disabled</ListBoxItem>
-				<ListBoxItem Background="#66000000">
-					Test
-				</ListBoxItem>
-				<ListBoxItem>Test</ListBoxItem>
-			</ListBox>
+		<Border Padding="20" Width="200">
+			<Grid ColumnDefinitions="*,*">
+				<ListBox Grid.Column="0"
+						SelectedIndex="1">
+					<ListBoxItem>Test</ListBoxItem>
+					<ListBoxItem>Test</ListBoxItem>
+					<ListBoxItem>Test</ListBoxItem>
+					<ListBoxItem>Test</ListBoxItem>
+				</ListBox>
+				<ListBox Grid.Column="1"
+						Theme.Color="Blue"
+						SelectedIndex="0">
+					<ListBoxItem>Test</ListBoxItem>
+					<ListBoxItem>Test</ListBoxItem>
+					<ListBoxItem>Test</ListBoxItem>
+					<ListBoxItem>Test</ListBoxItem>
+				</ListBox>
+			</Grid>
 		</Border>
 	</Design.PreviewWith>
 
@@ -73,5 +83,4 @@
 			</Style>
 		</Style>
 	</ControlTheme>
-
 </ResourceDictionary>

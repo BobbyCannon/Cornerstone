@@ -35,7 +35,7 @@ public sealed class UndoStack : INotifyPropertyChanged
 
 	private int _actionCountInUndoGroup;
 
-	private List<TextDocument> _affectedDocuments;
+	private List<TextEditorDocument> _affectedDocuments;
 
 	private bool _allowContinue;
 	// implements feature request SD2-784 - File still considered dirty after undoing all changes
@@ -195,14 +195,14 @@ public sealed class UndoStack : INotifyPropertyChanged
 				// only optional actions: don't store them
 				for (var i = 0; i < _optionalActionCount; i++)
 				{
-					_undostack.PopBack();
+					_undostack.PopEnd();
 				}
 				_allowContinue = false;
 			}
 			else if (_actionCountInUndoGroup > 1)
 			{
 				// combine all actions within the group into a single grouped action
-				_undostack.PushBack(new UndoOperationGroup(_undostack, _actionCountInUndoGroup));
+				_undostack.PushEnd(new UndoOperationGroup(_undostack, _actionCountInUndoGroup));
 				FileModified(-_actionCountInUndoGroup + 1 + _optionalActionCount);
 			}
 			//if (state == StateListen) {
@@ -256,8 +256,8 @@ public sealed class UndoStack : INotifyPropertyChanged
 		{
 			LastGroupDescriptor = null;
 			_allowContinue = false;
-			var uedit = _redostack.PopBack();
-			_undostack.PushBack(uedit);
+			var uedit = _redostack.PopEnd();
+			_undostack.PushEnd(uedit);
 			State = StatePlayback;
 			try
 			{
@@ -344,8 +344,8 @@ public sealed class UndoStack : INotifyPropertyChanged
 			LastGroupDescriptor = null;
 			_allowContinue = false;
 			// fetch operation to undo and move it to redo stack
-			var uedit = _undostack.PopBack();
-			_redostack.PushBack(uedit);
+			var uedit = _undostack.PopEnd();
+			_redostack.PushEnd(uedit);
 			State = StatePlayback;
 			try
 			{
@@ -369,7 +369,7 @@ public sealed class UndoStack : INotifyPropertyChanged
 		}
 	}
 
-	internal void Push(TextDocument document, DocumentChangeEventArgs e)
+	internal void Push(TextEditorDocument document, DocumentChangeEventArgs e)
 	{
 		if (State == StatePlayback)
 		{
@@ -385,7 +385,7 @@ public sealed class UndoStack : INotifyPropertyChanged
 		}
 	}
 
-	internal void RegisterAffectedDocument(TextDocument document)
+	internal void RegisterAffectedDocument(TextEditorDocument document)
 	{
 		if (_affectedDocuments == null)
 		{
@@ -485,7 +485,7 @@ public sealed class UndoStack : INotifyPropertyChanged
 			{
 				StartUndoGroup();
 			}
-			_undostack.PushBack(operation);
+			_undostack.PushEnd(operation);
 			_actionCountInUndoGroup++;
 			if (isOptional)
 			{

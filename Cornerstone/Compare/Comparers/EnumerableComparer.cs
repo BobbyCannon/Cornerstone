@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System;
 using System.Collections;
 
 #endregion
@@ -21,7 +22,7 @@ public class EnumerableComparer : BaseComparer
 	}
 
 	/// <inheritdoc />
-	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, string message)
+	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, Func<string> message)
 	{
 		try
 		{

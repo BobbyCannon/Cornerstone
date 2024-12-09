@@ -11,7 +11,7 @@ using Cornerstone.Extensions;
 namespace Cornerstone.Collections;
 
 /// <inheritdoc cref="ReadOnlySet{T}" />
-public class ReadOnlySet<T> : 
+public class ReadOnlySet<T> :
 	#if (!NETSTANDARD2_0)
 	IReadOnlySet<T>,
 	#endif
@@ -50,13 +50,13 @@ public class ReadOnlySet<T> :
 		: this(new HashSet<T>(values))
 	{
 	}
-	
+
 	/// <summary>
 	/// Initializes a readonly set with the provided values.
 	/// </summary>
 	/// <param name="comparer"> An optional comparer to compare set values. </param>
 	/// <param name="values"> The values to include in a read only set. </param>
-	public ReadOnlySet(IEqualityComparer<T> comparer, params T[] values) 
+	public ReadOnlySet(IEqualityComparer<T> comparer, params T[] values)
 		: this(new HashSet<T>(values, comparer))
 	{
 	}

@@ -29,13 +29,13 @@ public class BabelTests : CornerstoneUnitTest
 		Babel.Tower.ChangeDictionary("English");
 		AreEqual("FooBar", Babel.Tower["GeneralError"]);
 
-		var previous = Babel.Tower[BabelKeys.TimeServiceLocked];
-		Babel.Tower.AddOrUpdate(BabelKeys.TimeServiceLocked, "Time Is Locked");
-		AreNotEqual(previous, Babel.Tower[BabelKeys.TimeServiceLocked]);
-		AreEqual("Time Is Locked", Babel.Tower[BabelKeys.TimeServiceLocked]);
+		var previous = Babel.Tower[BabelKeys.DateTimeProviderLocked];
+		Babel.Tower.AddOrUpdate(BabelKeys.DateTimeProviderLocked, "Time Is Locked");
+		AreNotEqual(previous, Babel.Tower[BabelKeys.DateTimeProviderLocked]);
+		AreEqual("Time Is Locked", Babel.Tower[BabelKeys.DateTimeProviderLocked]);
 		
-		Babel.Tower.AddOrUpdate("English", BabelKeys.TimeServiceLocked, "Time Is Locked2");
-		AreEqual("Time Is Locked2", Babel.Tower[BabelKeys.TimeServiceLocked]);
+		Babel.Tower.AddOrUpdate("English", BabelKeys.DateTimeProviderLocked, "Time Is Locked2");
+		AreEqual("Time Is Locked2", Babel.Tower[BabelKeys.DateTimeProviderLocked]);
 	}
 	
 	[TestMethod]
@@ -51,16 +51,16 @@ public class BabelTests : CornerstoneUnitTest
 		IsTrue(Babel.Tower.ContainsKey("Custom Error 2"));
 		AreEqual("Hello World", Babel.Tower["Custom Error 2"]);
 		
-		Babel.Tower.AddOrUpdate("English3", BabelKeys.TimeServiceLocked, "Hello World3");
+		Babel.Tower.AddOrUpdate("English3", BabelKeys.DateTimeProviderLocked, "Hello World3");
 		Babel.Tower.ChangeDictionary("English3");
-		IsTrue(Babel.Tower.ContainsKey(BabelKeys.TimeServiceLocked));
-		AreEqual("Hello World3", Babel.Tower[BabelKeys.TimeServiceLocked]);
+		IsTrue(Babel.Tower.ContainsKey(BabelKeys.DateTimeProviderLocked));
+		AreEqual("Hello World3", Babel.Tower[BabelKeys.DateTimeProviderLocked]);
 		
 		Babel.Tower.ChangeDictionary("English4");
-		Babel.Tower.AddOrUpdate(BabelKeys.TimeServiceLocked, "Hello World4");
-		IsTrue(Babel.Tower.ContainsKey(BabelKeys.TimeServiceLocked));
-		AreEqual("Hello World4", Babel.Tower[BabelKeys.TimeServiceLocked]);
-		AreEqual("Hello World4", Babel.Tower[(Enum) BabelKeys.TimeServiceLocked]);
+		Babel.Tower.AddOrUpdate(BabelKeys.DateTimeProviderLocked, "Hello World4");
+		IsTrue(Babel.Tower.ContainsKey(BabelKeys.DateTimeProviderLocked));
+		AreEqual("Hello World4", Babel.Tower[BabelKeys.DateTimeProviderLocked]);
+		AreEqual("Hello World4", Babel.Tower[(Enum) BabelKeys.DateTimeProviderLocked]);
 	}
 	
 	[TestMethod]

@@ -66,8 +66,8 @@ public class SyncIssue : Bindable
 	/// Update the SyncIssue with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public virtual bool UpdateWith(SyncIssue update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	public virtual bool UpdateWith(SyncIssue update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -77,7 +77,7 @@ public class SyncIssue : Bindable
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			Id = update.Id;
 			IssueType = update.IssueType;
@@ -86,22 +86,22 @@ public class SyncIssue : Bindable
 		}
 		else
 		{
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Id)), x => x.Id = update.Id);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(IssueType)), x => x.IssueType = update.IssueType);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Message)), x => x.Message = update.Message);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(TypeName)), x => x.TypeName = update.TypeName);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Id)), x => x.Id = update.Id);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(IssueType)), x => x.IssueType = update.IssueType);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Message)), x => x.Message = update.Message);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(TypeName)), x => x.TypeName = update.TypeName);
 		}
 
 		return true;
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
-			SyncIssue value => UpdateWith(value, options),
-			_ => base.UpdateWith(update, options)
+			SyncIssue value => UpdateWith(value, settings),
+			_ => base.UpdateWith(update, settings)
 		};
 	}
 

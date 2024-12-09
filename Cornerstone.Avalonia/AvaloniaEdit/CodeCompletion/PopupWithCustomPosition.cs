@@ -2,7 +2,7 @@
 
 using Avalonia;
 using Avalonia.Controls.Primitives;
-using PropertyChanged;
+using Cornerstone.Weaver;
 
 #endregion
 

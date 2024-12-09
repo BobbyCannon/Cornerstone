@@ -38,7 +38,7 @@ public class JsonArray : JsonValue, IReadOnlyList<JsonValue>, IObjectConsumer
 	/// </summary>
 	public JsonArray(params JsonValue[] values): this()
 	{
-		_list.AddRange(values);
+		_list.Add(values);
 	}
 
 	#endregion

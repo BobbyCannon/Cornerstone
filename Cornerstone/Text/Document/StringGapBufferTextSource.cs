@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Cornerstone.Collections;
 using Cornerstone.Text.Buffers;
 
 #endregion
@@ -67,13 +68,13 @@ public sealed class StringGapBufferTextSource : ITextSource
 	/// <inheritdoc />
 	public TextReader CreateReader()
 	{
-		return new StringGapBufferTextReader(_buffer);
+		return new StringBufferTextReader(_buffer);
 	}
 
 	/// <inheritdoc />
 	public TextReader CreateReader(int offset, int length)
 	{
-		return new StringGapBufferTextReader(_buffer.GetRange(offset, length));
+		return new StringBufferTextReader(_buffer.SubString(offset, length));
 	}
 
 	/// <inheritdoc />
@@ -85,7 +86,7 @@ public sealed class StringGapBufferTextSource : ITextSource
 	/// <inheritdoc />
 	public ITextSource CreateSnapshot(int offset, int length)
 	{
-		return new StringGapBufferTextSource(_buffer.GetRange(offset, length));
+		return new StringGapBufferTextSource(_buffer.SubString(offset, length));
 	}
 
 	/// <inheritdoc />
@@ -97,13 +98,13 @@ public sealed class StringGapBufferTextSource : ITextSource
 	/// <inheritdoc />
 	public string GetText(int offset, int length)
 	{
-		return _buffer.GetRange(offset, length).ToString();
+		return _buffer.SubString(offset, length);
 	}
 
 	/// <inheritdoc />
-	public string GetText(ISegment segment)
+	public string GetText(IRange range)
 	{
-		return _buffer.GetRange(segment.Offset, segment.Length).ToString();
+		return _buffer.SubString(range.StartIndex, range.Length);
 	}
 
 	/// <inheritdoc />

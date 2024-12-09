@@ -4,7 +4,7 @@ using System;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Cornerstone.Avalonia.AvaloniaEdit.Utils;
-using PropertyChanged;
+using Cornerstone.Weaver;
 
 #endregion
 

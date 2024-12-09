@@ -7,6 +7,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using Cornerstone.Avalonia.AvaloniaEdit.Utils;
+using Cornerstone.Collections;
+using Cornerstone.Text;
 using Cornerstone.Text.Document;
 
 #endregion
@@ -23,7 +25,7 @@ public class HighlightedLine
 	/// <summary>
 	/// Creates a new HighlightedLine instance.
 	/// </summary>
-	public HighlightedLine(IDocument document, IDocumentLine documentLine)
+	public HighlightedLine(ITextEditorDocument document, IDocumentLine documentLine)
 	{
 		//if (!document.Lines.Contains(documentLine))
 		//	throw new ArgumentException("Line is null or not part of document");
@@ -39,7 +41,7 @@ public class HighlightedLine
 	/// <summary>
 	/// Gets the document associated with this HighlightedLine.
 	/// </summary>
-	public IDocument Document { get; }
+	public ITextEditorDocument Document { get; }
 
 	/// <summary>
 	/// Gets the document line associated with this HighlightedLine.
@@ -74,25 +76,25 @@ public class HighlightedLine
 
 		var pos = 0;
 		var activeSectionEndOffsets = new Stack<int>();
-		var lineEndOffset = DocumentLine.EndOffset;
+		var lineEndOffset = DocumentLine.EndIndex;
 		activeSectionEndOffsets.Push(lineEndOffset);
 		foreach (var newSection in additionalLine.Sections)
 		{
-			var newSectionStart = newSection.Offset;
+			var newSectionStart = newSection.StartIndex;
 			// Track the existing sections using the stack, up to the point where
 			// we need to insert the first part of the newSection
 			while (pos < Sections.Count)
 			{
 				var s = Sections[pos];
-				if (newSection.Offset < s.Offset)
+				if (newSection.StartIndex < s.StartIndex)
 				{
 					break;
 				}
-				while (s.Offset > activeSectionEndOffsets.Peek())
+				while (s.StartIndex > activeSectionEndOffsets.Peek())
 				{
 					activeSectionEndOffsets.Pop();
 				}
-				activeSectionEndOffsets.Push(s.Offset + s.Length);
+				activeSectionEndOffsets.Push(s.StartIndex + s.Length);
 				pos++;
 			}
 			// Now insert the new section
@@ -105,20 +107,20 @@ public class HighlightedLine
 			for (i = pos; i < Sections.Count; i++)
 			{
 				var s = Sections[i];
-				if ((newSection.Offset + newSection.Length) <= s.Offset)
+				if ((newSection.StartIndex + newSection.Length) <= s.StartIndex)
 				{
 					break;
 				}
 				// Insert a segment in front of s:
-				Insert(ref i, ref newSectionStart, s.Offset, newSection.Color, insertionStack);
+				Insert(ref i, ref newSectionStart, s.StartIndex, newSection.Color, insertionStack);
 
-				while (s.Offset > insertionStack.Peek())
+				while (s.StartIndex > insertionStack.Peek())
 				{
 					insertionStack.Pop();
 				}
-				insertionStack.Push(s.Offset + s.Length);
+				insertionStack.Push(s.StartIndex + s.Length);
 			}
-			Insert(ref i, ref newSectionStart, newSection.Offset + newSection.Length, newSection.Color, insertionStack);
+			Insert(ref i, ref newSectionStart, newSection.StartIndex + newSection.Length, newSection.Color, insertionStack);
 		}
 
 		#if DEBUG
@@ -166,10 +168,10 @@ public class HighlightedLine
 	public RichTextModel ToRichTextModel()
 	{
 		var builder = new RichTextModel();
-		var startOffset = DocumentLine.Offset;
+		var startOffset = DocumentLine.StartIndex;
 		foreach (var section in Sections)
 		{
-			builder.ApplyHighlighting(section.Offset - startOffset, section.Length, section.Color);
+			builder.ApplyHighlighting(section.StartIndex - startOffset, section.Length, section.Color);
 		}
 		return builder;
 	}
@@ -187,23 +189,23 @@ public class HighlightedLine
 	public void ValidateInvariants()
 	{
 		var line = this;
-		var lineStartOffset = line.DocumentLine.Offset;
-		var lineEndOffset = line.DocumentLine.EndOffset;
+		var lineStartOffset = line.DocumentLine.StartIndex;
+		var lineEndOffset = line.DocumentLine.EndIndex;
 		for (var i = 0; i < line.Sections.Count; i++)
 		{
 			var s1 = line.Sections[i];
-			if ((s1.Offset < lineStartOffset) || (s1.Length < 0) || ((s1.Offset + s1.Length) > lineEndOffset))
+			if ((s1.StartIndex < lineStartOffset) || (s1.Length < 0) || ((s1.StartIndex + s1.Length) > lineEndOffset))
 			{
 				throw new InvalidOperationException("Section is outside line bounds");
 			}
 			for (var j = i + 1; j < line.Sections.Count; j++)
 			{
 				var s2 = line.Sections[j];
-				if (s2.Offset >= (s1.Offset + s1.Length))
+				if (s2.StartIndex >= (s1.StartIndex + s1.Length))
 				{
 					// s2 is after s1
 				}
-				else if ((s2.Offset >= s1.Offset) && ((s2.Offset + s2.Length) <= (s1.Offset + s1.Length)))
+				else if ((s2.StartIndex >= s1.StartIndex) && ((s2.StartIndex + s2.Length) <= (s1.StartIndex + s1.Length)))
 				{
 					// s2 is nested within s1
 				}
@@ -220,7 +222,7 @@ public class HighlightedLine
 	/// </summary>
 	internal void WriteTo(RichTextWriter writer)
 	{
-		var startOffset = DocumentLine.Offset;
+		var startOffset = DocumentLine.StartIndex;
 		WriteTo(writer, startOffset, startOffset + DocumentLine.Length);
 	}
 
@@ -233,7 +235,7 @@ public class HighlightedLine
 		{
 			throw new ArgumentNullException("writer");
 		}
-		var documentLineStartOffset = DocumentLine.Offset;
+		var documentLineStartOffset = DocumentLine.StartIndex;
 		var documentLineEndOffset = documentLineStartOffset + DocumentLine.Length;
 		if ((startOffset < documentLineStartOffset) || (startOffset > documentLineEndOffset))
 		{
@@ -243,16 +245,16 @@ public class HighlightedLine
 		{
 			throw new ArgumentOutOfRangeException("endOffset", endOffset, "Value must be between startOffset and " + documentLineEndOffset);
 		}
-		ISegment requestedSegment = new SimpleSegment(startOffset, endOffset - startOffset);
+		IRange requestedRange = new SimpleRange(startOffset, endOffset - startOffset);
 
 		var elements = new List<HtmlElement>();
 		for (var i = 0; i < Sections.Count; i++)
 		{
 			var s = Sections[i];
-			if (s.GetOverlap(requestedSegment).Length > 0)
+			if (s.GetOverlap(requestedRange).Length > 0)
 			{
-				elements.Add(new HtmlElement(s.Offset, i, false, s.Color));
-				elements.Add(new HtmlElement(s.Offset + s.Length, i, true, s.Color));
+				elements.Add(new HtmlElement(s.StartIndex, i, false, s.Color));
+				elements.Add(new HtmlElement(s.StartIndex + s.Length, i, true, s.Color));
 			}
 		}
 		elements.Sort();
@@ -299,7 +301,7 @@ public class HighlightedLine
 			{
 				Sections.Insert(pos++, new HighlightedSection
 				{
-					Offset = newSectionStart,
+					StartIndex = newSectionStart,
 					Length = end - newSectionStart,
 					Color = color
 				});
@@ -310,7 +312,7 @@ public class HighlightedLine
 		{
 			Sections.Insert(pos++, new HighlightedSection
 			{
-				Offset = newSectionStart,
+				StartIndex = newSectionStart,
 				Length = insertionEndPos - newSectionStart,
 				Color = color
 			});

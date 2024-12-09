@@ -22,7 +22,7 @@ public class TypeComparer : BaseComparer
 	}
 
 	/// <inheritdoc />
-	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, string message)
+	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, Func<string> message)
 	{
 		if (expected == actual)
 		{

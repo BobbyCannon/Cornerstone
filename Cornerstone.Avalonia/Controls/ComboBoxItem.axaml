@@ -3,24 +3,45 @@
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		x:ClassModifier="internal">
 	<Design.PreviewWith>
-		<Border
-				Padding="20"
-				Background="{DynamicResource UiTheme01}">
-			<Border
-					Background="{DynamicResource ComboBoxDropDownBackground}"
-					BorderBrush="{DynamicResource ComboBoxDropDownBorderBrush}"
-					BorderThickness="{DynamicResource ComboBoxDropdownBorderThickness}"
-					Padding="{DynamicResource ComboBoxDropdownBorderPadding}"
-					CornerRadius="{DynamicResource ComboBoxDropdownCornerRadius}">
-				<StackPanel HorizontalAlignment="Stretch">
-					<ComboBoxItem>Item 1</ComboBoxItem>
-					<ComboBoxItem>Item 2 long</ComboBoxItem>
-					<ComboBoxItem IsSelected="True">Item 3</ComboBoxItem>
-					<ComboBoxItem IsEnabled="False">Item 4</ComboBoxItem>
-					<ComboBoxItem IsSelected="True" IsEnabled="False">Item 5</ComboBoxItem>
-				</StackPanel>
-			</Border>
-		</Border>
+		<StackPanel Orientation="Horizontal">
+			<ThemeVariantScope RequestedThemeVariant="Dark">
+				<Border Padding="20" Background="{DynamicResource Background01}">
+					<Border
+							Background="{DynamicResource ComboBoxDropDownBackground}"
+							BorderBrush="{DynamicResource ComboBoxDropDownBorderBrush}"
+							BorderThickness="{DynamicResource ComboBoxDropdownBorderThickness}"
+							Padding="{DynamicResource ComboBoxDropdownBorderPadding}"
+							CornerRadius="{DynamicResource ComboBoxDropdownCornerRadius}">
+						<StackPanel HorizontalAlignment="Stretch">
+							<ComboBoxItem>Item 1</ComboBoxItem>
+							<ComboBoxItem>Item 2 long</ComboBoxItem>
+							<ComboBoxItem IsSelected="True">Item 3</ComboBoxItem>
+							<ComboBoxItem IsEnabled="False">Item 4</ComboBoxItem>
+							<ComboBoxItem IsSelected="True" IsEnabled="False">Item 5</ComboBoxItem>
+						</StackPanel>
+					</Border>
+				</Border>
+			</ThemeVariantScope>
+			<ThemeVariantScope RequestedThemeVariant="Light">
+				<Border Padding="20" Background="{DynamicResource Background01}">
+					<Border
+							Background="{DynamicResource ComboBoxDropDownBackground}"
+							BorderBrush="{DynamicResource ComboBoxDropDownBorderBrush}"
+							BorderThickness="{DynamicResource ComboBoxDropdownBorderThickness}"
+							Padding="{DynamicResource ComboBoxDropdownBorderPadding}"
+							CornerRadius="{DynamicResource ComboBoxDropdownCornerRadius}">
+						<StackPanel HorizontalAlignment="Stretch">
+							<ComboBoxItem>Item 1</ComboBoxItem>
+							<ComboBoxItem>Item 2 long</ComboBoxItem>
+							<ComboBoxItem IsSelected="True">Item 3</ComboBoxItem>
+							<ComboBoxItem IsEnabled="False">Item 4</ComboBoxItem>
+							<ComboBoxItem IsSelected="True" IsEnabled="False">Item 5</ComboBoxItem>
+						</StackPanel>
+					</Border>
+				</Border>
+			</ThemeVariantScope>
+		</StackPanel>
+		
 	</Design.PreviewWith>
 	<ControlTheme x:Key="{x:Type ComboBoxItem}" TargetType="ComboBoxItem">
 		<Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForeground}" />

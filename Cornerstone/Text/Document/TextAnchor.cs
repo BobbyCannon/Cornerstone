@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using Cornerstone.Collections;
 using Cornerstone.Internal;
 
 #endregion
@@ -14,7 +15,7 @@ namespace Cornerstone.Text.Document;
 /// <remarks>
 /// <para>
 /// Use the <see cref="Offset" /> property to get the offset from a text anchor.
-/// Use the <see cref="TextDocument.CreateAnchor" /> method to create an anchor from an offset.
+/// Use the <see cref="TextEditorDocument.CreateAnchor" /> method to create an anchor from an offset.
 /// </para>
 /// <para>
 /// The document will automatically update all text anchors; and because it uses weak references to do so,
@@ -28,8 +29,8 @@ namespace Cornerstone.Text.Document;
 /// <inheritdoc cref="IsDeleted" />
 /// <inheritdoc cref="MovementType" />
 /// <para>
-/// If you want to track a segment, you can use the <see cref="AnchorSegment" /> class which
-/// implements <see cref="ISegment" /> using two text anchors.
+/// If you want to track a segment, you can use the <see cref="AnchorRange" /> class which
+/// implements <see cref="IRange" /> using two text anchors.
 /// </para>
 /// </remarks>
 /// <example>
@@ -43,7 +44,7 @@ public sealed class TextAnchor : ITextAnchor
 {
 	#region Constructors
 
-	internal TextAnchor(TextDocument document)
+	internal TextAnchor(TextEditorDocument document)
 	{
 		Document = document;
 	}
@@ -61,14 +62,14 @@ public sealed class TextAnchor : ITextAnchor
 		get
 		{
 			var offset = Offset;
-			return (offset - Document.GetLineByOffset(offset).Offset) + 1;
+			return (offset - Document.GetLineByOffset(offset).StartIndex) + 1;
 		}
 	}
 
 	/// <summary>
 	/// Gets the document owning the anchor.
 	/// </summary>
-	public TextDocument Document { get; }
+	public TextEditorDocument Document { get; }
 
 	/// <inheritdoc />
 	public bool IsDeleted

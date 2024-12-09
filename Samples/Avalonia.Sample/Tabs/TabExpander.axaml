@@ -30,7 +30,7 @@
 		<Expander
 				Header="Expand Down (Custom Background)"
 				ExpandDirection="Down"
-				Background="{DynamicResource UiTheme02}"
+				Background="{DynamicResource Background02}"
 				Width="400">
 			<StackPanel Orientation="Vertical" Spacing="8">
 				<Label Content="Content Line 1" />

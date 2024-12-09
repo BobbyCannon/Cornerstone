@@ -1,0 +1,448 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1; text/html" />
+		<meta name="description" content="Site dedicated to helping you become as EPIC as possible!" />
+		<title>Become Epic</title>
+		<link href="./Favicons/bible.ico" rel="shortcut icon" type="image/x-icon" />
+		<link rel="stylesheet" href="./lib/toastr/toastr.min.css" />
+		<link rel="stylesheet" href="./css/fontawesome-all.css" />
+		<link rel="stylesheet" href="./css/IcoMoon-Ultimate.css" />
+		<link rel="stylesheet" href="./css/BecomeEpic.css" />
+		<style type="text/css">
+	</style>
+	</head>
+	<body>
+		<div id="app" v-cloak>
+			<div id="header">
+				<div id="navigation">
+					<button class="menu-button" data-plugin="collapse" data-target="mainmenu">
+						<i class="fal fa-bars"></i>
+					</button>
+					<a id="headerLink" href="./development.html">
+						<span><span class="purple">Epic</span> Coders</span>
+					</a>
+					<ul id="mainmenu" class="collapse">
+						<li>
+							<a class="button" href="./development.html">log in</a>
+						</li>
+						<li>
+							<a class="button" href="./robots.txt">robot</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+			<div id="content">
+				<div class="row">
+					<div class="span24 padding-20 padding-0-mobile">
+						<h3 class="text-center foreground">
+							We are passionate people who love to perform at our best. Every day we strive to Become Epic, meaning to be better than we were yesterday.
+							We'd love to help <span class="blue">you</span> do the same. With our help you <span class="blue">will</span> become the most productive and
+							successful person you can be.
+						</h3>
+						<h3 class="text-center foreground">
+							To <span class="blue">become</span> an <span class="blue">EPIC</span> you!
+						</h3>
+					</div>
+				</div>
+				<div class="row">
+					<div class="span12 text-center">
+						<h2 class="margin-0">
+							<a href="https://fitness.becomeepic.com" class="align-top">
+								<i class="icon icon-meter-fast purple padding-right-8" style="font-size: 1.3em"></i>
+								<span class="inline">Fitness</span>
+							</a>
+						</h2>
+						<span class="darkGray">physical health</span>
+					</div>
+					<div class="span12 text-center">
+						<h2 class="margin-0">
+							<a href="https://bible.becomeepic.com" class="align-top">
+								<i class="fas fa-shield-cross purple padding-right-8"></i>
+								<span class="inline">Bible</span>
+							</a>
+						</h2>
+						<span class="darkGray">spiritual health</span>
+					</div>
+				</div>
+
+				<div class="text-center">
+					<toggle-switch v-model="input.checkbox1" v-bind:text="input.checkbox1text"></toggle-switch>
+					<toggle-switch text="testing"></toggle-switch>
+				</div>
+
+				<div class="text-center margin-top-10 margin-bottom-20">
+					<span class="inline margin-6">{{ input.checkbox1 }}</span>
+					<input class="small margin-left-10" type="text" title="checkbox1 text" v-model="input.checkbox1text" />
+				</div>
+
+				<div id="calendar" class="block-center"></div>
+
+				<form class="text-center margin-top-20 margin-bottom-10" v-on:submit.prevent="exerciseSelected()">
+					<div class="input">
+						<input id="exerciseName" type="text" v-model="input.exerciseName" placeholder="add exercise" v-bind:class="{ loading: input.searchingExercises }" />
+						<i class="spinner margin-0" v-if="input.searchingExercises"></i>
+						<i class="icon icon-plus2 blue clickable" v-show="input.exerciseName.length > 0 && input.isNewExercise" v-on:click="exerciseSelected()"></i>
+					</div>
+					<div>Searching: {{ input.searchingExercises }}</div>
+				</form>
+
+				<div class="text-center">
+					<button v-on:click="triggerNotFound()">404</button>
+				</div>
+
+				<div class="text-center margin-top-40">
+					<button v-on:click="count++">{{ $filters.decimal(count, 1) }}</button>
+					<button v-on:click="print()">print</button>
+					<button v-on:click="increment()">+</button>
+					<button v-on:click="decrement()">-</button>
+				</div>
+
+				<div class="text-center margin-top-20">
+					<number-spinner v-model="count"></number-spinner>
+				</div>
+
+				<div class="text-center margin-top-20">
+					<div>
+						<bible-verse-selector v-model="newReferenceFrom" v-bind:to="newReference"></bible-verse-selector>
+						<div>book {{ newReferenceFrom.book }}, chapter {{ newReferenceFrom.chapter }}, verse {{ newReferenceFrom.verse }}</div>
+						<div>from difference: {{ fromDifference }}</div>
+						<number-spinner v-model="fromDifference" :min="0" :max="31101" :step="1"></number-spinner>
+					</div>
+					<br />
+					<div>
+						<bible-verse-selector v-model="newReference" v-bind:from="newReferenceFrom" v-bind:to="newReferenceTo"></bible-verse-selector>
+						<div>book {{ newReference.book }}, chapter {{ newReference.chapter }}, verse {{ newReference.verse }}</div>
+					</div>
+					<br />
+					<div>
+						<bible-verse-selector v-model="newReferenceTo" v-bind:from="newReference"></bible-verse-selector>
+						<div>book {{ newReferenceTo.book }}, chapter {{ newReferenceTo.chapter }}, verse {{ newReferenceTo.verse }}</div>
+						<div>to difference: {{ toDifference }}</div>
+						<number-spinner v-model="toDifference" :min="0" :max="31101" :step="1"></number-spinner>
+					</div>
+					<br />
+					<button v-on:click="reset()">reset</button>
+
+					<div class="margin-top-20 margin-bottom-20">
+						{{ newReference }}
+					</div>
+
+					<div>
+						<bible-verses-selector v-model="newReference"></bible-verses-selector>
+					</div>
+				</div>
+
+				<div class="margin-top-20 comma-delimited text-center">
+					<span class="red" v-for="(verses, index) in getBookChapters(newReference.book)">
+						{{ index + 1 }}
+					</span>
+				</div>
+
+				<table class="panel responsive margin-bottom-20">
+					<thead>
+						<tr>
+							<th>Code</th>
+							<th>Company / Status</th>
+							<th class="numeric">Price</th>
+							<th class="numeric">Change</th>
+							<th class="numeric">Change %</th>
+							<th class="numeric">Open</th>
+							<th class="numeric">High</th>
+							<th class="numeric">Low</th>
+							<th class="numeric">Volume</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td data-title="Code">AAC</td>
+							<td data-title="Company / Status">AUSTRALIAN AGRICULTURAL COMPANY LIMITED.</td>
+							<td data-title="Price" class="numeric">$1.38</td>
+							<td data-title="Change" class="numeric">-0.01</td>
+							<td data-title="Change %" class="numeric">-0.36%</td>
+							<td data-title="Open" class="numeric">$1.39</td>
+							<td data-title="High" class="numeric">$1.39</td>
+							<td data-title="Low" class="numeric">$1.38</td>
+							<td data-title="Volume" class="numeric">9,395</td>
+						</tr>
+						<tr>
+							<td data-title="Code">aoeu</td>
+							<td data-title="Company / Status">aoeut taoe aoest aoetn oatneuh ntu .</td>
+							<td data-title="Price" class="numeric">$1.23</td>
+							<td data-title="Change" class="numeric">-3.21</td>
+							<td data-title="Change %" class="numeric">-0.59%</td>
+							<td data-title="Open" class="numeric">$1.93</td>
+							<td data-title="High" class="numeric">$1.76</td>
+							<td data-title="Low" class="numeric">$1.13</td>
+							<td data-title="Volume" class="numeric">10,642</td>
+						</tr>
+					</tbody>
+				</table>
+				
+				<div class="panel blackish">
+					<div class="amber">amber: The quick brown fox jumped over the lazy dogs back.</div>
+					<div class="black">black: The quick brown fox jumped over the lazy dogs back.</div>
+					<div class="blackGray">blackGray: The quick brown fox jumped over the lazy dogs back.</div>
+					<div class="blue">blue: The quick brown fox jumped over the lazy dogs back.</div>
+					<div class="darkBlue">darkBlue: The quick brown fox jumped over the lazy dogs back.</div>
+					<div class="burgundy">burgundy: The quick brown fox jumped over the lazy dogs back.</div>
+					<div class="brown">brown: The quick brown fox jumped over the lazy dogs back.</div>
+					<div class="cyan">cyan: The quick brown fox jumped over the lazy dogs back.</div>
+					<div class="gray">gray: The quick brown fox jumped over the lazy dogs back.</div>
+					<div class="darkGray">darkGray: The quick brown fox jumped over the lazy dogs back.</div>
+					<div class="darkerGray">darkerGray: The quick brown fox jumped over the lazy dogs back.</div>
+					<div class="green">green: The quick brown fox jumped over the lazy dogs back.</div>
+					<div class="orange">orange: The quick brown fox jumped over the lazy dogs back.</div>
+					<div class="darkOrange">darkOrange: The quick brown fox jumped over the lazy dogs back.</div>
+					<div class="purple">purple: The quick brown fox jumped over the lazy dogs back.</div>
+					<div class="darkPurple">darkPurple: The quick brown fox jumped over the lazy dogs back.</div>
+					<div class="red">red: The quick brown fox jumped over the lazy dogs back.</div>
+					<div class="teal">teal: The quick brown fox jumped over the lazy dogs back.</div>
+					<div class="white">white: The quick brown fox jumped over the lazy dogs back.</div>
+				</div>
+				
+				<h1>Header One</h1>
+				<h2>Header Two</h2>
+				<h3>Header Three</h3>
+				<h4>Header Four</h4>
+				<h5>Header Five</h5>
+				<h6>Header Six</h6>
+			</div>
+			<div id="footer" class="text-center">
+				<div class="row margin-0">
+					<div class="span12 text-left-then-center">
+
+					</div>
+					<div class="span12 text-right-then-center">
+
+					</div>
+				</div>
+				<div class="text-center clear margin-bottom-6">
+
+				</div>
+				<div class="text-center clear comma-delimited margin-top-20">
+				</div>
+				<div class="red">
+					<span>&nbsp; &copy; 2013 - 2023&nbsp;&nbsp;</span>
+					<span class="comma-delimited">
+						<a id="footerAbout" href="https://becomeepic.com">Become Epic</a>
+						<a id="footerPrivacy" href="https://becomeepic.com/privacy">Privacy</a>
+					</span>
+				</div>
+			</div>
+		</div>
+		<script src="./lib/jquery/jquery.min.js" type="text/javascript"></script>
+		<script src="./lib/moment/moment.min.js" type="text/javascript"></script>
+		<script src="./lib/toastr/toastr.min.js" type="text/javascript"></script>
+		<script src="./lib/underscore/underscore.min.js" type="text/javascript"></script>
+		<script src="./lib/vue/vue.min.js" type="text/javascript"></script>
+		<script src="./js/fontawesome.min.js" type="text/javascript"></script>
+		<script src="./js/plugins/jquery/calendar.js" type="text/javascript"></script>
+		<script src="./js/plugins/jquery/collapse.js" type="text/javascript"></script>
+		<script src="./js/plugins/jquery/typeahead.js" type="text/javascript"></script>
+		<script src="./js/plugins/vue/components/vue-bible-verse-selector.js" type="text/javascript"></script>
+		<script src="./js/plugins/vue/components/vue-bible-verses-selector.js" type="text/javascript"></script>
+		<script src="./js/plugins/vue/components/vue-number-spinner.js" type="text/javascript"></script>
+		<script src="./js/plugins/vue/components/vue-toggle-switch.js" type="text/javascript"></script>
+		<script src="./js/plugins/vue/filters/vue-date.js" type="text/javascript"></script>
+		<script src="./js/plugins/vue/filters/vue-decimal.js" type="text/javascript"></script>
+		<script src="./js/epic.js" type="text/javascript"></script>
+		<script src="./js/bible.js" type="text/javascript"></script>
+		<script src="./js/fitness.js" type="text/javascript"></script>
+		<script type="text/javascript">
+
+			var model = $.extend(defaultModel, {
+				count: 0,
+				newReference: {
+					book: 1,
+					chapter: 1,
+					verse: 1,
+					count: 0
+				},
+				fromDifference: 0,
+				newReferenceFrom: {
+					book: 1,
+					chapter: 1,
+					verse: 1
+				},
+				toDifference: 0,
+				newReferenceTo: {
+					book: 66,
+					chapter: 22,
+					verse: 21
+				},
+				input: {
+					exerciseName: '',
+					isNewExercise: true,
+					searchingExercises: false,
+					checkbox1: false,
+					checkbox1text: 'aoeu',
+					checkbox2: false
+				}
+			});
+
+			var exercises = [
+				{ "id": 83, "name": "Alternating Barbell Curl", "type": 0 },
+				{ "id": 307, "name": "Alternating Dumbbell Curl", "type": 0 },
+				{ "id": 84, "name": "Arm Blaster Curls", "type": 0 },
+				{ "id": 334, "name": "Arnold Dumbbell Press", "type": 0 },
+				{ "id": 276, "name": "Axe Kick", "type": 2 }
+			];
+
+			var debouncedSearchExercises = _.debounce(async function (filter, callback) {
+				console.log(filter);
+				var filterValues = filter.split(' ');
+
+				let results = _.filter(
+					exercises,
+					function (exercise) {
+						return filterValues.any(x => exercise.name.toLowerCase().includes(x.toLowerCase()));
+					}
+				);
+
+				results = _.sortBy(results,
+					function (exercise) {
+						return exercise.name.toLowerCase().indexOf(filter.toLowerCase());
+					}
+				)
+					.reverse();
+
+				var names = _.map(results, function (x) { return x.name; });
+				callback(names);
+
+				epic.appSetValue('input.isNewExercise', names.length <= 0);
+				epic.appSetValue('input.searchingExercises', false);
+			}, 1000);
+
+			app = Vue.createApp({
+				data: function () {
+					return model;
+				},
+				methods: {
+					print: function () {
+						console.log('print');
+					},
+					increment: function () {
+						this.count += 0.1;
+					},
+					decrement: function () {
+						this.count -= 0.1;
+					},
+					reset: function () {
+						console.log("reset");
+						this.newReferenceFrom.book = 1;
+						this.newReferenceFrom.chapter = 1;
+						this.newReferenceFrom.verse = 1;
+						this.newReference.book = 1;
+						this.newReference.chapter = 1;
+						this.newReference.verse = 1;
+						this.newReference.count = 0;
+						this.newReferenceTo.book = 66;
+						this.newReferenceTo.chapter = 22;
+						this.newReferenceTo.verse = 21;
+					},
+					getBookChapters: function (id) {
+						return bible.bookChapterVerses[id - 1];
+					},
+					exerciseSelected: function (name) {
+						console.log(name);
+					},
+					searchExercise: function (filter, other) {
+						this.input.searchingExercises = true;
+						this.input.isNewExercise = false;
+						debouncedSearchExercises(filter, other);
+					},
+					triggerNotFound: function () {
+						var result = epic.get('https://becomeepic.com/api/aoeu');
+						console.log(result);
+
+						result = epic.post('https://becomeepic.com/api/aoeu', {});
+						console.log(result);
+					}
+				},
+				watch: {
+					fromDifference: {
+						immediate: true,
+						deep: true,
+						handler(newValue, oldValue) {
+							if (oldValue === undefined) {
+								return;
+							}
+							var reference = bible.getVerseAfter(model.newReferenceFrom, newValue);
+							reference.count = model.newReference.count;
+							model.newReference = reference;
+						}
+					},
+					toDifference: {
+						immediate: true,
+						deep: true,
+						handler(newValue, oldValue) {
+							if (oldValue === undefined) {
+								return;
+							}
+							var reference = bible.getVerseAfter(model.newReferenceTo, newValue * -1);
+							reference.count = model.newReference.count;
+							model.newReference = reference;
+						}
+					},
+					newReferenceFrom: {
+						immediate: true,
+						deep: true,
+						handler(newValue, oldValue) {
+							model.fromDifference = bible.getVerseCount(model.newReferenceFrom, model.newReference);
+						}
+					},
+					newReference: {
+						immediate: true,
+						deep: true,
+						handler(newValue, oldValue) {
+							model.fromDifference = bible.getVerseCount(model.newReferenceFrom, model.newReference);
+							model.toDifference = bible.getVerseCount(model.newReference, model.newReferenceTo);
+						}
+					},
+					newReferenceTo: {
+						immediate: true,
+						deep: true,
+						handler(newValue, oldValue) {
+							model.toDifference = bible.getVerseCount(model.newReference, model.newReferenceTo);
+						}
+					}
+				},
+				mounted() {
+					$('#exerciseName')
+						.typeahead({
+							source: this.searchExercise,
+							selected: this.exerciseSelected,
+							blurred: this.exerciseSelected,
+							minLength: 2,
+							onlyDisplay: true
+						});
+
+					$('[data-plugin=collapse]').collapse();
+					$('#calendar')
+						.calendar({
+							activeDays: {
+								"$id": "2",
+								"20230104": 1,
+								"20230119": 1,
+								"20230124": 1,
+								"20230125": 1,
+								"20230126": 1
+							},
+							selectedMonth: new Date(2023, 0, 1),
+							value: new Date(2023, 0, 26),
+							onChanged: function (date) {
+								console.log(date);
+							},
+							onMonthChanged: function (month) {
+								console.log(month);
+							}
+						});
+				}
+			});
+
+		</script>
+	</body>
+</html>

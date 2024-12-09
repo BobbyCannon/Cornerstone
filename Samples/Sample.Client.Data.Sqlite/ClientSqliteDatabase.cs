@@ -17,10 +17,17 @@ public class ClientSqliteDatabase : ClientDatabase
 		// Default constructor needed for Add-Migration
 	}
 
-	public ClientSqliteDatabase(DbContextOptions<ClientDatabase> contextOptions, DatabaseOptions options, DatabaseKeyCache keyCache)
-		: base(contextOptions, options, keyCache)
+	public ClientSqliteDatabase(DbContextOptions<ClientDatabase> contextOptions, DatabaseSettings settings, DatabaseKeyCache keyCache)
+		: base(contextOptions, settings, keyCache)
 	{
 	}
+
+	#endregion
+
+	#region Properties
+
+	/// <inheritdoc />
+	public override string[] SyncOrder => ClientMemoryDatabase.GetSyncOrder();
 
 	#endregion
 
@@ -35,12 +42,12 @@ public class ClientSqliteDatabase : ClientDatabase
 		builder.MigrationsHistoryTable("MigrationHistory", "system");
 	}
 
-	public static ClientSqliteDatabase UseSqlite(string connectionString = null, DatabaseOptions options = null, DatabaseKeyCache keyCache = null)
+	public static ClientSqliteDatabase UseSqlite(string connectionString = null, DatabaseSettings settings = null, DatabaseKeyCache keyCache = null)
 	{
 		connectionString ??= GetConnectionString();
 
 		var builder = new DbContextOptionsBuilder<ClientDatabase>();
-		return new ClientSqliteDatabase(builder.UseSqlite(connectionString, UpdateOptions).Options, options, keyCache);
+		return new ClientSqliteDatabase(builder.UseSqlite(connectionString, UpdateOptions).Options, settings, keyCache);
 	}
 
 	protected override void ConfigureDatabaseOptions(DbContextOptionsBuilder options)

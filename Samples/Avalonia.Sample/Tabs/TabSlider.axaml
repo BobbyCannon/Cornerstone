@@ -548,23 +548,23 @@
 					Width="{StaticResource SliderWidthNarrow}"
 					Margin="{StaticResource SliderHorizontalMargin}" />
 
-			<!-- Blue Grey slider. -->
+			<!-- Blue Gray slider. -->
 
 			<Label
 					Grid.Row="13" Grid.Column="0"
-					Content="Blue Grey"
+					Content="Blue Gray"
 					VerticalAlignment="Center" />
 
 			<Slider
 					Grid.Row="13" Grid.Column="1"
-					Theme.Color="BlueGrey"
+					Theme.Color="BlueGray"
 					Value="50"
 					Width="{StaticResource SliderWidthNarrow}"
 					Margin="{StaticResource SliderHorizontalMargin}" />
 
 			<Slider
 					Grid.Row="13" Grid.Column="2"
-					Theme.Color="BlueGrey"
+					Theme.Color="BlueGray"
 					Value="50"
 					IsEnabled="False"
 					Width="{StaticResource SliderWidthNarrow}"

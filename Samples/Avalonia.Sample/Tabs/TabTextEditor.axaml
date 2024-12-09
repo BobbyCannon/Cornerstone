@@ -3,7 +3,6 @@
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-		xmlns:avaloniaEdit="clr-namespace:Cornerstone.Avalonia.AvaloniaEdit;assembly=Cornerstone.Avalonia"
 		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
 		x:Class="Avalonia.Sample.Tabs.TabTextEditor">
 	<DockPanel LastChildFill="True">
@@ -14,11 +13,11 @@
 			</StackPanel>
 		</ThemeVariantScope>
 		<UniformGrid Columns="2">
-			<avaloniaEdit:TextEditor x:Name="CSharp" />
-			<avaloniaEdit:TextEditor x:Name="Html" />
-			<avaloniaEdit:TextEditor x:Name="Json" />
-			<avaloniaEdit:TextEditor x:Name="PowerShell" />
-			<avaloniaEdit:TextEditor x:Name="Xml" />
+			<TextEditorControl x:Name="CSharp" />
+			<TextEditorControl x:Name="Html" />
+			<TextEditorControl x:Name="Json" />
+			<TextEditorControl x:Name="PowerShell" />
+			<TextEditorControl x:Name="Xml" />
 		</UniformGrid>
 	</DockPanel>
 </UserControl>

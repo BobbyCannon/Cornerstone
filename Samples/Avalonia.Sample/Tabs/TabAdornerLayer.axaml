@@ -72,10 +72,10 @@
 
 			<!-- Button border objects. -->
 
-			<Border Background="{DynamicResource Grey05}" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" />
-			<Border Background="{DynamicResource Grey05}" Grid.Row="1" Grid.Column="0" />
-			<Border Background="{DynamicResource Grey05}" Grid.Row="1" Grid.Column="2" />
-			<Border Background="{DynamicResource Grey05}" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" />
+			<Border Background="{DynamicResource Gray05}" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" />
+			<Border Background="{DynamicResource Gray05}" Grid.Row="1" Grid.Column="0" />
+			<Border Background="{DynamicResource Gray05}" Grid.Row="1" Grid.Column="2" />
+			<Border Background="{DynamicResource Gray05}" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" />
 
 			<!-- Rotation transform. -->
 

@@ -1,10 +1,30 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<?xml version="1.0" encoding="utf-8"?>
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFrameworks>net9.0</TargetFrameworks>
+		<LangVersion>latest</LangVersion>
+		<DisableFody>true</DisableFody>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
+		<PackageReference Include="BenchmarkDotNet.Annotations" Version="0.14.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\Samples\Sample.Client.Data.Sqlite\Sample.Client.Data.Sqlite.csproj" />
+		<ProjectReference Include="..\..\Samples\Sample.Client.Data.Sql\Sample.Client.Data.Sql.csproj" />
+		<ProjectReference Include="..\..\Samples\Sample.Server.Data.Sqlite\Sample.Server.Data.Sqlite.csproj" />
+		<ProjectReference Include="..\..\Samples\Sample.Server.Data.Sql\Sample.Server.Data.Sql.csproj" />
+		<ProjectReference Include="..\..\Cornerstone\Cornerstone.csproj" />
+	</ItemGroup>
 </Project>

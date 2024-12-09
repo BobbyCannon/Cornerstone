@@ -47,7 +47,7 @@ public class RichText
 			StateChanges = new HighlightingColor[sections.Length];
 			for (var i = 0; i < sections.Length; i++)
 			{
-				StateChangeOffsets[i] = sections[i].Offset;
+				StateChangeOffsets[i] = sections[i].StartIndex;
 				StateChanges[i] = sections[i].Color;
 			}
 		}
@@ -126,7 +126,7 @@ public class RichText
 			var endPos = Math.Min(endOffset, GetEnd(index));
 			yield return new HighlightedSection
 			{
-				Offset = pos,
+				StartIndex = pos,
 				Length = endPos - pos,
 				Color = StateChanges[index]
 			};

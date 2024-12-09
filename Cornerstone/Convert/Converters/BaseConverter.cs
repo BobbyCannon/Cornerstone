@@ -85,9 +85,9 @@ public abstract class BaseConverter : IProvider
 	/// <param name="fromType"> The type to convert from. </param>
 	/// <param name="toType"> The type to convert to. </param>
 	/// <param name="value"> The new converted object. </param>
-	/// <param name="options"> The options for converting. </param>
+	/// <param name="settings"> The options for converting. </param>
 	/// <returns> True if the item was converted otherwise false. </returns>
-	public virtual bool TryConvertTo(object from, Type fromType, Type toType, out object value, IConverterOptions options = null)
+	public virtual bool TryConvertTo(object from, Type fromType, Type toType, out object value, IConverterSettings settings = null)
     {
         value = default;
         return false;

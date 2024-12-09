@@ -22,7 +22,7 @@ public enum BabelKeys
 
 	// Authentication / Authorization
 	AuthenticationFailed,
-	NotAuthorized,
+	Unauthorized,
 
 	// Security
 	EncryptionFailed,
@@ -38,7 +38,7 @@ public enum BabelKeys
 	VaultIsNotOpen,
 
 	// Services
-	TimeServiceLocked,
+	DateTimeProviderLocked,
 
 	// Sync
 	SyncOptionsInvalid,

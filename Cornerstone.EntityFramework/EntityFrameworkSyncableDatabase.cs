@@ -40,13 +40,12 @@ public abstract class EntityFrameworkSyncableDatabase : EntityFrameworkDatabase,
 	/// <param name="startup"> The startup options for this database. </param>
 	/// <param name="options"> The options for this database. </param>
 	/// <param name="keyCache"> An optional key manager for caching entity IDs (primary and sync). </param>
-	protected EntityFrameworkSyncableDatabase(DbContextOptions startup, DatabaseOptions options, DatabaseKeyCache keyCache)
-		: base(startup, options)
+	protected EntityFrameworkSyncableDatabase(DbContextOptions startup, DatabaseSettings settings, DatabaseKeyCache keyCache)
+		: base(startup, settings)
 	{
 		_syncableRepositories = new ConcurrentDictionary<string, ISyncableRepository>();
 
 		KeyCache = keyCache;
-		EnablePrimaryKeyCache = keyCache != null;
 	}
 
 	#endregion
@@ -54,17 +53,17 @@ public abstract class EntityFrameworkSyncableDatabase : EntityFrameworkDatabase,
 	#region Properties
 
 	/// <inheritdoc />
-	public bool EnablePrimaryKeyCache { get; set; }
+	public DatabaseKeyCache KeyCache { get; }
 
 	/// <inheritdoc />
-	public DatabaseKeyCache KeyCache { get; }
+	public abstract string[] SyncOrder { get; }
 
 	#endregion
 
 	#region Methods
 
 	/// <inheritdoc />
-	public IEnumerable<ISyncableRepository> GetSyncableRepositories(SyncOptions options)
+	public IEnumerable<ISyncableRepository> GetSyncableRepositories(SyncSettings settings)
 	{
 		//
 		// NOTE: If you change this then update Cornerstone.Database
@@ -73,10 +72,10 @@ public abstract class EntityFrameworkSyncableDatabase : EntityFrameworkDatabase,
 		if (_syncableRepositories.Count <= 0)
 		{
 			// Refresh the syncable repositories
-			DetectSyncableRepositories(options);
+			DetectSyncableRepositories(settings);
 		}
 
-		if (Options.SyncOrder.Length <= 0)
+		if (SyncOrder.Length <= 0)
 		{
 			return _syncableRepositories
 				.Values
@@ -84,7 +83,7 @@ public abstract class EntityFrameworkSyncableDatabase : EntityFrameworkDatabase,
 				.ToList();
 		}
 
-		var order = Options.SyncOrder.Reverse().ToList();
+		var order = SyncOrder.Reverse().ToList();
 		var ordered = _syncableRepositories
 			.OrderBy(x => x.Key == order[0]);
 
@@ -110,11 +109,6 @@ public abstract class EntityFrameworkSyncableDatabase : EntityFrameworkDatabase,
 	public ISyncableRepository GetSyncableRepository(Type syncEntityType)
 	{
 		var assemblyName = syncEntityType.ToAssemblyName();
-
-		if ((Options.SyncOrder.Length > 0) && !Options.SyncOrder.Contains(assemblyName))
-		{
-			return null;
-		}
 
 		if (_syncableRepositories.TryGetValue(assemblyName, out var repository))
 		{
@@ -144,7 +138,7 @@ public abstract class EntityFrameworkSyncableDatabase : EntityFrameworkDatabase,
 	/// <summary>
 	/// Reads all repositories and puts all the syncable ones in an internal list.
 	/// </summary>
-	private void DetectSyncableRepositories(SyncOptions options)
+	private void DetectSyncableRepositories(SyncSettings settings)
 	{
 		var type = GetType();
 		var syncEntityType = typeof(ISyncEntity);
@@ -159,7 +153,7 @@ public abstract class EntityFrameworkSyncableDatabase : EntityFrameworkDatabase,
 			var genericType = property.PropertyType.GetCachedGenericArguments().First();
 			var assemblyName = genericType.ToAssemblyName();
 
-			if (options.ShouldExcludeRepository(assemblyName))
+			if (settings.ShouldExcludeRepository(assemblyName))
 			{
 				continue;
 			}

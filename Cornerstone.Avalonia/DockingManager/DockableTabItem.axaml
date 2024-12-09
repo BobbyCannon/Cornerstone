@@ -1,0 +1,268 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+		xmlns:converters="clr-namespace:Cornerstone.Avalonia.Converters">
+
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type DockableTabItem}"
+					TargetType="DockableTabItem">
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="BorderBrush" Value="Transparent" />
+				<Setter Property="BorderThickness" Value="0" />
+				<Setter Property="CornerRadius" Value="6" />
+				<Setter Property="FontSize" Value="{DynamicResource StandardFontSize}" />
+				<Setter Property="FontWeight" Value="{DynamicResource TabItemHeaderThemeFontWeight}" />
+				<Setter Property="Foreground" Value="{DynamicResource TabItemHeaderForegroundUnselected}" />
+				<Setter Property="HorizontalContentAlignment" Value="Center" />
+				<Setter Property="Padding" Value="12,0" />
+				<Setter Property="MinWidth" Value="160" />
+				<Setter Property="MaxWidth" Value="320" />
+				<Setter Property="VerticalContentAlignment" Value="Center" />
+				<Setter Property="Template" x:DataType="DockableTabModel">
+					<ControlTemplate>
+						<Grid>
+							<Border Name="PART_LayoutRoot"
+									Background="{TemplateBinding Background}"
+									BorderBrush="{TemplateBinding BorderBrush}"
+									BorderThickness="{TemplateBinding BorderThickness}"
+									CornerRadius="{TemplateBinding CornerRadius}"
+									MinHeight="32">
+
+								<Grid ColumnDefinitions="26,*,26">
+									<PathIcon Grid.Column="0"
+											Data="{Binding Icon, Mode=OneWay}"
+											Height="14" Width="14"
+											Foreground="{TemplateBinding Foreground}"
+											Margin="4,0,0,0"
+											HorizontalAlignment="Center"
+											VerticalAlignment="Center"
+											IsVisible="{Binding IconImage, Mode=OneWay, Converter={x:Static ObjectConverters.IsNull}}" />
+
+									<Image Grid.Column="0"
+											Height="14" Width="14"
+											Source="{Binding IconImage, Mode=OneWay, Converter={x:Static converters:ImageConverters.ToBitmap}}"
+											Margin="4,0,0,0"
+											HorizontalAlignment="Center"
+											VerticalAlignment="Center"
+											IsVisible="{Binding IconImage, Mode=OneWay, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+									<Border Grid.Column="1"
+											Padding="{TemplateBinding Padding}"
+											Margin="0,-2,0,0"
+											HorizontalAlignment="Center"
+											VerticalAlignment="Center">
+										<Grid>
+											<TextBlock 
+													Text="{Binding Header}"
+													IsVisible="{TemplateBinding TabModel, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+											<ContentPresenter Grid.Column="1"
+													Content="{TemplateBinding Header}"
+													IsVisible="{TemplateBinding Header, Converter={x:Static ObjectConverters.IsNotNull}}" />
+										</Grid>
+									</Border>
+
+									<Button Name="PART_CloseButton"
+											Classes="TabClose"
+											Grid.Column="2">
+										<PathIcon Data="{StaticResource Icons.Window.Close}" />
+									</Button>
+								</Grid>
+							</Border>
+
+							<!-- Tab highlight. -->
+							<Border Name="PART_Highlight"
+									ClipToBounds="True"
+									CornerRadius="{TemplateBinding CornerRadius}"
+									Margin="{TemplateBinding Margin}"
+									IsVisible="False"/>
+
+							<Rectangle Name="PART_Spacer"
+									Width="0.5" Height="20"
+									HorizontalAlignment="Left"
+									VerticalAlignment="Center"
+									Fill="{DynamicResource TabControlBorder}">
+								<Rectangle.IsVisible>
+									<MultiBinding Converter="{x:Static DockingManagerConverters.ToTabSeparatorVisible}">
+										<Binding />
+										<Binding Path="$parent[DockingTabControl].SelectedItem" />
+										<Binding Path="$parent[DockingTabControl].Items" />
+									</MultiBinding>
+								</Rectangle.IsVisible>
+							</Rectangle>
+						</Grid>
+					</ControlTemplate>
+				</Setter>
+
+				<Style Selector="^:selected">
+					<Setter Property="Background" Value="{DynamicResource TabControlBackground}" />
+					<Setter Property="Foreground" Value="{DynamicResource TabItemHeaderForegroundSelected}" />
+					<Setter Property="BorderBrush" Value="{DynamicResource TabControlBorder}" />
+					<Style Selector="^ /template/ Border#PART_Highlight">
+						<Setter Property="IsVisible" Value="False" />
+					</Style>
+				</Style>
+				<Style Selector="^:disabled /template/ Border#PART_LayoutRoot">
+					<Setter Property="Background" Value="{DynamicResource TabItemHeaderBackgroundDisabled}" />
+					<Setter Property="TextElement.Foreground" Value="{DynamicResource TabItemHeaderForegroundDisabled}" />
+				</Style>
+
+				<!-- Top placement. -->
+				<Style Selector="^[TabStripPlacement=Top]">
+					<Setter Property="CornerRadius" Value="6,6,0,0" />
+
+					<Style Selector="^ /template/ Border#PART_LayoutRoot">
+						<Setter Property="BorderThickness" Value="1,1,1,0" />
+						<Setter Property="Margin" Value="0" />
+					</Style>
+					<Style Selector="^ /template/ Border#PART_Highlight">
+						<Setter Property="Background" Value="{DynamicResource TabItemHeaderHighlightUnselected}" />
+						<Setter Property="VerticalAlignment" Value="Top" />
+						<Setter Property="Height" Value="2" />
+						<Setter Property="Margin" Value="2,0" />
+					</Style>
+					
+				</Style>
+
+				<!-- Left placement. -->
+				<Style Selector="^[TabStripPlacement=Left]">
+					<Setter Property="CornerRadius" Value="6,0,0,6" />
+					<Setter Property="HorizontalContentAlignment" Value="Left" />
+
+					<Style Selector="^ /template/ Border#PART_LayoutRoot">
+						<Setter Property="BorderThickness" Value="1,1,0,1" />
+						<Setter Property="Margin" Value="0,2" />
+					</Style>
+					<Style Selector="^ /template/ Border#PART_Highlight">
+						<Setter Property="Background" Value="{DynamicResource TabItemHeaderHighlightUnselected}" />
+						<Setter Property="HorizontalAlignment" Value="Left" />
+						<Setter Property="Width" Value="4" />
+						<Setter Property="Margin" Value="0,2" />
+					</Style>
+					<Style Selector="^ /template/ Rectangle#PART_Spacer">
+						<Setter Property="Height" Value="1" />
+						<Setter Property="Width" Value="{x:Static sys:Double.NaN}" />
+						<Setter Property="Margin" Value="4,0,8,0" />
+						<Setter Property="HorizontalAlignment" Value="Stretch" />
+						<Setter Property="VerticalAlignment" Value="Top" />
+					</Style>
+				</Style>
+
+				<!-- Bottom placement. -->
+				<Style Selector="^[TabStripPlacement=Bottom]">
+					<Setter Property="CornerRadius" Value="0,0,6,6" />
+
+					<Style Selector="^ /template/ Border#PART_LayoutRoot">
+						<Setter Property="BorderThickness" Value="1,0,1,1" />
+						<Setter Property="Margin" Value="2,0" />
+					</Style>
+					<Style Selector="^ /template/ Border#PART_Highlight">
+						<Setter Property="Background" Value="{DynamicResource TabItemHeaderHighlightUnselected}" />
+						<Setter Property="VerticalAlignment" Value="Bottom" />
+						<Setter Property="Height" Value="4" />
+						<Setter Property="Margin" Value="0" />
+					</Style>
+				</Style>
+
+				<!-- Right placement. -->
+				<Style Selector="^[TabStripPlacement=Right]">
+					<Setter Property="CornerRadius" Value="0,6,6,0" />
+					<Setter Property="HorizontalContentAlignment" Value="Right" />
+
+					<Style Selector="^ /template/ Border#PART_LayoutRoot">
+						<Setter Property="BorderThickness" Value="0,1,1,1" />
+						<Setter Property="Margin" Value="0,2" />
+					</Style>
+					<Style Selector="^ /template/ Border#PART_Highlight">
+						<Setter Property="Background" Value="{DynamicResource TabItemHeaderHighlightUnselected}" />
+						<Setter Property="HorizontalAlignment" Value="Right" />
+						<Setter Property="Width" Value="4" />
+						<Setter Property="Margin" Value="0,2" />
+					</Style>
+					<Style Selector="^ /template/ Rectangle#PART_Spacer">
+						<Setter Property="Height" Value="1" />
+						<Setter Property="Width" Value="{x:Static sys:Double.NaN}" />
+						<Setter Property="Margin" Value="8,0,4,0" />
+						<Setter Property="HorizontalAlignment" Value="Stretch" />
+						<Setter Property="VerticalAlignment" Value="Top" />
+					</Style>
+				</Style>
+				
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Style Selector="DockableTabItem">
+		<Setter Property="IsActive" Value="{Binding $parent[DockingTabControl].IsActive}" />
+	</Style>
+
+	<Style Selector="Button.TabClose">
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="BorderBrush" Value="Transparent" />
+		<Setter Property="BorderThickness" Value="0" />
+		<Setter Property="HorizontalAlignment" Value="Center" />
+		<Setter Property="VerticalAlignment" Value="Center" />
+		<Setter Property="Height" Value="26" />
+		<Setter Property="Width" Value="26" />
+		<Style Selector="^ PathIcon">
+			<Setter Property="Foreground" Value="{Binding $parent[Button].Foreground}" />
+			<Setter Property="Height" Value="11" />
+			<Setter Property="Width" Value="11" />
+			<Setter Property="HorizontalAlignment" Value="Center" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+	</Style>
+
+	<Design.PreviewWith>
+		<DockPanel>
+			<DockingTabControl DockPanel.Dock="Top"
+					TabStripPlacement="Left"
+					Margin="0,0,0,20">
+				<DockableTabItem>
+					<DockableTabItem.TabModel>
+						<DockableTabModel Header="First" />
+					</DockableTabItem.TabModel>
+				</DockableTabItem>
+				<DockableTabItem Header="Second" />
+				<DockableTabItem Header="Third" />
+				<DockableTabItem Header="Fourth" />
+			</DockingTabControl>
+			<DockingTabControl DockPanel.Dock="Top"
+					TabStripPlacement="Right"
+					Margin="0,0,0,20">
+				<DockableTabItem>
+					<DockableTabItem.TabModel>
+						<DockableTabModel Header="First" />
+					</DockableTabItem.TabModel>
+				</DockableTabItem>
+				<DockableTabItem Header="Second" />
+				<DockableTabItem Header="Third" />
+				<DockableTabItem Header="Fourth" />
+			</DockingTabControl>
+			<DockingTabControl DockPanel.Dock="Top"
+					Height="100"
+					Margin="0,0,0,20">
+				<DockableTabItem>
+					<DockableTabItem.TabModel>
+						<DockableTabModel Header="First" />
+					</DockableTabItem.TabModel>
+				</DockableTabItem>
+				<DockableTabItem Header="Second" />
+				<DockableTabItem Header="Third" />
+				<DockableTabItem Header="Fourth" />
+			</DockingTabControl>
+			<DockingTabControl DockPanel.Dock="Bottom"
+					TabStripPlacement="Bottom"
+					Height="100">
+				<DockableTabItem>
+					<DockableTabItem.TabModel>
+						<DockableTabModel Header="1st" />
+					</DockableTabItem.TabModel>
+				</DockableTabItem>
+				<DockableTabItem Header="2nd" />
+				<DockableTabItem Header="3rd" />
+				<DockableTabItem Header="4th" />
+			</DockingTabControl>
+		</DockPanel>
+	</Design.PreviewWith>
+</Styles>

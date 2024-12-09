@@ -75,7 +75,7 @@ public abstract class BaseComparer
 	/// <param name="actual"> The value to be tested. </param>
 	/// <param name="message"> Message to prefix if compare fails. </param>
 	/// <returns> The result of the compare. </returns>
-	public CompareResult Compare(CompareSession session, object expected, object actual, string message = null)
+	public CompareResult Compare(CompareSession session, object expected, object actual, Func<string> message = null)
 	{
 		if ((expected == null) && (actual == null))
 		{
@@ -91,8 +91,7 @@ public abstract class BaseComparer
 
 		if (!AreSameType(session, expected, actual))
 		{
-			AddDifference(session, expected.GetType().FullName, actual.GetType().FullName, true,
-				message ?? "Data types do not match.");
+			AddDifference(session, expected.GetType().FullName, actual.GetType().FullName, true, message ?? (() => "Data types do not match."));
 			return session.Result;
 		}
 
@@ -119,13 +118,15 @@ public abstract class BaseComparer
 	/// <param name="shouldEqual"> True if the values should have been equal otherwise false. </param>
 	/// <param name="message"> On optional message to include. </param>
 	/// <returns> The error message. </returns>
-	protected static void AddDifference(CompareSession session, string expected, string actual, bool shouldEqual, string message = null)
+	protected static void AddDifference(CompareSession session, string expected, string actual, bool shouldEqual, Func<string> message = null)
 	{
 		session.UpdateResult(CompareResult.NotEqual);
 
-		if (!string.IsNullOrWhiteSpace(message))
+		var actualMessage = message?.Invoke();
+
+		if (!string.IsNullOrWhiteSpace(actualMessage))
 		{
-			session.AppendDifference(message);
+			session.AppendDifference(actualMessage);
 			session.AppendDifference(string.Empty);
 		}
 
@@ -151,7 +152,7 @@ public abstract class BaseComparer
 	/// <returns> True if the expected and actual objects are the same type otherwise false. </returns>
 	protected bool AreSameType(CompareSession session, object expected, object actual)
 	{
-		if (session.Options.IgnoreObjectTypes)
+		if (session.Settings.IgnoreObjectTypes)
 		{
 			return true;
 		}
@@ -169,7 +170,7 @@ public abstract class BaseComparer
 	/// <param name="actual"> The value to be tested. </param>
 	/// <param name="message"> Message to prefix if compare fails. </param>
 	/// <returns> The result of the compare. </returns>
-	protected abstract CompareResult CompareValues(CompareSession session, object expected, object actual, string message);
+	protected abstract CompareResult CompareValues(CompareSession session, object expected, object actual, Func<string> message);
 
 	/// <summary>
 	/// Validates the types are supported.

@@ -68,7 +68,7 @@
 				<TextBlock Margin="16" Text="Tab with brown highlight." />
 			</TabItem>
 
-			<TabItem Header="Blue Grey" Theme.Color="BlueGrey">
+			<TabItem Header="Blue Gray" Theme.Color="BlueGray">
 				<TextBlock Margin="16" Text="Tab with blue grey highlight." />
 			</TabItem>
 
@@ -137,7 +137,7 @@
 				<TextBlock Margin="16" Text="Tab with brown highlight." />
 			</TabItem>
 
-			<TabItem Header="Blue Grey" Theme.Color="BlueGrey">
+			<TabItem Header="Blue Gray" Theme.Color="BlueGray">
 				<TextBlock Margin="16" Text="Tab with blue grey highlight." />
 			</TabItem>
 

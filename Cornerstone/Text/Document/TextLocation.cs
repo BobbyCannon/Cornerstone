@@ -13,8 +13,8 @@ namespace Cornerstone.Text.Document;
 /// Text editor lines/columns are counted started from one.
 /// </summary>
 /// <remarks>
-/// The document provides the methods <see cref="IDocument.GetLocation" /> and
-/// <see cref="IDocument.GetOffset(TextLocation)" /> to convert between offsets and TextLocations.
+/// The document provides the methods <see cref="ITextEditorDocument.GetLocation" /> and
+/// <see cref="ITextEditorDocument.GetOffset(TextLocation)" /> to convert between offsets and TextLocations.
 /// </remarks>
 [TypeConverter(typeof(TextLocationConverter))]
 public readonly struct TextLocation : IComparable<TextLocation>, IEquatable<TextLocation>
@@ -221,33 +221,6 @@ public class TextLocationConverter : TypeConverter
 		}
 		throw new InvalidOperationException();
 	}
-
-	#endregion
-}
-
-/// <summary>
-/// An (Offset,Length)-pair.
-/// </summary>
-public interface ISegment
-{
-	#region Properties
-
-	/// <summary>
-	/// Gets the end offset of the segment.
-	/// </summary>
-	/// <remarks> EndOffset = Offset + Length; </remarks>
-	int EndOffset { get; }
-
-	/// <summary>
-	/// Gets the length of the segment.
-	/// </summary>
-	/// <remarks> For line segments (IDocumentLine), the length does not include the line delimiter. </remarks>
-	int Length { get; }
-
-	/// <summary>
-	/// Gets the start offset of the segment.
-	/// </summary>
-	int Offset { get; }
 
 	#endregion
 }

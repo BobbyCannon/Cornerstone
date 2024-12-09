@@ -1,6 +1,8 @@
 ﻿#region References
 
 using System;
+using Cornerstone.Collections;
+using Cornerstone.Text;
 using Cornerstone.Text.Document;
 
 #endregion
@@ -47,7 +49,7 @@ public class SnippetBoundElement : SnippetElement
 			var end = context.Document.CreateAnchor(context.InsertionPosition);
 			end.MovementType = AnchorMovementType.BeforeInsertion;
 			end.SurviveDeletion = true;
-			var segment = new AnchorSegment(start, end);
+			var segment = new AnchorRange(start, end);
 			context.RegisterActiveElement(this, new BoundActiveElement(context, TargetElement, this, segment));
 		}
 	}
@@ -74,19 +76,19 @@ internal sealed class BoundActiveElement : IActiveElement
 	internal IReplaceableActiveElement TargetElement;
 	private readonly SnippetBoundElement _boundElement;
 	private readonly InsertionContext _context;
-	private AnchorSegment _segment;
+	private AnchorRange _range;
 	private readonly SnippetReplaceableTextElement _targetSnippetElement;
 
 	#endregion
 
 	#region Constructors
 
-	public BoundActiveElement(InsertionContext context, SnippetReplaceableTextElement targetSnippetElement, SnippetBoundElement boundElement, AnchorSegment segment)
+	public BoundActiveElement(InsertionContext context, SnippetReplaceableTextElement targetSnippetElement, SnippetBoundElement boundElement, AnchorRange range)
 	{
 		_context = context;
 		_targetSnippetElement = targetSnippetElement;
 		_boundElement = boundElement;
-		_segment = segment;
+		_range = range;
 	}
 
 	#endregion
@@ -95,7 +97,7 @@ internal sealed class BoundActiveElement : IActiveElement
 
 	public bool IsEditable => false;
 
-	public ISegment Segment => _segment;
+	public IRange Range => _range;
 
 	#endregion
 
@@ -119,10 +121,10 @@ internal sealed class BoundActiveElement : IActiveElement
 	{
 		// Don't copy text if the segments overlap (we would get an endless loop).
 		// This can happen if the user deletes the text between the replaceable element and the bound element.
-		if (_segment.GetOverlap(TargetElement.Segment) == SegmentExtensions.Invalid)
+		if (_range.GetOverlap(TargetElement.Range) == SegmentExtensions.Invalid)
 		{
-			var offset = _segment.Offset;
-			var length = _segment.Length;
+			var offset = _range.StartIndex;
+			var length = _range.Length;
 			var text = _boundElement.ConvertText(TargetElement.Text);
 			if ((length != text.Length) || (text != _context.Document.GetText(offset, length)))
 			{
@@ -132,7 +134,7 @@ internal sealed class BoundActiveElement : IActiveElement
 				if (length == 0)
 				{
 					// replacing an empty anchor segment with text won't enlarge it, so we have to recreate it
-					_segment = new AnchorSegment(_context.Document, offset, text.Length);
+					_range = new AnchorRange(_context.Document, offset, text.Length);
 				}
 			}
 		}

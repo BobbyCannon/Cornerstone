@@ -1,0 +1,315 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<!-- Code Generated - Colors -->
+
+	<!-- Amber -->
+	<Color x:Key="Amber00">#FFF8E1</Color>
+	<Color x:Key="Amber01">#FFECB3</Color>
+	<Color x:Key="Amber02">#FFE082</Color>
+	<Color x:Key="Amber03">#FFD54F</Color>
+	<Color x:Key="Amber04">#FFCA28</Color>
+	<Color x:Key="Amber05">#FFC107</Color>
+	<Color x:Key="Amber06">#FFB300</Color>
+	<Color x:Key="Amber07">#FFA000</Color>
+	<Color x:Key="Amber08">#FF8F00</Color>
+	<Color x:Key="Amber09">#FF6F00</Color>
+	<Color x:Key="AmberText00">#000000</Color>
+	<Color x:Key="AmberText01">#000000</Color>
+	<Color x:Key="AmberText02">#000000</Color>
+	<Color x:Key="AmberText03">#000000</Color>
+	<Color x:Key="AmberText04">#FFFFFF</Color>
+	<Color x:Key="AmberText05">#FFFFFF</Color>
+	<Color x:Key="AmberText06">#FFFFFF</Color>
+	<Color x:Key="AmberText07">#FFFFFF</Color>
+	<Color x:Key="AmberText08">#FFFFFF</Color>
+	<Color x:Key="AmberText09">#FFFFFF</Color>
+
+	<!-- Blue -->
+	<Color x:Key="Blue00">#E3F2FD</Color>
+	<Color x:Key="Blue01">#BBDEFB</Color>
+	<Color x:Key="Blue02">#90CAF9</Color>
+	<Color x:Key="Blue03">#64B5F6</Color>
+	<Color x:Key="Blue04">#42A5F5</Color>
+	<Color x:Key="Blue05">#2196F3</Color>
+	<Color x:Key="Blue06">#1E88E5</Color>
+	<Color x:Key="Blue07">#1976D2</Color>
+	<Color x:Key="Blue08">#1565C0</Color>
+	<Color x:Key="Blue09">#0D47A1</Color>
+	<Color x:Key="BlueText00">#000000</Color>
+	<Color x:Key="BlueText01">#000000</Color>
+	<Color x:Key="BlueText02">#000000</Color>
+	<Color x:Key="BlueText03">#000000</Color>
+	<Color x:Key="BlueText04">#FFFFFF</Color>
+	<Color x:Key="BlueText05">#FFFFFF</Color>
+	<Color x:Key="BlueText06">#FFFFFF</Color>
+	<Color x:Key="BlueText07">#FFFFFF</Color>
+	<Color x:Key="BlueText08">#FFFFFF</Color>
+	<Color x:Key="BlueText09">#FFFFFF</Color>
+
+	<!-- BlueGray -->
+	<Color x:Key="BlueGray00">#ECEFF1</Color>
+	<Color x:Key="BlueGray01">#CFD8DC</Color>
+	<Color x:Key="BlueGray02">#B0BEC5</Color>
+	<Color x:Key="BlueGray03">#90A4AE</Color>
+	<Color x:Key="BlueGray04">#78909C</Color>
+	<Color x:Key="BlueGray05">#607D8B</Color>
+	<Color x:Key="BlueGray06">#546E7A</Color>
+	<Color x:Key="BlueGray07">#455A64</Color>
+	<Color x:Key="BlueGray08">#37474F</Color>
+	<Color x:Key="BlueGray09">#263238</Color>
+	<Color x:Key="BlueGrayText00">#000000</Color>
+	<Color x:Key="BlueGrayText01">#000000</Color>
+	<Color x:Key="BlueGrayText02">#000000</Color>
+	<Color x:Key="BlueGrayText03">#000000</Color>
+	<Color x:Key="BlueGrayText04">#FFFFFF</Color>
+	<Color x:Key="BlueGrayText05">#FFFFFF</Color>
+	<Color x:Key="BlueGrayText06">#FFFFFF</Color>
+	<Color x:Key="BlueGrayText07">#FFFFFF</Color>
+	<Color x:Key="BlueGrayText08">#FFFFFF</Color>
+	<Color x:Key="BlueGrayText09">#FFFFFF</Color>
+
+	<!-- Brown -->
+	<Color x:Key="Brown00">#EFEBE9</Color>
+	<Color x:Key="Brown01">#D7CCC8</Color>
+	<Color x:Key="Brown02">#BCAAA4</Color>
+	<Color x:Key="Brown03">#A1887F</Color>
+	<Color x:Key="Brown04">#8D6E63</Color>
+	<Color x:Key="Brown05">#795548</Color>
+	<Color x:Key="Brown06">#6D4C41</Color>
+	<Color x:Key="Brown07">#5D4037</Color>
+	<Color x:Key="Brown08">#4E342E</Color>
+	<Color x:Key="Brown09">#3E2723</Color>
+	<Color x:Key="BrownText00">#000000</Color>
+	<Color x:Key="BrownText01">#000000</Color>
+	<Color x:Key="BrownText02">#000000</Color>
+	<Color x:Key="BrownText03">#000000</Color>
+	<Color x:Key="BrownText04">#FFFFFF</Color>
+	<Color x:Key="BrownText05">#FFFFFF</Color>
+	<Color x:Key="BrownText06">#FFFFFF</Color>
+	<Color x:Key="BrownText07">#FFFFFF</Color>
+	<Color x:Key="BrownText08">#FFFFFF</Color>
+	<Color x:Key="BrownText09">#FFFFFF</Color>
+
+	<!-- DeepOrange -->
+	<Color x:Key="DeepOrange00">#FBE9E7</Color>
+	<Color x:Key="DeepOrange01">#FFCCBC</Color>
+	<Color x:Key="DeepOrange02">#FFAB91</Color>
+	<Color x:Key="DeepOrange03">#FF8A65</Color>
+	<Color x:Key="DeepOrange04">#FF7043</Color>
+	<Color x:Key="DeepOrange05">#FF5722</Color>
+	<Color x:Key="DeepOrange06">#F4511E</Color>
+	<Color x:Key="DeepOrange07">#E64A19</Color>
+	<Color x:Key="DeepOrange08">#D84315</Color>
+	<Color x:Key="DeepOrange09">#BF360C</Color>
+	<Color x:Key="DeepOrangeText00">#000000</Color>
+	<Color x:Key="DeepOrangeText01">#000000</Color>
+	<Color x:Key="DeepOrangeText02">#000000</Color>
+	<Color x:Key="DeepOrangeText03">#000000</Color>
+	<Color x:Key="DeepOrangeText04">#FFFFFF</Color>
+	<Color x:Key="DeepOrangeText05">#FFFFFF</Color>
+	<Color x:Key="DeepOrangeText06">#FFFFFF</Color>
+	<Color x:Key="DeepOrangeText07">#FFFFFF</Color>
+	<Color x:Key="DeepOrangeText08">#FFFFFF</Color>
+	<Color x:Key="DeepOrangeText09">#FFFFFF</Color>
+
+	<!-- DeepPurple -->
+	<Color x:Key="DeepPurple00">#EDE7F6</Color>
+	<Color x:Key="DeepPurple01">#D1C4E9</Color>
+	<Color x:Key="DeepPurple02">#B39DDB</Color>
+	<Color x:Key="DeepPurple03">#9575CD</Color>
+	<Color x:Key="DeepPurple04">#7E57C2</Color>
+	<Color x:Key="DeepPurple05">#673AB7</Color>
+	<Color x:Key="DeepPurple06">#5E35B1</Color>
+	<Color x:Key="DeepPurple07">#512DA8</Color>
+	<Color x:Key="DeepPurple08">#4527A0</Color>
+	<Color x:Key="DeepPurple09">#311B92</Color>
+	<Color x:Key="DeepPurpleText00">#000000</Color>
+	<Color x:Key="DeepPurpleText01">#000000</Color>
+	<Color x:Key="DeepPurpleText02">#000000</Color>
+	<Color x:Key="DeepPurpleText03">#000000</Color>
+	<Color x:Key="DeepPurpleText04">#FFFFFF</Color>
+	<Color x:Key="DeepPurpleText05">#FFFFFF</Color>
+	<Color x:Key="DeepPurpleText06">#FFFFFF</Color>
+	<Color x:Key="DeepPurpleText07">#FFFFFF</Color>
+	<Color x:Key="DeepPurpleText08">#FFFFFF</Color>
+	<Color x:Key="DeepPurpleText09">#FFFFFF</Color>
+
+	<!-- Gray -->
+	<Color x:Key="Gray00">#FAFAFA</Color>
+	<Color x:Key="Gray01">#BDBDBD</Color>
+	<Color x:Key="Gray02">#A7A7A7</Color>
+	<Color x:Key="Gray03">#929292</Color>
+	<Color x:Key="Gray04">#7E7E7E</Color>
+	<Color x:Key="Gray05">#6A6A6A</Color>
+	<Color x:Key="Gray06">#565656</Color>
+	<Color x:Key="Gray07">#444444</Color>
+	<Color x:Key="Gray08">#323232</Color>
+	<Color x:Key="Gray09">#212121</Color>
+	<Color x:Key="GrayText00">#000000</Color>
+	<Color x:Key="GrayText01">#000000</Color>
+	<Color x:Key="GrayText02">#000000</Color>
+	<Color x:Key="GrayText03">#000000</Color>
+	<Color x:Key="GrayText04">#FFFFFF</Color>
+	<Color x:Key="GrayText05">#FFFFFF</Color>
+	<Color x:Key="GrayText06">#FFFFFF</Color>
+	<Color x:Key="GrayText07">#FFFFFF</Color>
+	<Color x:Key="GrayText08">#FFFFFF</Color>
+	<Color x:Key="GrayText09">#FFFFFF</Color>
+
+	<!-- Green -->
+	<Color x:Key="Green00">#E8F5E9</Color>
+	<Color x:Key="Green01">#C8E6C9</Color>
+	<Color x:Key="Green02">#A5D6A7</Color>
+	<Color x:Key="Green03">#81C784</Color>
+	<Color x:Key="Green04">#66BB6A</Color>
+	<Color x:Key="Green05">#4CAF50</Color>
+	<Color x:Key="Green06">#43A047</Color>
+	<Color x:Key="Green07">#388E3C</Color>
+	<Color x:Key="Green08">#2E7D32</Color>
+	<Color x:Key="Green09">#1B5E20</Color>
+	<Color x:Key="GreenText00">#000000</Color>
+	<Color x:Key="GreenText01">#000000</Color>
+	<Color x:Key="GreenText02">#000000</Color>
+	<Color x:Key="GreenText03">#000000</Color>
+	<Color x:Key="GreenText04">#FFFFFF</Color>
+	<Color x:Key="GreenText05">#FFFFFF</Color>
+	<Color x:Key="GreenText06">#FFFFFF</Color>
+	<Color x:Key="GreenText07">#FFFFFF</Color>
+	<Color x:Key="GreenText08">#FFFFFF</Color>
+	<Color x:Key="GreenText09">#FFFFFF</Color>
+
+	<!-- Indigo -->
+	<Color x:Key="Indigo00">#E8EAF6</Color>
+	<Color x:Key="Indigo01">#C5CAE9</Color>
+	<Color x:Key="Indigo02">#9FA8DA</Color>
+	<Color x:Key="Indigo03">#7986CB</Color>
+	<Color x:Key="Indigo04">#5C6BC0</Color>
+	<Color x:Key="Indigo05">#3F51B5</Color>
+	<Color x:Key="Indigo06">#3949AB</Color>
+	<Color x:Key="Indigo07">#303F9F</Color>
+	<Color x:Key="Indigo08">#283593</Color>
+	<Color x:Key="Indigo09">#1A237E</Color>
+	<Color x:Key="IndigoText00">#000000</Color>
+	<Color x:Key="IndigoText01">#000000</Color>
+	<Color x:Key="IndigoText02">#000000</Color>
+	<Color x:Key="IndigoText03">#000000</Color>
+	<Color x:Key="IndigoText04">#FFFFFF</Color>
+	<Color x:Key="IndigoText05">#FFFFFF</Color>
+	<Color x:Key="IndigoText06">#FFFFFF</Color>
+	<Color x:Key="IndigoText07">#FFFFFF</Color>
+	<Color x:Key="IndigoText08">#FFFFFF</Color>
+	<Color x:Key="IndigoText09">#FFFFFF</Color>
+
+	<!-- Orange -->
+	<Color x:Key="Orange00">#FFF3E0</Color>
+	<Color x:Key="Orange01">#FFE0B2</Color>
+	<Color x:Key="Orange02">#FFCC80</Color>
+	<Color x:Key="Orange03">#FFB74D</Color>
+	<Color x:Key="Orange04">#FFA726</Color>
+	<Color x:Key="Orange05">#FF9800</Color>
+	<Color x:Key="Orange06">#FB8C00</Color>
+	<Color x:Key="Orange07">#F57C00</Color>
+	<Color x:Key="Orange08">#EF6C00</Color>
+	<Color x:Key="Orange09">#E65100</Color>
+	<Color x:Key="OrangeText00">#000000</Color>
+	<Color x:Key="OrangeText01">#000000</Color>
+	<Color x:Key="OrangeText02">#000000</Color>
+	<Color x:Key="OrangeText03">#000000</Color>
+	<Color x:Key="OrangeText04">#FFFFFF</Color>
+	<Color x:Key="OrangeText05">#FFFFFF</Color>
+	<Color x:Key="OrangeText06">#FFFFFF</Color>
+	<Color x:Key="OrangeText07">#FFFFFF</Color>
+	<Color x:Key="OrangeText08">#FFFFFF</Color>
+	<Color x:Key="OrangeText09">#FFFFFF</Color>
+
+	<!-- Pink -->
+	<Color x:Key="Pink00">#FCE4EC</Color>
+	<Color x:Key="Pink01">#F8BBD0</Color>
+	<Color x:Key="Pink02">#F48FB1</Color>
+	<Color x:Key="Pink03">#F06292</Color>
+	<Color x:Key="Pink04">#EC407A</Color>
+	<Color x:Key="Pink05">#E91E63</Color>
+	<Color x:Key="Pink06">#D81B60</Color>
+	<Color x:Key="Pink07">#C2185B</Color>
+	<Color x:Key="Pink08">#AD1457</Color>
+	<Color x:Key="Pink09">#880E4F</Color>
+	<Color x:Key="PinkText00">#000000</Color>
+	<Color x:Key="PinkText01">#000000</Color>
+	<Color x:Key="PinkText02">#000000</Color>
+	<Color x:Key="PinkText03">#000000</Color>
+	<Color x:Key="PinkText04">#FFFFFF</Color>
+	<Color x:Key="PinkText05">#FFFFFF</Color>
+	<Color x:Key="PinkText06">#FFFFFF</Color>
+	<Color x:Key="PinkText07">#FFFFFF</Color>
+	<Color x:Key="PinkText08">#FFFFFF</Color>
+	<Color x:Key="PinkText09">#FFFFFF</Color>
+
+	<!-- Purple -->
+	<Color x:Key="Purple00">#F3E5F5</Color>
+	<Color x:Key="Purple01">#E1BEE7</Color>
+	<Color x:Key="Purple02">#CE93D8</Color>
+	<Color x:Key="Purple03">#BA68C8</Color>
+	<Color x:Key="Purple04">#AB47BC</Color>
+	<Color x:Key="Purple05">#9C27B0</Color>
+	<Color x:Key="Purple06">#8E24AA</Color>
+	<Color x:Key="Purple07">#7B1FA2</Color>
+	<Color x:Key="Purple08">#6A1B9A</Color>
+	<Color x:Key="Purple09">#4A148C</Color>
+	<Color x:Key="PurpleText00">#000000</Color>
+	<Color x:Key="PurpleText01">#000000</Color>
+	<Color x:Key="PurpleText02">#000000</Color>
+	<Color x:Key="PurpleText03">#000000</Color>
+	<Color x:Key="PurpleText04">#FFFFFF</Color>
+	<Color x:Key="PurpleText05">#FFFFFF</Color>
+	<Color x:Key="PurpleText06">#FFFFFF</Color>
+	<Color x:Key="PurpleText07">#FFFFFF</Color>
+	<Color x:Key="PurpleText08">#FFFFFF</Color>
+	<Color x:Key="PurpleText09">#FFFFFF</Color>
+
+	<!-- Red -->
+	<Color x:Key="Red00">#FFEBEE</Color>
+	<Color x:Key="Red01">#FFCDD2</Color>
+	<Color x:Key="Red02">#EF9A9A</Color>
+	<Color x:Key="Red03">#E57373</Color>
+	<Color x:Key="Red04">#EF5350</Color>
+	<Color x:Key="Red05">#F44336</Color>
+	<Color x:Key="Red06">#E53935</Color>
+	<Color x:Key="Red07">#D32F2F</Color>
+	<Color x:Key="Red08">#C62828</Color>
+	<Color x:Key="Red09">#B71C1C</Color>
+	<Color x:Key="RedText00">#000000</Color>
+	<Color x:Key="RedText01">#000000</Color>
+	<Color x:Key="RedText02">#000000</Color>
+	<Color x:Key="RedText03">#000000</Color>
+	<Color x:Key="RedText04">#FFFFFF</Color>
+	<Color x:Key="RedText05">#FFFFFF</Color>
+	<Color x:Key="RedText06">#FFFFFF</Color>
+	<Color x:Key="RedText07">#FFFFFF</Color>
+	<Color x:Key="RedText08">#FFFFFF</Color>
+	<Color x:Key="RedText09">#FFFFFF</Color>
+
+	<!-- Teal -->
+	<Color x:Key="Teal00">#E0F2F1</Color>
+	<Color x:Key="Teal01">#B2DFDB</Color>
+	<Color x:Key="Teal02">#80CBC4</Color>
+	<Color x:Key="Teal03">#4DB6AC</Color>
+	<Color x:Key="Teal04">#26A69A</Color>
+	<Color x:Key="Teal05">#009688</Color>
+	<Color x:Key="Teal06">#00897B</Color>
+	<Color x:Key="Teal07">#00796B</Color>
+	<Color x:Key="Teal08">#00695C</Color>
+	<Color x:Key="Teal09">#004D40</Color>
+	<Color x:Key="TealText00">#000000</Color>
+	<Color x:Key="TealText01">#000000</Color>
+	<Color x:Key="TealText02">#000000</Color>
+	<Color x:Key="TealText03">#000000</Color>
+	<Color x:Key="TealText04">#FFFFFF</Color>
+	<Color x:Key="TealText05">#FFFFFF</Color>
+	<Color x:Key="TealText06">#FFFFFF</Color>
+	<Color x:Key="TealText07">#FFFFFF</Color>
+	<Color x:Key="TealText08">#FFFFFF</Color>
+	<Color x:Key="TealText09">#FFFFFF</Color>
+
+	<!-- Code Generated - /Colors -->
+</ResourceDictionary>

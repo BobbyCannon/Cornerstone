@@ -50,6 +50,19 @@ public class PartialUpdate<T> : PartialUpdate
 	#region Methods
 
 	/// <summary>
+	/// Add the model values to the partial update.
+	/// </summary>
+	public void FromModel(T model)
+	{
+		var properties = GetTargetProperties();
+
+		foreach (var property in properties)
+		{
+			Set(property.Value.GetValue(model), property.Key);
+		}
+	}
+
+	/// <summary>
 	/// Get the property value.
 	/// </summary>
 	/// <typeparam name="TProperty"> The type to cast the value to. </typeparam>
@@ -61,7 +74,7 @@ public class PartialUpdate<T> : PartialUpdate
 		var propertyExpression = (MemberExpression) expression.Body;
 		return Get(defaultValue, propertyExpression.Member.Name);
 	}
-	
+
 	/// <summary>
 	/// Set a property for the update.
 	/// </summary>
@@ -71,6 +84,26 @@ public class PartialUpdate<T> : PartialUpdate
 	{
 		var propertyExpression = (MemberExpression) expression.Body;
 		Set(value, propertyExpression.Member.Name);
+	}
+
+	/// <summary>
+	/// Get the model from the partial updates.
+	/// </summary>
+	/// <returns> The model. </returns>
+	public T ToModel()
+	{
+		var response = Activator.CreateInstance<T>();
+		var properties = GetTargetProperties();
+
+		foreach (var property in properties)
+		{
+			if (TryGet(property.Value, out var value))
+			{
+				property.Value.SetValue(response, value);
+			}
+		}
+
+		return response;
 	}
 
 	/// <summary>
@@ -198,7 +231,7 @@ public class PartialUpdate : Bindable
 	{
 		return Get(default(T), name);
 	}
-	
+
 	/// <summary>
 	/// Get the update for the provided name with a fallback default value if not found.
 	/// </summary>
@@ -244,6 +277,24 @@ public class PartialUpdate : Bindable
 	}
 
 	/// <summary>
+	/// Create a dynamic object of the partial update.
+	/// </summary>
+	/// <returns> The dynamic version of the partial update. </returns>
+	public virtual IDictionary<string, object> ToDictionary()
+	{
+		var dictionary = new Dictionary<string, object>();
+
+		RefreshUpdates();
+
+		foreach (var update in _updates)
+		{
+			dictionary.AddOrUpdate(update.Key, update.Value.Value);
+		}
+
+		return dictionary;
+	}
+
+	/// <summary>
 	/// Try to get the update for the provided name.
 	/// </summary>
 	/// <typeparam name="T"> The type to cast the value to. </typeparam>
@@ -255,6 +306,41 @@ public class PartialUpdate : Bindable
 		if (_updates.TryGetValue(name, out var update))
 		{
 			return update.Value.TryConvertTo(out value);
+		}
+
+		value = default;
+		return false;
+	}
+
+	/// <summary>
+	/// Try to get the value for the provided name then call the provided update.
+	/// </summary>
+	/// <typeparam name="T"> The type to cast the value to. </typeparam>
+	/// <param name="name"> The name of the update. </param>
+	/// <param name="update"> The update to invoke if read successful. </param>
+	/// <returns> True if the value was read otherwise false. </returns>
+	public bool TryGet<T>(string name, Action<T> update)
+	{
+		if (!TryGet<T>(out var value, name))
+		{
+			return false;
+		}
+
+		update.Invoke(value);
+		return true;
+	}
+
+	/// <summary>
+	/// Try to get the update for the provided name.
+	/// </summary>
+	/// <param name="propertyInfo"> The property type to cast the value to. </param>
+	/// <param name="value"> The value read if successful. </param>
+	/// <returns> True if the value was read otherwise false. </returns>
+	public bool TryGet(PropertyInfo propertyInfo, out object value)
+	{
+		if (_updates.TryGetValue(propertyInfo.Name, out var update))
+		{
+			return update.Value.TryConvertTo(propertyInfo.PropertyType, out value);
 		}
 
 		value = default;
@@ -293,15 +379,15 @@ public class PartialUpdate : Bindable
 	/// <param name="update"> The update to be applied. </param>
 	public virtual bool UpdateWith(PartialUpdate update)
 	{
-		return UpdateWith(update, IncludeExcludeOptions.Empty);
+		return UpdateWith(update, IncludeExcludeSettings.Empty);
 	}
 
 	/// <summary>
 	/// Update the PartialUpdate with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the entity. </param>
-	public virtual bool UpdateWith(PartialUpdate update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the entity. </param>
+	public virtual bool UpdateWith(PartialUpdate update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -318,31 +404,13 @@ public class PartialUpdate : Bindable
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
-			PartialUpdate value => UpdateWith(value, options),
-			_ => base.UpdateWith(update, options)
+			PartialUpdate value => UpdateWith(value, settings),
+			_ => base.UpdateWith(update, settings)
 		};
-	}
-
-	/// <summary>
-	/// Create a dynamic object of the partial update.
-	/// </summary>
-	/// <returns> The dynamic version of the partial update. </returns>
-	protected internal virtual IDictionary<string, object> GetDictionary()
-	{
-		var dictionary = new Dictionary<string, object>();
-
-		RefreshUpdates();
-
-		foreach (var update in _updates)
-		{
-			dictionary.AddOrUpdate(update.Key, update.Value.Value);
-		}
-
-		return dictionary;
 	}
 
 	/// <summary>

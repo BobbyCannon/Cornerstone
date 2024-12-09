@@ -1,0 +1,24 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+			
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Style Selector="Border">
+		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+		<Setter Property="BorderThickness" Value="0" />
+	</Style>
+
+	<Design.PreviewWith>
+		<Border Width="300">
+			<WrapPanel Orientation="Horizontal"
+					ItemHeight="48">
+				<Border>
+					<TextBlock Text="Border" />
+				</Border>
+			</WrapPanel>
+		</Border>
+	</Design.PreviewWith>
+</Styles>

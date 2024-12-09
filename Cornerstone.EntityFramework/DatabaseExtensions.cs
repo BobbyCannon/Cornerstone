@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -26,12 +27,30 @@ namespace Cornerstone.EntityFramework;
 /// </summary>
 public static class DatabaseExtensions
 {
+	#region Fields
+
+	private static readonly ConcurrentDictionary<Type, IList<IEntityMappingConfiguration>> _configurations;
+
+	#endregion
+
+	#region Constructors
+
+	static DatabaseExtensions()
+	{
+		_configurations = new ConcurrentDictionary<Type, IList<IEntityMappingConfiguration>>();
+	}
+
+	#endregion
+
 	#region Methods
 
 	/// <summary>
 	/// Try to configure the entity models using the EntityMappingConfiguration configurations
 	/// </summary>
-	/// <param name="database"> </param>
+	/// <param name="database"> The database to process. </param>
+	/// <remarks>
+	/// todo: create a cached version that can be loaded?
+	/// </remarks>
 	public static void ConfigureModelViaMapping(this Database database)
 	{
 		if (database.HasBeenConfiguredViaMapping)
@@ -46,20 +65,13 @@ public static class DatabaseExtensions
 		var databaseHasRequiredMethod = methods.FirstOrDefault(x => x.IsGenericMethod && (x.Name == nameof(Database.HasRequired)))
 			?? throw new CornerstoneException($"Failed to find the '{nameof(Database.HasRequired)}' method on the '{nameof(Database)}' class.");
 
-		var assembly = database.GetMappingAssembly();
-		var types = assembly.GetTypes();
-		var mappingTypes = types.Where(x => !x.IsAbstract && x.GetInterfaces().Any(y => y == typeof(IEntityMappingConfiguration)));
 		var builder = new ModelBuilder(new ConventionSet());
 
-		foreach (var config in mappingTypes.Select(x => x.CreateInstance()).Cast<IEntityMappingConfiguration>())
+		foreach (var config in database.GetMappingConfigurations())
 		{
 			var entityBuilder = (EntityTypeBuilder) config.Map(builder);
-			var primaryKey = entityBuilder.Metadata.ClrType.GetPrimaryKeyType();
-
-			if (primaryKey == null)
-			{
-				throw new CornerstoneException($"Failed to find the 'Primary Key' type for the '{entityBuilder.Metadata.ClrType.FullName}' entity.");
-			}
+			var primaryKey = entityBuilder.Metadata.ClrType.GetPrimaryKeyType()
+				?? throw new CornerstoneException($"Failed to find the 'Primary Key' type for the '{entityBuilder.Metadata.ClrType.FullName}' entity.");
 
 			var entityProperties = entityBuilder.Metadata.GetProperties();
 			var annotations = entityBuilder.Metadata.GetAnnotations();
@@ -186,6 +198,26 @@ public static class DatabaseExtensions
 	}
 
 	/// <summary>
+	/// Gets the assembly that contains the entity mappings. Base implementation defaults to the implemented types assembly.
+	/// </summary>
+	public static IList<IEntityMappingConfiguration> GetMappingConfigurations(this Database database)
+	{
+		return _configurations.GetOrAdd(database.GetType(), type =>
+		{
+			var assembly = database.GetMappingAssembly();
+			var types = assembly.GetTypes();
+			var mappingTypes = types.Where(x => !x.IsAbstract && x.GetInterfaces().Any(y => y == typeof(IEntityMappingConfiguration)));
+
+			var response = mappingTypes
+				.Select(x => x.CreateInstance())
+				.Cast<IEntityMappingConfiguration>()
+				.ToList();
+
+			return response;
+		});
+	}
+
+	/// <summary>
 	/// Determines the database provider type for the database.
 	/// </summary>
 	/// <param name="database"> The database to be tested. </param>
@@ -253,7 +285,7 @@ public static class DatabaseExtensions
 		}
 	}
 
-	private static Expression GetPropertyExpression(this Type type, string name)
+	private static LambdaExpression GetPropertyExpression(this Type type, string name)
 	{
 		var parameter = Expression.Parameter(type, "x");
 		var memberExpression = Expression.Property(parameter, name);
@@ -261,7 +293,7 @@ public static class DatabaseExtensions
 		return lambdaExpression;
 	}
 
-	private static Expression GetPropertyObjectExpression(this Type type, string name)
+	private static LambdaExpression GetPropertyObjectExpression(this Type type, string name)
 	{
 		var parameter = Expression.Parameter(type, "x");
 		var memberExpression = Expression.Property(parameter, name);
@@ -270,7 +302,7 @@ public static class DatabaseExtensions
 		return lambdaExpression;
 	}
 
-	private static IDictionary<string, ICollection<string>> ValidateMappings(Assembly assembly)
+	private static Dictionary<string, ICollection<string>> ValidateMappings(Assembly assembly)
 	{
 		var types = assembly.GetTypes();
 		var mappingTypes = types.Where(x => !x.IsAbstract && x.GetInterfaces().Any(y => y == typeof(IEntityMappingConfiguration)));

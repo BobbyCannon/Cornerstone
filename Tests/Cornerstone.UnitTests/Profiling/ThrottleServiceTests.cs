@@ -24,12 +24,12 @@ public class ThrottleServiceTests : CornerstoneUnitTest
 	{
 		var actual = new List<int>();
 
-		void work(CancellationToken token, int data)
+		void Work(CancellationToken token, int data)
 		{
 			actual.Add(data);
 		}
 
-		ForEachService<int>(TimeSpan.FromSeconds(10), work, this, service =>
+		ForEachService<int>(TimeSpan.FromSeconds(10), Work, this, service =>
 		{
 			actual.Clear();
 
@@ -71,7 +71,7 @@ public class ThrottleServiceTests : CornerstoneUnitTest
 			watch.Stop();
 
 			// Should never be greater than 100 ms +- 10/15ms, if so it's locked with
-			// TimeService and the wait expired.
+			// DateTimeProvider.RealTime and the wait expired.
 			IsTrue(result, "The wait timed out... it should not have...");
 			IsFalse(watch.Elapsed.TotalMilliseconds > 250);
 			watch.Elapsed.Dump();
@@ -83,30 +83,30 @@ public class ThrottleServiceTests : CornerstoneUnitTest
 	{
 		var actual = new List<int>();
 
-		void work(CancellationToken token, int data)
+		void Work(CancellationToken token, int data)
 		{
 			actual.Add(data);
 		}
 
-		ForEachService<int>(TimeSpan.FromSeconds(10), work, this, service =>
+		ForEachService<int>(TimeSpan.FromSeconds(10), Work, this, service =>
 		{
 			actual.Clear();
 
 			IsFalse(service.IsTriggered);
-			AreEqual(0, actual.Count, service.CurrentTime.ToString());
+			AreEqual(0, actual.Count, () => service.CurrentTime.ToString());
 
 			for (var i = 1; i < 10; i++)
 			{
 				service.Trigger(i);
-				AreEqual(0, actual.Count, service.CurrentTime.ToString());
+				AreEqual(0, actual.Count, () => service.CurrentTime.ToString());
 				IsTrue(service.IsTriggered, service.CurrentTime.ToString());
 			}
 
 			IncrementTime(seconds: 10);
 			IsTrue(this.WaitUntil(() => !service.IsTriggered && !service.IsProcessing, 1000, 10), service.CurrentTime.ToString());
 			IsFalse(service.IsTriggered);
-			AreEqual(1, actual.Count, service.CurrentTime.ToString());
-			AreEqual(9, actual[0], service.CurrentTime.ToString());
+			AreEqual(1, actual.Count, () => service.CurrentTime.ToString());
+			AreEqual(9, actual[0], () => service.CurrentTime.ToString());
 		});
 	}
 
@@ -117,13 +117,13 @@ public class ThrottleServiceTests : CornerstoneUnitTest
 		var expected = new List<int>();
 		var count = 2;
 
-		void work(CancellationToken token, int data)
+		void Work(CancellationToken token, int data)
 		{
 			//Console.WriteLine(data);
 			actual.Add(data);
 		}
 
-		ForEachService<int>(TimeSpan.FromSeconds(1), work, this, service =>
+		ForEachService<int>(TimeSpan.FromSeconds(1), Work, this, service =>
 		{
 			actual.Clear();
 			expected.Clear();
@@ -182,12 +182,12 @@ public class ThrottleServiceTests : CornerstoneUnitTest
 		var actual = new List<int>();
 		var interval = TimeSpan.FromSeconds(10);
 
-		void work(CancellationToken token, int data)
+		void Work(CancellationToken token, int data)
 		{
 			actual.Add(data);
 		}
 
-		ForEachService<int>(interval, work, this, service =>
+		ForEachService<int>(interval, Work, this, service =>
 		{
 			service.Trigger(1);
 
@@ -240,7 +240,7 @@ public class ThrottleServiceTests : CornerstoneUnitTest
 		var expected = new List<int>();
 		var count = 25;
 
-		void work(CancellationToken token, int data)
+		void Work(CancellationToken token, int data)
 		{
 			//Console.WriteLine(data);
 			actual.Add(data);
@@ -248,7 +248,7 @@ public class ThrottleServiceTests : CornerstoneUnitTest
 
 		var watch = Stopwatch.StartNew();
 
-		ForEachService<int>(TimeSpan.FromMilliseconds(10), work, null, service =>
+		ForEachService<int>(TimeSpan.FromMilliseconds(1), Work, null, service =>
 		{
 			actual.Clear();
 			expected.Clear();
@@ -262,7 +262,7 @@ public class ThrottleServiceTests : CornerstoneUnitTest
 
 			var b = this.WaitUntil(() => !service.IsTriggered, 1000, 10);
 			IsTrue(b, "Should not have timed out... process not running...");
-			AreEqual(expected, actual, $"Elapsed: {watch.Elapsed} : {string.Join(",", actual)}");
+			AreEqual(expected, actual, () => $"Elapsed: {watch.Elapsed} : {string.Join(",", actual)}");
 		});
 	}
 
@@ -273,7 +273,7 @@ public class ThrottleServiceTests : CornerstoneUnitTest
 		var expected = new List<int> { 1 };
 		ThrottleService<int> currentService = null;
 
-		void work(CancellationToken token, int data)
+		void Work(CancellationToken token, int data)
 		{
 			if (data == 1)
 			{
@@ -285,7 +285,7 @@ public class ThrottleServiceTests : CornerstoneUnitTest
 			actual.Add(data);
 		}
 
-		ForEachService<int>(TimeSpan.FromMilliseconds(25), work, null, service =>
+		ForEachService<int>(TimeSpan.FromMilliseconds(25), Work, null, service =>
 		{
 			// ReSharper disable once RedundantAssignment
 			currentService = service;
@@ -305,12 +305,12 @@ public class ThrottleServiceTests : CornerstoneUnitTest
 		var actual = new List<int>();
 		var interval = TimeSpan.FromSeconds(10);
 
-		void work(CancellationToken token, int data)
+		void Work(CancellationToken token, int data)
 		{
 			actual.Add(data);
 		}
 
-		ForEachService<int>(interval, work, this, service =>
+		ForEachService<int>(interval, Work, this, service =>
 		{
 			service.QueueTriggers = true;
 			service.Trigger(1);
@@ -373,15 +373,15 @@ public class ThrottleServiceTests : CornerstoneUnitTest
 		}
 	}
 
-	private IEnumerable<ThrottleService> GetServices(TimeSpan interval, Action<CancellationToken> action, IDateTimeProvider timeService)
+	private IEnumerable<ThrottleService> GetServices(TimeSpan interval, Action<CancellationToken> action, IDateTimeProvider timeProvider)
 	{
-		yield return new ThrottleService(interval, action, timeService);
+		yield return new ThrottleService(interval, action, timeProvider);
 		//yield return new ThrottleServiceAsync(interval, c => Task.Run(() => action(c)), useTimeService);
 	}
 
-	private IEnumerable<ThrottleService<T>> GetServices<T>(TimeSpan interval, Action<CancellationToken, T> action, IDateTimeProvider timeService)
+	private IEnumerable<ThrottleService<T>> GetServices<T>(TimeSpan interval, Action<CancellationToken, T> action, IDateTimeProvider timeProvider)
 	{
-		yield return new ThrottleService<T>(interval, action, timeService);
+		yield return new ThrottleService<T>(interval, action, timeProvider);
 		//yield return new ThrottleServiceAsync<T>(interval, (c, t) => Task.Run(() => action(c, t)), useTimeService).Dump();
 	}
 

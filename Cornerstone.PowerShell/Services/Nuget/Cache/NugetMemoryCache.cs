@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Concurrent;
 using Cornerstone.Extensions;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -47,13 +48,13 @@ public class NugetMemoryCache : INugetCache
 			x =>
 			{
 				var p = factory.Invoke(x);
-				p.UpdatedOn = TimeService.CurrentTime.UtcNow;
+				p.UpdatedOn = DateTimeProvider.RealTime.UtcNow;
 				return p;
 			},
 			(x, y) =>
 			{
 				var p = factory.Invoke(x);
-				p.UpdatedOn = TimeService.CurrentTime.UtcNow;
+				p.UpdatedOn = DateTimeProvider.RealTime.UtcNow;
 				return p;
 			}
 		);
@@ -72,7 +73,7 @@ public class NugetMemoryCache : INugetCache
 		var response = _cache.GetOrAdd(packageId, x =>
 		{
 			var p = factory.Invoke(x);
-			p.UpdatedOn = TimeService.CurrentTime.UtcNow;
+			p.UpdatedOn = DateTimeProvider.RealTime.UtcNow;
 			return p;
 		});
 

@@ -84,7 +84,7 @@ public class CsvReaderTests : CornerstoneUnitTest
 	public void CsvSpecTest3()
 	{
 		var csv = "field_1,field_2,field_3\r\naaa,bbb,ccc\r\nxxx,yyy,zzz";
-		var options = new CsvOptions { HasHeader = true };
+		var options = new CsvConverterSettings { HasHeader = true };
 		var l = CsvReader.ReadContent<CsvValue>(csv, options, (o, c) =>
 		{
 			o.Value1 = c[0];

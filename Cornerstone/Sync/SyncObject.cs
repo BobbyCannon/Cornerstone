@@ -21,7 +21,7 @@ public struct SyncObject : IComparable<SyncObject>, IEquatable<SyncObject>
 
 	static SyncObject()
 	{
-		OutgoingSerializationOptions = new SerializationOptions
+		OutgoingSerializationSettings = new SerializationSettings
 		{
 			IgnoreDefaultValues = true,
 			IgnoreNullValues = true,
@@ -65,7 +65,7 @@ public struct SyncObject : IComparable<SyncObject>, IEquatable<SyncObject>
 	/// <summary>
 	/// Cached serializer settings.
 	/// </summary>
-	internal static SerializationOptions OutgoingSerializationOptions { get; }
+	internal static SerializationSettings OutgoingSerializationSettings { get; }
 
 	#endregion
 
@@ -149,7 +149,7 @@ public struct SyncObject : IComparable<SyncObject>, IEquatable<SyncObject>
 			throw new InvalidDataException("The sync object has an invalid type name.");
 		}
 
-		return Data.FromJson(type, OutgoingSerializationOptions) as ISyncEntity;
+		return Data.FromJson(type, OutgoingSerializationSettings) as ISyncEntity;
 	}
 
 	/// <summary>
@@ -158,7 +158,7 @@ public struct SyncObject : IComparable<SyncObject>, IEquatable<SyncObject>
 	/// <returns> The sync entity to convert into a sync object. </returns>
 	public static SyncObject ToSyncObject(ISyncEntity syncEntity)
 	{
-		var json = syncEntity.ToJson(OutgoingSerializationOptions);
+		var json = syncEntity.ToJson(OutgoingSerializationSettings);
 
 		return new SyncObject
 		{

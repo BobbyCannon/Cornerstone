@@ -224,7 +224,7 @@ public abstract class NmeaMessage
 	/// </summary>
 	/// <param name="sentence"> The sentence to calculate for. </param>
 	/// <returns> The checksum in a two-character hexadecimal format. </returns>
-	private static string CalculateChecksum(string sentence)
+	public static string CalculateChecksum(string sentence)
 	{
 		if (string.IsNullOrWhiteSpace(sentence) || (sentence.Length < 2))
 		{

@@ -8,6 +8,7 @@ using Cornerstone.Extensions;
 using Cornerstone.Protocols.Nmea.Exceptions;
 using Cornerstone.Protocols.Nmea.Messages;
 using Cornerstone.Protocols.Osc;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -139,7 +140,7 @@ public class NmeaParser
 						return null;
 					}
 					p.Parse(sentence);
-					p.ReceivedOn = timestamp ?? TimeService.RealTime.UtcNow;
+					p.ReceivedOn = timestamp ?? DateTimeProvider.RealTime.UtcNow;
 					return p;
 				}
 			}

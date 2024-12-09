@@ -16,7 +16,7 @@ public class HighlightedLineMergeTests
 {
 	#region Fields
 
-	private readonly IDocument document = new TextDocument(new string(' ', 20));
+	private readonly ITextEditorDocument _document = new TextEditorDocument(new string(' ', 20));
 
 	#endregion
 
@@ -25,10 +25,10 @@ public class HighlightedLineMergeTests
 	[TestMethod]
 	public void SimpleMerge1()
 	{
-		var baseLine = new HighlightedLine(document, document.GetLineByNumber(1));
+		var baseLine = new HighlightedLine(_document, _document.GetLineByNumber(1));
 		baseLine.Sections.Add(MakeSection(0, 1, "B"));
 
-		var additionalLine = new HighlightedLine(document, document.GetLineByNumber(1));
+		var additionalLine = new HighlightedLine(_document, _document.GetLineByNumber(1));
 		additionalLine.Sections.Add(MakeSection(0, 2, "A"));
 
 		baseLine.MergeWith(additionalLine);
@@ -45,11 +45,11 @@ public class HighlightedLineMergeTests
 	[TestMethod]
 	public void SimpleMerge2()
 	{
-		var baseLine = new HighlightedLine(document, document.GetLineByNumber(1));
+		var baseLine = new HighlightedLine(_document, _document.GetLineByNumber(1));
 		baseLine.Sections.Add(MakeSection(0, 1, "B"));
 		baseLine.Sections.Add(MakeSection(0, 1, "BN"));
 
-		var additionalLine = new HighlightedLine(document, document.GetLineByNumber(1));
+		var additionalLine = new HighlightedLine(_document, _document.GetLineByNumber(1));
 		additionalLine.Sections.Add(MakeSection(0, 2, "A"));
 
 		baseLine.MergeWith(additionalLine);
@@ -66,7 +66,7 @@ public class HighlightedLineMergeTests
 
 	private HighlightedSection MakeSection(int start, int end, string name)
 	{
-		return new HighlightedSection { Offset = start, Length = end - start, Color = new HighlightingColor { Name = name } };
+		return new HighlightedSection { StartIndex = start, Length = end - start, Color = new HighlightingColor { Name = name } };
 	}
 
 	#endregion
@@ -79,12 +79,12 @@ public class HighlightedLineMergeTests
 
 		public bool Equals(HighlightedSection a, HighlightedSection b)
 		{
-			return (a.Offset == b.Offset) && (a.Length == b.Length) && (a.Color.Name == b.Color.Name);
+			return (a.StartIndex == b.StartIndex) && (a.Length == b.Length) && (a.Color.Name == b.Color.Name);
 		}
 
 		public int GetHashCode(HighlightedSection obj)
 		{
-			return obj.Offset;
+			return obj.StartIndex;
 		}
 
 		#endregion

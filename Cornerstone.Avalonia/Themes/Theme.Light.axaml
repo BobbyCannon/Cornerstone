@@ -1,0 +1,59 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<!-- Code Generated - Colors -->
+
+	<!-- Backgrounds -->
+	<Color x:Key="Background00">#FFFFFF</Color>
+	<Color x:Key="Background01">#F0F0F0</Color>
+	<Color x:Key="Background02">#E1E1E1</Color>
+	<Color x:Key="Background03">#D2D2D2</Color>
+	<Color x:Key="Background04">#C3C3C3</Color>
+	<Color x:Key="Background05">#B5B5B5</Color>
+	<Color x:Key="Background06">#A7A7A7</Color>
+	<Color x:Key="Background07">#999999</Color>
+	<Color x:Key="Background08">#8B8B8B</Color>
+	<Color x:Key="Background09">#7E7E7E</Color>
+
+	<!-- Foregrounds -->
+	<Color x:Key="Foreground00">#000000</Color>
+	<Color x:Key="Foreground01">#191919</Color>
+	<Color x:Key="Foreground02">#2A2A2A</Color>
+	<Color x:Key="Foreground03">#3D3D3D</Color>
+	<Color x:Key="Foreground04">#515151</Color>
+	<Color x:Key="Foreground05">#666666</Color>
+	<Color x:Key="Foreground06">#7B7B7B</Color>
+	<Color x:Key="Foreground07">#929292</Color>
+	<Color x:Key="Foreground08">#A9A9A9</Color>
+	<Color x:Key="Foreground09">#C0C0C0</Color>
+
+	<!-- Code Generated - /Colors -->
+
+	<ResourceDictionary.MergedDictionaries>
+		<ResourceInclude Source="avares://Cornerstone.Avalonia/Themes/Theme.Shared.axaml" />
+	</ResourceDictionary.MergedDictionaries>
+
+	<Design.PreviewWith>
+		<Border>
+			<StackPanel>
+				<StackPanel.Styles>
+					<Style Selector="TextBlock">
+						<Setter Property="Padding" Value="10,4" />
+					</Style>
+				</StackPanel.Styles>
+				<!-- Code Generated - PreviewWith -->
+				<TextBlock Background="#FFFFFF" Foreground="#000000" Text="Color 00" />
+				<TextBlock Background="#F0F0F0" Foreground="#191919" Text="Color 01" />
+				<TextBlock Background="#E1E1E1" Foreground="#2A2A2A" Text="Color 02" />
+				<TextBlock Background="#D2D2D2" Foreground="#3D3D3D" Text="Color 03" />
+				<TextBlock Background="#C3C3C3" Foreground="#515151" Text="Color 04" />
+				<TextBlock Background="#B5B5B5" Foreground="#666666" Text="Color 05" />
+				<TextBlock Background="#A7A7A7" Foreground="#7B7B7B" Text="Color 06" />
+				<TextBlock Background="#999999" Foreground="#929292" Text="Color 07" />
+				<TextBlock Background="#8B8B8B" Foreground="#A9A9A9" Text="Color 08" />
+				<TextBlock Background="#7E7E7E" Foreground="#C0C0C0" Text="Color 09" />
+				<!-- Code Generated - /PreviewWith -->
+			</StackPanel>
+		</Border>
+	</Design.PreviewWith>
+</ResourceDictionary>

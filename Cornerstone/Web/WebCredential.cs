@@ -87,8 +87,8 @@ public class WebCredential : Credential
 	/// Update the WebCredential with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public virtual bool UpdateWith(WebCredential update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	public virtual bool UpdateWith(WebCredential update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -98,25 +98,25 @@ public class WebCredential : Credential
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			RememberMe = update.RememberMe;
 		}
 		else
 		{
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(RememberMe)), x => x.RememberMe = update.RememberMe);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(RememberMe)), x => x.RememberMe = update.RememberMe);
 		}
 
-		return base.UpdateWith(update, options);
+		return base.UpdateWith(update, settings);
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
-			WebCredential credential => UpdateWith(credential, options),
-			_ => base.UpdateWith(update, options)
+			WebCredential credential => UpdateWith(credential, settings),
+			_ => base.UpdateWith(update, settings)
 		};
 	}
 

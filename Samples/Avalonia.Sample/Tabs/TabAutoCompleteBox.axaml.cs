@@ -10,6 +10,7 @@ using Avalonia.Data;
 using Avalonia.Data.Converters;
 using Avalonia.LogicalTree;
 using Avalonia.Markup.Xaml;
+using Cornerstone.Avalonia;
 using Cornerstone.Avalonia.Controls;
 
 #endregion

@@ -17,7 +17,7 @@ public class LineManagerTests : CornerstoneUnitTest
 {
 	#region Fields
 
-	private TextDocument _document;
+	private TextEditorDocument _document;
 
 	#endregion
 
@@ -65,7 +65,7 @@ public class LineManagerTests : CornerstoneUnitTest
 	{
 		var line = _document.GetLineByNumber(1);
 		AreEqual(1, line.LineNumber);
-		AreEqual(0, line.Offset);
+		AreEqual(0, line.StartIndex);
 		Assert.IsFalse(line.IsDeleted);
 		AreEqual(0, line.Length);
 		AreEqual(0, line.TotalLength);
@@ -346,7 +346,7 @@ public class LineManagerTests : CornerstoneUnitTest
 	{
 		var line = _document.GetLineByNumber(1);
 		AreEqual(0, _document.Lines.IndexOf(line));
-		var lineFromOtherDocument = new TextDocument().GetLineByNumber(1);
+		var lineFromOtherDocument = new TextEditorDocument().GetLineByNumber(1);
 		AreEqual(-1, _document.Lines.IndexOf(lineFromOtherDocument));
 		_document.Text = "a\nb\nc";
 		var middleLine = _document.GetLineByNumber(2);
@@ -564,7 +564,7 @@ public class LineManagerTests : CornerstoneUnitTest
 	[TestInitialize]
 	public void SetUp()
 	{
-		_document = new TextDocument();
+		_document = new TextEditorDocument();
 	}
 
 	private void CheckDocumentLines(params string[] lines)

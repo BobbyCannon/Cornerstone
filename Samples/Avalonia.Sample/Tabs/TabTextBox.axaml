@@ -158,7 +158,7 @@
 			<Label Content="Validation Error"
 					Width="{StaticResource LabelWidth}" />
 			<TextBox
-					Text="An error? That's unpossible."
+					Text="An error? That's impossible."
 					AcceptsReturn="True"
 					Margin="4"
 					Width="{StaticResource TextBoxWidth}">

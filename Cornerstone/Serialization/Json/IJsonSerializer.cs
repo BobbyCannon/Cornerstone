@@ -20,7 +20,7 @@ public interface IJsonSerializer
 	/// <param name="value"> The JSON data to deserialize. </param>
 	/// <param name="settings"> The settings to be used. </param>
 	/// <returns> The deserialized object. </returns>
-	T FromJson<T>(string value, ISerializationOptions settings = null);
+	T FromJson<T>(string value, ISerializationSettings settings = null);
 
 	/// <summary>
 	/// Convert the string into an object.
@@ -29,7 +29,7 @@ public interface IJsonSerializer
 	/// <param name="type"> The type to convert into. </param>
 	/// <param name="settings"> The settings to be used. </param>
 	/// <returns> The deserialized object. </returns>
-	object FromJson(string value, Type type, ISerializationOptions settings = null);
+	object FromJson(string value, Type type, ISerializationSettings settings = null);
 
 	/// <summary>
 	/// Serialize an object into a JSON string.
@@ -38,7 +38,7 @@ public interface IJsonSerializer
 	/// <param name="value"> The object to serialize. </param>
 	/// <param name="settings"> The settings for the serializer. </param>
 	/// <returns> The JSON string of the serialized object. </returns>
-	string ToJson<T>(T value, ISerializationOptions settings = null);
+	string ToJson<T>(T value, ISerializationSettings settings = null);
 
 	/// <summary>
 	/// Serialize an object into a JSON string.
@@ -47,7 +47,7 @@ public interface IJsonSerializer
 	/// <param name="type"> The type of the object to serialize. </param>
 	/// <param name="settings"> The settings for the serializer. </param>
 	/// <returns> The JSON string of the serialized object. </returns>
-	string ToJson(object value, Type type, ISerializationOptions settings = null);
+	string ToJson(object value, Type type, ISerializationSettings settings = null);
 
 	#endregion
 }

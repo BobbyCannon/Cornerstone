@@ -3,7 +3,9 @@
 using System;
 using System.Collections.Generic;
 using Cornerstone.Avalonia.AvaloniaEdit.Utils;
+using Cornerstone.Collections;
 using Cornerstone.Internal;
+using Cornerstone.Text;
 using Cornerstone.Text.Document;
 
 #endregion
@@ -51,12 +53,12 @@ public sealed class SimpleSelection : Selection
 	public override int Length => Math.Abs(_endOffset - _startOffset);
 
 	/// <inheritdoc />
-	public override IEnumerable<SelectionSegment> Segments => ExtensionMethods.Sequence(new SelectionSegment(_startOffset, _start.VisualColumn, _endOffset, _end.VisualColumn));
+	public override IEnumerable<SelectionRange> Segments => ExtensionMethods.Sequence(new SelectionRange(_startOffset, _start.VisualColumn, _endOffset, _end.VisualColumn));
 
 	public override TextViewPosition StartPosition => _start;
 
 	/// <inheritdoc />
-	public override ISegment SurroundingSegment => new SelectionSegment(_startOffset, _endOffset);
+	public override IRange SurroundingRange => new SelectionRange(_startOffset, _endOffset);
 
 	#endregion
 
@@ -95,12 +97,12 @@ public sealed class SimpleSelection : Selection
 		}
 		using (TextArea.Document.RunUpdate())
 		{
-			var segmentsToDelete = TextArea.GetDeletableSegments(SurroundingSegment);
+			var segmentsToDelete = TextArea.GetDeletableSegments(SurroundingRange);
 			for (var i = segmentsToDelete.Length - 1; i >= 0; i--)
 			{
 				if (i == (segmentsToDelete.Length - 1))
 				{
-					if ((segmentsToDelete[i].Offset == SurroundingSegment.Offset) && (segmentsToDelete[i].Length == SurroundingSegment.Length))
+					if ((segmentsToDelete[i].StartIndex == SurroundingRange.StartIndex) && (segmentsToDelete[i].Length == SurroundingRange.Length))
 					{
 						newText = AddSpacesIfRequired(newText, _start, _end);
 					}
@@ -113,7 +115,7 @@ public sealed class SimpleSelection : Selection
 					else
 					{
 						// place caret so that it ends up behind the new text
-						TextArea.Caret.Offset = segmentsToDelete[i].EndOffset;
+						TextArea.Caret.Offset = segmentsToDelete[i].EndIndex;
 					}
 					TextArea.Document.Replace(segmentsToDelete[i], newText);
 				}

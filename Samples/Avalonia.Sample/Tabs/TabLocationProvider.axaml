@@ -6,7 +6,7 @@
 		xmlns:tabs="clr-namespace:Avalonia.Sample.Tabs"
 		xmlns:converters="clr-namespace:Cornerstone.Avalonia.Converters;assembly=Cornerstone.Avalonia"
 		xmlns:avalonia="clr-namespace:Mapsui.UI.Avalonia;assembly=Mapsui.UI.Avalonia"
-		mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="600"
+		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
 		x:Class="Avalonia.Sample.Tabs.TabLocationProvider"
 		x:DataType="tabs:TabLocationProvider">
 	<ScrollViewer
@@ -15,19 +15,22 @@
 		<WrapPanel ItemWidth="320">
 			<StackPanel HorizontalAlignment="Center"
 					Margin="10">
+				<StackPanel.Styles>
+					<Style Selector="StackPanel > :is(Control)">
+						<Setter Property="HorizontalAlignment" Value="Center" />
+					</Style>
+				</StackPanel.Styles>
 				<WrapPanel Orientation="Horizontal"
 						Margin="0,0,0,10">
 					<Button Click="GetCurrentLocationOnClick"
 							Margin="0,0,6,0">
 						Get Current Location
 					</Button>
-					<Button Click="StartMonitoringOnClick"
-							IsVisible="{Binding !LocationProvider.IsMonitoring, Mode=OneWay}"
+					<Button Command="{Binding LocationProvider.StartMonitoringCommand}"
 							Margin="0,0,6,0">
 						Start Monitoring
 					</Button>
-					<Button Click="StopMonitoringOnClick"
-							IsVisible="{Binding LocationProvider.IsMonitoring, Mode=OneWay}"
+					<Button Command="{Binding LocationProvider.StopMonitoringCommand}"
 							Margin="0,0,6,0">
 						Stop Monitoring
 					</Button>
@@ -132,7 +135,7 @@
 							FormatString="F2"
 							IsEnabled="{Binding LocationProvider.CurrentValue.HorizontalLocation.HasHeading, Mode=OneWay}"
 							Margin="0,20,0,0"
-							Value="{Binding LocationProvider.CurrentValue.HorizontalLocation.Heading, Mode=OneWay, Converter={x:Static converters:NumberConverters.DoubleToDecimal}}"
+							Value="{Binding LocationProvider.CurrentValue.HorizontalLocation.Heading, Mode=OneWay, Converter={x:Static converters:DoubleConverters.DoubleToDecimal}}"
 							Width="230">
 						<NumericUpDown.InnerLeftContent>
 							<TextBlock Text="Heading" />
@@ -142,7 +145,7 @@
 							HorizontalContentAlignment="Right"
 							FormatString="F2"
 							IsEnabled="{Binding LocationProvider.CurrentValue.HorizontalLocation.HasSpeed, Mode=OneWay}"
-							Value="{Binding LocationProvider.CurrentValue.HorizontalLocation.Speed, Mode=OneWay, Converter={x:Static converters:NumberConverters.DoubleToDecimal}}"
+							Value="{Binding LocationProvider.CurrentValue.HorizontalLocation.Speed, Mode=OneWay, Converter={x:Static converters:DoubleConverters.DoubleToDecimal}}"
 							Width="230">
 						<NumericUpDown.InnerLeftContent>
 							<TextBlock Text="Speed" />

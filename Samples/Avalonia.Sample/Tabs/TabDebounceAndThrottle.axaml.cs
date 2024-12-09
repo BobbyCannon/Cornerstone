@@ -4,15 +4,17 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Sample.ViewModels;
 using Avalonia.Threading;
-using Cornerstone;
 using Cornerstone.Avalonia;
 using Cornerstone.Avalonia.Controls;
 using Cornerstone.Collections;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
 using Cornerstone.Profiling;
+using Cornerstone.Runtime;
 using LiveChartsCore;
 using LiveChartsCore.Defaults;
 using LiveChartsCore.SkiaSharpView;
@@ -43,12 +45,16 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 
 	#region Constructors
 
-	public TabDebounceAndThrottle() : this(new CornerstoneDispatcher())
+	public TabDebounceAndThrottle() : this(
+		DesignModeDependencyProvider.Get<IDateTimeProvider>(),
+		DesignModeDependencyProvider.Get<IDispatcher>())
 	{
 	}
 
-	public TabDebounceAndThrottle(IDispatcher dispatcher)
+	public TabDebounceAndThrottle(IDateTimeProvider timeProvider, IDispatcher dispatcher)
 	{
+		TimeProvider = timeProvider;
+
 		DebounceRequests = new SpeedyList<DateTimePoint>(dispatcher);
 		Debounces = new SpeedyList<DateTimePoint>(dispatcher) { Limit = 250 };
 		Debounce = new DebounceService<int>(TimeSpan.FromSeconds(2), DebouncedMethod, null, dispatcher);
@@ -83,7 +89,7 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 
 		_customXAxis = new DateTimeAxis(TimeSpan.FromSeconds(1), Formatter)
 		{
-			CustomSeparators = GetSeparators(TimeService.RealTime.Now),
+			CustomSeparators = GetSeparators(DateTimeProvider.RealTime.Now),
 			AnimationsSpeed = TimeSpan.FromMilliseconds(0),
 			SeparatorsPaint = new SolidColorPaint(SKColors.White.WithAlpha(100)),
 			ShowSeparatorLines = true,
@@ -105,6 +111,8 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 	#region Properties
 
 	public SpeedyList<DateTimePoint> DebounceRequests { get; set; }
+
+	public IDateTimeProvider TimeProvider { get; }
 
 	public SpeedyList<DateTimePoint> Debounces { get; set; }
 
@@ -141,7 +149,7 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 			Thread.Sleep(1000);
 			_secondsTimer.IsEnabled = true;
 		});
-		
+
 		base.OnLoaded(e);
 	}
 
@@ -184,14 +192,14 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 			Thread.Sleep(250);
 		}
 
-		Debounces.Add(new DateTimePoint(TimeService.RealTime.Now, arg2));
+		Debounces.Add(new DateTimePoint(DateTimeProvider.RealTime.Now, arg2));
 
 		AppendText("- Debounce\r\n");
 	}
 
 	private void DebounceOnClick(object sender, RoutedEventArgs e)
 	{
-		DebounceRequests.Add(new DateTimePoint(TimeService.RealTime.Now, 1));
+		DebounceRequests.Add(new DateTimePoint(DateTimeProvider.RealTime.Now, 1));
 		Debounce.Trigger(1);
 	}
 
@@ -202,11 +210,8 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 
 	private static string Formatter(DateTime date)
 	{
-		var secsAgo = (TimeService.RealTime.Now - date).TotalSeconds;
-
-		return secsAgo < 1
-			? "now"
-			: $"{secsAgo:N0}s ago";
+		var secsAgo = (DateTimeProvider.RealTime.Now - date).TotalSeconds;
+		return secsAgo < 1 ? "now" : $"{secsAgo:N0}s ago";
 	}
 
 	private double[] GetSeparators(DateTime from)
@@ -244,14 +249,14 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 			Thread.Sleep(250);
 		}
 
-		Throttles.Add(new DateTimePoint(TimeService.RealTime.Now, arg2));
+		Throttles.Add(new DateTimePoint(DateTimeProvider.RealTime.Now, arg2));
 
 		AppendText("- Throttle\r\n");
 	}
 
 	private void ThrottleOnClick(object sender, RoutedEventArgs e)
 	{
-		ThrottleRequests.Add(new DateTimePoint(TimeService.RealTime.Now, 2));
+		ThrottleRequests.Add(new DateTimePoint(DateTimeProvider.RealTime.Now, 2));
 		Throttle.Trigger(2);
 	}
 
@@ -262,7 +267,7 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 
 	private void TimerTick(object sender, EventArgs e)
 	{
-		var currentTime = TimeService.RealTime.Now;
+		var currentTime = DateTimeProvider.RealTime.Now;
 
 		try
 		{

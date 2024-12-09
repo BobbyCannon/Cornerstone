@@ -43,7 +43,7 @@ public class TypeActivator<T, T2> : TypeActivator
 	#region Constructors
 
 	/// <inheritdoc />
-	public TypeActivator(Func<object[], T2> activator) : base(typeof(T))
+	public TypeActivator(Func<object[], T2> activator) : base(typeof(T), null)
 	{
 		_activator = activator;
 	}
@@ -109,16 +109,24 @@ public class TypeActivator<T, T2> : TypeActivator
 /// <summary>
 /// Allows assigning an interface to a specific implementation.
 /// </summary>
-public abstract class TypeActivator
+public class TypeActivator
 {
+	#region Fields
+
+	private readonly Func<object[], object> _activator;
+
+	#endregion
+
 	#region Constructors
 
 	/// <summary>
 	/// Create an instance of the type activator.
 	/// </summary>
 	/// <param name="type"> The type this activator is for. </param>
-	protected TypeActivator(Type type)
+	/// <param name="activator"> The activator to create the type. </param>
+	public TypeActivator(Type type, Func<object[], object> activator)
 	{
+		_activator = activator;
 		Lock = new ReaderWriterLockTiny();
 		Type = type;
 	}
@@ -156,7 +164,10 @@ public abstract class TypeActivator
 	/// </summary>
 	/// <param name="arguments"> The value of the arguments. </param>
 	/// <returns> The new instances of the type. </returns>
-	public abstract object CreateInstanceObject(params object[] arguments);
+	public virtual object CreateInstanceObject(params object[] arguments)
+	{
+		return _activator.Invoke(arguments);
+	}
 
 	#endregion
 }

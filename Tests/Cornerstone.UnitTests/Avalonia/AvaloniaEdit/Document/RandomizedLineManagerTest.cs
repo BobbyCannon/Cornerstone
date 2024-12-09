@@ -18,7 +18,7 @@ public class RandomizedLineManagerTest : CornerstoneUnitTest
 {
 	#region Fields
 
-	private TextDocument _document;
+	private TextEditorDocument _document;
 
 	#endregion
 
@@ -125,7 +125,7 @@ public class RandomizedLineManagerTest : CornerstoneUnitTest
 	[TestInitialize]
 	public void Setup()
 	{
-		_document = new TextDocument();
+		_document = new TextEditorDocument();
 	}
 
 	[TestMethod]
@@ -161,7 +161,7 @@ public class RandomizedLineManagerTest : CornerstoneUnitTest
 				var line = _document.GetLineByNumber(lineNumber);
 				AreEqual(lineNumber, line.LineNumber);
 				AreEqual(2, line.DelimiterLength);
-				AreEqual(lineStart, line.Offset);
+				AreEqual(lineStart, line.StartIndex);
 				AreEqual(i - lineStart, line.Length);
 				i++; // consume \n
 				lineNumber++;
@@ -172,7 +172,7 @@ public class RandomizedLineManagerTest : CornerstoneUnitTest
 				var line = _document.GetLineByNumber(lineNumber);
 				AreEqual(lineNumber, line.LineNumber);
 				AreEqual(1, line.DelimiterLength);
-				AreEqual(lineStart, line.Offset);
+				AreEqual(lineStart, line.StartIndex);
 				AreEqual(i - lineStart, line.Length);
 				lineNumber++;
 				lineStart = i + 1;

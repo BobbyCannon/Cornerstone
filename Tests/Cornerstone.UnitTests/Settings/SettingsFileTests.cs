@@ -25,7 +25,7 @@ public class SettingsFileTests : CornerstoneUnitTest
 		IsFalse(settings.HasChanges());
 
 		settings.IsEnabled = true;
-		settings.Options.AddRange("abc", "123");
+		settings.Options.Add("abc", "123");
 		IsTrue(settings.HasChanges());
 		
 		var json = settings.ToJson();
@@ -88,15 +88,15 @@ public class SettingsFileTests : CornerstoneUnitTest
 		/// <param name="update"> The update to be applied. </param>
 		public virtual bool UpdateWith(SampleSettings update)
 		{
-			return UpdateWith(update, IncludeExcludeOptions.Empty);
+			return UpdateWith(update, IncludeExcludeSettings.Empty);
 		}
 
 		/// <summary>
 		/// Update the SampleSettings with an update.
 		/// </summary>
 		/// <param name="update"> The update to be applied. </param>
-		/// <param name="options"> The options for controlling the updating of the entity. </param>
-		public virtual bool UpdateWith(SampleSettings update, IncludeExcludeOptions options)
+		/// <param name="settings> The options for controlling the updating of the entity. </param>
+		public virtual bool UpdateWith(SampleSettings update, IncludeExcludeSettings settings)
 		{
 			// If the update is null then there is nothing to do.
 			if (update == null)
@@ -106,27 +106,27 @@ public class SettingsFileTests : CornerstoneUnitTest
 
 			// ****** You can use GenerateUpdateWith to update this ******
 
-			if ((options == null) || options.IsEmpty())
+			if ((settings == null) || settings.IsEmpty())
 			{
 				IsEnabled = update.IsEnabled;
 				Options.Reconcile(update.Options);
 			}
 			else
 			{
-				this.IfThen(_ => options.ShouldProcessProperty(nameof(IsEnabled)), x => x.IsEnabled = update.IsEnabled);
-				this.IfThen(_ => options.ShouldProcessProperty(nameof(Options)), x => x.Options.Reconcile(update.Options));
+				this.IfThen(_ => settings.ShouldProcessProperty(nameof(IsEnabled)), x => x.IsEnabled = update.IsEnabled);
+				this.IfThen(_ => settings.ShouldProcessProperty(nameof(Options)), x => x.Options.Reconcile(update.Options));
 			}
 
 			return true;
 		}
 
 		/// <inheritdoc />
-		public override bool UpdateWith(object update, IncludeExcludeOptions options)
+		public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 		{
 			return update switch
 			{
-				SampleSettings value => UpdateWith(value, options),
-				_ => base.UpdateWith(update, options)
+				SampleSettings value => UpdateWith(value, settings),
+				_ => base.UpdateWith(update, settings)
 			};
 		}
 

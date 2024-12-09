@@ -9,10 +9,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.TextFormatting;
-using Cornerstone.Avalonia.AvaloniaEdit.Utils;
 using Cornerstone.Internal;
 using Cornerstone.Text.Document;
-using PropertyChanged;
+using Cornerstone.Weaver;
 using LogicalDirection = Cornerstone.Text.Document.LogicalDirection;
 
 #endregion
@@ -64,7 +63,7 @@ public sealed class VisualLine
 	/// <summary>
 	/// Gets the document to which this VisualLine belongs.
 	/// </summary>
-	public TextDocument Document { get; }
+	public TextEditorDocument Document { get; }
 
 	/// <summary>
 	/// Gets a read-only collection of line elements.
@@ -95,7 +94,7 @@ public sealed class VisualLine
 	/// Gets the start offset of the VisualLine inside the document.
 	/// This is equivalent to <c> FirstDocumentLine.Offset </c>.
 	/// </summary>
-	public int StartOffset => FirstDocumentLine.Offset;
+	public int StartOffset => FirstDocumentLine.StartIndex;
 
 	/// <summary>
 	/// Gets a read-only collection of text lines.
@@ -125,7 +124,7 @@ public sealed class VisualLine
 		get
 		{
 			var length = VisualLength;
-			if (_textView.Options.ShowEndOfLine && (LastDocumentLine.NextLine != null))
+			if (_textView.Settings.ShowEndOfLine && (LastDocumentLine.NextLine != null))
 			{
 				length++;
 			}
@@ -173,7 +172,7 @@ public sealed class VisualLine
 			{
 				return 0;
 			}
-			if ((visualColumn > 0) && (direction ==  LogicalDirection.Backward))
+			if ((visualColumn > 0) && (direction == LogicalDirection.Backward))
 			{
 				return 0;
 			}
@@ -181,7 +180,7 @@ public sealed class VisualLine
 		}
 
 		int i;
-		if (direction ==  LogicalDirection.Backward)
+		if (direction == LogicalDirection.Backward)
 		{
 			// Search Backwards:
 			// If the last element doesn't handle line borders, return the line end as caret stop
@@ -418,7 +417,7 @@ public sealed class VisualLine
 	/// </summary>
 	public TextViewPosition GetTextViewPosition(int visualColumn)
 	{
-		var documentOffset = GetRelativeOffset(visualColumn) + FirstDocumentLine.Offset;
+		var documentOffset = GetRelativeOffset(visualColumn) + FirstDocumentLine.StartIndex;
 		return new TextViewPosition(Document.GetLocation(documentOffset), visualColumn);
 	}
 
@@ -434,7 +433,7 @@ public sealed class VisualLine
 	public TextViewPosition GetTextViewPosition(Point visualPosition, bool allowVirtualSpace)
 	{
 		var visualColumn = GetVisualColumn(visualPosition, allowVirtualSpace, out var isAtEndOfLine);
-		var documentOffset = GetRelativeOffset(visualColumn) + FirstDocumentLine.Offset;
+		var documentOffset = GetRelativeOffset(visualColumn) + FirstDocumentLine.StartIndex;
 		var pos = new TextViewPosition(Document.GetLocation(documentOffset), visualColumn)
 		{
 			IsAtEndOfLine = isAtEndOfLine
@@ -454,7 +453,7 @@ public sealed class VisualLine
 	public TextViewPosition GetTextViewPositionFloor(Point visualPosition, bool allowVirtualSpace)
 	{
 		var visualColumn = GetVisualColumnFloor(visualPosition, allowVirtualSpace, out var isAtEndOfLine);
-		var documentOffset = GetRelativeOffset(visualColumn) + FirstDocumentLine.Offset;
+		var documentOffset = GetRelativeOffset(visualColumn) + FirstDocumentLine.StartIndex;
 		var pos = new TextViewPosition(Document.GetLocation(documentOffset), visualColumn)
 		{
 			IsAtEndOfLine = isAtEndOfLine
@@ -485,7 +484,7 @@ public sealed class VisualLine
 	/// </summary>
 	public int GetVisualColumn(Point point)
 	{
-		return GetVisualColumn(point, _textView.Options.EnableVirtualSpace);
+		return GetVisualColumn(point, _textView.Settings.EnableVirtualSpace);
 	}
 
 	/// <summary>
@@ -523,7 +522,7 @@ public sealed class VisualLine
 	/// </summary>
 	public int GetVisualColumnFloor(Point point)
 	{
-		return GetVisualColumnFloor(point, _textView.Options.EnableVirtualSpace);
+		return GetVisualColumnFloor(point, _textView.Settings.EnableVirtualSpace);
 	}
 
 	/// <summary>
@@ -607,7 +606,7 @@ public sealed class VisualLine
 	/// </summary>
 	public int ValidateVisualColumn(int offset, int visualColumn, bool allowVirtualSpace)
 	{
-		var firstDocumentLineOffset = FirstDocumentLine.Offset;
+		var firstDocumentLineOffset = FirstDocumentLine.StartIndex;
 		if (visualColumn < 0)
 		{
 			return GetVisualColumn(offset - firstDocumentLineOffset);
@@ -746,15 +745,26 @@ public sealed class VisualLine
 	{
 		var visualOffset = 0;
 		var textOffset = 0;
+		var tabOffset = 0;
 		foreach (var element in _elements)
 		{
 			element.VisualColumn = visualOffset;
 			element.RelativeTextOffset = textOffset;
 			visualOffset += element.VisualLength;
 			textOffset += element.DocumentLength;
+			
+			if (element is SingleCharacterElementGenerator.TabTextElement textElement)
+			{
+				textElement.TabSize = 4 - (tabOffset % 4);
+				tabOffset = 0;
+			}
+			else
+			{
+				tabOffset += element.DocumentLength;
+			}
 		}
 		VisualLength = visualOffset;
-		Debug.Assert(textOffset == (LastDocumentLine.EndOffset - FirstDocumentLine.Offset));
+		Debug.Assert(textOffset == (LastDocumentLine.EndIndex - FirstDocumentLine.StartIndex));
 	}
 
 	private static bool HasImplicitStopAtLineEnd()
@@ -775,7 +785,7 @@ public sealed class VisualLine
 	private void PerformVisualElementConstruction(IReadOnlyList<VisualLineElementGenerator> generators)
 	{
 		var lineLength = FirstDocumentLine.Length;
-		var offset = FirstDocumentLine.Offset;
+		var offset = FirstDocumentLine.StartIndex;
 		var currentLineEnd = offset + lineLength;
 		LastDocumentLine = FirstDocumentLine;
 		var askInterestOffset = 0; // 0 or 1
@@ -828,7 +838,7 @@ public sealed class VisualLine
 							if (offset > currentLineEnd)
 							{
 								var newEndLine = Document.GetLineByOffset(offset);
-								currentLineEnd = newEndLine.Offset + newEndLine.Length;
+								currentLineEnd = newEndLine.StartIndex + newEndLine.Length;
 								LastDocumentLine = newEndLine;
 								if (currentLineEnd < offset)
 								{

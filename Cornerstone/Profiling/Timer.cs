@@ -1,6 +1,8 @@
 ﻿#region References
 
 using System;
+using Cornerstone.Data;
+using Cornerstone.Extensions;
 using Cornerstone.Presentation;
 using Cornerstone.Runtime;
 
@@ -11,13 +13,11 @@ namespace Cornerstone.Profiling;
 /// <summary>
 /// Timer that uses the time service.
 /// </summary>
-public class Timer : Bindable
+public class Timer : Bindable<Timer>
 {
 	#region Fields
 
 	private TimeSpan _elapsed;
-	private DateTime _startedOn;
-	private readonly IDateTimeProvider _timeService;
 
 	#endregion
 
@@ -33,21 +33,21 @@ public class Timer : Bindable
 	/// <summary>
 	/// Initializes an instance of the timer.
 	/// </summary>
-	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
-	public Timer(IDateTimeProvider timeService) : this(timeService, null)
+	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
+	public Timer(IDateTimeProvider timeProvider) : this(timeProvider, null)
 	{
 	}
 
 	/// <summary>
 	/// Initializes an instance of the timer.
 	/// </summary>
-	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
+	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public Timer(IDateTimeProvider timeService, IDispatcher dispatcher) : base(dispatcher)
+	public Timer(IDateTimeProvider timeProvider, IDispatcher dispatcher) : base(dispatcher)
 	{
 		_elapsed = TimeSpan.Zero;
-		_timeService = timeService ?? TimeService.RealTime;
-		_startedOn = DateTime.MinValue;
+		TimeProvider = timeProvider ?? DateTimeProvider.RealTime;
+		StartedOn = DateTime.MinValue;
 	}
 
 	#endregion
@@ -57,16 +57,48 @@ public class Timer : Bindable
 	/// <summary>
 	/// The time elapsed for the timer.
 	/// </summary>
-	public TimeSpan Elapsed => IsRunning ? _elapsed + RunningElapsed() : _elapsed;
+	public TimeSpan Elapsed
+	{
+		get => IsRunning ? _elapsed + RunningElapsed() : _elapsed;
+		set => _elapsed = value;
+	}
 
 	/// <summary>
 	/// Indicates the timer is running or not.
 	/// </summary>
-	public bool IsRunning => _startedOn > DateTime.MinValue;
+	public bool IsRunning => StartedOn > DateTime.MinValue;
+
+	/// <summary>
+	/// The time the timer started, if started.
+	/// </summary>
+	public DateTime StartedOn { get; private set; }
+
+	/// <summary>
+	/// The provider of time.
+	/// </summary>
+	internal IDateTimeProvider TimeProvider { get; }
 
 	#endregion
 
 	#region Methods
+
+	/// <summary>
+	/// Adds the average timer elapsed value to this timer.
+	/// </summary>
+	/// <param name="timer"> The timer to be added. </param>
+	public void Add(AverageTimer timer)
+	{
+		Add(timer.Elapsed);
+	}
+
+	/// <summary>
+	/// Adds the average timer elapsed value to this timer.
+	/// </summary>
+	/// <param name="timer"> The timer to be added. </param>
+	public void Add(Timer timer)
+	{
+		Add(timer.Elapsed);
+	}
 
 	/// <summary>
 	/// Adds the time value to this timer.
@@ -74,9 +106,7 @@ public class Timer : Bindable
 	/// <param name="time"> The time to be added. </param>
 	public void Add(TimeSpan time)
 	{
-		_elapsed = _elapsed.Add(time);
-
-		NotifyOfPropertyChanged(nameof(Elapsed));
+		Elapsed = _elapsed.Add(time);
 	}
 
 	/// <summary>
@@ -115,13 +145,20 @@ public class Timer : Bindable
 	/// <summary>
 	/// Reset the time while provided an elapsed timer.
 	/// </summary>
+	/// <param name="timer"> The value to set elapsed to. </param>
+	public void Reset(Timer timer)
+	{
+		Reset(timer.Elapsed);
+	}
+
+	/// <summary>
+	/// Reset the time while provided an elapsed timer.
+	/// </summary>
 	/// <param name="elapsed"> The value to set elapsed to. </param>
 	public virtual void Reset(TimeSpan elapsed)
 	{
-		_elapsed = elapsed;
-		_startedOn = DateTime.MinValue;
-
-		NotifyOfPropertyChanged(nameof(Elapsed));
+		Elapsed = elapsed;
+		StartedOn = DateTime.MinValue;
 	}
 
 	/// <summary>
@@ -138,10 +175,8 @@ public class Timer : Bindable
 	/// <param name="dateTime"> The time the timer was started. </param>
 	public virtual void Restart(DateTime dateTime)
 	{
-		_elapsed = TimeSpan.Zero;
-		_startedOn = dateTime;
-
-		NotifyOfPropertyChanged(nameof(Elapsed));
+		Elapsed = TimeSpan.Zero;
+		StartedOn = dateTime;
 	}
 
 	/// <summary>
@@ -164,7 +199,7 @@ public class Timer : Bindable
 			return;
 		}
 
-		_startedOn = dateTime;
+		StartedOn = dateTime;
 
 		// Do not trigger the OnPropertyChanged or you risk affecting the timer performance
 		//OnPropertyChanged(nameof(Elapsed));
@@ -174,9 +209,9 @@ public class Timer : Bindable
 	/// Creates a timer and starts it running.
 	/// </summary>
 	/// <returns> The new timer that is currently running. </returns>
-	public static Timer StartNewTimer(IDateTimeProvider timeService = null)
+	public static Timer StartNewTimer(IDateTimeProvider timeProvider = null, IDispatcher dispatcher = null)
 	{
-		var timer = new Timer(timeService, null);
+		var timer = new Timer(timeProvider, dispatcher);
 		timer.Start();
 		return timer;
 	}
@@ -200,13 +235,13 @@ public class Timer : Bindable
 			return TimeSpan.Zero;
 		}
 
-		var elapsed = dateTime - _startedOn;
+		var elapsed = dateTime - StartedOn;
 		if (elapsed.Ticks > 0)
 		{
 			_elapsed += elapsed;
 		}
 
-		_startedOn = DateTime.MinValue;
+		StartedOn = DateTime.MinValue;
 
 		NotifyOfPropertyChanged(nameof(Elapsed));
 		return elapsed;
@@ -223,7 +258,7 @@ public class Timer : Bindable
 		try
 		{
 			// Just set the field directly for performance reasons
-			_startedOn = GetCurrentTime();
+			StartedOn = GetCurrentTime();
 			action();
 		}
 		finally
@@ -244,7 +279,7 @@ public class Timer : Bindable
 		try
 		{
 			// Just set the field directly for performance reasons
-			_startedOn = GetCurrentTime();
+			StartedOn = GetCurrentTime();
 			return function();
 		}
 		finally
@@ -259,13 +294,38 @@ public class Timer : Bindable
 		return Elapsed.ToString();
 	}
 
+	/// <inheritdoc />
+	public override bool UpdateWith(Timer update, IncludeExcludeSettings settings)
+	{
+		// If the update is null then there is nothing to do.
+		if (update == null)
+		{
+			return false;
+		}
+
+		// ****** You can use GenerateUpdateWith to update this ******
+
+		if ((settings == null) || settings.IsEmpty())
+		{
+			_elapsed = update._elapsed;
+			StartedOn = update.StartedOn;
+		}
+		else
+		{
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Elapsed)), x => x._elapsed = update._elapsed);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(StartedOn)), x => x.StartedOn = update.StartedOn);
+		}
+
+		return true;
+	}
+
 	/// <summary>
 	/// Gets the current time for the timer.
 	/// </summary>
 	/// <returns> The current time. </returns>
-	protected virtual DateTime GetCurrentTime()
+	protected internal virtual DateTime GetCurrentTime()
 	{
-		return _timeService.UtcNow;
+		return TimeProvider.UtcNow;
 	}
 
 	/// <summary>
@@ -275,7 +335,7 @@ public class Timer : Bindable
 	private TimeSpan RunningElapsed()
 	{
 		var currentTime = GetCurrentTime();
-		return currentTime - _startedOn;
+		return currentTime - StartedOn;
 	}
 
 	#endregion

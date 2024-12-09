@@ -64,7 +64,7 @@ internal class GeolocationContinuousListener<T, THorizontal, TVertical> : Object
 			}
 		}
 
-		LogEventWritten?.Invoke(this, new LogEventArgs(null, location.GetTimestamp().UtcDateTime, EventLevel.Verbose, $"Location updated, source: {location.Provider}"));
+		LogEventWritten?.Invoke(this, new LogEventArgs(Guid.Empty, location.GetTimestamp().UtcDateTime, EventLevel.Verbose, $"Location updated, source: {location.Provider}"));
 
 		var previous = Interlocked.Exchange(ref _lastLocation, location);
 		previous?.Dispose();

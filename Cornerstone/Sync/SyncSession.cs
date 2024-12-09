@@ -2,9 +2,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Tracing;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using Cornerstone.Collections;
 using Cornerstone.Data;
 using Cornerstone.Exceptions;
@@ -12,6 +14,8 @@ using Cornerstone.Extensions;
 using Cornerstone.Logging;
 using Cornerstone.Net;
 using Cornerstone.Presentation;
+using Cornerstone.Profiling;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -25,6 +29,7 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 	#region Fields
 
 	private readonly SyncManager _syncManager;
+	private readonly IDateTimeProvider _timeProvider;
 
 	#endregion
 
@@ -33,25 +38,20 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 	/// <summary>
 	/// Initiates an instances of the sync session.
 	/// </summary>
-	public SyncSession() : this(null, default, null)
-	{
-	}
-
-	/// <summary>
-	/// Initiates an instances of the sync session.
-	/// </summary>
-	public SyncSession(SyncManager syncManager, string syncType, IDispatcher dispatcher) : base(dispatcher)
+	public SyncSession(SyncManager syncManager, Guid sessionId, string syncType, IDateTimeProvider timeProvider, IDispatcher dispatcher) : base(dispatcher)
 	{
 		_syncManager = syncManager;
+		_timeProvider = timeProvider;
 
-		Options = new SyncOptions(dispatcher);
-		SessionId = Guid.NewGuid();
+		Settings = new SyncSettings(dispatcher);
 		StatisticsForClient = new SyncStatistics(dispatcher);
 		StatisticsForServer = new SyncStatistics(dispatcher);
-		//SyncIssues = new ThreadSafeObservableList<SyncIssue>(null, null, dispatcher);
+		SyncClientProfilerForClient = new Profiler("Client");
+		SyncClientProfilerForServer = new Profiler("Server");
 		SyncIssues = new SpeedyList<SyncIssue>(dispatcher);
 
 		Reset(syncType);
+		SessionId = sessionId;
 	}
 
 	#endregion
@@ -66,13 +66,13 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 		&& (StoppedOn == DateTime.MinValue)
 			? TimeSpan.Zero
 			: StoppedOn == DateTime.MinValue
-				? TimeService.CurrentTime.UtcNow - StartedOn
+				? CurrentTime - StartedOn
 				: StoppedOn - StartedOn;
 
 	/// <summary>
 	/// The sync options.
 	/// </summary>
-	public SyncOptions Options { get; }
+	public SyncSettings Settings { get; }
 
 	/// <summary>
 	/// The percent of processing. This is based on the sync session <see cref="State" />.
@@ -122,12 +122,22 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 	/// <summary>
 	/// Gets a value indicating if the last sync was started.
 	/// </summary>
-	public bool SyncCancelled { get; private set; }
+	public bool SyncCancelled => State.HasFlag(SyncSessionState.Cancelled);
+
+	/// <summary>
+	/// An optional profiler data for the client.
+	/// </summary>
+	public Profiler SyncClientProfilerForClient { get; }
+
+	/// <summary>
+	/// An optional profiler data for the server.
+	/// </summary>
+	public Profiler SyncClientProfilerForServer { get; }
 
 	/// <summary>
 	/// The sync ran to completion.
 	/// </summary>
-	public bool SyncCompleted { get; private set; }
+	public bool SyncCompleted => StoppedOn > DateTime.MinValue;
 
 	/// <summary>
 	/// Gets the list of issues that occurred during the last sync.
@@ -137,7 +147,7 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 	/// <summary>
 	/// Gets a value indicating if the sync is running.
 	/// </summary>
-	public bool SyncRunning => (StartedOn > DateTime.MinValue) && !SyncCompleted;
+	public bool SyncRunning => SyncStarted && !SyncCompleted;
 
 	/// <summary>
 	/// Gets a value indicating if the last sync was started.
@@ -147,12 +157,17 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 	/// <summary>
 	/// Gets a value indicating if the sync was successful.
 	/// </summary>
-	public bool SyncSuccessful { get; private set; }
+	public bool SyncSuccessful => State.HasFlag(SyncSessionState.Successful);
 
 	/// <summary>
-	/// The Type for the sync.
+	/// The type for the sync.
 	/// </summary>
-	public string SyncType { get; private set; }
+	public string SyncType => Settings.SyncType;
+
+	/// <summary>
+	/// Gets the current time.
+	/// </summary>
+	protected DateTime CurrentTime => _timeProvider?.UtcNow ?? DateTimeProvider.RealTime.UtcNow;
 
 	#endregion
 
@@ -163,15 +178,32 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 	/// </summary>
 	public void Cancel()
 	{
-		SyncCancelled = true;
+		UpdateState(SyncSessionState.Cancelled);
+		StoppedOn = CurrentTime;
+	}
+
+	/// <summary>
+	/// Mark the session as completed.
+	/// </summary>
+	public void CompleteSync()
+	{
+		UpdateState(SyncSessionState.Completed);
+		StoppedOn = CurrentTime;
+	}
+
+	public static SyncSession CouldNotStart(SyncManager syncManager, Guid sessionId, string syncType, IDateTimeProvider timeProvider)
+	{
+		var session = new SyncSession(syncManager, sessionId, syncType, timeProvider, null);
+		session.UpdateState(SyncSessionState.CouldNotStart);
+		return session;
 	}
 
 	/// <summary>
 	/// Update the SyncSession with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public override bool UpdateWith(SyncSession update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	public override bool UpdateWith(SyncSession update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -181,9 +213,9 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
-			Options.UpdateWith(update.Options);
+			Settings.UpdateWith(update.Settings);
 			Percent = update.Percent;
 			SessionId = update.SessionId;
 			ShowProgressThreshold = update.ShowProgressThreshold;
@@ -192,76 +224,100 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 			StatisticsForClient.UpdateWith(update.StatisticsForClient);
 			StatisticsForServer.UpdateWith(update.StatisticsForServer);
 			StoppedOn = update.StoppedOn;
-			SyncCancelled = update.SyncCancelled;
-			SyncCompleted = update.SyncCompleted;
+			SyncClientProfilerForClient.UpdateWith(update.SyncClientProfilerForClient);
+			SyncClientProfilerForServer.UpdateWith(update.SyncClientProfilerForServer);
 			SyncIssues.Reconcile(update.SyncIssues);
-			SyncSuccessful = update.SyncSuccessful;
-			SyncType = update.SyncType;
 		}
 		else
 		{
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Options)), x => x.Options.UpdateWith(update.Options));
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Percent)), x => x.Percent = update.Percent);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(SessionId)), x => x.SessionId = update.SessionId);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(ShowProgressThreshold)), x => x.ShowProgressThreshold = update.ShowProgressThreshold);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(StartedOn)), x => x.StartedOn = update.StartedOn);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(State)), x => x.State = update.State);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(StatisticsForClient)), x => x.StatisticsForClient.UpdateWith(update.StatisticsForClient));
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(StatisticsForServer)), x => x.StatisticsForServer.UpdateWith(update.StatisticsForServer));
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(StoppedOn)), x => x.StoppedOn = update.StoppedOn);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(SyncCancelled)), x => x.SyncCancelled = update.SyncCancelled);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(SyncCompleted)), x => x.SyncCompleted = update.SyncCompleted);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(SyncIssues)), x => x.SyncIssues.Reconcile(update.SyncIssues));
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(SyncSuccessful)), x => x.SyncSuccessful = update.SyncSuccessful);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(SyncType)), x => x.SyncType = update.SyncType);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Settings)), x => x.Settings.UpdateWith(update.Settings));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Percent)), x => x.Percent = update.Percent);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(SessionId)), x => x.SessionId = update.SessionId);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(ShowProgressThreshold)), x => x.ShowProgressThreshold = update.ShowProgressThreshold);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(StartedOn)), x => x.StartedOn = update.StartedOn);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(State)), x => x.State = update.State);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(StatisticsForClient)), x => x.StatisticsForClient.UpdateWith(update.StatisticsForClient));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(StatisticsForServer)), x => x.StatisticsForServer.UpdateWith(update.StatisticsForServer));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(StoppedOn)), x => x.StoppedOn = update.StoppedOn);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(SyncClientProfilerForClient)), x => x.SyncClientProfilerForClient.UpdateWith(update.SyncClientProfilerForClient));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(SyncClientProfilerForServer)), x => x.SyncClientProfilerForServer.UpdateWith(update.SyncClientProfilerForServer));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(SyncIssues)), x => x.SyncIssues.Reconcile(update.SyncIssues));
 		}
 
 		return true;
 	}
 
-	/// <inheritdoc />
-	protected override void OnPropertyChangedInDispatcher(string propertyName)
+	/// <summary>
+	/// Wait for the sync to complete.
+	/// </summary>
+	/// <param name="timeout"> The max amount of time to wait. </param>
+	/// <returns> True if the sync completed otherwise false if timed out waiting. </returns>
+	public bool WaitForSyncToComplete(TimeSpan timeout)
 	{
-		switch (propertyName)
+		if (SyncCompleted)
 		{
-			case nameof(State):
-			{
-				LogVerboseState(State);
-				break;
-			}
+			return true;
 		}
 
-		base.OnPropertyChangedInDispatcher(propertyName);
+		var watch = Stopwatch.StartNew();
+
+		while (!SyncCompleted)
+		{
+			if (watch.Elapsed >= timeout)
+			{
+				return false;
+			}
+
+			Thread.Sleep(5);
+		}
+
+		return true;
 	}
 
 	/// <summary>
-	/// Write a message to the log.
+	/// Wait for the sync to start.
 	/// </summary>
-	/// <param name="message"> The message to be written. </param>
-	/// <param name="level"> The level of this message. </param>
-	internal void OnLogEvent(string message, EventLevel level)
+	/// <param name="timeout"> The max amount of time to wait. </param>
+	/// <returns> True if the sync was started otherwise false if timed out waiting. </returns>
+	public bool WaitForSyncToStart(TimeSpan timeout)
 	{
-		Logger.Instance.Write(SessionId, message, level);
+		if (SyncStarted)
+		{
+			return true;
+		}
+
+		var watch = Stopwatch.StartNew();
+
+		while (SyncStarted != true)
+		{
+			if (watch.Elapsed >= timeout)
+			{
+				return false;
+			}
+
+			Thread.Sleep(5);
+		}
+
+		return true;
 	}
 
 	/// <summary>
 	/// Run the sync. This should only be called by ProcessAsync.
 	/// </summary>
-	/// <param name="updateOptions"> Update options before running sync. </param>
+	/// <param name="updateSettings"> Update options before running sync. </param>
 	/// <param name="onSyncRunning"> Action to call when sync starts running. </param>
 	/// <param name="onSyncCompleted"> </param>
-	internal SyncSession RunSync(Action<SyncOptions> updateOptions, Action<SyncSession> onSyncRunning, Action<SyncSession> onSyncCompleted)
+	internal SyncSession ProcessSyncSession(Action<SyncSettings> updateSettings, Action<SyncSession> onSyncRunning, Action<SyncSession> onSyncCompleted)
 	{
 		try
 		{
 			UpdatePercent(0, 0);
+			UpdateState(SyncSessionState.Initializing);
 
-			State = SyncSessionState.Initializing;
+			updateSettings?.Invoke(Settings);
 
-			updateOptions?.Invoke(Options);
-
-			var client = _syncManager.GetSyncClientForClient();
-			var server = _syncManager.GetSyncClientForServer();
+			var client = _syncManager.GetSyncClientForClient(StatisticsForClient, SyncClientProfilerForClient);
+			var server = _syncManager.GetSyncClientForServer(StatisticsForServer, SyncClientProfilerForServer);
 
 			if ((client == null) || (server == null))
 			{
@@ -270,46 +326,46 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 
 			onSyncRunning?.Invoke(this);
 
-			State = SyncSessionState.Starting;
+			UpdateState(SyncSessionState.Starting);
 
-			var serverSession = server.BeginSync(SessionId, Options);
-			var clientSession = client.BeginSync(SessionId, Options);
+			var serverSession = server.BeginSync(SessionId, Settings);
+			var clientSession = client.BeginSync(SessionId, Settings);
 			var incoming = new Dictionary<Guid, DateTime>();
 
-			State = SyncSessionState.Started;
+			UpdateState(SyncSessionState.Started);
 
-			if (!SyncCancelled && Options.SyncDirection.HasFlag(SyncDirection.PullDown))
+			if (!SyncCancelled && Settings.SyncDirection.HasFlag(SyncDirection.PullDown))
 			{
-				State = SyncSessionState.Pulling;
-				Process(server, client, Options.LastSyncedOnServer, serverSession.StartedOn, incoming);
+				UpdateState(SyncSessionState.Pulling);
+				Process(server, client, Settings.LastSyncedOnServer, serverSession.StartedOn, incoming);
 			}
 
-			if (!SyncCancelled && Options.SyncDirection.HasFlag(SyncDirection.PushUp))
+			if (!SyncCancelled && Settings.SyncDirection.HasFlag(SyncDirection.PushUp))
 			{
-				State = SyncSessionState.Pushing;
-				Process(client, server, Options.LastSyncedOnClient, clientSession.StartedOn, incoming);
+				UpdateState(SyncSessionState.Pushing);
+				Process(client, server, Settings.LastSyncedOnClient, clientSession.StartedOn, incoming);
 			}
 
-			State = SyncSessionState.Ending;
+			UpdateState(SyncSessionState.Completing);
 
 			client.EndSync(SessionId);
 			server.EndSync(SessionId);
 
 			//SortLocalDatabases();
 
-			Options.LastSyncedOnClient = clientSession.StartedOn;
-			Options.LastSyncedOnServer = serverSession.StartedOn;
+			Settings.LastSyncedOnClient = clientSession.StartedOn;
+			Settings.LastSyncedOnServer = serverSession.StartedOn;
 
-			StatisticsForClient.UpdateWith(client.Statistics);
-			StatisticsForServer.UpdateWith(server.Statistics);
-
-			SyncSuccessful = !SyncCancelled && !SyncIssues.Any();
+			if (!SyncCancelled && !SyncIssues.Any())
+			{
+				UpdateState(SyncSessionState.Successful);
+			}
 
 			UpdatePercent(100, 100);
 		}
 		catch (WebClientException ex)
 		{
-			SyncSuccessful = false;
+			ClearState(SyncSessionState.Successful);
 
 			switch (ex.Code)
 			{
@@ -350,7 +406,8 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 		}
 		catch (Exception ex)
 		{
-			SyncSuccessful = false;
+			ClearState(SyncSessionState.Successful);
+
 			SyncIssues.Add(new SyncIssue
 			{
 				Id = Guid.Empty,
@@ -362,7 +419,7 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 		finally
 		{
 			// This must be the last state that must change
-			StoppedOn = TimeService.CurrentTime.UtcNow;
+			StoppedOn = CurrentTime;
 
 			// See if we have a timer for this sync type
 			if (_syncManager.SyncTimers.TryGetValue(SyncType, out var syncTimer))
@@ -383,42 +440,53 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 					syncTimer.Stop(StoppedOn);
 				}
 			}
-
-			State = SyncSessionState.Completed;
 		}
 
-		var response = new SyncSession();
+		var response = new SyncSession(null, SessionId, SyncType, _timeProvider, GetDispatcher());
 		response.DisablePropertyChangeNotifications();
 		response.UpdateWith(this);
-		response.SyncCompleted = true;
+		response.CompleteSync();
 		response.EnablePropertyChangeNotifications();
 		response.ResetHasChanges();
 		onSyncCompleted.Invoke(this);
-		SyncCompleted = true;
+
+		CompleteSync();
+
 		return response;
 	}
 
 	/// <summary>
 	/// Start the sync session.
 	/// </summary>
+	/// <param name="sessionId"> The ID for the session. </param>
 	/// <param name="syncType"> The type of the sync to start. </param>
 	/// <param name="updates"> The option to update the session with. </param>
-	internal void Start(string syncType, SyncOptions updates)
+	internal void Start(Guid sessionId, string syncType, SyncSettings updates)
 	{
 		Reset();
-		Options.UpdateWith(updates);
-		SessionId = Guid.NewGuid();
-		SyncType = syncType;
-		StartedOn = TimeService.CurrentTime.UtcNow;
+		Settings.UpdateWith(updates);
+		Settings.SyncType = syncType;
+		SessionId = sessionId;
+		StartedOn = CurrentTime;
+	}
+
+	private void ClearState(SyncSessionState flag)
+	{
+		State = State.ClearFlag(flag);
 	}
 
 	private void LogVerboseState(SyncSessionState state)
 	{
-		switch (State)
+		if (_syncManager == null)
+		{
+			return;
+		}
+
+		switch (state)
 		{
 			case SyncSessionState.Initializing:
 			{
-				OnLogEvent($"Syncing {SyncType} for {Options.LastSyncedOnClient}, {Options.LastSyncedOnServer}", EventLevel.Verbose);
+				OnLogEvent($"Syncing {SyncType} for {Settings.LastSyncedOnClient}, {Settings.LastSyncedOnServer}", EventLevel.Verbose);
 				break;
 			}
 			case SyncSessionState.Starting:
@@ -441,7 +509,13 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 				OnLogEvent("Starting to push to server from client.", EventLevel.Verbose);
 				break;
 			}
-			case SyncSessionState.Ending:
+			case SyncSessionState.Cancelled:
+			{
+				OnLogEvent("The sync session was cancelled.", EventLevel.Verbose);
+
+				break;
+			}
+			case SyncSessionState.Completing:
 			{
 				OnLogEvent("Starting to end the session.", EventLevel.Verbose);
 
@@ -450,6 +524,13 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 			case SyncSessionState.Completed:
 			{
 				OnLogEvent($"Sync {SyncType} completed. {Elapsed:mm\\:ss\\.fff}", EventLevel.Verbose);
+				break;
+			}
+			case SyncSessionState.CouldNotStart:
+			case SyncSessionState.Unknown:
+			case SyncSessionState.Successful:
+			{
+				// Ignore these
 				break;
 			}
 			default:
@@ -461,6 +542,16 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 	}
 
 	/// <summary>
+	/// Write a message to the log.
+	/// </summary>
+	/// <param name="message"> The message to be written. </param>
+	/// <param name="level"> The level of this message. </param>
+	private void OnLogEvent(string message, EventLevel level)
+	{
+		Logger.Instance.Write(SessionId, message, level, CurrentTime);
+	}
+
+	/// <summary>
 	/// Get changes from one client and apply them to another client.
 	/// </summary>
 	/// <param name="sourceClient"> The source to get changes from. </param>
@@ -468,7 +559,7 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 	/// <param name="since"> The start date and time to get changes for. </param>
 	/// <param name="until"> The end date and time to get changes for. </param>
 	/// <param name="exclude"> The optional collection of items to exclude. </param>
-	private void Process(ISyncClient sourceClient, ISyncClient destinationClient, DateTime since, DateTime until, IDictionary<Guid, DateTime> exclude)
+	private void Process(SyncClient sourceClient, SyncClient destinationClient, DateTime since, DateTime until, IDictionary<Guid, DateTime> exclude)
 	{
 		var issues = new ServiceRequest<SyncIssue>();
 		var request = new SyncRequest { Since = since, Until = until, Skip = 0 };
@@ -492,7 +583,7 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 			}
 
 			// Apply changes and track any sync issues returned
-			issues.Collection.AddRange(destinationClient.ApplyChanges(SessionId, request).Collection);
+			issues.Collection.Add(destinationClient.ApplyChanges(SessionId, request).Collection);
 
 			// Capture all items that were synced without issue
 			foreach (var syncObject in request.Collection.Where(x => issues.Collection.All(i => i.Id != x.SyncId)))
@@ -503,7 +594,7 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 			UpdatePercent(changes.TotalCount, request.Skip);
 		} while (!SyncCancelled && hasMore);
 
-		SyncIssues.AddRange(issues.Collection);
+		SyncIssues.Add(issues.Collection);
 
 		if (SyncCancelled || !issues.Collection.Any())
 		{
@@ -512,7 +603,7 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 
 		var issuesToProcess = new ServiceRequest<SyncIssue>
 		{
-			Collection = issues.Collection.Take(Options.ItemsPerSyncRequest).ToList()
+			Collection = issues.Collection.Take(Settings.ItemsPerSyncRequest).ToList()
 		};
 
 		var results = sourceClient.GetCorrections(SessionId, issuesToProcess);
@@ -521,7 +612,7 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 		{
 			RemoveIssues(SyncIssues, results.Collection);
 			request.Collection = results.Collection;
-			SyncIssues.AddRange(destinationClient.ApplyCorrections(SessionId, request).Collection);
+			SyncIssues.Add(destinationClient.ApplyCorrections(SessionId, request).Collection);
 		}
 
 		results = destinationClient.GetCorrections(SessionId, issuesToProcess);
@@ -530,7 +621,7 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 		{
 			RemoveIssues(SyncIssues, results.Collection);
 			request.Collection = results.Collection;
-			SyncIssues.AddRange(sourceClient.ApplyCorrections(SessionId, request).Collection);
+			SyncIssues.Add(sourceClient.ApplyCorrections(SessionId, request).Collection);
 		}
 	}
 
@@ -543,20 +634,24 @@ public class SyncSession : Bindable<SyncSession>, ILoggingSession
 
 	private void Reset(string syncType = default)
 	{
-		Options.Reset();
 		SessionId = Guid.Empty;
+		State = SyncSessionState.Unknown;
 		StartedOn = DateTime.MinValue;
 		StoppedOn = DateTime.MinValue;
-		SyncCancelled = false;
-		SyncCompleted = false;
 		SyncIssues.Clear();
-		SyncSuccessful = false;
-		SyncType = syncType;
+		Settings.Reset();
+		Settings.SyncType = syncType;
 	}
 
 	private void UpdatePercent(decimal total, decimal count)
 	{
-		Percent = total <= 0 ? 0 : Math.Round((total / count) * 100, 2);
+		Percent = total <= 0 ? 0 : Math.Round((count / total) * 100, 2);
+	}
+
+	private void UpdateState(SyncSessionState flag)
+	{
+		LogVerboseState(flag);
+		State = State.SetFlag(flag);
 	}
 
 	#endregion

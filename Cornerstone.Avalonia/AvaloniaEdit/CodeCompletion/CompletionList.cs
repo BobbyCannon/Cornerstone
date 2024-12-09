@@ -12,7 +12,7 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml.Templates;
 using Cornerstone.Avalonia.AvaloniaEdit.Utils;
 using Cornerstone.Extensions;
-using PropertyChanged;
+using Cornerstone.Weaver;
 
 #endregion
 

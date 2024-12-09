@@ -3,6 +3,7 @@
 using System;
 using Avalonia.Animation;
 using Avalonia.Controls;
+using Cornerstone.Avalonia;
 using Cornerstone.Avalonia.Controls;
 
 #endregion

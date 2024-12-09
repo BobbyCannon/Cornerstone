@@ -24,15 +24,15 @@ public class HtmlOptions
 	}
 
 	/// <summary>
-	/// Creates a new HtmlOptions instance that copies applicable options from the <see cref="TextEditorOptions" />.
+	/// Creates a new HtmlOptions instance that copies applicable options from the <see cref="TextEditorSettings" />.
 	/// </summary>
-	public HtmlOptions(TextEditorOptions options) : this()
+	public HtmlOptions(TextEditorSettings settings) : this()
 	{
-		if (options == null)
+		if (settings == null)
 		{
-			throw new ArgumentNullException(nameof(options));
+			throw new ArgumentNullException(nameof(settings));
 		}
-		TabSize = options.IndentationSize;
+		TabSize = settings.IndentationSize;
 	}
 
 	#endregion

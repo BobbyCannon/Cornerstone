@@ -54,7 +54,7 @@ internal sealed class TextAnchorTree
 	// This allows computing the Offset from an anchor by walking up the list of parent nodes instead of going
 	// through all predecessor nodes. So computing the Offset runs in O(log N).
 
-	private readonly TextDocument _document;
+	private readonly TextEditorDocument _document;
 	private readonly List<TextAnchorNode> _nodesToDelete = [];
 	private TextAnchorNode _root;
 
@@ -62,7 +62,7 @@ internal sealed class TextAnchorTree
 
 	#region Constructors
 
-	public TextAnchorTree(TextDocument document)
+	public TextAnchorTree(TextEditorDocument document)
 	{
 		_document = document;
 	}

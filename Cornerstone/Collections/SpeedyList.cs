@@ -9,7 +9,7 @@ using System.Linq;
 using Cornerstone.Data;
 using Cornerstone.Presentation;
 using Cornerstone.Threading;
-using PropertyChanged;
+using Cornerstone.Weaver;
 
 #endregion
 
@@ -330,6 +330,16 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 	}
 
 	/// <summary>
+	/// Get the first item in the list or default value.
+	/// </summary>
+	/// <param name="predicate"> The predicate filter. </param>
+	/// <returns> The first item or default. </returns>
+	public T Find(Func<T, bool> predicate)
+	{
+		return FirstOrDefault(predicate);
+	}
+
+	/// <summary>
 	/// Get the first item in the list.
 	/// </summary>
 	/// <returns> The first item. </returns>
@@ -386,7 +396,7 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 	/// </summary>
 	/// <param name="predicate"> The predicate filter. </param>
 	/// <returns> The first item or default. </returns>
-	public T FirstOrDefault(Func<T, bool> predicate)
+	public virtual T FirstOrDefault(Func<T, bool> predicate)
 	{
 		try
 		{
@@ -415,7 +425,7 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 	}
 
 	/// <inheritdoc />
-	public override bool HasChanges(IncludeExcludeOptions options)
+	public override bool HasChanges(IncludeExcludeSettings settings)
 	{
 		return _hasChanges;
 	}
@@ -998,7 +1008,9 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 		try
 		{
 			EnterReadLock();
-			return InternalContains((T) item);
+
+			return item is T itemAsT
+				&& InternalContains(itemAsT);
 		}
 		finally
 		{
@@ -1253,6 +1265,19 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 		IsLoading = false;
 	}
 
+	private IList<T> InternalOrderCollectionForLoad(IList<T> items)
+	{
+		if ((items.Count <= 1) || OrderBy is not { Length: > 0 })
+		{
+			return items;
+		}
+
+		var firstOrder = OrderBy.First();
+		var thenBy = OrderBy.Skip(1).ToArray();
+		var ordered = firstOrder.Process(items, thenBy).ToList();
+		return ordered;
+	}
+
 	private void InternalOrderWithoutLocking()
 	{
 		if (!ShouldOrder())
@@ -1354,19 +1379,6 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 		{
 			IsFiltering = false;
 		}
-	}
-
-	private IList<T> InternalOrderCollectionForLoad(IList<T> items)
-	{
-		if ((items.Count <= 1) || OrderBy is not { Length: > 0 })
-		{
-			return items;
-		}
-
-		var firstOrder = OrderBy.First();
-		var thenBy = OrderBy.Skip(1).ToArray();
-		var ordered = firstOrder.Process(items, thenBy).ToList();
-		return ordered;
 	}
 
 	/// <inheritdoc />
@@ -1516,7 +1528,7 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 /// <summary>
 /// Represents a speedy list.
 /// </summary>
-public interface ISpeedyList<T> : IList<T>, INotifyCollectionChanged
+public interface ISpeedyList<T> : IList<T>, INotifyCollectionChanged, IDispatchable
 {
 	#region Properties
 
@@ -1544,6 +1556,15 @@ public interface ISpeedyList<T> : IList<T>, INotifyCollectionChanged
 	/// </summary>
 	/// <returns> True if the list should order or false otherwise. </returns>
 	internal bool ShouldOrder();
+
+	#endregion
+
+	#region Events
+
+	/// <summary>
+	/// Used to notify when items are added or removed.
+	/// </summary>
+	event EventHandler<SpeedyListUpdatedEventArg<T>> ListUpdated;
 
 	#endregion
 }

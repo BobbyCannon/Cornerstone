@@ -2,8 +2,8 @@
 
 using System;
 using System.Linq;
-using Cornerstone.Automation.Desktop;
 using Cornerstone.UnitTests;
+using Cornerstone.Windows;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
@@ -29,7 +29,7 @@ public class ScreenTests : CornerstoneUnitTest
 	[TestMethod]
 	public void MultiMonitorSupport()
 	{
-		if (!string.Equals(RuntimeInformation.DeviceName, "bobbys-rig", StringComparison.OrdinalIgnoreCase))
+		if (!string.Equals(GetRuntimeInformation().DeviceName, "bobbys-rig", StringComparison.OrdinalIgnoreCase))
 		{
 			Assert.Inconclusive("Device not recognized");
 		}
@@ -37,15 +37,15 @@ public class ScreenTests : CornerstoneUnitTest
 		IsTrue(Screen.MultipleScreenSupport);
 		
 		var actual = Screen.AllScreens.Skip(1).Take(1).First();
-		AreEqual(1517, actual.Location.X);
+		AreEqual(1529, actual.Location.X);
 		AreEqual(1440, actual.Location.Y);
 		AreEqual(1280, actual.Size.Width);
 		AreEqual(800, actual.Size.Height);
-		AreEqual(1517, actual.ScreenArea.X);
+		AreEqual(1529, actual.ScreenArea.X);
 		AreEqual(1440, actual.ScreenArea.Y);
 		AreEqual(1280, actual.ScreenArea.Width);
 		AreEqual(800, actual.ScreenArea.Height);
-		AreEqual(1517, actual.WorkingArea.X);
+		AreEqual(1529, actual.WorkingArea.X);
 		AreEqual(1440, actual.WorkingArea.Y);
 		AreEqual(1280, actual.WorkingArea.Width);
 		AreEqual(752, actual.WorkingArea.Height);
@@ -74,7 +74,7 @@ public class ScreenTests : CornerstoneUnitTest
 	[TestMethod]
 	public void SecondaryScreenSize()
 	{
-		if (!string.Equals(RuntimeInformation.DeviceName, "bobbys-rig", StringComparison.OrdinalIgnoreCase))
+		if (!string.Equals(GetRuntimeInformation().DeviceName, "bobbys-rig", StringComparison.OrdinalIgnoreCase))
 		{
 			Assert.Inconclusive("Device not recognized");
 		}
@@ -82,15 +82,15 @@ public class ScreenTests : CornerstoneUnitTest
 		var actual = Screen.AllScreens.FirstOrDefault(x => !x.IsPrimary);
 		Assert.IsNotNull(actual);
 
-		AreEqual(1517, actual.Location.X);
+		AreEqual(1529, actual.Location.X);
 		AreEqual(1440, actual.Location.Y);
 		AreEqual(1280, actual.Size.Width);
 		AreEqual(800, actual.Size.Height);
-		AreEqual(1517, actual.ScreenArea.X);
+		AreEqual(1529, actual.ScreenArea.X);
 		AreEqual(1440, actual.ScreenArea.Y);
 		AreEqual(1280, actual.ScreenArea.Width);
 		AreEqual(800, actual.ScreenArea.Height);
-		AreEqual(1517, actual.WorkingArea.X);
+		AreEqual(1529, actual.WorkingArea.X);
 		AreEqual(1440, actual.WorkingArea.Y);
 		AreEqual(1280, actual.WorkingArea.Width);
 		AreEqual(752, actual.WorkingArea.Height);
@@ -100,7 +100,7 @@ public class ScreenTests : CornerstoneUnitTest
 	[TestMethod]
 	public void VirtualScreenSize()
 	{
-		if (!string.Equals(RuntimeInformation.DeviceName, "bobbys-rig", StringComparison.OrdinalIgnoreCase))
+		if (!string.Equals(GetRuntimeInformation().DeviceName, "bobbys-rig", StringComparison.OrdinalIgnoreCase))
 		{
 			Assert.Inconclusive("Device not recognized");
 		}

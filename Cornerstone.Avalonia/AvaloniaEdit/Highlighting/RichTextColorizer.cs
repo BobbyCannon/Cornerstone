@@ -36,14 +36,14 @@ public class RichTextColorizer : DocumentColorizingTransformer
 	/// <inheritdoc />
 	protected override void ColorizeLine(DocumentLine line)
 	{
-		var sections = _richTextModel.GetHighlightedSections(line.Offset, line.Length);
+		var sections = _richTextModel.GetHighlightedSections(line.StartIndex, line.Length);
 		foreach (var section in sections)
 		{
 			if (HighlightingColorizer.IsEmptyColor(section.Color))
 			{
 				continue;
 			}
-			ChangeLinePart(section.Offset, section.Offset + section.Length,
+			ChangeLinePart(section.StartIndex, section.StartIndex + section.Length,
 				visualLineElement => HighlightingColorizer.ApplyColorToElement(visualLineElement, section.Color, CurrentContext));
 		}
 	}

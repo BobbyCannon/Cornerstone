@@ -3,6 +3,7 @@
 using System;
 using System.Globalization;
 using Cornerstone.Extensions;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -74,7 +75,7 @@ public struct OscTimeTag : IOscArgument, IComparable<OscTimeTag>, IComparable, I
 	/// <summary>
 	/// Gets a OscTimeTag object that is set to the current date and time on this computer, expressed as the local time.
 	/// </summary>
-	public static OscTimeTag Now => FromDateTime(TimeService.CurrentTime.UtcNow);
+	public static OscTimeTag Now => FromDateTime(DateTimeProvider.RealTime.UtcNow);
 
 	/// <summary>
 	/// Gets the number of seconds including fractional parts since midnight on January 1, 1900.
@@ -94,7 +95,7 @@ public struct OscTimeTag : IOscArgument, IComparable<OscTimeTag>, IComparable, I
 	/// <summary>
 	/// Gets a OscTimeTag object that is set to the current date and time on this computer, expressed as the Coordinated Universal Time (UTC).
 	/// </summary>
-	public static OscTimeTag UtcNow => FromDateTime(TimeService.CurrentTime.UtcNow);
+	public static OscTimeTag UtcNow => FromDateTime(DateTimeProvider.RealTime.UtcNow);
 
 	/// <summary>
 	/// Gets or set the value of the tag.

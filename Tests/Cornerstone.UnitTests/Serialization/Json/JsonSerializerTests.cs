@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
 using System.Text;
 using Cornerstone.Attributes;
@@ -96,6 +95,46 @@ public class JsonSerializerTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void ConvertWithNestedQuotes()
+	{
+		var dictionary = new Dictionary<string, string>
+		{
+			{
+				"a",
+				new Dictionary<string, string>
+				{
+					{
+						"b",
+						new Dictionary<string, string>
+						{
+							{ "c", "d" }
+						}.ToJson()
+					}
+				}.ToJson()
+			}
+		};
+
+		var json = dictionary.ToJson();
+		var scenarios = new[] { '\"', '\'' };
+
+		foreach (var scenario in scenarios)
+		{
+			var scenarioJson = json.Replace('\"', scenario);
+			var jsonObject = (JsonObject) JsonSerializer.Parse(scenarioJson);
+			AreEqual(1, jsonObject.Keys.Count());
+
+			var actual = (JsonString) jsonObject["a"];
+			var expected = "{\"b\":\"{\\\"c\\\":\\\"d\\\"}\"}".Replace('\"', scenario);
+			AreEqual(expected, actual.Value, () => actual.Value);
+
+			jsonObject = (JsonObject) JsonSerializer.Parse(actual.Value);
+			actual = (JsonString) jsonObject["b"];
+			expected = "{\"c\":\"d\"}".Replace('\"', scenario);
+			AreEqual(expected, actual.Value, () => actual.Value);
+		}
+	}
+
+	[TestMethod]
 	public void DateAndTimes()
 	{
 		var scenarios = new SerializationScenario[]
@@ -129,7 +168,7 @@ public class JsonSerializerTests : CornerstoneUnitTest
 			serializer.GetType().FullName.Dump();
 			AreEqual("9", serializer.ToJson(ConsoleColor.Blue));
 			AreEqual("null", serializer.ToJson<ConsoleColor?>(null));
-			AreEqual("\"Blue\"", serializer.ToJson(ConsoleColor.Blue, new SerializationOptions { EnumFormat = EnumFormat.Name }));
+			AreEqual("\"Blue\"", serializer.ToJson(ConsoleColor.Blue, new SerializationSettings { EnumFormat = EnumFormat.Name }));
 			AreEqual(ConsoleColor.Blue, serializer.FromJson<ConsoleColor>("9"));
 			AreEqual(ConsoleColor.Blue, serializer.FromJson<ConsoleColor>("\"Blue\""));
 			AreEqual(null, serializer.FromJson<ConsoleColor?>("null"));
@@ -214,7 +253,7 @@ public class JsonSerializerTests : CornerstoneUnitTest
 	""Name"": ""Grandpa"",
 	""Parent"": null
 }";
-		var settings = new SerializationOptions
+		var settings = new SerializationSettings
 		{
 			TextFormat = TextFormat.Indented
 		};
@@ -243,7 +282,7 @@ public class JsonSerializerTests : CornerstoneUnitTest
 		};
 
 		var expected = "{\"Child\":{\"Name\":\"Child\",\"Version\":\"1.2.3.4\"},\"Name\":\"Parent\",\"Version\":\"1.2.3.4\"}";
-		var actual = dynamic.ToJson(new SerializationOptions
+		var actual = dynamic.ToJson(new SerializationSettings
 		{
 			IgnoreReadOnly = false
 		});
@@ -256,7 +295,7 @@ public class JsonSerializerTests : CornerstoneUnitTest
 		var person1 = new Person { Name = "John" };
 		var person2 = new Person { Name = "Jane", Children = [person1] };
 
-		var options = new SerializationOptions { TextFormat = TextFormat.Indented };
+		var options = new SerializationSettings { TextFormat = TextFormat.Indented };
 		var data = new
 		{
 			Person1 = person1,
@@ -365,7 +404,7 @@ public class JsonSerializerTests : CornerstoneUnitTest
 	[TestMethod]
 	public void SampleTest()
 	{
-		var jss = new SerializationOptions { TextFormat = TextFormat.None };
+		var jss = new SerializationSettings { TextFormat = TextFormat.None };
 		var js = new JsonSerializer();
 		var sample = new Sample();
 		var actual = js.ToJson(sample, jss);
@@ -378,6 +417,7 @@ public class JsonSerializerTests : CornerstoneUnitTest
 	{
 		var scenarios = new Dictionary<object, (string none, string indented)>
 		{
+			{ (456, 321), ("{\"Item1\":456,\"Item2\":321}", "{\r\n\t\"Item1\": 456,\r\n\t\"Item2\": 321\r\n}") },
 			{
 				(
 					new DateTime(2023, 12, 31),
@@ -389,7 +429,6 @@ public class JsonSerializerTests : CornerstoneUnitTest
 				)
 			},
 			{ new Tuple<TextFormat>(TextFormat.Spaced), ("{\"Item1\":2}", "{\r\n\t\"Item1\": 2\r\n}") },
-			{ (456, 321), ("{\"Item1\":456,\"Item2\":321}", "{\r\n\t\"Item1\": 456,\r\n\t\"Item2\": 321\r\n}") },
 			{ new Tuple<int, int>(456, 321), ("{\"Item1\":456,\"Item2\":321}", "{\r\n\t\"Item1\": 456,\r\n\t\"Item2\": 321\r\n}") },
 			{
 				("Bob", new Guid("8D6533AA-4103-4071-9341-1D2F64904F7A")),
@@ -410,7 +449,7 @@ public class JsonSerializerTests : CornerstoneUnitTest
 			AreEqual(scenario.Value.none, json);
 			var actual = json.FromJson(expected.GetType());
 			AreEqual(expected, actual);
-			json = expected.ToJson(new SerializationOptions { TextFormat = TextFormat.Indented });
+			json = expected.ToJson(new SerializationSettings { TextFormat = TextFormat.Indented });
 			AreEqual(scenario.Value.indented, json, () => json);
 			actual = json.FromJson(expected.GetType());
 			AreEqual(expected, actual);
@@ -447,7 +486,7 @@ public class JsonSerializerTests : CornerstoneUnitTest
 		{
 			item.Key.Dump();
 
-			var actual = account.ToJson(new SerializationOptions { UpdateableAction = item.Key });
+			var actual = account.ToJson(new SerializationSettings { UpdateableAction = item.Key });
 			AreEqual(item.Value, actual);
 		}
 	}
@@ -455,7 +494,7 @@ public class JsonSerializerTests : CornerstoneUnitTest
 	protected IEnumerable<IJsonSerializer> GetSerializers()
 	{
 		yield return new JsonSerializer();
-		yield return new JsonSerializer(x => new TextJsonConsumer(new TextWriterStringBuffer(new StringWriter()), x));
+		yield return new JsonSerializer(x => new TextJsonConsumer(new StringGapBuffer(), x));
 		yield return new NewtonsoftJsonSerializer();
 	}
 
@@ -481,7 +520,7 @@ public class JsonSerializerTests : CornerstoneUnitTest
 
 	private void GenerateNewScenarios(bool enableTestScenarioCreation, params Type[] types)
 	{
-		if (RuntimeInformation.DotNetRuntimeVersion.Major <= 4)
+		if (GetRuntimeInformation().DotNetRuntimeVersion.Major <= 4)
 		{
 			// Do NOT generate scenarios on .NET48
 			"We do not generate scenarios on .NET48".Dump();

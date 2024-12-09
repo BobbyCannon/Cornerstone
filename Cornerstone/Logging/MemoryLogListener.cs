@@ -1,7 +1,6 @@
 ﻿#region References
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
 using System.Linq;
@@ -21,8 +20,7 @@ public class MemoryLogListener : LogListener
 
 	private MemoryLogListener(Guid sessionId, EventLevel level = EventLevel.Informational) : base(sessionId, level)
 	{
-		Events = new ConcurrentDictionary<Guid, SpeedyList<LogEventArgs>>();
-		Sessions = new ConcurrentDictionary<Guid, ILoggingSession>();
+		Events = new SpeedyList<LogEventArgs>();
 	}
 
 	#endregion
@@ -32,12 +30,7 @@ public class MemoryLogListener : LogListener
 	/// <summary>
 	/// The events that have been captured from the event source (logger).
 	/// </summary>
-	public ConcurrentDictionary<Guid, SpeedyList<LogEventArgs>> Events { get; }
-
-	/// <summary>
-	/// The session info for a set of events.
-	/// </summary>
-	public ConcurrentDictionary<Guid, ILoggingSession> Sessions { get; }
+	public SpeedyList<LogEventArgs> Events { get; }
 
 	#endregion
 
@@ -49,7 +42,6 @@ public class MemoryLogListener : LogListener
 	public void Clear()
 	{
 		Events.Clear();
-		Sessions.Clear();
 	}
 
 	/// <summary>
@@ -71,11 +63,9 @@ public class MemoryLogListener : LogListener
 	/// </summary>
 	/// <param name="sessionId"> The ID of the session to access. </param>
 	/// <returns> The events if found otherwise empty collection. </returns>
-	public SpeedyList<LogEventArgs> GetEvents(Guid sessionId)
+	public IEnumerable<LogEventArgs> GetEvents(Guid sessionId)
 	{
-		return Events.TryGetValue(sessionId, out var events)
-			? events
-			: [];
+		return Events.Where(x => x.SessionId == sessionId).ToList();
 	}
 
 	/// <summary>
@@ -83,24 +73,14 @@ public class MemoryLogListener : LogListener
 	/// </summary>
 	/// <param name="includeDateTime"> Option to include messaged on in message. </param>
 	/// <param name="includeSessionId"> Option to include session ID in message. </param>
-	/// <param name="elapsedTime"> Optional to convert DateTime to Elapsed. Relative to session start time value. </param>
 	/// <returns> The formatted events. </returns>
-	public List<string> GetEventsDetails(bool includeDateTime = true, bool includeSessionId = false, bool elapsedTime = false)
+	public List<string> GetEventsDetails(bool includeDateTime = true, bool includeSessionId = false)
 	{
-		var sessions = Sessions
-			.OrderBy(x => x.Value.StartedOn)
-			.Select(x => x.Value)
-			.ToList();
-
-		return sessions
-			.SelectMany(x =>
-				Enumerable
-				.OrderBy<LogEventArgs, DateTime>((Events.TryGetValue(x.SessionId, out var values) ? values : new List<LogEventArgs>()), o => o.MessagedOn)
-				.Select(v => v.GetDetailedMessage(
+		return Events
+			.Select(v => v.GetDetailedMessage(
 					includeDateTime,
-					includeSessionId,
-					elapsedTime ? x.StartedOn : null
-				))
+					includeSessionId
+				)
 			)
 			.ToList();
 	}
@@ -108,7 +88,9 @@ public class MemoryLogListener : LogListener
 	/// <inheritdoc />
 	protected override void OnEventWritten(EventWrittenEventArgs args)
 	{
-		if ((SessionId != Guid.Empty) && !Equals(SessionId, args.Payload?.FirstOrDefault()))
+		var logEvent = args.ToLogEvent();
+
+		if ((SessionId != Guid.Empty) && !Equals(SessionId, logEvent.SessionId))
 		{
 			return;
 		}
@@ -118,10 +100,7 @@ public class MemoryLogListener : LogListener
 			return;
 		}
 
-		var logEvent = args.ToLogEvent();
-		Sessions.GetOrAdd(SessionId, guid => new LoggingSession(guid, logEvent.MessagedOn));
-		var list = Events.GetOrAdd(SessionId, x => []);
-		list.Add(logEvent);
+		Events.Add(logEvent);
 		base.OnEventWritten(args);
 	}
 

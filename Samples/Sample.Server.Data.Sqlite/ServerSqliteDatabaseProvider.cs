@@ -1,13 +1,12 @@
 ﻿#region References
 
-using Cornerstone.Storage;
 using Sample.Shared.Storage;
 
 #endregion
 
 namespace Sample.Server.Data.Sqlite;
 
-public class ServerSqliteDatabaseProvider : DatabaseProvider<IServerDatabase>
+public class ServerSqliteDatabaseProvider : ServerDatabaseProvider
 {
 	#region Fields
 
@@ -18,7 +17,6 @@ public class ServerSqliteDatabaseProvider : DatabaseProvider<IServerDatabase>
 	#region Constructors
 
 	public ServerSqliteDatabaseProvider(string connectionString)
-		: base(new DatabaseOptions())
 	{
 		_connectionString = connectionString;
 	}
@@ -28,9 +26,9 @@ public class ServerSqliteDatabaseProvider : DatabaseProvider<IServerDatabase>
 	#region Methods
 
 	/// <inheritdoc />
-	protected override IServerDatabase GetDatabaseFromProvider(DatabaseOptions options)
+	protected override IServerDatabase GetDatabaseFromProvider()
 	{
-		return ServerSqliteDatabase.UseSqlite(_connectionString, options);
+		return ServerSqliteDatabase.UseSqlite(_connectionString);
 	}
 
 	#endregion

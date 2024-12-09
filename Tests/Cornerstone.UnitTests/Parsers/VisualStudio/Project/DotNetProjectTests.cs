@@ -29,7 +29,7 @@ public class DotNetProjectTests : CornerstoneUnitTest
 		var path = @$"{SolutionDirectory}\Cornerstone.EntityFramework\Cornerstone.EntityFramework.csproj";
 		var expected = File.ReadAllText(path);
 		var project = DotNetProject.FromFile(path);
-		var options = new SerializationOptions { TextFormat = TextFormat.Indented };
+		var options = new SerializationSettings { TextFormat = TextFormat.Indented };
 		project.ToJson(options).Dump();
 		var actual = project.ToXml();
 		AreEqual(expected, actual);
@@ -41,7 +41,7 @@ public class DotNetProjectTests : CornerstoneUnitTest
 		var content = @"<Project Sdk=""Microsoft.NET.Sdk"">
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0</TargetFrameworks>
-		<TargetFrameworks Condition=""$([MSBuild]::IsOSPlatform('windows'))"">$(TargetFrameworks);net8.0</TargetFrameworks>
+		<TargetFrameworks Condition=""$([MSBuild]::IsOSPlatform('windows'))"">$(TargetFrameworks);net9.0</TargetFrameworks>
 		<AssemblyVersion>9.2.0.0</AssemblyVersion>
 		<FileVersion>9.2.0.0</FileVersion>
 		<Version>9.2.0.0</Version>
@@ -51,7 +51,7 @@ public class DotNetProjectTests : CornerstoneUnitTest
 
 		var project = DotNetProject.FromXml(content);
 		AreEqual(
-			new[] { "netstandard2.0", "net8.0" },
+			new[] { "netstandard2.0", "net9.0" },
 			project.TargetFrameworks.Select(x => x.Moniker).ToArray()
 		);
 	}
@@ -111,7 +111,7 @@ public class DotNetProjectTests : CornerstoneUnitTest
 			new[] { "uap" },
 			project.TargetFrameworks.Select(x => x.Moniker).ToArray()
 		);
-		
+
 		content = @"<Project DefaultTargets=""Build"" ToolsVersion=""4.0"" xmlns=""http://schemas.microsoft.com/developer/msbuild/2003"">
 	<PropertyGroup>
 		<Configuration Condition="" '$(Configuration)' == '' "">Debug</Configuration>

@@ -47,12 +47,25 @@ public class DateTimeProvider : IDateTimeProvider
 		_providerId = providerId;
 	}
 
+	static DateTimeProvider()
+	{
+		var realTime = new DateTimeProvider(Guid.Parse("48E21BDA-9E7A-4767-8E3B-B218203C9A71"), () => DateTime.UtcNow);
+		realTime.LockProvider();
+
+		RealTime = realTime;
+	}
+
 	#endregion
 
 	#region Properties
 
 	/// <inheritdoc />
 	public DateTime Now => _provider.Invoke().ToLocalTime();
+
+	/// <summary>
+	/// Represents the systems real time (DateTime.Now / DateTime.UtcNow).
+	/// </summary>
+	public static IDateTimeProvider RealTime { get; }
 
 	/// <inheritdoc />
 	public DateTime UtcNow => _provider.Invoke().ToUniversalTime();

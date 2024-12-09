@@ -50,7 +50,7 @@ public class DocumentHighlighter : ILineTracker, IHighlighter
 	/// <summary>
 	/// Creates a new DocumentHighlighter instance.
 	/// </summary>
-	public DocumentHighlighter(TextDocument document, IHighlightingDefinition definition)
+	public DocumentHighlighter(TextEditorDocument document, IHighlightingDefinition definition)
 	{
 		Document = document ?? throw new ArgumentNullException(nameof(document));
 		_definition = definition ?? throw new ArgumentNullException(nameof(definition));
@@ -70,7 +70,7 @@ public class DocumentHighlighter : ILineTracker, IHighlighter
 	/// <summary>
 	/// Gets the document that this DocumentHighlighter is highlighting.
 	/// </summary>
-	public IDocument Document { get; }
+	public ITextEditorDocument Document { get; }
 
 	/// <summary>
 	/// Gets/sets the initial span stack of the document. Default value is <see cref="SpanStack.Empty" />.

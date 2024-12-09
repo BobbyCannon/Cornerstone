@@ -57,7 +57,6 @@ public class AndroidLocationProvider<TLocation, THorizontal, TVertical, TLocatio
 	#region Fields
 
 	private readonly AppCompatActivity _activity;
-
 	private FusedLocationProviderCallback _fusedCallback;
 	private IFusedLocationProviderClient _fusedListener;
 	private GeolocationContinuousListener<TLocation, THorizontal, TVertical> _listener;

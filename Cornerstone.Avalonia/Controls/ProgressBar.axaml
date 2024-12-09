@@ -224,10 +224,10 @@
 
 		<Style Selector="^[(Theme.Color)=Current]">
 
-			<Setter Property="Foreground" Value="{DynamicResource ColorTheme06}" />
+			<Setter Property="Foreground" Value="{DynamicResource ThemeColor06}" />
 
 			<Style Selector="^:disabled">
-				<Setter Property="Foreground" Value="{DynamicResource ColorTheme02}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeColor02}" />
 			</Style>
 
 		</Style>
@@ -376,14 +376,14 @@
 
 		</Style>
 
-		<!-- Blue Grey theme. -->
+		<!-- Blue Gray theme. -->
 
-		<Style Selector="^[(Theme.Color)=BlueGrey]">
+		<Style Selector="^[(Theme.Color)=BlueGray]">
 
-			<Setter Property="Foreground" Value="{DynamicResource BlueGrey06}" />
+			<Setter Property="Foreground" Value="{DynamicResource BlueGray06}" />
 
 			<Style Selector="^:disabled">
-				<Setter Property="Foreground" Value="{DynamicResource BlueGrey02}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueGray02}" />
 			</Style>
 
 		</Style>

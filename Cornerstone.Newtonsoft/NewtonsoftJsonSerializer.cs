@@ -18,25 +18,25 @@ public class NewtonsoftJsonSerializer : IJsonSerializer
 	#region Methods
 
 	/// <inheritdoc />
-	public T FromJson<T>(string value, ISerializationOptions settings = null)
+	public T FromJson<T>(string value, ISerializationSettings settings = null)
 	{
 		return JsonConvert.DeserializeObject<T>(value, JsonSerializerSettingsExtensions.DefaultSettings);
 	}
 
 	/// <inheritdoc />
-	public object FromJson(string value, Type type, ISerializationOptions settings = null)
+	public object FromJson(string value, Type type, ISerializationSettings settings = null)
 	{
 		return JsonConvert.DeserializeObject(value, type, JsonSerializerSettingsExtensions.DefaultSettings);
 	}
 
 	/// <inheritdoc />
-	public string ToJson(object value, Type type, ISerializationOptions settings = null)
+	public string ToJson(object value, Type type, ISerializationSettings settings = null)
 	{
 		return JsonConvert.SerializeObject(value, type, JsonSerializerSettingsExtensions.DefaultSettings);
 	}
 
 	/// <inheritdoc />
-	public string ToJson<T>(T value, ISerializationOptions settings = null)
+	public string ToJson<T>(T value, ISerializationSettings settings = null)
 	{
 		if (settings == null)
 		{

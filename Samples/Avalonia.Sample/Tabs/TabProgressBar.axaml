@@ -466,23 +466,23 @@
 					Width="{StaticResource ProgressBarWidth}"
 					Margin="{StaticResource ProgressBarHorizontalMargin}" />
 
-			<!-- Blue Grey ProgressBar. -->
+			<!-- Blue Gray ProgressBar. -->
 
 			<Label
 					Grid.Row="13" Grid.Column="0"
-					Content="Blue Grey"
+					Content="Blue Gray"
 					VerticalAlignment="Center" />
 
 			<ProgressBar
 					Grid.Row="13" Grid.Column="1"
-					Theme.Color="BlueGrey"
+					Theme.Color="BlueGray"
 					Value="50"
 					Width="{StaticResource ProgressBarWidth}"
 					Margin="{StaticResource ProgressBarHorizontalMargin}" />
 
 			<ProgressBar
 					Grid.Row="13" Grid.Column="2"
-					Theme.Color="BlueGrey"
+					Theme.Color="BlueGray"
 					Value="50"
 					IsEnabled="False"
 					Width="{StaticResource ProgressBarWidth}"

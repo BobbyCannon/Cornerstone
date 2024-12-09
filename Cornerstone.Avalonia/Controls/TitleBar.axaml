@@ -3,10 +3,14 @@
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		x:ClassModifier="internal">
 	<Design.PreviewWith>
-		<Border Height="30" Width="300">
-			<TitleBar Background="SkyBlue"
-					Foreground="Black">
-			</TitleBar>
+		<Border Width="300">
+			<StackPanel Orientation="Vertical"
+					Spacing="10">
+				<TitleBar Background="SkyBlue"
+						Foreground="Black">
+				</TitleBar>
+				<TitleBar Background="Red" />
+			</StackPanel>
 		</Border>
 	</Design.PreviewWith>
 	<ControlTheme x:Key="{x:Type TitleBar}" TargetType="TitleBar">

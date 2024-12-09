@@ -37,12 +37,12 @@ public class CsvReader
 	/// <summary>
 	/// Initializes an instance of the CSV parser.
 	/// </summary>
-	public CsvReader(TextReader reader, CsvOptions options)
+	public CsvReader(TextReader reader, CsvConverterSettings settings)
 	{
 		_reader = reader;
 
 		BufferSize = 32768;
-		Options = options;
+		Settings = settings;
 	}
 
 	#endregion
@@ -101,7 +101,7 @@ public class CsvReader
 	/// <summary>
 	/// Options for the CSV parser.
 	/// </summary>
-	public CsvOptions Options { get; set; }
+	public CsvConverterSettings Settings { get; set; }
 
 	#endregion
 
@@ -214,7 +214,7 @@ public class CsvReader
 				}
 				default:
 				{
-					if (character == Options.Delimiter)
+					if (character == Settings.Delimiter)
 					{
 						currentField = GetOrAddField(characterPosition + 1);
 						ignoreQuote = false;
@@ -224,7 +224,7 @@ public class CsvReader
 					// space
 					if (character == ' ')
 					{
-						if (Options.TrimFields)
+						if (Settings.TrimFields)
 						{
 							// do nothing
 							continue;
@@ -270,7 +270,7 @@ public class CsvReader
 			return Read();
 		}
 
-		if (Options.HasHeader && (_headerColumns == null))
+		if (Settings.HasHeader && (_headerColumns == null))
 		{
 			ParseFieldsAsHeaders();
 		}
@@ -288,7 +288,7 @@ public class CsvReader
 	/// <exception cref="Exception"> Failed to parse line {line number}. </exception>
 	public static IList<T> ReadContent<T>(string content, Func<T, CsvReader, bool> mapper) where T : new()
 	{
-		return ReadContent(content, new CsvOptions(), mapper);
+		return ReadContent(content, new CsvConverterSettings(), mapper);
 	}
 
 	/// <summary>
@@ -296,18 +296,18 @@ public class CsvReader
 	/// </summary>
 	/// <typeparam name="T"> The type to be returned. </typeparam>
 	/// <param name="content"> The CSV content in string format. </param>
-	/// <param name="options"> The options for parsing. </param>
+	/// <param name="settings"> The options for parsing. </param>
 	/// <param name="mapper"> The mapper to map a record to the type. </param>
 	/// <returns> A list of types from the CSV records. </returns>
 	/// <exception cref="Exception"> Failed to parse line {line number}. </exception>
-	public static IList<T> ReadContent<T>(string content, CsvOptions options, Func<T, CsvReader, bool> mapper) where T : new()
+	public static IList<T> ReadContent<T>(string content, CsvConverterSettings settings, Func<T, CsvReader, bool> mapper) where T : new()
 	{
 		using var reader = new StringReader(content);
-		var parser = new CsvReader(reader, options);
+		var parser = new CsvReader(reader, settings);
 		var response = new List<T>();
 		var line = 0;
 
-		if (options.HasHeader)
+		if (settings.HasHeader)
 		{
 			parser.Read();
 		}

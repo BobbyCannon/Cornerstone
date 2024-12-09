@@ -12,7 +12,16 @@ public static class ThemeConverters
 {
 	#region Fields
 
-	public static readonly FuncValueConverter<ThemeColor, object, IBrush> GetColorBrushAtIndex = new(Convert);
+	public static readonly FuncValueConverter<ThemeColor, object, IBrush> GetColorBrushAtIndex;
+
+	#endregion
+
+	#region Constructors
+
+	static ThemeConverters()
+	{
+		GetColorBrushAtIndex = new(Convert);
+	}
 
 	#endregion
 

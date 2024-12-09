@@ -49,12 +49,6 @@ public class ApplicationSettings : SettingsFile<ApplicationSettings>
 		set => Set(value);
 	}
 
-	public Dock SelectedTabPlacement
-	{
-		get => Get(Dock.Left);
-		set => Set(value);
-	}
-
 	public ThemeColor ThemeColor
 	{
 		get => Get(ThemeColor.Blue);
@@ -72,9 +66,9 @@ public class ApplicationSettings : SettingsFile<ApplicationSettings>
 	#region Methods
 
 	/// <inheritdoc />
-	public override bool HasChanges(IncludeExcludeOptions options)
+	public override bool HasChanges(IncludeExcludeSettings settings)
 	{
-		return base.HasChanges(options)
+		return base.HasChanges(settings)
 			|| MainWindowLocation.HasChanges();
 	}
 

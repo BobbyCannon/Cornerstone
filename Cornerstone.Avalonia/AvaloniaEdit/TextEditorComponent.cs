@@ -12,7 +12,7 @@ namespace Cornerstone.Avalonia.AvaloniaEdit;
 
 /// <summary>
 /// Represents a text editor control
-/// (<see cref="TextEditor" />, <see cref="TextArea" /> or <see cref="TextView" />).
+/// (<see cref="TextEditorControl" />, <see cref="TextArea" /> or <see cref="TextView" />).
 /// </summary>
 public interface ITextEditorComponent : IServiceProvider
 {
@@ -21,12 +21,12 @@ public interface ITextEditorComponent : IServiceProvider
 	/// <summary>
 	/// Gets the document being edited.
 	/// </summary>
-	TextDocument Document { get; }
+	TextEditorDocument Document { get; }
 
 	/// <summary>
 	/// Gets the options of the text editor.
 	/// </summary>
-	TextEditorOptions Options { get; }
+	TextEditorSettings Settings { get; }
 
 	#endregion
 

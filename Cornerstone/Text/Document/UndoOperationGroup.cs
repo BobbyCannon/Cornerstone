@@ -35,7 +35,7 @@ internal sealed class UndoOperationGroup : IUndoableOperationWithContext
 		_undolist = new IUndoableOperation[numops];
 		for (var i = 0; i < numops; ++i)
 		{
-			_undolist[i] = stack.PopBack();
+			_undolist[i] = stack.PopEnd();
 		}
 	}
 

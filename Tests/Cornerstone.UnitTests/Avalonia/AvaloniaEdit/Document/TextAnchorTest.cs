@@ -14,7 +14,7 @@ public class TextAnchorTest : CornerstoneUnitTest
 {
 	#region Fields
 
-	private TextDocument _document;
+	private TextEditorDocument _document;
 	private static Random _random;
 
 	#endregion
@@ -369,7 +369,7 @@ public class TextAnchorTest : CornerstoneUnitTest
 	[TestInitialize]
 	public void SetUp()
 	{
-		_document = new TextDocument();
+		_document = new TextEditorDocument();
 	}
 
 	#endregion

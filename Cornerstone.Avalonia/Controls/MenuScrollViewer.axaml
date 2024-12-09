@@ -111,8 +111,7 @@
 										RelativeSource="{RelativeSource TemplatedParent}" />
 							</MultiBinding>
 						</RepeatButton.IsVisible>
-						<Path Data="M 0 4 L 8 4 L 4 0 Z"
-								Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RepeatButton}}" />
+						<Path Data="M 0 4 L 8 4 L 4 0 Z" />
 					</RepeatButton>
 					<RepeatButton
 							Command="{Binding LineDown, RelativeSource={RelativeSource TemplatedParent}}"
@@ -133,8 +132,7 @@
 										RelativeSource="{RelativeSource TemplatedParent}" />
 							</MultiBinding>
 						</RepeatButton.IsVisible>
-						<Path Data="M 0 0 L 4 4 L 8 0 Z"
-								Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RepeatButton}}" />
+						<Path Data="M 0 0 L 4 4 L 8 0 Z" />
 					</RepeatButton>
 					<ScrollContentPresenter
 							Name="PART_ContentPresenter"
@@ -158,7 +156,7 @@
 							DockPanel.Dock="Left"
 							VerticalAlignment="Stretch"
 							VerticalContentAlignment="Center"
-							Margin="0,0,0,4">
+							Margin="0,2,0,0">
 						<RepeatButton.IsVisible>
 							<MultiBinding
 									Converter="{x:Static converters:MenuScrollingVisibilityConverter.Instance}"
@@ -177,15 +175,19 @@
 										RelativeSource="{RelativeSource TemplatedParent}" />
 							</MultiBinding>
 						</RepeatButton.IsVisible>
-						<Path Data="M 0 4 L 8 0 L 8 8 Z"
-								Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RepeatButton}}" />
+						<Path Data="M 0 4 L 8 0 L 8 8 Z" 
+								Height="10" Width="10"
+								HorizontalAlignment="Center"
+								VerticalAlignment="Center"
+								Margin="0,0,2,0"/>
 					</RepeatButton>
 					<RepeatButton
 							Command="{Binding LineRight, RelativeSource={RelativeSource TemplatedParent}}"
 							DockPanel.Dock="Right"
 							VerticalAlignment="Stretch"
 							VerticalContentAlignment="Center"
-							Margin="0,4,0,0">
+							Margin="0,2,0,0"
+							MinWidth="24">
 						<RepeatButton.IsVisible>
 							<MultiBinding Converter="{x:Static converters:MenuScrollingVisibilityConverter.Instance}"
 									ConverterParameter="100">
@@ -200,7 +202,10 @@
 							</MultiBinding>
 						</RepeatButton.IsVisible>
 						<Path Data="M 0 0 L 0 8 L 8 4 Z"
-								Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RepeatButton}}" />
+								Height="10" Width="10"
+								HorizontalAlignment="Center"
+								VerticalAlignment="Center"
+								Margin="2,0,0,0" />
 					</RepeatButton>
 					<ScrollContentPresenter
 							Name="PART_ContentPresenter"

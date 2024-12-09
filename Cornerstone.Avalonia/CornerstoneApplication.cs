@@ -1,10 +1,14 @@
 ﻿#region References
 
+using System;
 using System.ComponentModel;
+using System.Reflection;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Cornerstone.Avalonia.Extensions;
 using Cornerstone.Exceptions;
+using Cornerstone.Input;
+using Cornerstone.Media;
 using Cornerstone.Presentation;
 using Cornerstone.Runtime;
 using IDispatcher = Cornerstone.Presentation.IDispatcher;
@@ -18,7 +22,6 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 	#region Fields
 
 	private static CornerstoneDispatcher _dispatcher;
-
 	private PropertyChangedEventHandler _propertyChangedHandler;
 
 	#endregion
@@ -27,13 +30,15 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 
 	protected CornerstoneApplication()
 	{
-		Dependencies = new DependencyInjector();
 		ApplicationArguments = new ApplicationArguments();
+		RuntimeInformation.SetApplicationAssembly(Assembly.GetCallingAssembly());
+		RuntimeInformation.Refresh();
 	}
 
 	static CornerstoneApplication()
 	{
-		PlatformDependencies = new DependencyInjector();
+		DependencyProvider = new DependencyProvider("Cornerstone");
+		RuntimeInformation = new();
 	}
 
 	#endregion
@@ -42,11 +47,11 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 
 	public ApplicationArguments ApplicationArguments { get; }
 
-	public DependencyInjector Dependencies { get; }
+	public static DependencyProvider DependencyProvider { get; }
 
 	public static CornerstoneDispatcher Dispatcher => _dispatcher ??= new CornerstoneDispatcher();
 
-	public static DependencyInjector PlatformDependencies { get; }
+	public static RuntimeInformation RuntimeInformation { get; }
 
 	#endregion
 
@@ -58,12 +63,29 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 		return Dispatcher;
 	}
 
+	public static object GetService(string type)
+	{
+		var response = GetService(Type.GetType(type));
+		return response;
+	}
+
 	public static T GetService<T>()
 	{
 		var app = (CornerstoneApplication) Current;
 		if (app != null)
 		{
-			return app.Dependencies.GetInstance<T>();
+			return DependencyProvider.GetInstance<T>();
+		}
+
+		throw new CornerstoneException("Application is not available.");
+	}
+
+	public static object GetService(Type type)
+	{
+		var app = (CornerstoneApplication) Current;
+		if (app != null)
+		{
+			return DependencyProvider.GetInstance(type);
 		}
 
 		throw new CornerstoneException("Application is not available.");
@@ -72,10 +94,20 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 	/// <inheritdoc />
 	public override void OnFrameworkInitializationCompleted()
 	{
-		if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+		switch (ApplicationLifetime)
 		{
-			ApplicationArguments.Parse(desktop.Args);
+			case IClassicDesktopStyleApplicationLifetime sValue:
+			{
+				ApplicationArguments.Parse(sValue.Args);
+				break;
+			}
+			case ISingleViewApplicationLifetime sValue:
+			{
+				ApplicationArguments.Parse(sValue.GetBrowserArgs());
+				break;
+			}
 		}
+
 		base.OnFrameworkInitializationCompleted();
 	}
 
@@ -88,12 +120,15 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 	/// <inheritdoc />
 	public override void RegisterServices()
 	{
-		PlatformDependencies.Lock();
-		Dependencies.Import(PlatformDependencies);
-		Dependencies.AddSingleton<IClipboardService, ClipboardService>();
-		Dependencies.AddSingleton<IDispatcher>(Dispatcher);
-		Dependencies.AddSingleton<IRuntimeInformation>(CornerstoneRuntimeInformation.Instance);
-		Dependencies.Lock();
+		DependencyProvider.AddSingleton(ApplicationArguments);
+		DependencyProvider.AddSingleton<AudioPlayer, AudioPlayerStub>();
+		DependencyProvider.AddSingleton<IBrowserProxy, BrowserProxy>();
+		DependencyProvider.AddSingleton<IClipboardService, ClipboardService>();
+		DependencyProvider.AddSingleton<Keyboard, KeyboardStub>();
+		DependencyProvider.AddSingleton<Mouse, MouseStub>();
+
+		DependencyProvider.AddCornerstoneServices(RuntimeInformation, Dispatcher);
+		DependencyProvider.Lock();
 		base.RegisterServices();
 	}
 
@@ -102,7 +137,7 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 		var app = (CornerstoneApplication) Current;
 		if (app != null)
 		{
-			service = app.Dependencies.GetInstance<T>();
+			service = DependencyProvider.GetInstance<T>();
 			return true;
 		}
 

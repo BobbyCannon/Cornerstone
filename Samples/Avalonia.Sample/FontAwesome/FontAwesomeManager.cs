@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -34,8 +33,6 @@ public class FontAwesomeManager : Notifiable
 	public Dictionary<string, FontAwesomeIcon> IconLookup { get; private set; }
 
 	public SpeedyList<FontAwesomeIcon> Icons { get; private set; }
-
-	public ReadOnlyObservableCollection<FontAwesomeIcon> IconsFiltered { get; private set; }
 
 	#endregion
 
@@ -105,8 +102,7 @@ public class FontAwesomeManager : Notifiable
 				{
 					FilterCheck = x => x.IsVisible
 				};
-				Icons.AddRange(IconLookup?.Values);
-				IconsFiltered = Icons.Filtered;
+				Icons.Add(IconLookup?.Values);
 			});
 	}
 

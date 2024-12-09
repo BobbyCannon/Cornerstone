@@ -109,15 +109,15 @@ public class XmlElement : Notifiable
 	/// <param name="update"> The update to be applied. </param>
 	public virtual bool UpdateWith(XmlElement update)
 	{
-		return UpdateWith(update, IncludeExcludeOptions.Empty);
+		return UpdateWith(update, IncludeExcludeSettings.Empty);
 	}
 
 	/// <summary>
 	/// Update the XmlElement with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the entity. </param>
-	public virtual bool UpdateWith(XmlElement update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the entity. </param>
+	public virtual bool UpdateWith(XmlElement update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -127,7 +127,7 @@ public class XmlElement : Notifiable
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			Attributes.Reconcile(update.Attributes);
 			Elements.Reconcile(update.Elements);
@@ -136,22 +136,22 @@ public class XmlElement : Notifiable
 		}
 		else
 		{
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Attributes)), x => x.Attributes.Reconcile(update.Attributes));
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Elements)), x => x.Elements.Reconcile(update.Elements));
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(ElementName)), x => x.ElementName = update.ElementName);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(ElementValue)), x => x.ElementValue = update.ElementValue);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Attributes)), x => x.Attributes.Reconcile(update.Attributes));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Elements)), x => x.Elements.Reconcile(update.Elements));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(ElementName)), x => x.ElementName = update.ElementName);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(ElementValue)), x => x.ElementValue = update.ElementValue);
 		}
 
-		return base.UpdateWith(update, options);
+		return base.UpdateWith(update, settings);
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
-			XmlElement value => UpdateWith(value, options),
-			_ => base.UpdateWith(update, options)
+			XmlElement value => UpdateWith(value, settings),
+			_ => base.UpdateWith(update, settings)
 		};
 	}
 

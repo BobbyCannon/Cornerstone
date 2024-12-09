@@ -43,7 +43,7 @@ public class CsvWriterTests : CornerstoneUnitTest
 		history.Add((VerticalLocation) location.ShallowClone());
 
 		var actual = new StringWriter();
-		var option = new CsvOptions();
+		var option = new CsvConverterSettings();
 		CsvWriter.Write(actual, option, history.ToArray());
 		actual.Dump();
 

@@ -11,9 +11,9 @@ public class DocumentChangedEventArgs : EventArgs
 	#region Constructors
 
 	/// <summary>
-	/// Provides data for the <see cref="ITextEditorComponent.DocumentChanged" /> event.
+	/// Provides data for the <see cref="DocumentChanged" /> event.
 	/// </summary>
-	public DocumentChangedEventArgs(TextDocument oldDocument, TextDocument newDocument)
+	public DocumentChangedEventArgs(TextEditorDocument oldDocument, TextEditorDocument newDocument)
 	{
 		OldDocument = oldDocument;
 		NewDocument = newDocument;
@@ -26,12 +26,12 @@ public class DocumentChangedEventArgs : EventArgs
 	/// <summary>
 	/// Gets the new TextDocument.
 	/// </summary>
-	public TextDocument NewDocument { get; private set; }
+	public TextEditorDocument NewDocument { get; private set; }
 
 	/// <summary>
 	/// Gets the old TextDocument.
 	/// </summary>
-	public TextDocument OldDocument { get; private set; }
+	public TextEditorDocument OldDocument { get; private set; }
 
 	#endregion
 }

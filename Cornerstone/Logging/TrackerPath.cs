@@ -3,6 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Cornerstone.Presentation;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -11,22 +13,25 @@ namespace Cornerstone.Logging;
 /// <summary>
 /// Represents a tracker path.
 /// </summary>
-public class TrackerPath : ITrackerPath
+public class TrackerPath : Bindable, ITrackerPath
 {
 	#region Constructors
 
 	/// <summary>
 	/// Instantiates a new instance of the class.
 	/// </summary>
-	public TrackerPath()
+	public TrackerPath() : this(null)
 	{
-		var currentTime = TimeService.CurrentTime.UtcNow;
+	}
+
+	/// <summary>
+	/// Instantiates a new instance of the class.
+	/// </summary>
+	public TrackerPath(IDispatcher dispatcher) : base(dispatcher)
+	{
 		Children = new List<TrackerPath>();
-		CompletedOn = currentTime;
-		Id = Guid.NewGuid();
-		Name = string.Empty;
-		StartedOn = currentTime;
 		Values = new List<TrackerPathValue>();
+		Restart();
 	}
 
 	#endregion
@@ -137,7 +142,7 @@ public class TrackerPath : ITrackerPath
 	public TrackerPath Complete()
 	{
 		IsCompleted = true;
-		CompletedOn = TimeService.CurrentTime.UtcNow;
+		CompletedOn = DateTimeProvider.RealTime.UtcNow;
 		Completed?.Invoke(this);
 		return this;
 	}
@@ -160,6 +165,20 @@ public class TrackerPath : ITrackerPath
 	{
 		Dispose(true);
 		GC.SuppressFinalize(this);
+	}
+
+	/// <summary>
+	/// Reset the tracker.
+	/// </summary>
+	public void Restart()
+	{
+		var currentTime = DateTimeProvider.RealTime.UtcNow;
+		Children.Clear();
+		CompletedOn = currentTime;
+		Id = Guid.NewGuid();
+		Name = string.Empty;
+		StartedOn = currentTime;
+		Values.Clear();
 	}
 
 	/// <summary>
@@ -191,7 +210,7 @@ public class TrackerPath : ITrackerPath
 
 		using var result = new TrackerPath();
 		result.Name = key();
-		result.StartedOn = TimeService.CurrentTime.UtcNow;
+		result.StartedOn = DateTimeProvider.RealTime.UtcNow;
 		action(result);
 		Children.Add(result);
 	}
@@ -212,7 +231,7 @@ public class TrackerPath : ITrackerPath
 
 		using var result = new TrackerPath();
 		result.Name = key();
-		result.StartedOn = TimeService.CurrentTime.UtcNow;
+		result.StartedOn = DateTimeProvider.RealTime.UtcNow;
 		var response = action(result);
 		Children.Add(result);
 		return response;

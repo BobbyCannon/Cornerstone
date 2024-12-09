@@ -449,7 +449,7 @@
 
 									<!-- Default property setters. -->
 
-									<Setter Property="Background" Value="{DynamicResource UiTheme05}" />
+									<Setter Property="Background" Value="{DynamicResource Background05}" />
 
 									<!-- Template. -->
 

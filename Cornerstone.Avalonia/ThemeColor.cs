@@ -14,42 +14,45 @@ public enum ThemeColor
 	[Display(Order = 1)]
 	Current,
 
-	[Display(Order = 90)]
+	[Display(Name = "Amber", Order = 90)]
 	Amber,
 
-	[Display(Order = 60)]
+	[Display(Name = "Blue", Order = 60)]
 	Blue,
 
-	[Display(Order = 130)]
-	BlueGrey,
+	[Display(Name = "Blue Gray", Order = 61)]
+	BlueGray,
 
-	[Display(Order = 120)]
+	[Display(Name = "Brown", Order = 120)]
 	Brown,
 
-	[Display(Order = 110)]
+	[Display(Name = "Deep Orange", Order = 110)]
 	DeepOrange,
 
-	[Display(Order = 40)]
+	[Display(Name = "Deep Purple", Order = 40)]
 	DeepPurple,
 
-	[Display(Order = 80)]
+	[Display(Name = "Gray", Order = 140)]
+	Gray,
+
+	[Display(Name = "Green", Order = 80)]
 	Green,
 
-	[Display(Order = 50)]
+	[Display(Name = "Indigo", Order = 50)]
 	Indigo,
 
-	[Display(Order = 100)]
+	[Display(Name = "Orange", Order = 100)]
 	Orange,
 
-	[Display(Order = 20)]
+	[Display(Name = "Pink", Order = 20)]
 	Pink,
 
-	[Display(Order = 30)]
+	[Display(Name = "Purple", Order = 30)]
 	Purple,
 
-	[Display(Order = 10)]
+	[Display(Name = "Red", Order = 10)]
 	Red,
 
-	[Display(Order = 70)]
+	[Display(Name = "Teal", Order = 70)]
 	Teal
 }

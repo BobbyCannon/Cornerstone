@@ -125,11 +125,11 @@ public static class UtilityExtensions
 	/// <param name="action"> The action to call. </param>
 	/// <param name="timeout"> The timeout to attempt the action. This value is in milliseconds. </param>
 	/// <param name="delay"> The delay in between actions. This value is in milliseconds. </param>
-	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
+	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <returns> Returns true of the call completed successfully or false if it timed out. </returns>
-	public static bool WaitUntil(this Func<bool> action, int timeout, int delay, IDateTimeProvider timeService = null)
+	public static bool WaitUntil(this Func<bool> action, int timeout, int delay, IDateTimeProvider timeProvider = null)
 	{
-		return WaitUntil(action, TimeSpan.FromMilliseconds(timeout), TimeSpan.FromMilliseconds(delay), TimeSpan.MinValue, timeService);
+		return WaitUntil(action, TimeSpan.FromMilliseconds(timeout), TimeSpan.FromMilliseconds(delay), TimeSpan.MinValue, timeProvider);
 	}
 
 	/// <summary>
@@ -139,11 +139,11 @@ public static class UtilityExtensions
 	/// <param name="action"> The action to call. </param>
 	/// <param name="timeout"> The timeout to attempt the action. </param>
 	/// <param name="delay"> The delay in between actions. This value is in milliseconds. </param>
-	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
+	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <returns> Returns true of the call completed successfully or false if it timed out. </returns>
-	public static bool WaitUntil(this Func<bool> action, TimeSpan timeout, int delay, IDateTimeProvider timeService = null)
+	public static bool WaitUntil(this Func<bool> action, TimeSpan timeout, int delay, IDateTimeProvider timeProvider = null)
 	{
-		return WaitUntil(action, timeout, TimeSpan.FromMilliseconds(delay), TimeSpan.MinValue, TimeSpan.MaxValue, timeService);
+		return WaitUntil(action, timeout, TimeSpan.FromMilliseconds(delay), TimeSpan.MinValue, TimeSpan.MaxValue, timeProvider);
 	}
 
 	/// <summary>
@@ -153,11 +153,11 @@ public static class UtilityExtensions
 	/// <param name="timeout"> The timeout to attempt the action. </param>
 	/// <param name="delay"> The delay between checks. </param>
 	/// <param name="minimum"> The minimal time to wait. </param>
-	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
+	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <returns> True if the wait was completed, false if the wait was cancelled. </returns>
-	public static bool WaitUntil(Func<bool> action, TimeSpan timeout, TimeSpan delay, TimeSpan minimum, IDateTimeProvider timeService = null)
+	public static bool WaitUntil(Func<bool> action, TimeSpan timeout, TimeSpan delay, TimeSpan minimum, IDateTimeProvider timeProvider = null)
 	{
-		return WaitUntil(action, timeout, delay, minimum, TimeSpan.MaxValue, timeService);
+		return WaitUntil(action, timeout, delay, minimum, TimeSpan.MaxValue, timeProvider);
 	}
 
 	/// <summary>
@@ -168,9 +168,9 @@ public static class UtilityExtensions
 	/// <param name="delay"> The delay between checks. </param>
 	/// <param name="minimum"> The minimal time to wait. </param>
 	/// <param name="maximum"> The maximum time to wait. </param>
-	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
+	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <returns> True if the wait was completed, false if the wait was cancelled. </returns>
-	public static bool WaitUntil(Func<bool> action, TimeSpan timeout, TimeSpan delay, TimeSpan minimum, TimeSpan maximum, IDateTimeProvider timeService = null)
+	public static bool WaitUntil(Func<bool> action, TimeSpan timeout, TimeSpan delay, TimeSpan minimum, TimeSpan maximum, IDateTimeProvider timeProvider = null)
 	{
 		// Leave here for performance reason, in case cancellation has already been requested
 		// Note: this cut 75% of time for existing cancellations
@@ -179,7 +179,7 @@ public static class UtilityExtensions
 			return true;
 		}
 
-		var timer = Timer.StartNewTimer(timeService ?? TimeService.RealTime);
+		var timer = Timer.StartNewTimer(timeProvider ?? DateTimeProvider.RealTime);
 		var shouldDelay = delay.Ticks > 0;
 
 		while (((timer.Elapsed < timeout) || (timer.Elapsed < minimum)) && (timer.Elapsed < maximum))
@@ -205,11 +205,11 @@ public static class UtilityExtensions
 	/// <param name="action"> The action to call. </param>
 	/// <param name="timeout"> The timeout to attempt the action. This value is in milliseconds. </param>
 	/// <param name="delay"> The delay between checks. This value is in milliseconds. </param>
-	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
+	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <returns> True if the wait was completed, false if the wait was cancelled. </returns>
-	public static bool WaitUntil<T>(this T value, Func<bool> action, int timeout, int delay, IDateTimeProvider timeService = null)
+	public static bool WaitUntil<T>(this T value, Func<bool> action, int timeout, int delay, IDateTimeProvider timeProvider = null)
 	{
-		return WaitUntil(value, _ => action(), TimeSpan.FromMilliseconds(timeout), TimeSpan.FromMilliseconds(delay), TimeSpan.MinValue, timeService);
+		return WaitUntil(value, _ => action(), TimeSpan.FromMilliseconds(timeout), TimeSpan.FromMilliseconds(delay), TimeSpan.MinValue, timeProvider);
 	}
 
 	/// <summary>
@@ -219,11 +219,11 @@ public static class UtilityExtensions
 	/// <param name="action"> The action to call. </param>
 	/// <param name="timeout"> The timeout to attempt the action. </param>
 	/// <param name="delay"> The delay between checks. This value is in milliseconds. </param>
-	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
+	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <returns> True if the wait was completed, false if the wait was cancelled. </returns>
-	public static bool WaitUntil<T>(this T value, Func<bool> action, TimeSpan timeout, int delay, IDateTimeProvider timeService = null)
+	public static bool WaitUntil<T>(this T value, Func<bool> action, TimeSpan timeout, int delay, IDateTimeProvider timeProvider = null)
 	{
-		return WaitUntil(value, _ => action(), timeout, TimeSpan.FromMilliseconds(delay), TimeSpan.MinValue, timeService);
+		return WaitUntil(value, _ => action(), timeout, TimeSpan.FromMilliseconds(delay), TimeSpan.MinValue, timeProvider);
 	}
 
 	/// <summary>
@@ -233,11 +233,11 @@ public static class UtilityExtensions
 	/// <param name="action"> The action to call. </param>
 	/// <param name="timeout"> The timeout to attempt the action. </param>
 	/// <param name="delay"> The delay between checks. </param>
-	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
+	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <returns> True if the wait was completed, false if the wait was cancelled. </returns>
-	public static bool WaitUntil<T>(this T value, Func<bool> action, TimeSpan timeout, TimeSpan delay, IDateTimeProvider timeService = null)
+	public static bool WaitUntil<T>(this T value, Func<bool> action, TimeSpan timeout, TimeSpan delay, IDateTimeProvider timeProvider = null)
 	{
-		return WaitUntil(value, _ => action(), timeout, delay, TimeSpan.MinValue, timeService);
+		return WaitUntil(value, _ => action(), timeout, delay, TimeSpan.MinValue, timeProvider);
 	}
 
 	/// <summary>
@@ -247,11 +247,11 @@ public static class UtilityExtensions
 	/// <param name="action"> The action to call. </param>
 	/// <param name="timeout"> The timeout to attempt the action. This value is in milliseconds. </param>
 	/// <param name="delay"> The delay between checks. This value is in milliseconds. </param>
-	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
+	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <returns> True if the wait was completed, false if the wait was cancelled. </returns>
-	public static bool WaitUntil<T>(this T value, Func<T, bool> action, int timeout, int delay, IDateTimeProvider timeService = null)
+	public static bool WaitUntil<T>(this T value, Func<T, bool> action, int timeout, int delay, IDateTimeProvider timeProvider = null)
 	{
-		return WaitUntil(() => action(value), TimeSpan.FromMilliseconds(timeout), TimeSpan.FromMilliseconds(delay), TimeSpan.MinValue, timeService);
+		return WaitUntil(() => action(value), TimeSpan.FromMilliseconds(timeout), TimeSpan.FromMilliseconds(delay), TimeSpan.MinValue, timeProvider);
 	}
 
 	/// <summary>
@@ -261,11 +261,11 @@ public static class UtilityExtensions
 	/// <param name="action"> The action to call. </param>
 	/// <param name="timeout"> The timeout to attempt the action. </param>
 	/// <param name="delay"> The delay between checks. This value is in milliseconds. </param>
-	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
+	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <returns> True if the wait was completed, false if the wait was cancelled. </returns>
-	public static bool WaitUntil<T>(this T value, Func<T, bool> action, TimeSpan timeout, int delay, IDateTimeProvider timeService = null)
+	public static bool WaitUntil<T>(this T value, Func<T, bool> action, TimeSpan timeout, int delay, IDateTimeProvider timeProvider = null)
 	{
-		return WaitUntil(() => action(value), timeout, TimeSpan.FromMilliseconds(delay), TimeSpan.MinValue, timeService);
+		return WaitUntil(() => action(value), timeout, TimeSpan.FromMilliseconds(delay), TimeSpan.MinValue, timeProvider);
 	}
 
 	/// <summary>
@@ -275,11 +275,11 @@ public static class UtilityExtensions
 	/// <param name="action"> The action to call. </param>
 	/// <param name="timeout"> The timeout to attempt the action. </param>
 	/// <param name="delay"> The delay between checks. </param>
-	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
+	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <returns> True if the wait was completed, false if the wait was cancelled. </returns>
-	public static bool WaitUntil<T>(this T value, Func<T, bool> action, TimeSpan timeout, TimeSpan delay, IDateTimeProvider timeService = null)
+	public static bool WaitUntil<T>(this T value, Func<T, bool> action, TimeSpan timeout, TimeSpan delay, IDateTimeProvider timeProvider = null)
 	{
-		return WaitUntil(() => action(value), timeout, delay, TimeSpan.MinValue, timeService);
+		return WaitUntil(() => action(value), timeout, delay, TimeSpan.MinValue, timeProvider);
 	}
 
 	/// <summary>
@@ -290,11 +290,11 @@ public static class UtilityExtensions
 	/// <param name="timeout"> The timeout to attempt the action. </param>
 	/// <param name="delay"> The delay between checks. </param>
 	/// <param name="minimum"> The minimal time to wait. </param>
-	/// <param name="timeService"> An optional TimeService instead of DateTime. Defaults to new instance of TimeService (DateTime). </param>
+	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <returns> True if the wait was completed, false if the wait was cancelled. </returns>
-	public static bool WaitUntil<T>(this T value, Func<T, bool> action, TimeSpan timeout, TimeSpan delay, TimeSpan minimum, IDateTimeProvider timeService = null)
+	public static bool WaitUntil<T>(this T value, Func<T, bool> action, TimeSpan timeout, TimeSpan delay, TimeSpan minimum, IDateTimeProvider timeProvider = null)
 	{
-		return WaitUntil(() => action(value), timeout, delay, minimum, timeService);
+		return WaitUntil(() => action(value), timeout, delay, minimum, timeProvider);
 	}
 
 	#endregion

@@ -69,5 +69,13 @@ public class StringExtensionsTests : CornerstoneUnitTest
 		IsTrue("?".IsQueryString());
 	}
 
+	[TestMethod]
+	public void ToMd5HashHexString()
+	{
+		var data = "7142AA46-BC9E-4527-86AC-D627DDE6D437";
+		var value = data.ToMd5HashHexString();
+		AreEqual("9122aad21df449f09bfa00c808c47be9", value);
+	}
+
 	#endregion
 }

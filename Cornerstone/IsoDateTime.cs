@@ -141,10 +141,10 @@ public struct IsoDateTime : IComparable<IsoDateTime>, IComparable, IEquatable<Is
 	/// True if the date time has expired. Expires on is included into duration, this
 	/// means you must be greater than expired on to be considered expired.
 	/// </summary>
-	/// <param name="service"> The time service to use for comparison otherwise uses <see cref="TimeService.CurrentTime" />. </param>
-	public bool IsExpired(IDateTimeProvider service = null)
+	/// <param name="service"> The time service to use for comparison. </param>
+	public bool IsExpired(IDateTimeProvider service)
 	{
-		return (service ?? TimeService.RealTime).UtcNow > ExpiresAfter;
+		return service.UtcNow > ExpiresAfter;
 	}
 
 	/// <summary>

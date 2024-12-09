@@ -25,7 +25,7 @@ public class ComparableComparer : BaseComparer
 	}
 
 	/// <inheritdoc />
-	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, string message)
+	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, Func<string> message)
 	{
 		var actualValue = actual.ConvertTo(expected.GetType());
 
@@ -38,7 +38,7 @@ public class ComparableComparer : BaseComparer
 				return CompareResult.NotEqual;
 			}
 
-			if (string.Compare(eString, (string) actualValue, session.Options.StringComparison) == 0)
+			if (string.Compare(eString, (string) actualValue, session.Settings.StringComparison) == 0)
 			{
 				return CompareResult.AreEqual;
 			}

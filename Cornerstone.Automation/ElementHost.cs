@@ -264,7 +264,8 @@ public abstract class ElementHost : IDisposable
 		return FirstOrDefault<T>(x =>
 				(x.FullId == id)
 				|| (x.Id == id)
-				|| (x.Name == id),
+				|| (x.Name == id)
+				|| (x.AutomationId == id),
 			includeDescendants,
 			wait
 		);

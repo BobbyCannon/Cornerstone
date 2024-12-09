@@ -13,7 +13,7 @@ namespace Cornerstone.Sync;
 /// <summary>
 /// The sync client details.
 /// </summary>
-public class SyncClientDetails : Bindable, ISyncClientDetails
+public class SyncClientDetails : Bindable<SyncClientDetails>, ISyncClientDetails
 {
 	#region Properties
 
@@ -46,8 +46,8 @@ public class SyncClientDetails : Bindable, ISyncClientDetails
 	/// Update the SyncClientDetails with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public virtual bool UpdateWith(ISyncClientDetails update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	public virtual bool UpdateWith(ISyncClientDetails update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -57,7 +57,7 @@ public class SyncClientDetails : Bindable, ISyncClientDetails
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			ApplicationName = update.ApplicationName;
 			ApplicationVersion = update.ApplicationVersion;
@@ -69,26 +69,32 @@ public class SyncClientDetails : Bindable, ISyncClientDetails
 		}
 		else
 		{
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(ApplicationName)), x => x.ApplicationName = update.ApplicationName);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(ApplicationVersion)), x => x.ApplicationVersion = update.ApplicationVersion);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(DeviceId)), x => x.DeviceId = update.DeviceId);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(DeviceName)), x => x.DeviceName = update.DeviceName);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(DevicePlatform)), x => x.DevicePlatform = update.DevicePlatform);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(DevicePlatformVersion)), x => x.DevicePlatformVersion = update.DevicePlatformVersion);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(DeviceType)), x => x.DeviceType = update.DeviceType);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(ApplicationName)), x => x.ApplicationName = update.ApplicationName);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(ApplicationVersion)), x => x.ApplicationVersion = update.ApplicationVersion);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(DeviceId)), x => x.DeviceId = update.DeviceId);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(DeviceName)), x => x.DeviceName = update.DeviceName);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(DevicePlatform)), x => x.DevicePlatform = update.DevicePlatform);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(DevicePlatformVersion)), x => x.DevicePlatformVersion = update.DevicePlatformVersion);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(DeviceType)), x => x.DeviceType = update.DeviceType);
 		}
 
 		return true;
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	public override bool UpdateWith(SyncClientDetails update, IncludeExcludeSettings settings)
+	{
+		return UpdateWith(update, settings);
+	}
+
+	/// <inheritdoc />
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
-			SyncClientDetails value => UpdateWith(value, options),
-			ISyncClientDetails value => UpdateWith(value, options),
-			_ => base.UpdateWith(update, options)
+			SyncClientDetails value => UpdateWith(value, settings),
+			ISyncClientDetails value => UpdateWith(value, settings),
+			_ => base.UpdateWith(update, settings)
 		};
 	}
 

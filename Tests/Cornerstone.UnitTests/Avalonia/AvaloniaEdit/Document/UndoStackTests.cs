@@ -15,7 +15,7 @@ public class UndoStackTests : CornerstoneUnitTest
 	[TestMethod]
 	public void ContinueEmptyUndoGroup()
 	{
-		var doc = new TextDocument();
+		var doc = new TextEditorDocument();
 		doc.Insert(0, "a");
 		doc.UndoStack.StartUndoGroup();
 		doc.UndoStack.EndUndoGroup();
@@ -29,7 +29,7 @@ public class UndoStackTests : CornerstoneUnitTest
 	[TestMethod]
 	public void ContinueEmptyUndoGroup_WithOptionalEntries()
 	{
-		var doc = new TextDocument();
+		var doc = new TextEditorDocument();
 		doc.Insert(0, "a");
 		doc.UndoStack.StartUndoGroup();
 		doc.UndoStack.PushOptional(new StubUndoableAction());
@@ -44,7 +44,7 @@ public class UndoStackTests : CornerstoneUnitTest
 	[TestMethod]
 	public void ContinueUndoGroup()
 	{
-		var doc = new TextDocument();
+		var doc = new TextEditorDocument();
 		doc.Insert(0, "a");
 		doc.UndoStack.StartContinuedUndoGroup();
 		doc.Insert(1, "b");
@@ -56,7 +56,7 @@ public class UndoStackTests : CornerstoneUnitTest
 	[TestMethod]
 	public void EmptyContinuationGroup()
 	{
-		var doc = new TextDocument();
+		var doc = new TextEditorDocument();
 		doc.Insert(0, "a");
 		doc.UndoStack.StartContinuedUndoGroup();
 		doc.UndoStack.EndUndoGroup();

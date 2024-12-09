@@ -190,11 +190,11 @@
 
 ApplicationBitness            : X64
 ApplicationDataLocation       : C:\Users\Account\AppData\Local\Console
-ApplicationFileName           : Cornerstone.Console.exe
-ApplicationFilePath           : C:\Workspaces\Console\Console\bin\x64\Debug\net8.0-windows\Console.exe
+ApplicationFileName           : BobsToolbox.Console.exe
+ApplicationFilePath           : C:\Workspaces\Console\Console\bin\x64\Debug\net9.0-windows\Console.exe
 ApplicationIsDevelopmentBuild : True
 ApplicationIsElevated         : True
-ApplicationLocation           : C:\Workspaces\Console\Console\bin\x64\Debug\net8.0-windows
+ApplicationLocation           : C:\Workspaces\Console\Console\bin\x64\Debug\net9.0-windows
 ApplicationName               : Console
 ApplicationVersion            : 1.2.3.4
 DeviceId                      : ABC123

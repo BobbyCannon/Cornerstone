@@ -1,6 +1,5 @@
 ﻿#region References
 
-using Cornerstone.Storage;
 using Cornerstone.Sync;
 using Sample.Shared.Storage;
 
@@ -19,7 +18,6 @@ public class ServerMemoryDatabaseProvider : SyncableDatabaseProvider<IServerData
 	#region Constructors
 
 	public ServerMemoryDatabaseProvider()
-		: base(new DatabaseOptions())
 	{
 		_database = new ServerMemoryDatabase();
 	}
@@ -29,7 +27,13 @@ public class ServerMemoryDatabaseProvider : SyncableDatabaseProvider<IServerData
 	#region Methods
 
 	/// <inheritdoc />
-	protected override IServerDatabase GetDatabaseFromProvider(DatabaseOptions options)
+	public override string[] GetSyncOrder()
+	{
+		return ServerMemoryDatabase.GetSyncOrder();
+	}
+
+	/// <inheritdoc />
+	protected override IServerDatabase GetDatabaseFromProvider()
 	{
 		return _database;
 	}

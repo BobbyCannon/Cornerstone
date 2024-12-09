@@ -9,8 +9,6 @@ using static System.Globalization.NumberStyles;
 
 #endregion
 
-
-
 namespace Cornerstone.Data.Bytes;
 
 /// <summary>
@@ -62,13 +60,8 @@ public readonly partial struct ByteSize : IComparable<ByteSize>, IEquatable<Byte
 
 	#region Fields
 
-	#if NET7_0_OR_GREATER
-	public static readonly ByteSize MinValue = FromBits(Int128.MinValue);
-	public static readonly ByteSize MaxValue = FromBits(UInt128.MaxValue);
-	#else
 	public static readonly ByteSize MinValue = FromBits(long.MinValue);
 	public static readonly ByteSize MaxValue = FromBits(ulong.MaxValue);
-	#endif
 
 	#endregion
 
@@ -77,7 +70,7 @@ public readonly partial struct ByteSize : IComparable<ByteSize>, IEquatable<Byte
 	public ByteSize(decimal byteSize)
 	{
 		// Get ceiling because bits are whole units
-		Bits = (long) Math.Ceiling(byteSize * BitsInByte);
+		Bits = Math.Ceiling(byteSize * BitsInByte);
 
 		Bytes = byteSize;
 		Kilobits = byteSize / BytesInKilobit;
@@ -99,7 +92,7 @@ public readonly partial struct ByteSize : IComparable<ByteSize>, IEquatable<Byte
 
 	#region Properties
 
-	public long Bits { get; }
+	public decimal Bits { get; }
 
 	public decimal Bytes { get; }
 

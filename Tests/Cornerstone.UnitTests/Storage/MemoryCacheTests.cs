@@ -21,12 +21,12 @@ public class MemoryCacheTests : CornerstoneUnitTest
 	[TestMethod]
 	public void CacheShouldExpire()
 	{
-		var cache = new MemoryCache(TimeSpan.FromSeconds(1), this);
+		var cache = new MemoryCache<string, object>(TimeSpan.FromSeconds(1), this);
 		var count = 0;
 
 		try
 		{
-			cache.CollectionChanged += onCacheOnItemRemoved;
+			cache.CollectionChanged += OnCacheOnItemRemoved;
 			cache.Set("foo", "bar");
 			IsTrue(cache.TryGet("foo", out var item));
 			AreEqual("bar", (string) item.Value);
@@ -39,12 +39,12 @@ public class MemoryCacheTests : CornerstoneUnitTest
 		}
 		finally
 		{
-			cache.CollectionChanged -= onCacheOnItemRemoved;
+			cache.CollectionChanged -= OnCacheOnItemRemoved;
 		}
 
 		return;
 
-		void onCacheOnItemRemoved(object sender, NotifyCollectionChangedEventArgs args)
+		void OnCacheOnItemRemoved(object sender, NotifyCollectionChangedEventArgs args)
 		{
 			if (args.Action == NotifyCollectionChangedAction.Remove)
 			{
@@ -57,11 +57,11 @@ public class MemoryCacheTests : CornerstoneUnitTest
 	public void CleanUpShouldWork()
 	{
 		var count = 0;
-		var cache = new MemoryCache(TimeSpan.FromSeconds(10), this);
+		var cache = new MemoryCache<string, object>(TimeSpan.FromSeconds(10), this);
 
 		try
 		{
-			cache.CollectionChanged += onCollectionChanged;
+			cache.CollectionChanged += OnCollectionChanged;
 			cache.Set("foo", "bar");
 			cache.Set("hello", "world");
 
@@ -81,12 +81,12 @@ public class MemoryCacheTests : CornerstoneUnitTest
 		}
 		finally
 		{
-			cache.CollectionChanged -= onCollectionChanged;
+			cache.CollectionChanged -= OnCollectionChanged;
 		}
 
 		return;
 
-		void onCollectionChanged(object sender, NotifyCollectionChangedEventArgs args)
+		void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs args)
 		{
 			count += args.NewItems?.Count ?? 0;
 			count += args.OldItems?.Count ?? 0;
@@ -97,11 +97,11 @@ public class MemoryCacheTests : CornerstoneUnitTest
 	public void ClearShouldWork()
 	{
 		var count = 0;
-		var cache = new MemoryCache(TimeSpan.FromSeconds(10), this);
+		var cache = new MemoryCache<string, object>(TimeSpan.FromSeconds(10), this);
 
 		try
 		{
-			cache.CollectionChanged += onCollectionChanged;
+			cache.CollectionChanged += OnCollectionChanged;
 			cache.Set("foo", "bar");
 			cache.Set("hello", "world");
 
@@ -116,12 +116,12 @@ public class MemoryCacheTests : CornerstoneUnitTest
 		}
 		finally
 		{
-			cache.CollectionChanged -= onCollectionChanged;
+			cache.CollectionChanged -= OnCollectionChanged;
 		}
 
 		return;
 
-		void onCollectionChanged(object sender, NotifyCollectionChangedEventArgs args)
+		void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs args)
 		{
 			count += args.NewItems?.Count ?? 0;
 			count += args.OldItems?.Count ?? 0;
@@ -131,13 +131,13 @@ public class MemoryCacheTests : CornerstoneUnitTest
 	[TestMethod]
 	public void Constructor()
 	{
-		var cache = new MemoryCache();
+		var cache = new MemoryCache<string, object>();
 		IsTrue(cache.IsEmpty);
 		IsTrue(cache.IsSynchronized);
 		IsTrue(cache.SlidingExpiration);
 		AreEqual(TimeSpan.FromMinutes(15), cache.DefaultTimeout);
 
-		cache = new MemoryCache(TimeSpan.FromSeconds(1), this);
+		cache = new MemoryCache<string, object>(TimeSpan.FromSeconds(1), this);
 		IsTrue(cache.IsEmpty);
 		IsTrue(cache.IsSynchronized);
 		IsTrue(cache.SlidingExpiration);
@@ -148,7 +148,7 @@ public class MemoryCacheTests : CornerstoneUnitTest
 	public void CopyTo()
 	{
 		var array = new MemoryCacheItem<string, object>[2];
-		var cache = new MemoryCache(TimeSpan.FromSeconds(10), this);
+		var cache = new MemoryCache<string, object>(TimeSpan.FromSeconds(10), this);
 		cache.Set("foo", "bar");
 		cache.Set("hello", "world");
 
@@ -166,7 +166,7 @@ public class MemoryCacheTests : CornerstoneUnitTest
 	[TestMethod]
 	public void EnumeratorShouldWork()
 	{
-		var cache = new MemoryCache(TimeSpan.FromSeconds(10), this);
+		var cache = new MemoryCache<string, object>(TimeSpan.FromSeconds(10), this);
 		IsTrue(cache.SlidingExpiration);
 		cache.Set("foo", "bar");
 		IncrementTime(seconds: 1);
@@ -192,7 +192,7 @@ public class MemoryCacheTests : CornerstoneUnitTest
 	[TestMethod]
 	public void ExpiredEntriesShouldBeCleanedUp()
 	{
-		var cache = new MemoryCache(TimeSpan.FromSeconds(10), this);
+		var cache = new MemoryCache<string, object>(TimeSpan.FromSeconds(10), this);
 		cache.Set("foo", "bar");
 		IncrementTime(seconds: 1);
 		cache.Set("hello", "world");
@@ -209,7 +209,7 @@ public class MemoryCacheTests : CornerstoneUnitTest
 	[TestMethod]
 	public void ExpiredEntriesShouldBeIgnored()
 	{
-		var cache = new MemoryCache(TimeSpan.FromSeconds(10), this);
+		var cache = new MemoryCache<string, object>(TimeSpan.FromSeconds(10), this);
 		cache.Set("foo", "bar");
 		IncrementTime(seconds: 1);
 		cache.Set("hello", "world");
@@ -223,7 +223,7 @@ public class MemoryCacheTests : CornerstoneUnitTest
 	[TestMethod]
 	public void HasKey()
 	{
-		var cache = new MemoryCache(TimeSpan.FromSeconds(10), this);
+		var cache = new MemoryCache<string, object>(TimeSpan.FromSeconds(10), this);
 		IsFalse(cache.HasKey("foo"));
 		cache.Set("foo", "bar");
 		IsTrue(cache.HasKey("foo"));
@@ -232,7 +232,7 @@ public class MemoryCacheTests : CornerstoneUnitTest
 	[TestMethod]
 	public void Contains()
 	{
-		var cache = new MemoryCache(TimeSpan.FromSeconds(10), this);
+		var cache = new MemoryCache<string, object>(TimeSpan.FromSeconds(10), this);
 		IsFalse(cache.Contains(new MemoryCacheItem<string, object>(cache, "foo", "bar", TimeSpan.Zero, this)));
 		cache.Set("foo", "bar");
 		IsTrue(cache.HasKey("foo"));
@@ -241,7 +241,7 @@ public class MemoryCacheTests : CornerstoneUnitTest
 	[TestMethod]
 	public void RemoveShouldWork()
 	{
-		var cache = new MemoryCache(TimeSpan.FromSeconds(10), this);
+		var cache = new MemoryCache<string, object>(TimeSpan.FromSeconds(10), this);
 		cache.Set("foo", "bar");
 		cache.Set("hello", "world");
 
@@ -258,7 +258,7 @@ public class MemoryCacheTests : CornerstoneUnitTest
 	[TestMethod]
 	public void RemoveShouldWorkWithInvalidKey()
 	{
-		var cache = new MemoryCache(TimeSpan.FromSeconds(10), this);
+		var cache = new MemoryCache<string, object>(TimeSpan.FromSeconds(10), this);
 		AreEqual(0, cache.Count);
 
 		// Remove key is not available so [default] (null) should be returned
@@ -269,7 +269,7 @@ public class MemoryCacheTests : CornerstoneUnitTest
 	[TestMethod]
 	public void SetMultipleCallsShouldUpdateNotAdd()
 	{
-		var cache = new MemoryCache(TimeSpan.FromSeconds(10), this);
+		var cache = new MemoryCache<string, object>(TimeSpan.FromSeconds(10), this);
 		cache.Set("foo", "bar");
 
 		AreEqual(1, cache.Count);
@@ -287,7 +287,7 @@ public class MemoryCacheTests : CornerstoneUnitTest
 	[TestMethod]
 	public void SlidingExpirationDisabledShouldNotAffectItems()
 	{
-		var cache = new MemoryCache(TimeSpan.FromSeconds(10), this)
+		var cache = new MemoryCache<string, object>(TimeSpan.FromSeconds(10), this)
 		{
 			SlidingExpiration = false
 		};
@@ -317,7 +317,7 @@ public class MemoryCacheTests : CornerstoneUnitTest
 	[TestMethod]
 	public void SlidingExpirationShouldWork()
 	{
-		var cache = new MemoryCache(TimeSpan.FromSeconds(10), this);
+		var cache = new MemoryCache<string, object>(TimeSpan.FromSeconds(10), this);
 		IsTrue(cache.SlidingExpiration);
 
 		cache.Set("foo", "bar");
@@ -340,7 +340,7 @@ public class MemoryCacheTests : CornerstoneUnitTest
 	[TestMethod]
 	public void TryGetInvalidKey()
 	{
-		var cache = new MemoryCache(TimeSpan.FromSeconds(10), this);
+		var cache = new MemoryCache<string, object>(TimeSpan.FromSeconds(10), this);
 		cache.Set("foo", "bar");
 		cache.Set("hello", "world");
 

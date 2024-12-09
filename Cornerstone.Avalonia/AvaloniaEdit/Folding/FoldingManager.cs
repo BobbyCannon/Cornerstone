@@ -30,7 +30,7 @@ public class FoldingManager
 	/// <summary>
 	/// Creates a new FoldingManager instance.
 	/// </summary>
-	public FoldingManager(TextDocument document)
+	public FoldingManager(TextEditorDocument document)
 	{
 		Document = document ?? throw new ArgumentNullException(nameof(document));
 		_foldings = [];
@@ -49,7 +49,7 @@ public class FoldingManager
 	/// </summary>
 	public IEnumerable<FoldingSection> AllFoldings => _foldings;
 
-	internal TextDocument Document { get; }
+	internal TextEditorDocument Document { get; }
 	internal List<TextView> TextViews { get; } = [];
 
 	#endregion
@@ -127,7 +127,7 @@ public class FoldingManager
 	}
 
 	/// <summary>
-	/// Gets the first folding with a <see cref="TextSegment.StartOffset" /> greater or equal to
+	/// Gets the first folding with a <see cref="TextRange.StartOffset" /> greater or equal to
 	/// <paramref name="startOffset" />.
 	/// Returns null if there are no foldings after <paramref name="startOffset" />.
 	/// </summary>
@@ -223,7 +223,7 @@ public class FoldingManager
 			}
 			previousStartOffset = newFolding.StartOffset;
 
-			if (newFolding.StartOffset == newFolding.EndOffset)
+			if (newFolding.StartOffset == newFolding.EndIndex)
 			{
 				continue; // ignore zero-length foldings
 			}
@@ -238,12 +238,12 @@ public class FoldingManager
 			if ((oldFoldingIndex < oldFoldings.Length) && (newFolding.StartOffset == oldFoldings[oldFoldingIndex].StartOffset))
 			{
 				section = oldFoldings[oldFoldingIndex++];
-				section.Length = newFolding.EndOffset - newFolding.StartOffset;
+				section.Length = newFolding.EndIndex - newFolding.StartOffset;
 			}
 			else
 			{
 				// no matching current folding; create a new one:
-				section = CreateFolding(newFolding.StartOffset, newFolding.EndOffset);
+				section = CreateFolding(newFolding.StartOffset, newFolding.EndIndex);
 				// auto-close #regions only when opening the document
 				if (_isFirstUpdate)
 				{
@@ -326,7 +326,7 @@ public class FoldingManager
 		var newEndOffset = e.Offset + e.InsertionLength;
 		// extend end offset to the end of the line (including delimiter)
 		var endLine = Document.GetLineByOffset(newEndOffset);
-		newEndOffset = endLine.Offset + endLine.TotalLength;
+		newEndOffset = endLine.StartIndex + endLine.TotalLength;
 		foreach (var affectedFolding in _foldings.FindOverlappingSegments(e.Offset, newEndOffset - e.Offset))
 		{
 			if (affectedFolding.Length == 0)
@@ -417,7 +417,7 @@ public class FoldingManager
 			var caretOffset = _textArea.Caret.Offset;
 			foreach (var s in GetFoldingsContaining(caretOffset))
 			{
-				if (s.IsFolded && (s.StartOffset < caretOffset) && (caretOffset < s.EndOffset))
+				if (s.IsFolded && (s.StartOffset < caretOffset) && (caretOffset < s.EndIndex))
 				{
 					s.IsFolded = false;
 				}

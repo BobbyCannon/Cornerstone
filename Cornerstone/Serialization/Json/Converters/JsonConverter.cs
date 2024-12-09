@@ -46,7 +46,7 @@ public abstract class JsonConverter : IJsonConverter
 	#region Methods
 
 	/// <inheritdoc />
-	public abstract void Append(object value, Type valueType, IObjectConsumer consumer, ISerializationOptions settings);
+	public abstract void Append(object value, Type valueType, IObjectConsumer consumer, ISerializationSettings settings);
 
 	/// <inheritdoc />
 	public virtual bool CanConvert(Type type)
@@ -58,7 +58,7 @@ public abstract class JsonConverter : IJsonConverter
 	public abstract object ConvertTo(Type type, JsonValue jsonValue);
 
 	/// <inheritdoc />
-	public abstract string GetJsonString(object value, ISerializationOptions settings);
+	public abstract string GetJsonString(object value, ISerializationSettings settings);
 
 	/// <inheritdoc />
 	public Type[] GetSupportedTypes()

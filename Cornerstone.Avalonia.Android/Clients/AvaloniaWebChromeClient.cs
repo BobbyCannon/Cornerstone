@@ -2,41 +2,41 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Android.Content;
+using Android.Graphics;
 using Android.OS;
+using Android.Service.QuickSettings;
 using Android.Webkit;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
-using Cornerstone.Avalonia.Android.Core;
-using Cornerstone.Avalonia.AvaloniaWebView.Core.Extensions;
+using Cornerstone.Avalonia.Extensions;
+using Debug = System.Diagnostics.Debug;
 
 #endregion
 
 namespace Cornerstone.Avalonia.Android.Clients;
 
-internal class AvaloniaWebChromeClient : WebChromeClient
+internal class CornerstoneWebChromeClient : WebChromeClient
 {
 	#region Fields
 
-	private readonly AndroidWebViewCore _androidWebViewCore;
+	private readonly WebViewAdapter _androidWebViewCore;
 	private readonly TopLevel _topLevel;
 
 	#endregion
 
 	#region Constructors
 
-	public AvaloniaWebChromeClient(AndroidWebViewCore androidWebViewCore)
+	public CornerstoneWebChromeClient(WebViewAdapter androidWebViewCore)
 	{
 		_androidWebViewCore = androidWebViewCore;
-		var topLevel = androidWebViewCore.GetTopLevel();
-		if (topLevel is null)
-		{
-			throw new ArgumentNullException(nameof(topLevel));
-		}
 
-		_topLevel = topLevel;
+		var topLevel = Application.Current.GetTopLevel();
+		_topLevel = topLevel ?? throw new ArgumentNullException(nameof(topLevel));
 	}
 
 	#endregion
@@ -56,14 +56,47 @@ internal class AvaloniaWebChromeClient : WebChromeClient
 		return false;
 	}
 
+	/// <inheritdoc />
+	public override void OnReceivedTitle(WebView view, string title)
+	{
+		_androidWebViewCore.Title = title;
+		base.OnReceivedTitle(view, title);
+	}
+
+	/// <inheritdoc />
+	public override void OnReceivedIcon(WebView view, Bitmap icon)
+	{
+		_androidWebViewCore.Favicon = ToByteArray(icon);
+		base.OnReceivedIcon(view, icon);
+	}
+
+	private byte[] ToByteArray(Bitmap b)
+	{
+		if (b == null)
+		{
+			return null;
+		}
+
+		using var stream = new MemoryStream();
+		b.Compress(Bitmap.CompressFormat.Png, 0, stream);
+		return stream.ToArray();
+	}
+
+	/// <inheritdoc />
+	public override bool OnJsAlert(WebView view, string url, string message, JsResult result)
+	{
+		Debug.WriteLine(message);
+		return base.OnJsAlert(view, url, message, result);
+	}
+
 	public override bool OnShowFileChooser(AndroidWebView webView, IValueCallback filePathCallback, FileChooserParams fileChooserParams)
 	{
 		if (filePathCallback is null)
 		{
-			return base.OnShowFileChooser(webView, filePathCallback, fileChooserParams);
+			return base.OnShowFileChooser(webView, null, fileChooserParams);
 		}
 
-		CallFilePickerAsync(filePathCallback, fileChooserParams).FireAndForget();
+		_ = CallFilePickerAsync(filePathCallback, fileChooserParams);
 		return true;
 	}
 
@@ -83,7 +116,7 @@ internal class AvaloniaWebChromeClient : WebChromeClient
 			return;
 		}
 
-		var fileUris = new List<AndroidUri>(fileResults.Count());
+		var fileUris = new List<AndroidUri>(fileResults.Count);
 		foreach (var fileResult in fileResults)
 		{
 			if (fileResult is null)
@@ -126,8 +159,8 @@ internal class AvaloniaWebChromeClient : WebChromeClient
 				new("Accepted File")
 				{
 					Patterns = acceptedFileTypes,
-					AppleUniformTypeIdentifiers = new string[1] { "public.accepted" },
-					MimeTypes = new string[1] { "accepted/*" }
+					AppleUniformTypeIdentifiers = ["public.accepted"],
+					MimeTypes = ["accepted/*"]
 				}
 			}
 		};

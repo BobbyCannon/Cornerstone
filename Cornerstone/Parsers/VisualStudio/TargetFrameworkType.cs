@@ -179,28 +179,28 @@ public enum TargetFrameworkType
 	[TargetFramework(Moniker = "net7.0-windows", Version = "7.0", OperatingSystem = "windows", NetStandard = NetStandard21, Platform = Net7, Parent = Net8Windows)]
 	Net7Windows,
 
-	[TargetFramework(Moniker = "net8.0", Version = "8.0", NetStandard = NetStandard21, Platform = Net8)]
+	[TargetFramework(Moniker = "net9.0", Version = "8.0", NetStandard = NetStandard21, Platform = Net8)]
 	Net8,
 
-	[TargetFramework(Moniker = "net8.0-android", Version = "8.0", OperatingSystem = "android", NetStandard = NetStandard21, Platform = Net8)]
+	[TargetFramework(Moniker = "net9.0-android", Version = "8.0", OperatingSystem = "android", NetStandard = NetStandard21, Platform = Net8)]
 	Net8Android,
 
-	[TargetFramework(Moniker = "net8.0-browser", Version = "8.0", OperatingSystem = "browser", NetStandard = NetStandard21, Platform = Net8)]
+	[TargetFramework(Moniker = "net9.0-browser", Version = "8.0", OperatingSystem = "browser", NetStandard = NetStandard21, Platform = Net8)]
 	Net8Browser,
 
-	[TargetFramework(Moniker = "net8.0-ios", Version = "8.0", OperatingSystem = "ios", NetStandard = NetStandard21, Platform = Net8)]
+	[TargetFramework(Moniker = "net9.0-ios", Version = "8.0", OperatingSystem = "ios", NetStandard = NetStandard21, Platform = Net8)]
 	Net8Ios,
 
-	[TargetFramework(Moniker = "net8.0-maccatalyst", Version = "8.0", OperatingSystem = "maccatalyst", NetStandard = NetStandard21, Platform = Net8)]
+	[TargetFramework(Moniker = "net9.0-maccatalyst", Version = "8.0", OperatingSystem = "maccatalyst", NetStandard = NetStandard21, Platform = Net8)]
 	Net8MacCatalyst,
 
-	[TargetFramework(Moniker = "net8.0-macos", Version = "8.0", OperatingSystem = "macos", NetStandard = NetStandard21, Platform = Net8)]
+	[TargetFramework(Moniker = "net9.0-macos", Version = "8.0", OperatingSystem = "macos", NetStandard = NetStandard21, Platform = Net8)]
 	Net8MacOs,
 
-	[TargetFramework(Moniker = "net8.0-tvos", Version = "8.0", OperatingSystem = "tvos", NetStandard = NetStandard21, Platform = Net8)]
+	[TargetFramework(Moniker = "net9.0-tvos", Version = "8.0", OperatingSystem = "tvos", NetStandard = NetStandard21, Platform = Net8)]
 	Net8TvOs,
 
-	[TargetFramework(Moniker = "net8.0-windows", Version = "8.0", OperatingSystem = "windows", NetStandard = NetStandard21, Platform = Net8)]
+	[TargetFramework(Moniker = "net9.0-windows", Version = "8.0", OperatingSystem = "windows", NetStandard = NetStandard21, Platform = Net8)]
 	Net8Windows,
 
 	[TargetFramework(Moniker = "MonoAndroid", Version = "MonoAndroid", OperatingSystem = "Android", NetStandard = NetStandard20)]

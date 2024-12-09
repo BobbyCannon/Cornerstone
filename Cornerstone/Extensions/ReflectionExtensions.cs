@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Cornerstone.Generators.CodeGenerators;
 using Cornerstone.Internal;
 
 #endregion
@@ -43,7 +44,8 @@ public static class ReflectionExtensions
 	private static readonly ConcurrentDictionary<CacheKey, Type> _makeGenericTypes;
 	private static readonly ConcurrentDictionary<CacheKey, ParameterInfo[]> _methodParameters;
 	private static readonly ConcurrentDictionary<CacheKey, Type[]> _methodsGenericArgumentInfos;
-	private static readonly ConcurrentDictionary<CacheKey, ConstructorInfo[]> _typeConstructors;
+	private static readonly ConcurrentDictionary<CacheKey, ConstructorInfo> _typeConstructors;
+	private static readonly ConcurrentDictionary<CacheKey, ConstructorInfo[]> _typeConstructorsAll;
 	private static readonly ConcurrentDictionary<CacheKey, Attribute> _typeCustomAttribute;
 	private static readonly ConcurrentDictionary<CacheKey, FieldInfo[]> _typeFieldInfos;
 	private static readonly ConcurrentDictionary<CacheKey, MethodInfo> _typeMethodInfos;
@@ -64,7 +66,8 @@ public static class ReflectionExtensions
 		_methodParameters = new ConcurrentDictionary<CacheKey, ParameterInfo[]>();
 		_methodsGenericArgumentInfos = new ConcurrentDictionary<CacheKey, Type[]>();
 		_typeCustomAttribute = new ConcurrentDictionary<CacheKey, Attribute>();
-		_typeConstructors = new ConcurrentDictionary<CacheKey, ConstructorInfo[]>();
+		_typeConstructors = new ConcurrentDictionary<CacheKey, ConstructorInfo>();
+		_typeConstructorsAll = new ConcurrentDictionary<CacheKey, ConstructorInfo[]>();
 		_typeFieldInfos = new ConcurrentDictionary<CacheKey, FieldInfo[]>();
 		_typeMethodInfos = new ConcurrentDictionary<CacheKey, MethodInfo>();
 		_typeMethodsInfos = new ConcurrentDictionary<CacheKey, MethodInfo[]>();
@@ -78,6 +81,25 @@ public static class ReflectionExtensions
 	#region Methods
 
 	/// <summary>
+	/// Get the constructor of provided types.
+	/// The results are cached so the next query is much faster.
+	/// </summary>
+	/// <param name="type"> The type to get the constructor for. </param>
+	/// <param name="parameterTypes">
+	/// An array of type objects representing the number, order, and type of the parameters for the constructor to get.-or-
+	/// An empty array of type objects (as provided by the EmptyTypes field) to get a constructor that takes no parameters.
+	/// </param>
+	/// <param name="flags"> The flags used to query with. </param>
+	/// <returns> The constructor info. </returns>
+	public static ConstructorInfo GetCachedConstructor(this Type type, Type[] parameterTypes, BindingFlags? flags = null)
+	{
+		var typeFlags = flags ?? DefaultPublicFlags;
+		var label = GetLabel(type, parameterTypes);
+		var key = new CacheKey(type, typeFlags, label);
+		return _typeConstructors.GetOrAdd(key, _ => type.GetConstructor(parameterTypes));
+	}
+
+	/// <summary>
 	/// Get the constructors for a types.
 	/// The results are cached so the next query is much faster.
 	/// </summary>
@@ -87,9 +109,8 @@ public static class ReflectionExtensions
 	public static ConstructorInfo[] GetCachedConstructors(this Type type, BindingFlags? flags = null)
 	{
 		var typeFlags = flags ?? DefaultPublicFlags;
-		var label = $"{type.FullName}";
-		var key = new CacheKey(type, typeFlags, label);
-		return _typeConstructors.GetOrAdd(key, _ => type.GetConstructors(typeFlags));
+		var key = new CacheKey(type, typeFlags, type.FullName);
+		return _typeConstructorsAll.GetOrAdd(key, _ => type.GetConstructors(typeFlags));
 	}
 
 	/// <summary>
@@ -174,7 +195,7 @@ public static class ReflectionExtensions
 	public static IList<Type> GetCachedGenericArguments(this MethodInfo info, BindingFlags? flags = null)
 	{
 		var typeFlags = flags ?? DefaultPublicFlags;
-		var name = info.IsGenericMethod ? info.GetType().ToCSharpCode() : info.Name;
+		var name = info.IsGenericMethod ? info.GetCodeTypeName() : info.Name;
 		var key = new CacheKey(info.ReflectedType ?? throw new InvalidOperationException(), typeFlags, name);
 		return _methodsGenericArgumentInfos.GetOrAdd(key, _ => info.GetGenericArguments());
 	}
@@ -192,7 +213,7 @@ public static class ReflectionExtensions
 	public static MethodInfo GetCachedGenericMethod(this Type type, string methodName, Type[] methodGenericTypes, Type[] parameterTypes, BindingFlags? flags = null)
 	{
 		var typeFlags = flags ?? DefaultPublicFlags;
-		var label = $"{type.FullName}<{methodName}{string.Join(",", methodGenericTypes.Select(x => x.FullName))}>.{string.Join(",", parameterTypes.Select(x => x.FullName))}";
+		var label = GetLabel(type, methodName, methodGenericTypes, parameterTypes);
 		var key = new CacheKey(type, typeFlags, label);
 		return _genericMethod.GetOrAdd(key, _ =>
 		{
@@ -226,7 +247,7 @@ public static class ReflectionExtensions
 	/// <returns> The method information with generics. </returns>
 	public static MethodInfo GetCachedMakeGenericMethod(this MethodInfo info, params Type[] arguments)
 	{
-		var name = info.IsGenericMethod ? info.GetType().ToCSharpCode() : info.Name;
+		var name = info.IsGenericMethod ? info.GetType().GetCodeTypeName() : info.Name;
 		var label = name + string.Join(",", arguments.Select(x => x.FullName));
 		var key = new CacheKey(info.ReflectedType ?? throw new InvalidOperationException(), BindingFlags.Public, label);
 		return _makeGenericMethods.GetOrAdd(key, _ => info.MakeGenericMethod(arguments));
@@ -345,7 +366,7 @@ public static class ReflectionExtensions
 		}
 
 		var typeFlags = flags ?? DefaultPublicFlags;
-		var name = info.IsGenericMethod ? info.GetType().ToCSharpCode() : info.Name;
+		var name = info.IsGenericMethod ? info.GetType().GetCodeTypeName() : info.Name;
 		var key = new CacheKey(info.ReflectedType ?? throw new InvalidOperationException(), typeFlags, name);
 		return _methodParameters.GetOrAdd(key, _ => info.GetParameters());
 	}
@@ -703,11 +724,29 @@ public static class ReflectionExtensions
 		return info;
 	}
 
+	private static string GetLabel(Type type, Type[] parameterTypes)
+	{
+		var label = $"{type.FullName}.{string.Join(",", parameterTypes.Select(x => x.FullName))}";
+		return label;
+	}
+
+	private static string GetLabel(Type type, Type[] genericTypes, Type[] parameterTypes)
+	{
+		var label = $"{type.FullName}<{string.Join(",", genericTypes.Select(x => x.FullName))}>.{string.Join(",", parameterTypes.Select(x => x.FullName))}";
+		return label;
+	}
+
+	private static string GetLabel(Type type, string methodName, Type[] genericTypes, Type[] parameterTypes)
+	{
+		var label = $"{type.FullName}.{methodName}<{string.Join(",", genericTypes.Select(x => x.FullName))}>.{string.Join(",", parameterTypes.Select(x => x.FullName))}";
+		return label;
+	}
+
 	#endregion
 
 	#region Structures
 
-	private struct CacheKey : IEquatable<CacheKey>, IEqualityComparer<CacheKey>
+	public struct CacheKey : IEquatable<CacheKey>, IEqualityComparer<CacheKey>
 	{
 		#region Constructors
 
@@ -750,6 +789,11 @@ public static class ReflectionExtensions
 		public int GetHashCode(CacheKey obj)
 		{
 			return HashCodeCalculator.Combine(Type, Flags, Label);
+		}
+
+		public static CacheKey From(MethodInfo info)
+		{
+			return new CacheKey();
 		}
 
 		#endregion

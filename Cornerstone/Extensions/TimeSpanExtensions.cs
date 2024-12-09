@@ -32,5 +32,54 @@ public static class TimeSpanExtensions
 		return response;
 	}
 
+	/// <summary>
+	/// Return the minimal string of a timespan
+	/// </summary>
+	/// <param name="span"> The span value. </param>
+	/// <returns> The minimal string. </returns>
+	public static string ToMinString(this TimeSpan span)
+	{
+		var precisionLength = 0;
+		var includePrecision = false;
+
+		if (span.Milliseconds > 0)
+		{
+			precisionLength = 3;
+			includePrecision = true;
+		}
+		
+		#if (!NETSTANDARD2_0)
+		if (span.Microseconds > 0)
+		{
+			precisionLength = 6;
+			includePrecision = true;
+		}
+		if (span.Nanoseconds > 0)
+		{
+			precisionLength = 7;
+			includePrecision = true;
+		}
+		#endif
+
+		if (span.Days > 0)
+		{
+			return includePrecision ? span.ToString() : span.ToString("d\\:hh\\:mm\\:ss");
+		}
+
+		if (span.Hours > 0)
+		{
+			return includePrecision ? span.ToString() : span.ToString("hh\\:mm\\:ss");
+		}
+
+		if (span.Minutes > 0)
+		{
+			return includePrecision ? span.ToString() : span.ToString("mm\\:ss");
+		}
+
+		return includePrecision
+			? span.ToString($"ss\\.{new string('f', precisionLength)}")
+			: span.ToString("ss");
+	}
+
 	#endregion
 }

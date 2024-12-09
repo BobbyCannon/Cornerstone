@@ -29,20 +29,12 @@
 		<Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
 		<Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
 		<Setter Property="ScrollViewer.IsScrollChainingEnabled" Value="True" />
-
-		<!-- Template. -->
 		<Setter Property="Template">
-
-			<!-- Control template. -->
 			<ControlTemplate>
-
-				<!-- Background border. -->
 				<Border
 						BorderBrush="{TemplateBinding BorderBrush}"
 						BorderThickness="{TemplateBinding BorderThickness}"
 						CornerRadius="{TemplateBinding CornerRadius}">
-
-					<!-- Scroll viewer. -->
 					<ScrollViewer
 							Background="{TemplateBinding Background}"
 							HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
@@ -50,13 +42,10 @@
 							IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
 							AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
 							BringIntoViewOnFocusChange="{TemplateBinding (ScrollViewer.BringIntoViewOnFocusChange)}">
-
-						<!-- Items. -->
 						<ItemsPresenter
 								Name="PART_ItemsPresenter"
 								ItemsPanel="{TemplateBinding ItemsPanel}"
 								Margin="{TemplateBinding Padding}" />
-
 					</ScrollViewer>
 				</Border>
 			</ControlTemplate>

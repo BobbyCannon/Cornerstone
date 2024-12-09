@@ -1,0 +1,121 @@
+﻿<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+		<meta name="description" content="Site dedicated to helping you become as EPIC as possible!" />
+		<title>Become Epic</title>
+		<link href="./Favicons/bible.ico" rel="shortcut icon" type="image/x-icon" />
+		<link rel="stylesheet" href="file:///C:/Workspaces/EpicCoders/BecomeEpic/BecomeEpic.WebService/wwwroot/css/BecomeEpic.css" />
+		<link rel="stylesheet" href="file:///C:/Workspaces/EpicCoders/BecomeEpic/BecomeEpic.WebService/wwwroot/css/fontawesome-all.css" />
+		<link rel="stylesheet" href="file:///C:/Workspaces/EpicCoders/BecomeEpic/BecomeEpic.WebService/wwwroot/lib/toastr/toastr.css" />
+		<style type="text/css">
+
+		</style>
+	</head>
+	<body class="padding-10">
+	<h1>Text Boxes</h1>
+	<input type="text" value="Hello World" /><br />
+	<input type="text" value="Disabled" disabled /><br />
+	<input type="text" placeholder="email address" /><br />
+	<input type="password" placeholder="password" /><br />
+	<h1>Combo Boxes</h1>
+	<select><option>1</option><option>2</option><option>3</option></select>
+	<h1>Button</h1>
+	<button>button</button>
+	<button disabled>disabled</button>
+	<button disabled="disabled">disabled with attributed</button>
+	<button class="link">button link</button>
+	<a class="button">link button</a>
+	<a class="button blue">link button blue</a>
+	<h1>Button (multi-colors)</h1>
+	<button class="margin-4 black amber-bg">black / amber</button>
+	<button class="margin-4 black gray-bg">black / gray</button>
+	<button class="margin-4 white red-bg">white / red</button>
+	<button class="margin-4 white burgundy-bg">white / burgundy</button>
+	<button class="margin-4 white black-bg">white / black</button>
+	<button class="margin-4 white black-bg green-hover">white / black - green hover</button>
+	<h1>Button (color)</h1>
+	<button class="amber margin-4">amber</button>
+	<button class="black margin-4">black</button>
+	<button class="blackish margin-4">blackish</button>
+	<button class="blackGray margin-4">blackGray</button>
+	<button class="blue margin-4">blue</button>
+	<button class="darkBlue margin-4">darkBlue</button>
+	<button class="burgundy margin-4">burgundy</button>
+	<button class="brown margin-4">brown</button>
+	<button class="cyan margin-4">cyan</button>
+	<button class="gray margin-4">gray</button>
+	<button class="darkGray margin-4">darkGray</button>
+	<button class="darkerGray margin-4">darkerGray</button>
+	<button class="green margin-4">green</button>
+	<button class="orange margin-4">orange</button>
+	<button class="darkOrange margin-4">darkOrange</button>
+	<button class="purple margin-4">purple</button>
+	<button class="darkPurple margin-4">darkPurple</button>
+	<button class="red margin-4">red</button>
+	<button class="teal margin-4">teal</button>
+	<button class="white margin-4">white</button>
+	<h1>Colors</h1>
+	<span class="amber margin-4">amber</span>
+	<span class="black margin-4">black</span>
+	<span class="blackish margin-4">blackish</span>
+	<span class="blackGray margin-4">blackGray</span>
+	<span class="blue margin-4">blue</span>
+	<span class="darkBlue margin-4">darkBlue</span>
+	<span class="burgundy margin-4">burgundy</span>
+	<span class="brown margin-4">brown</span>
+	<span class="cyan margin-4">cyan</span>
+	<span class="gray margin-4">gray</span>
+	<span class="darkGray margin-4">darkGray</span>
+	<span class="darkerGray margin-4">darkerGray</span>
+	<span class="green margin-4">green</span>
+	<span class="orange margin-4">orange</span>
+	<span class="darkOrange margin-4">darkOrange</span>
+	<span class="purple margin-4">purple</span>
+	<span class="darkPurple margin-4">darkPurple</span>
+	<span class="red margin-4">red</span>
+	<span class="teal margin-4">teal</span>
+	<span class="white margin-4">white</span>
+	<h1>Syntax</h1>
+	<span class="syntaxDefault margin-4">default</span>
+	<span class="syntaxArgument margin-4">argument</span>
+	<span class="syntaxCommand margin-4">command</span>
+	<span class="syntaxComment margin-4">comment</span>
+	<span class="syntaxKeyword margin-4">keyword</span>
+	<span class="syntaxKeywordMuted margin-4">keywordmuted</span>
+	<span class="syntaxLink margin-4">link</span>
+	<span class="syntaxMember margin-4">member</span>
+	<span class="syntaxMethod margin-4">method</span>
+	<span class="syntaxParameter margin-4">parameter</span>
+	<span class="syntaxString margin-4">string</span>
+	<span class="syntaxVariable margin-4">variable</span>
+	<h1>Code Fences</h1>
+	<h6>JSON</h6>
+<pre><code><span class="syntaxParameter">{</span>
+	<span class="syntaxString">&quot;Name&quot;</span><span class="syntaxArgument">:</span> <span class="syntaxString">&quot;John&quot;</span><span class="syntaxArgument">,</span>
+	<span class="syntaxString">&quot;Age&quot;</span><span class="syntaxArgument">:</span> <span class="syntaxVariable">23</span>		
+<span class="syntaxParameter">}</span></code></pre>
+	<h6>PowerShell</h6>
+<pre><code><span class="syntaxKeyword">param</span><span>
+(
+	[Parameter()]
+	[string] </span><span class="syntaxVariable">$Configuration</span><span> = </span><span class="syntaxString">&quot;Release&quot;</span><span>,
+	[Parameter()]
+	[string] </span><span class="syntaxVariable">$BuildNumber</span><span>)</span>
+
+<span class="syntaxVariable">$ErrorActionPreference</span> <span>=</span> <span class="syntaxString">&quot;Stop&quot;</span>
+<span class="syntaxVariable">$watch</span> <span>=</span> <span>[System.Diagnostics.Stopwatch]::</span><span class="syntaxMember">StartNew</span>
+<span class="syntaxVariable">$scriptPath</span> <span>=</span> <span class="syntaxCommand">Split-Path</span><span>(</span><span class="syntaxCommand">Get-Variable</span><span> </span><span class="syntaxArgument">MyInvocation</span><span>).</span><span class="syntaxMember">Value</span><span>.</span><span class="syntaxMember">MyCommand</span><span>.</span><span class="syntaxMember">Path</span>
+
+<span class="syntaxCommand">Push-Location</span><span> </span><span class="syntaxVariable">$scriptPath</span></code></pre>
+	<h1>Paragraphs</h1>
+	<p>This is a paragraph.</p>
+<h1>Header 1</h1>
+<h2>Header 2</h2>
+<h3>Header 3</h3>
+<h4>Header 4</h4>
+<h5>Header 5</h5>
+<h6>Header 6</h6>
+</body>
+</html>

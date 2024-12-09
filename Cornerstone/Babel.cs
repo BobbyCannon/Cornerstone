@@ -168,7 +168,7 @@ public class Babel
 
 		// Authentication / Authorization
 		AddOrUpdate("English", BabelKeys.AuthenticationFailed, "The credentials failed to authenticate. Please try again.");
-		AddOrUpdate("English", BabelKeys.NotAuthorized, "The request does not have sufficient privileges for this operation.");
+		AddOrUpdate("English", BabelKeys.Unauthorized, "The request does not have sufficient privileges for this operation.");
 
 		// Encryption
 		AddOrUpdate("English", BabelKeys.EncryptionFailed, "The value was not able to be encrypted.");
@@ -184,7 +184,7 @@ public class Babel
 		AddOrUpdate("English", BabelKeys.VaultIsNotOpen, "The vault is not currently open.");
 
 		// Services
-		AddOrUpdate("English", BabelKeys.TimeServiceLocked, "The time service has been locked and cannot change.");
+		AddOrUpdate("English", BabelKeys.DateTimeProviderLocked, "The date and time service has been locked and cannot change.");
 
 		// Sync
 		AddOrUpdate("English", BabelKeys.SyncOptionsInvalid, "The sync values are invalid.");

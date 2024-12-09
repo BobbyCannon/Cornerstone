@@ -1,32 +1,19 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
+		<TargetFrameworks>net9.0</TargetFrameworks>
 		<AssemblyTitle>Cornerstone.EntityFramework</AssemblyTitle>
 		<PackageId>Cornerstone.EntityFramework</PackageId>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<SignAssembly>true</SignAssembly>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Azure.Identity" Version="1.12.0" />
-		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.1" />
+		<PackageReference Include="Azure.Identity" Version="1.13.1" />
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+		<PackageReference Include="Microsoft.Data.Sqlite.Core" Version="9.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="9.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.0" />
 		<PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
-	</ItemGroup>
-	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-		<PackageReference Include="Microsoft.Data.Sqlite.Core" Version="3.1.32" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.32" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="3.1.32" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="3.1.32" />
-	</ItemGroup>
-	<ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
-		<PackageReference Include="Microsoft.Data.Sqlite.Core" Version="7.0.14" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.14" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="7.0.14" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="7.0.14" />
-	</ItemGroup>
-	<ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-		<PackageReference Include="Microsoft.Data.Sqlite.Core" Version="8.0.6" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.6" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="8.0.6" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.6" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Cornerstone\Cornerstone.csproj" />

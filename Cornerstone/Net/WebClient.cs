@@ -19,7 +19,7 @@ namespace Cornerstone.Net;
 /// <summary>
 /// This class is used for making GET and POST calls to an HTTP endpoint.
 /// </summary>
-public class WebClient : Bindable, IWebClient
+public class WebClient : Bindable, IWebClient, ICloneable<WebClient>
 {
 	#region Fields
 
@@ -135,9 +135,9 @@ public class WebClient : Bindable, IWebClient
 	#region Methods
 
 	/// <inheritdoc />
-	public virtual object DeepClone(int? maxDepth = null, IncludeExcludeOptions options = null)
+	public virtual WebClient DeepClone(int? maxDepth = null, IncludeExcludeSettings settings = null)
 	{
-		return ShallowClone(options);
+		return ShallowClone(settings);
 	}
 
 	/// <summary>
@@ -336,7 +336,7 @@ public class WebClient : Bindable, IWebClient
 	}
 
 	/// <inheritdoc />
-	public virtual object ShallowClone(IncludeExcludeOptions options = null)
+	public virtual WebClient ShallowClone(IncludeExcludeSettings settings = null)
 	{
 		return new WebClient(BaseUri, Timeout, Credential, Proxy, GetDispatcher());
 	}

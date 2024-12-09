@@ -1,8 +1,8 @@
 ﻿#region References
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using Cornerstone.Collections;
 
 #endregion
 
@@ -19,7 +19,6 @@ public interface ITextSource
 	/// <summary>
 	/// Gets the whole text as string.
 	/// </summary>
-	[SuppressMessage("Microsoft.Naming", "CA1721:PropertyNamesShouldNotMatchGetMethods")]
 	string Text { get; }
 
 	/// <summary>
@@ -90,7 +89,7 @@ public interface ITextSource
 	/// Retrieves the text for a portion of the document.
 	/// </summary>
 	/// <exception cref="ArgumentOutOfRangeException"> offset or length is outside the valid range. </exception>
-	string GetText(ISegment segment);
+	string GetText(IRange range);
 
 	/// <summary>
 	/// Gets the index of the first occurrence of the character in the specified array.

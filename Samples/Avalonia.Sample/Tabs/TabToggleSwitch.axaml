@@ -475,34 +475,34 @@
 						IsEnabled="False"
 						Margin="{StaticResource ToggleSwitchMargin}" />
 
-				<!-- Blue Grey ToggleSwitch. -->
+				<!-- Blue Gray ToggleSwitch. -->
 
 				<Label
 						Grid.Row="13" Grid.Column="0"
-						Content="Blue Grey"
+						Content="Blue Gray"
 						VerticalAlignment="Center"
 						Margin="{StaticResource ToggleSwitchMargin}" />
 
 				<ToggleSwitch
 						Grid.Row="13" Grid.Column="1"
-						Theme.Color="BlueGrey"
+						Theme.Color="BlueGray"
 						Margin="{StaticResource ToggleSwitchMargin}" />
 
 				<ToggleSwitch
 						Grid.Row="13" Grid.Column="2"
-						Theme.Color="BlueGrey"
+						Theme.Color="BlueGray"
 						IsEnabled="False"
 						Margin="{StaticResource ToggleSwitchMargin}" />
 
 				<ToggleSwitch
 						Grid.Row="13" Grid.Column="3"
-						Theme.Color="BlueGrey"
+						Theme.Color="BlueGray"
 						IsChecked="True"
 						Margin="{StaticResource ToggleSwitchMargin}" />
 
 				<ToggleSwitch
 						Grid.Row="13" Grid.Column="4"
-						Theme.Color="BlueGrey"
+						Theme.Color="BlueGray"
 						IsChecked="True"
 						IsEnabled="False"
 						Margin="{StaticResource ToggleSwitchMargin}" />

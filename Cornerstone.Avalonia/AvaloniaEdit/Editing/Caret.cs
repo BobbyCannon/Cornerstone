@@ -4,13 +4,11 @@ using System;
 using System.Diagnostics;
 using Avalonia;
 using Avalonia.Media;
-using Avalonia.Threading;
 using Cornerstone.Avalonia.AvaloniaEdit.Rendering;
-using Cornerstone.Avalonia.AvaloniaEdit.Utils;
-using Cornerstone.Data;
 using Cornerstone.Internal;
+using Cornerstone.Presentation;
 using Cornerstone.Text.Document;
-using PropertyChanged;
+using Dispatcher = Avalonia.Threading.Dispatcher;
 
 #endregion
 
@@ -19,7 +17,7 @@ namespace Cornerstone.Avalonia.AvaloniaEdit.Editing;
 /// <summary>
 /// Helper class with caret-related methods.
 /// </summary>
-public sealed class Caret : Notifiable
+public sealed class Caret : Bindable
 {
 	#region Constants
 
@@ -28,7 +26,7 @@ public sealed class Caret : Notifiable
 	/// </summary>
 	internal const double MinimumDistanceToViewBorder = 0;
 
-	private const double _caretWidth = 0.5;
+	private const double CaretWidth = 0.5;
 
 	#endregion
 
@@ -50,7 +48,7 @@ public sealed class Caret : Notifiable
 
 	#region Constructors
 
-	internal Caret(TextArea textArea)
+	internal Caret(TextArea textArea, IDispatcher dispatcher) : base(dispatcher)
 	{
 		_textArea = textArea;
 		_textView = textArea.TextView;
@@ -265,7 +263,7 @@ public sealed class Caret : Notifiable
 		}
 	}
 
-	[SuppressPropertyChangedWarnings]
+
 	internal void OnDocumentChanged(DocumentChangeEventArgs e)
 	{
 		InvalidateVisualColumn();
@@ -274,7 +272,7 @@ public sealed class Caret : Notifiable
 			// If the caret is at the end of a selection, we don't expand the selection if something
 			// is inserted at the end. Thus we also need to keep the caret in front of the insertion.
 			AnchorMovementType caretMovementType;
-			if (!_textArea.Selection.IsEmpty && (_storedCaretOffset == _textArea.Selection.SurroundingSegment.EndOffset))
+			if (!_textArea.Selection.IsEmpty && (_storedCaretOffset == _textArea.Selection.SurroundingRange.EndIndex))
 			{
 				caretMovementType = AnchorMovementType.BeforeInsertion;
 			}
@@ -349,9 +347,9 @@ public sealed class Caret : Notifiable
 			r = new Rect(xPos, lineTop, xPos2 - xPos, lineBottom - lineTop);
 		}
 		// If the caret is too small (e.g. in front of zero-width character), ensure it's still visible
-		if (r.Width < _caretWidth)
+		if (r.Width < CaretWidth)
 		{
-			r = r.WithWidth(_caretWidth);
+			r = r.WithWidth(CaretWidth);
 		}
 		return r;
 	}
@@ -369,7 +367,7 @@ public sealed class Caret : Notifiable
 		var lineBottom = visualLine.GetTextLineVisualYPosition(textLine, VisualYPosition.TextBottom);
 		var caretHeight = lineBottom - lineTop;
 		//var characterSize = _textArea.GetTextSize();
-		return new Rect(xPos, lineTop, _caretWidth, caretHeight);
+		return new Rect(xPos, lineTop, CaretWidth, caretHeight);
 	}
 
 	private void InvalidateVisualColumn()
@@ -414,7 +412,7 @@ public sealed class Caret : Notifiable
 		_visualColumnValid = true;
 
 		var caretOffset = _textView.Document.GetOffset(_position.Location);
-		var firstDocumentLineOffset = visualLine.FirstDocumentLine.Offset;
+		var firstDocumentLineOffset = visualLine.FirstDocumentLine.StartIndex;
 		_position.VisualColumn = visualLine.ValidateVisualColumn(_position, _textArea.Selection.EnableVirtualSpace);
 
 		// search possible caret positions
@@ -592,7 +590,7 @@ public sealed class Caret : Notifiable
 	#region Events
 
 	/// <summary>
-	/// Event raised when the caret position has changed.
+	/// TrackerPath raised when the caret position has changed.
 	/// If the caret position is changed inside a document update (between BeginUpdate/EndUpdate calls),
 	/// the PositionChanged event is raised only once at the end of the document update.
 	/// </summary>

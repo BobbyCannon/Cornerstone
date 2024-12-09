@@ -90,22 +90,22 @@
 
 		<Style Selector="^[(Theme.Color)=Current]">
 			<Style Selector="^ /template/ Border#RootBorder">
-				<Setter Property="Background" Value="{DynamicResource ColorTheme07}" />
-				<Setter Property="TextElement.Foreground" Value="{DynamicResource White}" />
+				<Setter Property="Background" Value="{DynamicResource ThemeColor07}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
 			</Style>
 			<Style Selector="^:pointerover /template/ Border#RootBorder">
-				<Setter Property="Background" Value="{DynamicResource ColorTheme06}" />
+				<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
 			</Style>
 			<Style Selector="^:pressed /template/ Border#RootBorder">
-				<Setter Property="Background" Value="{DynamicResource ColorTheme06}" />
+				<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
 				<Setter Property="Margin" Value="0,1,0,-1" />
 			</Style>
 			<Style Selector="^:disabled /template/ Border#RootBorder">
-				<Setter Property="Background" Value="{DynamicResource ColorTheme03}" />
-				<Setter Property="TextElement.Foreground" Value="{DynamicResource ColorTheme01}" />
+				<Setter Property="Background" Value="{DynamicResource ThemeColor03}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeColor01}" />
 			</Style>
 			<Style Selector="^:disabled /template/ PathIcon#DropDownGlyph">
-				<Setter Property="Foreground" Value="{DynamicResource ColorTheme01}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeColor01}" />
 			</Style>
 		</Style>
 		
@@ -115,7 +115,7 @@
 
 			<Style Selector="^ /template/ Border#RootBorder">
 				<Setter Property="Background" Value="{DynamicResource Red07}" />
-				<Setter Property="TextElement.Foreground" Value="{DynamicResource White}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
 			</Style>
 
 			<Style Selector="^:pointerover /template/ Border#RootBorder">
@@ -144,7 +144,7 @@
 
 			<Style Selector="^ /template/ Border#RootBorder">
 				<Setter Property="Background" Value="{DynamicResource Pink07}" />
-				<Setter Property="TextElement.Foreground" Value="{DynamicResource White}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
 			</Style>
 
 			<Style Selector="^:pointerover /template/ Border#RootBorder">
@@ -173,7 +173,7 @@
 
 			<Style Selector="^ /template/ Border#RootBorder">
 				<Setter Property="Background" Value="{DynamicResource Purple07}" />
-				<Setter Property="TextElement.Foreground" Value="{DynamicResource White}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
 			</Style>
 
 			<Style Selector="^:pointerover /template/ Border#RootBorder">
@@ -202,7 +202,7 @@
 
 			<Style Selector="^ /template/ Border#RootBorder">
 				<Setter Property="Background" Value="{DynamicResource DeepPurple07}" />
-				<Setter Property="TextElement.Foreground" Value="{DynamicResource White}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
 			</Style>
 
 			<Style Selector="^:pointerover /template/ Border#RootBorder">
@@ -231,7 +231,7 @@
 
 			<Style Selector="^ /template/ Border#RootBorder">
 				<Setter Property="Background" Value="{DynamicResource Indigo07}" />
-				<Setter Property="TextElement.Foreground" Value="{DynamicResource White}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
 			</Style>
 
 			<Style Selector="^:pointerover /template/ Border#RootBorder">
@@ -260,7 +260,7 @@
 
 			<Style Selector="^ /template/ Border#RootBorder">
 				<Setter Property="Background" Value="{DynamicResource Blue07}" />
-				<Setter Property="TextElement.Foreground" Value="{DynamicResource White}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
 			</Style>
 
 			<Style Selector="^:pointerover /template/ Border#RootBorder">
@@ -289,7 +289,7 @@
 
 			<Style Selector="^ /template/ Border#RootBorder">
 				<Setter Property="Background" Value="{DynamicResource Teal07}" />
-				<Setter Property="TextElement.Foreground" Value="{DynamicResource White}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
 			</Style>
 
 			<Style Selector="^:pointerover /template/ Border#RootBorder">
@@ -318,7 +318,7 @@
 
 			<Style Selector="^ /template/ Border#RootBorder">
 				<Setter Property="Background" Value="{DynamicResource Green07}" />
-				<Setter Property="TextElement.Foreground" Value="{DynamicResource White}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
 			</Style>
 
 			<Style Selector="^:pointerover /template/ Border#RootBorder">
@@ -347,7 +347,7 @@
 
 			<Style Selector="^ /template/ Border#RootBorder">
 				<Setter Property="Background" Value="{DynamicResource Amber07}" />
-				<Setter Property="TextElement.Foreground" Value="{DynamicResource White}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
 			</Style>
 
 			<Style Selector="^:pointerover /template/ Border#RootBorder">
@@ -376,7 +376,7 @@
 
 			<Style Selector="^ /template/ Border#RootBorder">
 				<Setter Property="Background" Value="{DynamicResource Orange07}" />
-				<Setter Property="TextElement.Foreground" Value="{DynamicResource White}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
 			</Style>
 
 			<Style Selector="^:pointerover /template/ Border#RootBorder">
@@ -405,7 +405,7 @@
 
 			<Style Selector="^ /template/ Border#RootBorder">
 				<Setter Property="Background" Value="{DynamicResource DeepOrange07}" />
-				<Setter Property="TextElement.Foreground" Value="{DynamicResource White}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
 			</Style>
 
 			<Style Selector="^:pointerover /template/ Border#RootBorder">
@@ -434,7 +434,7 @@
 
 			<Style Selector="^ /template/ Border#RootBorder">
 				<Setter Property="Background" Value="{DynamicResource Brown07}" />
-				<Setter Property="TextElement.Foreground" Value="{DynamicResource White}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
 			</Style>
 
 			<Style Selector="^:pointerover /template/ Border#RootBorder">
@@ -457,31 +457,31 @@
 
 		</Style>
 
-		<!-- Blue Grey theme. -->
+		<!-- Blue Gray theme. -->
 
-		<Style Selector="^[(Theme.Color)=BlueGrey]">
+		<Style Selector="^[(Theme.Color)=BlueGray]">
 
 			<Style Selector="^ /template/ Border#RootBorder">
-				<Setter Property="Background" Value="{DynamicResource BlueGrey07}" />
-				<Setter Property="TextElement.Foreground" Value="{DynamicResource White}" />
+				<Setter Property="Background" Value="{DynamicResource BlueGray07}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
 			</Style>
 
 			<Style Selector="^:pointerover /template/ Border#RootBorder">
-				<Setter Property="Background" Value="{DynamicResource BlueGrey06}" />
+				<Setter Property="Background" Value="{DynamicResource BlueGray06}" />
 			</Style>
 
 			<Style Selector="^:pressed /template/ Border#RootBorder">
-				<Setter Property="Background" Value="{DynamicResource BlueGrey06}" />
+				<Setter Property="Background" Value="{DynamicResource BlueGray06}" />
 				<Setter Property="Margin" Value="0,1,0,-1" />
 			</Style>
 
 			<Style Selector="^:disabled /template/ Border#RootBorder">
-				<Setter Property="Background" Value="{DynamicResource BlueGrey03}" />
-				<Setter Property="TextElement.Foreground" Value="{DynamicResource BlueGrey01}" />
+				<Setter Property="Background" Value="{DynamicResource BlueGray03}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource BlueGray01}" />
 			</Style>
 
 			<Style Selector="^:disabled /template/ PathIcon#DropDownGlyph">
-				<Setter Property="Foreground" Value="{DynamicResource BlueGrey01}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueGray01}" />
 			</Style>
 
 		</Style>

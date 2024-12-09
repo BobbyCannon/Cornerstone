@@ -48,12 +48,12 @@ public class Location : Bindable<Location>,
 	#region Methods
 
 	/// <inheritdoc />
-	public override Location DeepClone(int? maxDepth = null, IncludeExcludeOptions options = null)
+	public override Location DeepClone(int? maxDepth = null, IncludeExcludeSettings settings = null)
 	{
 		var response = new Location
 		{
-			HorizontalLocation = HorizontalLocation.DeepClone(maxDepth, options),
-			VerticalLocation = VerticalLocation.DeepClone(maxDepth, options)
+			HorizontalLocation = HorizontalLocation.DeepClone(maxDepth, settings),
+			VerticalLocation = VerticalLocation.DeepClone(maxDepth, settings)
 		};
 
 		if (response is ITrackPropertyChanges changeable)
@@ -68,26 +68,26 @@ public class Location : Bindable<Location>,
 	/// Determine if the update should be applied.
 	/// </summary>
 	/// <param name="update"> The update to be tested. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
 	/// <returns> True if the update should be applied otherwise false. </returns>
-	public bool ShouldUpdate(ILocation<IHorizontalLocation, IVerticalLocation> update, IncludeExcludeOptions options)
+	public bool ShouldUpdate(ILocation<IHorizontalLocation, IVerticalLocation> update, IncludeExcludeSettings settings)
 	{
-		return HorizontalLocation.ShouldUpdate(update.HorizontalLocation, options)
-			|| VerticalLocation.ShouldUpdate(update.VerticalLocation, options);
+		return HorizontalLocation.ShouldUpdate(update.HorizontalLocation, settings)
+			|| VerticalLocation.ShouldUpdate(update.VerticalLocation, settings);
 	}
 
 	/// <inheritdoc />
-	public override bool ShouldUpdate(object update, IncludeExcludeOptions options)
+	public override bool ShouldUpdate(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
-			Location location => ShouldUpdate(location, options),
-			ILocation<IHorizontalLocation, IVerticalLocation> location => ShouldUpdate(location, options),
-			HorizontalLocation location => HorizontalLocation.ShouldUpdate(location, options),
-			IHorizontalLocation location => HorizontalLocation.ShouldUpdate(location, options),
-			VerticalLocation location => VerticalLocation.ShouldUpdate(location, options),
-			IVerticalLocation location => VerticalLocation.ShouldUpdate(location, options),
-			_ => base.ShouldUpdate(update, options)
+			Location location => ShouldUpdate(location, settings),
+			ILocation<IHorizontalLocation, IVerticalLocation> location => ShouldUpdate(location, settings),
+			HorizontalLocation location => HorizontalLocation.ShouldUpdate(location, settings),
+			IHorizontalLocation location => HorizontalLocation.ShouldUpdate(location, settings),
+			VerticalLocation location => VerticalLocation.ShouldUpdate(location, settings),
+			IVerticalLocation location => VerticalLocation.ShouldUpdate(location, settings),
+			_ => base.ShouldUpdate(update, settings)
 		};
 	}
 
@@ -103,20 +103,20 @@ public class Location : Bindable<Location>,
 	/// Allows updating of one type to another based on member Name and Type.
 	/// </summary>
 	/// <param name="update"> The source of the update. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
 	/// <returns> True if the update was applied otherwise false. </returns>
-	public bool UpdateWith(ILocation<IHorizontalLocation, IVerticalLocation> update, IncludeExcludeOptions options)
+	public bool UpdateWith(ILocation<IHorizontalLocation, IVerticalLocation> update, IncludeExcludeSettings settings)
 	{
-		return HorizontalLocation.TryUpdateWith(update.HorizontalLocation, options)
-			| VerticalLocation.TryUpdateWith(update.VerticalLocation, options);
+		return HorizontalLocation.TryUpdateWith(update.HorizontalLocation, settings)
+			| VerticalLocation.TryUpdateWith(update.VerticalLocation, settings);
 	}
 
 	/// <summary>
 	/// Update the Location with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the entity. </param>
-	public override bool UpdateWith(Location update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the entity. </param>
+	public override bool UpdateWith(Location update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -126,45 +126,45 @@ public class Location : Bindable<Location>,
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			HorizontalLocation.UpdateWith(update.HorizontalLocation);
 			VerticalLocation.UpdateWith(update.VerticalLocation);
 		}
 		else
 		{
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(HorizontalLocation)), x => x.HorizontalLocation.UpdateWith(update.HorizontalLocation));
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(VerticalLocation)), x => x.VerticalLocation.UpdateWith(update.VerticalLocation));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(HorizontalLocation)), x => x.HorizontalLocation.UpdateWith(update.HorizontalLocation));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(VerticalLocation)), x => x.VerticalLocation.UpdateWith(update.VerticalLocation));
 		}
 
 		return true;
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
-			Location location => UpdateWith(location, options),
-			ILocation<IHorizontalLocation, IVerticalLocation> location => UpdateWith(location, options),
-			HorizontalLocation location => HorizontalLocation.UpdateWith(location, options),
-			IHorizontalLocation location => HorizontalLocation.UpdateWith(location, options),
-			VerticalLocation location => VerticalLocation.UpdateWith(location, options),
-			IVerticalLocation location => VerticalLocation.UpdateWith(location, options),
-			_ => base.UpdateWith(update, options)
+			Location location => UpdateWith(location, settings),
+			ILocation<IHorizontalLocation, IVerticalLocation> location => UpdateWith(location, settings),
+			HorizontalLocation location => HorizontalLocation.UpdateWith(location, settings),
+			IHorizontalLocation location => HorizontalLocation.UpdateWith(location, settings),
+			VerticalLocation location => VerticalLocation.UpdateWith(location, settings),
+			IVerticalLocation location => VerticalLocation.UpdateWith(location, settings),
+			_ => base.UpdateWith(update, settings)
 		};
 	}
 
 	/// <inheritdoc />
-	ILocation<IHorizontalLocation, IVerticalLocation> ICloneable<ILocation<IHorizontalLocation, IVerticalLocation>>.DeepClone(int? maxDepth, IncludeExcludeOptions options)
+	ILocation<IHorizontalLocation, IVerticalLocation> ICloneable<ILocation<IHorizontalLocation, IVerticalLocation>>.DeepClone(int? maxDepth, IncludeExcludeSettings settings)
 	{
-		return DeepClone(maxDepth, options);
+		return DeepClone(maxDepth, settings);
 	}
 
 	/// <inheritdoc />
-	ILocation<IHorizontalLocation, IVerticalLocation> ICloneable<ILocation<IHorizontalLocation, IVerticalLocation>>.ShallowClone(IncludeExcludeOptions options)
+	ILocation<IHorizontalLocation, IVerticalLocation> ICloneable<ILocation<IHorizontalLocation, IVerticalLocation>>.ShallowClone(IncludeExcludeSettings settings)
 	{
-		return DeepClone(0, options);
+		return DeepClone(0, settings);
 	}
 
 	#endregion

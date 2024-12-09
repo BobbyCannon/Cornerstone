@@ -25,8 +25,7 @@ public class HighlightingManager : IHighlightingDefinitionReferenceResolver
 {
 	#region Fields
 
-	private readonly ISpeedyList<TextEditor> _editors;
-
+	private readonly ISpeedyList<TextEditorControl> _editors;
 	private readonly Dictionary<string, IHighlightingDefinition> _highlightingsByExtension;
 	private readonly Dictionary<string, IHighlightingDefinition> _highlightingsByName;
 	private readonly object _lockObj;
@@ -37,7 +36,7 @@ public class HighlightingManager : IHighlightingDefinitionReferenceResolver
 
 	protected HighlightingManager()
 	{
-		_editors = new SpeedyList<TextEditor>();
+		_editors = new SpeedyList<TextEditorControl>();
 		_highlightingsByExtension = new(StringComparer.OrdinalIgnoreCase);
 		_highlightingsByName = new(StringComparer.OrdinalIgnoreCase);
 		_lockObj = new();
@@ -95,7 +94,7 @@ public class HighlightingManager : IHighlightingDefinitionReferenceResolver
 		}
 	}
 
-	public void RegisterForUpdates(TextEditor editor)
+	public void RegisterForUpdates(TextEditorControl editor)
 	{
 		_editors.Add(editor);
 	}
@@ -165,7 +164,7 @@ public class HighlightingManager : IHighlightingDefinitionReferenceResolver
 		RegisterHighlighting(name, extensions, new DelayLoadedHighlightingDefinition(name, extensions, resourceName, lazyLoadedHighlighting));
 	}
 
-	public void UnregisterForUpdates(TextEditor editor)
+	public void UnregisterForUpdates(TextEditorControl editor)
 	{
 		_editors.Remove(editor);
 	}

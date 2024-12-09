@@ -16,13 +16,22 @@ public class JsonOptions : IEnumerable<ICompatibilitySwitch>
 {
 	#region Fields
 
-	private readonly IReadOnlyList<ICompatibilitySwitch> _switches = Array.Empty<ICompatibilitySwitch>();
+	private readonly IReadOnlyList<ICompatibilitySwitch> _switches;
+
+	#endregion
+
+	#region Constructors
+
+	public JsonOptions()
+	{
+		_switches = Array.Empty<ICompatibilitySwitch>();
+	}
 
 	#endregion
 
 	#region Methods
 
-	IEnumerator<ICompatibilitySwitch> IEnumerable<ICompatibilitySwitch>.GetEnumerator()
+	public IEnumerator<ICompatibilitySwitch> GetEnumerator()
 	{
 		return _switches.GetEnumerator();
 	}

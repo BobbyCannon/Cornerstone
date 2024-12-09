@@ -1,0 +1,203 @@
+Aberdeen
+Acequia
+Albion
+American Falls
+Ammon
+Arco
+Arimo
+Ashton
+Athol
+Atomic City
+Bancroft
+Basalt
+Bellevue
+Blackfoot
+Bliss
+Bloomington
+Boise
+Bonners Ferry
+Bovill
+Buhl
+Burley
+Butte City
+Caldwell
+Cambridge
+Carey
+Cascade
+Castleford
+Challis
+Chubbuck
+Clark Fork
+Clayton
+Clifton
+Coeur d'Alene
+Cottonwood
+Council
+Craigmont
+Crouch
+Culdesac
+Dalton Gardens
+Dayton
+Deary
+Declo
+Dietrich
+Donnelly
+Dover
+Downey
+Driggs
+Drummond
+Dubois
+Eagle
+Easley
+East Hope
+Eden
+Elk River
+Emmett
+Fairfield
+Ferdinand
+Fernan Lake Village
+Filer
+Firth
+Franklin
+Fruitland
+Garden City
+Genesee
+Georgetown
+Glenns Ferry
+Gooding
+Grace
+Grand View
+Grangeville
+Greenleaf
+Greenville
+Hagerman
+Hailey
+Hamer
+Hansen
+Harrison
+Hauser
+Hayden
+Hayden Lake
+Hazelton
+Heyburn
+Hollister
+Homedale
+Hope
+Horseshoe Bend
+Huetter
+Idaho City
+Idaho Falls
+Inkom
+Iona
+Irwin
+Island Park
+Jerome
+Juliaetta
+Kamiah
+Kellogg
+Kendrick
+Ketchum
+Kimberly
+Kooskia
+Kootenai
+Kuna
+Lapwai
+Lava Hot Springs
+Leadore
+Lewiston
+Lewisville
+Lost River
+Mackay
+Malad City
+Malta
+Marsing
+McCall
+McCammon
+Melba
+Menan
+Meridian
+Middleton
+Midvale
+Minidoka
+Montpelier
+Moore
+Moscow
+Mountain Home
+Moyie Springs
+Mud Lake
+Mullan
+Murtaugh
+Nampa
+New Meadows
+New Plymouth
+Newdale
+Nezperce
+Notus
+Oakley
+Oldtown
+Onaway
+Orofino
+Osburn
+Oxford
+Paris
+Parker
+Parma
+Paul
+Payette
+Peck
+Pierce
+Pinehurst
+Placerville
+Plummer
+Pocatello
+Ponderay
+Post Falls
+Potlatch
+Preston
+Priest River
+Rathdrum
+Reubens
+Rexburg
+Richfield
+Rigby
+Riggins
+Ririe
+Roberts
+Rockland
+Rupert
+Salmon
+Sandpoint
+Shelley
+Shoshone
+Smelterville
+Soda Springs
+Spencer
+Spirit Lake
+St. Anthony
+St. Charles
+St. Maries
+Stanley
+Star
+State Line
+Stites
+Sugar City
+Sun Valley
+Swan Valley
+Tensed
+Teton
+Tetonia
+Troy
+Twin Falls
+Ucon
+Victor
+Wallace
+Wardner
+Warm River
+Weippe
+Weiser
+Wendell
+Weston
+White Bird
+Wilder
+Winchester
+Worley

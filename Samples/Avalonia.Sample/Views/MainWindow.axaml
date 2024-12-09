@@ -1,8 +1,7 @@
-<controls:CornerstoneWindow xmlns="https://github.com/avaloniaui"
+<CornerstoneWindow xmlns="https://github.com/avaloniaui"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-		xmlns:controls="clr-namespace:Cornerstone.Avalonia.Controls;assembly=Cornerstone.Avalonia"
 		xmlns:viewModels="clr-namespace:Avalonia.Sample.ViewModels"
 		mc:Ignorable="d" d:DesignWidth="1024" d:DesignHeight="600"
 		x:Class="Avalonia.Sample.Views.MainWindow"
@@ -18,4 +17,4 @@
 		<ContentPresenter Content="{Binding #ThisWindow.MainView}" 
 				Margin="0,10,0,0"/>
 	</DockPanel>
-</controls:CornerstoneWindow>
+</CornerstoneWindow>

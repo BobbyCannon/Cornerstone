@@ -2,9 +2,9 @@
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		xmlns:controls="clr-namespace:Cornerstone.Avalonia.Controls">
 	<Design.PreviewWith>
-		<Border Padding="20">
-			<Grid ColumnDefinitions="Auto,400">
-				<StackPanel
+		<Border Padding="10" MaxWidth="600">
+			<Grid RowDefinitions="Auto,Auto,*">
+				<StackPanel Orientation="Horizontal"
 						HorizontalAlignment="Left"
 						VerticalAlignment="Top"
 						Spacing="10"
@@ -16,16 +16,21 @@
 							Width="100"
 							Height="100"
 							Value="63" />
-					<Slider Value="{Binding #Progress.Value, Mode=TwoWay}"
-							Maximum="{Binding #Progress.Maximum}"
-							Minimum="{Binding #Progress.Minimum}" />
-					<CheckBox IsChecked="{Binding #Progress.ShowProgressText, Mode=TwoWay}"
-							Content="Show Progress Text" />
-					<CheckBox IsChecked="{Binding #Progress.IsIndeterminate, Mode=TwoWay}"
-							Content="Indeterminate" />
+					<StackPanel 
+							Spacing="10"
+							Margin="20">
+						<Slider Value="{Binding #Progress.Value, Mode=TwoWay}"
+								Maximum="{Binding #Progress.Maximum}"
+								Minimum="{Binding #Progress.Minimum}"
+								Width="160"/>
+						<CheckBox IsChecked="{Binding #Progress.ShowProgressText, Mode=TwoWay}"
+								Content="Show Progress Text" />
+						<CheckBox IsChecked="{Binding #Progress.IsIndeterminate, Mode=TwoWay}"
+								Content="Indeterminate" />
+					</StackPanel>
 				</StackPanel>
-				<ItemsControl ItemsSource="{x:Static Theme.Colors}"
-						Grid.Column="1"
+				<ItemsControl Grid.Row="1"
+						ItemsSource="{x:Static Theme.Colors}"
 						Margin="10,0,0,0">
 					<ItemsControl.ItemsPanel>
 						<ItemsPanelTemplate>
@@ -151,8 +156,11 @@
 		<Style Selector="^[(Theme.Color)=Brown] /template/ Arc#Stroke">
 			<Setter Property="Stroke" Value="{DynamicResource Brown06}" />
 		</Style>
-		<Style Selector="^[(Theme.Color)=BlueGrey] /template/ Arc#Stroke">
-			<Setter Property="Stroke" Value="{DynamicResource BlueGrey06}" />
+		<Style Selector="^[(Theme.Color)=BlueGray] /template/ Arc#Stroke">
+			<Setter Property="Stroke" Value="{DynamicResource BlueGray06}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Gray] /template/ Arc#Stroke">
+			<Setter Property="Stroke" Value="{DynamicResource Gray06}" />
 		</Style>
 	</ControlTheme>
 </ResourceDictionary>

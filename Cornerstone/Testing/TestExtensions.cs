@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using Cornerstone.Convert;
 using Cornerstone.Extensions;
+using Cornerstone.Generators.CodeGenerators;
 using Cornerstone.Serialization;
 using Cornerstone.Text;
 
@@ -54,8 +55,9 @@ public static class TestExtensions
 	/// Dump the item as CSharp code to the Console.WriteLine().
 	/// </summary>
 	/// <param name="item"> The item to dump. </param>
+	/// <param name="options"> The code writer options. </param>
 	/// <param name="prefix"> An optional prefix. </param>
-	public static string DumpCSharp(this object item, string prefix = null)
+	public static string DumpCSharp(this object item, CodeWriterSettings? options = null, string prefix = null)
 	{
 		if (!string.IsNullOrEmpty(prefix))
 		{
@@ -68,9 +70,74 @@ public static class TestExtensions
 			return "null";
 		}
 
-		var code = item.ToCSharp();
+		var code = item.ToCSharp(options ?? new CodeWriterSettings
+		{
+			IgnoreDefaultValues = true,
+			IgnoreReadOnly = true,
+			IgnoreNullValues = true,
+			OutputMode = CodeWriterMode.Instance,
+			TextFormat = TextFormat.Spaced
+		});
+
 		Console.WriteLine(code);
+
 		return code;
+	}
+
+	/// <summary>
+	/// Dump the items as CSharp array code to the Console.WriteLine().
+	/// </summary>
+	/// <param name="items"> The items to dump. </param>
+	/// <param name="builder"> The text builder to use. </param>
+	/// <param name="options"> The code writer options. </param>
+	/// <param name="prefix"> An optional prefix. </param>
+	public static ITextBuilder DumpCSharpArray<T>(this T[] items, ITextBuilder builder = null, CodeWriterSettings? options = null, string prefix = null)
+	{
+		if (!string.IsNullOrEmpty(prefix))
+		{
+			Console.Write(prefix);
+		}
+
+		if (items == null)
+		{
+			Console.WriteLine("null");
+			return new TextBuilder("null");
+		}
+
+		options ??= new CodeWriterSettings
+		{
+			IgnoreDefaultValues = true,
+			IgnoreReadOnly = true,
+			IgnoreNullValues = true,
+			OutputMode = CodeWriterMode.Instance,
+			TextFormat = TextFormat.Spaced
+		};
+		builder ??= new TextBuilder(options);
+
+		for (var index = 0; index < items.Length; index++)
+		{
+			var item = items[index];
+			var itemCode = item.ToCSharp(options);
+			
+			if (index > 0)
+			{
+				builder.Append(",");
+			}
+
+			builder.AppendLine();
+			if (!string.IsNullOrWhiteSpace(prefix))
+			{
+				builder.Append(prefix);
+			}
+			builder.Append(itemCode);
+		}
+
+		builder.AppendLine("");
+		var code = builder.ToString();
+
+		Console.WriteLine(code);
+
+		return builder;
 	}
 
 	/// <summary>
@@ -92,7 +159,7 @@ public static class TestExtensions
 		}
 
 		var isArray = item.GetType().IsArray;
-		var json = item.ToJson(new SerializationOptions
+		var json = item.ToJson(new SerializationSettings
 		{
 			TextFormat = isArray ? TextFormat.None : TextFormat.Indented,
 			EnumFormat = EnumFormat.Name
@@ -120,7 +187,7 @@ public static class TestExtensions
 			return "null";
 		}
 
-		var json = item.ToJson(new SerializationOptions
+		var json = item.ToJson(new SerializationSettings
 		{
 			TextFormat = TextFormat.Indented,
 			EnumFormat = EnumFormat.Name

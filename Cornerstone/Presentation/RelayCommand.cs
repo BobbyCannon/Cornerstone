@@ -10,8 +10,7 @@ using System.Windows.Input;
 namespace Cornerstone.Presentation;
 
 /// <summary>
-/// A command whose sole purpose is to relay its functionality to other objects by invoking delegates.
-/// The default return value for the CanExecute method is 'true'.
+/// A command whose sole purpose is to relay its functionality to other objects by invoking delegates. The default return value for the CanExecute method is 'true'.
 /// </summary>
 public class RelayCommand : ICommand
 {
@@ -20,6 +19,7 @@ public class RelayCommand : ICommand
 	private readonly MethodInfo _canExecuteCallback;
 	private readonly WeakReference<object> _canExecuteReference;
 	private readonly MethodInfo _executeCallback;
+	private readonly WeakReference<object> _executeParameter;
 	private readonly WeakReference<object> _executeReference;
 
 	#endregion
@@ -32,26 +32,27 @@ public class RelayCommand : ICommand
 	/// <param name="execute"> The execution logic. </param>
 	/// <param name="canExecute"> The execution status logic. </param>
 	public RelayCommand(Action<object> execute, Func<object, bool> canExecute = null)
+		: this(execute, null, canExecute)
 	{
-		_executeReference = new WeakReference<object>(execute.Target);
-		_executeCallback = execute.GetMethodInfo();
-
-		if (canExecute != null)
-		{
-			_canExecuteReference = new WeakReference<object>(canExecute.Target);
-			_canExecuteCallback = canExecute.GetMethodInfo();
-		}
 	}
 
 	/// <summary>
 	/// Creates a new command.
 	/// </summary>
 	/// <param name="execute"> The execution logic. </param>
-	/// <param name="parameter"> The parameter to pass during execute. </param>
+	/// <param name="parameter"> An optional parameter. </param>
 	/// <param name="canExecute"> The execution status logic. </param>
-	public RelayCommand(ICommand execute, string parameter, Func<object, bool> canExecute = null)
-		: this(_ => execute.Execute(parameter), canExecute)
+	public RelayCommand(Action<object> execute, object parameter, Func<object, bool> canExecute = null)
 	{
+		_executeReference = new WeakReference<object>(execute.Target);
+		_executeCallback = execute.GetMethodInfo();
+		_executeParameter = new WeakReference<object>(parameter);
+
+		if (canExecute != null)
+		{
+			_canExecuteReference = new WeakReference<object>(canExecute.Target);
+			_canExecuteCallback = canExecute.GetMethodInfo();
+		}
 	}
 
 	#endregion
@@ -81,6 +82,7 @@ public class RelayCommand : ICommand
 	{
 		if (_executeReference.TryGetTarget(out var action))
 		{
+			parameter ??= _executeParameter.TryGetTarget(out var target) ? target : null;
 			_executeCallback.Invoke(action, [parameter]);
 		}
 	}

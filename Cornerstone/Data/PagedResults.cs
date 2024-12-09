@@ -178,8 +178,8 @@ public class PagedResults<T> : PartialUpdate<PagedResults<T>>, IPagedResults
     /// Update the PagedResults with an update.
     /// </summary>
     /// <param name="update"> The update to be applied. </param>
-    /// <param name="options"> The options for controlling the updating of the value. </param>
-    public bool UpdateWith(PagedResults<T> update, IncludeExcludeOptions options)
+    /// <param name="settings"> The options for controlling the updating of the value. </param>
+    public bool UpdateWith(PagedResults<T> update, IncludeExcludeSettings settings)
     {
         // If the update is null then there is nothing to do.
         if (update == null)
@@ -189,7 +189,7 @@ public class PagedResults<T> : PartialUpdate<PagedResults<T>>, IPagedResults
 
         // ****** You can use GenerateUpdateWith to update this ******
 
-        if ((options == null) || options.IsEmpty())
+        if ((settings == null) || settings.IsEmpty())
         {
             Filter = update.Filter;
             Order = update.Order;
@@ -200,24 +200,24 @@ public class PagedResults<T> : PartialUpdate<PagedResults<T>>, IPagedResults
         }
         else
         {
-            this.IfThen(_ => options.ShouldProcessProperty(nameof(Filter)), x => x.Filter = update.Filter);
-            this.IfThen(_ => options.ShouldProcessProperty(nameof(Order)), x => x.Order = update.Order);
-            this.IfThen(_ => options.ShouldProcessProperty(nameof(Page)), x => x.Page = update.Page);
-            this.IfThen(_ => options.ShouldProcessProperty(nameof(PerPage)), x => x.PerPage = update.PerPage);
-            this.IfThen(_ => options.ShouldProcessProperty(nameof(Results)), x => x.Results.Reconcile(update.Results));
-            this.IfThen(_ => options.ShouldProcessProperty(nameof(TotalCount)), x => x.TotalCount = update.TotalCount);
+            this.IfThen(_ => settings.ShouldProcessProperty(nameof(Filter)), x => x.Filter = update.Filter);
+            this.IfThen(_ => settings.ShouldProcessProperty(nameof(Order)), x => x.Order = update.Order);
+            this.IfThen(_ => settings.ShouldProcessProperty(nameof(Page)), x => x.Page = update.Page);
+            this.IfThen(_ => settings.ShouldProcessProperty(nameof(PerPage)), x => x.PerPage = update.PerPage);
+            this.IfThen(_ => settings.ShouldProcessProperty(nameof(Results)), x => x.Results.Reconcile(update.Results));
+            this.IfThen(_ => settings.ShouldProcessProperty(nameof(TotalCount)), x => x.TotalCount = update.TotalCount);
         }
 
-        return base.UpdateWith(update, options);
+        return base.UpdateWith(update, settings);
     }
 
     /// <inheritdoc />
-    public override bool UpdateWith(object update, IncludeExcludeOptions options)
+    public override bool UpdateWith(object update, IncludeExcludeSettings settings)
     {
         return update switch
         {
-            PagedResults<T> value => UpdateWith(value, options),
-            _ => base.UpdateWith(update, options)
+            PagedResults<T> value => UpdateWith(value, settings),
+            _ => base.UpdateWith(update, settings)
         };
     }
 

@@ -97,11 +97,11 @@ public static class StringFormatter
 	/// Humanize the time unit.
 	/// </summary>
 	/// <param name="timeUnit"> The time unit to humanize. </param>
-	/// <param name="options"> The options for humanizing. </param>
+	/// <param name="settings"> The options for humanizing. </param>
 	/// <returns> The human formatted string. </returns>
-	public static string Humanize(this TimeUnit timeUnit, IHumanizeOptions options = null)
+	public static string Humanize(this TimeUnit timeUnit, IHumanizeSettings settings = null)
 	{
-		return options?.WordFormat == WordFormat.Full
+		return settings?.WordFormat == WordFormat.Full
 			? timeUnit.GetDisplayName()
 			: timeUnit.GetDisplayShortName();
 	}
@@ -110,9 +110,9 @@ public static class StringFormatter
 	/// Convert the DateTime to a human string.
 	/// </summary>
 	/// <param name="value"> The value to convert. </param>
-	/// <param name="options"> The options for humanizing. </param>
+	/// <param name="settings"> The options for humanizing. </param>
 	/// <returns> The human formatted string. </returns>
-	public static string Humanize(this DateTime value, IHumanizeOptions options = null)
+	public static string Humanize(this DateTime value, IHumanizeSettings settings = null)
 	{
 		// todo: place-holder until we can get to this.
 		return value.ToString();
@@ -122,9 +122,9 @@ public static class StringFormatter
 	/// Convert the int to a human string.
 	/// </summary>
 	/// <param name="value"> The value to convert. </param>
-	/// <param name="options"> The settings for conversion. </param>
+	/// <param name="settings"> The settings for conversion. </param>
 	/// <returns> The human formatted string. </returns>
-	public static string Humanize(this int value, IHumanizeOptions options = null)
+	public static string Humanize(this int value, IHumanizeSettings settings = null)
 	{
 		// todo: place-holder until we can get to this.
 		return value.ToString();
@@ -134,9 +134,9 @@ public static class StringFormatter
 	/// Convert the long to a human string.
 	/// </summary>
 	/// <param name="value"> The value to convert. </param>
-	/// <param name="options"> The settings for conversion. </param>
+	/// <param name="settings"> The settings for conversion. </param>
 	/// <returns> The human formatted string. </returns>
-	public static string Humanize(this long value, IHumanizeOptions options = null)
+	public static string Humanize(this long value, IHumanizeSettings settings = null)
 	{
 		// todo: place-holder until we can get to this.
 		return value.ToString();
@@ -146,16 +146,16 @@ public static class StringFormatter
 	/// Convert the timespan to a human string.
 	/// </summary>
 	/// <param name="value"> The value to convert. </param>
-	/// <param name="options"> The settings for conversion. </param>
+	/// <param name="settings"> The settings for conversion. </param>
 	/// <returns> The human formatted string. </returns>
-	public static string Humanize(this TimeSpan value, IHumanizeOptions options = null)
+	public static string Humanize(this TimeSpan value, IHumanizeSettings settings = null)
 	{
-		options ??= new HumanizeOptions();
+		settings ??= new HumanizeSettings();
 
-		var valueMinUnit = MinUnit(value, options.MinUnit);
-		var valueMaxUnit = MaxUnit(value, valueMinUnit, options.MaxUnit);
+		var valueMinUnit = MinUnit(value, settings.MinUnit);
+		var valueMaxUnit = MaxUnit(value, valueMinUnit, settings.MaxUnit);
 		var sections = new List<string>();
-		var precisionFormat = $"{{0:0.{RandomGenerator.NextString(options.Precision, "#")}}}";
+		var precisionFormat = settings.Precision > 0 ? $"{{0:0.{RandomGenerator.NextString(settings.Precision, "#")}}}" : "{0:0}";
 
 		foreach (var unit in _timeUnitDescending)
 		{
@@ -174,13 +174,13 @@ public static class StringFormatter
 				case TimeUnit.Year when value.Days > 365:
 				{
 					var years = value.Days / 365;
-					sections.Add($"{years} {GetUnitName(unit, years, options.WordFormat)}");
+					sections.Add($"{years} {GetUnitName(unit, years, settings.WordFormat)}");
 					value -= TimeSpan.FromDays(years * 365);
 					break;
 				}
 				case TimeUnit.Day when value.Days > 0:
 				{
-					sections.Add($"{value.Days} {GetUnitName(unit, value.Days, options.WordFormat)}");
+					sections.Add($"{value.Days} {GetUnitName(unit, value.Days, settings.WordFormat)}");
 					value -= TimeSpan.FromDays(value.Days);
 					break;
 				}
@@ -189,15 +189,15 @@ public static class StringFormatter
 					double number = value.Hours;
 					value -= TimeSpan.FromHours(value.Hours);
 
-					if ((valueMinUnit == TimeUnit.Hour) && (value > TimeSpan.Zero))
+					if ((settings.MaxUnitSegments == 1) || ((valueMinUnit == TimeUnit.Hour) && (value > TimeSpan.Zero)))
 					{
 						number += value.TotalHours;
 						var total = string.Format(precisionFormat, number);
-						sections.Add($"{total} {GetUnitName(unit, number, options.WordFormat)}");
+						sections.Add($"{total} {GetUnitName(unit, number, settings.WordFormat)}");
 					}
 					else
 					{
-						sections.Add($"{number} {GetUnitName(unit, number, options.WordFormat)}");
+						sections.Add($"{number} {GetUnitName(unit, number, settings.WordFormat)}");
 					}
 					break;
 				}
@@ -206,15 +206,15 @@ public static class StringFormatter
 					double number = value.Minutes;
 					value -= TimeSpan.FromMinutes(value.Minutes);
 
-					if ((valueMinUnit == TimeUnit.Minute) && (value > TimeSpan.Zero))
+					if ((settings.MaxUnitSegments == 1) || ((valueMinUnit == TimeUnit.Minute) && (value > TimeSpan.Zero)))
 					{
 						number += value.TotalMinutes;
 						var total = string.Format(precisionFormat, number);
-						sections.Add($"{total} {GetUnitName(unit, number, options.WordFormat)}");
+						sections.Add($"{total} {GetUnitName(unit, number, settings.WordFormat)}");
 					}
 					else
 					{
-						sections.Add($"{number} {GetUnitName(unit, number, options.WordFormat)}");
+						sections.Add($"{number} {GetUnitName(unit, number, settings.WordFormat)}");
 					}
 					break;
 				}
@@ -223,15 +223,15 @@ public static class StringFormatter
 					double number = value.Seconds;
 					value -= TimeSpan.FromSeconds(value.Seconds);
 
-					if ((valueMinUnit == TimeUnit.Second) && (value > TimeSpan.Zero))
+					if ((settings.MaxUnitSegments == 1) || ((valueMinUnit == TimeUnit.Second) && (value > TimeSpan.Zero)))
 					{
 						number += value.TotalSeconds;
 						var total = string.Format(precisionFormat, number);
-						sections.Add($"{total} {GetUnitName(unit, number, options.WordFormat)}");
+						sections.Add($"{total} {GetUnitName(unit, number, settings.WordFormat)}");
 					}
 					else
 					{
-						sections.Add($"{number} {GetUnitName(unit, number, options.WordFormat)}");
+						sections.Add($"{number} {GetUnitName(unit, number, settings.WordFormat)}");
 					}
 					break;
 				}
@@ -240,29 +240,29 @@ public static class StringFormatter
 					double number = value.Milliseconds;
 					value -= TimeSpan.FromMilliseconds(value.Milliseconds);
 
-					if ((valueMinUnit == TimeUnit.Millisecond) && (value > TimeSpan.Zero))
+					if ((settings.MaxUnitSegments == 1) || ((valueMinUnit == TimeUnit.Millisecond) && (value > TimeSpan.Zero)))
 					{
 						number += value.TotalMilliseconds;
 						var total = string.Format(precisionFormat, number);
-						sections.Add($"{total} {GetUnitName(unit, number, options.WordFormat)}");
+						sections.Add($"{total} {GetUnitName(unit, number, settings.WordFormat)}");
 					}
 					else
 					{
-						sections.Add($"{number} {GetUnitName(unit, number, options.WordFormat)}");
+						sections.Add($"{number} {GetUnitName(unit, number, settings.WordFormat)}");
 					}
 					break;
 				}
 				#if NET7_0_OR_GREATER
 				case TimeUnit.Microsecond when value.Microseconds > 0:
 				{
-					sections.Add($"{value.Microseconds} {GetUnitName(unit, value.Microseconds, options.WordFormat)}");
+					sections.Add($"{value.Microseconds} {GetUnitName(unit, value.Microseconds, settings.WordFormat)}");
 					value -= TimeSpan.FromMilliseconds(value.Microseconds);
 					break;
 				}
 				#endif
 			}
 
-			if (sections.Count >= options.MaxUnitSegments)
+			if (sections.Count >= settings.MaxUnitSegments)
 			{
 				break;
 			}
@@ -273,7 +273,7 @@ public static class StringFormatter
 			}
 		}
 
-		if (options.WordFormat == WordFormat.Abbreviation)
+		if (settings.WordFormat == WordFormat.Abbreviation)
 		{
 			return string.Join(" ", sections);
 		}
@@ -297,6 +297,117 @@ public static class StringFormatter
 			builder.Append(sections[end]);
 		}
 
+		return builder.ToString();
+	}
+
+	/// <summary>
+	/// Convert the text to a camel case string.
+	/// </summary>
+	/// <param name="value"> The value to convert. </param>
+	/// <returns> The string in the desired format. </returns>
+	public static string ToCamelCase(this string value)
+	{
+		var builder = new TextBuilder();
+		var nextCharUpper = false;
+
+		for (var i = 0; i < value.Length; i++)
+		{
+			var c = value[i];
+
+			if (i == 0)
+			{
+				builder.Append(char.IsUpper(c) ? char.ToLower(c) : c);
+				continue;
+			}
+
+			if ((c == ' ') || !char.IsLetterOrDigit(c))
+			{
+				nextCharUpper = true;
+				continue;
+			}
+
+			if (nextCharUpper)
+			{
+				builder.Append(char.ToUpper(c));
+				nextCharUpper = false;
+				continue;
+			}
+
+			builder.Append(c);
+		}
+		return builder.ToString();
+	}
+
+	/// <summary>
+	/// Convert the day to string with suffix. Ex. 1st, 2nd, 3rd...
+	/// </summary>
+	/// <param name="day"> The day value. </param>
+	/// <returns> The day with suffix. </returns>
+	public static string ToDayWithSuffix(this int day)
+	{
+		var response = day.ToString();
+		if (response.EndsWith("11"))
+		{
+			return response + "th";
+		}
+		if (response.EndsWith("12"))
+		{
+			return response + "th";
+		}
+		if (response.EndsWith("13"))
+		{
+			return response + "th";
+		}
+		if (response.EndsWith("1"))
+		{
+			return response + "st";
+		}
+		if (response.EndsWith("2"))
+		{
+			return response + "nd";
+		}
+		if (response.EndsWith("3"))
+		{
+			return response + "rd";
+		}
+		return response + "th";
+	}
+
+	/// <summary>
+	/// Convert the text to a camel case string.
+	/// </summary>
+	/// <param name="value"> The value to convert. </param>
+	/// <returns> The string in a camel case format. </returns>
+	public static string ToPascalCase(this string value)
+	{
+		var builder = new TextBuilder();
+		var nextCharUpper = false;
+
+		for (var i = 0; i < value.Length; i++)
+		{
+			var c = value[i];
+
+			if (i == 0)
+			{
+				builder.Append(char.IsLower(c) ? char.ToUpper(c) : c);
+				continue;
+			}
+
+			if ((c == ' ') || !char.IsLetterOrDigit(c))
+			{
+				nextCharUpper = true;
+				continue;
+			}
+
+			if (nextCharUpper)
+			{
+				builder.Append(char.ToUpper(c));
+				nextCharUpper = false;
+				continue;
+			}
+
+			builder.Append(c);
+		}
 		return builder.ToString();
 	}
 
@@ -339,7 +450,7 @@ public static class StringFormatter
 			}
 
 			if (char.IsUpper(c)
-				&& previousCharLower 
+				&& previousCharLower
 				&& !previousCharIsSpace)
 			{
 				builder.Append(' ');
@@ -359,81 +470,22 @@ public static class StringFormatter
 
 		return builder.Trim().ToString();
 	}
-	
-	/// <summary>
-	/// Convert the text to a camel case string.
-	/// </summary>
-	/// <param name="value"> The value to convert. </param>
-	/// <returns> The string in the desired format. </returns>
-	public static string ToCamelCase(this string value)
+
+	public static string ToSpeechForDay(this DateTime dateTime)
 	{
-		var builder = new TextBuilder();
-		var nextCharUpper = false;
-
-		for (var i = 0; i < value.Length; i++)
-		{
-			var c = value[i];
-
-			if (i == 0)
-			{
-				builder.Append(char.IsUpper(c) ? char.ToLower(c) : c);
-				continue;
-			}
-
-			if ((c == ' ') || !char.IsLetterOrDigit(c))
-			{
-				nextCharUpper = true;
-				continue;
-			}
-
-			if (nextCharUpper)
-			{
-				builder.Append(char.ToUpper(c));
-				nextCharUpper = false;
-				continue;
-			}
-
-			builder.Append(c);
-		}
-		return builder.ToString();
+		// Today is Wednesday, November 6th
+		return $"Today is {dateTime:dddd, MMMM} {dateTime.Day.ToDayWithSuffix()}";
 	}
 
-	/// <summary>
-	/// Convert the text to a camel case string.
-	/// </summary>
-	/// <param name="value"> The value to convert. </param>
-	/// <returns> The string in a camel case format. </returns>
-	public static string ToPascalCase(this string value)
+	public static string ToSpeechForTime(this DateTime dateTime)
 	{
-		var builder = new TextBuilder();
-		var nextCharUpper = false;
+		dateTime = dateTime.ToLocalTime();
+		return dateTime.ToString("h:mm tt");
+	}
 
-		for (var i = 0; i < value.Length; i++)
-		{
-			var c = value[i];
-
-			if (i == 0)
-			{
-				builder.Append(char.IsLower(c) ? char.ToUpper(c) : c);
-				continue;
-			}
-
-			if ((c == ' ') || !char.IsLetterOrDigit(c))
-			{
-				nextCharUpper = true;
-				continue;
-			}
-
-			if (nextCharUpper)
-			{
-				builder.Append(char.ToUpper(c));
-				nextCharUpper = false;
-				continue;
-			}
-
-			builder.Append(c);
-		}
-		return builder.ToString();
+	public static string ToSpeechForTime(this TimeSpan value, HumanizeSettings? settings = null)
+	{
+		return value.Humanize(settings);
 	}
 
 	private static string GetUnitName(TimeUnit unit, double value, WordFormat wordFormat)

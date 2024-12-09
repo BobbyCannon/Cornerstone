@@ -25,8 +25,8 @@ public abstract class ClientDatabase : EntityFrameworkSyncableDatabase, IClientD
 		// Default constructor needed for Add-Migration
 	}
 
-	protected ClientDatabase(DbContextOptions contextOptions, DatabaseOptions options, DatabaseKeyCache keyCache)
-		: base(contextOptions, options, keyCache)
+	protected ClientDatabase(DbContextOptions contextOptions, DatabaseSettings settings, DatabaseKeyCache keyCache)
+		: base(contextOptions, settings, keyCache)
 	{
 	}
 

@@ -52,13 +52,8 @@ public class VisualLineText : VisualLineElement
 		}
 
 		var relativeOffset = startVisualColumn - VisualColumn;
-
-		var offset = context.VisualLine.FirstDocumentLine.Offset + RelativeTextOffset + relativeOffset;
-
-		var text = context.GetText(
-			offset,
-			DocumentLength - relativeOffset);
-
+		var offset = context.VisualLine.FirstDocumentLine.StartIndex + RelativeTextOffset + relativeOffset;
+		var text = context.GetText(offset, DocumentLength - relativeOffset);
 		var textSlice = text.Text.AsMemory().Slice(text.Offset, text.Count);
 
 		return new TextCharacters(textSlice, TextRunProperties);
@@ -85,8 +80,7 @@ public class VisualLineText : VisualLineElement
 		}
 
 		var relativeOffset = visualColumnLimit - VisualColumn;
-
-		var text = context.GetText(context.VisualLine.FirstDocumentLine.Offset + RelativeTextOffset, relativeOffset);
+		var text = context.GetText(context.VisualLine.FirstDocumentLine.StartIndex + RelativeTextOffset, relativeOffset);
 
 		return text.Text.AsMemory().Slice(text.Offset, text.Count);
 	}
@@ -106,7 +100,7 @@ public class VisualLineText : VisualLineElement
 	/// <inheritdoc />
 	public override bool IsWhitespace(int visualColumn)
 	{
-		var offset = (visualColumn - VisualColumn) + ParentVisualLine.FirstDocumentLine.Offset + RelativeTextOffset;
+		var offset = (visualColumn - VisualColumn) + ParentVisualLine.FirstDocumentLine.StartIndex + RelativeTextOffset;
 		return char.IsWhiteSpace(ParentVisualLine.Document.GetCharAt(offset));
 	}
 

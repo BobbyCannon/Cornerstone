@@ -18,7 +18,7 @@ public class EnumJsonConverter : JsonConverter
 	#region Methods
 
 	/// <inheritdoc />
-	public override void Append(object value, Type valueType, IObjectConsumer consumer, ISerializationOptions settings)
+	public override void Append(object value, Type valueType, IObjectConsumer consumer, ISerializationSettings settings)
 	{
 		consumer.WriteRawString(GetJsonString(value, settings));
 	}
@@ -48,7 +48,7 @@ public class EnumJsonConverter : JsonConverter
 	}
 
 	/// <inheritdoc />
-	public override string GetJsonString(object value, ISerializationOptions settings)
+	public override string GetJsonString(object value, ISerializationSettings settings)
 	{
 		if (settings.EnumFormat == EnumFormat.Value)
 		{

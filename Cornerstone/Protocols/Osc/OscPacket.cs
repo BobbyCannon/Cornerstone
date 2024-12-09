@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Text;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -45,7 +46,7 @@ public abstract class OscPacket : Bindable
 	/// <returns> Message containing various arguments and an address </returns>
 	public static OscPacket Parse(byte[] data, params OscArgumentParser[] parsers)
 	{
-		return Parse(TimeService.CurrentTime.UtcNow, data, data.Length, parsers);
+		return Parse(DateTimeProvider.RealTime.UtcNow, data, data.Length, parsers);
 	}
 
 	/// <summary>
@@ -69,7 +70,7 @@ public abstract class OscPacket : Bindable
 	/// <returns> Message containing various arguments and an address </returns>
 	public static OscPacket Parse(byte[] data, int length, params OscArgumentParser[] parsers)
 	{
-		return Parse(TimeService.CurrentTime.UtcNow, data, length, parsers);
+		return Parse(DateTimeProvider.RealTime.UtcNow, data, length, parsers);
 	}
 
 	/// <summary>
@@ -93,7 +94,7 @@ public abstract class OscPacket : Bindable
 		}
 		catch (Exception)
 		{
-			return new OscError(TimeService.CurrentTime.UtcNow, OscError.Message.InvalidParsedMessage);
+			return new OscError(DateTimeProvider.RealTime.UtcNow, OscError.Message.InvalidParsedMessage);
 		}
 	}
 
@@ -117,7 +118,7 @@ public abstract class OscPacket : Bindable
 	/// <returns> The parsed OSC packet. </returns>
 	public static OscPacket Parse(string value, IFormatProvider provider, params OscArgumentParser[] parsers)
 	{
-		return Parse(TimeService.CurrentTime.UtcNow, value, provider, parsers);
+		return Parse(DateTimeProvider.RealTime.UtcNow, value, provider, parsers);
 	}
 
 	/// <summary>

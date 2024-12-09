@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
@@ -13,21 +14,14 @@ public static class ResourceService
 {
 	#region Methods
 
-	public static Path CreateMenuIcon(string key)
-	{
-		var response = new Path
-		{
-			Width = 12,
-			Height = 12,
-			Stretch = Stretch.Uniform,
-			Data = GetMenuIcon(key)
-		};
-		return response;
-	}
-
 	public static T Get<T>(string key)
 	{
 		var resource = Application.Current?.FindResource(key);
+		if ((resource == AvaloniaProperty.UnsetValue) && Debugger.IsAttached)
+		{
+			Debugger.Break();
+		}
+
 		return resource is T response ? response : default;
 	}
 
@@ -43,15 +37,33 @@ public static class ResourceService
 			: Colors.Black;
 	}
 
+	public static IBrush GetColorAsBrush(string key)
+	{
+		TryGet(key, out var value, Colors.Black);
+		return new SolidColorBrush(value);
+	}
+
 	public static FontFamily GetFontFamily(string key)
 	{
 		var response = Application.Current?.FindResource(key) as FontFamily;
 		return response;
 	}
 
-	public static StreamGeometry GetMenuIcon(string key)
+	public static StreamGeometry GetSvgImage(string key)
 	{
 		var response = Application.Current?.FindResource(key) as StreamGeometry;
+		return response;
+	}
+
+	public static Path GetSvgPath(string key)
+	{
+		var response = new Path
+		{
+			Width = 12,
+			Height = 12,
+			Stretch = Stretch.Uniform,
+			Data = GetSvgImage(key)
+		};
 		return response;
 	}
 

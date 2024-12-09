@@ -18,7 +18,7 @@ public class TextEditorTests : CornerstoneUnitTest
 	[AvaloniaTest]
 	public void Defaults()
 	{
-		var editor = new TextEditor();
+		var editor = new TextEditorControl();
 		IsFalse(editor.IsModified);
 		IsFalse(editor.IsDataLoaded);
 	}
@@ -26,7 +26,7 @@ public class TextEditorTests : CornerstoneUnitTest
 	[AvaloniaTest]
 	public void TextInput()
 	{
-		var editor = new TextEditor();
+		var editor = new TextEditorControl();
 		var window = new Window { Content = editor };
 		window.Show();
 		editor.Focus();

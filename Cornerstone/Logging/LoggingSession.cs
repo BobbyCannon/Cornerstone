@@ -37,7 +37,6 @@ public class LoggingSession : ILoggingSession
 	#endregion
 }
 
-
 /// <summary>
 /// Represents a logging session.
 /// </summary>

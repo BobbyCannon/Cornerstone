@@ -14,12 +14,15 @@ namespace Cornerstone.Sync;
 /// Represent an entity that can be synced.
 /// </summary>
 /// <typeparam name="TKey"> The type of the entity primary ID. </typeparam>
-public abstract class SyncEntity<TKey> : Entity<TKey>, ISyncEntity
+public class SyncEntity<TKey> : Entity<TKey>, ISyncEntity
 {
 	#region Properties
 
 	/// <inheritdoc />
 	public DateTime CreatedOn { get; set; }
+
+	/// <inheritdoc />
+	public override TKey Id { get; set; }
 
 	/// <inheritdoc />
 	public bool IsDeleted { get; set; }

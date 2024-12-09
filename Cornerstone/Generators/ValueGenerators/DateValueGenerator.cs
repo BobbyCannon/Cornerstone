@@ -71,7 +71,7 @@ public class DateValueGenerator : ValueGenerator
 		#if !NETSTANDARD
 		if ((type == typeof(DateOnly)) || (type == typeof(DateOnly?)))
 		{
-			return response.AddRange(
+			return response.Add(
 				DateOnly.MinValue,
 				DateOnly.MaxValue,
 				new DateOnly(2023, 10, 31)
@@ -81,7 +81,7 @@ public class DateValueGenerator : ValueGenerator
 
 		if ((type == typeof(DateTime)) || (type == typeof(DateTime?)))
 		{
-			return response.AddRange(
+			return response.Add(
 				DateTime.MinValue,
 				DateTime.MaxValue,
 				new DateTime(2023, 10, 31, 12, 01, 02, DateTimeKind.Local),
@@ -92,7 +92,7 @@ public class DateValueGenerator : ValueGenerator
 
 		if ((type == typeof(DateTimeOffset)) || (type == typeof(DateTimeOffset?)))
 		{
-			return response.AddRange(
+			return response.Add(
 				DateTimeOffset.MinValue,
 				DateTimeOffset.MaxValue,
 				new DateTimeOffset(2023, 10, 31, 12, 01, 02, new TimeSpan(1, 2, 0))
@@ -101,7 +101,7 @@ public class DateValueGenerator : ValueGenerator
 
 		if ((type == typeof(IsoDateTime)) || (type == typeof(IsoDateTime?)))
 		{
-			return response.AddRange(
+			return response.Add(
 				IsoDateTime.MinValue,
 				IsoDateTime.MaxValue,
 				new IsoDateTime(new DateTime(2023, 10, 31, 12, 01, 02, DateTimeKind.Local), new TimeSpan(1, 2, 3)),
@@ -111,7 +111,7 @@ public class DateValueGenerator : ValueGenerator
 
 		if ((type == typeof(OscTimeTag)) || (type == typeof(OscTimeTag?)))
 		{
-			return response.AddRange(
+			return response.Add(
 				OscTimeTag.MinValue,
 				OscTimeTag.MaxValue,
 				new OscTimeTag(new DateTime(2023, 10, 31, 12, 01, 02, DateTimeKind.Utc))

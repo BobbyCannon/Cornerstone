@@ -26,7 +26,7 @@ public class VersionJsonConverter : JsonConverter
 	#region Methods
 
 	/// <inheritdoc />
-	public override void Append(object value, Type valueType, IObjectConsumer consumer, ISerializationOptions settings)
+	public override void Append(object value, Type valueType, IObjectConsumer consumer, ISerializationSettings settings)
 	{
 		switch (value)
 		{
@@ -54,7 +54,7 @@ public class VersionJsonConverter : JsonConverter
 	}
 
 	/// <inheritdoc />
-	public override string GetJsonString(object value, ISerializationOptions settings)
+	public override string GetJsonString(object value, ISerializationSettings settings)
 	{
 		return value switch
 		{

@@ -34,7 +34,7 @@ internal sealed class VisualLineTextSource : ITextSource, ITextRunConstructionCo
 
 	#region Properties
 
-	public TextDocument Document { get; set; }
+	public TextEditorDocument Document { get; set; }
 	public TextRunProperties GlobalTextRunProperties { get; set; }
 	public TextView TextView { get; set; }
 
@@ -121,7 +121,7 @@ internal sealed class VisualLineTextSource : ITextSource, ITextRunConstructionCo
 					return run;
 				}
 			}
-			if (TextView.Options.ShowEndOfLine && (textSourceCharacterIndex == VisualLine.VisualLength))
+			if (TextView.Settings.ShowEndOfLine && (textSourceCharacterIndex == VisualLine.VisualLength))
 			{
 				return CreateTextRunForNewLine();
 			}
@@ -140,18 +140,18 @@ internal sealed class VisualLineTextSource : ITextSource, ITextRunConstructionCo
 		var lastDocumentLine = VisualLine.LastDocumentLine;
 		if (lastDocumentLine.DelimiterLength == 2)
 		{
-			newlineText = TextView.Options.EndOfLineCRLFGlyph;
+			newlineText = TextView.Settings.EndOfLineCRLFGlyph;
 		}
 		else if (lastDocumentLine.DelimiterLength == 1)
 		{
-			var newlineChar = Document.GetCharAt(lastDocumentLine.Offset + lastDocumentLine.Length);
+			var newlineChar = Document.GetCharAt(lastDocumentLine.StartIndex + lastDocumentLine.Length);
 			if (newlineChar == '\r')
 			{
-				newlineText = TextView.Options.EndOfLineCRGlyph;
+				newlineText = TextView.Settings.EndOfLineCRGlyph;
 			}
 			else if (newlineChar == '\n')
 			{
-				newlineText = TextView.Options.EndOfLineLFGlyph;
+				newlineText = TextView.Settings.EndOfLineLFGlyph;
 			}
 			else
 			{
@@ -164,7 +164,7 @@ internal sealed class VisualLineTextSource : ITextSource, ITextRunConstructionCo
 		p.SetFontRenderingEmSize(GlobalTextRunProperties.FontRenderingEmSize - 2);
 		var textElement = new FormattedTextElement(TextView.CachedElements.GetTextForNonPrintableCharacter(newlineText, p), 0);
 
-		textElement.RelativeTextOffset = lastDocumentLine.Offset + lastDocumentLine.Length;
+		textElement.RelativeTextOffset = lastDocumentLine.StartIndex + lastDocumentLine.Length;
 
 		return new FormattedTextRun(textElement, GlobalTextRunProperties);
 	}

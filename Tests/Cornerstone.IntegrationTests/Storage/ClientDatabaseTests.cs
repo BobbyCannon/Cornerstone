@@ -1,17 +1,10 @@
 ﻿#region References
 
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using Cornerstone.EntityFramework;
 using Cornerstone.Extensions;
-using Cornerstone.Storage;
 using Cornerstone.UnitTests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Sample.Client.Data;
-using Sample.Client.Data.Sql;
-using Sample.Client.Data.Sqlite;
-using Sample.Shared.Storage;
 using Sample.Shared.Storage.Client;
 
 #endregion
@@ -32,7 +25,6 @@ public class ClientDatabaseTests : CornerstoneUnitTest
 
 			using (var database = provider.GetDatabase())
 			{
-				database.EnsureMigrated();
 				database.Addresses.Add(expected);
 				database.SaveChanges();
 			}
@@ -46,36 +38,32 @@ public class ClientDatabaseTests : CornerstoneUnitTest
 		});
 	}
 
-	public void ForEachClientDatabaseProvider(Action<IDatabaseProvider<IClientDatabase>> test)
+	[TestMethod]
+	public void Relationships()
 	{
-		var providers = GetClientDatabaseProviders();
-
-		foreach (var provider in providers)
+		ForEachClientDatabaseProvider(provider =>
 		{
-			test(provider);
-		}
-	}
+			var address = GetModel<ClientAddress>();
+			var account = GetModel<ClientAccount>();
+			address.Accounts.Add(account);
 
-	private IEnumerable<IDatabaseProvider<IClientDatabase>> GetClientDatabaseProviders()
-	{
-		yield return GetClientMemoryDatabaseProvider();
-		yield return GetClientSqlDatabaseProvider();
-		yield return GetClientSqliteDatabaseProvider();
-	}
+			using (var database = provider.GetDatabase())
+			{
+				database.Addresses.Add(address);
+				database.SaveChanges();
+			}
 
-	private IDatabaseProvider<IClientDatabase> GetClientMemoryDatabaseProvider()
-	{
-		return new ClientMemoryDatabaseProvider();
-	}
+			using (var database = provider.GetDatabase())
+			{
+				var addresses = database.Addresses.ToList();
+				IsNotNull(addresses);
+				AreEqual(address.Unwrap(), addresses[0].Unwrap());
 
-	private IDatabaseProvider<IClientDatabase> GetClientSqlDatabaseProvider()
-	{
-		return new ClientSqlDatabaseProvider("server=localhost;database=CornerstoneClient;integrated security=true;encrypt=false");
-	}
-	
-	private IDatabaseProvider<IClientDatabase> GetClientSqliteDatabaseProvider()
-	{
-		return new ClientSqliteDatabaseProvider("Data Source=CornerstoneClient.db");
+				var accounts = database.Accounts.ToList();
+				IsNotNull(accounts);
+				AreEqual(account.Unwrap(), accounts[0].Unwrap());
+			}
+		});
 	}
 
 	#endregion

@@ -505,43 +505,43 @@
 				Margin="4"
 				GroupName="BrownDisabled" />
 
-		<!-- Blue Grey button. -->
+		<!-- Blue Gray button. -->
 
 		<RadioButton
 				Grid.Row="13" Grid.Column="0"
-				Theme.Color="BlueGrey"
-				Content="Blue Grey"
+				Theme.Color="BlueGray"
+				Content="Blue Gray"
 				IsChecked="True"
 				Width="200"
 				Margin="4"
-				GroupName="BlueGrey" />
+				GroupName="BlueGray" />
 
 		<RadioButton
 				Grid.Row="13" Grid.Column="1"
-				Theme.Color="BlueGrey"
-				Content="Blue Grey"
+				Theme.Color="BlueGray"
+				Content="Blue Gray"
 				Width="200"
 				Margin="4"
-				GroupName="BlueGrey" />
+				GroupName="BlueGray" />
 
 		<RadioButton
 				Grid.Row="13" Grid.Column="2"
-				Theme.Color="BlueGrey"
-				Content="Blue Grey (Disabled)"
+				Theme.Color="BlueGray"
+				Content="Blue Gray (Disabled)"
 				IsChecked="True"
 				IsEnabled="False"
 				Width="200"
 				Margin="4"
-				GroupName="BlueGreyDisabled" />
+				GroupName="BlueGrayDisabled" />
 
 		<RadioButton
 				Grid.Row="13" Grid.Column="3"
-				Theme.Color="BlueGrey"
-				Content="Blue Grey (Disabled)"
+				Theme.Color="BlueGray"
+				Content="Blue Gray (Disabled)"
 				IsEnabled="False"
 				Width="200"
 				Margin="4"
-				GroupName="BlueGreyDisabled" />
+				GroupName="BlueGrayDisabled" />
 
 	</Grid>
 

@@ -4,7 +4,7 @@ using System.Collections.ObjectModel;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
-using Cornerstone.Avalonia.Controls;
+using Cornerstone.Avalonia;
 using Cornerstone.Presentation;
 
 #endregion
@@ -21,10 +21,14 @@ public partial class TabComboBox : CornerstoneUserControl<TabComboBoxViewModel>
 
 	#region Constructors
 
-	public TabComboBox()
+	public TabComboBox() : this(null)
+	{
+	}
+
+	public TabComboBox(IDispatcher dispatcher) : base(dispatcher)
 	{
 		InitializeComponent();
-		ViewModel = new TabComboBoxViewModel();
+		ViewModel = new TabComboBoxViewModel(dispatcher);
 		DataContext = ViewModel;
 	}
 
@@ -54,7 +58,7 @@ public class TabComboBoxViewModel : ViewModel
 
 	#region Constructors
 
-	public TabComboBoxViewModel()
+	public TabComboBoxViewModel(IDispatcher dispatcher) : base(dispatcher)
 	{
 		Values =
 		[

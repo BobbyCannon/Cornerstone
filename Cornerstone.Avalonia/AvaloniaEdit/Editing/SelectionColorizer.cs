@@ -34,13 +34,13 @@ internal sealed class SelectionColorizer : ColorizingTransformer
 			return;
 		}
 
-		var lineStartOffset = context.VisualLine.FirstDocumentLine.Offset;
-		var lineEndOffset = context.VisualLine.LastDocumentLine.Offset + context.VisualLine.LastDocumentLine.TotalLength;
+		var lineStartOffset = context.VisualLine.FirstDocumentLine.StartIndex;
+		var lineEndOffset = context.VisualLine.LastDocumentLine.StartIndex + context.VisualLine.LastDocumentLine.TotalLength;
 
 		foreach (var segment in _textArea.Selection.Segments)
 		{
-			var segmentStart = segment.StartOffset;
-			var segmentEnd = segment.EndOffset;
+			var segmentStart = segment.StartIndex;
+			var segmentEnd = segment.EndIndex;
 			if (segmentEnd <= lineStartOffset)
 			{
 				continue;
@@ -51,12 +51,12 @@ internal sealed class SelectionColorizer : ColorizingTransformer
 			}
 			var startColumn = segmentStart < lineStartOffset
 				? 0
-				: context.VisualLine.ValidateVisualColumn(segment.StartOffset, segment.StartVisualColumn,
+				: context.VisualLine.ValidateVisualColumn(segment.StartIndex, segment.StartVisualColumn,
 					_textArea.Selection.EnableVirtualSpace);
 
 			var endColumn = segmentEnd > lineEndOffset
 				? _textArea.Selection.EnableVirtualSpace ? int.MaxValue : context.VisualLine.VisualLengthWithEndOfLineMarker
-				: context.VisualLine.ValidateVisualColumn(segment.EndOffset, segment.EndVisualColumn, _textArea.Selection.EnableVirtualSpace);
+				: context.VisualLine.ValidateVisualColumn(segment.EndIndex, segment.EndVisualColumn, _textArea.Selection.EnableVirtualSpace);
 
 			ChangeVisualElements(
 				startColumn, endColumn,

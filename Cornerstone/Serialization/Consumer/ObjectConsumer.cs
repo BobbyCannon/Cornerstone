@@ -14,7 +14,7 @@ namespace Cornerstone.Serialization.Consumer;
 /// <inheritdoc cref="IObjectConsumer" />
 public abstract class ObjectConsumer<T>
 	: TextBuilder<T>, IObjectConsumer, IReferenceTracker
-	where T : ISerializationOptions
+	where T : ISerializationSettings
 {
 	#region Fields
 

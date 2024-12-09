@@ -24,7 +24,7 @@ public interface IHighlighter : IDisposable
 	/// <summary>
 	/// Gets the underlying text document.
 	/// </summary>
-	IDocument Document { get; }
+	ITextEditorDocument Document { get; }
 
 	#endregion
 
@@ -111,6 +111,6 @@ public interface IHighlighter : IDisposable
 }
 
 /// <summary>
-/// Event handler for <see cref="IHighlighter.HighlightingStateChanged" />
+/// TrackerPath handler for <see cref="IHighlighter.HighlightingStateChanged" />
 /// </summary>
 public delegate void HighlightingStateChangedEventHandler(int fromLineNumber, int toLineNumber);

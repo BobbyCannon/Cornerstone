@@ -2,6 +2,7 @@
 
 using System.Collections.Generic;
 using Avalonia.Controls;
+using Cornerstone.Avalonia;
 using Cornerstone.Avalonia.Controls;
 using Cornerstone.Collections;
 using Cornerstone.Extensions;

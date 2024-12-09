@@ -237,7 +237,7 @@ internal static class CaretNavigationCommandHandler
 			return nextLine.GetTextViewPosition(pos);
 		}
 		// at end of document
-		Debug.Assert((visualLine.LastDocumentLine.Offset + visualLine.LastDocumentLine.TotalLength) == textView.Document.TextLength);
+		Debug.Assert((visualLine.LastDocumentLine.StartIndex + visualLine.LastDocumentLine.TotalLength) == textView.Document.TextLength);
 		return new TextViewPosition(textView.Document.GetLocation(textView.Document.TextLength));
 	}
 
@@ -261,7 +261,7 @@ internal static class CaretNavigationCommandHandler
 			return previousLine.GetTextViewPosition(pos);
 		}
 		// at start of document
-		Debug.Assert(visualLine.FirstDocumentLine.Offset == 0);
+		Debug.Assert(visualLine.FirstDocumentLine.StartIndex == 0);
 		return new TextViewPosition(0, 0);
 	}
 
@@ -416,7 +416,7 @@ internal static class CaretNavigationCommandHandler
 				args.Handled = true;
 				// First, convert the selection into a rectangle selection
 				// (this is required so that virtual space gets enabled for the caret movement)
-				if (textArea.Options.EnableRectangularSelection && !(textArea.Selection is RectangleSelection))
+				if (textArea.Settings.EnableRectangularSelection && !(textArea.Selection is RectangleSelection))
 				{
 					textArea.Selection = textArea.Selection.IsEmpty
 						? new RectangleSelection(textArea, textArea.Caret.Position, textArea.Caret.Position)

@@ -6,7 +6,7 @@
 	<!-- Design preview. -->
 
 	<Design.PreviewWith>
-		<Border Padding="20" Background="{DynamicResource UiTheme00}">
+		<Border Padding="20" Background="{DynamicResource Background00}">
 			<StackPanel Spacing="20">
 				<CalendarDayButton Content="31" />
 			</StackPanel>

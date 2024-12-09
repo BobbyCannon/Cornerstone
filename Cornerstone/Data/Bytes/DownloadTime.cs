@@ -49,10 +49,10 @@ public class DownloadTime
 	/// Humanize the time it would take to download.
 	/// </summary>
 	/// <returns> </returns>
-	public string Humanize(IHumanizeOptions options = null)
+	public string Humanize(IHumanizeSettings settings = null)
 	{
 		var time = Size.Bytes / Rate.Bytes;
-		return TimeSpan.FromSeconds((double) time).Humanize(options);
+		return TimeSpan.FromSeconds((double) time).Humanize(settings);
 	}
 
 	/// <summary>
@@ -70,7 +70,7 @@ public class DownloadTime
 		response.Append("Rate: ");
 		response.AppendLine(Size.Humanize());
 
-		var options = new HumanizeOptions { MaxUnit = max, MinUnit = min };
+		var options = new HumanizeSettings { MaxUnit = max, MinUnit = min };
 		response.Append("Estimate: ");
 		response.Append(Humanize(options));
 

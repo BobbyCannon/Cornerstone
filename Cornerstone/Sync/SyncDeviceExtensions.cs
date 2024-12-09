@@ -16,7 +16,7 @@ namespace Cornerstone.Sync;
 /// <summary>
 /// Extensions for Sync Device
 /// </summary>
-public static class SyncDeviceExtensions
+public static class SyncClientDetailsExtensions
 {
 	#region Constants
 
@@ -63,10 +63,10 @@ public static class SyncDeviceExtensions
 	/// Update the sync client details into the provided sync options.
 	/// </summary>
 	/// <param name="device"> The device to load options into. </param>
-	/// <param name="syncOptions"> The options to load. </param>
-	public static void AddOrUpdateSyncClientDetails(this ISyncClientDetails device, SyncOptions syncOptions)
+	/// <param name="syncSettings"> The options to load. </param>
+	public static void AddOrUpdateSyncClientDetails(this ISyncClientDetails device, SyncSettings syncSettings)
 	{
-		AddOrUpdateSyncClientDetails(device, syncOptions.Values);
+		AddOrUpdateSyncClientDetails(device, syncSettings.Values);
 	}
 
 	/// <summary>

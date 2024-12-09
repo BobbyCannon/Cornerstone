@@ -22,7 +22,7 @@ public class CompletionWindowTests : CornerstoneUnitTest
 
 		var editor = CreateEditor();
 		editor.Text = "cd \\";
-		editor.CaretOffset = editor.Document.TextLength;
+		editor.TextArea.Caret.Offset = editor.Document.TextLength;
 
 		var window = new CompletionWindow(editor.TextArea, "\\", null, [
 			new CompletionData { CompletionText = "'C:\\Program Files'", DisplayText = "C:\\Program Files" }
@@ -41,7 +41,7 @@ public class CompletionWindowTests : CornerstoneUnitTest
 
 		var editor = CreateEditor();
 		editor.Text = "cd 'C:\\Program Files\\Win'";
-		editor.CaretOffset = editor.Document.TextLength - 1;
+		editor.TextArea.Caret.Offset = editor.Document.TextLength - 1;
 
 		var window = new CompletionWindow(editor.TextArea, "'C:\\Program Files\\Win", null, [
 			new CompletionData { CompletionText = "'C:\\\\Program Files\\\\Windows Defender'", DisplayText = "Windows Defender" }
@@ -50,12 +50,12 @@ public class CompletionWindowTests : CornerstoneUnitTest
 		var item = window.CompletionList.CompletionData[0];
 		var actual = window.GetSegment(item);
 
-		AreEqual(3, actual?.Offset);
+		AreEqual(3, actual?.StartIndex);
 	}
 
-	private static TextEditor CreateEditor()
+	private static TextEditorControl CreateEditor()
 	{
-		var textEditor = new TextEditor();
+		var textEditor = new TextEditorControl();
 		var window = new Window { Content = textEditor };
 		window.Show();
 		textEditor.ApplyTemplate();

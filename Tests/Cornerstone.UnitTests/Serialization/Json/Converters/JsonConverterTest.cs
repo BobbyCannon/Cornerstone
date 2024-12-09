@@ -2,9 +2,9 @@
 
 using System.Linq;
 using Cornerstone.Extensions;
-using Cornerstone.Generators;
 using Cornerstone.Generators.CodeGenerators;
 using Cornerstone.Serialization;
+using Cornerstone.Serialization.Json;
 using Cornerstone.Serialization.Json.Converters;
 using Cornerstone.Text;
 using CodeGenerator = Cornerstone.Generators.CodeGenerator;
@@ -32,6 +32,24 @@ public class JsonConverterTest<T> : JsonConverterTest
 	#endregion
 
 	#region Methods
+
+	protected void ProcessConverter<T2>(T2 value, string expectedJson, string expectedIndentedJson)
+	{
+		var actual = Converter.GetJsonString(value, new SerializationSettings());
+		AreEqual(expectedJson, actual);
+
+		var jsonObject = JsonSerializer.Parse(actual);
+		var actualTable = Converter.ConvertTo(typeof(T2), jsonObject);
+		AreEqual(value, actualTable);
+
+		actual = Converter.GetJsonString(value, new SerializationSettings { TextFormat = TextFormat.Indented });
+		
+		AreEqual(expectedIndentedJson, actual);
+
+		jsonObject = JsonSerializer.Parse(actual);
+		actualTable = Converter.ConvertTo(typeof(T2), jsonObject);
+		AreEqual(value, actualTable);
+	}
 
 	protected void GenerateNewScenarios(string fileName, bool enableTestScenarioCreation)
 	{
@@ -80,7 +98,7 @@ public class JsonConverterTest<T> : JsonConverterTest
 		var builder = new TextBuilder();
 		var scenarioIndex = 0;
 		var serializerSettings = Serializer.DefaultSettings;
-		var writerSettings = CodeGenerator.DefaultWriterOptions;
+		var writerSettings = CodeGenerator.DefaultWriterSettings;
 
 		foreach (var value in values)
 		{
@@ -109,14 +127,14 @@ public class JsonConverterTest : CornerstoneUnitTest
 
 	static JsonConverterTest()
 	{
-		ConverterSettings = CodeGenerator.GetAllCodeCombinations<SerializationOptions>().ToArray();
+		ConverterSettings = CodeGenerator.GetAllCodeCombinations<SerializationSettings>().ToArray();
 	}
 
 	#endregion
 
 	#region Properties
 
-	public static SerializationOptions[] ConverterSettings { get; }
+	public static SerializationSettings[] ConverterSettings { get; }
 
 	#endregion
 }

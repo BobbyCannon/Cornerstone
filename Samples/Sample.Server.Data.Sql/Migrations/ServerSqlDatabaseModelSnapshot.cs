@@ -17,7 +17,7 @@ namespace Sample.Server.Data.Sql.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.0")
+                .HasAnnotation("ProductVersion", "9.0.0")
                 .HasAnnotation("Proxies:ChangeTracking", false)
                 .HasAnnotation("Proxies:CheckEquality", false)
                 .HasAnnotation("Proxies:LazyLoading", true)
@@ -34,11 +34,11 @@ namespace Sample.Server.Data.Sql.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<long>("AddressId")
+                    b.Property<long?>("AddressId")
                         .HasColumnType("bigint")
                         .HasColumnName("AccountAddressId");
 
-                    b.Property<Guid>("AddressSyncId")
+                    b.Property<Guid?>("AddressSyncId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("AccountAddressSyncId");
 
@@ -110,7 +110,7 @@ namespace Sample.Server.Data.Sql.Migrations
                     b.HasIndex("AddressId", "ExternalId")
                         .IsUnique()
                         .HasDatabaseName("IX_Accounts_AddressId_ExternalId")
-                        .HasFilter("[AccountExternalId] IS NOT NULL");
+                        .HasFilter("[AccountAddressId] IS NOT NULL AND [AccountExternalId] IS NOT NULL");
 
                     b.ToTable("Accounts", "dbo");
                 });
@@ -706,8 +706,7 @@ namespace Sample.Server.Data.Sql.Migrations
                     b.HasOne("Sample.Shared.Storage.Server.AddressEntity", "Address")
                         .WithMany("Accounts")
                         .HasForeignKey("AddressId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Address");
                 });

@@ -37,7 +37,7 @@ public class CodeGeneratorTests<T> : CornerstoneUnitTest
 			return;
 		}
 
-        var filePath = $@"{UnitTestsDirectory}\Generators\CodeGenerators\{fileName}";
+        var filePath = $@"{UnitTestsDirectory}\{fileName}";
         var builder = new TextBuilder();
         var allTypes = TypeExtensions.AddNullables(Generator.GetSupportedTypes());
         var scenarioIndex = 0;
@@ -71,10 +71,10 @@ public class CodeGeneratorTests<T> : CornerstoneUnitTest
 			return;
 		}
 
-        var filePath = $@"{UnitTestsDirectory}\Generators\CodeGenerators\{fileName}";
+        var filePath = $@"{UnitTestsDirectory}\{fileName}";
         var builder = new TextBuilder();
         var scenarioIndex = 0;
-		var settings = Cornerstone.Generators.CodeGenerator.DefaultWriterOptions;
+		var settings = Cornerstone.Generators.CodeGenerator.DefaultWriterSettings;
 
         foreach (var value in values)
         {

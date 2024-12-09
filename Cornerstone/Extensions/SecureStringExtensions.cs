@@ -20,6 +20,19 @@ public static class SecureStringExtensions
 	/// </summary>
 	/// <param name="secureString"> </param>
 	/// <param name="value"> </param>
+	public static void Append(this SecureString secureString, string value)
+	{
+		foreach (var x in value)
+		{
+			secureString.AppendChar(x);
+		}
+	}
+
+	/// <summary>
+	/// Append the provided value to the secure string.
+	/// </summary>
+	/// <param name="secureString"> </param>
+	/// <param name="value"> </param>
 	public static void Append(this SecureString secureString, SecureString value)
 	{
 		if (ReferenceEquals(secureString, value))

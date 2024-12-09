@@ -95,8 +95,8 @@ public abstract class LocationInformation<T>
 	/// Update the LocationInformation with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public override bool UpdateWith(T update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	public override bool UpdateWith(T update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -106,7 +106,7 @@ public abstract class LocationInformation<T>
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			Accuracy = update.Accuracy;
 			AccuracyReference = update.AccuracyReference;
@@ -119,14 +119,14 @@ public abstract class LocationInformation<T>
 		}
 		else
 		{
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Accuracy)), x => x.Accuracy = update.Accuracy);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(AccuracyReference)), x => x.AccuracyReference = update.AccuracyReference);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Flags)), x => x.Flags = update.Flags);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Heading)), x => x.Heading = update.Heading);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(ProviderName)), x => x.ProviderName = update.ProviderName);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(SourceName)), x => x.SourceName = update.SourceName);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Speed)), x => x.Speed = update.Speed);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(StatusTime)), x => x.StatusTime = update.StatusTime);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Accuracy)), x => x.Accuracy = update.Accuracy);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(AccuracyReference)), x => x.AccuracyReference = update.AccuracyReference);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Flags)), x => x.Flags = update.Flags);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Heading)), x => x.Heading = update.Heading);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(ProviderName)), x => x.ProviderName = update.ProviderName);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(SourceName)), x => x.SourceName = update.SourceName);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Speed)), x => x.Speed = update.Speed);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(StatusTime)), x => x.StatusTime = update.StatusTime);
 		}
 
 		return true;

@@ -41,7 +41,7 @@ public class SyncRepositoryFilter<T> : SyncRepositoryFilter
 	public Expression<Func<T, bool>> IncomingFilter => IncomingExpression as Expression<Func<T, bool>>;
 
 	/// <summary>
-	/// The look up expression for the type
+	/// The look-up expression for the type
 	/// </summary>
 	public Func<T, Expression<Func<T, bool>>> LookupFilter => LookupExpression as Func<T, Expression<Func<T, bool>>>;
 

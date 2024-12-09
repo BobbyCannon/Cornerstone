@@ -3,6 +3,7 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Notifications;
 using Avalonia.Interactivity;
+using Cornerstone.Avalonia;
 using Cornerstone.Avalonia.Controls;
 
 #endregion

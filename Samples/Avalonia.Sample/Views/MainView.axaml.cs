@@ -1,36 +1,26 @@
 ﻿#region References
 
 using System.Linq;
-using Avalonia.Interactivity;
 using Avalonia.Sample.ViewModels;
 using Cornerstone.Avalonia;
-using Cornerstone.Avalonia.Controls;
+using Cornerstone.Presentation;
 
 #endregion
 
 namespace Avalonia.Sample.Views;
 
-public partial class MainView : CornerstoneUserControl
+public partial class MainView : CornerstoneMainView<MainViewModel>
 {
 	#region Constructors
 
-	public MainView() : this(ViewModelProviderForDesignMode.Get<MainViewModel>())
+	public MainView() : this(DesignModeDependencyProvider.Get<MainViewModel>(), null)
 	{
 	}
 
-	public MainView(MainViewModel viewModel)
+	public MainView(MainViewModel viewModel, IDispatcher dispatcher) : base(viewModel, dispatcher)
 	{
-		ViewModel = viewModel;
-		DataContext = ViewModel;
-
 		InitializeComponent();
 	}
-
-	#endregion
-
-	#region Properties
-
-	public MainViewModel ViewModel { get; }
 
 	#endregion
 
@@ -42,13 +32,6 @@ public partial class MainView : CornerstoneUserControl
 		ViewModel.SelectedTab = ViewModel.Tabs.FirstOrDefault(x => x.Header == ViewModel.ApplicationSettings.SelectedTabName)
 			?? ViewModel.Tabs.FirstOrDefault();
 		base.OnInitialized();
-	}
-
-	/// <inheritdoc />
-	protected override void OnLoaded(RoutedEventArgs e)
-	{
-		CornerstoneRuntimeInformation.Instance.CompleteLoad();
-		base.OnLoaded(e);
 	}
 
 	#endregion

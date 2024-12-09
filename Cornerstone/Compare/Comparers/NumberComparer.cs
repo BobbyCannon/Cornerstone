@@ -24,14 +24,14 @@ public class NumberComparer : BaseComparer
 	#region Methods
 
 	/// <inheritdoc />
-	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, string message)
+	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, Func<string> message)
 	{
 		var expectedValue = EnsureNotPointer(expected);
 		var actualValue = EnsureNotPointer(actual).ConvertTo(expectedValue.GetType());
 
 		if (expectedValue is double dExpected && actualValue is double dActual)
 		{
-			if (CompareDoublePrecision(dExpected, dActual, session.Options.DoubleTolerance))
+			if (CompareDoublePrecision(dExpected, dActual, session.Settings.DoubleTolerance))
 			{
 				return CompareResult.AreEqual;
 			}
@@ -42,7 +42,7 @@ public class NumberComparer : BaseComparer
 
 		if (expectedValue is float fExpected && actualValue is float fActual)
 		{
-			if (CompareFloatPrecision(fExpected, fActual, session.Options.FloatTolerance))
+			if (CompareFloatPrecision(fExpected, fActual, session.Settings.FloatTolerance))
 			{
 				return CompareResult.AreEqual;
 			}

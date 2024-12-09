@@ -186,7 +186,7 @@ public class OscTimeTagTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
-	public void name()
+	public void Name()
 	{
 		var datetime = new DateTime(636835710121234567, DateTimeKind.Utc);
 		datetime.ToString("O").Dump();

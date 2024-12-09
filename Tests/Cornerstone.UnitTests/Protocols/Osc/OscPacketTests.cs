@@ -54,7 +54,7 @@ public class OscPacketTests : CornerstoneUnitTest
 	[TestMethod]
 	public void GetBytes()
 	{
-		var message = new OscMessage(TimeService.CurrentTime.UtcNow, "/test");
+		var message = new OscMessage(UtcNow, "/test");
 		message.Arguments.Add(true);
 		message.Arguments.Add(123);
 
@@ -70,22 +70,22 @@ public class OscPacketTests : CornerstoneUnitTest
 	public void GetBytesForAllInfinity()
 	{
 		var expected = new byte[] { 0x2F, 0x74, 0x65, 0x73, 0x74, 0x00, 0x00, 0x00, 0x2C, 0x49, 0x00, 0x00 };
-		var message = new OscMessage(TimeService.CurrentTime.UtcNow, "/test");
+		var message = new OscMessage(UtcNow, "/test");
 		message.Arguments.Add(float.PositiveInfinity);
 		var actual = message.ToByteArray();
 		AreEqual(expected, actual);
 
-		message = new OscMessage(TimeService.CurrentTime.UtcNow, "/test");
+		message = new OscMessage(UtcNow, "/test");
 		message.Arguments.Add(float.NegativeInfinity);
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 
-		message = new OscMessage(TimeService.CurrentTime.UtcNow, "/test");
+		message = new OscMessage(UtcNow, "/test");
 		message.Arguments.Add(double.PositiveInfinity);
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 
-		message = new OscMessage(TimeService.CurrentTime.UtcNow, "/test");
+		message = new OscMessage(UtcNow, "/test");
 		message.Arguments.Add(double.NegativeInfinity);
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
@@ -95,7 +95,7 @@ public class OscPacketTests : CornerstoneUnitTest
 	public void ParseAllTypes()
 	{
 		var command = "/command,\"value1, value2\",0.1234d";
-		var packet = OscPacket.Parse(TimeService.CurrentTime.UtcNow, command, CultureInfo.CurrentCulture);
+		var packet = OscPacket.Parse(UtcNow, command, CultureInfo.CurrentCulture);
 		var actual = packet as OscMessage;
 
 		Assert.IsNotNull(actual);
@@ -114,7 +114,7 @@ public class OscPacketTests : CornerstoneUnitTest
 
 		AreEqual(command, actualString);
 
-		var packet = OscPacket.Parse(TimeService.CurrentTime.UtcNow, command, CultureInfo.CurrentCulture);
+		var packet = OscPacket.Parse(UtcNow, command, CultureInfo.CurrentCulture);
 		var actual = packet as OscMessage;
 
 		Assert.IsNotNull(actual);
@@ -145,7 +145,7 @@ public class OscPacketTests : CornerstoneUnitTest
 
 		foreach (var command in commands)
 		{
-			var packet = OscPacket.Parse(TimeService.CurrentTime.UtcNow, command, CultureInfo.CurrentCulture);
+			var packet = OscPacket.Parse(UtcNow, command, CultureInfo.CurrentCulture);
 			var actual = packet as OscMessage;
 
 			Assert.IsNotNull(actual);
@@ -164,7 +164,7 @@ public class OscPacketTests : CornerstoneUnitTest
 
 		foreach (var command in commands)
 		{
-			var packet = OscPacket.Parse(TimeService.CurrentTime.UtcNow, command, CultureInfo.CurrentCulture);
+			var packet = OscPacket.Parse(UtcNow, command, CultureInfo.CurrentCulture);
 			var actual = packet as OscMessage;
 
 			Assert.IsNotNull(actual);
@@ -261,11 +261,11 @@ public class OscPacketTests : CornerstoneUnitTest
 			new OscTimeTag(new DateTime(2021, 02, 17, 09, 18, 41, 842, DateTimeKind.Utc))
 		);
 
-		var comparerSettings = new ComparerOptions
+		var comparerSettings = new ComparerSettings
 		{
-			IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeOptions>
+			IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeSettings>
 			{
-				{ typeof(OscMessage), new IncludeExcludeOptions(null, [nameof(OscMessage.Time)]) }
+				{ typeof(OscMessage), new IncludeExcludeSettings(null, [nameof(OscMessage.Time)]) }
 			}
 		};
 
@@ -274,14 +274,14 @@ public class OscPacketTests : CornerstoneUnitTest
 		var actualString = oscMessage.ToString();
 		AreEqual(expected, actualString);
 		var actualMessage = OscPacket.Parse(expected) as OscMessage;
-		AreEqual(oscMessage, actualMessage, options: comparerSettings);
+		AreEqual(oscMessage, actualMessage, settings: comparerSettings);
 
 		// The hex version
 		expected = "/command,0x0000007B,0x000001C8u,0x00000000000010E1L,0x000000000000223DU,12.34f,123.456d,\"123456\",True,False,{ Blob: 0x000102 },[0xFFFFFF85,0x000001C8u,0xFFFFFFFFFFFFEF1FL,0x000000000000223DU,-12.34f,-123.456d,True,False],{ Time: 2021-02-17T09:18:41.8420000Z },{ Time: 2021-02-17T09:18:41.8420000Z }";
 		actualString = oscMessage.ToHexString();
 		AreEqual(expected, actualString);
 		actualMessage = OscPacket.Parse(expected) as OscMessage;
-		AreEqual(oscMessage, actualMessage, options: comparerSettings);
+		AreEqual(oscMessage, actualMessage, settings: comparerSettings);
 	}
 
 	[TestMethod]

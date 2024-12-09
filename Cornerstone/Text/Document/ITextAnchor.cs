@@ -13,7 +13,7 @@ namespace Cornerstone.Text.Document;
 /// <remarks>
 /// <para>
 /// Use the <see cref="ITextAnchor.Offset" /> property to get the offset from a text anchor.
-/// Use the <see cref="IDocument.CreateAnchor" /> method to create an anchor from an offset.
+/// Use the <see cref="ITextEditorDocument.CreateAnchor" /> method to create an anchor from an offset.
 /// </para>
 /// <para>
 /// The document will automatically update all text anchors; and because it uses weak references to do so,
@@ -94,7 +94,7 @@ public interface ITextAnchor
 	/// </para>
 	/// <para>
 	/// <c> false </c>: The anchor is deleted when the a selection that includes the anchor is deleted.
-	/// <c> true </c>: The anchor is not deleted.
+	/// true: The anchor is not deleted.
 	/// </para>
 	/// </summary>
 	/// <remarks>

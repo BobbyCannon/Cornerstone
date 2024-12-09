@@ -2,6 +2,7 @@
 
 using System;
 using Cornerstone.Presentation;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -102,7 +103,7 @@ public class OscStatisticValue : Bindable
 	/// </summary>
 	public void UpdateRate()
 	{
-		var now = TimeService.CurrentTime.UtcNow;
+		var now = DateTimeProvider.RealTime.UtcNow;
 		var time = now - _lastUpdate;
 
 		if (time < UpdateInterval)

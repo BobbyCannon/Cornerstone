@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 using Cornerstone.Avalonia.AvaloniaEdit;
 using Cornerstone.Avalonia.AvaloniaEdit.Editing;
 using Cornerstone.Avalonia.AvaloniaEdit.Rendering;
-using Cornerstone.Text.Document;
+using Cornerstone.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion

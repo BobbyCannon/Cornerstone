@@ -1,12 +1,16 @@
 ﻿#region References
 
 using Android.App;
+using Android.Content;
 using Android.Content.PM;
+using Android.Views;
 using Avalonia.Android;
+using Avalonia.Controls;
 using Cornerstone.Android;
 using Cornerstone.Avalonia;
 using Cornerstone.Avalonia.Android;
 using Cornerstone.Location;
+using AndroidApplication = Android.App.Application;
 
 #endregion
 
@@ -24,12 +28,23 @@ public class MainActivity : AvaloniaMainActivity<App>
 
 	protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
 	{
-		var locationProvider = new AndroidLocationProvider(this);
-		CornerstoneApplication.PlatformDependencies.AddSingleton<ILocationProvider>(() => locationProvider);
+		var dependencyProvider = CornerstoneApplication.DependencyProvider;
+
+		AndroidPlatform.Initialize(this, dependencyProvider);
+
 		var response = base.CustomizeAppBuilder(builder)
 			.WithInterFont()
-			.UseAndroidWebView();
+			.UseCornerstoneAndroid();
+
 		return response;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStart()
+	{
+		//var intent = new Intent(AndroidApplication.Context, typeof(ForegroundService));
+		//AndroidApplication.Context.StartForegroundService(intent);
+		base.OnStart();
 	}
 
 	#endregion

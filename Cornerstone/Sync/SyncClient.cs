@@ -11,6 +11,8 @@ using Cornerstone.Exceptions;
 using Cornerstone.Extensions;
 using Cornerstone.Logging;
 using Cornerstone.Net;
+using Cornerstone.Profiling;
+using Cornerstone.Runtime;
 using Cornerstone.Storage;
 using Cornerstone.Storage.Configuration;
 
@@ -21,12 +23,13 @@ namespace Cornerstone.Sync;
 /// <summary>
 /// Represents a sync client.
 /// </summary>
-public class SyncClient : ISyncClient
+public abstract class SyncClient
 {
 	#region Fields
 
 	private int _changeCount;
 	private SyncSessionStart _syncSessionStart;
+	private readonly IDateTimeProvider _timeProvider;
 
 	#endregion
 
@@ -35,79 +38,131 @@ public class SyncClient : ISyncClient
 	/// <summary>
 	/// Initializes a sync client.
 	/// </summary>
-	public SyncClient(string name, ISyncableDatabaseProvider provider)
+	protected SyncClient(ISyncableDatabaseProvider provider, IDateTimeProvider timeProvider,
+		SyncStatistics syncStatistics, Profiler syncClientProfiler)
+		: this("Client", provider, timeProvider, syncStatistics, syncClientProfiler)
 	{
+	}
+
+	/// <summary>
+	/// Initializes a sync client.
+	/// </summary>
+	protected SyncClient(string name, ISyncableDatabaseProvider provider, IDateTimeProvider timeProvider,
+		SyncStatistics syncStatistics, Profiler syncClientProfiler)
+	{
+		_timeProvider = timeProvider;
 		_changeCount = -1;
 
 		DatabaseProvider = provider;
 		Name = name;
-		Options = new SyncClientOptions();
-		Profiler = new SyncClientProfiler(name);
-		Statistics = new SyncStatistics();
-		SyncOptions = new SyncOptions();
+		Profiler = syncClientProfiler ?? new Profiler(name);
+		Statistics = syncStatistics ?? new SyncStatistics();
+		SyncSettings = new SyncSettings();
 	}
 
 	#endregion
 
 	#region Properties
 
-	/// <inheritdoc />
+	/// <summary>
+	/// The database provider to use during a sync session.
+	/// </summary>
 	public ISyncableDatabaseProvider DatabaseProvider { get; }
 
-	/// <inheritdoc />
-	public SyncClientIncomingConverter IncomingConverter { get; set; }
+	/// <summary>
+	/// An optional converter to process sync objects from Server to Client
+	/// </summary>
+	public SyncClientIncomingConverter IncomingConverter { get; private set; }
 
-	/// <inheritdoc />
+	/// <summary>
+	/// Gets or sets the name of the sync client.
+	/// </summary>
 	public string Name { get; }
 
-	/// <inheritdoc />
-	public SyncClientOptions Options { get; protected set; }
+	/// <summary>
+	/// An optional converter to process sync objects from Client to Server
+	/// </summary>
+	public SyncClientOutgoingConverter OutgoingConverter { get; private set; }
 
-	/// <inheritdoc />
-	public SyncClientOutgoingConverter OutgoingConverter { get; set; }
+	/// <summary>
+	/// Profiler for tracking specific points during sync client processing.
+	/// </summary>
+	public Profiler Profiler { get; }
 
-	/// <inheritdoc />
-	public SyncClientProfiler Profiler { get; }
-
-	/// <inheritdoc />
+	/// <summary>
+	/// The communication statistics for this sync client.
+	/// </summary>
 	public SyncStatistics Statistics { get; }
 
-	/// <inheritdoc />
-	public SyncOptions SyncOptions { get; protected set; }
+	/// <summary>
+	/// The options for the sync.
+	/// </summary>
+	public SyncSettings SyncSettings { get; private set; }
+
+	/// <summary>
+	/// True if the client is a server client.
+	/// </summary>
+	private bool IsServerClient => this is ServerSyncClient;
 
 	#endregion
 
 	#region Methods
 
-	/// <inheritdoc />
+	/// <summary>
+	/// Sends changes to a server.
+	/// </summary>
+	/// <param name="sessionId"> The ID of the sync session. </param>
+	/// <param name="changes"> The changes to write to the server. </param>
+	/// <returns> A list of sync issues if there were any. </returns>
 	public virtual ServiceResult<SyncIssue> ApplyChanges(Guid sessionId, ServiceRequest<SyncObject> changes)
 	{
 		return ApplyChanges(changes, false);
 	}
 
-	/// <inheritdoc />
+	/// <summary>
+	/// Sends issue corrections to a server.
+	/// </summary>
+	/// <param name="sessionId"> The ID of the sync session. </param>
+	/// <param name="corrections"> The corrections to write to the server. </param>
+	/// <returns> A list of sync issues if there were any. </returns>
 	public virtual ServiceResult<SyncIssue> ApplyCorrections(Guid sessionId, ServiceRequest<SyncObject> corrections)
 	{
 		return ApplyChanges(corrections, true);
 	}
 
-	/// <inheritdoc />
-	public virtual SyncSessionStart BeginSync(Guid sessionId, SyncOptions options)
+	/// <summary>
+	/// Starts the sync session.
+	/// </summary>
+	/// <param name="sessionId"> The ID of the sync session. </param>
+	/// <param name="settings"> The settings for the sync session. </param>
+	public virtual SyncSessionStart BeginSync(Guid sessionId, SyncSettings settings)
 	{
 		if (_syncSessionStart != null)
 		{
 			throw new InvalidOperationException("An existing sync session is in progress.");
 		}
 
-		_syncSessionStart = new SyncSessionStart { Id = sessionId, StartedOn = TimeService.CurrentTime.UtcNow };
+		_syncSessionStart = new SyncSessionStart { Id = sessionId, StartedOn = DateTimeProvider.RealTime.UtcNow };
 
-		SyncOptions = options;
 		Statistics.Reset();
+		SyncSettings = settings;
+
+		// Detect the type of sync requested
+		var syncDevice = new SyncDevice();
+		syncDevice.AddOrUpdateSyncClientDetails(settings);
+
+		UpdateSyncSettings(SyncSettings, syncDevice);
+
+		IncomingConverter = GetIncomingConverter();
+		OutgoingConverter = GetOutgoingConverter();
 
 		return _syncSessionStart;
 	}
 
-	/// <inheritdoc />
+	/// <summary>
+	/// Ends the sync session.
+	/// </summary>
+	/// <param name="sessionId"> The ID of the sync session. </param>
 	public virtual SyncStatistics EndSync(Guid sessionId)
 	{
 		ValidateSession(sessionId);
@@ -115,7 +170,12 @@ public class SyncClient : ISyncClient
 		return Statistics;
 	}
 
-	/// <inheritdoc />
+	/// <summary>
+	/// Gets the changes from the server.
+	/// </summary>
+	/// <param name="sessionId"> The ID of the sync session. </param>
+	/// <param name="request"> The details for the request. </param>
+	/// <returns> The list of changes from the server. </returns>
 	public virtual ServiceResult<SyncObject> GetChanges(Guid sessionId, SyncRequest request)
 	{
 		ValidateSession(sessionId);
@@ -123,10 +183,10 @@ public class SyncClient : ISyncClient
 		var response = new ServiceResult<SyncObject>
 		{
 			Skipped = request.Skip,
-			TotalCount = Profiler.GetChangeCount.Time(() => GetChangeCount(request))
+			TotalCount = Profiler.Time(nameof(GetChangeCount), () => GetChangeCount(request))
 		};
 
-		return Profiler.GetChanges.Time(() =>
+		return Profiler.Time(nameof(GetChanges), () =>
 		{
 			if (response.TotalCount == 0)
 			{
@@ -137,24 +197,24 @@ public class SyncClient : ISyncClient
 			// if the [since] and [until] are equal that means we should get all changes from since to now
 			if (request.Since == request.Until)
 			{
-				request.Until = TimeService.CurrentTime.UtcNow;
+				request.Until = DateTimeProvider.RealTime.UtcNow;
 			}
 
-			var take = (request.Take <= 0) || (request.Take > SyncOptions.ItemsPerSyncRequest) ? SyncOptions.ItemsPerSyncRequest : request.Take;
+			var take = (request.Take <= 0) || (request.Take > SyncSettings.ItemsPerSyncRequest) ? SyncSettings.ItemsPerSyncRequest : request.Take;
 			var remainingSkip = request.Skip;
 			using var database = DatabaseProvider.GetSyncableDatabase();
 
-			foreach (var repository in database.GetSyncableRepositories(SyncOptions))
+			foreach (var repository in database.GetSyncableRepositories(SyncSettings))
 			{
 				// Skip this type if it's being filters or if the outgoing converter cannot convert
-				if (SyncOptions.ShouldExcludeRepository(repository.TypeName)
+				if (SyncSettings.ShouldExcludeRepository(repository.TypeName)
 					|| ((OutgoingConverter != null) && !OutgoingConverter.CanConvert(repository.TypeName)))
 				{
 					// Do not process this repository because we have filters and the repository is not in the filters.
 					continue;
 				}
 
-				var syncRepositoryFilter = SyncOptions.GetFilter(repository);
+				var syncRepositoryFilter = SyncSettings.GetFilter(repository);
 
 				// Check to see if this repository should be skipped
 				var changeCount = repository.GetChangeCount(request.Since, request.Until, syncRepositoryFilter);
@@ -168,7 +228,7 @@ public class SyncClient : ISyncClient
 				var changes = repository.GetChanges(request.Since, request.Until, remainingSkip, take - response.Collection.Count, syncRepositoryFilter).ToList();
 				var items = OutgoingConverter?.Convert(changes).ToList() ?? changes;
 
-				response.Collection.AddRange(items);
+				response.Collection.Add(items);
 				remainingSkip = 0;
 
 				if (response.Collection.Count >= take)
@@ -186,7 +246,12 @@ public class SyncClient : ISyncClient
 		});
 	}
 
-	/// <inheritdoc />
+	/// <summary>
+	/// Gets the list of sync objects to try and resolve the issue list.
+	/// </summary>
+	/// <param name="sessionId"> The ID of the sync session. </param>
+	/// <param name="issues"> The issues to process. </param>
+	/// <returns> The sync objects to resolve the issues. </returns>
 	public virtual ServiceResult<SyncObject> GetCorrections(Guid sessionId, ServiceRequest<SyncIssue> issues)
 	{
 		ValidateSession(sessionId);
@@ -217,7 +282,7 @@ public class SyncClient : ISyncClient
 				{
 					var type = Type.GetType(issue.TypeName);
 
-					if (SyncOptions.ShouldExcludeRepository(type))
+					if (SyncSettings.ShouldExcludeRepository(type))
 					{
 						// Do not process this issue because we have filters and the repository is not in the filters.
 						continue;
@@ -260,17 +325,34 @@ public class SyncClient : ISyncClient
 		return response;
 	}
 
-	/// <inheritdoc />
+	/// <summary>
+	/// Gets an instance of the database this sync client is for.
+	/// </summary>
+	/// <returns> The database that is syncable. </returns>
 	public ISyncableDatabase GetDatabase()
 	{
 		return DatabaseProvider.GetSyncableDatabase();
 	}
 
-	/// <inheritdoc />
+	/// <summary>
+	/// Gets an instance of the database this sync client is for.
+	/// </summary>
+	/// <returns> The database that is syncable. </returns>
 	public T GetDatabase<T>() where T : class, ISyncableDatabase
 	{
 		return (T) DatabaseProvider.GetSyncableDatabase();
 	}
+
+	protected abstract SyncClientIncomingConverter GetIncomingConverter();
+
+	protected abstract SyncClientOutgoingConverter GetOutgoingConverter();
+
+	/// <summary>
+	/// Update sync options on BeginSync.
+	/// </summary>
+	/// <param name="syncSettings"> The options for the sync. </param>
+	/// <param name="syncDevice"> The device details for the sync. </param>
+	protected abstract void UpdateSyncSettings(SyncSettings syncSettings, SyncDevice syncDevice);
 
 	/// <summary>
 	/// Validates the sync session. The SyncSession will be set on BeginSync and cleared on EndSync.
@@ -286,7 +368,7 @@ public class SyncClient : ISyncClient
 
 	private ServiceResult<SyncIssue> ApplyChanges(ServiceRequest<SyncObject> changes, bool corrections)
 	{
-		return Profiler.ApplyChanges.Time(() =>
+		return Profiler.Time(nameof(ApplyChanges), () =>
 		{
 			// The collection is incoming types
 			// todo: performance, could we increase performance by going straight to entity, currently we convert to entity then back to sync object
@@ -304,9 +386,10 @@ public class SyncClient : ISyncClient
 				Statistics.AppliedChanges += objects.Count;
 			}
 
-			if (DatabaseProvider.Options.SyncOrder.Any())
+			var syncOrder = DatabaseProvider.GetSyncOrder();
+			if (syncOrder.Any())
 			{
-				var order = DatabaseProvider.Options.SyncOrder.ToList();
+				var order = syncOrder.ToList();
 				groups = groups.OrderBy(x => order.IndexOf(x.Key));
 			}
 
@@ -327,17 +410,17 @@ public class SyncClient : ISyncClient
 
 		using var database = DatabaseProvider.GetSyncableDatabase();
 
-		_changeCount = database.GetSyncableRepositories(SyncOptions).Sum(repository =>
+		_changeCount = database.GetSyncableRepositories(SyncSettings).Sum(repository =>
 		{
 			// Skip this type if it's being filters or if the outgoing converter cannot convert
-			if (SyncOptions.ShouldExcludeRepository(repository.TypeName)
+			if (SyncSettings.ShouldExcludeRepository(repository.TypeName)
 				|| ((OutgoingConverter != null) && !OutgoingConverter.CanConvert(repository.TypeName)))
 			{
 				// Do not count this repository because we have filters and the repository is not in the filters.
 				return 0;
 			}
 
-			var syncRepositoryFilter = SyncOptions.GetFilter(repository);
+			var syncRepositoryFilter = SyncSettings.GetFilter(repository);
 			return repository.GetChangeCount(request.Since, request.Until, syncRepositoryFilter);
 		});
 
@@ -378,14 +461,16 @@ public class SyncClient : ISyncClient
 
 	private void ProcessSyncObject(SyncObject syncObject, ISyncableDatabase database, ICollection<SyncIssue> issues, bool correction, bool isIndividualProcess)
 	{
-		Profiler.ProcessSyncObject.Time(() =>
+		Profiler.Time(nameof(ProcessSyncObject), () =>
 		{
 			Logger.Instance.Write(_syncSessionStart?.Id ?? Guid.Empty, correction
 					? $"Processing sync object correction {syncObject.SyncId} {syncObject.TypeName}."
 					: $"Processing sync object {syncObject.SyncId} {syncObject.TypeName}.",
-				EventLevel.Verbose);
+				EventLevel.Verbose,
+				_timeProvider.UtcNow
+			);
 
-			if (SyncOptions.ShouldExcludeRepository(syncObject.TypeName))
+			if (SyncSettings.ShouldExcludeRepository(syncObject.TypeName))
 			{
 				var issue = new SyncIssue
 				{
@@ -395,7 +480,7 @@ public class SyncClient : ISyncClient
 					TypeName = syncObject.TypeName
 				};
 				issues.Add(issue);
-				Logger.Instance.Write(_syncSessionStart?.Id ?? Guid.Empty, issue.Message, EventLevel.Verbose);
+				Logger.Instance.Write(_syncSessionStart?.Id ?? Guid.Empty, issue.Message, EventLevel.Verbose, _timeProvider.UtcNow);
 				return;
 			}
 
@@ -406,7 +491,7 @@ public class SyncClient : ISyncClient
 				return;
 			}
 
-			if (SyncOptions.ShouldFilterIncomingEntity(syncObject.TypeName, syncEntity))
+			if (SyncSettings.ShouldFilterIncomingEntity(syncObject.TypeName, syncEntity))
 			{
 				var issue = new SyncIssue
 				{
@@ -416,7 +501,7 @@ public class SyncClient : ISyncClient
 					TypeName = syncObject.TypeName
 				};
 				issues.Add(issue);
-				Logger.Instance.Write(_syncSessionStart?.Id ?? Guid.Empty, issue.Message, EventLevel.Verbose);
+				Logger.Instance.Write(_syncSessionStart?.Id ?? Guid.Empty, issue.Message, EventLevel.Verbose, _timeProvider.UtcNow);
 				return;
 			}
 
@@ -428,8 +513,8 @@ public class SyncClient : ISyncClient
 				throw new InvalidDataException("Failed to find a syncable repository for the entity.");
 			}
 
-			var syncRepositoryFilter = SyncOptions.GetFilter(repository);
-			var foundEntity = Profiler.ProcessSyncObjectReadEntity.Time(() =>
+			var syncRepositoryFilter = SyncSettings.GetFilter(repository);
+			var foundEntity = Profiler.Time($"{nameof(ProcessSyncObject)}ReadEntity", () =>
 			{
 				// Check to see if primary key caching is enabled and is never expiring for a client
 				// This combination of state means we are caching all keys for a local client to reduce
@@ -446,8 +531,7 @@ public class SyncClient : ISyncClient
 				var doesNotHaveLookupFilter = syncRepositoryFilter?.HasLookupFilter != true;
 				if (doesNotHaveLookupFilter
 					&& !isIndividualProcess
-					&& Options.EnablePrimaryKeyCache
-					&& !Options.IsServerClient
+					&& !IsServerClient
 					&& (database.KeyCache?.SupportsType(type) == true))
 				{
 					var id = database.KeyCache.GetEntityId(syncEntity);
@@ -491,7 +575,7 @@ public class SyncClient : ISyncClient
 			{
 				case SyncObjectStatus.Added:
 				{
-					Profiler.ProcessSyncObjectAdded.Time(() =>
+					Profiler.Time($"{nameof(ProcessSyncObject)}Added", () =>
 					{
 						// Instantiate a new instance of the sync entity to update, also use the provided sync ID
 						// this is because it's possibly the sync entity is blocking updating of the sync ID so it 
@@ -512,11 +596,11 @@ public class SyncClient : ISyncClient
 				}
 				case SyncObjectStatus.Modified:
 				{
-					Profiler.ProcessSyncObjectModified.Time(() =>
+					Profiler.Time($"{nameof(ProcessSyncObject)}Modified",() =>
 					{
 						if ((foundEntity == null) || ((foundEntity.ModifiedOn >= syncEntity.ModifiedOn) && !correction))
 						{
-							// Did not find the entity or it has not changed.
+							// Did not find the entity, or it has not changed.
 							return;
 						}
 
@@ -530,12 +614,12 @@ public class SyncClient : ISyncClient
 				}
 				case SyncObjectStatus.Deleted:
 				{
-					Profiler.ProcessSyncObjectDeleted.Time(() =>
+					Profiler.Time($"{nameof(ProcessSyncObject)}Deleted", () =>
 					{
 						if (foundEntity == null)
 						{
 							// Check to see if we are permanently deleting sync entity
-							if (SyncOptions.PermanentDeletions)
+							if (SyncSettings.PermanentDeletions)
 							{
 								// Entity not found and we don't soft delete so bounce
 								return;
@@ -556,7 +640,7 @@ public class SyncClient : ISyncClient
 							return;
 						}
 
-						if (SyncOptions.PermanentDeletions)
+						if (SyncSettings.PermanentDeletions)
 						{
 							repository.Remove(foundEntity);
 						}
@@ -577,161 +661,171 @@ public class SyncClient : ISyncClient
 
 	private void ProcessSyncObjects(ISyncableDatabaseProvider provider, IEnumerable<SyncObject> syncObjects, ICollection<SyncIssue> issues, bool corrections)
 	{
-		var objects = Profiler.ProcessSyncObjectsSyncObjectsToList.Time(syncObjects.ToList);
-		if (objects.Count <= 0)
+		Profiler.Time(nameof(ProcessSyncObjects), () =>
 		{
-			return;
-		}
-
-		try
-		{
-			var database = Profiler.ProcessSyncObjectsGetDatabase.Time(() =>
+			var objects = Profiler.Time(nameof(ProcessSyncObjects) + "SyncObjectsToList", syncObjects.ToList);
+			if (objects.Count <= 0)
 			{
-				var d = provider.GetSyncableDatabase();
-				d.Options.MaintainCreatedOn = false;
-				d.Options.MaintainModifiedOn = Options.IsServerClient;
-				return d;
-			});
+				return;
+			}
 
 			try
 			{
-				Profiler.ProcessSyncObjects.Time(() =>
+				var database = Profiler.Time(nameof(ProcessSyncObjects) + "GetDatabase", () =>
 				{
-					for (var i = 0; i < objects.Count; i++)
-					{
-						ProcessSyncObject(objects[i], database, issues, corrections, false);
-					}
+					var d = provider.GetSyncableDatabase();
+					d.DatabaseSettings.MaintainCreatedOn = false;
+					d.DatabaseSettings.MaintainModifiedOn = IsServerClient;
+					return d;
 				});
 
-				Profiler.ProcessSyncObjectsSaveDatabase.Time(() => database.SaveChanges());
+				try
+				{
+					Profiler.Time(nameof(ProcessSyncObjects), () =>
+					{
+						for (var i = 0; i < objects.Count; i++)
+						{
+							ProcessSyncObject(objects[i], database, issues, corrections, false);
+						}
+					});
+
+					Profiler.Time(nameof(ProcessSyncObjects) + "SaveDatabase", database.SaveChanges);
+				}
+				finally
+				{
+					database.Dispose();
+				}
 			}
-			finally
+			catch
 			{
-				database.Dispose();
+				Statistics.IndividualProcessCount++;
+				Logger.Instance.Write(_syncSessionStart?.Id ?? Guid.Empty, "Failed to process sync objects in the batch.", EventLevel.Warning, _timeProvider.UtcNow);
+				ProcessSyncObjectsIndividually(provider, objects, issues, corrections);
 			}
-		}
-		catch
-		{
-			Statistics.IndividualProcessCount++;
-			Logger.Instance.Write(_syncSessionStart?.Id ?? Guid.Empty, "Failed to process sync objects in the batch.", EventLevel.Warning);
-			ProcessSyncObjectsIndividually(provider, objects, issues, corrections);
-		}
+		});
 	}
 
 	private void ProcessSyncObjectsIndividually(ISyncableDatabaseProvider provider, IEnumerable<SyncObject> syncObjects, ICollection<SyncIssue> issues, bool corrections)
 	{
-		var objects = syncObjects.ToList();
-
-		foreach (var syncObject in objects)
+		Profiler.Time(nameof(ProcessSyncObjectsIndividually), () =>
 		{
-			try
-			{
-				using var database = provider.GetSyncableDatabase();
-				database.Options.MaintainCreatedOn = false;
-				database.Options.MaintainModifiedOn = Options.IsServerClient;
-				ProcessSyncObject(syncObject, database, issues, corrections, true);
-				database.SaveChanges();
-			}
-			catch (SyncIssueException ex)
-			{
-				ex.Issues.ForEach(issues.Add);
+			var objects = syncObjects.ToList();
 
-				var issue = new SyncIssue
+			foreach (var syncObject in objects)
+			{
+				try
 				{
-					Id = syncObject.SyncId,
-					IssueType = ex.IssueType,
-					Message = ex.Message,
-					TypeName = syncObject.TypeName
-				};
-
-				if (SyncOptions.IncludeIssueDetails)
-				{
-					issue.Message += Environment.NewLine + ex.ToDetailedString();
+					using var database = Profiler.Time($"{nameof(ProcessSyncObjectsIndividually)}GetDatabase",() =>
+					{
+						var d = provider.GetSyncableDatabase();
+						d.DatabaseSettings.MaintainCreatedOn = false;
+						d.DatabaseSettings.MaintainModifiedOn = IsServerClient;
+						return d;
+					});
+					ProcessSyncObject(syncObject, database, issues, corrections, true);
+					Profiler.Time($"{nameof(ProcessSyncObjectsIndividually)}SaveDatabase",() => database.SaveChanges());
 				}
-
-				issues.Add(issue);
-			}
-			catch (InvalidConstraintException ex)
-			{
-				var issue = new SyncIssue
+				catch (SyncIssueException ex)
 				{
-					Id = syncObject.SyncId,
-					IssueType = SyncIssueType.ConstraintException,
-					Message = "Invalid constraint exception...",
-					TypeName = syncObject.TypeName
-				};
+					ex.Issues.ForEach(issues.Add);
 
-				if (SyncOptions.IncludeIssueDetails)
-				{
-					issue.Message += Environment.NewLine + ex.ToDetailedString();
+					var issue = new SyncIssue
+					{
+						Id = syncObject.SyncId,
+						IssueType = ex.IssueType,
+						Message = ex.Message,
+						TypeName = syncObject.TypeName
+					};
+
+					if (SyncSettings.IncludeIssueDetails)
+					{
+						issue.Message += Environment.NewLine + ex.ToDetailedString();
+					}
+
+					issues.Add(issue);
 				}
-
-				issues.Add(issue);
-			}
-			catch (InvalidOperationException ex)
-			{
-				var issue = new SyncIssue
+				catch (InvalidConstraintException ex)
 				{
-					Id = syncObject.SyncId,
-					IssueType = SyncIssueType.RelationshipConstraint,
-					Message = "Invalid operation exception...",
-					TypeName = syncObject.TypeName
-				};
+					var issue = new SyncIssue
+					{
+						Id = syncObject.SyncId,
+						IssueType = SyncIssueType.ConstraintException,
+						Message = "Invalid constraint exception...",
+						TypeName = syncObject.TypeName
+					};
 
-				if (SyncOptions.IncludeIssueDetails)
-				{
-					issue.Message += Environment.NewLine + ex.ToDetailedString();
+					if (SyncSettings.IncludeIssueDetails)
+					{
+						issue.Message += Environment.NewLine + ex.ToDetailedString();
+					}
+
+					issues.Add(issue);
 				}
-
-				issues.Add(issue);
-			}
-			catch (ValidationException ex)
-			{
-				var issue = new SyncIssue
+				catch (InvalidOperationException ex)
 				{
-					Id = syncObject.SyncId,
-					IssueType = SyncIssueType.ValidationException,
-					Message = ex.Message,
-					TypeName = syncObject.TypeName
-				};
+					var issue = new SyncIssue
+					{
+						Id = syncObject.SyncId,
+						IssueType = SyncIssueType.RelationshipConstraint,
+						Message = "Invalid operation exception...",
+						TypeName = syncObject.TypeName
+					};
 
-				if (SyncOptions.IncludeIssueDetails)
-				{
-					issue.Message += Environment.NewLine + ex.ToDetailedString();
+					if (SyncSettings.IncludeIssueDetails)
+					{
+						issue.Message += Environment.NewLine + ex.ToDetailedString();
+					}
+
+					issues.Add(issue);
 				}
-
-				issues.Add(issue);
-			}
-			catch (Exception ex)
-			{
-				var details = ex.ToDetailedString();
-
-				// Cannot catch the DbUpdateException without reference EntityFramework.
-				var issue = details.Contains("conflicted with the FOREIGN KEY constraint")
-					|| details.Contains("The DELETE statement conflicted with the REFERENCE constraint")
-						? new SyncIssue
-						{
-							Id = syncObject.SyncId,
-							IssueType = SyncIssueType.RelationshipConstraint,
-							Message = "This entity has relationship issue with another entity.",
-							TypeName = syncObject.TypeName
-						}
-						: new SyncIssue
-						{
-							Id = syncObject.SyncId,
-							IssueType = SyncIssueType.Unknown,
-							Message = "Unknown issue...",
-							TypeName = syncObject.TypeName
-						};
-
-				if (SyncOptions.IncludeIssueDetails)
+				catch (ValidationException ex)
 				{
-					issue.Message += Environment.NewLine + ex.ToDetailedString();
-				}
+					var issue = new SyncIssue
+					{
+						Id = syncObject.SyncId,
+						IssueType = SyncIssueType.ValidationException,
+						Message = ex.Message,
+						TypeName = syncObject.TypeName
+					};
 
-				issues.Add(issue);
+					if (SyncSettings.IncludeIssueDetails)
+					{
+						issue.Message += Environment.NewLine + ex.ToDetailedString();
+					}
+
+					issues.Add(issue);
+				}
+				catch (Exception ex)
+				{
+					var details = ex.ToDetailedString();
+
+					// Cannot catch the DbUpdateException without reference EntityFramework.
+					var issue = details.Contains("conflicted with the FOREIGN KEY constraint")
+						|| details.Contains("The DELETE statement conflicted with the REFERENCE constraint")
+							? new SyncIssue
+							{
+								Id = syncObject.SyncId,
+								IssueType = SyncIssueType.RelationshipConstraint,
+								Message = "This entity has relationship issue with another entity.",
+								TypeName = syncObject.TypeName
+							}
+							: new SyncIssue
+							{
+								Id = syncObject.SyncId,
+								IssueType = SyncIssueType.Unknown,
+								Message = "Unknown issue...",
+								TypeName = syncObject.TypeName
+							};
+
+					if (SyncSettings.IncludeIssueDetails)
+					{
+						issue.Message += Environment.NewLine + ex.ToDetailedString();
+					}
+
+					issues.Add(issue);
+				}
 			}
-		}
+		});
 	}
 
 	private bool UpdateEntity(ISyncableDatabase database, SyncObject syncObject, ISyncEntity syncEntity, ISyncEntity foundEntity, UpdateableAction action, SyncObjectStatus status, ICollection<SyncIssue> issues)
@@ -797,14 +891,11 @@ public class SyncClient : ISyncClient
 				continue;
 			}
 
-			if (Options.EnablePrimaryKeyCache)
+			var entityId = database.KeyCache?.GetEntityId(relationship.Type, relationship.EntitySyncId.Value);
+			if (entityId != null)
 			{
-				var entityId = database.KeyCache?.GetEntityId(relationship.Type, relationship.EntitySyncId.Value);
-				if (entityId != null)
-				{
-					relationship.EntityIdPropertyInfo.SetValue(entity, entityId);
-					continue;
-				}
+				relationship.EntityIdPropertyInfo.SetValue(entity, entityId);
+				continue;
 			}
 
 			var repository = database.GetSyncableRepository(relationship.Type);
@@ -823,10 +914,7 @@ public class SyncClient : ISyncClient
 					relationship.EntityPropertyInfo.SetValue(entity, foundEntity);
 				}
 
-				if (Options.EnablePrimaryKeyCache)
-				{
-					database.KeyCache?.AddEntityId(relationship.Type, relationship.EntitySyncId.Value, id);
-				}
+				database.KeyCache?.AddEntityId(relationship.Type, relationship.EntitySyncId.Value, id);
 				continue;
 			}
 

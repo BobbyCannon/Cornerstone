@@ -21,11 +21,11 @@ public class SampleOscCommandTests : CornerstoneUnitTest
 
 	public SampleOscCommandTests()
 	{
-		ComparerOptions = new ComparerOptions
+		ComparerSettings = new ComparerSettings
 		{
-			IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeOptions>
+			IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeSettings>
 			{
-				{ typeof(SampleOscCommand), new IncludeExcludeOptions(null, [nameof(SampleOscCommand.Time), nameof(SampleOscCommand.HasBeenRead), nameof(SampleOscCommand.HasBeenUpdated)]) }
+				{ typeof(SampleOscCommand), new IncludeExcludeSettings(null, [nameof(SampleOscCommand.Time), nameof(SampleOscCommand.HasBeenRead), nameof(SampleOscCommand.HasBeenUpdated)]) }
 			}
 		};
 	}
@@ -34,7 +34,7 @@ public class SampleOscCommandTests : CornerstoneUnitTest
 
 	#region Properties
 
-	private ComparerOptions ComparerOptions { get; }
+	private ComparerSettings ComparerSettings { get; }
 
 	#endregion
 
@@ -156,9 +156,9 @@ public class SampleOscCommandTests : CornerstoneUnitTest
 		AreEqual(0, actual2.Length % 4);
 
 		var actualCommand = OscCommand.FromMessage<SampleOscCommand>((OscMessage) OscPacket.Parse(expected));
-		AreEqual(command, actualCommand, options: ComparerOptions);
+		AreEqual(command, actualCommand, settings: ComparerSettings);
 		actualCommand = OscCommand.FromMessage<SampleOscCommand>((OscMessage) OscPacket.Parse(expected2));
-		AreEqual(command, actualCommand, options: ComparerOptions);
+		AreEqual(command, actualCommand, settings: ComparerSettings);
 	}
 
 	[TestMethod]
@@ -176,9 +176,9 @@ public class SampleOscCommandTests : CornerstoneUnitTest
 		AreEqual(0, actual2.Length % 4);
 
 		var actualCommand = OscCommand.FromMessage<SampleOscCommand>((OscMessage) OscPacket.Parse(expected));
-		AreEqual(command, actualCommand, options: ComparerOptions);
+		AreEqual(command, actualCommand, settings: ComparerSettings);
 		actualCommand = OscCommand.FromMessage<SampleOscCommand>((OscMessage) OscPacket.Parse(expected2));
-		AreEqual(command, actualCommand, options: ComparerOptions);
+		AreEqual(command, actualCommand, settings: ComparerSettings);
 	}
 
 	[TestMethod]
@@ -198,9 +198,9 @@ public class SampleOscCommandTests : CornerstoneUnitTest
 
 		var parser = new OscArgumentParser<SampleCustomValue>();
 		var actualCommand = OscCommand.FromMessage<SampleOscCommand>((OscMessage) OscPacket.Parse(expected, parser));
-		AreEqual(command, actualCommand, options: ComparerOptions);
+		AreEqual(command, actualCommand, settings: ComparerSettings);
 		actualCommand = OscCommand.FromMessage<SampleOscCommand>((OscMessage) OscPacket.Parse(expected2, parser));
-		AreEqual(command, actualCommand, options: ComparerOptions);
+		AreEqual(command, actualCommand, settings: ComparerSettings);
 	}
 
 	#endregion

@@ -46,7 +46,7 @@ public abstract class VisualLineElement
 	/// <summary>
 	/// Gets/sets the brush used for the background of this <see cref="VisualLineElement" />.
 	/// </summary>
-	public IBrush BackgroundBrush { get; set; }
+	public IBrush Background03 { get; set; }
 
 	/// <summary>
 	/// Gets if this VisualLineElement can be split.
@@ -275,8 +275,8 @@ public abstract class VisualLineElement
 		{
 			secondPart.TextRunProperties = TextRunProperties.Clone();
 		}
-		firstPart.BackgroundBrush = BackgroundBrush;
-		secondPart.BackgroundBrush = BackgroundBrush;
+		firstPart.Background03 = Background03;
+		secondPart.Background03 = Background03;
 	}
 
 	internal void SetTextRunProperties(VisualLineElementTextRunProperties p)

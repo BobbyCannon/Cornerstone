@@ -1,6 +1,7 @@
 #region References
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Cornerstone.Convert;
 using Cornerstone.Data.Times;
@@ -23,10 +24,29 @@ public class HumanizeTests : CornerstoneUnitTest
 	public void Basic()
 	{
 		var value = TimeSpan.FromDays(512);
-		var options = new HumanizeOptions { MinUnit = TimeUnit.Year, MaxUnit = TimeUnit.Year };
+		var options = new HumanizeSettings { MinUnit = TimeUnit.Year, MaxUnit = TimeUnit.Year };
 		AreEqual("1 Year", value.Humanize(options));
-		options = new HumanizeOptions { MinUnit = TimeUnit.Day, MaxUnit = TimeUnit.Day };
+		options = new HumanizeSettings { MinUnit = TimeUnit.Day, MaxUnit = TimeUnit.Day };
 		AreEqual("512 Days", value.Humanize(options));
+	}
+
+	[TestMethod]
+	public void Precision()
+	{
+		var scenarios = new (string expected, TimeSpan value, HumanizeSettings settings)[]
+		{
+			("1.98 Minutes", TimeSpan.FromMinutes(1.98), new HumanizeSettings { MinUnit = TimeUnit.Minute, MaxUnit = TimeUnit.Minute, Precision = 2 }),
+			("2 Minutes", TimeSpan.FromMinutes(1.98), new HumanizeSettings { MinUnit = TimeUnit.Minute, MaxUnit = TimeUnit.Minute, Precision = 1 }),
+			("1 Minutes", TimeSpan.FromMinutes(1.23), new HumanizeSettings { MinUnit = TimeUnit.Minute, MaxUnit = TimeUnit.Minute, Precision = 0 }),
+			("1 Minute", TimeSpan.FromMinutes(0.99), new HumanizeSettings { MinUnit = TimeUnit.Minute, MaxUnit = TimeUnit.Minute, Precision = 0 }),
+		};
+
+		foreach (var scenario in scenarios)
+		{
+			scenario.expected.Dump();
+			var actual = scenario.value.Humanize(scenario.settings);
+			AreEqual(scenario.expected, actual);
+		}
 	}
 
 	[TestMethod]
@@ -49,7 +69,7 @@ public class HumanizeTests : CornerstoneUnitTest
 
 	private void GenerateNewScenarios(bool enableTestScenarioCreation)
 	{
-		if (RuntimeInformation.DotNetRuntimeVersion.Major <= 4)
+		if (GetRuntimeInformation().DotNetRuntimeVersion.Major <= 4)
 		{
 			// Do NOT generate scenarios on .NET48
 			"We do not generate scenarios on .NET48".Dump();
@@ -66,7 +86,7 @@ public class HumanizeTests : CornerstoneUnitTest
 		var filePath = $@"{UnitTestsDirectory}\Text\{nameof(HumanizeTests)}.cs";
 		var builder = new TextBuilder();
 		var scenarioIndex = 0;
-		var combinations = new HumanizeOptions[]
+		var combinations = new HumanizeSettings[]
 		{
 			new() { MaxUnit = TimeUnit.Max, MinUnit = TimeUnit.Min, Precision = 3, WordFormat = WordFormat.Full },
 			new() { MaxUnit = TimeUnit.Max, MinUnit = TimeUnit.Min, Precision = 3, WordFormat = WordFormat.Abbreviation },
@@ -75,9 +95,9 @@ public class HumanizeTests : CornerstoneUnitTest
 			new() { MaxUnit = TimeUnit.Hour, MinUnit = TimeUnit.Min, Precision = 7, WordFormat = WordFormat.Full },
 			new() { MaxUnit = TimeUnit.Hour, MinUnit = TimeUnit.Min, Precision = 7, WordFormat = WordFormat.Abbreviation }
 		};
-		var settingsType = typeof(HumanizeOptions);
+		var settingsType = typeof(HumanizeSettings);
 		var timeSpan = new TimeSpan(366, 12, 35, 59, 987);
-		var codeSettings = new CodeWriterOptions
+		var codeSettings = new CodeWriterSettings
 		{
 			TextFormat = TextFormat.Spaced,
 			OutputMode = CodeWriterMode.Instance,
@@ -111,43 +131,43 @@ public class HumanizeTests : CornerstoneUnitTest
 			// <Scenarios>
 			new(
 				"0: HumanizeOptions",
-				new HumanizeOptions { MaxUnit = TimeUnit.Year, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Min, Precision = 3, WordFormat = WordFormat.Full },
-				typeof(HumanizeOptions),
+				new HumanizeSettings { MaxUnit = TimeUnit.Year, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Min, Precision = 3, WordFormat = WordFormat.Full },
+				typeof(HumanizeSettings),
 				"1 Year, 1 Day, 12 Hours, 35 Minutes, 59 Seconds, and 987 Milliseconds",
 				typeof(string)
 			),
 			new(
 				"1: HumanizeOptions",
-				new HumanizeOptions { MaxUnit = TimeUnit.Year, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Min, Precision = 3, WordFormat = WordFormat.Abbreviation },
-				typeof(HumanizeOptions),
+				new HumanizeSettings { MaxUnit = TimeUnit.Year, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Min, Precision = 3, WordFormat = WordFormat.Abbreviation },
+				typeof(HumanizeSettings),
 				"1 yr 1 d 12 h 35 m 59 s 987 ms",
 				typeof(string)
 			),
 			new(
 				"2: HumanizeOptions",
-				new HumanizeOptions { MaxUnit = TimeUnit.Year, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Min, Precision = 7, WordFormat = WordFormat.Full },
-				typeof(HumanizeOptions),
+				new HumanizeSettings { MaxUnit = TimeUnit.Year, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Min, Precision = 7, WordFormat = WordFormat.Full },
+				typeof(HumanizeSettings),
 				"1 Year, 1 Day, 12 Hours, 35 Minutes, 59 Seconds, and 987 Milliseconds",
 				typeof(string)
 			),
 			new(
 				"3: HumanizeOptions",
-				new HumanizeOptions { MaxUnit = TimeUnit.Year, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Min, Precision = 7, WordFormat = WordFormat.Abbreviation },
-				typeof(HumanizeOptions),
+				new HumanizeSettings { MaxUnit = TimeUnit.Year, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Min, Precision = 7, WordFormat = WordFormat.Abbreviation },
+				typeof(HumanizeSettings),
 				"1 yr 1 d 12 h 35 m 59 s 987 ms",
 				typeof(string)
 			),
 			new(
 				"4: HumanizeOptions",
-				new HumanizeOptions { MaxUnit = TimeUnit.Hour, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Min, Precision = 7, WordFormat = WordFormat.Full },
-				typeof(HumanizeOptions),
+				new HumanizeSettings { MaxUnit = TimeUnit.Hour, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Min, Precision = 7, WordFormat = WordFormat.Full },
+				typeof(HumanizeSettings),
 				"12 Hours, 35 Minutes, 59 Seconds, and 987 Milliseconds",
 				typeof(string)
 			),
 			new(
 				"5: HumanizeOptions",
-				new HumanizeOptions { MaxUnit = TimeUnit.Hour, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Min, Precision = 7, WordFormat = WordFormat.Abbreviation },
-				typeof(HumanizeOptions),
+				new HumanizeSettings { MaxUnit = TimeUnit.Hour, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Min, Precision = 7, WordFormat = WordFormat.Abbreviation },
+				typeof(HumanizeSettings),
 				"12 h 35 m 59 s 987 ms",
 				typeof(string)
 			),
@@ -164,7 +184,7 @@ public class HumanizeTests : CornerstoneUnitTest
 		foreach (var scenario in scenarios)
 		{
 			scenario.Name.Dump();
-			var settings = (HumanizeOptions) scenario.From.Value;
+			var settings = (HumanizeSettings) scenario.From.Value;
 			var actual = timeSpan.Humanize(settings);
 			AreEqual(scenario.To.Value, actual);
 		}

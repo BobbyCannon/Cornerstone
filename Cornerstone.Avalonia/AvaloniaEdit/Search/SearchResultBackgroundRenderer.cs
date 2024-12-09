@@ -55,8 +55,8 @@ internal class SearchResultBackgroundRenderer : IBackgroundRenderer
 			return;
 		}
 
-		var viewStart = visualLines.First().FirstDocumentLine.Offset;
-		var viewEnd = visualLines.Last().LastDocumentLine.EndOffset;
+		var viewStart = visualLines.First().FirstDocumentLine.StartIndex;
+		var viewEnd = visualLines.Last().LastDocumentLine.EndIndex;
 
 		foreach (var result in CurrentResults.FindOverlappingSegments(viewStart, viewEnd - viewStart))
 		{

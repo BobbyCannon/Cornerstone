@@ -25,7 +25,7 @@ public abstract class SettingsFile<T> : PartialUpdate<T>
 
 	private readonly string _directory;
 	private readonly string _fileName;
-	private readonly SerializationOptions _serializationOptions;
+	private readonly SerializationSettings _serializationSettings;
 
 	#endregion
 
@@ -59,7 +59,7 @@ public abstract class SettingsFile<T> : PartialUpdate<T>
 	{
 		_fileName = fileName;
 		_directory = directory;
-		_serializationOptions = new SerializationOptions
+		_serializationSettings = new SerializationSettings
 		{
 			EnumFormat = EnumFormat.Value,
 			IgnoreDefaultValues = true,
@@ -119,7 +119,7 @@ public abstract class SettingsFile<T> : PartialUpdate<T>
 	{
 		try
 		{
-			var instance = json.FromJson<T>(_serializationOptions);
+			var instance = json.FromJson<T>(_serializationSettings);
 			UpdateWith(instance);
 		}
 		catch
@@ -166,7 +166,7 @@ public abstract class SettingsFile<T> : PartialUpdate<T>
 	public string ToJson()
 	{
 		RefreshUpdates();
-		var json = Serializer.Instance.ToJson(this, _serializationOptions);
+		var json = Serializer.Instance.ToJson(this, _serializationSettings);
 		return json;
 	}
 

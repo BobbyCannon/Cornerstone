@@ -66,7 +66,7 @@ public class VerticalLocation : LocationInformation<IVerticalLocation>, IVertica
 	#region Methods
 
 	/// <inheritdoc />
-	public override IVerticalLocation DeepClone(int? maxDepth = null, IncludeExcludeOptions options = null)
+	public override IVerticalLocation DeepClone(int? maxDepth = null, IncludeExcludeSettings settings = null)
 	{
 		var response = new VerticalLocation(GetDispatcher());
 		response.UpdateWith(this);
@@ -74,7 +74,7 @@ public class VerticalLocation : LocationInformation<IVerticalLocation>, IVertica
 	}
 
 	/// <inheritdoc />
-	public override bool ShouldUpdate(object update, IncludeExcludeOptions options)
+	public override bool ShouldUpdate(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
@@ -89,8 +89,8 @@ public class VerticalLocation : LocationInformation<IVerticalLocation>, IVertica
 	/// Update the VerticalLocation with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="options"> The options for controlling the updating of the value. </param>
-	public override bool UpdateWith(IVerticalLocation update, IncludeExcludeOptions options)
+	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	public override bool UpdateWith(IVerticalLocation update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)
@@ -100,29 +100,29 @@ public class VerticalLocation : LocationInformation<IVerticalLocation>, IVertica
 
 		// ****** You can use GenerateUpdateWith to update this ******
 
-		if ((options == null) || options.IsEmpty())
+		if ((settings == null) || settings.IsEmpty())
 		{
 			Altitude = update.Altitude;
 			AltitudeReference = update.AltitudeReference;
 		}
 		else
 		{
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(Altitude)), x => x.Altitude = update.Altitude);
-			this.IfThen(_ => options.ShouldProcessProperty(nameof(AltitudeReference)), x => x.AltitudeReference = update.AltitudeReference);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Altitude)), x => x.Altitude = update.Altitude);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(AltitudeReference)), x => x.AltitudeReference = update.AltitudeReference);
 		}
 
-		return base.UpdateWith(update, options);
+		return base.UpdateWith(update, settings);
 	}
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
-			VerticalLocation value => UpdateWith(value, options),
-			IVerticalLocation value => UpdateWith(value, options),
-			ILocation<IHorizontalLocation, IVerticalLocation> value => UpdateWith(value.VerticalLocation, options),
-			_ => base.UpdateWith(update, options)
+			VerticalLocation value => UpdateWith(value, settings),
+			IVerticalLocation value => UpdateWith(value, settings),
+			ILocation<IHorizontalLocation, IVerticalLocation> value => UpdateWith(value.VerticalLocation, settings),
+			_ => base.UpdateWith(update, settings)
 		};
 	}
 

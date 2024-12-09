@@ -1,11 +1,13 @@
 ﻿#region References
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
+using System.Linq;
 using Cornerstone.Collections;
+using Cornerstone.Data;
 using Cornerstone.Extensions;
+using Cornerstone.Runtime;
+using Cornerstone.Sync;
 
 #endregion
 
@@ -14,204 +16,328 @@ namespace Cornerstone.Presentation.Managers;
 /// <summary>
 /// Represents a manager of a set of views.
 /// </summary>
-public abstract class ViewManager<T> : Manager, IViewManager<T>
+public abstract class ViewManager<T, TEntity, TEntityKey> : ViewManager<T>
+	where T : class, IUpdateable, ISyncEntity
+	where TEntity : SyncEntity<TEntityKey>
 {
-	#region Fields
-
-	private readonly SpeedyList<T> _collection;
-
-	#endregion
-
 	#region Constructors
 
-	/// <summary>
-	/// Initialize the view manager.
-	/// </summary>
-	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	/// <param name="items"> An optional set. </param>
-	protected ViewManager(IDispatcher dispatcher, params T[] items)
-		: this(dispatcher, [], items)
+	/// <inheritdoc />
+	protected ViewManager(
+		IDateTimeProvider dateTimeProvider,
+		IDependencyProvider dependencyProvider,
+		IDispatcher dispatcher,
+		Func<T, T, bool> distinctCheck,
+		params OrderBy<T>[] orderBy)
+		: base(dateTimeProvider, dependencyProvider, dispatcher, distinctCheck, orderBy)
 	{
-	}
-
-	/// <summary>
-	/// Initialize the view manager.
-	/// </summary>
-	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	/// <param name="orderBy"> The optional set of order by settings. </param>
-	/// <param name="items"> An optional set. </param>
-	protected ViewManager(IDispatcher dispatcher, OrderBy<T>[] orderBy, params T[] items)
-		: base(dispatcher)
-	{
-		_collection = new SpeedyList<T>(dispatcher, orderBy, items);
 	}
 
 	#endregion
 
 	#region Properties
 
-	/// <summary>
-	/// The quantity of items in the view manager.
-	/// </summary>
-	public int Count => _collection.Count;
+	protected virtual Func<TEntity, bool> RemovePredicateByEntity => x => x.IsDeleted;
 
-	/// <inheritdoc />
-	public bool IsLoaded { get; private set; }
+	protected virtual Func<TEntity, bool> UpdatePredicate => x => !x.IsDeleted;
 
 	#endregion
 
 	#region Methods
 
 	/// <summary>
-	/// Add a new item to the view manager.
+	/// Add or update the view by using the entity.
 	/// </summary>
-	/// <param name="item"> The item to be added. </param>
-	/// <returns> The added item. </returns>
-	public T2 Add<T2>(T2 item) where T2 : T
+	/// <param name="update"> The entity update. </param>
+	/// <returns> The view that was added or updated. </returns>
+	public T AddOrUpdate(TEntity update)
 	{
-		_collection.Add(item);
-		return item;
+		// Locate account view to update, or see if our account is a view, or build a new account view from the account
+		var foundView = FirstOrDefault(x => x.SyncId == update.SyncId);
+
+		if (foundView == null)
+		{
+			foundView = CreateView();
+			UpdateAndInitializeView(foundView, update);
+			OnViewUpdated(foundView);
+			return foundView;
+		}
+
+		if (UpdateView(foundView, update))
+		{
+			OnViewUpdated(foundView);
+		}
+		return foundView;
 	}
 
-	/// <inheritdoc />
-	public IEnumerator<T> GetEnumerator()
+	public virtual IEnumerable<T> AddOrUpdate(params TEntity[] updates)
 	{
-		return _collection.GetEnumerator();
+		return ProcessThenOrder(() =>
+		{
+			// Remove view that should be removed
+			RemoveViews();
+
+			// Remove entities that should be removed
+			updates
+				.Where(RemovePredicateByEntity)
+				.ForEach(x => RemoveBySyncId(x.SyncId));
+
+			// Add or update new items
+			var updatedViews = updates
+				.Where(UpdatePredicate)
+				.Select(AddOrUpdate)
+				.ToList();
+
+			return updatedViews;
+		});
 	}
 
-	/// <inheritdoc />
-	public override void Initialize()
+	public T RemoveBySyncId(Guid id)
 	{
-		_collection.ListUpdated += OnCollectionUpdated;
-		_collection.CollectionChanged += CollectionOnCollectionChanged;
-		base.Initialize();
+		// Need to ensure this is thread safe
+		var view = FirstOrDefault(x => x.SyncId == id);
+		if (view != null)
+		{
+			Remove(view);
+		}
+
+		return view;
 	}
 
-	/// <inheritdoc />
-	public void Load()
+	#endregion
+}
+
+/// <summary>
+/// Represents a manager of a set of views.
+/// </summary>
+public abstract class ViewManager<T>
+	: SpeedyList<T>, IDisposable, IManager
+	where T : class, IUpdateable
+{
+	#region Constructors
+
+	protected ViewManager(
+		IDateTimeProvider dateTimeProvider,
+		IDependencyProvider dependencyProvider,
+		IDispatcher dispatcher,
+		Func<T, T, bool> distinctCheck,
+		params OrderBy<T>[] orderBy)
+		: base(dispatcher, orderBy)
 	{
-		IsLoaded = true;
+		DateTimeProvider = dateTimeProvider;
+		DependencyProvider = dependencyProvider;
+		DistinctCheck = distinctCheck;
 	}
 
-	/// <inheritdoc />
-	public override void Uninitialize()
-	{
-		_collection.ListUpdated -= OnCollectionUpdated;
-		_collection.CollectionChanged -= CollectionOnCollectionChanged;
-		base.Uninitialize();
-	}
+	#endregion
+
+	#region Properties
+
+	public IDateTimeProvider DateTimeProvider { get; }
+
+	public IDependencyProvider DependencyProvider { get; }
 
 	/// <inheritdoc />
-	public void Unload()
+	public bool IsInitialized { get; private set; }
+
+	/// <summary>
+	/// The last time this view was updated.
+	/// </summary>
+	public DateTime LastUpdated { get; set; }
+
+	/// <summary>
+	/// Gets the selected view.
+	/// </summary>
+	public T SelectedView { get; set; }
+
+	/// <summary>
+	/// Predicate for removing views from collection
+	/// </summary>
+	protected virtual Func<T, bool> RemovePredicateByView => x => false;
+
+	#endregion
+
+	#region Methods
+
+	/// <summary>
+	/// NOTE: Be careful when using this because it does not perform as well as "AddOrUpdateViews"
+	/// </summary>
+	/// <param name="update"> The update. </param>
+	/// <returns> </returns>
+	public T AddOrUpdate(T update)
 	{
-		IsLoaded = false;
+		var foundView = FirstOrDefault(x => DistinctCheck(x, update));
+		if (foundView == null)
+		{
+			foundView = update;
+			UpdateAndInitializeView(foundView, update);
+			Add(update);
+			OnViewUpdated(update);
+			return update;
+		}
+
+		if (UpdateView(foundView, update))
+		{
+			OnViewUpdated(foundView);
+		}
+		return foundView;
 	}
 
 	/// <summary>
-	/// The collection was updated by adding or removing items.
+	/// Add or update the view by using an object very similar to the view.
+	/// It is very critical that this is used sparingly as the object could get
+	/// out of sync (structure/members) with each other, then silently just
+	/// not work quite right.
 	/// </summary>
-	/// <param name="args"> The collection items that was added or removed. </param>
-	protected virtual void OnCollectionUpdated(SpeedyListUpdatedEventArg<T> args)
+	/// <param name="lookup"> The lookup to locate the view. </param>
+	/// <param name="update"> The update that will use . </param>
+	/// <returns> The view that was added or updated. </returns>
+	public T AddOrUpdate(Func<T, bool> lookup, object update)
 	{
-		args.Removed?
-			.ForEach(x =>
-			{
-				if (x is IViewModel viewModel)
-				{
-					viewModel.Uninitialize();
-				}
+		var foundView = FirstOrDefault(lookup);
+		if (foundView == null)
+		{
+			foundView = CreateView();
+			UpdateAndInitializeView(foundView, update);
+			Add(foundView);
+			OnViewUpdated(foundView);
+			return foundView;
+		}
 
-				if (x is IDisposable disposable)
-				{
-					disposable.Dispose();
-				}
-			});
-
-		args.Added?
-			.ForEach(x =>
-			{
-				if (x is IViewModel viewModel)
-				{
-					viewModel.Initialize();
-				}
-			});
-
-		OnPropertyChanged(nameof(Count));
+		if (UpdateView(foundView, update))
+		{
+			OnViewUpdated(foundView);
+		}
+		return foundView;
 	}
 
-	private void CollectionOnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+	public override void Clear()
 	{
-		CollectionChanged?.Invoke(this, e);
+		base.Clear();
+		LastUpdated = DateTime.MinValue;
 	}
 
-	/// <inheritdoc />
-	IEnumerator IEnumerable.GetEnumerator()
+	/// <summary>
+	/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+	/// </summary>
+	public void Dispose()
 	{
-		return GetEnumerator();
-	}
-
-	private void OnCollectionUpdated(object sender, SpeedyListUpdatedEventArg<T> e)
-	{
-		OnCollectionUpdated(e);
+		Dispose(true);
+		GC.SuppressFinalize(this);
 	}
 
 	/// <inheritdoc />
-	void IViewManager.Remove(object value)
+	public virtual void Initialize()
 	{
-		_collection.Remove((T) value);
+		IsInitialized = true;
+	}
+
+	/// <inheritdoc />
+	public void Process()
+	{
+	}
+
+	public virtual void Reset()
+	{
+		Clear();
+
+		this.Dispatch(() =>
+		{
+			SelectedView = null;
+			LastUpdated = DateTime.MinValue;
+		});
+	}
+
+	/// <inheritdoc />
+	public virtual void Uninitialize()
+	{
+		IsInitialized = false;
+	}
+
+	protected bool CheckIfManagerShouldRefresh(out DateTime until)
+	{
+		until = DateTimeProvider.UtcNow;
+		return until > LastUpdated;
+	}
+
+	protected bool Contains(Func<T, bool> filter)
+	{
+		var foundView = FirstOrDefault(filter);
+		return foundView != null;
+	}
+
+	protected virtual T CreateView()
+	{
+		return DependencyProvider.GetInstance<T>();
+	}
+
+	/// <summary>
+	/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+	/// </summary>
+	/// <param name="disposing"> True if disposing and false if otherwise. </param>
+	protected virtual void Dispose(bool disposing)
+	{
+		if (!disposing)
+		{
+			return;
+		}
+
+		Clear();
+	}
+
+	protected override void OnListUpdated(SpeedyListUpdatedEventArg<T> e)
+	{
+		ProcessOldItems(e.Removed);
+		ProcessNewItems(e.Added);
+		base.OnListUpdated(e);
+	}
+
+	protected virtual void OnViewUpdated(T view)
+	{
+		ViewUpdated?.Invoke(this, view);
+	}
+
+	protected virtual void ProcessNewItems(IList<T> newItems)
+	{
+	}
+
+	protected virtual void ProcessOldItems(IList<T> oldItems)
+	{
+	}
+
+	protected void RemoveViews()
+	{
+		var itemsToRemove = this.Where(RemovePredicateByView).ToList();
+		if (itemsToRemove.Count <= 0)
+		{
+			return;
+		}
+
+		itemsToRemove.ForEach(x => Remove(x));
+	}
+
+	protected virtual bool UpdateAndInitializeView(T view, object update)
+	{
+		// Just call update by default.
+		return UpdateView(view, update);
+	}
+
+	protected virtual bool UpdateView(T view, object update)
+	{
+		if ((view == null) || (update == null))
+		{
+			return false;
+		}
+
+		view.UpdateWith(update);
+		return true;
 	}
 
 	#endregion
 
 	#region Events
 
-	/// <inheritdoc />
-	public event NotifyCollectionChangedEventHandler CollectionChanged;
-
-	#endregion
-}
-
-/// <summary>
-/// Represents a manager for a collection of views.
-/// </summary>
-public interface IViewManager<out T> : IViewManager, IEnumerable<T>, INotifyCollectionChanged
-{
-	#region Properties
-
-	/// <summary>
-	/// The manager is loaded.
-	/// </summary>
-	bool IsLoaded { get; }
-
-	#endregion
-
-	#region Methods
-
-	/// <summary>
-	/// The method to load the manager.
-	/// </summary>
-	void Load();
-
-	/// <summary>
-	/// The method to unload the manager.
-	/// </summary>
-	void Unload();
-
-	#endregion
-}
-
-/// <summary>
-/// Represents a manager for a collection of views.
-/// </summary>
-public interface IViewManager : IViewModel
-{
-	#region Methods
-
-	/// <summary>
-	/// Remove an item from the view
-	/// </summary>
-	/// <param name="value"> </param>
-	void Remove(object value);
+	public event EventHandler<T> ViewUpdated;
 
 	#endregion
 }

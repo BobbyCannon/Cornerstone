@@ -3,12 +3,11 @@
 using System;
 using System.IO;
 using Cornerstone.Extensions;
+using Cornerstone.Runtime;
 using Cornerstone.Storage;
 using Cornerstone.Sync;
 
 #endregion
-
-
 
 namespace Cornerstone.Presentation.Managers;
 
@@ -27,6 +26,11 @@ public abstract class ClientDatabaseManager<T> : Manager, ISyncableDatabaseProvi
 	#endregion
 
 	#region Constructors
+
+	protected ClientDatabaseManager(IRuntimeInformation runtimeInformation, IDispatcher dispatcher)
+		: this(runtimeInformation.ApplicationName, runtimeInformation.ApplicationDataLocation, runtimeInformation.ApplicationVersion.ToString(4), dispatcher)
+	{
+	}
 
 	protected ClientDatabaseManager(string databaseName, string storagePath, string version, IDispatcher dispatcher) : base(dispatcher)
 	{
@@ -47,7 +51,7 @@ public abstract class ClientDatabaseManager<T> : Manager, ISyncableDatabaseProvi
 
 	public string MigrationFilePath => _migrationFilePath ??= Path.Combine(StoragePath, $"{DatabaseName}.db.version");
 
-	public DatabaseOptions Options { get; set; }
+	public DatabaseSettings Settings { get; set; }
 
 	public string StoragePath { get; }
 
@@ -57,44 +61,51 @@ public abstract class ClientDatabaseManager<T> : Manager, ISyncableDatabaseProvi
 
 	#region Methods
 
-	public string GetConnectionString()
+	public void EnsureMigrated()
 	{
-		ValidateDatabaseName();
-		return $"Data Source={DatabaseFilePath}";
+		new DirectoryInfo(StoragePath).SafeCreate();
+		using var database = GetDatabase();
+		Migrate(database);
 	}
 
+	/// <inheritdoc />
 	public T GetDatabase()
 	{
-		var options = new DatabaseOptions();
-		options.UpdateWith(Options);
+		var options = new DatabaseSettings();
+		options.UpdateWith(Settings);
 		return GetDatabase(options);
 	}
 
-	public T GetDatabase(DatabaseOptions options)
+	public T GetDatabase(DatabaseSettings settings)
 	{
-		return GetSyncableDatabase(options, KeyCache);
+		return GetSyncableDatabase(settings, KeyCache);
 	}
 
-	public T GetSyncableDatabase(DatabaseOptions options, DatabaseKeyCache keyCache)
+	public T GetSyncableDatabase(DatabaseSettings settings, DatabaseKeyCache keyCache)
 	{
-		var database = GetDatabaseFromManager(options, keyCache);
+		var database = GetDatabaseFromManager(settings, keyCache);
 
 		if (!_isMigrated)
 		{
-			database = Migrate(database, () => { });
+			database = Migrate(database);
 			_isMigrated = true;
 		}
 
 		return database;
 	}
 
+	/// <inheritdoc />
 	public T GetSyncableDatabase()
 	{
-		var options = new DatabaseOptions();
-		options.UpdateWith(Options);
+		var options = new DatabaseSettings();
+		options.UpdateWith(Settings);
 		return GetSyncableDatabase(options, KeyCache);
 	}
 
+	/// <inheritdoc />
+	public abstract string[] GetSyncOrder();
+
+	/// <inheritdoc />
 	public override void Initialize()
 	{
 		// Refresh the migration status
@@ -103,67 +114,25 @@ public abstract class ClientDatabaseManager<T> : Manager, ISyncableDatabaseProvi
 		base.Initialize();
 	}
 
-	public void LoadMigrationStatus()
-	{
-		try
-		{
-			_isMigrated = Version == ReadMigrationVersion();
-		}
-		catch
-		{
-			_isMigrated = false;
-		}
-	}
-
-	/// <summary>
-	/// Reads the version from the migration file.
-	/// </summary>
-	/// <returns> The last version migrated. </returns>
-	public virtual string ReadMigrationVersion()
-	{
-		try
-		{
-			return File.Exists(MigrationFilePath) ? File.ReadAllText(MigrationFilePath) : string.Empty;
-		}
-		catch
-		{
-			return string.Empty;
-		}
-	}
-
-	/// <summary>
-	/// Reset the database, clears the data.
-	/// </summary>
+	/// <inheritdoc />
 	public override void Uninitialize()
 	{
 		_isMigrated = false;
 		_databaseFilePath = null;
 		_migrationFilePath = null;
 
-		KeyCache.Clear();
+		KeyCache?.Clear();
 	}
 
-	public IDatabaseSession<T> StartSession()
-	{
-		return new DatabaseSession<T>(this);
-	}
-
-	/// <summary>
-	/// Writes the current version to the migration file to track migrations.
-	/// </summary>
-	public virtual void WriteMigrationVersion()
+	protected string GetConnectionString()
 	{
 		ValidateDatabaseName();
-
-		if (!string.IsNullOrWhiteSpace(Version))
-		{
-			File.WriteAllText(MigrationFilePath, Version);
-		}
+		return $"Data Source={DatabaseFilePath}";
 	}
 
-	protected abstract T GetDatabaseFromManager(DatabaseOptions options, DatabaseKeyCache keyCache);
+	protected abstract T GetDatabaseFromManager(DatabaseSettings settings, DatabaseKeyCache keyCache);
 
-	protected virtual T Migrate(T database, Action failed)
+	protected virtual T Migrate(T database)
 	{
 		if (!database.CanMigrate())
 		{
@@ -183,29 +152,43 @@ public abstract class ClientDatabaseManager<T> : Manager, ISyncableDatabaseProvi
 
 			// Reset the database
 			database.Dispose();
-			database = GetDatabaseFromManager(database.Options, database.KeyCache);
+			database = GetDatabaseFromManager(database.DatabaseSettings, database.KeyCache);
 			database.Migrate();
 
 			// Store the migration version, so we can know it was migrated
 			WriteMigrationVersion();
-
-			failed();
 		}
 
 		return database;
 	}
 
-	protected void ValidateDatabaseName()
+	/// <summary>
+	/// Reads the version from the migration file.
+	/// </summary>
+	/// <returns> The last version migrated. </returns>
+	protected virtual string ReadMigrationVersion()
 	{
-		if (DatabaseName == null)
+		try
 		{
-			throw new InvalidOperationException("Database name is not set and should be!");
+			return File.Exists(MigrationFilePath) ? File.ReadAllText(MigrationFilePath) : string.Empty;
+		}
+		catch
+		{
+			return string.Empty;
 		}
 	}
 
-	IDatabase IDatabaseProvider.GetDatabase(DatabaseOptions options)
+	/// <summary>
+	/// Writes the current version to the migration file to track migrations.
+	/// </summary>
+	protected virtual void WriteMigrationVersion()
 	{
-		return GetDatabase(options);
+		ValidateDatabaseName();
+
+		if (!string.IsNullOrWhiteSpace(Version))
+		{
+			File.WriteAllText(MigrationFilePath, Version);
+		}
 	}
 
 	IDatabase IDatabaseProvider.GetDatabase()
@@ -216,6 +199,26 @@ public abstract class ClientDatabaseManager<T> : Manager, ISyncableDatabaseProvi
 	ISyncableDatabase ISyncableDatabaseProvider.GetSyncableDatabase()
 	{
 		return GetSyncableDatabase();
+	}
+
+	private void LoadMigrationStatus()
+	{
+		try
+		{
+			_isMigrated = Version == ReadMigrationVersion();
+		}
+		catch
+		{
+			_isMigrated = false;
+		}
+	}
+
+	private void ValidateDatabaseName()
+	{
+		if (DatabaseName == null)
+		{
+			throw new InvalidOperationException("Database name is not set and should be!");
+		}
 	}
 
 	#endregion

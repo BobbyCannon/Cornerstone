@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using Cornerstone.Data;
 using Cornerstone.Presentation;
-using PropertyChanged;
+using Cornerstone.Weaver;
 
 #endregion
 
@@ -24,7 +24,7 @@ public class ProcessDetails : Bindable<ProcessDetails>
 	/// <inheritdoc />
 	public ProcessDetails(IDispatcher dispatcher) : base(dispatcher)
 	{
-		Errors = new List<string>();
+		Errors = [];
 	}
 
 	#endregion
@@ -102,9 +102,9 @@ public class ProcessDetails : Bindable<ProcessDetails>
 	#region Methods
 
 	/// <inheritdoc />
-	public override bool UpdateWith(ProcessDetails update, IncludeExcludeOptions options)
+	public override bool UpdateWith(ProcessDetails update, IncludeExcludeSettings settings)
 	{
-		return this.UpdateWithUsingReflection(update, options);
+		return this.UpdateWithUsingReflection(update, settings);
 	}
 
 	#endregion

@@ -32,12 +32,13 @@ public static class ResourceLoader
 	internal static void RegisterBuiltInHighlightings(HighlightingManager.DefaultHighlightingManager hlm)
 	{
 		hlm.RegisterHighlighting("C#", [".cs"], "CSharp.xshd");
-		//hlm.RegisterHighlighting("CSS", [".css"], "CSS.xshd");
+		hlm.RegisterHighlighting("CSS", [".css"], "CSS.xshd");
 		hlm.RegisterHighlighting("HTML", [".htm", ".html", ".cshtml"], "HTML.xshd");
 		hlm.RegisterHighlighting("JavaScript", [".js"], "JavaScript.xshd");
 		hlm.RegisterHighlighting("Json", [".json"], "Json.xshd");
 		hlm.RegisterHighlighting("MarkDown", [".md"], "MarkDown.xshd");
 		hlm.RegisterHighlighting("PowerShell", [".ps1", ".psm1", ".psd1"], "PowerShell.xshd");
+		hlm.RegisterHighlighting("Solution", [".sln"], "Solution.xshd");
 		hlm.RegisterHighlighting("TSQL", [".sql"], "TSQL.xshd");
 		hlm.RegisterHighlighting("XML", (".xml;.xsl;.xslt;.xsd;.manifest;.config;.addin;" +
 				".xshd;.wxs;.wxi;.wxl;.proj;.csproj;.vbproj;.ilproj;" +

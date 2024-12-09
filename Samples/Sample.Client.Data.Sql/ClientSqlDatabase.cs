@@ -17,10 +17,17 @@ public class ClientSqlDatabase : ClientDatabase
 		// Default constructor needed for Add-Migration
 	}
 
-	public ClientSqlDatabase(DbContextOptions contextOptions, DatabaseOptions options, DatabaseKeyCache keyCache)
-		: base(contextOptions, options, keyCache)
+	public ClientSqlDatabase(DbContextOptions contextOptions, DatabaseSettings settings, DatabaseKeyCache keyCache)
+		: base(contextOptions, settings, keyCache)
 	{
 	}
+
+	#endregion
+
+	#region Properties
+
+	/// <inheritdoc />
+	public override string[] SyncOrder => ClientMemoryDatabase.GetSyncOrder();
 
 	#endregion
 
@@ -35,12 +42,12 @@ public class ClientSqlDatabase : ClientDatabase
 		builder.MigrationsHistoryTable("MigrationHistory", "system");
 	}
 
-	public static ClientSqlDatabase UseSqlServer(string connectionString = null, DatabaseOptions options = null, DatabaseKeyCache keyCache = null)
+	public static ClientSqlDatabase UseSqlServer(string connectionString = null, DatabaseSettings settings = null, DatabaseKeyCache keyCache = null)
 	{
 		connectionString ??= GetConnectionString();
 
 		var builder = new DbContextOptionsBuilder<ClientDatabase>();
-		return new ClientSqlDatabase(builder.UseSqlServer(connectionString, UpdateOptions).Options, options, keyCache);
+		return new ClientSqlDatabase(builder.UseSqlServer(connectionString, UpdateOptions).Options, settings, keyCache);
 	}
 
 	protected override void ConfigureDatabaseOptions(DbContextOptionsBuilder options)

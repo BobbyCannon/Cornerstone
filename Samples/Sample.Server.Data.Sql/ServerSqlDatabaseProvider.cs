@@ -1,13 +1,12 @@
 ﻿#region References
 
-using Cornerstone.Storage;
 using Sample.Shared.Storage;
 
 #endregion
 
 namespace Sample.Server.Data.Sql;
 
-public class ServerSqlDatabaseProvider : DatabaseProvider<IServerDatabase>
+public class ServerSqlDatabaseProvider : ServerDatabaseProvider
 {
 	#region Fields
 
@@ -18,7 +17,6 @@ public class ServerSqlDatabaseProvider : DatabaseProvider<IServerDatabase>
 	#region Constructors
 
 	public ServerSqlDatabaseProvider(string connectionString)
-		: base(new DatabaseOptions())
 	{
 		_connectionString = connectionString;
 	}
@@ -28,9 +26,9 @@ public class ServerSqlDatabaseProvider : DatabaseProvider<IServerDatabase>
 	#region Methods
 
 	/// <inheritdoc />
-	protected override IServerDatabase GetDatabaseFromProvider(DatabaseOptions options)
+	protected override IServerDatabase GetDatabaseFromProvider()
 	{
-		return ServerSqlDatabase.UseSqlServer(_connectionString, options);
+		return ServerSqlDatabase.UseSqlServer(_connectionString);
 	}
 
 	#endregion

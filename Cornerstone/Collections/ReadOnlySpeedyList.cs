@@ -7,7 +7,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using Cornerstone.Data;
 using Cornerstone.Presentation;
-using PropertyChanged;
+using Cornerstone.Weaver;
 
 #endregion
 
@@ -20,7 +20,7 @@ public class ReadOnlySpeedyList<T> : Notifiable, ISpeedyList<T>, IList, IViewMod
 {
 	#region Fields
 
-	private readonly ISpeedyList<T> _list;
+	private readonly SpeedyList<T> _list;
 
 	#endregion
 
@@ -29,7 +29,7 @@ public class ReadOnlySpeedyList<T> : Notifiable, ISpeedyList<T>, IList, IViewMod
 	/// <summary>
 	/// Create an instance of the list.
 	/// </summary>
-	public ReadOnlySpeedyList(ISpeedyList<T> list)
+	public ReadOnlySpeedyList(SpeedyList<T> list)
 	{
 		_list = list;
 	}
@@ -117,6 +117,12 @@ public class ReadOnlySpeedyList<T> : Notifiable, ISpeedyList<T>, IList, IViewMod
 	}
 
 	/// <inheritdoc />
+	public IDispatcher GetDispatcher()
+	{
+		return _list.GetDispatcher();
+	}
+
+	/// <inheritdoc />
 	public IEnumerator<T> GetEnumerator()
 	{
 		var list = _list.ToList();
@@ -124,10 +130,10 @@ public class ReadOnlySpeedyList<T> : Notifiable, ISpeedyList<T>, IList, IViewMod
 	}
 
 	/// <inheritdoc />
-	public override bool HasChanges(IncludeExcludeOptions options)
+	public override bool HasChanges(IncludeExcludeSettings settings)
 	{
 		return _list is ITrackPropertyChanges trackPropertyChanges
-			&& trackPropertyChanges.HasChanges(options);
+			&& trackPropertyChanges.HasChanges(settings);
 	}
 
 	/// <inheritdoc />
@@ -147,6 +153,12 @@ public class ReadOnlySpeedyList<T> : Notifiable, ISpeedyList<T>, IList, IViewMod
 	public void Insert(int index, T item)
 	{
 		throw new NotSupportedException();
+	}
+
+	/// <inheritdoc />
+	public void RefreshList()
+	{
+		_list.RefreshFilter();
 	}
 
 	/// <inheritdoc />
@@ -181,6 +193,11 @@ public class ReadOnlySpeedyList<T> : Notifiable, ISpeedyList<T>, IList, IViewMod
 	{
 		_list.CollectionChanged -= ListOnCollectionChanged;
 		IsInitialized = false;
+	}
+
+	protected virtual void OnListUpdated(SpeedyListUpdatedEventArg<T> e)
+	{
+		ListUpdated?.Invoke(this, e);
 	}
 
 	/// <inheritdoc />
@@ -260,6 +277,9 @@ public class ReadOnlySpeedyList<T> : Notifiable, ISpeedyList<T>, IList, IViewMod
 	/// class description.
 	/// </summary>
 	public event NotifyCollectionChangedEventHandler CollectionChanged;
+
+	/// <inheritdoc />
+	public event EventHandler<SpeedyListUpdatedEventArg<T>> ListUpdated;
 
 	#endregion
 }

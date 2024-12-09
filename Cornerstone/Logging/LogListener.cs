@@ -13,8 +13,7 @@ namespace Cornerstone.Logging;
 /// Represents an example on how to listen to the logger.
 /// </summary>
 /// <remarks>
-/// LogListener must be in the same process as the logger. See other ETW examples on how
-/// to capture logger from outside the process.
+/// LogListener must be in the same process as the <see cref="Logger"/>.
 /// </remarks>
 public class LogListener : EventListener, INotifyPropertyChanged
 {
@@ -153,7 +152,7 @@ public class LogListener : EventListener, INotifyPropertyChanged
 	#if NETSTANDARD2_1 || NET6_0_OR_GREATER
 	public new event EventHandler<EventWrittenEventArgs> EventWritten;
 	#else
-		public event EventHandler<EventWrittenEventArgs> EventWritten;
+	public event EventHandler<EventWrittenEventArgs> EventWritten;
 	#endif
 
 	/// <inheritdoc />

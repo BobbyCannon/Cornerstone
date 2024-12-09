@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Cornerstone.Collections;
 using Cornerstone.Data;
+using Cornerstone.Presentation;
 
 #endregion
 
@@ -22,10 +23,25 @@ public static class CollectionExtensions
 	/// <summary>
 	/// Add multiple items to a collection
 	/// </summary>
+	/// <param name="set"> The set to add items to. </param>
+	/// <param name="items"> The items to add. </param>
+	public static IList Add(this IList set, IEnumerable items)
+	{
+		foreach (var item in items)
+		{
+			set.Add(item);
+		}
+
+		return set;
+	}
+
+	/// <summary>
+	/// Add multiple items to a collection
+	/// </summary>
 	/// <typeparam name="T"> The type of the items in the collection. </typeparam>
 	/// <param name="set"> The set to add items to. </param>
 	/// <param name="items"> The items to add. </param>
-	public static IList<T> AddRange<T>(this IList<T> set, params T[] items)
+	public static IList<T> Add<T>(this IList<T> set, params T[] items)
 	{
 		foreach (var item in items)
 		{
@@ -41,7 +57,7 @@ public static class CollectionExtensions
 	/// <param name="set"> The set to add items to. </param>
 	/// <param name="items"> The items to add. </param>
 	/// <typeparam name="T"> The type of the items in the collection. </typeparam>
-	public static ICollection<T> AddRange<T>(this ICollection<T> set, params T[] items)
+	public static ICollection<T> Add<T>(this ICollection<T> set, params T[] items)
 	{
 		foreach (var item in items)
 		{
@@ -57,7 +73,7 @@ public static class CollectionExtensions
 	/// <param name="set"> The set to add items to. </param>
 	/// <param name="items"> The items to add. </param>
 	/// <typeparam name="T"> The type of the items in the collection. </typeparam>
-	public static ICollection<T> AddRange<T>(this ICollection<T> set, IEnumerable<T> items)
+	public static ICollection<T> Add<T>(this ICollection<T> set, IEnumerable<T> items)
 	{
 		foreach (var item in items)
 		{
@@ -233,7 +249,7 @@ public static class CollectionExtensions
 	public static HashSet<T> Reconcile<T>(this HashSet<T> collection, IEnumerable<T> updates)
 	{
 		collection.Clear();
-		collection.AddRange(updates);
+		collection.Add(updates);
 		return collection;
 	}
 
@@ -290,6 +306,27 @@ public static class CollectionExtensions
 	public static string ToBase64String(this byte[] data)
 	{
 		return System.Convert.ToBase64String(data);
+	}
+
+	/// <summary>
+	/// Converts the byte array to a hex string.
+	/// </summary>
+	/// <param name="data"> The data to convert. </param>
+	/// <returns> The data in a hex string format. </returns>
+	public static string ToHexString(this byte[] data)
+	{
+		var digits = data.Length * 2;
+		var c = new char[digits];
+
+		for (var i = 0; i < (digits / 2); i++)
+		{
+			var b = (byte) (data[i] >> 4);
+			c[i * 2] = (char) (b > 9 ? b + 87 : b + 0x30);
+			b = (byte) (data[i] & 0xF);
+			c[(i * 2) + 1] = (char) (b > 9 ? b + 87 : b + 0x30);
+		}
+
+		return new string(c);
 	}
 
 	/// <summary>
@@ -360,11 +397,14 @@ public static class CollectionExtensions
 	/// Converts a collection into a SpeedyList.
 	/// </summary>
 	/// <param name="collection"> The collection to convert to a SpeedyList. </param>
+	/// <param name="dispatcher"> The optional dispatcher to use. </param>
+	/// <param name="orderBy"> The optional set of order by settings. </param>
 	/// <returns> The SpeedyList containing the collection. </returns>
-	public static SpeedyList<T> ToSpeedyList<T>(this IEnumerable<T> collection)
+	public static SpeedyList<T> ToSpeedyList<T>(this IEnumerable<T> collection, IDispatcher dispatcher = null, params OrderBy<T>[] orderBy)
 	{
-		var array = collection.ToArray();
-		return new SpeedyList<T>(array);
+		var response = new SpeedyList<T>(dispatcher, orderBy);
+		response.Load(collection);
+		return response;
 	}
 
 	/// <summary>

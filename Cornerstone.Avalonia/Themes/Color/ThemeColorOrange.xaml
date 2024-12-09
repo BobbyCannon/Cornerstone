@@ -1,0 +1,25 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<Color x:Key="ThemeColor00">#FFF3E0</Color>
+	<Color x:Key="ThemeColor01">#FFE0B2</Color>
+	<Color x:Key="ThemeColor02">#FFCC80</Color>
+	<Color x:Key="ThemeColor03">#FFB74D</Color>
+	<Color x:Key="ThemeColor04">#FFA726</Color>
+	<Color x:Key="ThemeColor05">#FF9800</Color>
+	<Color x:Key="ThemeColor06">#FB8C00</Color>
+	<Color x:Key="ThemeColor07">#F57C00</Color>
+	<Color x:Key="ThemeColor08">#EF6C00</Color>
+	<Color x:Key="ThemeColor09">#E65100</Color>
+
+	<Color x:Key="ThemeForeground00">#000000</Color>
+	<Color x:Key="ThemeForeground01">#000000</Color>
+	<Color x:Key="ThemeForeground02">#000000</Color>
+	<Color x:Key="ThemeForeground03">#000000</Color>
+	<Color x:Key="ThemeForeground04">#FFFFFF</Color>
+	<Color x:Key="ThemeForeground05">#FFFFFF</Color>
+	<Color x:Key="ThemeForeground06">#FFFFFF</Color>
+	<Color x:Key="ThemeForeground07">#FFFFFF</Color>
+	<Color x:Key="ThemeForeground08">#FFFFFF</Color>
+	<Color x:Key="ThemeForeground09">#FFFFFF</Color>
+</ResourceDictionary>

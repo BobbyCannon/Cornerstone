@@ -518,43 +518,43 @@
 					Content="Brown Unchecked, Disabled"
 					IsEnabled="False" />
 
-			<!-- Blue Grey button. -->
+			<!-- Blue Gray button. -->
 
 			<CheckBox
 					Grid.Row="13" Grid.Column="0"
-					Theme.Color="BlueGrey"
-					Content="Blue Grey Checked"
+					Theme.Color="BlueGray"
+					Content="Blue Gray Checked"
 					IsChecked="True" />
 
 			<CheckBox
 					Grid.Row="13" Grid.Column="1"
-					Theme.Color="BlueGrey"
-					Content="Blue Grey Indeterminate"
+					Theme.Color="BlueGray"
+					Content="Blue Gray Indeterminate"
 					IsChecked="{x:Null}" />
 
 			<CheckBox
 					Grid.Row="13" Grid.Column="2"
-					Theme.Color="BlueGrey"
-					Content="Blue Grey Unchecked" />
+					Theme.Color="BlueGray"
+					Content="Blue Gray Unchecked" />
 
 			<CheckBox
 					Grid.Row="13" Grid.Column="3"
-					Theme.Color="BlueGrey"
-					Content="Blue Grey Checked, Disabled"
+					Theme.Color="BlueGray"
+					Content="Blue Gray Checked, Disabled"
 					IsChecked="True"
 					IsEnabled="False" />
 
 			<CheckBox
 					Grid.Row="13" Grid.Column="4"
-					Theme.Color="BlueGrey"
-					Content="Blue Grey Indeterminate, Disabled"
+					Theme.Color="BlueGray"
+					Content="Blue Gray Indeterminate, Disabled"
 					IsChecked="{x:Null}"
 					IsEnabled="False" />
 
 			<CheckBox
 					Grid.Row="13" Grid.Column="5"
-					Theme.Color="BlueGrey"
-					Content="Blue Grey Unchecked, Disabled"
+					Theme.Color="BlueGray"
+					Content="Blue Gray Unchecked, Disabled"
 					IsEnabled="False" />
 		</Grid>
 	</ScrollViewer>

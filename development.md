@@ -6,11 +6,11 @@ Ideas
 
 ## Database Migrations
 
-Add-Migration InitialDatabase -Project Sample.Server.Data.Sql -StartupProject Sample.Server.Website
-Add-Migration InitialDatabase -Project Sample.Server.Data.Sqlite -StartupProject Cornerstone.IntegrationTests
+Add-Migration InitialDatabase -Project Sample.Server.Data.Sql -StartupProject Cornerstone.Benchmark
+Add-Migration InitialDatabase -Project Sample.Server.Data.Sqlite -StartupProject Cornerstone.Benchmark
 
-Add-Migration InitialDatabase -Project Sample.Client.Data.Sql -StartupProject Cornerstone.IntegrationTests
-Add-Migration InitialDatabase -Project Sample.Client.Data.Sqlite -StartupProject Cornerstone.IntegrationTests
+Add-Migration InitialDatabase -Project Sample.Client.Data.Sql -StartupProject Cornerstone.Benchmark
+Add-Migration InitialDatabase -Project Sample.Client.Data.Sqlite -StartupProject Cornerstone.Benchmark
 
 
 # Platform Links
@@ -24,6 +24,11 @@ Add-Migration InitialDatabase -Project Sample.Client.Data.Sqlite -StartupProject
 ## Windows
 
 [WebView2](https://learn.microsoft.com/en-us/microsoft-edge/webview2)
+
+
+# Cornerstone.Weaver (Fody)
+
+https://github.com/Fody/Home/blob/master/pages/readme.md
 
 
 # Reference Links

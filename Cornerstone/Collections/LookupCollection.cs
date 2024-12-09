@@ -15,8 +15,9 @@ internal class LookupCollection<T, T2>
 {
 	#region Fields
 
-	private readonly Dictionary<T, Dictionary<T, T2>> _lookup;
 	private readonly IList<T2> _cannotLookup;
+
+	private readonly Dictionary<T, Dictionary<T, T2>> _lookup;
 
 	#endregion
 
@@ -42,7 +43,7 @@ internal class LookupCollection<T, T2>
 		_cannotLookup.Add(value);
 		return true;
 	}
-	
+
 	public bool TryAdd(T first, T then, T2 value)
 	{
 		var collection = _lookup.GetOrAdd(first, _ => new Dictionary<T, T2>());
@@ -51,7 +52,7 @@ internal class LookupCollection<T, T2>
 		{
 			return false;
 		}
-		
+
 		collection.AddIfMissing(then, () => value);
 		return true;
 	}
@@ -76,7 +77,6 @@ internal class LookupCollection<T, T2>
 			value = _cannotLookup[i];
 			return true;
 		}
-
 
 		value = default;
 		return false;

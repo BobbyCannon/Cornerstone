@@ -1,7 +1,7 @@
 ﻿#region References
 
 using System;
-using Cornerstone.Text.Document;
+using Cornerstone.Collections;
 
 #endregion
 
@@ -10,37 +10,37 @@ namespace Cornerstone.Avalonia.AvaloniaEdit.Editing;
 /// <summary>
 /// Represents a selected segment.
 /// </summary>
-public class SelectionSegment : ISegment
+public class SelectionRange : IRange
 {
 	#region Constructors
 
 	/// <summary>
 	/// Creates a SelectionSegment from two offsets.
 	/// </summary>
-	public SelectionSegment(int startOffset, int endOffset)
+	public SelectionRange(int startIndex, int endOffset)
 	{
-		StartOffset = Math.Min(startOffset, endOffset);
-		EndOffset = Math.Max(startOffset, endOffset);
+		StartIndex = Math.Min(startIndex, endOffset);
+		EndIndex = Math.Max(startIndex, endOffset);
 		StartVisualColumn = EndVisualColumn = -1;
 	}
 
 	/// <summary>
 	/// Creates a SelectionSegment from two offsets and visual columns.
 	/// </summary>
-	public SelectionSegment(int startOffset, int startVisualColumn, int endOffset, int endVisualColumn)
+	public SelectionRange(int startIndex, int startVisualColumn, int endIndex, int endVisualColumn)
 	{
-		if ((startOffset < endOffset) || ((startOffset == endOffset) && (startVisualColumn <= endVisualColumn)))
+		if ((startIndex < endIndex) || ((startIndex == endIndex) && (startVisualColumn <= endVisualColumn)))
 		{
-			StartOffset = startOffset;
+			StartIndex = startIndex;
 			StartVisualColumn = startVisualColumn;
-			EndOffset = endOffset;
+			EndIndex = endIndex;
 			EndVisualColumn = endVisualColumn;
 		}
 		else
 		{
-			StartOffset = endOffset;
+			StartIndex = endIndex;
 			StartVisualColumn = endVisualColumn;
-			EndOffset = startOffset;
+			EndIndex = startIndex;
 			EndVisualColumn = startVisualColumn;
 		}
 	}
@@ -52,7 +52,7 @@ public class SelectionSegment : ISegment
 	/// <summary>
 	/// Gets the end offset.
 	/// </summary>
-	public int EndOffset { get; }
+	public int EndIndex { get; }
 
 	/// <summary>
 	/// Gets the end visual column.
@@ -60,20 +60,15 @@ public class SelectionSegment : ISegment
 	public int EndVisualColumn { get; }
 
 	/// <inheritdoc />
-	public int Length => EndOffset - StartOffset;
+	public int Length => EndIndex - StartIndex;
 
-	/// <summary>
-	/// Gets the start offset.
-	/// </summary>
-	public int StartOffset { get; }
+	/// <inheritdoc />
+	public int StartIndex { get; }
 
 	/// <summary>
 	/// Gets the start visual column.
 	/// </summary>
 	public int StartVisualColumn { get; }
-
-	/// <inheritdoc />
-	int ISegment.Offset => StartOffset;
 
 	#endregion
 
@@ -82,7 +77,7 @@ public class SelectionSegment : ISegment
 	/// <inheritdoc />
 	public override string ToString()
 	{
-		return $"[SelectionSegment StartOffset={StartOffset}, EndOffset={EndOffset}, StartVC={StartVisualColumn}, EndVC={EndVisualColumn}]";
+		return $"[SelectionSegment StartOffset={StartIndex}, EndOffset={EndIndex}, StartVC={StartVisualColumn}, EndVC={EndVisualColumn}]";
 	}
 
 	#endregion

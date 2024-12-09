@@ -5,6 +5,8 @@ using System.Linq;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Cornerstone.Avalonia.AvaloniaEdit.Rendering;
+using Cornerstone.Collections;
+using Cornerstone.Text;
 using Cornerstone.Text.Document;
 
 #endregion
@@ -91,7 +93,7 @@ internal sealed class ReplaceableActiveElement : IReplaceableActiveElement
 
 	public bool IsEditable => true;
 
-	public ISegment Segment
+	public IRange Range
 	{
 		get
 		{
@@ -99,7 +101,7 @@ internal sealed class ReplaceableActiveElement : IReplaceableActiveElement
 			{
 				return null;
 			}
-			return new SimpleSegment(_start.Offset, Math.Max(0, _end.Offset - _start.Offset));
+			return new SimpleRange(_start.Offset, Math.Max(0, _end.Offset - _start.Offset));
 		}
 	}
 
@@ -150,7 +152,7 @@ internal sealed class ReplaceableActiveElement : IReplaceableActiveElement
 
 	private void Caret_PositionChanged(object sender, EventArgs e)
 	{
-		var s = Segment;
+		var s = Range;
 		if (s != null)
 		{
 			var newIsCaretInside = s.Contains(_context.TextArea.Caret.Offset, 0);
@@ -196,7 +198,7 @@ internal sealed class ReplaceableActiveElement : IReplaceableActiveElement
 		#region Fields
 
 		internal ReplaceableActiveElement Element;
-		private static readonly IBrush BackgroundBrush = CreateBackgroundBrush();
+		private static readonly IBrush Background03 = CreateBackgroundBrush();
 		private static readonly Pen ActiveBorderPen = CreateBorderPen();
 
 		#endregion
@@ -211,7 +213,7 @@ internal sealed class ReplaceableActiveElement : IReplaceableActiveElement
 
 		public void Draw(TextView textView, DrawingContext drawingContext)
 		{
-			var s = Element.Segment;
+			var s = Element.Range;
 			if (s != null)
 			{
 				var geoBuilder = new BackgroundGeometryBuilder
@@ -225,7 +227,7 @@ internal sealed class ReplaceableActiveElement : IReplaceableActiveElement
 					var geometry = geoBuilder.CreateGeometry();
 					if (geometry != null)
 					{
-						drawingContext.DrawGeometry(BackgroundBrush, null, geometry);
+						drawingContext.DrawGeometry(Background03, null, geometry);
 					}
 				}
 				else
@@ -238,7 +240,7 @@ internal sealed class ReplaceableActiveElement : IReplaceableActiveElement
 						{
 							if (boundElement.TargetElement == Element)
 							{
-								geoBuilder.AddSegment(textView, boundElement.Segment);
+								geoBuilder.AddSegment(textView, boundElement.Range);
 								geoBuilder.CloseFigure();
 							}
 						}

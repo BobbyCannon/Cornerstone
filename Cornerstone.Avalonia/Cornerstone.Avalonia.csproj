@@ -1,6 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFrameworks>net8.0</TargetFrameworks>
+		<TargetFrameworks>net9.0;net9.0-windows</TargetFrameworks>
+		<UseWindowsWpf Condition="'$(TargetFramework)' == 'net9.0-windows'">true</UseWindowsWpf>
+		<UseWindowsForms Condition="'$(TargetFramework)' == 'net9.0-windows'">true</UseWindowsForms>
 		<PackageId>Cornerstone.Avalonia</PackageId>
 		<GenerateDocumentationFile>false</GenerateDocumentationFile>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -21,7 +23,10 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
-		<PackageReference Include="Microsoft.Extensions.FileProviders.Abstractions" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.FileProviders.Abstractions" Version="9.0.0" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0-windows'">
+		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Update="AvaloniaEdit\SR.Designer.cs">

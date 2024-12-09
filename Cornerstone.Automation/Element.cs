@@ -4,8 +4,10 @@ using System;
 using System.Drawing;
 using System.Text;
 using System.Threading;
-using Cornerstone.Automation.Desktop;
 using Cornerstone.Automation.Internal;
+using Cornerstone.Input;
+using Cornerstone.Windows;
+
 
 #endregion
 
@@ -201,7 +203,7 @@ public abstract class Element : ElementHost
 	{
 		Application.BringToFront();
 		Focus();
-		Input.Keyboard.SendInput(text, delay);
+		WindowsInput.Keyboard.SendInput(text, delay);
 		return this;
 	}
 
@@ -214,7 +216,7 @@ public abstract class Element : ElementHost
 	{
 		Application.BringToFront();
 		Focus();
-		Input.Keyboard.SendInput(text, keys);
+		WindowsInput.Keyboard.SendInput(text, keys);
 		return this;
 	}
 
@@ -228,7 +230,7 @@ public abstract class Element : ElementHost
 	{
 		Application.BringToFront();
 		Focus();
-		Input.Keyboard.SendInput(text, delay, keys);
+		WindowsInput.Keyboard.SendInput(text, delay, keys);
 		return this;
 	}
 
@@ -244,7 +246,7 @@ public abstract class Element : ElementHost
 	{
 		Application.BringToFront();
 		Focus();
-		Input.Keyboard.SendInput(text, delay, keyStrokes);
+		WindowsInput.Keyboard.SendInput(text, delay, keyStrokes);
 		return this;
 	}
 
@@ -257,7 +259,7 @@ public abstract class Element : ElementHost
 	{
 		Application.BringToFront();
 		Focus();
-		Input.Keyboard.SendInput(keys);
+		WindowsInput.Keyboard.SendInput(keys);
 		return this;
 	}
 
@@ -271,7 +273,7 @@ public abstract class Element : ElementHost
 	{
 		Application.BringToFront();
 		Focus();
-		Input.Keyboard.SendInput(modifiers, keys);
+		WindowsInput.Keyboard.SendInput(modifiers, keys);
 		return this;
 	}
 
@@ -283,7 +285,7 @@ public abstract class Element : ElementHost
 	{
 		Application.BringToFront();
 		Focus();
-		Input.Keyboard.SendInput(keyStrokes);
+		WindowsInput.Keyboard.SendInput(keyStrokes);
 		return this;
 	}
 

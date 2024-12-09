@@ -28,14 +28,14 @@ internal sealed class DocumentLineTree : IList<DocumentLine>
 
 	#region Fields
 
-	private readonly TextDocument _document;
+	private readonly TextEditorDocument _document;
 	private DocumentLine _root;
 
 	#endregion
 
 	#region Constructors
 
-	public DocumentLineTree(TextDocument document)
+	public DocumentLineTree(TextEditorDocument document)
 	{
 		_document = document;
 
@@ -49,24 +49,17 @@ internal sealed class DocumentLineTree : IList<DocumentLine>
 
 	public int LineCount => _root.NodeTotalCount;
 
-	int ICollection<DocumentLine>.Count
-	{
-		get
-		{
-			//Dispatcher.UIThread.VerifyAccess();
-			return LineCount;
-		}
-	}
+	int ICollection<DocumentLine>.Count =>
+		//Dispatcher.UIThread.VerifyAccess();
+		LineCount;
 
 	bool ICollection<DocumentLine>.IsReadOnly => true;
 
 	DocumentLine IList<DocumentLine>.this[int index]
 	{
-		get
-		{
+		get =>
 			//Dispatcher.UIThread.VerifyAccess();
-			return GetByNumber(1 + index);
-		}
+			GetByNumber(1 + index);
 		set => throw new NotSupportedException();
 	}
 

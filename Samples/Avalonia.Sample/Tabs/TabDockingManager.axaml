@@ -1,0 +1,61 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:dm="clr-namespace:Cornerstone.Avalonia.DockingManager;assembly=Cornerstone.Avalonia"
+		xmlns:tabs="clr-namespace:Avalonia.Sample.Tabs"
+		mc:Ignorable="d" d:DesignWidth="1020" d:DesignHeight="400"
+		x:Class="Avalonia.Sample.Tabs.TabDockingManager"
+		x:DataType="tabs:TabDockingManager">
+	<DockPanel>
+		<Border DockPanel.Dock="Top" Classes="ToolBar">
+			<Grid>
+				<StackPanel>
+					<TextBlock Margin="8,4" Text="Samples" />
+					<Button Classes="Icon"
+							Click="LoadSample1OnClick"
+							ToolTip.Tip="Load Sample">
+						<TextBlock FontFamily="{StaticResource DejaVuSansMono}"
+								FontWeight="Heavy"
+								Text="1" />
+					</Button>
+					<Button Classes="Icon"
+							Click="LoadSample2OnClick"
+							ToolTip.Tip="Load Sample">
+						<TextBlock FontFamily="{StaticResource DejaVuSansMono}"
+								FontWeight="Heavy"
+								Text="2" />
+					</Button>
+				</StackPanel>
+				<StackPanel>
+					<Button Classes="Icon"
+							Click="LoadLayoutOnClick"
+							ToolTip.Tip="Load Tab Layout">
+						<Path Data="{StaticResource FontAwesome.Sync.Solid}" />
+					</Button>
+					<Button Classes="Icon"
+							Click="SaveLayoutOnClick"
+							ToolTip.Tip="Save Tab Layout">
+						<PathIcon Data="{StaticResource FontAwesome.Save.Solid}" />
+					</Button>
+				</StackPanel>
+				<StackPanel>
+					<Button Classes="Icon"
+							Click="ClearOnClick"
+							ToolTip.Tip="Clear All Tabs">
+						<PathIcon Data="{StaticResource FontAwesome.Times.Circle.Solid}"
+								Height="18" Width="18" />
+					</Button>
+				</StackPanel>
+			</Grid>
+		</Border>
+		<dm:DockSplitPanel>
+			<TextEditorControl Name="LayoutJson" DockPanel.Dock="Right" Width="600" />
+			<dm:DockingManager Name="DockingManager"
+					DockIndicatorFieldFill="{DynamicResource ThemeColor05}"
+					DockIndicatorFieldHoveredFill="{DynamicResource ThemeColor06}">
+			</dm:DockingManager>
+		</dm:DockSplitPanel>
+	</DockPanel>
+</UserControl>

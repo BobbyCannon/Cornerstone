@@ -5,7 +5,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
-using Cornerstone.Collections;
 using Cornerstone.Extensions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -29,10 +28,10 @@ public class CollectionExtensionsTests : CornerstoneUnitTest
 	[TestMethod]
 	public void AsReadOnly()
 	{
-		var expected = new ReadOnlySet<int>(1, 2, 3, 4);
+		var expected = new Cornerstone.Collections.ReadOnlySet<int>(1, 2, 3, 4);
 		var scenarios = new IEnumerable<int>[]
 		{
-			new[] { 1, 2, 3, 4 },
+			[1, 2, 3, 4],
 			new Collection<int> { 1, 2, 3, 4 },
 			new List<int> { 1, 2, 3, 4 }
 		};
@@ -47,7 +46,7 @@ public class CollectionExtensionsTests : CornerstoneUnitTest
 	[TestMethod]
 	public void Reconcile()
 	{
-		IList list = new List<object> { "1", 1, true, DateTime.MinValue};
+		IList list = new List<object> { "1", 1, true, DateTime.MinValue };
 		IEnumerable expected = new object[] { "2", 2, false };
 
 		list.Reconcile(expected);
@@ -62,10 +61,10 @@ public class CollectionExtensionsTests : CornerstoneUnitTest
 	{
 		var scenarios = new IEnumerable<string>[]
 		{
-			new[] { "Apple", "apple", "Bob", "bob" },
-			new HashSet<string>(new[] { "Apple", "apple", "Bob", "bob" }),
-			new HashSet<string>(new[] { "Apple", "apple", "Bob", "bob" }, StringComparer.CurrentCulture),
-			new HashSet<string>(new[] { "Apple", "apple", "Bob", "bob" }, StringComparer.Ordinal)
+			["Apple", "apple", "Bob", "bob"],
+			new HashSet<string>(["Apple", "apple", "Bob", "bob"]),
+			new HashSet<string>(["Apple", "apple", "Bob", "bob"], StringComparer.CurrentCulture),
+			new HashSet<string>(["Apple", "apple", "Bob", "bob"], StringComparer.Ordinal)
 		};
 
 		foreach (var scenario in scenarios)
@@ -84,9 +83,9 @@ public class CollectionExtensionsTests : CornerstoneUnitTest
 	{
 		var scenarios = new IEnumerable<string>[]
 		{
-			new HashSet<string>(new[] { "Apple", "apple", "Bob", "bob" }, StringComparer.CurrentCultureIgnoreCase),
-			new HashSet<string>(new[] { "Apple", "apple", "Bob", "bob" }, StringComparer.InvariantCultureIgnoreCase),
-			new HashSet<string>(new[] { "Apple", "apple", "Bob", "bob" }, StringComparer.OrdinalIgnoreCase)
+			new HashSet<string>(["Apple", "apple", "Bob", "bob"], StringComparer.CurrentCultureIgnoreCase),
+			new HashSet<string>(["Apple", "apple", "Bob", "bob"], StringComparer.InvariantCultureIgnoreCase),
+			new HashSet<string>(["Apple", "apple", "Bob", "bob"], StringComparer.OrdinalIgnoreCase)
 		};
 
 		foreach (var scenario in scenarios)
@@ -98,6 +97,23 @@ public class CollectionExtensionsTests : CornerstoneUnitTest
 			IsTrue(actual.Contains("apple"));
 			IsTrue(actual.Contains("APPLE"));
 		}
+	}
+
+	[TestMethod]
+	public void ToHexString()
+	{
+		var scenarios = new (string expected, byte[] value)[]
+		{
+			("1234567890", [0x12, 0x34, 0x56, 0x78, 0x90]),
+			("abcdef", [0xAB, 0xCD, 0xEF])
+		};
+
+		foreach (var scenario in scenarios)
+		{
+			var actual = scenario.value.ToHexString();
+			AreEqual(scenario.expected, actual);
+			AreEqual(scenario.value, actual.FromHexStringToArray());
+		}	
 	}
 
 	#endregion

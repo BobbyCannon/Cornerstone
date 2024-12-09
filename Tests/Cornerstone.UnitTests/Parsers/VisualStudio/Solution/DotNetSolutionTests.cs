@@ -3,9 +3,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Cornerstone.Compare;
 using Cornerstone.Data;
 using Cornerstone.Parsers.VisualStudio.Solution;
+using Cornerstone.Testing;
 using Cornerstone.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -38,6 +40,49 @@ Global
 EndGlobal
 ";
 		AreEqual(expected, actual);
+	}
+
+	[TestMethod]
+	public void LoadCornerstoneSolution()
+	{
+		var path = Path.GetFullPath(@$"{SolutionDirectory}\..\Cornerstone\Cornerstone.sln");
+		var rawData = File.ReadAllText(path);
+		var solution = DotNetSolution.LoadFile(path);
+		var data = new TextBuilder();
+		solution.WriteTo(data);
+		AreEqual(rawData, data.ToString());
+
+		foreach (var gs in solution.GlobalSections)
+		{
+			$"{gs.Name}: {gs.Type}".Dump();
+
+			foreach (var s in gs.Settings)
+			{
+				$"{s.Key} - {s.Value}".Dump("\t");
+			}
+		}
+
+		foreach (var p in solution.Projects)
+		{
+			p.ProjectName.Dump();
+			p.Id.Dump("\t");
+			p.Type.Dump("\t");
+
+			if (p.Type == DotNetProjectType.SolutionFolder)
+			{
+				foreach (var ps in p.ProjectSections)
+				foreach (var d in ps.Dependencies)
+				{
+					$"{d.Key} : {d.Value}".Dump("\t");
+				}
+				continue;
+			}
+
+			p.AbsolutePath.Dump("\t");
+			string.Join(",", p.ProjectSections.Select(x => $"{x.Name} {x.Type}")).Dump("\t PS: ");
+			string.Join(", ", p.ProjectTypes).Dump("\t PT: ");
+			"".Dump();
+		}
 	}
 
 	[TestMethod]
@@ -108,13 +153,13 @@ EndGlobal
 		//CSharpCodeWriter.GenerateCode(solution.Projects, CodeWriterMode.Instance, new CodeWriterSettings { TextFormat = TextFormat.Indented }).Dump();
 
 		AreEqual(projects, solution.Projects, null,
-			new ComparerOptions
+			new ComparerSettings
 			{
-				IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeOptions>
+				IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeSettings>
 				{
 					{
 						typeof(DotNetSolutionProject),
-						new IncludeExcludeOptions(null, [
+						new IncludeExcludeSettings(null, [
 							nameof(DotNetSolutionProject.Attributes),
 							nameof(DotNetSolutionProject.Elements),
 							nameof(DotNetSolutionProject.ItemGroups),

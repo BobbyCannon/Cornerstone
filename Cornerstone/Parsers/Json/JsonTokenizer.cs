@@ -1,7 +1,11 @@
 ﻿#region References
 
+using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
+
+#if NETSTANDARD2_0
+using Cornerstone.Extensions;
+#endif
 
 #endregion
 
@@ -13,15 +17,18 @@ namespace Cornerstone.Parsers.Json;
 public sealed class JsonTokenizer
 	: Tokenizer<JsonTokenData, JsonTokenType>
 {
+	#region Fields
+
+	private readonly Stack<bool> _expectingPropertyStack;
+	private bool _nextStringIsProperty;
+
+	#endregion
+
 	#region Constructors
 
-	/// <summary>
-	/// Initializes a tokenizer for JSON data.
-	/// </summary>
-	/// <param name="reader"> The text reader. </param>
-	public JsonTokenizer(TextReader reader) : base(reader)
+	public JsonTokenizer()
 	{
-		MoveNext();
+		_expectingPropertyStack = new Stack<bool>();
 	}
 
 	#endregion
@@ -29,30 +36,29 @@ public sealed class JsonTokenizer
 	#region Methods
 
 	/// <inheritdoc />
-	public override void MoveNext()
+	public override bool ParseNext()
 	{
-		CurrentToken = NextToken;
-
 		for (;;)
 		{
+			CurrentToken.IsPropertyName = false;
+			CurrentToken.LineNumber = LineNumber;
+			CurrentToken.ColumnNumber = ColumnNumber;
+			CurrentToken.StartIndex = ReadIndex;
+			CurrentToken.Value = null;
+
 			var c = NextChar();
 
 			if (c == (char) 0)
 			{
-				NextToken.LineNumber = LineNumber;
-				NextToken.Position = ColumnIndex;
-				NextToken.Type = JsonTokenType.None;
-				return;
-			}
-
-			if (IsWhitespace(c))
-			{
-				continue;
+				CurrentToken.EndIndex = ReadIndex;
+				CurrentToken.Type = JsonTokenType.None;
+				return false;
 			}
 
 			if (c == '/')
 			{
 				Expect("//");
+
 				while ((c = NextChar()) != (char) 0)
 				{
 					if (c == '\n') // comment till end of line
@@ -63,84 +69,130 @@ public sealed class JsonTokenizer
 			}
 			else
 			{
-				NextToken.LineNumber = LineNumber;
-				NextToken.Position = ColumnIndex;
+				CurrentToken.EndIndex = ReadIndex;
+
+				if (IsWhitespace(c))
+				{
+					ParseWhitespace();
+					CurrentToken.Type = JsonTokenType.Whitespace;
+					CurrentToken.EndIndex = ReadIndex;
+					return true;
+				}
+
+				if (IsNewLine(c))
+				{
+					ParseNewLines();
+					CurrentToken.Type = JsonTokenType.NewLine;
+					CurrentToken.EndIndex = ReadIndex;
+					return true;
+				}
 
 				if (c == 't')
 				{
 					Expect("true");
-					NextToken.Type = JsonTokenType.Boolean;
-					NextToken.BooleanValue = true;
-					return;
+					CurrentToken.Type = JsonTokenType.Boolean;
+					CurrentToken.Value = true;
+					CurrentToken.EndIndex = ReadIndex;
+					return true;
 				}
 				if (c == 'N')
 				{
 					Expect("NaN");
-					NextToken.Type = JsonTokenType.NumberFloat;
-					NextToken.FloatValue = double.NaN;
-					return;
+					CurrentToken.Type = JsonTokenType.NumberFloat;
+					CurrentToken.Value = float.NaN;
+					CurrentToken.EndIndex = ReadIndex;
+					return true;
 				}
 				if (c == 'n')
 				{
 					Expect("null");
-					NextToken.Type = JsonTokenType.Null;
-					return;
+					CurrentToken.Type = JsonTokenType.Null;
+					CurrentToken.Value = null;
+					CurrentToken.EndIndex = ReadIndex;
+					return true;
 				}
 				if (c == 'f')
 				{
 					Expect("false");
-					NextToken.Type = JsonTokenType.Boolean;
-					NextToken.BooleanValue = false;
-					return;
+					CurrentToken.Type = JsonTokenType.Boolean;
+					CurrentToken.Value = false;
+					CurrentToken.EndIndex = ReadIndex;
+					return true;
 				}
 				if (c is '-' or '+' || char.IsDigit(c))
 				{
-					ParseNumber(c, ref NextToken);
-					return;
+					ParseNumber(c, CurrentToken);
+					CurrentToken.EndIndex = ReadIndex;
+					return true;
 				}
 				if (c is '\"' or '\'')
 				{
-					NextToken.Type = JsonTokenType.String;
-					NextToken.StringValue = ParseString(c);
-					return;
+					CurrentToken.Type = JsonTokenType.String;
+					ParseString(c);
+					CurrentToken.IsPropertyName = _nextStringIsProperty;
+					CurrentToken.EndIndex = ReadIndex;
+					_nextStringIsProperty = false;
+					return true;
 				}
 				if (c == '{')
 				{
-					NextToken.Type = JsonTokenType.CurlyOpen;
-					return;
+					CurrentToken.Type = JsonTokenType.CurlyOpen;
+					_expectingPropertyStack.Push(true);
+					_nextStringIsProperty = true;
+					return true;
 				}
 				if (c == '}')
 				{
-					NextToken.Type = JsonTokenType.CurlyClose;
-					return;
+					CurrentToken.Type = JsonTokenType.CurlyClose;
+					_expectingPropertyStack.TryPop(out _);
+					return true;
 				}
 				if (c == '[')
 				{
-					NextToken.Type = JsonTokenType.SquaredOpen;
-					return;
+					CurrentToken.Type = JsonTokenType.SquaredOpen;
+					_expectingPropertyStack.Push(false);
+					return true;
 				}
 				if (c == ']')
 				{
-					NextToken.Type = JsonTokenType.SquaredClose;
-					return;
+					CurrentToken.Type = JsonTokenType.SquaredClose;
+					_expectingPropertyStack.TryPop(out _);
+					return true;
 				}
 				if (c == ':')
 				{
-					NextToken.Type = JsonTokenType.Colon;
-					return;
+					CurrentToken.Type = JsonTokenType.Colon;
+					return true;
 				}
 				if (c == ',')
 				{
-					NextToken.Type = JsonTokenType.Comma;
-					return;
+					CurrentToken.Type = JsonTokenType.Comma;
+					_nextStringIsProperty = _expectingPropertyStack.TryPeek(out var value) && value;
+					return true;
 				}
 				if (c < 32)
 				{
-					throw new ParserException($"Unexpected control character 0x{(int) c:X2} in line {LineNumber} at position {ColumnIndex}.", LineNumber, ColumnIndex);
+					throw new ParserException($"Unexpected control character 0x{(int) c:X2} in line {LineNumber} at position {ColumnNumber}.", LineNumber, ColumnNumber);
 				}
 
-				throw new ParserException($"Unexpected character '{c}' in line {LineNumber} at position {ColumnIndex}.", LineNumber, ColumnIndex);
+				throw new ParserException($"Unexpected character '{c}' in line {LineNumber} at position {ColumnNumber}.", LineNumber, ColumnNumber);
 			}
+		}
+	}
+
+	public void ParseNextUntilNotWhitespaceAndNewLines()
+	{
+		ParseNext();
+		SkipWhitespaceOrNewLines();
+	}
+
+	public void SkipWhitespaceOrNewLines()
+	{
+		while (CurrentToken.Type
+				is JsonTokenType.Whitespace
+				or JsonTokenType.NewLine)
+		{
+			ParseNext();
 		}
 	}
 
@@ -149,124 +201,34 @@ public sealed class JsonTokenizer
 	/// </summary>
 	/// <param name="quote"> The quote character. </param>
 	/// <returns> The string parsed. </returns>
-	protected override string ParseString(char quote)
+	protected override void ParseString(char quote)
 	{
-		TemporaryBuffer.Clear();
 		var escaped = false;
 		for (;;)
 		{
 			var c = NextChar();
 			if (c == (char) 0)
 			{
-				throw new ParserException($"Unexpected end of stream reached while parsing string in line {LineNumber} at position {ColumnIndex}.", LineNumber, ColumnIndex);
+				throw new ParserException($"Unexpected end of stream reached while parsing string in line {LineNumber} at position {ColumnNumber}.", LineNumber, ColumnNumber);
 			}
 
 			if (escaped)
 			{
-				switch (c)
-				{
-					case '0':
-					{
-						TemporaryBuffer.Append('0');
-						break;
-					}
-					case '\'':
-					{
-						TemporaryBuffer.Append('\'');
-						break;
-					}
-					case '"':
-					{
-						TemporaryBuffer.Append('"');
-						break;
-					}
-					case '\\':
-					{
-						TemporaryBuffer.Append('\\');
-						break;
-					}
-					case '/':
-					{
-						TemporaryBuffer.Append('/');
-						break;
-					}
-					case 'b':
-					{
-						TemporaryBuffer.Append('\b');
-						break;
-					}
-					case 'f':
-					{
-						TemporaryBuffer.Append('\f');
-						break;
-					}
-					case 'n':
-					{
-						TemporaryBuffer.Append("\n");
-						break;
-					}
-					case 'r':
-					{
-						TemporaryBuffer.Append('\r');
-						break;
-					}
-					case 't':
-					{
-						TemporaryBuffer.Append('\t');
-						break;
-					}
-					case 'u':
-					{
-						var hex1 = NextChar();
-						var hex2 = NextChar();
-						var hex3 = NextChar();
-						var hex4 = NextChar();
-						if ((hex1 == 0) || (hex2 == 0) || (hex3 == 0) || (hex4 == 0))
-						{
-							throw new ParserException($"Unexpected end of stream reached while parsing unicode escape sequence in line {LineNumber} at position {ColumnIndex}.", LineNumber, ColumnIndex);
-						}
-
-						// parse the 32 bit hex into an integer codepoint
-						var codePoint = ParseUnicode(hex1, hex2, hex3, hex4);
-						TemporaryBuffer.Append((char) codePoint);
-						break;
-					}
-					default:
-					{
-						throw new ParserException($"Invalid character '{c}' in escape sequence in line {LineNumber} at position {ColumnIndex}.", LineNumber, ColumnIndex);
-					}
-				}
 				escaped = false;
 			}
 			else if (c == quote)
 			{
-				return TemporaryBuffer.ToString();
+				return;
 			}
 			else if (c == '\\')
 			{
 				escaped = true;
 			}
-			else
-			{
-				if (c < 32)
-				{
-					//throw new ParserException($"Unexpected control character 0x{(int) c:X2} in string literal in line {_lineNo} at position {_columnIndex}.", _lineNo, _columnIndex);
-					//JsonString.Escape(c, _stringBuilder);
-					TemporaryBuffer.Append(c);
-				}
-				else
-				{
-					TemporaryBuffer.Append(c);
-				}
-			}
 		}
 	}
 
-	private void ParseNumber(char c, ref JsonTokenData tokenData)
+	private void ParseNumber(char c, JsonTokenData tokenData)
 	{
-		TemporaryBuffer.Clear();
-		TemporaryBuffer.Append(c);
-
 		var dotAppeared = false;
 		var exponentAppeared = false;
 		var minusAppeared = c == '-';
@@ -277,25 +239,27 @@ public sealed class JsonTokenizer
 
 			if (char.IsDigit(c))
 			{
-				TemporaryBuffer.Append(NextChar());
+				NextChar();
 			}
 			else if (c == '.')
 			{
-				TemporaryBuffer.Append(NextChar());
+				NextChar();
 				if (dotAppeared)
 				{
-					throw new ParserException($"The dot '.' must not appear twice in the number literal {TemporaryBuffer} in line {LineNumber} at position {ColumnIndex}.", LineNumber, ColumnIndex);
+					throw new ParserException($"The dot '.' must not appear twice in the number literal in line {LineNumber} at position {ColumnNumber}.", LineNumber, ColumnNumber);
 				}
 				dotAppeared = true;
 			}
-			else if ((c == 'E') || (c == 'e'))
+			else if (c is 'E' or 'e')
 			{
 				exponentAppeared = true;
-				TemporaryBuffer.Append(NextChar());
+
+				NextChar();
 				c = PeekChar();
-				if ((c == '-') || (c == '+'))
+
+				if (c is '-' or '+')
 				{
-					TemporaryBuffer.Append(NextChar());
+					NextChar();
 				}
 			}
 			else
@@ -303,46 +267,41 @@ public sealed class JsonTokenizer
 				break;
 			}
 		}
+
+		CurrentToken.EndIndex = ReadIndex;
+
+		var sValue = CurrentToken.ToString();
+
 		if (dotAppeared || exponentAppeared)
 		{
-			if (!double.TryParse(TemporaryBuffer.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var floatValue))
+			if (!double.TryParse(sValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var floatValue))
 			{
-				throw new ParserException($"Invalid number '{TemporaryBuffer}' in line {LineNumber} at position {ColumnIndex}.", LineNumber, ColumnIndex);
+				throw new ParserException($"Invalid number '{ToString()}' in line {LineNumber} at position {ColumnNumber}.", LineNumber, ColumnNumber);
 			}
 
-			tokenData.FloatValue = floatValue;
+			tokenData.Value = floatValue;
 			tokenData.Type = JsonTokenType.NumberFloat;
 		}
 		else if (minusAppeared)
 		{
-			if (!long.TryParse(TemporaryBuffer.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var integerValue))
+			if (!long.TryParse(sValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var integerValue))
 			{
-				throw new ParserException($"Invalid number '{TemporaryBuffer}' in line {LineNumber} at position {ColumnIndex}.", LineNumber, ColumnIndex);
+				throw new ParserException($"Invalid number '{ToString()}' in line {LineNumber} at position {ColumnNumber}.", LineNumber, ColumnNumber);
 			}
 
-			tokenData.IntegerValue = integerValue;
+			tokenData.Value = integerValue;
 			tokenData.Type = JsonTokenType.NumberInteger;
 		}
 		else
 		{
-			if (!ulong.TryParse(TemporaryBuffer.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var unsignedIntegerValue))
+			if (!ulong.TryParse(sValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var unsignedIntegerValue))
 			{
-				throw new ParserException($"Invalid number '{TemporaryBuffer}' in line {LineNumber} at position {ColumnIndex}.", LineNumber, ColumnIndex);
+				throw new ParserException($"Invalid number '{ToString()}' in line {LineNumber} at position {ColumnNumber}.", LineNumber, ColumnNumber);
 			}
 
-			tokenData.UnsignedIntegerValue = unsignedIntegerValue;
+			tokenData.Value = unsignedIntegerValue;
 			tokenData.Type = JsonTokenType.NumberUnsignedInteger;
 		}
-	}
-
-	private uint ParseUnicode(char c1, char c2, char c3, char c4)
-	{
-		var p1 = ParseSingleNumber(c1, 0x1000);
-		var p2 = ParseSingleNumber(c2, 0x0100);
-		var p3 = ParseSingleNumber(c3, 0x0010);
-		var p4 = ParseSingleNumber(c4, 0x0001);
-
-		return p1 + p2 + p3 + p4;
 	}
 
 	#endregion

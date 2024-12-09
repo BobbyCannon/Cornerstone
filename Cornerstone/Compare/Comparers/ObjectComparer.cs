@@ -28,7 +28,7 @@ public class ObjectComparer : BaseComparer
 	}
 
 	/// <inheritdoc />
-	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, string message)
+	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, Func<string> message)
 	{
 		try
 		{
@@ -44,7 +44,8 @@ public class ObjectComparer : BaseComparer
 				return CompareResult.AreEqual;
 			}
 
-			var propertiesToExclude = session.Options.IncludeExcludeOptions?.TryGetValue(expected.GetType(), out var p) == true ? p : IncludeExcludeOptions.Empty;
+			var expectedType = expected.GetType();
+			var propertiesToExclude = session.Settings.IncludeExcludeOptions?.TryGetValue(expectedType, out var p) == true ? p : IncludeExcludeSettings.Empty;
 
 			// Cycle through properties
 			foreach (var expectedProperty in expectedProperties)
@@ -52,7 +53,7 @@ public class ObjectComparer : BaseComparer
 				if (!actualProperties.TryGetValue(expectedProperty.Key, out var actualProperty))
 				{
 					// failed to get property on actual
-					if (session.Options.IgnoreMissingProperties)
+					if (session.Settings.IgnoreMissingProperties)
 					{
 						// This compare allows missing properties so just continue
 						continue;
@@ -68,6 +69,12 @@ public class ObjectComparer : BaseComparer
 					continue;
 				}
 
+				if (expectedProperty.Value.GetIndexParameters().Length > 0)
+				{
+					// Property is an indexer
+					continue;
+				}
+
 				var expectedValue = expectedProperty.Value.GetValue(expected);
 				var actualValue = actualProperty.GetValue(actual);
 
@@ -78,7 +85,7 @@ public class ObjectComparer : BaseComparer
 					continue;
 				}
 
-				CompareSession.InternalProcess(session, expectedValue, actualValue, expectedProperty.Key);
+				CompareSession.InternalProcess(session, expectedValue, actualValue, () => $"{message?.Invoke()}\r\n{expectedType}.{expectedProperty.Key}");
 
 				// See if we have hit an issue.
 				if (session.Result != CompareResult.AreEqual)

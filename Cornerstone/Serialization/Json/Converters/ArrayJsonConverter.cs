@@ -3,6 +3,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Reflection;
 using Cornerstone.Collections;
@@ -25,7 +26,7 @@ public class ArrayJsonConverter : JsonConverter
 	#region Methods
 
 	/// <inheritdoc />
-	public override void Append(object value, Type valueType, IObjectConsumer consumer, ISerializationOptions settings)
+	public override void Append(object value, Type valueType, IObjectConsumer consumer, ISerializationSettings settings)
 	{
 		var arrayType = value.GetType();
 		var arrayValue = (IEnumerable) value;
@@ -116,7 +117,7 @@ public class ArrayJsonConverter : JsonConverter
 	}
 
 	/// <inheritdoc />
-	public override string GetJsonString(object value, ISerializationOptions settings)
+	public override string GetJsonString(object value, ISerializationSettings settings)
 	{
 		var consumer = new TextJsonConsumer(settings);
 		Append(value, value?.GetType(), consumer, settings);
@@ -137,7 +138,10 @@ public class ArrayJsonConverter : JsonConverter
 
 	private object ProcessArray(Type arrayType, JsonArray jsonArray)
 	{
-		var arrayElementType = arrayType.GetElementType();
+		var arrayElementType = arrayType.GetElementType() 
+			?? arrayType.GetGenericArgumentsRecursive()?.FirstOrDefault();
+
+		arrayElementType ??= typeof(object);
 		var response = Array.CreateInstance(arrayElementType, jsonArray.Count);
 		var arrayElementTypeIsObject = arrayElementType == typeof(object);
 
@@ -167,9 +171,7 @@ public class ArrayJsonConverter : JsonConverter
 	private object ProcessList(Type arrayType, JsonArray jsonArray)
 	{
 		var response = (IList) arrayType.CreateInstance();
-		var listElementType = arrayType.IsGenericType
-			? arrayType.GetGenericArguments().FirstOrDefault() ?? typeof(object)
-			: typeof(object);
+		var listElementType = arrayType.GetGenericArgumentsRecursive()?.FirstOrDefault() ?? typeof(object);
 		var listElementTypeIsObject = listElementType == typeof(object);
 
 		for (var i = 0; i < jsonArray.Count; i++)
@@ -187,7 +189,10 @@ public class ArrayJsonConverter : JsonConverter
 				continue;
 			}
 
-			var converter = JsonSerializer.GetConverter(item.GetType());
+			var converter = JsonSerializer.GetConverter(listElementType == typeof(DataTable)
+				? typeof(DataTable)
+				: item.GetType()
+			);
 			response.Add(converter.ConvertTo(listElementType, item));
 		}
 

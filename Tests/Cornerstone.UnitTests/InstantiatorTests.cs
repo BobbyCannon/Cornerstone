@@ -18,7 +18,7 @@ public class InstantiatorTests : CornerstoneUnitTest
 	[TestMethod]
 	public void AddSingleton()
 	{
-		var injector = new DependencyInjector();
+		var injector = new DependencyProvider(nameof(InstantiatorTests));
 		injector.AddTransient<AccountSync>();
 		//injector.AddSingleton<AddressSync>();
 		injector.AddSingleton<Test>();

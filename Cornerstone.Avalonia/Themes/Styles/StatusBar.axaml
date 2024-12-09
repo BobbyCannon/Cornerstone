@@ -1,0 +1,103 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	
+	<Style Selector="Border.StatusBar">
+		<Setter Property="Background" Value="{DynamicResource Background01}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource ControlBorder}" />
+		<Setter Property="BorderThickness" Value="0,1,0,0" />
+		<Setter Property="Height" Value="28" />
+		<Style Selector="^ Path">
+			<Setter Property="Height" Value="14" />
+			<Setter Property="Width" Value="14" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+		<Style Selector="^ > Grid > StackPanel:nth-child(1)">
+			<Setter Property="HorizontalAlignment" Value="Left" />
+			<Setter Property="Orientation" Value="Horizontal" />
+		</Style>
+		<Style Selector="^ > Grid > StackPanel:nth-child(2)">
+			<Setter Property="HorizontalAlignment" Value="Center" />
+			<Setter Property="Orientation" Value="Horizontal" />
+		</Style>
+		<Style Selector="^ > Grid > StackPanel:nth-child(3)">
+			<Setter Property="HorizontalAlignment" Value="Right" />
+			<Setter Property="Orientation" Value="Horizontal" />
+		</Style>
+		<Style Selector="^ TextBlock.Label">
+			<Setter Property="FontSize" Value="14" />
+			<Setter Property="Margin" Value="12,0,6,0" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+		<Style Selector="^ TextBlock.Value">
+			<Setter Property="FontSize" Value="14" />
+			<Setter Property="Margin" Value="0" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+		<Style Selector="^ Button">
+			<Setter Property="Height" Value="28" />
+			<Setter Property="MinHeight" Value="28" />
+			<Setter Property="Width" Value="28" />
+			<Setter Property="MinWidth" Value="28" />
+			<Style Selector="^.Icon Path">
+				<Setter Property="Height" Value="18" />
+				<Setter Property="Width" Value="18" />
+			</Style>
+			<Style Selector="^.Icon PathIcon">
+				<Setter Property="Height" Value="18" />
+				<Setter Property="Width" Value="18" />
+			</Style>
+		</Style>
+		<Style Selector="^ ToggleButton">
+			<Setter Property="Height" Value="28" />
+			<Setter Property="MinHeight" Value="28" />
+			<Setter Property="Width" Value="28" />
+			<Setter Property="MinWidth" Value="28" />
+			<Style Selector="^.Icon Path">
+				<Setter Property="Height" Value="18" />
+				<Setter Property="Width" Value="18" />
+			</Style>
+			<Style Selector="^.Icon PathIcon">
+				<Setter Property="Height" Value="18" />
+				<Setter Property="Width" Value="18" />
+			</Style>
+		</Style>
+	</Style>
+
+	<Design.PreviewWith>
+		<StackPanel Width="420">
+			<Grid Height="80">
+			</Grid>
+			<Border Classes="StatusBar"
+					DockPanel.Dock="Bottom">
+				<Grid ColumnDefinitions="*,*,*">
+					<StackPanel Grid.Column="0">
+						<Path Data="{StaticResource FontAwesome.Asterisk.Solid}"
+								Margin="8,0,0,0" />
+						<PathIcon Data="{StaticResource FontAwesome.Asterisk.Solid}"
+								Margin="8,0,0,0" />
+						<TextBlock Classes="Label" Text="Font" />
+						<TextBlock Classes="Value" Text="12" />
+					</StackPanel>
+					<StackPanel Grid.Column="1">
+						<Button Classes="Icon">
+							<Path Data="{StaticResource FontAwesome.Bell.Solid}" />
+						</Button>
+						<ToggleButton Classes="Icon" IsChecked="True">
+							<Path Data="{StaticResource FontAwesome.Bookmark.Regular}"
+									Margin="4,0,0,0" />
+						</ToggleButton>
+					</StackPanel>
+					<StackPanel Grid.Column="2">
+						<Button Classes="Icon">
+							<PathIcon Data="{StaticResource FontAwesome.Bell.Solid}" />
+						</Button>
+						<ToggleButton Classes="Icon">
+							<PathIcon Data="{StaticResource FontAwesome.Bookmark.Regular}"
+									Margin="4,0,0,0" />
+						</ToggleButton>
+					</StackPanel>
+				</Grid>
+			</Border>
+		</StackPanel>
+	</Design.PreviewWith>
+</Styles>

@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFrameworks>net8.0-android</TargetFrameworks>
-		<SupportedOSPlatformVersion>34</SupportedOSPlatformVersion>
+		<TargetFrameworks>net9.0-android</TargetFrameworks>
+		<SupportedOSPlatformVersion>30</SupportedOSPlatformVersion>
 		<ApplicationId>com.cornerstone.avalonia.sample</ApplicationId>
 		<ApplicationVersion>1</ApplicationVersion>
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
@@ -13,6 +13,7 @@
 		<AndroidResource Include="Icon.png">
 			<Link>Resources\drawable\Icon.png</Link>
 		</AndroidResource>
+		<None Remove="hs_err_pid*.log" />
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Avalonia.Android" Version="$(AvaloniaVersion)" />

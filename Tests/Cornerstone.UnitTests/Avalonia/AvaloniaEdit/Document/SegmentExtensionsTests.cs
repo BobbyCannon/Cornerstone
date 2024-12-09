@@ -22,19 +22,19 @@ public class SegmentExtensionsTests : CornerstoneUnitTest
 	[TestMethod]
 	public void Contains()
 	{
-		var scenarios = new (string name, SimpleSegment left, SimpleSegment right, bool expected)[]
+		var scenarios = new (string name, SimpleRange left, SimpleRange right, bool expected)[]
 		{
-			("1", new SimpleSegment(0, 1), new SimpleSegment(1, 0), true),
-			("2", new SimpleSegment(0, 0), new SimpleSegment(1, 0), false),
-			("3", new SimpleSegment(0, 3), new SimpleSegment(1, 2), true),
-			("4", new SimpleSegment(0, 3), new SimpleSegment(0, 2), true),
-			("5", new SimpleSegment(0, 3), new SimpleSegment(3, 0), true),
+			("1", new SimpleRange(0, 1), new SimpleRange(1, 0), true),
+			("2", new SimpleRange(0, 0), new SimpleRange(1, 0), false),
+			("3", new SimpleRange(0, 3), new SimpleRange(1, 2), true),
+			("4", new SimpleRange(0, 3), new SimpleRange(0, 2), true),
+			("5", new SimpleRange(0, 3), new SimpleRange(3, 0), true),
 			// right.offset should end of left.endOffset
-			("6", new SimpleSegment(10, 10), new SimpleSegment(9, 1), true),
+			("6", new SimpleRange(10, 10), new SimpleRange(9, 1), true),
 			// Just one offset to less
-			("7", new SimpleSegment(10, 10), new SimpleSegment(9, 0), false),
+			("7", new SimpleRange(10, 10), new SimpleRange(9, 0), false),
 			// Just one offset too many
-			("8", new SimpleSegment(10, 10), new SimpleSegment(21, 0), false)
+			("8", new SimpleRange(10, 10), new SimpleRange(21, 0), false)
 		};
 
 		foreach (var scenario in scenarios)
@@ -48,18 +48,18 @@ public class SegmentExtensionsTests : CornerstoneUnitTest
 	[TestMethod]
 	public void GetOverlap()
 	{
-		var scenarios = new (string name, SimpleSegment left, SimpleSegment right, SimpleSegment expected)[]
+		var scenarios = new (string name, SimpleRange left, SimpleRange right, SimpleRange expected)[]
 		{
-			("1", new SimpleSegment(0, 1), new SimpleSegment(1, 0), new SimpleSegment(1, 0)),
-			("2", new SimpleSegment(0, 0), new SimpleSegment(1, 0), SegmentExtensions.Invalid),
-			("3", new SimpleSegment(0, 3), new SimpleSegment(1, 2), new SimpleSegment(1, 2)),
-			("4", new SimpleSegment(0, 3), new SimpleSegment(0, 2), new SimpleSegment(1, 1)),
-			("5", new SimpleSegment(0, 3), new SimpleSegment(3, 1), new SimpleSegment(3, 0)),
-			("6", new SimpleSegment(10, 10), new SimpleSegment(9, 1), new SimpleSegment(10, 0)),
+			("1", new SimpleRange(0, 1), new SimpleRange(1, 0), new SimpleRange(1, 0)),
+			("2", new SimpleRange(0, 0), new SimpleRange(1, 0), SegmentExtensions.Invalid),
+			("3", new SimpleRange(0, 3), new SimpleRange(1, 2), new SimpleRange(1, 2)),
+			("4", new SimpleRange(0, 3), new SimpleRange(0, 2), new SimpleRange(1, 1)),
+			("5", new SimpleRange(0, 3), new SimpleRange(3, 1), new SimpleRange(3, 0)),
+			("6", new SimpleRange(10, 10), new SimpleRange(9, 1), new SimpleRange(10, 0)),
 			// Just one offset to less
-			("7", new SimpleSegment(10, 10), new SimpleSegment(9, 0), SegmentExtensions.Invalid),
+			("7", new SimpleRange(10, 10), new SimpleRange(9, 0), SegmentExtensions.Invalid),
 			// Just one offset too many
-			("8", new SimpleSegment(10, 10), new SimpleSegment(21, 0), SegmentExtensions.Invalid)
+			("8", new SimpleRange(10, 10), new SimpleRange(21, 0), SegmentExtensions.Invalid)
 		};
 
 		foreach (var scenario in scenarios)

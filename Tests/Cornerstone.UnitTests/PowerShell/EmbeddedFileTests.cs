@@ -17,9 +17,9 @@ public class EmbeddedFileTests : CornerstoneUnitTest
 	public void ReadEmbeddedFile()
 	{
 		var assembly = typeof(CmdletHelpGenerator).Assembly;
-		assembly.ReadEmbeddedFile("Cornerstone.PowerShell.Cornerstone.PowerShell.ps1xml");
-		assembly.ReadEmbeddedFile("Cornerstone.PowerShell.Cornerstone.PowerShell.psd1");
-		assembly.ReadEmbeddedFile("Cornerstone.PowerShell.Cornerstone.PowerShell-Help.xml");
+		assembly.ReadEmbeddedText("Cornerstone.PowerShell.Cornerstone.PowerShell.ps1xml");
+		assembly.ReadEmbeddedText("Cornerstone.PowerShell.Cornerstone.PowerShell.psd1");
+		assembly.ReadEmbeddedText("Cornerstone.PowerShell.Cornerstone.PowerShell-Help.xml");
 	}
 
 	#endregion

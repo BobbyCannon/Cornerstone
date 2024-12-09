@@ -1,6 +1,8 @@
 ﻿#region References
 
 using System;
+using Cornerstone.Collections;
+using Cornerstone.Text;
 using Cornerstone.Text.Document;
 
 #endregion
@@ -10,7 +12,7 @@ namespace Cornerstone.Avalonia.AvaloniaEdit.Folding;
 /// <summary>
 /// Helper class used for <see cref="FoldingManager.UpdateFoldings" />.
 /// </summary>
-public class NewFolding : ISegment
+public class NewFolding : IRange
 {
 	#region Constructors
 
@@ -31,7 +33,7 @@ public class NewFolding : ISegment
 			throw new ArgumentException("'start' must be less than 'end'");
 		}
 		StartOffset = start;
-		EndOffset = end;
+		EndIndex = end;
 		Name = null;
 		DefaultClosed = false;
 	}
@@ -48,7 +50,7 @@ public class NewFolding : ISegment
 	/// <summary>
 	/// Gets/Sets the end offset.
 	/// </summary>
-	public int EndOffset { get; set; }
+	public int EndIndex { get; set; }
 
 	/// <summary>
 	/// Gets/Sets whether the folding is considered to be a definition.
@@ -66,9 +68,9 @@ public class NewFolding : ISegment
 	/// </summary>
 	public int StartOffset { get; set; }
 
-	int ISegment.Length => EndOffset - StartOffset;
+	int IRange.Length => EndIndex - StartOffset;
 
-	int ISegment.Offset => StartOffset;
+	int IRange.StartIndex => StartOffset;
 
 	#endregion
 }

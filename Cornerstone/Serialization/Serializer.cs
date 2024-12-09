@@ -23,7 +23,7 @@ public class Serializer : ISerializer
 
 	static Serializer()
 	{
-		DefaultSettings = new SerializationOptions
+		DefaultSettings = new SerializationSettings
 		{
 			EnumFormat = EnumFormat.Value,
 			IgnoreDefaultValues = false,
@@ -49,7 +49,7 @@ public class Serializer : ISerializer
 	/// <summary>
 	/// The default settings for the serializer.
 	/// </summary>
-	public static ISerializationOptions DefaultSettings { get; private set; }
+	public static ISerializationSettings DefaultSettings { get; private set; }
 
 	/// <summary>
 	/// The static instance of the serializer.
@@ -61,13 +61,13 @@ public class Serializer : ISerializer
 	#region Methods
 
 	/// <inheritdoc />
-	public T FromJson<T>(string value, ISerializationOptions settings = null)
+	public T FromJson<T>(string value, ISerializationSettings settings = null)
 	{
 		return _jsonSerializer.FromJson<T>(value, settings ?? DefaultSettings);
 	}
 
 	/// <inheritdoc />
-	public object FromJson(string value, Type type, ISerializationOptions settings = null)
+	public object FromJson(string value, Type type, ISerializationSettings settings = null)
 	{
 		return _jsonSerializer.FromJson(value, type, settings ?? DefaultSettings);
 	}
@@ -85,19 +85,19 @@ public class Serializer : ISerializer
 	}
 
 	/// <inheritdoc />
-	public string ToJson<T>(T value, ISerializationOptions settings = null)
+	public string ToJson<T>(T value, ISerializationSettings settings = null)
 	{
 		return _jsonSerializer.ToJson(value, settings ?? DefaultSettings);
 	}
 
 	/// <inheritdoc />
-	public string ToJson(object value, Type type, ISerializationOptions settings = null)
+	public string ToJson(object value, Type type, ISerializationSettings settings = null)
 	{
 		return _jsonSerializer.ToJson(value, type, settings);
 	}
 
 	/// <inheritdoc />
-	public void UpdateDefaultSettings(ISerializationOptions settings)
+	public void UpdateDefaultSettings(ISerializationSettings settings)
 	{
 		if (_lockDefaultSettings)
 		{
@@ -133,7 +133,7 @@ public interface ISerializer : IJsonSerializer
 	/// Update the default settings.
 	/// </summary>
 	/// <param name="settings"> The new settings. </param>
-	void UpdateDefaultSettings(ISerializationOptions settings);
+	void UpdateDefaultSettings(ISerializationSettings settings);
 
 	#endregion
 }

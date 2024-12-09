@@ -14,7 +14,6 @@
 		<Setter Property="BorderThickness" Value="{DynamicResource MenuFlyoutPresenterBorderThemeThickness}" />
 		<Setter Property="Padding" Value="{DynamicResource MenuFlyoutPresenterThemePadding}" />
 		<Setter Property="MaxWidth" Value="{DynamicResource FlyoutThemeMaxWidth}" />
-		<Setter Property="MinHeight" Value="{DynamicResource MenuFlyoutThemeMinHeight}" />
 		<Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
 		<Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
 		<Setter Property="CornerRadius" Value="{DynamicResource FlyoutCornerRadius}" />

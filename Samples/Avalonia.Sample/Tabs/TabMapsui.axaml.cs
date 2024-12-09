@@ -1,7 +1,7 @@
 #region References
 
 using Avalonia.Interactivity;
-using Cornerstone.Avalonia.Controls;
+using Cornerstone.Avalonia;
 using Cornerstone.Location;
 using Mapsui;
 using Mapsui.Layers;
@@ -48,11 +48,14 @@ public partial class TabMapsui : CornerstoneUserControl
 		MapControl.Map.Navigator.ZoomToLevel(MapControl.Map.Navigator.Resolutions.Count - 2);
 
 		var currentLocation = await LocationProvider.GetCurrentLocationAsync();
-		var point = SphericalMercator.FromLonLat(
-			currentLocation.HorizontalLocation.Longitude,
-			currentLocation.HorizontalLocation.Latitude
-		);
-		myLocation.UpdateMyLocation(new MPoint(point.x, point.y));
+		if (currentLocation != null)
+		{
+			var point = SphericalMercator.FromLonLat(
+				currentLocation.HorizontalLocation.Longitude,
+				currentLocation.HorizontalLocation.Latitude
+			);
+			myLocation.UpdateMyLocation(new MPoint(point.x, point.y));
+		}
 
 		base.OnLoaded(e);
 	}

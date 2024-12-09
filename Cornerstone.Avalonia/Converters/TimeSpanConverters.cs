@@ -19,11 +19,21 @@ public static class TimeSpanConverters
 	/// </summary>
 	public static readonly IValueConverter Humanize = new FuncValueConverter<TimeSpan, string>(x => x.Humanize());
 
+	/// <summary>
+	/// A value converter that returns the TimeSpan as a formatted string.
+	/// </summary>
+	public static readonly IValueConverter Format = new FuncValueConverter<TimeSpan, string, string>(ConvertTimeSpan);
+
 	#endregion
 
 	#region Methods
 
-	public static int ConvertToSeconds(TimeSpan value, object parameter)
+	private static string ConvertTimeSpan(TimeSpan value, string format)
+	{
+		return value.ToString(format);
+	}
+
+	private static int ConvertToSeconds(TimeSpan value, object parameter)
 	{
 		return (int) value.TotalSeconds;
 	}

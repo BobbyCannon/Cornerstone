@@ -3,8 +3,9 @@
 using System;
 using System.Drawing;
 using System.Linq;
-using Cornerstone.Automation.Internal.Native;
 using Cornerstone.Extensions;
+using Cornerstone.Windows;
+using Cornerstone.Windows.Native;
 using Interop.UIAutomationClient;
 
 #endregion
@@ -184,7 +185,7 @@ public class Window : DesktopElement
 
 	private void HourGlassWait()
 	{ 
-		this.WaitUntil(() => MouseCursor.WaitCursors.Contains(Mouse.Cursor), 1000, 10);
+		this.WaitUntil(() => MouseCursor.WaitCursors.Contains(WindowsMouse.Cursor), 1000, 10);
 	}
 
 	private void WaitForWindow()

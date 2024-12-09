@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 using Cornerstone.Data;
@@ -22,8 +23,8 @@ public static class TypeExtensions
 	#region Fields
 
 	private static readonly Type _enumerableType;
+	private static readonly ReadOnlyDictionary<Type, string> _simplifiedTypeNames;
 	private static readonly Type _stringType;
-
 	private static readonly ConcurrentDictionary<Type, string> _typeAssemblyNames;
 
 	#endregion
@@ -34,6 +35,25 @@ public static class TypeExtensions
 	{
 		_enumerableType = typeof(IEnumerable);
 		_stringType = typeof(string);
+		_simplifiedTypeNames = new ReadOnlyDictionary<Type, string>(
+			new Dictionary<Type, string>
+			{
+				{ typeof(char), "char" },
+				{ typeof(bool), "bool" },
+				{ typeof(byte), "byte" },
+				{ typeof(sbyte), "sbyte" },
+				{ typeof(short), "short" },
+				{ typeof(ushort), "ushort" },
+				{ typeof(int), "int" },
+				{ typeof(uint), "uint" },
+				{ typeof(long), "long" },
+				{ typeof(ulong), "ulong" },
+				{ typeof(decimal), "decimal" },
+				{ typeof(float), "float" },
+				{ typeof(double), "double" },
+				{ typeof(string), "string" }
+			}
+		);
 		_typeAssemblyNames = new ConcurrentDictionary<Type, string>();
 	}
 
@@ -78,6 +98,56 @@ public static class TypeExtensions
 	{
 		type = Nullable.GetUnderlyingType(type) ?? type;
 		return type;
+	}
+
+	/// <summary>
+	/// Converts data type to the code simplified type. Ex. Int16 to short, Single to float
+	/// </summary>
+	/// <param name="value"> The type to get C# code for. </param>
+	/// <returns> The type in C# code format. </returns>
+	public static string GetCodeTypeName(this object value)
+	{
+		return value switch
+		{
+			MethodInfo sValue => CSharpCodeWriter.GetCodeTypeName(sValue),
+			_ => CSharpCodeWriter.GenerateCode(value?.GetType())
+		};
+	}
+
+	/// <summary>
+	/// Converts data type to the code simplified type. Ex. Int16 to short, Single to float
+	/// </summary>
+	/// <param name="type"> The type to get C# code for. </param>
+	/// <returns> The type in C# code format. </returns>
+	public static string GetCodeTypeName(this Type type)
+	{
+		if (_simplifiedTypeNames.TryGetValue(type, out var value))
+		{
+			var isNullableType = type.IsNullableType();
+			return isNullableType ? $"{value}?" : value;
+		}
+
+		if (type.ImplementsType(typeof(Nullable<>)))
+		{
+			var baseType = type.FromNullableType();
+			var name = GetCodeTypeName(baseType);
+			return name + "?";
+		}
+
+		if (!type.IsGenericType)
+		{
+			return type.Name;
+		}
+
+		var typeName = type.Name;
+		var index = typeName.IndexOf("`");
+		if (index >= 0)
+		{
+			typeName = typeName.Substring(0, index);
+		}
+
+		var genericArguments = type.GetGenericArguments();
+		return $"{typeName}<{string.Join(", ", genericArguments.Select(GetCodeTypeName))}>";
 	}
 
 	/// <summary>
@@ -139,6 +209,27 @@ public static class TypeExtensions
 			}
 		}
 		return result;
+	}
+
+	public static Type[] GetGenericArgumentsRecursive(this Type type)
+	{
+		while (type != null)
+		{
+			if (type.IsGenericType)
+			{
+				return type.GenericTypeArguments;
+			}
+
+			if (type.IsGenericTypeDefinition)
+			{
+				var definition = type.GetGenericTypeDefinition();
+				return definition.GenericTypeArguments;
+			}
+
+			type = type.BaseType;
+		}
+
+		return null;
 	}
 
 	/// <summary>
@@ -253,7 +344,7 @@ public static class TypeExtensions
 	}
 
 	/// <summary>
-	/// Determines if a instance is nullable.
+	/// Determines if an instance is nullable.
 	/// </summary>
 	/// <param name="type"> The type to be checked. </param>
 	/// <returns> True if the type instance is nullable otherwise false. </returns>
@@ -311,16 +402,6 @@ public static class TypeExtensions
 	}
 
 	/// <summary>
-	/// Converts data type to the code simplified type. Ex. Int16 to short, Single to float
-	/// </summary>
-	/// <param name="type"> The type to get C# code for. </param>
-	/// <returns> The type in C# code format. </returns>
-	public static string ToCSharpCode(this Type type)
-	{
-		return CSharpCodeWriter.GetCodeTypeName(type);
-	}
-
-	/// <summary>
 	/// Convert type to <see cref="Nullable{T}" /> type.
 	/// </summary>
 	/// <param name="type"> The type to convert. </param>
@@ -329,6 +410,32 @@ public static class TypeExtensions
 	{
 		type = Nullable.GetUnderlyingType(type) ?? type;
 		return type.IsValueType ? typeof(Nullable<>).GetCachedMakeGenericType(type) : type;
+	}
+
+	/// <summary>
+	/// Try to convert the assembly name string into a type. Does not include version. Ex. System.String,mscorlib
+	/// </summary>
+	/// <param name="value"> The type assembly name string. </param>
+	/// <param name="type"> The type to get the assembly name for. </param>
+	/// <returns> True if the value was a valid type otherwise false. </returns>
+	public static bool TryGetType(this string value, out Type type)
+	{
+		if (string.IsNullOrWhiteSpace(value))
+		{
+			type = null;
+			return false;
+		}
+
+		try
+		{
+			type = Type.GetType(value);
+			return type != null;
+		}
+		catch
+		{
+			type = null;
+			return false;
+		}
 	}
 
 	private static Type GetFullTypeDefinition(Type type)

@@ -20,7 +20,7 @@ namespace Cornerstone.Avalonia.AvaloniaEdit.Rendering;
 /// </summary>
 /// <remarks>
 /// This element generator is present in every TextView by default; the enabled features can be configured using the
-/// <see cref="TextEditorOptions" />.
+/// <see cref="TextEditorSettings" />.
 /// </remarks>
 [SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "Whitespace")]
 internal sealed class SingleCharacterElementGenerator : VisualLineElementGenerator, IBuiltinElementGenerator
@@ -69,7 +69,7 @@ internal sealed class SingleCharacterElementGenerator : VisualLineElementGenerat
 			var runProperties = new VisualLineElementTextRunProperties(CurrentContext.GlobalTextRunProperties);
 			runProperties.SetForegroundBrush(CurrentContext.TextView.NonPrintableCharacterBrush);
 			return new SpaceTextElement(CurrentContext.TextView.CachedElements.GetTextForNonPrintableCharacter(
-				CurrentContext.TextView.Options.ShowSpacesGlyph,
+				CurrentContext.TextView.Settings.ShowSpacesGlyph,
 				runProperties));
 		}
 		if (ShowTabs && (c == '\t'))
@@ -77,7 +77,7 @@ internal sealed class SingleCharacterElementGenerator : VisualLineElementGenerat
 			var runProperties = new VisualLineElementTextRunProperties(CurrentContext.GlobalTextRunProperties);
 			runProperties.SetForegroundBrush(CurrentContext.TextView.NonPrintableCharacterBrush);
 			return new TabTextElement(CurrentContext.TextView.CachedElements.GetTextForNonPrintableCharacter(
-				CurrentContext.TextView.Options.ShowTabsGlyph,
+				CurrentContext.TextView.Settings.ShowTabsGlyph,
 				runProperties));
 		}
 		if (ShowBoxForControlCharacters && char.IsControl(c))
@@ -95,7 +95,7 @@ internal sealed class SingleCharacterElementGenerator : VisualLineElementGenerat
 	public override int GetFirstInterestedOffset(int startOffset)
 	{
 		var endLine = CurrentContext.VisualLine.LastDocumentLine;
-		var relevantText = CurrentContext.GetText(startOffset, endLine.EndOffset - startOffset);
+		var relevantText = CurrentContext.GetText(startOffset, endLine.EndIndex - startOffset);
 
 		for (var i = 0; i < relevantText.Count; i++)
 		{
@@ -125,11 +125,11 @@ internal sealed class SingleCharacterElementGenerator : VisualLineElementGenerat
 		return -1;
 	}
 
-	void IBuiltinElementGenerator.FetchOptions(TextEditorOptions options)
+	void IBuiltinElementGenerator.FetchOptions(TextEditorSettings settings)
 	{
-		ShowSpaces = options.ShowSpaces;
-		ShowTabs = options.ShowTabs;
-		ShowBoxForControlCharacters = options.ShowBoxForControlCharacters;
+		ShowSpaces = settings.ShowSpaces;
+		ShowTabs = settings.ShowTabs;
+		ShowBoxForControlCharacters = settings.ShowBoxForControlCharacters;
 	}
 
 	#endregion
@@ -275,7 +275,7 @@ internal sealed class SingleCharacterElementGenerator : VisualLineElementGenerat
 
 		public override TextRunProperties Properties { get; }
 
-		public override Size Size => default;
+		public override Size Size => new(_element.Text.WidthIncludingTrailingWhitespace * (_element.TabSize - 1), 0);
 
 		#endregion
 
@@ -289,10 +289,11 @@ internal sealed class SingleCharacterElementGenerator : VisualLineElementGenerat
 		#endregion
 	}
 
-	private sealed class TabTextElement : VisualLineElement
+	internal sealed class TabTextElement : VisualLineElement
 	{
 		#region Fields
 
+		internal int TabSize;
 		internal readonly TextLine Text;
 
 		#endregion

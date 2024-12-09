@@ -119,10 +119,10 @@
 			</ControlTemplate>
 		</Setter>
 		<Style Selector="^:current /template/ Rectangle#CurrentCellVisual">
-			<Setter Property="IsVisible" Value="True" />
+			<Setter Property="IsVisible" Value="False" />
 		</Style>
 		<Style Selector="^:focus /template/ Panel#FocusVisual">
-			<Setter Property="IsVisible" Value="True" />
+			<Setter Property="IsVisible" Value="False" />
 		</Style>
 		<Style Selector="^:invalid /template/ Rectangle#InvalidVisualElement">
 			<Setter Property="IsVisible" Value="True" />
@@ -204,7 +204,7 @@
 		</Setter>
 
 		<Style Selector="^:focus-visible /template/ Grid#FocusVisual">
-			<Setter Property="IsVisible" Value="True" />
+			<Setter Property="IsVisible" Value="False" />
 		</Style>
 
 		<Style Selector="^:pointerover /template/ Border#HeaderBackground">

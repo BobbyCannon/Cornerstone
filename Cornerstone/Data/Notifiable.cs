@@ -21,44 +21,45 @@ namespace Cornerstone.Data;
 /// Represents a notifiable object.
 /// </summary>
 public abstract class Notifiable<T> : Notifiable, ICloneable<T>, IUpdateable<T>
+	where T : class, new()
 {
 	#region Methods
 
 	/// <inheritdoc />
-	public virtual T DeepClone(int? maxDepth = null, IncludeExcludeOptions options = null)
+	public virtual T DeepClone(int? maxDepth = null, IncludeExcludeSettings settings = null)
 	{
-		return (T) this.DeepCloneUsingUpdateWith(typeof(T), maxDepth, options);
+		return (T) this.DeepCloneUsingUpdateWith(typeof(T), maxDepth, settings);
 	}
 
 	/// <inheritdoc />
-	public T ShallowClone(IncludeExcludeOptions options = null)
+	public T ShallowClone(IncludeExcludeSettings settings = null)
 	{
-		return DeepClone(0, options);
+		return DeepClone(0, settings);
 	}
 
 	/// <inheritdoc />
-	public virtual bool ShouldUpdate(T update, IncludeExcludeOptions options)
+	public virtual bool ShouldUpdate(T update, IncludeExcludeSettings settings)
 	{
-		return UpdateableExtensions.ShouldUpdate(this, update, options);
+		return UpdateableExtensions.ShouldUpdate(this, update, settings);
 	}
 
 	/// <inheritdoc />
 	public bool TryUpdateWith(T update)
 	{
-		return TryUpdateWith(update, IncludeExcludeOptions.Empty);
+		return TryUpdateWith(update, IncludeExcludeSettings.Empty);
 	}
 
 	/// <inheritdoc />
-	public bool TryUpdateWith(T update, IncludeExcludeOptions options)
+	public bool TryUpdateWith(T update, IncludeExcludeSettings settings)
 	{
-		return ShouldUpdate(update, options)
-			&& UpdateWith(update, options);
+		return ShouldUpdate(update, settings)
+			&& UpdateWith(update, settings);
 	}
 
 	/// <inheritdoc />
 	public bool UpdateWith(T update)
 	{
-		return UpdateWith(update, IncludeExcludeOptions.Empty);
+		return UpdateWith(update, IncludeExcludeSettings.Empty);
 	}
 
 	/// <inheritdoc />
@@ -69,15 +70,15 @@ public abstract class Notifiable<T> : Notifiable, ICloneable<T>, IUpdateable<T>
 	}
 
 	/// <inheritdoc />
-	public abstract bool UpdateWith(T update, IncludeExcludeOptions options);
+	public abstract bool UpdateWith(T update, IncludeExcludeSettings settings);
 
 	/// <inheritdoc />
-	public override bool UpdateWith(object update, IncludeExcludeOptions options)
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		return update switch
 		{
-			T value => UpdateWith(value, options),
-			_ => base.UpdateWith(update, options)
+			T value => UpdateWith(value, settings),
+			_ => base.UpdateWith(update, settings)
 		};
 	}
 
@@ -121,9 +122,9 @@ public abstract class Notifiable : INotifiable, IUpdateable, ICloneable, IUpdate
 	}
 
 	/// <inheritdoc />
-	public virtual object DeepCloneObject(int? maxDepth = null, IncludeExcludeOptions options = null)
+	public virtual object DeepCloneObject(int? maxDepth = null, IncludeExcludeSettings settings = null)
 	{
-		return this.DeepCloneUsingUpdateWith(GetRealType(), maxDepth, options);
+		return this.DeepCloneUsingUpdateWith(GetRealType(), maxDepth, settings);
 	}
 
 	/// <inheritdoc />
@@ -159,7 +160,7 @@ public abstract class Notifiable : INotifiable, IUpdateable, ICloneable, IUpdate
 	}
 
 	/// <inheritdoc />
-	public IncludeExcludeOptions GetUpdateableOptions(UpdateableAction action)
+	public IncludeExcludeSettings GetUpdateableOptions(UpdateableAction action)
 	{
 		return Cache.GetOptions(GetRealType(), action);
 	}
@@ -167,13 +168,13 @@ public abstract class Notifiable : INotifiable, IUpdateable, ICloneable, IUpdate
 	/// <inheritdoc />
 	public bool HasChanges()
 	{
-		return HasChanges(IncludeExcludeOptions.Empty);
+		return HasChanges(IncludeExcludeSettings.Empty);
 	}
 
 	/// <inheritdoc />
-	public virtual bool HasChanges(IncludeExcludeOptions options)
+	public virtual bool HasChanges(IncludeExcludeSettings settings)
 	{
-		return _changedProperties.Any(x => options.ShouldProcessProperty(x.Key));
+		return _changedProperties.Any(x => settings.ShouldProcessProperty(x.Key));
 	}
 
 	/// <inheritdoc />
@@ -218,34 +219,34 @@ public abstract class Notifiable : INotifiable, IUpdateable, ICloneable, IUpdate
 	}
 
 	/// <inheritdoc />
-	public object ShallowCloneObject(IncludeExcludeOptions options = null)
+	public object ShallowCloneObject(IncludeExcludeSettings settings = null)
 	{
-		return DeepCloneObject(0, options);
+		return DeepCloneObject(0, settings);
 	}
 
 	/// <inheritdoc />
-	public virtual bool ShouldUpdate(object update, IncludeExcludeOptions options)
+	public virtual bool ShouldUpdate(object update, IncludeExcludeSettings settings)
 	{
-		return UpdateableExtensions.ShouldUpdate(this, update, options);
+		return UpdateableExtensions.ShouldUpdate(this, update, settings);
 	}
 
 	/// <inheritdoc />
 	public bool TryUpdateWith(object update)
 	{
-		return TryUpdateWith(update, IncludeExcludeOptions.Empty);
+		return TryUpdateWith(update, IncludeExcludeSettings.Empty);
 	}
 
 	/// <inheritdoc />
-	public bool TryUpdateWith(object update, IncludeExcludeOptions options)
+	public bool TryUpdateWith(object update, IncludeExcludeSettings settings)
 	{
-		return ShouldUpdate(update, options)
-			&& UpdateWith(update, options);
+		return ShouldUpdate(update, settings)
+			&& UpdateWith(update, settings);
 	}
 
 	/// <inheritdoc />
 	public bool UpdateWith(object update)
 	{
-		return UpdateWith(update, IncludeExcludeOptions.Empty);
+		return UpdateWith(update, IncludeExcludeSettings.Empty);
 	}
 
 	/// <inheritdoc />
@@ -256,9 +257,9 @@ public abstract class Notifiable : INotifiable, IUpdateable, ICloneable, IUpdate
 	}
 
 	/// <inheritdoc />
-	public virtual bool UpdateWith(object update, IncludeExcludeOptions options)
+	public virtual bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
-		return this.UpdateWithUsingReflection(update, options);
+		return this.UpdateWithUsingReflection(update, settings);
 	}
 
 	/// <summary>
@@ -324,10 +325,11 @@ public abstract class Notifiable : INotifiable, IUpdateable, ICloneable, IUpdate
 	/// <param name="field"> The field that represents the property. </param>
 	/// <param name="value"> The value to change the property. </param>
 	/// <param name="propertyName"> The name of the property to notify. </param>
+	/// <param name="validate"> Optional flag to trigger validation.  </param>
 	#if (NETSTANDARD2_0)
-	protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+	protected bool SetProperty<T>(ref T field, T value, bool validate = false, [CallerMemberName] string propertyName = null)
 	#else
-	protected bool SetProperty<T>([NotNullIfNotNull(nameof(value))] ref T field, T value, [CallerMemberName] string propertyName = null)
+	protected bool SetProperty<T>([NotNullIfNotNull(nameof(value))] ref T field, T value, bool validate = false, [CallerMemberName] string propertyName = null)
 	#endif
 	{
 		if (Equals(field, value))
@@ -346,6 +348,7 @@ public abstract class Notifiable : INotifiable, IUpdateable, ICloneable, IUpdate
 		{
 			OnPropertyChanged(propertyName);
 		}
+
 		return true;
 	}
 

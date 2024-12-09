@@ -84,9 +84,9 @@ public sealed class FoldingElementGenerator : VisualLineElementGenerator, ITextV
 		{
 			if (fs.IsFolded)
 			{
-				if (fs.EndOffset > foldedUntil)
+				if (fs.EndIndex > foldedUntil)
 				{
-					foldedUntil = fs.EndOffset;
+					foldedUntil = fs.EndIndex;
 					foldingSection = fs;
 				}
 			}
@@ -102,9 +102,9 @@ public sealed class FoldingElementGenerator : VisualLineElementGenerator, ITextV
 				foundOverlappingFolding = false;
 				foreach (var fs in FoldingManager.GetFoldingsContaining(foldedUntil))
 				{
-					if (fs.IsFolded && (fs.EndOffset > foldedUntil))
+					if (fs.IsFolded && (fs.EndIndex > foldedUntil))
 					{
-						foldedUntil = fs.EndOffset;
+						foldedUntil = fs.EndIndex;
 						foundOverlappingFolding = true;
 					}
 				}
@@ -134,7 +134,7 @@ public sealed class FoldingElementGenerator : VisualLineElementGenerator, ITextV
 				// Test whether we're currently within a folded folding (that didn't just end).
 				// If so, create the fold marker immediately.
 				// This is necessary if the actual beginning of the fold marker got skipped due to another VisualElementGenerator.
-				if (fs.IsFolded && (fs.EndOffset > startOffset))
+				if (fs.IsFolded && (fs.EndIndex > startOffset))
 				{
 					//return startOffset;
 				}

@@ -1,0 +1,34 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		mc:Ignorable="d"
+		x:Class="Avalonia.Sample.Tabs.TabThemeVariantScope">
+	<StackPanel Orientation="Vertical" Spacing="8" Margin="8">
+		<Grid ColumnDefinitions="*,*" RowDefinitions="*,*"
+				HorizontalAlignment="Center"
+				VerticalAlignment="Center">
+			<ThemeVariantScope Grid.Column="0" Grid.Row="0"
+					Name="Scope" RequestedThemeVariant="Dark">
+				<Grid Background="{DynamicResource Background03}">
+					<StackPanel Margin="10">
+						<TextBlock Text="Hello World"
+								Foreground="{DynamicResource Foreground01}" />
+						<Button>Test</Button>
+					</StackPanel>
+				</Grid>
+			</ThemeVariantScope>
+			<ThemeVariantScope Grid.Column="1" Grid.Row="0"
+					Name="Scope2" RequestedThemeVariant="Light">
+				<Grid Background="{DynamicResource Background03}">
+					<StackPanel Margin="10">
+						<TextBlock Text="Hello World"
+								Foreground="{DynamicResource Foreground01}" />
+						<Button>Test</Button>
+					</StackPanel>
+				</Grid>
+			</ThemeVariantScope>
+		</Grid>
+	</StackPanel>
+</UserControl>
