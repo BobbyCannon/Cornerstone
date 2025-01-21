@@ -29,8 +29,8 @@ public class CodeGeneratorTests : CornerstoneUnitTest
 	{
 		var actual = CodeGenerator.GetAllCodeCombinations<SerializationSettings>().ToList();
 		//AreEqual(expected, actual);
-		AreEqual(4608, actual.Count);
-		AreEqual(4608, actual
+		AreEqual(5760, actual.Count);
+		AreEqual(5760, actual
 			.Select(x => x.GetHashCode())
 			.Distinct()
 			.Count()

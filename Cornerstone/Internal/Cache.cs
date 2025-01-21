@@ -64,22 +64,23 @@ internal static class Cache
 	#region Methods
 
 	/// <summary>
+	/// Get cached updateable setting for the provided type.
 	/// </summary>
-	/// <typeparam name="T"> </typeparam>
-	/// <param name="action"> </param>
-	/// <returns> </returns>
-	public static IncludeExcludeSettings GetOptions<T>(UpdateableAction action)
+	/// <typeparam name="T"> The type to get settings for. </typeparam>
+	/// <param name="action"> The action to get settings for. </param>
+	/// <returns> The settings. </returns>
+	public static IncludeExcludeSettings GetSettings<T>(UpdateableAction action)
 	{
-		return GetOptions(typeof(T), action);
+		return GetSettings(typeof(T), action);
 	}
 
 	/// <summary>
-	/// Get cached updateable option for the provided type.
+	/// Get cached updateable setting for the provided type.
 	/// </summary>
-	/// <param name="type"> </param>
-	/// <param name="action"> </param>
-	/// <returns> </returns>
-	public static IncludeExcludeSettings GetOptions(Type type, UpdateableAction action)
+	/// <param name="type"> The type to get settings for. </param>
+	/// <param name="action"> The action to get settings for. </param>
+	/// <returns> The settings. </returns>
+	public static IncludeExcludeSettings GetSettings(Type type, UpdateableAction action)
 	{
 		var realType = type.GetRealTypeUsingReflection();
 		if (!realType.ImplementsType<IUpdateable>())
@@ -125,7 +126,11 @@ internal static class Cache
 		return SettableProperties
 			.GetOrAdd(realType, t => t
 				.GetCachedProperties()
-				.Where(x => x.CanWrite)
+				.Where(x =>
+					x.CanWrite
+					&& (x.SetMethod?.IsPublic == true)
+					&& !x.IsIndexer()
+				)
 				.ToHashSet()
 				.ToReadOnlySet()
 			);
@@ -146,7 +151,7 @@ internal static class Cache
 
 		foreach (var actionType in UpdateableActionTypes.Keys)
 		{
-			if (actionType == UpdateableAction.Unknown)
+			if (actionType == UpdateableAction.None)
 			{
 				continue;
 			}

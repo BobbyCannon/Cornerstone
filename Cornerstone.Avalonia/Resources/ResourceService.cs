@@ -32,9 +32,12 @@ public static class ResourceService
 
 	public static Color GetColor(string key)
 	{
-		return TryGet(key, out var value, Colors.Black)
-			? value
-			: Colors.Black;
+		if (TryGet<Color>(key, out var value))
+		{
+			return value;
+		}
+			
+		return Colors.Black;
 	}
 
 	public static IBrush GetColorAsBrush(string key)
@@ -69,20 +72,32 @@ public static class ResourceService
 
 	public static bool TryGet<T>(string key, out T value, T defaultValue = default)
 	{
-		if (!Application.Current.TryGetResource(key, out var found))
+		if (Application.Current?.TryGetResource(key, out var found) == true)
 		{
-			value = defaultValue;
-			return false;
+			if (found == null)
+			{
+				value = defaultValue;
+				return false;
+			}
+
+			value = (T) found;
+			return true;
+		}
+		
+		if (Application.Current?.Styles.Resources.TryGetResource(key, null, out found) == true)
+		{
+			if (found == null)
+			{
+				value = defaultValue;
+				return false;
+			}
+
+			value = (T) found;
+			return true;
 		}
 
-		if (found == null)
-		{
-			value = defaultValue;
-			return false;
-		}
-
-		value = (T) found;
-		return true;
+		value = defaultValue;
+		return false;
 	}
 
 	#endregion

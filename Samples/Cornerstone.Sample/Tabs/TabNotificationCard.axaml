@@ -1,0 +1,70 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="200"
+		x:Class="Cornerstone.Sample.Tabs.TabNotificationCard">
+	<UserControl.Resources>
+		<x:Double x:Key="ButtonWidth">160</x:Double>
+	</UserControl.Resources>
+	<Grid Margin="8">
+		<!-- Display notification top right. -->
+		<Button
+				x:Name="ShowTopRightNotification"
+				Theme.Color="Blue"
+				Content="Show Top Right"
+				Click="ShowTopRightNotification_OnClick"
+				Width="{StaticResource ButtonWidth}"
+				HorizontalAlignment="Right"
+				VerticalAlignment="Top" />
+
+		<!-- Display notification top left. -->
+		<Button
+				x:Name="ShowTopLeftNotification"
+				Theme.Color="Green"
+				Content="Show Top Left"
+				Click="ShowTopLeftNotification_OnClick"
+				Width="{StaticResource ButtonWidth}"
+				HorizontalAlignment="Left"
+				VerticalAlignment="Top" />
+
+		<!-- Display notification top center. -->
+		<Button
+				x:Name="ShowTopCenterNotification"
+				Content="Show Top Center"
+				Click="ShowTopCenterNotification_OnClick"
+				Width="{StaticResource ButtonWidth}"
+				HorizontalAlignment="Center"
+				VerticalAlignment="Top" />
+
+		<!-- Display notification bottom left. -->
+		<Button
+				x:Name="ShowBottomLeftNotification"
+				Theme.Color="Orange"
+				Content="Show Bottom Left"
+				Click="ShowBottomLeftNotification_OnClick"
+				Width="{StaticResource ButtonWidth}"
+				HorizontalAlignment="Left"
+				VerticalAlignment="Bottom" />
+
+		<!-- Display notification bottom center. -->
+		<Button
+				x:Name="ShowBottomCenterNotification"
+				Content="Show Bottom Center"
+				Click="ShowBottomCenterNotification_OnClick"
+				Width="{StaticResource ButtonWidth}"
+				HorizontalAlignment="Center"
+				VerticalAlignment="Bottom" />
+
+		<!-- Display notification bottom right. -->
+		<Button
+				x:Name="ShowBottomRightNotification"
+				Theme.Color="Red"
+				Content="Show Bottom Right"
+				Click="ShowBottomRightNotification_OnClick"
+				Width="{StaticResource ButtonWidth}"
+				HorizontalAlignment="Right"
+				VerticalAlignment="Bottom" />
+	</Grid>
+</UserControl>

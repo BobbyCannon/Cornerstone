@@ -48,6 +48,11 @@ public class CompareSession<T, T2> : CompareSession
 
 	#region Methods
 
+	public bool AreEqual()
+	{
+		return Result == CompareResult.AreEqual;
+	}
+
 	/// <summary>
 	/// Assert if the <see cref="CompareSession.Result" /> does not match the expected result.
 	/// </summary>
@@ -119,6 +124,7 @@ public class CompareSession : ReferenceTracker
 	{
 		Differences = new TextBuilder();
 		Settings = settings;
+		Path = new Stack<string>();
 		Result = CompareResult.Inconclusive;
 	}
 
@@ -132,35 +138,80 @@ public class CompareSession : ReferenceTracker
 	public TextBuilder Differences { get; }
 
 	/// <summary>
-	/// The settings for the compare session.
+	/// The current path being compared.
 	/// </summary>
-	public ComparerSettings Settings { get; }
+	public Stack<string> Path { get; }
 
 	/// <summary>
 	/// The final results of the comparison.
 	/// </summary>
 	public CompareResult Result { get; private set; }
 
+	/// <summary>
+	/// The settings for the compare session.
+	/// </summary>
+	public ComparerSettings Settings { get; }
+
 	#endregion
 
 	#region Methods
 
 	/// <summary>
-	/// Add the difference line.
+	/// Build an error message for the comparer
 	/// </summary>
-	/// <param name="value"> The value to be appended. </param>
-	internal void AppendDifference(string value)
+	/// <param name="message"> On optional message to include. </param>
+	/// <returns> The error message. </returns>
+	public void AddDifference(string message)
 	{
-		Differences.Append(value);
+		if (Path.Count > 0)
+		{
+			InternalAppendDifferenceLine(string.Join(".", Path));
+		}
+
+		InternalAppendDifference(message);
 	}
 
 	/// <summary>
-	/// Add the difference line.
+	/// Build an error message for the comparer
 	/// </summary>
-	/// <param name="value"> The value to be appended. </param>
-	internal void AppendDifferenceLine(string value)
+	/// <param name="expected"> The expected value in string format. </param>
+	/// <param name="actual"> The actual value in string format. </param>
+	/// <param name="shouldEqual"> True if the values should have been equal otherwise false. </param>
+	/// <param name="message"> On optional message to include. </param>
+	/// <returns> The error message. </returns>
+	public void AddDifference(object expected, object actual, bool shouldEqual, Func<string> message = null)
 	{
-		Differences.AppendLine(value);
+		UpdateResult(CompareResult.NotEqual);
+
+		if (Path.Count > 0)
+		{
+			InternalAppendDifferenceLine(string.Join(".", Path));
+		}
+
+		var actualMessage = message?.Invoke();
+
+		if (!string.IsNullOrWhiteSpace(actualMessage))
+		{
+			InternalAppendDifference(actualMessage);
+			InternalAppendDifference(string.Empty);
+		}
+
+		if ((Differences.Length > 0)
+			&& !Differences.EndsWithNewLine())
+		{
+			InternalAppendDifference(" ");
+		}
+
+		if (shouldEqual)
+		{
+			InternalAppendDifference(expected?.ToString() ?? "null");
+			InternalAppendDifference(" != ");
+			InternalAppendDifference(actual?.ToString() ?? "null");
+			return;
+		}
+
+		InternalAppendDifference("Should not have equaled the value below");
+		InternalAppendDifference(actual?.ToString() ?? "null");
 	}
 
 	/// <summary>
@@ -175,15 +226,28 @@ public class CompareSession : ReferenceTracker
 	/// <returns> </returns>
 	internal static void InternalProcess<T, T2>(CompareSession session, T expected, T2 actual, Func<string> message = null)
 	{
+		if (session.Path.Count > session.Settings.MaxDepth)
+		{
+			session.UpdateResult(CompareResult.AreEqual);
+			return;
+		}
+
 		if (Equals(expected, default(T)) && Equals(actual, default(T2)))
 		{
 			session.UpdateResult(CompareResult.AreEqual);
 			return;
 		}
 
+		// Both are not null and if one is then the items do not match
+		if (Equals(expected, null) || Equals(actual, null))
+		{
+			session.AddDifference(expected, actual, true, message);
+			return;
+		}
+
 		foreach (var comparer in Comparer.Comparers)
 		{
-			if (!comparer.IsSupported(expected ?? (object) typeof(T), actual ?? (object) typeof(T2)))
+			if (!comparer.IsSupported(expected, actual))
 			{
 				// The comparer should use expected to find the comparer
 				continue;
@@ -203,7 +267,7 @@ public class CompareSession : ReferenceTracker
 			return;
 		}
 
-		session.AppendDifference($"The type [{expected?.GetType().FullName ?? "null"}] is not supported by the {nameof(Comparer)}.");
+		session.InternalAppendDifference($"The type [{expected.GetType().FullName ?? "null"}] is not supported by the {nameof(Comparer)}.");
 	}
 
 	internal void UpdateResult(CompareResult result)
@@ -214,6 +278,24 @@ public class CompareSession : ReferenceTracker
 		}
 
 		Result = result;
+	}
+
+	/// <summary>
+	/// Add the difference line.
+	/// </summary>
+	/// <param name="value"> The value to be appended. </param>
+	private void InternalAppendDifference(string value)
+	{
+		Differences.Append(value);
+	}
+
+	/// <summary>
+	/// Add the difference line.
+	/// </summary>
+	/// <param name="value"> The value to be appended. </param>
+	private void InternalAppendDifferenceLine(string value)
+	{
+		Differences.AppendLine(value);
 	}
 
 	#endregion

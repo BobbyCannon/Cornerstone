@@ -1,0 +1,54 @@
+<CornerstoneUserControl xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:vm="clr-namespace:Cornerstone.Sample.ViewModels"
+		mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="600"
+		x:Class="Cornerstone.Sample.Views.MainView"
+		x:DataType="vm:MainViewModel"
+		x:Name="This">
+	<DockPanel LastChildFill="True">
+		<Grid DockPanel.Dock="Top"
+				x:Name="MainGrid">
+			<WrapPanel Grid.Column="0"
+					Margin="10,10,10,0"
+					Orientation="Horizontal">
+				<WrapPanel.Styles>
+					<Style Selector="WrapPanel > :is(Control)">
+						<Setter Property="Margin" Value="5" />
+					</Style>
+				</WrapPanel.Styles>
+				<TextBlock FontSize="16" Text="Tab:" VerticalAlignment="Center" />
+				<ComboBox SelectedIndex="0"
+						ItemsSource="{Binding Tabs, Mode=OneWay}"
+						SelectedItem="{Binding SelectedTab, Mode=TwoWay}"
+						MinWidth="220">
+					<ComboBox.ItemTemplate>
+						<DataTemplate>
+							<TextBlock Text="{Binding Header}" />
+						</DataTemplate>
+					</ComboBox.ItemTemplate>
+				</ComboBox>
+				<TextBlock FontSize="16" Text="Theme:" VerticalAlignment="Center" />
+				<ComboBox ItemsSource="{x:Static Theme.Colors}"
+						SelectedItem="{Binding ApplicationSettings.ThemeColor}"
+						MinWidth="130" />
+				<ToggleSwitch
+						IsChecked="{Binding ApplicationSettings.CycleThemes, Mode=TwoWay}"
+						OnContent="Cycle Themes"
+						OffContent="Cycle Themes" />
+				<ToggleSwitch
+						IsChecked="{Binding ApplicationSettings.UseDarkMode}"
+						OnContent="Dark"
+						OffContent="Light" />
+				<ToggleSwitch
+						IsChecked="{Binding ApplicationSettings.UseGamepadForInput}"
+						OnContent="Gamepad as Input"
+						OffContent="Gamepad as Input"
+						ToolTip.Tip="Gamepad as Keyboard / Mouse Input" />
+			</WrapPanel>
+		</Grid>
+		<ContentPresenter Content="{Binding SelectedTab.Content}"
+				Margin="10" />
+	</DockPanel>
+</CornerstoneUserControl>

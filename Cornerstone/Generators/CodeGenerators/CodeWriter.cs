@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System;
 using Cornerstone.Extensions;
 using Cornerstone.Serialization.Consumer;
 using Cornerstone.Text;
@@ -99,6 +100,12 @@ public abstract class CodeWriter<T> : ObjectConsumer<T>, ICodeWriter
 	public abstract ICodeGenerator GetGenerator(object value);
 
 	/// <inheritdoc />
+	public TValue GetSettingsValue<TValue>(Func<ICodeWriterSettings, TValue> predicate)
+	{
+		return predicate.Invoke(Settings);
+	}
+
+	/// <inheritdoc />
 	public override IObjectConsumer Null()
 	{
 		Append("null");
@@ -124,6 +131,11 @@ public abstract class CodeWriter<T> : ObjectConsumer<T>, ICodeWriter
 	public override IObjectConsumer String(string value)
 	{
 		return this;
+	}
+
+	public void UpdateSettings(Action<T> update)
+	{
+		update?.Invoke(Settings);
 	}
 
 	/// <summary>
@@ -155,7 +167,7 @@ public abstract class CodeWriter<T> : ObjectConsumer<T>, ICodeWriter
 		for (var index = 0; index < properties.Count; index++)
 		{
 			var propertyInfo = properties[index];
-			if (propertyInfo.GetIndexParameters().Length > 0)
+			if (propertyInfo.IsIndexer())
 			{
 				// Property is an indexer
 				continue;
@@ -211,6 +223,12 @@ public abstract class CodeWriter<T> : ObjectConsumer<T>, ICodeWriter
 		WritingPropertyValue = false;
 	}
 
+	/// <inheritdoc />
+	void ICodeWriter.UpdateSettings(Action<ICodeWriterSettings> update)
+	{
+		UpdateSettings(x => update(x));
+	}
+
 	#endregion
 }
 
@@ -235,6 +253,18 @@ public interface ICodeWriter : ITextBuilder
 	/// </summary>
 	/// <param name="value"> The value to append to the code writer. </param>
 	void AppendObject(object value);
+
+	/// <summary>
+	/// Get a settings value.
+	/// </summary>
+	/// <param name="predicate"> The predicate for settings. </param>
+	T GetSettingsValue<T>(Func<ICodeWriterSettings, T> predicate);
+
+	/// <summary>
+	/// Updates settings.
+	/// </summary>
+	/// <param name="update"> The update for settings. </param>
+	void UpdateSettings(Action<ICodeWriterSettings> update);
 
 	#endregion
 }

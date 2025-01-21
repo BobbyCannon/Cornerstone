@@ -28,7 +28,7 @@ public class NugetPackageVersion : Notifiable<NugetPackageVersion>
 	/// Update the NugetPackageVersion with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="settings> The options for controlling the updating of the entity. </param>
+	/// <param name="settings"> The options for controlling the updating of the entity. </param>
 	public override bool UpdateWith(NugetPackageVersion update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.

@@ -75,7 +75,7 @@ public interface IUpdateable
 	/// </summary>
 	/// <param name="action"> The properties to include for the action. </param>
 	/// <returns> The properties to be included for the action. </returns>
-	HashSet<string> GetDefaultIncludedProperties(UpdateableAction action);
+	public HashSet<string> GetDefaultIncludedProperties(UpdateableAction action);
 
 	/// <summary>
 	/// Determine if the update should be applied.
@@ -83,14 +83,14 @@ public interface IUpdateable
 	/// <param name="update"> The update to be tested. </param>
 	/// <param name="settings"> The options for controlling the updating of the value. </param>
 	/// <returns> True if the update should be applied otherwise false. </returns>
-	bool ShouldUpdate(object update, IncludeExcludeSettings settings);
+	public bool ShouldUpdate(object update, IncludeExcludeSettings settings);
 
 	/// <summary>
 	/// Try to apply an update to the provided value.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
 	/// <returns> True if the update was applied otherwise false. </returns>
-	bool TryUpdateWith(object update);
+	public bool TryUpdateWith(object update);
 
 	/// <summary>
 	/// Try to apply an update to the provided value.
@@ -98,14 +98,14 @@ public interface IUpdateable
 	/// <param name="update"> The update to be applied. </param>
 	/// <param name="settings"> The options for controlling the updating of the value. </param>
 	/// <returns> True if the update was applied otherwise false. </returns>
-	bool TryUpdateWith(object update, IncludeExcludeSettings settings);
+	public bool TryUpdateWith(object update, IncludeExcludeSettings settings);
 
 	/// <summary>
 	/// Allows updating of one type to another based on member Name and Type.
 	/// </summary>
 	/// <param name="update"> The source of the update. </param>
 	/// <returns> True if the update was applied otherwise false. </returns>
-	bool UpdateWith(object update);
+	public bool UpdateWith(object update);
 
 	/// <summary>
 	/// Allows updating of one type to another based on member Name and Type.
@@ -113,7 +113,7 @@ public interface IUpdateable
 	/// <param name="update"> The source of the update. </param>
 	/// <param name="action"> The type of the action this update is for. </param>
 	/// <returns> True if the update was applied otherwise false. </returns>
-	bool UpdateWith(object update, UpdateableAction action);
+	public bool UpdateWith(object update, UpdateableAction action);
 
 	/// <summary>
 	/// Allows updating of one type to another based on member Name and Type.
@@ -121,7 +121,7 @@ public interface IUpdateable
 	/// <param name="update"> The source of the update. </param>
 	/// <param name="settings"> The options for controlling the updating of the value. </param>
 	/// <returns> True if the update was applied otherwise false. </returns>
-	bool UpdateWith(object update, IncludeExcludeSettings settings);
+	public bool UpdateWith(object update, IncludeExcludeSettings settings);
 
 	#endregion
 }

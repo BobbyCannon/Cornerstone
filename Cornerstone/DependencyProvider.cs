@@ -44,17 +44,6 @@ public class DependencyProvider : IDependencyProvider
 
 	#region Methods
 
-	public void AddCornerstoneServices(
-		IRuntimeInformation runtimeInformation = null,
-		IDispatcher dispatcher = null)
-	{
-		AddSingleton(() => DateTimeProvider.RealTime);
-		AddSingleton(dispatcher);
-		AddSingleton(runtimeInformation ?? new RuntimeInformation());
-		AddSingleton<IDependencyProvider>(this);
-		AddSingleton<IWeakEventManager, WeakEventManager>();
-	}
-
 	/// <summary>
 	/// Add a singleton of the provided type.
 	/// </summary>
@@ -275,6 +264,22 @@ public class DependencyProvider : IDependencyProvider
 		Factories.Clear();
 	}
 
+	/// <summary>
+	/// Setup the default Cornerstone services.
+	/// </summary>
+	public void SetupCornerstoneServices(
+		IDateTimeProvider dateTimeProvider = null,
+		IRuntimeInformation runtimeInformation = null,
+		IDispatcher dispatcher = null,
+		IWeakEventManager weakEventManager = null)
+	{
+		AddSingleton(dateTimeProvider ?? DateTimeProvider.RealTime);
+		AddSingleton(dispatcher);
+		AddSingleton(runtimeInformation ?? new RuntimeInformation());
+		AddSingleton<IDependencyProvider>(this);
+		AddSingleton(weakEventManager ?? new WeakEventManager());
+	}
+
 	private T CreateInstanceForDependencyInjection<T>(Action<T> initialize = null)
 	{
 		return (T) CreateInstanceForDependencyInjection(typeof(T), x => initialize?.Invoke((T) x));
@@ -311,6 +316,11 @@ public class DependencyProvider : IDependencyProvider
 				var parameters = x.GetParameters();
 				var parametersAvailable = parameters.Select(p => Factories.Keys.Contains(p.ParameterType));
 				var allValid = parametersAvailable.All(p => p);
+				if (!allValid)
+				{
+					// How can we make this less configurable, more automatic...
+					Debugger.Break();
+				}
 				return allValid;
 			})
 			.ToList();

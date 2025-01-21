@@ -1,8 +1,9 @@
 ﻿#region References
 
 using System.Linq;
-using Cornerstone.Runtime;
+using Cornerstone.Generators.CodeGenerators;
 using Cornerstone.Testing;
+using Cornerstone.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
@@ -17,7 +18,7 @@ public class RuntimeInformationDataTests : CornerstoneUnitTest
 	[TestMethod]
 	public void Enumeration()
 	{
-		var data = (RuntimeInformationData) GetRuntimeInformation();
+		var data = GetRuntimeInformation();
 		var actual = data.Keys.ToArray();
 		var expected = new[]
 		{
@@ -28,17 +29,24 @@ public class RuntimeInformationDataTests : CornerstoneUnitTest
 			"ApplicationIsDevelopmentBuild",
 			"ApplicationIsElevated",
 			"ApplicationLocation",
+			"ApplicationName",
+			"ApplicationVersion",
 			"DeviceDisplaySize",
+			"DeviceId",
 			"DeviceManufacturer",
 			"DeviceMemory",
 			"DeviceModel",
+			"DeviceName",
+			"DevicePlatform",
 			"DevicePlatformBitness",
+			"DevicePlatformVersion",
+			"DeviceType",
 			"DotNetRuntimeVersion",
 			"IsLoaded",
 			"IsShuttingDown"
 		};
 
-		AreEqual(expected, actual, () => actual.DumpCSharp());
+		AreEqual(expected, actual, () => actual.DumpCSharp(new CodeWriterSettings { TextFormat = TextFormat.Indented }));
 	}
 
 	#endregion

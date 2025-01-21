@@ -178,8 +178,8 @@ public class DetailedTimer : Timer, IDetailedTimer
 
 	internal static void ToDetailedString(IDetailedTimer timer, TextBuilder builder, int precision = 2)
 	{
-		var format = precision > 0 ? $"F{precision}" : "F2";
-		builder.Append(timer.Percent.ToString(format));
+		var format = precision > 0 ? $"{{0,{4 + precision}:N{precision}}}" : "{0,6:N}";
+		builder.Append(string.Format(format, timer.Percent));
 		builder.Append("% ");
 		builder.Append(timer.Elapsed.ToString("G"));
 		builder.Append(": ");
@@ -191,7 +191,7 @@ public class DetailedTimer : Timer, IDetailedTimer
 		}
 
 		builder.PushIndent();
-		var childTime = new TimeSpan();
+		var childTime = TimeSpan.Zero;
 		foreach (var child in timer.Timers)
 		{
 			childTime = childTime.Add(child.Elapsed);
@@ -202,7 +202,7 @@ public class DetailedTimer : Timer, IDetailedTimer
 		if (remainder > TimeSpan.Zero)
 		{
 			var percent = remainder.PercentOf(timer.Elapsed);
-			builder.Append(percent.ToString(format));
+			builder.Append(string.Format(format, percent));
 			builder.Append("% ");
 			builder.Append(remainder.ToString("G"));
 			builder.Append(": ");

@@ -25,7 +25,7 @@ public class SampleOscCommandTests : CornerstoneUnitTest
 	{
 		ComparerSettings = new ComparerSettings
 		{
-			IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeSettings>
+			TypeIncludeExcludeSettings = new Dictionary<Type, IncludeExcludeSettings>
 			{
 				{ typeof(SampleOscCommand), new IncludeExcludeSettings(null, [nameof(SampleOscCommand.Time), nameof(SampleOscCommand.HasBeenRead), nameof(SampleOscCommand.HasBeenUpdated)]) }
 			}

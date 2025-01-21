@@ -2,7 +2,9 @@
 
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Platform;
 using Avalonia.Interactivity;
+using Avalonia.Styling;
 using Cornerstone.Presentation;
 
 #endregion
@@ -15,6 +17,7 @@ public class CornerstoneMainView<T> : CornerstoneUserControl
 
 	public CornerstoneMainView(T viewModel, IDispatcher dispatcher) : base(dispatcher)
 	{
+		UseSafeArea = true;
 		ViewModel = viewModel;
 		DataContext = ViewModel;
 	}
@@ -22,6 +25,12 @@ public class CornerstoneMainView<T> : CornerstoneUserControl
 	#endregion
 
 	#region Properties
+
+	public IInsetsManager InsetsManager { get; private set; }
+
+	public Thickness SafeAreaPadding => InsetsManager?.SafeAreaPadding ?? default;
+
+	public bool UseSafeArea { get; set; }
 
 	public T ViewModel { get; }
 
@@ -36,13 +45,31 @@ public class CornerstoneMainView<T> : CornerstoneUserControl
 
 		base.OnLoaded(e);
 
-		var insetsManager = TopLevel.GetTopLevel(this)?.InsetsManager;
+		var topLevel = TopLevel.GetTopLevel(this);
 
-		if (insetsManager != null)
+		if (InsetsManager != null)
 		{
-			insetsManager.DisplayEdgeToEdge = false;
-			insetsManager.IsSystemBarVisible = false;
+			InsetsManager.SafeAreaChanged -= InsetsManagerOnSafeAreaChanged;
 		}
+
+		InsetsManager = topLevel?.InsetsManager;
+
+		if (InsetsManager != null)
+		{
+			InsetsManager.SafeAreaChanged += InsetsManagerOnSafeAreaChanged;
+			InsetsManager.DisplayEdgeToEdge = true;
+			InsetsManager.IsSystemBarVisible = true;
+		}
+	}
+
+	private void InsetsManagerOnSafeAreaChanged(object sender, SafeAreaChangedArgs e)
+	{
+		RaiseSafeAreaChanged();
+	}
+
+	private void RaiseSafeAreaChanged()
+	{
+		OnPropertyChanged(nameof(SafeAreaPadding));
 	}
 
 	#endregion

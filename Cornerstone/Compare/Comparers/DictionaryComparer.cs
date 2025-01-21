@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Cornerstone.Extensions;
 
 #endregion
@@ -18,8 +19,10 @@ public class DictionaryComparer : BaseComparer
 	/// <inheritdoc />
 	public override bool IsSupported(object expected, object actual)
 	{
-		return expected.ImplementsType<IDictionary>()
-			&& actual.ImplementsType<IDictionary>();
+		return (expected.ImplementsType<IDictionary>()
+				|| expected.ImplementsType(typeof(IReadOnlyDictionary<,>)))
+			&& (actual.ImplementsType<IDictionary>()
+				|| actual.ImplementsType(typeof(IReadOnlyDictionary<,>)));
 	}
 
 	/// <inheritdoc />
@@ -30,10 +33,7 @@ public class DictionaryComparer : BaseComparer
 			session.AddReference(expected);
 			session.AddReference(actual);
 
-			var expectedValue = (IDictionary) expected;
-			var actualValue = (IDictionary) actual;
-
-			CompareDictionaries(session, expectedValue, actualValue);
+			CompareDictionaries(session, expected, actual, message);
 
 			// Return the current result.
 			return session.Result;
@@ -45,35 +45,39 @@ public class DictionaryComparer : BaseComparer
 		}
 	}
 
-	internal static void CompareDictionaries(CompareSession session, IDictionary expected, IDictionary actual)
+	internal static void CompareDictionaries(CompareSession session, object expected, object actual, Func<string> message)
 	{
-		var keys = expected.Keys;
-		var length = expected.Keys.Count;
+		var expectedKeys = GetKeys(expected).IterateList();
+		var actualKeys = GetKeys(actual).IterateList();
 
-		if (length != actual.Keys.Count)
+		if (expectedKeys.Count != actualKeys.Count)
 		{
-			AddDifference(session, length.ToString(), actual.Count.ToString(),
-				true, () => "The dictionary lengths are different."
+			session.AddDifference(expectedKeys.Count.ToString(), actualKeys.Count.ToString(), true,
+				() => message == null
+					? "The dictionary lengths are different."
+					: $"{message.Invoke()} The dictionary lengths are different."
 			);
 			return;
 		}
 
-		if (length == 0)
+		if (expectedKeys.Count == 0)
 		{
 			session.UpdateResult(CompareResult.AreEqual);
 			return;
 		}
 
-		foreach (var key in keys)
+		foreach (var key in expectedKeys)
 		{
-			if (!actual.Contains(key))
+			if (!actualKeys.Contains(key)
+				&& !session.Settings.IgnoreMissingDictionaryEntries)
 			{
-				AddDifference(session, key.ToString(), string.Empty, true, () => "Key missing in actual dictionary.");
+				session.Path.Push(key.ToString());
+				session.AddDifference(key.ToString(), string.Empty, true, () => "Key missing in actual dictionary.");
 				return;
 			}
 
-			var expectedValue = expected[key];
-			var actualValue = actual[key];
+			var expectedValue = GetValue(expected, key);
+			var actualValue = GetValue(actual, key);
 
 			// Values cannot be previous process or references to themselves.
 			if (session.CheckReference(expected, expectedValue, actual, actualValue))
@@ -82,7 +86,9 @@ public class DictionaryComparer : BaseComparer
 				continue;
 			}
 
-			CompareSession.InternalProcess(session, expectedValue, actualValue);
+			session.Path.Push(key.ToString());
+			CompareSession.InternalProcess(session, expectedValue, actualValue, message);
+			session.Path.Pop();
 
 			// See if we have hit an issue.
 			if (session.Result == CompareResult.NotEqual)
@@ -90,6 +96,19 @@ public class DictionaryComparer : BaseComparer
 				return;
 			}
 		}
+	}
+
+	private static IEnumerable GetKeys(object dict)
+	{
+		var keysProperty = dict.GetType().GetCachedProperty("Keys");
+		var keysValue = keysProperty?.GetValue(dict);
+		return keysValue as IEnumerable;
+	}
+
+	private static object GetValue(object dict, object key)
+	{
+		var indexer = dict.GetType().GetProperty("Item", [key.GetType()]);
+		return indexer?.GetValue(dict, [key]);
 	}
 
 	#endregion

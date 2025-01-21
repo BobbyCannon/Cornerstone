@@ -122,7 +122,7 @@ public class DockingTabControl : TabControl
 		{
 			if (item is DockableTabItem tabItem)
 			{
-				tabItem.Close();
+				tabItem.Close(false);
 			}
 		}
 	}
@@ -182,8 +182,19 @@ public class DockingTabControl : TabControl
 	{
 		base.OnPointerPressed(e);
 
-		var hitPoint = e.GetPosition(this);
-		var tabItem = Items.OfType<DockableTabItem>().LastOrDefault(x => this.GetBoundsOf(x).Contains(hitPoint));
+		var currentPoint = e.GetCurrentPoint(this);
+		if (!currentPoint.Properties.IsLeftButtonPressed)
+		{
+			return;
+		}
+
+		var hitPoint = currentPoint.Position;
+		var tabItem = Items
+			.OfType<DockableTabItem>()
+			.LastOrDefault(x =>
+				this.GetBoundsOf(x)
+					.Contains(hitPoint)
+			);
 
 		if (tabItem == null)
 		{

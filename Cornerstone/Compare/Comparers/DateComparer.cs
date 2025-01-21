@@ -85,7 +85,7 @@ public class DateComparer : BaseComparer
 			}
 		}
 
-		AddDifference(session, expected.ToString(), actual.ToString(), true);
+		session.AddDifference(expected, actual, true);
 		return CompareResult.NotEqual;
 	}
 

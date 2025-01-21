@@ -17,6 +17,13 @@ namespace Cornerstone.Generators.CodeGenerators;
 /// <inheritdoc />
 public class CSharpCodeWriter : CodeWriter<ICodeWriterSettings>
 {
+	#region Constants
+
+	public const string SlashSectionFormat = "// Code Generated - {0}";
+	public const string XmlSectionFormat = "<!-- Code Generated - {0} -->";
+
+	#endregion
+
 	#region Fields
 
 	private static readonly IList<ICodeGenerator> _builtInGenerators;
@@ -65,6 +72,7 @@ public class CSharpCodeWriter : CodeWriter<ICodeWriterSettings>
 
 		_builtInGenerators = new List<ICodeGenerator>
 		{
+			new SystemDrawingGenerator(),
 			new NumberCSharpGenerator(),
 			new StringCSharpGenerator(),
 			new TimeCSharpGenerator(),
@@ -94,7 +102,7 @@ public class CSharpCodeWriter : CodeWriter<ICodeWriterSettings>
 		writer.AppendObject(value);
 		return writer.ToString();
 	}
-
+	
 	/// <summary>
 	/// Converts data type to the code simplified type. Ex. Int16 to short, Single to float
 	/// </summary>
@@ -143,7 +151,7 @@ public class CSharpCodeWriter : CodeWriter<ICodeWriterSettings>
 			var genericArguments = info.GetGenericArguments();
 			return $"{info.Name}<{string.Join(", ", genericArguments.Select(GetCodeTypeName))}>";
 		}
-		
+
 		if (info.IsGenericMethod)
 		{
 			var genericArguments = info.GetGenericArguments();

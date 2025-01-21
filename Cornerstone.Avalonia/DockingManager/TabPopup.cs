@@ -1,11 +1,16 @@
 ﻿#region References
 
 using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Avalonia.Media;
 using Cornerstone.Avalonia.Resources;
+using Cornerstone.Extensions;
 using Cornerstone.Presentation;
 using Dispatcher = Avalonia.Threading.Dispatcher;
 
@@ -26,6 +31,7 @@ public class TabPopup : Bindable
 	private bool _inProgress;
 	private bool _isDestructive;
 	private string _progressDescription;
+	private Dictionary<PropertyInfo, RequiredAttribute> _propertiesToValidate;
 	private bool _showButtons;
 
 	#endregion
@@ -87,6 +93,8 @@ public class TabPopup : Bindable
 
 	public DockableTabModel TabModel { get; set; }
 
+	public string ValidationError { get; private set; }
+
 	#endregion
 
 	#region Methods
@@ -99,18 +107,12 @@ public class TabPopup : Bindable
 	[UnconditionalSuppressMessage("AssemblyLoadTrimming", "IL2026:RequiresUnreferencedCode")]
 	public bool Check()
 	{
-		//if (HasErrors)
-		//{
-		//	return false;
-		//}
-		//ValidateAllProperties();
-		//return !HasErrors;
-		return true;
+		return ValidateAllProperties();
 	}
 
 	public void StartProcess()
 	{
-		TabModel.ProcessPopup();
+		TabModel?.ProcessPopup();
 	}
 
 	/// <summary>
@@ -138,6 +140,37 @@ public class TabPopup : Bindable
 	protected void SetProgressDescription(string description)
 	{
 		Dispatch(() => ProgressDescription = description);
+	}
+
+	private IDictionary<PropertyInfo, RequiredAttribute> GetPropertiesToValidate()
+	{
+		if (_propertiesToValidate != null)
+		{
+			return _propertiesToValidate;
+		}
+
+		_propertiesToValidate = this.GetCachedProperties()
+			.Select(x => new { p = x, a = x.GetCustomAttribute<RequiredAttribute>()})
+			.Where(x => x.a != null)
+			.ToDictionary(x => x.p, x => x.a);
+
+		return _propertiesToValidate;
+	}
+
+	private bool ValidateAllProperties()
+	{
+		var propertiesToValidate = GetPropertiesToValidate();
+		foreach (var entry in propertiesToValidate)
+		{
+			var value = entry.Key.GetValue(this);
+			if (value == null)
+			{
+				ValidationError = entry.Value.ErrorMessage;
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	#endregion

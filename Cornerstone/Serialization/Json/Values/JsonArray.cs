@@ -81,7 +81,7 @@ public class JsonArray : JsonValue, IReadOnlyList<JsonValue>, IObjectConsumer
 	{
 		if (obj is JsonArray jObject)
 		{
-			return Comparer.Compare(_list, jObject._list) ? 0 : 1;
+			return Comparer.Compare(_list, jObject._list).AreEqual() ? 0 : 1;
 		}
 
 		return -1;

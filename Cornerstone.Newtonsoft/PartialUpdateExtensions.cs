@@ -105,7 +105,7 @@ public static class PartialUpdateExtensions
 			}
 
 			var directWritableProperty = directProperties.FirstOrDefault(x => string.Equals(x.Name, jProperty.Name, StringComparison.OrdinalIgnoreCase) && x.CanWrite);
-			var targetProperty = targetProperties.FirstOrDefault(x => string.Equals(x.Key, jProperty.Name, StringComparison.OrdinalIgnoreCase)).Value;
+			var targetProperty = targetProperties.FirstOrDefault(x => string.Equals(x.Name, jProperty.Name, StringComparison.OrdinalIgnoreCase));
 			var targetPropertyType = directWritableProperty?.PropertyType
 				?? targetProperty?.PropertyType
 				?? PartialUpdateConverter.ConvertType(jProperty.Value.Type);

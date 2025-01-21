@@ -87,7 +87,11 @@ public struct RuntimeInformationData : IRuntimeInformation
 	public bool IsShuttingDown { get; set; }
 
 	/// <inheritdoc />
-	public object this[string key] => throw new NotImplementedException();
+	public object this[string key]
+	{
+		get => this.GetCachedProperty(key).GetValue(this);
+		set => throw new NotSupportedException();
+	}
 
 	/// <inheritdoc />
 	public IEnumerable<string> Keys => this.Select(x => x.Key);
@@ -109,7 +113,20 @@ public struct RuntimeInformationData : IRuntimeInformation
 	/// <inheritdoc />
 	public IEnumerator<KeyValuePair<string, object>> GetEnumerator()
 	{
-		var properties = typeof(IRuntimeInformation).GetCachedProperties();
+		var ignore = typeof(IReadOnlyDictionary<,>)
+			.GetCachedProperties()
+			.Select(x => x.Name)
+			.ToHashSet()
+			.AddRange(nameof(Count));
+
+		var properties = typeof(RuntimeInformationData)
+			.GetCachedProperties()
+			.Where(x => 
+				!ignore.Contains(x.Name) 
+				&& !x.IsIndexer()
+			)
+			.ToList();
+		
 		foreach (var property in properties)
 		{
 			yield return new KeyValuePair<string, object>(property.Name, property.GetValue(this));
@@ -120,32 +137,30 @@ public struct RuntimeInformationData : IRuntimeInformation
 	/// Return an IRuntimeInformation sample.
 	/// </summary>
 	/// <returns> The sample data. </returns>
-	public static IRuntimeInformation GetSample()
+	public static RuntimeInformationData GetSample()
 	{
 		return new RuntimeInformationData
 		{
-			ApplicationBitness = Bitness.X86,
-			ApplicationDataLocation = @"C:\The\Quick\BrownFox\Jumped\Over\The\Lazy\DogsBack",
-			ApplicationFileName = "App.exe",
-			ApplicationFilePath = @"\\Server\Foo\Bar\Hello\World\App.exe",
-			ApplicationIsDevelopmentBuild = true,
+			ApplicationBitness = Bitness.X64,
+			ApplicationDataLocation = "C:\\Users\\Public\\Documents",
+			ApplicationFileName = "Sample.exe",
+			ApplicationFilePath = "C:\\Users\\Public\\Documents\\Sample.exe",
+			ApplicationIsDevelopmentBuild = false,
 			ApplicationIsElevated = true,
-			ApplicationLocation = @"\\Server\Foo\Bar\Hello\World",
-			ApplicationName = "Cornerstone",
-			ApplicationVersion = new Version(1, 2, 3, 4),
-			DeviceDisplaySize = new Size(123, 456),
-			DeviceId = "DEV-123",
-			DeviceManufacturer = "Asus",
-			DeviceMemory = ByteSize.FromGigabytes(24),
-			DeviceModel = "Rog Super Computer X",
-			DeviceName = "rog-super-rig",
+			ApplicationLocation = "C:\\Users\\Public\\Documents\\",
+			ApplicationName = "Sample",
+			ApplicationVersion = new Version(2, 16, 1, 109),
+			DeviceDisplaySize = new Size(3440, 1440),
+			DeviceId = "WPGR602V4CZBT6BM82BPNYXMM9N8T0FK1K3G4KR3BXGB97AKYR23",
+			DeviceManufacturer = "ASUS",
+			DeviceMemory = ByteSize.FromGigabytes(128),
+			DeviceModel = "ROG STRIX Z690-F",
+			DeviceName = "Sample-RIG",
 			DevicePlatform = DevicePlatform.Windows,
 			DevicePlatformBitness = Bitness.X64,
-			DevicePlatformVersion = new Version(9, 8, 7, 6),
+			DevicePlatformVersion = new Version(10, 0, 26100, 0),
 			DeviceType = DeviceType.Desktop,
-			DotNetRuntimeVersion = new Version(8, 0, 0, 0),
-			IsLoaded = true,
-			IsShuttingDown = false,
+			DotNetRuntimeVersion = new Version(9, 0, 0),
 		};
 	}
 

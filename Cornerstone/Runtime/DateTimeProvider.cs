@@ -59,26 +59,26 @@ public class DateTimeProvider : IDateTimeProvider
 
 	#region Properties
 
-	/// <inheritdoc />
-	public DateTime Now => _provider.Invoke().ToLocalTime();
-
 	/// <summary>
 	/// Represents the systems real time (DateTime.Now / DateTime.UtcNow).
 	/// </summary>
 	public static IDateTimeProvider RealTime { get; }
-
-	/// <inheritdoc />
-	public DateTime UtcNow => _provider.Invoke().ToUniversalTime();
 
 	#endregion
 
 	#region Methods
 
 	/// <inheritdoc />
+	public DateTime Now => _provider.Invoke().ToLocalTime();
+
+	/// <inheritdoc />
 	public Guid GetProviderId()
 	{
 		return _providerId;
 	}
+
+	/// <inheritdoc />
+	public DateTime UtcNow => _provider.Invoke().ToUniversalTime();
 
 	/// <summary>
 	/// Lock the provider to not allow the time service to change. Once locked
@@ -111,17 +111,19 @@ public class DateTimeProvider : IDateTimeProvider
 /// </summary>
 public interface IDateTimeProvider : IProvider
 {
-	#region Properties
+	#region Methods
 
 	/// <summary>
-	/// Gets the DateTime in local time.
+	/// Gets the DateTime in the current time zone.
 	/// </summary>
-	public DateTime Now { get; }
+	/// <value> The current UTC date and time for the sync client. </value>
+	DateTime Now { get; }
 
 	/// <summary>
 	/// Gets the DateTime in UTC.
 	/// </summary>
-	public DateTime UtcNow { get; }
+	/// <value> The current UTC date and time for the sync client. </value>
+	DateTime UtcNow { get; }
 
 	#endregion
 }

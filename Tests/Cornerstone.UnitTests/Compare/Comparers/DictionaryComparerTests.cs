@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using Cornerstone.Compare;
 using Cornerstone.Compare.Comparers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -25,8 +26,17 @@ public class DictionaryComparerTests : ComparerTests
 		var comparer = new DictionaryComparer();
 
 		AreEqual(CompareResult.AreEqual, comparer.Compare(session, expected, actual));
+		AreEqual(CompareResult.AreEqual, comparer.Compare(session, expected, new ReadOnlyDictionary<string, int>(actual)));
+		AreEqual(CompareResult.AreEqual, comparer.Compare(session, new ReadOnlyDictionary<string, int>(expected), actual));
+		AreEqual(CompareResult.AreEqual, comparer.Compare(session, expected, actual));
+		AreEqual(CompareResult.AreEqual, comparer.Compare(session, expected, new ReadOnlyDictionary<string, int>(actual)));
+		AreEqual(CompareResult.AreEqual, comparer.Compare(session, new ReadOnlyDictionary<string, int>(expected), actual));
 		AreEqual(CompareResult.NotEqual, comparer.Compare(session, notExpected, actual));
+		AreEqual(CompareResult.NotEqual, comparer.Compare(session, notExpected, new ReadOnlyDictionary<string, int>(actual)));
+		AreEqual(CompareResult.NotEqual, comparer.Compare(session, new ReadOnlyDictionary<string, int>(notExpected), actual));
 		AreEqual(CompareResult.NotEqual, comparer.Compare(session, notExpected2, actual));
+		AreEqual(CompareResult.NotEqual, comparer.Compare(session, notExpected2, new ReadOnlyDictionary<string, int>(actual)));
+		AreEqual(CompareResult.NotEqual, comparer.Compare(session, new ReadOnlyDictionary<string, int>(notExpected2), actual));
 	}
 
 	[TestMethod]

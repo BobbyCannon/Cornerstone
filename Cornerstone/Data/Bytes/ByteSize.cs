@@ -3,6 +3,7 @@
 using System;
 using System.Globalization;
 using System.Linq;
+using Cornerstone.Generators.CodeGenerators;
 using Cornerstone.Text;
 using Cornerstone.Text.Human;
 using static System.Globalization.NumberStyles;
@@ -14,7 +15,7 @@ namespace Cornerstone.Data.Bytes;
 /// <summary>
 /// Represents a byte size value.
 /// </summary>
-public readonly partial struct ByteSize : IComparable<ByteSize>, IEquatable<ByteSize>, IComparable, IFormattable
+public readonly partial struct ByteSize : IComparable<ByteSize>, IEquatable<ByteSize>, IComparable, IFormattable, IObjectCodeWriter
 {
 	#region Constants
 
@@ -108,38 +109,7 @@ public readonly partial struct ByteSize : IComparable<ByteSize>, IEquatable<Byte
 
 	public string LargestWholeNumberSymbol => GetLargestWholeNumberSymbol();
 
-	public decimal LargestWholeNumberValue
-	{
-		get
-		{
-			if (Terabytes >= 1)
-			{
-				return Terabytes;
-			}
-
-			if (Gigabytes >= 1)
-			{
-				return Gigabytes;
-			}
-
-			if (Megabytes >= 1)
-			{
-				return Megabytes;
-			}
-
-			if (Kilobytes >= 1)
-			{
-				return Kilobytes;
-			}
-
-			if (Bytes >= 1)
-			{
-				return Bytes;
-			}
-
-			return Bits;
-		}
-	}
+	public decimal LargestWholeNumberValue => GetLargestWholeNumberValue();
 
 	public decimal Megabits { get; }
 
@@ -257,6 +227,36 @@ public readonly partial struct ByteSize : IComparable<ByteSize>, IEquatable<Byte
 		return Bits.GetHashCode();
 	}
 
+	public ByteUnit GetLargestByteUnit()
+	{
+		if (Terabytes >= 1)
+		{
+			return ByteUnit.Terabyte;
+		}
+
+		if (Gigabytes >= 1)
+		{
+			return ByteUnit.Gigabyte;
+		}
+
+		if (Megabytes >= 1)
+		{
+			return ByteUnit.Megabyte;
+		}
+
+		if (Kilobytes >= 1)
+		{
+			return ByteUnit.Kilobyte;
+		}
+
+		if (Bytes >= 1)
+		{
+			return ByteUnit.Byte;
+		}
+
+		return ByteUnit.Bit;
+	}
+
 	public readonly string GetLargestWholeNumberFullWord()
 	{
 		if (Terabytes >= 1)
@@ -315,6 +315,36 @@ public readonly partial struct ByteSize : IComparable<ByteSize>, IEquatable<Byte
 		}
 
 		return ByteUnit.Bit.GetHumanizeStringFormat(Bits);
+	}
+
+	public decimal GetLargestWholeNumberValue()
+	{
+		if (Terabytes >= 1)
+		{
+			return Terabytes;
+		}
+
+		if (Gigabytes >= 1)
+		{
+			return Gigabytes;
+		}
+
+		if (Megabytes >= 1)
+		{
+			return Megabytes;
+		}
+
+		if (Kilobytes >= 1)
+		{
+			return Kilobytes;
+		}
+
+		if (Bytes >= 1)
+		{
+			return Bytes;
+		}
+
+		return Bits;
 	}
 
 	public static ByteSize operator +(ByteSize b1, ByteSize b2)
@@ -523,6 +553,26 @@ public readonly partial struct ByteSize : IComparable<ByteSize>, IEquatable<Byte
 
 		result = response ?? default;
 		return response != null;
+	}
+
+	/// <inheritdoc />
+	public void Write(ICodeWriter writer)
+	{
+		var code = GetLargestByteUnit() switch
+		{
+			ByteUnit.Terabyte => $"ByteSize.{nameof(FromTerabytes)}({LargestWholeNumberValue})",
+			ByteUnit.Terabit => $"ByteSize.{nameof(FromTerabits)}({LargestWholeNumberValue})",
+			ByteUnit.Gigabyte => $"ByteSize.{nameof(FromGigabytes)}({LargestWholeNumberValue})",
+			ByteUnit.Gigabit => $"ByteSize.{nameof(FromGigabits)}({LargestWholeNumberValue})",
+			ByteUnit.Megabyte => $"ByteSize.{nameof(FromMegabytes)}({LargestWholeNumberValue})",
+			ByteUnit.Megabit => $"ByteSize.{nameof(FromMegabits)}({LargestWholeNumberValue})",
+			ByteUnit.Kilobyte => $"ByteSize.{nameof(FromKilobytes)}({LargestWholeNumberValue})",
+			ByteUnit.Kilobit => $"ByteSize.{nameof(FromKilobits)}({LargestWholeNumberValue})",
+			ByteUnit.Byte => $"ByteSize.{nameof(FromBytes)}({LargestWholeNumberValue})",
+			ByteUnit.Bit => $"ByteSize.{nameof(FromBits)}({LargestWholeNumberValue})",
+			_ => $"ByteSize.{nameof(FromBits)}({LargestWholeNumberValue})"
+		};
+		writer.Append(code);
 	}
 
 	private static NumberFormatInfo GetNumberFormatInfo(IFormatProvider formatProvider)

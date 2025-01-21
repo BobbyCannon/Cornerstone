@@ -64,7 +64,7 @@ public class SyncObjectIncomingConverter<TSyncModel, TSyncEntity> : SyncObjectIn
 		return Update((TSyncEntity) source, (TSyncEntity) destination, _update,
 			status == SyncObjectStatus.Added
 				? UpdateableAction.SyncIncomingAdd
-				: UpdateableAction.SyncIncomingModified,
+				: UpdateableAction.SyncIncomingUpdate,
 			status
 		);
 	}
@@ -336,7 +336,7 @@ public abstract class SyncObjectConverter
 		destination ??= System.Activator.CreateInstance<T1>();
 
 		// todo: move this to after all updates?
-		if (!Cache.ShouldProcessProperty(destination.GetRealType(), UpdateableAction.SyncIncomingModified, nameof(ISyncEntity.SyncId))
+		if (!Cache.ShouldProcessProperty(destination.GetRealType(), UpdateableAction.SyncIncomingUpdate, nameof(ISyncEntity.SyncId))
 			&& (destination.SyncId != source.SyncId))
 		{
 			// Update will not set the sync ID and they are different so set it

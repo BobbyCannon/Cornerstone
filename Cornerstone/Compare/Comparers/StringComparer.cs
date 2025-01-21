@@ -31,7 +31,7 @@ public class StringComparer : BaseComparer
 			return CompareResult.AreEqual;
 		}
 
-		AddDifference(session, expectedValue, actualValue, true, message);
+		session.AddDifference(expectedValue, actualValue, true, message);
 		return CompareResult.NotEqual;
 	}
 

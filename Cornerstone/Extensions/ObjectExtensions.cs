@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Linq;
 using Cornerstone.Data;
 using Cornerstone.Generators.CodeGenerators;
 using Cornerstone.Internal;
@@ -96,7 +97,7 @@ public static class ObjectExtensions
 		{
 			case IUpdateable updateable:
 			{
-				var allOptions = Cache.GetOptions(type, UpdateableAction.Updateable).WithMoreOptions(settings);
+				var allOptions = Cache.GetSettings(type, UpdateableAction.Updateable).WithMoreOptions(settings);
 				updateable.UpdateWith(value, allOptions);
 				break;
 			}
@@ -190,18 +191,24 @@ public static class ObjectExtensions
 	{
 		T response;
 
-		if (value is IUpdateable)
+		switch (value)
 		{
-			response = Activator.CreateInstance<T>();
-			response.UpdateWith(value, settings);
-		}
-		else
-		{
-			response = value switch
+			case ICloneable cloneable:
 			{
-				ICloneable cloneable => (T) cloneable.ShallowCloneObject(settings),
-				_ => DeepCloneUsingSerializer(value, 0)
-			};
+				response = (T) cloneable.ShallowCloneObject();
+				break;
+			}
+			case IUpdateable:
+			{
+				response = Activator.CreateInstance<T>();
+				response.UpdateWith(value, settings);
+				break;
+			}
+			default:
+			{
+				response = DeepCloneUsingSerializer(value, 0);
+				break;
+			}
 		}
 
 		if (response is ITrackPropertyChanges trackable)
@@ -291,6 +298,59 @@ public static class ObjectExtensions
 		notifiable?.ResetHasChanges();
 
 		return response;
+	}
+
+	/// <summary>
+	/// Update the provided object with non default values.
+	/// </summary>
+	/// <typeparam name="T"> The type of the value. </typeparam>
+	/// <param name="model"> The value to update all properties for. </param>
+	/// <param name="settings"> The include exclude settings. </param>
+	/// <param name="customTypeFactory"> An optional custom factory method to create unknown types. </param>
+	/// <returns> The type updated with non default values. </returns>
+	public static T UpdateWithNonDefaultValues<T>(this T model, IncludeExcludeSettings settings, Func<Type, object[], object> customTypeFactory = null)
+	{
+		var notifiable = model as INotifiable;
+		notifiable?.DisablePropertyChangeNotifications();
+
+		try
+		{
+			var properties = Cache
+				.GetSettableProperties(model)
+				.Where(x => settings.ShouldProcessProperty(x.Name))
+				.OrderBy(x => x.Name)
+				.ToList();
+
+			foreach (var property in properties)
+			{
+				var currentValue = property.GetValue(model);
+				if (currentValue != null)
+				{
+					if (property.PropertyType.IsEnumerable())
+					{
+						continue;
+					}
+
+					if (!currentValue.IsDefaultValue())
+					{
+						continue;
+					}
+				}
+
+				var nonDefaultValue = property.CreateInstanceOfNonDefaultValue(customTypeFactory: customTypeFactory);
+				if (nonDefaultValue == null)
+				{
+					continue;
+				}
+				property.SetValue(model, nonDefaultValue);
+			}
+
+			return model;
+		}
+		finally
+		{
+			notifiable?.EnablePropertyChangeNotifications();
+		}
 	}
 
 	#endregion

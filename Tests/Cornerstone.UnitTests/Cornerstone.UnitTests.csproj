@@ -17,9 +17,9 @@
 		<PackageReference Include="Avalonia.Headless.NUnit" Version="$(AvaloniaVersion)" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
 		<PackageReference Include="Moq" Version="4.20.72" />
-		<PackageReference Include="MSTest.TestAdapter" Version="3.6.3" />
-		<PackageReference Include="MSTest.TestFramework" Version="3.6.3" />
-		<PackageReference Include="NUnit" Version="4.2.2" />
+		<PackageReference Include="MSTest.TestAdapter" Version="3.7.0" />
+		<PackageReference Include="MSTest.TestFramework" Version="3.7.0" />
+		<PackageReference Include="NUnit" Version="4.3.2" />
 		<PackageReference Include="System.IO.Ports" Version="9.0.0" />
 	</ItemGroup>
 	<ItemGroup>
@@ -30,6 +30,7 @@
 		<ProjectReference Include="..\..\Cornerstone.Weaver.Fody\Cornerstone.Weaver.Fody.csproj" />
 		<ProjectReference Include="..\..\Cornerstone.Web\Cornerstone.Web.csproj" />
 		<ProjectReference Include="..\..\Cornerstone\Cornerstone.csproj" />
+		<ProjectReference Include="..\..\Samples\Cornerstone.Sample\Cornerstone.Sample.csproj" />
 		<ProjectReference Include="..\..\Samples\Sample.Client.Data.Sqlite\Sample.Client.Data.Sqlite.csproj" />
 		<ProjectReference Include="..\..\Samples\Sample.Client.Data.Sql\Sample.Client.Data.Sql.csproj" />
 		<ProjectReference Include="..\..\Samples\Sample.Client.Data\Sample.Client.Data.csproj" />

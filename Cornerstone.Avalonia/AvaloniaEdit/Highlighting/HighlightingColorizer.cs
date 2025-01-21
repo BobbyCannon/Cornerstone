@@ -262,7 +262,7 @@ public class HighlightingColorizer : DocumentColorizingTransformer
 		}
 
 		//add service only if it doesn't already exist
-		if (textView.Services.GetService<IHighlighter>() == null)
+		if (textView.Services.GetInstance<IHighlighter>() == null)
 		{
 			textView.Services.AddService(typeof(IHighlighter), _highlighter);
 		}

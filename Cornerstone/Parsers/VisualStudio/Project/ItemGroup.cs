@@ -1,6 +1,5 @@
 ﻿#region References
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -36,16 +35,18 @@ public class ItemGroup : XmlElement
 	#region Properties
 
 	public IEnumerable<PackageReference> PackageReferences =>
-		Elements
+		Elements?
 			.Where(x => x is PackageReference)
 			.Cast<PackageReference>()
-			.ToList();
+			.ToList()
+		?? [];
 
 	public IEnumerable<ClassicReference> References =>
-		Elements
+		Elements?
 			.Where(x => x is ClassicReference)
 			.Cast<ClassicReference>()
-			.ToList();
+			.ToList()
+		?? [];
 
 	public IEnumerable<TargetFramework> TargetFrameworks => _targetFrameworks ??= ReadTargetFrameworks();
 
@@ -55,11 +56,11 @@ public class ItemGroup : XmlElement
 
 	private IList<TargetFramework> ReadTargetFrameworks()
 	{
-		var conditions = Attributes.FirstOrDefault(x => x.Name == "Condition")?.Value;
+		var conditions = Attributes?.FirstOrDefault(x => x.Name == "Condition")?.Value;
 
 		if (conditions == null)
 		{
-			return Array.Empty<TargetFramework>();
+			return [];
 		}
 
 		#if (NETSTANDARD)

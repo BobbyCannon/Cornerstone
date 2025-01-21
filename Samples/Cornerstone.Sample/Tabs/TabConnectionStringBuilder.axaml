@@ -1,0 +1,44 @@
+<CornerstoneUserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignHeight="400" d:DesignWidth="400"
+		x:Class="Cornerstone.Sample.Tabs.TabConnectionStringBuilder"
+		x:DataType="tabs:TabConnectionStringBuilder">
+	<Grid RowDefinitions="Auto,*"
+			ColumnDefinitions="*,*">
+		<StackPanel Orientation="Horizontal"
+				HorizontalAlignment="Left"
+				VerticalAlignment="Top"
+				Spacing="10"
+				Margin="10">
+			<ToggleSwitch x:Name="IsOpen"
+					IsChecked="True"
+					OnContent="Is Open"
+					OffContent="Is Open" />
+			<ToggleSwitch x:Name="LightDismiss"
+					OnContent="Light Dismiss"
+					OffContent="Light Dismiss" />
+		</StackPanel>
+		<ThemeVariantScope Grid.Row="1" Grid.Column="0"
+				RequestedThemeVariant="Light">
+			<ConnectionStringBuilder x:Name="Builder"
+					DatabaseType="Memory"
+					IsBuilderOpen="{Binding ElementName=IsOpen, Path=IsChecked, Mode=TwoWay}"
+					IsLightDismissEnabled="{Binding ElementName=LightDismiss, Path=IsChecked, Mode=TwoWay}"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Top" />
+		</ThemeVariantScope>
+		<ThemeVariantScope Grid.Row="1" Grid.Column="1"
+				RequestedThemeVariant="Dark">
+			<ConnectionStringBuilder x:Name="Builder2"
+					DatabaseType="Memory"
+					IsBuilderOpen="{Binding ElementName=Builder, Path=IsBuilderOpen, Mode=TwoWay}"
+					IsLightDismissEnabled="{Binding ElementName=Builder, Path=IsLightDismissEnabled, Mode=TwoWay}"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Top" />
+		</ThemeVariantScope>
+	</Grid>
+</CornerstoneUserControl>

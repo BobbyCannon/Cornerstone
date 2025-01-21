@@ -32,7 +32,7 @@ public class TypeComparer : BaseComparer
 		var expectedValue = expected as Type;
 		var actualValue = actual as Type;
 
-		AddDifference(session, expectedValue?.FullName, actualValue?.FullName, true);
+		session.AddDifference(expectedValue?.FullName, actualValue?.FullName, true);
 		return CompareResult.NotEqual;
 	}
 

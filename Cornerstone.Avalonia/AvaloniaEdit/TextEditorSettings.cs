@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Cornerstone.Data;
+using Cornerstone.Extensions;
 using Cornerstone.Weaver;
 
 #endregion
@@ -113,13 +114,13 @@ public class TextEditorSettings : Notifiable
 	/// <summary>
 	/// Gets/Sets whether to enable clickable hyperlinks for e-mail addresses in the editor.
 	/// </summary>
-	/// <remarks> The default value is <c> true </c>. </remarks>
+	/// <remarks> The default value is True. </remarks>
 	public bool EnableEmailHyperlinks { get; set; }
 
 	/// <summary>
 	/// Gets/Sets whether to enable clickable hyperlinks in the editor.
 	/// </summary>
-	/// <remarks> The default value is <c> true </c>. </remarks>
+	/// <remarks> The default value is True. </remarks>
 	public bool EnableHyperlinks { get; set; }
 
 	/// <summary>
@@ -188,19 +189,10 @@ public class TextEditorSettings : Notifiable
 		get => _indentationSize;
 		set
 		{
-			if (value < 1)
+			var newValue = value.EnsureRange(1, 1000);
+			if (_indentationSize != newValue)
 			{
-				throw new ArgumentOutOfRangeException(nameof(value), value, "value must be positive");
-			}
-			// sanity check; a too large value might cause a crash internally much later
-			// (it only crashed in the hundred thousands for me; but might crash earlier with larger fonts)
-			if (value > 1000)
-			{
-				throw new ArgumentOutOfRangeException(nameof(value), value, "indentation size is too large");
-			}
-			if (_indentationSize != value)
-			{
-				_indentationSize = value;
+				_indentationSize = newValue;
 				OnPropertyChanged(nameof(IndentationSize));
 				OnPropertyChanged(nameof(IndentationString));
 			}
@@ -223,13 +215,13 @@ public class TextEditorSettings : Notifiable
 	/// Gets/Sets whether the user needs to press Control to click hyperlinks.
 	/// The default value is true.
 	/// </summary>
-	/// <remarks> The default value is <c> true </c>. </remarks>
+	/// <remarks> The default value is True. </remarks>
 	public bool RequireControlModifierForHyperlinkClick { get; set; }
 
 	/// <summary>
 	/// Gets/Sets whether to show a box with the hex code for control characters.
 	/// </summary>
-	/// <remarks> The default value is <c> true </c>. </remarks>
+	/// <remarks> The default value is True. </remarks>
 	public bool ShowBoxForControlCharacters { get; set; }
 
 	/// <summary>

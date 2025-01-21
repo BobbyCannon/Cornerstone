@@ -439,11 +439,11 @@ public class RopeBuffer<T> : Buffer<T>, ICloneable
 	/// <inheritdoc />
 	public override void RemoveAt(int index)
 	{
-		RemoveRange(index, 1);
+		Remove(index, 1);
 	}
 
 	/// <inheritdoc />
-	public override void RemoveRange(int index, int length)
+	public override void Remove(int index, int length)
 	{
 		if (index > End)
 		{

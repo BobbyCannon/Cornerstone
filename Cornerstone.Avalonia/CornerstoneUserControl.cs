@@ -71,15 +71,15 @@ public class CornerstoneUserControl : UserControl, IDispatchable
 		return _dispatcher;
 	}
 
-	public static object GetService(string type)
+	public static object GetInstance(string type)
 	{
-		var response = CornerstoneApplication.GetService(Type.GetType(type));
+		var response = CornerstoneApplication.GetInstance(Type.GetType(type));
 		return response;
 	}
 
-	public static T GetService<T>()
+	public static T GetInstance<T>()
 	{
-		return CornerstoneApplication.GetService<T>();
+		return CornerstoneApplication.GetInstance<T>();
 	}
 
 	public virtual void OnPropertyChanged(string propertyName)

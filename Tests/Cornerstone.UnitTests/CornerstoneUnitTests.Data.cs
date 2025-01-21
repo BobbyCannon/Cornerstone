@@ -3,6 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
+using Avalonia;
+using Avalonia.Media;
 using Cornerstone.EntityFramework;
 using Cornerstone.Logging;
 using Cornerstone.Presentation;
@@ -30,6 +32,17 @@ namespace Cornerstone.UnitTests;
 public partial class CornerstoneUnitTest
 {
 	#region Methods
+
+	/// <inheritdoc />
+	protected override object CreateCustomTypeFactory(Type type, object[] args)
+	{
+		if (type == typeof(Geometry))
+		{
+			return new LineGeometry(new Point(0, 0), new Point(1, 1));
+		}
+
+		return base.CreateCustomTypeFactory(type, args);
+	}
 
 	protected void ForEachBuffers(Action<IStringBuffer> action, string value)
 	{
@@ -114,7 +127,7 @@ public partial class CornerstoneUnitTest
 
 	protected ISyncableDatabaseProvider<IClientDatabase> GetClientDatabaseProvider()
 	{
-		return new ClientMemoryDatabaseProvider();
+		return new ClientMemoryDatabaseProvider(this);
 	}
 
 	protected MemoryLogListener GetLogListener(EventLevel level = EventLevel.Verbose)
@@ -191,25 +204,13 @@ public partial class CornerstoneUnitTest
 
 	protected ISyncableDatabaseProvider<IServerDatabase> GetServerDatabaseProvider()
 	{
-		return new ServerMemoryDatabaseProvider();
-	}
-
-	protected T GetService<T>()
-	{
-		return Dependencies.GetInstance<T>();
+		return new ServerMemoryDatabaseProvider(this);
 	}
 
 	protected IEnumerable<IStringBuffer> GetStringBuffers(string text)
 	{
 		yield return new StringGapBuffer(text);
 		yield return new StringRopeBuffer(text);
-	}
-
-	protected virtual void SetupDependencyInjection()
-	{
-		Dependencies.AddTransient(GetRuntimeInformation());
-		Dependencies.AddSingleton<IDateTimeProvider>(this);
-		Dependencies.AddSingleton<IDispatcher>(() => null);
 	}
 
 	private IEnumerable<IDatabaseProvider<IClientDatabase>> GetClientDatabaseProviders()
@@ -221,17 +222,17 @@ public partial class CornerstoneUnitTest
 
 	private IDatabaseProvider<IClientDatabase> GetClientMemoryDatabaseProvider()
 	{
-		return new ClientMemoryDatabaseProvider();
+		return new ClientMemoryDatabaseProvider(this);
 	}
 
 	private IDatabaseProvider<IClientDatabase> GetClientSqlDatabaseProvider()
 	{
-		return new ClientSqlDatabaseProvider("server=localhost;database=CornerstoneClient;integrated security=true;encrypt=false");
+		return new ClientSqlDatabaseProvider("server=localhost;database=CornerstoneClient;integrated security=true;encrypt=false", this);
 	}
 
 	private IDatabaseProvider<IClientDatabase> GetClientSqliteDatabaseProvider()
 	{
-		return new ClientSqliteDatabaseProvider("Data Source=CornerstoneClient.db");
+		return new ClientSqliteDatabaseProvider("Data Source=CornerstoneClient.db", this);
 	}
 
 	#endregion

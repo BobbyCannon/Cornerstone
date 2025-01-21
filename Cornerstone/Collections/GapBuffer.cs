@@ -419,7 +419,7 @@ public class GapBuffer<T> : Buffer<T>
 	}
 
 	/// <inheritdoc />
-	public override void RemoveRange(int index, int length)
+	public override void Remove(int index, int length)
 	{
 		if (length < 1)
 		{

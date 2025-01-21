@@ -518,7 +518,7 @@ public class SpeedyListTests : BaseCollectionTests
 		AreEqual(-1, list.IndexOf("z"));
 		AreEqual(-1, list.IndexOf(string.Empty));
 		AreEqual(-1, list.IndexOf(null));
-		AreEqual(-1, ((IList) list).IndexOf(UtcNow));
+		AreEqual(-1, ((IList) list).IndexOf(Now));
 
 		list.DistinctCheck = Equals;
 

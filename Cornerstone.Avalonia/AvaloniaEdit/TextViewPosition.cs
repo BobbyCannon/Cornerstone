@@ -68,7 +68,7 @@ public struct TextViewPosition : IEquatable<TextViewPosition>, IComparable<TextV
 	/// then both the end of the first TextLine and the beginning of the second TextLine
 	/// refer to the same position in the document, and also have the same visual column.
 	/// In this case, the IsAtEndOfLine property is used to distinguish between the two cases:
-	/// the value <c> true </c> indicates that the position refers to the end of the previous TextLine;
+	/// the value True indicates that the position refers to the end of the previous TextLine;
 	/// the value <c> false </c> indicates that the position refers to the beginning of the next TextLine.
 	/// If this position is not at such a wrapping position, the value of this property has no effect.
 	/// </summary>

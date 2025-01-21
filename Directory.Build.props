@@ -1,16 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
-
 <Project>
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;net9.0</TargetFrameworks>
 		<Configurations>Debug;Release</Configurations>
+		<ApplicationIcon>$(MSBuildThisFileDirectory)Cornerstone.ico</ApplicationIcon>
 		<Company>Bobby Cannon</Company>
 		<Authors>Bobby Cannon</Authors>
 		<Copyright>© Copyright 2014</Copyright>
 		<AssemblyVersion>1.0.5</AssemblyVersion>
 		<FileVersion>$(AssemblyVersion)</FileVersion>
-		<Version>$(AssemblyVersion)</Version>
-		<AvaloniaVersion>11.2.0</AvaloniaVersion>
+		<Version>$(AssemblyVersion)-alpha</Version>
+		<AvaloniaVersion>11.3.999-cibuild0054325-alpha</AvaloniaVersion>
 		<SkiaSharpVersion>2.88.9</SkiaSharpVersion>
 		<LangVersion>latest</LangVersion>
 		<GenerateDocumentationFile>false</GenerateDocumentationFile>

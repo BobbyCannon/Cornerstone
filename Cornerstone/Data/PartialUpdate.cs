@@ -58,7 +58,7 @@ public class PartialUpdate<T> : PartialUpdate
 
 		foreach (var property in properties)
 		{
-			Set(property.Value.GetValue(model), property.Key);
+			Set(property.GetValue(model), property.Name);
 		}
 	}
 
@@ -97,9 +97,9 @@ public class PartialUpdate<T> : PartialUpdate
 
 		foreach (var property in properties)
 		{
-			if (TryGet(property.Value, out var value))
+			if (TryGet(property, out var value))
 			{
-				property.Value.SetValue(response, value);
+				property.SetValue(response, value);
 			}
 		}
 
@@ -111,9 +111,9 @@ public class PartialUpdate<T> : PartialUpdate
 	/// The results are cached so the next query is much faster.
 	/// </summary>
 	/// <returns> The list of properties for the provided type. </returns>
-	protected internal override IDictionary<string, PropertyInfo> GetTargetProperties()
+	protected internal override IList<PropertyInfo> GetTargetProperties()
 	{
-		return typeof(T).GetCachedPropertyDictionary();
+		return typeof(T).GetCachedProperties();
 	}
 
 	#endregion
@@ -227,9 +227,9 @@ public class PartialUpdate : Bindable
 	/// <typeparam name="T"> The type to cast the value to. </typeparam>
 	/// <param name="name"> The name of the update. </param>
 	/// <returns> The value if it was found otherwise default(T). </returns>
-	public T Get<T>(string name)
+	public T Get<T>([CallerMemberName] string name = "")
 	{
-		return Get(default(T), name);
+		return Get(() => default(T), name);
 	}
 
 	/// <summary>
@@ -239,11 +239,28 @@ public class PartialUpdate : Bindable
 	/// <param name="defaultValue"> A default value if update not available. </param>
 	/// <param name="name"> The name of the update. </param>
 	/// <returns> The value if it was found otherwise default(T). </returns>
-	public T Get<T>(T defaultValue = default, [CallerMemberName] string name = "")
+	public T Get<T>(T defaultValue, [CallerMemberName] string name = "")
 	{
-		return !_updates.TryGetValue(name, out var update)
-			? defaultValue
-			: ConvertOrDefault(update, defaultValue);
+		return Get(() => defaultValue, name);
+	}
+
+	/// <summary>
+	/// Get the update for the provided name with a fallback default value if not found.
+	/// </summary>
+	/// <typeparam name="T"> The type to cast the value to. </typeparam>
+	/// <param name="defaultValueFactory"> A default value factory if update not available. </param>
+	/// <param name="name"> The name of the update. </param>
+	/// <returns> The value if it was found otherwise default(T). </returns>
+	public T Get<T>(Func<T> defaultValueFactory, [CallerMemberName] string name = "")
+	{
+		if (_updates.TryGetValue(name, out var update))
+		{
+			return ConvertOrDefault(update, defaultValueFactory);
+		}
+
+		var defaultValue = defaultValueFactory();
+		AddOrUpdate(name, defaultValue);
+		return defaultValue;
 	}
 
 	/// <summary>
@@ -272,8 +289,14 @@ public class PartialUpdate : Bindable
 	/// <param name="name"> The name of the member to set. </param>
 	public void Set<T>(T value, [CallerMemberName] string name = "")
 	{
-		var property = GetTargetProperty(name);
-		Set(name, value, property);
+		if (TryGetTargetProperty(name, out var property))
+		{
+			Set(name, value, property);
+		}
+		else
+		{
+			AddOrUpdate(name, value);
+		}
 	}
 
 	/// <summary>
@@ -343,7 +366,7 @@ public class PartialUpdate : Bindable
 			return update.Value.TryConvertTo(propertyInfo.PropertyType, out value);
 		}
 
-		value = default;
+		value = null;
 		return false;
 	}
 
@@ -363,12 +386,12 @@ public class PartialUpdate : Bindable
 				return true;
 			}
 
-			value = default;
+			value = null;
 			return false;
 		}
 		catch
 		{
-			value = default;
+			value = null;
 			return false;
 		}
 	}
@@ -418,9 +441,9 @@ public class PartialUpdate : Bindable
 	/// The results are cached so the next query is much faster.
 	/// </summary>
 	/// <returns> The list of properties for this type. </returns>
-	protected internal virtual IDictionary<string, PropertyInfo> GetTargetProperties()
+	protected internal virtual IList<PropertyInfo> GetTargetProperties()
 	{
-		return GetType().GetCachedPropertyDictionary();
+		return GetRealType().GetCachedProperties();
 	}
 
 	/// <summary>
@@ -445,21 +468,6 @@ public class PartialUpdate : Bindable
 	}
 
 	/// <summary>
-	/// Gets a property information for this type.
-	/// The results are cached so the next query is much faster.
-	/// </summary>
-	/// <returns> The property for the target type or null if not found. </returns>
-	protected virtual PropertyInfo GetTargetProperty(string name)
-	{
-		if (GetTargetProperties().TryGetValue(name, out var value))
-		{
-			return value;
-		}
-
-		throw new NotSupportedException();
-	}
-
-	/// <summary>
 	/// Reconcile the update collections.
 	/// </summary>
 	/// <param name="partialUpdate"> The partial update to reconcile with. </param>
@@ -468,14 +476,14 @@ public class PartialUpdate : Bindable
 		_updates.Reconcile(partialUpdate._updates);
 	}
 
-	private static T ConvertOrDefault<T>(PartialUpdateValue update, T defaultValue)
+	private static T ConvertOrDefault<T>(PartialUpdateValue update, Func<T> defaultValue)
 	{
-		return (T) ConvertOrDefault(typeof(T), update, defaultValue);
+		return (T) ConvertOrDefault(typeof(T), update, () => defaultValue.Invoke());
 	}
 
-	private static object ConvertOrDefault(Type type, PartialUpdateValue update, object defaultValue)
+	private static object ConvertOrDefault(Type type, PartialUpdateValue update, Func<object> defaultValue)
 	{
-		return update.Value.TryConvertTo(type, out var result) ? result : defaultValue;
+		return update.Value.TryConvertTo(type, out var result) ? result : defaultValue?.Invoke();
 	}
 
 	private void Set(string name, object value, PropertyInfo property)
@@ -503,6 +511,26 @@ public class PartialUpdate : Bindable
 		}
 
 		AddOrUpdate(name, property.PropertyType, value);
+	}
+
+	/// <summary>
+	/// Gets a property information for this type.
+	/// The results are cached so the next query is much faster.
+	/// </summary>
+	/// <param name="name"> The name of the property. </param>
+	/// <param name="info"> The property for the target type or null if not found. </param>
+	/// <returns> True if the property is found otherwise false. </returns>
+	private bool TryGetTargetProperty(string name, out PropertyInfo info)
+	{
+		var response = GetTargetProperties().FirstOrDefault(x => x.Name == name);
+		if (response == null)
+		{
+			info = null;
+			return false;
+		}
+
+		info = response;
+		return true;
 	}
 
 	#endregion

@@ -1,5 +1,6 @@
 ﻿#region References
 
+using Cornerstone.Testing;
 using Cornerstone.Text.Buffers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -24,9 +25,11 @@ public class StringGapBufferTests : CornerstoneUnitTest
 
 		foreach (var buffer in buffers)
 		{
-			AreEqual(4, buffer.LastIndexOf(9, "quick"));
-			AreEqual(4, buffer.LastIndexOf(8, "quick"));
-			AreEqual(-1, buffer.LastIndexOf(7, "quick"));
+			buffer.GetType().Dump();
+			AreEqual(4, buffer.LastIndexOf("quick", 4, 5));
+			AreEqual(4, buffer.LastIndexOf("quick", 0, 9));
+			AreEqual(-1, buffer.LastIndexOf("quick", 0, 8));
+			AreEqual(44, buffer.LastIndexOf("."));
 		}
 	}
 

@@ -11,24 +11,24 @@ public static class IntegerExtensions
 	/// Ensure the value falls between the ranges.
 	/// </summary>
 	/// <param name="value"> The nullable float value. </param>
-	/// <param name="min"> The inclusive minimal value. </param>
-	/// <param name="max"> The inclusive maximum value. </param>
+	/// <param name="inclusiveMinimum"> The inclusive minimal value. </param>
+	/// <param name="inclusiveMaximum"> The inclusive maximum value. </param>
 	/// <returns> The value within the provided ranges. </returns>
-	public static int EnsureRange(this int? value, int min, int max)
+	public static int EnsureRange(this int? value, int inclusiveMinimum, int inclusiveMaximum)
 	{
-		return value is null ? min : EnsureRange(value.Value, min, max);
+		return value is null ? inclusiveMinimum : EnsureRange(value.Value, inclusiveMinimum, inclusiveMaximum);
 	}
 
 	/// <summary>
 	/// Ensure the value falls between the ranges.
 	/// </summary>
 	/// <param name="value"> The nullable int value. </param>
-	/// <param name="min"> The inclusive minimal value. </param>
-	/// <param name="max"> The inclusive maximum value. </param>
+	/// <param name="inclusiveMinimum"> The inclusive minimal value. </param>
+	/// <param name="inclusiveMaximum"> The inclusive maximum value. </param>
 	/// <returns> The value within the provided ranges. </returns>
-	public static int EnsureRange(this int value, int min, int max)
+	public static int EnsureRange(this int value, int inclusiveMinimum, int inclusiveMaximum)
 	{
-		EnsureRange(ref value, min, max);
+		EnsureRange(ref value, inclusiveMinimum, inclusiveMaximum);
 		return value;
 	}
 
@@ -36,19 +36,19 @@ public static class IntegerExtensions
 	/// Ensure the value falls between the ranges.
 	/// </summary>
 	/// <param name="value"> The nullable int value. </param>
-	/// <param name="min"> The inclusive minimal value. </param>
-	/// <param name="max"> The inclusive maximum value. </param>
+	/// <param name="inclusiveMinimum"> The inclusive minimal value. </param>
+	/// <param name="inclusiveMaximum"> The inclusive maximum value. </param>
 	/// <returns> The value within the provided ranges. </returns>
-	public static void EnsureRange(ref int value, int min, int max)
+	public static void EnsureRange(ref int value, int inclusiveMinimum, int inclusiveMaximum)
 	{
-		if (value < min)
+		if (value < inclusiveMinimum)
 		{
-			value = min;
+			value = inclusiveMinimum;
 		}
 
-		if (value > max)
+		if (value > inclusiveMaximum)
 		{
-			value = max;
+			value = inclusiveMaximum;
 		}
 	}
 

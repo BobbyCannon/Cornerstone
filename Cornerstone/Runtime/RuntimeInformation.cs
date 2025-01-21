@@ -12,9 +12,14 @@ using System.Security.Principal;
 using System.Text;
 using Cornerstone.Data.Bytes;
 using Cornerstone.Extensions;
-using Cornerstone.Internal.Windows;
+using Cornerstone.Generators.CodeGenerators;
 using Cornerstone.Presentation;
 using Cornerstone.Sync;
+#if ANDROID
+using Microsoft.Maui.Devices;
+#else
+using Cornerstone.Internal.Windows;
+#endif
 
 #endregion
 
@@ -23,7 +28,7 @@ namespace Cornerstone.Runtime;
 /// <summary>
 /// Gets information about the current runtime.
 /// </summary>
-public class RuntimeInformation : Bindable, IRuntimeInformation
+public class RuntimeInformation : Bindable, IRuntimeInformation, IObjectCodeWriter
 {
 	#region Fields
 
@@ -303,6 +308,24 @@ public class RuntimeInformation : Bindable, IRuntimeInformation
 		return _cache.TryGetValue(key, out value);
 	}
 
+	/// <inheritdoc />
+	public void Write(ICodeWriter writer)
+	{
+		writer.AppendLine("new RuntimeInformationData");
+		writer.AppendLine("{");
+		writer.PushIndent();
+
+		foreach (var key in Keys)
+		{
+			writer.Append($"{key} = ");
+			writer.AppendObject(this[key]);
+			writer.AppendLine(",");
+		}
+
+		writer.PopIndent();
+		writer.AppendLine("}");
+	}
+
 	/// <summary>
 	/// The bitness of the application.
 	/// </summary>
@@ -422,13 +445,14 @@ public class RuntimeInformation : Bindable, IRuntimeInformation
 	/// </summary>
 	protected virtual string GetDeviceManufacturer()
 	{
-		if (IsWindows())
-		{
-			return new DeviceManufacturerRegistryComponent().GetValue()
-				?? new DeviceManufacturerWmiComponent().GetValue();
-		}
-
+		#if ANDROID
+		return DeviceInfo.Manufacturer;
+		#elif WINDOWS
+		return new DeviceManufacturerRegistryComponent().GetValue()
+			?? new DeviceManufacturerWmiComponent().GetValue();
+		#else
 		return string.Empty;
+		#endif
 	}
 
 	/// <summary>
@@ -444,6 +468,9 @@ public class RuntimeInformation : Bindable, IRuntimeInformation
 	/// </summary>
 	protected virtual string GetDeviceModel()
 	{
+		#if ANDROID
+		return DeviceInfo.Model;
+		#else
 		if (IsWindows())
 		{
 			return new DeviceModelRegistryComponent().GetValue()
@@ -451,6 +478,7 @@ public class RuntimeInformation : Bindable, IRuntimeInformation
 		}
 
 		return string.Empty;
+		#endif
 	}
 
 	/// <summary>
@@ -458,7 +486,11 @@ public class RuntimeInformation : Bindable, IRuntimeInformation
 	/// </summary>
 	protected virtual string GetDeviceName()
 	{
+		#if ANDROID
+		return DeviceInfo.Name;
+		#else
 		return Environment.MachineName;
+		#endif
 	}
 
 	/// <summary>
@@ -514,7 +546,7 @@ public class RuntimeInformation : Bindable, IRuntimeInformation
 	/// </summary>
 	protected virtual DeviceType GetDeviceType()
 	{
-		#if (NETSTANDARD)
+		#if NETSTANDARD
 		return DeviceType.Desktop;
 		#else
 		if (OperatingSystem.IsAndroid()

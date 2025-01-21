@@ -5,20 +5,29 @@ using System.Collections.Generic;
 using System.Linq;
 using Cornerstone.Collections;
 using Cornerstone.Extensions;
+using Cornerstone.Generators.CodeGenerators;
+using Cornerstone.Internal;
 
 #endregion
 
 namespace Cornerstone.Data;
 
 /// <summary>
-/// Include / Exclude options for filtering.
+/// Include / Exclude settings for filtering.
 /// </summary>
-public class IncludeExcludeSettings
+public class IncludeExcludeSettings : IObjectCodeWriter
 {
 	#region Constructors
 
 	/// <summary>
-	/// Initializes options.
+	/// Initializes settings.
+	/// </summary>
+	public IncludeExcludeSettings() : this([], [], true)
+	{
+	}
+
+	/// <summary>
+	/// Initializes settings.
 	/// </summary>
 	/// <param name="including"> The parameters to include when updating. </param>
 	/// <param name="excluding"> The parameters to exclude when updating. </param>
@@ -28,7 +37,7 @@ public class IncludeExcludeSettings
 	}
 
 	/// <summary>
-	/// Initializes options.
+	/// Initializes settings.
 	/// </summary>
 	/// <param name="including"> The parameters to include when updating. </param>
 	/// <param name="excluding"> The parameters to exclude when updating. </param>
@@ -60,7 +69,7 @@ public class IncludeExcludeSettings
 	#region Properties
 
 	/// <summary>
-	/// Represents an empty set of options.
+	/// Represents an empty set of settings.
 	/// </summary>
 	public static IncludeExcludeSettings Empty { get; }
 
@@ -79,19 +88,30 @@ public class IncludeExcludeSettings
 	#region Methods
 
 	/// <summary>
-	/// Return update options with only exclusions.
+	/// 
+	/// </summary>
+	/// <param name="entityType"></param>
+	/// <param name="actionType"></param>
+	/// <returns></returns>
+	public static IncludeExcludeSettings ForEntity(Type entityType, UpdateableAction actionType)
+	{
+		return Cache.GetSettings(entityType, actionType);
+	}
+
+	/// <summary>
+	/// Return update settings with only exclusions.
 	/// </summary>
 	/// <param name="exclusions"> The exclusions. </param>
-	/// <returns> The options with only exclusions. </returns>
+	/// <returns> The settings with only exclusions. </returns>
 	public static IncludeExcludeSettings FromExclusions(params string[] exclusions)
 	{
 		return new IncludeExcludeSettings(null, exclusions);
 	}
 
 	/// <summary>
-	/// Returns true if the options are empty.
+	/// Returns true if the settings are empty.
 	/// </summary>
-	/// <returns> True if all options are empty. </returns>
+	/// <returns> True if all settings are empty. </returns>
 	public bool IsEmpty()
 	{
 		return (IncludedProperties.Count <= 0)
@@ -99,10 +119,10 @@ public class IncludeExcludeSettings
 	}
 
 	/// <summary>
-	/// Return update options with only including.
+	/// Return update settings with only including.
 	/// </summary>
 	/// <param name="including"> The including. </param>
-	/// <returns> The options with only inclusions. </returns>
+	/// <returns> The settings with only inclusions. </returns>
 	public static IncludeExcludeSettings OnlyIncluding(params string[] including)
 	{
 		return new IncludeExcludeSettings(including, null);
@@ -136,10 +156,10 @@ public class IncludeExcludeSettings
 	}
 
 	/// <summary>
-	/// Creates a new set of options with more exclusions.
+	/// Creates a new set of settings with more exclusions.
 	/// </summary>
 	/// <param name="exclusions"> An extra set of exclusions. </param>
-	/// <returns> The modified set of updateable options. </returns>
+	/// <returns> The modified set of updateable settings. </returns>
 	public IncludeExcludeSettings WithMoreExclusions(params string[] exclusions)
 	{
 		var allExclusions = new HashSet<string>(ExcludedProperties);
@@ -148,10 +168,10 @@ public class IncludeExcludeSettings
 	}
 
 	/// <summary>
-	/// Creates a new set of options with more options.
+	/// Creates a new set of settings with more settings.
 	/// </summary>
-	/// <param name="settings"> An extra set of options. </param>
-	/// <returns> The modified set of options. </returns>
+	/// <param name="settings"> An extra set of settings. </param>
+	/// <returns> The modified set of settings. </returns>
 	public IncludeExcludeSettings WithMoreOptions(IncludeExcludeSettings settings)
 	{
 		if (settings == null)
@@ -166,4 +186,23 @@ public class IncludeExcludeSettings
 	}
 
 	#endregion
+
+	/// <inheritdoc />
+	public void Write(ICodeWriter writer)
+	{
+		if (IncludedProperties.Count > 0)
+		{
+			var properties = $"\"{string.Join("\", \"", IncludedProperties)}\"";
+			writer.AppendLine($"IncludeExcludeSettings.OnlyIncluding({properties})");
+		}
+		else if (ExcludedProperties.Count > 0)
+		{
+			var properties = $"\"{string.Join("\", \"", ExcludedProperties)}\"";
+			writer.AppendLine($"IncludeExcludeSettings.FromExclusions({properties})");
+		}
+		else
+		{
+			writer.AppendLine("IncludeExcludeSettings.Empty");
+		}
+	}
 }

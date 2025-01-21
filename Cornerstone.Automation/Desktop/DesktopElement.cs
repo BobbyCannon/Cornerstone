@@ -15,9 +15,7 @@ using Cornerstone.Extensions;
 using Cornerstone.Windows;
 using Cornerstone.Windows.Native;
 using Interop.UIAutomationClient;
-#if NET48
 using Image = Cornerstone.Automation.Desktop.Elements.Image;
-#endif
 
 #endregion
 

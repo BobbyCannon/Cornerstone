@@ -15,6 +15,7 @@ public enum DotNetProjectType
 	Database,
 	DatabaseOther,
 	SolutionFolder,
+	Test,
 	UniversalWindowsClassLibrary,
 	XamarinAndroid,
 	XamarinAndroidBinding,

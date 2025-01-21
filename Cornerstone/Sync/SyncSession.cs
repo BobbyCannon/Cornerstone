@@ -24,7 +24,7 @@ namespace Cornerstone.Sync;
 /// <summary>
 /// The object to track a sync session.
 /// </summary>
-public class SyncSession : Bindable<SyncSession>, ILoggingSession
+public class SyncSession : Bindable<SyncSession>
 {
 	#region Fields
 

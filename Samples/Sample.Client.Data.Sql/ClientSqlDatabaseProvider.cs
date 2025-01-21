@@ -1,5 +1,6 @@
 ﻿#region References
 
+using Cornerstone.Runtime;
 using Cornerstone.Storage;
 using Sample.Shared.Storage;
 
@@ -17,7 +18,7 @@ public class ClientSqlDatabaseProvider : DatabaseProvider<IClientDatabase>
 
 	#region Constructors
 
-	public ClientSqlDatabaseProvider(string connectionString)
+	public ClientSqlDatabaseProvider(string connectionString, IDateTimeProvider dateTimeProvider) : base(dateTimeProvider)
 	{
 		_connectionString = connectionString;
 	}

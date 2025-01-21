@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System.Threading.Tasks;
+using Cornerstone.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -55,7 +56,7 @@ public class InstantiatorTests : CornerstoneUnitTest
 
 		using var host = builder.Build();
 		host.StartAsync();
-		var account = host.Services.GetService<Test>();
+		var account = host.Services.GetInstance<Test>();
 		Assert.IsNotNull(account);
 	}
 

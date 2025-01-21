@@ -21,7 +21,7 @@ public class DotNetSolution
 	/// <summary>
 	/// Initializes a new instance of the <see cref="T:Cornerstone.Parsers.VisualStudio.Solution.DotNetSolution" /> class.
 	/// </summary>
-	private DotNetSolution()
+	public DotNetSolution()
 	{
 	}
 

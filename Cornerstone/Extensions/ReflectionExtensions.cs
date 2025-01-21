@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using Cornerstone.Generators.CodeGenerators;
+using System.Text.Json.Serialization;
 using Cornerstone.Internal;
 
 #endregion
@@ -48,6 +48,7 @@ public static class ReflectionExtensions
 	private static readonly ConcurrentDictionary<CacheKey, ConstructorInfo[]> _typeConstructorsAll;
 	private static readonly ConcurrentDictionary<CacheKey, Attribute> _typeCustomAttribute;
 	private static readonly ConcurrentDictionary<CacheKey, FieldInfo[]> _typeFieldInfos;
+	private static readonly ConcurrentDictionary<CacheKey, Dictionary<string, PropertyInfo>> _typeJsonPropertyNameDictionaries;
 	private static readonly ConcurrentDictionary<CacheKey, MethodInfo> _typeMethodInfos;
 	private static readonly ConcurrentDictionary<CacheKey, MethodInfo[]> _typeMethodsInfos;
 	private static readonly ConcurrentDictionary<CacheKey, Dictionary<string, PropertyInfo>> _typePropertyInfoDictionaries;
@@ -69,6 +70,7 @@ public static class ReflectionExtensions
 		_typeConstructors = new ConcurrentDictionary<CacheKey, ConstructorInfo>();
 		_typeConstructorsAll = new ConcurrentDictionary<CacheKey, ConstructorInfo[]>();
 		_typeFieldInfos = new ConcurrentDictionary<CacheKey, FieldInfo[]>();
+		_typeJsonPropertyNameDictionaries = new ConcurrentDictionary<CacheKey, Dictionary<string, PropertyInfo>>();
 		_typeMethodInfos = new ConcurrentDictionary<CacheKey, MethodInfo>();
 		_typeMethodsInfos = new ConcurrentDictionary<CacheKey, MethodInfo[]>();
 		_typePropertyInfoDictionaries = new ConcurrentDictionary<CacheKey, Dictionary<string, PropertyInfo>>();
@@ -239,6 +241,32 @@ public static class ReflectionExtensions
 	}
 
 	/// <summary>
+	/// Gets a list of property information for the provided type based;
+	/// The results are cached so the next query is much faster.
+	/// </summary>
+	/// <param name="type"> The type to get the properties for. </param>
+	/// <param name="flags"> The flags to find properties by. Defaults to Public, Instance, Flatten Hierarchy </param>
+	/// <returns> The list of properties for the type. </returns>
+	public static IDictionary<string, PropertyInfo> GetCachedJsonPropertyNameDictionary(this Type type, BindingFlags? flags = null)
+	{
+		var typeFlags = flags ?? DefaultPublicFlags;
+		var key = new CacheKey(type ?? throw new InvalidOperationException(), typeFlags, null);
+		return _typeJsonPropertyNameDictionaries
+			.GetOrAdd(key, _ =>
+			{
+				var properties = type.GetProperties(typeFlags);
+				var attributes = properties
+					.ToDictionary(x => x, x => x.GetCustomAttribute<JsonPropertyNameAttribute>())
+					.Where(x => x.Value != null);
+
+				var response = attributes
+					.ToDictionary(p => p.Value.Name, p => p.Key, StringComparer.InvariantCultureIgnoreCase);
+
+				return response;
+			});
+	}
+
+	/// <summary>
 	/// Substitutes the elements of an array of types for the type parameters of the current generic method definition, and returns a
 	/// MethodInfo object representing the resulting constructed method. The results are cached so the next query is much faster.
 	/// </summary>
@@ -322,9 +350,10 @@ public static class ReflectionExtensions
 	public static MethodInfo GetCachedMethod(this Type type, string name, BindingFlags flags, params Type[] parameterTypes)
 	{
 		var key = new CacheKey(type, flags, name);
-		return _typeMethodInfos.GetOrAdd(key, _ => parameterTypes.Any()
-			? type.GetMethod(name, parameterTypes)
-			: type.GetMethod(name)
+		return _typeMethodInfos.GetOrAdd(key,
+			_ => parameterTypes.Any()
+				? type.GetMethod(name, parameterTypes)
+				: type.GetMethod(name)
 		);
 	}
 
@@ -425,6 +454,18 @@ public static class ReflectionExtensions
 	/// <summary>
 	/// Gets the information for the provided type and property name. The results are cached so the next query is much faster.
 	/// </summary>
+	/// <param name="value"> The value to get the property for. </param>
+	/// <param name="name"> The name of the property to be queried. </param>
+	/// <param name="flags"> The flags to find properties by. Defaults to Public, Instance, Flatten Hierarchy </param>
+	/// <returns> The list of properties for the type. </returns>
+	public static PropertyInfo GetCachedProperty<T>(this T value, string name, BindingFlags? flags = null)
+	{
+		return GetCachedProperty(value.GetType(), name, flags);
+	}
+
+	/// <summary>
+	/// Gets the information for the provided type and property name. The results are cached so the next query is much faster.
+	/// </summary>
 	/// <param name="type"> The type to get the property for. </param>
 	/// <param name="name"> The name of the property to be queried. </param>
 	/// <param name="flags"> The flags to find properties by. Defaults to Public, Instance, Flatten Hierarchy </param>
@@ -457,8 +498,8 @@ public static class ReflectionExtensions
 		var key = new CacheKey(type ?? throw new InvalidOperationException(), typeFlags, null);
 		return _typePropertyInfoDictionaries.GetOrAdd(key, _ =>
 		{
-			var properties = type.GetProperties(typeFlags);
-			return properties.ToDictionary(p => p.Name, p => p, StringComparer.InvariantCultureIgnoreCase);
+			var properties = type.GetProperties(typeFlags).GroupBy(x => x.Name);
+			return properties.ToDictionary(p => p.Key, p => p.First(), StringComparer.InvariantCultureIgnoreCase);
 		});
 	}
 
@@ -508,16 +549,11 @@ public static class ReflectionExtensions
 	{
 		var memberInfo = GetCachedMember(value, memberName);
 
-		if (memberInfo == null)
-		{
-			throw new InvalidOperationException();
-		}
-
 		return memberInfo switch
 		{
 			PropertyInfo propertyInfo => propertyInfo.GetValue(value, null),
 			FieldInfo fieldInfo => fieldInfo.GetValue(value),
-			_ => throw new Exception()
+			_ => throw new Exception("The member was not found.")
 		};
 	}
 
@@ -576,7 +612,7 @@ public static class ReflectionExtensions
 	}
 
 	/// <summary>
-	/// Determine if the property is a abstract property.
+	/// Determine if the property is an abstract property.
 	/// </summary>
 	/// <param name="info"> The info to process. </param>
 	/// <returns> True if the accessor is abstract. </returns>
@@ -588,6 +624,17 @@ public static class ReflectionExtensions
 			|| (info.CanWrite
 				&& (info.SetMethod != null)
 				&& info.SetMethod.IsAbstract);
+	}
+
+	public static bool IsDelegate(this Type type)
+	{
+		return (type == typeof(MulticastDelegate))
+			|| (type.BaseType == typeof(MulticastDelegate));
+	}
+
+	public static bool IsIndexer(this PropertyInfo type)
+	{
+		return type.GetIndexParameters().Length > 0;
 	}
 
 	/// <summary>
@@ -643,27 +690,63 @@ public static class ReflectionExtensions
 			throw new Exception("memberName");
 		}
 
-		var oldValue = obj.GetMemberValue(memberName);
-
 		switch (memberInfo)
 		{
 			case PropertyInfo propertyInfo:
 			{
-				propertyInfo.SetValue(obj, newValue, null);
-				break;
+				var oldValue = propertyInfo.CanRead
+					? obj.GetMemberValue(memberName)
+					: null;
+
+				if (propertyInfo.CanWrite)
+				{
+					propertyInfo.SetValue(obj, newValue, null);
+				}
+
+				return oldValue;
 			}
 			case FieldInfo fieldInfo:
 			{
+				var oldValue = obj.GetMemberValue(memberName);
 				fieldInfo.SetValue(obj, newValue);
-				break;
+				return oldValue;
 			}
 			default:
 			{
 				throw new Exception();
 			}
 		}
+	}
 
-		return oldValue;
+	/// <summary>
+	/// Gets the public or private member using reflection.
+	/// </summary>
+	/// <param name="value"> The value that contains the member. </param>
+	/// <param name="memberName"> The name of the field or property to get the value of. </param>
+	/// <param name="memberValue"> The value of the member. </param>
+	/// <returns> True if the member value was read otherwise false. </returns>
+	public static bool TryGetMemberValue(this object value, string memberName, out object memberValue)
+	{
+		var memberInfo = GetCachedMember(value, memberName);
+
+		switch (memberInfo)
+		{
+			case PropertyInfo propertyInfo:
+			{
+				memberValue = propertyInfo.GetValue(value, null);
+				return true;
+			}
+			case FieldInfo fieldInfo:
+			{
+				memberValue = fieldInfo.GetValue(value);
+				return true;
+			}
+			default:
+			{
+				memberValue = null;
+				return false;
+			}
+		}
 	}
 
 	/// <summary>
@@ -785,15 +868,15 @@ public static class ReflectionExtensions
 			return x.Equals(y);
 		}
 
+		public static CacheKey From(MethodInfo info)
+		{
+			return new CacheKey();
+		}
+
 		/// <inheritdoc />
 		public int GetHashCode(CacheKey obj)
 		{
 			return HashCodeCalculator.Combine(Type, Flags, Label);
-		}
-
-		public static CacheKey From(MethodInfo info)
-		{
-			return new CacheKey();
 		}
 
 		#endregion

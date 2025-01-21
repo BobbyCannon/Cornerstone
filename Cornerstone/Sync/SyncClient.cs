@@ -604,7 +604,7 @@ public abstract class SyncClient
 							return;
 						}
 
-						if (!UpdateEntity(database, syncObject, syncEntity, foundEntity, UpdateableAction.SyncIncomingModified, syncStatus, issues))
+						if (!UpdateEntity(database, syncObject, syncEntity, foundEntity, UpdateableAction.SyncIncomingUpdate, syncStatus, issues))
 						{
 							// todo: roll back any possible changes
 							//database.RevertChanges(foundEntity);
@@ -634,7 +634,7 @@ public abstract class SyncClient
 							repository.Add(foundEntity);
 						}
 
-						if (!UpdateEntity(database, syncObject, syncEntity, foundEntity, UpdateableAction.SyncIncomingModified, syncStatus, issues))
+						if (!UpdateEntity(database, syncObject, syncEntity, foundEntity, UpdateableAction.SyncIncomingUpdate, syncStatus, issues))
 						{
 							// todo: roll back any possible changes
 							return;

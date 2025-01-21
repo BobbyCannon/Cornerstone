@@ -9,6 +9,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
 using Cornerstone.Extensions;
+using Cornerstone.Runtime;
 using Cornerstone.Storage.Configuration;
 using Cornerstone.Sync;
 
@@ -24,8 +25,8 @@ public abstract class Database : IDatabase
 	#region Fields
 
 	private readonly CollectionChangeTracker _collectionChangeTracker;
-	private int _saveChangeCount;
 	private Assembly _mappingAssembly;
+	private int _saveChangeCount;
 
 	#endregion
 
@@ -53,10 +54,13 @@ public abstract class Database : IDatabase
 	#region Properties
 
 	/// <inheritdoc />
-	public bool IsDisposed { get; private set; }
+	public DatabaseSettings DatabaseSettings { get; }
 
 	/// <inheritdoc />
-	public DatabaseSettings DatabaseSettings { get; }
+	public IDateTimeProvider DateTimeProvider { get; internal set; }
+
+	/// <inheritdoc />
+	public bool IsDisposed { get; private set; }
 
 	internal bool HasBeenConfiguredViaMapping { get; set; }
 
@@ -121,7 +125,7 @@ public abstract class Database : IDatabase
 	{
 		return _mappingAssembly ??= GetType().Assembly;
 	}
-	
+
 	/// <summary>
 	/// Gets a read only repository for the provided type.
 	/// </summary>
@@ -152,11 +156,6 @@ public abstract class Database : IDatabase
 		var repository = CreateRepository<T, T2>();
 		Repositories.Add(key, repository);
 		return repository;
-	}
-
-	/// <inheritdoc />
-	public void Migrate()
-	{
 	}
 
 	/// <summary>
@@ -219,6 +218,11 @@ public abstract class Database : IDatabase
 		}
 
 		return property;
+	}
+
+	/// <inheritdoc />
+	public void Migrate()
+	{
 	}
 
 	/// <summary>
@@ -324,6 +328,12 @@ public abstract class Database : IDatabase
 	public virtual Task<int> SaveChangesAsync()
 	{
 		return Task.Run(SaveChanges);
+	}
+
+	/// <inheritdoc />
+	public void UpdateDateTimeProvider(IDateTimeProvider dateTimeProvider)
+	{
+		DateTimeProvider = dateTimeProvider;
 	}
 
 	/// <summary>
@@ -583,7 +593,7 @@ public abstract class Database : IDatabase
 	}
 
 	[SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
-	private void UpdateEntityCollectionRelationships<T,T2>(EntityState<T,T2> entityState)
+	private void UpdateEntityCollectionRelationships<T, T2>(EntityState<T, T2> entityState)
 		where T : Entity<T2>
 	{
 		var enumerableType = typeof(IEnumerable);
@@ -632,7 +642,7 @@ public abstract class Database : IDatabase
 		}
 	}
 
-	private void UpdateEntityDirectRelationships<T,T2>(EntityState<T, T2> entityState)
+	private void UpdateEntityDirectRelationships<T, T2>(EntityState<T, T2> entityState)
 		where T : Entity<T2>
 	{
 		var baseType = typeof(IEntity);
@@ -766,7 +776,7 @@ public abstract class Database : IDatabase
 		_collectionChangeTracker.Update(tracker);
 	}
 
-	private protected void RepositoryUpdateEntityRelationships<T, T2>(EntityState<T,T2> entityState) where T : Entity<T2>
+	private protected void RepositoryUpdateEntityRelationships<T, T2>(EntityState<T, T2> entityState) where T : Entity<T2>
 	{
 		UpdateEntityDirectRelationships(entityState);
 		UpdateEntityCollectionRelationships(entityState);
@@ -824,14 +834,19 @@ public interface IDatabase : IDisposable
 	#region Properties
 
 	/// <summary>
-	/// Gets a value indicating whether the database has been disposed of.
-	/// </summary>
-	bool IsDisposed { get; }
-
-	/// <summary>
 	/// Gets the options for this database.
 	/// </summary>
 	DatabaseSettings DatabaseSettings { get; }
+
+	/// <summary>
+	/// The date and time provider.
+	/// </summary>
+	public IDateTimeProvider DateTimeProvider { get; }
+
+	/// <summary>
+	/// Gets a value indicating whether the database has been disposed of.
+	/// </summary>
+	bool IsDisposed { get; }
 
 	#endregion
 
@@ -906,6 +921,12 @@ public interface IDatabase : IDisposable
 	/// </returns>
 	/// <exception cref="T:System.InvalidOperationException"> Thrown if the context has been disposed. </exception>
 	int SaveChanges();
+
+	/// <summary>
+	/// Update the date time provider.
+	/// </summary>
+	/// <param name="dateTimeProvider"> The new date time provider. </param>
+	void UpdateDateTimeProvider(IDateTimeProvider dateTimeProvider);
 
 	#endregion
 

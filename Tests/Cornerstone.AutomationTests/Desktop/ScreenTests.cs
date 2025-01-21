@@ -29,7 +29,7 @@ public class ScreenTests : CornerstoneUnitTest
 	[TestMethod]
 	public void MultiMonitorSupport()
 	{
-		if (!string.Equals(GetRuntimeInformation().DeviceName, "bobbys-rig", StringComparison.OrdinalIgnoreCase))
+		if (!string.Equals(Environment.MachineName, "bobbys-rig", StringComparison.OrdinalIgnoreCase))
 		{
 			Assert.Inconclusive("Device not recognized");
 		}
@@ -74,7 +74,7 @@ public class ScreenTests : CornerstoneUnitTest
 	[TestMethod]
 	public void SecondaryScreenSize()
 	{
-		if (!string.Equals(GetRuntimeInformation().DeviceName, "bobbys-rig", StringComparison.OrdinalIgnoreCase))
+		if (!string.Equals(Environment.MachineName, "bobbys-rig", StringComparison.OrdinalIgnoreCase))
 		{
 			Assert.Inconclusive("Device not recognized");
 		}
@@ -100,7 +100,7 @@ public class ScreenTests : CornerstoneUnitTest
 	[TestMethod]
 	public void VirtualScreenSize()
 	{
-		if (!string.Equals(GetRuntimeInformation().DeviceName, "bobbys-rig", StringComparison.OrdinalIgnoreCase))
+		if (!string.Equals(Environment.MachineName, "bobbys-rig", StringComparison.OrdinalIgnoreCase))
 		{
 			Assert.Inconclusive("Device not recognized");
 		}

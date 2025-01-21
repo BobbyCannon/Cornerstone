@@ -35,7 +35,7 @@ public class ListComparer : BaseComparer
 
 			if (length != list2.Length)
 			{
-				AddDifference(session, length.ToString(), list2.Length.ToString(), true, () => $"The {message?.Invoke()} collection lengths are different.");
+				session.AddDifference(length.ToString(), list2.Length.ToString(), true, () => $"The {message?.Invoke()} collection lengths are different.");
 				return CompareResult.NotEqual;
 			}
 

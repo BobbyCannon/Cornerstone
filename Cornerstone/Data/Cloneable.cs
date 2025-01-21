@@ -1,12 +1,4 @@
-﻿#region References
-
-using System;
-using Cornerstone.Extensions;
-using Cornerstone.Presentation;
-
-#endregion
-
-namespace Cornerstone.Data;
+﻿namespace Cornerstone.Data;
 
 /// <summary>
 /// Represents a cloneable item.

@@ -65,11 +65,11 @@ public static class Comparer
 	/// <param name="actual"> The actual value to compare to expected. </param>
 	/// <param name="settings"> The settings for the compare session. </param>
 	/// <returns> True if the values are equal otherwise false. </returns>
-	public static bool Compare(object expected, object actual, ComparerSettings? settings = null)
+	public static CompareSession<T, T2> Compare<T, T2>(T expected, T2 actual, ComparerSettings? settings = null)
 	{
 		var session = StartSession(expected, actual, settings);
 		session.Compare();
-		return session.Result == CompareResult.AreEqual;
+		return session;
 	}
 
 	/// <summary>

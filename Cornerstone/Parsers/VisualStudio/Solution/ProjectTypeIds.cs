@@ -11,6 +11,7 @@ namespace Cornerstone.Parsers.VisualStudio.Solution;
 /// </summary>
 /// <remarks>
 /// https://github.com/JamesW75/visual-studio-project-type-guid
+/// https://github.com/VISTALL/visual-studio-project-type-guids?tab=readme-ov-file
 /// </remarks>
 public static class ProjectTypeIds
 {
@@ -28,6 +29,7 @@ public static class ProjectTypeIds
 	public const string Database = "A9ACE9BB-CECE-4E62-9AA4-C7E7C5BD2124";
 	public const string DatabaseOther = "4F174C21-8C12-11D0-8340-0000F80270F8";
 	public const string SolutionFolder = "2150E333-8FDC-42A3-9474-1A3956D46DE8";
+	public const string Test = "3AC096D0-A1C2-E12C-1390-A8335801FDAB";
 	public const string UniversalWindowsClassLibrary = "A5A43C5B-DE2A-4C0C-9213-0A381AF9435A";
 	public const string XamarinAndroid = "EFBA0AD7-5A72-4C68-AF49-83D382785DCF";
 	public const string XamarinAndroidBinding = "10368E6C-D01B-4462-8E8B-01FC667A7035";
@@ -56,6 +58,7 @@ public static class ProjectTypeIds
 			Database => $"{nameof(ProjectTypeIds)}.{nameof(Database)}",
 			DatabaseOther => $"{nameof(ProjectTypeIds)}.{nameof(DatabaseOther)}",
 			SolutionFolder => $"{nameof(ProjectTypeIds)}.{nameof(SolutionFolder)}",
+			Test => $"{nameof(ProjectTypeIds)}.{nameof(Test)}",
 			UniversalWindowsClassLibrary => $"{nameof(ProjectTypeIds)}.{nameof(UniversalWindowsClassLibrary)}",
 			XamarinAndroid => $"{nameof(ProjectTypeIds)}.{nameof(XamarinAndroid)}",
 			XamarinAndroidBinding => $"{nameof(ProjectTypeIds)}.{nameof(XamarinAndroidBinding)}",
@@ -83,6 +86,7 @@ public static class ProjectTypeIds
 			Database => DotNetProjectType.Database,
 			DatabaseOther => DotNetProjectType.DatabaseOther,
 			SolutionFolder => DotNetProjectType.SolutionFolder,
+			Test => DotNetProjectType.Test,
 			UniversalWindowsClassLibrary => DotNetProjectType.UniversalWindowsClassLibrary,
 			XamarinAndroid => DotNetProjectType.XamarinAndroid,
 			XamarinAndroidBinding => DotNetProjectType.XamarinAndroidBinding,
@@ -109,6 +113,7 @@ public static class ProjectTypeIds
 			DotNetProjectType.Database => Database,
 			DotNetProjectType.DatabaseOther => DatabaseOther,
 			DotNetProjectType.SolutionFolder => SolutionFolder,
+			DotNetProjectType.Test => Test,
 			DotNetProjectType.UniversalWindowsClassLibrary => UniversalWindowsClassLibrary,
 			DotNetProjectType.XamarinAndroid => XamarinAndroid,
 			DotNetProjectType.XamarinAndroidBinding => XamarinAndroidBinding,

@@ -24,6 +24,9 @@ public class WebClientProxy : IWebClient
 	public HttpHeaders Headers { get; set; }
 
 	/// <inheritdoc />
+	public string IpAddress { get; }
+
+	/// <inheritdoc />
 	public IWebProxy Proxy { get; set; }
 
 	/// <inheritdoc />
@@ -49,20 +52,8 @@ public class WebClientProxy : IWebClient
 	}
 
 	/// <inheritdoc />
-	public T Deserialize<T>(HttpResponseMessage result, TimeSpan? timeout = null)
-	{
-		return default;
-	}
-
-	/// <inheritdoc />
 	public void Dispose()
 	{
-	}
-
-	/// <inheritdoc />
-	public T Get<T>(string uri, TimeSpan? timeout = null)
-	{
-		return default;
 	}
 
 	/// <inheritdoc />
@@ -72,12 +63,42 @@ public class WebClientProxy : IWebClient
 	}
 
 	/// <inheritdoc />
+	public T Get<T>(string uri, TimeSpan? timeout = null)
+	{
+		return default;
+	}
+
+	/// <inheritdoc />
 	public void Initialize()
 	{
 	}
 
 	/// <inheritdoc />
+	public HttpResponseMessage Patch(string uri, string content, TimeSpan? timeout = null)
+	{
+		return new HttpResponseMessage(HttpStatusCode.OK);
+	}
+
+	/// <inheritdoc />
 	public HttpResponseMessage Patch<TContent>(string uri, TContent content, TimeSpan? timeout = null)
+	{
+		return new HttpResponseMessage(HttpStatusCode.OK);
+	}
+
+	/// <inheritdoc />
+	public TResult Patch<TContent, TResult>(string uri, TContent content, TimeSpan? timeout = null)
+	{
+		return default;
+	}
+
+	/// <inheritdoc />
+	public HttpResponseMessage Post(string uri, string content, TimeSpan? timeout = null)
+	{
+		return new HttpResponseMessage(HttpStatusCode.OK);
+	}
+
+	/// <inheritdoc />
+	public HttpResponseMessage Post<TContent>(string uri, TContent content, TimeSpan? timeout = null)
 	{
 		return new HttpResponseMessage(HttpStatusCode.OK);
 	}
@@ -89,13 +110,7 @@ public class WebClientProxy : IWebClient
 	}
 
 	/// <inheritdoc />
-	public HttpResponseMessage Post<TContent>(string uri, TContent content, TimeSpan? timeout = null)
-	{
-		return new HttpResponseMessage(HttpStatusCode.OK);
-	}
-
-	/// <inheritdoc />
-	public HttpResponseMessage Post(string uri, string content, TimeSpan? timeout = null)
+	public HttpResponseMessage Put(string uri, string content, TimeSpan? timeout = null)
 	{
 		return new HttpResponseMessage(HttpStatusCode.OK);
 	}

@@ -67,17 +67,17 @@ public class ServerDatabaseTests : CornerstoneUnitTest
 
 	private IDatabaseProvider<IServerDatabase> GetServerMemoryDatabaseProvider()
 	{
-		return new ServerMemoryDatabaseProvider();
+		return new ServerMemoryDatabaseProvider(this);
 	}
 
 	private IDatabaseProvider<IServerDatabase> GetServerSqlDatabaseProvider()
 	{
-		return new ServerSqlDatabaseProvider("server=localhost;database=CornerstoneServer;integrated security=true;encrypt=false");
+		return new ServerSqlDatabaseProvider("server=localhost;database=CornerstoneServer;integrated security=true;encrypt=false", this);
 	}
 	
 	private IDatabaseProvider<IServerDatabase> GetServerSqliteDatabaseProvider()
 	{
-		return new ServerSqliteDatabaseProvider("Data Source=CornerstoneServer.db");
+		return new ServerSqliteDatabaseProvider("Data Source=CornerstoneServer.db", this);
 	}
 
 	#endregion

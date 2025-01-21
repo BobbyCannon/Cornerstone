@@ -14,35 +14,35 @@ public class ReaderWriterLockTiny : IReaderWriterLock
 	#region Constants
 
 	/// <summary>
-	/// Represents a standard write lock.
-	/// </summary>
-	private const int _writeLock = 1000000;
-
-	/// <summary>
 	/// Represents an upgraded write lock.
 	/// </summary>
-	private const int _upgradedWriteLock = 1000001;
+	private const int UpgradedWriteLock = 1000001;
+
+	/// <summary>
+	/// Represents a standard write lock.
+	/// </summary>
+	private const int WriteLock = 1000000;
 
 	#endregion
 
 	#region Fields
 
+	private bool _awaitingWriteLock;
 	private int _lock;
 	private int _ownerId;
-	private bool _awaitingWriteLock;
 
 	#endregion
 
 	#region Properties
 
 	/// <inheritdoc />
-	public bool IsReadLockHeld => _lock is > 0 and < _writeLock;
+	public bool IsAwaitingWriteLock => _awaitingWriteLock && (_lock < WriteLock);
 
 	/// <inheritdoc />
-	public bool IsWriteLockHeld => _lock >= _writeLock;
+	public bool IsReadLockHeld => _lock is > 0 and < WriteLock;
 
 	/// <inheritdoc />
-	public bool IsAwaitingWriteLock => _awaitingWriteLock && (_lock < _writeLock);
+	public bool IsWriteLockHeld => _lock >= WriteLock;
 
 	#endregion
 
@@ -54,8 +54,8 @@ public class ReaderWriterLockTiny : IReaderWriterLock
 		var w = new SpinWait();
 		var tmpLock = _lock;
 
-		while ((tmpLock >= _writeLock)
-				|| (_awaitingWriteLock)
+		while ((tmpLock >= WriteLock)
+				|| _awaitingWriteLock
 				|| (tmpLock != Interlocked.CompareExchange(ref _lock, tmpLock + 1, tmpLock)))
 		{
 			w.SpinOnce();
@@ -76,8 +76,8 @@ public class ReaderWriterLockTiny : IReaderWriterLock
 
 		var tmpLock = _lock;
 
-		while ((tmpLock >= _writeLock)
-				|| (_awaitingWriteLock)
+		while ((tmpLock >= WriteLock)
+				|| _awaitingWriteLock
 				|| (tmpLock != Interlocked.CompareExchange(ref _lock, tmpLock + 1, tmpLock)))
 		{
 			w.SpinOnce();
@@ -97,7 +97,7 @@ public class ReaderWriterLockTiny : IReaderWriterLock
 				_awaitingWriteLock = true;
 
 				// Wait for us to be the last reader before getting the writer lock
-				while (1 != Interlocked.CompareExchange(ref _lock, _upgradedWriteLock, 1))
+				while (1 != Interlocked.CompareExchange(ref _lock, UpgradedWriteLock, 1))
 				{
 					w.SpinOnce();
 				}
@@ -120,7 +120,7 @@ public class ReaderWriterLockTiny : IReaderWriterLock
 			_awaitingWriteLock = true;
 
 			// Now try and grab the lock, we have to wait for readers to complete
-			while (0 != Interlocked.CompareExchange(ref _lock, _writeLock, 0))
+			while (0 != Interlocked.CompareExchange(ref _lock, WriteLock, 0))
 			{
 				w.SpinOnce();
 			}
@@ -155,7 +155,7 @@ public class ReaderWriterLockTiny : IReaderWriterLock
 	public void ExitWriteLock()
 	{
 		// See if the lock is an upgrade one
-		if (_lock == _upgradedWriteLock)
+		if (_lock == UpgradedWriteLock)
 		{
 			// if so just downgrade the lock back to a single reader and keep ownership
 			_lock = 1;

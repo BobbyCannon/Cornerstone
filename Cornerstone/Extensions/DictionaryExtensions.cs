@@ -157,6 +157,11 @@ public static class DictionaryExtensions
 	/// <param name="updates"> The right dictionary. </param>
 	public static void Reconcile<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, IDictionary<TKey, TValue> updates)
 	{
+		if (updates == null)
+		{
+			return;
+		}
+
 		// Reconcile two dictionary
 		var keysToAdd = updates.Keys.Where(x => !dictionary.ContainsKey(x)).ToList();
 		var updateToBeApplied = updates

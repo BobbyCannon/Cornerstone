@@ -11,6 +11,8 @@ using Cornerstone.Input;
 using Cornerstone.Media;
 using Cornerstone.Presentation;
 using Cornerstone.Runtime;
+using Cornerstone.Security;
+using Cornerstone.Security.SecurityKeys;
 using IDispatcher = Cornerstone.Presentation.IDispatcher;
 
 #endregion
@@ -63,13 +65,13 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 		return Dispatcher;
 	}
 
-	public static object GetService(string type)
+	public static object GetInstance(string type)
 	{
-		var response = GetService(Type.GetType(type));
+		var response = GetInstance(Type.GetType(type));
 		return response;
 	}
 
-	public static T GetService<T>()
+	public static T GetInstance<T>()
 	{
 		var app = (CornerstoneApplication) Current;
 		if (app != null)
@@ -80,7 +82,7 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 		throw new CornerstoneException("Application is not available.");
 	}
 
-	public static object GetService(Type type)
+	public static object GetInstance(Type type)
 	{
 		var app = (CornerstoneApplication) Current;
 		if (app != null)
@@ -124,10 +126,17 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 		DependencyProvider.AddSingleton<AudioPlayer, AudioPlayerStub>();
 		DependencyProvider.AddSingleton<IBrowserProxy, BrowserProxy>();
 		DependencyProvider.AddSingleton<IClipboardService, ClipboardService>();
+		DependencyProvider.AddSingleton<CredentialVault, CredentialVaultStub>();
+		DependencyProvider.AddSingleton<Gamepad, GamepadStub>();
 		DependencyProvider.AddSingleton<Keyboard, KeyboardStub>();
 		DependencyProvider.AddSingleton<Mouse, MouseStub>();
+		DependencyProvider.AddSingleton<SmartCardReader, SmartCardReaderStub>();
 
-		DependencyProvider.AddCornerstoneServices(RuntimeInformation, Dispatcher);
+		DependencyProvider.SetupCornerstoneServices(
+			dispatcher: Dispatcher,
+			runtimeInformation: RuntimeInformation
+		);
+
 		DependencyProvider.Lock();
 		base.RegisterServices();
 	}

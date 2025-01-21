@@ -81,12 +81,14 @@ public class DockableTabItem : TabItem
 
 	#region Methods
 
-	public void Close()
+	public void Close(bool force)
 	{
-		if (!TabModel.CanCloseTab())
+		if (!force && !TabModel.CanCloseTab())
 		{
 			return;
 		}
+
+		TabModel.OnClosing();
 
 		RaiseEvent(new RoutedEventArgs(ClosedEvent));
 	}
@@ -94,18 +96,7 @@ public class DockableTabItem : TabItem
 	/// <inheritdoc />
 	protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
 	{
-		if (CloseButton != null)
-		{
-			CloseButton.Click -= CloseButtonOnClick;
-		}
-
-		CloseButton = e.NameScope.Find<Button>("PART_CloseButton");
-
-		if (CloseButton != null)
-		{
-			CloseButton.Click += CloseButtonOnClick;
-		}
-
+		TabModel.CloseRequest += (_, force) => Close(force);
 		base.OnApplyTemplate(e);
 	}
 
@@ -144,11 +135,6 @@ public class DockableTabItem : TabItem
 			}
 		}
 		base.OnPropertyChanged(change);
-	}
-
-	private void CloseButtonOnClick(object sender, RoutedEventArgs e)
-	{
-		Close();
 	}
 
 	private void UpdatePseudoClasses(bool isActive)

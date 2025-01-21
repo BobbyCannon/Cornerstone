@@ -99,33 +99,33 @@ public class SampleSyncManager : SyncManager
 	}
 
 	/// <inheritdoc />
-	protected override void OnSyncCompleted(SyncSession session)
+	protected override void OnSyncCompleted(SyncSession sessionManager)
 	{
-		this.DispatchAsync(() => SyncClientProfilerForClient.UpdateWith(session.SyncClientProfilerForClient));
-		this.DispatchAsync(() => SyncClientProfilerForServer.UpdateWith(session.SyncClientProfilerForServer));
+		this.DispatchAsync(() => SyncClientProfilerForClient.UpdateWith(sessionManager.SyncClientProfilerForClient));
+		this.DispatchAsync(() => SyncClientProfilerForServer.UpdateWith(sessionManager.SyncClientProfilerForServer));
 
-		base.OnSyncCompleted(session);
+		base.OnSyncCompleted(sessionManager);
 	}
 
 	/// <inheritdoc />
-	protected override void OnSyncRunning(SyncSession session)
+	protected override void OnSyncRunning(SyncSession sessionManager)
 	{
-		if (_testUntil.TryGetValue(session.SyncType, out var testUntil))
+		if (_testUntil.TryGetValue(sessionManager.SyncType, out var testUntil))
 		{
-			ProcessTestUntil(session, testUntil);
-			_testUntil.Remove(session.SyncType);
+			ProcessTestUntil(sessionManager, testUntil);
+			_testUntil.Remove(sessionManager.SyncType);
 		}
-		base.OnSyncRunning(session);
+		base.OnSyncRunning(sessionManager);
 	}
 
-	private void ProcessTestUntil(SyncSession session, Func<bool> testUntil)
+	private void ProcessTestUntil(SyncSession sessionManager, Func<bool> testUntil)
 	{
 		if (testUntil == null)
 		{
 			return;
 		}
 
-		while (!testUntil.Invoke() && !session.SyncCancelled)
+		while (!testUntil.Invoke() && !sessionManager.SyncCancelled)
 		{
 			// Delay while getting options
 			Thread.Sleep(1);

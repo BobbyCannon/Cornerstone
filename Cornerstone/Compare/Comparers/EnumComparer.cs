@@ -27,7 +27,7 @@ public class EnumComparer : BaseComparer
 
 		if (!actual.TryConvertTo(expectedValue.GetType(), out var actualValue))
 		{
-			AddDifference(session, expectedValue.GetType().FullName, actualValue?.GetType().FullName, true, () => "Failed to convert actual to Enum type.");
+			session.AddDifference(expectedValue.GetType().FullName, actualValue?.GetType().FullName, true, () => "Failed to convert actual to Enum type.");
 			return CompareResult.NotEqual;
 		}
 
@@ -36,7 +36,7 @@ public class EnumComparer : BaseComparer
 			return CompareResult.AreEqual;
 		}
 
-		AddDifference(session, expectedValue.ToString(), actualValue.ToString(), true);
+		session.AddDifference(expectedValue.ToString(), actualValue.ToString(), true);
 		return CompareResult.NotEqual;
 	}
 

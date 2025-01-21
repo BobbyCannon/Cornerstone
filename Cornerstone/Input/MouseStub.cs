@@ -30,31 +30,7 @@ public class MouseStub : Mouse
 	}
 
 	/// <inheritdoc />
-	public override Mouse LeftButtonClick()
-	{
-		return this;
-	}
-
-	/// <inheritdoc />
-	public override Mouse LeftButtonClick(int x, int y)
-	{
-		return this;
-	}
-
-	/// <inheritdoc />
-	public override Mouse MiddleButtonClick(int x, int y)
-	{
-		return this;
-	}
-
-	/// <inheritdoc />
 	public override Mouse MoveTo(int x, int y)
-	{
-		return this;
-	}
-
-	/// <inheritdoc />
-	public override Mouse RightButtonClick(int x, int y)
 	{
 		return this;
 	}
@@ -77,6 +53,15 @@ public class MouseStub : Mouse
 	protected override InputBuilder GetInputBuilder()
 	{
 		return null;
+	}
+
+	protected override void RefreshState()
+	{
+	}
+
+	protected override InputBuilder SendInput(InputBuilder builder)
+	{
+		return builder;
 	}
 
 	#endregion

@@ -3,6 +3,7 @@
 using System;
 using System.Collections;
 using Cornerstone.Extensions;
+using Cornerstone.Text;
 
 #endregion
 
@@ -32,25 +33,27 @@ public class DictionaryCSharpGenerator : CSharpCodeGenerator
 		codeWriter.AppendLine($"new {CSharpCodeWriter.GetCodeTypeName(type)}");
 		codeWriter.AppendLineThenPushIndent('{');
 
+		var textFormat = codeWriter.GetSettingsValue(x => x.TextFormat);
+		
 		for (var index = 0; index <= lastIndex; index++)
 		{
 			var key = keys[index];
 
-			//codeWriter.AppendLineThenPushIndent('{');
-			//codeWriter.AppendObject(key);
-			//codeWriter.AppendLine(",");
-			//codeWriter.AppendObject(dictionary[key]);
-			//codeWriter.PopIndent();
-			//codeWriter.NewLine();
-			//codeWriter.Append("}");
+			if (textFormat == TextFormat.Indented)
+			{
+				codeWriter.UpdateSettings(x => x.TextFormat = TextFormat.Spaced);
+			}
 
 			codeWriter.Append("{ ");
 			codeWriter.AppendObject(key);
 			codeWriter.Append(", ");
 			codeWriter.AppendObject(dictionary[key]);
-			//codeWriter.PopIndent();
-			//codeWriter.NewLine();
 			codeWriter.Append(" }");
+
+			if (textFormat == TextFormat.Indented)
+			{
+				codeWriter.UpdateSettings(x => x.TextFormat = TextFormat.Indented);
+			}
 
 			if (index != lastIndex)
 			{

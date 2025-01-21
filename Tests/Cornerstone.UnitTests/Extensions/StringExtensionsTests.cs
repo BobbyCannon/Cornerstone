@@ -61,12 +61,46 @@ public class StringExtensionsTests : CornerstoneUnitTest
 
 		AreEqual(-1, string.Empty.IndexOfAnyReverse([' '], 0));
 		AreEqual(-1, string.Empty.IndexOfAnyReverse([' '], 10));
+
+		AreEqual(5, value.IndexOfAnyReverse("456", value.Length));
+		AreEqual(5, value.IndexOfAnyReverse(["987", "456"], value.Length));
+	}
+	
+	[TestMethod]
+	public void LastIndexOf()
+	{
+		//           0123 4 567
+		var value = "123\r\n456";
+		AreEqual(5, value.LastIndexOf(["456"], value.Length));
 	}
 
 	[TestMethod]
 	public void IsQueryString()
 	{
 		IsTrue("?".IsQueryString());
+	}
+
+	[TestMethod]
+	public void MaxLength()
+	{
+		var data = "12345678901234567890";
+		AreEqual("", data.MaxLength(0));
+		AreEqual("1", data.MaxLength(1));
+		AreEqual("123456789012345", data.MaxLength(15));
+		AreEqual("1234567890123456789", data.MaxLength(19));
+		AreEqual("12345678901234567890", data.MaxLength(20));
+		AreEqual("12345678901234567890", data.MaxLength(21));
+
+		// With suffix
+		AreEqual("", data.MaxLength(0, true));
+		AreEqual("1", data.MaxLength(1, true));
+		AreEqual("123", data.MaxLength(3, true));
+		AreEqual("1...", data.MaxLength(4, true));
+		AreEqual("12...", data.MaxLength(5, true));
+		AreEqual("123456789012...", data.MaxLength(15, true));
+		AreEqual("1234567890123456...", data.MaxLength(19, true));
+		AreEqual("12345678901234567890", data.MaxLength(20, true));
+		AreEqual("12345678901234567890", data.MaxLength(21, true));
 	}
 
 	[TestMethod]

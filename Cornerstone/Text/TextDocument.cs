@@ -418,7 +418,7 @@ public class TextDocument : ITextRange
 
 	public void Remove(int index, int length)
 	{
-		_buffer.RemoveRange(index, length);
+		_buffer.Remove(index, length);
 
 		//if (Ranges.TryFind(index, out var value))
 		//{

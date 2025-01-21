@@ -23,7 +23,7 @@ public class OscCommandTests : CornerstoneUnitTest
 	{
 		ComparerSettings = new ComparerSettings
 		{
-			IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeSettings>
+			TypeIncludeExcludeSettings = new Dictionary<Type, IncludeExcludeSettings>
 			{
 				{ typeof(TestOscCommand), new IncludeExcludeSettings(null, [nameof(OscCommand.HasBeenRead), nameof(OscCommand.HasBeenUpdated)]) }
 			}
@@ -106,7 +106,7 @@ public class OscCommandTests : CornerstoneUnitTest
 	{
 		var comparerSettings = new ComparerSettings
 		{
-			IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeSettings>
+			TypeIncludeExcludeSettings = new Dictionary<Type, IncludeExcludeSettings>
 			{
 				{ typeof(TestOscCommand), new IncludeExcludeSettings(null, [nameof(OscCommand.HasBeenRead), nameof(OscCommand.HasBeenUpdated)]) }
 			}

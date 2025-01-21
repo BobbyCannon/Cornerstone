@@ -1,7 +1,6 @@
 #region References
 
 using System;
-using System.Linq;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
 
@@ -69,10 +68,10 @@ public class DatabaseSettings : Notifiable<DatabaseSettings>
 	#region Methods
 
 	/// <summary>
-	/// Update the DatabaseOptions with an update.
+	/// Update the DatabaseSettings with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	/// <param name="settings"> The settings for controlling the updating of the entity. </param>
 	public override bool UpdateWith(DatabaseSettings update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
@@ -85,24 +84,34 @@ public class DatabaseSettings : Notifiable<DatabaseSettings>
 
 		if ((settings == null) || settings.IsEmpty())
 		{
-			DisableEntityValidations = update.DisableEntityValidations;
-			MaintainCreatedOn = update.MaintainCreatedOn;
-			MaintainModifiedOn = update.MaintainModifiedOn;
-			MaintainSyncId = update.MaintainSyncId;
-			PermanentSyncEntityDeletions = update.PermanentSyncEntityDeletions;
-			UnmaintainedEntities = update.UnmaintainedEntities.ToArray();
+			DisableEntityValidations = UpdateProperty(DisableEntityValidations, update.DisableEntityValidations);
+			MaintainCreatedOn = UpdateProperty(MaintainCreatedOn, update.MaintainCreatedOn);
+			MaintainModifiedOn = UpdateProperty(MaintainModifiedOn, update.MaintainModifiedOn);
+			MaintainSyncId = UpdateProperty(MaintainSyncId, update.MaintainSyncId);
+			PermanentSyncEntityDeletions = UpdateProperty(PermanentSyncEntityDeletions, update.PermanentSyncEntityDeletions);
+			UnmaintainedEntities = update.UnmaintainedEntities;
 		}
 		else
 		{
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(DisableEntityValidations)), x => x.DisableEntityValidations = update.DisableEntityValidations);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(MaintainCreatedOn)), x => x.MaintainCreatedOn = update.MaintainCreatedOn);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(MaintainModifiedOn)), x => x.MaintainModifiedOn = update.MaintainModifiedOn);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(MaintainSyncId)), x => x.MaintainSyncId = update.MaintainSyncId);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(PermanentSyncEntityDeletions)), x => x.PermanentSyncEntityDeletions = update.PermanentSyncEntityDeletions);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(DisableEntityValidations)), x => x.DisableEntityValidations = UpdateProperty(DisableEntityValidations, update.DisableEntityValidations));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(MaintainCreatedOn)), x => x.MaintainCreatedOn = UpdateProperty(MaintainCreatedOn, update.MaintainCreatedOn));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(MaintainModifiedOn)), x => x.MaintainModifiedOn = UpdateProperty(MaintainModifiedOn, update.MaintainModifiedOn));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(MaintainSyncId)), x => x.MaintainSyncId = UpdateProperty(MaintainSyncId, update.MaintainSyncId));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(PermanentSyncEntityDeletions)), x => x.PermanentSyncEntityDeletions = UpdateProperty(PermanentSyncEntityDeletions, update.PermanentSyncEntityDeletions));
 			this.IfThen(_ => settings.ShouldProcessProperty(nameof(UnmaintainedEntities)), x => x.UnmaintainedEntities = update.UnmaintainedEntities);
 		}
 
 		return true;
+	}
+
+	/// <inheritdoc />
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
+	{
+		return update switch
+		{
+			DatabaseSettings value => UpdateWith(value, settings),
+			_ => base.UpdateWith(update, settings)
+		};
 	}
 
 	#endregion

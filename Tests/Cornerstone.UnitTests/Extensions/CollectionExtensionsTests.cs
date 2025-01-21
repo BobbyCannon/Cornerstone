@@ -105,7 +105,7 @@ public class CollectionExtensionsTests : CornerstoneUnitTest
 		var scenarios = new (string expected, byte[] value)[]
 		{
 			("1234567890", [0x12, 0x34, 0x56, 0x78, 0x90]),
-			("abcdef", [0xAB, 0xCD, 0xEF])
+			("ABCDEF", [0xAB, 0xCD, 0xEF])
 		};
 
 		foreach (var scenario in scenarios)

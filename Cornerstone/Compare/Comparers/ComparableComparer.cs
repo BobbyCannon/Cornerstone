@@ -34,7 +34,7 @@ public class ComparableComparer : BaseComparer
 			var aString = (string) actualValue;
 			if (eString.Length != aString.Length)
 			{
-				AddDifference(session, expected.ToString(), actual.ToString(), true);
+				session.AddDifference(expected, actual, true);
 				return CompareResult.NotEqual;
 			}
 
@@ -64,7 +64,7 @@ public class ComparableComparer : BaseComparer
 			}
 		}
 
-		AddDifference(session, expected.ToString(), actual.ToString(), true, message);
+		session.AddDifference(expected, actual, true, message);
 
 		return CompareResult.NotEqual;
 	}

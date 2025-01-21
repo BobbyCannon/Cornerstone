@@ -28,12 +28,14 @@
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/FlyoutPresenter.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/GridSplitter.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/ItemsControl.axaml" />
+				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/JoystickControl.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/Label.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/ListBoxItem.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/ManagedFileChooser.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/Menu.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/MenuFlyoutPresenter.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/MenuItem.axaml" />
+				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/MenuItemWithCheckBox.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/MenuScrollViewer.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/NativeMenuBar.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/NotificationCard.axaml" />

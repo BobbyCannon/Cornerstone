@@ -171,10 +171,10 @@ public class SyncSettings : Bindable<SyncSettings>
 	}
 
 	/// <summary>
-	/// Update the SyncOptions with an update.
+	/// Update the SyncSettings with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	/// <param name="settings"> The settings for controlling the updating of the entity. </param>
 	public override bool UpdateWith(SyncSettings update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
@@ -187,31 +187,38 @@ public class SyncSettings : Bindable<SyncSettings>
 
 		if ((settings == null) || settings.IsEmpty())
 		{
-			IncludeIssueDetails = update.IncludeIssueDetails;
-			ItemsPerSyncRequest = update.ItemsPerSyncRequest;
-			LastSyncedOnClient = update.LastSyncedOnClient;
-			LastSyncedOnServer = update.LastSyncedOnServer;
-			PermanentDeletions = update.PermanentDeletions;
-			SyncDirection = update.SyncDirection;
-			Values.Reconcile(update.Values);
+			IncludeIssueDetails = UpdateProperty(IncludeIssueDetails, update.IncludeIssueDetails);
+			ItemsPerSyncRequest = UpdateProperty(ItemsPerSyncRequest, update.ItemsPerSyncRequest);
+			LastSyncedOnClient = UpdateProperty(LastSyncedOnClient, update.LastSyncedOnClient);
+			LastSyncedOnServer = UpdateProperty(LastSyncedOnServer, update.LastSyncedOnServer);
+			PermanentDeletions = UpdateProperty(PermanentDeletions, update.PermanentDeletions);
+			SyncDirection = UpdateProperty(SyncDirection, update.SyncDirection);
+			SyncType = UpdateProperty(SyncType, update.SyncType);
+			Values = UpdateProperty(Values, update.Values);
 		}
 		else
 		{
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(IncludeIssueDetails)), x => x.IncludeIssueDetails = update.IncludeIssueDetails);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(ItemsPerSyncRequest)), x => x.ItemsPerSyncRequest = update.ItemsPerSyncRequest);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(LastSyncedOnClient)), x => x.LastSyncedOnClient = update.LastSyncedOnClient);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(LastSyncedOnServer)), x => x.LastSyncedOnServer = update.LastSyncedOnServer);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(PermanentDeletions)), x => x.PermanentDeletions = update.PermanentDeletions);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(SyncDirection)), x => x.SyncDirection = update.SyncDirection);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Values)), x => x.Values.Reconcile(update.Values));
-		}
-
-		foreach (var lookup in update._filters)
-		{
-			AddSyncableFilter(lookup.Value);
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(IncludeIssueDetails)), x => x.IncludeIssueDetails = UpdateProperty(IncludeIssueDetails, update.IncludeIssueDetails));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(ItemsPerSyncRequest)), x => x.ItemsPerSyncRequest = UpdateProperty(ItemsPerSyncRequest, update.ItemsPerSyncRequest));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(LastSyncedOnClient)), x => x.LastSyncedOnClient = UpdateProperty(LastSyncedOnClient, update.LastSyncedOnClient));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(LastSyncedOnServer)), x => x.LastSyncedOnServer = UpdateProperty(LastSyncedOnServer, update.LastSyncedOnServer));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(PermanentDeletions)), x => x.PermanentDeletions = UpdateProperty(PermanentDeletions, update.PermanentDeletions));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(SyncDirection)), x => x.SyncDirection = UpdateProperty(SyncDirection, update.SyncDirection));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(SyncType)), x => x.SyncType = UpdateProperty(SyncType, update.SyncType));
+			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Values)), x => x.Values = UpdateProperty(Values, update.Values));
 		}
 
 		return true;
+	}
+
+	/// <inheritdoc />
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
+	{
+		return update switch
+		{
+			SyncSettings value => UpdateWith(value, settings),
+			_ => base.UpdateWith(update, settings)
+		};
 	}
 
 	/// <summary>

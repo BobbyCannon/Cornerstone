@@ -4,8 +4,6 @@ using Avalonia.Media;
 using Cornerstone.Avalonia.AvaloniaEdit.Editing;
 using Cornerstone.Collections;
 using Cornerstone.Data;
-using Cornerstone.Text;
-using Cornerstone.Text.Document;
 
 #endregion
 
@@ -19,7 +17,7 @@ public class CompletionData : Notifiable, ICompletionData
 	{
 	}
 
-	public CompletionData(string displayText, string completionText, object description, IImage image, double priority, int caretOffset)
+	public CompletionData(string displayText, string completionText, object description, IImage image, decimal priority, int caretOffset)
 	{
 		CaretOffset = caretOffset;
 		CompletionText = completionText;
@@ -43,7 +41,7 @@ public class CompletionData : Notifiable, ICompletionData
 
 	public IImage Image { get; set; }
 
-	public double Priority { get; set; }
+	public decimal Priority { get; set; }
 
 	#endregion
 
@@ -106,7 +104,7 @@ public interface ICompletionData
 	/// Gets the priority. This property is used in the selection logic. You can use it to prefer selecting those items
 	/// which the user is accessing most frequently.
 	/// </summary>
-	double Priority { get; set; }
+	decimal Priority { get; set; }
 
 	#endregion
 

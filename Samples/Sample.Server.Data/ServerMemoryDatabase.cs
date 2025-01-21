@@ -2,6 +2,7 @@
 
 using Cornerstone.EntityFramework;
 using Cornerstone.Extensions;
+using Cornerstone.Logging;
 using Cornerstone.Storage;
 using Cornerstone.Sync;
 using Sample.Shared.Storage;
@@ -43,44 +44,19 @@ public class ServerMemoryDatabase : SyncableDatabase, IServerDatabase
 
 	#region Properties
 
-	/// <inheritdoc />
 	public ISyncableRepository<AccountEntity, int> Accounts { get; }
-
-	/// <inheritdoc />
 	public ISyncableRepository<AddressEntity, long> Addresses { get; }
-
-	/// <inheritdoc />
 	public IRepository<FoodEntity, int> Food { get; }
-
-	/// <inheritdoc />
 	public IRepository<FoodRelationshipEntity, int> FoodRelationships { get; }
-
-	/// <inheritdoc />
 	public IRepository<GroupMemberEntity, int> GroupMembers { get; }
-
-	/// <inheritdoc />
 	public IRepository<GroupEntity, int> Groups { get; }
-
-	/// <inheritdoc />
 	public ISyncableRepository<LogEventEntity, long> LogEvents { get; }
-
-	/// <inheritdoc />
 	public IRepository<PetEntity, (string Name, int OwnerId)> Pets { get; }
-
-	/// <inheritdoc />
 	public IRepository<PetTypeEntity, string> PetTypes { get; }
-
-	/// <inheritdoc />
 	public ISyncableRepository<SettingEntity, long> Settings { get; }
-
-	/// <inheritdoc />
 	public override string[] SyncOrder => GetSyncOrder();
-
-	/// <inheritdoc />
-	public IRepository<TrackerPathConfigurationEntity, int> TrackerPathConfigurations { get; }
-
-	/// <inheritdoc />
-	public IRepository<TrackerPathEntity, long> TrackerPaths { get; }
+	public ISyncableRepository<TrackerPathConfigurationEntity, int> TrackerPathConfigurations { get; }
+	public ISyncableRepository<TrackerPathEntity, long> TrackerPaths { get; }
 
 	#endregion
 

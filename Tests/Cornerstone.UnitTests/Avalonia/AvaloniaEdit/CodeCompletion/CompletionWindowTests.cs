@@ -28,7 +28,7 @@ public class CompletionWindowTests : CornerstoneUnitTest
 			new CompletionData { CompletionText = "'C:\\Program Files'", DisplayText = "C:\\Program Files" }
 		]);
 
-		var item = window.CompletionList.CompletionData[0];
+		var item = window.CompletionList.Suggestions[0];
 		window.CompleteRequest(item);
 
 		AreEqual("cd 'C:\\Program Files'", editor.Text);
@@ -47,7 +47,7 @@ public class CompletionWindowTests : CornerstoneUnitTest
 			new CompletionData { CompletionText = "'C:\\\\Program Files\\\\Windows Defender'", DisplayText = "Windows Defender" }
 		]);
 
-		var item = window.CompletionList.CompletionData[0];
+		var item = window.CompletionList.Suggestions[0];
 		var actual = window.GetSegment(item);
 
 		AreEqual(3, actual?.StartIndex);

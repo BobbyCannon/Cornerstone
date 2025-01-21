@@ -54,7 +54,7 @@ public class TimeComparer : BaseComparer
 			}
 		}
 
-		AddDifference(session, expected.ToString(), actual.ToString(), true);
+		session.AddDifference(expected, actual, true, message);
 		return CompareResult.NotEqual;
 	}
 

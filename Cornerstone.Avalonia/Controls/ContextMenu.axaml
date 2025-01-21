@@ -65,10 +65,10 @@
 	<ControlTheme x:Key="{x:Type ContextMenu}" TargetType="ContextMenu">
 		<Setter Property="Background" Value="{DynamicResource MenuFlyoutPresenterBackground}" />
 		<Setter Property="BorderBrush" Value="{DynamicResource MenuFlyoutPresenterBorderBrush}" />
-		<Setter Property="BorderThickness" Value="{DynamicResource MenuFlyoutPresenterBorderThemeThickness}" />
+		<Setter Property="BorderThickness" Value="1" />
 		<Setter Property="CornerRadius" Value="{DynamicResource FlyoutCornerRadius}" />
 		<Setter Property="MaxWidth" Value="{DynamicResource FlyoutThemeMaxWidth}" />
-		<Setter Property="Padding" Value="{DynamicResource MenuFlyoutPresenterThemePadding}" />
+		<Setter Property="Padding" Value="4" />
 		<Setter Property="HorizontalAlignment" Value="Stretch" />
 		<Setter Property="TextBlock.FontSize" Value="{DynamicResource TextEditorFontSize}" />
 		<Setter Property="TextBlock.FontWeight" Value="Normal" />
@@ -88,7 +88,7 @@
 						<ItemsPresenter
 								Name="PART_ItemsPresenter"
 								ItemsPanel="{TemplateBinding ItemsPanel}"
-								Margin="{DynamicResource MenuFlyoutScrollerMargin}"
+								Margin="0"
 								KeyboardNavigation.TabNavigation="Continue"
 								Grid.IsSharedSizeScope="True" />
 					</ScrollViewer>

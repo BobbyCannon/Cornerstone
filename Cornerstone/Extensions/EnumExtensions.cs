@@ -281,6 +281,18 @@ public static class EnumExtensions
 	/// Get all enum values with an optional set of exclusions.
 	/// </summary>
 	/// <returns> The enum value except the exclusions. </returns>
+	public static HashSet<object> GetEnumValues(this Type enumType)
+	{
+		return Enum
+			.GetValues(enumType)
+			.Cast<object>()
+			.ToHashSet();
+	}
+
+	/// <summary>
+	/// Get all enum values with an optional set of exclusions.
+	/// </summary>
+	/// <returns> The enum value except the exclusions. </returns>
 	public static HashSet<T> GetEnumValues<T>(params T[] except) where T : Enum
 	{
 		return Enum.GetValues(typeof(T))
@@ -308,12 +320,25 @@ public static class EnumExtensions
 	/// <returns> The individual values for the enum. </returns>
 	public static T[] GetFlagValues<T>() where T : Enum
 	{
-		return Enum.GetValues(typeof(T))
+		return GetFlagValues(typeof(T))
 			.Cast<T>()
+			.ToArray();
+	}
+
+	/// <summary>
+	/// Gets the type array of the values in the enum.
+	/// </summary>
+	/// <param name="enumValue"> The enum type. </param>
+	/// <returns> The individual values for the enum. </returns>
+	public static object[] GetFlagValues(this Type enumValue)
+	{
+		return Enum
+			.GetValues(enumValue)
+			.Cast<object>()
 			.Where(v =>
 			{
 				// because enums can be UInt64
-				var x = System.Convert.ToUInt64(v);
+				var x = v.ConvertTo<ulong>();
 				return (x != 0) && ((x & (x - 1)) == 0);
 				// Checks whether x is a power of 2
 				// Example: when x = 16, the binary values are:

@@ -10,7 +10,6 @@ using Cornerstone.Collections;
 using Cornerstone.Data;
 using Cornerstone.Exceptions;
 using Cornerstone.Extensions;
-using Cornerstone.Runtime;
 using Cornerstone.Sync;
 
 #endregion
@@ -422,7 +421,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 			return 0;
 		}
 
-		var now = DateTimeProvider.RealTime.UtcNow;
+		var now = Database.DateTimeProvider.UtcNow;
 
 		foreach (var entry in _cache.ToList())
 		{

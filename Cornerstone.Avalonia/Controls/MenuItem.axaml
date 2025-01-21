@@ -9,6 +9,7 @@
 	<Design.PreviewWith>
 		<Border Width="220">
 			<StackPanel HorizontalAlignment="Left">
+				<MenuItem Header="Checkable" ToggleType="CheckBox" />
 				<MenuItem Header="_Standard" />
 				<MenuItem IsSelected="True" Header="Selected" />
 				<MenuItem Header="With Icon">
@@ -34,7 +35,7 @@
 				<MenuItem Header="Input Gesture" InputGesture="Ctrl+G" />
 				<MenuItem Header="Disabled" IsEnabled="False" />
 				<MenuItem Header="-" />
-				<MenuItem Header="Parent" IsSubMenuOpen="True">
+				<MenuItem Header="Parent" IsSubMenuOpen="False">
 					<MenuItem Header="Child 1" />
 					<MenuItem Header="Child 2" />
 					<MenuItem Header="Child 3" />
@@ -66,7 +67,6 @@
 	<!-- Constants. -->
 
 	<conv:PlatformKeyGestureConverter x:Key="KeyGestureConverter" />
-	<!-- <x:Double x:Key="MenuFlyoutSubItemPopupHorizontalOffset">-4</x:Double> -->
 	<Thickness x:Key="MenuIconPresenterMargin">0,0,8,0</Thickness>
 	<Thickness x:Key="MenuInputGestureTextMargin">24,0,0,0</Thickness>
 	<Thickness x:Key="MenuFlyoutItemArrowMargin">12,0,0,0</Thickness>
@@ -75,10 +75,10 @@
 	<ControlTheme x:Key="{x:Type MenuItem}" TargetType="MenuItem">
 		<Setter Property="Background" Value="{DynamicResource MenuFlyoutItemBackground}" />
 		<Setter Property="Foreground" Value="{DynamicResource MenuFlyoutItemForeground}" />
-		<!--  Narrow padding should be used for mouse input, when non-narrow one should be used for touch input in the future.  -->
-		<Setter Property="Padding" Value="{DynamicResource MenuFlyoutItemPaddingNarrow}" />
+		<Setter Property="Height" Value="28" />
+		<Setter Property="Padding" Value="8,4" />
 		<Setter Property="FontSize" Value="{DynamicResource StandardFontSize}" />
-		<Setter Property="CornerRadius" Value="{DynamicResource MenuFlyoutItemCornerRadius}" />
+		<Setter Property="CornerRadius" Value="0" />
 		<Setter Property="Template">
 			<ControlTemplate>
 				<Panel>
@@ -138,15 +138,15 @@
 							Name="PART_Popup"
 							WindowManagerAddShadowHint="False"
 							Placement="RightEdgeAlignedTop"
-							HorizontalOffset="{DynamicResource MenuFlyoutSubItemPopupHorizontalOffset}"
-							VerticalOffset="{DynamicResource MenuFlyoutSubItemPopupVerticalOffset}"
+							HorizontalOffset="0"
+							VerticalOffset="-4"
 							IsLightDismissEnabled="False"
 							IsOpen="{TemplateBinding IsSubMenuOpen, Mode=TwoWay}">
 						<Border
 								Background="{DynamicResource MenuFlyoutPresenterBackground}"
 								BorderBrush="{DynamicResource MenuFlyoutPresenterBorderBrush}"
-								BorderThickness="{DynamicResource MenuFlyoutPresenterBorderThemeThickness}"
-								Padding="{DynamicResource MenuFlyoutPresenterThemePadding}"
+								BorderThickness="1"
+								Padding="0"
 								MaxWidth="{DynamicResource FlyoutThemeMaxWidth}"
 								MinHeight="32"
 								HorizontalAlignment="Stretch"
@@ -155,7 +155,7 @@
 								<ItemsPresenter
 										Name="PART_ItemsPresenter"
 										ItemsPanel="{TemplateBinding ItemsPanel}"
-										Margin="{DynamicResource MenuFlyoutScrollerMargin}"
+										Margin="0"
 										Grid.IsSharedSizeScope="True" />
 							</ScrollViewer>
 						</Border>

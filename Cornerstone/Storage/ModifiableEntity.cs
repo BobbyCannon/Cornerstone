@@ -30,7 +30,7 @@ public interface IModifiableEntity : ICreatedEntity
 	/// <summary>
 	/// Gets or sets the date and time the entity was modified.
 	/// </summary>
-	DateTime ModifiedOn { get; set; }
+	public DateTime ModifiedOn { get; set; }
 
 	#endregion
 }

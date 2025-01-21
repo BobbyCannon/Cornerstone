@@ -130,7 +130,7 @@ public class ThrottleServiceTests : CornerstoneUnitTest
 			service.QueueTriggers = true;
 
 			// {12/29/2022 8:00:00 AM}
-			UtcNow.Dump();
+			Now.Dump();
 
 			for (var i = 1; i <= count; i++)
 			{
@@ -147,7 +147,7 @@ public class ThrottleServiceTests : CornerstoneUnitTest
 			}
 
 			// should still be {12/29/2022 8:00:03 AM}
-			UtcNow.Dump();
+			Now.Dump();
 
 			IsFalse(service.IsTriggered);
 			AreEqual(count, actual.Count);

@@ -352,6 +352,59 @@ public static class StringExtensions
 	}
 
 	/// <summary>
+	/// Gets the index of the first occurrence of any character in the specified array in reverse of provided start index.
+	/// </summary>
+	/// <param name="value"> The value to process. </param>
+	/// <param name="anyOf"> Characters to search for </param>
+	/// <param name="startIndex"> Start index of the area to search. </param>
+	/// <returns> The first index where any character was found; or -1 if no occurrence was found. </returns>
+	public static int IndexOfAnyReverse(this string value, string[] anyOf, int startIndex)
+	{
+		foreach (var item in anyOf)
+		{
+			var result = IndexOfAnyReverse(value, item, startIndex);
+			if (result != -1)
+			{
+				return result;
+			}
+		}
+
+		return -1;
+	}
+
+	/// <summary>
+	/// Gets the index of the first occurrence of any character in the specified array in reverse of provided start index.
+	/// </summary>
+	/// <param name="value"> The value to process. </param>
+	/// <param name="expected"> Characters to search for </param>
+	/// <param name="startIndex"> Start index of the area to search. </param>
+	/// <returns> The first index where any character was found; or -1 if no occurrence was found. </returns>
+	public static int IndexOfAnyReverse(this string value, string expected, int startIndex)
+	{
+		if (string.IsNullOrEmpty(expected))
+		{
+			return -1;
+		}
+
+		var expectedStartIndex = startIndex - expected.Length;
+
+		if (!value.ValidRange(expectedStartIndex, expected.Length))
+		{
+			return -1;
+		}
+
+		for (var i = 0; i < expected.Length; i++)
+		{
+			if (value[expectedStartIndex + i] != expected[i])
+			{
+				return -1;
+			}
+		}
+
+		return expectedStartIndex;
+	}
+
+	/// <summary>
 	/// Determines if the string is a JSON string.
 	/// </summary>
 	/// <param name="input"> The value to validate. </param>
@@ -378,6 +431,28 @@ public static class StringExtensions
 				|| (input.StartsWith("[") && input.EndsWith("]"))
 				|| (input.StartsWith("\"") && input.EndsWith("\""))
 			) && isWellFormed();
+	}
+
+	/// <summary>
+	/// Determines whether the string is not null or empty.
+	/// </summary>
+	/// <param name="value"> The value to check. </param>
+	/// <returns> True if the string is not null or empty otherwise false. </returns>
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public static bool IsNotNullOrEmpty(this string value)
+	{
+		return !string.IsNullOrEmpty(value);
+	}
+
+	/// <summary>
+	/// Determines whether the string is null or empty.
+	/// </summary>
+	/// <param name="value"> The value to check. </param>
+	/// <returns> True if the string is null or empty otherwise false. </returns>
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public static bool IsNullOrEmpty(this string value)
+	{
+		return string.IsNullOrEmpty(value);
 	}
 
 	/// <summary>
@@ -408,6 +483,45 @@ public static class StringExtensions
 		{
 			return false;
 		}
+	}
+
+	/// <summary>
+	/// Gets the last index 
+	/// </summary>
+	/// <param name="value"> The value to process. </param>
+	/// <param name="anyOf"> Characters to search for </param>
+	/// <param name="length"> The length of the string search. </param>
+	/// <returns> The first index where any character was found; or -1 if no occurrence was found. </returns>
+	public static int LastIndexOf(this string value, string[] anyOf, int length)
+	{
+		var response = -1;
+
+		foreach (var item in anyOf)
+		{
+			var result = value.IndexOf(item, 0, length, StringComparison.OrdinalIgnoreCase);
+			response = Math.Max(response, result);
+		}
+
+		return response;
+	}
+
+	/// <summary>
+	/// Trims string to a maximum length.
+	/// </summary>
+	/// <param name="value"> The value to process. </param>
+	/// <param name="max"> The maximum length of the string. </param>
+	/// <param name="addEllipses"> The option to add ellipses to shorted strings. Defaults to false. </param>
+	/// <returns> The value limited to the maximum length. </returns>
+	public static string MaxLength(this string value, int max, bool addEllipses = false)
+	{
+		if (string.IsNullOrWhiteSpace(value) || (max <= 0))
+		{
+			return string.Empty;
+		}
+
+		var shouldAddEllipses = addEllipses && (value.Length > max) && (max >= 4);
+
+		return value.Length > max ? value.Substring(0, shouldAddEllipses ? max - 3 : max) + (shouldAddEllipses ? "..." : string.Empty) : value;
 	}
 
 	/// <summary>

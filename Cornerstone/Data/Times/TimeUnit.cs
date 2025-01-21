@@ -14,9 +14,6 @@ namespace Cornerstone.Data.Times;
 public enum TimeUnit
 {
     [Display(Name = "Ticks", ShortName = "t")]
-    Min = 0,
-
-    [Display(Name = "Ticks", ShortName = "t")]
     Ticks = 0,
 
     [Display(Name = "Nanosecond", ShortName = "ns")]
@@ -47,8 +44,5 @@ public enum TimeUnit
     Month = 9,
 
     [Display(Name = "Year", ShortName = "yr")]
-    Year = 10,
-
-    [Display(Name = "Year", ShortName = "yr")]
-    Max = 10
+    Year = 10
 }

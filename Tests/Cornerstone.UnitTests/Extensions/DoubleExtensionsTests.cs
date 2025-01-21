@@ -50,5 +50,18 @@ public class DoubleExtensionsTests : CornerstoneUnitTest
 		AreEqual(double.Epsilon * -1, 0.0.Increment(double.Epsilon * -1.0));
 	}
 
+	[TestMethod]
+	public void IsEqual()
+	{
+		var start = new DateTime(2025, 01, 01);
+		var end = new DateTime(2025, 01, 31);
+		var total = end - start;
+		var elapsed = new DateTime(2025, 01, 20) - start;
+		var percent = elapsed.TotalSeconds / total.TotalSeconds;
+
+		IsTrue(percent.IsEqual(0.6333333333333333));
+		IsFalse(percent.IsEqual(0.633333333333333));
+	}
+
 	#endregion
 }

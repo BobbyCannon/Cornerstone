@@ -156,9 +156,9 @@ public class ReadOnlySpeedyList<T> : Notifiable, ISpeedyList<T>, IList, IViewMod
 	}
 
 	/// <inheritdoc />
-	public void RefreshList()
+	public void Load(params T[] items)
 	{
-		_list.RefreshFilter();
+		throw new NotSupportedException();
 	}
 
 	/// <inheritdoc />

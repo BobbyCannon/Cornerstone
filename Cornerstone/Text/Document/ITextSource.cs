@@ -128,9 +128,21 @@ public interface ITextSource
 	/// <returns> The last index where the search term was found; or -1 if no occurrence was found. </returns>
 	/// <remarks>
 	/// The search proceeds backwards from (startIndex+count) to startIndex.
-	/// This is different than the meaning of the parameters on string.LastIndexOf!
+	/// This is different from the meaning of the parameters on string.LastIndexOf!
 	/// </remarks>
 	int LastIndexOf(char c, int startIndex, int count);
+
+	/// <summary>
+	/// Gets the index of the last occurrence of the specified search text in this text source.
+	/// </summary>
+	/// <param name="searchText"> The search text </param>
+	/// <param name="comparisonType"> String comparison to use. </param>
+	/// <returns> The last index where the search term was found; or -1 if no occurrence was found. </returns>
+	/// <remarks>
+	/// The search proceeds backwards from (startIndex+count) to startIndex.
+	/// This is different from the meaning of the parameters on string.LastIndexOf!
+	/// </remarks>
+	int LastIndexOf(string searchText, StringComparison comparisonType);
 
 	/// <summary>
 	/// Gets the index of the last occurrence of the specified search text in this text source.
@@ -142,7 +154,7 @@ public interface ITextSource
 	/// <returns> The last index where the search term was found; or -1 if no occurrence was found. </returns>
 	/// <remarks>
 	/// The search proceeds backwards from (startIndex+count) to startIndex.
-	/// This is different than the meaning of the parameters on string.LastIndexOf!
+	/// This is different from the meaning of the parameters on string.LastIndexOf!
 	/// </remarks>
 	int LastIndexOf(string searchText, int startIndex, int count, StringComparison comparisonType);
 

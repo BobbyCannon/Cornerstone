@@ -7,7 +7,6 @@ using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Sync;
 using Cornerstone.Testing;
-using Cornerstone.Web.Extensions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Sample.Shared.Sync;
 
@@ -106,9 +105,11 @@ public class PagedResultsTests : CornerstoneUnitTest
 		AreEqual(new[]
 			{
 				new PartialUpdateValue("Filter", "foo"),
+				new PartialUpdateValue("Order", ""),
 				new PartialUpdateValue("Page", 2),
+				new PartialUpdateValue("PerPage", 10),
 				new PartialUpdateValue("roleId", "5"),
-				new PartialUpdateValue("TotalCount", 400)
+				new PartialUpdateValue("TotalCount", 400),
 			},
 			actual.GetUpdates()
 		);

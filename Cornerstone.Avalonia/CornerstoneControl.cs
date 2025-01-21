@@ -25,9 +25,9 @@ public class CornerstoneControl : Control, IDispatchable
         return CornerstoneDispatcher.Instance;
     }
 
-    public static T GetService<T>()
+    public static T GetInstance<T>()
     {
-        return CornerstoneApplication.GetService<T>();
+        return CornerstoneApplication.GetInstance<T>();
     }
 
     public void OnPropertyChanged(string propertyName)

@@ -38,7 +38,7 @@ public abstract class EntityFrameworkSyncableDatabase : EntityFrameworkDatabase,
 	/// Initializes an instance of the database.
 	/// </summary>
 	/// <param name="startup"> The startup options for this database. </param>
-	/// <param name="options"> The options for this database. </param>
+	/// <param name="settings"> The settings for this database. </param>
 	/// <param name="keyCache"> An optional key manager for caching entity IDs (primary and sync). </param>
 	protected EntityFrameworkSyncableDatabase(DbContextOptions startup, DatabaseSettings settings, DatabaseKeyCache keyCache)
 		: base(startup, settings)
