@@ -54,7 +54,7 @@ public class OscPacketTests : CornerstoneUnitTest
 	[TestMethod]
 	public void GetBytes()
 	{
-		var message = new OscMessage(UtcNow, "/test");
+		var message = new OscMessage(Now, "/test");
 		message.Arguments.Add(true);
 		message.Arguments.Add(123);
 
@@ -70,22 +70,22 @@ public class OscPacketTests : CornerstoneUnitTest
 	public void GetBytesForAllInfinity()
 	{
 		var expected = new byte[] { 0x2F, 0x74, 0x65, 0x73, 0x74, 0x00, 0x00, 0x00, 0x2C, 0x49, 0x00, 0x00 };
-		var message = new OscMessage(UtcNow, "/test");
+		var message = new OscMessage(Now, "/test");
 		message.Arguments.Add(float.PositiveInfinity);
 		var actual = message.ToByteArray();
 		AreEqual(expected, actual);
 
-		message = new OscMessage(UtcNow, "/test");
+		message = new OscMessage(Now, "/test");
 		message.Arguments.Add(float.NegativeInfinity);
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 
-		message = new OscMessage(UtcNow, "/test");
+		message = new OscMessage(Now, "/test");
 		message.Arguments.Add(double.PositiveInfinity);
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 
-		message = new OscMessage(UtcNow, "/test");
+		message = new OscMessage(Now, "/test");
 		message.Arguments.Add(double.NegativeInfinity);
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
@@ -95,7 +95,7 @@ public class OscPacketTests : CornerstoneUnitTest
 	public void ParseAllTypes()
 	{
 		var command = "/command,\"value1, value2\",0.1234d";
-		var packet = OscPacket.Parse(UtcNow, command, CultureInfo.CurrentCulture);
+		var packet = OscPacket.Parse(Now, command, CultureInfo.CurrentCulture);
 		var actual = packet as OscMessage;
 
 		Assert.IsNotNull(actual);
@@ -114,7 +114,7 @@ public class OscPacketTests : CornerstoneUnitTest
 
 		AreEqual(command, actualString);
 
-		var packet = OscPacket.Parse(UtcNow, command, CultureInfo.CurrentCulture);
+		var packet = OscPacket.Parse(Now, command, CultureInfo.CurrentCulture);
 		var actual = packet as OscMessage;
 
 		Assert.IsNotNull(actual);
@@ -145,7 +145,7 @@ public class OscPacketTests : CornerstoneUnitTest
 
 		foreach (var command in commands)
 		{
-			var packet = OscPacket.Parse(UtcNow, command, CultureInfo.CurrentCulture);
+			var packet = OscPacket.Parse(Now, command, CultureInfo.CurrentCulture);
 			var actual = packet as OscMessage;
 
 			Assert.IsNotNull(actual);
@@ -164,7 +164,7 @@ public class OscPacketTests : CornerstoneUnitTest
 
 		foreach (var command in commands)
 		{
-			var packet = OscPacket.Parse(UtcNow, command, CultureInfo.CurrentCulture);
+			var packet = OscPacket.Parse(Now, command, CultureInfo.CurrentCulture);
 			var actual = packet as OscMessage;
 
 			Assert.IsNotNull(actual);
@@ -263,7 +263,7 @@ public class OscPacketTests : CornerstoneUnitTest
 
 		var comparerSettings = new ComparerSettings
 		{
-			IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeSettings>
+			TypeIncludeExcludeSettings = new Dictionary<Type, IncludeExcludeSettings>
 			{
 				{ typeof(OscMessage), new IncludeExcludeSettings(null, [nameof(OscMessage.Time)]) }
 			}

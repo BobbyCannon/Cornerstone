@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
@@ -36,7 +37,7 @@ public class DockLayoutItem
 
 	public Orientation Orientation { get; set; }
 
-	public string SelectedTab { get; set; }
+	public Guid SelectedTab { get; set; }
 
 	public double Width { get; set; }
 

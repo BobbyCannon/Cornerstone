@@ -12,20 +12,35 @@ public sealed class CircularProgress : CornerstoneContentControl
 {
 	#region Fields
 
-	public static readonly StyledProperty<bool> IsIndeterminateProperty = AvaloniaProperty.Register<CircularProgress, bool>(nameof(IsIndeterminate));
-	public static readonly StyledProperty<double> MaximumProperty = AvaloniaProperty.Register<CircularProgress, double>(nameof(Maximum), 100);
-	public static readonly StyledProperty<double> MinimumProperty = AvaloniaProperty.Register<CircularProgress, double>(nameof(Minimum));
-	public static readonly DirectProperty<CircularProgress, double> PercentageProperty = AvaloniaProperty.RegisterDirect<CircularProgress, double>(nameof(Percentage), x => x.Percentage);
-	public static readonly StyledProperty<string> ProgressTextFormatProperty = AvaloniaProperty.Register<CircularProgress, string>(nameof(ProgressTextFormat), "{1:0}%");
-	public static readonly StyledProperty<bool> ShowProgressTextProperty = AvaloniaProperty.Register<CircularProgress, bool>(nameof(ShowProgressText));
-	public static readonly StyledProperty<PenLineCap> StrokeLineCapProperty = AvaloniaProperty.Register<CircularProgress, PenLineCap>(nameof(StrokeLineCap), PenLineCap.Round);
-	public static readonly StyledProperty<IBrush> StrokeProperty = AvaloniaProperty.Register<CircularProgress, IBrush>(nameof(Stroke));
-	public static readonly StyledProperty<int> StrokeThicknessProperty = AvaloniaProperty.Register<CircularProgress, int>(nameof(StrokeThickness), 8);
-	public static readonly StyledProperty<double> SweepAngleProperty = AvaloniaProperty.Register<CircularProgress, double>(nameof(SweepAngle));
-	public static readonly StyledProperty<double> ValueProperty = AvaloniaProperty.Register<CircularProgress, double>(nameof(Value));
+	public static readonly StyledProperty<bool> IsIndeterminateProperty;
+	public static readonly StyledProperty<double> MaximumProperty;
+	public static readonly StyledProperty<double> MinimumProperty;
+	public static readonly DirectProperty<CircularProgress, double> PercentageProperty;
+	public static readonly StyledProperty<string> ProgressTextFormatProperty;
+	public static readonly StyledProperty<bool> ShowProgressTextProperty;
+	public static readonly StyledProperty<PenLineCap> StrokeLineCapProperty;
+	public static readonly StyledProperty<IBrush> StrokeProperty;
+	public static readonly StyledProperty<int> StrokeThicknessProperty;
+	public static readonly StyledProperty<double> SweepAngleProperty;
+	public static readonly StyledProperty<double> ValueProperty;
 
 	private double _percentage;
 	private double _radius;
+
+	static CircularProgress()
+	{
+		IsIndeterminateProperty = AvaloniaProperty.Register<CircularProgress, bool>(nameof(IsIndeterminate));
+		MaximumProperty = AvaloniaProperty.Register<CircularProgress, double>(nameof(Maximum), 100);
+		MinimumProperty = AvaloniaProperty.Register<CircularProgress, double>(nameof(Minimum));
+		PercentageProperty = AvaloniaProperty.RegisterDirect<CircularProgress, double>(nameof(Percentage), x => x.Percentage);
+		ProgressTextFormatProperty = AvaloniaProperty.Register<CircularProgress, string>(nameof(ProgressTextFormat), "{1:0}%");
+		ShowProgressTextProperty = AvaloniaProperty.Register<CircularProgress, bool>(nameof(ShowProgressText));
+		StrokeLineCapProperty = AvaloniaProperty.Register<CircularProgress, PenLineCap>(nameof(StrokeLineCap), PenLineCap.Round);
+		StrokeProperty = AvaloniaProperty.Register<CircularProgress, IBrush>(nameof(Stroke));
+		StrokeThicknessProperty = AvaloniaProperty.Register<CircularProgress, int>(nameof(StrokeThickness), 8);
+		SweepAngleProperty = AvaloniaProperty.Register<CircularProgress, double>(nameof(SweepAngle));
+		ValueProperty = AvaloniaProperty.Register<CircularProgress, double>(nameof(Value));
+	}
 
 	#endregion
 

@@ -1,0 +1,65 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:system="clr-namespace:System;assembly=System.Runtime"
+		xmlns:converters="clr-namespace:Cornerstone.Avalonia.Converters;assembly=Cornerstone.Avalonia"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignHeight="150"
+		x:Class="Cornerstone.Sample.Tabs.TabThemes"
+		x:Name="ThisControl"
+		x:DataType="tabs:TabThemes">
+	<UserControl.Resources>
+		<ResourceDictionary>
+			<system:Double x:Key="ColorWidth">30</system:Double>
+			<system:Double x:Key="ColorHeight">30</system:Double>
+		</ResourceDictionary>
+	</UserControl.Resources>
+	<ScrollViewer>
+		<ItemsControl ItemsSource="{x:Static Theme.Colors}">
+			<ItemsControl.ItemsPanel>
+				<ItemsPanelTemplate>
+					<VirtualizingStackPanel Margin="10" />
+				</ItemsPanelTemplate>
+			</ItemsControl.ItemsPanel>
+			<ItemsControl.ItemTemplate>
+				<DataTemplate DataType="ThemeColor">
+					<Grid ColumnDefinitions="120,*">
+						<RadioButton
+								Grid.Column="0"
+								Content="{Binding}"
+								Margin="4"
+								GroupName="ThemeSelector"
+								Theme.Color="{Binding}"
+								Click="ThemeOnClick">
+							<RadioButton.IsChecked>
+								<MultiBinding Converter="{x:Static Theme.ColorsMatch}">
+									<Binding Mode="OneWay" />
+									<Binding Path="ApplicationSettings.ThemeColor" Mode="OneWay" ElementName="ThisControl" />
+								</MultiBinding>
+							</RadioButton.IsChecked>
+						</RadioButton>
+						<StackPanel
+								Grid.Column="1"
+								Orientation="Horizontal"
+								VerticalAlignment="Center"
+								Margin="14,4,4,4"
+								Height="{StaticResource ColorHeight}">
+							<Border Width="{StaticResource ColorWidth}" Background="{Binding Converter={x:Static converters:ThemeConverters.GetColorBrushAtIndex}, ConverterParameter=00}" CornerRadius="4,0,0,4" />
+							<Border Width="{StaticResource ColorWidth}" Background="{Binding Converter={x:Static converters:ThemeConverters.GetColorBrushAtIndex}, ConverterParameter=01}" />
+							<Border Width="{StaticResource ColorWidth}" Background="{Binding Converter={x:Static converters:ThemeConverters.GetColorBrushAtIndex}, ConverterParameter=02}" />
+							<Border Width="{StaticResource ColorWidth}" Background="{Binding Converter={x:Static converters:ThemeConverters.GetColorBrushAtIndex}, ConverterParameter=03}" />
+							<Border Width="{StaticResource ColorWidth}" Background="{Binding Converter={x:Static converters:ThemeConverters.GetColorBrushAtIndex}, ConverterParameter=04}" />
+							<Border Width="{StaticResource ColorWidth}" Background="{Binding Converter={x:Static converters:ThemeConverters.GetColorBrushAtIndex}, ConverterParameter=05}" />
+							<Border Width="{StaticResource ColorWidth}" Background="{Binding Converter={x:Static converters:ThemeConverters.GetColorBrushAtIndex}, ConverterParameter=06}" />
+							<Border Width="{StaticResource ColorWidth}" Background="{Binding Converter={x:Static converters:ThemeConverters.GetColorBrushAtIndex}, ConverterParameter=07}" />
+							<Border Width="{StaticResource ColorWidth}" Background="{Binding Converter={x:Static converters:ThemeConverters.GetColorBrushAtIndex}, ConverterParameter=08}" />
+							<Border Width="{StaticResource ColorWidth}" Background="{Binding Converter={x:Static converters:ThemeConverters.GetColorBrushAtIndex}, ConverterParameter=09}" CornerRadius="0,4,4,0" />
+						</StackPanel>
+					</Grid>
+				</DataTemplate>
+			</ItemsControl.ItemTemplate>
+		</ItemsControl>
+	</ScrollViewer>
+</UserControl>

@@ -7,7 +7,7 @@ using System.Reflection;
 using Cornerstone.Attributes;
 using Cornerstone.Compare;
 using Cornerstone.Extensions;
-using Cornerstone.Input;
+using Cornerstone.Internal;
 
 #endregion
 
@@ -28,7 +28,7 @@ public static class UpdateableExtensions
 	public static bool IsSyncAction(this UpdateableAction action)
 	{
 		return action is UpdateableAction.SyncIncomingAdd
-			or UpdateableAction.SyncIncomingModified
+			or UpdateableAction.SyncIncomingUpdate
 			or UpdateableAction.SyncOutgoing;
 	}
 
@@ -41,10 +41,12 @@ public static class UpdateableExtensions
 	/// <returns> True if the update should be applied otherwise false. </returns>
 	public static bool ShouldUpdate(this IUpdateable value, object update, IncludeExcludeSettings settings)
 	{
-		return !Comparer.Compare(value, update, new ComparerSettings
+		var session = Comparer.Compare(value, update, new ComparerSettings
 		{
-			IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeSettings> { { value?.GetType(), settings } }
+			TypeIncludeExcludeSettings = new Dictionary<Type, IncludeExcludeSettings> { { value?.GetType(), settings } }
 		});
+
+		return session.Result != CompareResult.AreEqual;
 	}
 
 	/// <summary>
@@ -103,11 +105,16 @@ public static class UpdateableExtensions
 	/// </summary>
 	/// <param name="value"> The value to be updated. </param>
 	/// <param name="update"> The source of the updates. </param>
-	/// <param name="exclusions"> An optional list of members to exclude. </param>
 	/// <returns> True if the update was applied otherwise false. </returns>
-	internal static bool UpdateWithUsingReflection(this object value, object update, params string[] exclusions)
+	public static bool UpdateWithUsingReflection(this object value, object update, UpdateableAction action)
 	{
-		return UpdateWithUsingReflection(value, update, IncludeExcludeSettings.FromExclusions(exclusions));
+		if (value == null)
+		{
+			return false;
+		}
+
+		var settings = Cache.GetSettings(value.GetType(), action);
+		return UpdateWithUsingReflection(value, update, settings);
 	}
 
 	/// <summary>
@@ -134,14 +141,18 @@ public static class UpdateableExtensions
 		foreach (var thisProperty in destinationProperties)
 		{
 			// Ensure the source can read this property
-			var canRead = (thisProperty.GetMethod != null) && thisProperty.CanRead && thisProperty.GetMethod.IsPublic;
+			var canRead = (thisProperty.GetMethod != null)
+				&& thisProperty.CanRead
+				&& thisProperty.GetMethod.IsPublic;
 			if (!canRead)
 			{
 				continue;
 			}
 
 			// Ensure the destination can write this property
-			var canWrite = (thisProperty.SetMethod != null) && thisProperty.CanWrite && thisProperty.SetMethod.IsPublic;
+			var canWrite = (thisProperty.SetMethod != null)
+				&& thisProperty.CanWrite
+				&& thisProperty.SetMethod.IsPublic;
 			if (!canWrite)
 			{
 				continue;
@@ -160,10 +171,11 @@ public static class UpdateableExtensions
 			}
 
 			// Check to see if the update source entity has the property
-			var updateProperty = sourceProperties.FirstOrDefault(x =>
-				(x.Name == thisProperty.Name)
-				&& (x.PropertyType == thisProperty.PropertyType)
-			);
+			var updateProperty = sourceProperties
+				.FirstOrDefault(x =>
+					(x.Name == thisProperty.Name)
+					&& (x.PropertyType == thisProperty.PropertyType)
+				);
 
 			if (updateProperty == null)
 			{
@@ -181,6 +193,18 @@ public static class UpdateableExtensions
 		}
 
 		return true;
+	}
+
+	/// <summary>
+	/// Allows updating of one type to another based on member Name and Type.
+	/// </summary>
+	/// <param name="value"> The value to be updated. </param>
+	/// <param name="update"> The source of the updates. </param>
+	/// <param name="exclusions"> An optional list of members to exclude. </param>
+	/// <returns> True if the update was applied otherwise false. </returns>
+	internal static bool UpdateWithUsingReflection(this object value, object update, params string[] exclusions)
+	{
+		return UpdateWithUsingReflection(value, update, IncludeExcludeSettings.FromExclusions(exclusions));
 	}
 
 	#endregion

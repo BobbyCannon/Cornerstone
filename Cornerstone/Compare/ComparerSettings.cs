@@ -23,10 +23,13 @@ public struct ComparerSettings
 	public ComparerSettings() : this(
 		floatTolerance: float.Epsilon,
 		doubleTolerance: double.Epsilon,
+		globalIncludeExcludeSettings: IncludeExcludeSettings.Empty,
+		ignoreMissingDictionaryEntries: false,
 		ignoreMissingProperties: false,
 		ignoreObjectTypes: true,
+		maxDepth: int.MaxValue,
 		stringComparison: StringComparison.CurrentCulture,
-		includeExcludeOptions: new())
+		typeIncludeExcludeOptions: new())
 	{
 	}
 
@@ -35,20 +38,28 @@ public struct ComparerSettings
 	/// </summary>
 	/// <param name="doubleTolerance"> The tolerance for double. </param>
 	/// <param name="floatTolerance"> The tolerance for float. </param>
+	/// <param name="globalIncludeExcludeSettings"> An optional set of included or excluded properties for all types. </param>
 	/// <param name="ignoreMissingProperties"> Option to ignore missing properties. </param>
+	/// <param name="ignoreMissingDictionaryEntries"> Options to ignore missing dictionary entries (keys). </param>
 	/// <param name="ignoreObjectTypes"> Option to ignore the property type. </param>
+	/// <param name="maxDepth"> The maximum depth to compare. </param>
 	/// <param name="stringComparison"> The default comparison for comparing strings. </param>
-	/// <param name="includeExcludeOptions"> An optional set of included or excluded properties. </param>
-	public ComparerSettings(double doubleTolerance, float floatTolerance, bool ignoreMissingProperties,
-		bool ignoreObjectTypes, StringComparison stringComparison,
-		Dictionary<Type, IncludeExcludeSettings> includeExcludeOptions)
+	/// <param name="typeIncludeExcludeOptions"> An optional set of included or excluded properties. </param>
+	public ComparerSettings(double doubleTolerance, float floatTolerance,
+		bool ignoreMissingProperties, bool ignoreMissingDictionaryEntries,
+		bool ignoreObjectTypes, int maxDepth, StringComparison stringComparison,
+		IncludeExcludeSettings globalIncludeExcludeSettings,
+		Dictionary<Type, IncludeExcludeSettings> typeIncludeExcludeOptions)
 	{
 		DoubleTolerance = doubleTolerance;
 		FloatTolerance = floatTolerance;
+		GlobalIncludeExcludeSettings = globalIncludeExcludeSettings;
+		IgnoreMissingDictionaryEntries = ignoreMissingDictionaryEntries;
 		IgnoreMissingProperties = ignoreMissingProperties;
 		IgnoreObjectTypes = ignoreObjectTypes;
-		IncludeExcludeOptions = includeExcludeOptions ?? new();
+		MaxDepth = maxDepth;
 		StringComparison = stringComparison;
+		TypeIncludeExcludeSettings = typeIncludeExcludeOptions ?? new();
 	}
 
 	#endregion
@@ -64,6 +75,16 @@ public struct ComparerSettings
 	/// The tolerance when comparing float numbers.
 	/// </summary>
 	public float FloatTolerance { get; set; }
+
+	/// <summary>
+	/// Include / Exclude options for all types.
+	/// </summary>
+	public IncludeExcludeSettings GlobalIncludeExcludeSettings { get; set; }
+
+	/// <summary>
+	/// Allow dictionaries to have missing entries.
+	/// </summary>
+	public bool IgnoreMissingDictionaryEntries { get; set; }
 
 	/// <summary>
 	/// Ignore missing properties.
@@ -83,24 +104,35 @@ public struct ComparerSettings
 	public bool IgnoreObjectTypes { get; set; }
 
 	/// <summary>
-	/// Include / Exclude options for each type.
+	/// The maximum depth to compare.
 	/// </summary>
-	public Dictionary<Type, IncludeExcludeSettings> IncludeExcludeOptions { get; set; }
+	public int MaxDepth { get; set; }
 
 	/// <summary>
 	/// The comparison to use for strings.
 	/// </summary>
 	public StringComparison StringComparison { get; set; }
 
+	/// <summary>
+	/// Include / Exclude options for specific types.
+	/// </summary>
+	public Dictionary<Type, IncludeExcludeSettings> TypeIncludeExcludeSettings { get; set; }
+
 	#endregion
 
 	#region Methods
 
-	public void IgnoreProperty<T>(Expression<Func<T, object>> expression)
+	public void IgnoreGlobalProperty<T>(Expression<Func<T, object>> expression)
+	{
+		var name = expression.GetExpressionName();
+		GlobalIncludeExcludeSettings = GlobalIncludeExcludeSettings.WithMoreExclusions(name);
+	}
+
+	public void IgnoreTypeProperty<T>(Expression<Func<T, object>> expression)
 	{
 		var name = expression.GetExpressionName();
 
-		IncludeExcludeOptions.AddOrUpdate(typeof(T),
+		TypeIncludeExcludeSettings.AddOrUpdate(typeof(T),
 			() => new IncludeExcludeSettings(null, [name]),
 			existing => existing.WithMoreExclusions(name)
 		);

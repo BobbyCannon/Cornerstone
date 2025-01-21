@@ -23,6 +23,8 @@ public static class StringFormatter
 {
 	#region Fields
 
+	public static readonly char[] HexCharacters = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'];
+
 	private static readonly Dictionary<TimeUnit, Func<TimeSpan, bool>> _timeSpanUnitMaxChecks;
 	private static readonly Dictionary<TimeUnit, Func<TimeSpan, bool>> _timeSpanUnitMinChecks;
 	private static readonly IList<TimeUnit> _timeUnitAscending;
@@ -526,7 +528,7 @@ public static class StringFormatter
 			}
 		}
 
-		return TimeUnit.Max;
+		return TimeUnit.Year;
 	}
 
 	private static TimeUnit MinUnit(TimeSpan value, TimeUnit minAllowed)
@@ -549,7 +551,7 @@ public static class StringFormatter
 			}
 		}
 
-		return TimeUnit.Min;
+		return TimeUnit.Ticks;
 	}
 
 	#endregion

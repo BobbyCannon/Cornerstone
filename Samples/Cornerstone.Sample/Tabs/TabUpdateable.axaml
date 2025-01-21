@@ -1,0 +1,36 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignHeight="400" d:DesignWidth="600"
+		x:Class="Cornerstone.Sample.Tabs.TabUpdateable"
+		x:DataType="tabs:TabUpdateable">
+	<DockPanel>
+		<Grid DockPanel.Dock="Top"
+				Margin="0,0,0,6">
+			<StackPanel Orientation="Horizontal"
+					IsVisible="{Binding IsRunning}">
+				<CircularProgress
+						StrokeThickness="3"
+						IsIndeterminate="true"
+						Margin="8,0,0,0"
+						Value="16"
+						Height="24"
+						Width="24"
+						VerticalAlignment="Center" />
+				<TextBlock Text="Testing"
+						Margin="10,0,0,0"
+						VerticalAlignment="Center" />
+			</StackPanel>
+			<StackPanel HorizontalAlignment="Right">
+				<Button Click="TestOnClick"
+						IsEnabled="{Binding !IsRunning}">
+					Test
+				</Button>
+			</StackPanel>
+		</Grid>
+		<TextEditorControl x:Name="Results" />
+	</DockPanel>
+</UserControl>

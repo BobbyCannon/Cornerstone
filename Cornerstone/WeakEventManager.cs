@@ -6,6 +6,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using Cornerstone.Collections;
 using Cornerstone.Internal.WeakEvents;
+using Cornerstone.Presentation;
 
 #endregion
 
@@ -42,6 +43,15 @@ public class WeakEventManager : IWeakEventManager
 		where T : class
 	{
 		_listeners.Add(new WeakEventListener<T, TArgs>(source, eventName, handler), handler);
+	}
+
+	/// <summary>
+	/// Registers the given delegate as a handler for the event specified by [eventName] on the given source.
+	/// </summary>
+	public void Add<T, TArgs1, TArgs2>(T source, string eventName, EventHandler<TArgs1, TArgs2> handler)
+		where T : class
+	{
+		_listeners.Add(new WeakEventListener<T, TArgs1, TArgs2>(source, eventName, handler), handler);
 	}
 
 	/// <summary>

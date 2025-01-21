@@ -16,9 +16,9 @@ public struct HumanizeSettings : IHumanizeSettings
 	/// </summary>
 	public HumanizeSettings()
 	{
-		MaxUnit = TimeUnit.Max;
+		MaxUnit = TimeUnit.Year;
 		MaxUnitSegments = 2;
-		MinUnit = TimeUnit.Min;
+		MinUnit = TimeUnit.Ticks;
 		Precision = 3;
 		WordFormat = WordFormat.Full;
 	}

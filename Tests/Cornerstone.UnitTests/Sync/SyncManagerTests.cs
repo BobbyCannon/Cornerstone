@@ -560,6 +560,38 @@ public class SyncManagerTests : CornerstoneUnitTest
 				$"2020-04-23T01:55:57.0000000Z - {result3.Result.SessionId} Verbose : Starting to push to server from client.",
 				$"2020-04-23T01:55:58.0000000Z - {result3.Result.SessionId} Verbose : Starting to end the session.",
 				$"2020-04-23T01:56:01.0000000Z - {result3.Result.SessionId} Verbose : Sync Addresses completed. 00:09.000"
+			},
+			new[]
+			{
+				$"2020-04-23T01:55:23.0000000Z - {result1.Result.SessionId} Verbose : Sync All started",
+				$"2020-04-23T01:55:24.0000000Z - {result1.Result.SessionId} Verbose : Starting to All sync...",
+				$"2020-04-23T01:55:25.0000000Z - {result1.Result.SessionId} Verbose : Syncing All for 1/1/0001 12:00:00 AM, 1/1/0001 12:00:00 AM",
+				$"2020-04-23T01:55:27.0000000Z - {result1.Result.SessionId} Verbose : Starting the sync session.",
+				$"2020-04-23T01:55:26.0000000Z - {result2.Result.SessionId} Verbose : Sync Accounts waiting for Sync All to complete...",
+				$"2020-04-23T01:55:28.0000000Z - {result3.Result.SessionId} Verbose : Sync Addresses waiting for Sync All to complete...",
+				$"2020-04-23T01:55:29.0000000Z - {result1.Result.SessionId} Verbose : The sync session has started.",
+				$"2020-04-23T01:55:30.0000000Z - {result1.Result.SessionId} Verbose : Starting to pull from server to client.",
+				$"2020-04-23T01:55:31.0000000Z - {result1.Result.SessionId} Verbose : Starting to push to server from client.",
+				$"2020-04-23T01:55:32.0000000Z - {result1.Result.SessionId} Verbose : Starting to end the session.",
+				$"2020-04-23T01:55:35.0000000Z - {result1.Result.SessionId} Verbose : Sync All completed. 00:11.000",
+				$"2020-04-23T01:55:38.0000000Z - {result2.Result.SessionId} Verbose : Sync Accounts started",
+				$"2020-04-23T01:55:39.0000000Z - {result2.Result.SessionId} Verbose : Starting to Accounts sync...",
+				$"2020-04-23T01:55:40.0000000Z - {result2.Result.SessionId} Verbose : Syncing Accounts for 1/1/0001 12:00:00 AM, 1/1/0001 12:00:00 AM",
+				$"2020-04-23T01:55:41.0000000Z - {result2.Result.SessionId} Verbose : Starting the sync session.",
+				$"2020-04-23T01:55:42.0000000Z - {result2.Result.SessionId} Verbose : The sync session has started.",
+				$"2020-04-23T01:55:43.0000000Z - {result2.Result.SessionId} Verbose : Starting to pull from server to client.",
+				$"2020-04-23T01:55:44.0000000Z - {result2.Result.SessionId} Verbose : Starting to push to server from client.",
+				$"2020-04-23T01:55:45.0000000Z - {result2.Result.SessionId} Verbose : Starting to end the session.",
+				$"2020-04-23T01:55:48.0000000Z - {result2.Result.SessionId} Verbose : Sync Accounts completed. 00:09.000",
+				$"2020-04-23T01:55:51.0000000Z - {result3.Result.SessionId} Verbose : Sync Addresses started",
+				$"2020-04-23T01:55:52.0000000Z - {result3.Result.SessionId} Verbose : Starting to Addresses sync...",
+				$"2020-04-23T01:55:53.0000000Z - {result3.Result.SessionId} Verbose : Syncing Addresses for 1/1/0001 12:00:00 AM, 1/1/0001 12:00:00 AM",
+				$"2020-04-23T01:55:54.0000000Z - {result3.Result.SessionId} Verbose : Starting the sync session.",
+				$"2020-04-23T01:55:55.0000000Z - {result3.Result.SessionId} Verbose : The sync session has started.",
+				$"2020-04-23T01:55:56.0000000Z - {result3.Result.SessionId} Verbose : Starting to pull from server to client.",
+				$"2020-04-23T01:55:57.0000000Z - {result3.Result.SessionId} Verbose : Starting to push to server from client.",
+				$"2020-04-23T01:55:58.0000000Z - {result3.Result.SessionId} Verbose : Starting to end the session.",
+				$"2020-04-23T01:56:01.0000000Z - {result3.Result.SessionId} Verbose : Sync Addresses completed. 00:09.000"
 			}
 		};
 

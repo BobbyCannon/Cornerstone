@@ -203,7 +203,7 @@ public abstract class Buffer<T> : IBuffer<T>
 	public abstract void RemoveAt(int index);
 
 	/// <inheritdoc />
-	public abstract void RemoveRange(int index, int length);
+	public abstract void Remove(int index, int length);
 
 	/// <summary>
 	/// Replace a section of the buffer.
@@ -227,7 +227,7 @@ public abstract class Buffer<T> : IBuffer<T>
 	/// <param name="valueLength"> The length of values to replace with. </param>
 	public virtual void Replace(int index, int length, T[] values, int valueIndex, int valueLength)
 	{
-		RemoveRange(index, length);
+		Remove(index, length);
 		Insert(index, values);
 	}
 
@@ -359,7 +359,7 @@ public interface IBuffer<T> : IList<T>
 	/// <summary>
 	/// Remove a range of items from the buffer.
 	/// </summary>
-	void RemoveRange(int index, int length);
+	void Remove(int index, int length);
 
 	/// <summary>
 	/// Check index to ensure it is within bounds of the buffer.

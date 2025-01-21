@@ -181,9 +181,9 @@ public abstract class InputBuilder
 	/// <summary>
 	/// Adds a mouse button down for the specified button.
 	/// </summary>
-	/// <param name="button"> </param>
+	/// <param name="buttons"> The buttons to press down. </param>
 	/// <returns> This <see cref="InputBuilder" /> instance. </returns>
-	public abstract InputBuilder AddMouseButtonDown(MouseButton button);
+	public abstract InputBuilder AddMouseButtonDown(params MouseButton[] buttons);
 
 	/// <summary>
 	/// Adds a mouse button down for the specified button.
@@ -197,9 +197,9 @@ public abstract class InputBuilder
 	/// <summary>
 	/// Adds a mouse button up for the specified button.
 	/// </summary>
-	/// <param name="button"> </param>
+	/// <param name="buttons"> The buttons to press down. </param>
 	/// <returns> This <see cref="InputBuilder" /> instance. </returns>
-	public abstract InputBuilder AddMouseButtonUp(MouseButton button);
+	public abstract InputBuilder AddMouseButtonUp(params MouseButton[] buttons);
 
 	/// <summary>
 	/// Scroll the horizontal mouse wheel by the specified amount.
@@ -215,7 +215,7 @@ public abstract class InputBuilder
 	/// <param name="y"> If relative is true then the relative amount of distance to move else it will be an absolute Y position to move to. </param>
 	/// <param name="relative"> True to move a relative amount or false to move to an absolute position. </param>
 	/// <returns> This <see cref="InputBuilder" /> instance. </returns>
-	public abstract InputBuilder AddMouseMovement(int x, int y, bool relative = true);
+	public abstract InputBuilder AddMouseMovement(int x, int y, bool relative);
 
 	/// <summary>
 	/// Move the mouse to the absolute position on the virtual desktop.

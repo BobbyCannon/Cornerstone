@@ -45,10 +45,10 @@ public class DetailedTimerTests : CornerstoneUnitTest
 		var actual = root.ToDetailedString();
 		var expected = """
 						100.00% 0:00:00:03.0000001: Root
-							66.67% 0:00:00:02.0000001: Child
-								0.00% 0:00:00:00.0000001: GrandChild
+							 66.67% 0:00:00:02.0000001: Child
+								  0.00% 0:00:00:00.0000001: GrandChild
 								100.00% 0:00:00:02.0000000: Remainder
-							33.33% 0:00:00:01.0000000: Remainder
+							 33.33% 0:00:00:01.0000000: Remainder
 
 						""";
 

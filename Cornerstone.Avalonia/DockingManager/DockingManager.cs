@@ -277,7 +277,7 @@ public class DockingManager : DockSplitPanel, IDispatchable
 					continue;
 				}
 
-				tab.Close();
+				tab.Close(true);
 				return;
 			}
 		}
@@ -315,7 +315,7 @@ public class DockingManager : DockSplitPanel, IDispatchable
 				}
 
 				tabControl.Add(newModel);
-				tabItem.Close();
+				tabItem.Close(true);
 				return;
 			}
 		}

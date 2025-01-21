@@ -18,5 +18,15 @@ public enum MouseButton
 	/// <summary>
 	/// Right mouse button
 	/// </summary>
-	RightButton
+	RightButton,
+
+	/// <summary>
+	/// 4th mouse button. Typically, performs the same function as BrowserBack.
+	/// </summary>
+	XButton1,
+
+	/// <summary>
+	/// 5th mouse button. Typically, performs the same function as BrowserForward.
+	/// </summary>
+	XButton2
 }

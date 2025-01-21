@@ -3,7 +3,7 @@
 using System;
 using System.Threading.Tasks;
 using Cornerstone.Data;
-using Cornerstone.Web.Extensions;
+using Cornerstone.Extensions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 #endregion

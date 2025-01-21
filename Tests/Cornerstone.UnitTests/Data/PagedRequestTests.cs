@@ -15,6 +15,16 @@ public class PagedRequestTests : CornerstoneUnitTest
 	#region Methods
 
 	[TestMethod]
+	public void Defaults()
+	{
+		var actual = new PagedRequest();
+		AreEqual(string.Empty, actual.Filter);
+		AreEqual(string.Empty, actual.Order);
+		AreEqual(1, actual.Page);
+		AreEqual(10, actual.PerPage);
+	}
+
+	[TestMethod]
 	public void Cleanup()
 	{
 		var actual = new PagedRequest { Page = 0, PerPage = 1001 };

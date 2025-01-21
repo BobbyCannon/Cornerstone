@@ -1,5 +1,6 @@
 ﻿#region References
 
+using Cornerstone.Runtime;
 using Cornerstone.Sync;
 using Sample.Shared.Storage;
 
@@ -17,7 +18,7 @@ public class ClientSqliteDatabaseProvider : SyncableDatabaseProvider<IClientData
 
 	#region Constructors
 
-	public ClientSqliteDatabaseProvider(string connectionString)
+	public ClientSqliteDatabaseProvider(string connectionString, IDateTimeProvider dateTimeProvider) : base(dateTimeProvider)
 	{
 		_connectionString = connectionString;
 	}

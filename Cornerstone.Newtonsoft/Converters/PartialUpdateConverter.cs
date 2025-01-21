@@ -70,7 +70,7 @@ public class PartialUpdateConverter : JsonConverter
 	/// <inheritdoc />
 	public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
 	{
-		var options = Cache.GetOptions(objectType, UpdateableAction.PartialUpdate);
+		var options = Cache.GetSettings(objectType, UpdateableAction.PartialUpdate);
 		return objectType.FromJson(reader, options);
 	}
 

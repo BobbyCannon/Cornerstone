@@ -83,7 +83,7 @@ public class ClientAccount : SyncEntity<int>, IAccountSync, IClientEntity
 		switch (action)
 		{
 			case UpdateableAction.SyncIncomingAdd:
-			case UpdateableAction.SyncIncomingModified:
+			case UpdateableAction.SyncIncomingUpdate:
 			case UpdateableAction.SyncOutgoing:
 			{
 				var syncProperties = typeof(AccountSync)

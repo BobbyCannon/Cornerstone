@@ -1,6 +1,5 @@
 ﻿#region References
 
-using System.Diagnostics.CodeAnalysis;
 using Cornerstone.Sync;
 
 #endregion

@@ -5,11 +5,19 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations;
+using System.Drawing;
 using System.Linq;
 using System.Reflection;
+using Cornerstone.Attributes;
+using Cornerstone.Convert;
 using Cornerstone.Data;
+using Cornerstone.Generators;
 using Cornerstone.Generators.CodeGenerators;
 using Cornerstone.Internal;
+using Cornerstone.Location;
+using Cornerstone.Protocols.Osc;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -87,6 +95,172 @@ public static class TypeExtensions
 			response.Add(nullableType);
 		}
 		return response.ToArray();
+	}
+
+	/// <summary>
+	/// Get a non default value for data type.
+	/// </summary>
+	/// <param name="info"> The info of the property to get the value for. </param>
+	/// <param name="arguments"> The arguments for the constructing the instance. </param>
+	/// <param name="customTypeFactory"> An optional custom factory method to create unknown types. </param>
+	/// <returns> The new instances of the type. </returns>
+	public static object CreateInstanceOfNonDefaultValue(this PropertyInfo info, object[] arguments = null,
+		Func<Type, object[], object> customTypeFactory = null)
+	{
+		var requiredRange = info.GetCustomAttribute<RangeAttribute>();
+		return CreateInstanceOfNonDefaultValue(info.PropertyType, arguments, requiredRange, customTypeFactory);
+	}
+
+	/// <summary>
+	/// Get a non default value for data type.
+	/// </summary>
+	/// <param name="type"> The type of object to get the value for. </param>
+	/// <param name="requiredRange"> An optional required range. </param>
+	/// <param name="arguments"> The arguments for the constructing the instance. </param>
+	/// <param name="customTypeFactory"> An optional custom factory method to create unknown types. </param>
+	/// <returns> The new instances of the type. </returns>
+	public static object CreateInstanceOfNonDefaultValue(this Type type, object[] arguments = null,
+		RangeAttribute requiredRange = null, Func<Type, object[], object> customTypeFactory = null)
+	{
+		if (type.IsDelegate())
+		{
+			// todo: how do we create a new instance of a delegate?
+			return null;
+		}
+
+		if (type.IsEnum)
+		{
+			var details = EnumExtensions.GetAllEnumDetails(type).Values.ToList();
+			return details.Count >= 2
+				? details[1].Value
+				: details.FirstOrDefault().Value;
+		}
+		if ((type == typeof(bool)) || (type == typeof(bool?)))
+		{
+			return true;
+		}
+		if ((type == typeof(byte)) || (type == typeof(byte?)))
+		{
+			var value = RandomGenerator.NextByte();
+			return (byte) (value == 0 ? 1 : value);
+		}
+		if ((type == typeof(char)) || (type == typeof(char?)))
+		{
+			var value = RandomGenerator.NextChar();
+			return (char) (value == 0 ? 1 : value);
+		}
+		if ((type == typeof(DateTime)) || (type == typeof(DateTime?)))
+		{
+			return DateTimeProvider.RealTime.UtcNow;
+		}
+		if ((type == typeof(DateTimeOffset)) || (type == typeof(DateTimeOffset?)))
+		{
+			return DateTimeOffset.UtcNow;
+		}
+		if ((type == typeof(OscTimeTag)) || (type == typeof(OscTimeTag?)))
+		{
+			return OscTimeTag.UtcNow;
+		}
+		if ((type == typeof(TimeSpan)) || (type == typeof(TimeSpan?)))
+		{
+			var ticks = RandomGenerator.NextLong(1, TimeSpan.FromDays(30).Ticks);
+			return TimeSpan.FromTicks(ticks == 0 ? 1 : ticks);
+		}
+		if ((type == typeof(double)) || (type == typeof(double?)))
+		{
+			var value = RandomGenerator.NextDouble(-100000, 100000);
+			return value == 0 ? 1.0 : value;
+		}
+		if ((type == typeof(float)) || (type == typeof(float?)))
+		{
+			return (float) RandomGenerator.NextDouble(-100000, 100000);
+		}
+		if ((type == typeof(decimal)) || (type == typeof(decimal?)))
+		{
+			return RandomGenerator.NextDecimal(-100000, 100000);
+		}
+		if ((type == typeof(Guid)) || (type == typeof(Guid?)))
+		{
+			return Guid.NewGuid();
+		}
+		if ((type == typeof(ShortGuid)) || (type == typeof(ShortGuid?)))
+		{
+			return ShortGuid.NewGuid();
+		}
+		if ((type == typeof(byte)) || (type == typeof(byte?)))
+		{
+			return (byte) RandomGenerator.NextInteger(1, byte.MaxValue);
+		}
+		if ((type == typeof(sbyte)) || (type == typeof(sbyte?)))
+		{
+			var value = RandomGenerator.NextInteger(sbyte.MinValue, sbyte.MaxValue);
+			return (sbyte) (value == 0 ? 1 : value);
+		}
+		if ((type == typeof(IntPtr)) || (type == typeof(IntPtr?)))
+		{
+			var value = RandomGenerator.NextInteger(int.MinValue + 1, int.MaxValue - 1);
+			return new IntPtr(value == 0 ? 1 : value);
+		}
+		if ((type == typeof(UIntPtr)) || (type == typeof(UIntPtr?)))
+		{
+			var value = (ulong) RandomGenerator.NextLong(uint.MinValue + 1, uint.MaxValue - 1);
+			return new UIntPtr(value == 0 ? 1u : value);
+		}
+		if ((type == typeof(int)) || (type == typeof(int?)))
+		{
+			var value = RandomGenerator.NextInteger(
+				requiredRange?.Minimum.ConvertTo<int>() ?? int.MinValue + 1,
+				requiredRange?.Maximum.ConvertTo<int>() ?? int.MaxValue - 1
+			);
+			return value == 0 ? 1 : value;
+		}
+		if ((type == typeof(uint)) || (type == typeof(uint?)))
+		{
+			return (uint) RandomGenerator.NextInteger(1, int.MaxValue / 4);
+		}
+		if ((type == typeof(long)) || (type == typeof(long?)))
+		{
+			var value = RandomGenerator.NextLong(long.MinValue / 4, long.MaxValue / 4);
+			return value == 0 ? 1 : value;
+		}
+		if ((type == typeof(ulong)) || (type == typeof(ulong?)))
+		{
+			return (ulong) RandomGenerator.NextLong(
+				requiredRange?.Minimum.ConvertTo<long>() ?? 1,
+				requiredRange?.Maximum.ConvertTo<long>() ?? long.MaxValue / 4
+			);
+		}
+		if ((type == typeof(short)) || (type == typeof(short?)))
+		{
+			var value = RandomGenerator.NextInteger(short.MinValue / 4, short.MaxValue / 4);
+			return (short) (value == 0 ? 1 : value);
+		}
+		if ((type == typeof(ushort)) || (type == typeof(ushort?)))
+		{
+			return (ushort) RandomGenerator.NextInteger(1, ushort.MaxValue / 4);
+		}
+		if (type == typeof(string))
+		{
+			return Guid.NewGuid().ToString();
+		}
+
+		if (type == typeof(Rectangle))
+		{
+			return new Rectangle(1, 2, 3, 4);
+		}
+
+		if (type == typeof(IHorizontalLocation))
+		{
+			return new HorizontalLocation();
+		}
+
+		if (type == typeof(IVerticalLocation))
+		{
+			return new VerticalLocation();
+		}
+
+		return customTypeFactory?.Invoke(type, arguments ?? [])
+			?? type.CreateInstance(arguments ?? []);
 	}
 
 	/// <summary>
@@ -168,7 +342,8 @@ public static class TypeExtensions
 			case UpdateableAction.PropertyChangeTracking:
 			case UpdateableAction.Updateable:
 			{
-				var properties = Cache.GetPropertyDictionary(type.GetRealTypeUsingReflection());
+				var realType = type.GetRealTypeUsingReflection();
+				var properties = Cache.GetPropertyDictionary(realType);
 				return [..properties.Keys];
 			}
 			case UpdateableAction.UnwrapProxyEntity:
@@ -178,10 +353,23 @@ public static class TypeExtensions
 				var virtuals = realType.GetVirtualPropertyNames();
 				return [..properties.Keys.Except(virtuals)];
 			}
-			case UpdateableAction.Unknown:
 			case UpdateableAction.SyncIncomingAdd:
-			case UpdateableAction.SyncIncomingModified:
+			case UpdateableAction.SyncIncomingUpdate:
 			case UpdateableAction.SyncOutgoing:
+			{
+				var realType = type.GetRealTypeUsingReflection();
+				var properties = Cache
+					.GetPropertyDictionary(realType)
+					.Where(x =>
+					{
+						var a = x.Value.GetCustomAttribute<SyncPropertyAttribute>();
+						return (a != null) && a.Supports(action);
+					})
+					.Select(x => x.Key)
+					.ToList();
+				return [..properties];
+			}
+			case UpdateableAction.None:
 			default:
 			{
 				return [];
@@ -364,6 +552,36 @@ public static class TypeExtensions
 	{
 		return type.ImplementsType(typeof(Nullable<>))
 			&& (Nullable.GetUnderlyingType(type) != null);
+	}
+
+	/// <summary>
+	/// Determines whether [is numeric type] [the specified type].
+	/// </summary>
+	/// <param name="type"> The type. </param>
+	/// <returns> <c> true </c> if [is numeric type] [the specified type]; otherwise, <c> false </c>. </returns>
+	public static bool IsNumericType(this Type type)
+	{
+		switch (Type.GetTypeCode(type))
+		{
+			case TypeCode.Byte:
+			case TypeCode.SByte:
+			case TypeCode.UInt16:
+			case TypeCode.UInt32:
+			case TypeCode.UInt64:
+			case TypeCode.Int16:
+			case TypeCode.Int32:
+			case TypeCode.Int64:
+			case TypeCode.Decimal:
+			case TypeCode.Double:
+			case TypeCode.Single:
+			{
+				return true;
+			}
+			default:
+			{
+				return false;
+			}
+		}
 	}
 
 	/// <summary>

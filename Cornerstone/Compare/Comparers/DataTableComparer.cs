@@ -48,7 +48,7 @@ public class DataTableComparer : BaseComparer
 	{
 		if (expected.Rows.Count != actual.Rows.Count)
 		{
-			AddDifference(session, expected.Rows.Count.ToString(), actual.Rows.Count.ToString(),
+			session.AddDifference(expected.Rows.Count.ToString(), actual.Rows.Count.ToString(),
 				true, () => "The data table row counts are different."
 			);
 			return;
@@ -80,7 +80,7 @@ public class DataTableComparer : BaseComparer
 	{
 		if (expected.ItemArray.Length != actual.ItemArray.Length)
 		{
-			AddDifference(session, expected.ItemArray.Length.ToString(), actual.ItemArray.Length.ToString(),
+			session.AddDifference(expected.ItemArray.Length.ToString(), actual.ItemArray.Length.ToString(),
 				true, () => "The data table row column lengths are different."
 			);
 			return;

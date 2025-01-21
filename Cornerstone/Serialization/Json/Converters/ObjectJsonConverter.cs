@@ -73,7 +73,7 @@ public class ObjectJsonConverter : JsonConverter
 				continue;
 			}
 
-			if (info.GetIndexParameters().Length > 0)
+			if (info.IsIndexer())
 			{
 				// Property is an indexer
 				continue;
@@ -122,14 +122,22 @@ public class ObjectJsonConverter : JsonConverter
 		// Convert to a new object.
 		var response = type.CreateInstance();
 		var propertyInfos = type.GetCachedPropertyDictionary();
+		var jsonPropertyNames = type.GetCachedJsonPropertyNameDictionary();
 
 		switch (jsonValue)
 		{
 			case JsonObject jsonObject:
 			{
+				if (response is IJsonParseable parseable)
+				{
+					parseable.Parse(jsonObject);
+					return parseable;
+				}
+
 				foreach (var objectValue in jsonObject)
 				{
-					if (!propertyInfos.TryGetValue(objectValue.Key, out var info))
+					if (!propertyInfos.TryGetValue(objectValue.Key, out var info)
+						&& !jsonPropertyNames.TryGetValue(objectValue.Key, out info))
 					{
 						continue;
 					}

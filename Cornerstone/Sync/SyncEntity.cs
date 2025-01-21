@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Storage;
@@ -44,7 +45,7 @@ public class SyncEntity<TKey> : Entity<TKey>, ISyncEntity
 
 		switch (action)
 		{
-			case UpdateableAction.SyncIncomingModified:
+			case UpdateableAction.SyncIncomingUpdate:
 			{
 				response.AddRange(nameof(CreatedOn), nameof(IsDeleted), nameof(ModifiedOn));
 				break;
@@ -84,6 +85,23 @@ public class SyncEntity<TKey> : Entity<TKey>, ISyncEntity
 		return UpdateWith(update, GetUpdateableOptions(action));
 	}
 
+	/// <summary>
+	/// Add model to the set.
+	/// </summary>
+	/// <typeparam name="T"> The type of the items in the collection. </typeparam>
+	/// <param name="set"> The set to add items to. </param>
+	/// <param name="except"> Optional properties to ignore. </param>
+	protected static void AddModel<T>(ISet<string> set, params string[] except)
+	{
+		var properties = typeof(T)
+			.GetCachedProperties()
+			.Select(x => x.Name)
+			.Except(except)
+			.ToList();
+
+		set.Add(properties);
+	}
+
 	#endregion
 }
 
@@ -97,7 +115,7 @@ public interface ISyncEntity : IModifiableEntity
 	/// <summary>
 	/// Used to communicate if the sync entity is deleted.
 	/// </summary>
-	bool IsDeleted { get; set; }
+	public bool IsDeleted { get; set; }
 
 	/// <summary>
 	/// The ID of the sync entity.
@@ -105,7 +123,7 @@ public interface ISyncEntity : IModifiableEntity
 	/// <remarks>
 	/// This ID must be globally unique. Never reuse GUIDs.
 	/// </remarks>
-	Guid SyncId { get; set; }
+	public Guid SyncId { get; set; }
 
 	#endregion
 
@@ -116,27 +134,27 @@ public interface ISyncEntity : IModifiableEntity
 	/// This can be overriden by setting the LookupFilter for a sync repository filter.
 	/// </summary>
 	/// <returns> The sync key value for the sync entity. </returns>
-	Guid GetEntitySyncId();
+	public Guid GetEntitySyncId();
 
 	/// <summary>
 	/// Gets the sync key (ID) of the sync entity. Defaults to SyncId.
 	/// This can be overriden by setting the LookupFilter for a sync repository filter.
 	/// </summary>
 	/// <param name="syncId"> The sync key value for the sync entity. </param>
-	void SetEntitySyncId(Guid syncId);
+	public void SetEntitySyncId(Guid syncId);
 
 	/// <summary>
 	/// Converts the entity into an object to transmit.
 	/// </summary>
 	/// <returns> The sync object for this entity. </returns>
-	SyncObject ToSyncObject();
+	public SyncObject ToSyncObject();
 
 	/// <summary>
 	/// Updates the entity with the provided entity for the type of action.
 	/// </summary>
 	/// <param name="update"> The source of the update. </param>
 	/// <param name="action"> The action of the type of update. </param>
-	bool UpdateSyncEntity(ISyncEntity update, UpdateableAction action);
+	public bool UpdateSyncEntity(ISyncEntity update, UpdateableAction action);
 
 	#endregion
 }

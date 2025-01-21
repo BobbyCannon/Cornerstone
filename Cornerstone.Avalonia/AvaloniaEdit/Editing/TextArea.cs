@@ -1209,7 +1209,7 @@ public class TextArea : CornerstoneTemplatedControl, ITextEditorComponent, IRout
 		{
 			get
 			{
-				if (_textArea == null)
+				if ((_textArea == null) || (_textArea.Selection.Length <= 0))
 				{
 					return new TextSelection(0, 0);
 				}

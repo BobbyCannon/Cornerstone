@@ -92,7 +92,7 @@ public class KeyboardStub : Keyboard
 	}
 
 	/// <inheritdoc />
-	protected override InputBuilder SendInput(InputBuilder addKeyDown)
+	protected override InputBuilder SendInput(InputBuilder builder)
 	{
 		return null;
 	}

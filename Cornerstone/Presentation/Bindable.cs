@@ -62,13 +62,13 @@ public abstract class Bindable<T> : Bindable, ICloneable<T>, IUpdateable<T>
 	/// <inheritdoc />
 	public bool UpdateWith(T update)
 	{
-		return UpdateWith(update, IncludeExcludeSettings.Empty);
+		return UpdateWith((object) update);
 	}
 
 	/// <inheritdoc />
 	public bool UpdateWith(T update, UpdateableAction action)
 	{
-		var options = Cache.GetOptions(GetRealType(), action);
+		var options = Cache.GetSettings(GetRealType(), action);
 		return UpdateWith(update, options);
 	}
 

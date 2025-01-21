@@ -15,54 +15,59 @@ public class CompletionListTests : CornerstoneUnitTest
 	[TestMethod]
 	public void Order()
 	{
-		//var list = new CompletionList("Get-");
-		var list = new CompletionList("Get-", [
+		var data = CompletionProvider.CreateList(null);
+		data.Load(
 			new CompletionData { DisplayText = "Get-ApplicationHost" },
 			new CompletionData { DisplayText = "Get-ServiceHost" },
 			new CompletionData { DisplayText = "Get-Host" }
-		]);
-
-		var actual = list.FilterAndOrderList("H");
-		AreEqual(
-			new[]
-			{
-				new CompletionData { DisplayText = "Get-Host" },
-				new CompletionData { DisplayText = "Get-ServiceHost" },
-				new CompletionData { DisplayText = "Get-ApplicationHost" }
-			},
-			actual
 		);
 
-		actual = list.FilterAndOrderList("O");
+		var list = new CompletionList("Get-", data);
+		list.SetFilter("H");
+
 		AreEqual(
 			new[]
 			{
-				new CompletionData { DisplayText = "Get-Host" },
-				new CompletionData { DisplayText = "Get-ServiceHost" },
-				new CompletionData { DisplayText = "Get-ApplicationHost" }
+				new CompletionData { DisplayText = "Get-Host", Priority = 3 },
+				new CompletionData { DisplayText = "Get-ServiceHost", Priority = 6.011m },
+				new CompletionData { DisplayText = "Get-ApplicationHost", Priority = 6.015m }
 			},
-			actual
+			list.Suggestions.Filtered
+		);
+
+		list.SetFilter("O");
+
+		AreEqual(
+			new[]
+			{
+				new CompletionData { DisplayText = "Get-Host", Priority = 7.005m },
+				new CompletionData { DisplayText = "Get-ServiceHost", Priority = 7.012m },
+				new CompletionData { DisplayText = "Get-ApplicationHost", Priority = 7.013m }
+			},
+			list.Suggestions.Filtered
 		);
 	}
 
 	[TestMethod]
 	public void OrderAndFilter()
 	{
-		//var list = new CompletionList("Get-");
-		var list = new CompletionList("Get-", [
+		var data = CompletionProvider.CreateList(null);
+		data.Load(
 			new CompletionData { DisplayText = "Get-Application" },
 			new CompletionData { DisplayText = "Get-ServiceHome" },
 			new CompletionData { DisplayText = "Get-Host" }
-		]);
+		);
+		
+		var list = new CompletionList("Get-", data);
+		list.SetFilter("h");
 
-		var actual = list.FilterAndOrderList("h");
 		AreEqual(
 			new[]
 			{
-				new CompletionData { DisplayText = "Get-Host" },
-				new CompletionData { DisplayText = "Get-ServiceHome" }
+				new CompletionData { DisplayText = "Get-Host", Priority = 4 },
+				new CompletionData { DisplayText = "Get-ServiceHome", Priority = 7.011m }
 			},
-			actual
+			list.Suggestions.Filtered
 		);
 	}
 

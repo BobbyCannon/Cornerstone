@@ -22,6 +22,15 @@
 				<Button>aoeu</Button>
 				<SplitButton>aoeu</SplitButton>
 			</StackPanel>
+			<StackPanel HorizontalAlignment="Left">
+				<MenuItem Header="_Standard" />
+				<MenuItem IsSelected="True" Header="Selected" />
+				<MenuItem Header="With Icon">
+					<MenuItem.Icon>
+						<TextBlock>😊</TextBlock>
+					</MenuItem.Icon>
+				</MenuItem>
+			</StackPanel>
 		</StackPanel>
 
 	</Design.PreviewWith>
@@ -143,23 +152,6 @@
 	<Thickness x:Key="ListBoxItemFirstItemMargin">0</Thickness>
 	<Thickness x:Key="ListBoxItemLastItemMargin">0</Thickness>
 	<CornerRadius x:Key="ListBoxItemCornerRadius">0</CornerRadius>
-
-	<!-- MenuBar resources. -->
-	<x:Double x:Key="MenuBarHeight">28</x:Double>
-	<Thickness x:Key="MenuBarPadding">0</Thickness>
-	<Thickness x:Key="MenuBarBorderThickness">0,0,0,1</Thickness>
-	<Thickness x:Key="MenuBarItemPadding">8,0</Thickness>
-
-	<!-- MenuFlyout resources. -->
-	<x:Double x:Key="MenuFlyoutSeparatorHeight">1</x:Double>
-	<Thickness x:Key="MenuFlyoutSeparatorPadding">0,4</Thickness>
-	<Thickness x:Key="MenuFlyoutItemPaddingNarrow">8,2</Thickness>
-	<CornerRadius x:Key="MenuFlyoutItemCornerRadius">0</CornerRadius>
-	<Thickness x:Key="MenuFlyoutPresenterBorderThemeThickness">1</Thickness>
-	<Thickness x:Key="MenuFlyoutPresenterThemePadding">0</Thickness>
-	<Thickness x:Key="MenuFlyoutScrollerMargin">0</Thickness>
-	<x:Double x:Key="MenuFlyoutSubItemPopupHorizontalOffset">0</x:Double>
-	<x:Double x:Key="MenuFlyoutSubItemPopupVerticalOffset">-4</x:Double>
 
 	<!-- NotificationCard resources. -->
 	<CornerRadius x:Key="NotificationCardCornerRadius">4</CornerRadius>

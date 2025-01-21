@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFrameworks>net9.0-android</TargetFrameworks>
+		<SupportedOSPlatformVersion>30</SupportedOSPlatformVersion>
+		<ApplicationId>com.cornerstone.avalonia.sample</ApplicationId>
+		<ApplicationVersion>1</ApplicationVersion>
+		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+		<AndroidPackageFormat>apk</AndroidPackageFormat>
+		<AndroidEnableProfiledAot>False</AndroidEnableProfiledAot>
+	</PropertyGroup>
+	<ItemGroup>
+		<AndroidResource Include="Icon.png">
+			<Link>Resources\drawable\Icon.png</Link>
+		</AndroidResource>
+		<None Remove="hs_err_pid*.log" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Avalonia.Android" Version="$(AvaloniaVersion)" />
+		<PackageReference Include="Mapsui.Avalonia" Version="5.0.0-beta.6" />
+		<PackageReference Include="Mapsui.Android" Version="5.0.0-beta.6" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
+		<ProjectReference Include="..\Cornerstone.Sample\Cornerstone.Sample.csproj" />
+	</ItemGroup>
+</Project>

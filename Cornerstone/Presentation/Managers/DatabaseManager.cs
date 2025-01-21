@@ -132,6 +132,10 @@ public abstract class ClientDatabaseManager<T> : Manager, ISyncableDatabaseProvi
 
 	protected abstract T GetDatabaseFromManager(DatabaseSettings settings, DatabaseKeyCache keyCache);
 
+	protected virtual void HandleFailedMigration(T database)
+	{
+	}
+
 	protected virtual T Migrate(T database)
 	{
 		if (!database.CanMigrate())
@@ -149,6 +153,7 @@ public abstract class ClientDatabaseManager<T> : Manager, ISyncableDatabaseProvi
 		catch (Exception)
 		{
 			// todo: remove database?
+			HandleFailedMigration(database);
 
 			// Reset the database
 			database.Dispose();

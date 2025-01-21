@@ -11,9 +11,9 @@
 
 		<Setter Property="Background" Value="{DynamicResource MenuFlyoutSeparatorBackground}" />
 		<Setter Property="Focusable" Value="False" />
-		<Setter Property="Height" Value="{DynamicResource MenuFlyoutSeparatorHeight}" />
+		<Setter Property="Height" Value="1" />
 		<Setter Property="HorizontalAlignment" Value="Stretch" />
-		<Setter Property="Margin" Value="{DynamicResource MenuFlyoutSeparatorPadding}" />
+		<Setter Property="Margin" Value="0,4" />
 
 		<!-- Template. -->
 

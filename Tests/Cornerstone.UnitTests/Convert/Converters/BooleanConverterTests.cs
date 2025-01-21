@@ -34,7 +34,10 @@ public class BooleanConverterTests : ConverterTests<BooleanConverter>
 	[TestMethod]
 	public void GenerateScenarios()
 	{
-		GenerateNewScenarios($"{nameof(BooleanConverterTests)}.cs", EnableFileUpdates || IsDebugging);
+		GenerateNewScenarios(
+			$"{nameof(BooleanConverterTests)}.cs",
+			EnableFileUpdates || IsDebugging
+		);
 	}
 
 	[TestMethod]

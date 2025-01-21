@@ -171,7 +171,13 @@
 			<DockingTabControl DockPanel.Dock="Top" Height="300">
 				<DockableTabItem>
 					<DockableTabItem.TabModel>
-						<DockableTabModel Header="aoeu222" IsSelected="True">
+						<DockableTabModel Header="aoeu222"
+								IsSelected="True">
+							<DockableTabModel.HeaderMenu>
+								<ContextMenu>
+									<MenuItem Header="sub-item" />
+								</ContextMenu>
+							</DockableTabModel.HeaderMenu>
 							<DockableTabModel.Popup>
 								<TabPopup ProgressDescription="I'm running stuff"
 										IsDestructive="True"

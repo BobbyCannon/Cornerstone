@@ -33,7 +33,7 @@ public class TupleComparer : BaseComparer
 			var values1 = expected.GetValueTupleItemDictionary();
 			var values2 = actual.GetValueTupleItemDictionary();
 
-			DictionaryComparer.CompareDictionaries(session, values1, values2);
+			DictionaryComparer.CompareDictionaries(session, values1, values2, message);
 
 			// Return the current result.
 			return session.Result;

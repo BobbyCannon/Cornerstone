@@ -3,7 +3,7 @@
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		x:ClassModifier="internal">
 	<Design.PreviewWith>
-		<Border Padding="10" Width="300">
+		<Border Padding="10" Width="400">
 			<StackPanel>
 				<Menu>
 					<MenuItem Header="_Standard">
@@ -36,8 +36,8 @@
 		<Setter Property="Background" Value="{DynamicResource MenuBarBackground}" />
 		<Setter Property="Foreground" Value="{DynamicResource MenuFlyoutItemForeground}" />
 		<Setter Property="FontSize" Value="{DynamicResource StandardFontSize}" />
-		<Setter Property="Padding" Value="{DynamicResource MenuBarItemPadding}" />
-		<Setter Property="CornerRadius" Value="{DynamicResource MenuFlyoutItemCornerRadius}" />
+		<Setter Property="Padding" Value="8,0" />
+		<Setter Property="CornerRadius" Value="0" />
 		<Setter Property="ContextMenu.Placement" Value="BottomEdgeAlignedLeft" />
 		<Setter Property="Template">
 			<ControlTemplate>
@@ -67,8 +67,8 @@
 							<Border
 									Background="{DynamicResource MenuFlyoutPresenterBackground}"
 									BorderBrush="{DynamicResource MenuFlyoutPresenterBorderBrush}"
-									BorderThickness="{DynamicResource MenuFlyoutPresenterBorderThemeThickness}"
-									Padding="{DynamicResource MenuFlyoutPresenterThemePadding}"
+									BorderThickness="1"
+									Padding="0"
 									MaxWidth="{DynamicResource FlyoutThemeMaxWidth}"
 									HorizontalAlignment="Stretch"
 									CornerRadius="{DynamicResource FlyoutCornerRadius}">
@@ -76,7 +76,7 @@
 									<ItemsPresenter
 											Name="PART_ItemsPresenter"
 											ItemsPanel="{TemplateBinding ItemsPanel}"
-											Margin="{DynamicResource MenuFlyoutScrollerMargin}"
+											Margin="0"
 											Grid.IsSharedSizeScope="True" />
 								</ScrollViewer>
 							</Border>
@@ -114,10 +114,10 @@
 	<ControlTheme x:Key="{x:Type Menu}" TargetType="Menu">
 		<Setter Property="Background" Value="{DynamicResource MenuBarBackground}" />
 		<Setter Property="BorderBrush" Value="{DynamicResource MenuBarBorderBrush}" />
-		<Setter Property="BorderThickness" Value="{DynamicResource MenuBarBorderThickness}" />
-		<Setter Property="Height" Value="{DynamicResource MenuBarHeight}" />
+		<Setter Property="BorderThickness" Value="0,0,0,1" />
+		<Setter Property="Height" Value="28" />
 		<Setter Property="ItemContainerTheme" Value="{StaticResource TopLevelMenuItem}" />
-		<Setter Property="Padding" Value="{DynamicResource MenuBarPadding}" />
+		<Setter Property="Padding" Value="0" />
 		<Setter Property="Template">
 			<ControlTemplate>
 				<Border
@@ -127,12 +127,14 @@
 						CornerRadius="{TemplateBinding CornerRadius}"
 						HorizontalAlignment="Stretch"
 						Padding="{TemplateBinding Padding}">
-					<ItemsPresenter
-							Name="PART_ItemsPresenter"
-							ItemsPanel="{TemplateBinding ItemsPanel}"
-							VerticalAlignment="Stretch"
-							Margin="0,0,0,0"
-							KeyboardNavigation.TabNavigation="Continue" />
+					<ScrollViewer HorizontalScrollBarVisibility="Auto">
+						<ItemsPresenter
+								Name="PART_ItemsPresenter"
+								ItemsPanel="{TemplateBinding ItemsPanel}"
+								VerticalAlignment="Stretch"
+								Margin="0,0,0,0"
+								KeyboardNavigation.TabNavigation="Continue" />
+					</ScrollViewer>
 				</Border>
 			</ControlTemplate>
 		</Setter>

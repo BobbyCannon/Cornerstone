@@ -172,11 +172,11 @@ public class GapBufferTests : CornerstoneUnitTest
 	{
 		//                                0    1    2    3    4    5    6    7    8
 		var buffer = new GapBuffer<char>('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i');
-		buffer.RemoveRange(3, 3);
+		buffer.Remove(3, 3);
 		AreEqual(6, buffer.Count);
 		AreEqual("abcghi", buffer.ToString());
 
-		buffer.RemoveRange(0, 0);
+		buffer.Remove(0, 0);
 		AreEqual(6, buffer.Count);
 		AreEqual("abcghi", buffer.ToString());
 	}

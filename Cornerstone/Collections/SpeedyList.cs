@@ -271,14 +271,13 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 
 		try
 		{
-			EnterUpgradeableReadLock();
-
-			var removedItems = _list.ToArray();
+			T[] removedItems;
 
 			try
 			{
 				EnterWriteLock();
 
+				removedItems = _list.ToArray();
 				_list.Clear();
 
 				Profiler?.RemovedCount.Increment(removedItems.Length);
@@ -846,6 +845,12 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 		}
 	}
 
+	/// <inheritdoc />
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
+	{
+		return false;
+	}
+
 	/// <summary>
 	/// Raises the <see cref="CollectionChanged" /> event.
 	/// </summary>
@@ -1150,8 +1155,8 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 			});
 
 			var toAdd = _list
-				.Where(x =>
-					filterCheck(x) && !_filtered.Contains(x)).ToList();
+				.Where(x => filterCheck(x) && !_filtered.Contains(x))
+				.ToList();
 
 			this.Dispatch(() =>
 			{
@@ -1528,7 +1533,7 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 /// <summary>
 /// Represents a speedy list.
 /// </summary>
-public interface ISpeedyList<T> : IList<T>, INotifyCollectionChanged, IDispatchable
+public interface ISpeedyList<T> : IList<T>, INotifyCollectionChanged, IDispatchable, IEnumerable
 {
 	#region Properties
 
@@ -1556,6 +1561,12 @@ public interface ISpeedyList<T> : IList<T>, INotifyCollectionChanged, IDispatcha
 	/// </summary>
 	/// <returns> True if the list should order or false otherwise. </returns>
 	internal bool ShouldOrder();
+
+	/// <summary>
+	/// Loads the items into the list. All existing items will be cleared.
+	/// </summary>
+	/// <param name="items"> The items to be loaded. </param>
+	void Load(params T[] items);
 
 	#endregion
 

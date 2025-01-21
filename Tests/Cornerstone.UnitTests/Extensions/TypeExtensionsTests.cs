@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using Cornerstone.Automation.Web;
 using Cornerstone.Compare;
 using Cornerstone.Data;
@@ -105,6 +106,7 @@ public class TypeExtensionsTests : CornerstoneUnitTest
 	public void ImplementsTypesForGenerics()
 	{
 		IsTrue(new ShortGuid().ImplementsType<IComparable>());
+		IsTrue(new ReadOnlyDictionary<int, string>(new Dictionary<int, string>()).ImplementsType(typeof(IReadOnlyDictionary<,>)));
 	}
 
 	[TestMethod]

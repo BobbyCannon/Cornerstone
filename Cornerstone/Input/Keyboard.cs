@@ -127,7 +127,7 @@ public abstract class Keyboard : Manager
 	}
 
 	/// <summary>
-	/// Determines whether the specified key is up or down.
+	/// Determines whether the specified key is down.
 	/// </summary>
 	/// <param name="keys"> The <see cref="KeyboardKey" /> for the key(s). </param>
 	/// <returns>
@@ -136,7 +136,7 @@ public abstract class Keyboard : Manager
 	public abstract bool IsKeyDown(params KeyboardKey[] keys);
 
 	/// <summary>
-	/// Determines whether the specified key is up or down.
+	/// Determines whether the specified key is up.
 	/// </summary>
 	/// <param name="keys"> The <see cref="KeyboardKey" /> for the key(s). </param>
 	/// <returns>
@@ -479,12 +479,12 @@ public abstract class Keyboard : Manager
 
 	protected abstract InputBuilder GetInputBuilder(KeyboardKey[] keys);
 
-	protected virtual void OnKeyPressed(KeyboardState e)
+	protected virtual void OnKeyPressed(KeyboardStateArg e)
 	{
 		KeyChanged?.Invoke(this, e);
 	}
 
-	protected abstract InputBuilder SendInput(InputBuilder addKeyDown);
+	protected abstract InputBuilder SendInput(InputBuilder builder);
 
 	#endregion
 
@@ -493,7 +493,7 @@ public abstract class Keyboard : Manager
 	/// <summary>
 	/// Called when monitoring keyboard and a key is pressed.
 	/// </summary>
-	public event EventHandler<KeyboardState> KeyChanged;
+	public event EventHandler<KeyboardStateArg> KeyChanged;
 
 	#endregion
 }

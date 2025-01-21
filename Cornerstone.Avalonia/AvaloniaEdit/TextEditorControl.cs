@@ -1055,7 +1055,8 @@ public class TextEditorControl : CornerstoneTemplatedControl, ITextEditorCompone
 	/// <inheritdoc />
 	protected override void OnKeyDown(KeyEventArgs e)
 	{
-		if (TextArea.IsFocused && (CompletionProvider?.ShouldTrigger(e.Key, e.KeyModifiers, out var silent) == true))
+		var completionProvider = CompletionProvider;
+		if (TextArea.IsFocused && (completionProvider?.ShouldTrigger(e.Key, e.KeyModifiers, out var silent) == true))
 		{
 			e.Handled = true;
 			base.OnKeyDown(e);
@@ -1069,9 +1070,9 @@ public class TextEditorControl : CornerstoneTemplatedControl, ITextEditorCompone
 
 			Task.Run(() =>
 			{
-				if (CompletionProvider.TryGetAutoComplete(line, out var prefix, out var data))
+				if (completionProvider.TryGetAutoComplete(line))
 				{
-					this.Dispatch(() => CompletionWindowOpen(prefix, data));
+					this.Dispatch(() => CompletionWindowOpen(completionProvider));
 				}
 			});
 
@@ -1160,11 +1161,11 @@ public class TextEditorControl : CornerstoneTemplatedControl, ITextEditorCompone
 		}
 	}
 
-	private void CompletionWindowOpen(string prefix, ICompletionData[] suggestions)
+	private void CompletionWindowOpen(ICompletionProvider provider)
 	{
 		CompletionWindowOnClosed(CompletionWindow, EventArgs.Empty);
 
-		CompletionWindow = new CompletionWindow(TextArea, prefix, null, suggestions);
+		CompletionWindow = new CompletionWindow(TextArea, provider.Prefix, null, provider.Data);
 		CompletionWindow.Closed += CompletionWindowOnClosed;
 		CompletionWindow.Show();
 	}

@@ -1,6 +1,5 @@
 ﻿#region References
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Cornerstone.Presentation;
@@ -20,7 +19,7 @@ public class ServiceRequest<T> : ServiceRequest
 	/// <summary>
 	/// Initializes an instance of a service request.
 	/// </summary>
-	public ServiceRequest() : this(Array.Empty<T>())
+	public ServiceRequest() : this([])
 	{
 	}
 
@@ -64,7 +63,7 @@ public class ServiceRequest : Bindable
 	public IDictionary<string, string> Filters { get; set; }
 
 	/// <summary>
-	/// The values to be include in the results. Defaults to an empty collection.
+	/// The values to be included in the results. Defaults to an empty collection.
 	/// </summary>
 	public IList<string> Including { get; set; }
 

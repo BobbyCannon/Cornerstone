@@ -30,7 +30,7 @@ public interface ICreatedEntity : IEntity
 	/// <summary>
 	/// Gets or sets the date and time the entity was created.
 	/// </summary>
-	DateTime CreatedOn { get; set; }
+	public DateTime CreatedOn { get; set; }
 
 	#endregion
 }

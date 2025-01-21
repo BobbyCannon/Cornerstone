@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using Cornerstone.Runtime;
 using Cornerstone.Storage;
 
 #endregion
@@ -19,6 +20,12 @@ public class SyncableDatabaseProvider2<T> : SyncableDatabaseProvider<T>
 	#region Constructors
 
 	public SyncableDatabaseProvider2(Func<T> databaseProvider)
+		: this(databaseProvider, Runtime.DateTimeProvider.RealTime)
+	{
+	}
+
+	public SyncableDatabaseProvider2(Func<T> databaseProvider, IDateTimeProvider dateTimeProvider)
+		: base(dateTimeProvider)
 	{
 		_databaseProvider = databaseProvider;
 	}
@@ -28,18 +35,18 @@ public class SyncableDatabaseProvider2<T> : SyncableDatabaseProvider<T>
 	#region Methods
 
 	/// <inheritdoc />
+	public override string[] GetSyncOrder()
+	{
+		throw new NotImplementedException();
+	}
+
+	/// <inheritdoc />
 	protected override T GetDatabaseFromProvider()
 	{
 		return _databaseProvider.Invoke();
 	}
 
 	#endregion
-
-	/// <inheritdoc />
-	public override string[] GetSyncOrder()
-	{
-		throw new NotImplementedException();
-	}
 }
 
 /// <summary>
@@ -49,6 +56,15 @@ public abstract class SyncableDatabaseProvider<T>
 	: DatabaseProvider<T>, ISyncableDatabaseProvider<T>
 	where T : ISyncableDatabase
 {
+	#region Constructors
+
+	protected SyncableDatabaseProvider(IDateTimeProvider dateTimeProvider)
+		: base(dateTimeProvider)
+	{
+	}
+
+	#endregion
+
 	#region Methods
 
 	/// <inheritdoc />

@@ -2,6 +2,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 using Cornerstone.EntityFramework;
+using Cornerstone.Logging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Sample.Shared.Storage.Server;
@@ -41,14 +42,18 @@ public class TrackerPathMap : EntityMappingConfiguration<TrackerPathEntity>
 		b.Property(x => x.Value08).IsRequired(false).HasMaxLength(900);
 		b.Property(x => x.Value09).IsRequired(false).HasMaxLength(900);
 
-		#if NET6_0_OR_GREATER
-		b.HasIndex(x => x.SyncId).HasDatabaseName("IX_TrackerPaths_SyncId").IsUnique();
-		#else
-		b.HasIndex(x => x.SyncId).HasName("IX_TrackerPaths_SyncId").IsUnique();
-		#endif
-
-		b.HasOne(x => x.Configuration).WithMany(x => x.Paths).HasForeignKey(x => x.ConfigurationId).OnDelete(DeleteBehavior.Restrict);
-		b.HasOne(x => x.Parent).WithMany(x => x.Children).HasForeignKey(x => x.ParentId).OnDelete(DeleteBehavior.Restrict);
+		b.HasIndex(x => x.SyncId)
+			.HasIndexName("IX_TrackerPaths_SyncId")
+			.IsUnique();
+		
+		b.HasOne(x => x.Configuration)
+			.WithMany(x => x.Paths)
+			.HasForeignKey(x => x.ConfigurationId)
+			.OnDelete(DeleteBehavior.Restrict);
+		b.HasOne(x => x.Parent)
+			.WithMany(x => x.Children)
+			.HasForeignKey(x => x.ParentId)
+			.OnDelete(DeleteBehavior.Restrict);
 	}
 
 	#endregion

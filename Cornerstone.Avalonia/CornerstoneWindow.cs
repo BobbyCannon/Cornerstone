@@ -7,10 +7,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Interactivity;
-using Avalonia.Media;
 using Cornerstone.Avalonia.Extensions;
 using Cornerstone.Presentation;
-using Cornerstone.Windows;
 using Dispatcher = Avalonia.Threading.Dispatcher;
 
 #endregion
@@ -100,9 +98,9 @@ public class CornerstoneWindow : Window, IDispatchable
 		return _dispatcher;
 	}
 
-	public static T GetService<T>()
+	public static T GetInstance<T>()
 	{
-		return CornerstoneApplication.GetService<T>();
+		return CornerstoneApplication.GetInstance<T>();
 	}
 
 	public bool IsOnScreen()

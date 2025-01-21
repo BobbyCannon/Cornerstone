@@ -12,7 +12,6 @@ using System.Threading;
 using Cornerstone.Collections;
 using Cornerstone.Internal;
 using Cornerstone.Text.Buffers;
-using Cornerstone.Weaver;
 
 #endregion
 
@@ -568,6 +567,13 @@ public sealed class TextEditorDocument : ITextEditorDocument, INotifyPropertyCha
 	}
 
 	/// <inheritdoc />
+	public int LastIndexOf(string searchText,  StringComparison comparisonType)
+	{
+		DebugVerifyAccess();
+		return _buffer.LastIndexOf(searchText, 0, _buffer.Count, comparisonType);
+	}
+	
+	/// <inheritdoc />
 	public int LastIndexOf(string searchText, int startIndex, int count, StringComparison comparisonType)
 	{
 		DebugVerifyAccess();
@@ -969,7 +975,7 @@ public sealed class TextEditorDocument : ITextEditorDocument, INotifyPropertyCha
 			}
 			else
 			{
-				_buffer.RemoveRange(offset, length);
+				_buffer.Remove(offset, length);
 				_lineManager.Remove(offset, length);
 				#if DEBUG
 				_lineTree.CheckProperties();
@@ -1045,7 +1051,6 @@ public sealed class TextEditorDocument : ITextEditorDocument, INotifyPropertyCha
 
 		return textSource.Text.ToCharArray();
 	}
-
 
 	private void OnFileNameChanged(EventArgs e)
 	{

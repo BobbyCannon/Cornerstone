@@ -1,4 +1,4 @@
-﻿#region References
+#region References
 
 using Cornerstone.Data;
 using Cornerstone.Extensions;
@@ -107,8 +107,15 @@ public class Location : Bindable<Location>,
 	/// <returns> True if the update was applied otherwise false. </returns>
 	public bool UpdateWith(ILocation<IHorizontalLocation, IVerticalLocation> update, IncludeExcludeSettings settings)
 	{
-		return HorizontalLocation.TryUpdateWith(update.HorizontalLocation, settings)
-			| VerticalLocation.TryUpdateWith(update.VerticalLocation, settings);
+		UpdateProperty(HorizontalLocation, update.HorizontalLocation,
+			settings.ShouldProcessProperty(nameof(HorizontalLocation)),
+			x => HorizontalLocation = x
+		);
+		UpdateProperty(VerticalLocation, update.VerticalLocation,
+			settings.ShouldProcessProperty(nameof(VerticalLocation)),
+			x => VerticalLocation = x
+		);
+		return true;
 	}
 
 	/// <summary>
@@ -118,24 +125,20 @@ public class Location : Bindable<Location>,
 	/// <param name="settings"> The options for controlling the updating of the entity. </param>
 	public override bool UpdateWith(Location update, IncludeExcludeSettings settings)
 	{
+		// Code Generated - UpdateWith
+
 		// If the update is null then there is nothing to do.
 		if (update == null)
 		{
 			return false;
 		}
 
-		// ****** You can use GenerateUpdateWith to update this ******
+		// ****** This code has been auto generated, do not edit this. ******
 
-		if ((settings == null) || settings.IsEmpty())
-		{
-			HorizontalLocation.UpdateWith(update.HorizontalLocation);
-			VerticalLocation.UpdateWith(update.VerticalLocation);
-		}
-		else
-		{
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(HorizontalLocation)), x => x.HorizontalLocation.UpdateWith(update.HorizontalLocation));
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(VerticalLocation)), x => x.VerticalLocation.UpdateWith(update.VerticalLocation));
-		}
+		UpdateProperty(HorizontalLocation, update.HorizontalLocation, settings.ShouldProcessProperty(nameof(HorizontalLocation)), x => HorizontalLocation = x);
+		UpdateProperty(VerticalLocation, update.VerticalLocation, settings.ShouldProcessProperty(nameof(VerticalLocation)), x => VerticalLocation = x);
+
+		// Code Generated - /UpdateWith
 
 		return true;
 	}

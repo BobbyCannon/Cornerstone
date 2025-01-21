@@ -7,6 +7,7 @@ using System.Text;
 using Cornerstone.Attributes;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
+using Cornerstone.Presentation;
 using Cornerstone.Web;
 
 #endregion
@@ -16,7 +17,7 @@ namespace Cornerstone.Net;
 /// <summary>
 /// Represents a credential for a client.
 /// </summary>
-public class Credential : Notifiable, IDisposable, ICredential
+public class Credential : Bindable, IDisposable, ICredential
 {
 	#region Constructors
 
@@ -24,7 +25,16 @@ public class Credential : Notifiable, IDisposable, ICredential
 	/// Creates an instance of the credential.
 	/// </summary>
 	public Credential()
-		: this(string.Empty, (SecureString) null)
+		: this(string.Empty, (SecureString) null, null)
+	{
+	}
+
+	/// <summary>
+	/// Creates an instance of the credential.
+	/// </summary>
+	/// <param name="dispatcher"> The optional dispatcher to use. </param>
+	public Credential(IDispatcher dispatcher)
+		: this(string.Empty, (SecureString) null, dispatcher)
 	{
 	}
 
@@ -34,7 +44,18 @@ public class Credential : Notifiable, IDisposable, ICredential
 	/// <param name="username"> The username of the credential. </param>
 	/// <param name="password"> The password of the credential. </param>
 	public Credential(string username, string password)
-		: this(username, password?.ToSecureString())
+		: this(username, password?.ToSecureString(), null)
+	{
+	}
+
+	/// <summary>
+	/// Creates an instance of the credential.
+	/// </summary>
+	/// <param name="username"> The username of the credential. </param>
+	/// <param name="password"> The password of the credential. </param>
+	/// <param name="dispatcher"> The optional dispatcher to use. </param>
+	public Credential(string username, string password, IDispatcher dispatcher)
+		: this(username, password?.ToSecureString(), dispatcher)
 	{
 	}
 
@@ -44,6 +65,18 @@ public class Credential : Notifiable, IDisposable, ICredential
 	/// <param name="username"> The username of the credential. </param>
 	/// <param name="password"> The password of the credential. </param>
 	public Credential(string username, SecureString password)
+		: this(username, password, null)
+	{
+	}
+
+	/// <summary>
+	/// Creates an instance of the credential.
+	/// </summary>
+	/// <param name="username"> The username of the credential. </param>
+	/// <param name="password"> The password of the credential. </param>
+	/// <param name="dispatcher"> The optional dispatcher to use. </param>
+	public Credential(string username, SecureString password, IDispatcher dispatcher)
+		: base(dispatcher)
 	{
 		UserName = username ?? string.Empty;
 		SecurePassword = password?.Copy();
@@ -97,9 +130,7 @@ public class Credential : Notifiable, IDisposable, ICredential
 	/// </summary>
 	public virtual AuthenticationHeaderValue GetAuthenticationHeaderValue()
 	{
-		return new AuthenticationHeaderValue("Basic",
-			System.Convert.ToBase64String(Encoding.UTF8.GetBytes($"{UserName}:{Password}"))
-		);
+		return new AuthenticationHeaderValue("Basic", ToBase64String());
 	}
 
 	/// <summary>
@@ -136,6 +167,11 @@ public class Credential : Notifiable, IDisposable, ICredential
 		//Password = string.Empty;
 
 		NotifyOfPropertyChanged(nameof(Password));
+	}
+
+	public virtual string ToBase64String()
+	{
+		return System.Convert.ToBase64String(Encoding.UTF8.GetBytes($"{UserName}:{Password}"));
 	}
 
 	/// <summary>

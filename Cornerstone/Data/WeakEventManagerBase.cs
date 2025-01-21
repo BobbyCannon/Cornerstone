@@ -75,7 +75,7 @@ public abstract class WeakEventManagerBase<TEventManager, TEventSource, TEventHa
 	/// Delivers the event to the handlers registered for the source.
 	/// </summary>
 	/// <param name="sender"> The sender. </param>
-	/// <param name="args"> The <see cref="TEventArgs" /> instance containing the event data. </param>
+	/// <param name="args"> The event args containing the event data. </param>
 	protected static void DeliverEvent(object sender, TEventArgs args)
 	{
 		Current.PrivateDeliverEvent(sender, args);

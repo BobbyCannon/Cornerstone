@@ -36,7 +36,7 @@ public class NumberComparer : BaseComparer
 				return CompareResult.AreEqual;
 			}
 
-			AddDifference(session, expected.ToString(), actual.ToString(), true, message);
+			session.AddDifference(expected, actual, true, message);
 			return CompareResult.NotEqual;
 		}
 
@@ -47,7 +47,7 @@ public class NumberComparer : BaseComparer
 				return CompareResult.AreEqual;
 			}
 
-			AddDifference(session, expected.ToString(), actual.ToString(), true, message);
+			session.AddDifference(expected, actual, true, message);
 			return CompareResult.NotEqual;
 		}
 
@@ -57,7 +57,7 @@ public class NumberComparer : BaseComparer
 			return CompareResult.AreEqual;
 		}
 
-		AddDifference(session, expected.ToString(), actual.ToString(), true, message);
+		session.AddDifference(expected, actual, true, message);
 		return CompareResult.NotEqual;
 	}
 

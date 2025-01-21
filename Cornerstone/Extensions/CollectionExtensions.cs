@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using Cornerstone.Collections;
 using Cornerstone.Data;
 using Cornerstone.Presentation;
+using Cornerstone.Text.Human;
 
 #endregion
 
@@ -213,7 +214,7 @@ public static class CollectionExtensions
 	/// <param name="compare"> An optional compare function. Defaults to Equals. </param>
 	public static void Reconcile<T>(this IList<T> collection, IEnumerable<T> expected, Func<T, T, bool> compare = null)
 	{
-		var expectedList = expected.ToList();
+		var expectedList = expected?.ToList() ?? [];
 		compare ??= GetEqualityComparer<T>();
 
 		// Reconcile two collections
@@ -309,27 +310,6 @@ public static class CollectionExtensions
 	}
 
 	/// <summary>
-	/// Converts the byte array to a hex string.
-	/// </summary>
-	/// <param name="data"> The data to convert. </param>
-	/// <returns> The data in a hex string format. </returns>
-	public static string ToHexString(this byte[] data)
-	{
-		var digits = data.Length * 2;
-		var c = new char[digits];
-
-		for (var i = 0; i < (digits / 2); i++)
-		{
-			var b = (byte) (data[i] >> 4);
-			c[i * 2] = (char) (b > 9 ? b + 87 : b + 0x30);
-			b = (byte) (data[i] & 0xF);
-			c[(i * 2) + 1] = (char) (b > 9 ? b + 87 : b + 0x30);
-		}
-
-		return new string(c);
-	}
-
-	/// <summary>
 	/// Appends new values to an existing HashSet.
 	/// </summary>
 	/// <typeparam name="T"> The type of value in the set. </typeparam>
@@ -341,6 +321,22 @@ public static class CollectionExtensions
 		return values is HashSet<T> hashSet
 			? new HashSet<T>(values.Union(additions), hashSet.Comparer)
 			: [..values.Union(additions)];
+	}
+
+	/// <summary>
+	/// Converts the byte array to a hex string.
+	/// </summary>
+	/// <param name="data"> The data to convert. </param>
+	/// <returns> The data in a hex string format. </returns>
+	public static string ToHexString(this byte[] data)
+	{
+		var response = new char[data.Length * 2];
+		for (int i = 0, j = 0; i < data.Length; i++)
+		{
+			response[j++] = StringFormatter.HexCharacters[data[i] >> 4];
+			response[j++] = StringFormatter.HexCharacters[data[i] & 0xF];
+		}
+		return new string(response);
 	}
 
 	/// <summary>

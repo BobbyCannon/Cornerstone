@@ -59,6 +59,11 @@ public class ClassicReference : XmlElement
 
 	private IDictionary<string, string> GetIncludeLookup()
 	{
+		if (Include == null)
+		{
+			return new Dictionary<string, string>();
+		}
+
 		_includeDictionary ??= Include
 			.Split(',')
 			.Select(x => x.Split('='))

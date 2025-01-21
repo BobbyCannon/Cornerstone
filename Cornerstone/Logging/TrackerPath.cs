@@ -15,20 +15,27 @@ namespace Cornerstone.Logging;
 /// </summary>
 public class TrackerPath : Bindable, ITrackerPath
 {
+	#region Fields
+
+	private readonly IDateTimeProvider _dateTimeProvider;
+
+	#endregion
+
 	#region Constructors
 
 	/// <summary>
 	/// Instantiates a new instance of the class.
 	/// </summary>
-	public TrackerPath() : this(null)
+	public TrackerPath() : this(DateTimeProvider.RealTime, null)
 	{
 	}
 
 	/// <summary>
 	/// Instantiates a new instance of the class.
 	/// </summary>
-	public TrackerPath(IDispatcher dispatcher) : base(dispatcher)
+	public TrackerPath(IDateTimeProvider dateTimeProvider, IDispatcher dispatcher) : base(dispatcher)
 	{
+		_dateTimeProvider = dateTimeProvider;
 		Children = new List<TrackerPath>();
 		Values = new List<TrackerPathValue>();
 		Restart();
@@ -113,7 +120,7 @@ public class TrackerPath : Bindable, ITrackerPath
 	/// <param name="values"> Optional values for this exception. </param>
 	public void AddException(Exception exception, params TrackerPathValue[] values)
 	{
-		Children.Add(CreatePath(Id, exception, values));
+		Children.Add(CreatePath(_dateTimeProvider, Id, exception, values));
 	}
 
 	/// <summary>
@@ -142,7 +149,7 @@ public class TrackerPath : Bindable, ITrackerPath
 	public TrackerPath Complete()
 	{
 		IsCompleted = true;
-		CompletedOn = DateTimeProvider.RealTime.UtcNow;
+		CompletedOn = _dateTimeProvider.UtcNow;
 		Completed?.Invoke(this);
 		return this;
 	}
@@ -150,12 +157,13 @@ public class TrackerPath : Bindable, ITrackerPath
 	/// <summary>
 	/// Starts a new path including an exception. The path will need to be completed or disposed before it will be added to the tracker.
 	/// </summary>
+	/// <param name="dateTimeProvider"> The date and time provider. </param>
 	/// <param name="ex"> The exception to be turned into a path. </param>
 	/// <param name="values"> Optional values for this path. </param>
 	/// <returns> The path for tracking a path. </returns>
-	public static TrackerPath CreatePath(Exception ex, params TrackerPathValue[] values)
+	public static TrackerPath CreatePath(IDateTimeProvider dateTimeProvider, Exception ex, params TrackerPathValue[] values)
 	{
-		return CreatePath(Guid.Empty, ex, values);
+		return CreatePath(dateTimeProvider, Guid.Empty, ex, values);
 	}
 
 	/// <summary>
@@ -172,7 +180,7 @@ public class TrackerPath : Bindable, ITrackerPath
 	/// </summary>
 	public void Restart()
 	{
-		var currentTime = DateTimeProvider.RealTime.UtcNow;
+		var currentTime = _dateTimeProvider.UtcNow;
 		Children.Clear();
 		CompletedOn = currentTime;
 		Id = Guid.NewGuid();
@@ -210,7 +218,7 @@ public class TrackerPath : Bindable, ITrackerPath
 
 		using var result = new TrackerPath();
 		result.Name = key();
-		result.StartedOn = DateTimeProvider.RealTime.UtcNow;
+		result.StartedOn = _dateTimeProvider.UtcNow;
 		action(result);
 		Children.Add(result);
 	}
@@ -231,7 +239,7 @@ public class TrackerPath : Bindable, ITrackerPath
 
 		using var result = new TrackerPath();
 		result.Name = key();
-		result.StartedOn = DateTimeProvider.RealTime.UtcNow;
+		result.StartedOn = _dateTimeProvider.UtcNow;
 		var response = action(result);
 		Children.Add(result);
 		return response;
@@ -259,11 +267,12 @@ public class TrackerPath : Bindable, ITrackerPath
 	/// <summary>
 	/// Starts a new path including an exception. The path will need to be completed or disposed before it will be added to the tracker.
 	/// </summary>
+	/// <param name="dateTimeProvider"> The date and time provider. </param>
 	/// <param name="parentId"> The ID of the parent for this path. </param>
 	/// <param name="ex"> The exception to be turned into a path. </param>
 	/// <param name="values"> Optional values for this path. </param>
 	/// <returns> The path for tracking a path. </returns>
-	private static TrackerPath CreatePath(Guid parentId, Exception ex, params TrackerPathValue[] values)
+	private static TrackerPath CreatePath(IDateTimeProvider dateTimeProvider, Guid parentId, Exception ex, params TrackerPathValue[] values)
 	{
 		if (ex == null)
 		{
@@ -273,7 +282,7 @@ public class TrackerPath : Bindable, ITrackerPath
 		var pathValues = new List<TrackerPathValue>(values);
 		pathValues.AddOrUpdate(new TrackerPathValue("Message", ex.Message), new TrackerPathValue("Stack Trace", ex.StackTrace ?? string.Empty));
 
-		var response = new TrackerPath
+		var response = new TrackerPath(dateTimeProvider, null)
 		{
 			ParentId = parentId,
 			Name = ex.GetType().Name,
@@ -286,7 +295,7 @@ public class TrackerPath : Bindable, ITrackerPath
 			return response;
 		}
 
-		var childException = CreatePath(parentId, ex.InnerException);
+		var childException = CreatePath(dateTimeProvider, parentId, ex.InnerException);
 		response.Children.Add(childException);
 		return response;
 	}

@@ -1,5 +1,6 @@
 ﻿#region References
 
+using Cornerstone.Runtime;
 using Cornerstone.Sync;
 using Sample.Shared.Storage;
 
@@ -17,7 +18,7 @@ public class ServerMemoryDatabaseProvider : SyncableDatabaseProvider<IServerData
 
 	#region Constructors
 
-	public ServerMemoryDatabaseProvider()
+	public ServerMemoryDatabaseProvider(IDateTimeProvider dateTimeProvider) : base(dateTimeProvider)
 	{
 		_database = new ServerMemoryDatabase();
 	}

@@ -192,33 +192,33 @@ public interface IEntity : INotifyPropertyChanged, IUpdateable, IUpdateableOptio
 	/// <summary>
 	/// Checks to see if an entity can be modified.
 	/// </summary>
-	bool CanBeModified();
+	public bool CanBeModified();
 
 	/// <summary>
 	/// Update an entity that has been added.
 	/// </summary>
-	void EntityAdded(DateTime utcNow);
+	public void EntityAdded(DateTime utcNow);
 
 	/// <summary>
 	/// Update an entity that has been added, deleted, or modified.
 	/// </summary>
-	void EntityAddedDeletedOrModified(DateTime utcNow);
+	public void EntityAddedDeletedOrModified(DateTime utcNow);
 
 	/// <summary>
 	/// Update an entity that has been deleted.
 	/// </summary>
-	void EntityDeleted(DateTime utcNow);
+	public void EntityDeleted(DateTime utcNow);
 
 	/// <summary>
 	/// Update an entity that has been modified.
 	/// </summary>
-	void EntityModified(DateTime utcNow);
+	public void EntityModified(DateTime utcNow);
 
 	/// <summary>
 	/// Gets the primary key (ID) of the entity.
 	/// </summary>
 	/// <returns> The primary key value for the entity. </returns>
-	object GetEntityId();
+	public object GetEntityId();
 
 	/// <summary>
 	/// Cached version of the "real" type, meaning not EF proxy but rather root type
@@ -229,7 +229,7 @@ public interface IEntity : INotifyPropertyChanged, IUpdateable, IUpdateableOptio
 	/// Determine if the ID is set on the entity.
 	/// </summary>
 	/// <returns> True if the ID is set or false if otherwise. </returns>
-	bool IdIsSet();
+	public bool IdIsSet();
 
 	/// <summary>
 	/// Checks a property to see if it should be processed for the provided action.
@@ -237,13 +237,13 @@ public interface IEntity : INotifyPropertyChanged, IUpdateable, IUpdateableOptio
 	/// <param name="action"> The action to validate. </param>
 	/// <param name="propertyName"> The name of the property to validate. </param>
 	/// <returns> True if the property should be processed otherwise false. </returns>
-	bool ShouldProcessProperty(UpdateableAction action, string propertyName);
+	public bool ShouldProcessProperty(UpdateableAction action, string propertyName);
 
 	/// <summary>
 	/// Try to set the ID from a serialized version.
 	/// </summary>
 	/// <returns> True if the ID is successfully set or false if otherwise. </returns>
-	bool TrySetId(string id);
+	public bool TrySetId(string id);
 
 	#endregion
 }

@@ -1,6 +1,5 @@
 ﻿#region References
 
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -19,7 +18,7 @@ namespace Cornerstone.Settings;
 /// <summary>
 /// Represents a set of settings to load and save to a file in the JSON format.
 /// </summary>
-public abstract class SettingsFile<T> : PartialUpdate<T>
+public abstract class SettingsFile<T> : Settings<T>
 {
 	#region Fields
 
@@ -74,27 +73,7 @@ public abstract class SettingsFile<T> : PartialUpdate<T>
 
 	#endregion
 
-	#region Properties
-
-	/// <summary>
-	/// True if loaded.
-	/// </summary>
-	public bool IsLoaded { get; private set; }
-
-	#endregion
-
 	#region Methods
-
-	/// <inheritdoc />
-	public override HashSet<string> GetDefaultIncludedProperties(UpdateableAction action)
-	{
-		var response = GetType().GetDefaultIncludedProperties(action);
-		if (action == UpdateableAction.PartialUpdate)
-		{
-			response.Remove(nameof(IsLoaded));
-		}
-		return response;
-	}
 
 	/// <summary>
 	/// Loads the settings from a json file in the application data location.
@@ -132,15 +111,6 @@ public abstract class SettingsFile<T> : PartialUpdate<T>
 	}
 
 	/// <summary>
-	/// Reset the settings file.
-	/// </summary>
-	public void Reset()
-	{
-		ResetToDefaults();
-		ResetHasChanges();
-	}
-
-	/// <summary>
 	/// Save the settings to a json file in the application data location.
 	/// </summary>
 	public void Save(bool force = false)
@@ -157,33 +127,6 @@ public abstract class SettingsFile<T> : PartialUpdate<T>
 		File.WriteAllText(filePath, json, Encoding.UTF8);
 
 		ResetHasChanges();
-	}
-
-	/// <summary>
-	/// Serialize the settings file to JSON.
-	/// </summary>
-	/// <returns> The settings in JSON format. </returns>
-	public string ToJson()
-	{
-		RefreshUpdates();
-		var json = Serializer.Instance.ToJson(this, _serializationSettings);
-		return json;
-	}
-
-	/// <summary>
-	/// Finalize the load.
-	/// </summary>
-	protected virtual void FinalizeLoad()
-	{
-		IsLoaded = true;
-	}
-
-	/// <summary>
-	/// Reset all values to the default state.
-	/// </summary>
-	protected virtual void ResetToDefaults()
-	{
-		IsLoaded = false;
 	}
 
 	#endregion

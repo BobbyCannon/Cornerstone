@@ -65,7 +65,7 @@ public abstract class Notifiable<T> : Notifiable, ICloneable<T>, IUpdateable<T>
 	/// <inheritdoc />
 	public bool UpdateWith(T update, UpdateableAction action)
 	{
-		var options = Cache.GetOptions(GetRealType(), action);
+		var options = Cache.GetSettings(GetRealType(), action);
 		return UpdateWith(update, options);
 	}
 
@@ -162,7 +162,7 @@ public abstract class Notifiable : INotifiable, IUpdateable, ICloneable, IUpdate
 	/// <inheritdoc />
 	public IncludeExcludeSettings GetUpdateableOptions(UpdateableAction action)
 	{
-		return Cache.GetOptions(GetRealType(), action);
+		return Cache.GetSettings(GetRealType(), action);
 	}
 
 	/// <inheritdoc />
@@ -252,7 +252,7 @@ public abstract class Notifiable : INotifiable, IUpdateable, ICloneable, IUpdate
 	/// <inheritdoc />
 	public bool UpdateWith(object update, UpdateableAction action)
 	{
-		var options = Cache.GetOptions(GetRealType(), action);
+		var options = Cache.GetSettings(GetRealType(), action);
 		return UpdateWith(update, options);
 	}
 
@@ -302,30 +302,10 @@ public abstract class Notifiable : INotifiable, IUpdateable, ICloneable, IUpdate
 	/// <summary>
 	/// Change the property then notify that it changed.
 	/// </summary>
-	/// <param name="update"> The update to change the property. </param>
-	/// <param name="propertyName"> The name of the property to notify. </param>
-	protected void SetProperty(Action update, [CallerMemberName] string propertyName = "")
-	{
-		if (!string.IsNullOrWhiteSpace(propertyName))
-		{
-			OnPropertyChanging(propertyName);
-		}
-
-		update();
-
-		if (!string.IsNullOrWhiteSpace(propertyName))
-		{
-			OnPropertyChanged(propertyName);
-		}
-	}
-
-	/// <summary>
-	/// Change the property then notify that it changed.
-	/// </summary>
 	/// <param name="field"> The field that represents the property. </param>
 	/// <param name="value"> The value to change the property. </param>
 	/// <param name="propertyName"> The name of the property to notify. </param>
-	/// <param name="validate"> Optional flag to trigger validation.  </param>
+	/// <param name="validate"> Optional flag to trigger validation. </param>
 	#if (NETSTANDARD2_0)
 	protected bool SetProperty<T>(ref T field, T value, bool validate = false, [CallerMemberName] string propertyName = null)
 	#else
@@ -352,6 +332,35 @@ public abstract class Notifiable : INotifiable, IUpdateable, ICloneable, IUpdate
 		return true;
 	}
 
+	protected void UpdateProperty<T>(T current, T update, bool shouldUpdate, Action<T> assignment = null)
+	{
+		if (!shouldUpdate)
+		{
+			return;
+		}
+
+		if (current is IUpdateable updateable
+			&& update is not null)
+		{
+			updateable.UpdateWith(update);
+			return;
+		}
+
+		assignment?.Invoke(update);
+	}
+	
+	protected T UpdateProperty<T>(T current, T update)
+	{
+		if (current is IUpdateable updateable
+			&& update is not null)
+		{
+			updateable.UpdateWith(update);
+			return (T) updateable;
+		}
+
+		return update;
+	}
+
 	#endregion
 
 	#region Events
@@ -375,17 +384,17 @@ public interface INotifiable : INotifyPropertyChanged, INotifyPropertyChanging, 
 	/// <summary>
 	/// Disable the property change notifications
 	/// </summary>
-	void DisablePropertyChangeNotifications();
+	public void DisablePropertyChangeNotifications();
 
 	/// <summary>
 	/// Enable the property change notifications
 	/// </summary>
-	void EnablePropertyChangeNotifications();
+	public void EnablePropertyChangeNotifications();
 
 	/// <summary>
 	/// Return true if the change notifications are enabled or otherwise false.
 	/// </summary>
-	bool IsPropertyChangeNotificationsEnabled();
+	public bool IsPropertyChangeNotificationsEnabled();
 
 	/// <summary>
 	/// Notifies the property has changed.
@@ -394,7 +403,7 @@ public interface INotifiable : INotifyPropertyChanged, INotifyPropertyChanging, 
 	/// <remarks>
 	/// The property will not show in ITrackPropertyChanges state.
 	/// </remarks>
-	void NotifyOfPropertyChanged(string propertyName);
+	public void NotifyOfPropertyChanged(string propertyName);
 
 	/// <summary>
 	/// Notifies the property is changing.
@@ -403,7 +412,7 @@ public interface INotifiable : INotifyPropertyChanged, INotifyPropertyChanging, 
 	/// <remarks>
 	/// The property will not show in ITrackPropertyChanges state.
 	/// </remarks>
-	void NotifyOfPropertyChanging(string propertyName);
+	public void NotifyOfPropertyChanging(string propertyName);
 
 	#endregion
 }

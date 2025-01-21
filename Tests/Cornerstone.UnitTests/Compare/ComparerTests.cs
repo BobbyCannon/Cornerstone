@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Cornerstone.Compare;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
@@ -39,21 +40,102 @@ public class ComparerTests : CornerstoneUnitTest
 	[TestMethod]
 	public void ExcludePropertyOnDirectObject()
 	{
-		var expected = new Person { FirstName = "Foo", LastName = "Bar", Address = new Address { Line1 = "Main Street", Number = 123 }, Parent = new Person { FirstName = "Hello", LastName = "World" } };
-		var actual = new Person { FirstName = "Foo", LastName = "Bar", Address = new Address { Line1 = "Main Street", Number = 123 }, Parent = new Person { FirstName = "Hello", LastName = "World" } };
-		IsTrue(Comparer.Compare(expected, actual));
+		var expected = new Person
+		{
+			FirstName = "Foo",
+			LastName = "Bar",
+			Address = new Address { Line1 = "Main Street", Number = 123 },
+			Parent = new Person { FirstName = "Hello", LastName = "World" }
+		};
+		var actual = new Person
+		{
+			FirstName = "Foo",
+			LastName = "Bar",
+			Address = new Address { Line1 = "Main Street", Number = 123 },
+			Parent = new Person { FirstName = "Hello", LastName = "World" }
+		};
+		AreEqual(CompareResult.AreEqual, Comparer.Compare(expected, actual).Result);
 
 		expected.FirstName = "foo";
-		IsFalse(Comparer.Compare(expected, actual));
-		IsTrue(Comparer.Compare(expected, actual,
-			new ComparerSettings
-			{
-				IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeSettings>
+		AreEqual(CompareResult.NotEqual, Comparer.Compare(expected, actual).Result);
+		AreEqual(CompareResult.AreEqual, Comparer.Compare(expected, actual,
+				new ComparerSettings
 				{
-					{ typeof(Person), IncludeExcludeSettings.FromExclusions(nameof(Person.FirstName), nameof(Person.FullName)) }
+					TypeIncludeExcludeSettings = new Dictionary<Type, IncludeExcludeSettings>
+					{
+						{ typeof(Person), IncludeExcludeSettings.FromExclusions(nameof(Person.FirstName), nameof(Person.FullName)) }
+					}
 				}
-			})
+			).Result
 		);
+	}
+
+	[TestMethod]
+	public void MaxDepth()
+	{
+		var expected = new Person
+		{
+			FirstName = "Foo",
+			LastName = "Bar",
+			Address = new Address { Line1 = "Main Street", Number = 123, Owner = [
+				new Person { FirstName = "Hello", LastName = "World" }
+			]}
+		};
+		var actual = new Person
+		{
+			FirstName = "Foo",
+			LastName = "Bar",
+			Address = new Address { Line1 = "Main Street", Number = 123, Owner = [
+				new Person { FirstName = "Hello", LastName = "World" }
+			]}
+		};
+		var settings = new ComparerSettings { MaxDepth = 1 };
+		AreEqual(expected, actual, null, settings);
+
+		actual.FirstName = "foo";
+		AreEqual("FirstName\r\nFoo != foo", Comparer.Compare(expected, actual, settings).Differences);
+		
+		actual.FirstName = "Foo";
+		actual.LastName = "bar";
+		AreEqual("FullName\r\nFoo Bar != Foo bar", Comparer.Compare(expected, actual, settings).Differences);
+		
+		actual.LastName = "Bar";
+		settings.MaxDepth = 3;
+		
+		AreEqual(expected, actual, null, settings);
+
+		actual.Address.Owner.First().FirstName = "hello";
+		settings.MaxDepth = 2;
+		
+		AreEqual(expected, actual, null, settings);
+		
+		actual.Address.Owner.First().FirstName = "hello";
+		settings.MaxDepth = 3;
+		
+		AreEqual("FirstName.Owner.Address\r\nArray index [0] does not match. Hello != hello", Comparer.Compare(expected, actual, settings).Differences);
+	}
+
+	[TestMethod]
+	public void SubDictionary()
+	{
+		var person1 = new Person { Dates = new Dictionary<string, DateTime> { { "MinDate", DateTime.MinValue } } };
+		var person2 = new Person();
+		var session = Comparer.Compare(person1, person2);
+
+		AreEqual(CompareResult.NotEqual, session.Result);
+		AreEqual(
+			"Dates\r\nSystem.Collections.Generic.Dictionary`2[System.String,System.DateTime] != null",
+			session.Differences.ToString()
+		);
+	}
+	
+	[TestMethod]
+	public void ValueTypesComparedToNull()
+	{
+		AreEqual("True != null", Comparer.Compare<bool, bool?>(true, null).Differences);
+		AreEqual("null != True", Comparer.Compare<bool?, bool>(null, true).Differences);
+		AreEqual("True != null", Comparer.Compare<bool?, bool?>(true, null).Differences);
+		AreEqual("null != True", Comparer.Compare<bool?, bool?>(null, true).Differences);
 	}
 
 	[TestMethod]
@@ -65,9 +147,9 @@ public class ComparerTests : CornerstoneUnitTest
 		AreEqual(actual, expected);
 
 		actual.Parent = expected;
-		actual.Address = new Address { Owner = new[] { actual, expected } };
+		actual.Address = new Address { Owner = [actual, expected] };
 		expected.Parent = actual;
-		expected.Address = new Address { Owner = new[] { expected, actual } };
+		expected.Address = new Address { Owner = [expected, actual] };
 
 		AreEqual(actual, expected);
 	}
@@ -81,7 +163,7 @@ public class ComparerTests : CornerstoneUnitTest
 		#region Properties
 
 		public string Line1 { get; set; }
-		
+
 		public int Number { get; set; }
 
 		public IEnumerable<Person> Owner { get; set; }
@@ -94,6 +176,8 @@ public class ComparerTests : CornerstoneUnitTest
 		#region Properties
 
 		public Address Address { get; set; }
+
+		public Dictionary<string, DateTime> Dates { get; set; }
 
 		public string FirstName { get; set; }
 

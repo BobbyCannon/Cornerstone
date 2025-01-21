@@ -17,7 +17,7 @@ public class TrackerTests : CornerstoneUnitTest
 	[TestMethod]
 	public void InitialSessionEventShouldBeAddedOnStart()
 	{
-		var repository = new TrackerRepository(null);
+		var repository = new MemoryTrackerRepository(null);
 		var tracker = Tracker.Start(repository, this, null);
 		tracker.Dispose();
 

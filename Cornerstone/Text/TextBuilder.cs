@@ -1,7 +1,6 @@
 ﻿#region References
 
 using System;
-using System.Linq;
 using Cornerstone.Text.Buffers;
 #if !NETSTANDARD
 using System.Diagnostics.CodeAnalysis;
@@ -233,6 +232,15 @@ public class TextBuilder<T> : ITextBuilder
 	}
 
 	/// <summary>
+	/// The buffer ends with a newline.
+	/// </summary>
+	/// <returns> True if so otherwise false. </returns>
+	public bool EndsWithNewLine()
+	{
+		return _endsWithNewline;
+	}
+
+	/// <summary>
 	/// Fill the builder with the provided value.
 	/// </summary>
 	/// <param name="value"> The value to fill with. </param>
@@ -251,6 +259,11 @@ public class TextBuilder<T> : ITextBuilder
 
 			Append(value);
 		}
+	}
+
+	public int IndexOf(string startComment)
+	{
+		return _buffer.IndexOf(startComment);
 	}
 
 	/// <summary>
@@ -306,10 +319,13 @@ public class TextBuilder<T> : ITextBuilder
 	/// </summary>
 	public ITextBuilder PushIndent()
 	{
-		if (Settings.TextFormat == TextFormat.None)
+		if (Settings.TextFormat
+			is TextFormat.None
+			or TextFormat.Spaced)
 		{
 			return this;
 		}
+
 		_currentIndent.Add(IndentToken);
 		return this;
 	}
@@ -321,8 +337,14 @@ public class TextBuilder<T> : ITextBuilder
 	/// <param name="length"> The length of text to remove. </param>
 	public ITextBuilder Remove(int index, int length)
 	{
-		_buffer.RemoveRange(index, length);
+		_buffer.Remove(index, length);
 		return this;
+	}
+
+	/// <inheritdoc />
+	public void Replace(int index, int length, string value)
+	{
+		_buffer.Replace(index, length, value);
 	}
 
 	/// <summary>
@@ -368,6 +390,11 @@ public class TextBuilder<T> : ITextBuilder
 		return this;
 	}
 
+	public void WriteIndent()
+	{
+		WriteIndent(Length - 1);
+	}
+
 	private void InternalNewLine(int index)
 	{
 		switch (Settings.TextFormat)
@@ -389,11 +416,7 @@ public class TextBuilder<T> : ITextBuilder
 
 	private void InternalUpdate(int index, char value, bool newLine)
 	{
-		if ((_currentIndent.Count > 0) && _endsWithNewline)
-		{
-			_buffer.Insert(index, _currentIndent.ToString());
-			index += _currentIndent.Count;
-		}
+		index = WriteIndent(index);
 
 		_buffer.Insert(index, value);
 		_endsWithNewline = false;
@@ -408,15 +431,9 @@ public class TextBuilder<T> : ITextBuilder
 	{
 		if (value is { Length: > 0 })
 		{
-			if ((_currentIndent.Count > 0) && _endsWithNewline)
-			{
-				_buffer.Insert(index, _currentIndent);
-				index += _currentIndent.Count;
-				_endsWithNewline = false;
-			}
+			index = WriteIndent(index);
 
 			_buffer.Insert(index, value);
-			_endsWithNewline = false;
 		}
 
 		_endsWithNewline = _buffer.LastOrDefault() is '\r' or '\n';
@@ -425,6 +442,17 @@ public class TextBuilder<T> : ITextBuilder
 		{
 			InternalNewLine(index + (value?.Length ?? 0));
 		}
+	}
+
+	private int WriteIndent(int index)
+	{
+		if ((_currentIndent.Count > 0) && _endsWithNewline)
+		{
+			_buffer.Insert(index, _currentIndent);
+			index += _currentIndent.Count;
+			_endsWithNewline = false;
+		}
+		return index;
 	}
 
 	#endregion
@@ -465,7 +493,7 @@ public interface ITextBuilder
 	ITextBuilder AppendLine(string value);
 
 	/// <summary>
-	/// Append the value with a <see cref="NewLineToken" /> then decrease indent.
+	/// Append the value with a new line then decrease indent.
 	/// </summary>
 	/// <param name="value"> The value to append to the document. </param>
 	/// <returns> The text document. </returns>
@@ -496,7 +524,7 @@ public interface ITextBuilder
 	ITextBuilder PopIndent();
 
 	/// <summary>
-	/// Decrease indent then append the value with a <see cref="NewLineToken" />.
+	/// Decrease indent then append the value with a new line value.
 	/// </summary>
 	/// <param name="value"> The value to append to the document. </param>
 	/// <returns> The text document. </returns>
@@ -506,6 +534,14 @@ public interface ITextBuilder
 	/// Increases indent.
 	/// </summary>
 	ITextBuilder PushIndent();
+
+	/// <summary>
+	/// Replace a section of text with a new value.
+	/// </summary>
+	/// <param name="index"> The start index to read from. </param>
+	/// <param name="length"> The length of text to read. </param>
+	/// <param name="value"> The value to replace with. </param>
+	void Replace(int index, int length, string value);
 
 	#endregion
 }

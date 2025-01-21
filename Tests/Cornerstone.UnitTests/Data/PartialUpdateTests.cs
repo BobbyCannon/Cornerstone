@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Linq;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Sync;
@@ -18,7 +19,7 @@ public class PartialUpdateTests : CornerstoneUnitTest
 	[TestMethod]
 	public void FromJsonThenToModel()
 	{
-		var json = "{\"CreatedOn\":\"2000-01-02T03:04:00Z\",\"Id\":2,\"IsDeleted\":true,\"ModifiedOn\":\"2000-01-02T03:04:01Z\",\"Name\":\"Test\",\"SyncId\":\"a28f0b1b-20b3-404d-b034-18fad78fd221\"}";
+		var json = "{\"createdOn\":\"2000-01-02T03:04:00Z\",\"id\":2,\"isDeleted\":true,\"modifiedOn\":\"2000-01-02T03:04:01Z\",\"name\":\"Test\",\"syncId\":\"a28f0b1b-20b3-404d-b034-18fad78fd221\"}";
 		var expected = new Test
 		{
 			CreatedOn = StartDateTime,
@@ -61,14 +62,14 @@ public class PartialUpdateTests : CornerstoneUnitTest
 	public void GetTargetProperties()
 	{
 		var update = new PartialUpdate();
-		var actual = update.GetTargetProperties();
+		var actual = update.GetTargetProperties().Select(x => x.Name).ToArray();
 		var expected = Array.Empty<string>();
-		AreEqual(expected, actual.Keys);
+		AreEqual(expected, actual);
 
 		update = new PartialUpdate<Test>();
-		actual = update.GetTargetProperties();
-		expected = ["Id", "Name", "CreatedOn", "IsDeleted", "ModifiedOn", "SyncId"];
-		AreEqual(expected, actual.Keys, $"\"{string.Join("\", \"", actual.Keys)}\"");
+		actual = update.GetTargetProperties().Select(x => x.Name).ToArray();
+		expected = ["CreatedOn", "Id", "IsDeleted", "ModifiedOn", "Name", "SyncId"];
+		AreEqual(expected, actual, $"\"{string.Join("\", \"", actual)}\"");
 	}
 
 	#endregion

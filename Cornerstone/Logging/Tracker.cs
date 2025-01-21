@@ -19,7 +19,7 @@ public class Tracker : Bindable, IDisposable
 	#region Fields
 
 	private readonly TrackerPath _session;
-	private readonly IDateTimeProvider _timeProvider;
+	private readonly IDateTimeProvider _dateTimeProvider;
 
 	#endregion
 
@@ -29,15 +29,15 @@ public class Tracker : Bindable, IDisposable
 	/// A tracker to capture, store, and transmit paths to a path repository.
 	/// </summary>
 	/// <param name="pathRepository"> The final repository used to store the data. </param>
-	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
+	/// <param name="dateTimeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	private Tracker(ITrackerRepository pathRepository, IDateTimeProvider timeProvider, IDispatcher dispatcher) : base(dispatcher)
+	private Tracker(ITrackerRepository pathRepository, IDateTimeProvider dateTimeProvider, IDispatcher dispatcher) : base(dispatcher)
 	{
-		_timeProvider = timeProvider;
-		_session = new TrackerPath(dispatcher)
+		_dateTimeProvider = dateTimeProvider;
+		_session = new TrackerPath(dateTimeProvider, dispatcher)
 		{
 			Name = "Session",
-			StartedOn = _timeProvider.UtcNow,
+			StartedOn = _dateTimeProvider.UtcNow,
 			Type = "Session",
 			Data = string.Empty
 		};
@@ -66,7 +66,7 @@ public class Tracker : Bindable, IDisposable
 	public void AddException(Exception exception, params TrackerPathValue[] values)
 	{
 		ValidateTrackerState();
-		WriteAndSave(TrackerPath.CreatePath(exception, values));
+		WriteAndSave(TrackerPath.CreatePath(_dateTimeProvider, exception, values));
 
 		if (exception.InnerException != null)
 		{
@@ -95,7 +95,7 @@ public class Tracker : Bindable, IDisposable
 	{
 		ValidateTrackerState();
 
-		var currentTime = _timeProvider.UtcNow;
+		var currentTime = _dateTimeProvider.UtcNow;
 
 		WriteAndSave(new TrackerPath
 		{

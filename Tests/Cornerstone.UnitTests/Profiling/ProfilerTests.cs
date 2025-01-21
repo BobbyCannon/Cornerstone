@@ -42,12 +42,12 @@ public class ProfilerTests : CornerstoneUnitTest
 		var actual = profiler.ToString();
 		var expected = """
 						100.00% 0:00:00:05.0000001: Profiler
-							60.00% 0:00:00:03.0000001: First
-								66.67% 0:00:00:02.0000001: Child
-									0.00% 0:00:00:00.0000001: GrandChild
+							 60.00% 0:00:00:03.0000001: First
+								 66.67% 0:00:00:02.0000001: Child
+									  0.00% 0:00:00:00.0000001: GrandChild
 									100.00% 0:00:00:02.0000000: Remainder
-								33.33% 0:00:00:01.0000000: Remainder
-							40.00% 0:00:00:02.0000000: Second
+								 33.33% 0:00:00:01.0000000: Remainder
+							 40.00% 0:00:00:02.0000000: Second
 
 						""";
 
@@ -79,8 +79,8 @@ public class ProfilerTests : CornerstoneUnitTest
 						100.00% 0:00:00:10.0000000: Profiler
 							100.00% 0:00:00:10.0000000: First
 								100.00% 0:00:00:10.0000000: Child
-									50.00% 0:00:00:05.0000000: GrandChild
-									50.00% 0:00:00:05.0000000: Remainder
+									 50.00% 0:00:00:05.0000000: GrandChild
+									 50.00% 0:00:00:05.0000000: Remainder
 
 						""";
 
@@ -110,11 +110,11 @@ public class ProfilerTests : CornerstoneUnitTest
 		var actual = profiler.ToString();
 		var expected = """
 						100.00% 0:00:00:02.1230000: Profiler
-							47.10% 0:00:00:01.0000000: First
+							 47.10% 0:00:00:01.0000000: First
 								100.00% 0:00:00:01.0000000: Child
-									50.00% 0:00:00:00.5000000: GrandChild
-									50.00% 0:00:00:00.5000000: Remainder
-							52.90% 0:00:00:01.1230000: First
+									 50.00% 0:00:00:00.5000000: GrandChild
+									 50.00% 0:00:00:00.5000000: Remainder
+							 52.90% 0:00:00:01.1230000: First
 
 						""";
 

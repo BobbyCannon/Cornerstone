@@ -25,10 +25,13 @@ public class ComparerSettingsTests : CornerstoneUnitTest
 		{
 			{ nameof(ComparerSettings.DoubleTolerance), double.Epsilon },
 			{ nameof(ComparerSettings.FloatTolerance), float.Epsilon },
+			{ nameof(ComparerSettings.GlobalIncludeExcludeSettings), IncludeExcludeSettings.Empty },
 			{ nameof(ComparerSettings.IgnoreObjectTypes), true },
+			{ nameof(ComparerSettings.IgnoreMissingDictionaryEntries), false },
 			{ nameof(ComparerSettings.IgnoreMissingProperties), false },
+			{ nameof(ComparerSettings.MaxDepth), int.MaxValue },
 			{ nameof(ComparerSettings.StringComparison), StringComparison.CurrentCulture },
-			{ nameof(ComparerSettings.IncludeExcludeOptions), new Dictionary<Type, string[]>() }
+			{ nameof(ComparerSettings.TypeIncludeExcludeSettings), new Dictionary<Type, string[]>() }
 		};
 
 		var properties = actual.GetType().GetCachedProperties().OrderBy(x => x.Name).ToList();
@@ -49,9 +52,9 @@ public class ComparerSettingsTests : CornerstoneUnitTest
 	public void IgnorePropertyType()
 	{
 		var options = new ComparerSettings();
-		options.IgnoreProperty<ComparerTests.Person>(x => x.FullName);
+		options.IgnoreTypeProperty<ComparerTests.Person>(x => x.FullName);
 
-		var actual = options.IncludeExcludeOptions;
+		var actual = options.TypeIncludeExcludeSettings;
 		var expected = new Dictionary<Type, IncludeExcludeSettings>
 		{
 			{ typeof(ComparerTests.Person), new IncludeExcludeSettings(null, ["FullName"]) }

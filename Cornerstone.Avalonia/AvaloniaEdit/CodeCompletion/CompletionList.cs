@@ -1,8 +1,7 @@
 ﻿#region References
 
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -11,6 +10,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml.Templates;
 using Cornerstone.Avalonia.AvaloniaEdit.Utils;
+using Cornerstone.Collections;
 using Cornerstone.Extensions;
 using Cornerstone.Weaver;
 
@@ -26,33 +26,23 @@ public class CompletionList : TemplatedControl
 {
 	#region Fields
 
-	/// <summary>
-	/// Dependency property for <see cref="EmptyTemplate" />.
-	/// </summary>
-	public static readonly StyledProperty<ControlTemplate> EmptyTemplateProperty =
-		AvaloniaProperty.Register<CompletionList, ControlTemplate>(nameof(EmptyTemplate));
-
-	private readonly ObservableCollection<ICompletionData> _completionData;
-	private ObservableCollection<ICompletionData> _currentList;
 	private CompletionListBox _listBox;
 
 	/// <summary>
 	/// This is all typed characters after the list is created.
-	/// <see cref="SelectItem" /> gets called twice for every typed character (once from FormatLine),
-	/// this helps execute <see cref="SelectItem" /> only once.
+	/// <see cref="SetFilter" /> gets called twice for every typed character (once from FormatLine),
+	/// this helps execute <see cref="SetFilter" /> only once.
 	/// </summary>
-	private string _typedCharacters;
+	private string _filter;
 
 	#endregion
 
 	#region Constructors
 
-	public CompletionList(string prefix, IEnumerable<ICompletionData> suggestions, params Key[] completionsKeys)
+	public CompletionList(string prefix, SpeedyList<ICompletionData> suggestions, params Key[] completionsKeys)
 	{
 		Prefix = prefix;
-
-		_completionData = new ObservableCollection<ICompletionData>(suggestions);
-
+		Suggestions = suggestions;
 		CompletionAcceptKeys = completionsKeys?.Length > 0
 			? completionsKeys
 			: [Key.Enter, Key.Tab];
@@ -68,28 +58,6 @@ public class CompletionList : TemplatedControl
 	/// Gets or sets the array of keys that are supposed to request insertion of the completion
 	/// </summary>
 	public Key[] CompletionAcceptKeys { get; }
-
-	/// <summary>
-	/// Gets the list to which completion data can be added.
-	/// </summary>
-	public IList<ICompletionData> CompletionData => _completionData;
-
-	/// <summary>
-	/// The current list that has possibly been filtered.
-	/// </summary>
-	public IList<ICompletionData> CurrentList => ListBox?.Items.Cast<ICompletionData>().ToList()
-		?? _currentList?.ToList()
-		?? CompletionData;
-
-	/// <summary>
-	/// Content of EmptyTemplate will be shown when CompletionList contains no items.
-	/// If EmptyTemplate is null, nothing will be shown.
-	/// </summary>
-	public ControlTemplate EmptyTemplate
-	{
-		get => GetValue(EmptyTemplateProperty);
-		set => SetValue(EmptyTemplateProperty, value);
-	}
 
 	/// <summary>
 	/// Gets the list box.
@@ -136,37 +104,27 @@ public class CompletionList : TemplatedControl
 		}
 	}
 
+	public SpeedyList<ICompletionData> Suggestions { get; }
+
 	#endregion
 
 	#region Methods
 
-	public ObservableCollection<ICompletionData> FilterAndOrderList(string query)
+	public void FilterAndOrderList()
 	{
-		var filter = string.IsNullOrEmpty(Prefix) ? query : Prefix + query;
-		var currentFilter = string.IsNullOrEmpty(Prefix) ? _typedCharacters : Prefix + _typedCharacters;
+		Suggestions.ProcessThenOrder(() =>
+		{
+			var fullFilter = string.IsNullOrEmpty(Prefix) ? _filter : Prefix + _filter;
 
-		//Debug.WriteLine($"{nameof(FilterList)} {filter} : {query} {_prefix} / {_currentList}");
+			foreach (var item in Suggestions)
+			{
+				item.Priority = GetMatchQuality(item.DisplayText, fullFilter, _filter);
 
-		// if the user just typed one more character, don't filter all data but just filter what we are already displaying
-		var listToFilter = (_currentList != null)
-			&& !string.IsNullOrEmpty(currentFilter)
-			&& !string.IsNullOrEmpty(filter)
-			&& filter.StartsWith(currentFilter, StringComparison.Ordinal)
-				? _currentList
-				: _completionData;
+				//Debug.WriteLine($"{nameof(FilterAndOrderList)} {item.DisplayText} - {fullFilter} / {fullFilter} - {item.Priority}");
+			}
+		});
 
-		var matchingItems = listToFilter
-			.Select(x => new { item = x, quality = GetMatchQuality(x.DisplayText, filter, query) })
-			.Where(x => x.quality > 0)
-			.Select(x => new { Item = x.item, Quality = x.quality })
-			.OrderBy(x => x.Quality)
-			.ThenBy(x => x.Item.Priority)
-			.ThenBy(x => x.Item.DisplayText)
-			.Select(x => x.Item)
-			.ToList();
-
-		var response = new ObservableCollection<ICompletionData>(matchingItems);
-		return response;
+		Suggestions.RefreshFilter();
 	}
 
 	/// <summary>
@@ -256,9 +214,9 @@ public class CompletionList : TemplatedControl
 	/// <summary>
 	/// Selects the best match and filter the items.
 	/// </summary>
-	public void SelectItem(string text)
+	public void SetFilter(string filter)
 	{
-		if (text == _typedCharacters)
+		if (filter == _filter)
 		{
 			return;
 		}
@@ -267,29 +225,9 @@ public class CompletionList : TemplatedControl
 			ApplyTemplate();
 		}
 
-		SelectItemFiltering(text);
+		_filter = filter;
 
-		_typedCharacters = text;
-
-		// Debug.WriteLine(_typedCharacters);
-	}
-
-	/// <summary>
-	/// Filters CompletionList items to show only those matching given query, and selects the best match.
-	/// </summary>
-	public void SelectItemFiltering(string query)
-	{
-		if (_listBox == null)
-		{
-			return;
-		}
-
-		// Debug.WriteLine($"Query: {query}  Prefix: {Prefix}");
-
-		var listBoxItems = FilterAndOrderList(query);
-		_currentList = listBoxItems;
-		_listBox.ItemsSource = listBoxItems;
-
+		FilterAndOrderList();
 		SelectIndexCentered(0);
 	}
 
@@ -301,7 +239,7 @@ public class CompletionList : TemplatedControl
 
 		if (_listBox != null)
 		{
-			_listBox.ItemsSource = _completionData;
+			_listBox.ItemsSource = Suggestions.Filtered;
 		}
 	}
 
@@ -314,11 +252,11 @@ public class CompletionList : TemplatedControl
 		}
 	}
 
-	private decimal GetMatchQuality(string itemText, string query, string otherQuery)
+	public static decimal GetMatchQuality(string itemText, string fullFilter, string typedFilter)
 	{
 		if (itemText == null)
 		{
-			return -1;
+			return 100;
 		}
 
 		// Qualities: (lower better)
@@ -330,30 +268,30 @@ public class CompletionList : TemplatedControl
 		// 		6 = match substring case-sensitive
 		//		7 = match substring
 		//		8 = match CamelCase
-		//		-1 = no match
-		if (query == itemText)
+		//		100 = no match
+		if (fullFilter == itemText)
 		{
 			return 1;
 		}
-		if (string.Equals(itemText, query, StringComparison.CurrentCultureIgnoreCase))
+		if (string.Equals(itemText, fullFilter, StringComparison.CurrentCultureIgnoreCase))
 		{
 			return 2;
 		}
 
-		if (itemText.StartsWith(query, StringComparison.CurrentCulture))
+		if (itemText.StartsWith(fullFilter, StringComparison.CurrentCulture))
 		{
 			return 3;
 		}
-		if (itemText.StartsWith(query, StringComparison.CurrentCultureIgnoreCase))
+		if (itemText.StartsWith(fullFilter, StringComparison.CurrentCultureIgnoreCase))
 		{
 			return 4;
 		}
 
 		bool? camelCaseMatch = null;
 
-		if (query.Length <= 2)
+		if (fullFilter.Length <= 2)
 		{
-			camelCaseMatch = itemText.CamelCaseMatch(query);
+			camelCaseMatch = itemText.CamelCaseMatch(fullFilter);
 			if (camelCaseMatch == true)
 			{
 				return 5;
@@ -362,26 +300,26 @@ public class CompletionList : TemplatedControl
 
 		decimal index;
 
-		if ((index = itemText.IndexOf(query, StringComparison.CurrentCulture)) >= 0)
+		if ((index = itemText.IndexOf(fullFilter, StringComparison.CurrentCulture)) >= 0)
 		{
 			return 6 + (index / 1000m);
 		}
 
-		if ((index = itemText.IndexOf(query, StringComparison.CurrentCultureIgnoreCase)) >= 0)
+		if ((index = itemText.IndexOf(fullFilter, StringComparison.CurrentCultureIgnoreCase)) >= 0)
 		{
 			return 7 + (index / 1000m);
 		}
 
-		camelCaseMatch ??= itemText.CamelCaseMatch(query);
+		camelCaseMatch ??= itemText.CamelCaseMatch(fullFilter);
 
 		if (camelCaseMatch == true)
 		{
 			return 8;
 		}
 
-		return !string.IsNullOrWhiteSpace(otherQuery)
-			? GetMatchQuality(itemText, otherQuery, null)
-			: -1;
+		return !string.IsNullOrWhiteSpace(typedFilter)
+			? GetMatchQuality(itemText, typedFilter, null)
+			: 100;
 	}
 
 	private void OnPointerPressed(object sender, PointerPressedEventArgs e)
@@ -406,22 +344,28 @@ public class CompletionList : TemplatedControl
 
 	private void SelectIndexCentered(int bestIndex)
 	{
+		var listBox = _listBox;
+		if (listBox == null)
+		{
+			return;
+		}
+
 		if (bestIndex < 0)
 		{
-			_listBox.ClearSelection();
+			listBox.ClearSelection();
 		}
 		else
 		{
-			var firstItem = _listBox.FirstVisibleItem;
-			if ((bestIndex < firstItem) || ((firstItem + _listBox.VisibleItemCount) <= bestIndex))
+			var firstItem = listBox.FirstVisibleItem;
+			if ((bestIndex < firstItem) || ((firstItem + listBox.VisibleItemCount) <= bestIndex))
 			{
 				// CenterViewOn does nothing as CompletionListBox.ScrollViewer is null
-				_listBox.CenterViewOn(bestIndex);
-				_listBox.SelectIndex(bestIndex);
+				listBox.CenterViewOn(bestIndex);
+				listBox.SelectIndex(bestIndex);
 			}
 			else
 			{
-				_listBox.SelectIndex(bestIndex);
+				listBox.SelectIndex(bestIndex);
 			}
 		}
 	}

@@ -72,7 +72,7 @@ public class JsonObject : JsonValue, IReadOnlyDictionary<string, JsonValue>, IOb
 	{
 		if (obj is JsonObject jObject)
 		{
-			return Comparer.Compare(_properties, jObject._properties) ? 0 : 1;
+			return Comparer.Compare(_properties, jObject._properties).AreEqual() ? 0 : 1;
 		}
 
 		return -1;

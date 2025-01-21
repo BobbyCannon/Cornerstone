@@ -30,7 +30,7 @@ public class CompletionWindow : CompletionWindowBase
 	/// <summary>
 	/// Creates a new code completion window.
 	/// </summary>
-	public CompletionWindow(TextArea textArea, string prefix, Key[] completionsKeys, params ICompletionData[] suggestions) : base(textArea)
+	public CompletionWindow(TextArea textArea, string prefix, Key[] completionsKeys, SpeedyList<ICompletionData> suggestions) : base(textArea)
 	{
 		CompletionList = new CompletionList(prefix, suggestions, completionsKeys);
 
@@ -137,22 +137,11 @@ public class CompletionWindow : CompletionWindowBase
 		}
 
 		var prefix = CompletionList.Prefix ?? string.Empty;
-		var startOffset = StartOffset - prefix.Length;
-		var nextCharacterIndex = EndOffset;
+		var indexOf = TextArea.Document.LastIndexOf(prefix, StringComparison.CurrentCultureIgnoreCase);
+		var startOffset = indexOf >= 0 ? indexOf : StartOffset - prefix.Length;
+		var endOffset = indexOf >= 0 ? (indexOf + prefix.Length) : EndOffset;
 
-		if ((TextArea.Document.TextLength <= nextCharacterIndex)
-			|| !item.CompletionText.StartsWith(CompletionList.Prefix))
-		{
-			return new AnchorRange(TextArea.Document, startOffset, EndOffset - startOffset);
-		}
-
-		var extra = item.CompletionText.Substring(prefix.Length);
-		if ((extra.Length > 0) && (TextArea.Document.GetCharAt(nextCharacterIndex) == extra.Last()))
-		{
-			return new AnchorRange(TextArea.Document, startOffset, (EndOffset - startOffset) + 1);
-		}
-
-		return new AnchorRange(TextArea.Document, startOffset, EndOffset - startOffset);
+		return new AnchorRange(TextArea.Document, startOffset, endOffset - startOffset);
 	}
 
 	private void AttachEvents()
@@ -175,7 +164,7 @@ public class CompletionWindow : CompletionWindowBase
 			}
 			else
 			{
-				CompletionList.SelectItem(string.Empty);
+				CompletionList.SetFilter(string.Empty);
 				IsVisible = CompletionList.ListBox.ItemCount != 0;
 			}
 
@@ -197,7 +186,7 @@ public class CompletionWindow : CompletionWindowBase
 			return;
 		}
 
-		CompletionList.SelectItem(document.GetText(StartOffset, offset - StartOffset));
+		CompletionList.SetFilter(document.GetText(StartOffset, offset - StartOffset));
 
 		if (CompletionList.ListBox?.ItemCount == 0)
 		{
@@ -228,7 +217,7 @@ public class CompletionWindow : CompletionWindowBase
 		var item = CompletionList.SelectedItem;
 		var description = item?.Description;
 
-		if ((description != null) && Host is Control placementTarget && (CompletionList.CurrentList != null))
+		if ((description != null) && Host is Control placementTarget)
 		{
 			_toolTipContent.Content = description;
 

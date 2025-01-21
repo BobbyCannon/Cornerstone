@@ -1,5 +1,6 @@
 ﻿#region References
 
+using Cornerstone.Logging;
 using Cornerstone.Storage;
 using Cornerstone.Sync;
 using Sample.Shared.Storage.Server;
@@ -8,7 +9,7 @@ using Sample.Shared.Storage.Server;
 
 namespace Sample.Shared.Storage;
 
-public interface IServerDatabase : ISyncableDatabase
+public interface IServerDatabase : ISyncableDatabase, ITrackerDatabase
 {
 	#region Properties
 
@@ -22,8 +23,6 @@ public interface IServerDatabase : ISyncableDatabase
 	IRepository<PetEntity, (string Name, int OwnerId)> Pets { get; }
 	IRepository<PetTypeEntity, string> PetTypes { get; }
 	ISyncableRepository<SettingEntity, long> Settings { get; }
-	IRepository<TrackerPathConfigurationEntity, int> TrackerPathConfigurations { get; }
-	IRepository<TrackerPathEntity, long> TrackerPaths { get; }
 
 	#endregion
 }

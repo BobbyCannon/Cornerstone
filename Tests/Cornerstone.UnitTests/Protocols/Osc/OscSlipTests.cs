@@ -43,7 +43,7 @@ public class OscSlipTests : CornerstoneUnitTest
 	[TestMethod]
 	public void DecodeOscMessageWithAllTypes()
 	{
-		var message = new OscMessage(UtcNow, "/Address");
+		var message = new OscMessage(Now, "/Address");
 		message.Arguments.Add(123);
 		message.Arguments.Add(123.45f);
 		message.Arguments.Add("Boom");
@@ -249,7 +249,7 @@ public class OscSlipTests : CornerstoneUnitTest
 	[TestMethod]
 	public void EncodePacket()
 	{
-		var message = new OscMessage(UtcNow, "/test");
+		var message = new OscMessage(Now, "/test");
 		message.Arguments.Add(123);
 
 		var actual = OscSlip.EncodePacket(message);
@@ -264,7 +264,7 @@ public class OscSlipTests : CornerstoneUnitTest
 	[TestMethod]
 	public void EncodeThenDecodeOscMessageWithRgbaArgument()
 	{
-		var message = new OscMessage(UtcNow, "/test");
+		var message = new OscMessage(Now, "/test");
 		message.Arguments.Add(new OscRgba(1, 2, 3, 4));
 
 		var data = OscSlip.EncodePacket(message);
@@ -299,7 +299,7 @@ public class OscSlipTests : CornerstoneUnitTest
 	[TestMethod]
 	public void EncodeThenDecodeOscMessageWithStringArgument()
 	{
-		var message = new OscMessage(UtcNow, "/test");
+		var message = new OscMessage(Now, "/test");
 		message.Arguments.Add("Test");
 
 		var data = OscSlip.EncodePacket(message);
@@ -334,7 +334,7 @@ public class OscSlipTests : CornerstoneUnitTest
 	[TestMethod]
 	public void EncodeThenDecodeOscMessageWithSymbolArgument()
 	{
-		var message = new OscMessage(UtcNow, "/test");
+		var message = new OscMessage(Now, "/test");
 		message.Arguments.Add(new OscSymbol("Test"));
 
 		// The OscSymbol of test should force another 4 bytes for null terminator

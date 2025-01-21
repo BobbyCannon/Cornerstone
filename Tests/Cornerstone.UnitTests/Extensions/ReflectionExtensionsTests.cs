@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -78,6 +79,21 @@ public class ReflectionExtensionsTests : CornerstoneUnitTest
 		AreEqual(account, dictionary.Keys.First());
 		AreEqual(address, dictionary.Values.First());
 		AreEqual(address, dictionary[account]);
+	}
+
+	[TestMethod]
+	public void IsDelegate()
+	{
+		var scenarios = new[]
+		{
+			typeof(Action), typeof(Action<>)
+		};
+
+		foreach (var scenario in scenarios)
+		{
+			scenario.FullName.Dump();
+			IsTrue(scenario.IsDelegate());
+		}
 	}
 
 	[TestMethod]

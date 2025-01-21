@@ -1,6 +1,7 @@
 ﻿#region References
 
-using System;
+using System.Linq;
+using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Generators;
 using Cornerstone.Generators.CodeGenerators;
@@ -20,7 +21,7 @@ public abstract partial class CornerstoneTest
 	/// Get a test dispatcher.
 	/// </summary>
 	/// <returns> The dispatcher for testing. </returns>
-	public IDispatcher GetDispatcher()
+	public virtual IDispatcher GetDispatcher()
 	{
 		return new TestDispatcher();
 	}
@@ -28,12 +29,10 @@ public abstract partial class CornerstoneTest
 	/// <summary>
 	/// Get a test runtime information.
 	/// </summary>
-	/// <param name="update"> An optional update. </param>
 	/// <returns> The runtime information. </returns>
-	public IRuntimeInformation GetRuntimeInformation(Action<IRuntimeInformation> update = null)
+	public virtual IRuntimeInformation GetRuntimeInformation()
 	{
-		var response = RuntimeInformation.Copy();
-		update?.Invoke(response);
+		var response = RuntimeInformationData.GetSample();
 		return response;
 	}
 
@@ -42,14 +41,28 @@ public abstract partial class CornerstoneTest
 	/// </summary>
 	/// <typeparam name="T"> The type of the object. </typeparam>
 	/// <param name="instance"> The object instance. </param>
-	protected void GenerateAsserts<T>(T instance)
+	/// <param name="settings"> Optional include / exclude settings. </param>
+	protected void GenerateAsserts<T>(T instance, IncludeExcludeSettings settings = null)
 	{
-		var properties = instance.GetCachedProperties();
+		settings ??= IncludeExcludeSettings.Empty;
 		var builder = new TextBuilder();
+		var properties = instance
+			.GetCachedProperties()
+			.Where(x => !x.IsIndexer());
+		var codeSettings = new CodeWriterSettings
+		{
+			TextFormat = TextFormat.Spaced,
+			OutputMode = CodeWriterMode.Instance
+		};
 
 		foreach (var property in properties)
 		{
-			var expected = CSharpCodeWriter.GenerateCode(property.GetValue(instance));
+			if (!settings.ShouldProcessProperty(property.Name))
+			{
+				continue;
+			}
+
+			var expected = CSharpCodeWriter.GenerateCode(property.GetValue(instance), codeSettings);
 			builder.AppendLine($"AreEqual({expected}, actual.{property.Name});");
 		}
 

@@ -45,11 +45,18 @@ public class ObjectComparer : BaseComparer
 			}
 
 			var expectedType = expected.GetType();
-			var propertiesToExclude = session.Settings.IncludeExcludeOptions?.TryGetValue(expectedType, out var p) == true ? p : IncludeExcludeSettings.Empty;
+			var globalIncludeExcludeSettings = session.Settings.GlobalIncludeExcludeSettings ?? IncludeExcludeSettings.Empty;
+			var typePropertiesToExclude = session.Settings.TypeIncludeExcludeSettings?.TryGetValue(expectedType, out var p) == true ? p : IncludeExcludeSettings.Empty;
 
 			// Cycle through properties
 			foreach (var expectedProperty in expectedProperties)
 			{
+				if (!typePropertiesToExclude.ShouldProcessProperty(expectedProperty.Key)
+					|| !globalIncludeExcludeSettings.ShouldProcessProperty(expectedProperty.Key))
+				{
+					continue;
+				}
+
 				if (!actualProperties.TryGetValue(expectedProperty.Key, out var actualProperty))
 				{
 					// failed to get property on actual
@@ -59,17 +66,16 @@ public class ObjectComparer : BaseComparer
 						continue;
 					}
 
-					session.AppendDifference($"Expected [{expectedProperty.Key}] property is was not found on the actual value.");
+					session.AddDifference($"Expected [{expectedProperty.Key}] property is was not found on the actual value.");
 					return CompareResult.NotEqual;
 				}
 
-				if (!expectedProperty.Value.CanRead
-					|| !propertiesToExclude.ShouldProcessProperty(expectedProperty.Key))
+				if (!expectedProperty.Value.CanRead)
 				{
 					continue;
 				}
 
-				if (expectedProperty.Value.GetIndexParameters().Length > 0)
+				if (expectedProperty.Value.IsIndexer())
 				{
 					// Property is an indexer
 					continue;
@@ -85,7 +91,9 @@ public class ObjectComparer : BaseComparer
 					continue;
 				}
 
-				CompareSession.InternalProcess(session, expectedValue, actualValue, () => $"{message?.Invoke()}\r\n{expectedType}.{expectedProperty.Key}");
+				session.Path.Push(expectedProperty.Key);
+				CompareSession.InternalProcess(session, expectedValue, actualValue, message);
+				session.Path.Pop();
 
 				// See if we have hit an issue.
 				if (session.Result != CompareResult.AreEqual)
@@ -99,7 +107,7 @@ public class ObjectComparer : BaseComparer
 		}
 		catch (Exception ex)
 		{
-			session.AppendDifference($"{expected.GetType()} failed. Exception: {ex.Message}");
+			session.AddDifference($"{expected.GetType()} failed. Exception: {ex.ToDetailedString()}");
 			return CompareResult.Inconclusive;
 		}
 		finally

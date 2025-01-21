@@ -56,6 +56,24 @@ public class MouseState : Notifiable<MouseState>
 
 	#region Methods
 
+	public bool IsButtonDown(MouseButton button)
+	{
+		return button switch
+		{
+			MouseButton.LeftButton => LeftButton,
+			MouseButton.MiddleButton => MiddleButton,
+			MouseButton.RightButton => RightButton,
+			MouseButton.XButton1 => XButton1,
+			MouseButton.XButton2 => XButton2,
+			_ => false
+		};
+	}
+
+	public bool IsButtonUp(MouseButton button)
+	{
+		return !IsButtonDown(button);
+	}
+
 	/// <summary>
 	/// Update the MouseState with an update.
 	/// </summary>

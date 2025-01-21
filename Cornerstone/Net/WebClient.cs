@@ -1,7 +1,9 @@
 ﻿#region References
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -101,15 +103,9 @@ public class WebClient : Bindable, IWebClient, ICloneable<WebClient>
 	/// <summary>
 	/// Headers for this client.
 	/// </summary>
-	public HttpHeaders Headers
-	{
-		get => _httpClient.DefaultRequestHeaders;
-		set
-		{
-			_httpClient.DefaultRequestHeaders.Clear();
-			value.ForEach(x => _httpClient.DefaultRequestHeaders.Add(x.Key, x.Value));
-		}
-	}
+	public HttpHeaders Headers => _httpClient.DefaultRequestHeaders;
+
+	public string IpAddress { get; private set; }
 
 	/// <summary>
 	/// Gets or sets an optional proxy for the connection.
@@ -148,23 +144,11 @@ public class WebClient : Bindable, IWebClient, ICloneable<WebClient>
 	/// <returns> The response from the server. </returns>
 	public HttpResponseMessage Delete(string uri, TimeSpan? timeout = null)
 	{
-		return _httpClient
-			.DeleteAsync(uri)
-			.AwaitResults(timeout ?? Timeout);
-	}
-
-	/// <summary>
-	/// Deserialize the response.
-	/// </summary>
-	/// <typeparam name="T"> The type to deserialize into. </typeparam>
-	/// <param name="result"> The result to deserialize. </param>
-	/// <param name="timeout"> An optional timeout to override the default Timeout value. </param>
-	/// <returns> The deserialized type. </returns>
-	public virtual T Deserialize<T>(HttpResponseMessage result, TimeSpan? timeout = null)
-	{
-		using var task = result.Content.ReadAsStringAsync();
-		var response = task.Result.FromJson<T>();
-		return response;
+		return ProcessResponse(
+			_httpClient
+				.DeleteAsync(uri)
+				.AwaitResults(timeout ?? Timeout)
+		);
 	}
 
 	/// <summary>
@@ -200,38 +184,36 @@ public class WebClient : Bindable, IWebClient, ICloneable<WebClient>
 	/// <summary>
 	/// Gets a response and deserialize it.
 	/// </summary>
+	/// <param name="uri"> The URI of the content to deserialize. </param>
+	/// <param name="timeout"> An optional timeout to override the default Timeout value. </param>
+	/// <returns> The response from the server. </returns>
+	public virtual HttpResponseMessage Get(string uri, TimeSpan? timeout = null)
+	{
+		return InternalGet(uri, timeout);
+	}
+
+	/// <summary>
+	/// Gets a response and deserialize it.
+	/// </summary>
 	/// <typeparam name="T"> The type to deserialize into. </typeparam>
 	/// <param name="uri"> The URI of the content to deserialize. </param>
 	/// <param name="timeout"> An optional timeout to override the default Timeout value. </param>
 	/// <returns> The deserialized type. </returns>
 	public virtual T Get<T>(string uri, TimeSpan? timeout = null)
 	{
-		using var result = Get(uri, timeout);
-
-		if (!result.IsSuccessStatusCode)
-		{
-			throw new WebClientException(result);
-		}
-
-		return Deserialize<T>(result, timeout);
-	}
-
-	/// <summary>
-	/// Gets a response and deserialize it.
-	/// </summary>
-	/// <param name="uri"> The URI of the content to deserialize. </param>
-	/// <param name="timeout"> An optional timeout to override the default Timeout value. </param>
-	/// <returns> The response from the server. </returns>
-	public virtual HttpResponseMessage Get(string uri, TimeSpan? timeout = null)
-	{
-		return _httpClient
-			.GetAsync(uri)
-			.AwaitResults(timeout ?? Timeout);
+		using var response = Get(uri, timeout);
+		return Deserialize<T>(response, timeout);
 	}
 
 	/// <inheritdoc />
 	public virtual void Initialize()
 	{
+	}
+
+	/// <inheritdoc />
+	public HttpResponseMessage Patch(string uri, string content, TimeSpan? timeout = null)
+	{
+		return InternalPatch(uri, content, timeout);
 	}
 
 	/// <summary>
@@ -247,25 +229,23 @@ public class WebClient : Bindable, IWebClient, ICloneable<WebClient>
 		return InternalPatch(uri, content, timeout);
 	}
 
+	/// <inheritdoc />
+	public TResult Patch<TContent, TResult>(string uri, TContent content, TimeSpan? timeout = null)
+	{
+		using var response = InternalPatch(uri, content, timeout);
+		return Deserialize<TResult>(response);
+	}
+
 	/// <summary>
 	/// Post an item on the server with the provide content.
 	/// </summary>
-	/// <typeparam name="TContent"> The type to update with. </typeparam>
-	/// <typeparam name="TResult"> The type to respond with. </typeparam>
 	/// <param name="uri"> The URI to post to. </param>
 	/// <param name="content"> The content to update with. </param>
 	/// <param name="timeout"> An optional timeout to override the default Timeout value. </param>
-	/// <returns> The server result. </returns>
-	public virtual TResult Post<TContent, TResult>(string uri, TContent content, TimeSpan? timeout = null)
+	/// <returns> The response from the server. </returns>
+	public virtual HttpResponseMessage Post(string uri, string content, TimeSpan? timeout = null)
 	{
-		using var result = InternalPost(uri, content, timeout);
-
-		if (!result.IsSuccessStatusCode)
-		{
-			throw new WebClientException(result);
-		}
-
-		return Deserialize<TResult>(result);
+		return InternalPost(uri, content, timeout);
 	}
 
 	/// <summary>
@@ -284,35 +264,22 @@ public class WebClient : Bindable, IWebClient, ICloneable<WebClient>
 	/// <summary>
 	/// Post an item on the server with the provide content.
 	/// </summary>
+	/// <typeparam name="TContent"> The type to update with. </typeparam>
+	/// <typeparam name="TResult"> The type to respond with. </typeparam>
 	/// <param name="uri"> The URI to post to. </param>
 	/// <param name="content"> The content to update with. </param>
 	/// <param name="timeout"> An optional timeout to override the default Timeout value. </param>
-	/// <returns> The response from the server. </returns>
-	public virtual HttpResponseMessage Post(string uri, string content, TimeSpan? timeout = null)
+	/// <returns> The server result. </returns>
+	public virtual TResult Post<TContent, TResult>(string uri, TContent content, TimeSpan? timeout = null)
 	{
-		return InternalPost(uri, content, timeout);
+		using var response = InternalPost(uri, content, timeout);
+		return Deserialize<TResult>(response);
 	}
 
-	/// <summary>
-	/// Put an item on the server with the provide content.
-	/// </summary>
-	/// <param name="uri"> The URI to put to. </param>
-	/// <param name="content"> The content to update with. </param>
-	/// <param name="timeout"> An optional timeout to override the default Timeout value. </param>
-	/// <returns> The response from the server. </returns>
-	public virtual TResult Put<TContent, TResult>(string uri, TContent content, TimeSpan? timeout = null)
+	/// <inheritdoc />
+	public HttpResponseMessage Put(string uri, string content, TimeSpan? timeout = null)
 	{
-		using var result = InternalPut(uri, content, timeout);
-
-		if (!result.IsSuccessStatusCode)
-		{
-			throw new WebClientException(result);
-		}
-
-		return result.Content
-			.ReadAsStringAsync()
-			.AwaitResults(Timeout)
-			.FromJson<TResult>();
+		return InternalPost(uri, content, timeout);
 	}
 
 	/// <summary>
@@ -329,6 +296,19 @@ public class WebClient : Bindable, IWebClient, ICloneable<WebClient>
 	}
 
 	/// <summary>
+	/// Put an item on the server with the provide content.
+	/// </summary>
+	/// <param name="uri"> The URI to put to. </param>
+	/// <param name="content"> The content to update with. </param>
+	/// <param name="timeout"> An optional timeout to override the default Timeout value. </param>
+	/// <returns> The response from the server. </returns>
+	public virtual TResult Put<TContent, TResult>(string uri, TContent content, TimeSpan? timeout = null)
+	{
+		using var response = InternalPut(uri, content, timeout);
+		return Deserialize<TResult>(response, timeout);
+	}
+
+	/// <summary>
 	/// Reset the web client.
 	/// </summary>
 	public virtual void Reset()
@@ -342,20 +322,39 @@ public class WebClient : Bindable, IWebClient, ICloneable<WebClient>
 	}
 
 	/// <summary>
-	/// Get JSON for the provided object.
+	/// Deserialize the response.
 	/// </summary>
-	/// <param name="content"> The content to be converted to JSON format. </param>
-	/// <returns> The JSON formatted content. </returns>
-	protected virtual string GetJson(object content)
+	/// <typeparam name="T"> The type to deserialize into. </typeparam>
+	/// <param name="result"> The result to deserialize. </param>
+	/// <param name="timeout"> An optional timeout to override the default Timeout value. </param>
+	/// <returns> The deserialized type. </returns>
+	protected virtual T Deserialize<T>(HttpResponseMessage result, TimeSpan? timeout = null)
 	{
-		if (content is string sValue && sValue.IsJson())
+		using var task = result.Content.ReadAsStringAsync();
+		var response = task.Result.FromJson<T>();
+		return response;
+	}
+
+	/// <inheritdoc />
+	protected override void OnPropertyChanged(string propertyName = null)
+	{
+		switch (propertyName)
 		{
-			return sValue;
+			case nameof(BaseUri):
+			{
+				try
+				{
+					IpAddress = Dns.GetHostAddresses(BaseUri.DnsSafeHost).FirstOrDefault()?.ToString();
+				}
+				catch (Exception e)
+				{
+					Console.WriteLine("Error: " + e.Message);
+				}
+				break;
+			}
 		}
 
-		return UseRawJson
-			? content.ToRawJson()
-			: content.ToJson();
+		base.OnPropertyChanged(propertyName);
 	}
 
 	/// <inheritdoc />
@@ -373,38 +372,95 @@ public class WebClient : Bindable, IWebClient, ICloneable<WebClient>
 		base.OnPropertyChangedInDispatcher(propertyName);
 	}
 
+	protected virtual HttpResponseMessage ProcessResponse(HttpResponseMessage response)
+	{
+		if (!response.IsSuccessStatusCode)
+		{
+			throw new WebClientException(response);
+		}
+
+		return response;
+	}
+
+	/// <summary>
+	/// Get the serialized string for the provided object.
+	/// </summary>
+	/// <param name="content"> The content to be converted to a serialize format. </param>
+	/// <returns> The serialized formatted content. </returns>
+	protected virtual string Serialize(object content)
+	{
+		if (content is string sValue && sValue.IsJson())
+		{
+			return sValue;
+		}
+
+		return UseRawJson
+			? content.ToRawJson()
+			: content.ToJson();
+	}
+
 	private void CredentialOnPropertyChanged(object sender, PropertyChangedEventArgs e)
 	{
 		UpdateCredentials();
 	}
 
+	private HttpResponseMessage InternalGet(string uri, TimeSpan? timeout = null)
+	{
+		var response = _httpClient
+			.GetAsync(uri)
+			.AwaitResults(timeout ?? Timeout);
+
+		return ProcessResponse(response);
+	}
+
 	private HttpResponseMessage InternalPatch<T>(string uri, T content, TimeSpan? timeout = null)
 	{
-		var json = GetJson(content);
-		using var objectContent = new StringContent(json, Encoding.UTF8, "application/json-patch+json");
+		var serialized = Serialize(content);
+		return InternalPatch(uri, serialized, "application/json-patch+json", timeout);
+	}
+
+	private HttpResponseMessage InternalPatch(string uri, string serialized, string mediaType, TimeSpan? timeout = null)
+	{
+		using var objectContent = new StringContent(serialized, Encoding.UTF8, mediaType);
 		var method = new HttpMethod("PATCH");
 		var request = new HttpRequestMessage(method, uri) { Content = objectContent };
-		return _httpClient
+		var response = _httpClient
 			.SendAsync(request)
 			.AwaitResults(timeout ?? Timeout);
+
+		return ProcessResponse(response);
 	}
 
 	private HttpResponseMessage InternalPost<T>(string uri, T content, TimeSpan? timeout = null)
 	{
-		var json = GetJson(content);
-		using var objectContent = new StringContent(json, Encoding.UTF8, "application/json");
-		return _httpClient
+		var serialized = Serialize(content);
+		return InternalPost(uri, serialized, "application/json", timeout);
+	}
+
+	private HttpResponseMessage InternalPost(string uri, string serialized, string mediaType, TimeSpan? timeout = null)
+	{
+		using var objectContent = new StringContent(serialized, Encoding.UTF8, mediaType);
+		var response = _httpClient
 			.PostAsync(uri, objectContent)
 			.AwaitResults(timeout ?? Timeout);
+
+		return ProcessResponse(response);
 	}
 
 	private HttpResponseMessage InternalPut<T>(string uri, T content, TimeSpan? timeout = null)
 	{
-		var json = GetJson(content);
-		using var objectContent = new StringContent(json, Encoding.UTF8, "application/json");
-		return _httpClient
+		var serialized = Serialize(content);
+		return InternalPut(uri, serialized, "application/json", timeout);
+	}
+
+	private HttpResponseMessage InternalPut(string uri, string content, string mediaType, TimeSpan? timeout = null)
+	{
+		using var objectContent = new StringContent(content, Encoding.UTF8, mediaType);
+		var response = _httpClient
 			.PutAsync(uri, objectContent)
 			.AwaitResults(timeout ?? Timeout);
+
+		return ProcessResponse(response);
 	}
 
 	private void UpdateCredentials()
@@ -440,7 +496,12 @@ public interface IWebClient : IDisposable, ICloneable
 	/// <summary>
 	/// Headers for this client.
 	/// </summary>
-	HttpHeaders Headers { get; set; }
+	HttpHeaders Headers { get; }
+
+	/// <summary>
+	/// The IP address for the base URI.
+	/// </summary>
+	string IpAddress { get; }
 
 	/// <summary>
 	/// Gets or sets an optional proxy for the connection.
@@ -470,13 +531,12 @@ public interface IWebClient : IDisposable, ICloneable
 	HttpResponseMessage Delete(string uri, TimeSpan? timeout = null);
 
 	/// <summary>
-	/// Deserialize the response.
+	/// Gets a response and deserialize it.
 	/// </summary>
-	/// <typeparam name="T"> The type to deserialize into. </typeparam>
-	/// <param name="result"> The result to deserialize. </param>
+	/// <param name="uri"> The URI of the content to deserialize. </param>
 	/// <param name="timeout"> An optional timeout to override the default Timeout value. </param>
-	/// <returns> The deserialized type. </returns>
-	T Deserialize<T>(HttpResponseMessage result, TimeSpan? timeout = null);
+	/// <returns> The response from the server. </returns>
+	HttpResponseMessage Get(string uri, TimeSpan? timeout = null);
 
 	/// <summary>
 	/// Gets a response and deserialize it.
@@ -488,17 +548,18 @@ public interface IWebClient : IDisposable, ICloneable
 	T Get<T>(string uri, TimeSpan? timeout = null);
 
 	/// <summary>
-	/// Gets a response and deserialize it.
-	/// </summary>
-	/// <param name="uri"> The URI of the content to deserialize. </param>
-	/// <param name="timeout"> An optional timeout to override the default Timeout value. </param>
-	/// <returns> The response from the server. </returns>
-	HttpResponseMessage Get(string uri, TimeSpan? timeout = null);
-
-	/// <summary>
 	/// Initialize the web client.
 	/// </summary>
 	void Initialize();
+
+	/// <summary>
+	/// Patch an item on the server with the provide content.
+	/// </summary>
+	/// <param name="uri"> The URI to patch to. </param>
+	/// <param name="content"> The content to update with. </param>
+	/// <param name="timeout"> An optional timeout to override the default Timeout value. </param>
+	/// <returns> The response from the server. </returns>
+	HttpResponseMessage Patch(string uri, string content, TimeSpan? timeout = null);
 
 	/// <summary>
 	/// Patch an item on the server with the provide content.
@@ -511,15 +572,24 @@ public interface IWebClient : IDisposable, ICloneable
 	HttpResponseMessage Patch<TContent>(string uri, TContent content, TimeSpan? timeout = null);
 
 	/// <summary>
-	/// Post an item on the server with the provide content.
+	/// Patch an item on the server with the provide content.
 	/// </summary>
 	/// <typeparam name="TContent"> The type to update with. </typeparam>
 	/// <typeparam name="TResult"> The type to respond with. </typeparam>
+	/// <param name="uri"> The URI to patch to. </param>
+	/// <param name="content"> The content to update with. </param>
+	/// <param name="timeout"> An optional timeout to override the default Timeout value. </param>
+	/// <returns> The response from the server. </returns>
+	TResult Patch<TContent, TResult>(string uri, TContent content, TimeSpan? timeout = null);
+
+	/// <summary>
+	/// Post an item on the server with the provide content.
+	/// </summary>
 	/// <param name="uri"> The URI to post to. </param>
 	/// <param name="content"> The content to update with. </param>
 	/// <param name="timeout"> An optional timeout to override the default Timeout value. </param>
-	/// <returns> The server result. </returns>
-	TResult Post<TContent, TResult>(string uri, TContent content, TimeSpan? timeout = null);
+	/// <returns> The response from the server. </returns>
+	HttpResponseMessage Post(string uri, string content, TimeSpan? timeout = null);
 
 	/// <summary>
 	/// Post an item on the server with the provide content.
@@ -534,20 +604,22 @@ public interface IWebClient : IDisposable, ICloneable
 	/// <summary>
 	/// Post an item on the server with the provide content.
 	/// </summary>
+	/// <typeparam name="TContent"> The type to update with. </typeparam>
+	/// <typeparam name="TResult"> The type to respond with. </typeparam>
+	/// <param name="uri"> The URI to post to. </param>
+	/// <param name="content"> The content to update with. </param>
+	/// <param name="timeout"> An optional timeout to override the default Timeout value. </param>
+	/// <returns> The server result. </returns>
+	TResult Post<TContent, TResult>(string uri, TContent content, TimeSpan? timeout = null);
+
+	/// <summary>
+	/// Put (update) an item on the server with the provide content.
+	/// </summary>
 	/// <param name="uri"> The URI to post to. </param>
 	/// <param name="content"> The content to update with. </param>
 	/// <param name="timeout"> An optional timeout to override the default Timeout value. </param>
 	/// <returns> The response from the server. </returns>
-	HttpResponseMessage Post(string uri, string content, TimeSpan? timeout = null);
-
-	/// <summary>
-	/// Put an item on the server with the provide content.
-	/// </summary>
-	/// <param name="uri"> The URI to put to. </param>
-	/// <param name="content"> The content to update with. </param>
-	/// <param name="timeout"> An optional timeout to override the default Timeout value. </param>
-	/// <returns> The response from the server. </returns>
-	TResult Put<TContent, TResult>(string uri, TContent content, TimeSpan? timeout = null);
+	HttpResponseMessage Put(string uri, string content, TimeSpan? timeout = null);
 
 	/// <summary>
 	/// Put (update) an item on the server with the provide content.
@@ -558,6 +630,15 @@ public interface IWebClient : IDisposable, ICloneable
 	/// <param name="timeout"> An optional timeout to override the default Timeout value. </param>
 	/// <returns> The response from the server. </returns>
 	HttpResponseMessage Put<TContent>(string uri, TContent content, TimeSpan? timeout = null);
+
+	/// <summary>
+	/// Put an item on the server with the provide content.
+	/// </summary>
+	/// <param name="uri"> The URI to put to. </param>
+	/// <param name="content"> The content to update with. </param>
+	/// <param name="timeout"> An optional timeout to override the default Timeout value. </param>
+	/// <returns> The response from the server. </returns>
+	TResult Put<TContent, TResult>(string uri, TContent content, TimeSpan? timeout = null);
 
 	/// <summary>
 	/// Reset the web client.

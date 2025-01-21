@@ -171,7 +171,7 @@ public class UtilityExtensionsTests : CornerstoneUnitTest
 		watch.Elapsed.Dump();
 
 		AreEqual(31, count);
-		AreEqual(new DateTime(2021, 06, 23, 09, 37, 30, DateTimeKind.Utc), UtcNow);
+		AreEqual(new DateTime(2021, 06, 23, 09, 37, 30, DateTimeKind.Utc), Now);
 		AreEqual(false, actual);
 	}
 
@@ -195,7 +195,7 @@ public class UtilityExtensionsTests : CornerstoneUnitTest
 		AreEqual(11, count);
 		AreEqual(false, actual);
 		// Time should be 10s (minimum) + one extra second (11 total) for the final loop
-		AreEqual(StartDateTime.Add(minimum).AddSeconds(1), UtcNow);
+		AreEqual(StartDateTime.Add(minimum).AddSeconds(1), Now);
 	}
 
 	#endregion

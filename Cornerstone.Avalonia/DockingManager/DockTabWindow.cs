@@ -161,7 +161,7 @@ internal class DockTabWindow : CornerstoneWindow
 		if (!_isTabItemClosed)
 		{
 			e.Cancel = true;
-			tabItem.Close();
+			tabItem.Close(true);
 		}
 	}
 

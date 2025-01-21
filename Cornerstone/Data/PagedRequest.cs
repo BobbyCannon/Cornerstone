@@ -58,14 +58,14 @@ public class PagedRequest : PartialUpdate<PagedRequest>, IPagedRequest
 	/// </summary>
 	public string Filter
 	{
-		get => Get(string.Empty, nameof(Filter));
+		get => Get(string.Empty);
 		set => Set(value);
 	}
 
 	/// <inheritdoc />
 	public string Order
 	{
-		get => Get(string.Empty, nameof(Order));
+		get => Get(string.Empty);
 		set => Set(value);
 	}
 
@@ -74,7 +74,7 @@ public class PagedRequest : PartialUpdate<PagedRequest>, IPagedRequest
 	/// </summary>
 	public int Page
 	{
-		get => Get(PageDefault, nameof(Page));
+		get => Get(PageDefault);
 		set => Set(value);
 	}
 
@@ -83,7 +83,7 @@ public class PagedRequest : PartialUpdate<PagedRequest>, IPagedRequest
 	/// </summary>
 	public int PerPage
 	{
-		get => Get(PerPageDefault, nameof(PerPage));
+		get => Get(PerPageDefault);
 		set => Set(value);
 	}
 
@@ -135,7 +135,7 @@ public class PagedRequest : PartialUpdate<PagedRequest>, IPagedRequest
 	/// <typeparam name="T"> The item type to be cleaned up. </typeparam>
 	/// <param name="item"> The item to test and clean up. </param>
 	/// <param name="test"> The test for the time. </param>
-	/// <param name="action"> The action to cleanup the item. </param>
+	/// <param name="action"> The action to clean up the item. </param>
 	private static void Cleanup<T>(T item, Func<T, bool> test, Action action)
 	{
 		if (test(item))

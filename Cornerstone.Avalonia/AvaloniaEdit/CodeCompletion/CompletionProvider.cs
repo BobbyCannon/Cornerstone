@@ -1,62 +1,51 @@
 ﻿#region References
 
-using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Input;
-using Cornerstone.Extensions;
+using Cornerstone.Collections;
+using Cornerstone.Presentation;
+using IDispatcher = Cornerstone.Presentation.IDispatcher;
 
 #endregion
 
 namespace Cornerstone.Avalonia.AvaloniaEdit.CodeCompletion;
 
-public abstract class CompletionProvider : ICompletionProvider
+public abstract class CompletionProvider : Bindable, ICompletionProvider
 {
 	#region Constructors
 
-	protected CompletionProvider(params CompletionTrigger[] keys)
+	protected CompletionProvider(IDispatcher dispatcher, params CompletionTrigger[] keys) : base(dispatcher)
 	{
 		Keys = keys;
+		Data = CreateList(dispatcher);
 	}
 
 	#endregion
 
 	#region Properties
 
+	public SpeedyList<ICompletionData> Data { get; }
+
 	public CompletionTrigger[] Keys { get; }
+
+	public string Prefix { get; protected set; }
 
 	#endregion
 
 	#region Methods
 
-	public static string GetCompletionPrefix(string input, string completionText)
+	public static SpeedyList<ICompletionData> CreateList(IDispatcher dispatcher)
 	{
-		if (input.EndsWithStartOf(completionText, out var match, true))
+		return new SpeedyList<ICompletionData>(dispatcher,
+			new OrderBy<ICompletionData>(x => x.Priority),
+			new OrderBy<ICompletionData>(x => x.DisplayText)
+		)
 		{
-			return match;
-		}
-
-		if (TryGetCompletionPrefix(input, "::", false, out var value))
-		{
-			return value;
-		}
-
-		if (TryGetCompletionPrefix(input, ".\\", true, out value))
-		{
-			return value;
-		}
-
-		if (TryGetCompletionPrefixOfAny(input, [' ', '\r', '\n', '.'], false, out value))
-		{
-			return value;
-		}
-
-		if (TryGetCompletionPrefixOfAny(input, ['['], true, out value))
-		{
-			return value;
-		}
-
-		return input;
+			FilterCheck = x => x.Priority < 100
+		};
 	}
+
+	public abstract string GetTextToReplaceWithCompletionResults(string input, string completionText);
 
 	/// <inheritdoc />
 	public virtual bool ShouldTrigger(Key key, KeyModifiers modifiers, out bool silent)
@@ -72,75 +61,26 @@ public abstract class CompletionProvider : ICompletionProvider
 	}
 
 	/// <inheritdoc />
-	public abstract bool TryGetAutoComplete(string input, out string prefix, out ICompletionData[] data);
-
-	private static bool TryGetCompletionPrefix(string input, IEnumerable<string> terminators, bool includeTerminator, out string value)
-	{
-		foreach (var terminator in terminators)
-		{
-			if (TryGetCompletionPrefix(input, terminator, includeTerminator, out value))
-			{
-				return true;
-			}
-		}
-
-		value = null;
-		return false;
-	}
-
-	private static bool TryGetCompletionPrefix(string input, string terminator, bool includeTerminator, out string value)
-	{
-		var inputOffset = input.Length - 1;
-		var response = input;
-		var index = response.LastIndexOf(terminator, inputOffset);
-
-		if (index < 0)
-		{
-			value = null;
-			return false;
-		}
-
-		var length = input.Length - index;
-		if ((length == terminator.Length) && !includeTerminator)
-		{
-			value = string.Empty;
-			return true;
-		}
-
-		value = includeTerminator
-			? response.Substring(index, length)
-			: response.Substring(index + terminator.Length, length - terminator.Length);
-
-		return true;
-	}
-
-	private static bool TryGetCompletionPrefixOfAny(string input, char[] terminators, bool includeTerminator, out string value)
-	{
-		var inputOffset = input.Length - 1;
-		var response = input;
-		var index = response.IndexOfAnyReverse(terminators, inputOffset);
-
-		if (index < 0)
-		{
-			value = null;
-			return false;
-		}
-
-		var length = inputOffset - index;
-		value = response.Substring(includeTerminator ? index : index + 1, length);
-		return true;
-	}
+	public abstract bool TryGetAutoComplete(string input);
 
 	#endregion
 }
 
 public interface ICompletionProvider
 {
+	#region Properties
+
+	SpeedyList<ICompletionData> Data { get; }
+
+	string Prefix { get; }
+
+	#endregion
+
 	#region Methods
 
 	bool ShouldTrigger(Key key, KeyModifiers modifiers, out bool silent);
 
-	public bool TryGetAutoComplete(string input, out string prefix, out ICompletionData[] data);
+	public bool TryGetAutoComplete(string input);
 
 	#endregion
 }

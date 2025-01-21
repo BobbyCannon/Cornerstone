@@ -88,12 +88,12 @@ public class HumanizeTests : CornerstoneUnitTest
 		var scenarioIndex = 0;
 		var combinations = new HumanizeSettings[]
 		{
-			new() { MaxUnit = TimeUnit.Max, MinUnit = TimeUnit.Min, Precision = 3, WordFormat = WordFormat.Full },
-			new() { MaxUnit = TimeUnit.Max, MinUnit = TimeUnit.Min, Precision = 3, WordFormat = WordFormat.Abbreviation },
-			new() { MaxUnit = TimeUnit.Max, MinUnit = TimeUnit.Min, Precision = 7, WordFormat = WordFormat.Full },
-			new() { MaxUnit = TimeUnit.Max, MinUnit = TimeUnit.Min, Precision = 7, WordFormat = WordFormat.Abbreviation },
-			new() { MaxUnit = TimeUnit.Hour, MinUnit = TimeUnit.Min, Precision = 7, WordFormat = WordFormat.Full },
-			new() { MaxUnit = TimeUnit.Hour, MinUnit = TimeUnit.Min, Precision = 7, WordFormat = WordFormat.Abbreviation }
+			new() { MaxUnit = TimeUnit.Year, MinUnit = TimeUnit.Ticks, Precision = 3, WordFormat = WordFormat.Full },
+			new() { MaxUnit = TimeUnit.Year, MinUnit = TimeUnit.Ticks, Precision = 3, WordFormat = WordFormat.Abbreviation },
+			new() { MaxUnit = TimeUnit.Year, MinUnit = TimeUnit.Ticks, Precision = 7, WordFormat = WordFormat.Full },
+			new() { MaxUnit = TimeUnit.Year, MinUnit = TimeUnit.Ticks, Precision = 7, WordFormat = WordFormat.Abbreviation },
+			new() { MaxUnit = TimeUnit.Hour, MinUnit = TimeUnit.Ticks, Precision = 7, WordFormat = WordFormat.Full },
+			new() { MaxUnit = TimeUnit.Hour, MinUnit = TimeUnit.Ticks, Precision = 7, WordFormat = WordFormat.Abbreviation }
 		};
 		var settingsType = typeof(HumanizeSettings);
 		var timeSpan = new TimeSpan(366, 12, 35, 59, 987);
@@ -131,42 +131,42 @@ public class HumanizeTests : CornerstoneUnitTest
 			// <Scenarios>
 			new(
 				"0: HumanizeOptions",
-				new HumanizeSettings { MaxUnit = TimeUnit.Year, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Min, Precision = 3, WordFormat = WordFormat.Full },
+				new HumanizeSettings { MaxUnit = TimeUnit.Year, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Ticks, Precision = 3, WordFormat = WordFormat.Full },
 				typeof(HumanizeSettings),
 				"1 Year, 1 Day, 12 Hours, 35 Minutes, 59 Seconds, and 987 Milliseconds",
 				typeof(string)
 			),
 			new(
 				"1: HumanizeOptions",
-				new HumanizeSettings { MaxUnit = TimeUnit.Year, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Min, Precision = 3, WordFormat = WordFormat.Abbreviation },
+				new HumanizeSettings { MaxUnit = TimeUnit.Year, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Ticks, Precision = 3, WordFormat = WordFormat.Abbreviation },
 				typeof(HumanizeSettings),
 				"1 yr 1 d 12 h 35 m 59 s 987 ms",
 				typeof(string)
 			),
 			new(
 				"2: HumanizeOptions",
-				new HumanizeSettings { MaxUnit = TimeUnit.Year, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Min, Precision = 7, WordFormat = WordFormat.Full },
+				new HumanizeSettings { MaxUnit = TimeUnit.Year, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Ticks, Precision = 7, WordFormat = WordFormat.Full },
 				typeof(HumanizeSettings),
 				"1 Year, 1 Day, 12 Hours, 35 Minutes, 59 Seconds, and 987 Milliseconds",
 				typeof(string)
 			),
 			new(
 				"3: HumanizeOptions",
-				new HumanizeSettings { MaxUnit = TimeUnit.Year, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Min, Precision = 7, WordFormat = WordFormat.Abbreviation },
+				new HumanizeSettings { MaxUnit = TimeUnit.Year, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Ticks, Precision = 7, WordFormat = WordFormat.Abbreviation },
 				typeof(HumanizeSettings),
 				"1 yr 1 d 12 h 35 m 59 s 987 ms",
 				typeof(string)
 			),
 			new(
 				"4: HumanizeOptions",
-				new HumanizeSettings { MaxUnit = TimeUnit.Hour, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Min, Precision = 7, WordFormat = WordFormat.Full },
+				new HumanizeSettings { MaxUnit = TimeUnit.Hour, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Ticks, Precision = 7, WordFormat = WordFormat.Full },
 				typeof(HumanizeSettings),
 				"12 Hours, 35 Minutes, 59 Seconds, and 987 Milliseconds",
 				typeof(string)
 			),
 			new(
 				"5: HumanizeOptions",
-				new HumanizeSettings { MaxUnit = TimeUnit.Hour, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Min, Precision = 7, WordFormat = WordFormat.Abbreviation },
+				new HumanizeSettings { MaxUnit = TimeUnit.Hour, MaxUnitSegments = int.MaxValue, MinUnit = TimeUnit.Ticks, Precision = 7, WordFormat = WordFormat.Abbreviation },
 				typeof(HumanizeSettings),
 				"12 h 35 m 59 s 987 ms",
 				typeof(string)

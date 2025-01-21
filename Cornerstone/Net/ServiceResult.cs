@@ -20,7 +20,7 @@ public class ServiceResult<T> : Bindable
 	/// <summary>
 	/// Initializes an instance of a request result.
 	/// </summary>
-	public ServiceResult() : this(Array.Empty<T>())
+	public ServiceResult() : this([])
 	{
 	}
 

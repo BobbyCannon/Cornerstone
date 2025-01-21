@@ -32,7 +32,7 @@ public static class ServiceExtensions
 		container.AddService(typeof(T), serviceInstance);
 	}
 
-	public static T GetService<T>(this IServiceProvider provider) where T : class
+	public static T GetInstance<T>(this IServiceProvider provider) where T : class
 	{
 		return provider.GetService(typeof(T)) as T;
 	}

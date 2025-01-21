@@ -326,7 +326,7 @@ public static class Activator
 	/// <param name="type"> The Type for which to get an instance of. </param>
 	/// <param name="arguments"> The value of the arguments. </param>
 	/// <returns> The new instances of the type. </returns>
-	internal static object CreateInstanceInternal(bool useCustomActivators, Type type, params object[] arguments)
+	private static object CreateInstanceInternal(bool useCustomActivators, Type type, params object[] arguments)
 	{
 		object response;
 

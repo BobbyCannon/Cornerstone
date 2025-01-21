@@ -378,12 +378,23 @@ public static class RandomGenerator
 	}
 
 	/// <summary>
+	/// Returns a random char value.
+	/// </summary>
+	/// <returns> The random char value. </returns>
+	public static char NextChar()
+	{
+		var value = NextInteger(char.MinValue, char.MaxValue);
+		return (char) value;
+	}
+
+	/// <summary>
 	/// Returns a random byte value.
 	/// </summary>
 	/// <returns> The random byte value. </returns>
 	public static byte NextByte()
 	{
-		return (byte) NextInteger(byte.MinValue, byte.MaxValue);
+		var value = NextInteger(byte.MinValue, byte.MaxValue);
+		return (byte) value;
 	}
 
 	/// <summary>

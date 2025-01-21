@@ -17,31 +17,31 @@ public interface ITrackPropertyChanges
 	/// Apply the changes to this object to the provided destination object.
 	/// </summary>
 	/// <param name="destination"> The object to update. </param>
-	void ApplyChangesTo(object destination);
+	public void ApplyChangesTo(object destination);
 
 	/// <summary>
 	/// Get the list of changed properties.
 	/// </summary>
 	/// <returns> The list of changed property in a read only set. </returns>
-	ReadOnlySet<string> GetChangedProperties();
+	public ReadOnlySet<string> GetChangedProperties();
 
 	/// <summary>
 	/// Determines if the object has changes.
 	/// </summary>
 	/// <returns> True if the object has changes otherwise false. </returns>
-	bool HasChanges();
+	public bool HasChanges();
 
 	/// <summary>
 	/// Determines if the object has changes.
 	/// </summary>
 	/// <param name="settings"> An optional set of options. </param>
 	/// <returns> True if the object has changes otherwise false. </returns>
-	bool HasChanges(IncludeExcludeSettings settings);
+	public bool HasChanges(IncludeExcludeSettings settings);
 
 	/// <summary>
 	/// Reset the "has changes" state.
 	/// </summary>
-	void ResetHasChanges();
+	public void ResetHasChanges();
 
 	#endregion
 }

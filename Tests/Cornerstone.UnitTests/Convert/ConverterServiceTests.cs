@@ -3,6 +3,7 @@
 using System;
 using Cornerstone.Convert;
 using Cornerstone.Exceptions;
+using Cornerstone.Runtime;
 using Cornerstone.UnitTests.Compare;
 using Cornerstone.UnitTests.Resources;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -27,7 +28,7 @@ public class ConverterTests : CornerstoneUnitTest
 		);
 
 		ExpectedException<ConversionException>(
-			() => DateTime.UtcNow.ConvertTo<SampleAccount>(),
+			() => DateTimeProvider.RealTime.UtcNow.ConvertTo<SampleAccount>(),
 			"Failed to convert [System.DateTime] to [Cornerstone.UnitTests.Resources.SampleAccount] type."
 		);
 	}
@@ -39,7 +40,7 @@ public class ConverterTests : CornerstoneUnitTest
 		AreEqual(null, value);
 
 		AreEqual(false, Converter.TryConvertTo(null, typeof(DateTime), out value));
-		AreEqual(false, DateTime.UtcNow.TryConvertTo(typeof(ComparerTests.Person), out value));
+		AreEqual(false, DateTimeProvider.RealTime.UtcNow.TryConvertTo(typeof(ComparerTests.Person), out value));
 	}
 
 	#endregion

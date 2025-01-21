@@ -1,10 +1,31 @@
-﻿namespace Cornerstone.Storage;
+﻿#region References
+
+using Cornerstone.Runtime;
+
+#endregion
+
+namespace Cornerstone.Storage;
 
 /// <summary>
 /// Represents a database provider for syncable databases.
 /// </summary>
 public abstract class DatabaseProvider<T> : IDatabaseProvider<T> where T : IDatabase
 {
+	#region Fields
+
+	protected readonly IDateTimeProvider DateTimeProvider;
+
+	#endregion
+
+	#region Constructors
+
+	protected DatabaseProvider(IDateTimeProvider dateTimeProvider)
+	{
+		DateTimeProvider = dateTimeProvider;
+	}
+
+	#endregion
+
 	#region Methods
 
 	/// <summary>
@@ -25,7 +46,9 @@ public abstract class DatabaseProvider<T> : IDatabaseProvider<T> where T : IData
 	/// <inheritdoc />
 	public T GetDatabase()
 	{
-		return GetDatabaseFromProvider();
+		var response = GetDatabaseFromProvider();
+		response.UpdateDateTimeProvider(DateTimeProvider);
+		return response;
 	}
 
 	/// <summary>

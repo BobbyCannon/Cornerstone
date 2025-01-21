@@ -38,10 +38,6 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 	/// </summary>
 	protected EntityFrameworkDatabase()
 	{
-		_collectionChangeTracker = new CollectionChangeTracker();
-
-		DbContextOptions = null;
-		DatabaseSettings = new DatabaseSettings();
 	}
 
 	/// <summary>
@@ -62,10 +58,11 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 
 	#region Properties
 
-	/// <summary>
-	/// Gets the options for this database.
-	/// </summary>
+	/// <inheritdoc />
 	public DatabaseSettings DatabaseSettings { get; }
+
+	/// <inheritdoc />
+	public IDateTimeProvider DateTimeProvider { get; private set; }
 
 	/// <summary>
 	/// Gets the database context options for this database.
@@ -257,6 +254,12 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 		{
 			_saveChangeCount = 0;
 		}
+	}
+
+	/// <inheritdoc />
+	public void UpdateDateTimeProvider(IDateTimeProvider dateTimeProvider)
+	{
+		DateTimeProvider = dateTimeProvider;
 	}
 
 	/// <summary>
@@ -512,7 +515,7 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 		var maintainCreatedOnDate = maintainedEntity && DatabaseSettings.MaintainCreatedOn;
 		var maintainModifiedOnDate = maintainedEntity && DatabaseSettings.MaintainModifiedOn;
 		var maintainSyncId = maintainedEntity && DatabaseSettings.MaintainSyncId;
-		var now = DateTimeProvider.RealTime.UtcNow;
+		var now = DateTimeProvider.UtcNow;
 
 		// Check to see if the entity was added.
 		switch (entry.State)

@@ -51,14 +51,24 @@ public class StringGapBuffer : GapBuffer<char>, ICloneable<StringGapBuffer>, ISt
 		return new StringGapBuffer(ToString());
 	}
 
-	public int IndexOf(string item, int index, int length, StringComparison comparisonType)
+	/// <inheritdoc />
+	public char FirstOrDefault()
+	{
+		return Count > 0 ? this[0] : '\0';
+	}
+
+	public int IndexOf(string value)
+	{
+		return IndexOf(value, 0, Count, StringComparison.Ordinal);
+	}
+
+	public int IndexOf(string value, int index, int length, StringComparison comparisonType)
 	{
 		VerifyRange(index, length);
 
-		var comparer = comparisonType.GetComparer();
 		for (var i = index; i < (index + length); i++)
 		{
-			if (comparer.Compare(this[i], item) == 0)
+			if (Match(i, value, comparisonType))
 			{
 				return i;
 			}
@@ -80,44 +90,39 @@ public class StringGapBuffer : GapBuffer<char>, ICloneable<StringGapBuffer>, ISt
 	}
 
 	/// <inheritdoc />
-	public int LastIndexOf(int index, string item)
+	public int LastIndexOf(string item, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
 	{
-		var itemIndex = item.Length - 1;
-
-		for (var i = index; i >= 0; i--)
-		{
-			if (this[i] == item[itemIndex])
-			{
-				if (itemIndex == 0)
-				{
-					return i;
-				}
-
-				itemIndex--;
-			}
-			else
-			{
-				itemIndex = item.Length - 1;
-			}
-		}
-
-		return -1;
+		return LastIndexOf(item, 0, Count, comparisonType);
 	}
 
+	/// <inheritdoc />
 	public int LastIndexOf(string item, int index, int length, StringComparison comparisonType)
 	{
+		if (string.IsNullOrEmpty(item))
+		{
+			return -1;
+		}
+
 		VerifyRange(index, length);
 
-		var comparer = comparisonType.GetComparer();
-		for (var i = (index + length) - 1; i >= index; i--)
+		var startIndex = (index + length) - item.Length;
+		var endIndex = index;
+
+		for (var i = startIndex; i >= endIndex; i--)
 		{
-			if (comparer.Compare(this[i], item) == 0)
+			if (Match(i, item, comparisonType))
 			{
 				return i;
 			}
 		}
 
 		return -1;
+	}
+
+	/// <inheritdoc />
+	public char LastOrDefault()
+	{
+		return Count > 0 ? this[Count - 1] : '\0';
 	}
 
 	public bool Match(int index, char value)
@@ -133,8 +138,13 @@ public class StringGapBuffer : GapBuffer<char>, ICloneable<StringGapBuffer>, ISt
 	}
 
 	/// <inheritdoc />
-	public bool Match(int index, string value, StringComparison comparisonType)
+	public bool Match(int index, string value, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
 	{
+		if (string.IsNullOrEmpty(value))
+		{
+			return false;
+		}
+		
 		var length = value.Length;
 
 		VerifyRange(index);
@@ -180,6 +190,13 @@ public class StringGapBuffer : GapBuffer<char>, ICloneable<StringGapBuffer>, ISt
 
 		length = matches;
 		return matches > 0;
+	}
+
+	/// <inheritdoc />
+	public void Replace(int index, int length, string value)
+	{
+		Remove(index, length);
+		InsertRange(index, value);
 	}
 
 	/// <inheritdoc />

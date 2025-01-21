@@ -45,7 +45,7 @@ public static class ExtensionMethods
 			collection.Add(e);
 		}
 	}
-
+	
 	public static IEnumerable<char> AsEnumerable(this string s)
 	{
 		// ReSharper disable once ForCanBeConvertedToForeach

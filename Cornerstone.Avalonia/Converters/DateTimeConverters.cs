@@ -19,7 +19,7 @@ public static class DateTimeConverters
 
 	static DateTimeConverters()
 	{
-		ToLocalTime = new FuncValueConverter<DateTime, string>(x => x.ToLocalTime().ToString());
+		ToLocalTime = new(x => x.ToLocalTime().ToString());
 	}
 
 	#endregion

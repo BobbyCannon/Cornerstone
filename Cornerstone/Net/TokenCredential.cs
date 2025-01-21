@@ -5,6 +5,7 @@ using System.Net.Http.Headers;
 using System.Security;
 using System.Text;
 using Cornerstone.Extensions;
+using Cornerstone.Presentation;
 
 #endregion
 
@@ -38,7 +39,17 @@ public class TokenCredential : Credential
 	/// </summary>
 	/// <param name="password"> The token of the credential. </param>
 	public TokenCredential(SecureString password)
-		: base(string.Empty, password)
+		: this(password, null)
+	{
+	}
+
+	/// <summary>
+	/// Creates an instance of the credential.
+	/// </summary>
+	/// <param name="password"> The token of the credential. </param>
+	/// <param name="dispatcher"> The optional dispatcher to use. </param>
+	public TokenCredential(SecureString password, IDispatcher dispatcher)
+		: base(string.Empty, password, dispatcher)
 	{
 	}
 
@@ -66,7 +77,7 @@ public class TokenCredential : Credential
 	/// </summary>
 	public override AuthenticationHeaderValue GetAuthenticationHeaderValue()
 	{
-		return new AuthenticationHeaderValue("Bearer", System.Convert.ToBase64String(Encoding.UTF8.GetBytes(Password)));
+		return new AuthenticationHeaderValue("Bearer", ToBase64String());
 	}
 
 	/// <summary>
@@ -82,6 +93,12 @@ public class TokenCredential : Credential
 	public override void Load(AuthenticationHeaderValue value)
 	{
 		Password = value?.Parameter.FromBase64String();
+	}
+
+	/// <inheritdoc />
+	public override string ToBase64String()
+	{
+		return System.Convert.ToBase64String(Encoding.UTF8.GetBytes(Password));
 	}
 
 	#endregion

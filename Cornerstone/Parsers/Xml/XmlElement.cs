@@ -49,12 +49,12 @@ public class XmlElement : Notifiable
 
 	public string GetAttributeValue(string name)
 	{
-		return Attributes.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase))?.Value;
+		return Attributes?.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase))?.Value;
 	}
 
 	public string GetElementValue(string name)
 	{
-		return Elements.FirstOrDefault(x => string.Equals(x.ElementName, name, StringComparison.OrdinalIgnoreCase))?.ElementValue;
+		return Elements?.FirstOrDefault(x => string.Equals(x.ElementName, name, StringComparison.OrdinalIgnoreCase))?.ElementValue;
 	}
 
 	public virtual void Reset()

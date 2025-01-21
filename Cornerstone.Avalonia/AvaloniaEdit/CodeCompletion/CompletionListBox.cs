@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Cornerstone.Avalonia.AvaloniaEdit.Utils;
@@ -21,7 +22,7 @@ public class CompletionListBox : ListBox
 	internal ScrollViewer ScrollViewer;
 
 	#endregion
-
+	
 	#region Properties
 
 	/// <summary>

@@ -128,6 +128,11 @@ public class StringTextSource : ITextSource
 		return Text.LastIndexOf(c, (startIndex + count) - 1, count);
 	}
 
+	public int LastIndexOf(string searchText, StringComparison comparisonType)
+	{
+		return LastIndexOf(searchText, 0, TextLength, comparisonType);
+	}
+
 	/// <inheritdoc />
 	public int LastIndexOf(string searchText, int startIndex, int count, StringComparison comparisonType)
 	{

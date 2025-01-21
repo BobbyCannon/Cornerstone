@@ -3,6 +3,7 @@
 using System.IO;
 using System.Reflection;
 using Cornerstone.EntityFramework;
+using Cornerstone.Logging;
 using Cornerstone.Storage;
 using Cornerstone.Sync;
 using Microsoft.EntityFrameworkCore;
@@ -34,41 +35,18 @@ public abstract class ServerDatabase : EntityFrameworkSyncableDatabase, IServerD
 
 	#region Properties
 
-	/// <inheritdoc />
 	public ISyncableRepository<AccountEntity, int> Accounts => GetSyncableRepository<AccountEntity, int>();
-
-	/// <inheritdoc />
 	public ISyncableRepository<AddressEntity, long> Addresses => GetSyncableRepository<AddressEntity, long>();
-
-	/// <inheritdoc />
 	public IRepository<FoodEntity, int> Food => GetRepository<FoodEntity, int>();
-
-	/// <inheritdoc />
 	public IRepository<FoodRelationshipEntity, int> FoodRelationships => GetRepository<FoodRelationshipEntity, int>();
-
-	/// <inheritdoc />
 	public IRepository<GroupMemberEntity, int> GroupMembers => GetRepository<GroupMemberEntity, int>();
-
-	/// <inheritdoc />
 	public IRepository<GroupEntity, int> Groups => GetRepository<GroupEntity, int>();
-
-	/// <inheritdoc />
 	public ISyncableRepository<LogEventEntity, long> LogEvents => GetSyncableRepository<LogEventEntity, long>();
-
-	/// <inheritdoc />
 	public IRepository<PetEntity, (string Name, int OwnerId)> Pets => GetRepository<PetEntity, (string name, int OwnerId)>();
-
-	/// <inheritdoc />
 	public IRepository<PetTypeEntity, string> PetTypes => GetRepository<PetTypeEntity, string>();
-
-	/// <inheritdoc />
 	public ISyncableRepository<SettingEntity, long> Settings => GetSyncableRepository<SettingEntity, long>();
-
-	/// <inheritdoc />
-	public IRepository<TrackerPathConfigurationEntity, int> TrackerPathConfigurations => GetRepository<TrackerPathConfigurationEntity, int>();
-
-	/// <inheritdoc />
-	public IRepository<TrackerPathEntity, long> TrackerPaths => GetRepository<TrackerPathEntity, long>();
+	public ISyncableRepository<TrackerPathConfigurationEntity, int> TrackerPathConfigurations => GetSyncableRepository<TrackerPathConfigurationEntity, int>();
+	public ISyncableRepository<TrackerPathEntity, long> TrackerPaths => GetSyncableRepository<TrackerPathEntity, long>();
 
 	#endregion
 

@@ -155,7 +155,7 @@ EndGlobal
 		AreEqual(projects, solution.Projects, null,
 			new ComparerSettings
 			{
-				IncludeExcludeOptions = new Dictionary<Type, IncludeExcludeSettings>
+				TypeIncludeExcludeSettings = new Dictionary<Type, IncludeExcludeSettings>
 				{
 					{
 						typeof(DotNetSolutionProject),

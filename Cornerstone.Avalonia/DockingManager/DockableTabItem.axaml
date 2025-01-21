@@ -51,12 +51,13 @@
 											Padding="{TemplateBinding Padding}"
 											Margin="0,-2,0,0"
 											HorizontalAlignment="Center"
-											VerticalAlignment="Center">
+											VerticalAlignment="Center"
+											ContextMenu="{Binding HeaderMenu}">
 										<Grid>
-											<TextBlock 
+											<TextBlock
 													Text="{Binding Header}"
-													IsVisible="{TemplateBinding TabModel, Converter={x:Static ObjectConverters.IsNotNull}}"/>
-											<ContentPresenter Grid.Column="1"
+													IsVisible="{TemplateBinding TabModel, Converter={x:Static ObjectConverters.IsNotNull}}" />
+											<ContentPresenter
 													Content="{TemplateBinding Header}"
 													IsVisible="{TemplateBinding Header, Converter={x:Static ObjectConverters.IsNotNull}}" />
 										</Grid>
@@ -64,7 +65,9 @@
 
 									<Button Name="PART_CloseButton"
 											Classes="TabClose"
-											Grid.Column="2">
+											Grid.Column="2"
+											Command="{Binding CloseCommand}"
+											IsEnabled="{Binding CanClose}">
 										<PathIcon Data="{StaticResource Icons.Window.Close}" />
 									</Button>
 								</Grid>
@@ -75,7 +78,7 @@
 									ClipToBounds="True"
 									CornerRadius="{TemplateBinding CornerRadius}"
 									Margin="{TemplateBinding Margin}"
-									IsVisible="False"/>
+									IsVisible="False" />
 
 							<Rectangle Name="PART_Spacer"
 									Width="0.5" Height="20"
@@ -121,7 +124,7 @@
 						<Setter Property="Height" Value="2" />
 						<Setter Property="Margin" Value="2,0" />
 					</Style>
-					
+
 				</Style>
 
 				<!-- Left placement. -->
@@ -187,7 +190,7 @@
 						<Setter Property="VerticalAlignment" Value="Top" />
 					</Style>
 				</Style>
-				
+
 			</ControlTheme>
 		</ResourceDictionary>
 	</Styles.Resources>

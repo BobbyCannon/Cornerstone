@@ -80,7 +80,7 @@ public abstract class ConverterTests<T> : CornerstoneUnitTest
 
 	protected void TestInvalidValues(params TestScenarioValue[] invalidValues)
 	{
-		TestInvalidValues(Array.Empty<Type>(), invalidValues);
+		TestInvalidValues([], invalidValues);
 	}
 
 	protected void TestScenarios(params TestScenario[] scenarios)

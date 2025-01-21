@@ -77,6 +77,11 @@ public abstract class BaseComparer
 	/// <returns> The result of the compare. </returns>
 	public CompareResult Compare(CompareSession session, object expected, object actual, Func<string> message = null)
 	{
+		if (session.Path.Count > session.Settings.MaxDepth)
+		{
+			return CompareResult.AreEqual;
+		}
+
 		if ((expected == null) && (actual == null))
 		{
 			session.UpdateResult(CompareResult.AreEqual);
@@ -85,13 +90,14 @@ public abstract class BaseComparer
 
 		if ((expected == null) || (actual == null))
 		{
-			AddDifference(session, expected?.ToString() ?? "null", actual?.ToString() ?? "null", true, message);
+			session.AddDifference(expected, actual, true, message);
 			return session.Result;
 		}
 
-		if (!AreSameType(session, expected, actual))
+		if (!session.Settings.IgnoreObjectTypes
+			&& !AreSameType(session, expected, actual))
 		{
-			AddDifference(session, expected.GetType().FullName, actual.GetType().FullName, true, message ?? (() => "Data types do not match."));
+			session.AddDifference(expected.GetType().FullName, actual.GetType().FullName, true, message ?? (() => "Data types do not match."));
 			return session.Result;
 		}
 
@@ -107,40 +113,6 @@ public abstract class BaseComparer
 	public virtual bool IsSupported(object expected, object actual)
 	{
 		return TryValidate(expected, actual, out _);
-	}
-
-	/// <summary>
-	/// Build an error message for the comparer
-	/// </summary>
-	/// <param name="session"> The session to append the error message. </param>
-	/// <param name="expected"> The expected value in string format. </param>
-	/// <param name="actual"> The actual value in string format. </param>
-	/// <param name="shouldEqual"> True if the values should have been equal otherwise false. </param>
-	/// <param name="message"> On optional message to include. </param>
-	/// <returns> The error message. </returns>
-	protected static void AddDifference(CompareSession session, string expected, string actual, bool shouldEqual, Func<string> message = null)
-	{
-		session.UpdateResult(CompareResult.NotEqual);
-
-		var actualMessage = message?.Invoke();
-
-		if (!string.IsNullOrWhiteSpace(actualMessage))
-		{
-			session.AppendDifference(actualMessage);
-			session.AppendDifference(string.Empty);
-		}
-
-		if (shouldEqual)
-		{
-			session.AppendDifference(" ");
-			session.AppendDifference(expected);
-			session.AppendDifference(" != ");
-			session.AppendDifference(actual);
-			return;
-		}
-
-		session.AppendDifference("Should not have equaled the value below");
-		session.AppendDifference(actual);
 	}
 
 	/// <summary>
