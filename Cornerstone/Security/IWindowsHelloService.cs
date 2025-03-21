@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 #endregion
 
-namespace Cornerstone.Security.Vault;
+namespace Cornerstone.Security;
 
 public class WindowsHelloServiceStub : IWindowsHelloService
 {

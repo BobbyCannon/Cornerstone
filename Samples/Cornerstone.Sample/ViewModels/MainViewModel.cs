@@ -45,6 +45,7 @@ public class MainViewModel : ViewModel
 		AddTabItemViewModel(TabDockingManager.HeaderName, "Icons.Window.Restore", typeof(TabDockingManager), browser: false);
 		AddTabItemViewModel(TabMenu.HeaderName, "Icons.Menu", typeof(TabMenu));
 		AddTabItemViewModel(TabNavigationMenu.HeaderName, "Icons.Grid", typeof(TabNavigationMenu));
+		AddTabItemViewModel(TabNotificationCard.HeaderName, "Icons.Copy", typeof(TabNotificationCard));
 		AddTabItemViewModel(TabResponsiveGrid.HeaderName, "Icons.List", typeof(TabResponsiveGrid));
 		AddTabItemViewModel(TabRuntimeInformation.HeaderName, "Icons.Info", typeof(TabRuntimeInformation));
 		AddTabItemViewModel(TabSecurityKeys.HeaderName, "Icons.Tag", typeof(TabSecurityKeys), browser: false);

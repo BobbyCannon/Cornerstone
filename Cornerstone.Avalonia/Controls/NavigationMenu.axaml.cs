@@ -23,6 +23,8 @@ public class NavigationMenu : TabControl
 	public static readonly StyledProperty<int> ExpandedModeThresholdWidthProperty;
 	public static readonly StyledProperty<bool> IsOpenProperty;
 	public static readonly StyledProperty<Color> PaneBackgroundProperty;
+	public static readonly StyledProperty<double> PaneCollapsedWidthProperty;
+	public static readonly StyledProperty<double> PaneExpandedWidthProperty;
 	private SplitView _splitView;
 
 	#endregion
@@ -38,6 +40,8 @@ public class NavigationMenu : TabControl
 		DisplayModeProperty = AvaloniaProperty.Register<NavigationMenu, SplitViewDisplayMode>(nameof(DisplayMode), SplitViewDisplayMode.CompactInline);
 		ExpandedModeThresholdWidthProperty = AvaloniaProperty.Register<NavigationMenu, int>(nameof(ExpandedModeThresholdWidth), 1024);
 		IsOpenProperty = AvaloniaProperty.Register<NavigationMenu, bool>(nameof(IsOpen));
+		PaneExpandedWidthProperty = AvaloniaProperty.Register<NavigationMenu, double>(nameof(PaneExpandedWidth));
+		PaneCollapsedWidthProperty = AvaloniaProperty.Register<NavigationMenu, double>(nameof(PaneCollapsedWidth));
 		PaneBackgroundProperty = AvaloniaProperty.Register<NavigationMenu, Color>(nameof(PaneBackground));
 	}
 
@@ -91,6 +95,18 @@ public class NavigationMenu : TabControl
 	{
 		get => GetValue(PaneBackgroundProperty);
 		set => SetValue(PaneBackgroundProperty, value);
+	}
+
+	public double PaneCollapsedWidth
+	{
+		get => GetValue(PaneCollapsedWidthProperty);
+		set => SetValue(PaneCollapsedWidthProperty, value);
+	}
+
+	public double PaneExpandedWidth
+	{
+		get => GetValue(PaneExpandedWidthProperty);
+		set => SetValue(PaneExpandedWidthProperty, value);
 	}
 
 	#endregion

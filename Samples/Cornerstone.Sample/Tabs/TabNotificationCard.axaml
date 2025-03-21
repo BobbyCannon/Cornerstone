@@ -1,0 +1,59 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="200"
+		x:Class="Cornerstone.Sample.Tabs.TabNotificationCard">
+	<UserControl.Styles>
+		<Style Selector="Button">
+			<Setter Property="Margin" Value="4" />
+			<Setter Property="Width" Value="180" />
+			<Setter Property="ResponsiveGrid.LG" Value="4" />
+			<Setter Property="ResponsiveGrid.SM" Value="12" />
+		</Style>
+	</UserControl.Styles>
+	<ResponsiveGrid HorizontalAlignment="Center"
+			VerticalAlignment="Center">
+		
+		<!-- Display notification top left. -->
+		<Button x:Name="ShowTopLeftNotification"
+				Theme.Color="Green"
+				Content="Top Left"
+				Click="ShowTopLeftNotification_OnClick" />
+
+		<!-- Display notification top center. -->
+		<Button
+				x:Name="ShowTopCenterNotification"
+				Content="Top Center"
+				Click="ShowTopCenterNotification_OnClick" />
+
+		<!-- Display notification top right. -->
+		<Button
+				x:Name="ShowTopRightNotification"
+				Theme.Color="Blue"
+				Content="Top Right"
+				Click="ShowTopRightNotification_OnClick" />
+
+
+		<!-- Display notification bottom left. -->
+		<Button
+				x:Name="ShowBottomLeftNotification"
+				Theme.Color="Orange"
+				Content="Bottom Left"
+				Click="ShowBottomLeftNotification_OnClick" />
+
+		<!-- Display notification bottom center. -->
+		<Button
+				x:Name="ShowBottomCenterNotification"
+				Content="Bottom Center"
+				Click="ShowBottomCenterNotification_OnClick" />
+
+		<!-- Display notification bottom right. -->
+		<Button
+				x:Name="ShowBottomRightNotification"
+				Theme.Color="Red"
+				Content="Bottom Right"
+				Click="ShowBottomRightNotification_OnClick" />
+	</ResponsiveGrid>
+</UserControl>

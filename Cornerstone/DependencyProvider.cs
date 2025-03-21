@@ -14,7 +14,6 @@ using Cornerstone.Presentation;
 using Cornerstone.Runtime;
 using Cornerstone.Security;
 using Cornerstone.Security.SecurityKeys;
-using Cornerstone.Security.Vault;
 using Cornerstone.Web;
 
 #endregion

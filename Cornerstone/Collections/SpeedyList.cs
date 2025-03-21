@@ -641,14 +641,6 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 	}
 
 	/// <summary>
-	/// Order the collection.
-	/// </summary>
-	public void Order()
-	{
-		InternalOrder();
-	}
-
-	/// <summary>
 	/// Process an action then order the collection.
 	/// </summary>
 	/// <param name="process"> The process to execute before ordering. </param>
@@ -689,7 +681,7 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 			// Re-enable ordering then order
 			PauseOrdering = false;
 
-			Order();
+			RefreshOrder();
 		}
 	}
 
@@ -702,6 +694,24 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 		{
 			EnterUpgradeableReadLock();
 			InternalFilter();
+		}
+		finally
+		{
+			ExitUpgradeableReadLock();
+		}
+	}
+
+	public void RefreshOrder()
+	{
+		if (!ShouldOrder())
+		{
+			return;
+		}
+
+		try
+		{
+			EnterUpgradeableReadLock();
+			InternalOrderWithoutLocking();
 		}
 		finally
 		{
@@ -937,7 +947,7 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 			}
 			case nameof(OrderBy):
 			{
-				Order();
+				RefreshOrder();;
 				break;
 			}
 		}
@@ -1333,24 +1343,6 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 		finally
 		{
 			IsLoading = false;
-		}
-	}
-
-	private void InternalOrder()
-	{
-		if (!ShouldOrder())
-		{
-			return;
-		}
-
-		try
-		{
-			EnterUpgradeableReadLock();
-			InternalOrderWithoutLocking();
-		}
-		finally
-		{
-			ExitUpgradeableReadLock();
 		}
 	}
 
