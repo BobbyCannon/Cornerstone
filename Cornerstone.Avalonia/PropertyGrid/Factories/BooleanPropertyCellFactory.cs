@@ -75,6 +75,5 @@ public class BooleanPropertyCellFactory : PropertyCellFactory
 		return false;
 	}
 
-	
 	#endregion
 }

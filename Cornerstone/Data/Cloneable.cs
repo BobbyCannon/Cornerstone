@@ -1,5 +1,34 @@
 ﻿namespace Cornerstone.Data;
 
+/// <inheritdoc />
+public abstract class Cloneable<T> : ICloneable<T>
+{
+	#region Methods
+
+	/// <inheritdoc />
+	public abstract T DeepClone(int? maxDepth = null, IncludeExcludeSettings settings = null);
+
+	/// <inheritdoc />
+	public object DeepCloneObject(int? maxDepth = null, IncludeExcludeSettings settings = null)
+	{
+		return DeepClone(maxDepth, settings);
+	}
+
+	/// <inheritdoc />
+	public T ShallowClone(IncludeExcludeSettings settings = null)
+	{
+		return DeepClone(1, settings);
+	}
+
+	/// <inheritdoc />
+	public object ShallowCloneObject(IncludeExcludeSettings settings = null)
+	{
+		return ShallowClone(settings);
+	}
+
+	#endregion
+}
+
 /// <summary>
 /// Represents a cloneable item.
 /// </summary>

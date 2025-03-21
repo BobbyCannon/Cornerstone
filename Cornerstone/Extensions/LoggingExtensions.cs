@@ -62,7 +62,9 @@ public static class LoggingExtensions
 	/// <returns> The formatted message. </returns>
 	public static string GetMessage(this EventWrittenEventArgs args)
 	{
-		return string.Format(args.Message, args.Payload.ToArray());
+		return string.IsNullOrWhiteSpace(args.Message)
+			? args.Message
+			: string.Format(args.Message, args.Payload.ToArray());
 	}
 
 	/// <summary>

@@ -62,6 +62,8 @@ public class ProcessDetails : Bindable<ProcessDetails>
 	/// </summary>
 	public string FilePath { get; set; }
 
+	public bool HasErrors => (Exception != null) || Errors is { Count: > 0 };
+
 	/// <summary>
 	/// True if the process has started.
 	/// </summary>

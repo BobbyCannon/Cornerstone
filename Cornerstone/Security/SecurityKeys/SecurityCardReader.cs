@@ -1,6 +1,5 @@
 ﻿#region References
 
-using System;
 using Cornerstone.Presentation;
 using Cornerstone.Security.SecurityKeys.Apdu.Commands;
 

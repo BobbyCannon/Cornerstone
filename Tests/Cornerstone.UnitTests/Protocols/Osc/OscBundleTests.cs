@@ -52,7 +52,7 @@ public class OscBundleTests : CornerstoneUnitTest
 		};
 
 		var actual = OscPacket.Parse(data);
-		Assert.IsNotNull(actual);
+		IsNotNull(actual);
 
 		var randomOffset = random.Next(1, data.Length - 2);
 		var randomBit = 1 << random.Next(0, 8);
@@ -72,7 +72,7 @@ public class OscBundleTests : CornerstoneUnitTest
 			OscError.Message.UnknownTagType
 		};
 
-		Assert.IsTrue(possibleErrors.Any(x => x.Equals(error.Code)), error.Code.ToString());
+		IsTrue(possibleErrors.Any(x => x.Equals(error.Code)), error.Code.ToString());
 	}
 
 	[TestMethod]

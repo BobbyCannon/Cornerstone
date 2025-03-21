@@ -19,7 +19,7 @@ public class ModuleWeaver : AbstractModuleWeaver
 	#region Properties
 
 	public override bool ShouldCleanReference => true;
-	
+
 	public IEnumerable<CornerstoneWeaver> Weavers { get; private set; }
 
 	#endregion

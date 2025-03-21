@@ -33,23 +33,60 @@ public class OscTimeTagTests : CornerstoneUnitTest
 		var expected = new DateTime(2019, 1, 20, 08, 50, 12, DateTimeKind.Utc);
 		var time1 = OscTimeTag.FromDateTime(expected);
 		var time2 = new OscTimeTag(16136033268821655552);
-		Assert.IsTrue(time1 == time2);
+		IsTrue(time1 == time2);
 		AreEqual(time1, time2);
 
 		time1 = OscTimeTag.MinValue;
 		time2 = OscTimeTag.MaxValue;
-		Assert.IsTrue(time1 < time2);
-		Assert.IsFalse(time1 > time2);
+		IsTrue(time1 < time2);
+		IsFalse(time1 > time2);
 
 		time1 = OscTimeTag.MinValue;
 		time2 = OscTimeTag.MinValue;
-		Assert.IsTrue(time1 == time2);
-		Assert.IsFalse(time1 != time2);
+		IsTrue(time1 == time2);
+		IsFalse(time1 != time2);
 
 		time1 = OscTimeTag.MinValue;
 		time2 = OscTimeTag.MinValue;
-		Assert.IsTrue(time1 >= time2);
-		Assert.IsTrue(time1 <= time2);
+		IsTrue(time1 >= time2);
+		IsTrue(time1 <= time2);
+	}
+
+	[TestMethod]
+	public void Debugging()
+	{
+		var datetime = new DateTime(636835710121234567, DateTimeKind.Utc);
+		datetime.ToString("O").Dump();
+		var span = datetime.ToUniversalTime() - OscTimeTag.MinDateTime;
+		var seconds = span.TotalSeconds;
+		var secondsUInt = (uint) seconds;
+		var remainingTicks = span.Ticks - ((decimal) secondsUInt * TimeSpan.TicksPerSecond);
+		var fraction = (remainingTicks / TimeSpan.TicksPerMillisecond / 1000.0m) * uint.MaxValue;
+		var test = ((ulong) (secondsUInt & 0xFFFFFFFF) << 32) | ((ulong) fraction & 0xFFFFFFFF);
+		test.Dump();
+
+		var timetag3 = new OscTimeTag(datetime);
+		timetag3.Value.Dump();
+
+		var timetag = new OscTimeTag(test);
+		timetag.Seconds.Dump("seconds: ");
+		timetag.SubSeconds.Dump("sub seconds: ");
+		timetag.PreciseValue.Dump("precise1: ");
+
+		var ticks1 = Math.Round(((decimal) timetag.SubSeconds / uint.MaxValue) * 1000, 4, MidpointRounding.AwayFromZero);
+		ticks1.Dump("Ticks1: ");
+		var ticks2 = ticks1 * TimeSpan.TicksPerMillisecond;
+		ticks2.Dump("Ticks2: ");
+
+		var datetime2 = OscTimeTag.MinDateTime.AddSeconds(timetag.Seconds).AddTicks((long) ticks2);
+		datetime2.ToString("O").Dump();
+
+		var datetime3 = timetag.ToDateTime();
+		datetime3.ToString("O").Dump();
+
+		var timetag2 = datetime2.ToOscTimeTag();
+		timetag2.PreciseValue.Dump("precise2: ");
+		AreEqual(timetag.PreciseValue, timetag2.PreciseValue);
 	}
 
 	[TestMethod]
@@ -183,43 +220,6 @@ public class OscTimeTagTests : CornerstoneUnitTest
 	{
 		var expected = new OscTimeTag(0);
 		AreEqual(expected, OscTimeTag.MinValue);
-	}
-
-	[TestMethod]
-	public void Name()
-	{
-		var datetime = new DateTime(636835710121234567, DateTimeKind.Utc);
-		datetime.ToString("O").Dump();
-		var span = datetime.ToUniversalTime() - OscTimeTag.MinDateTime;
-		var seconds = span.TotalSeconds;
-		var secondsUInt = (uint) seconds;
-		var remainingTicks = span.Ticks - ((decimal) secondsUInt * TimeSpan.TicksPerSecond);
-		var fraction = (remainingTicks / TimeSpan.TicksPerMillisecond / 1000.0m) * uint.MaxValue;
-		var test = ((ulong) (secondsUInt & 0xFFFFFFFF) << 32) | ((ulong) fraction & 0xFFFFFFFF);
-		test.Dump();
-
-		var timetag3 = new OscTimeTag(datetime);
-		timetag3.Value.Dump();
-
-		var timetag = new OscTimeTag(test);
-		timetag.Seconds.Dump("seconds: ");
-		timetag.SubSeconds.Dump("sub seconds: ");
-		timetag.PreciseValue.Dump("precise1: ");
-
-		var ticks1 = Math.Round(((decimal) timetag.SubSeconds / uint.MaxValue) * 1000, 4, MidpointRounding.AwayFromZero);
-		ticks1.Dump("Ticks1: ");
-		var ticks2 = ticks1 * TimeSpan.TicksPerMillisecond;
-		ticks2.Dump("Ticks2: ");
-
-		var datetime2 = OscTimeTag.MinDateTime.AddSeconds(timetag.Seconds).AddTicks((long) ticks2);
-		datetime2.ToString("O").Dump();
-
-		var datetime3 = timetag.ToDateTime();
-		datetime3.ToString("O").Dump();
-
-		var timetag2 = datetime2.ToOscTimeTag();
-		timetag2.PreciseValue.Dump("precise2: ");
-		AreEqual(timetag.PreciseValue, timetag2.PreciseValue);
 	}
 
 	[TestMethod]

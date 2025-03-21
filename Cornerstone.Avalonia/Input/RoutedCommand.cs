@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows.Input;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using KeyGesture = Avalonia.Input.KeyGesture;
 
 #endregion
 

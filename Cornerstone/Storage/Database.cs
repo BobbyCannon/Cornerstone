@@ -35,11 +35,13 @@ public abstract class Database : IDatabase
 	/// <summary>
 	/// Initializes an instance of the database class.
 	/// </summary>
+	/// <param name="dateTimeProvider"> The provider for date and time. </param>
 	/// <param name="settings"> The options for this database. </param>
-	protected Database(DatabaseSettings settings)
+	protected Database(IDateTimeProvider dateTimeProvider, DatabaseSettings settings)
 	{
 		_collectionChangeTracker = new CollectionChangeTracker();
 
+		DateTimeProvider = dateTimeProvider;
 		IndexConfigurations = new Dictionary<string, IndexConfiguration>();
 		OneToManyRelationships = new Dictionary<string, object[]>();
 		DatabaseSettings = settings?.DeepClone() ?? new DatabaseSettings();
@@ -57,7 +59,7 @@ public abstract class Database : IDatabase
 	public DatabaseSettings DatabaseSettings { get; }
 
 	/// <inheritdoc />
-	public IDateTimeProvider DateTimeProvider { get; internal set; }
+	public IDateTimeProvider DateTimeProvider { get; private set; }
 
 	/// <inheritdoc />
 	public bool IsDisposed { get; private set; }
@@ -79,19 +81,6 @@ public abstract class Database : IDatabase
 	#endregion
 
 	#region Methods
-
-	/// <inheritdoc />
-	public T Add<T, T2>(T item) where T : Entity<T2>
-	{
-		GetRepository<T, T2>().Add(item);
-		return item;
-	}
-
-	/// <inheritdoc />
-	public virtual bool CanMigrate()
-	{
-		return false;
-	}
 
 	/// <summary>
 	/// Discard all changes made in this context to the underlying database.
@@ -135,6 +124,22 @@ public abstract class Database : IDatabase
 	public IRepository<T, T2> GetReadOnlyRepository<T, T2>() where T : Entity<T2>
 	{
 		return GetRepository<T, T2>();
+	}
+
+	/// <summary>
+	/// Gets a repository for the provided type.
+	/// </summary>
+	/// <typeparam name="T"> The type of the item in the repository. </typeparam>
+	/// <returns> The repository for the type. </returns>
+	public IRepository<T> GetRepository<T>() where T : Entity
+	{
+		var entityType = typeof(T);
+		var entityKey = entityType.BaseType?.GetGenericArguments().FirstOrDefault();
+		var genericMethod = typeof(Database)
+			.GetCachedGenericMethod(nameof(GetRepository), [entityType, entityKey],
+				[], ReflectionExtensions.DefaultPublicFlags
+			);
+		return (IRepository<T>)genericMethod.Invoke(this, []);
 	}
 
 	/// <summary>
@@ -204,7 +209,11 @@ public abstract class Database : IDatabase
 	/// <typeparam name="T2"> The type of the entity key of the host. </typeparam>
 	/// <typeparam name="T3"> The entity to build a relationship to. </typeparam>
 	/// <typeparam name="T4"> The type of the entity key to build the relationship to. </typeparam>
-	public PropertyConfiguration<T1, T2> HasRequired<T1, T2, T3, T4>(bool required, Expression<Func<T1, T3>> entity, Expression<Func<T1, object>> foreignKey, Expression<Func<T3, ICollection<T1>>> collectionKey = null)
+	public PropertyConfiguration<T1, T2> HasRequired<T1, T2, T3, T4>(
+		bool required,
+		Expression<Func<T1, T3>> entity,
+		Expression<Func<T1, object>> foreignKey,
+		Expression<Func<T3, ICollection<T1>>> collectionKey = null)
 		where T1 : Entity<T2>
 		where T3 : Entity<T4>
 	{
@@ -214,7 +223,9 @@ public abstract class Database : IDatabase
 		{
 			var key = $"{typeof(T3).Name}-{collectionKey.GetExpressionName()}";
 			var repositoryFactory = GetRepository<T1, T2>();
-			OneToManyRelationships.AddIfMissing(key, () => [repositoryFactory, entity, entity.Compile(), foreignKey, foreignKey.Compile(), property]);
+			OneToManyRelationships.AddIfMissing(key,
+				() => [repositoryFactory, entity, entity.Compile(), foreignKey, foreignKey.Compile(), property]
+			);
 		}
 
 		return property;
@@ -289,7 +300,7 @@ public abstract class Database : IDatabase
 			}
 
 			Repositories.Values.ForEach(x => x.UpdateRelationships());
-			Repositories.Values.ForEach(x => x.AssignKeys([]));
+			Repositories.Values.ForEach(x => x.AssignKeys());
 			Repositories.Values.ForEach(x => x.ValidateEntities());
 			Repositories.Values.ForEach(x => x.UpdateRelationships());
 
@@ -505,6 +516,15 @@ public abstract class Database : IDatabase
 
 		collection.ForEach(x => response.AddOrUpdate((T2) x));
 		return response;
+	}
+
+	private IDatabaseRepository CreateRepository(Type entityType, Type entityKey)
+	{
+		var genericMethod = typeof(Database)
+			.GetCachedGenericMethod(nameof(CreateRepository), [entityType, entityKey],
+				[], ReflectionExtensions.DefaultPrivateFlags
+			);
+		return (IDatabaseRepository) genericMethod.Invoke(this, []);
 	}
 
 	private Repository<T, T2> CreateRepository<T, T2>() where T : Entity<T2>
@@ -853,21 +873,6 @@ public interface IDatabase : IDisposable
 	#region Methods
 
 	/// <summary>
-	/// Adds an entity to the database
-	/// </summary>
-	/// <typeparam name="T"> The type of the entity to get a repository for. </typeparam>
-	/// <typeparam name="T2"> The type of the entity key. </typeparam>
-	/// <param name="item"> The item to be added. </param>
-	/// <returns> The entity that was added. </returns>
-	T Add<T, T2>(T item) where T : Entity<T2>;
-
-	/// <summary>
-	/// Determine if the database can migrate.
-	/// </summary>
-	/// <returns> Return true if the database can migrate. </returns>
-	bool CanMigrate();
-
-	/// <summary>
 	/// Discard all changes made in this context to the underlying database.
 	/// </summary>
 	int DiscardChanges();
@@ -890,6 +895,13 @@ public interface IDatabase : IDisposable
 	/// <typeparam name="T2"> The type of the entity key. </typeparam>
 	/// <returns> The repository of entities requested. </returns>
 	IRepository<T, T2> GetReadOnlyRepository<T, T2>() where T : Entity<T2>;
+
+	/// <summary>
+	/// Gets a repository of the requested entity.
+	/// </summary>
+	/// <typeparam name="T"> The type of the entity to get a repository for. </typeparam>
+	/// <returns> The repository of entities requested. </returns>
+	IRepository<T> GetRepository<T>() where T : Entity;
 
 	/// <summary>
 	/// Gets a repository of the requested entity.

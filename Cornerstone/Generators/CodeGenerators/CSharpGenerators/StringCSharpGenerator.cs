@@ -40,7 +40,6 @@ public class StringCSharpGenerator : CSharpCodeGenerator
 			string sValue => $"\"{sValue.Escape()}\"",
 			char sValue => $"'{sValue.ToString().Escape()}'",
 			GapBuffer<char> sValue => $"new GapBuffer<char>(\"{sValue.ToString().Escape()}\")",
-			RopeBuffer<char> sValue => $"new RopeBuffer<char>(\"{sValue.ToString().Escape()}\")",
 			StringBuilder sValue => $"new StringBuilder(\"{sValue.ToString().Escape()}\")",
 			TextBuilder sValue => $"new TextBuilder(\"{sValue.ToString().Escape()}\")",
 			JsonString sValue => $"new JsonString(\"{sValue.Value.Escape()}\")",

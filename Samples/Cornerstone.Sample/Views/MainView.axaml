@@ -3,52 +3,68 @@
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:vm="clr-namespace:Cornerstone.Sample.ViewModels"
-		mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="600"
+		xmlns:sample="clr-namespace:Cornerstone.Sample"
+		xmlns:converters="clr-namespace:Cornerstone.Avalonia.Converters;assembly=Cornerstone.Avalonia"
+		mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="800"
 		x:Class="Cornerstone.Sample.Views.MainView"
 		x:DataType="vm:MainViewModel"
 		x:Name="This">
-	<DockPanel LastChildFill="True">
-		<Grid DockPanel.Dock="Top"
-				x:Name="MainGrid">
-			<WrapPanel Grid.Column="0"
-					Margin="10,10,10,0"
-					Orientation="Horizontal">
-				<WrapPanel.Styles>
-					<Style Selector="WrapPanel > :is(Control)">
-						<Setter Property="Margin" Value="5" />
-					</Style>
-				</WrapPanel.Styles>
-				<TextBlock FontSize="16" Text="Tab:" VerticalAlignment="Center" />
-				<ComboBox SelectedIndex="0"
-						ItemsSource="{Binding Tabs, Mode=OneWay}"
-						SelectedItem="{Binding SelectedTab, Mode=TwoWay}"
-						MinWidth="220">
-					<ComboBox.ItemTemplate>
-						<DataTemplate>
-							<TextBlock Text="{Binding Header}" />
-						</DataTemplate>
-					</ComboBox.ItemTemplate>
-				</ComboBox>
-				<TextBlock FontSize="16" Text="Theme:" VerticalAlignment="Center" />
-				<ComboBox ItemsSource="{x:Static Theme.Colors}"
-						SelectedItem="{Binding ApplicationSettings.ThemeColor}"
-						MinWidth="130" />
-				<ToggleSwitch
-						IsChecked="{Binding ApplicationSettings.CycleThemes, Mode=TwoWay}"
-						OnContent="Cycle Themes"
-						OffContent="Cycle Themes" />
-				<ToggleSwitch
-						IsChecked="{Binding ApplicationSettings.UseDarkMode}"
-						OnContent="Dark"
-						OffContent="Light" />
-				<ToggleSwitch
-						IsChecked="{Binding ApplicationSettings.UseGamepadForInput}"
-						OnContent="Gamepad as Input"
-						OffContent="Gamepad as Input"
-						ToolTip.Tip="Gamepad as Keyboard / Mouse Input" />
-			</WrapPanel>
-		</Grid>
-		<ContentPresenter Content="{Binding SelectedTab.Content}"
-				Margin="10" />
-	</DockPanel>
+	<NavigationMenu x:Name="Menu"
+			AutoExpandOnResize="{Binding ApplicationSettings.MenuAutoExpandOnResize, Mode=TwoWay}"
+			AutoCollapseOnSelectionChange="{Binding ApplicationSettings.MenuAutoCollapseOnSelectionChange, Mode=TwoWay}"
+			ItemsSource="{Binding Tabs}"
+			SelectedItem="{Binding SelectedTab}"
+			IsOpen="{Binding ApplicationSettings.MenuIsOpen, Mode=TwoWay}">
+		<NavigationMenu.CustomContent>
+			<Border CornerRadius="80"
+					ClipToBounds="True"
+					Margin="10"
+					MaxHeight="160"
+					MaxWidth="160">
+				<Image Source="/Assets/profile.jpg" />
+			</Border>
+		</NavigationMenu.CustomContent>
+		<FlyoutBase.AttachedFlyout>
+			<Flyout>
+				<StackPanel>
+					<ComboBox SelectedItem="{Binding ElementName=Menu, Path=DisplayMode, Mode=TwoWay}"
+							Margin="0,0,20,0">
+						<ComboBox.Items>
+							<SplitViewDisplayMode>CompactInline</SplitViewDisplayMode>
+							<SplitViewDisplayMode>CompactOverlay</SplitViewDisplayMode>
+							<SplitViewDisplayMode>Inline</SplitViewDisplayMode>
+							<SplitViewDisplayMode>Overlay</SplitViewDisplayMode>
+						</ComboBox.Items>
+					</ComboBox>
+					<ToggleSwitch
+							IsChecked="{Binding ElementName=Menu, Path=IsOpen, Mode=TwoWay}"
+							OnContent="IsOpen"
+							OffContent="IsOpen"
+							Margin="0,0,20,0" />
+
+					<ToggleSwitch
+							IsChecked="{Binding ElementName=Menu, Path=AutoCollapseOnSelectionChange, Mode=TwoWay}"
+							OnContent="Auto Collapse On Change"
+							OffContent="Auto Collapse On Change" />
+					<ToggleSwitch
+							IsChecked="{Binding ElementName=Menu, Path=AutoExpandOnResize, Mode=TwoWay}"
+							OnContent="Auto Expand On Resize"
+							OffContent="Auto Expand On Resize" />
+				</StackPanel>
+			</Flyout>
+		</FlyoutBase.AttachedFlyout>
+		<NavigationMenu.DataTemplates>
+			<sample:ViewModelLocator />
+		</NavigationMenu.DataTemplates>
+		<NavigationMenu.ItemTemplate>
+			<DataTemplate x:DataType="TabItemReferenceViewModel">
+				<StackPanel Orientation="Horizontal">
+					<Path Data="{Binding TabIcon, Converter={x:Static converters:ResourceConverters.GetSvg}}"
+							Height="16" Width="16"
+							Margin="0,0,14,0"/>
+					<TextBlock Text="{Binding TabName}" />
+				</StackPanel>
+			</DataTemplate>
+		</NavigationMenu.ItemTemplate>
+	</NavigationMenu>
 </CornerstoneUserControl>

@@ -97,77 +97,77 @@ public class NumberValueGenerator : ValueGenerator
 	{
 		if ((type == typeof(byte)) || (type == typeof(byte?)))
 		{
-			return new object[] { byte.MinValue, (byte) 0, byte.MaxValue };
+			return [byte.MinValue, (byte) 0, byte.MaxValue];
 		}
 
 		if ((type == typeof(sbyte)) || (type == typeof(sbyte?)))
 		{
-			return new object[] { sbyte.MinValue, (sbyte) 0, sbyte.MaxValue };
+			return [sbyte.MinValue, (sbyte) 0, sbyte.MaxValue];
 		}
 
 		if ((type == typeof(short)) || (type == typeof(short?)))
 		{
-			return new object[] { short.MinValue, (short) 0, short.MaxValue };
+			return [short.MinValue, (short) 0, short.MaxValue];
 		}
 
 		if ((type == typeof(ushort)) || (type == typeof(ushort?)))
 		{
-			return new object[] { ushort.MinValue, (ushort) 0, ushort.MaxValue };
+			return [ushort.MinValue, (ushort) 0, ushort.MaxValue];
 		}
 
 		if ((type == typeof(int)) || (type == typeof(int?)))
 		{
-			return new object[] { int.MinValue, 0, int.MaxValue };
+			return [int.MinValue, 0, int.MaxValue];
 		}
 
 		if ((type == typeof(uint)) || (type == typeof(uint?)))
 		{
-			return new object[] { uint.MinValue, (uint) 0, uint.MaxValue };
+			return [uint.MinValue, (uint) 0, uint.MaxValue];
 		}
 
 		if ((type == typeof(long)) || (type == typeof(long?)))
 		{
-			return new object[] { long.MinValue, (long) 0, long.MaxValue };
+			return [long.MinValue, (long) 0, long.MaxValue];
 		}
 
 		if ((type == typeof(ulong)) || (type == typeof(ulong?)))
 		{
-			return new object[] { ulong.MinValue, (ulong) 0, ulong.MaxValue };
+			return [ulong.MinValue, (ulong) 0, ulong.MaxValue];
 		}
 		
 		#if NET7_0_OR_GREATER
 		if ((type == typeof(Int128)) || (type == typeof(Int128?)))
 		{
-			return new object[] { Int128.MinValue, (Int128) 0, Int128.MaxValue };
+			return [Int128.MinValue, (Int128) 0, Int128.MaxValue];
 		}
 
 		if ((type == typeof(UInt128)) || (type == typeof(UInt128?)))
 		{
-			return new object[] { UInt128.MinValue, (UInt128) 0, UInt128.MaxValue };
+			return [UInt128.MinValue, (UInt128) 0, UInt128.MaxValue];
 		}
 		#endif
 
 		if ((type == typeof(IntPtr)) || (type == typeof(IntPtr?)))
 		{
 			#if !NETSTANDARD
-			return new object[] { IntPtr.MinValue, (IntPtr) 0, IntPtr.MaxValue };
+			return [IntPtr.MinValue, (IntPtr) 0, IntPtr.MaxValue];
 			#else
-			return new object[] { new IntPtr(int.MinValue), (IntPtr) 0, new IntPtr(int.MaxValue) };
+			return [new IntPtr(int.MinValue), (IntPtr) 0, new IntPtr(int.MaxValue)];
 			#endif
 		}
 
 		if ((type == typeof(UIntPtr)) || (type == typeof(UIntPtr?)))
 		{
 			#if !NETSTANDARD
-			return new object[] { UIntPtr.MinValue, (UIntPtr) 0, UIntPtr.MaxValue };
+			return [UIntPtr.MinValue, (UIntPtr) 0, UIntPtr.MaxValue];
 			#else
-			return new object[] { new UIntPtr(uint.MinValue), (UIntPtr) 0, new UIntPtr(uint.MaxValue) };
+			return [new UIntPtr(uint.MinValue), (UIntPtr) 0, new UIntPtr(uint.MaxValue)];
 			#endif
 		}
 
 		if ((type == typeof(decimal)) || (type == typeof(decimal?)))
 		{
-			return new object[] { decimal.MinValue, (decimal) 0, decimal.MaxValue };
+			return [decimal.MinValue, (decimal) 0, decimal.MaxValue];
 		}
 
 		if ((type == typeof(float)) || (type == typeof(float?)))

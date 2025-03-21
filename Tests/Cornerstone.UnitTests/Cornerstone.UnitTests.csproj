@@ -3,7 +3,6 @@
 		<OutputType>Library</OutputType>
 		<TargetFrameworks>net9.0-windows10.0.19041.0</TargetFrameworks>
 		<UseWpf>true</UseWpf>
-		<UseWinforms>true</UseWinforms>
 		<IsPackable>false</IsPackable>
 		<IsTestProject>true</IsTestProject>
 		<SignAssembly>true</SignAssembly>
@@ -15,12 +14,15 @@
 		<PackageReference Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
 		<PackageReference Include="Avalonia.Themes.Simple" Version="$(AvaloniaVersion)" />
 		<PackageReference Include="Avalonia.Headless.NUnit" Version="$(AvaloniaVersion)" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+		<PackageReference Include="PowerShellStandard.Library" Version="5.1.1">
+			<PrivateAssets>All</PrivateAssets>
+		</PackageReference>
 		<PackageReference Include="Moq" Version="4.20.72" />
-		<PackageReference Include="MSTest.TestAdapter" Version="3.7.0" />
-		<PackageReference Include="MSTest.TestFramework" Version="3.7.0" />
+		<PackageReference Include="MSTest.TestAdapter" Version="3.8.2" />
+		<PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
 		<PackageReference Include="NUnit" Version="4.3.2" />
-		<PackageReference Include="System.IO.Ports" Version="9.0.0" />
+		<PackageReference Include="System.IO.Ports" Version="9.0.2" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\Cornerstone.Automation\Cornerstone.Automation.csproj" />
@@ -34,7 +36,10 @@
 		<ProjectReference Include="..\..\Samples\Sample.Client.Data.Sqlite\Sample.Client.Data.Sqlite.csproj" />
 		<ProjectReference Include="..\..\Samples\Sample.Client.Data.Sql\Sample.Client.Data.Sql.csproj" />
 		<ProjectReference Include="..\..\Samples\Sample.Client.Data\Sample.Client.Data.csproj" />
+		<ProjectReference Include="..\..\Samples\Sample.Server.Data.Sqlite\Sample.Server.Data.Sqlite.csproj" />
+		<ProjectReference Include="..\..\Samples\Sample.Server.Data.Sql\Sample.Server.Data.Sql.csproj" />
 		<ProjectReference Include="..\..\Samples\Sample.Server.Data\Sample.Server.Data.csproj" />
+		<ProjectReference Include="..\..\Samples\Sample.Server.Website\Sample.Server.Website.csproj" />
 		<ProjectReference Include="..\..\Samples\Sample.Shared\Sample.Shared.csproj" />
 		<ProjectReference Include="..\Cornerstone.TestAssembly\Cornerstone.TestAssembly.csproj" />
 		<ProjectReference Include="..\Cornerstone.Weaver.TestAssembly\Cornerstone.Weaver.TestAssembly.csproj" />

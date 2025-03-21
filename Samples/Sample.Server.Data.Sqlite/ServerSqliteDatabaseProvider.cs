@@ -1,6 +1,7 @@
 ﻿#region References
 
 using Cornerstone.Runtime;
+using Cornerstone.Storage;
 using Sample.Shared.Storage;
 
 #endregion
@@ -17,7 +18,8 @@ public class ServerSqliteDatabaseProvider : ServerDatabaseProvider
 
 	#region Constructors
 
-	public ServerSqliteDatabaseProvider(string connectionString, IDateTimeProvider dateTimeProvider) : base(dateTimeProvider)
+	public ServerSqliteDatabaseProvider(string connectionString, IDateTimeProvider dateTimeProvider, DatabaseKeyCache keyCache)
+		: base(dateTimeProvider, keyCache)
 	{
 		_connectionString = connectionString;
 	}
@@ -30,6 +32,11 @@ public class ServerSqliteDatabaseProvider : ServerDatabaseProvider
 	protected override IServerDatabase GetDatabaseFromProvider()
 	{
 		return ServerSqliteDatabase.UseSqlite(_connectionString);
+	}
+
+	protected override IServerDatabase GetDatabaseFromProvider(DatabaseSettings settings, DatabaseKeyCache keyCache)
+	{
+		return ServerSqliteDatabase.UseSqlite(_connectionString, settings, keyCache);
 	}
 
 	#endregion

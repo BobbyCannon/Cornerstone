@@ -4,14 +4,12 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Cornerstone.Collections;
 using Cornerstone.Extensions;
 using Cornerstone.Internal;
-#if !NETSTANDARD
-using System.Diagnostics.CodeAnalysis;
-#endif
 
 #endregion
 
@@ -35,38 +33,6 @@ public abstract class Notifiable<T> : Notifiable, ICloneable<T>, IUpdateable<T>
 	public T ShallowClone(IncludeExcludeSettings settings = null)
 	{
 		return DeepClone(0, settings);
-	}
-
-	/// <inheritdoc />
-	public virtual bool ShouldUpdate(T update, IncludeExcludeSettings settings)
-	{
-		return UpdateableExtensions.ShouldUpdate(this, update, settings);
-	}
-
-	/// <inheritdoc />
-	public bool TryUpdateWith(T update)
-	{
-		return TryUpdateWith(update, IncludeExcludeSettings.Empty);
-	}
-
-	/// <inheritdoc />
-	public bool TryUpdateWith(T update, IncludeExcludeSettings settings)
-	{
-		return ShouldUpdate(update, settings)
-			&& UpdateWith(update, settings);
-	}
-
-	/// <inheritdoc />
-	public bool UpdateWith(T update)
-	{
-		return UpdateWith(update, IncludeExcludeSettings.Empty);
-	}
-
-	/// <inheritdoc />
-	public bool UpdateWith(T update, UpdateableAction action)
-	{
-		var options = Cache.GetSettings(GetRealType(), action);
-		return UpdateWith(update, options);
 	}
 
 	/// <inheritdoc />
@@ -348,7 +314,7 @@ public abstract class Notifiable : INotifiable, IUpdateable, ICloneable, IUpdate
 
 		assignment?.Invoke(update);
 	}
-	
+
 	protected T UpdateProperty<T>(T current, T update)
 	{
 		if (current is IUpdateable updateable

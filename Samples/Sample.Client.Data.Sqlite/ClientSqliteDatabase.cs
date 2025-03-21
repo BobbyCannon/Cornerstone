@@ -24,13 +24,6 @@ public class ClientSqliteDatabase : ClientDatabase
 
 	#endregion
 
-	#region Properties
-
-	/// <inheritdoc />
-	public override string[] SyncOrder => ClientMemoryDatabase.GetSyncOrder();
-
-	#endregion
-
 	#region Methods
 
 	/// <summary>

@@ -16,6 +16,12 @@ namespace Cornerstone.Web;
 /// </summary>
 public class WebCredential : Credential
 {
+	#region Constants
+
+	public const string AuthenticationScheme = "Basic";
+
+	#endregion
+
 	#region Constructors
 
 	/// <summary>
@@ -64,7 +70,7 @@ public class WebCredential : Credential
 	/// </summary>
 	public static WebCredential FromAuthenticationHeaderValue(AuthenticationHeaderValue headerValue)
 	{
-		if (!string.Equals(headerValue.Scheme, "Basic", StringComparison.OrdinalIgnoreCase))
+		if (!string.Equals(headerValue.Scheme, AuthenticationScheme, StringComparison.OrdinalIgnoreCase))
 		{
 			throw new SecurityException("The authentication header is incorrect schema.");
 		}

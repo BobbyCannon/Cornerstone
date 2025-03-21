@@ -7,7 +7,7 @@ using System.Linq;
 using Cornerstone.Extensions;
 using Cornerstone.Generators.CodeGenerators;
 using Cornerstone.Testing;
-using Cornerstone.Text.Human;
+using Cornerstone.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion

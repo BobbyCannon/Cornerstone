@@ -63,7 +63,7 @@ public class ComparerTests : CornerstoneUnitTest
 				{
 					TypeIncludeExcludeSettings = new Dictionary<Type, IncludeExcludeSettings>
 					{
-						{ typeof(Person), IncludeExcludeSettings.FromExclusions(nameof(Person.FirstName), nameof(Person.FullName)) }
+						{ typeof(Person), new[] { nameof(Person.FirstName), nameof(Person.FullName) }.ToOnlyExcludingSettings() }
 					}
 				}
 			).Result
@@ -93,11 +93,11 @@ public class ComparerTests : CornerstoneUnitTest
 		AreEqual(expected, actual, null, settings);
 
 		actual.FirstName = "foo";
-		AreEqual("FirstName\r\nFoo != foo", Comparer.Compare(expected, actual, settings).Differences);
+		AreEqual("FirstName\r\nFoo\r\n **** != ****\r\nfoo\r\n", Comparer.Compare(expected, actual, settings).Differences);
 		
 		actual.FirstName = "Foo";
 		actual.LastName = "bar";
-		AreEqual("FullName\r\nFoo Bar != Foo bar", Comparer.Compare(expected, actual, settings).Differences);
+		AreEqual("FullName\r\nFoo Bar\r\n **** != ****\r\nFoo bar\r\n", Comparer.Compare(expected, actual, settings).Differences);
 		
 		actual.LastName = "Bar";
 		settings.MaxDepth = 3;
@@ -112,7 +112,7 @@ public class ComparerTests : CornerstoneUnitTest
 		actual.Address.Owner.First().FirstName = "hello";
 		settings.MaxDepth = 3;
 		
-		AreEqual("FirstName.Owner.Address\r\nArray index [0] does not match. Hello != hello", Comparer.Compare(expected, actual, settings).Differences);
+		AreEqual("FirstName.Owner.Address\r\nArray index [0] does not match. Hello\r\n **** != ****\r\nhello\r\n", Comparer.Compare(expected, actual, settings).Differences);
 	}
 
 	[TestMethod]
@@ -124,7 +124,7 @@ public class ComparerTests : CornerstoneUnitTest
 
 		AreEqual(CompareResult.NotEqual, session.Result);
 		AreEqual(
-			"Dates\r\nSystem.Collections.Generic.Dictionary`2[System.String,System.DateTime] != null",
+			"Dates\r\nSystem.Collections.Generic.Dictionary`2[System.String,System.DateTime]\r\n **** != ****\r\nnull\r\n",
 			session.Differences.ToString()
 		);
 	}
@@ -132,10 +132,10 @@ public class ComparerTests : CornerstoneUnitTest
 	[TestMethod]
 	public void ValueTypesComparedToNull()
 	{
-		AreEqual("True != null", Comparer.Compare<bool, bool?>(true, null).Differences);
-		AreEqual("null != True", Comparer.Compare<bool?, bool>(null, true).Differences);
-		AreEqual("True != null", Comparer.Compare<bool?, bool?>(true, null).Differences);
-		AreEqual("null != True", Comparer.Compare<bool?, bool?>(null, true).Differences);
+		AreEqual("True\r\n **** != ****\r\nnull\r\n", Comparer.Compare<bool, bool?>(true, null).Differences);
+		AreEqual("null\r\n **** != ****\r\nTrue\r\n", Comparer.Compare<bool?, bool>(null, true).Differences);
+		AreEqual("True\r\n **** != ****\r\nnull\r\n", Comparer.Compare<bool?, bool?>(true, null).Differences);
+		AreEqual("null\r\n **** != ****\r\nTrue\r\n", Comparer.Compare<bool?, bool?>(null, true).Differences);
 	}
 
 	[TestMethod]

@@ -1,7 +1,8 @@
 #region References
 
+using System;
 using Cornerstone.Data;
-using Cornerstone.Extensions;
+using Cornerstone.Internal;
 using Cornerstone.Presentation;
 
 #endregion
@@ -13,7 +14,7 @@ namespace Cornerstone.Location;
 /// </summary>
 public class Location : Bindable<Location>,
 	ICloneable<ILocation<IHorizontalLocation, IVerticalLocation>>,
-	ILocation<IHorizontalLocation, IVerticalLocation>
+	ILocation<IHorizontalLocation, IVerticalLocation>, IEquatable<Location>
 {
 	#region Constructors
 
@@ -62,6 +63,52 @@ public class Location : Bindable<Location>,
 		}
 
 		return response;
+	}
+
+	public bool Equals(Location other)
+	{
+		if (other is null)
+		{
+			return false;
+		}
+		if (ReferenceEquals(this, other))
+		{
+			return true;
+		}
+		return Equals(HorizontalLocation, other.HorizontalLocation)
+			&& Equals(VerticalLocation, other.VerticalLocation);
+	}
+
+	public override bool Equals(object obj)
+	{
+		if (obj is null)
+		{
+			return false;
+		}
+		if (ReferenceEquals(this, obj))
+		{
+			return true;
+		}
+		if (obj.GetType() != GetType())
+		{
+			return false;
+		}
+		return Equals((Location) obj);
+	}
+
+	public override int GetHashCode()
+	{
+		return HashCodeCalculator.Combine(HorizontalLocation, VerticalLocation);
+	}
+
+	public static bool operator ==(Location left, Location right)
+	{
+		return Equals(left, right);
+	}
+
+	public static bool operator !=(Location left, Location right)
+	{
+		return !Equals(left, right);
 	}
 
 	/// <summary>

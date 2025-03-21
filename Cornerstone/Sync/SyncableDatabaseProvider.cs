@@ -13,19 +13,18 @@ public class SyncableDatabaseProvider2<T> : SyncableDatabaseProvider<T>
 {
 	#region Fields
 
-	private readonly Func<T> _databaseProvider;
+	private readonly Func<DatabaseSettings, DatabaseKeyCache, T> _databaseProvider;
 
 	#endregion
 
 	#region Constructors
 
-	public SyncableDatabaseProvider2(Func<T> databaseProvider)
-		: this(databaseProvider, Runtime.DateTimeProvider.RealTime)
-	{
-	}
-
-	public SyncableDatabaseProvider2(Func<T> databaseProvider, IDateTimeProvider dateTimeProvider)
-		: base(dateTimeProvider)
+	public SyncableDatabaseProvider2(
+		Func<DatabaseSettings, DatabaseKeyCache, T> databaseProvider,
+		DatabaseKeyCache databaseKeyCache,
+		DatabaseSettings defaultDatabaseSettings,
+		IDateTimeProvider dateTimeProvider)
+		: base(dateTimeProvider, databaseKeyCache, defaultDatabaseSettings)
 	{
 		_databaseProvider = databaseProvider;
 	}
@@ -34,16 +33,15 @@ public class SyncableDatabaseProvider2<T> : SyncableDatabaseProvider<T>
 
 	#region Methods
 
-	/// <inheritdoc />
-	public override string[] GetSyncOrder()
+	protected override T GetDatabaseFromProvider()
 	{
-		throw new NotImplementedException();
+		return _databaseProvider.Invoke(Settings, KeyCache);
 	}
 
 	/// <inheritdoc />
-	protected override T GetDatabaseFromProvider()
+	protected override T GetDatabaseFromProvider(DatabaseSettings settings, DatabaseKeyCache keyCache)
 	{
-		return _databaseProvider.Invoke();
+		return _databaseProvider.Invoke(settings, keyCache);
 	}
 
 	#endregion
@@ -58,10 +56,20 @@ public abstract class SyncableDatabaseProvider<T>
 {
 	#region Constructors
 
-	protected SyncableDatabaseProvider(IDateTimeProvider dateTimeProvider)
-		: base(dateTimeProvider)
+	protected SyncableDatabaseProvider(
+		IDateTimeProvider dateTimeProvider,
+		DatabaseKeyCache databaseKeyCache,
+		DatabaseSettings databaseSettings)
+		: base(dateTimeProvider, databaseSettings)
 	{
+		KeyCache = databaseKeyCache;
 	}
+
+	#endregion
+
+	#region Properties
+
+	public DatabaseKeyCache KeyCache { get; }
 
 	#endregion
 
@@ -70,26 +78,34 @@ public abstract class SyncableDatabaseProvider<T>
 	/// <inheritdoc />
 	public T GetSyncableDatabase()
 	{
-		return GetDatabase();
+		return GetDatabase(Settings, KeyCache);
 	}
 
 	/// <inheritdoc />
-	public abstract string[] GetSyncOrder();
+	public T GetSyncableDatabase(DatabaseSettings settings, DatabaseKeyCache keyCache)
+	{
+		return GetDatabase(settings, keyCache);
+	}
 
 	/// <inheritdoc />
 	ISyncableDatabase ISyncableDatabaseProvider.GetSyncableDatabase()
 	{
-		return GetSyncableDatabase();
+		return GetSyncableDatabase(Settings, KeyCache);
+	}
+
+	/// <inheritdoc />
+	ISyncableDatabase ISyncableDatabaseProvider.GetSyncableDatabase(DatabaseSettings settings, DatabaseKeyCache keyCache)
+	{
+		return GetSyncableDatabase(settings, keyCache);
 	}
 
 	#endregion
 }
 
 /// <summary>
-/// Represents a database provider for syncable databases.
+/// Represents a database provider for syncable databases that is also a normal database provider.
 /// </summary>
-public interface ISyncableDatabaseProvider<out T>
-	: IDatabaseProvider<T>, ISyncableDatabaseProvider
+public interface ISyncableDatabaseProvider<out T> : ISyncableDatabaseProvider, IDatabaseProvider<T>
 	where T : ISyncableDatabase
 {
 	#region Methods
@@ -100,6 +116,14 @@ public interface ISyncableDatabaseProvider<out T>
 	/// <returns> The database instance. </returns>
 	new T GetSyncableDatabase();
 
+	/// <summary>
+	/// Gets an instance of the database.
+	/// </summary>
+	/// <param name="options"> The database options to use for the new database instance. </param>
+	/// <param name="keyCache"> An optional key manager for tracking entity IDs (primary and sync). </param>
+	/// <returns> The database instance. </returns>
+	new T GetSyncableDatabase(DatabaseSettings options, DatabaseKeyCache keyCache);
+
 	#endregion
 }
 
@@ -108,6 +132,15 @@ public interface ISyncableDatabaseProvider<out T>
 /// </summary>
 public interface ISyncableDatabaseProvider : IDatabaseProvider
 {
+	#region Properties
+
+	/// <summary>
+	/// An optional key manager for tracking entity IDs (primary and sync).
+	/// </summary>
+	DatabaseKeyCache KeyCache { get; }
+
+	#endregion
+
 	#region Methods
 
 	/// <summary>
@@ -117,10 +150,12 @@ public interface ISyncableDatabaseProvider : IDatabaseProvider
 	ISyncableDatabase GetSyncableDatabase();
 
 	/// <summary>
-	/// Gets the order in which to sync entities.
+	/// Gets an instance of the database.
 	/// </summary>
-	/// <returns> </returns>
-	string[] GetSyncOrder();
+	/// <param name="options"> The database options to use for the new database instance. </param>
+	/// <param name="keyCache"> An optional key manager for tracking entity IDs (primary and sync). </param>
+	/// <returns> The database instance. </returns>
+	ISyncableDatabase GetSyncableDatabase(DatabaseSettings options, DatabaseKeyCache keyCache);
 
 	#endregion
 }

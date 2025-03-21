@@ -10,7 +10,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Cornerstone.UnitTests.Extensions;
 
 [TestClass]
-public class VersionExtensionsTests
+public class VersionExtensionsTests : CornerstoneUnitTest
 {
 	#region Methods
 
@@ -32,7 +32,7 @@ public class VersionExtensionsTests
 		{
 			index.Dump();
 			var scenario = scenarios[index];
-			Assert.IsTrue(scenario.IsDefault());
+			IsTrue(scenario.IsDefault());
 		}
 	}
 

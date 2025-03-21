@@ -11,6 +11,8 @@ using Cornerstone.Automation.Desktop;
 using Cornerstone.Automation.Desktop.Elements;
 using Cornerstone.Automation.Internal;
 using Cornerstone.Extensions;
+using Cornerstone.Platforms.Windows;
+using Cornerstone.Platforms.Windows.Native;
 using Cornerstone.Windows.Native;
 using Interop.UIAutomationClient;
 

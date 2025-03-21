@@ -21,6 +21,205 @@ namespace Sample.Server.Data.Sqlite.Migrations
                 .HasAnnotation("Proxies:CheckEquality", false)
                 .HasAnnotation("Proxies:LazyLoading", true);
 
+            modelBuilder.Entity("Cornerstone.Logging.TrackerPathConfigurationEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CompletedOnName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DataName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsException")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("ModifiedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name01")
+                        .HasMaxLength(900)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name02")
+                        .HasMaxLength(900)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name03")
+                        .HasMaxLength(900)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name04")
+                        .HasMaxLength(900)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name05")
+                        .HasMaxLength(900)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name06")
+                        .HasMaxLength(900)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name07")
+                        .HasMaxLength(900)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name08")
+                        .HasMaxLength(900)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name09")
+                        .HasMaxLength(900)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PathName")
+                        .IsRequired()
+                        .HasMaxLength(896)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PathType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("StartedOnName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Type01")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Type02")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Type03")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Type04")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Type05")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Type06")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Type07")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Type08")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Type09")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SyncId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_TrackerPathConfigurations_SyncId");
+
+                    b.ToTable("TrackerPathConfigurations", "dbo");
+                });
+
+            modelBuilder.Entity("Cornerstone.Logging.TrackerPathEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CompletedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ConfigurationId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Data")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("ElapsedTicks")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsException")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("ModifiedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("ParentId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("StartedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Value01")
+                        .HasMaxLength(900)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value02")
+                        .HasMaxLength(900)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value03")
+                        .HasMaxLength(900)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value04")
+                        .HasMaxLength(900)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value05")
+                        .HasMaxLength(900)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value06")
+                        .HasMaxLength(900)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value07")
+                        .HasMaxLength(900)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value08")
+                        .HasMaxLength(900)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value09")
+                        .HasMaxLength(900)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConfigurationId");
+
+                    b.HasIndex("ParentId");
+
+                    b.HasIndex("SyncId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_TrackerPaths_SyncId");
+
+                    b.ToTable("TrackerPaths", "dbo");
+                });
+
             modelBuilder.Entity("Sample.Shared.Storage.Server.AccountEntity", b =>
                 {
                     b.Property<int>("Id")
@@ -482,197 +681,22 @@ namespace Sample.Server.Data.Sqlite.Migrations
                     b.ToTable("Settings", "dbo");
                 });
 
-            modelBuilder.Entity("Sample.Shared.Storage.Server.TrackerPathConfigurationEntity", b =>
+            modelBuilder.Entity("Cornerstone.Logging.TrackerPathEntity", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                    b.HasOne("Cornerstone.Logging.TrackerPathConfigurationEntity", "Configuration")
+                        .WithMany("Paths")
+                        .HasForeignKey("ConfigurationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
-                    b.Property<string>("CompletedOnName")
-                        .HasColumnType("TEXT");
+                    b.HasOne("Cornerstone.Logging.TrackerPathEntity", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Property<DateTime>("CreatedOn")
-                        .HasColumnType("datetime2");
+                    b.Navigation("Configuration");
 
-                    b.Property<string>("DataName")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("ModifiedOn")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name01")
-                        .HasMaxLength(900)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name02")
-                        .HasMaxLength(900)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name03")
-                        .HasMaxLength(900)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name04")
-                        .HasMaxLength(900)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name05")
-                        .HasMaxLength(900)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name06")
-                        .HasMaxLength(900)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name07")
-                        .HasMaxLength(900)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name08")
-                        .HasMaxLength(900)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name09")
-                        .HasMaxLength(900)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PathName")
-                        .IsRequired()
-                        .HasMaxLength(896)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PathType")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("StartedOnName")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("SyncId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Type01")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Type02")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Type03")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Type04")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Type05")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Type06")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Type07")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Type08")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("Type09")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SyncId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_TrackerPathConfigurations_SyncId");
-
-                    b.ToTable("TrackerPathConfigurations", "dbo");
-                });
-
-            modelBuilder.Entity("Sample.Shared.Storage.Server.TrackerPathEntity", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CompletedOn")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ConfigurationId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreatedOn")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Data")
-                        .HasColumnType("TEXT");
-
-                    b.Property<long>("ElapsedTicks")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("ModifiedOn")
-                        .HasColumnType("datetime2");
-
-                    b.Property<long?>("ParentId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("StartedOn")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("SyncId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Value01")
-                        .HasMaxLength(900)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Value02")
-                        .HasMaxLength(900)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Value03")
-                        .HasMaxLength(900)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Value04")
-                        .HasMaxLength(900)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Value05")
-                        .HasMaxLength(900)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Value06")
-                        .HasMaxLength(900)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Value07")
-                        .HasMaxLength(900)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Value08")
-                        .HasMaxLength(900)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Value09")
-                        .HasMaxLength(900)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ConfigurationId");
-
-                    b.HasIndex("ParentId");
-
-                    b.HasIndex("SyncId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_TrackerPaths_SyncId");
-
-                    b.ToTable("TrackerPaths", "dbo");
+                    b.Navigation("Parent");
                 });
 
             modelBuilder.Entity("Sample.Shared.Storage.Server.AccountEntity", b =>
@@ -758,22 +782,14 @@ namespace Sample.Server.Data.Sqlite.Migrations
                     b.Navigation("Type");
                 });
 
-            modelBuilder.Entity("Sample.Shared.Storage.Server.TrackerPathEntity", b =>
+            modelBuilder.Entity("Cornerstone.Logging.TrackerPathConfigurationEntity", b =>
                 {
-                    b.HasOne("Sample.Shared.Storage.Server.TrackerPathConfigurationEntity", "Configuration")
-                        .WithMany("Paths")
-                        .HasForeignKey("ConfigurationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.Navigation("Paths");
+                });
 
-                    b.HasOne("Sample.Shared.Storage.Server.TrackerPathEntity", "Parent")
-                        .WithMany("Children")
-                        .HasForeignKey("ParentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Configuration");
-
-                    b.Navigation("Parent");
+            modelBuilder.Entity("Cornerstone.Logging.TrackerPathEntity", b =>
+                {
+                    b.Navigation("Children");
                 });
 
             modelBuilder.Entity("Sample.Shared.Storage.Server.AccountEntity", b =>
@@ -805,16 +821,6 @@ namespace Sample.Server.Data.Sqlite.Migrations
             modelBuilder.Entity("Sample.Shared.Storage.Server.PetTypeEntity", b =>
                 {
                     b.Navigation("Types");
-                });
-
-            modelBuilder.Entity("Sample.Shared.Storage.Server.TrackerPathConfigurationEntity", b =>
-                {
-                    b.Navigation("Paths");
-                });
-
-            modelBuilder.Entity("Sample.Shared.Storage.Server.TrackerPathEntity", b =>
-                {
-                    b.Navigation("Children");
                 });
 #pragma warning restore 612, 618
         }

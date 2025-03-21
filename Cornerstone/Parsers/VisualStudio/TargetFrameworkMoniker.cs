@@ -137,7 +137,7 @@ public class TargetFrameworkMoniker : Notifiable, ITargetFrameworkMoniker
 			this.IfThen(_ => settings.ShouldProcessProperty(nameof(TypeMoniker)), x => x.TypeMoniker = update.TypeMoniker);
 		}
 
-		return base.UpdateWith(update, settings);
+		return true;
 	}
 
 	/// <inheritdoc />

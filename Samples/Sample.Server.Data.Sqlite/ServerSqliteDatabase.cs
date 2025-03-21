@@ -24,13 +24,6 @@ public class ServerSqliteDatabase : ServerDatabase
 
 	#endregion
 
-	#region Properties
-
-	/// <inheritdoc />
-	public override string[] SyncOrder { get; }
-
-	#endregion
-
 	#region Methods
 
 	/// <summary>

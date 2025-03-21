@@ -16,9 +16,23 @@ public abstract class BaseLockableTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	protected void RunTestOnLock(Action<TextBuilder, IReaderWriterLock> test)
+	protected IEnumerable<IReaderWriterLock> GetLocks(bool includeSlim)
 	{
-		foreach (var lockable in GetLocks())
+		yield return new ReaderWriterLockTiny();
+		yield return new Lockable(new ReaderWriterLockTiny());
+		yield return new ReaderWriterLockBindable(new ReaderWriterLockTiny());
+
+		if (includeSlim)
+		{
+			yield return new ReaderWriterLockSlimProxy();
+			yield return new Lockable(new ReaderWriterLockSlimProxy());
+			yield return new ReaderWriterLockBindable(new ReaderWriterLockSlimProxy());
+		}
+	}
+
+	protected void RunTestOnLock(Action<TextBuilder, IReaderWriterLock> test, bool includeSlim)
+	{
+		foreach (var lockable in GetLocks(includeSlim))
 		{
 			var builder = new TextBuilder();
 			var name = lockable.GetType().Name.Replace("ReaderWriterLock", "");
@@ -27,7 +41,7 @@ public abstract class BaseLockableTests : CornerstoneUnitTest
 			var watch = Stopwatch.StartNew();
 			test.Invoke(builder, lockable);
 			watch.Stop();
-			
+
 			builder.Append(watch.Elapsed.TotalMilliseconds.ToString("F4"));
 			builder.Dump();
 
@@ -36,21 +50,6 @@ public abstract class BaseLockableTests : CornerstoneUnitTest
 				d.Dispose();
 			}
 		}
-	}
-
-	protected IEnumerable<IReaderWriterLock> GetLocks()
-	{
-		var response = new IReaderWriterLock[]
-		{
-			new ReaderWriterLockTiny(),
-			new ReaderWriterLockSlimProxy(),
-			new Lockable(new ReaderWriterLockTiny()),
-			new Lockable(new ReaderWriterLockSlimProxy()),
-			new ReaderWriterLockBindable(new ReaderWriterLockTiny()),
-			new ReaderWriterLockBindable(new ReaderWriterLockSlimProxy())
-		};
-
-		return response;
 	}
 
 	#endregion

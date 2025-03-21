@@ -28,6 +28,11 @@ public class SecurityCard : Bindable
 
 	#region Methods
 
+	public virtual byte[] ReadBlock(ushort block)
+	{
+		return [];
+	}
+
 	public virtual void Refresh()
 	{
 	}
@@ -35,6 +40,11 @@ public class SecurityCard : Bindable
 	public void UpdateUniqueId(byte[] values)
 	{
 		UniqueId = BitConverter.ToString(values);
+	}
+
+	public virtual byte[] WriteBlock(ushort block, byte[] data)
+	{
+		return [];
 	}
 
 	#endregion

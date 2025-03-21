@@ -5,7 +5,7 @@ using Cornerstone.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Sample.Shared.Sync;
+using Sample.Shared.Storage.Sync;
 
 #endregion
 
@@ -20,8 +20,8 @@ public class InstantiatorTests : CornerstoneUnitTest
 	public void AddSingleton()
 	{
 		var injector = new DependencyProvider(nameof(InstantiatorTests));
-		injector.AddTransient<AccountSync>();
-		//injector.AddSingleton<AddressSync>();
+		injector.AddTransient<Account>();
+		//injector.AddSingleton<Address>();
 		injector.AddSingleton<Test>();
 
 		var values = new Test[99];
@@ -40,7 +40,7 @@ public class InstantiatorTests : CornerstoneUnitTest
 			IsTrue(ReferenceEquals(values[0].Account, values[i].Account));
 		}
 
-		var account = injector.GetInstance<AccountSync>();
+		var account = injector.GetInstance<Account>();
 		AreEqual(values[0].Account, account);
 		IsFalse(ReferenceEquals(values[0].Account, account));
 	}
@@ -50,14 +50,14 @@ public class InstantiatorTests : CornerstoneUnitTest
 	{
 		var builder = Host.CreateApplicationBuilder();
 
-		builder.Services.AddSingleton<AccountSync>();
-		//builder.Services.AddSingleton<AddressSync>();
+		builder.Services.AddSingleton<Account>();
+		//builder.Services.AddSingleton<Address>();
 		builder.Services.AddSingleton<Test>();
 
 		using var host = builder.Build();
 		host.StartAsync();
 		var account = host.Services.GetInstance<Test>();
-		Assert.IsNotNull(account);
+		IsNotNull(account);
 	}
 
 	#endregion
@@ -76,12 +76,12 @@ public class InstantiatorTests : CornerstoneUnitTest
 		{
 		}
 
-		public Test(AccountSync account)
+		public Test(Account account)
 		{
 			Account = account;
 		}
 
-		public Test(AddressSync test)
+		public Test(Address test)
 		{
 		}
 
@@ -89,7 +89,7 @@ public class InstantiatorTests : CornerstoneUnitTest
 
 		#region Properties
 
-		public AccountSync Account { get; }
+		public Account Account { get; }
 
 		#endregion
 	}

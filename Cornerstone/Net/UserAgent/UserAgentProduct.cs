@@ -166,7 +166,7 @@ public class UserAgentProduct
 					{
 						case "p":
 						{
-							var parts = group.Value.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+							var parts = group.Value.Split(['/'], StringSplitOptions.RemoveEmptyEntries);
 							p.Name = parts.Length >= 1 ? parts[0] : string.Empty;
 							p.Version = parts.Length >= 2 ? parts[1] : string.Empty;
 							continue;

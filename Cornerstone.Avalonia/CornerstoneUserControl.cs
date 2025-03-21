@@ -14,17 +14,12 @@ public class CornerstoneUserControl<T> : CornerstoneUserControl
 {
 	#region Constructors
 
-	public CornerstoneUserControl() : this(default, null)
+	public CornerstoneUserControl() : this(null)
 	{
 	}
 
-	public CornerstoneUserControl(IDispatcher dispatcher) : this(default, dispatcher)
+	public CornerstoneUserControl(IDispatcher dispatcher) : base(dispatcher)
 	{
-	}
-
-	public CornerstoneUserControl(T viewModel, IDispatcher dispatcher) : base(dispatcher)
-	{
-		ViewModel = viewModel;
 	}
 
 	#endregion
@@ -34,7 +29,7 @@ public class CornerstoneUserControl<T> : CornerstoneUserControl
 	public T ViewModel
 	{
 		get => (T) DataContext;
-		protected set => DataContext = value;
+		set => DataContext = value;
 	}
 
 	#endregion

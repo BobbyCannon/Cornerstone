@@ -76,7 +76,7 @@ public class NumberCSharpGenerator : CSharpCodeGenerator
 			UIntPtr sValue => $"(UIntPtr) {sValue}",
 			decimal sValue when sValue == decimal.MaxValue => "decimal.MaxValue",
 			decimal sValue when sValue == decimal.MinValue => "decimal.MinValue",
-			decimal sValue => $"(decimal) {sValue}",
+			decimal sValue => $"(decimal) {sValue}m",
 			double sValue when double.IsNaN(sValue) => "double.NaN",
 			double sValue when double.IsNegativeInfinity(sValue) => "double.NegativeInfinity",
 			double sValue when double.IsPositiveInfinity(sValue) => "double.PositiveInfinity",
@@ -86,7 +86,7 @@ public class NumberCSharpGenerator : CSharpCodeGenerator
 			#endif
 			double sValue when sValue >= double.MaxValue => "double.MaxValue",
 			double sValue when sValue <= double.MinValue => "double.MinValue",
-			double sValue => $"(double) {sValue}",
+			double sValue => $"(double) {sValue}d",
 			float sValue when float.IsNaN(sValue) => "float.NaN",
 			float sValue when float.IsNegativeInfinity(sValue) => "float.NegativeInfinity",
 			float sValue when float.IsPositiveInfinity(sValue) => "float.PositiveInfinity",
@@ -95,7 +95,7 @@ public class NumberCSharpGenerator : CSharpCodeGenerator
 			#endif
 			float sValue when sValue >= float.MaxValue => "float.MaxValue",
 			float sValue when sValue <= float.MinValue => "float.MinValue",
-			float sValue => $"(float) {sValue}",
+			float sValue => $"(float) {sValue}f",
 			_ => throw new CornerstoneException($"Type ({type.FullName}) not supported.")
 		};
 

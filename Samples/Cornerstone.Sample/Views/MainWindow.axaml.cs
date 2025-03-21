@@ -2,7 +2,6 @@
 
 using System;
 using Avalonia.Controls;
-using Avalonia.Interactivity;
 using Cornerstone.Avalonia;
 using Cornerstone.Presentation;
 using Cornerstone.Sample.ViewModels;
@@ -11,20 +10,17 @@ using Cornerstone.Sample.ViewModels;
 
 namespace Cornerstone.Sample.Views;
 
-public partial class MainWindow : CornerstoneWindow
+public partial class MainWindow : CornerstoneWindow<MainViewModel>
 {
 	#region Constructors
 
-	public MainWindow() : this(DesignModeDependencyProvider.Get<MainViewModel>(), null)
+	public MainWindow() : this(ViewDependencyProvider.Get<MainViewModel>(), null)
 	{
 	}
 
-	public MainWindow(MainViewModel viewModel, IDispatcher dispatcher) : base(dispatcher)
+	public MainWindow(MainViewModel viewModel, IDispatcher dispatcher) : base(viewModel, dispatcher)
 	{
-		ViewModel = viewModel;
-		DataContext = viewModel;
-		MainView = new MainView(ViewModel, dispatcher);
-
+		MainView = new MainView(viewModel, dispatcher);
 		InitializeComponent();
 	}
 
@@ -33,8 +29,6 @@ public partial class MainWindow : CornerstoneWindow
 	#region Properties
 
 	public MainView MainView { get; }
-
-	public MainViewModel ViewModel { get; }
 
 	#endregion
 
@@ -45,9 +39,8 @@ public partial class MainWindow : CornerstoneWindow
 		CornerstoneApplication.RuntimeInformation.Shutdown();
 		CornerstoneDispatcher.Instance.IsEnabled = false;
 
-		ViewModel.Uninitialize();
 		ViewModel.ApplicationSettings.MainWindowLocation.UpdateWith(GetWindowLocation());
-		ViewModel.ApplicationSettings.Save();
+		ViewModel.Uninitialize();
 
 		base.OnClosing(e);
 	}
@@ -72,17 +65,12 @@ public partial class MainWindow : CornerstoneWindow
 	protected override void OnOpened(EventArgs e)
 	{
 		// Prevent the designer from null referencing
-		if ((ViewModel?.ApplicationSettings?.MainWindowLocation != null) && !Design.IsDesignMode)
+		if (!Design.IsDesignMode)
 		{
 			RestoreWindowLocation(ViewModel.ApplicationSettings.MainWindowLocation);
 		}
 
 		base.OnOpened(e);
-	}
-
-	private void ExitMenuItemOnClick(object sender, RoutedEventArgs e)
-	{
-		Close();
 	}
 
 	#endregion

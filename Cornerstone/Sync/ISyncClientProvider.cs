@@ -1,4 +1,8 @@
-﻿using Cornerstone.Profiling;
+﻿#region References
+
+using Cornerstone.Profiling;
+
+#endregion
 
 namespace Cornerstone.Sync;
 
@@ -8,6 +12,12 @@ namespace Cornerstone.Sync;
 public interface ISyncClientProvider
 {
 	#region Methods
+
+	/// <summary>
+	/// Gets an instance of the database.
+	/// </summary>
+	/// <returns> The database instance. </returns>
+	ISyncableDatabase GetSyncableDatabase();
 
 	/// <summary>
 	/// Return a client by the provided name and credential.
@@ -21,7 +31,7 @@ public interface ISyncClientProvider
 /// <summary>
 /// Represents a provider to get a server sync client.
 /// </summary>
-public interface IServerSyncClientProvider
+public interface IServerSyncClientProvider : ISyncClientProvider
 {
 	#region Methods
 

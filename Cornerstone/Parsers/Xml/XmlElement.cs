@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Cornerstone.Data;
-using Cornerstone.Extensions;
 
 #endregion
 
@@ -14,13 +13,12 @@ public class XmlElement : Notifiable
 {
 	#region Constructors
 
+	public XmlElement() : this(string.Empty)
+	{
+	}
+
 	public XmlElement(string elementName)
 	{
-		if (string.IsNullOrWhiteSpace(elementName))
-		{
-			throw new ArgumentException("Value cannot be null or whitespace.", nameof(elementName));
-		}
-
 		ElementName = elementName;
 		Attributes = new List<XmlAttribute>();
 		Elements = new List<XmlElement>();
@@ -119,30 +117,24 @@ public class XmlElement : Notifiable
 	/// <param name="settings"> The options for controlling the updating of the entity. </param>
 	public virtual bool UpdateWith(XmlElement update, IncludeExcludeSettings settings)
 	{
+		// Code Generated - UpdateWith - XmlElement
+
 		// If the update is null then there is nothing to do.
 		if (update == null)
 		{
 			return false;
 		}
 
-		// ****** You can use GenerateUpdateWith to update this ******
+		// ****** This code has been auto generated, do not edit this. ******
 
-		if ((settings == null) || settings.IsEmpty())
-		{
-			Attributes.Reconcile(update.Attributes);
-			Elements.Reconcile(update.Elements);
-			ElementName = update.ElementName;
-			ElementValue = update.ElementValue;
-		}
-		else
-		{
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Attributes)), x => x.Attributes.Reconcile(update.Attributes));
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Elements)), x => x.Elements.Reconcile(update.Elements));
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(ElementName)), x => x.ElementName = update.ElementName);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(ElementValue)), x => x.ElementValue = update.ElementValue);
-		}
+		UpdateProperty(Attributes, update.Attributes, settings.ShouldProcessProperty(nameof(Attributes)), x => Attributes = x);
+		UpdateProperty(ElementName, update.ElementName, settings.ShouldProcessProperty(nameof(ElementName)), x => ElementName = x);
+		UpdateProperty(Elements, update.Elements, settings.ShouldProcessProperty(nameof(Elements)), x => Elements = x);
+		UpdateProperty(ElementValue, update.ElementValue, settings.ShouldProcessProperty(nameof(ElementValue)), x => ElementValue = x);
 
-		return base.UpdateWith(update, settings);
+		// Code Generated - /UpdateWith - XmlElement
+
+		return true;
 	}
 
 	/// <inheritdoc />

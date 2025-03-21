@@ -11,7 +11,7 @@ public static class SpeedyListExtensions
 {
 	#region Methods
 
-	public static bool TryFind<T>(this ISpeedyList<T> list, int index, out T value) where T : TextRange
+	public static bool TryFind<T>(this SpeedyList<T> list, int index, out T value) where T : TextRange
 	{
 		if (list.Count <= 3)
 		{

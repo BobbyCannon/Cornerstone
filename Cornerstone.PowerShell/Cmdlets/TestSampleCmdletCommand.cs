@@ -12,16 +12,16 @@ namespace Cornerstone.PowerShell.Cmdlets;
 [OutputType(typeof(FavoriteStuff))]
 public class TestSampleCmdletCommand : PSCmdlet
 {
-    #region Properties
+	#region Properties
 
-    [Parameter(Mandatory = true, Position = 0, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true)]
-    public int FavoriteNumber { get; set; }
+	[Parameter(Mandatory = true, Position = 0, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true)]
+	public int FavoriteNumber { get; set; }
 
-    [Parameter(Position = 1, ValueFromPipelineByPropertyName = true)]
-    [ValidateSet("Cat", "Dog", "Horse")]
-    public string FavoritePet { get; set; } = "Dog";
+	[Parameter(Position = 1, ValueFromPipelineByPropertyName = true)]
+	[ValidateSet("Cat", "Dog", "Horse")]
+	public string FavoritePet { get; set; } = "Dog";
 
-    #endregion
+	#endregion
 
     #region Methods
 
@@ -52,10 +52,11 @@ public class TestSampleCmdletCommand : PSCmdlet
 
 public class FavoriteStuff
 {
-    #region Properties
+	#region Properties
 
-    public int FavoriteNumber { get; set; }
-    public string FavoritePet { get; set; }
+	public int FavoriteNumber { get; set; }
 
-    #endregion
+	public string FavoritePet { get; set; }
+
+	#endregion
 }

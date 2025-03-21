@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading;
 using Cornerstone.Automation.Web.Elements;
 using Cornerstone.Input;
-using Cornerstone.Windows;
+using Cornerstone.Platforms.Windows;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Font = Cornerstone.Automation.Web.Elements.Font;
@@ -372,7 +372,7 @@ public class WebElement : Element
 
 		if (refresh)
 		{
-			name = _propertiesToRename.ContainsKey(name) ? _propertiesToRename[name] : name;
+			name = _propertiesToRename.TryGetValue(name, out var value1) ? value1 : name;
 			var script = $"Cornerstone.getElementValue(\'{Id}\',{GetFrameIdInsert()},\'{name}\')";
 			value = Browser.ExecuteScript(script);
 		}
@@ -429,7 +429,7 @@ public class WebElement : Element
 			.ToList()
 			.ToDictionary(x => x.Key, x => x.Value);
 
-		return styleValues.ContainsKey(name) ? styleValues[name] : string.Empty;
+		return styleValues.TryGetValue(name, out var value) ? value : string.Empty;
 	}
 
 	/// <summary>
@@ -583,7 +583,7 @@ public class WebElement : Element
 	/// <param name="value"> The value to be written. </param>
 	public void SetAttributeValue(string name, string value)
 	{
-		name = _propertiesToRename.ContainsKey(name) ? _propertiesToRename[name] : name;
+		name = _propertiesToRename.TryGetValue(name, out var value1) ? value1 : name;
 		value = Browser.CleanupScriptForJavascriptString(value);
 
 		var script = $"Cornerstone.setElementValue(\'{Id}\',{GetFrameIdInsert()},\'{name}\',\'{value}\')";

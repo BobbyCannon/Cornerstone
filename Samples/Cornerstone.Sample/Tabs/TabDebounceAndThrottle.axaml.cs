@@ -1,6 +1,7 @@
 #region References
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +14,6 @@ using Cornerstone.Extensions;
 using Cornerstone.Presentation;
 using Cornerstone.Profiling;
 using Cornerstone.Runtime;
-using Cornerstone.Sample.ViewModels;
 using LiveChartsCore;
 using LiveChartsCore.Defaults;
 using LiveChartsCore.SkiaSharpView;
@@ -45,8 +45,8 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 	#region Constructors
 
 	public TabDebounceAndThrottle() : this(
-		DesignModeDependencyProvider.Get<IDateTimeProvider>(),
-		DesignModeDependencyProvider.Get<IDispatcher>())
+		ViewDependencyProvider.Get<IDateTimeProvider>(),
+		ViewDependencyProvider.Get<IDispatcher>())
 	{
 	}
 
@@ -67,14 +67,14 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 
 		Series =
 		[
-			new StepLineSeries<DateTimePoint> { Values = DebounceRequests, Fill = null, GeometryFill = null, GeometryStroke = null, Name = "Debounce" },
-			new StepLineSeries<DateTimePoint> { Values = ThrottleRequests, Fill = null, GeometryFill = null, GeometryStroke = null, Name = "Throttle" }
+			new StepLineSeries<DateTimePoint> { Values = DebounceRequests.AsReadOnly(), Fill = null, GeometryFill = null, GeometryStroke = null, Name = "Debounce" },
+			new StepLineSeries<DateTimePoint> { Values = ThrottleRequests.AsReadOnly(), Fill = null, GeometryFill = null, GeometryStroke = null, Name = "Throttle" }
 		];
 
 		Series2 =
 		[
-			new StepLineSeries<DateTimePoint> { Values = Debounces, Fill = null, GeometryFill = null, GeometryStroke = null, Name = "Debounce" },
-			new StepLineSeries<DateTimePoint> { Values = Throttles, Fill = null, GeometryFill = null, GeometryStroke = null, Name = "Throttle" }
+			new StepLineSeries<DateTimePoint> { Values = Debounces.AsReadOnly(), Fill = null, GeometryFill = null, GeometryStroke = null, Name = "Debounce" },
+			new StepLineSeries<DateTimePoint> { Values = Throttles.AsReadOnly(), Fill = null, GeometryFill = null, GeometryStroke = null, Name = "Throttle" }
 		];
 
 		_customYAxis = new Axis

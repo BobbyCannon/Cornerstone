@@ -11,12 +11,6 @@ namespace Cornerstone.Input;
 
 public class GamepadInput : WorkerManager
 {
-	#region Fields
-
-	private readonly WeakEventManager _weakEventManager;
-
-	#endregion
-
 	#region Constructors
 
 	[DependencyInjectionConstructor]
@@ -28,10 +22,9 @@ public class GamepadInput : WorkerManager
 		Mouse = mouse;
 		MouseMoveSpeed = 0.015;
 
-		_weakEventManager = weakEventManager;
-		_weakEventManager.Add<Gamepad, GamepadButton, bool>(Gamepad, nameof(Gamepad.ButtonChanged), GamepadOnButtonChanged);
-		_weakEventManager.Add<Gamepad, GamepadState>(Gamepad, nameof(Gamepad.Changed), GamepadOnChanged);
-		_weakEventManager.Add<Mouse, MouseState>(Mouse, nameof(Mouse.MouseChanged), MouseOnMouseChanged);
+		//weakEventManager.Add<Gamepad, GamepadInput, GamepadButton, bool>(Gamepad, nameof(Gamepad.ButtonChanged), this, GamepadOnButtonChanged);
+		weakEventManager.Add<Gamepad, GamepadInput, GamepadState>(Gamepad, nameof(Gamepad.Changed), this, GamepadOnChanged);
+		weakEventManager.Add<Mouse, GamepadInput, MouseState>(Mouse, nameof(Mouse.MouseChanged), this, MouseOnMouseChanged);
 	}
 
 	#endregion

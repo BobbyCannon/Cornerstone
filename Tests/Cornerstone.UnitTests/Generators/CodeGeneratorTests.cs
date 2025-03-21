@@ -2,14 +2,11 @@
 
 using System;
 using System.Linq;
+using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Parsers;
 using Cornerstone.Parsers.Json;
-using Cornerstone.Parsers.Markdown;
-using Cornerstone.Profiling;
-using Cornerstone.Runtime;
 using Cornerstone.Serialization;
-using Cornerstone.Sync;
 using Cornerstone.Testing;
 using Cornerstone.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -40,8 +37,8 @@ public class CodeGeneratorTests : CornerstoneUnitTest
 	[TestMethod]
 	public void GenerateUpdateWith()
 	{
-		var type = typeof(TokenData<,>);
-		var builder = GenerateUpdateWith(type);
+		var type = typeof(PartialUpdateValue);
+		var builder = GenerateUpdateWith(type, type);
 		CopyToClipboard(builder.ToString());
 		Console.Write(builder.ToString());
 	}

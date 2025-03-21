@@ -185,12 +185,15 @@ public class Babel
 
 		// Services
 		AddOrUpdate("English", BabelKeys.DateTimeProviderLocked, "The date and time service has been locked and cannot change.");
+		AddOrUpdate("English", BabelKeys.DependencyProviderLocked, "The dependency provider has been locked and cannot change.");
 
 		// Sync
-		AddOrUpdate("English", BabelKeys.SyncOptionsInvalid, "The sync values are invalid.");
+		AddOrUpdate("English", BabelKeys.SyncClientNotSupported, "The sync client is not supported.");
+		AddOrUpdate("English", BabelKeys.SyncDeviceNotFound, "The sync device was not found.");
 		AddOrUpdate("English", BabelKeys.SyncSessionAlreadyActive, "The sync session is already active.");
 		AddOrUpdate("English", BabelKeys.SyncSessionInvalid, "The sync session is invalid.");
-		AddOrUpdate("English", BabelKeys.SyncClientNotSupported, "The sync client is not supported.");
+		AddOrUpdate("English", BabelKeys.SyncSessionNotFound, "The sync session was not found.");
+		AddOrUpdate("English", BabelKeys.SyncSettingsInvalid, "The sync values are invalid.");
 
 		// Clipboard
 		AddOrUpdate("English", BabelKeys.ClipboardCouldNotBeOpened, "The clipboard could not be opened.");

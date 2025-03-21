@@ -40,5 +40,10 @@ public enum DevicePlatform
     /// <summary>
     /// Linux
     /// </summary>
-    Linux = 5
+    Linux = 5,
+
+    /// <summary>
+    /// Browser
+    /// </summary>
+    Browser = 6
 }

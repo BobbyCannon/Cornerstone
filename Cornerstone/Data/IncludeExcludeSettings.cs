@@ -6,7 +6,6 @@ using System.Linq;
 using Cornerstone.Collections;
 using Cornerstone.Extensions;
 using Cornerstone.Generators.CodeGenerators;
-using Cornerstone.Internal;
 
 #endregion
 
@@ -15,7 +14,7 @@ namespace Cornerstone.Data;
 /// <summary>
 /// Include / Exclude settings for filtering.
 /// </summary>
-public class IncludeExcludeSettings : IObjectCodeWriter
+public class IncludeExcludeSettings : Cloneable<IncludeExcludeSettings>, IObjectCodeWriter
 {
 	#region Constructors
 
@@ -87,25 +86,10 @@ public class IncludeExcludeSettings : IObjectCodeWriter
 
 	#region Methods
 
-	/// <summary>
-	/// 
-	/// </summary>
-	/// <param name="entityType"></param>
-	/// <param name="actionType"></param>
-	/// <returns></returns>
-	public static IncludeExcludeSettings ForEntity(Type entityType, UpdateableAction actionType)
+	/// <inheritdoc />
+	public override IncludeExcludeSettings DeepClone(int? maxDepth = null, IncludeExcludeSettings settings = null)
 	{
-		return Cache.GetSettings(entityType, actionType);
-	}
-
-	/// <summary>
-	/// Return update settings with only exclusions.
-	/// </summary>
-	/// <param name="exclusions"> The exclusions. </param>
-	/// <returns> The settings with only exclusions. </returns>
-	public static IncludeExcludeSettings FromExclusions(params string[] exclusions)
-	{
-		return new IncludeExcludeSettings(null, exclusions);
+		return new IncludeExcludeSettings(IncludedProperties, ExcludedProperties);
 	}
 
 	/// <summary>
@@ -116,16 +100,6 @@ public class IncludeExcludeSettings : IObjectCodeWriter
 	{
 		return (IncludedProperties.Count <= 0)
 			&& (ExcludedProperties.Count <= 0);
-	}
-
-	/// <summary>
-	/// Return update settings with only including.
-	/// </summary>
-	/// <param name="including"> The including. </param>
-	/// <returns> The settings with only inclusions. </returns>
-	public static IncludeExcludeSettings OnlyIncluding(params string[] including)
-	{
-		return new IncludeExcludeSettings(including, null);
 	}
 
 	/// <summary>
@@ -172,7 +146,7 @@ public class IncludeExcludeSettings : IObjectCodeWriter
 	/// </summary>
 	/// <param name="settings"> An extra set of settings. </param>
 	/// <returns> The modified set of settings. </returns>
-	public IncludeExcludeSettings WithMoreOptions(IncludeExcludeSettings settings)
+	public IncludeExcludeSettings WithMoreSettings(IncludeExcludeSettings settings)
 	{
 		if (settings == null)
 		{
@@ -180,29 +154,28 @@ public class IncludeExcludeSettings : IObjectCodeWriter
 		}
 
 		return new IncludeExcludeSettings(
-			ArrayExtensions.CombineArrays(IncludedProperties?.ToArray(), settings?.IncludedProperties?.ToArray()),
-			ArrayExtensions.CombineArrays(ExcludedProperties?.ToArray(), settings?.ExcludedProperties?.ToArray())
+			ArrayExtensions.CombineArrays(IncludedProperties?.ToArray(), settings.IncludedProperties?.ToArray()),
+			ArrayExtensions.CombineArrays(ExcludedProperties?.ToArray(), settings.ExcludedProperties?.ToArray())
 		);
 	}
-
-	#endregion
 
 	/// <inheritdoc />
 	public void Write(ICodeWriter writer)
 	{
-		if (IncludedProperties.Count > 0)
+		if (IsEmpty())
 		{
-			var properties = $"\"{string.Join("\", \"", IncludedProperties)}\"";
-			writer.AppendLine($"IncludeExcludeSettings.OnlyIncluding({properties})");
+			writer.Append("IncludeExcludeSettings.Empty");
+			return;
 		}
-		else if (ExcludedProperties.Count > 0)
-		{
-			var properties = $"\"{string.Join("\", \"", ExcludedProperties)}\"";
-			writer.AppendLine($"IncludeExcludeSettings.FromExclusions({properties})");
-		}
-		else
-		{
-			writer.AppendLine("IncludeExcludeSettings.Empty");
-		}
+
+		var including = IncludedProperties.Count <= 0 ? "[]" : $"[\"{string.Join("\", \"", IncludedProperties)}\"]";
+		var excluding = ExcludedProperties.Count <= 0 ? "[]" : $"[\"{string.Join("\", \"", ExcludedProperties)}\"]";
+
+		writer.AppendLine("new IncludeExcludeSettings(");
+		writer.AppendLine($"\t{including},");
+		writer.AppendLine($"\t{excluding}");
+		writer.Append(")");
 	}
+
+	#endregion
 }

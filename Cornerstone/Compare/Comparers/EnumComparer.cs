@@ -15,7 +15,7 @@ public class EnumComparer : BaseComparer
 	#region Methods
 
 	/// <inheritdoc />
-	public override bool IsSupported(object expected, object actual)
+	public override bool IsSupported(CompareSession session, object expected, object actual)
 	{
 		return expected?.GetType().IsEnum ?? false;
 	}

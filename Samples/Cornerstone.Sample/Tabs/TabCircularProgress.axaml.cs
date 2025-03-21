@@ -10,7 +10,7 @@ public partial class TabCircularProgress : CornerstoneUserControl
 {
 	#region Constants
 
-	public const string HeaderName = "CircularProgress";
+	public const string HeaderName = "Circular Progress";
 
 	#endregion
 

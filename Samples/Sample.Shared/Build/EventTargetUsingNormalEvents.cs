@@ -78,7 +78,7 @@ public class EventTargetUsingNormalEvents<T> : IEventTarget
 		{
 			_eventTracer($"CollectionChanged: {e.Action}({string.Join(",", e.NewItems.ToObjectArray())}) : {e.NewStartingIndex}");
 		}
-		
+
 		if (e.OldItems != null)
 		{
 			_eventTracer($"CollectionChanged: {e.Action}({string.Join(",", e.OldItems.ToObjectArray())}) : {e.OldStartingIndex}");

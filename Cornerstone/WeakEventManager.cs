@@ -21,7 +21,7 @@ public class WeakEventManager : IWeakEventManager
 {
 	#region Fields
 
-	internal readonly SpeedyDictionary<IWeakEventListener, Delegate> _listeners;
+	private readonly SpeedyList<IWeakEventListener> _listeners;
 
 	#endregion
 
@@ -36,40 +36,48 @@ public class WeakEventManager : IWeakEventManager
 
 	#region Methods
 
-	/// <summary>
-	/// Registers the given delegate as a handler for the event specified by [eventName] on the given source.
-	/// </summary>
-	public void Add<T, TArgs>(T source, string eventName, EventHandler<TArgs> handler)
+	public IWeakEventListener Add<T, T2, TArgs>(T source, string eventName, T2 destination, EventHandler<TArgs> handler)
 		where T : class
+		where T2 : class
 	{
-		_listeners.Add(new WeakEventListener<T, TArgs>(source, eventName, handler), handler);
+		return _listeners.Add(new WeakEventListener<T, T2, TArgs>(source, eventName, destination, handler.Method));
 	}
 
 	/// <summary>
 	/// Registers the given delegate as a handler for the event specified by [eventName] on the given source.
 	/// </summary>
-	public void Add<T, TArgs1, TArgs2>(T source, string eventName, EventHandler<TArgs1, TArgs2> handler)
+	public IWeakEventListener Add<T, T2, TArgs1, TArgs2>(T source, string eventName, T2 destination, EventHandler<TArgs1, TArgs2> handler)
 		where T : class
+		where T2 : class
 	{
-		_listeners.Add(new WeakEventListener<T, TArgs1, TArgs2>(source, eventName, handler), handler);
+		return _listeners.Add(new WeakEventListener<T, T2, TArgs1, TArgs2>(source, eventName, destination, handler.Method));
 	}
 
 	/// <summary>
 	/// Registers the given delegate as a handler for the INotifyCollectionChanged.CollectionChanged event
 	/// </summary>
-	public void AddCollectionChanged<T>(T source, EventHandler<NotifyCollectionChangedEventArgs> handler)
+	public IWeakEventListener AddCollectionChanged<T, T2>(T source, T2 destination, NotifyCollectionChangedEventHandler handler)
 		where T : class, INotifyCollectionChanged
+		where T2 : class
 	{
-		_listeners.Add(new CollectionChangedWeakEventListener<T>(source, handler), handler);
+		return _listeners.Add(new CollectionChangedWeakEventListener<T, T2>(source, destination, handler));
 	}
 
 	/// <summary>
 	/// Registers the given delegate as a handler for the INotifyPropertyChanged.PropertyChanged event
 	/// </summary>
-	public void AddPropertyChanged<T>(T source, EventHandler<PropertyChangedEventArgs> handler)
+	public IWeakEventListener AddPropertyChanged<T, T2>(T source, T2 destination, PropertyChangedEventHandler handler)
 		where T : class, INotifyPropertyChanged
+		where T2 : class
 	{
-		_listeners.Add(new PropertyChangedWeakEventListener<T>(source, handler), handler);
+		return _listeners.Add(new PropertyChangedWeakEventListener<T, T2>(source, destination, handler));
+	}
+
+	public IWeakEventListener AddSpeedyListUpdated<T, TArgs, T2>(T source, T2 destination, EventHandler<SpeedyListUpdatedEventArg<TArgs>> handler)
+		where T : class, ISpeedyList<TArgs>
+		where T2 : class
+	{
+		return _listeners.Add(new ListChangedWeakEventListener<T, TArgs, T2>(source, destination, handler));
 	}
 
 	/// <summary>
@@ -79,7 +87,7 @@ public class WeakEventManager : IWeakEventManager
 		where T : class
 	{
 		var toRemove = new List<IWeakEventListener>();
-		foreach (var listener in _listeners.Keys)
+		foreach (var listener in _listeners)
 		{
 			if (!listener.IsAlive)
 			{
@@ -102,7 +110,7 @@ public class WeakEventManager : IWeakEventManager
 	/// </summary>
 	public void Reset()
 	{
-		foreach (var listener in _listeners.Keys)
+		foreach (var listener in _listeners)
 		{
 			if (listener.IsAlive)
 			{
@@ -122,20 +130,37 @@ public interface IWeakEventManager
 	/// <summary>
 	/// Registers the given delegate as a handler for the event specified by `eventName` on the given source.
 	/// </summary>
-	void Add<T, TArgs>(T source, string eventName, EventHandler<TArgs> handler)
-		where T : class;
+	IWeakEventListener Add<T, T2, TArgs>(T source, string eventName, T2 destination, EventHandler<TArgs> handler)
+		where T : class
+		where T2 : class;
+
+	/// <summary>
+	/// Registers the given delegate as a handler for the event specified by [eventName] on the given source.
+	/// </summary>
+	IWeakEventListener Add<T, T2, TArgs1, TArgs2>(T source, string eventName, T2 destination, EventHandler<TArgs1, TArgs2> handler)
+		where T : class
+		where T2 : class;
 
 	/// <summary>
 	/// Registers the given delegate as a handler for the INotifyCollectionChanged.CollectionChanged event
 	/// </summary>
-	void AddCollectionChanged<T>(T source, EventHandler<NotifyCollectionChangedEventArgs> handler)
-		where T : class, INotifyCollectionChanged;
+	IWeakEventListener AddCollectionChanged<T, T2>(T source, T2 destination, NotifyCollectionChangedEventHandler handler)
+		where T : class, INotifyCollectionChanged
+		where T2 : class;
 
 	/// <summary>
 	/// Registers the given delegate as a handler for the INotifyPropertyChanged.PropertyChanged event
 	/// </summary>
-	void AddPropertyChanged<T>(T source, EventHandler<PropertyChangedEventArgs> handler)
-		where T : class, INotifyPropertyChanged;
+	IWeakEventListener AddPropertyChanged<T, T2>(T source, T2 destination, PropertyChangedEventHandler handler)
+		where T : class, INotifyPropertyChanged
+		where T2 : class;
+
+	/// <summary>
+	/// Registers the given delegate as a handler for the ISpeedyList.ListChanged event
+	/// </summary>
+	IWeakEventListener AddSpeedyListUpdated<T, TArgs, T2>(T source, T2 destination, EventHandler<SpeedyListUpdatedEventArg<TArgs>> handler)
+		where T : class, ISpeedyList<TArgs>
+		where T2 : class;
 
 	/// <summary>
 	/// Unregisters any previously registered weak event handlers on the given source object
@@ -147,6 +172,23 @@ public interface IWeakEventManager
 	/// Unregisters all weak event listeners that have been registered by this weak event manager instance
 	/// </summary>
 	void Reset();
+
+	#endregion
+}
+
+public interface IWeakEventListener
+{
+	#region Properties
+
+	bool IsAlive { get; }
+
+	object Source { get; }
+
+	#endregion
+
+	#region Methods
+
+	void StopListening();
 
 	#endregion
 }

@@ -4,7 +4,9 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Browser;
 using Cornerstone.Avalonia;
-using Cornerstone.Location;
+using Cornerstone.Avalonia.Platforms.Browser;
+using Cornerstone.Avalonia.Extensions;
+using Cornerstone.Platforms.Browser;
 
 #endregion
 
@@ -14,20 +16,17 @@ internal class Program
 {
 	#region Methods
 
-	public static AppBuilder BuildAvaloniaApp()
-	{
-		return AppBuilder.Configure<App>();
-	}
-
 	private static async Task Main(string[] args)
 	{
-		var locationProvider = new LocationProvider();
 		var dependencyProvider = CornerstoneApplication.DependencyProvider;
 
-		dependencyProvider.AddSingleton<ILocationProvider>(() => locationProvider);
+		BrowserPlatform.Initialize(dependencyProvider);
+		ApplicationLifecycleExtensions.SetBrowserArgs(args);
 
-		await BuildAvaloniaApp()
+		await AppBuilder
+			.Configure<App>()
 			.WithInterFont()
+			.UseCornerstone()
 			.StartBrowserAppAsync("out");
 	}
 

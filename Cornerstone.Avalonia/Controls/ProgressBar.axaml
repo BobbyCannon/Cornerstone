@@ -117,7 +117,7 @@
 			<Setter Property="VerticalAlignment" Value="Stretch" />
 		</Style>
 		<Style Selector="^:horizontal">
-			<Setter Property="MinWidth" Value="200" />
+			<Setter Property="MinWidth" Value="50" />
 			<Setter Property="MinHeight" Value="8" />
 		</Style>
 
@@ -128,7 +128,7 @@
 		</Style>
 		<Style Selector="^:vertical">
 			<Setter Property="MinWidth" Value="8" />
-			<Setter Property="MinHeight" Value="200" />
+			<Setter Property="MinHeight" Value="50" />
 		</Style>
 		<Style Selector="^:vertical /template/ LayoutTransformControl#PART_LayoutTransformControl">
 			<Setter Property="LayoutTransform">

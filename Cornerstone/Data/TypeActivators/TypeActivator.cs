@@ -32,11 +32,11 @@ public class TypeActivator<T> : TypeActivator<T, T>
 /// <typeparam name="T"> The interface type. </typeparam>
 /// <typeparam name="T2"> The implementation type. </typeparam>
 public class TypeActivator<T, T2> : TypeActivator
+	where T2 : T
 {
 	#region Fields
 
 	private readonly Func<object[], T2> _activator;
-	private T2 _currentValue;
 
 	#endregion
 
@@ -52,55 +52,12 @@ public class TypeActivator<T, T2> : TypeActivator
 
 	#region Methods
 
-	/// <summary>
-	/// Create an instance of the Type.
-	/// </summary>
-	/// <param name="arguments"> The value of the arguments. </param>
-	/// <returns> The new instances of the type. </returns>
-	public T2 CreateInstance(params object[] arguments)
-	{
-		Lock.EnterReadLock();
-
-		try
-		{
-			if ((Lifetime == TypeLifetime.Singleton)
-				&& (_currentValue != null))
-			{
-				return _currentValue;
-			}
-		}
-		finally
-		{
-			Lock.ExitReadLock();
-		}
-
-		Lock.EnterWriteLock();
-
-		try
-		{
-			if ((Lifetime == TypeLifetime.Singleton)
-				&& (_currentValue != null))
-			{
-				return _currentValue;
-			}
-
-			var response = _activator.Invoke(arguments);
-			if (Lifetime == TypeLifetime.Singleton)
-			{
-				_currentValue = response;
-			}
-			return response;
-		}
-		finally
-		{
-			Lock.ExitWriteLock();
-		}
-	}
-
 	/// <inheritdoc />
-	public sealed override object CreateInstanceObject(params object[] arguments)
+	protected sealed override object CreateInstanceObject(params object[] arguments)
 	{
-		return CreateInstance(arguments);
+		var instance = _activator.Invoke(arguments);
+		T response = instance;
+		return response;
 	}
 
 	#endregion
@@ -114,6 +71,8 @@ public class TypeActivator
 	#region Fields
 
 	private readonly Func<object[], object> _activator;
+	private object _currentValue;
+	private readonly ReaderWriterLockTiny _lock;
 
 	#endregion
 
@@ -127,7 +86,8 @@ public class TypeActivator
 	public TypeActivator(Type type, Func<object[], object> activator)
 	{
 		_activator = activator;
-		Lock = new ReaderWriterLockTiny();
+		_lock = new ReaderWriterLockTiny();
+
 		Type = type;
 	}
 
@@ -139,11 +99,6 @@ public class TypeActivator
 	/// The type this activator is for.
 	/// </summary>
 	public Type Type { get; }
-
-	/// <summary>
-	/// The lock for handling singleton creation.
-	/// </summary>
-	protected ReaderWriterLockTiny Lock { get; }
 
 	/// <summary>
 	/// True if this activator is for dependency injection.
@@ -164,7 +119,53 @@ public class TypeActivator
 	/// </summary>
 	/// <param name="arguments"> The value of the arguments. </param>
 	/// <returns> The new instances of the type. </returns>
-	public virtual object CreateInstanceObject(params object[] arguments)
+	public object GetOrCreateInstance(params object[] arguments)
+	{
+		try
+		{
+			_lock.EnterUpgradeableReadLock();
+
+			if ((Lifetime == TypeLifetime.Singleton)
+				&& (_currentValue != null))
+			{
+				return _currentValue;
+			}
+
+			_lock.EnterWriteLock();
+
+			try
+			{
+				if ((Lifetime == TypeLifetime.Singleton)
+					&& (_currentValue != null))
+				{
+					return _currentValue;
+				}
+
+				var response = CreateInstanceObject(arguments);
+				if (Lifetime == TypeLifetime.Singleton)
+				{
+					_currentValue = response;
+				}
+
+				return response;
+			}
+			finally
+			{
+				_lock.ExitWriteLock();
+			}
+		}
+		finally
+		{
+			_lock.ExitUpgradeableReadLock();
+		}
+	}
+
+	/// <summary>
+	/// Create an instance of the Type.
+	/// </summary>
+	/// <param name="arguments"> The value of the arguments. </param>
+	/// <returns> The new instances of the type. </returns>
+	protected virtual object CreateInstanceObject(params object[] arguments)
 	{
 		return _activator.Invoke(arguments);
 	}

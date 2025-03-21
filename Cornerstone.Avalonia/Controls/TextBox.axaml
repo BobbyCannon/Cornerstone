@@ -163,6 +163,19 @@
 						<Setter Property="BorderBrush" Value="{DynamicResource TextBoxBorderBrushDisabled}" />
 					</Style>
 				</Style>
+				<Style Selector="^[IsReadOnly=True]">
+					<Setter Property="Foreground" Value="{DynamicResource TextBoxForegroundDisabled}" />
+					<Style Selector="^ /template/ Border#PART_BorderElement">
+						<Setter Property="Background" Value="{DynamicResource TextBoxBackgroundDisabled}" />
+						<Setter Property="BorderBrush" Value="{DynamicResource TextBoxBorderBrushDisabled}" />
+					</Style>
+				</Style>
+				<Style Selector="^ /template/ DockPanel#PART_InnerDockPanel[IsEnabled=false]">
+					<Style Selector="^ /template/ Border#PART_BorderElement">
+						<Setter Property="Background" Value="{DynamicResource TextBoxBackgroundDisabled}" />
+						<Setter Property="BorderBrush" Value="{DynamicResource TextBoxBorderBrushDisabled}" />
+					</Style>
+				</Style>
 				<Style Selector="^:focus">
 					<Style Selector="^ /template/ Border#PART_BorderElement">
 						<Setter Property="BorderBrush" Value="{DynamicResource TextBoxBorderBrushFocused}" />
@@ -219,7 +232,15 @@
 						</Template>
 					</Setter>
 				</Style>
-				
+				<Style Selector="^.Lockable">
+					<Setter Property="InnerRightContent">
+						<Template>
+							<ToggleButton IsChecked="{Binding $parent[TextBox].IsReadOnly}">
+								<Path Data="{DynamicResource FontAwesome.Lock.Regular}" />
+							</ToggleButton>
+						</Template>
+					</Setter>
+				</Style>
 			</ControlTheme>
 		</ResourceDictionary>
 	</Styles.Resources>
@@ -252,6 +273,7 @@
 	<Design.PreviewWith>
 		<Border Padding="20">
 			<StackPanel Spacing="20">
+				<TextBox Classes="Lockable" Text="Blah" />
 				<TextBox Watermark="email" />
 				<TextBox Watermark="email" Text="email" />
 				<TextBox Watermark="password" />

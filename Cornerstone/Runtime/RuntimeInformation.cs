@@ -3,6 +3,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -17,6 +18,7 @@ using Cornerstone.Presentation;
 using Cornerstone.Sync;
 #if ANDROID
 using Microsoft.Maui.Devices;
+
 #else
 using Cornerstone.Internal.Windows;
 #endif
@@ -99,6 +101,7 @@ public class RuntimeInformation : Bindable, IRuntimeInformation, IObjectCodeWrit
 	public Version ApplicationVersion => GetOrCache<Version>(nameof(ApplicationVersion));
 
 	/// <inheritdoc />
+	[Browsable(false)]
 	public int Count => _cache.Count;
 
 	/// <inheritdoc />
@@ -135,18 +138,22 @@ public class RuntimeInformation : Bindable, IRuntimeInformation, IObjectCodeWrit
 	public Version DotNetRuntimeVersion => GetOrCache<Version>(nameof(DotNetRuntimeVersion));
 
 	/// <inheritdoc />
+	[Browsable(false)]
 	public bool IsLoaded { get; private set; }
 
 	/// <inheritdoc />
+	[Browsable(false)]
 	public bool IsShuttingDown { get; private set; }
 
 	/// <inheritdoc />
 	public object this[string key] => _cache[key];
 
 	/// <inheritdoc />
+	[Browsable(false)]
 	public IEnumerable<string> Keys => _cache.Keys;
 
 	/// <inheritdoc />
+	[Browsable(false)]
 	public IEnumerable<object> Values => _cache.Values;
 
 	#endregion
@@ -196,9 +203,15 @@ public class RuntimeInformation : Bindable, IRuntimeInformation, IObjectCodeWrit
 	/// <summary>
 	/// Initialize the runtime information state. Ex. Ensure the paths exists.
 	/// </summary>
-	public virtual void Initialize()
+	public void Initialize()
 	{
-		new DirectoryInfo(ApplicationDataLocation).SafeCreate();
+		if (!ApplicationIsDevelopmentBuild)
+		{
+			return;
+		}
+
+		SetOverride(x => x.ApplicationName, ApplicationName + ".Development");
+		SetOverride(x => x.ApplicationDataLocation, ApplicationDataLocation + ".Development");
 	}
 
 	/// <summary>
@@ -234,7 +247,7 @@ public class RuntimeInformation : Bindable, IRuntimeInformation, IObjectCodeWrit
 	/// </summary>
 	public void ResetCache(string name)
 	{
-		_cache.Remove(name);
+		_cache.Remove(name, out _);
 	}
 
 	public void SetApplicationAssembly(Assembly assembly)
@@ -553,6 +566,11 @@ public class RuntimeInformation : Bindable, IRuntimeInformation, IObjectCodeWrit
 			|| OperatingSystem.IsIOS())
 		{
 			return DeviceType.Phone;
+		}
+
+		if (OperatingSystem.IsBrowser())
+		{
+			return DeviceType.Browser;
 		}
 
 		return DeviceType.Desktop;

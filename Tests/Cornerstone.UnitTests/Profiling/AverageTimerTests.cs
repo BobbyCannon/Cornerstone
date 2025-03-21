@@ -22,43 +22,43 @@ public class AverageTimerTests : CornerstoneUnitTest
 
 		timer.Time(() => IncrementTime(TimeSpan.FromTicks(1)));
 
-		Assert.IsFalse(timer.IsRunning);
-		Assert.AreEqual(1, timer.Elapsed.Ticks);
-		Assert.AreEqual(1, timer.Average.Ticks);
-		Assert.AreEqual(0, timer.Samples);
-		Assert.AreEqual(1, timer.Count);
+		IsFalse(timer.IsRunning);
+		AreEqual(1, timer.Elapsed.Ticks);
+		AreEqual(1, timer.Average.Ticks);
+		AreEqual(0, timer.Samples);
+		AreEqual(1, timer.Count);
 
 		timer.Time(() => IncrementTime(TimeSpan.FromTicks(2)));
 
-		Assert.IsFalse(timer.IsRunning);
-		Assert.AreEqual(2, timer.Elapsed.Ticks);
-		Assert.AreEqual(1, timer.Average.Ticks);
-		Assert.AreEqual(0, timer.Samples);
-		Assert.AreEqual(2, timer.Count);
+		IsFalse(timer.IsRunning);
+		AreEqual(2, timer.Elapsed.Ticks);
+		AreEqual(1, timer.Average.Ticks);
+		AreEqual(0, timer.Samples);
+		AreEqual(2, timer.Count);
 
 		timer.Time(() => IncrementTime(TimeSpan.FromTicks(3)));
 
-		Assert.IsFalse(timer.IsRunning);
-		Assert.AreEqual(3, timer.Elapsed.Ticks);
-		Assert.AreEqual(2, timer.Average.Ticks);
-		Assert.AreEqual(0, timer.Samples);
-		Assert.AreEqual(3, timer.Count);
+		IsFalse(timer.IsRunning);
+		AreEqual(3, timer.Elapsed.Ticks);
+		AreEqual(2, timer.Average.Ticks);
+		AreEqual(0, timer.Samples);
+		AreEqual(3, timer.Count);
 
 		timer.Time(() => IncrementTime(TimeSpan.FromTicks(4)));
 
-		Assert.IsFalse(timer.IsRunning);
-		Assert.AreEqual(4, timer.Elapsed.Ticks);
-		Assert.AreEqual(3, timer.Average.Ticks);
-		Assert.AreEqual(0, timer.Samples);
-		Assert.AreEqual(4, timer.Count);
+		IsFalse(timer.IsRunning);
+		AreEqual(4, timer.Elapsed.Ticks);
+		AreEqual(3, timer.Average.Ticks);
+		AreEqual(0, timer.Samples);
+		AreEqual(4, timer.Count);
 
 		timer.Time(() => IncrementTime(TimeSpan.FromTicks(5)));
 
-		Assert.IsFalse(timer.IsRunning);
-		Assert.AreEqual(5, timer.Elapsed.Ticks);
-		Assert.AreEqual(4, timer.Average.Ticks);
-		Assert.AreEqual(0, timer.Samples);
-		Assert.AreEqual(5, timer.Count);
+		IsFalse(timer.IsRunning);
+		AreEqual(5, timer.Elapsed.Ticks);
+		AreEqual(4, timer.Average.Ticks);
+		AreEqual(0, timer.Samples);
+		AreEqual(5, timer.Count);
 	}
 
 	[TestMethod]
@@ -71,23 +71,23 @@ public class AverageTimerTests : CornerstoneUnitTest
 
 		IncrementTime(TimeSpan.FromMilliseconds(123));
 
-		Assert.IsTrue(timer.IsRunning);
-		Assert.AreEqual(123, timer.Elapsed.Milliseconds);
-		Assert.AreEqual(0, timer.Average.Ticks);
+		IsTrue(timer.IsRunning);
+		AreEqual(123, timer.Elapsed.Milliseconds);
+		AreEqual(0, timer.Average.Ticks);
 
 		// Cancel should reset state to empty
 		timer.Cancel();
 
-		Assert.IsFalse(timer.IsRunning);
-		Assert.AreEqual(123, timer.Elapsed.Milliseconds);
-		Assert.AreEqual(0, timer.Average.Ticks);
+		IsFalse(timer.IsRunning);
+		AreEqual(123, timer.Elapsed.Milliseconds);
+		AreEqual(0, timer.Average.Ticks);
 
 		// Calling stop later should not change state
 		timer.Stop();
 
-		Assert.IsFalse(timer.IsRunning);
-		Assert.AreEqual(123, timer.Elapsed.Milliseconds);
-		Assert.AreEqual(0, timer.Average.Ticks);
+		IsFalse(timer.IsRunning);
+		AreEqual(123, timer.Elapsed.Milliseconds);
+		AreEqual(0, timer.Average.Ticks);
 	}
 
 	[TestMethod]
@@ -99,64 +99,64 @@ public class AverageTimerTests : CornerstoneUnitTest
 		timer.Start();
 
 		IncrementTime(TimeSpan.FromMilliseconds(123));
-		Assert.IsTrue(timer.IsRunning);
-		Assert.AreEqual(123, timer.Elapsed.Milliseconds);
-		Assert.AreEqual(0, timer.Average.Ticks);
+		IsTrue(timer.IsRunning);
+		AreEqual(123, timer.Elapsed.Milliseconds);
+		AreEqual(0, timer.Average.Ticks);
 
 		timer.Stop();
-		Assert.IsFalse(timer.IsRunning);
-		Assert.AreEqual(123, timer.Elapsed.Milliseconds);
-		Assert.AreEqual(1230000, timer.Average.Ticks);
-		Assert.AreEqual(1, timer.Samples);
+		IsFalse(timer.IsRunning);
+		AreEqual(123, timer.Elapsed.Milliseconds);
+		AreEqual(1230000, timer.Average.Ticks);
+		AreEqual(1, timer.Samples);
 
 		// Restart timer
 		IncrementTime(TimeSpan.FromMilliseconds(12));
 		timer.Start();
 		IncrementTime(TimeSpan.FromMilliseconds(13));
-		Assert.IsTrue(timer.IsRunning);
-		Assert.AreEqual(13, timer.Elapsed.Milliseconds);
-		Assert.AreEqual(1230000, timer.Average.Ticks);
-		Assert.AreEqual(1, timer.Samples);
+		IsTrue(timer.IsRunning);
+		AreEqual(13, timer.Elapsed.Milliseconds);
+		AreEqual(1230000, timer.Average.Ticks);
+		AreEqual(1, timer.Samples);
 
 		// Cancel should reset state to empty
 		timer.Cancel();
-		Assert.IsFalse(timer.IsRunning);
-		Assert.AreEqual(13, timer.Elapsed.Milliseconds);
-		Assert.AreEqual(1230000, timer.Average.Ticks);
-		Assert.AreEqual(1, timer.Samples);
+		IsFalse(timer.IsRunning);
+		AreEqual(13, timer.Elapsed.Milliseconds);
+		AreEqual(1230000, timer.Average.Ticks);
+		AreEqual(1, timer.Samples);
 
 		// Calling stop later should not change state
 		timer.Stop();
-		Assert.IsFalse(timer.IsRunning);
-		Assert.AreEqual(13, timer.Elapsed.Milliseconds);
-		Assert.AreEqual(1230000, timer.Average.Ticks);
-		Assert.AreEqual(1, timer.Samples);
+		IsFalse(timer.IsRunning);
+		AreEqual(13, timer.Elapsed.Milliseconds);
+		AreEqual(1230000, timer.Average.Ticks);
+		AreEqual(1, timer.Samples);
 	}
 
 	[TestMethod]
 	public void IsRunning()
 	{
 		var timer = new AverageTimer();
-		Assert.IsFalse(timer.IsRunning);
+		IsFalse(timer.IsRunning);
 
 		timer.Start();
-		Assert.IsTrue(timer.IsRunning);
+		IsTrue(timer.IsRunning);
 
 		timer.Stop();
-		Assert.IsFalse(timer.IsRunning);
+		IsFalse(timer.IsRunning);
 
-		timer.Time(() => { Assert.IsTrue(timer.IsRunning); });
+		timer.Time(() => { IsTrue(timer.IsRunning); });
 
-		Assert.IsFalse(timer.IsRunning);
+		IsFalse(timer.IsRunning);
 
 		var actual = timer.Time(() =>
 		{
-			Assert.IsTrue(timer.IsRunning);
+			IsTrue(timer.IsRunning);
 			return true;
 		});
 
-		Assert.IsTrue(actual);
-		Assert.IsFalse(timer.IsRunning);
+		IsTrue(actual);
+		IsFalse(timer.IsRunning);
 	}
 
 	[TestMethod]
@@ -165,50 +165,50 @@ public class AverageTimerTests : CornerstoneUnitTest
 		SetTime(new DateTime(2020, 04, 23, 07, 56, 12));
 
 		var timer = new AverageTimer(10, this, null);
-		Assert.IsFalse(timer.IsRunning);
+		IsFalse(timer.IsRunning);
 
 		timer.Start();
-		Assert.IsTrue(timer.IsRunning);
+		IsTrue(timer.IsRunning);
 
 		IncrementTime(TimeSpan.FromTicks(10));
 		timer.Stop();
 
-		Assert.IsFalse(timer.IsRunning);
-		Assert.AreEqual(10, timer.Elapsed.Ticks);
-		Assert.AreEqual(10, timer.Average.Ticks);
-		Assert.AreEqual(1, timer.Samples);
+		IsFalse(timer.IsRunning);
+		AreEqual(10, timer.Elapsed.Ticks);
+		AreEqual(10, timer.Average.Ticks);
+		AreEqual(1, timer.Samples);
 
 		// Just bump up to ensure average is borked by time moving
 		IncrementTime(TimeSpan.FromTicks(100));
 
 		timer.Start();
 
-		Assert.IsTrue(timer.IsRunning);
+		IsTrue(timer.IsRunning);
 		IncrementTime(TimeSpan.FromTicks(20));
 
 		timer.Stop();
 
 		// 10 + 20 = 30 / 2 = 15
-		Assert.IsFalse(timer.IsRunning);
-		Assert.AreEqual(20, timer.Elapsed.Ticks);
-		Assert.AreEqual(15, timer.Average.Ticks);
-		Assert.AreEqual(2, timer.Samples);
+		IsFalse(timer.IsRunning);
+		AreEqual(20, timer.Elapsed.Ticks);
+		AreEqual(15, timer.Average.Ticks);
+		AreEqual(2, timer.Samples);
 
 		// Just bump up to ensure average is borked by time moving
 		IncrementTime(TimeSpan.FromTicks(131));
 
 		timer.Start();
 
-		Assert.IsTrue(timer.IsRunning);
+		IsTrue(timer.IsRunning);
 		IncrementTime(TimeSpan.FromTicks(9));
 
 		timer.Stop();
 
 		// 10 + 20 + 9 = 39 / 3 = 13
-		Assert.IsFalse(timer.IsRunning);
-		Assert.AreEqual(9, timer.Elapsed.Ticks);
-		Assert.AreEqual(13, timer.Average.Ticks);
-		Assert.AreEqual(3, timer.Samples);
+		IsFalse(timer.IsRunning);
+		AreEqual(9, timer.Elapsed.Ticks);
+		AreEqual(13, timer.Average.Ticks);
+		AreEqual(3, timer.Samples);
 	}
 
 	[TestMethod]
@@ -232,10 +232,10 @@ public class AverageTimerTests : CornerstoneUnitTest
 		}
 
 		// 6 + 7 + 8 + 9 = 30 / 4 = 7
-		Assert.IsFalse(timer.IsRunning);
-		Assert.AreEqual(9, timer.Elapsed.Ticks);
-		Assert.AreEqual(7, timer.Average.Ticks);
-		Assert.AreEqual(4, timer.Samples);
+		IsFalse(timer.IsRunning);
+		AreEqual(9, timer.Elapsed.Ticks);
+		AreEqual(7, timer.Average.Ticks);
+		AreEqual(4, timer.Samples);
 	}
 
 	[TestMethod]
@@ -254,10 +254,10 @@ public class AverageTimerTests : CornerstoneUnitTest
 			});
 		}
 
-		Assert.AreEqual(10000, count);
-		Assert.AreEqual(10000, timer.Count);
-		Assert.AreEqual(0, timer.Samples);
-		Assert.AreEqual(TimeSpan.FromSeconds(1), timer.Average);
+		AreEqual(10000, count);
+		AreEqual(10000, timer.Count);
+		AreEqual(0, timer.Samples);
+		AreEqual(TimeSpan.FromSeconds(1), timer.Average);
 	}
 
 	#endregion

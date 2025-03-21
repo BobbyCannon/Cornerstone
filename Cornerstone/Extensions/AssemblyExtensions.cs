@@ -54,7 +54,10 @@ public static class AssemblyExtensions
 		return assembly
 			.GetCustomAttributes(false)
 			.OfType<DebuggableAttribute>()
-			.Any(x => x.IsJITTrackingEnabled);
+			.Any(x => x.IsJITTrackingEnabled
+				|| x.IsJITOptimizerDisabled
+				|| x.DebuggingFlags.HasFlag(DebuggableAttribute.DebuggingModes.DisableOptimizations)
+			);
 	}
 
 	/// <summary>

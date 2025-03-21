@@ -35,14 +35,28 @@ public class ApplicationSettings : SettingsFile<ApplicationSettings>
 
 	#region Properties
 
-	[Category("Theme")]
-	public bool CycleThemes
+	public WindowLocation MainWindowLocation => Get<WindowLocation>();
+
+	[Category("Menu")]
+	public bool MenuAutoCollapseOnSelectionChange
+	{
+		get => Get(false);
+		set => Set(value);
+	}
+
+	[Category("Menu")]
+	public bool MenuAutoExpandOnResize
+	{
+		get => Get(false);
+		set => Set(value);
+	}
+
+	[Category("Menu")]
+	public bool MenuIsOpen
 	{
 		get => Get(true);
 		set => Set(value);
 	}
-
-	public WindowLocation MainWindowLocation => Get<WindowLocation>();
 
 	public string SelectedTabName
 	{

@@ -1,6 +1,6 @@
 <Project>
 	<PropertyGroup>
-		<TargetFrameworks>netstandard2.0;net9.0</TargetFrameworks>
+		<TargetFrameworks>net9.0</TargetFrameworks>
 		<Configurations>Debug;Release</Configurations>
 		<ApplicationIcon>$(MSBuildThisFileDirectory)Cornerstone.ico</ApplicationIcon>
 		<Company>Bobby Cannon</Company>
@@ -9,8 +9,7 @@
 		<AssemblyVersion>1.0.5</AssemblyVersion>
 		<FileVersion>$(AssemblyVersion)</FileVersion>
 		<Version>$(AssemblyVersion)-alpha</Version>
-		<AvaloniaVersion>11.3.999-cibuild0054325-alpha</AvaloniaVersion>
-		<SkiaSharpVersion>2.88.9</SkiaSharpVersion>
+		<AvaloniaVersion>11.3.53.14441</AvaloniaVersion>
 		<LangVersion>latest</LangVersion>
 		<GenerateDocumentationFile>false</GenerateDocumentationFile>
 		<SignAssembly>false</SignAssembly>
@@ -30,6 +29,7 @@
 		<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>disable</Nullable>
+		<EnableTrimAnalyzer>false</EnableTrimAnalyzer>
 		<NoWarn>$(NoWarn);CA1416;CS8002;MSB3277;NETSDK1206;NU1608;NU1900;</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
@@ -49,7 +49,7 @@
 	<ItemGroup Condition="$(MSBuildProjectName)!='Cornerstone.Weaver' AND $(MSBuildProjectName)!='Cornerstone.Weaver.Fody'">
 		<None Remove="FodyWeavers.xml" />
 		<None Include="$(MSBuildThisFileDirectory)..\Cornerstone\FodyWeavers.xml" />
-		<PackageReference Include="Fody" Version="6.9.1">
+		<PackageReference Include="Fody" Version="6.9.2">
 			<PrivateAssets>None</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>

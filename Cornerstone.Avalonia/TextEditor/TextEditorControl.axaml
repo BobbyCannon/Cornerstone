@@ -1,0 +1,72 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+	<ControlTheme x:Key="{x:Type TextEditorControl}"
+			TargetType="TextEditorControl">
+		<Setter Property="Background" Value="{DynamicResource TextEditorBackground}" />
+		<Setter Property="Foreground" Value="{DynamicResource TextEditorForeground}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource TextEditorBorderBrush}" />
+		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="Padding" Value="8" />
+		<Setter Property="FontFamily" Value="{DynamicResource DejaVuSansMono}" />
+		<Setter Property="FontSize" Value="{DynamicResource TextEditorFontSize}" />
+		<Setter Property="HorizontalAlignment" Value="Stretch" />
+		<Setter Property="VerticalAlignment" Value="Stretch" />
+		<Setter Property="ShowLineNumbers" Value="True" />
+		<Setter Property="ContextMenu">
+			<Setter.Value>
+				<ContextMenu>
+					<MenuItem x:Name="TextEditorContextFlyoutCutItem"
+							Header="Cut"
+							Command="{Binding $parent[TextEditorControl].Cut}"
+							IsEnabled="{Binding $parent[TextEditorControl].CanCut}"
+							InputGesture="{x:Static TextBox.CutGesture}">
+						<MenuItem.Icon>
+							<Path Data="{StaticResource FontAwesome.Cut.Light}"></Path>
+						</MenuItem.Icon>
+					</MenuItem>
+					<MenuItem x:Name="TextEditorContextFlyoutCopyItem"
+							Header="Copy"
+							Command="{Binding $parent[TextEditorControl].Copy}"
+							IsEnabled="{Binding $parent[TextEditorControl].CanCopy}"
+							InputGesture="{x:Static TextBox.CopyGesture}">
+						<MenuItem.Icon>
+							<Path Data="{StaticResource FontAwesome.Copy.Light}"></Path>
+						</MenuItem.Icon>
+					</MenuItem>
+					<MenuItem x:Name="TextEditorContextFlyoutPasteItem"
+							Header="Paste"
+							Command="{Binding $parent[TextEditorControl].Paste}"
+							IsEnabled="{Binding $parent[TextEditorControl].CanPaste}"
+							InputGesture="{x:Static TextBox.PasteGesture}">
+						<MenuItem.Icon>
+							<Path Data="{StaticResource FontAwesome.Paste.Light}"></Path>
+						</MenuItem.Icon>
+					</MenuItem>
+				</ContextMenu>
+			</Setter.Value>
+		</Setter>
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border Background="{TemplateBinding Background}"
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}"
+						HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
+						VerticalAlignment="{TemplateBinding VerticalAlignment}">
+					<ScrollViewer Focusable="False"
+							Name="PART_ScrollViewer"
+							VerticalScrollBarVisibility="{TemplateBinding VerticalScrollBarVisibility}"
+							HorizontalScrollBarVisibility="{TemplateBinding HorizontalScrollBarVisibility}"
+							Padding="{TemplateBinding Padding}" />
+				</Border>
+			</ControlTemplate>
+		</Setter>
+	</ControlTheme>
+	<Design.PreviewWith>
+		<TextEditorControl
+				Height="500"
+				Width="400"
+				Text="&#x09;a&#x09;a&#x0D;a&#x09;a&#x09;a">
+		</TextEditorControl>
+	</Design.PreviewWith>
+</ResourceDictionary>

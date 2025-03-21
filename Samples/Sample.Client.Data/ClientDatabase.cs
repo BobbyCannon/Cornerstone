@@ -3,6 +3,7 @@
 using System.IO;
 using System.Reflection;
 using Cornerstone.EntityFramework;
+using Cornerstone.Logging;
 using Cornerstone.Storage;
 using Cornerstone.Sync;
 using Microsoft.EntityFrameworkCore;
@@ -34,11 +35,13 @@ public abstract class ClientDatabase : EntityFrameworkSyncableDatabase, IClientD
 
 	#region Properties
 
-	/// <inheritdoc />
 	public ISyncableRepository<ClientAccount, int> Accounts => GetSyncableRepository<ClientAccount, int>();
-
-	/// <inheritdoc />
 	public ISyncableRepository<ClientAddress, long> Addresses => GetSyncableRepository<ClientAddress, long>();
+	public ISyncableRepository<ClientLogEvent, long> LogEvents => GetSyncableRepository<ClientLogEvent, long>();
+	public ISyncableRepository<ClientSetting, long> Settings => GetSyncableRepository<ClientSetting, long>();
+	public override string[] SyncOrder => IClientDatabase.GetSyncOrder();
+	public ISyncableRepository<TrackerPathConfigurationEntity, int> TrackerPathConfigurations => GetSyncableRepository<TrackerPathConfigurationEntity, int>();
+	public ISyncableRepository<TrackerPathEntity, long> TrackerPaths => GetSyncableRepository<TrackerPathEntity, long>();
 
 	#endregion
 

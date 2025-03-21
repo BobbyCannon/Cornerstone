@@ -12,8 +12,8 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Interop.UIAutomationClient" Version="10.19041.0" />
-		<PackageReference Include="MSTest.TestFramework" Version="3.7.0" />
-		<PackageReference Include="System.Management" Version="9.0.0" />
+		<PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
+		<PackageReference Include="System.Management" Version="9.0.2" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Cornerstone.Newtonsoft\Cornerstone.Newtonsoft.csproj" />

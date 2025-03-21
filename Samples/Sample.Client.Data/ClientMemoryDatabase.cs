@@ -1,7 +1,8 @@
 ﻿#region References
 
 using Cornerstone.EntityFramework;
-using Cornerstone.Extensions;
+using Cornerstone.Logging;
+using Cornerstone.Runtime;
 using Cornerstone.Storage;
 using Cornerstone.Sync;
 using Sample.Shared.Storage;
@@ -16,15 +17,20 @@ public class ClientMemoryDatabase : SyncableDatabase, IClientDatabase
 	#region Constructors
 
 	/// <inheritdoc />
-	public ClientMemoryDatabase() : this(null, null)
+	public ClientMemoryDatabase() : this(null, null, null)
 	{
 	}
 
 	/// <inheritdoc />
-	public ClientMemoryDatabase(DatabaseSettings settings, DatabaseKeyCache keyCache) : base(settings, keyCache)
+	public ClientMemoryDatabase(IDateTimeProvider dateTimeProvider, DatabaseSettings settings, DatabaseKeyCache keyCache)
+		: base(dateTimeProvider, settings, keyCache)
 	{
 		Accounts = GetSyncableRepository<ClientAccount, int>();
 		Addresses = GetSyncableRepository<ClientAddress, long>();
+		LogEvents = GetSyncableRepository<ClientLogEvent, long>();
+		Settings = GetSyncableRepository<ClientSetting, long>();
+		TrackerPathConfigurations = GetSyncableRepository<TrackerPathConfigurationEntity, int>();
+		TrackerPaths = GetSyncableRepository<TrackerPathEntity, long>();
 
 		this.ConfigureModelViaMapping();
 	}
@@ -33,27 +39,19 @@ public class ClientMemoryDatabase : SyncableDatabase, IClientDatabase
 
 	#region Properties
 
-	/// <inheritdoc />
 	public ISyncableRepository<ClientAccount, int> Accounts { get; }
 
-	/// <inheritdoc />
 	public ISyncableRepository<ClientAddress, long> Addresses { get; }
 
-	/// <inheritdoc />
-	public override string[] SyncOrder => GetSyncOrder();
+	public ISyncableRepository<ClientLogEvent, long> LogEvents { get; }
 
-	#endregion
+	public ISyncableRepository<ClientSetting, long> Settings { get; }
 
-	#region Methods
+	public override string[] SyncOrder => IClientDatabase.GetSyncOrder();
 
-	public static string[] GetSyncOrder()
-	{
-		return
-		[
-			typeof(ClientAccount).ToAssemblyName(),
-			typeof(ClientAddress).ToAssemblyName()
-		];
-	}
+	public ISyncableRepository<TrackerPathConfigurationEntity, int> TrackerPathConfigurations { get; }
+
+	public ISyncableRepository<TrackerPathEntity, long> TrackerPaths { get; }
 
 	#endregion
 }

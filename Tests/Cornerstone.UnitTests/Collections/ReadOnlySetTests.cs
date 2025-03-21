@@ -47,10 +47,10 @@ public class ReadOnlySetTests : CornerstoneUnitTest
 		ExpectedException<NotSupportedException>(() => ((ICollection<int>) actual).Add(1));
 		ExpectedException<NotSupportedException>(() => ((ISet<int>) actual).Add(1));
 		ExpectedException<NotSupportedException>(() => actual.Remove(1));
-		ExpectedException<NotSupportedException>(() => actual.ExceptWith(new[] { 2, 3, 4 }));
-		ExpectedException<NotSupportedException>(() => actual.IntersectWith(new[] { 2, 3, 4 }));
-		ExpectedException<NotSupportedException>(() => actual.SymmetricExceptWith(new[] { 2, 3, 4 }));
-		ExpectedException<NotSupportedException>(() => actual.UnionWith(new[] { 2, 3, 4 }));
+		ExpectedException<NotSupportedException>(() => actual.ExceptWith([2, 3, 4]));
+		ExpectedException<NotSupportedException>(() => actual.IntersectWith([2, 3, 4]));
+		ExpectedException<NotSupportedException>(() => actual.SymmetricExceptWith([2, 3, 4]));
+		ExpectedException<NotSupportedException>(() => actual.UnionWith([2, 3, 4]));
 	}
 
 	[TestMethod]

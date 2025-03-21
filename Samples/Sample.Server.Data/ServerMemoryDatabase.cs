@@ -1,8 +1,8 @@
 ﻿#region References
 
 using Cornerstone.EntityFramework;
-using Cornerstone.Extensions;
 using Cornerstone.Logging;
+using Cornerstone.Runtime;
 using Cornerstone.Storage;
 using Cornerstone.Sync;
 using Sample.Shared.Storage;
@@ -17,12 +17,13 @@ public class ServerMemoryDatabase : SyncableDatabase, IServerDatabase
 	#region Constructors
 
 	/// <inheritdoc />
-	public ServerMemoryDatabase() : this(null, null)
+	public ServerMemoryDatabase() : this(null, null, null)
 	{
 	}
 
 	/// <inheritdoc />
-	public ServerMemoryDatabase(DatabaseSettings settings, DatabaseKeyCache keyCache) : base(settings, keyCache)
+	public ServerMemoryDatabase(IDateTimeProvider dateTimeProvider, DatabaseSettings settings, DatabaseKeyCache keyCache)
+		: base(dateTimeProvider, settings, keyCache)
 	{
 		Accounts = GetSyncableRepository<AccountEntity, int>();
 		Addresses = GetSyncableRepository<AddressEntity, long>();
@@ -45,33 +46,30 @@ public class ServerMemoryDatabase : SyncableDatabase, IServerDatabase
 	#region Properties
 
 	public ISyncableRepository<AccountEntity, int> Accounts { get; }
+
 	public ISyncableRepository<AddressEntity, long> Addresses { get; }
+
 	public IRepository<FoodEntity, int> Food { get; }
+
 	public IRepository<FoodRelationshipEntity, int> FoodRelationships { get; }
+
 	public IRepository<GroupMemberEntity, int> GroupMembers { get; }
+
 	public IRepository<GroupEntity, int> Groups { get; }
+
 	public ISyncableRepository<LogEventEntity, long> LogEvents { get; }
+
 	public IRepository<PetEntity, (string Name, int OwnerId)> Pets { get; }
+
 	public IRepository<PetTypeEntity, string> PetTypes { get; }
+
 	public ISyncableRepository<SettingEntity, long> Settings { get; }
-	public override string[] SyncOrder => GetSyncOrder();
+
+	public override string[] SyncOrder => IServerDatabase.GetSyncOrder();
+
 	public ISyncableRepository<TrackerPathConfigurationEntity, int> TrackerPathConfigurations { get; }
+
 	public ISyncableRepository<TrackerPathEntity, long> TrackerPaths { get; }
-
-	#endregion
-
-	#region Methods
-
-	public static string[] GetSyncOrder()
-	{
-		return
-		[
-			typeof(AccountEntity).ToAssemblyName(),
-			typeof(AddressEntity).ToAssemblyName(),
-			typeof(LogEventEntity).ToAssemblyName(),
-			typeof(SettingEntity).ToAssemblyName()
-		];
-	}
 
 	#endregion
 }

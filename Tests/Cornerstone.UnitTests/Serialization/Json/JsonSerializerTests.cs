@@ -191,6 +191,25 @@ public class JsonSerializerTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void IgnoreSerialization()
+	{
+		var expected = new SampleWithIgnoredMembers
+		{
+			FirstName = "First",
+			LastName = "Last",
+			Nickname = "Nick"
+		};
+
+		var expectedJson = "{\"FirstName\":\"First\",\"LastName\":\"Last\"}";
+		var actualJson = expected.ToJson();
+		AreEqual(expectedJson, actualJson);
+
+		var incoming = "{\"FirstName\":\"First\",\"LastName\":\"Last\",\"Nickname\":\"Nick\"}";
+		var actual = incoming.FromJson<SampleWithIgnoredMembers>();
+		AreEqual(expected, actual);
+	}
+
+	[TestMethod]
 	public void JsonValues()
 	{
 		AreEqual("\"ABC\"", new JsonString("ABC").ToJson());
@@ -667,10 +686,10 @@ public class JsonSerializerTests : CornerstoneUnitTest
 			new("87: UInt128?", UInt128.MaxValue, typeof(UInt128?), "340282366920938463463374607431768211455"),
 			new("88: UInt128?", null, typeof(UInt128?), "null"),
 			new("89: decimal", decimal.MinValue, typeof(decimal), "-79228162514264337593543950335.0"),
-			new("90: decimal", (decimal) 0, typeof(decimal), "0.0"),
+			new("90: decimal", (decimal) 0m, typeof(decimal), "0.0"),
 			new("91: decimal", decimal.MaxValue, typeof(decimal), "79228162514264337593543950335.0"),
 			new("92: decimal?", decimal.MinValue, typeof(decimal?), "-79228162514264337593543950335.0"),
-			new("93: decimal?", (decimal) 0, typeof(decimal?), "0.0"),
+			new("93: decimal?", (decimal) 0m, typeof(decimal?), "0.0"),
 			new("94: decimal?", decimal.MaxValue, typeof(decimal?), "79228162514264337593543950335.0"),
 			new("95: decimal?", null, typeof(decimal?), "null"),
 			new("96: double", double.MinValue, typeof(double), "-1.7976931348623157E+308"),
@@ -691,20 +710,20 @@ public class JsonSerializerTests : CornerstoneUnitTest
 			new("111: double?", double.Pi, typeof(double?), "3.141592653589793"),
 			new("112: double?", null, typeof(double?), "null"),
 			new("113: float", float.MinValue, typeof(float), "-3.4028235E+38"),
-			new("114: float", (float) 0, typeof(float), "-0.0"),
+			new("114: float", (float) 0f, typeof(float), "-0.0"),
 			new("115: float", float.MaxValue, typeof(float), "3.4028235E+38"),
 			new("116: float", float.NegativeInfinity, typeof(float), "\"-Infinity\""),
 			new("117: float", float.PositiveInfinity, typeof(float), "\"Infinity\""),
 			new("118: float", float.NaN, typeof(float), "\"NaN\""),
-			new("119: float", (float) -0, typeof(float), "-0.0"),
+			new("119: float", (float) -0f, typeof(float), "-0.0"),
 			new("120: float", float.Pi, typeof(float), "3.1415927"),
 			new("121: float?", float.MinValue, typeof(float?), "-3.4028235E+38"),
-			new("122: float?", (float) 0, typeof(float?), "-0.0"),
+			new("122: float?", (float) 0f, typeof(float?), "-0.0"),
 			new("123: float?", float.MaxValue, typeof(float?), "3.4028235E+38"),
 			new("124: float?", float.NegativeInfinity, typeof(float?), "\"-Infinity\""),
 			new("125: float?", float.PositiveInfinity, typeof(float?), "\"Infinity\""),
 			new("126: float?", float.NaN, typeof(float?), "\"NaN\""),
-			new("127: float?", (float) -0, typeof(float?), "-0.0"),
+			new("127: float?", (float) -0f, typeof(float?), "-0.0"),
 			new("128: float?", float.Pi, typeof(float?), "3.1415927"),
 			new("129: float?", null, typeof(float?), "null"),
 			new("130: char", '\0', typeof(char), "\"\\u0000\""),
@@ -722,93 +741,91 @@ public class JsonSerializerTests : CornerstoneUnitTest
 			new("142: TextBuilder", null, typeof(TextBuilder), "null"),
 			new("143: GapBuffer<char>", new GapBuffer<char>(""), typeof(GapBuffer<char>), "\"\""),
 			new("144: GapBuffer<char>", null, typeof(GapBuffer<char>), "null"),
-			new("145: RopeBuffer<char>", new RopeBuffer<char>(""), typeof(RopeBuffer<char>), "\"\""),
-			new("146: RopeBuffer<char>", null, typeof(RopeBuffer<char>), "null"),
-			new("147: JsonString", new JsonString(""), typeof(JsonString), "\"\""),
-			new("148: JsonString", null, typeof(JsonString), "null"),
-			new("149: DateTime", DateTime.MinValue, typeof(DateTime), "\"0001-01-01T00:00:00\""),
-			new("150: DateTime", DateTime.MaxValue, typeof(DateTime), "\"9999-12-31T23:59:59.9999999\""),
-			new("151: DateTime", new DateTime(2023, 10, 31, 12, 1, 2, DateTimeKind.Local), typeof(DateTime), "\"2023-10-31T16:01:02Z\""),
-			new("152: DateTime", new DateTime(2023, 10, 31, 12, 1, 3, DateTimeKind.Utc), typeof(DateTime), "\"2023-10-31T12:01:03Z\""),
-			new("153: DateTime", new DateTime(2023, 10, 31, 12, 1, 4, DateTimeKind.Unspecified), typeof(DateTime), "\"2023-10-31T12:01:04Z\""),
-			new("154: DateTime?", null, typeof(DateTime?), "null"),
-			new("155: DateTime?", DateTime.MinValue, typeof(DateTime?), "\"0001-01-01T00:00:00\""),
-			new("156: DateTime?", DateTime.MaxValue, typeof(DateTime?), "\"9999-12-31T23:59:59.9999999\""),
-			new("157: DateTime?", new DateTime(2023, 10, 31, 12, 1, 2, DateTimeKind.Local), typeof(DateTime?), "\"2023-10-31T16:01:02Z\""),
-			new("158: DateTime?", new DateTime(2023, 10, 31, 12, 1, 3, DateTimeKind.Utc), typeof(DateTime?), "\"2023-10-31T12:01:03Z\""),
-			new("159: DateTime?", new DateTime(2023, 10, 31, 12, 1, 4, DateTimeKind.Unspecified), typeof(DateTime?), "\"2023-10-31T12:01:04Z\""),
-			new("160: DateTimeOffset", DateTimeOffset.MinValue, typeof(DateTimeOffset), "\"0001-01-01T00:00:00+00:00\""),
-			new("161: DateTimeOffset", DateTimeOffset.MaxValue, typeof(DateTimeOffset), "\"9999-12-31T23:59:59.9999999+00:00\""),
-			new("162: DateTimeOffset", new DateTimeOffset(2023, 10, 31, 12, 1, 2, 0, 0, new TimeSpan(1, 2, 0)), typeof(DateTimeOffset), "\"2023-10-31T12:01:02+01:02\""),
-			new("163: DateTimeOffset?", null, typeof(DateTimeOffset?), "null"),
-			new("164: DateTimeOffset?", DateTimeOffset.MinValue, typeof(DateTimeOffset?), "\"0001-01-01T00:00:00+00:00\""),
-			new("165: DateTimeOffset?", DateTimeOffset.MaxValue, typeof(DateTimeOffset?), "\"9999-12-31T23:59:59.9999999+00:00\""),
-			new("166: DateTimeOffset?", new DateTimeOffset(2023, 10, 31, 12, 1, 2, 0, 0, new TimeSpan(1, 2, 0)), typeof(DateTimeOffset?), "\"2023-10-31T12:01:02+01:02\""),
-			new("167: IsoDateTime", IsoDateTime.MinValue, typeof(IsoDateTime), "\"0001-01-01T00:00:00.0000000Z\""),
-			new("168: IsoDateTime", IsoDateTime.MaxValue, typeof(IsoDateTime), "\"9999-12-31T23:59:59.9999999Z\""),
-			new("169: IsoDateTime", new IsoDateTime(new DateTime(2023, 10, 31, 12, 1, 2, DateTimeKind.Local), new TimeSpan(1, 2, 3)), typeof(IsoDateTime), "\"2023-10-31T12:01:02.0000000-04:00/PT1H2M3.000S\""),
-			new("170: IsoDateTime", new IsoDateTime(new DateTime(2023, 10, 31, 12, 1, 3, DateTimeKind.Utc), new TimeSpan(4, 5, 6)), typeof(IsoDateTime), "\"2023-10-31T12:01:03.0000000Z/PT4H5M6.000S\""),
-			new("171: IsoDateTime?", null, typeof(IsoDateTime?), "null"),
-			new("172: IsoDateTime?", IsoDateTime.MinValue, typeof(IsoDateTime?), "\"0001-01-01T00:00:00.0000000Z\""),
-			new("173: IsoDateTime?", IsoDateTime.MaxValue, typeof(IsoDateTime?), "\"9999-12-31T23:59:59.9999999Z\""),
-			new("174: IsoDateTime?", new IsoDateTime(new DateTime(2023, 10, 31, 12, 1, 2, DateTimeKind.Local), new TimeSpan(1, 2, 3)), typeof(IsoDateTime?), "\"2023-10-31T12:01:02.0000000-04:00/PT1H2M3.000S\""),
-			new("175: IsoDateTime?", new IsoDateTime(new DateTime(2023, 10, 31, 12, 1, 3, DateTimeKind.Utc), new TimeSpan(4, 5, 6)), typeof(IsoDateTime?), "\"2023-10-31T12:01:03.0000000Z/PT4H5M6.000S\""),
-			new("176: OscTimeTag", OscTimeTag.MinValue, typeof(OscTimeTag), "\"1900-01-01T00:00:00.0000000Z\""),
-			new("177: OscTimeTag", OscTimeTag.MaxValue, typeof(OscTimeTag), "\"2036-02-07T06:28:16.0000000Z\""),
-			new("178: OscTimeTag", new OscTimeTag(new DateTime(2023, 10, 31, 12, 1, 2, DateTimeKind.Utc)), typeof(OscTimeTag), "\"2023-10-31T12:01:02.0000000Z\""),
-			new("179: OscTimeTag?", null, typeof(OscTimeTag?), "null"),
-			new("180: OscTimeTag?", OscTimeTag.MinValue, typeof(OscTimeTag?), "\"1900-01-01T00:00:00.0000000Z\""),
-			new("181: OscTimeTag?", OscTimeTag.MaxValue, typeof(OscTimeTag?), "\"2036-02-07T06:28:16.0000000Z\""),
-			new("182: OscTimeTag?", new OscTimeTag(new DateTime(2023, 10, 31, 12, 1, 2, DateTimeKind.Utc)), typeof(OscTimeTag?), "\"2023-10-31T12:01:02.0000000Z\""),
-			new("183: TimeSpan", TimeSpan.MinValue, typeof(TimeSpan), "\"-10675199.02:48:05.4775808\""),
-			new("184: TimeSpan", TimeSpan.MaxValue, typeof(TimeSpan), "\"10675199.02:48:05.4775807\""),
-			new("185: TimeSpan", TimeSpan.Zero, typeof(TimeSpan), "\"00:00:00\""),
-			new("186: TimeSpan", new TimeSpan(1, 2, 3, 4, 5, 6), typeof(TimeSpan), "\"1.02:03:04.0050060\""),
-			new("187: TimeSpan?", TimeSpan.MinValue, typeof(TimeSpan?), "\"-10675199.02:48:05.4775808\""),
-			new("188: TimeSpan?", TimeSpan.MaxValue, typeof(TimeSpan?), "\"10675199.02:48:05.4775807\""),
-			new("189: TimeSpan?", TimeSpan.Zero, typeof(TimeSpan?), "\"00:00:00\""),
-			new("190: TimeSpan?", new TimeSpan(1, 2, 3, 4, 5, 6), typeof(TimeSpan?), "\"1.02:03:04.0050060\""),
-			new("191: TimeSpan?", null, typeof(TimeSpan?), "null"),
-			new("192: Guid", Guid.Empty, typeof(Guid), "\"00000000-0000-0000-0000-000000000000\""),
-			new("193: Guid", Guid.Parse("6dcefb3f-4b1c-40fd-827e-58d31767e4a8"), typeof(Guid), "\"6dcefb3f-4b1c-40fd-827e-58d31767e4a8\""),
-			new("194: Guid", Guid.Parse("00000000-0000-0000-0000-000000000001"), typeof(Guid), "\"00000000-0000-0000-0000-000000000001\""),
-			new("195: Guid", Guid.Parse("10000000-0000-0000-0000-000000000000"), typeof(Guid), "\"10000000-0000-0000-0000-000000000000\""),
-			new("196: Guid?", null, typeof(Guid?), "null"),
-			new("197: Guid?", Guid.Empty, typeof(Guid?), "\"00000000-0000-0000-0000-000000000000\""),
-			new("198: Guid?", Guid.Parse("6dcefb3f-4b1c-40fd-827e-58d31767e4a8"), typeof(Guid?), "\"6dcefb3f-4b1c-40fd-827e-58d31767e4a8\""),
-			new("199: Guid?", Guid.Parse("00000000-0000-0000-0000-000000000001"), typeof(Guid?), "\"00000000-0000-0000-0000-000000000001\""),
-			new("200: Guid?", Guid.Parse("10000000-0000-0000-0000-000000000000"), typeof(Guid?), "\"10000000-0000-0000-0000-000000000000\""),
-			new("201: ShortGuid", ShortGuid.Empty, typeof(ShortGuid), "\"00000000-0000-0000-0000-000000000000\""),
-			new("202: ShortGuid", ShortGuid.Parse("P_vObRxL_UCCfljTF2fkqA"), typeof(ShortGuid), "\"6dcefb3f-4b1c-40fd-827e-58d31767e4a8\""),
-			new("203: ShortGuid", ShortGuid.Parse("AAAAAAAAAAAAAAAAAAAAAQ"), typeof(ShortGuid), "\"00000000-0000-0000-0000-000000000001\""),
-			new("204: ShortGuid", ShortGuid.Parse("AAAAEAAAAAAAAAAAAAAAAA"), typeof(ShortGuid), "\"10000000-0000-0000-0000-000000000000\""),
-			new("205: ShortGuid?", null, typeof(ShortGuid?), "null"),
-			new("206: ShortGuid?", ShortGuid.Empty, typeof(ShortGuid?), "\"00000000-0000-0000-0000-000000000000\""),
-			new("207: ShortGuid?", ShortGuid.Parse("P_vObRxL_UCCfljTF2fkqA"), typeof(ShortGuid?), "\"6dcefb3f-4b1c-40fd-827e-58d31767e4a8\""),
-			new("208: ShortGuid?", ShortGuid.Parse("AAAAAAAAAAAAAAAAAAAAAQ"), typeof(ShortGuid?), "\"00000000-0000-0000-0000-000000000001\""),
-			new("209: ShortGuid?", ShortGuid.Parse("AAAAEAAAAAAAAAAAAAAAAA"), typeof(ShortGuid?), "\"10000000-0000-0000-0000-000000000000\""),
-			new("210: Version", new Version(0, 0), typeof(Version), "\"0.0\""),
-			new("211: Version", new Version(1, 2), typeof(Version), "\"1.2\""),
-			new("212: Version", new Version(1, 2, 3), typeof(Version), "\"1.2.3\""),
-			new("213: Version", new Version(1, 2, 3, 4), typeof(Version), "\"1.2.3.4\""),
-			new("214: Version", new Version(12345, 12345, 12345, 12345), typeof(Version), "\"12345.12345.12345.12345\""),
-			new("215: Version", new Version(99999, 99999, 99999, 99999), typeof(Version), "\"99999.99999.99999.99999\""),
-			new("216: Version", null, typeof(Version), "null"),
+			new("145: JsonString", new JsonString(""), typeof(JsonString), "\"\""),
+			new("146: JsonString", null, typeof(JsonString), "null"),
+			new("147: DateTime", DateTime.MinValue, typeof(DateTime), "\"0001-01-01T00:00:00\""),
+			new("148: DateTime", DateTime.MaxValue, typeof(DateTime), "\"9999-12-31T23:59:59.9999999\""),
+			new("149: DateTime", new DateTime(2023, 10, 31, 12, 1, 2, DateTimeKind.Local), typeof(DateTime), "\"2023-10-31T16:01:02Z\""),
+			new("150: DateTime", new DateTime(2023, 10, 31, 12, 1, 3, DateTimeKind.Utc), typeof(DateTime), "\"2023-10-31T12:01:03Z\""),
+			new("151: DateTime", new DateTime(2023, 10, 31, 12, 1, 4, DateTimeKind.Unspecified), typeof(DateTime), "\"2023-10-31T12:01:04Z\""),
+			new("152: DateTime?", null, typeof(DateTime?), "null"),
+			new("153: DateTime?", DateTime.MinValue, typeof(DateTime?), "\"0001-01-01T00:00:00\""),
+			new("154: DateTime?", DateTime.MaxValue, typeof(DateTime?), "\"9999-12-31T23:59:59.9999999\""),
+			new("155: DateTime?", new DateTime(2023, 10, 31, 12, 1, 2, DateTimeKind.Local), typeof(DateTime?), "\"2023-10-31T16:01:02Z\""),
+			new("156: DateTime?", new DateTime(2023, 10, 31, 12, 1, 3, DateTimeKind.Utc), typeof(DateTime?), "\"2023-10-31T12:01:03Z\""),
+			new("157: DateTime?", new DateTime(2023, 10, 31, 12, 1, 4, DateTimeKind.Unspecified), typeof(DateTime?), "\"2023-10-31T12:01:04Z\""),
+			new("158: DateTimeOffset", DateTimeOffset.MinValue, typeof(DateTimeOffset), "\"0001-01-01T00:00:00+00:00\""),
+			new("159: DateTimeOffset", DateTimeOffset.MaxValue, typeof(DateTimeOffset), "\"9999-12-31T23:59:59.9999999+00:00\""),
+			new("160: DateTimeOffset", new DateTimeOffset(2023, 10, 31, 12, 1, 2, 0, 0, new TimeSpan(1, 2, 0)), typeof(DateTimeOffset), "\"2023-10-31T12:01:02+01:02\""),
+			new("161: DateTimeOffset?", null, typeof(DateTimeOffset?), "null"),
+			new("162: DateTimeOffset?", DateTimeOffset.MinValue, typeof(DateTimeOffset?), "\"0001-01-01T00:00:00+00:00\""),
+			new("163: DateTimeOffset?", DateTimeOffset.MaxValue, typeof(DateTimeOffset?), "\"9999-12-31T23:59:59.9999999+00:00\""),
+			new("164: DateTimeOffset?", new DateTimeOffset(2023, 10, 31, 12, 1, 2, 0, 0, new TimeSpan(1, 2, 0)), typeof(DateTimeOffset?), "\"2023-10-31T12:01:02+01:02\""),
+			new("165: IsoDateTime", IsoDateTime.MinValue, typeof(IsoDateTime), "\"0001-01-01T00:00:00.0000000Z\""),
+			new("166: IsoDateTime", IsoDateTime.MaxValue, typeof(IsoDateTime), "\"9999-12-31T23:59:59.9999999Z\""),
+			new("167: IsoDateTime", new IsoDateTime(new DateTime(2023, 10, 31, 12, 1, 2, DateTimeKind.Local), new TimeSpan(1, 2, 3)), typeof(IsoDateTime), "\"2023-10-31T12:01:02.0000000-04:00/PT1H2M3.000S\""),
+			new("168: IsoDateTime", new IsoDateTime(new DateTime(2023, 10, 31, 12, 1, 3, DateTimeKind.Utc), new TimeSpan(4, 5, 6)), typeof(IsoDateTime), "\"2023-10-31T12:01:03.0000000Z/PT4H5M6.000S\""),
+			new("169: IsoDateTime?", null, typeof(IsoDateTime?), "null"),
+			new("170: IsoDateTime?", IsoDateTime.MinValue, typeof(IsoDateTime?), "\"0001-01-01T00:00:00.0000000Z\""),
+			new("171: IsoDateTime?", IsoDateTime.MaxValue, typeof(IsoDateTime?), "\"9999-12-31T23:59:59.9999999Z\""),
+			new("172: IsoDateTime?", new IsoDateTime(new DateTime(2023, 10, 31, 12, 1, 2, DateTimeKind.Local), new TimeSpan(1, 2, 3)), typeof(IsoDateTime?), "\"2023-10-31T12:01:02.0000000-04:00/PT1H2M3.000S\""),
+			new("173: IsoDateTime?", new IsoDateTime(new DateTime(2023, 10, 31, 12, 1, 3, DateTimeKind.Utc), new TimeSpan(4, 5, 6)), typeof(IsoDateTime?), "\"2023-10-31T12:01:03.0000000Z/PT4H5M6.000S\""),
+			new("174: OscTimeTag", OscTimeTag.MinValue, typeof(OscTimeTag), "\"1900-01-01T00:00:00.0000000Z\""),
+			new("175: OscTimeTag", OscTimeTag.MaxValue, typeof(OscTimeTag), "\"2036-02-07T06:28:16.0000000Z\""),
+			new("176: OscTimeTag", new OscTimeTag(new DateTime(2023, 10, 31, 12, 1, 2, DateTimeKind.Utc)), typeof(OscTimeTag), "\"2023-10-31T12:01:02.0000000Z\""),
+			new("177: OscTimeTag?", null, typeof(OscTimeTag?), "null"),
+			new("178: OscTimeTag?", OscTimeTag.MinValue, typeof(OscTimeTag?), "\"1900-01-01T00:00:00.0000000Z\""),
+			new("179: OscTimeTag?", OscTimeTag.MaxValue, typeof(OscTimeTag?), "\"2036-02-07T06:28:16.0000000Z\""),
+			new("180: OscTimeTag?", new OscTimeTag(new DateTime(2023, 10, 31, 12, 1, 2, DateTimeKind.Utc)), typeof(OscTimeTag?), "\"2023-10-31T12:01:02.0000000Z\""),
+			new("181: TimeSpan", TimeSpan.MinValue, typeof(TimeSpan), "\"-10675199.02:48:05.4775808\""),
+			new("182: TimeSpan", TimeSpan.MaxValue, typeof(TimeSpan), "\"10675199.02:48:05.4775807\""),
+			new("183: TimeSpan", TimeSpan.Zero, typeof(TimeSpan), "\"00:00:00\""),
+			new("184: TimeSpan", new TimeSpan(1, 2, 3, 4, 5, 6), typeof(TimeSpan), "\"1.02:03:04.0050060\""),
+			new("185: TimeSpan?", TimeSpan.MinValue, typeof(TimeSpan?), "\"-10675199.02:48:05.4775808\""),
+			new("186: TimeSpan?", TimeSpan.MaxValue, typeof(TimeSpan?), "\"10675199.02:48:05.4775807\""),
+			new("187: TimeSpan?", TimeSpan.Zero, typeof(TimeSpan?), "\"00:00:00\""),
+			new("188: TimeSpan?", new TimeSpan(1, 2, 3, 4, 5, 6), typeof(TimeSpan?), "\"1.02:03:04.0050060\""),
+			new("189: TimeSpan?", null, typeof(TimeSpan?), "null"),
+			new("190: Guid", Guid.Empty, typeof(Guid), "\"00000000-0000-0000-0000-000000000000\""),
+			new("191: Guid", Guid.Parse("6dcefb3f-4b1c-40fd-827e-58d31767e4a8"), typeof(Guid), "\"6dcefb3f-4b1c-40fd-827e-58d31767e4a8\""),
+			new("192: Guid", Guid.Parse("00000000-0000-0000-0000-000000000001"), typeof(Guid), "\"00000000-0000-0000-0000-000000000001\""),
+			new("193: Guid", Guid.Parse("10000000-0000-0000-0000-000000000000"), typeof(Guid), "\"10000000-0000-0000-0000-000000000000\""),
+			new("194: Guid?", null, typeof(Guid?), "null"),
+			new("195: Guid?", Guid.Empty, typeof(Guid?), "\"00000000-0000-0000-0000-000000000000\""),
+			new("196: Guid?", Guid.Parse("6dcefb3f-4b1c-40fd-827e-58d31767e4a8"), typeof(Guid?), "\"6dcefb3f-4b1c-40fd-827e-58d31767e4a8\""),
+			new("197: Guid?", Guid.Parse("00000000-0000-0000-0000-000000000001"), typeof(Guid?), "\"00000000-0000-0000-0000-000000000001\""),
+			new("198: Guid?", Guid.Parse("10000000-0000-0000-0000-000000000000"), typeof(Guid?), "\"10000000-0000-0000-0000-000000000000\""),
+			new("199: ShortGuid", ShortGuid.Empty, typeof(ShortGuid), "\"00000000-0000-0000-0000-000000000000\""),
+			new("200: ShortGuid", ShortGuid.Parse("P_vObRxL_UCCfljTF2fkqA"), typeof(ShortGuid), "\"6dcefb3f-4b1c-40fd-827e-58d31767e4a8\""),
+			new("201: ShortGuid", ShortGuid.Parse("AAAAAAAAAAAAAAAAAAAAAQ"), typeof(ShortGuid), "\"00000000-0000-0000-0000-000000000001\""),
+			new("202: ShortGuid", ShortGuid.Parse("AAAAEAAAAAAAAAAAAAAAAA"), typeof(ShortGuid), "\"10000000-0000-0000-0000-000000000000\""),
+			new("203: ShortGuid?", null, typeof(ShortGuid?), "null"),
+			new("204: ShortGuid?", ShortGuid.Empty, typeof(ShortGuid?), "\"00000000-0000-0000-0000-000000000000\""),
+			new("205: ShortGuid?", ShortGuid.Parse("P_vObRxL_UCCfljTF2fkqA"), typeof(ShortGuid?), "\"6dcefb3f-4b1c-40fd-827e-58d31767e4a8\""),
+			new("206: ShortGuid?", ShortGuid.Parse("AAAAAAAAAAAAAAAAAAAAAQ"), typeof(ShortGuid?), "\"00000000-0000-0000-0000-000000000001\""),
+			new("207: ShortGuid?", ShortGuid.Parse("AAAAEAAAAAAAAAAAAAAAAA"), typeof(ShortGuid?), "\"10000000-0000-0000-0000-000000000000\""),
+			new("208: Version", new Version(0, 0), typeof(Version), "\"0.0\""),
+			new("209: Version", new Version(1, 2), typeof(Version), "\"1.2\""),
+			new("210: Version", new Version(1, 2, 3), typeof(Version), "\"1.2.3\""),
+			new("211: Version", new Version(1, 2, 3, 4), typeof(Version), "\"1.2.3.4\""),
+			new("212: Version", new Version(12345, 12345, 12345, 12345), typeof(Version), "\"12345.12345.12345.12345\""),
+			new("213: Version", new Version(99999, 99999, 99999, 99999), typeof(Version), "\"99999.99999.99999.99999\""),
+			new("214: Version", null, typeof(Version), "null"),
 			#if (!NET48)
-			new("217: DateOnly", DateOnly.MinValue, typeof(DateOnly), "\"0001-01-01\""),
-			new("218: DateOnly", DateOnly.MaxValue, typeof(DateOnly), "\"9999-12-31\""),
-			new("219: DateOnly", new DateOnly(2023, 10, 31), typeof(DateOnly), "\"2023-10-31\""),
-			new("220: DateOnly?", null, typeof(DateOnly?), "null"),
-			new("221: DateOnly?", DateOnly.MinValue, typeof(DateOnly?), "\"0001-01-01\""),
-			new("222: DateOnly?", DateOnly.MaxValue, typeof(DateOnly?), "\"9999-12-31\""),
-			new("223: DateOnly?", new DateOnly(2023, 10, 31), typeof(DateOnly?), "\"2023-10-31\""),
-			new("224: TimeOnly", TimeOnly.MinValue, typeof(TimeOnly), "\"00:00:00\""),
-			new("225: TimeOnly", TimeOnly.MaxValue, typeof(TimeOnly), "\"23:59:59.9999999\""),
-			new("226: TimeOnly", TimeOnly.Parse("11:01:02.0030040"), typeof(TimeOnly), "\"11:01:02.003004\""),
-			new("227: TimeOnly?", TimeOnly.MinValue, typeof(TimeOnly?), "\"00:00:00\""),
-			new("228: TimeOnly?", TimeOnly.MaxValue, typeof(TimeOnly?), "\"23:59:59.9999999\""),
-			new("229: TimeOnly?", TimeOnly.Parse("11:01:02.0030040"), typeof(TimeOnly?), "\"11:01:02.003004\""),
-			new("230: TimeOnly?", null, typeof(TimeOnly?), "null"),
+			new("215: DateOnly", DateOnly.MinValue, typeof(DateOnly), "\"0001-01-01\""),
+			new("216: DateOnly", DateOnly.MaxValue, typeof(DateOnly), "\"9999-12-31\""),
+			new("217: DateOnly", new DateOnly(2023, 10, 31), typeof(DateOnly), "\"2023-10-31\""),
+			new("218: DateOnly?", null, typeof(DateOnly?), "null"),
+			new("219: DateOnly?", DateOnly.MinValue, typeof(DateOnly?), "\"0001-01-01\""),
+			new("220: DateOnly?", DateOnly.MaxValue, typeof(DateOnly?), "\"9999-12-31\""),
+			new("221: DateOnly?", new DateOnly(2023, 10, 31), typeof(DateOnly?), "\"2023-10-31\""),
+			new("222: TimeOnly", TimeOnly.MinValue, typeof(TimeOnly), "\"00:00:00\""),
+			new("223: TimeOnly", TimeOnly.MaxValue, typeof(TimeOnly), "\"23:59:59.9999999\""),
+			new("224: TimeOnly", TimeOnly.Parse("11:01:02.0030040"), typeof(TimeOnly), "\"11:01:02.003004\""),
+			new("225: TimeOnly?", TimeOnly.MinValue, typeof(TimeOnly?), "\"00:00:00\""),
+			new("226: TimeOnly?", TimeOnly.MaxValue, typeof(TimeOnly?), "\"23:59:59.9999999\""),
+			new("227: TimeOnly?", TimeOnly.Parse("11:01:02.0030040"), typeof(TimeOnly?), "\"11:01:02.003004\""),
+			new("228: TimeOnly?", null, typeof(TimeOnly?), "null"),
 			#endif
 			// </Scenarios>
 		};
@@ -831,7 +848,6 @@ public class JsonSerializerTests : CornerstoneUnitTest
 					(StringBuilder
 					or TextBuilder
 					or GapBuffer<char>
-					or RopeBuffer<char>
 					)
 				#if (!NET48)
 				&& !scenario.Value.Equals(float.NegativeZero)
@@ -929,6 +945,20 @@ public class JsonSerializerTests : CornerstoneUnitTest
 		public string LastName { get; set; }
 
 		public string PasswordHash { get; set; }
+
+		#endregion
+	}
+
+	public class SampleWithIgnoredMembers
+	{
+		#region Properties
+
+		public string FirstName { get; set; }
+
+		public string LastName { get; set; }
+
+		[SerializationIgnore]
+		public string Nickname { get; set; }
 
 		#endregion
 	}

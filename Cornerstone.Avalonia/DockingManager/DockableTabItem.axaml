@@ -1,7 +1,8 @@
 <Styles xmlns="https://github.com/avaloniaui"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		xmlns:sys="clr-namespace:System;assembly=System.Runtime"
-		xmlns:converters="clr-namespace:Cornerstone.Avalonia.Converters">
+		xmlns:converters="clr-namespace:Cornerstone.Avalonia.Converters"
+		xmlns:p="clr-namespace:Cornerstone.Presentation;assembly=Cornerstone">
 
 	<Styles.Resources>
 		<ResourceDictionary>
@@ -31,13 +32,13 @@
 
 								<Grid ColumnDefinitions="26,*,26">
 									<PathIcon Grid.Column="0"
-											Data="{Binding Icon, Mode=OneWay}"
+											Data="{Binding IconName, Converter={x:Static converters:ResourceConverters.GetSvg}}"
 											Height="14" Width="14"
 											Foreground="{TemplateBinding Foreground}"
 											Margin="4,0,0,0"
 											HorizontalAlignment="Center"
 											VerticalAlignment="Center"
-											IsVisible="{Binding IconImage, Mode=OneWay, Converter={x:Static ObjectConverters.IsNull}}" />
+											IsVisible="{Binding IconName, Mode=OneWay, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
 									<Image Grid.Column="0"
 											Height="14" Width="14"
@@ -68,7 +69,8 @@
 											Grid.Column="2"
 											Command="{Binding CloseCommand}"
 											IsEnabled="{Binding CanClose}">
-										<PathIcon Data="{StaticResource Icons.Window.Close}" />
+										<PathIcon Data="{StaticResource Icons.Window.Close}"
+												VerticalAlignment="Center"/>
 									</Button>
 								</Grid>
 							</Border>
@@ -223,7 +225,16 @@
 					Margin="0,0,0,20">
 				<DockableTabItem>
 					<DockableTabItem.TabModel>
-						<DockableTabModel Header="First" />
+						<DockableTabModel Header="First">
+							<DockableTabModel.Popup>
+								<p:PopupViewModel
+										ProgressDescription="I'm running stuff"
+										IsDestructive="True"
+										ShowButtons="True"
+										InProgress="False">
+								</p:PopupViewModel>
+							</DockableTabModel.Popup>
+						</DockableTabModel>
 					</DockableTabItem.TabModel>
 				</DockableTabItem>
 				<DockableTabItem Header="Second" />

@@ -72,6 +72,22 @@ public static class SyncClientDetailsExtensions
 	}
 
 	/// <summary>
+	/// Update the server sync session with a set of sync client details.
+	/// </summary>
+	/// <param name="serverSession"> The server sync session to load details into. </param>
+	/// <param name="syncClientDetails"> The sync client details to update with. </param>
+	public static void AddOrUpdateSyncClientDetails(this IServerSyncSession serverSession, ISyncClientDetails syncClientDetails)
+	{
+		SetProperty(serverSession, x => x.ApplicationName, syncClientDetails.ApplicationName);
+		SetProperty(serverSession, x => x.ApplicationVersion, syncClientDetails.ApplicationVersion);
+		SetProperty(serverSession, x => x.DeviceId, syncClientDetails.DeviceId);
+		SetProperty(serverSession, x => x.DeviceName, syncClientDetails.DeviceName);
+		SetProperty(serverSession, x => x.DevicePlatform, syncClientDetails.DevicePlatform);
+		SetProperty(serverSession, x => x.DevicePlatformVersion, syncClientDetails.DevicePlatformVersion);
+		SetProperty(serverSession, x => x.DeviceType, syncClientDetails.DeviceType);
+	}
+
+	/// <summary>
 	/// Update the sync client details from the provided dictionary.
 	/// </summary>
 	/// <param name="device"> The device to load options into. </param>
@@ -90,43 +106,54 @@ public static class SyncClientDetailsExtensions
 	/// <summary>
 	/// Update the sync options with the provided sync client details.
 	/// </summary>
-	/// <param name="dictionary"> The dictionary to update. </param>
-	/// <param name="syncClient"> The client details to use. </param>
-	public static void AddOrUpdateSyncClientDetails(this IDictionary<string, string> dictionary, ISyncClientDetails syncClient)
+	/// <param name="syncSettings"> The options to update. </param>
+	/// <param name="clientDetails"> The client details to use. </param>
+	public static void AddOrUpdateSyncClientDetails(this SyncSettings syncSettings, ISyncClientDetails clientDetails)
 	{
-		dictionary.AddOrUpdate(ApplicationNameValueKey, syncClient.ApplicationName);
-		dictionary.AddOrUpdate(ApplicationVersionValueKey, syncClient.ApplicationVersion.ToString());
-		dictionary.AddOrUpdate(DeviceIdValueKey, syncClient.DeviceId);
-		dictionary.AddOrUpdate(DeviceNameValueKey, syncClient.DeviceName);
-		dictionary.AddOrUpdate(DevicePlatformValueKey, ((int) syncClient.DevicePlatform).ToString());
-		dictionary.AddOrUpdate(DevicePlatformVersionValueKey, syncClient.DevicePlatformVersion.ToString());
-		dictionary.AddOrUpdate(DeviceTypeValueKey, ((int) syncClient.DeviceType).ToString());
+		syncSettings.Values.AddOrUpdateSyncClientDetails(clientDetails);
 	}
 
 	/// <summary>
 	/// Update the sync options with the provided sync client details.
+	/// </summary>
+	/// <param name="dictionary"> The dictionary to update. </param>
+	/// <param name="clientDetails"> The client details to use. </param>
+	public static void AddOrUpdateSyncClientDetails(this IDictionary<string, StringValues> dictionary, ISyncClientDetails clientDetails)
+	{
+		var t = dictionary.ToDictionary(x => x.Key, x => string.Join("", x.Value.ToArray()));
+		AddOrUpdateSyncClientDetails(t, clientDetails);
+	}
+
+	/// <summary>
+	/// Update the sync options with the provided sync client details.
+	/// </summary>
+	/// <param name="dictionary"> The dictionary to update. </param>
+	/// <param name="clientDetails"> The client details to use. </param>
+	public static void AddOrUpdateSyncClientDetails(this IDictionary<string, string> dictionary, ISyncClientDetails clientDetails)
+	{
+		dictionary.AddOrUpdate(ApplicationNameValueKey, clientDetails.ApplicationName);
+		dictionary.AddOrUpdate(ApplicationVersionValueKey, clientDetails.ApplicationVersion.ToString());
+		dictionary.AddOrUpdate(DeviceIdValueKey, clientDetails.DeviceId);
+		dictionary.AddOrUpdate(DeviceNameValueKey, clientDetails.DeviceName);
+		dictionary.AddOrUpdate(DevicePlatformValueKey, ((int) clientDetails.DevicePlatform).ToString());
+		dictionary.AddOrUpdate(DevicePlatformVersionValueKey, clientDetails.DevicePlatformVersion.ToString());
+		dictionary.AddOrUpdate(DeviceTypeValueKey, ((int) clientDetails.DeviceType).ToString());
+	}
+
+	/// <summary>
+	/// Update the HTTP headers with the provided sync client details.
 	/// </summary>
 	/// <param name="headers"> The headers to update. </param>
-	/// <param name="syncClient"> The client details to use. </param>
-	public static void AddOrUpdateSyncClientDetails(this HttpHeaders headers, ISyncClientDetails syncClient)
-	{
-		headers.AddOrUpdate(ApplicationNameValueKey, syncClient.ApplicationName);
-		headers.AddOrUpdate(ApplicationVersionValueKey, syncClient.ApplicationVersion.ToString());
-		headers.AddOrUpdate(DeviceIdValueKey, syncClient.DeviceId);
-		headers.AddOrUpdate(DeviceNameValueKey, syncClient.DeviceName);
-		headers.AddOrUpdate(DevicePlatformValueKey, ((int) syncClient.DevicePlatform).ToString());
-		headers.AddOrUpdate(DevicePlatformVersionValueKey, syncClient.DevicePlatformVersion.ToString());
-		headers.AddOrUpdate(DeviceTypeValueKey, ((int) syncClient.DeviceType).ToString());
-	}
-
-	/// <summary>
-	/// Update the sync options with the provided sync client details.
-	/// </summary>
-	/// <param name="syncOptions"> The options to update. </param>
 	/// <param name="clientDetails"> The client details to use. </param>
-	public static void AddOrUpdateSyncClientDetails(this SyncSettings syncOptions, ISyncClientDetails clientDetails)
+	public static void AddOrUpdateSyncClientDetails(this HttpHeaders headers, ISyncClientDetails clientDetails)
 	{
-		syncOptions.Values.AddOrUpdateSyncClientDetails(clientDetails);
+		headers.AddOrUpdate(ApplicationNameValueKey, clientDetails.ApplicationName);
+		headers.AddOrUpdate(ApplicationVersionValueKey, clientDetails.ApplicationVersion.ToString());
+		headers.AddOrUpdate(DeviceIdValueKey, clientDetails.DeviceId);
+		headers.AddOrUpdate(DeviceNameValueKey, clientDetails.DeviceName);
+		headers.AddOrUpdate(DevicePlatformValueKey, ((int) clientDetails.DevicePlatform).ToString());
+		headers.AddOrUpdate(DevicePlatformVersionValueKey, clientDetails.DevicePlatformVersion.ToString());
+		headers.AddOrUpdate(DeviceTypeValueKey, ((int) clientDetails.DeviceType).ToString());
 	}
 
 	/// <summary>
@@ -172,10 +199,10 @@ public static class SyncClientDetailsExtensions
 	/// Load the sync client details into the provided sync options.
 	/// </summary>
 	/// <param name="device"> The device to load options into. </param>
-	/// <param name="syncOptions"> The options to load. </param>
-	public static void Load(this SyncClientDetails device, SyncSettings syncOptions)
+	/// <param name="syncSettings"> The options to load. </param>
+	public static void Load(this SyncClientDetails device, SyncSettings syncSettings)
 	{
-		device.Load(syncOptions.Values);
+		device.Load(syncSettings.Values);
 	}
 
 	/// <summary>
@@ -234,6 +261,11 @@ public static class SyncClientDetailsExtensions
 		{
 			throw new ArgumentException($"{nameof(syncClient.DeviceType)} must be provided.");
 		}
+	}
+
+	private static void SetProperty<T, T2>(T device, Expression<Func<T, T2>> property, T2 value)
+	{
+		device.TrySetProperty(property, value);
 	}
 
 	private static void SetProperty<T, T2>(T device, Expression<Func<T, T2>> property, string name, IDictionary<string, string> values)

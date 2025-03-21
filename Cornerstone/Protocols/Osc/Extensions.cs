@@ -222,7 +222,7 @@ internal static class Extensions
 	{
 		if (string.IsNullOrWhiteSpace(str))
 		{
-			return Array.Empty<byte>();
+			return [];
 		}
 
 		var trimmed = str.Trim();

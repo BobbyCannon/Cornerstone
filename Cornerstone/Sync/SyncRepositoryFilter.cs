@@ -17,14 +17,18 @@ public class SyncRepositoryFilter<T> : SyncRepositoryFilter
 	#region Constructors
 
 	/// <summary>
-	/// Initializes a repository filter.
+	/// Instantiates a repository filter.
 	/// </summary>
 	/// <param name="outgoingFilter"> The filter for the type for outgoing (GetChanges/GetCorrections). </param>
 	/// <param name="incomingFilter"> The filter for the type for incoming (ApplyChanges/ApplyCorrections). </param>
 	/// <param name="lookupFilter"> The filter for the type for looking up the entity (GetChanges/GetCorrections). </param>
 	/// <param name="skipDeletedItemsOnInitialSync"> The option to skipped SyncEntity.IsDeleted on initial sync. </param>
-	public SyncRepositoryFilter(Expression<Func<T, bool>> outgoingFilter = null, Expression<Func<T, bool>> incomingFilter = null, Func<T, Expression<Func<T, bool>>> lookupFilter = null, bool skipDeletedItemsOnInitialSync = true)
-		: base(typeof(T).ToAssemblyName(), outgoingFilter, incomingFilter, lookupFilter, skipDeletedItemsOnInitialSync)
+	public SyncRepositoryFilter(
+		Expression<Func<T, bool>> outgoingFilter = null,
+		Expression<Func<T, bool>> incomingFilter = null,
+		Func<T, Expression<Func<T, bool>>> lookupFilter = null,
+		bool skipDeletedItemsOnInitialSync = true
+	) : base(typeof(T).ToAssemblyName(), outgoingFilter, incomingFilter, lookupFilter, skipDeletedItemsOnInitialSync)
 	{
 	}
 
@@ -41,7 +45,7 @@ public class SyncRepositoryFilter<T> : SyncRepositoryFilter
 	public Expression<Func<T, bool>> IncomingFilter => IncomingExpression as Expression<Func<T, bool>>;
 
 	/// <summary>
-	/// The look-up expression for the type
+	/// The lookup expression for the type
 	/// </summary>
 	public Func<T, Expression<Func<T, bool>>> LookupFilter => LookupExpression as Func<T, Expression<Func<T, bool>>>;
 
@@ -76,7 +80,7 @@ public abstract class SyncRepositoryFilter
 	#region Constructors
 
 	/// <summary>
-	/// Initializes a repository filter.
+	/// Instantiates a repository filter.
 	/// </summary>
 	/// <param name="type"> The type this filter is for. </param>
 	/// <param name="outgoingFilter"> The outgoing filter for the type. </param>

@@ -7,7 +7,7 @@
 		x:Class="Cornerstone.Sample.Tabs.TabToggleButton">
 	<ScrollViewer HorizontalScrollBarVisibility="Auto"
 			VerticalScrollBarVisibility="Auto"
-			Margin="8">
+			Margin="10">
 		<Grid RowDefinitions="Auto,Auto,*">
 			<Grid.Styles>
 				<Style Selector="ToggleButton">

@@ -242,8 +242,8 @@ public static class EnumExtensions
 	{
 		var valueType = value.GetType();
 		var allDetails = GetAllEnumDetails(valueType);
-		return allDetails.ContainsKey(value)
-			? allDetails[value]
+		return allDetails.TryGetValue(value, out var detail)
+			? detail
 			: new EnumDetails
 			{
 				Description = value.ToString(),
@@ -309,7 +309,7 @@ public static class EnumExtensions
 	/// <returns> The individual values for the enum. </returns>
 	public static T[] GetFlaggedValues<T>(this T value) where T : Enum
 	{
-		var values = GetValues<T>();
+		var values = GetFlagValues<T>();
 		return values.Where(x => value?.HasFlag(x) == true).ToArray();
 	}
 

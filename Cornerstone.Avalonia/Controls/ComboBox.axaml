@@ -4,15 +4,24 @@
 		xmlns:sys="using:System"
 		x:ClassModifier="internal">
 	<Design.PreviewWith>
-		<StackPanel Orientation="Horizontal">
+		<StackPanel Orientation="Horizontal"
+				MaxHeight="300">
 			<Border Padding="20">
 				<StackPanel Spacing="10">
 					<ComboBox x:Name="Item"
 							PlaceholderText="Select an item"
 							MinWidth="160"
+							MaxDropDownHeight="60"
 							IsDropDownOpen="True">
 						<ComboBoxItem>Item 1</ComboBoxItem>
 						<ComboBoxItem>Item 2</ComboBoxItem>
+						<ComboBoxItem>Item 3</ComboBoxItem>
+						<ComboBoxItem>Item 4</ComboBoxItem>
+						<ComboBoxItem>Item 5</ComboBoxItem>
+						<ComboBoxItem>Item 6</ComboBoxItem>
+						<ComboBoxItem>Item 7</ComboBoxItem>
+						<ComboBoxItem>Item 8</ComboBoxItem>
+						<ComboBoxItem>Item 9</ComboBoxItem>
 					</ComboBox>
 					<ComboBox PlaceholderText="(disabled)"
 							IsEnabled="False"

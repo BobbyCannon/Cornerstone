@@ -1,7 +1,6 @@
 ﻿#region References
 
 using System.Linq;
-using Cornerstone.EntityFramework;
 using Cornerstone.Extensions;
 using Cornerstone.UnitTests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -21,7 +20,7 @@ public class ClientDatabaseTests : CornerstoneUnitTest
 	{
 		ForEachClientDatabaseProvider(provider =>
 		{
-			var expected = GetModel<ClientAddress>();
+			var expected = GetClientModel<ClientAddress>();
 
 			using (var database = provider.GetDatabase())
 			{
@@ -43,8 +42,8 @@ public class ClientDatabaseTests : CornerstoneUnitTest
 	{
 		ForEachClientDatabaseProvider(provider =>
 		{
-			var address = GetModel<ClientAddress>();
-			var account = GetModel<ClientAccount>();
+			var address = GetClientModel<ClientAddress>();
+			var account = GetClientModel<ClientAccount>();
 			address.Accounts.Add(account);
 
 			using (var database = provider.GetDatabase())

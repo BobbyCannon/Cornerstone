@@ -1,9 +1,7 @@
-﻿#region References
+#region References
 
 using Cornerstone.Data;
-using Cornerstone.Extensions;
 using Cornerstone.Presentation;
-using Cornerstone.Storage;
 
 #endregion
 
@@ -83,45 +81,48 @@ public class SyncStatistics : Bindable<SyncStatistics>
 		IndividualProcessCount = 0;
 	}
 
+	/// <inheritdoc />
+	public override string ToString()
+	{
+		return $"{Changes},{Corrections},{AppliedChanges},{AppliedCorrections},{IndividualProcessCount}";
+	}
+
 	/// <summary>
 	/// Update the SyncStatistics with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="settings"> The options for controlling the updating of the value. </param>
+	/// <param name="settings"> The settings for controlling the updating of the entity. </param>
 	public override bool UpdateWith(SyncStatistics update, IncludeExcludeSettings settings)
 	{
+		// Code Generated - UpdateWith
+
 		// If the update is null then there is nothing to do.
 		if (update == null)
 		{
 			return false;
 		}
 
-		// ****** You can use GenerateUpdateWith to update this ******
+		// ****** This code has been auto generated, do not edit this. ******
 
-		if ((settings == null) || settings.IsEmpty())
-		{
-			AppliedChanges = update.AppliedChanges;
-			AppliedCorrections = update.AppliedCorrections;
-			Changes = update.Changes;
-			Corrections = update.Corrections;
-			IndividualProcessCount = update.IndividualProcessCount;
-		}
-		else
-		{
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(AppliedChanges)), x => x.AppliedChanges = update.AppliedChanges);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(AppliedCorrections)), x => x.AppliedCorrections = update.AppliedCorrections);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Changes)), x => x.Changes = update.Changes);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Corrections)), x => x.Corrections = update.Corrections);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(IndividualProcessCount)), x => x.IndividualProcessCount = update.IndividualProcessCount);
-		}
+		UpdateProperty(AppliedChanges, update.AppliedChanges, settings.ShouldProcessProperty(nameof(AppliedChanges)), x => AppliedChanges = x);
+		UpdateProperty(AppliedCorrections, update.AppliedCorrections, settings.ShouldProcessProperty(nameof(AppliedCorrections)), x => AppliedCorrections = x);
+		UpdateProperty(Changes, update.Changes, settings.ShouldProcessProperty(nameof(Changes)), x => Changes = x);
+		UpdateProperty(Corrections, update.Corrections, settings.ShouldProcessProperty(nameof(Corrections)), x => Corrections = x);
+		UpdateProperty(IndividualProcessCount, update.IndividualProcessCount, settings.ShouldProcessProperty(nameof(IndividualProcessCount)), x => IndividualProcessCount = x);
+
+		// Code Generated - /UpdateWith
 
 		return true;
 	}
 
 	/// <inheritdoc />
-	public override string ToString()
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
-		return $"{Changes},{Corrections},{AppliedChanges},{AppliedCorrections},{IndividualProcessCount}";
+		return update switch
+		{
+			SyncStatistics value => UpdateWith(value, settings),
+			_ => base.UpdateWith(update, settings)
+		};
 	}
 
 	#endregion

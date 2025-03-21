@@ -8,8 +8,7 @@ using Cornerstone.Parsers.Xml;
 
 namespace Cornerstone.Parsers.VisualStudio.Project;
 
-/// <summary>
-/// </summary>
+
 public class ClassicReference : XmlElement
 {
 	#region Fields

@@ -4,13 +4,13 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using Cornerstone.Storage;
 using Cornerstone.Sync;
-using Sample.Shared.Sync;
+using Sample.Shared.Storage.Sync;
 
 #endregion
 
 namespace Sample.Shared.Storage.Client;
 
-public class ClientLogEvent : SyncEntity<long>, IClientEntity, ILogEventSync
+public class ClientLogEvent : SyncEntity<long, LogEvent>, IClientEntity, ILogEvent
 {
 	#region Constructors
 

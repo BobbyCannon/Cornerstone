@@ -56,7 +56,7 @@ public class JsonSerializer : IJsonSerializer
 
 	static JsonSerializer()
 	{
-		_cache = [];
+		_cache = new MemoryCache<Type, IJsonConverter>();
 		_customConverters = new List<IJsonConverter>();
 		_converters = new List<IJsonConverter>
 			{
@@ -66,7 +66,7 @@ public class JsonSerializer : IJsonSerializer
 				new StringJsonConverter(),
 				new DataTableConverter(),
 				new DateJsonConverter(),
-				new DictionaryConverter(),
+				new DictionaryJsonConverter(),
 				new TimeJsonConverter(),
 				new GuidJsonConverter(),
 				new VersionJsonConverter(),
@@ -136,7 +136,7 @@ public class JsonSerializer : IJsonSerializer
 		{
 			if (converter.CanConvert(type))
 			{
-				_cache.Set(type, converter);
+				_cache.AddOrUpdate(type, converter);
 				return converter;
 			}
 		}
@@ -145,7 +145,7 @@ public class JsonSerializer : IJsonSerializer
 		{
 			if (converter.CanConvert(type))
 			{
-				_cache.Set(type, converter);
+				_cache.AddOrUpdate(type, converter);
 				return converter;
 			}
 		}

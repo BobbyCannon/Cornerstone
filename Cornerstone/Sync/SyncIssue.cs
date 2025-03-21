@@ -1,8 +1,7 @@
-﻿#region References
+#region References
 
 using System;
 using Cornerstone.Data;
-using Cornerstone.Extensions;
 using Cornerstone.Presentation;
 
 #endregion
@@ -12,7 +11,7 @@ namespace Cornerstone.Sync;
 /// <summary>
 /// Represents as issue that occurred during sync.
 /// </summary>
-public class SyncIssue : Bindable
+public class SyncIssue : Bindable<SyncIssue>
 {
 	#region Properties
 
@@ -59,38 +58,32 @@ public class SyncIssue : Bindable
 	/// <inheritdoc />
 	public override string ToString()
 	{
-		return $"{IssueType}:{TypeName} - {Message}";
+		return $"{IssueType} : {TypeName} - {Message}";
 	}
 
 	/// <summary>
 	/// Update the SyncIssue with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="settings"> The options for controlling the updating of the value. </param>
-	public virtual bool UpdateWith(SyncIssue update, IncludeExcludeSettings settings)
+	/// <param name="settings"> The settings for controlling the updating of the entity. </param>
+	public override bool UpdateWith(SyncIssue update, IncludeExcludeSettings settings)
 	{
+		// Code Generated - UpdateWith
+
 		// If the update is null then there is nothing to do.
 		if (update == null)
 		{
 			return false;
 		}
 
-		// ****** You can use GenerateUpdateWith to update this ******
+		// ****** This code has been auto generated, do not edit this. ******
 
-		if ((settings == null) || settings.IsEmpty())
-		{
-			Id = update.Id;
-			IssueType = update.IssueType;
-			Message = update.Message;
-			TypeName = update.TypeName;
-		}
-		else
-		{
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Id)), x => x.Id = update.Id);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(IssueType)), x => x.IssueType = update.IssueType);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Message)), x => x.Message = update.Message);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(TypeName)), x => x.TypeName = update.TypeName);
-		}
+		UpdateProperty(Id, update.Id, settings.ShouldProcessProperty(nameof(Id)), x => Id = x);
+		UpdateProperty(IssueType, update.IssueType, settings.ShouldProcessProperty(nameof(IssueType)), x => IssueType = x);
+		UpdateProperty(Message, update.Message, settings.ShouldProcessProperty(nameof(Message)), x => Message = x);
+		UpdateProperty(TypeName, update.TypeName, settings.ShouldProcessProperty(nameof(TypeName)), x => TypeName = x);
+
+		// Code Generated - /UpdateWith
 
 		return true;
 	}

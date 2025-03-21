@@ -2,6 +2,7 @@
 
 using System.Net;
 using System.Net.Http.Headers;
+using Cornerstone.Convert;
 
 #endregion
 
@@ -28,6 +29,20 @@ public static class HttpExtensions
 		}
 
 		headers.Add(key, value);
+	}
+
+	/// <summary>
+	/// Get the value from the HTTP headers collection or return the provided default.
+	/// </summary>
+	/// <param name="headers"> The headers to be read from. </param>
+	/// <param name="key"> The key of the value. </param>
+	/// <param name="defaultValue"> The value to return if key is not in the header. </param>
+	/// <returns> The value found otherwise the default value. </returns>
+	public static T GetValueOrDefault<T>(this HttpHeaders headers, string key, T defaultValue)
+	{
+		return headers.TryGetValues(key, out var values)
+			? string.Join("", values).ConvertTo<T>()
+			: defaultValue;
 	}
 
 	/// <summary>

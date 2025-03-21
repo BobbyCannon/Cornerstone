@@ -11,7 +11,16 @@ public static class ColorConverters
 {
 	#region Fields
 
-	public static readonly FuncValueConverter<Color, IBrush> ToBrush = new(x => new SolidColorBrush(x));
+	public static readonly FuncValueConverter<Color, IBrush> ToBrush;
+
+	#endregion
+
+	#region Constructors
+
+	static ColorConverters()
+	{
+		ToBrush = new(x => new SolidColorBrush(x));
+	}
 
 	#endregion
 }

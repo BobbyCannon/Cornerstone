@@ -59,7 +59,7 @@ public class SupportedSyncClient : Bindable, ISupportedSyncClient
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
 	/// <param name="settings"> The options for controlling the updating of the value. </param>
-	public virtual bool UpdateWith(SupportedSyncClient update, IncludeExcludeSettings settings)
+	public virtual bool UpdateWith(ISupportedSyncClient update, IncludeExcludeSettings settings)
 	{
 		// If the update is null then there is nothing to do.
 		if (update == null)

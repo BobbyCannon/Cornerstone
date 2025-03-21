@@ -1,6 +1,7 @@
 ﻿#region References
 
 using Avalonia.Controls;
+using Avalonia.Media;
 
 #endregion
 
@@ -12,7 +13,10 @@ public class TextBlockPropertyCellFactory : PropertyCellFactory
 
 	public override Control HandleNewProperty(PropertyCellContext context)
 	{
-		var control = new TextBlock();
+		var control = new TextBlock
+		{
+			TextWrapping = TextWrapping.Wrap
+		};
 		return control;
 	}
 

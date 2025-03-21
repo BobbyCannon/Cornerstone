@@ -20,7 +20,74 @@ namespace Cornerstone.EntityFramework;
 /// </summary>
 /// <typeparam name="T"> The entity type this collection is for. </typeparam>
 /// <typeparam name="T2"> The type of the entity key. </typeparam>
-public class EntityFrameworkRepository<T, T2> : IRepository<T, T2> where T : Entity<T2>
+public class EntityFrameworkRepository<T, T2> : EntityFrameworkRepository<T>, IRepository<T, T2>
+	where T : Entity<T2>
+{
+	#region Constructors
+
+	/// <summary>
+	/// Initializes a repository.
+	/// </summary>
+	/// <param name="database"> The database where this repository resides. </param>
+	/// <param name="set"> The database set this repository is for. </param>
+	public EntityFrameworkRepository(EntityFrameworkDatabase database, DbSet<T> set)
+		: base(database, set)
+	{
+	}
+
+	#endregion
+
+	#region Methods
+
+	/// <summary>
+	/// Adds or updates an entity in the repository. The ID of the entity must be the default value to add and a value to
+	/// update.
+	/// </summary>
+	/// <param name="entity"> The entity to be added. </param>
+	public override void AddOrUpdate(T entity)
+	{
+		if (Set.Any(x => x.Id.Equals(entity.Id)))
+		{
+			Set.Update(entity);
+			return;
+		}
+
+		Set.Add(entity);
+	}
+
+	/// <inheritdoc />
+	public override bool Contains(T item)
+	{
+		if (item == null)
+		{
+			return false;
+		}
+		var id = item.Id;
+		return Set.Any(x => Equals(x.Id, id));
+	}
+
+	public bool Remove(T2 id)
+	{
+		var entity = Set.Local.FirstOrDefault(x => Equals(x.Id, id));
+		if (entity == null)
+		{
+			entity = Activator.CreateInstance<T>();
+			entity.Id = id;
+			Set.Attach(entity);
+		}
+
+		Set.Remove(entity);
+		return true;
+	}
+
+	#endregion
+}
+
+/// <summary>
+/// Represents a collection of entities for a Cornerstone database.
+/// </summary>
+/// <typeparam name="T"> The entity type this collection is for. </typeparam>
+public abstract class EntityFrameworkRepository<T> : IRepository<T> where T : Entity
 {
 	#region Fields
 
@@ -99,21 +166,8 @@ public class EntityFrameworkRepository<T, T2> : IRepository<T, T2> where T : Ent
 		Set.Add(entity);
 	}
 
-	/// <summary>
-	/// Adds or updates an entity in the repository. The ID of the entity must be the default value to add and a value to
-	/// update.
-	/// </summary>
-	/// <param name="entity"> The entity to be added. </param>
-	public void AddOrUpdate(T entity)
-	{
-		if (Set.Any(x => x.Id.Equals(entity.Id)))
-		{
-			Set.Update(entity);
-			return;
-		}
-
-		Set.Add(entity);
-	}
+	/// <inheritdoc />
+	public abstract void AddOrUpdate(T entity);
 
 	/// <inheritdoc />
 	public void Clear()
@@ -122,15 +176,7 @@ public class EntityFrameworkRepository<T, T2> : IRepository<T, T2> where T : Ent
 	}
 
 	/// <inheritdoc />
-	public bool Contains(T item)
-	{
-		if (item == null)
-		{
-			return false;
-		}
-		var id = item.Id;
-		return Set.Any(x => Equals(x.Id, id));
-	}
+	public abstract bool Contains(T item);
 
 	/// <inheritdoc />
 	public void CopyTo(T[] array, int arrayIndex)
@@ -170,7 +216,7 @@ public class EntityFrameworkRepository<T, T2> : IRepository<T, T2> where T : Ent
 			return new EntityIncludableQueryable<T, T3>(aiq);
 		}
 
-		// Try to find the internal includable queryable, not good but it is what we have to do...
+		// Try to find the internal includable queryable, not good, but it is what we have to do...
 		var includableQueryType = (Type) typeof(EntityFrameworkQueryableExtensions)
 			.GetMembers(BindingFlags.Instance | BindingFlags.NonPublic)
 			.FirstOrDefault(x => x.Name == "IncludableQueryable`2");
@@ -185,21 +231,6 @@ public class EntityFrameworkRepository<T, T2> : IRepository<T, T2> where T : Ent
 		var includableQueryTypeGeneric = includableQueryType.MakeGenericType(typeof(T), typeof(T3));
 		var instance = includableQueryTypeGeneric.CreateInstance(result);
 		return new EntityIncludableQueryable<T, T3>((Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<T, T3>) instance);
-	}
-
-	/// <inheritdoc />
-	public bool Remove(T2 id)
-	{
-		var entity = Set.Local.FirstOrDefault(x => Equals(x.Id, id));
-		if (entity == null)
-		{
-			entity = Activator.CreateInstance<T>();
-			entity.Id = id;
-			Set.Attach(entity);
-		}
-
-		Set.Remove(entity);
-		return true;
 	}
 
 	/// <inheritdoc />
@@ -223,7 +254,7 @@ public class EntityFrameworkRepository<T, T2> : IRepository<T, T2> where T : Ent
 		return GetEnumerator();
 	}
 
-	private void UpdateRelationships(T entity)
+	protected void UpdateRelationships(T entity)
 	{
 		var baseType = typeof(IEntity);
 		var entityType = entity.GetRealType();

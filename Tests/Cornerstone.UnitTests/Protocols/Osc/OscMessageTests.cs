@@ -33,11 +33,11 @@ public class OscMessageTests : CornerstoneUnitTest
 
 		if (packet is OscError error)
 		{
-			Assert.Fail($"{error.Code}: {error.Description}");
+			Fail($"{error.Code}: {error.Description}");
 		}
 
 		var message = packet as OscMessage;
-		Assert.IsNotNull(message);
+		IsNotNull(message);
 		AreEqual("8d337ca7-8f05-45c8-83f5-dcd5b7bc5725", message.Arguments[0]);
 		AreEqual("Dawson\'s Body Shop", message.Arguments[1]);
 	}
@@ -111,7 +111,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		//actual.Escape().Dump();
 
 		var actualMessage = OscPacket.Parse(actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		//actualMessage.Arguments[0].Dump();
 
 		var actualTime = actualMessage.GetArgument<string>(0).FromJson<OscTimeTag>();
@@ -141,7 +141,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		var actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		var actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(message, actualMessage);
 
 		message = new OscMessage("/a", false);
@@ -150,7 +150,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(message, actualMessage);
 	}
 
@@ -163,7 +163,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		var actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		var actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(message[0], actualMessage[0]);
 
 		message = new OscMessage("/a", new byte[] { 0, 1, 1, 2, 3, 5, 8 });
@@ -172,7 +172,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(message[0], actualMessage[0]);
 	}
 
@@ -186,7 +186,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		actual.Select(x => $"0x{x:X2}, ").Dump();
 		AreEqual(expected, actual);
 		var actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(123.45678m, message[0]);
 		AreEqual(message[0], actualMessage[0]);
 
@@ -197,7 +197,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		actual.Select(x => $"0x{x:X2}, ").Dump();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(decimal.MinValue, message[0]);
 		AreEqual(message[0], actualMessage[0]);
 
@@ -208,7 +208,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		actual.Select(x => $"0x{x:X2}, ").Dump();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(decimal.MaxValue, message[0]);
 		AreEqual(message[0], actualMessage[0]);
 	}
@@ -223,7 +223,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		actual.Select(x => $"0x{x:X2}, ").Dump();
 		AreEqual(expected, actual);
 		var actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(1234, message[0]);
 		AreEqual(message[0], actualMessage[0]);
 
@@ -234,7 +234,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		actual.Select(x => $"0x{x:X2}, ").Dump();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(int.MinValue, message[0]);
 		AreEqual(message[0], actualMessage[0]);
 
@@ -245,7 +245,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		actual.Select(x => $"0x{x:X2}, ").Dump();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(int.MaxValue, message[0]);
 		AreEqual(message[0], actualMessage[0]);
 	}
@@ -259,7 +259,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		var actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		var actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(message, actualMessage);
 
 		message = new OscMessage("/a", "1");
@@ -268,7 +268,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(message, actualMessage);
 
 		message = new OscMessage("/a", "123");
@@ -277,7 +277,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(message, actualMessage);
 
 		message = new OscMessage("/a", "1234");
@@ -286,7 +286,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(message, actualMessage);
 
 		message = new OscMessage("/a", "12345");
@@ -295,7 +295,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(message, actualMessage);
 	}
 
@@ -309,7 +309,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		actual.Dump();
 		AreEqual(expected, actual);
 		var actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(message[0], actualMessage[0]);
 	}
 
@@ -328,7 +328,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		actual.Dump();
 		AreEqual(expected, actual);
 		var actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(message[0], actualMessage[0]);
 	}
 
@@ -341,7 +341,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		var actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		var actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(message, actualMessage);
 
 		message = new OscMessage("/a", 23, "12345");
@@ -350,7 +350,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(message, actualMessage);
 
 		message = new OscMessage("/a", 23, Guid.Parse("0354FF2E-508C-4CF6-8BEA-2A2870E78A9B"));
@@ -359,7 +359,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(message[0], actualMessage[0]);
 		AreEqual(message[1].ToString(), actualMessage[1]);
 
@@ -369,7 +369,7 @@ public class OscMessageTests : CornerstoneUnitTest
 		actual = message.ToByteArray();
 		AreEqual(expected, actual);
 		actualMessage = OscPacket.Parse(message.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		AreEqual(message[0], actualMessage[0]);
 		AreEqual(message[1].ToString(), actualMessage[1]);
 	}
@@ -428,7 +428,7 @@ public class OscMessageTests : CornerstoneUnitTest
 			AreEqual(item.Value, actual);
 
 			var actualMessage = OscPacket.Parse(item.Value) as OscMessage;
-			Assert.IsNotNull(actualMessage);
+			IsNotNull(actualMessage);
 			AreEqual(1, actualMessage.Arguments.Count);
 			AreEqual(item.Key, actualMessage.Arguments[0]);
 		}
@@ -469,7 +469,7 @@ public class OscMessageTests : CornerstoneUnitTest
 	private void ValidateOscMessage(OscMessage actual, bool allInfinityTheSame)
 	{
 		var index = 0;
-		Assert.IsNotNull(actual);
+		IsNotNull(actual);
 		AreEqual("/Address", actual.Address);
 		AreEqual(26, actual.Arguments.Count);
 		AreEqual(123, actual.Arguments[index++]);

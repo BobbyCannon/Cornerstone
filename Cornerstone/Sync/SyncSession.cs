@@ -460,14 +460,16 @@ public class SyncSession : Bindable<SyncSession>
 	/// </summary>
 	/// <param name="sessionId"> The ID for the session. </param>
 	/// <param name="syncType"> The type of the sync to start. </param>
-	/// <param name="updates"> The option to update the session with. </param>
-	internal void Start(Guid sessionId, string syncType, SyncSettings updates)
+	/// <param name="settings"> The settings to update the session with. </param>
+	internal void Start(Guid sessionId, string syncType, SyncSettings settings)
 	{
 		Reset();
-		Settings.UpdateWith(updates);
+		Settings.UpdateWith(settings);
 		Settings.SyncType = syncType;
 		SessionId = sessionId;
 		StartedOn = CurrentTime;
+
+		settings.LastSyncAttemptedOn = StartedOn;
 	}
 
 	private void ClearState(SyncSessionState flag)
@@ -632,7 +634,7 @@ public class SyncSession : Bindable<SyncSession>
 			.ForEach(x => syncIssues.Remove(syncIssues.FirstOrDefault(y => y.Id == x.Id)));
 	}
 
-	private void Reset(string syncType = default)
+	private void Reset(string syncType = null)
 	{
 		SessionId = Guid.Empty;
 		State = SyncSessionState.Unknown;

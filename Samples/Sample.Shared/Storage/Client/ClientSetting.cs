@@ -4,12 +4,13 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using Cornerstone.Storage;
 using Cornerstone.Sync;
+using Sample.Shared.Storage.Sync;
 
 #endregion
 
 namespace Sample.Shared.Storage.Client;
 
-public class ClientSetting : SyncEntity<long>, IClientEntity
+public class ClientSetting : SyncEntity<long, Setting>, ISetting, IClientEntity
 {
 	#region Constructors
 

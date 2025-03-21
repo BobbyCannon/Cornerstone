@@ -275,6 +275,41 @@ public static class TypeExtensions
 	}
 
 	/// <summary>
+	/// Method to get all properties including inherited ones
+	/// </summary>
+	/// <param name="interfaceType"> The type of the interface. </param>
+	/// <returns> The list of property infos for the interface including inherited ones. </returns>
+	public static IList<PropertyInfo> GetAllInterfaceProperties(this Type interfaceType)
+	{
+		if (!interfaceType.IsInterface)
+		{
+			throw new ArgumentException("Type must be an interface");
+		}
+
+		// Create a list to store all properties
+		var properties = new List<PropertyInfo>();
+
+		// Get properties directly declared in this interface
+		properties.AddRange(interfaceType.GetProperties(BindingFlags.Public | BindingFlags.Instance));
+
+		// Get all base interfaces
+		var baseInterfaces = interfaceType.GetInterfaces();
+
+		// Add properties from each base interface
+		foreach (var baseInterface in baseInterfaces)
+		{
+			properties.AddRange(baseInterface.GetProperties(BindingFlags.Public | BindingFlags.Instance));
+		}
+
+		// Remove duplicates (in case of diamond inheritance)
+		return properties
+			.GroupBy(p => p.Name)
+			.Select(g => g.First())
+			.OrderBy(p => p.Name)
+			.ToList();
+	}
+
+	/// <summary>
 	/// Converts data type to the code simplified type. Ex. Int16 to short, Single to float
 	/// </summary>
 	/// <param name="value"> The type to get C# code for. </param>
@@ -483,6 +518,12 @@ public static class TypeExtensions
 	public static bool ImplementsType<T>(this Type value)
 	{
 		return (value != null) && value.ImplementsType(typeof(T));
+	}
+
+	public static bool IsDelegate(this Type type)
+	{
+		return (type == typeof(MulticastDelegate))
+			|| (type.BaseType == typeof(MulticastDelegate));
 	}
 
 	/// <summary>

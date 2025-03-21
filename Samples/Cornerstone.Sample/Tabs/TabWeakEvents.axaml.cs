@@ -6,7 +6,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Avalonia.Interactivity;
 using Cornerstone.Avalonia;
+using Cornerstone.Collections;
 using Cornerstone.Presentation;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -22,14 +24,31 @@ public partial class TabWeakEvents : CornerstoneUserControl
 
 	#region Fields
 
+	private PageWeakProcessor _weakProcessor;
+
 	private BackgroundWorker _worker;
 
 	#endregion
 
 	#region Constructors
 
-	public TabWeakEvents()
+	public TabWeakEvents() : this(
+		GetInstance<IDateTimeProvider>(),
+		GetInstance<WeakEventManager>(),
+		GetInstance<IDispatcher>()
+	)
 	{
+	}
+
+	public TabWeakEvents(
+		IDateTimeProvider dateTimeProvider,
+		IWeakEventManager weakEventManager,
+		IDispatcher dispatcher
+	) : base(dispatcher)
+	{
+		LogList = new SpeedyList<string>(dispatcher);
+		DateTimeProvider = dateTimeProvider;
+		WeakEventManager = weakEventManager;
 		DataContext = this;
 		InitializeComponent();
 	}
@@ -39,6 +58,12 @@ public partial class TabWeakEvents : CornerstoneUserControl
 	#region Properties
 
 	public bool ContextRunning { get; set; }
+
+	public IDateTimeProvider DateTimeProvider { get; }
+
+	public SpeedyList<string> LogList { get; }
+
+	public IWeakEventManager WeakEventManager { get; }
 
 	#endregion
 
@@ -88,6 +113,7 @@ public partial class TabWeakEvents : CornerstoneUserControl
 		if ((_worker == null) && enable)
 		{
 			Log.Clear();
+			LogList.Clear();
 
 			_worker = new BackgroundWorker();
 			_worker.DoWork += WorkerOnDoWork;
@@ -105,6 +131,28 @@ public partial class TabWeakEvents : CornerstoneUserControl
 		}
 	}
 
+	private void WeakProcessorOnPropertyChanged(object sender, PropertyChangedEventArgs e)
+	{
+		switch (e.PropertyName)
+		{
+			case nameof(PageWeakProcessor.Count):
+			{
+				LogList.Add($"{_weakProcessor?.Count ?? -1} {e.PropertyName}");
+				break;
+			}
+			default:
+			{
+				LogList.Add(e.PropertyName);
+				break;
+			}
+		}
+	}
+
+	private void WeakPropertyOnClick(object sender, RoutedEventArgs e)
+	{
+		_weakProcessor?.ResetCount();
+	}
+
 	private void WeakTriggerOnClick(object sender, RoutedEventArgs e)
 	{
 		OnWeakTrigger();
@@ -115,20 +163,29 @@ public partial class TabWeakEvents : CornerstoneUserControl
 	{
 		var worker = (BackgroundWorker) sender;
 		var page = (TabWeakEvents) e.Argument;
-		var weakProcessor = new PageWeakProcessor(page);
+		_weakProcessor = new PageWeakProcessor(page);
 		var normalProcessor = new PageRegularProcessor(page);
 		var count = 0;
 
-		while (!worker.CancellationPending)
+		try
 		{
-			worker.ReportProgress(1);
-			Thread.Sleep(25);
+			WeakEventManager.AddPropertyChanged(_weakProcessor, this, WeakProcessorOnPropertyChanged);
 
-			if (count++ >= 80)
+			while (!worker.CancellationPending)
 			{
-				worker.ReportProgress(0);
-				count = 0;
+				worker.ReportProgress(1);
+				Thread.Sleep(25);
+
+				if (count++ >= 80)
+				{
+					worker.ReportProgress(0);
+					count = 0;
+				}
 			}
+		}
+		finally
+		{
+			_weakProcessor = null;
 		}
 	}
 
@@ -159,7 +216,6 @@ public partial class TabWeakEvents : CornerstoneUserControl
 	#region Events
 
 	public event EventHandler RegularTrigger;
-
 	public event EventHandler WeakTrigger;
 
 	#endregion
@@ -205,12 +261,11 @@ public partial class TabWeakEvents : CornerstoneUserControl
 		#endregion
 	}
 
-	public class PageWeakProcessor
+	public class PageWeakProcessor : Bindable
 	{
 		#region Fields
 
 		private readonly TabWeakEvents _page;
-		private readonly WeakEventManager _weakEventManager;
 
 		#endregion
 
@@ -219,19 +274,25 @@ public partial class TabWeakEvents : CornerstoneUserControl
 		public PageWeakProcessor(TabWeakEvents page)
 		{
 			_page = page;
-			_weakEventManager = new WeakEventManager();
-			_weakEventManager.Add<TabWeakEvents, EventArgs>(_page, nameof(_page.WeakTrigger), OnWeakTrigger);
 			//_page.WeakTrigger += OnWeakTrigger;
-		}
 
-		~PageWeakProcessor()
-		{
-			_weakEventManager.Remove(_page);
+			_page.WeakEventManager.Add<TabWeakEvents, PageWeakProcessor, EventArgs>(_page, nameof(_page.WeakTrigger), this, OnWeakTrigger);
 		}
 
 		#endregion
 
+		#region Properties
+
+		public int Count { get; private set; }
+
+		#endregion
+
 		#region Methods
+
+		public void ResetCount()
+		{
+			Count = 0;
+		}
 
 		/// <summary>
 		/// Comment out the [WeakAttribute] to trigger the exception.
@@ -241,6 +302,8 @@ public partial class TabWeakEvents : CornerstoneUserControl
 			try
 			{
 				_page.Log.AppendText(" W ");
+
+				Count++;
 			}
 			catch (Exception ex)
 			{

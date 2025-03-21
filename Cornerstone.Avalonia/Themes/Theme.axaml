@@ -35,6 +35,8 @@
 
 	</Design.PreviewWith>
 
+	<converters:BrushToColorConverter x:Key="BrushToColorConverter" />
+	<converters:ColorToBrushConverter x:Key="ColorToBrushConverter" />
 	<converters:TimeSpanConverter x:Key="TimeSpanConverter" />
 	<x:Double x:Key="StandardFontSize">14</x:Double>
 

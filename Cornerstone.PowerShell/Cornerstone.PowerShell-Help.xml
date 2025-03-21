@@ -237,17 +237,35 @@ DeviceType                    : Desktop</dev:code>
 					<maml:name>Name</maml:name>
 					<command:parameterValue required="true">String</command:parameterValue>
 				</command:parameter>
+				<command:parameter required="false" position="2">
+					<maml:name>Type</maml:name>
+					<command:parameterValue required="true">Unknown | Generic | DomainPassword | DomainCertificate | DomainVisiblePassword | GenericCertificate | DomainExtended | Maximum | MaximumEx</command:parameterValue>
+				</command:parameter>
 			</command:syntaxItem>
 		</command:syntax>
 		<command:parameters>
 			<command:parameter required="true" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="1" variableLength="false">
 				<maml:name>Name</maml:name>
 				<maml:description>
-					<maml:para>The name of the credential to read. Will use the selected credential if the name is provided.</maml:para>
+					<maml:para>The name of the credential to read.</maml:para>
 				</maml:description>
 				<command:parameterValue required="true" variableLength="false">String</command:parameterValue>
 				<dev:type>
 					<maml:name>String</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+			<command:parameter required="false" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="2" variableLength="false">
+				<maml:name>Type</maml:name>
+				<maml:description>
+					<maml:para>The type of the credential to read.</maml:para>
+				</maml:description>
+				<command:parameterValue required="false" variableLength="false">WindowsCredentialType</command:parameterValue>
+				<dev:type>
+					<maml:name>WindowsCredentialType</maml:name>
 					<maml:uri />
 					<maml:description>
 						<maml:para />
@@ -332,11 +350,11 @@ DeviceType                    : Desktop</dev:code>
 				</command:parameter>
 				<command:parameter required="false" position="named">
 					<maml:name>OutputMaxUnit</maml:name>
-					<command:parameterValue required="true">Min | Ticks | Nanosecond | Microsecond | Millisecond | Second | Minute | Hour | Day | Week | Month | Year | Max</command:parameterValue>
+					<command:parameterValue required="true">Ticks | Nanosecond | Microsecond | Millisecond | Second | Minute | Hour | Day | Week | Month | Year</command:parameterValue>
 				</command:parameter>
 				<command:parameter required="false" position="named">
 					<maml:name>OutputMinUnit</maml:name>
-					<command:parameterValue required="true">Min | Ticks | Nanosecond | Microsecond | Millisecond | Second | Minute | Hour | Day | Week | Month | Year | Max</command:parameterValue>
+					<command:parameterValue required="true">Ticks | Nanosecond | Microsecond | Millisecond | Second | Minute | Hour | Day | Week | Month | Year</command:parameterValue>
 				</command:parameter>
 				<command:parameter required="false" position="named">
 					<maml:name>OutputUnitFormat</maml:name>
@@ -488,6 +506,360 @@ DeviceType                    : Desktop</dev:code>
 				<dev:code>Convert-NumberUnits -Value 16 -ValueUnit Bit -OutputUnit Byte
 2 bytes
 </dev:code>
+				<dev:remarks>
+					<maml:para />
+				</dev:remarks>
+			</command:example>
+		</command:examples>
+		<maml:relatedLinks>
+			<maml:navigationLink>
+				<maml:linkText>Online version:</maml:linkText>
+				<maml:uri />
+			</maml:navigationLink>
+		</maml:relatedLinks>
+	</command:command>
+	<command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/1" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:gl="http://schemas.falchionconsulting.com/maml/gl/2013/02" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10">
+		<command:details>
+			<command:name>New-Website</command:name>
+			<gl:group>Environment</gl:group>
+			<maml:description>
+				<maml:para>Add a new (or update) a website.</maml:para>
+			</maml:description>
+			<command:verb>New</command:verb>
+			<command:noun>Website</command:noun>
+		</command:details>
+		<maml:description>
+			<maml:para>Add a new (or update) a website.</maml:para>
+		</maml:description>
+		<command:syntax>
+			<command:syntaxItem>
+				<maml:name>New-Website</maml:name>
+				<command:parameter required="true" position="2">
+					<maml:name>Bindings</maml:name>
+					<command:parameterValue required="true">String</command:parameterValue>
+				</command:parameter>
+				<command:parameter required="true" position="1">
+					<maml:name>Name</maml:name>
+					<command:parameterValue required="true">String</command:parameterValue>
+				</command:parameter>
+			</command:syntaxItem>
+		</command:syntax>
+		<command:parameters>
+			<command:parameter required="true" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="2" variableLength="false">
+				<maml:name>Bindings</maml:name>
+				<maml:description>
+					<maml:para>The bindings for the site.</maml:para>
+				</maml:description>
+				<command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+				<dev:type>
+					<maml:name>String</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+			<command:parameter required="true" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="1" variableLength="false">
+				<maml:name>Name</maml:name>
+				<maml:description>
+					<maml:para>The name of the IIS website.</maml:para>
+				</maml:description>
+				<command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+				<dev:type>
+					<maml:name>String</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+		</command:parameters>
+		<command:inputTypes>
+			<command:inputType>
+				<dev:type>
+					<maml:name />
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:inputType>
+		</command:inputTypes>
+		<command:returnValues>
+			<command:returnValue>
+				<dev:type>
+					<maml:name />
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:returnValue>
+		</command:returnValues>
+		<command:terminatingErrors />
+		<command:nonTerminatingErrors />
+		<maml:alertSet>
+			<maml:title />
+			<maml:alert>
+				<maml:para>For more information, type "Get-Help New-Website -detailed". For technical information, type "Get-Help New-Website -full".</maml:para>
+			</maml:alert>
+		</maml:alertSet>
+		<command:examples>
+			<command:example>
+				<maml:title>------------------EXAMPLE------------------</maml:title>
+				<dev:code />
+				<dev:remarks>
+					<maml:para>Binding Example: *:443:btb.becomeepic.com:*.becomeepic.com</maml:para>
+				</dev:remarks>
+			</command:example>
+		</command:examples>
+		<maml:relatedLinks>
+			<maml:navigationLink>
+				<maml:linkText>Online version:</maml:linkText>
+				<maml:uri />
+			</maml:navigationLink>
+		</maml:relatedLinks>
+	</command:command>
+	<command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/1" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:gl="http://schemas.falchionconsulting.com/maml/gl/2013/02" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10">
+		<command:details>
+			<command:name>Restart-WebsiteAppPool</command:name>
+			<gl:group>Environment</gl:group>
+			<maml:description>
+				<maml:para>Restart a website application pool</maml:para>
+			</maml:description>
+			<command:verb>Restart</command:verb>
+			<command:noun>WebsiteAppPool</command:noun>
+		</command:details>
+		<maml:description>
+			<maml:para>Restart a website application pool</maml:para>
+		</maml:description>
+		<command:syntax>
+			<command:syntaxItem>
+				<maml:name>Restart-WebsiteAppPool</maml:name>
+				<command:parameter required="true" position="1">
+					<maml:name>Name</maml:name>
+					<command:parameterValue required="true">String</command:parameterValue>
+				</command:parameter>
+			</command:syntaxItem>
+		</command:syntax>
+		<command:parameters>
+			<command:parameter required="true" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="1" variableLength="false">
+				<maml:name>Name</maml:name>
+				<maml:description>
+					<maml:para>The name of the IIS application pool.</maml:para>
+				</maml:description>
+				<command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+				<dev:type>
+					<maml:name>String</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+		</command:parameters>
+		<command:inputTypes>
+			<command:inputType>
+				<dev:type>
+					<maml:name />
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:inputType>
+		</command:inputTypes>
+		<command:returnValues>
+			<command:returnValue>
+				<dev:type>
+					<maml:name />
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:returnValue>
+		</command:returnValues>
+		<command:terminatingErrors />
+		<command:nonTerminatingErrors />
+		<maml:alertSet>
+			<maml:title />
+			<maml:alert>
+				<maml:para>For more information, type "Get-Help Restart-WebsiteAppPool -detailed". For technical information, type "Get-Help Restart-WebsiteAppPool -full".</maml:para>
+			</maml:alert>
+		</maml:alertSet>
+		<command:examples>
+			<command:example>
+				<maml:title>------------------EXAMPLE------------------</maml:title>
+				<dev:code />
+				<dev:remarks>
+					<maml:para />
+				</dev:remarks>
+			</command:example>
+		</command:examples>
+		<maml:relatedLinks>
+			<maml:navigationLink>
+				<maml:linkText>Online version:</maml:linkText>
+				<maml:uri />
+			</maml:navigationLink>
+		</maml:relatedLinks>
+	</command:command>
+	<command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/1" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:gl="http://schemas.falchionconsulting.com/maml/gl/2013/02" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10">
+		<command:details>
+			<command:name>Start-WebsiteAppPool</command:name>
+			<gl:group>Environment</gl:group>
+			<maml:description>
+				<maml:para>Start a website application pool</maml:para>
+			</maml:description>
+			<command:verb>Start</command:verb>
+			<command:noun>WebsiteAppPool</command:noun>
+		</command:details>
+		<maml:description>
+			<maml:para>Start a website application pool</maml:para>
+		</maml:description>
+		<command:syntax>
+			<command:syntaxItem>
+				<maml:name>Start-WebsiteAppPool</maml:name>
+				<command:parameter required="true" position="1">
+					<maml:name>Name</maml:name>
+					<command:parameterValue required="true">String</command:parameterValue>
+				</command:parameter>
+			</command:syntaxItem>
+		</command:syntax>
+		<command:parameters>
+			<command:parameter required="true" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="1" variableLength="false">
+				<maml:name>Name</maml:name>
+				<maml:description>
+					<maml:para>The name of the IIS application pool.</maml:para>
+				</maml:description>
+				<command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+				<dev:type>
+					<maml:name>String</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+		</command:parameters>
+		<command:inputTypes>
+			<command:inputType>
+				<dev:type>
+					<maml:name />
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:inputType>
+		</command:inputTypes>
+		<command:returnValues>
+			<command:returnValue>
+				<dev:type>
+					<maml:name />
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:returnValue>
+		</command:returnValues>
+		<command:terminatingErrors />
+		<command:nonTerminatingErrors />
+		<maml:alertSet>
+			<maml:title />
+			<maml:alert>
+				<maml:para>For more information, type "Get-Help Start-WebsiteAppPool -detailed". For technical information, type "Get-Help Start-WebsiteAppPool -full".</maml:para>
+			</maml:alert>
+		</maml:alertSet>
+		<command:examples>
+			<command:example>
+				<maml:title>------------------EXAMPLE------------------</maml:title>
+				<dev:code />
+				<dev:remarks>
+					<maml:para />
+				</dev:remarks>
+			</command:example>
+		</command:examples>
+		<maml:relatedLinks>
+			<maml:navigationLink>
+				<maml:linkText>Online version:</maml:linkText>
+				<maml:uri />
+			</maml:navigationLink>
+		</maml:relatedLinks>
+	</command:command>
+	<command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/1" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:gl="http://schemas.falchionconsulting.com/maml/gl/2013/02" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10">
+		<command:details>
+			<command:name>Stop-WebsiteAppPool</command:name>
+			<gl:group>Environment</gl:group>
+			<maml:description>
+				<maml:para>Stop a website application pool</maml:para>
+			</maml:description>
+			<command:verb>Stop</command:verb>
+			<command:noun>WebsiteAppPool</command:noun>
+		</command:details>
+		<maml:description>
+			<maml:para>Stop a website application pool</maml:para>
+		</maml:description>
+		<command:syntax>
+			<command:syntaxItem>
+				<maml:name>Stop-WebsiteAppPool</maml:name>
+				<command:parameter required="true" position="1">
+					<maml:name>Name</maml:name>
+					<command:parameterValue required="true">String</command:parameterValue>
+				</command:parameter>
+			</command:syntaxItem>
+		</command:syntax>
+		<command:parameters>
+			<command:parameter required="true" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="1" variableLength="false">
+				<maml:name>Name</maml:name>
+				<maml:description>
+					<maml:para>The name of the IIS application pool.</maml:para>
+				</maml:description>
+				<command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+				<dev:type>
+					<maml:name>String</maml:name>
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:parameter>
+		</command:parameters>
+		<command:inputTypes>
+			<command:inputType>
+				<dev:type>
+					<maml:name />
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:inputType>
+		</command:inputTypes>
+		<command:returnValues>
+			<command:returnValue>
+				<dev:type>
+					<maml:name />
+					<maml:uri />
+					<maml:description>
+						<maml:para />
+					</maml:description>
+				</dev:type>
+			</command:returnValue>
+		</command:returnValues>
+		<command:terminatingErrors />
+		<command:nonTerminatingErrors />
+		<maml:alertSet>
+			<maml:title />
+			<maml:alert>
+				<maml:para>For more information, type "Get-Help Stop-WebsiteAppPool -detailed". For technical information, type "Get-Help Stop-WebsiteAppPool -full".</maml:para>
+			</maml:alert>
+		</maml:alertSet>
+		<command:examples>
+			<command:example>
+				<maml:title>------------------EXAMPLE------------------</maml:title>
+				<dev:code />
 				<dev:remarks>
 					<maml:para />
 				</dev:remarks>

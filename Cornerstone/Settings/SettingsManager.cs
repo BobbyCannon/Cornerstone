@@ -1,14 +1,16 @@
 ﻿#region References
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
+using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
 using Cornerstone.Presentation.Managers;
-using Cornerstone.Weaver;
+using Cornerstone.Runtime;
+using Cornerstone.Storage;
+using Cornerstone.Sync;
 
 #endregion
 
@@ -17,103 +19,193 @@ namespace Cornerstone.Settings;
 /// <summary>
 /// Represents a manager for a category of settings.
 /// </summary>
-/// <typeparam name="T"> The type of the setting. </typeparam>
-/// <typeparam name="T2"> The type of the setting ID. </typeparam>
-public abstract class SettingsManager<T, T2> : Manager
-	where T : Setting<T2>
+/// <typeparam name="TSettings"> The type that contains the settings value. </typeparam>
+/// <typeparam name="TEntity"> The type of the setting. </typeparam>
+/// <typeparam name="TKey"> The type of the setting ID. </typeparam>
+/// <typeparam name="TDatabase"> The database that stores the data. </typeparam>
+public class SettingsManager<TSettings, TEntity, TKey, TDatabase>
+	: ViewManagerForDatabase<PartialUpdateValue, TEntity, TKey, TDatabase>
+	where TEntity : Setting<TKey>, IClientEntity, new()
+	where TDatabase : ISyncableDatabase
 {
 	#region Fields
 
 	private readonly string _category;
-	private IList<PropertyInfo> _properties;
-	private readonly IDictionary<string, Setting<T2>> _trackedSettings;
 
 	#endregion
 
 	#region Constructors
 
-	/// <summary>
-	/// Initializes an instance of the settings manager.
-	/// </summary>
-	/// <param name="category"> The category name. </param>
-	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	protected SettingsManager(string category, IDispatcher dispatcher) : base(dispatcher)
+	public SettingsManager(string category,
+		IDatabaseProvider<TDatabase> databaseProvider,
+		IDateTimeProvider dateTimeProvider,
+		IDependencyProvider dependencyProvider,
+		IDispatcher dispatcher
+	) : base(databaseProvider, dateTimeProvider, dependencyProvider, dispatcher,
+		(model, entity) => model.Name == entity.Name)
 	{
 		_category = category;
-		_trackedSettings = new Dictionary<string, Setting<T2>>();
 	}
 
 	#endregion
 
 	#region Properties
 
-	/// <summary>
-	/// The predicate to load settings from storage mechanism.
-	/// </summary>
-	protected virtual Func<T, bool> LoadPredicate => x => !x.IsDeleted && (x.Category == _category);
+	protected override Func<PartialUpdateValue, TEntity, bool> LookupPredicate => (m, e) => m.Name == e.Name;
 
 	#endregion
 
 	#region Methods
 
 	/// <summary>
-	/// Get the repository to store the settings.
+	/// Get the update for the provided name with a fallback default value if not found.
 	/// </summary>
-	/// <returns> The repository to store the settings. </returns>
-	public abstract ISettingsRepository<T, T2> GetRepository();
+	/// <typeparam name="T"> The type to cast the value to. </typeparam>
+	/// <param name="name"> The name of the update. </param>
+	/// <returns> The value if it was found otherwise default(T). </returns>
+	public T Get<T>([CallerMemberName] string name = "")
+	{
+		return Get<T>(() => default, name);
+	}
+
+	/// <summary>
+	/// Get the property value.
+	/// </summary>
+	/// <typeparam name="TProperty"> The type to cast the value to. </typeparam>
+	/// <param name="expression"> The expression of the member to set. </param>
+	/// <param name="defaultValueFactory"> A default value factory if update not available. </param>
+	/// <returns> The value if it was found otherwise default(T). </returns>
+	public TProperty Get<TProperty>(Expression<Func<TSettings, TProperty>> expression, Func<TProperty> defaultValueFactory)
+	{
+		var propertyExpression = (MemberExpression) expression.Body;
+		var name = propertyExpression.Member.Name;
+		return Get(defaultValueFactory, name);
+	}
+
+	/// <summary>
+	/// Get the update for the provided name with a fallback default value if not found.
+	/// </summary>
+	/// <typeparam name="T"> The type to cast the value to. </typeparam>
+	/// <param name="defaultValueFactory"> A default value factory if update not available. </param>
+	/// <param name="name"> The name of the update. </param>
+	/// <returns> The value if it was found otherwise default(T). </returns>
+	public T Get<T>(Func<T> defaultValueFactory, [CallerMemberName] string name = "")
+	{
+		var model = FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
+		if (model != null)
+		{
+			return (T) model.Value;
+		}
+
+		var defaultValue = defaultValueFactory();
+		AddValue(name, defaultValue);
+		return defaultValue;
+	}
 
 	/// <inheritdoc />
 	public override bool HasChanges(IncludeExcludeSettings settings)
 	{
-		return settings.IsEmpty()
-			? _trackedSettings
-				.Values
-				.Any(x => x.HasChanges())
-			: _trackedSettings
-				.Values
-				.Where(x => settings.ShouldProcessProperty(x.Name))
-				.Any(x => x.HasChanges(settings));
+		return base.HasChanges(settings)
+			|| this.Any(x => x.HasChanges(settings));
 	}
 
 	/// <summary>
-	/// Load the settings from storage.
+	/// Reset the settings.
 	/// </summary>
-	public void Load()
+	public override void Reset()
 	{
-		using var repository = GetRepository();
-		var entities = repository.Load(LoadPredicate);
-
-		foreach (var entity in entities)
-		{
-			Load(entity);
-		}
-
-		//base.Load();
 		ResetHasChanges();
+		base.Reset();
 	}
 
 	/// <inheritdoc />
 	public override void ResetHasChanges()
 	{
-		_trackedSettings.ForEach(x => x.Value.ResetHasChanges());
+		this.ForEach(x => x.ResetHasChanges());
 		base.ResetHasChanges();
 	}
 
 	/// <summary>
 	/// Save the settings to the repository.
 	/// </summary>
-	public void Save()
+	public void Save(bool force = false)
 	{
-		using var repository = GetRepository();
-
-		foreach (var setting in _trackedSettings)
+		if (!force && !HasChanges())
 		{
-			repository.AddOrUpdate(setting.Value);
+			return;
 		}
 
-		repository.SaveChanges();
+		using var database = DatabaseProvider.GetDatabase();
+		var repository = database.GetRepository<TEntity, TKey>();
 
+		foreach (var model in this.Where(x => x.HasChanges()))
+		{
+			var entity = repository.FirstOrDefault(x => x.Name == model.Name);
+			if (entity == null)
+			{
+				entity = new TEntity();
+				repository.Add(entity);
+			}
+
+			entity.CanSync = CanSync(model.Name);
+			entity.Category = _category;
+			entity.Name = model.Name;
+			entity.Value = model.Value.ToRawJson();
+			entity.ValueType = model.Type.ToAssemblyName();
+
+			OnEntityUpdated(entity);
+		}
+
+		database.SaveChanges();
+
+		OnSettingSaved();
 		ResetHasChanges();
+	}
+
+	/// <summary>
+	/// Set a property for the update.
+	/// </summary>
+	/// <param name="expression"> The expression of the member to set. </param>
+	/// <param name="value"> The value of the member. </param>
+	public void Set<TProperty>(Expression<Func<TSettings, TProperty>> expression, Func<TProperty> value)
+	{
+		Set(expression, value.Invoke());
+	}
+
+	/// <summary>
+	/// Set a property for the update.
+	/// </summary>
+	/// <param name="expression"> The expression of the member to set. </param>
+	/// <param name="value"> The value of the member. </param>
+	public void Set<TProperty>(Expression<Func<TSettings, TProperty>> expression, TProperty value)
+	{
+		var propertyExpression = (MemberExpression) expression.Body;
+		Set(value, propertyExpression.Member.Name);
+	}
+
+	/// <summary>
+	/// Set a property for the update. The name must be available of the target value.
+	/// </summary>
+	/// <param name="value"> The value of the member. </param>
+	/// <param name="name"> The name of the member to set. </param>
+	public TData Set<TData>(TData value, [CallerMemberName] string name = "")
+	{
+		try
+		{
+			AddValue(name, value);
+			return value;
+		}
+		finally
+		{
+			OnSettingChanged(name);
+		}
+	}
+
+	public string ToJson()
+	{
+		var partialUpdate = new PartialUpdate();
+		partialUpdate.Load(this.ToArray());
+		return partialUpdate.ToRawJson();
 	}
 
 	/// <summary>
@@ -121,60 +213,6 @@ public abstract class SettingsManager<T, T2> : Manager
 	/// </summary>
 	public override void Uninitialize()
 	{
-		_trackedSettings.ForEach(x => x.Value.ResetToDefault());
-	}
-
-	/// <summary>
-	/// Add or update a track setting (local).
-	/// </summary>
-	/// <param name="name"> The name of the settings. </param>
-	/// <param name="defaultValue"> The default value for the setting. </param>
-	/// <param name="update"> An optional update action. </param>
-	/// <typeparam name="TData"> The type of the data for the setting. </typeparam>
-	/// <returns> The new setting. </returns>
-	protected Setting<TData, T2> AddOrUpdateTrackedSetting<TData>(string name, TData defaultValue = default, Action<Setting<TData, T2>> update = null)
-	{
-		Setting<TData, T2> response;
-		if (_trackedSettings.TryGetValue(name, out var setting))
-		{
-			response = (Setting<TData, T2>) setting;
-			response.CanSync = CanSync(name);
-			response.Data = defaultValue;
-			update?.Invoke((Setting<TData, T2>) setting);
-		}
-		else
-		{
-			response = new Setting<TData, T2>(name, defaultValue) { CanSync = CanSync(name) };
-			update?.Invoke(response);
-			_trackedSettings.Add(name, response);
-		}
-		return response;
-	}
-
-	/// <summary>
-	/// Add or update a track setting (local).
-	/// </summary>
-	/// <param name="name"> The name of the settings. </param>
-	/// <param name="type"> The type of the data value. </param>
-	/// <param name="defaultValue"> The default value for the setting. </param>
-	/// <param name="update"> An optional update action. </param>
-	/// <returns> The new setting. </returns>
-	protected Setting<T2> AddOrUpdateTrackedSetting(string name, Type type, object defaultValue = default, Action<Setting<T2>> update = null)
-	{
-		Setting<T2> response;
-		if (_trackedSettings.TryGetValue(name, out var setting))
-		{
-			response = setting;
-			response.Value = defaultValue.ToJson();
-			update?.Invoke(setting);
-		}
-		else
-		{
-			response = (Setting<T2>) typeof(Setting<,>).CreateInstanceOfGeneric([type, typeof(T2)], name, defaultValue, GetDispatcher());
-			update?.Invoke(response);
-			_trackedSettings.Add(name, response);
-		}
-		return response;
 	}
 
 	/// <summary>
@@ -187,110 +225,50 @@ public abstract class SettingsManager<T, T2> : Manager
 		return false;
 	}
 
-	/// <summary>
-	/// Get the value of a tracked setting.
-	/// </summary>
-	/// <typeparam name="TData"> The type of the Data value. </typeparam>
-	/// <param name="name"> The name of the setting. </param>
-	/// <param name="defaultValue"> The default value to return if not found. </param>
-	/// <returns> The value read or the default value. </returns>
-	protected TData Get<TData>(string name, TData defaultValue = default)
+	protected virtual void OnEntityUpdated(TEntity entity)
 	{
-		if (!_trackedSettings.TryGetValue(name, out var setting))
-		{
-			return AddOrUpdateTrackedSetting(name, defaultValue, x => x.ResetHasChanges()).Data;
-		}
-
-		if (setting is Setting<TData, T2> typedSetting)
-		{
-			return typedSetting.Data;
-		}
-
-		return setting.Value.FromJson<TData>();
 	}
 
 	/// <summary>
 	/// Triggered when set is called for a setting.
 	/// </summary>
 	/// <param name="name"> The name of setting that changed. </param>
-
 	protected virtual void OnSettingChanged(string name)
 	{
 		SettingChanged?.Invoke(this, name);
 	}
 
-	/// <summary>
-	/// Get the value of a setting.
-	/// </summary>
-	/// <typeparam name="TData"> The type of the Data value. </typeparam>
-	/// <param name="name"> The name of the setting. </param>
-	/// <param name="value"> The value to be set. </param>
-	/// <returns> The value set. </returns>
-	protected TData Set<TData>(string name, TData value)
+	protected virtual void OnSettingSaved()
 	{
-		try
-		{
-			if (!_trackedSettings.TryGetValue(name, out var setting))
-			{
-				return AddOrUpdateTrackedSetting(name, value).Data;
-			}
-
-			if (setting is Setting<TData, T2> typeSetting)
-			{
-				typeSetting.Data = value;
-				return typeSetting.Data;
-			}
-
-			setting.Value = value.ToJson();
-			return value;
-		}
-		finally
-		{
-			OnSettingChanged(name);
-		}
+		SettingSaved?.Invoke(this, EventArgs.Empty);
 	}
 
-	private PropertyInfo GetPropertyByName(string propertyName)
+	protected override void OnViewUpdated(PartialUpdateValue view)
 	{
-		_properties ??= GetType().GetCachedProperties();
-		return _properties?.FirstOrDefault(x => x.Name == propertyName);
+		OnPropertyChanged(view.Name);
+		base.OnViewUpdated(view);
 	}
 
-	private void Load(T entity)
+	protected override bool UpdateView(PartialUpdateValue view, TEntity update)
 	{
-		var property = GetPropertyByName(entity.Name);
-		if (property == null)
-		{
-			return;
-		}
+		view.Type = update.GetValueType();
+		view.Value = update.Value.FromJson(view.Type);
+		view.Name = update.Name;
+		return true;
+	}
 
-		if (property.PropertyType.ImplementsType<ISetting>())
-		{
-			var instance = (ISetting) property.PropertyType.CreateInstance();
-			var settingType = Type.GetType(instance.ValueType);
-			AddOrUpdateTrackedSetting(entity.Name,
-				settingType,
-				entity.Value.FromJson(settingType),
-				x => x.ResetHasChanges()
-			);
-			return;
-		}
-
-		AddOrUpdateTrackedSetting(entity.Name,
-			property.PropertyType,
-			entity.Value.FromJson(property.PropertyType),
-			x => x.ResetHasChanges()
-		);
+	private void AddValue<T>(string name, T value)
+	{
+		var model = new PartialUpdateValue(name, typeof(T), value);
+		AddOrUpdate(model);
 	}
 
 	#endregion
 
 	#region Events
 
-	/// <summary>
-	/// Fires when a setting changed.
-	/// </summary>
 	public event EventHandler<string> SettingChanged;
+	public event EventHandler SettingSaved;
 
 	#endregion
 }

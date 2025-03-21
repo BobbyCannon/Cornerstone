@@ -110,7 +110,7 @@ public class TrackerProvider<T>
 		if (configuration == null)
 		{
 			// Item was not on the entity, cached, or in the database. We need to add the event configuration
-			configuration = new TrackerPathConfigurationEntity { PathName = item.Name, PathType = item.Type ?? item.Name };
+			configuration = new TrackerPathConfigurationEntity { PathName = item.Name, PathType = item.Type ?? item.Name, IsException = item.IsException };
 			database.TrackerPathConfigurations.Add(configuration);
 			database.SaveChanges();
 			Cache.Set(item.Name, configuration, DateTimeProvider.UtcNow.Add(Timeout));

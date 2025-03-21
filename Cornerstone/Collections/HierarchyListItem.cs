@@ -12,15 +12,16 @@ using Cornerstone.Weaver;
 namespace Cornerstone.Collections;
 
 /// <summary>
-/// Represents a sync model in a hierarchy list.
+/// Represents a hierarchy list of items.
 /// </summary>
-public class HierarchyListItem<T> : SyncModel, IDispatchable
+public class HierarchyListItem<T>
+	: SyncModel, IDispatchable
 	where T : HierarchyListItem<T>
 {
 	#region Fields
 
 	private ISpeedyList<T> _children;
-	private readonly IDispatcher _dispatcher;
+	private IDispatcher _dispatcher;
 	private T _parent;
 
 	#endregion
@@ -54,23 +55,28 @@ public class HierarchyListItem<T> : SyncModel, IDispatchable
 
 	#region Methods
 
-	public T Add(T childItem)
+	public bool Add(T childItem)
 	{
+		if (!CanHaveChildren())
+		{
+			return false;
+		}
+
 		childItem.UpdateParent((T) this);
 		_children.Add(childItem);
-		return childItem;
+		return true;
 	}
 
-	public bool AnyDescendants(Func<T, bool> check)
+	public bool AnyDescendants(Func<T, bool> predicate)
 	{
-		if (check((T) this))
+		if (predicate((T) this))
 		{
 			return true;
 		}
 
 		foreach (var child in _children)
 		{
-			if (child.AnyDescendants(check))
+			if (child.AnyDescendants(predicate))
 			{
 				return true;
 			}
@@ -79,22 +85,14 @@ public class HierarchyListItem<T> : SyncModel, IDispatchable
 		return false;
 	}
 
-	public T FirstOrDefault(Func<T, bool> check)
+	public virtual bool CanHaveChildren()
 	{
-		if (check((T) this))
-		{
-			return (T) this;
-		}
+		return true;
+	}
 
-		foreach (var child in _children)
-		{
-			if (child.AnyDescendants(check))
-			{
-				return child;
-			}
-		}
-
-		return default;
+	public T FirstOrDefaultDescendants(Func<T, bool> predicate)
+	{
+		return TryFindDescendants((T) this, predicate);
 	}
 
 	public ISpeedyList<T> GetChildren()
@@ -134,6 +132,11 @@ public class HierarchyListItem<T> : SyncModel, IDispatchable
 	public virtual bool ShouldShowChildren()
 	{
 		return true;
+	}
+
+	public virtual void UpdateDispatcher(IDispatcher dispatcher)
+	{
+		_dispatcher = dispatcher;
 	}
 
 	protected void DisconnectParent(T parent)
@@ -306,6 +309,25 @@ public class HierarchyListItem<T> : SyncModel, IDispatchable
 	private void ParentShouldShowChildrenChanged(object sender, EventArgs e)
 	{
 		OnShouldBeShownChanged();
+	}
+
+	private static T TryFindDescendants(T list, Func<T, bool> predicate)
+	{
+		if (predicate(list))
+		{
+			return list;
+		}
+
+		foreach (var child in list.Children)
+		{
+			var found = TryFindDescendants(child, predicate);
+			if (found != null)
+			{
+				return found;
+			}
+		}
+
+		return null;
 	}
 
 	#endregion

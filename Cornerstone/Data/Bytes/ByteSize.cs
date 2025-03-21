@@ -5,7 +5,6 @@ using System.Globalization;
 using System.Linq;
 using Cornerstone.Generators.CodeGenerators;
 using Cornerstone.Text;
-using Cornerstone.Text.Human;
 using static System.Globalization.NumberStyles;
 
 #endregion

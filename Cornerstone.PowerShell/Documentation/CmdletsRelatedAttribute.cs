@@ -28,6 +28,7 @@ namespace Cornerstone.PowerShell.Documentation
 		#region Properties
 
 		public string[] ExternalCmdlets { get; set; }
+
 		public List<Type> RelatedCmdlets { get; set; }
 
 		#endregion

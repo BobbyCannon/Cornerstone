@@ -1,17 +1,13 @@
 ﻿#region References
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Cornerstone.EntityFramework;
 using Cornerstone.Extensions;
-using Cornerstone.Storage;
+using Cornerstone.Sync;
 using Cornerstone.Testing;
 using Cornerstone.UnitTests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Sample.Server.Data;
-using Sample.Server.Data.Sql;
-using Sample.Server.Data.Sqlite;
 using Sample.Shared.Storage;
 using Sample.Shared.Storage.Server;
 
@@ -29,7 +25,7 @@ public class ServerDatabaseTests : CornerstoneUnitTest
 	{
 		ForEachServerDatabaseProvider(provider =>
 		{
-			var expected = GetModel<AddressEntity>();
+			var expected = GetServerModel<AddressEntity>();
 
 			using (var database = provider.GetDatabase())
 			{
@@ -47,37 +43,15 @@ public class ServerDatabaseTests : CornerstoneUnitTest
 		});
 	}
 
-	public void ForEachServerDatabaseProvider(Action<IDatabaseProvider<IServerDatabase>> test)
+	public void ForEachServerDatabaseProvider(Action<SyncableDatabaseProvider<IServerDatabase>> test)
 	{
-		var providers = GetServerDatabaseProviders();
+		var providers = GetServerDatabaseProviders(false, false, false);
 
 		foreach (var provider in providers)
 		{
 			provider.GetType().FullName.Dump();
 			test(provider);
 		}
-	}
-
-	private IEnumerable<IDatabaseProvider<IServerDatabase>> GetServerDatabaseProviders()
-	{
-		yield return GetServerMemoryDatabaseProvider();
-		yield return GetServerSqlDatabaseProvider();
-		yield return GetServerSqliteDatabaseProvider();
-	}
-
-	private IDatabaseProvider<IServerDatabase> GetServerMemoryDatabaseProvider()
-	{
-		return new ServerMemoryDatabaseProvider(this);
-	}
-
-	private IDatabaseProvider<IServerDatabase> GetServerSqlDatabaseProvider()
-	{
-		return new ServerSqlDatabaseProvider("server=localhost;database=CornerstoneServer;integrated security=true;encrypt=false", this);
-	}
-	
-	private IDatabaseProvider<IServerDatabase> GetServerSqliteDatabaseProvider()
-	{
-		return new ServerSqliteDatabaseProvider("Data Source=CornerstoneServer.db", this);
 	}
 
 	#endregion

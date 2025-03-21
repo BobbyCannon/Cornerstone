@@ -45,7 +45,7 @@ public class TypeExtensionsTests : CornerstoneUnitTest
 	public void GetDetails()
 	{
 		var actual = EnumExtensions.GetAllEnumDetails<BrowserType>().Values;
-		Assert.IsNotNull(actual);
+		IsNotNull(actual);
 		var expected = new EnumExtensions.EnumDetails[]
 		{
 			new() { Description = "None", GroupName = "", IsFlaggedValue = false, Name = "None", ShortName = "None", Value = BrowserType.None, NumericValue = 0 },
@@ -120,7 +120,7 @@ public class TypeExtensionsTests : CornerstoneUnitTest
 
 		foreach (var type in nullableTypes)
 		{
-			Assert.IsTrue(type.IsNullable());
+			IsTrue(type.IsNullable());
 		}
 
 		var nonNullableTypes = new[]
@@ -135,7 +135,7 @@ public class TypeExtensionsTests : CornerstoneUnitTest
 
 		foreach (var type in nonNullableTypes)
 		{
-			Assert.IsFalse(type.IsNullable());
+			IsFalse(type.IsNullable());
 		}
 	}
 

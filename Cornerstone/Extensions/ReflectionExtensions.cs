@@ -98,7 +98,7 @@ public static class ReflectionExtensions
 		var typeFlags = flags ?? DefaultPublicFlags;
 		var label = GetLabel(type, parameterTypes);
 		var key = new CacheKey(type, typeFlags, label);
-		return _typeConstructors.GetOrAdd(key, _ => type.GetConstructor(parameterTypes));
+		return _typeConstructors.GetOrAdd(key, x => x.Type.GetConstructor(parameterTypes));
 	}
 
 	/// <summary>
@@ -423,6 +423,11 @@ public static class ReflectionExtensions
 		var key = new CacheKey(type ?? throw new InvalidOperationException(), typeFlags, null);
 		return _typePropertyInfos.GetOrAdd(key, _ =>
 		{
+			if (type.IsInterface && !typeFlags.HasFlag(BindingFlags.DeclaredOnly))
+			{
+				return type.GetAllInterfaceProperties().ToArray();
+			}
+
 			var response = type
 				.GetProperties(typeFlags)
 				.GroupBy(x => x.Name)
@@ -539,6 +544,35 @@ public static class ReflectionExtensions
 		return ((dynamic) expression).Body.Member.Name;
 	}
 
+	public static EventInfo GetMatchingEvent(this Type type, string name, MethodInfo methodInfo)
+	{
+		if (type == null)
+		{
+			throw new ArgumentNullException(nameof(type));
+		}
+		if (methodInfo == null)
+		{
+			throw new ArgumentNullException(nameof(methodInfo));
+		}
+
+		// Get all events on the type
+		var events = type
+			.GetEvents(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
+			.Where(x => x.Name == name)
+			.ToList();
+
+		foreach (var eventInfo in events)
+		{
+			var handlerType = eventInfo.EventHandlerType;
+			if (IsMethodCompatibleWithDelegate(methodInfo, handlerType))
+			{
+				return eventInfo;
+			}
+		}
+
+		return null; // No matching event found
+	}
+
 	/// <summary>
 	/// Gets the public or private member using reflection.
 	/// </summary>
@@ -624,12 +658,6 @@ public static class ReflectionExtensions
 			|| (info.CanWrite
 				&& (info.SetMethod != null)
 				&& info.SetMethod.IsAbstract);
-	}
-
-	public static bool IsDelegate(this Type type)
-	{
-		return (type == typeof(MulticastDelegate))
-			|| (type.BaseType == typeof(MulticastDelegate));
 	}
 
 	public static bool IsIndexer(this PropertyInfo type)
@@ -823,6 +851,47 @@ public static class ReflectionExtensions
 	{
 		var label = $"{type.FullName}.{methodName}<{string.Join(",", genericTypes.Select(x => x.FullName))}>.{string.Join(",", parameterTypes.Select(x => x.FullName))}";
 		return label;
+	}
+
+	private static bool IsMethodCompatibleWithDelegate(MethodInfo methodInfo, Type delegateType)
+	{
+		// Get the delegate's Invoke method
+		var invokeMethod = delegateType.GetMethod("Invoke");
+		if (invokeMethod == null)
+		{
+			return false;
+		}
+
+		// Check return type compatibility (typically void for event handlers)
+		if (invokeMethod.ReturnType != methodInfo.ReturnType)
+		{
+			return false;
+		}
+
+		// Get parameter lists
+		var delegateParams = invokeMethod.GetParameters();
+		var methodParams = methodInfo.GetParameters();
+
+		// Check parameter count
+		if (delegateParams.Length != methodParams.Length)
+		{
+			return false;
+		}
+
+		// Check parameter type compatibility
+		for (var i = 0; i < delegateParams.Length; i++)
+		{
+			var delegateParamType = delegateParams[i].ParameterType;
+			var methodParamType = methodParams[i].ParameterType;
+
+			// Allow covariance (e.g., object can accept string)
+			if (!delegateParamType.IsAssignableFrom(methodParamType))
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	#endregion

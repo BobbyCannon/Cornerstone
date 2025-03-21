@@ -8,7 +8,7 @@ using Cornerstone.Extensions;
 using Cornerstone.Sync;
 using Cornerstone.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Sample.Shared.Sync;
+using Sample.Shared.Storage.Sync;
 
 #endregion
 
@@ -57,8 +57,8 @@ public class PagedResultsTests : CornerstoneUnitTest
 	public void Constructor()
 	{
 		var request = new PagedRequest();
-		var collection = new[] { new AddressSync(), new AddressSync() };
-		var actual = new PagedResults<AddressSync>(request, collection.Length, collection);
+		var collection = new[] { new Address(), new Address() };
+		var actual = new PagedResults<Address>(request, collection.Length, collection);
 		AreEqual(2, actual.Results.ToList().Count);
 	}
 
@@ -162,7 +162,7 @@ public class PagedResultsTests : CornerstoneUnitTest
 			}).ToSyncObject()
 		);
 		var actual = results.ToRawJson();
-		var expected = "{\"Filter\":\"\",\"HasMore\":false,\"Order\":\"\",\"Page\":2,\"PerPage\":11,\"Results\":[{\"Data\":\"{\\\"AddressSyncId\\\":\\\"4562a619-89fa-4d64-a91a-66750184491f\\\",\\\"CreatedOn\\\":\\\"2022-10-17T05:43:21Z\\\",\\\"EmailAddress\\\":\\\"john.doe@domain.com\\\",\\\"ModifiedOn\\\":\\\"2022-10-17T05:43:22Z\\\",\\\"Name\\\":\\\"John\\\",\\\"Roles\\\":\\\",,\\\",\\\"SyncId\\\":\\\"e778e441-4486-478b-8661-4aa107fc92e3\\\"}\",\"ModifiedOn\":\"2022-10-17T05:43:22Z\",\"Status\":1,\"SyncId\":\"e778e441-4486-478b-8661-4aa107fc92e3\",\"TypeName\":\"Sample.Shared.Sync.AccountSync,Sample.Shared\"},{\"Data\":\"{\\\"AddressSyncId\\\":\\\"e49366c5-0cdb-45f7-a997-8f27471b8fbe\\\",\\\"CreatedOn\\\":\\\"2022-10-17T05:43:23Z\\\",\\\"EmailAddress\\\":\\\"john.doe@domain.com\\\",\\\"ModifiedOn\\\":\\\"2022-10-17T05:43:24Z\\\",\\\"Name\\\":\\\"Fred\\\",\\\"Roles\\\":\\\",,\\\",\\\"SyncId\\\":\\\"f77ec788-38f5-493d-9ca9-ec57bfcdcf8c\\\"}\",\"ModifiedOn\":\"2022-10-17T05:43:24Z\",\"Status\":1,\"SyncId\":\"f77ec788-38f5-493d-9ca9-ec57bfcdcf8c\",\"TypeName\":\"Sample.Shared.Sync.AccountSync,Sample.Shared\"}],\"TotalCount\":12,\"TotalPages\":2}";
+		var expected = "{\"Filter\":\"\",\"HasMore\":false,\"Order\":\"\",\"Page\":2,\"PerPage\":11,\"Results\":[{\"Data\":\"{\\\"AddressSyncId\\\":\\\"4562a619-89fa-4d64-a91a-66750184491f\\\",\\\"CreatedOn\\\":\\\"2022-10-17T05:43:21Z\\\",\\\"EmailAddress\\\":\\\"john.doe@domain.com\\\",\\\"ModifiedOn\\\":\\\"2022-10-17T05:43:22Z\\\",\\\"Name\\\":\\\"John\\\",\\\"Roles\\\":[],\\\"SyncId\\\":\\\"e778e441-4486-478b-8661-4aa107fc92e3\\\"}\",\"ModifiedOn\":\"2022-10-17T05:43:22Z\",\"Status\":1,\"SyncId\":\"e778e441-4486-478b-8661-4aa107fc92e3\",\"TypeName\":\"Sample.Shared.Storage.Sync.Account,Sample.Shared\"},{\"Data\":\"{\\\"AddressSyncId\\\":\\\"e49366c5-0cdb-45f7-a997-8f27471b8fbe\\\",\\\"CreatedOn\\\":\\\"2022-10-17T05:43:23Z\\\",\\\"EmailAddress\\\":\\\"john.doe@domain.com\\\",\\\"ModifiedOn\\\":\\\"2022-10-17T05:43:24Z\\\",\\\"Name\\\":\\\"Fred\\\",\\\"Roles\\\":[],\\\"SyncId\\\":\\\"f77ec788-38f5-493d-9ca9-ec57bfcdcf8c\\\"}\",\"ModifiedOn\":\"2022-10-17T05:43:24Z\",\"Status\":1,\"SyncId\":\"f77ec788-38f5-493d-9ca9-ec57bfcdcf8c\",\"TypeName\":\"Sample.Shared.Storage.Sync.Account,Sample.Shared\"}],\"TotalCount\":12,\"TotalPages\":2}";
 		//actual.Escape().Dump();
 		AreEqual(expected, actual);
 

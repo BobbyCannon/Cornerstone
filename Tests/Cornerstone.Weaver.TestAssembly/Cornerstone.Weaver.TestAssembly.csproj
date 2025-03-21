@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFrameworks>netstandard2.0</TargetFrameworks>
+		<TargetFrameworks>net9.0</TargetFrameworks>
 		<NoWarn>$(NoWarn);CS0067</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>

@@ -281,5 +281,8 @@ internal class DockTabWindow : CornerstoneWindow
 
 	#endregion
 
-	private record DragInfo(Point Offset);
+	private record DragInfo(Point Offset)
+	{
+		public Point Offset { get; init; } = Offset;
+	}
 }

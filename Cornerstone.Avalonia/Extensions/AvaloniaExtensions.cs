@@ -8,6 +8,9 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
 using Avalonia.VisualTree;
 using Cornerstone.Extensions;
+using Key = Avalonia.Input.Key;
+using KeyBinding = Avalonia.Input.KeyBinding;
+using KeyGesture = Avalonia.Input.KeyGesture;
 
 #endregion
 

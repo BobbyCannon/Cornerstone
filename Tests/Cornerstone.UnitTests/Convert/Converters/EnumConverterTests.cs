@@ -75,10 +75,8 @@ public class EnumConverterTests : ConverterTests<EnumConverter>
 			new("5: TextBuilder -> SampleEnum", new TextBuilder("Five"), SampleEnum.Five),
 			new("6: SampleEnum -> GapBuffer<char>", SampleEnum.Six, new GapBuffer<char>("Six")),
 			new("7: GapBuffer<char> -> SampleEnum", new GapBuffer<char>("Seven"), SampleEnum.Seven),
-			new("8: SampleEnum -> RopeBuffer<char>", SampleEnum.Eight, new RopeBuffer<char>("Eight")),
-			new("9: RopeBuffer<char> -> SampleEnum", new RopeBuffer<char>("Nine"), SampleEnum.Nine),
-			new("10: SampleEnum -> JsonString", SampleEnum.Ten, new JsonString("Ten")),
-			new("11: JsonString -> SampleEnum", new JsonString("Eleven"), SampleEnum.Eleven),
+			new("8: SampleEnum -> JsonString", SampleEnum.Eight, new JsonString("Eight")),
+			new("9: JsonString -> SampleEnum", new JsonString("Nine"), SampleEnum.Nine),
 			#if (!NET48)
 			#endif
 			// </Scenarios>

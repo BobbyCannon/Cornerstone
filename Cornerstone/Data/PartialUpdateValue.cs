@@ -1,4 +1,4 @@
-﻿#region References
+#region References
 
 using System;
 
@@ -9,7 +9,7 @@ namespace Cornerstone.Data;
 /// <summary>
 /// A value of a partial update.
 /// </summary>
-public class PartialUpdateValue
+public class PartialUpdateValue : Notifiable, IUpdateable<PartialUpdateValue>
 {
 	#region Constructors
 
@@ -61,6 +61,61 @@ public class PartialUpdateValue
 	/// The value of the member.
 	/// </summary>
 	public object Value { get; set; }
+
+	#endregion
+
+	#region Methods
+
+	public override bool HasChanges(IncludeExcludeSettings settings)
+	{
+		return base.HasChanges(settings)
+			|| (Value is ITrackPropertyChanges pValue && pValue.HasChanges());
+	}
+
+	public override void ResetHasChanges()
+	{
+		if (Value is ITrackPropertyChanges pValue)
+		{
+			pValue.ResetHasChanges();
+		}
+		base.ResetHasChanges();
+	}
+
+	/// <summary>
+	/// Update the PartialUpdateValue with an update.
+	/// </summary>
+	/// <param name="update"> The update to be applied. </param>
+	/// <param name="settings"> The settings for controlling the updating of the entity. </param>
+	public virtual bool UpdateWith(PartialUpdateValue update, IncludeExcludeSettings settings)
+	{
+		// Code Generated - UpdateWith - PartialUpdateValue
+
+		// If the update is null then there is nothing to do.
+		if (update == null)
+		{
+			return false;
+		}
+
+		// ****** This code has been auto generated, do not edit this. ******
+
+		UpdateProperty(Name, update.Name, settings.ShouldProcessProperty(nameof(Name)), x => Name = x);
+		UpdateProperty(Type, update.Type, settings.ShouldProcessProperty(nameof(Type)), x => Type = x);
+		UpdateProperty(Value, update.Value, settings.ShouldProcessProperty(nameof(Value)), x => Value = x);
+
+		// Code Generated - /UpdateWith - PartialUpdateValue
+
+		return true;
+	}
+
+	/// <inheritdoc />
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
+	{
+		return update switch
+		{
+			PartialUpdateValue value => UpdateWith(value, settings),
+			_ => base.UpdateWith(update, settings)
+		};
+	}
 
 	#endregion
 }

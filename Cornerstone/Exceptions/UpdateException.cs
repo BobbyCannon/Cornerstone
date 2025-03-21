@@ -2,7 +2,6 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.Serialization;
 
 #endregion
 
@@ -18,21 +17,21 @@ public class UpdateException : CornerstoneException
 	#region Constructors
 
 	/// <summary>
-	/// Initializes an instance of the update exception.
+	/// Instantiates an instance of the update exception.
 	/// </summary>
-	public UpdateException()
+	public UpdateException() : this(string.Empty)
 	{
 	}
 
 	/// <summary>
-	/// Initializes an instance of the update exception.
+	/// Instantiates an instance of the update exception.
 	/// </summary>
 	public UpdateException(string message) : base(message)
 	{
 	}
 
 	/// <summary>
-	/// Initializes an instance of the update exception.
+	/// Instantiates an instance of the update exception.
 	/// </summary>
 	public UpdateException(string message, Exception inner) : base(message, inner)
 	{

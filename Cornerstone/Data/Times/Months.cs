@@ -4,8 +4,6 @@ using System.ComponentModel.DataAnnotations;
 
 #endregion
 
-
-
 namespace Cornerstone.Data.Times;
 
 /// <summary>

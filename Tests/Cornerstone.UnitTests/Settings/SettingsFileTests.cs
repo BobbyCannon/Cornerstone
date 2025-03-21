@@ -72,8 +72,8 @@ public class SettingsFileTests : CornerstoneUnitTest
 
 		public bool IsEnabled
 		{
-			get => Get(x => x.IsEnabled, false);
-			set => Set(x => x.IsEnabled, value);
+			get => Get(false);
+			set => Set(value);
 		}
 
 		public IList<string> Options { get; }

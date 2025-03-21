@@ -18,13 +18,14 @@ public class AuthenticatedWebClient : WebClient
 {
 	#region Constructors
 
-	public AuthenticatedWebClient(CredentialVault credentialVault,
+	public AuthenticatedWebClient(
+		PlatformCredentialVault platformCredentialVault,
 		IRuntimeInformation runtimeInformation, Uri baseUri,
 		TimeSpan timeout, Credential credential = null,
 		IWebProxy proxy = null, IDispatcher dispatcher = null)
 		: base(baseUri, timeout, credential, proxy, dispatcher)
 	{
-		CredentialVault = credentialVault;
+		PlatformCredentialVault = platformCredentialVault;
 		RuntimeInformation = runtimeInformation;
 		Headers.AddOrUpdateSyncClientDetails(runtimeInformation);
 
@@ -36,13 +37,13 @@ public class AuthenticatedWebClient : WebClient
 
 	#region Properties
 
-	public CredentialVault CredentialVault { get; }
-
 	public bool IsAuthenticated { get; private set; }
 
 	public ICommand LogInCommand { get; }
 
 	public ICommand LogOutCommand { get; }
+
+	public PlatformCredentialVault PlatformCredentialVault { get; }
 
 	public IRuntimeInformation RuntimeInformation { get; }
 
@@ -53,15 +54,16 @@ public class AuthenticatedWebClient : WebClient
 	/// <inheritdoc />
 	public override WebClient DeepClone(int? maxDepth = null, IncludeExcludeSettings settings = null)
 	{
-		return new AuthenticatedWebClient(CredentialVault, RuntimeInformation, BaseUri, Timeout, null, Proxy, GetDispatcher());
+		var response = new AuthenticatedWebClient(PlatformCredentialVault, RuntimeInformation, BaseUri, Timeout, null, Proxy, GetDispatcher());
+		return response;
 	}
 
 	/// <inheritdoc />
 	public override void Initialize()
 	{
-		if (CredentialVault.LoadCredential())
+		if (LoadCredential(out var credential))
 		{
-			Credential = new TokenCredential(CredentialVault.Credential.Password);
+			Credential = credential;
 			LogIn();
 		}
 		base.Initialize();
@@ -72,17 +74,34 @@ public class AuthenticatedWebClient : WebClient
 		Dispose();
 	}
 
-	protected void LogIn()
+	protected virtual bool LoadCredential(out Credential credential)
 	{
+		if (PlatformCredentialVault.LoadCredential())
+		{
+			credential = PlatformCredentialVault.Credential;
+			return true;
+		}
+
+		credential = null;
+		return false;
+	}
+
+	protected virtual void LogIn()
+	{
+		if (!ValidateCredential())
+		{
+			LogOut();
+			return;
+		}
 		IsAuthenticated = true;
 		OnLoggedIn();
 	}
 
-	protected void LogOut()
+	protected virtual void LogOut()
 	{
-		CredentialVault.RemoveCredential();
 		Credential = null;
 		IsAuthenticated = false;
+		RemoveCredential();
 		OnLoggedOut();
 	}
 
@@ -105,6 +124,17 @@ public class AuthenticatedWebClient : WebClient
 		}
 
 		return base.ProcessResponse(response);
+	}
+
+	protected virtual bool RemoveCredential()
+	{
+		PlatformCredentialVault.RemoveCredential();
+		return false;
+	}
+
+	protected virtual bool ValidateCredential()
+	{
+		return Credential != null;
 	}
 
 	#endregion

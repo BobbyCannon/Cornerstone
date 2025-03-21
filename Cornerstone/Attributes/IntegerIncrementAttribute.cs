@@ -38,6 +38,7 @@ public class IntegerChangeAttribute : Attribute
 	#region Properties
 
 	public int LargeChange { get; }
+
 	public int SmallChange { get; }
 
 	#endregion

@@ -1,0 +1,317 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:converters="clr-namespace:Cornerstone.Avalonia.Converters">
+	<Design.PreviewWith>
+		<Grid RowDefinitions="Auto,*" Margin="10">
+			<WrapPanel Grid.Row="0"
+					Margin="0,0,0,10"
+					Orientation="Horizontal">
+				<ToggleSwitch
+						IsChecked="{Binding ElementName=Menu, Path=IsOpen, Mode=TwoWay}"
+						OnContent="IsOpen"
+						OffContent="IsOpen"
+						Margin="0,0,20,0" />
+				<ComboBox SelectedItem="{Binding ElementName=Menu, Path=DisplayMode, Mode=TwoWay}"
+						Margin="0,0,20,0">
+					<ComboBox.Items>
+						<SplitViewDisplayMode>CompactInline</SplitViewDisplayMode>
+						<SplitViewDisplayMode>CompactOverlay</SplitViewDisplayMode>
+						<SplitViewDisplayMode>Inline</SplitViewDisplayMode>
+						<SplitViewDisplayMode>Overlay</SplitViewDisplayMode>
+					</ComboBox.Items>
+				</ComboBox>
+				<ToggleSwitch
+						IsChecked="{Binding ElementName=Menu, Path=AutoCollapseOnSelectionChange, Mode=TwoWay}"
+						OnContent="AutoCollapseOnSelectionChange"
+						OffContent="AutoCollapseOnSelectionChange"
+						Margin="0,0,20,0" />
+				<ToggleSwitch
+						IsChecked="{Binding ElementName=Menu, Path=AutoExpandOnResize, Mode=TwoWay}"
+						OnContent="AutoExpandOnResize"
+						OffContent="AutoExpandOnResize"
+						Margin="0,0,20,0" />
+			</WrapPanel>
+			<NavigationMenu Grid.Row="1" x:Name="Menu"
+					AutoCollapseOnSelectionChange="False"
+					IsOpen="True"
+					DisplayMode="Overlay"
+					PaneBackground="{DynamicResource Background03}">
+				<NavigationMenu.CustomContent>
+					<Border Padding="10,0,10,10">
+						<TextBlock Text="Custom Content"
+								HorizontalAlignment="Center" />
+					</Border>
+				</NavigationMenu.CustomContent>
+				<FlyoutBase.AttachedFlyout>
+					<Flyout>
+						<StackPanel MinWidth="260">
+							<ToggleSwitch
+									IsChecked="{Binding ElementName=Menu, Path=IsOpen, Mode=TwoWay}"
+									OnContent="IsOpen"
+									OffContent="IsOpen" />
+							<ComboBox SelectedItem="{Binding ElementName=Menu, Path=DisplayMode, Mode=TwoWay}">
+								<ComboBox.Items>
+									<SplitViewDisplayMode>CompactInline</SplitViewDisplayMode>
+									<SplitViewDisplayMode>CompactOverlay</SplitViewDisplayMode>
+									<SplitViewDisplayMode>Inline</SplitViewDisplayMode>
+									<SplitViewDisplayMode>Overlay</SplitViewDisplayMode>
+								</ComboBox.Items>
+							</ComboBox>
+							<ToggleSwitch
+									IsChecked="{Binding ElementName=Menu, Path=AutoCollapseOnSelectionChange, Mode=TwoWay}"
+									OnContent="AutoCollapseOnSelectionChange"
+									OffContent="AutoCollapseOnSelectionChange" />
+							<ToggleSwitch
+									IsChecked="{Binding ElementName=Menu, Path=AutoExpandOnResize, Mode=TwoWay}"
+									OnContent="AutoExpandOnResize"
+									OffContent="AutoExpandOnResize" />
+						</StackPanel>
+					</Flyout>
+				</FlyoutBase.AttachedFlyout>
+				<NavigationMenu.ItemTemplate>
+					<DataTemplate x:DataType="TabItemViewModel">
+						<StackPanel Orientation="Horizontal">
+							<Path Data="{Binding TabIcon, Converter={x:Static converters:ResourceConverters.GetSvg}}"
+									Height="16" Width="16"
+									Margin="0,0,10,0" />
+							<TextBlock Text="{Binding TabName}" />
+						</StackPanel>
+					</DataTemplate>
+				</NavigationMenu.ItemTemplate>
+				<NavigationMenu.ContentTemplate>
+					<DataTemplate x:DataType="TabItemViewModel">
+						<ContentPresenter Content="{Binding TabContent}"
+								Margin="10" />
+					</DataTemplate>
+				</NavigationMenu.ContentTemplate>
+				<TabItemViewModel TabName="Search" TabIcon="Icons.Search">
+					<TabItemViewModel.TabContent>
+						<Grid Background="Green">
+							<TextBlock Text="Searching for content...." />
+						</Grid>
+					</TabItemViewModel.TabContent>
+				</TabItemViewModel>
+				<TabItemViewModel TabName="History" TabIcon="Icons.Histories">
+					<TabItemViewModel.TabContent>
+						<StackPanel>
+							<TextBlock Text="Hello World" />
+							<TextBlock Text="Foo Bar" />
+						</StackPanel>
+					</TabItemViewModel.TabContent>
+				</TabItemViewModel>
+			</NavigationMenu>
+		</Grid>
+	</Design.PreviewWith>
+
+	<x:Double x:Key="PaneCompactWidth">40</x:Double>
+	<x:Double x:Key="PaneExpandWidth">220</x:Double>
+	<x:Double x:Key="HeaderHeight">36</x:Double>
+	<BoxShadows x:Key="NavigationItemShadow">1 1 1 1 #2000, 0 0 1 1 #2fff</BoxShadows>
+	<BoxShadows x:Key="NavigationContentShadow">0 0 1 1 #2000</BoxShadows>
+
+	<!-- Navigation Button -->
+	<ControlTheme x:Key="NavigationButton" TargetType="Button"
+			BasedOn="{StaticResource {x:Type Button}}">
+		<Setter Property="HorizontalContentAlignment" Value="Stretch" />
+		<Setter Property="VerticalContentAlignment" Value="Center" />
+		<Setter Property="HorizontalAlignment" Value="Stretch" />
+		<Setter Property="VerticalAlignment" Value="Stretch" />
+		<Setter Property="FontWeight" Value="Normal" />
+		<Setter Property="MinHeight" Value="0" />
+		<Setter Property="Height" Value="36" />
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="BorderThickness" Value="0,1,0,0" />
+		<Setter Property="Padding" Value="12,0" />
+		<Setter Property="Margin" Value="0,10,0,0" />
+		<Setter Property="CornerRadius" Value="0" />
+		<Setter Property="ClipToBounds" Value="False" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<ContentPresenter Name="PART_ContentPresenter"
+						Padding="{TemplateBinding Padding}"
+						HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+						VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+						Background="{TemplateBinding Background}"
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}"
+						Content="{TemplateBinding Content}"
+						ContentTemplate="{TemplateBinding ContentTemplate}"
+						CornerRadius="{TemplateBinding CornerRadius}"
+						TextElement.FontFamily="{TemplateBinding FontFamily}"
+						TextElement.FontSize="{TemplateBinding FontSize}"
+						TextElement.FontWeight="{TemplateBinding FontWeight}" />
+			</ControlTemplate>
+		</Setter>
+
+		<Style Selector="^:pointerover /template/ ContentPresenter">
+			<Setter Property="Border.Background" Value="{DynamicResource Background02}" />
+			<Setter Property="Border.BoxShadow" Value="{StaticResource NavigationItemShadow}" />
+			<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
+		</Style>
+	</ControlTheme>
+
+	<!-- Menu Item -->
+	<ControlTheme x:Key="HamburgerMenuTabItem" TargetType="TabItem">
+		<Setter Property="HorizontalContentAlignment" Value="Stretch" />
+		<Setter Property="VerticalContentAlignment" Value="Center" />
+		<Setter Property="HorizontalAlignment" Value="Stretch" />
+		<Setter Property="VerticalAlignment" Value="Stretch" />
+		<Setter Property="FontSize" Value="16" />
+		<Setter Property="FontWeight" Value="Normal" />
+		<Setter Property="MinHeight" Value="0" />
+		<Setter Property="Height" Value="36" />
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="Padding" Value="12,0" />
+		<Setter Property="Margin" Value="0" />
+		<Setter Property="CornerRadius" Value="0" />
+		<Setter Property="ClipToBounds" Value="False" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border Name="PART_LayoutRoot"
+						HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
+						Background="{TemplateBinding Background}"
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}"
+						CornerRadius="{TemplateBinding CornerRadius}">
+					<Panel>
+						<Border Name="PART_SelectedPipe"
+								Width="{DynamicResource TabItemPipeThickness}"
+								Height="{DynamicResource TabItemVerticalPipeHeight}"
+								Margin="6,0,0,0"
+								HorizontalAlignment="Left"
+								VerticalAlignment="Center"
+								Background="{DynamicResource TabItemHeaderSelectedPipeFill}"
+								IsVisible="False"
+								CornerRadius="4" />
+						<ContentPresenter Name="PART_ContentPresenter"
+								Padding="{TemplateBinding Padding}"
+								Margin="0"
+								HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+								VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+								Content="{TemplateBinding Header}"
+								ContentTemplate="{TemplateBinding HeaderTemplate}"
+								TextElement.FontFamily="{TemplateBinding FontFamily}"
+								TextElement.FontSize="{TemplateBinding FontSize}"
+								TextElement.FontWeight="{TemplateBinding FontWeight}" />
+					</Panel>
+				</Border>
+			</ControlTemplate>
+		</Setter>
+
+		<Style Selector="^:pointerover">
+			<Setter Property="Background" Value="Transparent" />
+
+			<Style Selector="^ /template/ Border#PART_LayoutRoot">
+				<Setter Property="Background" Value="{DynamicResource Background02}" />
+				<Setter Property="BoxShadow" Value="{StaticResource NavigationItemShadow}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
+			</Style>
+		</Style>
+
+		<Style Selector="^:selected">
+			<Setter Property="Background" Value="{DynamicResource Background04}" />
+
+			<Style Selector="^ /template/ Border#PART_SelectedPipe">
+				<Setter Property="IsVisible" Value="True" />
+			</Style>
+		</Style>
+
+		<Style Selector="^:pressed /template/ Border#PART_LayoutRoot">
+			<Setter Property="Background" Value="{DynamicResource Background02}" />
+			<Setter Property="BoxShadow" Value="{StaticResource NavigationItemShadow}" />
+			<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground01}" />
+			<Setter Property="Margin" Value="0,1,0,-1" />
+		</Style>
+	</ControlTheme>
+
+	<!-- Navigation Menu  -->
+	<ControlTheme x:Key="{x:Type NavigationMenu}" TargetType="NavigationMenu">
+		<Setter Property="PaneBackground" Value="{DynamicResource Background03}" />
+		<Setter Property="Background" Value="{DynamicResource Background03}" />
+		<Setter Property="ContentBackground" Value="{DynamicResource Background02}" />
+		<Setter Property="ItemContainerTheme" Value="{StaticResource HamburgerMenuTabItem}" />
+		<Setter Property="TabStripPlacement" Value="Left" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Panel Background="Transparent">
+					<SplitView x:Name="PART_NavigationPane"
+							PaneBackground="{TemplateBinding PaneBackground, Converter={x:Static converters:ColorConverters.ToBrush}}"
+							CompactPaneLength="{StaticResource PaneCompactWidth}"
+							DisplayMode="{TemplateBinding DisplayMode}"
+							IsPaneOpen="{TemplateBinding IsOpen, Mode=TwoWay}"
+							OpenPaneLength="{StaticResource PaneExpandWidth}">
+						<SplitView.Pane>
+							<Grid RowDefinitions="Auto,Auto,*,Auto"
+									Background="{TemplateBinding PaneBackground, Converter={x:Static converters:ColorConverters.ToBrush}}">
+								<Panel Grid.Row="0"
+										Height="{StaticResource HeaderHeight}" />
+								<ContentPresenter Grid.Row="1"
+										Content="{TemplateBinding CustomContent}"
+										IsVisible="{TemplateBinding CustomContent, Mode=OneWay, Converter={x:Static ObjectConverters.IsNotNull}}"
+										VerticalAlignment="Top" />
+								<ScrollViewer x:Name="PART_ScrollViewer"
+										Grid.Row="2"
+										HorizontalAlignment="Stretch"
+										HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
+										VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}">
+									<ItemsPresenter Name="PART_ItemsPresenter"
+											HorizontalAlignment="Stretch">
+										<ItemsPresenter.ItemsPanel>
+											<ItemsPanelTemplate>
+												<StackPanel x:Name="HamburgerItemsPanel"
+														Margin="0,2"
+														Orientation="Vertical" />
+											</ItemsPanelTemplate>
+										</ItemsPresenter.ItemsPanel>
+									</ItemsPresenter>
+								</ScrollViewer>
+								<Button x:Name="SettingsButton"
+										Grid.Row="3"
+										Theme="{StaticResource NavigationButton}"
+										Content="Settings"
+										Flyout="{TemplateBinding (FlyoutBase.AttachedFlyout)}"
+										IsVisible="{Binding $parent[TabControl].(FlyoutBase.AttachedFlyout), Converter={x:Static ObjectConverters.IsNotNull}}" />
+							</Grid>
+						</SplitView.Pane>
+						<SplitView.Content>
+							<DockPanel Background="{TemplateBinding ContentBackground, Converter={x:Static converters:ColorConverters.ToBrush}}">
+								<ContentPresenter Name="PART_SelectedContentHost"
+										Background="Transparent"
+										Padding="{TemplateBinding Padding}"
+										Content="{TemplateBinding SelectedContent}"
+										ContentTemplate="{TemplateBinding SelectedContentTemplate}" />
+							</DockPanel>
+						</SplitView.Content>
+					</SplitView>
+					<ToggleButton x:Name="HamburgerMenuButton"
+							Width="{StaticResource PaneCompactWidth}"
+							BorderThickness="0"
+							Height="36"
+							Margin="1"
+							Padding="0"
+							HorizontalAlignment="Left"
+							VerticalAlignment="Top"
+							HorizontalContentAlignment="Center"
+							Theme="{StaticResource NavigationButton}"
+							CornerRadius="{TemplateBinding CornerRadius}"
+							IsChecked="{TemplateBinding IsOpen, Mode=TwoWay}">
+						<PathIcon Data="{StaticResource Icons.Grid}"
+								Foreground="{TemplateBinding Foreground}"
+								Margin="0,1,0,0"
+								Height="16"
+								Width="16"
+								VerticalAlignment="Top" />
+					</ToggleButton>
+				</Panel>
+			</ControlTemplate>
+		</Setter>
+
+		<Style Selector="^ /template/ SplitView[DisplayMode=Overlay]">
+			<Setter Property="PaneBackground" Value="{TemplateBinding PaneBackground}" />
+		</Style>
+		<Style Selector="^ /template/ SplitView[DisplayMode=Overlay]">
+			<Setter Property="Background" Value="{Binding $parent[NavigationMenu].ContentBackground}" />
+		</Style>
+
+	</ControlTheme>
+</ResourceDictionary>

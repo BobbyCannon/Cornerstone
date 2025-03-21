@@ -6,6 +6,6 @@ public enum Ins : byte
 	LoadKeys = 0x82,
 	Authenticate = 0x86,
 	Verify = 0x20,
-	ReadBinary = 0xB0,
-	UpdateBinary = 0xD6
+	ReadBytes = 0xB0,
+	WriteBytes = 0xD6
 }

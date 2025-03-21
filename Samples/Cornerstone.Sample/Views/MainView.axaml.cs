@@ -1,8 +1,11 @@
 ﻿#region References
 
 using System.Linq;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Cornerstone.Avalonia;
 using Cornerstone.Presentation;
+using Cornerstone.Runtime;
 using Cornerstone.Sample.ViewModels;
 
 #endregion
@@ -13,7 +16,7 @@ public partial class MainView : CornerstoneMainView<MainViewModel>
 {
 	#region Constructors
 
-	public MainView() : this(DesignModeDependencyProvider.Get<MainViewModel>(), null)
+	public MainView() : this(ViewDependencyProvider.Get<MainViewModel>(), null)
 	{
 	}
 
@@ -26,13 +29,15 @@ public partial class MainView : CornerstoneMainView<MainViewModel>
 
 	#region Methods
 
-	/// <inheritdoc />
-	protected override void OnInitialized()
+	protected override void OnLoaded(RoutedEventArgs e)
 	{
-		ViewModel.SelectedTab = ViewModel.Tabs.FirstOrDefault(x => x.Header == ViewModel.ApplicationSettings.SelectedTabName)
-			?? ViewModel.Tabs.FirstOrDefault();
+		if (ViewModel.RuntimeInformation.IsMobile())
+		{
+			Menu.AutoExpandOnResize = false;
+			Menu.DisplayMode = SplitViewDisplayMode.Overlay;
+		}
 
-		base.OnInitialized();
+		base.OnLoaded(e);
 	}
 
 	#endregion

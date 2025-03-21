@@ -4,13 +4,18 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
-using Cornerstone.Attributes;
 using Cornerstone.Data.TypeActivators;
 using Cornerstone.Exceptions;
 using Cornerstone.Extensions;
+using Cornerstone.FileSystem;
+using Cornerstone.Input;
+using Cornerstone.Media;
 using Cornerstone.Presentation;
 using Cornerstone.Runtime;
+using Cornerstone.Security;
+using Cornerstone.Security.SecurityKeys;
+using Cornerstone.Security.Vault;
+using Cornerstone.Web;
 
 #endregion
 
@@ -24,6 +29,12 @@ namespace Cornerstone;
 /// </remarks>
 public class DependencyProvider : IDependencyProvider
 {
+	#region Fields
+
+	private bool _locked;
+
+	#endregion
+
 	#region Constructors
 
 	public DependencyProvider(string name)
@@ -43,6 +54,33 @@ public class DependencyProvider : IDependencyProvider
 	#endregion
 
 	#region Methods
+
+	/// <summary>
+	/// Add or update a transient of the provided type.
+	/// </summary>
+	/// <typeparam name="T"> The type (interface/abstract) to add or update. </typeparam>
+	/// <typeparam name="T2"> The type of the implementation. </typeparam>
+	public void AddOrUpdateTransient<T, T2>()
+	{
+		AddOrUpdateTransient<T, T2>(() => CreateInstanceForDependencyInjection<T2>());
+	}
+
+	/// <summary>
+	/// Add a transient of the provided type.
+	/// </summary>
+	/// <typeparam name="T"> The type (interface/abstract) to add. </typeparam>
+	/// <typeparam name="T2"> The type of the implementation. </typeparam>
+	/// <param name="create"> The function to create the type. </param>
+	public void AddOrUpdateTransient<T, T2>(Func<T2> create)
+	{
+		FactoriesAddOrUpdate(typeof(T),
+			new TypeActivator<T2>(_ => create.Invoke())
+			{
+				ForDependencyInjection = true,
+				Lifetime = TypeLifetime.Transient
+			}
+		);
+	}
 
 	/// <summary>
 	/// Add a singleton of the provided type.
@@ -103,7 +141,7 @@ public class DependencyProvider : IDependencyProvider
 	/// <param name="create"> The function to create the type. </param>
 	public void AddSingleton<T, T2>(Func<T2> create)
 	{
-		Factories.GetOrAdd(typeof(T),
+		FactoriesGetOrAdd(typeof(T),
 			new TypeActivator<T2>(_ => create())
 			{
 				ForDependencyInjection = true,
@@ -118,9 +156,9 @@ public class DependencyProvider : IDependencyProvider
 	/// <typeparam name="T"> The type (interface/abstract) to add. </typeparam>
 	/// <typeparam name="T2"> The type of the provider. </typeparam>
 	/// <param name="create"> The function to provide the type. </param>
-	public void AddSingletonProvider<T, T2>(Func<T2, T> create)
+	public void AddSingleton<T, T2>(Func<T2, T> create)
 	{
-		Factories.GetOrAdd(typeof(T),
+		FactoriesGetOrAdd(typeof(T),
 			new TypeActivator<T>(_ => create(GetInstance<T2>()))
 			{
 				ForDependencyInjection = true,
@@ -176,7 +214,7 @@ public class DependencyProvider : IDependencyProvider
 	/// <param name="create"> The function to create the type. </param>
 	public void AddTransient<T, T2>(Func<T2> create)
 	{
-		Factories.GetOrAdd(typeof(T),
+		FactoriesGetOrAdd(typeof(T),
 			new TypeActivator<T2>(_ => create.Invoke())
 			{
 				ForDependencyInjection = true,
@@ -200,8 +238,8 @@ public class DependencyProvider : IDependencyProvider
 	/// <param name="create"> The function to create the type. </param>
 	public void AddTransientType(Type type, Func<object> create)
 	{
-		Factories.GetOrAdd(type,
-			new TypeActivator(type, _ => create.Invoke())
+		FactoriesGetOrAdd(type,
+			new TypeActivator<object>(_ => create.Invoke())
 			{
 				ForDependencyInjection = true,
 				Lifetime = TypeLifetime.Transient
@@ -239,7 +277,7 @@ public class DependencyProvider : IDependencyProvider
 	public object GetInstance(Type type)
 	{
 		return Factories.TryGetValue(type, out var activator)
-			? activator.CreateInstanceObject()
+			? activator.GetOrCreateInstance()
 			: CreateInstanceForDependencyInjection(type);
 	}
 
@@ -249,7 +287,10 @@ public class DependencyProvider : IDependencyProvider
 	/// <param name="dependencyProvider"> The dependencies settings to import. </param>
 	public void Import(DependencyProvider dependencyProvider)
 	{
-		Factories.Add(dependencyProvider.Factories);
+		foreach (var kp in dependencyProvider.Factories)
+		{
+			FactoriesAddOrUpdate(kp.Key, kp.Value);
+		}
 	}
 
 	/// <summary>
@@ -257,6 +298,7 @@ public class DependencyProvider : IDependencyProvider
 	/// </summary>
 	public void Lock()
 	{
+		_locked = true;
 	}
 
 	public void Reset()
@@ -276,8 +318,22 @@ public class DependencyProvider : IDependencyProvider
 		AddSingleton(dateTimeProvider ?? DateTimeProvider.RealTime);
 		AddSingleton(dispatcher);
 		AddSingleton(runtimeInformation ?? new RuntimeInformation());
-		AddSingleton<IDependencyProvider>(this);
+		AddSingleton(this);
+		AddSingleton<IDependencyProvider, DependencyProvider>();
+		AddSingleton<IPopupManager, PopupManager>();
 		AddSingleton(weakEventManager ?? new WeakEventManager());
+
+		// Add stub placeholders
+		AddSingleton<AudioPlayer, AudioPlayerStub>();
+		AddSingleton<BrowserInteropProxy, BrowserInteropProxyStub>();
+		AddSingleton<IClipboardService, ClipboardServiceStub>();
+		AddSingleton<FileService>();
+		AddSingleton<Gamepad, GamepadStub>();
+		AddSingleton<Keyboard, KeyboardStub>();
+		AddSingleton<Mouse, MouseStub>();
+		AddSingleton<PlatformCredentialVault, PlatformCredentialVaultStub>();
+		AddSingleton<SmartCardReader, SmartCardReaderStub>();
+		AddSingleton<IWindowsHelloService, WindowsHelloServiceStub>();
 	}
 
 	private T CreateInstanceForDependencyInjection<T>(Action<T> initialize = null)
@@ -289,7 +345,7 @@ public class DependencyProvider : IDependencyProvider
 	{
 		// locate constructors
 		var constructors = type.GetCachedConstructors();
-		var primaryConstructor = constructors.FirstOrDefault(x => x.GetCustomAttribute<DependencyInjectionConstructorAttribute>() != null);
+		var primaryConstructor = type.GetDependencyInjectionConstructor(constructors);
 		if (primaryConstructor != null)
 		{
 			// If a primary constructor is found, use it.
@@ -307,21 +363,23 @@ public class DependencyProvider : IDependencyProvider
 		if (emptyConstructor != null)
 		{
 			// If an empty constructor is found, use it.
-			return emptyConstructor.Invoke(null);
+			var response2 = emptyConstructor.Invoke(null);
+			initialize?.Invoke(response2);
+			return response2;
 		}
 
 		var availableConstructor = constructors
 			.Where(x =>
 			{
 				var parameters = x.GetParameters();
-				var parametersAvailable = parameters.Select(p => Factories.Keys.Contains(p.ParameterType));
-				var allValid = parametersAvailable.All(p => p);
-				if (!allValid)
+				var missingParameters = parameters.Where(p => !Factories.Keys.Contains(p.ParameterType)).ToList();
+				if (missingParameters.Count > 0)
 				{
 					// How can we make this less configurable, more automatic...
 					Debugger.Break();
+					return false;
 				}
-				return allValid;
+				return true;
 			})
 			.ToList();
 
@@ -344,6 +402,40 @@ public class DependencyProvider : IDependencyProvider
 		var response = constructor.Invoke(arguments);
 		initialize?.Invoke(response);
 		return response;
+	}
+
+	private void FactoriesAddOrUpdate(Type type, TypeActivator typeActivator)
+	{
+		if (_locked)
+		{
+			throw new InvalidOperationException(Babel.Tower[BabelKeys.DependencyProviderLocked]);
+		}
+
+		var activator =
+			// See if we have an existing factory of the given type
+			Factories.TryGetValue(typeActivator.Type, out var foundActivator)
+			&& (foundActivator.Lifetime == typeActivator.Lifetime)
+				? foundActivator
+				: typeActivator;
+
+		Factories.AddOrUpdate(type, activator);
+	}
+
+	private void FactoriesGetOrAdd(Type type, TypeActivator typeActivator)
+	{
+		if (_locked)
+		{
+			throw new InvalidOperationException(Babel.Tower[BabelKeys.DependencyProviderLocked]);
+		}
+
+		var activator =
+			// See if we have an existing factory of the given type
+			Factories.TryGetValue(typeActivator.Type, out var foundActivator)
+			&& (foundActivator.Lifetime == typeActivator.Lifetime)
+				? foundActivator
+				: typeActivator;
+
+		Factories.GetOrAdd(type, activator);
 	}
 
 	#endregion

@@ -163,7 +163,7 @@ public class ObjectJsonConverter : JsonConverter
 						if (existingValue is IList existingList
 							&& incomingValue is IEnumerable incomingList)
 						{
-							CollectionExtensions.Add(existingList, incomingList);
+							incomingList.ForEach(x => existingList.Add(x));
 						}
 
 						// Add IUpdateable support for read only support

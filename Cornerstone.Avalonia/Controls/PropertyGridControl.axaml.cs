@@ -8,9 +8,11 @@ using System.Linq;
 using System.Runtime.Serialization;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Metadata;
+using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
-using Cornerstone.Avalonia.AvaloniaEdit.Utils;
 using Cornerstone.Avalonia.PropertyGrid;
+using Cornerstone.Avalonia.TextEditor.Utils;
 using Cornerstone.Collections;
 using Cornerstone.Extensions;
 
@@ -18,9 +20,12 @@ using Cornerstone.Extensions;
 
 namespace Cornerstone.Avalonia.Controls;
 
-public partial class PropertyGridControl : CornerstoneUserControl
+[TemplatePart("PropertiesGrid", typeof(Grid), IsRequired = true)]
+public class PropertyGridControl : CornerstoneContentControl
 {
 	#region Fields
+
+	public static readonly StyledProperty<bool> IsReadOnlyProperty;
 
 	public static readonly StyledProperty<object> SourceProperty;
 
@@ -30,20 +35,19 @@ public partial class PropertyGridControl : CornerstoneUserControl
 
 	public PropertyGridControl()
 	{
-		var weakEventManager = GetInstance<WeakEventManager>();
+		var weakEventManager = GetInstance<IWeakEventManager>();
 
 		AllProperties = new SpeedyList<PropertyDescriptor>();
-		Categories = new SpeedyDictionary<string, ISpeedyList<PropertyDescriptor>>();
+		Categories = new SpeedyDictionary<string, SpeedyList<PropertyDescriptor>>();
 		Factories = PropertyCellFactoryCollection.Default;
 		PropertyViews = new SpeedyList<PropertyCellContext>();
 
-		weakEventManager.AddCollectionChanged(AllProperties, AllPropertiesListChanged);
-
-		InitializeComponent();
+		weakEventManager.AddCollectionChanged(AllProperties, this, AllPropertiesListChanged);
 	}
 
 	static PropertyGridControl()
 	{
+		IsReadOnlyProperty = AvaloniaProperty.Register<PropertyGridControl, bool>(nameof(IsReadOnly));
 		SourceProperty = AvaloniaProperty.Register<PropertyGridControl, object>(nameof(Source));
 	}
 
@@ -55,12 +59,23 @@ public partial class PropertyGridControl : CornerstoneUserControl
 	/// Gets all properties.
 	/// </summary>
 	/// <value> All properties. </value>
-	public ISpeedyList<PropertyDescriptor> AllProperties { get; }
+	public SpeedyList<PropertyDescriptor> AllProperties { get; }
 
 	/// <summary>
 	/// All properties by category.
 	/// </summary>
-	public SpeedyDictionary<string, ISpeedyList<PropertyDescriptor>> Categories { get; }
+	public SpeedyDictionary<string, SpeedyList<PropertyDescriptor>> Categories { get; }
+
+	public bool IsReadOnly
+	{
+		get => GetValue(IsReadOnlyProperty);
+		set => SetValue(IsReadOnlyProperty, value);
+	}
+
+	/// <summary>
+	/// The grid for properties.
+	/// </summary>
+	public Grid PropertiesGrid { get; private set; }
 
 	/// <summary>
 	/// All views for the properties.
@@ -93,20 +108,6 @@ public partial class PropertyGridControl : CornerstoneUserControl
 	}
 
 	/// <summary>
-	/// Builds the alphabetic properties view.
-	/// </summary>
-	/// <param name="target"> The target. </param>
-	/// <param name="referencePath"> The reference path. </param>
-	protected virtual IList<PropertyCellContext> BuildAlphabeticPropertiesView(object target, ReferencePath referencePath)
-	{
-		PropertiesGrid.ColumnDefinitions.Clear();
-		PropertiesGrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
-		PropertiesGrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
-
-		return BuildPropertiesCellEdit(target, referencePath, AllProperties.OrderBy(x => x.DisplayName), PropertiesGrid);
-	}
-
-	/// <summary>
 	/// Builds the category properties view.
 	/// </summary>
 	/// <param name="target"> The target. </param>
@@ -131,10 +132,10 @@ public partial class PropertyGridControl : CornerstoneUserControl
 			expander.Padding = new Thickness(2);
 			expander.Header = categoryInfo.Key;
 
-			var grid = new Grid();
-			grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
-			grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
-			grid.Margin = new Thickness(10);
+			var grid = new ResponsiveGrid.ResponsiveGrid
+			{
+				Margin = new Thickness(10)
+			};
 			expander.Content = grid;
 
 			var properties = categoryInfo.Value.OrderBy(x => x.DisplayName).ToList();
@@ -149,6 +150,12 @@ public partial class PropertyGridControl : CornerstoneUserControl
 		return response;
 	}
 
+	protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
+	{
+		PropertiesGrid = e.NameScope.Find<Grid>("PropertiesGrid");
+		RefreshProperties();
+	}
+
 	/// <inheritdoc />
 	protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
 	{
@@ -159,7 +166,7 @@ public partial class PropertyGridControl : CornerstoneUserControl
 	/// <inheritdoc />
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
 	{
-		if (change.Property == SourceProperty)
+		if ((change.Property == SourceProperty) && IsLoaded)
 		{
 			RefreshProperties();
 		}
@@ -217,13 +224,8 @@ public partial class PropertyGridControl : CornerstoneUserControl
 
 		try
 		{
-			// I think this is a recursive check
-			//_expandableObjectCache.Add(source);
-
 			referencePath.BeginScope(source.GetType().Name);
-
 			return BuildCategoryPropertiesView(source, referencePath);
-			//BuildAlphabeticPropertiesView(source, referencePath);
 		}
 		finally
 		{
@@ -255,11 +257,9 @@ public partial class PropertyGridControl : CornerstoneUserControl
 		Debug.Assert(context.EditorControl != null);
 		Debug.Assert(context.EditorControl == control);
 
-		grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-
 		var nameBlock = new TextBlock();
-		nameBlock.SetValue(Grid.RowProperty, grid.RowDefinitions.Count - 1);
-		nameBlock.SetValue(Grid.ColumnProperty, 0);
+		nameBlock.SetValue(ResponsiveGrid.ResponsiveGrid.SMProperty, 4);
+		nameBlock.SetValue(ResponsiveGrid.ResponsiveGrid.XSProperty, 12);
 		nameBlock.VerticalAlignment = VerticalAlignment.Center;
 		nameBlock.Margin = new Thickness(4);
 		nameBlock.Text = property.DisplayName;
@@ -272,11 +272,11 @@ public partial class PropertyGridControl : CornerstoneUserControl
 
 		grid.Children.Add(nameBlock);
 
-		control.SetValue(Grid.RowProperty, grid.RowDefinitions.Count - 1);
-		control.SetValue(Grid.ColumnProperty, 1);
+		control.SetValue(ResponsiveGrid.ResponsiveGrid.SMProperty, 8);
+		control.SetValue(ResponsiveGrid.ResponsiveGrid.XSProperty, 12);
 		control.Margin = nameBlock.Margin;
 		control.HorizontalAlignment = HorizontalAlignment.Right;
-		control.IsEnabled = !property.IsReadOnly;
+		control.IsEnabled = !property.IsReadOnly && !IsReadOnly;
 
 		grid.Children.Add(control);
 

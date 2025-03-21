@@ -3,13 +3,13 @@
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-		mc:Ignorable="d" d:DesignWidth="400"
+		mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="600"
 		x:Class="Cornerstone.Sample.Tabs.TabCircularProgress">
 	<Grid RowDefinitions="Auto,*">
 		<WrapPanel Orientation="Horizontal"
 				HorizontalAlignment="Left"
 				VerticalAlignment="Top"
-				Margin="20">
+				Margin="10">
 			<CircularProgress
 					x:Name="Progress"
 					StrokeThickness="8"
@@ -30,26 +30,26 @@
 						Content="Indeterminate" />
 			</StackPanel>
 		</WrapPanel>
-		<ItemsControl Grid.Row="1"
-				ItemsSource="{x:Static Theme.ColorsWithCurrent}"
-				Margin="10,0,0,0">
-			<ItemsControl.ItemsPanel>
-				<ItemsPanelTemplate>
-					<WrapPanel />
-				</ItemsPanelTemplate>
-			</ItemsControl.ItemsPanel>
-			<ItemsControl.ItemTemplate>
-				<DataTemplate DataType="ThemeColor">
-					<CircularProgress Theme.Color="{Binding}"
-							IsIndeterminate="{Binding #Progress.IsIndeterminate, Mode=OneWay}"
-							ShowProgressText="{Binding #Progress.ShowProgressText, Mode=OneWay}"
-							Value="{Binding #Progress.Value, Mode=OneWay}"
-							Minimum="{Binding #Progress.Minimum, Mode=OneWay}"
-							Maximum="{Binding #Progress.Maximum, Mode=OneWay}"
-							Content="{Binding}"
-							Margin="10" />
-				</DataTemplate>
-			</ItemsControl.ItemTemplate>
-		</ItemsControl>
+		<ScrollViewer Grid.Row="1">
+			<ItemsControl ItemsSource="{x:Static Theme.ColorsWithCurrent}">
+				<ItemsControl.ItemsPanel>
+					<ItemsPanelTemplate>
+						<WrapPanel />
+					</ItemsPanelTemplate>
+				</ItemsControl.ItemsPanel>
+				<ItemsControl.ItemTemplate>
+					<DataTemplate DataType="ThemeColor">
+						<CircularProgress Theme.Color="{Binding}"
+								IsIndeterminate="{Binding #Progress.IsIndeterminate, Mode=OneWay}"
+								ShowProgressText="{Binding #Progress.ShowProgressText, Mode=OneWay}"
+								Value="{Binding #Progress.Value, Mode=OneWay}"
+								Minimum="{Binding #Progress.Minimum, Mode=OneWay}"
+								Maximum="{Binding #Progress.Maximum, Mode=OneWay}"
+								Content="{Binding}"
+								Margin="10" />
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</ScrollViewer>
 	</Grid>
 </UserControl>

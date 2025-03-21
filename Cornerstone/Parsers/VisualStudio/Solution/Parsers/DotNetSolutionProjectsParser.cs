@@ -44,7 +44,7 @@ internal class DotNetSolutionProjectsParser
 		};
 
 		var dependencyLines = record
-			.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
+			.Split(['\n'], StringSplitOptions.RemoveEmptyEntries)
 			.Skip(1)
 			.Select(l => l.Trim())
 			.Where(l => l != string.Empty)
@@ -52,7 +52,7 @@ internal class DotNetSolutionProjectsParser
 
 		foreach (var line in dependencyLines)
 		{
-			var nameValue = line.Split(new[] { " = " }, StringSplitOptions.None).ToArray();
+			var nameValue = line.Split([" = "], StringSplitOptions.None).ToArray();
 
 			ps.Dependencies.Add(nameValue[0], nameValue[1]);
 		}

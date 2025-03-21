@@ -16,8 +16,14 @@ public class ComparableComparer : BaseComparer
 	#region Methods
 
 	/// <inheritdoc />
-	public override bool IsSupported(object expected, object actual)
+	public override bool IsSupported(CompareSession session, object expected, object actual)
 	{
+		if (session.Settings.TypeIncludeExcludeSettings.TryGetValue(expected?.GetType(), out var settings)
+			&& !settings.IsEmpty())
+		{
+			return false;
+		}
+
 		return expected is IComparable
 			|| ((expected != null)
 				&& expected.ImplementsType(typeof(IComparable<>))

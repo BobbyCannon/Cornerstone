@@ -45,6 +45,7 @@ public abstract class ServerDatabase : EntityFrameworkSyncableDatabase, IServerD
 	public IRepository<PetEntity, (string Name, int OwnerId)> Pets => GetRepository<PetEntity, (string name, int OwnerId)>();
 	public IRepository<PetTypeEntity, string> PetTypes => GetRepository<PetTypeEntity, string>();
 	public ISyncableRepository<SettingEntity, long> Settings => GetSyncableRepository<SettingEntity, long>();
+	public override string[] SyncOrder => IServerDatabase.GetSyncOrder();
 	public ISyncableRepository<TrackerPathConfigurationEntity, int> TrackerPathConfigurations => GetSyncableRepository<TrackerPathConfigurationEntity, int>();
 	public ISyncableRepository<TrackerPathEntity, long> TrackerPaths => GetSyncableRepository<TrackerPathEntity, long>();
 

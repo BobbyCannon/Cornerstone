@@ -48,11 +48,11 @@ public class DictionaryComparerTests : ComparerTests
 		var comparer = new DictionaryComparer();
 
 		AreEqual(CompareResult.NotEqual, comparer.Compare(session, expected, actual));
-		AreEqual("The dictionary lengths are different. 1 != 2", session.Differences.ToString());
+		AreEqual("The dictionary lengths are different. 1\r\n **** != ****\r\n2\r\n", session.Differences.ToString());
 
 		session = new CompareSession();
 		AreEqual(CompareResult.NotEqual, comparer.Compare(session, actual, expected));
-		AreEqual("The dictionary lengths are different. 2 != 1", session.Differences.ToString());
+		AreEqual("The dictionary lengths are different. 2\r\n **** != ****\r\n1\r\n", session.Differences.ToString());
 	}
 
 	#endregion

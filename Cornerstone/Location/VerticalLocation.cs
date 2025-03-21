@@ -12,7 +12,8 @@ namespace Cornerstone.Location;
 /// <summary>
 /// Represents a vertical location.
 /// </summary>
-public class VerticalLocation : LocationInformation<IVerticalLocation>, IVerticalLocation
+public class VerticalLocation : LocationInformation<IVerticalLocation>,
+	IVerticalLocation, IEquatable<VerticalLocation>
 {
 	#region Constants
 
@@ -71,6 +72,51 @@ public class VerticalLocation : LocationInformation<IVerticalLocation>, IVertica
 		var response = new VerticalLocation(GetDispatcher());
 		response.UpdateWith(this);
 		return response;
+	}
+
+	public bool Equals(VerticalLocation other)
+	{
+		if (other is null)
+		{
+			return false;
+		}
+		if (ReferenceEquals(this, other))
+		{
+			return true;
+		}
+		return Altitude.Equals(other.Altitude) && (AltitudeReference == other.AltitudeReference);
+	}
+
+	public override bool Equals(object obj)
+	{
+		if (obj is null)
+		{
+			return false;
+		}
+		if (ReferenceEquals(this, obj))
+		{
+			return true;
+		}
+		if (obj.GetType() != GetType())
+		{
+			return false;
+		}
+		return Equals((VerticalLocation) obj);
+	}
+
+	public override int GetHashCode()
+	{
+		return HashCode.Combine(Altitude, (int) AltitudeReference);
+	}
+
+	public static bool operator ==(VerticalLocation left, VerticalLocation right)
+	{
+		return Equals(left, right);
+	}
+
+	public static bool operator !=(VerticalLocation left, VerticalLocation right)
+	{
+		return !Equals(left, right);
 	}
 
 	/// <inheritdoc />

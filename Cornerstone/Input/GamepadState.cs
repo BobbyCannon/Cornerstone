@@ -240,9 +240,11 @@ public class GamepadState
 		UpdateProperty(Buttons, update.Buttons, settings.ShouldProcessProperty(nameof(Buttons)), x => Buttons = x);
 		UpdateProperty(DateTime, update.DateTime, settings.ShouldProcessProperty(nameof(DateTime)), x => DateTime = x);
 		UpdateProperty(IsConnected, update.IsConnected, settings.ShouldProcessProperty(nameof(IsConnected)), x => IsConnected = x);
+		UpdateProperty(LeftMovementDelta, update.LeftMovementDelta, settings.ShouldProcessProperty(nameof(LeftMovementDelta)), x => LeftMovementDelta = x);
 		UpdateProperty(LeftThumbX, update.LeftThumbX, settings.ShouldProcessProperty(nameof(LeftThumbX)), x => LeftThumbX = x);
 		UpdateProperty(LeftThumbY, update.LeftThumbY, settings.ShouldProcessProperty(nameof(LeftThumbY)), x => LeftThumbY = x);
 		UpdateProperty(LeftTriggerValue, update.LeftTriggerValue, settings.ShouldProcessProperty(nameof(LeftTriggerValue)), x => LeftTriggerValue = x);
+		UpdateProperty(RightMovementDelta, update.RightMovementDelta, settings.ShouldProcessProperty(nameof(RightMovementDelta)), x => RightMovementDelta = x);
 		UpdateProperty(RightThumbX, update.RightThumbX, settings.ShouldProcessProperty(nameof(RightThumbX)), x => RightThumbX = x);
 		UpdateProperty(RightThumbY, update.RightThumbY, settings.ShouldProcessProperty(nameof(RightThumbY)), x => RightThumbY = x);
 		UpdateProperty(RightTriggerValue, update.RightTriggerValue, settings.ShouldProcessProperty(nameof(RightTriggerValue)), x => RightTriggerValue = x);

@@ -30,6 +30,9 @@ public static class DecimalConverters
 	/// </summary>
 	public static readonly FuncValueConverter<decimal, decimal> FromPascalsToMercury;
 
+	/// <summary>
+	/// Convert from celsius to fahrenheit
+	/// </summary>
 	public static readonly FuncValueConverter<decimal, decimal> ToFahrenheit;
 
 	#endregion

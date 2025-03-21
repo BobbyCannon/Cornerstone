@@ -15,16 +15,6 @@ public class PagedRequestTests : CornerstoneUnitTest
 	#region Methods
 
 	[TestMethod]
-	public void Defaults()
-	{
-		var actual = new PagedRequest();
-		AreEqual(string.Empty, actual.Filter);
-		AreEqual(string.Empty, actual.Order);
-		AreEqual(1, actual.Page);
-		AreEqual(10, actual.PerPage);
-	}
-
-	[TestMethod]
 	public void Cleanup()
 	{
 		var actual = new PagedRequest { Page = 0, PerPage = 1001 };
@@ -45,6 +35,38 @@ public class PagedRequestTests : CornerstoneUnitTest
 		actual.Escape().Dump();
 		var expected = "{\"Filter\":\"\",\"Order\":\"\",\"Page\":1,\"PerPage\":10}";
 		AreEqual(expected, actual);
+	}
+
+	[TestMethod]
+	public void Defaults()
+	{
+		var actual = new PagedRequest();
+		AreEqual(string.Empty, actual.Filter);
+		AreEqual(string.Empty, actual.Order);
+		AreEqual(1, actual.Page);
+		AreEqual(10, actual.PerPage);
+	}
+
+	[TestMethod]
+	public void FromQueryString()
+	{
+		var request = new PagedRequest();
+		request.ParseQueryString("?filter=test&page=23");
+		AreEqual("test", request.Get<string>("filter"));
+		AreEqual(23, request.Get<int>("page"));
+		AreEqual(23, request.Page);
+
+		request.ParseQueryString("?options[]=foo&options[]=bar");
+		var actual = request.Get<string[]>("options");
+		AreEqual(new[] { "foo", "bar" }, actual);
+	}
+
+	[TestMethod]
+	public void FromQueryStringMissingValue()
+	{
+		// used to throw exception with null key
+		var request = new PagedRequest();
+		request.ParseQueryString("?includeWeb");
 	}
 
 	[TestMethod]

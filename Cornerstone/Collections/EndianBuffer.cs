@@ -70,7 +70,7 @@ public class BigEndianBuffer : EndianBuffer
 }
 
 /// <summary>
-/// A endian specific buffer.
+/// An endian specific buffer.
 /// </summary>
 /// <remarks>
 /// Little-endian byte ordering places the least significant byte first. This method is used in Intel microprocessors, for example.
@@ -119,7 +119,7 @@ public abstract class EndianBuffer
 	public int Length => _buffer.Length;
 
 	/// <summary>
-	/// The index of the read.
+	/// The index while reading.
 	/// </summary>
 	public int ReadIndex
 	{
@@ -142,7 +142,7 @@ public abstract class EndianBuffer
 	}
 
 	/// <summary>
-	/// The index of the write.
+	/// The index while writing.
 	/// </summary>
 	public int WriteIndex
 	{

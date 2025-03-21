@@ -111,7 +111,7 @@ public class TargetFrameworkServiceTests : CornerstoneUnitTest
 		AreEqual("net9.0", actual.PlatformMoniker);
 		AreEqual("windows", actual.OperatingSystem);
 		AreEqual("10.0.19041.0", actual.OperatingSystemVersion);
-		AreEqual(TargetFrameworkType.Net8Windows, actual.Type);
+		AreEqual(TargetFrameworkType.Net9Windows, actual.Type);
 		IsNull(actual.Parent);
 		IsNotNull(actual.Platform);
 		IsNotNull(actual.PlatformMoniker, actual.Platform.Moniker);

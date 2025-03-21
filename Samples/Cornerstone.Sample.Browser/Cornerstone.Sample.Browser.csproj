@@ -3,8 +3,7 @@
 		<TargetFrameworks>net9.0-browser</TargetFrameworks>
 		<OutputType>Exe</OutputType>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<TrimMode>copyused</TrimMode>
-		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+		<PublishTrimmed>false</PublishTrimmed>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Avalonia.Browser" Version="$(AvaloniaVersion)" />
@@ -13,4 +12,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\Cornerstone.Sample\Cornerstone.Sample.csproj" />
 	</ItemGroup>
+	<Target Name="CopyFiles" AfterTargets="Build">
+		<Copy SourceFiles="$(ProjectDir)..\..\Cornerstone.Avalonia\Platforms\Browser\Cornerstone.Browser.js" DestinationFiles="$(ProjectDir)wwwroot\Cornerstone.Browser.js" />
+	</Target>
 </Project>

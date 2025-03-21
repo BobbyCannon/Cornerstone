@@ -24,6 +24,7 @@ internal sealed class TextAnchorNode : WeakReference
 	#region Properties
 
 	internal bool Color { get; set; }
+
 	internal TextAnchorNode Left { get; set; }
 
 	internal TextAnchorNode LeftMost
@@ -40,6 +41,7 @@ internal sealed class TextAnchorNode : WeakReference
 	}
 
 	internal int Length { get; set; }
+
 	internal TextAnchorNode Parent { get; set; }
 
 	/// <summary>

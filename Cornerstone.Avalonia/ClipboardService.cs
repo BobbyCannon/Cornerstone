@@ -15,7 +15,7 @@ using Cornerstone.Profiling;
 
 namespace Cornerstone.Avalonia;
 
-public class ClipboardService : IClipboardService
+public class ClipboardService : IClipboardService, IDisposable
 {
 	#region Fields
 
@@ -48,6 +48,11 @@ public class ClipboardService : IClipboardService
 		return response;
 	}
 
+	public void Dispose()
+	{
+		_clearDebounce?.Dispose();
+	}
+
 	public Task<object> GetDataAsync(string format)
 	{
 		return Clipboard?.GetDataAsync(format) ?? Task.FromResult<object>(null);
@@ -61,6 +66,11 @@ public class ClipboardService : IClipboardService
 	public Task<string> GetTextAsync()
 	{
 		return Clipboard?.GetTextAsync() ?? Task.FromResult<string>(null);
+	}
+
+	public void QueueClear()
+	{
+		_clearDebounce.Trigger();
 	}
 
 	public Task SetDataObjectAsync(IDataObject data)

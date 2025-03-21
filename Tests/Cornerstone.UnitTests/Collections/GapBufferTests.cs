@@ -69,7 +69,7 @@ public class GapBufferTests : CornerstoneUnitTest
 			"Destination array was not long enough. Check the destination index, length, and the array's lower bounds."
 		);
 	}
-
+	
 	[TestMethod]
 	public void GetEnumerator()
 	{
@@ -108,7 +108,7 @@ public class GapBufferTests : CornerstoneUnitTest
 		AreEqual(new[] { 'a' }, buffer);
 		ExpectedException<IndexOutOfRangeException>(() => buffer.Insert(-1, 'z'), Babel.Tower[BabelKeys.IndexOutOfRange]);
 
-		buffer.InsertRange(0, new[] { 'b', 'c' });
+		buffer.InsertRange(0, ['b', 'c']);
 		AreEqual("bca", buffer);
 	}
 

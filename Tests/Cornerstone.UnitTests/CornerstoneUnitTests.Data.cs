@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
+using System.Windows.Input;
 using Avalonia;
 using Avalonia.Media;
 using Cornerstone.EntityFramework;
@@ -16,14 +17,9 @@ using Cornerstone.Testing;
 using Cornerstone.Text.Buffers;
 using Cornerstone.UnitTests.Resources;
 using Microsoft.EntityFrameworkCore;
-using Sample.Client.Data;
-using Sample.Client.Data.Sql;
-using Sample.Client.Data.Sqlite;
-using Sample.Server.Data;
 using Sample.Shared.Storage;
 using Sample.Shared.Storage.Client;
-using Sample.Shared.Storage.Server;
-using Sample.Shared.Sync;
+using Sample.Shared.Storage.Sync;
 
 #endregion
 
@@ -31,6 +27,14 @@ namespace Cornerstone.UnitTests;
 
 public partial class CornerstoneUnitTest
 {
+	#region Constants
+
+	public const string AdministratorEmailAddress = "admin@speedy.local";
+	public const int AdministratorId = 1;
+	public const string AdministratorPassword = "Password";
+
+	#endregion
+
 	#region Methods
 
 	/// <inheritdoc />
@@ -39,6 +43,21 @@ public partial class CornerstoneUnitTest
 		if (type == typeof(Geometry))
 		{
 			return new LineGeometry(new Point(0, 0), new Point(1, 1));
+		}
+
+		if (type == typeof(Type))
+		{
+			return typeof(object);
+		}
+
+		if (type == typeof(ICommand))
+		{
+			return new RelayCommand(_ => { });
+		}
+		
+		if (type == typeof(SyncClient))
+		{
+			return new SyncClientStub();
 		}
 
 		return base.CreateCustomTypeFactory(type, args);
@@ -56,7 +75,7 @@ public partial class CornerstoneUnitTest
 
 	protected void ForEachClientDatabaseProvider(Action<IDatabaseProvider<IClientDatabase>> test)
 	{
-		var providers = GetClientDatabaseProviders();
+		var providers = GetClientDatabaseProviders(false, false, false);
 
 		foreach (var provider in providers)
 		{
@@ -83,23 +102,23 @@ public partial class CornerstoneUnitTest
 		}
 	}
 
-	protected AccountSync GetAccountSync(Action<AccountSync> update = null)
+	protected Account GetAccountSync(Action<Account> update = null)
 	{
-		var response = new AccountSync
+		var response = new Account
 		{
 			AddressSyncId = Guid.Empty,
 			Name = "John Doe",
 			EmailAddress = "john.doe@domain.com",
-			Roles = ",,",
+			Roles = [],
 			SyncId = new Guid("1A07C107-E7B2-4AF0-9B50-FF4CEAC719D6")
 		};
 		update?.Invoke(response);
 		return response;
 	}
 
-	protected AddressSync GetAddressSync(Action<AddressSync> update = null)
+	protected Address GetAddressSync(Action<Address> update = null)
 	{
-		var response = new AddressSync
+		var response = new Address
 		{
 			Line1 = "Line 1",
 			Line2 = "Line 2",
@@ -112,22 +131,18 @@ public partial class CornerstoneUnitTest
 		return response;
 	}
 
-	protected ClientAccount GetClientAccount(string name, Guid? syncId = null, Action<ClientAccount> update = null)
+	protected ClientAccount GetClientAccount(string name, ClientAddress address = null, Action<ClientAccount> update = null)
 	{
 		var response = new ClientAccount
 		{
 			Name = name,
 			EmailAddress = $"{name}@domain.com",
 			Roles = string.Empty,
-			SyncId = syncId ?? Guid.NewGuid()
+			SyncId = Guid.NewGuid(),
+			Address = address
 		};
 		update?.Invoke(response);
 		return response;
-	}
-
-	protected ISyncableDatabaseProvider<IClientDatabase> GetClientDatabaseProvider()
-	{
-		return new ClientMemoryDatabaseProvider(this);
 	}
 
 	protected MemoryLogListener GetLogListener(EventLevel level = EventLevel.Verbose)
@@ -141,39 +156,6 @@ public partial class CornerstoneUnitTest
 
 		switch (response)
 		{
-			case AccountEntity sValue:
-			{
-				sValue.EmailAddress = "john@doe.com";
-				sValue.Name = "John Doe";
-				sValue.Roles = ",,";
-				break;
-			}
-			case AddressEntity sValue:
-			{
-				sValue.City = "City";
-				sValue.Line1 = "Line1";
-				sValue.Line2 = "Line2";
-				sValue.Postal = "Postal";
-				sValue.State = "State";
-				break;
-			}
-			case ClientAccount sValue:
-			{
-				sValue.EmailAddress = "john@doe.com";
-				sValue.Name = "John Doe";
-				sValue.LastClientUpdate = DateTime.MinValue;
-				sValue.Roles = ",,";
-				break;
-			}
-			case ClientAddress sValue:
-			{
-				sValue.City = "City";
-				sValue.Line1 = "Line1";
-				sValue.Line2 = "Line2";
-				sValue.Postal = "Postal";
-				sValue.State = "State";
-				break;
-			}
 			case SampleAccount sValue:
 			{
 				sValue.EmailAddress = "john@doe.com";
@@ -202,37 +184,9 @@ public partial class CornerstoneUnitTest
 		);
 	}
 
-	protected ISyncableDatabaseProvider<IServerDatabase> GetServerDatabaseProvider()
-	{
-		return new ServerMemoryDatabaseProvider(this);
-	}
-
 	protected IEnumerable<IStringBuffer> GetStringBuffers(string text)
 	{
 		yield return new StringGapBuffer(text);
-		yield return new StringRopeBuffer(text);
-	}
-
-	private IEnumerable<IDatabaseProvider<IClientDatabase>> GetClientDatabaseProviders()
-	{
-		yield return GetClientMemoryDatabaseProvider();
-		yield return GetClientSqlDatabaseProvider();
-		yield return GetClientSqliteDatabaseProvider();
-	}
-
-	private IDatabaseProvider<IClientDatabase> GetClientMemoryDatabaseProvider()
-	{
-		return new ClientMemoryDatabaseProvider(this);
-	}
-
-	private IDatabaseProvider<IClientDatabase> GetClientSqlDatabaseProvider()
-	{
-		return new ClientSqlDatabaseProvider("server=localhost;database=CornerstoneClient;integrated security=true;encrypt=false", this);
-	}
-
-	private IDatabaseProvider<IClientDatabase> GetClientSqliteDatabaseProvider()
-	{
-		return new ClientSqliteDatabaseProvider("Data Source=CornerstoneClient.db", this);
 	}
 
 	#endregion

@@ -1,7 +1,6 @@
 ﻿#region References
 
 using System.Management.Automation;
-using Cornerstone.Extensions;
 using Cornerstone.PowerShell.Documentation;
 using Cornerstone.Runtime;
 
@@ -39,7 +38,8 @@ public class GetRuntimeInformationCmdlet : PSCmdlet
 
 	protected override void ProcessRecord()
 	{
-		WriteObject(new RuntimeInformation().Copy());
+		var information = PowerShellPlatform.DependencyProvider.GetInstance<IRuntimeInformation>();
+		WriteObject((information ?? new RuntimeInformation()).Copy());
 	}
 
 	#endregion

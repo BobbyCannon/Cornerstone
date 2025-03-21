@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Cornerstone.Data.Bytes;
 using Cornerstone.Extensions;
+using Cornerstone.Generators;
 using Cornerstone.Generators.CodeGenerators;
 using Cornerstone.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -168,8 +169,8 @@ public class ByteSizeExtensionsTests : CornerstoneUnitTest
 
 		var path = $"{SolutionDirectory}\\Cornerstone\\Data\\Bytes\\ByteSize.Generated.cs";
 
-		UpdateFileIfNecessary("// <StartGenerated>\r\n", "// </StartGenerated>", path, builder.ToString(), "\t");
-		UpdateFileIfNecessary("// <StartGenerated-7+>\r\n", "// </StartGenerated-7+>", path, builderIsNet7OrGreater.ToString(), "\t");
+		FileModifier.UpdateFileIfNecessary("// <StartGenerated>\r\n", "// </StartGenerated>", path, builder.ToString(), "\t");
+		FileModifier.UpdateFileIfNecessary("// <StartGenerated-7+>\r\n", "// </StartGenerated-7+>", path, builderIsNet7OrGreater.ToString(), "\t");
 	}
 
 	[TestMethod]
@@ -215,8 +216,8 @@ public class ByteSizeExtensionsTests : CornerstoneUnitTest
 
 		var path = $"{SolutionDirectory}\\Cornerstone\\Data\\Bytes\\ByteSizeExtensions.Generated.cs";
 
-		UpdateFileIfNecessary("// <StartGenerated>\r\n", "// </StartGenerated>", path, builder.ToString(), "\t");
-		UpdateFileIfNecessary("// <StartGenerated-7+>\r\n", "// </StartGenerated-7+>", path, builderIsNet7OrGreater.ToString(), "\t");
+		FileModifier.UpdateFileIfNecessary("// <StartGenerated>\r\n", "// </StartGenerated>", path, builder.ToString(), "\t");
+		FileModifier.UpdateFileIfNecessary("// <StartGenerated-7+>\r\n", "// </StartGenerated-7+>", path, builderIsNet7OrGreater.ToString(), "\t");
 	}
 
 	[TestMethod]

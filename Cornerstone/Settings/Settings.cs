@@ -78,10 +78,11 @@ public abstract class Settings<T> : PartialUpdate<T>
 	}
 
 	/// <summary>
-	/// Reset the settings file.
+	/// Reset the settings.
 	/// </summary>
-	public void Reset()
+	public override void Reset()
 	{
+		base.Reset();
 		ResetToDefaults();
 		ResetHasChanges();
 	}

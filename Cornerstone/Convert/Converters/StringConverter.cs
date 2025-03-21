@@ -53,7 +53,6 @@ public class StringConverter : BaseConverter
 			{ typeof(StringBuilder).FullName, x => new StringBuilder(x) },
 			{ typeof(TextBuilder).FullName, x => new TextBuilder(x) },
 			{ typeof(GapBuffer<char>).FullName, x => new GapBuffer<char>(x) },
-			{ typeof(RopeBuffer<char>).FullName, x => new RopeBuffer<char>(x) },
 			{ typeof(JsonString).FullName, x => new JsonString(x) },
 			{ typeof(char?).FullName, x => x.FirstOrDefault() },
 			{ typeof(char).FullName, x => x.FirstOrDefault() },

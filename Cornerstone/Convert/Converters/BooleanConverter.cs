@@ -82,7 +82,6 @@ public class BooleanConverter : BaseConverter
 			if ((toType == typeof(TextBuilder))
 				|| (toType == typeof(StringBuilder))
 				|| (toType == typeof(GapBuffer<char>))
-				|| (toType == typeof(RopeBuffer<char>))
 				|| (toType == typeof(JsonString))
 				)
 			{

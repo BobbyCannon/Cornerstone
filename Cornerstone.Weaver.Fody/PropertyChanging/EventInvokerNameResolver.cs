@@ -12,11 +12,11 @@ public partial class WeaverForPropertyChanging
 {
 	#region Fields
 
-	public List<string> EventInvokerNames = new()
-	{
+	public List<string> EventInvokerNames =
+	[
 		"OnPropertyChanging",
 		"raisePropertyChanging"
-	};
+	];
 
 	#endregion
 

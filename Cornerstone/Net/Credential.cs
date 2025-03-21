@@ -174,6 +174,17 @@ public class Credential : Bindable, IDisposable, ICredential
 		return System.Convert.ToBase64String(Encoding.UTF8.GetBytes($"{UserName}:{Password}"));
 	}
 
+	public static Credential ToCredential(AuthenticationHeaderValue headerValue)
+	{
+		return headerValue.Scheme switch
+		{
+			//SecurityDeviceCredential.AuthenticationScheme => SecurityDeviceCredential.FromAuthenticationHeaderValue(headerValue),
+			TokenCredential.AuthenticationScheme => TokenCredential.FromAuthenticationHeaderValue(headerValue),
+			WebCredential.AuthenticationScheme => WebCredential.FromAuthenticationHeaderValue(headerValue),
+			_ => null
+		};
+	}
+
 	/// <summary>
 	/// Update the Credential with an update.
 	/// </summary>

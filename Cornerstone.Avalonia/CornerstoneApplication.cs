@@ -7,12 +7,8 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Cornerstone.Avalonia.Extensions;
 using Cornerstone.Exceptions;
-using Cornerstone.Input;
-using Cornerstone.Media;
 using Cornerstone.Presentation;
 using Cornerstone.Runtime;
-using Cornerstone.Security;
-using Cornerstone.Security.SecurityKeys;
 using IDispatcher = Cornerstone.Presentation.IDispatcher;
 
 #endregion
@@ -65,9 +61,15 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 		return Dispatcher;
 	}
 
-	public static object GetInstance(string type)
+	public static object GetInstance(string typeName)
 	{
-		var response = GetInstance(Type.GetType(type));
+		var type = Type.GetType(typeName);
+		if (type == null)
+		{
+			throw new ArgumentException(Babel.Tower[BabelKeys.ArgumentInvalid], nameof(typeName));
+		}
+		
+		var response = GetInstance(type);
 		return response;
 	}
 
@@ -123,35 +125,14 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 	public override void RegisterServices()
 	{
 		DependencyProvider.AddSingleton(ApplicationArguments);
-		DependencyProvider.AddSingleton<AudioPlayer, AudioPlayerStub>();
-		DependencyProvider.AddSingleton<IBrowserProxy, BrowserProxy>();
 		DependencyProvider.AddSingleton<IClipboardService, ClipboardService>();
-		DependencyProvider.AddSingleton<CredentialVault, CredentialVaultStub>();
-		DependencyProvider.AddSingleton<Gamepad, GamepadStub>();
-		DependencyProvider.AddSingleton<Keyboard, KeyboardStub>();
-		DependencyProvider.AddSingleton<Mouse, MouseStub>();
-		DependencyProvider.AddSingleton<SmartCardReader, SmartCardReaderStub>();
-
+		
 		DependencyProvider.SetupCornerstoneServices(
 			dispatcher: Dispatcher,
 			runtimeInformation: RuntimeInformation
 		);
 
-		DependencyProvider.Lock();
 		base.RegisterServices();
-	}
-
-	public static bool TryGetService<T>(out T service)
-	{
-		var app = (CornerstoneApplication) Current;
-		if (app != null)
-		{
-			service = DependencyProvider.GetInstance<T>();
-			return true;
-		}
-
-		service = default;
-		return false;
 	}
 
 	#endregion

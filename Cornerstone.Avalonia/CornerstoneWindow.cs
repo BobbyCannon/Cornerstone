@@ -7,6 +7,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Interactivity;
+using Cornerstone.Avalonia.DockingManager;
 using Cornerstone.Avalonia.Extensions;
 using Cornerstone.Presentation;
 using Dispatcher = Avalonia.Threading.Dispatcher;
@@ -41,7 +42,7 @@ public class CornerstoneWindow<T> : CornerstoneWindow
 	public T ViewModel
 	{
 		get => (T) DataContext;
-		protected set => DataContext = value;
+		set => DataContext = value;
 	}
 
 	#endregion
@@ -52,7 +53,6 @@ public class CornerstoneWindow : Window, IDispatchable
 	#region Fields
 
 	private readonly IDispatcher _dispatcher;
-
 	private PropertyChangedEventHandler _propertyChangedHandler;
 
 	#endregion
@@ -73,24 +73,6 @@ public class CornerstoneWindow : Window, IDispatchable
 	#endregion
 
 	#region Methods
-
-	public virtual void BindCommands()
-	{
-		ExitApplicationCommand = new RelayCommand(ExitApplicationOnExecute, ExitApplicationCanExecute);
-	}
-
-	public void CenterOnScreen()
-	{
-		var screen = Screens.Primary;
-		if (screen == null)
-		{
-			return;
-		}
-
-		var left = (int) (((double) screen.WorkingArea.Width / 2) - (Width / 2));
-		var top = (int) (((double) screen.WorkingArea.Height / 2) - (Height / 2));
-		Position = new PixelPoint(left, top);
-	}
 
 	/// <inheritdoc />
 	public IDispatcher GetDispatcher()
@@ -150,6 +132,24 @@ public class CornerstoneWindow : Window, IDispatchable
 		{
 			Dispatcher.UIThread.Post(() => WindowState = WindowState.Maximized);
 		}
+	}
+
+	protected virtual void BindCommands()
+	{
+		ExitApplicationCommand = new RelayCommand(ExitApplicationOnExecute, ExitApplicationCanExecute);
+	}
+
+	protected void CenterOnScreen()
+	{
+		var screen = Screens.Primary;
+		if (screen == null)
+		{
+			return;
+		}
+
+		var left = (int) (((double) screen.WorkingArea.Width / 2) - (Width / 2));
+		var top = (int) (((double) screen.WorkingArea.Height / 2) - (Height / 2));
+		Position = new PixelPoint(left, top);
 	}
 
 	protected virtual bool ExitApplicationCanExecute(object args)

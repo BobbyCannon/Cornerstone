@@ -65,7 +65,7 @@ public class ReflectionExtensionsTests : CornerstoneUnitTest
 	public void GetCodeTypeNameForMethodInfo()
 	{
 		var info = typeof(ReflectionExtensionsTests).GetMethod(nameof(Build), ReflectionExtensions.DefaultPrivateFlags);
-		Assert.IsNotNull(info);
+		IsNotNull(info);
 		CSharpCodeWriter.GetCodeTypeName(info).Dump();
 
 		var info2 = info.MakeGenericMethod(typeof(AccountEntity), typeof(int), typeof(AddressEntity), typeof(long));
@@ -74,7 +74,7 @@ public class ReflectionExtensionsTests : CornerstoneUnitTest
 		var address = new AddressEntity();
 		var account = new AccountEntity();
 		var dictionary = (Dictionary<AccountEntity, AddressEntity>) info2.Invoke(this, [account, address]);
-		Assert.IsNotNull(dictionary);
+		IsNotNull(dictionary);
 		AreEqual(1, dictionary.Count);
 		AreEqual(account, dictionary.Keys.First());
 		AreEqual(address, dictionary.Values.First());

@@ -335,10 +335,10 @@ public class RandomGeneratorTests : CornerstoneUnitTest
 			AreEqual(16, actual.Length);
 			actual.ToUnsecureString().Dump();
 
-			var settings = new PasswordSettings { MinLength = 14, UseSymbols = false, UseWords = true };
+			var settings = new PasswordSettings { MinLength = 12, UseSymbols = false, UseWords = true, AppendNumberToWords = true };
 			actual = new SecureString();
 			RandomGenerator.SetPassword(actual, settings);
-			IsTrue(actual.Length >= 14);
+			IsTrue(actual.Length >= settings.MinLength);
 			actual.ToUnsecureString().Dump();
 
 			string.Empty.Dump();

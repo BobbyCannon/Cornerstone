@@ -17,6 +17,20 @@ public abstract partial class CornerstoneUnitTest : CornerstoneTest
 {
 	#region Constructors
 
+	protected CornerstoneUnitTest()
+	{
+		EnableFileUpdates = false;
+
+		ClientSqlConnectionString = "server=localhost;database=CornerstoneClient;integrated security=true;encrypt=false";
+		ClientSqlConnectionString2 = "server=localhost;database=CornerstoneClient2;integrated security=true;encrypt=false";
+		ClientSqliteConnectionString = "Data Source=CornerstoneClient.db";
+		ClientSqliteConnectionString2 = "Data Source=CornerstoneClient2.db";
+		ServerSqlConnectionString = "server=localhost;database=CornerstoneServer;integrated security=true;encrypt=false";
+		ServerSqlConnectionString2 = "server=localhost;database=CornerstoneServer2;integrated security=true;encrypt=false";
+		ServerSqliteConnectionString = "Data Source=CornerstoneServer.db";
+		ServerSqliteConnectionString2 = "Data Source=CornerstoneServer2.db";
+	}
+
 	static CornerstoneUnitTest()
 	{
 		var assembly = typeof(CornerstoneUnitTest).Assembly;

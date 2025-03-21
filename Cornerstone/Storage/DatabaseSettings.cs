@@ -2,7 +2,6 @@
 
 using System;
 using Cornerstone.Data;
-using Cornerstone.Extensions;
 
 #endregion
 
@@ -59,6 +58,11 @@ public class DatabaseSettings : Notifiable<DatabaseSettings>
 	public bool PermanentSyncEntityDeletions { get; set; }
 
 	/// <summary>
+	/// Gets or sets the sync order of the syncable repositories.
+	/// </summary>
+	public string[] SyncOrder { get; set; }
+
+	/// <summary>
 	/// Gets or sets the list of entities to ignore during maintenance updates.
 	/// </summary>
 	public Type[] UnmaintainedEntities { get; set; }
@@ -74,32 +78,25 @@ public class DatabaseSettings : Notifiable<DatabaseSettings>
 	/// <param name="settings"> The settings for controlling the updating of the entity. </param>
 	public override bool UpdateWith(DatabaseSettings update, IncludeExcludeSettings settings)
 	{
+		// Code Generated - UpdateWith
+
 		// If the update is null then there is nothing to do.
 		if (update == null)
 		{
 			return false;
 		}
 
-		// ****** You can use GenerateUpdateWith to update this ******
+		// ****** This code has been auto generated, do not edit this. ******
 
-		if ((settings == null) || settings.IsEmpty())
-		{
-			DisableEntityValidations = UpdateProperty(DisableEntityValidations, update.DisableEntityValidations);
-			MaintainCreatedOn = UpdateProperty(MaintainCreatedOn, update.MaintainCreatedOn);
-			MaintainModifiedOn = UpdateProperty(MaintainModifiedOn, update.MaintainModifiedOn);
-			MaintainSyncId = UpdateProperty(MaintainSyncId, update.MaintainSyncId);
-			PermanentSyncEntityDeletions = UpdateProperty(PermanentSyncEntityDeletions, update.PermanentSyncEntityDeletions);
-			UnmaintainedEntities = update.UnmaintainedEntities;
-		}
-		else
-		{
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(DisableEntityValidations)), x => x.DisableEntityValidations = UpdateProperty(DisableEntityValidations, update.DisableEntityValidations));
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(MaintainCreatedOn)), x => x.MaintainCreatedOn = UpdateProperty(MaintainCreatedOn, update.MaintainCreatedOn));
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(MaintainModifiedOn)), x => x.MaintainModifiedOn = UpdateProperty(MaintainModifiedOn, update.MaintainModifiedOn));
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(MaintainSyncId)), x => x.MaintainSyncId = UpdateProperty(MaintainSyncId, update.MaintainSyncId));
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(PermanentSyncEntityDeletions)), x => x.PermanentSyncEntityDeletions = UpdateProperty(PermanentSyncEntityDeletions, update.PermanentSyncEntityDeletions));
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(UnmaintainedEntities)), x => x.UnmaintainedEntities = update.UnmaintainedEntities);
-		}
+		UpdateProperty(DisableEntityValidations, update.DisableEntityValidations, settings.ShouldProcessProperty(nameof(DisableEntityValidations)), x => DisableEntityValidations = x);
+		UpdateProperty(MaintainCreatedOn, update.MaintainCreatedOn, settings.ShouldProcessProperty(nameof(MaintainCreatedOn)), x => MaintainCreatedOn = x);
+		UpdateProperty(MaintainModifiedOn, update.MaintainModifiedOn, settings.ShouldProcessProperty(nameof(MaintainModifiedOn)), x => MaintainModifiedOn = x);
+		UpdateProperty(MaintainSyncId, update.MaintainSyncId, settings.ShouldProcessProperty(nameof(MaintainSyncId)), x => MaintainSyncId = x);
+		UpdateProperty(PermanentSyncEntityDeletions, update.PermanentSyncEntityDeletions, settings.ShouldProcessProperty(nameof(PermanentSyncEntityDeletions)), x => PermanentSyncEntityDeletions = x);
+		UpdateProperty(SyncOrder, update.SyncOrder, settings.ShouldProcessProperty(nameof(SyncOrder)), x => SyncOrder = x);
+		UpdateProperty(UnmaintainedEntities, update.UnmaintainedEntities, settings.ShouldProcessProperty(nameof(UnmaintainedEntities)), x => UnmaintainedEntities = x);
+
+		// Code Generated - /UpdateWith
 
 		return true;
 	}
@@ -113,6 +110,7 @@ public class DatabaseSettings : Notifiable<DatabaseSettings>
 			_ => base.UpdateWith(update, settings)
 		};
 	}
+
 
 	#endregion
 }

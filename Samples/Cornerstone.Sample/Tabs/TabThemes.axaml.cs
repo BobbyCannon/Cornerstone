@@ -21,7 +21,7 @@ public partial class TabThemes : CornerstoneUserControl
 
 	#region Constructors
 
-	public TabThemes() : this(DesignModeDependencyProvider.Get<ApplicationSettings>(), null)
+	public TabThemes() : this(ViewDependencyProvider.Get<ApplicationSettings>(), null)
 	{
 	}
 

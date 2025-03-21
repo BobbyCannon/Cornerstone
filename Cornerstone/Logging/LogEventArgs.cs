@@ -67,7 +67,7 @@ public class LogEventArgs : EventArgs
 	/// <param name="includeSessionId"> Option to include session ID in message. </param>
 	/// <param name="startedOn"> Optional to convert [DateTime] to [Elapsed]. Relative to provided value. </param>
 	/// <returns> The formatted message. </returns>
-	public string GetDetailedMessage(bool includeDateTime = true, bool includeSessionId = false, DateTime? startedOn = null)
+	public string GetDetailedMessage(bool includeDateTime = true, bool includeSessionId = true, DateTime? startedOn = null)
 	{
 		if (!includeDateTime || (MessagedOn == default))
 		{

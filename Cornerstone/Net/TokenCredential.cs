@@ -16,6 +16,12 @@ namespace Cornerstone.Net;
 /// </summary>
 public class TokenCredential : Credential
 {
+	#region Constants
+
+	public const string AuthenticationScheme = "Bearer";
+
+	#endregion
+
 	#region Constructors
 
 	/// <summary>
@@ -62,7 +68,7 @@ public class TokenCredential : Credential
 	/// </summary>
 	public static TokenCredential FromAuthenticationHeaderValue(AuthenticationHeaderValue headerValue)
 	{
-		if (!string.Equals(headerValue.Scheme, "Bearer", StringComparison.OrdinalIgnoreCase))
+		if (!string.Equals(headerValue.Scheme, AuthenticationScheme, StringComparison.OrdinalIgnoreCase))
 		{
 			throw new SecurityException("The authentication header is incorrect schema.");
 		}
@@ -77,7 +83,7 @@ public class TokenCredential : Credential
 	/// </summary>
 	public override AuthenticationHeaderValue GetAuthenticationHeaderValue()
 	{
-		return new AuthenticationHeaderValue("Bearer", ToBase64String());
+		return new AuthenticationHeaderValue(AuthenticationScheme, ToBase64String());
 	}
 
 	/// <summary>

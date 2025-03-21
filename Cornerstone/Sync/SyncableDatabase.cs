@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Cornerstone.Extensions;
+using Cornerstone.Runtime;
 using Cornerstone.Storage;
 
 #endregion
@@ -25,7 +26,7 @@ public abstract class SyncableDatabase : Database, ISyncableDatabase
 	#region Constructors
 
 	/// <inheritdoc />
-	protected SyncableDatabase(DatabaseSettings settings, DatabaseKeyCache keyCache) : base(settings)
+	protected SyncableDatabase(IDateTimeProvider dateTimeProvider, DatabaseSettings settings, DatabaseKeyCache keyCache) : base(dateTimeProvider, settings)
 	{
 		_syncableRepositories = new ConcurrentDictionary<string, ISyncableRepository>();
 
@@ -39,6 +40,7 @@ public abstract class SyncableDatabase : Database, ISyncableDatabase
 	/// <inheritdoc />
 	public DatabaseKeyCache KeyCache { get; set; }
 
+	/// <inheritdoc />
 	public abstract string[] SyncOrder { get; }
 
 	#endregion
@@ -46,7 +48,7 @@ public abstract class SyncableDatabase : Database, ISyncableDatabase
 	#region Methods
 
 	/// <inheritdoc />
-	public IEnumerable<ISyncableRepository> GetSyncableRepositories(SyncSettings settings)
+	public IEnumerable<ISyncableRepository> GetSyncableRepositories()
 	{
 		//
 		// NOTE: If you change this then update Cornerstone.EntityFramework.EntityFrameworkDatabase
@@ -55,7 +57,7 @@ public abstract class SyncableDatabase : Database, ISyncableDatabase
 		if (_syncableRepositories.Count <= 0)
 		{
 			// Refresh the syncable repositories
-			DetectSyncableRepositories(settings);
+			DetectSyncableRepositories();
 		}
 
 		if (SyncOrder.Length <= 0)
@@ -97,6 +99,13 @@ public abstract class SyncableDatabase : Database, ISyncableDatabase
 		return r.Value as ISyncableRepository;
 	}
 
+	/// <inheritdoc />
+	protected override void OnChangesSaved(CollectionChangeTracker e)
+	{
+		KeyCache?.UpdateCache(e);
+		base.OnChangesSaved(e);
+	}
+
 	private SyncableRepository<T, T2> CreateSyncableRepository<T, T2>() where T : SyncEntity<T2>
 	{
 		var repository = new SyncableRepository<T, T2>(this);
@@ -108,27 +117,15 @@ public abstract class SyncableDatabase : Database, ISyncableDatabase
 		return repository;
 	}
 
-	private void DetectSyncableRepositories(SyncSettings settings)
+	private void DetectSyncableRepositories()
 	{
-		var syncableRepositories = Repositories
-			.Where(x => x.Value is ISyncableRepository)
-			.ToList();
-
 		_syncableRepositories.Clear();
 
-		var order = SyncOrder.ToList();
-		var repositories = order.Count <= 0
-			? syncableRepositories
-				.Select(x => x.Value)
-				.Cast<ISyncableRepository>()
-				.Where(x => !settings.ShouldExcludeRepository(x.TypeName))
-				.ToList()
-			: syncableRepositories
-				.Where(x => order.Contains(x.Key))
-				.OrderBy(x => order.IndexOf(x.Key))
-				.Select(x => x.Value as ISyncableRepository)
-				.Where(x => x != null)
-				.ToList();
+		var repositories = Repositories
+			.Where(x => x.Value is ISyncableRepository)
+			.Select(x => x.Value)
+			.Cast<ISyncableRepository>()
+			.ToList();
 
 		foreach (var i in repositories)
 		{
@@ -167,7 +164,7 @@ public interface ISyncableDatabase : IDatabase
 	DatabaseKeyCache KeyCache { get; }
 
 	/// <summary>
-	/// The order to sync entities.
+	/// The order in which to sync.
 	/// </summary>
 	string[] SyncOrder { get; }
 
@@ -179,7 +176,7 @@ public interface ISyncableDatabase : IDatabase
 	/// Gets a list of syncable repositories.
 	/// </summary>
 	/// <returns> The list of syncable repositories. </returns>
-	IEnumerable<ISyncableRepository> GetSyncableRepositories(SyncSettings settings);
+	IEnumerable<ISyncableRepository> GetSyncableRepositories();
 
 	/// <summary>
 	/// Gets a syncable repository of the requested entity.
@@ -193,7 +190,7 @@ public interface ISyncableDatabase : IDatabase
 	/// Gets a syncable repository of the requested entity.
 	/// </summary>
 	/// <returns> The repository of entities requested. </returns>
-	ISyncableRepository GetSyncableRepository(Type syncEntityType);
+	ISyncableRepository GetSyncableRepository(Type type);
 
 	#endregion
 }

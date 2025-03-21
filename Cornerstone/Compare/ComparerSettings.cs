@@ -13,7 +13,7 @@ namespace Cornerstone.Compare;
 /// <summary>
 /// The options for the comparers.
 /// </summary>
-public struct ComparerSettings
+public struct ComparerSettings : ICloneable<ComparerSettings>
 {
 	#region Constructors
 
@@ -139,4 +139,38 @@ public struct ComparerSettings
 	}
 
 	#endregion
+
+	public object DeepCloneObject(int? maxDepth = null, IncludeExcludeSettings settings = null)
+	{
+		return DeepClone(maxDepth, settings);
+	}
+
+	public object ShallowCloneObject(IncludeExcludeSettings settings = null)
+	{
+		return ShallowClone(settings);
+	}
+
+	public ComparerSettings DeepClone(int? maxDepth = null, IncludeExcludeSettings settings = null)
+	{
+		var response = new ComparerSettings
+		{
+			DoubleTolerance = DoubleTolerance,
+			FloatTolerance = FloatTolerance,
+			GlobalIncludeExcludeSettings = GlobalIncludeExcludeSettings.ShallowClone(),
+			IgnoreMissingDictionaryEntries = IgnoreMissingDictionaryEntries,
+			IgnoreMissingProperties = IgnoreMissingProperties,
+			IgnoreObjectTypes = IgnoreObjectTypes,
+			MaxDepth = MaxDepth,
+			StringComparison = StringComparison,
+			TypeIncludeExcludeSettings = new Dictionary<Type, IncludeExcludeSettings>()
+		};
+
+		response.TypeIncludeExcludeSettings.Reconcile(TypeIncludeExcludeSettings);
+		return response;
+	}
+
+	public ComparerSettings ShallowClone(IncludeExcludeSettings settings = null)
+	{
+		return DeepClone(1, settings);
+	}
 }

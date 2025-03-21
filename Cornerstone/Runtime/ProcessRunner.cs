@@ -17,7 +17,7 @@ public class ProcessRunner
 		Cancel = null;
 		Details = new ProcessDetails();
 		RaiseError = true;
-		TraitErrorAsOutput = false;
+		TreatErrorAsOutput = false;
 	}
 
 	#endregion
@@ -30,7 +30,7 @@ public class ProcessRunner
 
 	public bool RaiseError { get; set; }
 
-	public bool TraitErrorAsOutput { get; set; }
+	public bool TreatErrorAsOutput { get; set; }
 
 	#endregion
 
@@ -118,15 +118,9 @@ public class ProcessRunner
 			var exitCode = process.ExitCode;
 			process.Close();
 
-			if (!Details.WasCancelled && (exitCode != 0) && (Details.Errors.Count > 0))
-			{
-				//if (RaiseError)
-				//{
-				//	Dispatcher.UIThread.Invoke(() => { App.RaiseException(Context, string.Join("\n", errs)); });
-				//}
-				return false;
-			}
-			return true;
+			return Details.WasCancelled
+				|| (exitCode == 0)
+				|| (Details.Errors.Count <= 0);
 		}
 		finally
 		{
@@ -198,12 +192,11 @@ public class ProcessRunner
 			return;
 		}
 
-		if (TraitErrorAsOutput)
+		if (TreatErrorAsOutput)
 		{
 			OnReadline(e.Data);
 		}
-
-		if (CheckAsError(e.Data))
+		else if (CheckAsError(e.Data))
 		{
 			Details.Errors.Add(e.Data);
 		}

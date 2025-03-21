@@ -2,7 +2,7 @@
 
 using System;
 using Cornerstone.Data.Times;
-using Cornerstone.Text.Human;
+using Cornerstone.Text;
 
 #endregion
 

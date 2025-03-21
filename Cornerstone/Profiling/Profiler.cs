@@ -52,7 +52,7 @@ public class Profiler : Bindable<Profiler>, IDetailedTimer
 		Timers = new SpeedyList<DetailedTimer>(dispatcher);
 
 		_weakEventManager = new WeakEventManager();
-		_weakEventManager.AddCollectionChanged(Timers, TimersOnCollectionChanged);
+		_weakEventManager.AddCollectionChanged(Timers, this, TimersOnCollectionChanged);
 	}
 
 	~Profiler()

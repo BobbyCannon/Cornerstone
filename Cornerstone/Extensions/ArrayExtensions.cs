@@ -111,6 +111,24 @@ public static class ArrayExtensions
 	}
 
 	/// <summary>
+	/// Get the value if the index exist otherwise return default value.
+	/// </summary>
+	/// <typeparam name="T"> The type of the items in teh array. </typeparam>
+	/// <param name="array"> The array. </param>
+	/// <param name="index"> The index in the array to read. </param>
+	/// <param name="defaultValue"> The value to provide if the index is invalid. </param>
+	/// <returns> The value or the default value. </returns>
+	public static T GetArrayValueOrDefault<T>(this T[] array, int index, T defaultValue)
+	{
+		if ((index >= 0) && (index < array.Length))
+		{
+			return array[index];
+		}
+
+		return defaultValue;
+	}
+
+	/// <summary>
 	/// Iterate the list.
 	/// </summary>
 	/// <param name="enumerable"> The items to enumerate. </param>
@@ -128,7 +146,7 @@ public static class ArrayExtensions
 	/// <summary>
 	/// Gets a sub array from an existing array.
 	/// </summary>
-	/// <typeparam name="T"> The type of the array items. </typeparam>
+	/// <typeparam name="T"> The type of the items in teh array. </typeparam>
 	/// <param name="data"> The array to pull from. </param>
 	/// <param name="index"> The index to start from. </param>
 	/// <param name="length"> The amount of data to pull. </param>

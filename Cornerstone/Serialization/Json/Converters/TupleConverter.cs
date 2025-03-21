@@ -34,7 +34,7 @@ public class TupleConverter : JsonConverter
 
 		var values = value.GetValueTupleItemDictionary();
 		var writer = consumer.StartObject(typeof(JsonObject));
-		DictionaryConverter.WriteDictionary(writer, values, settings);
+		DictionaryJsonConverter.WriteDictionary(writer, values, settings);
 		consumer.CompleteObject();
 	}
 

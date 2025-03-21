@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Cornerstone.Attributes;
 using Cornerstone.Compare;
@@ -77,10 +76,10 @@ public static class UpdateableExtensions
 	{
 		if (value is IUpdateable updateable)
 		{
-			updateable.UpdateWith(update, IncludeExcludeSettings.FromExclusions(exclusions));
+			updateable.UpdateWith(update, exclusions.ToOnlyExcludingSettings());
 		}
 
-		return UpdateWithUsingReflection(value, update, IncludeExcludeSettings.FromExclusions(exclusions));
+		return UpdateWithUsingReflection(value, update, exclusions.ToOnlyExcludingSettings());
 	}
 
 	/// <summary>
@@ -94,117 +93,118 @@ public static class UpdateableExtensions
 	{
 		if (value is IUpdateable updateable)
 		{
-			updateable.UpdateWith(update, IncludeExcludeSettings.OnlyIncluding(including));
+			updateable.UpdateWith(update, including.ToOnlyIncludingSettings());
 		}
 
-		return UpdateWithUsingReflection(value, update, IncludeExcludeSettings.OnlyIncluding(including));
+		return UpdateWithUsingReflection(value, update, including.ToOnlyIncludingSettings());
 	}
 
 	/// <summary>
 	/// Allows updating of one type to another based on member Name and Type.
 	/// </summary>
-	/// <param name="value"> The value to be updated. </param>
-	/// <param name="update"> The source of the updates. </param>
+	/// <param name="destination"> The value to be updated. </param>
+	/// <param name="source"> The source of the updates. </param>
+	/// <param name="action"> The action of the updateable. </param>
 	/// <returns> True if the update was applied otherwise false. </returns>
-	public static bool UpdateWithUsingReflection(this object value, object update, UpdateableAction action)
+	public static bool UpdateWithUsingReflection(this object destination, object source, UpdateableAction action)
 	{
-		if (value == null)
+		if (destination == null)
 		{
 			return false;
 		}
 
-		var settings = Cache.GetSettings(value.GetType(), action);
-		return UpdateWithUsingReflection(value, update, settings);
+		var settings = Cache.GetSettings(destination.GetType(), action);
+		return UpdateWithUsingReflection(destination, source, settings);
 	}
 
 	/// <summary>
 	/// Allows updating of one type to another based on member Name and Type.
 	/// </summary>
-	/// <param name="value"> The value to be updated. </param>
-	/// <param name="update"> The source of the updates. </param>
+	/// <param name="destination"> The value to be updated. </param>
+	/// <param name="source"> The source of the updates. </param>
 	/// <param name="settings"> The options for controlling the updating of the value. </param>
 	/// <returns> True if the update was applied otherwise false. </returns>
-	internal static bool UpdateWithUsingReflection(this object value, object update, IncludeExcludeSettings settings)
+	internal static bool UpdateWithUsingReflection(this object destination, object source, IncludeExcludeSettings settings)
 	{
-		if ((value == null) || (update == null))
+		if ((destination == null) || (source == null))
 		{
 			return false;
 		}
 
 		settings ??= IncludeExcludeSettings.Empty;
 
-		var destinationType = value.GetRealTypeUsingReflection();
-		var sourceType = update.GetRealTypeUsingReflection();
+		var response = false;
+		var destinationType = destination.GetRealTypeUsingReflection();
+		var sourceType = source.GetRealTypeUsingReflection();
 		var destinationProperties = destinationType.GetCachedProperties();
-		var sourceProperties = sourceType.GetCachedProperties();
+		var sourceProperties = sourceType.GetCachedPropertyDictionary();
 
-		foreach (var thisProperty in destinationProperties)
+		foreach (var destinationProperty in destinationProperties)
 		{
+			var shouldProcess = settings.ShouldProcessProperty(destinationProperty.Name);
+			if (!shouldProcess)
+			{
+				continue;
+			}
+
+			// Do not try and set computed properties as it will just modify other properties
+			if (destinationProperty.GetCustomAttribute<ComputedPropertyAttribute>() != null)
+			{
+				continue;
+			}
+
+			if (!sourceProperties.TryGetValue(destinationProperty.Name, out var sourceProperty))
+			{
+				continue;
+			}
+
 			// Ensure the source can read this property
-			var canRead = (thisProperty.GetMethod != null)
-				&& thisProperty.CanRead
-				&& thisProperty.GetMethod.IsPublic;
+			var canRead = (sourceProperty.GetMethod != null)
+				&& sourceProperty.CanRead
+				&& sourceProperty.GetMethod.IsPublic;
 			if (!canRead)
 			{
 				continue;
 			}
 
 			// Ensure the destination can write this property
-			var canWrite = (thisProperty.SetMethod != null)
-				&& thisProperty.CanWrite
-				&& thisProperty.SetMethod.IsPublic;
+			var canWrite = (destinationProperty.SetMethod != null)
+				&& destinationProperty.CanWrite
+				&& destinationProperty.SetMethod.IsPublic;
 			if (!canWrite)
 			{
 				continue;
 			}
 
-			// Do not try and set computed properties as it will just modify other properties
-			if (thisProperty.GetCustomAttribute<ComputedPropertyAttribute>() != null)
-			{
-				continue;
-			}
-
-			var shouldProcess = settings.ShouldProcessProperty(thisProperty.Name);
-			if (!shouldProcess)
-			{
-				continue;
-			}
-
-			// Check to see if the update source entity has the property
-			var updateProperty = sourceProperties
-				.FirstOrDefault(x =>
-					(x.Name == thisProperty.Name)
-					&& (x.PropertyType == thisProperty.PropertyType)
-				);
-
-			if (updateProperty == null)
+			if (sourceProperty.PropertyType != destinationProperty.PropertyType)
 			{
 				// Skip this because target type does not have correct property name and / or type.
 				continue;
 			}
 
-			var updateValue = updateProperty.GetValue(update);
-			var thisValue = thisProperty.GetValue(value);
+			var sourceValue = sourceProperty.GetValue(source);
+			var destinationValue = destinationProperty.GetValue(destination);
 
-			if (!Equals(updateValue, thisValue))
+			if (!Equals(sourceValue, destinationValue))
 			{
-				thisProperty.SetValue(value, updateValue);
+				destinationProperty.SetValue(destination, sourceValue);
+				response = true;
 			}
 		}
 
-		return true;
+		return response;
 	}
 
 	/// <summary>
 	/// Allows updating of one type to another based on member Name and Type.
 	/// </summary>
-	/// <param name="value"> The value to be updated. </param>
-	/// <param name="update"> The source of the updates. </param>
+	/// <param name="destination"> The value to be updated. </param>
+	/// <param name="source"> The source of the updates. </param>
 	/// <param name="exclusions"> An optional list of members to exclude. </param>
 	/// <returns> True if the update was applied otherwise false. </returns>
-	internal static bool UpdateWithUsingReflection(this object value, object update, params string[] exclusions)
+	internal static bool UpdateWithUsingReflection(this object destination, object source, params string[] exclusions)
 	{
-		return UpdateWithUsingReflection(value, update, IncludeExcludeSettings.FromExclusions(exclusions));
+		return UpdateWithUsingReflection(destination, source, exclusions.ToOnlyExcludingSettings());
 	}
 
 	#endregion

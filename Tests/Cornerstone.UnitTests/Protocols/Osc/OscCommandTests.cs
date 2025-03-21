@@ -119,7 +119,7 @@ public class OscCommandTests : CornerstoneUnitTest
 		AreEqual(expected, actual, settings: comparerSettings);
 
 		var actualMessage = OscPacket.Parse(command.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage, "Failed to parse the byte data.");
+		IsNotNull(actualMessage, "Failed to parse the byte data.");
 
 		var actualCommand = new TestOscCommand();
 		actualCommand.Load(actualMessage);
@@ -141,7 +141,7 @@ public class OscCommandTests : CornerstoneUnitTest
 		//actual.Escape().Dump();
 		AreEqual("/test,1,23U,\"John\",20,{ Time: 2000-01-15T00:00:00.0000000Z },5.11f,164.32d,'',{ Blob: 0x000101020305080D },True,\"e3966202-40fa-443d-b21f-e1528a1e6dfe\",4294967295u,9223372036854775807L", actual);
 		var actualMessage = OscPacket.Parse(command.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		var actualCommand = new TestOscCommand();
 		actualCommand.Load(actualMessage);
 		AreEqual(command, actualCommand, settings: ComparerSettings);
@@ -155,7 +155,7 @@ public class OscCommandTests : CornerstoneUnitTest
 		//actual.Escape().Dump();
 		AreEqual("/test,2,23U,\"John\",20,{ Time: 2000-01-15T00:00:00.0000000Z },5.11f,164.32d,\'\u0004\',{ Blob: 0x000101020305080D },True,\"e3966202-40fa-443d-b21f-e1528a1e6dfe\",4294967295u,9223372036854775807L,{ TimeSpan: 12:34:56 },2", actual);
 		actualMessage = OscPacket.Parse(command.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		actualCommand = new TestOscCommand();
 		actualCommand.Load(actualMessage);
 		AreEqual(command, actualCommand, settings: ComparerSettings);
@@ -166,7 +166,7 @@ public class OscCommandTests : CornerstoneUnitTest
 		//actual.Escape().Dump();
 		AreEqual("/test,3,23U,\"John\",20,{ Time: 2000-01-15T00:00:00.0000000Z },5.11f,164.32d,\'\u0004\',{ Blob: 0x000101020305080D },True,\"e3966202-40fa-443d-b21f-e1528a1e6dfe\",4294967295u,9223372036854775807L,{ TimeSpan: 12:34:56 },2,-32768,65535", actual);
 		actualMessage = OscPacket.Parse(command.Time, actual) as OscMessage;
-		Assert.IsNotNull(actualMessage);
+		IsNotNull(actualMessage);
 		actualCommand = new TestOscCommand();
 		actualCommand.Load(actualMessage);
 		AreEqual(command, actualCommand, settings: ComparerSettings);

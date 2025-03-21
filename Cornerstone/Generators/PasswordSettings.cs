@@ -10,13 +10,16 @@ public class PasswordSettings : Bindable
 {
 	#region Constructors
 
-	public PasswordSettings()
+	public PasswordSettings() : this(null)
+	{
+	}
+
+	public PasswordSettings(IDispatcher dispatcher) : base(dispatcher)
 	{
 		MinLength = 16;
 		UseSymbols = true;
 
 		UseWords = false;
-		UppercaseWords = true;
 		UseWordSeparator = false;
 		WordSeparator = ' ';
 		AppendNumberToWords = true;
@@ -29,8 +32,6 @@ public class PasswordSettings : Bindable
 	public bool AppendNumberToWords { get; set; }
 
 	public int MinLength { get; set; }
-
-	public bool UppercaseWords { get; set; }
 
 	public bool UseSymbols { get; set; }
 

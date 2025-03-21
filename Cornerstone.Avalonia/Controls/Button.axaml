@@ -8,7 +8,7 @@
 				<Setter Property="BorderBrush" Value="{DynamicResource ButtonBorderBrush}" />
 				<Setter Property="BorderThickness" Value="{DynamicResource ButtonBorderThickness}" />
 				<Setter Property="CornerRadius" Value="{DynamicResource ButtonCornerRadius}" />
-				<Setter Property="FontFamily" Value="{DynamicResource OpenSansRegular}" />
+				<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
 				<Setter Property="Height" Value="32" />
 				<Setter Property="Padding" Value="{DynamicResource ButtonPadding}" />
 				<Setter Property="Margin" Value="0" />
@@ -441,9 +441,10 @@
 	<Design.PreviewWith>
 		<Border Width="300">
 			<WrapPanel Orientation="Horizontal"
-					ItemHeight="48">
+					ItemHeight="32">
 				<Button Padding="12,0">Commit</Button>
 				<Button>Commit</Button>
+				<ToggleSwitch></ToggleSwitch>
 				<Button Classes="Inverted">Commit</Button>
 				<ToggleButton>Fox</ToggleButton>
 				<Button Classes="Icon">

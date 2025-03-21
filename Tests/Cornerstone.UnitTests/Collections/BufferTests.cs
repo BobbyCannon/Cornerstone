@@ -155,7 +155,6 @@ public class BufferTests : CornerstoneUnitTest
 	private IEnumerable<IBuffer<T>> GetBuffers<T>(params T[] values)
 	{
 		yield return new GapBuffer<T>(values);
-		yield return new RopeBuffer<T>(values);
 	}
 
 	#endregion

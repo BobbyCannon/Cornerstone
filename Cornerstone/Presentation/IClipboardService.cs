@@ -26,6 +26,11 @@ public interface IClipboardService
 	public Task<string> GetTextAsync();
 
 	/// <summary>
+	/// Queue the clear the clipboard.
+	/// </summary>
+	public void QueueClear();
+
+	/// <summary>
 	/// Update the clipboard with the provided text.
 	/// </summary>
 	/// <param name="text"> The text to set. </param>
@@ -36,6 +41,37 @@ public interface IClipboardService
 	/// </summary>
 	/// <param name="text"> The text to set. </param>
 	public Task SetTextAsync(SecureString text);
+
+	#endregion
+}
+
+public class ClipboardServiceStub : IClipboardService
+{
+	#region Methods
+
+	public Task ClearAsync()
+	{
+		return Task.CompletedTask;
+	}
+
+	public Task<string> GetTextAsync()
+	{
+		return Task.FromResult(string.Empty);
+	}
+
+	public void QueueClear()
+	{
+	}
+
+	public Task SetTextAsync(string text)
+	{
+		return Task.CompletedTask;
+	}
+
+	public Task SetTextAsync(SecureString text)
+	{
+		return Task.CompletedTask;
+	}
 
 	#endregion
 }

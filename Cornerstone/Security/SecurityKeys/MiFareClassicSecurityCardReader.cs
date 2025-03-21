@@ -1,7 +1,6 @@
 ﻿#region References
 
 using System;
-using System.Diagnostics;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
 using Cornerstone.Security.SecurityKeys.Apdu.Commands;
@@ -40,6 +39,35 @@ public class MiFareClassicSecurityCardReader : SecurityCardReader
 
 	#region Methods
 
+	public override byte[] ReadBlock(ushort block)
+	{
+		var authenticeCommand = new AuthenticateCommand(block);
+		var response = Connection.Transmit(authenticeCommand);
+		if (response.Status != 0x9000)
+		{
+			Connection.OnWriteLine($"Block {block} authenticated failed.");
+			return null;
+		}
+
+		Connection.OnWriteLine($"Block {block} authenticated successfully.");
+
+		var readBinaryCommand = new ReadBytesCommand(block);
+		response = Connection.Transmit(readBinaryCommand);
+		if (response.Status != 0x9000)
+		{
+			Connection.OnWriteLine($"Failed to read the {block} block.");
+			return null;
+		}
+
+		Buffer.BlockCopy(
+			response.Data, 0,
+			Data, block * BytesPerBlock,
+			Math.Min(response.Data.Length, BytesPerBlock)
+		);
+
+		return response.Data;
+	}
+
 	public override void Refresh()
 	{
 		base.Refresh();
@@ -54,30 +82,7 @@ public class MiFareClassicSecurityCardReader : SecurityCardReader
 		{
 			try
 			{
-				var authenticeCommand = new AuthenticateCommand(block);
-				var response = Connection.Transmit(authenticeCommand);
-				if (response.Status != 0x9000)
-				{
-					Connection.OnWriteLine($"Block {block} authenticated failed.");
-					return;
-				}
-
-				Connection.OnWriteLine($"Block {block} authenticated successfully.");
-
-				var readBinaryCommand = new ReadBinaryCommand(block, 16);
-				response = Connection.Transmit(readBinaryCommand);
-				if (response.Status != 0x9000)
-				{
-					Connection.OnWriteLine($"Failed to read the {block} block.");
-					return;
-				}
-
-				Buffer.BlockCopy(
-					response.Data, 0,
-					Data, block * BytesPerBlock,
-					Math.Min(response.Data.Length, BytesPerBlock)
-				);
-
+				ReadBlock(block);
 				//Debug.WriteLine(response.Data.ToHexString());
 			}
 			catch (Exception ex)
@@ -86,6 +91,35 @@ public class MiFareClassicSecurityCardReader : SecurityCardReader
 				break;
 			}
 		}
+	}
+
+	public override byte[] WriteBlock(ushort block, byte[] data)
+	{
+		var authenticeCommand = new AuthenticateCommand(block);
+		var response = Connection.Transmit(authenticeCommand);
+		if (response.Status != 0x9000)
+		{
+			Connection.OnWriteLine($"Block {block} authenticated failed.");
+			return null;
+		}
+
+		Connection.OnWriteLine($"Block {block} authenticated successfully.");
+
+		var command = new WriteBytesCommand(block, data);
+		response = Connection.Transmit(command);
+		if (response.Status != 0x9000)
+		{
+			Connection.OnWriteLine($"Failed to write the {block} block.");
+			return null;
+		}
+
+		Buffer.BlockCopy(
+			response.Data, 0,
+			Data, block * BytesPerBlock,
+			Math.Min(response.Data.Length, BytesPerBlock)
+		);
+
+		return response.Data;
 	}
 
 	private void LoadKeys()

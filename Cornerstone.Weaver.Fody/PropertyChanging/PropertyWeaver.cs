@@ -159,18 +159,12 @@ public class PropertyWeaver
 	{
 		if (_propertyData.BackingFieldReference == null)
 		{
-			return new()
-			{
-				_instructions.First()
-			};
+			return [_instructions.First()];
 		}
 		var setFieldInstructions = FindSetFieldInstructions().ToList();
 		if (setFieldInstructions.Count == 0)
 		{
-			return new()
-			{
-				_instructions.First()
-			};
+			return [_instructions.First()];
 		}
 
 		return setFieldInstructions;

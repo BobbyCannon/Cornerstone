@@ -1,6 +1,7 @@
 ﻿#region References
 
 using Cornerstone.Runtime;
+using Cornerstone.Storage;
 using Cornerstone.Sync;
 using Sample.Shared.Storage;
 
@@ -18,7 +19,8 @@ public class ClientSqliteDatabaseProvider : SyncableDatabaseProvider<IClientData
 
 	#region Constructors
 
-	public ClientSqliteDatabaseProvider(string connectionString, IDateTimeProvider dateTimeProvider) : base(dateTimeProvider)
+	public ClientSqliteDatabaseProvider(string connectionString, IDateTimeProvider dateTimeProvider, DatabaseKeyCache keyCache)
+		: base(dateTimeProvider, keyCache, IClientDatabase.GetDefaultDatabaseSettings())
 	{
 		_connectionString = connectionString;
 	}
@@ -28,15 +30,14 @@ public class ClientSqliteDatabaseProvider : SyncableDatabaseProvider<IClientData
 	#region Methods
 
 	/// <inheritdoc />
-	public override string[] GetSyncOrder()
-	{
-		return ClientMemoryDatabase.GetSyncOrder();
-	}
-
-	/// <inheritdoc />
 	protected override IClientDatabase GetDatabaseFromProvider()
 	{
-		return ClientSqliteDatabase.UseSqlite(_connectionString);
+		return ClientSqliteDatabase.UseSqlite(_connectionString, Settings, KeyCache);
+	}
+
+	protected override IClientDatabase GetDatabaseFromProvider(DatabaseSettings settings, DatabaseKeyCache keyCache)
+	{
+		return ClientSqliteDatabase.UseSqlite(_connectionString, settings, keyCache);
 	}
 
 	#endregion

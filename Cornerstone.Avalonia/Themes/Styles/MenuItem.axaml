@@ -1,0 +1,83 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:p="clr-namespace:Cornerstone.Presentation;assembly=Cornerstone"
+		xmlns:converters="clr-namespace:Cornerstone.Avalonia.Converters">
+
+	<Design.PreviewWith>
+		<Border Width="220">
+			<StackPanel HorizontalAlignment="Left">
+				<MenuItem Header="Checkable" ToggleType="CheckBox" />
+				<MenuItem Header="_Standard" />
+				<MenuItem IsSelected="True" Header="Selected" />
+				<MenuItem Header="With Icon">
+					<MenuItem.Icon>
+						<TextBlock>😊</TextBlock>
+					</MenuItem.Icon>
+				</MenuItem>
+				<MenuItem Header="With CheckBox">
+					<MenuItem.Icon>
+						<CheckBox IsChecked="True" />
+					</MenuItem.Icon>
+				</MenuItem>
+				<MenuItem Header="With CheckBox (unchecked)">
+					<MenuItem.Icon>
+						<CheckBox IsChecked="False" />
+					</MenuItem.Icon>
+				</MenuItem>
+				<MenuItem Header="_About">
+					<MenuItem.Icon>
+						<PathIcon Data="{StaticResource FontAwesome.Question.Solid}" />
+					</MenuItem.Icon>
+				</MenuItem>
+				<MenuItem Header="Input Gesture" InputGesture="Ctrl+G" />
+				<MenuItem Header="Disabled" IsEnabled="False" />
+				<MenuItem Header="-" />
+				<MenuItem Header="Parent" IsSubMenuOpen="False">
+					<MenuItem Header="Child 1" />
+					<MenuItem Header="Child 2" />
+					<MenuItem Header="Child 3" />
+					<Separator />
+					<MenuItem Header="Child 4" />
+					<MenuItem Header="Child 5" />
+					<MenuItem Header="Child 6" />
+					<MenuItem Header="Child 7" />
+					<MenuItem Header="Child 8" />
+					<MenuItem Header="Child 9" />
+					<MenuItem Header="Child 10" />
+					<MenuItem Header="Child 11" />
+					<MenuItem Header="Child 12" />
+					<MenuItem Header="Child 13" />
+					<MenuItem Header="Child 14" />
+					<MenuItem Header="Child 15" />
+					<MenuItem Header="Child 16" />
+					<MenuItem Header="Child 17" />
+					<MenuItem Header="Child 18" />
+					<MenuItem Header="Child 19" />
+				</MenuItem>
+				<MenuItem Header="Disabled Parent" IsEnabled="False">
+					<MenuItem Header="Child" />
+				</MenuItem>
+				<MenuItem Header="Test" IsSubMenuOpen="True">
+					<MenuItem.Styles>
+						<Style Selector="MenuItem" x:DataType="p:MenuItemData">
+							<Setter Property="Background" Value="{DynamicResource Background02}" />
+							<Setter Property="Header" Value="{Binding Name}" />
+							<Setter Property="ItemsSource" Value="{Binding Children}" />
+							<Setter Property="Command" Value="{Binding Command}" />
+							<Setter Property="CommandParameter" Value="{Binding CommandParameter}" />
+							<Setter Property="InputGesture" Value="{Binding InputGesture, Converter={x:Static converters:KeyGestureConverters.ToKeyGesture}}" />
+							<Setter Property="HotKey" Value="{Binding InputGesture, Converter={x:Static converters:KeyGestureConverters.ToKeyGesture}}" />
+						</Style>
+					</MenuItem.Styles>
+					<MenuItem.Items>
+						<p:MenuItemData Name="Test1" InputGesture="Ctrl+I" />
+						<p:MenuItemData Name="Test2" InputGesture="Alt+F9" />
+						<p:MenuItemData Name="Test3" />
+						<p:MenuItemData Name="Test4" />
+						<p:MenuItemData Name="Test5" />
+					</MenuItem.Items>
+				</MenuItem>
+			</StackPanel>
+		</Border>
+	</Design.PreviewWith>
+</Styles>

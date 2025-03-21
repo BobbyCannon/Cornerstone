@@ -1239,7 +1239,7 @@ public class NmeaParserTests : CornerstoneUnitTest
 		var m = "$GNGGA,143718.00,4513.13793,N,01859.19704,E,1,05,1.86,108.1,M,38.1,M,,*40";
 		var n = parser.Parse(m) as GgaMessage;
 
-		Assert.IsNotNull(n);
+		IsNotNull(n);
 		AreEqual(143718.00, n.Time);
 		AreEqual("45.2189655", n.Latitude.ToString());
 		AreEqual("18.986617333333333333333333333", n.Longitude.ToString());

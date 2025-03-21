@@ -15,6 +15,43 @@ namespace Cornerstone.Sync;
 /// Represent an entity that can be synced.
 /// </summary>
 /// <typeparam name="TKey"> The type of the entity primary ID. </typeparam>
+/// <typeparam name="TModel"> The type of the sync model. </typeparam>
+public abstract class SyncEntity<TKey, TModel>
+	: SyncEntity<TKey>
+	where TModel : SyncModel
+{
+	#region Methods
+
+	/// <inheritdoc />
+	public override HashSet<string> GetDefaultIncludedProperties(UpdateableAction action)
+	{
+		var response = base.GetDefaultIncludedProperties(action);
+
+		switch (action)
+		{
+			case UpdateableAction.SyncIncomingAdd:
+			case UpdateableAction.SyncIncomingUpdate:
+			case UpdateableAction.SyncOutgoing:
+			{
+				var syncProperties = typeof(TModel)
+					.GetCachedProperties()
+					.Select(x => x.Name)
+					.ToList();
+				response.Add(syncProperties);
+				break;
+			}
+		}
+
+		return response;
+	}
+
+	#endregion
+}
+
+/// <summary>
+/// Represent an entity that can be synced.
+/// </summary>
+/// <typeparam name="TKey"> The type of the entity primary ID. </typeparam>
 public class SyncEntity<TKey> : Entity<TKey>, ISyncEntity
 {
 	#region Properties

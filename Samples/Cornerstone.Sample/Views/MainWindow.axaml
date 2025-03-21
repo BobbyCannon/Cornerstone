@@ -3,19 +3,11 @@
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:viewModels="clr-namespace:Cornerstone.Sample.ViewModels"
-		mc:Ignorable="d" d:DesignWidth="1024" d:DesignHeight="600"
+		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
 		x:Class="Cornerstone.Sample.Views.MainWindow"
 		x:DataType="viewModels:MainViewModel"
 		Icon="/Assets/Cornerstone.ico"
-		Title="Cornerstone"
-		MinWidth="600" MinHeight="600"
+		Title="Cornerstone Sample"
 		x:Name="ThisWindow">
-	<DockPanel LastChildFill="True">
-		<Menu DockPanel.Dock="Top">
-			<MenuItem Header="_File">
-				<MenuItem Header="E_xit" Click="ExitMenuItemOnClick" />
-			</MenuItem>
-		</Menu>
-		<ContentPresenter Content="{Binding #ThisWindow.MainView}" />
-	</DockPanel>
+	<ContentPresenter Content="{Binding #ThisWindow.MainView}" />
 </CornerstoneWindow>

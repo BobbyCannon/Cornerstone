@@ -7,8 +7,14 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
+		<PackageReference Include="Avalonia.Diagnostics" Version="$(AvaloniaVersion)">
+			<IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
+			<PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
+		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
+		<ProjectReference Include="..\..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
+		<ProjectReference Include="..\..\Cornerstone.Avalonia.ColorPicker\Cornerstone.Avalonia.ColorPicker.csproj" />
 		<ProjectReference Include="..\Cornerstone.Sample\Cornerstone.Sample.csproj" />
 	</ItemGroup>
 </Project>

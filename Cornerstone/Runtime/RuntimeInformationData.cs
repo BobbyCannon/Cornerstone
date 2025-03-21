@@ -39,7 +39,7 @@ public struct RuntimeInformationData : IRuntimeInformation
 	public string ApplicationLocation { get; set; }
 
 	/// <inheritdoc />
-	public Size DeviceDisplaySize { get; set;  }
+	public Size DeviceDisplaySize { get; set; }
 
 	/// <inheritdoc />
 	public string ApplicationName { get; set; }
@@ -160,7 +160,7 @@ public struct RuntimeInformationData : IRuntimeInformation
 			DevicePlatformBitness = Bitness.X64,
 			DevicePlatformVersion = new Version(10, 0, 26100, 0),
 			DeviceType = DeviceType.Desktop,
-			DotNetRuntimeVersion = new Version(9, 0, 0),
+			DotNetRuntimeVersion = new Version(9, 0, 0)
 		};
 	}
 

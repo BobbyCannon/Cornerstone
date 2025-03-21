@@ -5,11 +5,10 @@
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:avalonia="clr-namespace:LiveChartsCore.SkiaSharpView.Avalonia;assembly=LiveChartsCore.SkiaSharpView.Avalonia"
 		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
-		xmlns:avaloniaEdit="clr-namespace:Cornerstone.Avalonia.AvaloniaEdit;assembly=Cornerstone.Avalonia"
 		mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="860"
 		x:Class="Cornerstone.Sample.Tabs.TabDebounceAndThrottle"
 		x:DataType="tabs:TabDebounceAndThrottle">
-	<DockPanel>
+	<DockPanel Margin="10">
 		<DockPanel.Styles>
 			<Style Selector="WrapPanel > TextBlock">
 				<Setter Property="VerticalAlignment" Value="Center" />
@@ -25,7 +24,7 @@
 						Text="Log"
 						HorizontalAlignment="Center"
 						Margin="0,10" />
-				<avaloniaEdit:TextEditorControl
+				<TextEditorControl
 						Grid.Row="1"
 						x:Name="Log"
 						Background="{DynamicResource TextEditorBackground}"
@@ -184,7 +183,7 @@
 		<avalonia:CartesianChart
 				x:Name="Chart"
 				DockPanel.Dock="Top"
-				Margin="20"
+				Margin="0"
 				Height="320"
 				Series="{Binding Series}"
 				XAxes="{Binding XAxes}"
@@ -193,7 +192,7 @@
 		<avalonia:CartesianChart
 				x:Name="Chart2"
 				DockPanel.Dock="Top"
-				Margin="20"
+				Margin="0"
 				Height="320"
 				Series="{Binding Series2}"
 				XAxes="{Binding XAxes}"

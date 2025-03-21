@@ -81,7 +81,8 @@ public class CompareSession<T, T2> : CompareSession
 			Differences.Insert(0, Environment.NewLine);
 			Differences.Insert(0, prefix.Invoke());
 		}
-		else if (Differences.Length == 0)
+		
+		if (Differences.Length == 0)
 		{
 			Differences.AppendLine($"Expected [{expectedResult}] Result but got [{Result}] with values {Expected}.");
 		}
@@ -205,13 +206,15 @@ public class CompareSession : ReferenceTracker
 		if (shouldEqual)
 		{
 			InternalAppendDifference(expected?.ToString() ?? "null");
-			InternalAppendDifference(" != ");
+			InternalAppendDifference("\r\n **** != ****\r\n");
 			InternalAppendDifference(actual?.ToString() ?? "null");
+			InternalAppendDifference("\r\n");
 			return;
 		}
 
 		InternalAppendDifference("Should not have equaled the value below");
 		InternalAppendDifference(actual?.ToString() ?? "null");
+		InternalAppendDifference("\r\n");
 	}
 
 	/// <summary>
@@ -245,9 +248,15 @@ public class CompareSession : ReferenceTracker
 			return;
 		}
 
+		if (expected.Equals(actual))
+		{
+			session.UpdateResult(CompareResult.AreEqual);
+			return;
+		}
+
 		foreach (var comparer in Comparer.Comparers)
 		{
-			if (!comparer.IsSupported(expected, actual))
+			if (!comparer.IsSupported(session, expected, actual))
 			{
 				// The comparer should use expected to find the comparer
 				continue;

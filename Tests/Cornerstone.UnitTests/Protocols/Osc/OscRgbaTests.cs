@@ -18,9 +18,9 @@ public class OscRgbaTests : CornerstoneUnitTest
 	{
 		var expected = new OscRgba { A = 0x01, B = 0x02, G = 0x03, R = 0x04 };
 		var actual = new OscRgba { A = 0x01, B = 0x02, G = 0x03, R = 0x04 };
-		Assert.IsTrue(expected == actual);
-		Assert.IsTrue(expected.Equals(actual));
-		Assert.IsTrue(expected.Equals(new byte[] { 0x04, 0x03, 0x02, 0x01 }));
+		IsTrue(expected == actual);
+		IsTrue(expected.Equals(actual));
+		IsTrue(expected.Equals(new byte[] { 0x04, 0x03, 0x02, 0x01 }));
 		AreEqual(250755124, expected.GetHashCode());
 		AreEqual(250755124, actual.GetHashCode());
 	}
@@ -51,9 +51,9 @@ public class OscRgbaTests : CornerstoneUnitTest
 		var notExpected = new OscRgba { A = 0x04, B = 0x03, G = 0x02, R = 0x01 };
 		var actual = new OscRgba { A = 0x01, B = 0x02, G = 0x03, R = 0x04 };
 		AreEqual(250755124, actual.GetHashCode());
-		Assert.IsTrue(notExpected != actual);
+		IsTrue(notExpected != actual);
 		// ReSharper disable once SuspiciousTypeConversion.Global
-		Assert.IsFalse(actual.Equals(true));
+		IsFalse(actual.Equals(true));
 	}
 
 	[TestMethod]

@@ -14,9 +14,11 @@ using Cornerstone.Collections;
 using Cornerstone.Extensions;
 using Cornerstone.Generators;
 using Cornerstone.Presentation;
+using Cornerstone.Profiling;
 using Cornerstone.Runtime;
 using Cornerstone.Threading;
 using Sample.Shared;
+using Timer = Cornerstone.Profiling.Timer;
 
 #endregion
 
@@ -26,7 +28,7 @@ public partial class TabSpeedyList : CornerstoneUserControl
 {
 	#region Constants
 
-	public const string HeaderName = "SpeedyList";
+	public const string HeaderName = "Speedy List";
 
 	#endregion
 
@@ -37,8 +39,11 @@ public partial class TabSpeedyList : CornerstoneUserControl
 		RuntimeInformation = GetInstance<IRuntimeInformation>();
 		Dispatcher = GetInstance<IDispatcher>();
 		LeftList = new SpeedyList<SelectionOption<int>>(Dispatcher);
+		LeftListFilterProxy = new FilteredSpeedyList<SelectionOption<int>>(LeftList, x => (x.Id % 2) == 0);
 		MiddleList = new SpeedyList<SelectionOption<int>>(Dispatcher);
+		MiddleListFilterProxy = new FilteredSpeedyList<SelectionOption<int>>(MiddleList, x => (x.Id % 3) == 0);
 		RightList = new SpeedyList<SelectionOption<int>>(Dispatcher);
+		RightListFilterProxy = new FilteredSpeedyList<SelectionOption<int>>(RightList, x => (x.Id % 10) == 0);
 
 		ReaderWriterLockValues =
 		[
@@ -64,12 +69,15 @@ public partial class TabSpeedyList : CornerstoneUserControl
 			new(1000, "1000 ms")
 		];
 
+		GenerateDataTimer = new Timer();
+		AddAverage = new AverageTimer();
+		InsertAverage = new AverageTimer();
 		Limit = 100;
-		NumberOfItems = 1000;
+		NumberOfItems = 100;
 		NumberOfThreads = 32;
 		SelectedReaderWriterLock = ReaderWriterLockValues[0];
 		SelectedTestLoopValue = TestLoopValues[1];
-		SelectedThrottleDelay = ThrottleDelayValues[1];
+		SelectedThrottleDelay = ThrottleDelayValues[0];
 		Progress = 0;
 
 		// Commands
@@ -84,15 +92,23 @@ public partial class TabSpeedyList : CornerstoneUserControl
 
 	#region Properties
 
+	public AverageTimer AddAverage { get; }
+
 	public bool CancellationPending { get; set; }
 
 	public ICommand ClearCommand { get; }
 
 	public IDispatcher Dispatcher { get; }
 
+	public Timer GenerateDataTimer { get; }
+
+	public AverageTimer InsertAverage { get; }
+
 	public bool IsRunning { get; set; }
 
 	public SpeedyList<SelectionOption<int>> LeftList { get; }
+
+	public FilteredSpeedyList<SelectionOption<int>> LeftListFilterProxy { get; }
 
 	public int Limit { get; set; }
 
@@ -108,6 +124,8 @@ public partial class TabSpeedyList : CornerstoneUserControl
 
 	public SpeedyList<SelectionOption<int>> MiddleList { get; }
 
+	public FilteredSpeedyList<SelectionOption<int>> MiddleListFilterProxy { get; }
+
 	public int NumberOfItems { get; set; }
 
 	public int NumberOfThreads { get; set; }
@@ -119,6 +137,8 @@ public partial class TabSpeedyList : CornerstoneUserControl
 	public SpeedyList<SelectionOption<int>> ReaderWriterLockValues { get; }
 
 	public SpeedyList<SelectionOption<int>> RightList { get; }
+
+	public FilteredSpeedyList<SelectionOption<int>> RightListFilterProxy { get; }
 
 	public TimeSpan RunElapsed { get; set; }
 
@@ -236,17 +256,23 @@ public partial class TabSpeedyList : CornerstoneUserControl
 			var total = NumberOfItems;
 			var minimum = Math.Max(10, (int) (total * 0.1));
 
-			LeftList.Load(Enumerable.Range(1, total).Select(x => new SelectionOption<int>(x, x.ToString())));
-			MiddleList.Load(Enumerable.Range(total + 1, total).Select(x => new SelectionOption<int>(x, x.ToString())));
-			RightList.Load(Enumerable.Range((total * 2) + 1, total).Select(x => new SelectionOption<int>(x, x.ToString())));
+			GenerateDataTimer.Restart();
+			var left = Enumerable.Range(1, total).Select(x => new SelectionOption<int>(x, x.ToString())).ToArray();
+			var middle = Enumerable.Range(total + 1, total).Select(x => new SelectionOption<int>(x, x.ToString())).ToArray();
+			var right = Enumerable.Range((total * 2) + 1, total).Select(x => new SelectionOption<int>(x, x.ToString())).ToArray();
+			GenerateDataTimer.Stop();
+
+			LeftList.Load(left);
+			MiddleList.Load(middle);
+			RightList.Load(right);
 
 			var actions = EnumExtensions.GetEnumValues<SampleViewModel.ListAction>();
 			var sources = new[] { LeftList, MiddleList, RightList };
 			var destinations = new Dictionary<SpeedyList<SelectionOption<int>>, SpeedyList<SelectionOption<int>>[]>
 			{
-				{ LeftList, new[] { MiddleList, RightList } },
-				{ MiddleList, new[] { LeftList, RightList } },
-				{ RightList, new[] { LeftList, MiddleList } }
+				{ LeftList, [MiddleList, RightList] },
+				{ MiddleList, [LeftList, RightList] },
+				{ RightList, [LeftList, MiddleList] }
 			};
 
 			try
@@ -276,13 +302,13 @@ public partial class TabSpeedyList : CornerstoneUserControl
 							{
 								case SampleViewModel.ListAction.Insert:
 								{
-									destination.Insert(0, item);
+									InsertAverage.Time(() => destination.Insert(0, item));
 									break;
 								}
 								case SampleViewModel.ListAction.Add:
 								default:
 								{
-									destination.Add(item);
+									AddAverage.Time(() => destination.Add(item));
 									break;
 								}
 							}

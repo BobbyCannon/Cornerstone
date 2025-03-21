@@ -15,6 +15,21 @@ namespace Cornerstone.Runtime;
 /// </summary>
 public static class RuntimeInformationExtensions
 {
+	#region Constructors
+
+	static RuntimeInformationExtensions()
+	{
+		Sample = RuntimeInformationData.GetSample();
+	}
+
+	#endregion
+
+	#region Properties
+
+	public static IRuntimeInformation Sample { get; }
+
+	#endregion
+
 	#region Methods
 
 	public static string AddOrUpdateEmbeddedFile(this IRuntimeInformation runtimeInformation,
@@ -70,6 +85,31 @@ public static class RuntimeInformationExtensions
 		};
 
 		return response;
+	}
+
+	/// <summary>
+	/// Determine if the platform is a desktop platform.
+	/// </summary>
+	/// <returns> True if the platform is a desktop otherwise false. </returns>
+	public static bool IsDesktop(this IRuntimeInformation runtimeInformation)
+	{
+		return runtimeInformation.DevicePlatform
+				is DevicePlatform.Windows
+				or DevicePlatform.Linux
+				or DevicePlatform.MacOS
+			&& runtimeInformation.DeviceType is DeviceType.Desktop;
+	}
+
+	/// <summary>
+	/// Determine if the platform is a mobile platform.
+	/// </summary>
+	/// <returns> True if the platform is a mobile otherwise false. </returns>
+	public static bool IsMobile(this IRuntimeInformation runtimeInformation)
+	{
+		return runtimeInformation.DevicePlatform
+				is DevicePlatform.Android
+				or DevicePlatform.IOS
+			&& runtimeInformation.DeviceType is DeviceType.Phone;
 	}
 
 	private static void UpdateFile(string filePath, byte[] data)

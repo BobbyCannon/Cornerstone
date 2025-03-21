@@ -6,33 +6,33 @@
 	<!-- Design preview. -->
 
 	<Design.PreviewWith>
-		<StackPanel Margin="20" Width="250" Spacing="24">
-			<StackPanel Spacing="12">
-				<ToggleSwitch />
-				<ToggleSwitch  Background="Red"/>
-				<ToggleSwitch IsChecked="True" />
-				<ToggleSwitch
-						HorizontalContentAlignment="Left"
-						Content="Header"
-						OffContent="Off"
-						OnContent="On" />
-				<ToggleSwitch IsEnabled="False" />
-				<ToggleSwitch
-						Content="disabled"
-						OffContent="Off"
-						OnContent="On"
-						IsEnabled="False"
-						IsChecked="True" />
-			</StackPanel>
-			
-		</StackPanel>
+		<WrapPanel>
+			<Button>Test</Button>
+			<ToggleSwitch />
+			<ToggleSwitch  Background="Red"/>
+			<ToggleSwitch IsChecked="True" />
+			<ToggleSwitch
+					HorizontalContentAlignment="Left"
+					Content="Header"
+					OffContent="Off"
+					OnContent="On" />
+			<ToggleSwitch IsEnabled="False" />
+			<ToggleSwitch
+					Content="disabled"
+					OffContent="Off"
+					OnContent="On"
+					IsEnabled="False"
+					IsChecked="True" />
+		</WrapPanel>
 	</Design.PreviewWith>
 
 	<ControlTheme x:Key="{x:Type ToggleSwitch}" TargetType="ToggleSwitch">
 		<Setter Property="Foreground" Value="{DynamicResource ToggleSwitchContentForeground}" />
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+		<Setter Property="MinHeight" Value="32" />
 		<Setter Property="HorizontalAlignment" Value="Left" />
-		<Setter Property="VerticalAlignment" Value="Center" />
-		<Setter Property="HorizontalContentAlignment" Value="Left" />
+		<Setter Property="HorizontalContentAlignment" Value="Center" />
+		<Setter Property="VerticalAlignment" Value="Top" />
 		<Setter Property="VerticalContentAlignment" Value="Center" />
 		<Setter Property="FontSize" Value="{DynamicResource StandardThemeFontSize}" />
 		<Setter Property="KnobTransitions">
@@ -46,7 +46,9 @@
 
 		<Setter Property="Template">
 			<ControlTemplate>
-				<Grid Background="{TemplateBinding Background}" RowDefinitions="Auto,*">
+				<Grid RowDefinitions="Auto,*"
+						Background="{TemplateBinding Background}"
+						MinHeight="{TemplateBinding MinHeight}">
 					<ContentPresenter
 							x:Name="PART_ContentPresenter"
 							Grid.Row="0"
@@ -57,8 +59,7 @@
 							RecognizesAccessKey="True" />
 					<Grid Grid.Row="1"
 							MinWidth="{DynamicResource ToggleSwitchThemeMinWidth}"
-							HorizontalAlignment="Left"
-							VerticalAlignment="Top">
+							VerticalAlignment="Center">
 						<Grid.RowDefinitions>
 							<RowDefinition Height="Auto" />
 							<RowDefinition Height="Auto" />

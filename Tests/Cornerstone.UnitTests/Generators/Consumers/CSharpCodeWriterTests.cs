@@ -166,16 +166,16 @@ public class CSharpCodeWriterTests : CodeWriterTest<CSharpCodeWriter>
 			new("TimeSpan", TimeSpan.MinValue, typeof(TimeSpan), "TimeSpan.MinValue"),
 			new("TimeSpan", TimeSpan.MaxValue, typeof(TimeSpan), "TimeSpan.MaxValue"),
 			new("TimeSpan", TimeSpan.Zero, typeof(TimeSpan), "TimeSpan.Zero"),
-			new("TimeSpan", new TimeSpan(1, 2, 3, 4, 5, 6), typeof(TimeSpan), "new TimeSpan(1,2, 3, 4, 5, 6)"),
+			new("TimeSpan", new TimeSpan(1,2, 3, 4, 5, 6), typeof(TimeSpan), "new TimeSpan(1,2, 3, 4, 5, 6)"),
 			new("TimeSpan?", TimeSpan.MinValue, typeof(TimeSpan?), "TimeSpan.MinValue"),
 			new("TimeSpan?", TimeSpan.MaxValue, typeof(TimeSpan?), "TimeSpan.MaxValue"),
 			new("TimeSpan?", TimeSpan.Zero, typeof(TimeSpan?), "TimeSpan.Zero"),
-			new("TimeSpan?", new TimeSpan(1, 2, 3, 4, 5, 6), typeof(TimeSpan?), "new TimeSpan(1,2, 3, 4, 5, 6)"),
+			new("TimeSpan?", new TimeSpan(1,2, 3, 4, 5, 6), typeof(TimeSpan?), "new TimeSpan(1,2, 3, 4, 5, 6)"),
 			new("TimeSpan?", null, typeof(TimeSpan?), "null"),
 			new("TimeSpan?", TimeSpan.MinValue, typeof(TimeSpan?), "TimeSpan.MinValue"),
 			new("TimeSpan?", TimeSpan.MaxValue, typeof(TimeSpan?), "TimeSpan.MaxValue"),
 			new("TimeSpan?", TimeSpan.Zero, typeof(TimeSpan?), "TimeSpan.Zero"),
-			new("TimeSpan?", new TimeSpan(1, 2, 3, 4, 5, 6), typeof(TimeSpan?), "new TimeSpan(1,2, 3, 4, 5, 6)"),
+			new("TimeSpan?", new TimeSpan(1,2, 3, 4, 5, 6), typeof(TimeSpan?), "new TimeSpan(1,2, 3, 4, 5, 6)"),
 			new("TimeSpan?", null, typeof(TimeSpan?), "null"),
 			new("Guid", Guid.Empty, typeof(Guid), "Guid.Empty"),
 			new("Guid", Guid.Parse("6dcefb3f-4b1c-40fd-827e-58d31767e4a8"), typeof(Guid), "Guid.Parse(\"6dcefb3f-4b1c-40fd-827e-58d31767e4a8\")"),
@@ -204,7 +204,7 @@ public class CSharpCodeWriterTests : CodeWriterTest<CSharpCodeWriter>
 			new("ShortGuid?", ShortGuid.Empty, typeof(ShortGuid?), "ShortGuid.Empty"),
 			new("ShortGuid?", ShortGuid.Parse("P_vObRxL_UCCfljTF2fkqA"), typeof(ShortGuid?), "ShortGuid.Parse(\"P_vObRxL_UCCfljTF2fkqA\")"),
 			new("ShortGuid?", ShortGuid.Parse("AAAAAAAAAAAAAAAAAAAAAQ"), typeof(ShortGuid?), "ShortGuid.Parse(\"AAAAAAAAAAAAAAAAAAAAAQ\")"),
-			new("ShortGuid?", ShortGuid.Parse("AAAAEAAAAAAAAAAAAAAAAA"), typeof(ShortGuid?), "ShortGuid.Parse(\"AAAAEAAAAAAAAAAAAAAAAA\")")
+			new("ShortGuid?", ShortGuid.Parse("AAAAEAAAAAAAAAAAAAAAAA"), typeof(ShortGuid?), "ShortGuid.Parse(\"AAAAEAAAAAAAAAAAAAAAAA\")"),
 			// </Scenarios>
 		};
 

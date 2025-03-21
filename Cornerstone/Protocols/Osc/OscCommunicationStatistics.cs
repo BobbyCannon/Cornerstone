@@ -26,15 +26,25 @@ public class OscCommunicationStatistics : OscStatistics
 	#region Properties
 
 	public OscStatisticValue BundlesReceived { get; }
+
 	public OscStatisticValue BundlesSent { get; }
+
 	public OscStatisticValue BytesReceived { get; }
+
 	public OscStatisticValue BytesSent { get; }
+
 	public OscStatisticValue ExtendedBundlesReceived { get; }
+
 	public OscStatisticValue ExtendedBundlesSent { get; }
+
 	public OscStatisticValue MessagesReceived { get; }
+
 	public OscStatisticValue MessagesSent { get; }
+
 	public OscStatisticValue PacketsReceived { get; }
+
 	public OscStatisticValue PacketsSent { get; }
+
 	public OscStatisticValue ReceiveErrors { get; }
 
 	#endregion

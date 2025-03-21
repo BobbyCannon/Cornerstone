@@ -6,8 +6,7 @@ using System.Text;
 using System.Threading;
 using Cornerstone.Automation.Internal;
 using Cornerstone.Input;
-using Cornerstone.Windows;
-
+using Cornerstone.Platforms.Windows;
 
 #endregion
 

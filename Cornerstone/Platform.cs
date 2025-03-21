@@ -1,10 +1,16 @@
 ﻿#region References
 
 #if ANDROID
-using Cornerstone.Android;
+using Cornerstone.Platforms.Android;
+
+#elif BROWSER
+using Cornerstone.Platforms.Browser;
+
+#elif IOS
+using Cornerstone.Platforms.iOS;
 
 #elif WINDOWS
-using Cornerstone.Windows;
+using Cornerstone.Platforms.Windows;
 #endif
 
 #endregion
@@ -19,13 +25,19 @@ public static class Platform
 	{
 		#if ANDROID
 		var dp = AndroidPlatform.DependencyProvider;
+		#elif BROWSER
+		var dp = BrowserPlatform.DependencyProvider;
+		#elif IOS
+		var dp = IOSPlatform.DependencyProvider;
 		#elif WINDOWS
 		var dp = WindowsPlatform.DependencyProvider;
 		#else
 		DependencyProvider dp = null;
 		#endif
 
-		return dp != null ? dp.GetInstance<T>() : default;
+		return dp != null
+			? dp.GetInstance<T>()
+			: Activator.CreateInstance<T>();
 	}
 
 	#endregion

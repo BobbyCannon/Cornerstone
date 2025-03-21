@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Cornerstone.Collections;
@@ -12,6 +13,7 @@ using Cornerstone.Extensions;
 using Cornerstone.Protocols.Osc;
 using Cornerstone.Serialization.Json.Values;
 using Cornerstone.Text;
+using Microsoft.Extensions.Primitives;
 
 #endregion
 
@@ -82,7 +84,6 @@ public static class Activator
 			typeof(StringBuilder),
 			typeof(TextBuilder),
 			typeof(GapBuffer<char>),
-			typeof(RopeBuffer<char>),
 			typeof(JsonString)
 		];
 		TimeTypes =
@@ -255,9 +256,17 @@ public static class Activator
 			type = typeof(Nullable<>).GetCachedMakeGenericType(type.GenericTypeArguments);
 		}
 
-		return arguments is { Length: > 0 }
-			? System.Activator.CreateInstance(type, arguments)
-			: System.Activator.CreateInstance(type);
+		try
+		{
+			return arguments is { Length: > 0 }
+				? System.Activator.CreateInstance(type, arguments)
+				: System.Activator.CreateInstance(type);
+		}
+		catch
+		{
+			Debugger.Break();
+			throw;
+		}
 	}
 
 	/// <summary>
@@ -334,11 +343,11 @@ public static class Activator
 		{
 			if (useCustomActivators && _customActivators.TryGetValue(type, out var activator))
 			{
-				response = activator.CreateInstanceObject(arguments);
+				response = activator.GetOrCreateInstance(arguments);
 			}
 			else if (_builtInActivators.TryGetValue(type, out activator))
 			{
-				response = activator.CreateInstanceObject(arguments);
+				response = activator.GetOrCreateInstance(arguments);
 			}
 			else if (type.IsArray)
 			{

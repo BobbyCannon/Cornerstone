@@ -17,14 +17,14 @@ public abstract class BaseConverter : IProvider
 
     private readonly Guid _id;
 
-    #endregion
+	#endregion
 
     #region Constructors
 
     /// <summary>
     /// Initialize the type converter.
     /// </summary>
-    protected BaseConverter(Guid id) : this(id, Array.Empty<Type>(), Array.Empty<Type>())
+    protected BaseConverter(Guid id) : this(id, [], [])
     {
     }
 
@@ -46,17 +46,17 @@ public abstract class BaseConverter : IProvider
 
     #region Properties
 
-    /// <summary>
-    /// Types this converter can convert to / from. Meaning the non primary type must be one of these types.
-    /// </summary>
-    public ReadOnlySet<Type> ToTypes { get; }
+	/// <summary>
+	/// Types this converter can convert to / from. Meaning the non primary type must be one of these types.
+	/// </summary>
+	public ReadOnlySet<Type> ToTypes { get; }
 
-    /// <summary>
-    /// Types this converter is primarily for. Meaning the To/From must be one of these types.
-    /// </summary>
-    public ReadOnlySet<Type> FromTypes { get; }
+	/// <summary>
+	/// Types this converter is primarily for. Meaning the To/From must be one of these types.
+	/// </summary>
+	public ReadOnlySet<Type> FromTypes { get; }
 
-    #endregion
+	#endregion
 
     #region Methods
 

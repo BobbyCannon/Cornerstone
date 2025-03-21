@@ -12,7 +12,7 @@ namespace Cornerstone.Logging;
 /// <summary>
 /// Represents a tracker path.
 /// </summary>
-public class TrackerPathEntity : SyncEntity<long>
+public class TrackerPathEntity : SyncEntity<long>, ITrackerPath
 {
 	#region Constructors
 
@@ -74,6 +74,8 @@ public class TrackerPathEntity : SyncEntity<long>
 
 	/// <inheritdoc />
 	public override long Id { get; set; }
+
+	public bool IsException { get; set; }
 
 	/// <summary>
 	/// Gets or sets the parent.

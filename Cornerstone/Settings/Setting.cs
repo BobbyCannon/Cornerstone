@@ -2,9 +2,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
-using Cornerstone.Storage;
 using Cornerstone.Sync;
 
 #endregion
@@ -14,132 +14,35 @@ namespace Cornerstone.Settings;
 /// <summary>
 /// Represents a setting.
 /// </summary>
-/// <typeparam name="T"> The type of the Value of the setting. </typeparam>
-/// <typeparam name="T2"> The type of the Id of the setting. </typeparam>
-public class Setting<T, T2> : Setting<T2>
+/// <typeparam name="TKey"> The type of the Value of the setting. </typeparam>
+/// <typeparam name="TModel"> The type of the sync model. </typeparam>
+public class Setting<TKey, TModel>
+	: Setting<TKey>
+	where TModel : SyncModel
 {
-	#region Fields
-
-	private readonly T _defaultValue;
-
-	#endregion
-
-	#region Constructors
-
-	/// <summary>
-	/// Represents a setting.
-	/// </summary>
-	public Setting()
-	{
-	}
-
-	/// <summary>
-	/// Represents a setting.
-	/// </summary>
-	/// <param name="name"> The name of the setting. </param>
-	/// <param name="defaultValue"> The default value for the setting. </param>
-	public Setting(string name, T defaultValue)
-	{
-		_defaultValue = defaultValue;
-
-		Name = name;
-		Data = defaultValue;
-	}
-
-	#endregion
-
-	#region Properties
-
-	/// <summary>
-	/// The typed data of the value property.
-	/// </summary>
-	public T Data { get; set; }
-
-	/// <inheritdoc />
-	public override string Value
-	{
-		get => Data.ToRawJson();
-		set => Data = value.FromJson<T>();
-	}
-
-	#endregion
-
 	#region Methods
 
 	/// <inheritdoc />
-	public override Type GetValueType()
+	public override HashSet<string> GetDefaultIncludedProperties(UpdateableAction action)
 	{
-		return typeof(T);
-	}
+		var response = base.GetDefaultIncludedProperties(action);
 
-	/// <inheritdoc />
-	public override bool HasChanges(IncludeExcludeSettings settings)
-	{
-		if (Data is ITrackPropertyChanges changeable && changeable.HasChanges())
+		switch (action)
 		{
-			return true;
+			case UpdateableAction.SyncIncomingAdd:
+			case UpdateableAction.SyncIncomingUpdate:
+			case UpdateableAction.SyncOutgoing:
+			{
+				var syncProperties = typeof(TModel)
+					.GetCachedProperties()
+					.Select(x => x.Name)
+					.ToList();
+				response.Add(syncProperties);
+				break;
+			}
 		}
 
-		return base.HasChanges(settings);
-	}
-
-	/// <inheritdoc />
-	public override void ResetHasChanges()
-	{
-		if (Data is ITrackPropertyChanges changeable)
-		{
-			changeable.ResetHasChanges();
-		}
-
-		base.ResetHasChanges();
-	}
-
-	/// <inheritdoc />
-	public override void ResetToDefault()
-	{
-		Data = _defaultValue;
-
-		ResetHasChanges();
-	}
-
-	/// <summary>
-	/// Update the Setting with an update.
-	/// </summary>
-	/// <param name="update"> The update to be applied. </param>
-	/// <param name="settings"> The options for controlling the updating of the value. </param>
-	public virtual bool UpdateWith(Setting<T, T2> update, IncludeExcludeSettings settings)
-	{
-		// If the update is null then there is nothing to do.
-		if (update == null)
-		{
-			return false;
-		}
-
-		// ****** You can use GenerateUpdateWith to update this ******
-
-		if ((settings == null) || settings.IsEmpty())
-		{
-			Data = update.Data;
-			Value = update.Value;
-		}
-		else
-		{
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Data)), x => x.Data = update.Data);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Value)), x => x.Value = update.Value);
-		}
-
-		return true;
-	}
-
-	/// <inheritdoc />
-	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
-	{
-		return update switch
-		{
-			Setting<T, T2> value => UpdateWith(value, settings),
-			Setting<T2> value => UpdateWith(value, settings),
-			_ => base.UpdateWith(update, settings)
-		};
+		return response;
 	}
 
 	#endregion
@@ -148,8 +51,9 @@ public class Setting<T, T2> : Setting<T2>
 /// <summary>
 /// Represents a setting.
 /// </summary>
-/// <typeparam name="T"> The type of the Value of the setting. </typeparam>
-public class Setting<T> : SyncEntity<T>, ISetting
+/// <typeparam name="TKey"> The type of the Value of the setting. </typeparam>
+public class Setting<TKey>
+	: SyncEntity<TKey>, ISetting
 {
 	#region Properties
 
@@ -169,7 +73,7 @@ public class Setting<T> : SyncEntity<T>, ISetting
 	public DateTime ExpiresOn { get; set; }
 
 	/// <inheritdoc />
-	public override T Id { get; set; }
+	public override TKey Id { get; set; }
 
 	/// <summary>
 	/// The name of the setting.
@@ -196,7 +100,7 @@ public class Setting<T> : SyncEntity<T>, ISetting
 		if (action.IsSyncAction())
 		{
 			// Properties should be included in every sync (incoming add / modify or outgoing).
-			response.AddRange(nameof(Category), nameof(ExpiresOn), nameof(Name), nameof(Value));
+			response.AddRange(nameof(Category), nameof(ExpiresOn), nameof(Name), nameof(Value), nameof(ValueType));
 		}
 
 		switch (action)
@@ -224,15 +128,21 @@ public class Setting<T> : SyncEntity<T>, ISetting
 	/// </summary>
 	public virtual void ResetToDefault()
 	{
-		Value = default;
+		Value = null;
 		ResetHasChanges();
+	}
+
+	public void SetData<TData>(TData value)
+	{
+		Value = value.ToRawJson();
+		ValueType = typeof(TData).ToAssemblyName();
 	}
 
 	/// <summary>
 	/// Update the Setting with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	public virtual bool UpdateWith(Setting<T> update)
+	public virtual bool UpdateWith(Setting<TKey> update)
 	{
 		return UpdateWith(update, IncludeExcludeSettings.Empty);
 	}
@@ -241,43 +151,32 @@ public class Setting<T> : SyncEntity<T>, ISetting
 	/// Update the Setting with an update.
 	/// </summary>
 	/// <param name="update"> The update to be applied. </param>
-	/// <param name="settings"> The options for controlling the updating of the entity. </param>
-	public virtual bool UpdateWith(Setting<T> update, IncludeExcludeSettings settings)
+	/// <param name="settings"> The settings for controlling the updating of the entity. </param>
+	public virtual bool UpdateWith(Setting<TKey> update, IncludeExcludeSettings settings)
 	{
+		// Code Generated - UpdateWith
+
 		// If the update is null then there is nothing to do.
 		if (update == null)
 		{
 			return false;
 		}
 
-		// ****** You can use GenerateUpdateWith to update this ******
+		// ****** This code has been auto generated, do not edit this. ******
 
-		if ((settings == null) || settings.IsEmpty())
-		{
-			CanSync = update.CanSync;
-			Category = update.Category;
-			CreatedOn = update.CreatedOn;
-			ExpiresOn = update.ExpiresOn;
-			Id = update.Id;
-			IsDeleted = update.IsDeleted;
-			ModifiedOn = update.ModifiedOn;
-			Name = update.Name;
-			SyncId = update.SyncId;
-			Value = update.Value;
-		}
-		else
-		{
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(CanSync)), x => x.CanSync = update.CanSync);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Category)), x => x.Category = update.Category);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(CreatedOn)), x => x.CreatedOn = update.CreatedOn);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(ExpiresOn)), x => x.ExpiresOn = update.ExpiresOn);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Id)), x => x.Id = update.Id);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(IsDeleted)), x => x.IsDeleted = update.IsDeleted);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(ModifiedOn)), x => x.ModifiedOn = update.ModifiedOn);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Name)), x => x.Name = update.Name);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(SyncId)), x => x.SyncId = update.SyncId);
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Value)), x => x.Value = update.Value);
-		}
+		UpdateProperty(CanSync, update.CanSync, settings.ShouldProcessProperty(nameof(CanSync)), x => CanSync = x);
+		UpdateProperty(Category, update.Category, settings.ShouldProcessProperty(nameof(Category)), x => Category = x);
+		UpdateProperty(CreatedOn, update.CreatedOn, settings.ShouldProcessProperty(nameof(CreatedOn)), x => CreatedOn = x);
+		UpdateProperty(ExpiresOn, update.ExpiresOn, settings.ShouldProcessProperty(nameof(ExpiresOn)), x => ExpiresOn = x);
+		UpdateProperty(Id, update.Id, settings.ShouldProcessProperty(nameof(Id)), x => Id = x);
+		UpdateProperty(IsDeleted, update.IsDeleted, settings.ShouldProcessProperty(nameof(IsDeleted)), x => IsDeleted = x);
+		UpdateProperty(ModifiedOn, update.ModifiedOn, settings.ShouldProcessProperty(nameof(ModifiedOn)), x => ModifiedOn = x);
+		UpdateProperty(Name, update.Name, settings.ShouldProcessProperty(nameof(Name)), x => Name = x);
+		UpdateProperty(SyncId, update.SyncId, settings.ShouldProcessProperty(nameof(SyncId)), x => SyncId = x);
+		UpdateProperty(Value, update.Value, settings.ShouldProcessProperty(nameof(Value)), x => Value = x);
+		UpdateProperty(ValueType, update.ValueType, settings.ShouldProcessProperty(nameof(ValueType)), x => ValueType = x);
+
+		// Code Generated - /UpdateWith
 
 		return true;
 	}
@@ -287,7 +186,7 @@ public class Setting<T> : SyncEntity<T>, ISetting
 	{
 		return update switch
 		{
-			Setting<T> value => UpdateWith(value, settings),
+			Setting<TKey> value => UpdateWith(value, settings),
 			_ => base.UpdateWith(update, settings)
 		};
 	}
@@ -298,7 +197,7 @@ public class Setting<T> : SyncEntity<T>, ISetting
 /// <summary>
 /// Represents a setting.
 /// </summary>
-public interface ISetting : IModifiableEntity
+public interface ISetting : ISyncEntity
 {
 	#region Properties
 

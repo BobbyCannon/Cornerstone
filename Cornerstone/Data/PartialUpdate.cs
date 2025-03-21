@@ -67,12 +67,12 @@ public class PartialUpdate<T> : PartialUpdate
 	/// </summary>
 	/// <typeparam name="TProperty"> The type to cast the value to. </typeparam>
 	/// <param name="expression"> The expression of the member to set. </param>
-	/// <param name="defaultValue"> A default value if update not available. </param>
+	/// <param name="defaultValueFactory"> A default value factory if update not available. </param>
 	/// <returns> The value if it was found otherwise default(T). </returns>
-	public TProperty Get<TProperty>(Expression<Func<T, TProperty>> expression, TProperty defaultValue)
+	public TProperty Get<TProperty>(Expression<Func<T, TProperty>> expression, Func<TProperty> defaultValueFactory)
 	{
 		var propertyExpression = (MemberExpression) expression.Body;
-		return Get(defaultValue, propertyExpression.Member.Name);
+		return Get(defaultValueFactory, propertyExpression.Member.Name);
 	}
 
 	/// <summary>
@@ -273,6 +273,20 @@ public class PartialUpdate : Bindable
 		return _updates.Values;
 	}
 
+	public override bool HasChanges(IncludeExcludeSettings settings)
+	{
+		return base.HasChanges(settings)
+			|| _updates.Values.Any(x => x.HasChanges());
+	}
+
+	public void Load(params PartialUpdateValue[] updates)
+	{
+		foreach (var update in updates)
+		{
+			_updates.AddOrUpdate(update.Name, update);
+		}
+	}
+
 	/// <summary>
 	/// Remove an update from the partial update.
 	/// </summary>
@@ -280,6 +294,18 @@ public class PartialUpdate : Bindable
 	public void Remove(string name)
 	{
 		_updates.Remove(name);
+	}
+
+	public virtual void Reset()
+	{
+		_updates.Clear();
+		ResetHasChanges();
+	}
+
+	public override void ResetHasChanges()
+	{
+		_updates.Values.ForEach(x => x.ResetHasChanges());
+		base.ResetHasChanges();
 	}
 
 	/// <summary>
@@ -488,11 +514,6 @@ public class PartialUpdate : Bindable
 
 	private void Set(string name, object value, PropertyInfo property)
 	{
-		//if (!property.CanWrite)
-		//{
-		//	throw new CornerstoneException("The property cannot be set because it's not writable.");
-		//}
-
 		if (property.PropertyType.IsNullable() && (value == null))
 		{
 			_updates.AddOrUpdate(name, new PartialUpdateValue

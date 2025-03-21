@@ -52,7 +52,7 @@ public static class ResourceService
 		return response;
 	}
 
-	public static StreamGeometry GetSvgImage(string key)
+	public static StreamGeometry GetSvg(string key)
 	{
 		var response = Application.Current?.FindResource(key) as StreamGeometry;
 		return response;
@@ -65,7 +65,7 @@ public static class ResourceService
 			Width = 12,
 			Height = 12,
 			Stretch = Stretch.Uniform,
-			Data = GetSvgImage(key)
+			Data = GetSvg(key)
 		};
 		return response;
 	}

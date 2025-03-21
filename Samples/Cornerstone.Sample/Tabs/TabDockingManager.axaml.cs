@@ -8,6 +8,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Notifications;
 using Avalonia.Interactivity;
 using Cornerstone.Avalonia;
+using Cornerstone.Avalonia.Controls;
 using Cornerstone.Avalonia.DockingManager;
 using Cornerstone.Data;
 using Cornerstone.Presentation;
@@ -131,13 +132,13 @@ public class TextBoxTabModel : TextTabModel
 
 	private void ShowSamplePopup(object obj)
 	{
-		Popup = new TextBoxSamplePopup();
+		TryShowPopup(new TextBoxSamplePopup());
 	}
 
 	#endregion
 }
 
-public class TextBoxSamplePopup : TabPopup
+public class TextBoxSamplePopup : PopupViewModel
 {
 	#region Constructors
 

@@ -14,7 +14,8 @@ namespace Cornerstone.Sync;
 /// </summary>
 /// <typeparam name="TSyncModel"> The sync entity type to convert from. </typeparam>
 /// <typeparam name="TSyncEntity"> The sync entity type to convert to. </typeparam>
-public class SyncObjectIncomingConverter<TSyncModel, TSyncEntity> : SyncObjectIncomingConverter
+public class SyncObjectIncomingConverter<TSyncModel, TSyncEntity>
+	: SyncObjectIncomingConverter
 	where TSyncModel : class, ISyncEntity
 	where TSyncEntity : class, ISyncEntity
 {
@@ -32,7 +33,8 @@ public class SyncObjectIncomingConverter<TSyncModel, TSyncEntity> : SyncObjectIn
 	/// </summary>
 	/// <param name="convert"> An optional convert method to do some additional conversion. </param>
 	/// <param name="update"> An optional update method to do some additional updating. </param>
-	public SyncObjectIncomingConverter(Action<TSyncModel, TSyncEntity> convert = null, Func<TSyncEntity, TSyncEntity, Action, SyncObjectStatus, bool> update = null)
+	public SyncObjectIncomingConverter(Action<TSyncModel, TSyncEntity> convert = null,
+		Func<TSyncEntity, TSyncEntity, Action, SyncObjectStatus, bool> update = null)
 		: base(
 			typeof(TSyncModel).GetRealTypeUsingReflection().ToAssemblyName(),
 			typeof(TSyncEntity).GetRealTypeUsingReflection().ToAssemblyName()
@@ -77,7 +79,8 @@ public class SyncObjectIncomingConverter<TSyncModel, TSyncEntity> : SyncObjectIn
 /// </summary>
 /// <typeparam name="TSyncEntity"> The sync entity type to convert from. </typeparam>
 /// <typeparam name="TSyncModel"> The sync model type to convert to. </typeparam>
-public class SyncObjectOutgoingConverter<TSyncEntity, TSyncModel> : SyncObjectOutgoingConverter
+public class SyncObjectOutgoingConverter<TSyncEntity, TSyncModel>
+	: SyncObjectOutgoingConverter
 	where TSyncEntity : class, ISyncEntity
 	where TSyncModel : class, ISyncEntity
 {
@@ -115,7 +118,7 @@ public class SyncObjectOutgoingConverter<TSyncEntity, TSyncModel> : SyncObjectOu
 	/// <inheritdoc />
 	public override SyncObject Convert(SyncObject syncObject)
 	{
-		return OutgoingConvert<TSyncEntity, TSyncModel>(syncObject, _convert, UpdateableAction.SyncOutgoing);
+		return OutgoingConvert(syncObject, _convert, UpdateableAction.SyncOutgoing);
 	}
 
 	/// <inheritdoc />

@@ -32,10 +32,10 @@ internal sealed class CodeImporter
 	private readonly IList<Action> _deferredActions = new List<Action>();
 
 	// ReSharper disable once AssignNullToNotNullAttribute
-	private static readonly ConstructorInfo _instructionConstructor = typeof(Instruction).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(OpCode), typeof(object) }, null);
+	private static readonly ConstructorInfo _instructionConstructor = typeof(Instruction).GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, [typeof(OpCode), typeof(object)], null);
 	private readonly Dictionary<string, ModuleDefinition> _sourceModuleDefinitions = new();
 	private readonly Dictionary<MethodDefinition, MethodDefinition> _targetMethods = new();
-	private readonly HashSet<TypeDefinition> _targetTypes = new();
+	private readonly HashSet<TypeDefinition> _targetTypes = [];
 	private readonly Dictionary<TypeDefinition, TypeDefinition> _targetTypesBySource = new();
 
 	#endregion
@@ -57,8 +57,11 @@ internal sealed class CodeImporter
 	#region Properties
 
 	public IAssemblyResolver AssemblyResolver { get; set; }
+
 	public bool HideImportedTypes { get; set; } = true;
+
 	public IModuleResolver ModuleResolver { get; set; }
+
 	public Func<string, string> NamespaceDecorator { get; set; } = value => value;
 
 	public ModuleDefinition TargetModule { get; }
@@ -322,7 +325,7 @@ internal sealed class CodeImporter
 	[SuppressMessage("ReSharper", "ImplicitlyCapturedClosure")]
 	private Instruction CloneInstruction(Instruction source, MethodDefinition targetMethod, IReadOnlyDictionary<Instruction, Instruction> instructionMap)
 	{
-		var targetInstruction = (Instruction) _instructionConstructor.Invoke(new[] { source.OpCode, source.Operand });
+		var targetInstruction = (Instruction) _instructionConstructor.Invoke([source.OpCode, source.Operand]);
 
 		switch (targetInstruction.Operand)
 		{
@@ -1365,7 +1368,7 @@ internal class LocalReferenceModuleResolver : IModuleResolver
 {
 	#region Fields
 
-	private readonly HashSet<string> _ignoredAssemblyNames = new();
+	private readonly HashSet<string> _ignoredAssemblyNames = [];
 
 	#endregion
 

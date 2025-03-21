@@ -31,21 +31,20 @@ public class NumericPropertyCellFactory : PropertyCellFactory
 			control.Minimum = attr.Minimum.ConvertTo<decimal>();
 			control.Maximum = attr.Maximum.ConvertTo<decimal>();
 		}
-		
+
 		var formatAttr = propertyDescriptor.GetCustomAttribute<FormatStringAttribute>();
 
-		if ((propertyDescriptor.PropertyType == typeof(sbyte)) ||
-			(propertyDescriptor.PropertyType == typeof(byte)) ||
-			(propertyDescriptor.PropertyType == typeof(short)) ||
-			(propertyDescriptor.PropertyType == typeof(ushort)) ||
-			(propertyDescriptor.PropertyType == typeof(int)) ||
-			(propertyDescriptor.PropertyType == typeof(uint)) ||
-			(propertyDescriptor.PropertyType == typeof(long)) ||
-			(propertyDescriptor.PropertyType == typeof(ulong))
+		if ((propertyDescriptor.PropertyType == typeof(sbyte))
+			|| (propertyDescriptor.PropertyType == typeof(byte)) 
+			|| (propertyDescriptor.PropertyType == typeof(short))
+			|| (propertyDescriptor.PropertyType == typeof(ushort))
+			|| (propertyDescriptor.PropertyType == typeof(int))
+			|| (propertyDescriptor.PropertyType == typeof(uint)) 
+			|| (propertyDescriptor.PropertyType == typeof(long))
+			|| (propertyDescriptor.PropertyType == typeof(ulong))
 			)
 		{
 			var incrementAttr = propertyDescriptor.GetCustomAttribute<IntegerChangeAttribute>();
-
 			control.Increment = incrementAttr?.SmallChange ?? 1;
 
 			if (formatAttr != null)
@@ -103,15 +102,7 @@ public class NumericPropertyCellFactory : PropertyCellFactory
 
 		var value = propertyDescriptor.GetValue(target);
 		var dValue = (double) System.Convert.ChangeType(value!, typeof(double));
-
-		if (decimal.TryParse(dValue.ToString(CultureInfo.InvariantCulture), out var d))
-		{
-			nup.Value = d;
-		}
-		else
-		{
-			nup.Value = null;
-		}
+		nup.Value = decimal.TryParse(dValue.ToString(CultureInfo.InvariantCulture), out var d) ? d : 0;
 
 		return true;
 	}

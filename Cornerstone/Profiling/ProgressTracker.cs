@@ -54,7 +54,9 @@ public class ProgressTracker : Bindable<ProgressTracker>
 	public void Update(int value)
 	{
 		Value = value;
-		Percent = ((value * 1.0m) / (Maximum - Minimum)) * 100;
+
+		var length = Maximum - Minimum;
+		Percent = length <= 0 ? 0 : ((value * 1.0m) / length) * 100;
 	}
 
 	public void Update(int value, int minimum, int maximum)

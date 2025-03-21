@@ -70,7 +70,7 @@ public static class CodeGenerator
 		{
 			if (!xss.Any())
 			{
-				return new[] { new List<(string, object)>() };
+				return [new List<(string, object)>()];
 			}
 			var query = xss.First()
 				.SelectMany(x =>

@@ -63,7 +63,7 @@ public static class DirectoryInfoExtensions
 		UtilityExtensions.Retry(() =>
 		{
 			info.Refresh();
-
+			
 			if (!info.Exists)
 			{
 				info.Create();

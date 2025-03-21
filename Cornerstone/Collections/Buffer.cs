@@ -200,10 +200,10 @@ public abstract class Buffer<T> : IBuffer<T>
 	public abstract bool Remove(T item);
 
 	/// <inheritdoc />
-	public abstract void RemoveAt(int index);
+	public abstract void Remove(int index, int length);
 
 	/// <inheritdoc />
-	public abstract void Remove(int index, int length);
+	public abstract void RemoveAt(int index);
 
 	/// <summary>
 	/// Replace a section of the buffer.
@@ -276,6 +276,33 @@ public abstract class Buffer<T> : IBuffer<T>
 		if ((end < 0) || (end > Count))
 		{
 			throw new IndexOutOfRangeException(Babel.Tower[BabelKeys.IndexAndLengthOutOfRange]);
+		}
+	}
+
+	public void Write(int index, T[] buffer, int bufferIndex, int length)
+	{
+		if (index > Count)
+		{
+			var fill = new T[index - Count];
+			Add(fill);
+		}
+
+		var currentIndex = index;
+		var bufferOffset = 0;
+
+		while (currentIndex < Count)
+		{
+			if (bufferOffset >= length)
+			{
+				return;
+			}
+
+			this[currentIndex++] = buffer[bufferIndex + bufferOffset++];
+		}
+
+		while (bufferOffset < length)
+		{
+			Add(buffer[bufferIndex + bufferOffset++]);
 		}
 	}
 
@@ -370,6 +397,16 @@ public interface IBuffer<T> : IList<T>
 	/// Check index and length to ensure it is within bounds of the buffer.
 	/// </summary>
 	void VerifyRange(int index, int length);
+
+	/// <summary>
+	/// Writes range of values to the buffer. Any buffer that exist at the index
+	/// will be overwritten then any additional data will be appended.
+	/// </summary>
+	/// <param name="index"> The index to start at. </param>
+	/// <param name="buffer"> The buffer to write. </param>
+	/// <param name="bufferIndex"> The buffer index to start at. </param>
+	/// <param name="length"> The number of values to attempt to write. </param>
+	public void Write(int index, T[] buffer, int bufferIndex, int length);
 
 	#endregion
 }

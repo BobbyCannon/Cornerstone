@@ -39,17 +39,21 @@ public enum BabelKeys
 
 	// Services
 	DateTimeProviderLocked,
+	DependencyProviderLocked,
 
 	// Sync
-	SyncOptionsInvalid,
+	SyncClientNotSupported,
+	SyncDeviceNotFound,
+	SyncEntityIncorrectType,
 	SyncSessionAlreadyActive,
 	SyncSessionInvalid,
-	SyncClientNotSupported,
+	SyncSessionNotFound,
+	SyncSettingsInvalid,
 
 	// Clipboard
 	ClipboardCouldNotBeOpened,
 	ClipboardCouldNotBeClosed,
 	ClipboardCouldNotBeCleared,
 	ClipboardCouldNotBeRead,
-	ClipboardCouldNotSetData,
+	ClipboardCouldNotSetData
 }

@@ -2,7 +2,7 @@
 
 using System;
 using Cornerstone.Extensions;
-using Cornerstone.Windows;
+using Cornerstone.Platforms.Windows;
 using NUnit.Framework;
 
 #endregion
@@ -17,7 +17,7 @@ public class WindowsClipboardServiceTests : CornerstoneUnitTest
 	public void SetGetClearClipboard()
 	{
 		var expected = Guid.NewGuid().ToString();
-		var service = new WindowsClipboardService();
+		var service = new WindowsClipboardService(this);
 		service.SetTextAsync(expected).AwaitResults();
 		AreEqual(expected, service.GetTextAsync().Result);
 		service.ClearAsync().AwaitResults();

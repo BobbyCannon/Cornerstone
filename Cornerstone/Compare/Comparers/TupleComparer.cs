@@ -16,7 +16,7 @@ public class TupleComparer : BaseComparer
 	#region Methods
 
 	/// <inheritdoc />
-	public override bool IsSupported(object expected, object actual)
+	public override bool IsSupported(CompareSession session, object expected, object actual)
 	{
 		return (expected.IsTuple() || expected.IsValueTuple())
 			&& (actual.IsTuple() || actual.IsValueTuple());

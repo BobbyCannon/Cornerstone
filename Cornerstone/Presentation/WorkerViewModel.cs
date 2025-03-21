@@ -19,8 +19,6 @@ public abstract class WorkerViewModel : ViewModel
 
 	protected readonly IWeakEventManager WeakEventManager;
 	private readonly BackgroundWorker _worker;
-	private bool _workerStarting;
-	private bool _workerStopping;
 
 	#endregion
 
@@ -29,18 +27,18 @@ public abstract class WorkerViewModel : ViewModel
 	protected WorkerViewModel(int workerDelay, IWeakEventManager weakEventManager, IDispatcher dispatcher)
 		: base(dispatcher)
 	{
-		_workerStarting = false;
-		_workerStopping = false;
+		WorkerStatus = WorkerStatus.Stopped;
+
 		_worker = new BackgroundWorker();
 
 		//_worker.DoWork += WorkerDoWork;
 		//_worker.ProgressChanged += WorkerProgressChanged;
-		//_worker.RunWorkerCompleted += WorkerRunWorkerCompleted;
+		_worker.RunWorkerCompleted += WorkerRunWorkerCompleted;
 
 		WeakEventManager = weakEventManager;
-		WeakEventManager.Add<BackgroundWorker, DoWorkEventArgs>(_worker, nameof(_worker.DoWork), WorkerDoWork);
-		WeakEventManager.Add<BackgroundWorker, ProgressChangedEventArgs>(_worker, nameof(_worker.ProgressChanged), WorkerProgressChanged);
-		WeakEventManager.Add<BackgroundWorker, RunWorkerCompletedEventArgs>(_worker, nameof(_worker.RunWorkerCompleted), WorkerRunWorkerCompleted);
+		WeakEventManager.Add<BackgroundWorker, WorkerViewModel, DoWorkEventArgs>(_worker, nameof(_worker.DoWork), this, WorkerDoWork);
+		WeakEventManager.Add<BackgroundWorker, WorkerViewModel, ProgressChangedEventArgs>(_worker, nameof(_worker.ProgressChanged), this, WorkerProgressChanged);
+		//WeakEventManager.Add<BackgroundWorker, RunWorkerCompletedEventArgs>(_worker, nameof(_worker.RunWorkerCompleted), WorkerRunWorkerCompleted);
 		WorkerDelay = workerDelay;
 
 		_worker.WorkerReportsProgress = true;
@@ -59,9 +57,11 @@ public abstract class WorkerViewModel : ViewModel
 	/// <summary>
 	/// True if the manager is working.
 	/// </summary>
-	protected bool IsWorking => _worker.IsBusy || _workerStarting || _workerStopping;
+	protected bool IsWorking => _worker.IsBusy || (WorkerStatus != WorkerStatus.Stopped);
 
 	protected int WorkerDelay { get; set; }
+
+	protected WorkerStatus WorkerStatus { get; private set; }
 
 	#endregion
 
@@ -77,7 +77,8 @@ public abstract class WorkerViewModel : ViewModel
 			return;
 		}
 
-		_workerStarting = true;
+		WorkerStatus = WorkerStatus.Starting;
+
 		_worker.RunWorkerAsync();
 	}
 
@@ -91,7 +92,8 @@ public abstract class WorkerViewModel : ViewModel
 			return;
 		}
 
-		_workerStopping = true;
+		WorkerStatus = WorkerStatus.Stopping;
+
 		_worker.CancelAsync();
 	}
 
@@ -103,13 +105,12 @@ public abstract class WorkerViewModel : ViewModel
 
 	protected virtual void WorkerRunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
 	{
-		_workerStarting = false;
-		_workerStopping = false;
+		WorkerStatus = WorkerStatus.Stopped;
 	}
 
 	private void WorkerDoWork(object sender, DoWorkEventArgs e)
 	{
-		_workerStarting = false;
+		WorkerStatus = WorkerStatus.Started;
 
 		while (!_worker.CancellationPending)
 		{

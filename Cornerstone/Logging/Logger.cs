@@ -57,31 +57,32 @@ public sealed class Logger : EventSource
 	/// <param name="sessionId"> The ID of the session this message is for. </param>
 	/// <param name="message"> The message to be written. </param>
 	/// <param name="level"> The level of this message. </param>
+	/// <param name="currentUtcTime"> The current time in UTC. </param>
 	[NonEvent]
-	public void Write(Guid sessionId, string message, EventLevel level, DateTime utcNow)
+	public void Write(Guid sessionId, string message, EventLevel level, DateTime currentUtcTime)
 	{
 		switch (level)
 		{
 			case EventLevel.LogAlways:
 			case EventLevel.Critical:
-				Critical(sessionId, message, utcNow);
+				Critical(sessionId, message, currentUtcTime);
 				return;
 
 			case EventLevel.Error:
-				Error(sessionId, message, utcNow);
+				Error(sessionId, message, currentUtcTime);
 				return;
 
 			case EventLevel.Informational:
 			default:
-				Information(sessionId, message, utcNow);
+				Information(sessionId, message, currentUtcTime);
 				return;
 
 			case EventLevel.Verbose:
-				Verbose(sessionId, message, utcNow);
+				Verbose(sessionId, message, currentUtcTime);
 				return;
 
 			case EventLevel.Warning:
-				Warning(sessionId, message, utcNow);
+				Warning(sessionId, message, currentUtcTime);
 				return;
 		}
 	}

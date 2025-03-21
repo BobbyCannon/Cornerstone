@@ -1,14 +1,13 @@
 ﻿#region References
 
 using System;
-using Cornerstone.Sync;
 
 #endregion
 
 namespace Cornerstone.Storage;
 
-/// <inheritdoc cref="SyncEntity{T}" />
-public abstract class ClientEntity<T> : SyncEntity<T>, IClientEntity
+/// <inheritdoc cref="Entity{T}" />
+public abstract class ClientEntity<T> : Entity<T>, IClientEntity
 {
 	#region Properties
 

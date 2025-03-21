@@ -7,7 +7,7 @@
 
 	<Design.PreviewWith>
 		<Border Padding="20">
-			<StackPanel Orientation="Vertical" Spacing="20" Width="350" Height="600">
+			<StackPanel Orientation="Vertical" Spacing="20" Width="350" Height="360">
 				<Expander ExpandDirection="Up" Header="Expand Up">
 					<StackPanel>
 						<TextBlock>Expanded content</TextBlock>
@@ -53,12 +53,7 @@
 		</Border>
 	</Design.PreviewWith>
 
-	<!-- Expander ToggleButton control theme. -->
-
 	<ControlTheme x:Key="ExpanderToggleButtonTheme" TargetType="ToggleButton">
-
-		<!-- Default property setters. -->
-
 		<Setter Property="Background" Value="{DynamicResource ExpanderHeaderBackground}" />
 		<Setter Property="BorderBrush" Value="{DynamicResource ExpanderHeaderBorderBrush}" />
 		<Setter Property="BorderThickness" Value="{DynamicResource ExpanderHeaderBorderThickness}" />
@@ -68,15 +63,8 @@
 		<Setter Property="HorizontalAlignment" Value="Stretch" />
 		<Setter Property="HorizontalContentAlignment" Value="{DynamicResource ExpanderHeaderHorizontalContentAlignment}" />
 		<Setter Property="VerticalContentAlignment" Value="{DynamicResource ExpanderHeaderVerticalContentAlignment}" />
-
-		<!-- Template. -->
-
 		<Setter Property="Template">
-
 			<ControlTemplate>
-
-				<!-- Header background. -->
-
 				<Border
 						x:Name="ToggleButtonBackground"
 						CornerRadius="{TemplateBinding CornerRadius}"
@@ -91,8 +79,7 @@
 					<!-- expanding, and column 2 for right expanding to -->
 					<!-- put it on the other side of the header content. -->
 
-					<Grid
-							x:Name="ToggleButtonGrid"
+					<Grid x:Name="ToggleButtonGrid"
 							ColumnDefinitions="Auto,*,Auto">
 
 						<!-- Header content. -->
@@ -111,57 +98,56 @@
 						<!-- Header arrow. -->
 						<!-- Grid column set in style below. -->
 
-						<Border
-								x:Name="ExpandCollapseArrowBorder"
+						<Border x:Name="ArrowBorder"
+								HorizontalAlignment="Center"
 								VerticalAlignment="Center"
 								Width="{DynamicResource ExpanderArrowButtonSize}"
-								Height="{DynamicResource ExpanderArrowButtonSize}">
-
-							<Path
-									x:Name="ExpandCollapseArrow"
+								Height="{DynamicResource ExpanderArrowButtonSize}"
+								RenderTransform="rotate(0)">
+							<Border.Transitions>
+								<Transitions>
+									<TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.25" />
+								</Transitions>
+							</Border.Transitions>
+							<Path x:Name="ArrowPath"
+									Data="{StaticResource TreeViewItemCollapsedArrowPathData}"
+									Fill="{DynamicResource ExpanderHeaderForeground}"
+									Width="10"
+									Height="10"
+									Margin="0,0,-5,0"
 									HorizontalAlignment="Center"
-									VerticalAlignment="Center"
-									Stretch="None"
-									Fill="{DynamicResource ExpanderHeaderForeground}">
-
-								<Path.RenderTransform>
-									<RotateTransform />
-								</Path.RenderTransform>
-
+									VerticalAlignment="Center">
 							</Path>
-
 						</Border>
-
 					</Grid>
-
 				</Border>
-
 			</ControlTemplate>
-
 		</Setter>
 
-		<!-- Disabled state. -->
+		<Style Selector="^:unchecked /template/ Border#ArrowBorder">
+			<Setter Property="RenderTransform" Value="rotate(0deg)" />
+		</Style>
 
+		<!-- Disabled state. -->
 		<Style Selector="^:disabled">
 			<Setter Property="Background" Value="{DynamicResource ExpanderHeaderBackgroundDisabled}" />
 			<Setter Property="Foreground" Value="{DynamicResource ExpanderHeaderForegroundDisabled}" />
 		</Style>
 
-		<Style Selector="^:disabled /template/ Path#ExpandCollapseArrow">
+		<Style Selector="^:disabled /template/ Path#ArrowPath">
 			<Setter Property="Fill" Value="{DynamicResource ExpanderHeaderForegroundDisabled}" />
 		</Style>
 
 		<!-- Default arrow position and margin. -->
-
 		<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
 			<Setter Property="Grid.Column" Value="1" />
 		</Style>
 
-		<Style Selector="^ /template/ Border#ExpandCollapseArrowBorder">
+		<Style Selector="^ /template/ Border#ArrowBorder">
 			<Setter Property="Grid.Column" Value="0" />
 		</Style>
 
-		<Style Selector="^ /template/ Border#ExpandCollapseArrowBorder">
+		<Style Selector="^ /template/ Border#ArrowBorder">
 			<Setter Property="Margin" Value="{DynamicResource ExpanderArrowMargin}" />
 		</Style>
 
@@ -172,74 +158,55 @@
 			<Setter Property="Grid.Column" Value="1" />
 		</Style>
 
-		<Style Selector="^[Tag=right] /template/ Border#ExpandCollapseArrowBorder">
+		<Style Selector="^[Tag=right] /template/ Border#ArrowBorder">
 			<Setter Property="Grid.Column" Value="2" />
 		</Style>
 
-		<Style Selector="^[Tag=right] /template/ Border#ExpandCollapseArrowBorder">
+		<Style Selector="^[Tag=right] /template/ Border#ArrowBorder">
 			<Setter Property="Margin" Value="{DynamicResource ExpanderArrowMarginRight}" />
 		</Style>
 
 	</ControlTheme>
-
-	<!-- Arrow up control theme. -->
-
 	<ControlTheme
 			x:Key="ExpanderToggleButtonUpTheme"
 			TargetType="ToggleButton"
 			BasedOn="{StaticResource ExpanderToggleButtonTheme}">
-
-		<Style Selector="^ /template/ Path#ExpandCollapseArrow">
-			<Setter Property="Data" Value="M 0 7 L 5 0 L 10 7" />
+		<Style Selector="^:checked /template/ Border#ArrowBorder">
+			<Setter Property="RenderTransform" Value="rotate(-90deg)" />
 		</Style>
-
 	</ControlTheme>
-
-	<!-- Arrow down control theme. -->
-
 	<ControlTheme
 			x:Key="ExpanderToggleButtonDownTheme"
 			TargetType="ToggleButton"
 			BasedOn="{StaticResource ExpanderToggleButtonTheme}">
-
-		<Style Selector="^ /template/ Path#ExpandCollapseArrow">
-			<Setter Property="Data" Value="M 0 0 L 5 7 L 10 0" />
+		<Style Selector="^:checked /template/ Border#ArrowBorder">
+			<Setter Property="RenderTransform" Value="rotate(90deg)" />
 		</Style>
-
 	</ControlTheme>
-
-	<!-- Arrow left control theme. -->
-
 	<ControlTheme
 			x:Key="ExpanderToggleButtonLeftTheme"
 			TargetType="ToggleButton"
 			BasedOn="{StaticResource ExpanderToggleButtonTheme}">
-
-		<Style Selector="^ /template/ Path#ExpandCollapseArrow">
-			<Setter Property="Data" Value="M 7 0 L 0 5 L 7 10" />
+		<Style Selector="^:unchecked /template/ Border#ArrowBorder">
+			<Setter Property="RenderTransform" Value="rotate(-90deg)" />
 		</Style>
-
+		<Style Selector="^:checked /template/ Border#ArrowBorder">
+			<Setter Property="RenderTransform" Value="rotate(-180deg)" />
+		</Style>
 	</ControlTheme>
-
-	<!-- Arrow right control theme. -->
-
 	<ControlTheme
 			x:Key="ExpanderToggleButtonRightTheme"
 			TargetType="ToggleButton"
 			BasedOn="{StaticResource ExpanderToggleButtonTheme}">
-
-		<Style Selector="^ /template/ Path#ExpandCollapseArrow">
-			<Setter Property="Data" Value="M 0 0 L 7 5 L 0 10" />
+		<Style Selector="^:unchecked /template/ Border#ArrowBorder">
+			<Setter Property="RenderTransform" Value="rotate(-90deg)" />
 		</Style>
-
+		<Style Selector="^:checked /template/ Border#ArrowBorder">
+			<Setter Property="RenderTransform" Value="rotate(0deg)" />
+		</Style>
 	</ControlTheme>
 
-	<!-- Expander control theme. -->
-
 	<ControlTheme x:Key="{x:Type Expander}" TargetType="Expander">
-
-		<!-- Default property setters. -->
-
 		<Setter Property="IsTabStop" Value="False" />
 		<Setter Property="MinWidth" Value="{DynamicResource FlyoutThemeMinWidth}" />
 		<Setter Property="MinHeight" Value="{DynamicResource ExpanderMinHeight}" />
@@ -250,21 +217,11 @@
 		<Setter Property="HorizontalAlignment" Value="Left" />
 		<Setter Property="VerticalAlignment" Value="Center" />
 		<Setter Property="CornerRadius" Value="{DynamicResource ExpanderContentCornerRadius}" />
-
-		<!-- Template. -->
-
 		<Setter Property="Template">
-
 			<ControlTemplate>
-
-				<!-- Dock container. -->
-
 				<DockPanel
 						MinWidth="{TemplateBinding MinWidth}"
 						MaxWidth="{TemplateBinding MaxWidth}">
-
-					<!-- Header. -->
-
 					<ToggleButton
 							x:Name="ExpanderHeader"
 							MinHeight="{TemplateBinding MinHeight}"
@@ -272,9 +229,6 @@
 							Content="{TemplateBinding Header}"
 							ContentTemplate="{TemplateBinding HeaderTemplate}"
 							IsChecked="{TemplateBinding IsExpanded, Mode=TwoWay}" />
-
-					<!-- Content background. -->
-
 					<Border
 							x:Name="ExpanderContent"
 							Background="{TemplateBinding Background}"
@@ -286,9 +240,6 @@
 							HorizontalAlignment="Stretch"
 							VerticalAlignment="Stretch"
 							Padding="{TemplateBinding Padding}">
-
-						<!-- Content. -->
-
 						<ContentPresenter
 								x:Name="PART_ContentPresenter"
 								Content="{TemplateBinding Content}"
@@ -296,13 +247,9 @@
 								Foreground="{TemplateBinding Foreground}"
 								HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
 								VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
-
 					</Border>
-
 				</DockPanel>
-
 			</ControlTemplate>
-
 		</Setter>
 
 		<!-- Vertical align header when left/right mode. -->
@@ -337,19 +284,19 @@
 		<!-- not open. -->
 
 		<Style Selector="^:left /template/ ToggleButton#ExpanderHeader">
-			<Setter Property="Theme" Value="{StaticResource ExpanderToggleButtonRightTheme}" />
-		</Style>
-
-		<Style Selector="^:up /template/ ToggleButton#ExpanderHeader">
-			<Setter Property="Theme" Value="{StaticResource ExpanderToggleButtonRightTheme}" />
-		</Style>
-
-		<Style Selector="^:right /template/ ToggleButton#ExpanderHeader">
 			<Setter Property="Theme" Value="{StaticResource ExpanderToggleButtonLeftTheme}" />
 		</Style>
 
-		<Style Selector="^:down /template/ ToggleButton#ExpanderHeader">
+		<Style Selector="^:up /template/ ToggleButton#ExpanderHeader">
+			<Setter Property="Theme" Value="{StaticResource ExpanderToggleButtonUpTheme}" />
+		</Style>
+
+		<Style Selector="^:right /template/ ToggleButton#ExpanderHeader">
 			<Setter Property="Theme" Value="{StaticResource ExpanderToggleButtonRightTheme}" />
+		</Style>
+
+		<Style Selector="^:down /template/ ToggleButton#ExpanderHeader">
+			<Setter Property="Theme" Value="{StaticResource ExpanderToggleButtonDownTheme}" />
 		</Style>
 
 		<!-- Set header theme based on expand direction when -->
@@ -424,7 +371,5 @@
 		<Style Selector="^:expanded:right /template/ Border#ExpanderContent">
 			<Setter Property="CornerRadius" Value="{DynamicResource ExpanderRightCornerRadius}" />
 		</Style>
-
 	</ControlTheme>
-
 </ResourceDictionary>

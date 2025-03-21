@@ -27,7 +27,7 @@ using Cornerstone.Storage;
 using Cornerstone.Sync;
 using Cornerstone.Text;
 #if WINDOWS
-using Cornerstone.Windows;
+using Cornerstone.Platforms.Windows;
 #endif
 
 #endregion
@@ -37,13 +37,15 @@ namespace Cornerstone.Testing;
 /// <summary>
 /// The base test for the Cornerstone framework.
 /// </summary>
-public abstract partial class CornerstoneTest : IDateTimeProvider
+public abstract partial class CornerstoneTest : DependencyProvider, IDateTimeProvider
 {
 	#region Fields
 
 	private static IClipboardService _clipboard;
 	private DateTime? _currentDateTime;
-	private readonly IDateTimeProvider _dateTimeProvider;
+	private readonly IDateTimeProvider _defaultDateTimeProvider;
+	private IDateTimeProvider _overriddenDateTimeProvider;
+	private UpdateableAction[] _updateableActions;
 
 	#endregion
 
@@ -52,15 +54,15 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// <summary>
 	/// Initialize the Cornerstone test.
 	/// </summary>
-	protected CornerstoneTest()
+	protected CornerstoneTest() : base("Unit Test")
 	{
-		_dateTimeProvider = new DateTimeProvider(
+		_defaultDateTimeProvider = new DateTimeProvider(
 			Guid.Parse("9C20125A-8E7A-428C-BA1C-9BDB72B7A543"),
-			() => _currentDateTime ?? DateTime.UtcNow
+			() => _overriddenDateTimeProvider?.UtcNow ?? _currentDateTime ?? DateTime.UtcNow
 		);
 		_currentDateTime = StartDateTime;
 
-		Dependencies = new DependencyProvider("Unit Test");
+		RuntimeInformation = RuntimeInformationData.GetSample();
 		EnableFileUpdates = false;
 		RunTestAgainstDatabase = false;
 	}
@@ -78,10 +80,6 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 							EXEC sp_MSForEachTable 'IF OBJECTPROPERTY(object_id(''?''), ''TableHasIdentity'') = 1 DBCC CHECKIDENT (''?'', RESEED, 0)'
 							""";
 
-		#if (WINDOWS)
-		SetClipboardService(new WindowsClipboardService());
-		#endif
-
 		TempDirectory = Path.Combine(Path.GetTempPath(), "Cornerstone.UnitTests");
 	}
 
@@ -91,8 +89,6 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 
 	public static string ClearDatabaseQuery { get; protected set; }
 
-	public DependencyProvider Dependencies { get; }
-
 	public bool EnableFileUpdates { get; protected set; }
 
 	/// <summary>
@@ -101,7 +97,7 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	public static bool IsDebugging => Debugger.IsAttached;
 
 	/// <inheritdoc />
-	public DateTime Now => _dateTimeProvider.Now;
+	public DateTime Now => _defaultDateTimeProvider.Now;
 
 	public bool RunTestAgainstDatabase { get; protected set; }
 
@@ -115,17 +111,17 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	public static string TempDirectory { get; protected set; }
 
 	/// <inheritdoc />
-	public DateTime UtcNow => _dateTimeProvider.UtcNow;
+	public DateTime UtcNow => _defaultDateTimeProvider.UtcNow;
 
 	/// <summary>
 	/// The timeout to use when waiting for a test state to be hit.
 	/// </summary>
-	public static TimeSpan WaitTimeout => TimeSpan.FromMilliseconds(IsDebugging ? 1000000 : 5000);
+	public static TimeSpan WaitTimeout => TimeSpan.FromMilliseconds(IsDebugging ? 1000000 : 1000);
 
 	/// <summary>
 	/// Represents test runtime information.
 	/// </summary>
-	private IRuntimeInformation RuntimeInformation { get; set; }
+	private IRuntimeInformation RuntimeInformation { get; }
 
 	#endregion
 
@@ -140,7 +136,7 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// <param name="exclusions"> The settings for the compare session. </param>
 	public void AreEqual(object expected, object actual, Func<string> message, params string[] exclusions)
 	{
-		var settings = new ComparerSettings { GlobalIncludeExcludeSettings = IncludeExcludeSettings.FromExclusions(exclusions) };
+		var settings = new ComparerSettings { GlobalIncludeExcludeSettings = exclusions.ToOnlyExcludingSettings() };
 		AreEqual(expected, actual, message, settings);
 	}
 
@@ -168,6 +164,25 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	public void AreEqual(object expected, object actual, string message = null, ComparerSettings? settings = null, Action<CompareSession<object, object>> configure = null)
 	{
 		AreEqual(expected, actual, () => message, settings, configure);
+	}
+
+	/// <summary>
+	/// Validates that the actual is equal to the expected. If they are not equal a <see cref="CompareException" /> is thrown.
+	/// </summary>
+	/// <param name="expected"> The value that is expected. </param>
+	/// <param name="actual"> The value to compare with expected. </param>
+	/// <param name="message"> An optional prefix to include with the assert message. </param>
+	/// <param name="includeExcludeSettings"> An optional set of included or excluded properties. </param>
+	public void AreEqual<T, T2>(T expected, T2 actual, Func<string> message, IncludeExcludeSettings includeExcludeSettings)
+	{
+		var settings = new ComparerSettings
+		{
+			TypeIncludeExcludeSettings =
+			{
+				{ typeof(T), includeExcludeSettings }
+			}
+		};
+		AreEqual(expected, actual, message, settings);
 	}
 
 	/// <summary>
@@ -301,9 +316,7 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// Fail the test with a <see cref="CornerstoneException" />.
 	/// </summary>
 	/// <param name="message"> The message to fail with. </param>
-	#if (NET6_0_OR_GREATER)
 	[DoesNotReturn]
-	#endif
 	public static void Fail(string message)
 	{
 		throw new CornerstoneException(message);
@@ -312,7 +325,13 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// <inheritdoc />
 	public Guid GetProviderId()
 	{
-		return _dateTimeProvider.GetProviderId();
+		return _defaultDateTimeProvider.GetProviderId();
+	}
+
+	public UpdateableAction[] GetUpdateableActions()
+	{
+		_updateableActions ??= EnumExtensions.GetEnumValues(UpdateableAction.None, UpdateableAction.All, UpdateableAction.SyncAll).ToArray();
+		return _updateableActions;
 	}
 
 	/// <summary>
@@ -344,7 +363,7 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// <param name="ticks"> The ticks to increment by. </param>
 	public DateTime IncrementTime(int years = 0, int months = 0, int days = 0, int hours = 0, int minutes = 0, int seconds = 0, int milliseconds = 0, int microseconds = 0, long ticks = 0)
 	{
-		var currentTime = _dateTimeProvider.UtcNow;
+		var currentTime = _defaultDateTimeProvider.UtcNow;
 
 		if (years != 0)
 		{
@@ -400,17 +419,10 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// Increment the current time. This only works if current time is set. Negative values will subtract time.
 	/// </summary>
 	/// <param name="value"> The value to increment by. </param>
-	public void IncrementTime(TimeSpan value)
+	public DateTime IncrementTime(TimeSpan value)
 	{
-		var provider = _dateTimeProvider;
-		if (provider == null)
-		{
-			return;
-		}
-
-		var currentTime = provider.UtcNow;
-
-		SetTime(currentTime + value);
+		var currentTime = UtcNow;
+		return SetTime(currentTime + value);
 	}
 
 	/// <summary>
@@ -418,11 +430,7 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// </summary>
 	/// <param name="condition"> The condition the test expects to be false. </param>
 	/// <param name="message"> The message is shown in test results. </param>
-	#if (NET6_0_OR_GREATER)
 	public void IsFalse([DoesNotReturnIf(true)] bool condition, string message = null)
-	#else
-	public void IsFalse(bool condition, string message = null)
-		#endif
 	{
 		if (condition)
 		{
@@ -435,11 +443,7 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// </summary>
 	/// <param name="condition"> The condition the test expects to be not null. </param>
 	/// <param name="message"> The message is shown in test results. </param>
-	#if (NET6_0_OR_GREATER)
 	public void IsNotNull([NotNull] object condition, string message = null)
-	#else
-	public void IsNotNull(object condition, string message = null)
-		#endif
 	{
 		if (condition == null)
 		{
@@ -475,11 +479,7 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// </summary>
 	/// <param name="condition"> The condition the test expects to be true. </param>
 	/// <param name="message"> The message is shown in test results. </param>
-	#if (NET6_0_OR_GREATER)
 	public void IsTrue([DoesNotReturnIf(false)] bool condition, string message = null)
-	#else
-	public void IsTrue(bool condition, string message = null)
-		#endif
 	{
 		if (!condition)
 		{
@@ -519,9 +519,28 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// Sets the clipboard provider.
 	/// </summary>
 	/// <param name="clipboard"> The provider to be set. </param>
-	public static void SetClipboardService(IClipboardService clipboard)
+	public void SetClipboardService(IClipboardService clipboard)
 	{
 		_clipboard = clipboard;
+	}
+
+	/// <summary>
+	/// Set the CurrentTime value.
+	/// </summary>
+	/// <param name="provider"> The provider for time. </param>
+	public DateTime SetTime(Func<DateTime> provider)
+	{
+		return SetTime(new DateTimeProvider(provider));
+	}
+
+	/// <summary>
+	/// Set the CurrentTime value.
+	/// </summary>
+	/// <param name="provider"> The provider for time. </param>
+	public DateTime SetTime(DateTimeProvider provider)
+	{
+		_overriddenDateTimeProvider = provider;
+		return UtcNow;
 	}
 
 	/// <summary>
@@ -530,6 +549,7 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// <param name="value"> The new time to set. </param>
 	public DateTime SetTime(DateTime value)
 	{
+		_overriddenDateTimeProvider = null;
 		_currentDateTime = value.ToUtcDateTime();
 		return UtcNow;
 	}
@@ -539,6 +559,7 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// </summary>
 	public virtual void TestCleanup()
 	{
+		TryToDispose(_clipboard);
 	}
 
 	/// <summary>
@@ -546,6 +567,10 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// </summary>
 	public virtual void TestInitialize()
 	{
+		#if (WINDOWS)
+		SetClipboardService(new WindowsClipboardService(this));
+		#endif
+
 		SetupDependencyInjection();
 		ResetCurrentTime(StartDateTime);
 		Babel.Tower.Reset();
@@ -579,9 +604,7 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// Throw a <see cref="CornerstoneTest" /> exception.
 	/// </summary>
 	/// <param name="message"> The error message. </param>
-	#if (NET6_0_OR_GREATER)
 	[DoesNotReturn]
-	#endif
 	public void Throw(string message)
 	{
 		throw new CornerstoneException(message);
@@ -609,7 +632,7 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// <returns> The type updated with default values. </returns>
 	public T UpdateWithDefaultValues<T>(T model, params string[] exclusions)
 	{
-		return UpdateWithDefaultValues(model, IncludeExcludeSettings.FromExclusions(exclusions));
+		return UpdateWithDefaultValues(model, exclusions.ToOnlyExcludingSettings());
 	}
 
 	/// <summary>
@@ -656,7 +679,7 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// <returns> The type updated with non default values. </returns>
 	public T UpdateWithNonDefaultValues<T>(T model, params string[] exclusions)
 	{
-		return UpdateWithNonDefaultValues(model, IncludeExcludeSettings.FromExclusions(exclusions));
+		return UpdateWithNonDefaultValues(model, exclusions.ToOnlyExcludingSettings());
 	}
 
 	/// <summary>
@@ -682,7 +705,7 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	{
 		var entity = new T();
 		var actual = EnumExtensions
-			.GetEnumValues<UpdateableAction>()
+			.GetFlagValues<UpdateableAction>()
 			.ToDictionary(x => x, x => entity.GetDefaultIncludedProperties(x).ToArray());
 
 		var missingActions = actual
@@ -721,13 +744,6 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 		#else
 		return true;
 		#endif
-	}
-
-	/// <summary>
-	/// Configure the dependencies for the tests.
-	/// </summary>
-	protected virtual void ConfigureDependencies()
-	{
 	}
 
 	protected virtual object CreateCustomTypeFactory(Type type, object[] args)
@@ -794,7 +810,7 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 
 		if (!converter.TryConvertTo(from, fromType, toType, out var to, settings))
 		{
-			throw new NotSupportedException("The converter does not support this type.");
+			throw new NotSupportedException($"The converter does not support this type.\r\n{fromType.FullName} > {toType.FullName}");
 		}
 
 		return (
@@ -956,44 +972,72 @@ public abstract partial class CornerstoneTest : IDateTimeProvider
 	/// <summary>
 	/// Generate the UpdateWith.
 	/// </summary>
-	protected static TextBuilder GenerateUpdateWith(Type type)
+	protected static TextBuilder GenerateSyncConverters(Type type)
 	{
-		var builder = new TextBuilder();
-		var isLastClass = IsDirectInheritingCornerstoneType(type);
-		var isGeneric = IsCornerstoneGeneric(type);
-		var properties = type
-			.GetCachedProperties(
-				isLastClass
-					? BindingFlags.Instance | BindingFlags.Public | BindingFlags.Instance
-					: BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance
+		var typeNamespace = type.Namespace;
+		var entities = type.Assembly
+			.GetTypes()
+			.Where(x =>
+				(x.Namespace == typeNamespace)
+				&& x.ImplementsType<ISyncEntity>()
+				&& !x.IsAbstract
+				&& !x.IsInterface
 			)
-			.Where(x => x.GetCustomAttribute<ComputedPropertyAttribute>() == null)
-			.OrderBy(x => x.Name)
 			.ToList();
 
-		builder.AppendLine($@"/// <summary>
-/// Update the {type.Name.Replace("`1", "").Replace("`2", "")} with an update.
-/// </summary>
-/// <param name=""update""> The update to be applied. </param>
-/// <param name=""settings""> The settings for controlling the updating of the entity. </param>
-public {(isGeneric ? "override" : "virtual")} bool UpdateWith({type.GetCodeTypeName()} update, IncludeExcludeSettings settings)
-{{");
-		builder.PushIndent();
-		var startComment = string.Format(CSharpCodeWriter.SlashSectionFormat, "UpdateWith");
-		var endComment = string.Format(CSharpCodeWriter.SlashSectionFormat, "/UpdateWith");
-		GenerateUpdateWith(builder, properties, startComment, endComment);
-		builder.AppendLine();
-		builder.AppendLine();
-		builder.AppendLine(isLastClass ? "return true;" : "return base.UpdateWith(update, settings);");
-		builder.PopIndent();
-		builder.AppendLine("}");
-		builder.AppendLine();
+		var incoming = new TextBuilder();
+		var outgoing = new TextBuilder();
+		var syncOrder = new TextBuilder();
+
+		foreach (var entity in entities)
+		{
+			var entityGenerics = entity.BaseType?.GetGenericArguments();
+			var syncModel = entityGenerics?.Length > 2
+				? entityGenerics[2].Name
+				: entity.Name.Replace("Entity", "");
+
+			incoming.AppendLine($"new SyncObjectIncomingConverter<{syncModel}, {entity.Name}>(),");
+			outgoing.AppendLine($"new SyncObjectOutgoingConverter<{entity.Name}, {syncModel}>(),");
+			syncOrder.AppendLine($"typeof({entity.Name}),");
+		}
+
+		incoming.AppendLine();
+		incoming.AppendLine();
+		incoming.Append(outgoing.ToString());
+
+		incoming.AppendLine();
+		incoming.AppendLine();
+		incoming.Append(syncOrder.ToString());
+
+		return incoming;
+	}
+
+	/// <summary>
+	/// Generate the UpdateWith.
+	/// </summary>
+	protected static TextBuilder GenerateUpdateWith(Type destinationType, params Type[] sourceTypes)
+	{
+		var builder = new TextBuilder();
+		var switchBuilder = new TextBuilder();
+
+		foreach (var sourceType in sourceTypes)
+		{
+			GenerateMethod(builder, destinationType, sourceType);
+
+			switchBuilder.AppendLine($"{destinationType.GetCodeTypeName()} value => UpdateWith(value, settings),");
+		}
+
+		if (builder.Length <= 0)
+		{
+			return builder;
+		}
+
 		builder.AppendLine($@"/// <inheritdoc />
 public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 {{
 	return update switch
 	{{
-		{type.GetCodeTypeName()} value => UpdateWith(value, settings),
+		{switchBuilder.Trim()}
 		_ => base.UpdateWith(update, settings)
 	}};
 }}");
@@ -1229,11 +1273,6 @@ public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 		throw new($"{fromTypeName} -> {toTypeName} missing");
 	}
 
-	protected T GetInstance<T>()
-	{
-		return Dependencies.GetInstance<T>();
-	}
-
 	/// <summary>
 	/// Create a new instance of the type then update the object with non default values.
 	/// </summary>
@@ -1242,7 +1281,7 @@ public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	/// <returns> The instance of the type with non default values. </returns>
 	protected object GetModelWithDefaultValues(Type type, params string[] exclusions)
 	{
-		return GetModelWithDefaultValues(type, IncludeExcludeSettings.FromExclusions(exclusions));
+		return GetModelWithDefaultValues(type, exclusions.ToOnlyExcludingSettings());
 	}
 
 	/// <summary>
@@ -1266,7 +1305,7 @@ public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	/// <returns> The instance of the type with non default values. </returns>
 	protected object GetModelWithNonDefaultValues(Type type, params string[] exclusions)
 	{
-		return GetModelWithDefaultValues(type, IncludeExcludeSettings.FromExclusions(exclusions));
+		return GetModelWithDefaultValues(type, exclusions.ToOnlyExcludingSettings());
 	}
 
 	/// <summary>
@@ -1286,25 +1325,35 @@ public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	/// Will try to find file based on type full path.
 	/// </summary>
 	/// <param name="shouldProcess"> Must be true to update file. </param>
-	/// <param name="type"> The type to try and process. </param>
-	/// <param name="settings"> The settings. </param>
+	/// <param name="destination"> The type to try and process. </param>
+	/// <param name="source"> The source to update. </param>
 	/// <param name="solutionPath"> The solution path. </param>
-	protected void RefreshCodeGeneratedUpdateWith(bool shouldProcess, Type type,
-		IncludeExcludeSettings settings, string solutionPath)
+	protected void RefreshCodeGeneratedUpdateWith(bool shouldProcess, Type destination, Type source, string solutionPath)
 	{
 		if (!shouldProcess)
 		{
 			return;
 		}
 
-		var filePath = CalculateTypeFilePath(solutionPath, type.FullName, ".cs");
+		var filePath = CalculateTypeFilePath(solutionPath, destination.FullName, ".cs");
 		if (!File.Exists(filePath))
 		{
 			return;
 		}
 
-		var startComment = string.Format(CSharpCodeWriter.SlashSectionFormat, "UpdateWith");
-		var endComment = string.Format(CSharpCodeWriter.SlashSectionFormat, "/UpdateWith");
+		var startComment = string.Format(CSharpCodeWriter.SlashSectionFormat, $"UpdateWith - {source.Name}");
+		var endComment = string.Format(CSharpCodeWriter.SlashSectionFormat, $"/UpdateWith - {source.Name}");
+
+		if (TryGetPropertiesToUpdate(destination, source, out var properties, out var isOverload))
+		{
+			return;
+		}
+
+		var builder = new TextBuilder();
+		builder.PushIndent();
+		builder.PushIndent();
+		GenerateUpdateWith(builder, properties, startComment, endComment);
+		var newContent = builder.ToString();
 
 		var content = new TextBuilder(File.ReadAllText(filePath));
 		var startIndex = content.IndexOf(startComment);
@@ -1312,27 +1361,13 @@ public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 
 		if ((startIndex == -1) || (endIndex == -1))
 		{
+			//Debugger.Break();
 			return;
 		}
 
 		endIndex += endComment.Length;
 
-		var isLastClass = IsDirectInheritingCornerstoneType(type);
-		var properties = type
-			.GetCachedProperties(
-				isLastClass
-					? BindingFlags.Instance | BindingFlags.Public | BindingFlags.Instance
-					: BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance
-			)
-			.Where(x => x.GetCustomAttribute<ComputedPropertyAttribute>() == null)
-			.OrderBy(x => x.Name)
-			.ToList();
-
-		var builder = new TextBuilder();
-		builder.PushIndent();
-		builder.PushIndent();
-		GenerateUpdateWith(builder, properties, startComment, endComment);
-		content.Replace(startIndex, endIndex - startIndex, builder.ToString());
+		content.Replace(startIndex, endIndex - startIndex, newContent);
 
 		File.WriteAllText(filePath, content.ToString(), Encoding.Default);
 	}
@@ -1342,10 +1377,132 @@ public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	/// </summary>
 	protected virtual void SetupDependencyInjection()
 	{
-		Dependencies.SetupCornerstoneServices(
-			_dateTimeProvider,
+		SetupCornerstoneServices(
+			_defaultDateTimeProvider,
 			RuntimeInformation
 		);
+	}
+
+	protected void UpdateableShouldUpdateAll(bool updateCodeGeneratedFiles, Type updateableType, Assembly[] assemblies,
+		List<Type> exclusions, ComparerSettings settings, Func<Type, bool> additionalTypeFilter = null)
+	{
+		var types = assemblies
+			.SelectMany(s => s.GetTypes())
+			.Where(t => !exclusions.Contains(t))
+			.Where(t => (t != null) && updateableType.IsAssignableFrom(t))
+			// Uncommit to test a single type
+			.Where(additionalTypeFilter ?? (_ => true))
+			.Where(x =>
+			{
+				if (x.IsAbstract || x.IsInterface || x.ContainsGenericParameters)
+				{
+					return false;
+				}
+
+				if (x.GetConstructors().All(t => t.GetParameters().Any()))
+				{
+					// Ignore if the type does not have an empty constructor
+					return false;
+				}
+
+				return x.GetCachedMethods()
+					.Any(m => m.Name == nameof(IUpdateable.UpdateWith));
+			})
+			.ToArray();
+
+		var updateableSourceTypes = types
+			.ToDictionary(
+				x => x,
+				x => x
+					.GetInterfaces()
+					.Where(m =>
+						m.IsDirectDescendantOf(typeof(IUpdateable))
+						&& (m.GenericTypeArguments.Length > 0)
+					)
+					.Select(t => t.GenericTypeArguments[0])
+					.Distinct()
+					.ToList()
+			)
+			.Where(x => x.Value.Count > 0)
+			.ToDictionary(x => x.Key, x => x.Value);
+
+		foreach (var destinationType in types)
+		{
+			destinationType.FullName.Dump();
+
+			var includeExcludeSettings = settings
+				.TypeIncludeExcludeSettings
+				.TryGetValue(destinationType, out var foundExclusions)
+				? foundExclusions
+				: IncludeExcludeSettings.Empty;
+
+			foreach (var typeKey in settings.TypeIncludeExcludeSettings.Keys)
+			{
+				if (!destinationType.ImplementsType(typeKey))
+				{
+					continue;
+				}
+
+				includeExcludeSettings = includeExcludeSettings
+					.WithMoreSettings(settings.TypeIncludeExcludeSettings[typeKey]);
+			}
+
+			var typesToTest = new HashSet<Type>([destinationType]);
+			if (updateableSourceTypes.TryGetValue(destinationType, out var additional))
+			{
+				typesToTest.Add(additional);
+			}
+
+			foreach (var sourceType in typesToTest)
+			{
+				if (sourceType != destinationType)
+				{
+					$"\t> {sourceType.FullName}".Dump();
+				}
+
+				RefreshCodeGeneratedUpdateWith(updateCodeGeneratedFiles,
+					destinationType, sourceType, SolutionDirectory
+				);
+
+				var destinationWithDefaults = GetModelWithDefaultValues(destinationType, includeExcludeSettings);
+				if (destinationWithDefaults is IRequiresDateTimeProvider requiresWithDefaults)
+				{
+					requiresWithDefaults.UpdateDateTimeProvider(this);
+				}
+
+				var destinationWithNonDefaults = GetModelWithNonDefaultValues(destinationType, includeExcludeSettings);
+				if (destinationWithNonDefaults is IRequiresDateTimeProvider requiresNonDefault)
+				{
+					requiresNonDefault.UpdateDateTimeProvider(this);
+				}
+
+				ValidateUnwrap(destinationWithNonDefaults, settings);
+				ValidateAllValuesAreNotDefault(destinationWithNonDefaults, includeExcludeSettings);
+
+				ValidateUpdateWith(destinationType, destinationType, destinationWithDefaults, settings);
+				ValidateUpdateWith(destinationType, destinationType, destinationWithNonDefaults, settings);
+
+				if (sourceType == destinationType)
+				{
+					continue;
+				}
+
+				var sourceWithDefaults = GetModelWithDefaultValues(sourceType, includeExcludeSettings);
+				if (sourceWithDefaults is IRequiresDateTimeProvider requiresWithDefaults2)
+				{
+					requiresWithDefaults2.UpdateDateTimeProvider(this);
+				}
+
+				var sourceWithNonDefaults = GetModelWithNonDefaultValues(sourceType, includeExcludeSettings);
+				if (sourceWithNonDefaults is IRequiresDateTimeProvider requiresNonDefault2)
+				{
+					requiresNonDefault2.UpdateDateTimeProvider(this);
+				}
+
+				ValidateUpdateWith(destinationType, sourceType, sourceWithDefaults, settings);
+				ValidateUpdateWith(destinationType, sourceType, sourceWithNonDefaults, settings);
+			}
+		}
 	}
 
 	/// <summary>
@@ -1359,70 +1516,7 @@ public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		var startToken = "// <Scenarios>\r\n";
 		var endToken = "// </Scenarios>";
-		UpdateFileIfNecessary(startToken, endToken, filePath, code.ToString(), indent);
-	}
-
-	/// <summary>
-	/// </summary>
-	/// <param name="startToken"> </param>
-	/// <param name="endToken"> </param>
-	/// <param name="filePath"> </param>
-	/// <param name="code"> </param>
-	/// <param name="indent"> </param>
-	/// <exception cref="InvalidDataException"> </exception>
-	/// <exception cref="Exception"> </exception>
-	protected void UpdateFileIfNecessary(string startToken, string endToken, string filePath, string code, string indent = "\t\t\t")
-	{
-		if (!File.Exists(filePath))
-		{
-			throw new InvalidDataException("File path is incorrect...");
-		}
-
-		var fileData = File.ReadAllText(filePath);
-		var startIndex = fileData.IndexOf(startToken);
-		if (startIndex == -1)
-		{
-			throw new InvalidDataException("Failed to find start token...");
-		}
-
-		startIndex += startToken.Length;
-		var endIndex = fileData.IndexOf(endToken, startIndex);
-		if ((endIndex == -1) || (endIndex <= startIndex))
-		{
-			throw new InvalidDataException("Failed to find end token...");
-		}
-
-		var currentScenarios = fileData.Substring(startIndex, endIndex - startIndex);
-
-		// Remove any white spaces
-		var newScenarios = code.Trim();
-
-		// Remove last ',' comma.
-		if (code.EndsWith(","))
-		{
-			newScenarios = newScenarios.Substring(0, newScenarios.Length - 1);
-		}
-
-		// Add indentation to new scenarios
-		newScenarios = string.Join(Environment.NewLine,
-			newScenarios
-				.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries)
-				.Select(x => $"{indent}{x}")
-		);
-		newScenarios += Environment.NewLine + indent;
-
-		if (string.Equals(currentScenarios, newScenarios))
-		{
-			// nothing needs to change
-			return;
-		}
-
-		// Remove old tests
-		fileData = fileData.Remove(startIndex, endIndex - startIndex);
-		fileData = fileData.Insert(startIndex, newScenarios);
-
-		// Save the file
-		File.WriteAllText(filePath, fileData);
+		FileModifier.UpdateFileIfNecessary(startToken, endToken, filePath, code.ToString(), indent);
 	}
 
 	/// <summary>
@@ -1523,51 +1617,78 @@ public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 	{
 		var type = model.GetType();
 		var actual = model.Unwrap();
+
+		if (actual is IRequiresDateTimeProvider requires)
+		{
+			requires.UpdateDateTimeProvider(this);
+		}
+
 		var unwrapSettings = Cache.GetSettings(type, UpdateableAction.UnwrapProxyEntity);
-		settings.TypeIncludeExcludeSettings.AddOrUpdate(type, unwrapSettings);
+		var comparerSettings = settings.ShallowClone();
+		comparerSettings.TypeIncludeExcludeSettings.AddOrUpdate(type, unwrapSettings);
 
 		AreEqual(model, actual,
 			() =>
 			{
-				var builder = GenerateUpdateWith(actual.GetType());
+				var actualType = actual.GetType();
+				var builder = GenerateUpdateWith(actualType, actualType);
 				CopyToClipboard(builder);
 				builder.Dump();
 				return model.GetType().FullName;
 			},
-			settings
+			comparerSettings
 		);
 	}
 
 	/// <summary>
 	/// Validate a model's UpdateWith using the "IUpdateable" interface.
 	/// </summary>
-	/// <param name="update"> The model to test. </param>
-	/// <param name="settings"> The include exclude settings. </param>
+	/// <param name="destinationType"> The type of the destination. </param>
+	/// <param name="sourceType"> The type of the source. </param>
+	/// <param name="source"> The source update to apply to the destination. </param>
 	/// <param name="comparerSettings"> The setting for comparing. </param>
-	protected void ValidateUpdateWith(object update, IncludeExcludeSettings settings, ComparerSettings comparerSettings)
+	protected void ValidateUpdateWith(Type destinationType, Type sourceType, object source, ComparerSettings comparerSettings)
 	{
-		var updateType = update.GetType();
-		var actual = (IUpdateable) updateType.CreateInstance();
+		var actions = GetUpdateableActions();
 
-		IsNotNull(actual);
-
-		try
+		foreach (var action in actions)
 		{
-			actual.UpdateWith(update, settings);
-		}
-		catch
-		{
-			CopyToClipboard(GenerateUpdateWith(updateType)).Dump();
-			throw;
-		}
+			var destinationInstance = destinationType.CreateInstance();
 
-		AreEqual(update, actual, () =>
+			IsNotNull(destinationInstance);
+
+			if (destinationInstance is IRequiresDateTimeProvider requires)
 			{
-				CopyToClipboard(GenerateUpdateWith(updateType)).Dump();
-				return updateType.FullName;
-			},
-			comparerSettings
-		);
+				requires.UpdateDateTimeProvider(this);
+			}
+
+			var destination = (IUpdateable) destinationInstance;
+			var settings = Cache.GetSettings(destinationType, action);
+			destination.UpdateWith(source, settings);
+
+			var areEqualSettings = comparerSettings.ShallowClone();
+
+			if ((settings.ExcludedProperties.Count > 0)
+				&& (settings.IncludedProperties.Count <= 0))
+			{
+				// todo: what could we check?
+				// Everything is excluded and nothing is included, aka nothing to check
+				return;
+			}
+			
+			areEqualSettings.TypeIncludeExcludeSettings.AddOrUpdate(destinationType, () => settings, x => x.WithMoreSettings(settings));
+
+			AreEqual(destination, source,
+				() =>
+				{
+					$"\t > {action}".Dump();
+
+					CopyToClipboard(GenerateUpdateWith(destinationType, sourceType)).Dump();
+					return destinationType.FullName;
+				},
+				areEqualSettings
+			);
+		}
 	}
 
 	private static object BestValueForTestingAsDate(Type fromType, Type toType, ref decimal nextDecimal)
@@ -1596,6 +1717,32 @@ public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 		return d.Values.ToList()[o].Value;
 	}
 
+	private static void GenerateMethod(TextBuilder builder, Type destinationType, Type sourceType)
+	{
+		if (TryGetPropertiesToUpdate(destinationType, sourceType, out var properties, out var isOverload))
+		{
+			return;
+		}
+
+		builder.AppendLine($@"/// <summary>
+/// Update the {destinationType.Name.Replace("`1", "").Replace("`2", "")} with an update.
+/// </summary>
+/// <param name=""update""> The update to be applied. </param>
+/// <param name=""settings""> The settings for controlling the updating of the entity. </param>
+public {(isOverload ? "override" : "virtual")} bool UpdateWith({sourceType.GetCodeTypeName()} update, IncludeExcludeSettings settings)
+{{");
+		builder.PushIndent();
+		var startComment = string.Format(CSharpCodeWriter.SlashSectionFormat, $"UpdateWith - {sourceType.Name}");
+		var endComment = string.Format(CSharpCodeWriter.SlashSectionFormat, $"/UpdateWith - {sourceType.Name}");
+		GenerateUpdateWith(builder, properties, startComment, endComment);
+		builder.AppendLine();
+		builder.AppendLine();
+		builder.AppendLine(isOverload ? "return true;" : "return base.UpdateWith(update, settings);");
+		builder.PopIndent();
+		builder.AppendLine("}");
+		builder.AppendLine();
+	}
+
 	private static void GenerateUpdateWith(TextBuilder builder, List<PropertyInfo> properties,
 		string startComment, string endComment)
 	{
@@ -1619,18 +1766,6 @@ public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 		builder.Append(endComment);
 	}
 
-	private static bool IsCornerstoneGeneric(Type type)
-	{
-		return type.IsDirectDescendantOf(typeof(Bindable<>))
-			|| type.IsDirectDescendantOf(typeof(Notifiable<>))
-			|| type.IsDirectDescendantOf(typeof(SyncEntity<>))
-			|| type.IsDirectDescendantOf(typeof(SyncEntity<>))
-			|| type.IsDirectDescendantOf(typeof(CreatedEntity<>))
-			|| type.IsDirectDescendantOf(typeof(ModifiableEntity<>))
-			|| type.IsDirectDescendantOf(typeof(Entity<>))
-			|| type.IsDirectDescendantOf(typeof(SettingsFile<>));
-	}
-
 	private static bool IsDirectInheritingCornerstoneType(Type type)
 	{
 		return type.IsDirectDescendantOf(typeof(Bindable))
@@ -1638,11 +1773,57 @@ public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 			|| type.IsDirectDescendantOf(typeof(Notifiable))
 			|| type.IsDirectDescendantOf(typeof(Notifiable<>))
 			|| type.IsDirectDescendantOf(typeof(SyncEntity<>))
-			|| type.IsDirectDescendantOf(typeof(SyncEntity<>))
+			|| type.IsDirectDescendantOf(typeof(SyncEntity<,>))
+			|| type.IsDirectDescendantOf(typeof(ClientSyncEntity<>))
+			|| type.IsDirectDescendantOf(typeof(ClientSyncEntity<,>))
 			|| type.IsDirectDescendantOf(typeof(CreatedEntity<>))
 			|| type.IsDirectDescendantOf(typeof(ModifiableEntity<>))
+			|| type.IsDirectDescendantOf(typeof(Entity))
 			|| type.IsDirectDescendantOf(typeof(Entity<>))
 			|| type.IsDirectDescendantOf(typeof(SettingsFile<>));
+	}
+
+	private static bool TryGetPropertiesToUpdate(Type destination, Type source, out List<PropertyInfo> properties, out bool isOverload)
+	{
+		isOverload = IsDirectInheritingCornerstoneType(destination);
+
+		var isLastClass = isOverload || (destination != source);
+		var destinationProperties = destination
+			.GetCachedProperties(
+				isLastClass
+					? BindingFlags.Instance | BindingFlags.Public | BindingFlags.Instance
+					: BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance
+			)
+			.Where(x => x.GetCustomAttribute<ComputedPropertyAttribute>() == null)
+			.OrderBy(x => x.Name)
+			.ToList();
+
+		isLastClass = IsDirectInheritingCornerstoneType(source) || (destination != source);
+		var sourceProperties = source
+			.GetCachedProperties(
+				isLastClass
+					? BindingFlags.Instance | BindingFlags.Public | BindingFlags.Instance
+					: BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance
+			)
+			.Where(x => x.GetCustomAttribute<ComputedPropertyAttribute>() == null)
+			.OrderBy(x => x.Name)
+			.ToList();
+
+		properties = destinationProperties
+			.Where(x => sourceProperties.Any(s => s.Name == x.Name)
+				&& (x.CanWrite || x.PropertyType.ImplementsType<IUpdateable>())
+			)
+			.ToList();
+
+		return properties.Count == 0;
+	}
+
+	private void TryToDispose<T>(T value)
+	{
+		if (value is IDisposable disposable)
+		{
+			disposable.Dispose();
+		}
 	}
 
 	private static bool UpdateWithAppendSetProperty(PropertyInfo p, TextBuilder builder)

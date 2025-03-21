@@ -2,9 +2,7 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Cornerstone.Extensions;
 using Cornerstone.Sync;
 
@@ -29,7 +27,7 @@ public class DatabaseKeyCache
 	/// <summary>
 	/// Instantiate an instance of the database key cache.
 	/// </summary>
-	public DatabaseKeyCache() : this(TimeSpan.MaxValue)
+	public DatabaseKeyCache() : this(TimeSpan.FromMinutes(15))
 	{
 	}
 
@@ -50,30 +48,10 @@ public class DatabaseKeyCache
 	#region Properties
 
 	/// <summary>
-	/// The total types tracked.
-	/// </summary>
-	public int Count => _cachedEntityId.Count;
-
-	/// <summary>
-	/// Return the cache for the type. If the type has not been cached then null will be returned.
-	/// </summary>
-	/// <param name="type"> The type for the key cache. </param>
-	/// <returns> The memory cache for the type if found otherwise null if not. </returns>
-	public Dictionary<string, object> this[Type type] =>
-		_cachedEntityId.TryGetValue(type, out var value)
-			? value.ToDictionary(x => x.Key, x => x.Value)
-			: null;
-
-	/// <summary>
 	/// Gets or sets the list of entities to cache the keys (ID, Sync ID). If the collection is empty
 	/// then cache all sync entities.
 	/// </summary>
 	public Type[] SyncEntitiesToCache { get; private set; }
-
-	/// <summary>
-	/// The total count for all items tracked.
-	/// </summary>
-	public int TotalCachedItems => _cachedEntityId.Sum(x => x.Value.Count);
 
 	#endregion
 
@@ -108,7 +86,7 @@ public class DatabaseKeyCache
 		}
 
 		var cache = _cachedEntityId.GetOrAdd(type, _ => new MemoryCache<string, object>(_cacheTimeout));
-		cache.Set(syncId.ToString(), id);
+		cache.AddOrUpdate(syncId.ToString(), id);
 	}
 
 	/// <summary>
@@ -118,16 +96,8 @@ public class DatabaseKeyCache
 	{
 		foreach (var entry in _cachedEntityId)
 		{
-			entry.Value
-				.Where(x => x.HasExpired)
-				.ToList()
-				.ForEach(x => entry.Value.Remove(x));
+			entry.Value.Cleanup();
 		}
-
-		_cachedEntityId
-			.Where(x => x.Value.IsEmpty)
-			.ToList()
-			.ForEach(x => _cachedEntityId.TryRemove(x.Key, out _));
 	}
 
 	/// <summary>
@@ -186,6 +156,17 @@ public class DatabaseKeyCache
 	/// </summary>
 	/// <param name="provider"> The syncable database provider. </param>
 	/// <param name="syncEntitiesToCache"> An optional set of specific entity types to cache. </param>
+	public void InitializeAndLoad(ISyncableDatabaseProvider provider, params string[] syncEntitiesToCache)
+	{
+		var syncTypes = syncEntitiesToCache.Select(Type.GetType).ToArray();
+		InitializeAndLoad(provider, syncTypes);
+	}
+
+	/// <summary>
+	/// Initializes the default key cache and load the keys.
+	/// </summary>
+	/// <param name="provider"> The syncable database provider. </param>
+	/// <param name="syncEntitiesToCache"> An optional set of specific entity types to cache. </param>
 	public void InitializeAndLoad(ISyncableDatabaseProvider provider, params Type[] syncEntitiesToCache)
 	{
 		using var database = provider.GetSyncableDatabase();
@@ -220,8 +201,7 @@ public class DatabaseKeyCache
 	/// <param name="types"> The types to be loaded. </param>
 	public void LoadKeysIntoCache(ISyncableDatabase database, params Type[] types)
 	{
-		var syncOptions = new SyncSettings();
-		var repositories = database.GetSyncableRepositories(syncOptions).ToList();
+		var repositories = database.GetSyncableRepositories().ToList();
 
 		foreach (var type in types)
 		{
@@ -264,12 +244,11 @@ public class DatabaseKeyCache
 	/// <param name="syncId"> The sync ID of the entity. </param>
 	public void RemoveEntityId(Type type, object syncId)
 	{
-		if (!_cachedEntityId.ContainsKey(type))
+		if (!_cachedEntityId.TryGetValue(type, out var cache))
 		{
 			return;
 		}
 
-		var cache = _cachedEntityId[type];
 		cache.Remove(syncId.ToString());
 	}
 
@@ -282,25 +261,6 @@ public class DatabaseKeyCache
 	{
 		return (SyncEntitiesToCache.Length <= 0)
 			|| SyncEntitiesToCache.Contains(type);
-	}
-
-	/// <summary>
-	/// Get a detailed string of cached entities
-	/// </summary>
-	/// <returns> A detailed string. </returns>
-	public string ToDetailedString()
-	{
-		var builder = new StringBuilder();
-		foreach (var cache in _cachedEntityId)
-		{
-			builder.AppendLine($"\t{cache.Key.FullName}");
-
-			foreach (var test2 in cache.Value)
-			{
-				builder.AppendLine($"\t\t{test2.Key}-{test2.Value}");
-			}
-		}
-		return builder.ToString();
 	}
 
 	/// <summary>
@@ -352,7 +312,7 @@ public class DatabaseKeyCache
 			return;
 		}
 
-		cache.Set(syncId.ToString(), id);
+		cache.AddOrUpdate(syncId.ToString(), id);
 	}
 
 	private MemoryCache<string, object> CreateCache(Type type)

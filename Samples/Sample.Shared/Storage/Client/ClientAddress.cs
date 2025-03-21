@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Cornerstone.Storage;
 using Cornerstone.Sync;
-using Sample.Shared.Sync;
+using Sample.Shared.Storage.Sync;
 
 #endregion
 
@@ -14,7 +14,7 @@ namespace Sample.Shared.Storage.Client;
 /// <summary>
 /// Represents the client private address model.
 /// </summary>
-public class ClientAddress : SyncEntity<long>, IAddressSync, IClientEntity
+public class ClientAddress : SyncEntity<long, Address>, IAddress, IClientEntity
 {
 	#region Constructors
 

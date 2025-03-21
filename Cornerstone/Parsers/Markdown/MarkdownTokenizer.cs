@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System.Linq;
 using Cornerstone.Parsers.Html;
 
 #endregion
@@ -46,16 +47,12 @@ public class MarkdownTokenizer
 						var headerNumber = MatchCharacter(CurrentToken.StartIndex, '#', 6);
 						CurrentToken.Type = MarkdownTokenType.Header;
 						CurrentToken.ElementName = "h" + headerNumber;
-						var offsets = FindCharactersPattern(CurrentToken.StartIndex, ['#', ' ', '{', '}'], ['\r', '\n', '\0']);
-						if (offsets.Length > 0)
-						{
-							offsets[0] += headerNumber;
-							CurrentToken.TokenIndexes = offsets;
-						}
-						else
-						{
-							CurrentToken.TokenIndexes = [CurrentToken.StartIndex + headerNumber];
-						}
+
+						// todo: this is broken, it's expect exact 1 character per match
+						// meaning ## { } aoeu won't match correctly
+						var offsets = FindCharactersIndexes(CurrentToken.StartIndex, expected: ['#', '{', '}'], ignore: [' '], until: ['\r', '\n', '\0']);
+						CurrentToken.TokenIndexes = offsets;
+						CurrentToken.TokenIndexes[0] += headerNumber;
 						ParseUntil('\0', '\r', '\n');
 						return true;
 					}
@@ -130,7 +127,7 @@ public class MarkdownTokenizer
 						{
 							CurrentToken.Type = MarkdownTokenType.Code;
 							CurrentToken.ElementName = "pre";
-							
+
 							// Get the code block
 							if (FindAnyCharacter(offsets[0], offsets[1], ['\n'], out var codeStart)
 								&& FindAnyCharacterExceptInReverse(offsets[0], offsets[1], ['`', '\r', '\n'], out var codeEnd)
@@ -139,8 +136,8 @@ public class MarkdownTokenizer
 								// Check for language
 								CurrentToken.TokenIndexes = FindAnyCharacterExcept(offsets[0], codeStart, ['`', '\r', '\n'], out var languageStart)
 									&& FindAnyCharacterExceptInReverse(offsets[0], codeStart, ['\r', '\n'], out var languageEnd)
-									? [offsets[0], languageStart, languageEnd, codeStart + 1, codeEnd, offsets[1]]
-									: [offsets[0], codeStart + 1, codeEnd, offsets[1]];
+										? [offsets[0], languageStart, languageEnd, codeStart + 1, codeEnd, offsets[1]]
+										: [offsets[0], codeStart + 1, codeEnd, offsets[1]];
 							}
 							else
 							{
@@ -160,7 +157,7 @@ public class MarkdownTokenizer
 					CurrentToken.Type = MarkdownTokenType.NewLine;
 					return true;
 				}
-				
+
 				if (IsWhitespace(c))
 				{
 					ParseWhitespace();
@@ -182,7 +179,7 @@ public class MarkdownTokenizer
 	public string ToHtml()
 	{
 		var writer = new HtmlWriter();
-		var tokens = GetTokens();
+		var tokens = GetTokens().ToList();
 
 		foreach (var token in tokens)
 		{
@@ -190,6 +187,14 @@ public class MarkdownTokenizer
 		}
 
 		return writer.ToString();
+	}
+
+	public static string ToHtml(string markdown)
+	{
+		var tokenizer = new MarkdownTokenizer();
+		tokenizer.Add(markdown);
+		var response = tokenizer.ToHtml();
+		return response;
 	}
 
 	/// <inheritdoc />

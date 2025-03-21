@@ -1,14 +1,10 @@
 ﻿#region References
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using Cornerstone.Data;
-using Cornerstone.Extensions;
 using Cornerstone.Storage;
 using Cornerstone.Sync;
-using Sample.Shared.Sync;
+using Sample.Shared.Storage.Sync;
 
 #endregion
 
@@ -19,7 +15,7 @@ namespace Sample.Shared.Storage.Client;
 /// does not inherit from a "SyncApi" model due to differences
 /// of property types.
 /// </summary>
-public class ClientAccount : SyncEntity<int>, IAccountSync, IClientEntity
+public class ClientAccount : SyncEntity<int, Account>, IAccount, IClientEntity
 {
 	#region Constructors
 
@@ -70,33 +66,6 @@ public class ClientAccount : SyncEntity<int>, IAccountSync, IClientEntity
 	/// The roles in storage format.
 	/// </summary>
 	public string Roles { get; set; }
-
-	#endregion
-
-	#region Methods
-
-	/// <inheritdoc />
-	public override HashSet<string> GetDefaultIncludedProperties(UpdateableAction action)
-	{
-		var response = base.GetDefaultIncludedProperties(action);
-
-		switch (action)
-		{
-			case UpdateableAction.SyncIncomingAdd:
-			case UpdateableAction.SyncIncomingUpdate:
-			case UpdateableAction.SyncOutgoing:
-			{
-				var syncProperties = typeof(AccountSync)
-					.GetCachedProperties()
-					.Select(x => x.Name)
-					.ToList();
-				response.Add(syncProperties);
-				break;
-			}
-		}
-
-		return response;
-	}
 
 	#endregion
 }

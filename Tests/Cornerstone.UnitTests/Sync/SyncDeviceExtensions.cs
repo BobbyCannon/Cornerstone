@@ -11,7 +11,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Cornerstone.UnitTests.Sync;
 
 [TestClass]
-public class SyncDeviceExtensions : CornerstoneUnitTest
+public class SyncClientDetailsExtensions : CornerstoneUnitTest
 {
 	#region Methods
 

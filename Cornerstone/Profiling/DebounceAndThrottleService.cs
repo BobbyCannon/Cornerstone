@@ -24,6 +24,7 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	private readonly Action<CancellationToken, T> _action;
 	private CancellationTokenSource _cancellationTokenSource;
 	private bool _force;
+	private bool _disposed;
 	private readonly IDateTimeProvider _timeProvider;
 	private BackgroundWorker _worker;
 
@@ -87,6 +88,7 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	/// <summary>
 	/// True if the throttle service has been triggered.
 	/// </summary>
+	[DependsOn(nameof(IsProcessing))]
 	public bool IsTriggered => !Queue.IsEmpty;
 
 	/// <summary>
@@ -195,6 +197,11 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	/// <param name="force"> An optional flag to immediately trigger if true. Defaults to false. </param>
 	public void Trigger(T value, bool force = false)
 	{
+		if (_disposed)
+		{
+			return;
+		}
+
 		if (IsProcessing)
 		{
 			if (AllowTriggerDuringProcessing)
@@ -226,6 +233,10 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	{
 		try
 		{
+			_disposed = true;
+
+			Reset();
+
 			Queue.QueueChanged -= QueueOnQueueChanged;
 
 			var worker = _worker;
@@ -258,7 +269,7 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	{
 		var worker = (BackgroundWorker) sender;
 
-		while (!worker.CancellationPending)
+		while (!worker.CancellationPending && !_disposed)
 		{
 			if (!IsTriggeredAndReadyToProcess && !_force)
 			{

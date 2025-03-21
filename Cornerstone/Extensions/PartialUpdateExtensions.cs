@@ -5,7 +5,7 @@ using System.Text;
 using System.Web;
 using Cornerstone.Convert;
 using Cornerstone.Data;
-using Cornerstone.Text.Human;
+using Cornerstone.Text;
 
 #endregion
 

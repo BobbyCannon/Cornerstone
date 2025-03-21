@@ -5,9 +5,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Shapes;
 using Avalonia.Input;
-using Avalonia.Media;
 using Cornerstone.Weaver;
 
 #endregion
@@ -99,6 +97,11 @@ public class DockSplitPanel : DockPanel
 			SplitLines.Add(line);
 			VisualChildren.Add(line);
 		}
+	}
+
+	protected override Size MeasureOverride(Size availableSize)
+	{
+		return base.MeasureOverride(availableSize);
 	}
 
 	protected override void OnPointerMoved(PointerEventArgs e)

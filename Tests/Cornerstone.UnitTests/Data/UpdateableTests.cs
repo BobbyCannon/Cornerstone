@@ -2,20 +2,19 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using Avalonia.Controls;
 using Avalonia.Media;
 using Cornerstone.Avalonia;
-using Cornerstone.Avalonia.AvaloniaEdit;
-using Cornerstone.Avalonia.AvaloniaEdit.CodeCompletion;
 using Cornerstone.Avalonia.DockingManager;
+using Cornerstone.Avalonia.Platforms.Windows;
+using Cornerstone.Avalonia.TextEditor;
+using Cornerstone.Avalonia.TextEditor.CodeCompletion;
 using Cornerstone.Compare;
 using Cornerstone.Data;
 using Cornerstone.EntityFramework;
-using Cornerstone.Extensions;
 using Cornerstone.Profiling;
 using Cornerstone.Runtime;
 using Cornerstone.Storage;
-using Cornerstone.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
@@ -65,67 +64,33 @@ public class UpdateableTests : CornerstoneUnitTest
 		};
 		var exclusions = new List<Type>
 		{
-			typeof(Cornerstone.Avalonia.Windows.WebBrowserAdapter)
+			typeof(WebBrowserAdapter)
 		};
-		var settings = new ComparerSettings();
+		var settings = new ComparerSettings { IgnoreMissingProperties = true };
 		settings.TypeIncludeExcludeSettings.Add(typeof(CompletionData),
-			IncludeExcludeSettings.FromExclusions(nameof(CompletionData.Image))
+			new[] { nameof(CompletionData.Image) }.ToOnlyExcludingSettings()
 		);
 		settings.TypeIncludeExcludeSettings.Add(typeof(LineGeometry),
-			IncludeExcludeSettings.FromExclusions(nameof(LineGeometry.Bounds), nameof(LineGeometry.ContourLength))
+			new[] { nameof(LineGeometry.Bounds), nameof(LineGeometry.ContourLength) }.ToOnlyExcludingSettings()
 		);
 		settings.TypeIncludeExcludeSettings.Add(typeof(Geometry),
-			IncludeExcludeSettings.FromExclusions(nameof(Geometry.Bounds), nameof(Geometry.ContourLength))
+			new[] { nameof(Geometry.Bounds), nameof(Geometry.ContourLength) }.ToOnlyExcludingSettings()
+		);
+		settings.TypeIncludeExcludeSettings.Add(typeof(ContextMenu),
+			new[] { nameof(ContextMenu.Bounds), nameof(ContextMenu.FontFamily) }.ToOnlyExcludingSettings()
 		);
 		settings.TypeIncludeExcludeSettings.Add(typeof(SplitFractions),
-			IncludeExcludeSettings.FromExclusions(
+			new[]
+			{
 				nameof(SplitFractions.DistinctCheck),
-				nameof(SplitFractions.FilterCheck))
+				nameof(SplitFractions.FilterCheck)
+			}.ToOnlyExcludingSettings()
 		);
 
-		var types = assemblies
-			.SelectMany(s => s.GetTypes())
-			.Where(t => !exclusions.Contains(t))
-			.Where(t => (t != null) && updateableType.IsAssignableFrom(t))
-			//.Where(x => x == typeof(GamepadState))
-			.Where(x =>
-			{
-				if (x.IsAbstract || x.IsInterface || x.ContainsGenericParameters)
-				{
-					return false;
-				}
-
-				if (x.GetConstructors().All(t => t.GetParameters().Any()))
-				{
-					// Ignore if the type does not have an empty constructor
-					return false;
-				}
-
-				return x.GetCachedMethods()
-					.Any(m => m.Name == nameof(IUpdateable.UpdateWith));
-			})
-			.ToArray();
-
-		foreach (var type in types)
-		{
-			type.FullName.Dump();
-
-			var includeExcludeSettings = settings.TypeIncludeExcludeSettings.TryGetValue(type, out var foundExclusions)
-				? foundExclusions
-				: IncludeExcludeSettings.Empty;
-
-			RefreshCodeGeneratedUpdateWith(updateCodeGeneratedFiles, type,
-				includeExcludeSettings, SolutionDirectory);
-
-			var modelWithDefaults = GetModelWithDefaultValues(type, includeExcludeSettings);
-			var modelWithNonDefault = GetModelWithNonDefaultValues(type, includeExcludeSettings);
-
-			ValidateUnwrap(modelWithNonDefault, settings);
-			ValidateAllValuesAreNotDefault(modelWithNonDefault, includeExcludeSettings);
-
-			ValidateUpdateWith(modelWithDefaults, includeExcludeSettings, settings);
-			ValidateUpdateWith(modelWithNonDefault, includeExcludeSettings, settings);
-		}
+		UpdateableShouldUpdateAll(
+			updateCodeGeneratedFiles, updateableType, assemblies, exclusions, settings
+			//, x => x == typeof(PopupManager)
+		);
 	}
 
 	/// <inheritdoc />

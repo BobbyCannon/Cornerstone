@@ -3,8 +3,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
+using Cornerstone.Collections;
 using Cornerstone.Extensions;
 using Cornerstone.Runtime;
 
@@ -15,11 +15,11 @@ namespace Cornerstone.Storage;
 /// <summary>
 /// Represent a memory cache.
 /// </summary>
-public class MemoryCache<TKey, TValue> : ICollection<MemoryCacheItem<TKey, TValue>>, ICollection, INotifyCollectionChanged
+public class MemoryCache<TKey, TValue>
 {
 	#region Fields
 
-	private readonly Dictionary<TKey, MemoryCacheItem<TKey, TValue>> _dictionary;
+	private readonly SpeedyDictionary<TKey, MemoryCacheItem<TKey, TValue>> _dictionary;
 	private readonly IDateTimeProvider _timeProvider;
 
 	#endregion
@@ -41,11 +41,10 @@ public class MemoryCache<TKey, TValue> : ICollection<MemoryCacheItem<TKey, TValu
 	public MemoryCache(TimeSpan defaultTimeout, IDateTimeProvider timeProvider = null)
 	{
 		_timeProvider = timeProvider ?? DateTimeProvider.RealTime;
-		_dictionary = new Dictionary<TKey, MemoryCacheItem<TKey, TValue>>();
+		_dictionary = new SpeedyDictionary<TKey, MemoryCacheItem<TKey, TValue>>();
 
 		DefaultTimeout = defaultTimeout;
 		SlidingExpiration = true;
-		SyncRoot = new object();
 	}
 
 	#endregion
@@ -55,13 +54,7 @@ public class MemoryCache<TKey, TValue> : ICollection<MemoryCacheItem<TKey, TValu
 	/// <inheritdoc cref="ICollection" />
 	public int Count
 	{
-		get
-		{
-			lock (SyncRoot)
-			{
-				return _dictionary.Count(x => !x.Value.HasExpired);
-			}
-		}
+		get { return _dictionary.Count(x => !x.Value.HasExpired); }
 	}
 
 	/// <summary>
@@ -70,42 +63,44 @@ public class MemoryCache<TKey, TValue> : ICollection<MemoryCacheItem<TKey, TValu
 	public TimeSpan DefaultTimeout { get; }
 
 	/// <summary>
-	/// Indicates whether or not the memory cache is empty.
+	/// Indicates if the memory cache is empty.
 	/// </summary>
 	public bool IsEmpty
 	{
 		get
 		{
-			lock (SyncRoot)
-			{
-				return (_dictionary.Count <= 0)
-					|| _dictionary.All(x => x.Value.HasExpired);
-			}
+			return (_dictionary.Count <= 0)
+				|| _dictionary.All(x => x.Value.HasExpired);
 		}
 	}
-
-	/// <inheritdoc />
-	public bool IsReadOnly => false;
-
-	/// <inheritdoc />
-	public bool IsSynchronized => true;
 
 	/// <summary>
 	/// Determines if the expiration time should be extended when read from the cache.
 	/// </summary>
 	public bool SlidingExpiration { get; set; }
 
-	/// <inheritdoc />
-	public object SyncRoot { get; }
-
 	#endregion
 
 	#region Methods
 
-	/// <inheritdoc />
-	[Obsolete("Use Set method instead")]
-	public void Add(MemoryCacheItem<TKey, TValue> item)
+	/// <summary>
+	/// Set a new entry with a custom timeout. This will add a new entry or update an existing one.
+	/// </summary>
+	/// <param name="key"> The key of the entry. </param>
+	/// <param name="value"> The value of the entry. </param>
+	/// <param name="timeout"> The custom timeout of the entry. </param>
+	public void AddOrUpdate(TKey key, TValue value, TimeSpan? timeout = null)
 	{
+		_dictionary.AddOrUpdate(key,
+			() => new MemoryCacheItem<TKey, TValue>(this, key, value, timeout, _timeProvider),
+			x =>
+			{
+				x.Key = key;
+				x.Value = value;
+				x.LastAccessed = _timeProvider.UtcNow;
+				return x;
+			}
+		);
 	}
 
 	/// <summary>
@@ -113,72 +108,14 @@ public class MemoryCache<TKey, TValue> : ICollection<MemoryCacheItem<TKey, TValu
 	/// </summary>
 	public void Cleanup()
 	{
-		lock (SyncRoot)
-		{
-			var toRemove = new List<MemoryCacheItem<TKey, TValue>>();
-			toRemove.AddRange(this.Where(x => x.HasExpired));
-			toRemove.ForEach(x => Remove(x));
-		}
+		var toRemove = new List<MemoryCacheItem<TKey, TValue>>();
+		toRemove.AddRange(_dictionary.Values.Where(x => x.HasExpired));
+		toRemove.ForEach(x => _dictionary.Remove(x.Key));
 	}
 
-	/// <inheritdoc />
 	public void Clear()
 	{
-		lock (SyncRoot)
-		{
-			var values = _dictionary.Values.ToArray();
-			_dictionary.Clear();
-			OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, values, 0));
-		}
-	}
-
-	/// <inheritdoc />
-	public bool Contains(MemoryCacheItem<TKey, TValue> item)
-	{
-		lock (SyncRoot)
-		{
-			return _dictionary.ContainsValue(item);
-		}
-	}
-
-	/// <inheritdoc />
-	public void CopyTo(MemoryCacheItem<TKey, TValue>[] array, int arrayIndex)
-	{
-		lock (SyncRoot)
-		{
-			Array.Copy(_dictionary.Values.ToArray(), 0, array, arrayIndex, _dictionary.Count);
-		}
-	}
-
-	/// <inheritdoc />
-	public void CopyTo(Array array, int index)
-	{
-		lock (SyncRoot)
-		{
-			Array.Copy(_dictionary.Values.ToArray(), 0, array, index, _dictionary.Count);
-		}
-	}
-
-	/// <summary>
-	/// Enumerator for the memory cache.
-	/// </summary>
-	/// <returns> The enumerator for the collection. </returns>
-	/// <remarks>
-	/// Enumeration should NOT be considered "accessing" items
-	/// We only bump last accessed by direct access. This allows
-	/// Enumeration of the item to check expiration
-	/// </remarks>
-	public IEnumerator<MemoryCacheItem<TKey, TValue>> GetEnumerator()
-	{
-		lock (SyncRoot)
-		{
-			foreach (var value in _dictionary)
-			{
-				// See remark in method summary.
-				//value.Value.LastAccessed = DateTimeProvider.RealTime.Instance.UtcNow;
-				yield return value.Value;
-			}
-		}
+		_dictionary.Clear();
 	}
 
 	/// <summary>
@@ -188,7 +125,6 @@ public class MemoryCache<TKey, TValue> : ICollection<MemoryCacheItem<TKey, TValu
 	/// <returns> True if the key exists otherwise false. </returns>
 	public bool HasKey(TKey key)
 	{
-		lock (SyncRoot)
 		{
 			return _dictionary.ContainsKey(key);
 		}
@@ -200,64 +136,15 @@ public class MemoryCache<TKey, TValue> : ICollection<MemoryCacheItem<TKey, TValu
 	/// <param name="key"> The name of the key. </param>
 	public MemoryCacheItem<TKey, TValue> Remove(TKey key)
 	{
-		MemoryCacheItem<TKey, TValue> response;
-
-		lock (SyncRoot)
+		if (!_dictionary.TryGetValue(key, out var value))
 		{
-			if (!_dictionary.ContainsKey(key))
-			{
-				return default;
-			}
-
-			response = _dictionary[key];
-			_dictionary.Remove(key);
+			return null;
 		}
 
-		OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, response));
+		var response = value;
+		_dictionary.Remove(key);
+
 		return response;
-	}
-
-	/// <summary>
-	/// Remove the entry from the cache.
-	/// </summary>
-	/// <param name="memoryCacheItem"> The item to remove from the cache. </param>
-	public MemoryCacheItem<TKey, TValue> Remove(MemoryCacheItem<TKey, TValue> memoryCacheItem)
-	{
-		return memoryCacheItem == null
-			? null
-			: Remove(memoryCacheItem.Key);
-	}
-
-	/// <summary>
-	/// Set a new entry with a custom timeout. This will add a new entry or update an existing one.
-	/// </summary>
-	/// <param name="key"> The key of the entry. </param>
-	/// <param name="value"> The value of the entry. </param>
-	/// <param name="timeout"> The custom timeout of the entry. </param>
-	public void Set(TKey key, TValue value, TimeSpan? timeout = null)
-	{
-		MemoryCacheItem<TKey, TValue> item;
-		var updated = false;
-
-		lock (SyncRoot)
-		{
-			item = _dictionary.AddOrUpdate(key,
-				() => new MemoryCacheItem<TKey, TValue>(this, key, value, timeout, _timeProvider),
-				x =>
-				{
-					updated = true;
-					x.Key = key;
-					x.Value = value;
-					x.LastAccessed = _timeProvider.UtcNow;
-					return x;
-				}
-			);
-		}
-
-		if (!updated)
-		{
-			OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item));
-		}
 	}
 
 	/// <summary>
@@ -268,54 +155,23 @@ public class MemoryCache<TKey, TValue> : ICollection<MemoryCacheItem<TKey, TValu
 	/// <returns> True if the entry was found or otherwise false. </returns>
 	public bool TryGet(TKey key, out MemoryCacheItem<TKey, TValue> value)
 	{
-		lock (SyncRoot)
+		if (!_dictionary.TryGetValue(key, out var cachedItem))
 		{
-			if (!_dictionary.TryGetValue(key, out var cachedItem))
-			{
-				value = null;
-				return false;
-			}
-
-			if (cachedItem.ExpirationDate <= _timeProvider.UtcNow)
-			{
-				value = null;
-				Remove(cachedItem);
-				return false;
-			}
-
-			value = cachedItem;
-			value.LastAccessed = _timeProvider.UtcNow;
-			return true;
+			value = null;
+			return false;
 		}
+
+		if (cachedItem.ExpirationDate <= _timeProvider.UtcNow)
+		{
+			value = null;
+			Remove(cachedItem.Key);
+			return false;
+		}
+
+		value = cachedItem;
+		value.LastAccessed = _timeProvider.UtcNow;
+		return true;
 	}
-
-	/// <summary>
-	/// Called when the collection changed.
-	/// </summary>
-	/// <param name="args"> The changed event. </param>
-	protected virtual void OnCollectionChanged(NotifyCollectionChangedEventArgs args)
-	{
-		CollectionChanged?.Invoke(this, args);
-	}
-
-	/// <inheritdoc />
-	IEnumerator IEnumerable.GetEnumerator()
-	{
-		return GetEnumerator();
-	}
-
-	bool ICollection<MemoryCacheItem<TKey, TValue>>.Remove(MemoryCacheItem<TKey, TValue> item)
-	{
-		var removed = Remove(item);
-		return removed == item;
-	}
-
-	#endregion
-
-	#region Events
-
-	/// <inheritdoc />
-	public event NotifyCollectionChangedEventHandler CollectionChanged;
 
 	#endregion
 }

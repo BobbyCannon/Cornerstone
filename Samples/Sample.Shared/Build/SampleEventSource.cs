@@ -27,6 +27,17 @@ public class SampleEventSource<T> : INotifyPropertyChanged
 
 	#region Methods
 
+	public bool OnPropertyChanged(string propertyName)
+	{
+		var eventHandler = PropertyChanged;
+		if (eventHandler == null)
+		{
+			return false;
+		}
+		eventHandler.Invoke(this, new PropertyChangedEventArgs(propertyName));
+		return true;
+	}
+
 	public bool RaiseCollectionChanged(NotifyCollectionChangedEventArgs e)
 	{
 		var eventHandler = CollectionChanged;
@@ -79,17 +90,6 @@ public class SampleEventSource<T> : INotifyPropertyChanged
 			return false;
 		}
 		eventHandler.Invoke(this, EventArgs.Empty);
-		return true;
-	}
-
-	public bool OnPropertyChanged(string propertyName)
-	{
-		var eventHandler = PropertyChanged;
-		if (eventHandler == null)
-		{
-			return false;
-		}
-		eventHandler.Invoke(this, new PropertyChangedEventArgs(propertyName));
 		return true;
 	}
 

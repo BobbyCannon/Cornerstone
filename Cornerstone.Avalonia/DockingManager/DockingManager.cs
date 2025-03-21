@@ -49,6 +49,7 @@ public class DockingManager : DockSplitPanel, IDispatchable
 	public DockingManager() : this(null)
 	{
 	}
+
 	public DockingManager(IDispatcher dispatcher)
 	{
 		_dispatcher = dispatcher;
@@ -380,12 +381,19 @@ public class DockingManager : DockSplitPanel, IDispatchable
 	}
 
 	/// <summary>
-	/// Move to DockingTabControl event?
+	/// DockableTabModel was added to one of the child TabControls.
 	/// </summary>
-	/// <param name="e"> </param>
 	protected internal virtual void OnTabModelAdded(DockableTabModel e)
 	{
-		TabModelAdded?.Invoke(this, new EventArgs<DockableTabModel>(e));
+		TabModelAdded?.Invoke(this, e);
+	}
+
+	/// <summary>
+	/// DockableTabModel was removed to one of the child TabControls.
+	/// </summary>
+	protected internal virtual void OnTabModelRemoved(DockableTabModel e)
+	{
+		TabModelRemoved?.Invoke(this, e);
 	}
 
 	protected override void ArrangeCore(Rect finalRect)
@@ -819,20 +827,23 @@ public class DockingManager : DockSplitPanel, IDispatchable
 			}
 			case nameof(DockableTabItem):
 			{
+				DockableTabModel model = null;
+
 				if (item.DataModelType.TryGetType(out var modelType))
 				{
-					var model = (DockableTabModel) DependencyProvider.GetInstance(modelType);
+					model = (DockableTabModel) DependencyProvider.GetInstance(modelType);
 					model.RestoreLayoutData(item.Data);
-					model.Initialize();
-					OnTabModelAdded(model);
-					var response = new DockableTabItem(model);
-					return response;
 				}
-				else
+
+				if ((model == null) || (model.Id == Guid.Empty))
 				{
-					var response = new DockableTabItem { Content = item.Data };
-					return response;
+					return null;
 				}
+
+				model.Initialize();
+				OnTabModelAdded(model);
+				var response = new DockableTabItem(model);
+				return response;
 			}
 			case nameof(SplitPanel):
 			{
@@ -1158,7 +1169,8 @@ public class DockingManager : DockSplitPanel, IDispatchable
 
 	#region Events
 
-	public event EventHandler<EventArgs<DockableTabModel>> TabModelAdded;
+	public event EventHandler<DockableTabModel> TabModelAdded;
+	public event EventHandler<DockableTabModel> TabModelRemoved;
 
 	#endregion
 
@@ -1235,5 +1247,14 @@ public class DockingManager : DockSplitPanel, IDispatchable
 
 	#endregion
 
-	public record struct TabInfo(object Header, Size TabItemSize, Size ContentSize, Size TabControlSize);
+	public record struct TabInfo(object Header, Size TabItemSize, Size ContentSize, Size TabControlSize)
+	{
+		public object Header { get; set; } = Header;
+
+		public Size TabItemSize { get; set; } = TabItemSize;
+
+		public Size ContentSize { get; set; } = ContentSize;
+
+		public Size TabControlSize { get; set; } = TabControlSize;
+	}
 }

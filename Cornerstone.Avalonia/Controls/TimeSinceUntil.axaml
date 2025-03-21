@@ -1,0 +1,150 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:converters="clr-namespace:Cornerstone.Avalonia.Converters">
+	<Design.PreviewWith>
+		<Border Padding="10" Width="650">
+			<Grid RowDefinitions="Auto,Auto,*">
+				<StackPanel
+						HorizontalAlignment="Stretch"
+						VerticalAlignment="Top"
+						Spacing="10"
+						Margin="20">
+					<TimeSinceUntil Start="01/20/2025"
+							Title="Start Only"
+							TitleHorizontalAlignment="Left"
+							ElapsedHorizontalAlignment="Right" />
+					<TimeSinceUntil End="01/20/2026"
+							Title="End Only"
+							TitleHorizontalAlignment="Left" />
+
+					<TimeSinceUntil
+							x:Name="Demo"
+							Start="01/20/2025"
+							End="01/20/2029"
+							Title="Golden Age"
+							ShowPercent="True" />
+					<StackPanel
+							Spacing="10"
+							Margin="20">
+						<TextBlock Text="Start" />
+						<DatePicker SelectedDate="{Binding ElementName=Demo, Path=Start}" />
+						<TextBlock Text="End" />
+						<DatePicker SelectedDate="{Binding ElementName=Demo, Path=End}" />
+						<Slider Minimum="10" Maximum="30"
+								SmallChange="1" LargeChange="1"
+								Value="{Binding ElementName=Demo, Path=ProgressBarHeight}" />
+
+						<StackPanel Orientation="Horizontal">
+							<TextBlock Text="{Binding ElementName=Demo, Path=Elapsed}"
+									Margin="0,0,10,0" />
+							<TextBlock Text="{Binding ElementName=Demo, Path=TotalTime}" />
+						</StackPanel>
+					</StackPanel>
+				</StackPanel>
+				<ItemsControl Grid.Row="1"
+						ItemsSource="{x:Static Theme.Colors}"
+						Margin="10,0,0,0">
+					<ItemsControl.ItemsPanel>
+						<ItemsPanelTemplate>
+							<StackPanel />
+						</ItemsPanelTemplate>
+					</ItemsControl.ItemsPanel>
+					<ItemsControl.ItemTemplate>
+						<DataTemplate DataType="ThemeColor">
+							<TimeSinceUntil
+									Theme.Color="{Binding}"
+									Content="{Binding}"
+									Start="{Binding ElementName=Demo, Path=Start}"
+									End="{Binding ElementName=Demo, Path=End}"
+									Title="{Binding}"
+									Margin="10"
+									ProgressBarHeight="{Binding ElementName=Demo, Path=ProgressBarHeight}" />
+						</DataTemplate>
+					</ItemsControl.ItemTemplate>
+				</ItemsControl>
+			</Grid>
+		</Border>
+	</Design.PreviewWith>
+	<ControlTheme x:Key="{x:Type TimeSinceUntil}"
+			TargetType="TimeSinceUntil">
+		<Setter Property="BorderThickness" Value="0" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<DockPanel>
+					<Grid DockPanel.Dock="Top"
+							HorizontalAlignment="Stretch">
+						<StackPanel
+								HorizontalAlignment="{TemplateBinding ElapsedHorizontalAlignment}"
+								Orientation="Horizontal">
+							<TextBlock Text="{TemplateBinding ElapsedLabel}" />
+							<TextBlock Text="{TemplateBinding ElapsedText}" />
+							<TextBlock Text="{Binding ElementName=Progress, Path=Percentage, Converter={x:Static converters:DoubleConverters.ToPercent}, ConverterParameter=P0}"
+									Margin="10,0,0,0"
+									IsVisible="{TemplateBinding ShowPercent}"/>
+						</StackPanel>
+						<StackPanel
+								HorizontalAlignment="{TemplateBinding TitleHorizontalAlignment}"
+								Orientation="Horizontal">
+							<TextBlock Text="{TemplateBinding Title}" />
+						</StackPanel>
+						<StackPanel
+								HorizontalAlignment="{TemplateBinding RemainingHorizontalAlignment}"
+								Orientation="Horizontal">
+							<TextBlock Text="{TemplateBinding RemainingLabel}" />
+							<TextBlock Text="{TemplateBinding RemainingText}" />
+						</StackPanel>
+					</Grid>
+					<ProgressBar
+							x:Name="Progress"
+							Margin="0,4,0,0"
+							Minimum="0"
+							Maximum="1"
+							Height="{TemplateBinding ProgressBarHeight}"
+							Value="{TemplateBinding Percent}" />
+				</DockPanel>
+			</ControlTemplate>
+		</Setter>
+		<Style Selector="^[(Theme.Color)=Red] /template/ ProgressBar#Progress">
+			<Setter Property="Foreground" Value="{DynamicResource Red06}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Pink] /template/ ProgressBar#Progress">
+			<Setter Property="Foreground" Value="{DynamicResource Pink06}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Purple] /template/ ProgressBar#Progress">
+			<Setter Property="Foreground" Value="{DynamicResource Purple06}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepPurple] /template/ ProgressBar#Progress">
+			<Setter Property="Foreground" Value="{DynamicResource DeepPurple06}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Indigo] /template/ ProgressBar#Progress">
+			<Setter Property="Foreground" Value="{DynamicResource Indigo06}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Blue] /template/ ProgressBar#Progress">
+			<Setter Property="Foreground" Value="{DynamicResource Blue06}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Teal] /template/ ProgressBar#Progress">
+			<Setter Property="Foreground" Value="{DynamicResource Teal06}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Green] /template/ ProgressBar#Progress">
+			<Setter Property="Foreground" Value="{DynamicResource Green06}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Amber] /template/ ProgressBar#Progress">
+			<Setter Property="Foreground" Value="{DynamicResource Amber06}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Orange] /template/ ProgressBar#Progress">
+			<Setter Property="Foreground" Value="{DynamicResource Orange06}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepOrange] /template/ ProgressBar#Progress">
+			<Setter Property="Foreground" Value="{DynamicResource DeepOrange06}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Brown] /template/ ProgressBar#Progress">
+			<Setter Property="Foreground" Value="{DynamicResource Brown06}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=BlueGray] /template/ ProgressBar#Progress">
+			<Setter Property="Foreground" Value="{DynamicResource BlueGray06}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Gray] /template/ ProgressBar#Progress">
+			<Setter Property="Foreground" Value="{DynamicResource Gray06}" />
+		</Style>
+	</ControlTheme>
+</ResourceDictionary>

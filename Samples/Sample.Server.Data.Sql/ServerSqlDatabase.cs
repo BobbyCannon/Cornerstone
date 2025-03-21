@@ -24,13 +24,6 @@ public class ServerSqlDatabase : ServerDatabase
 
 	#endregion
 
-	#region Properties
-
-	/// <inheritdoc />
-	public override string[] SyncOrder => ServerMemoryDatabase.GetSyncOrder();
-
-	#endregion
-
 	#region Methods
 
 	/// <summary>

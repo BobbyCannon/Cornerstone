@@ -1,7 +1,10 @@
 ﻿#region References
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Cornerstone.Net;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -12,6 +15,32 @@ namespace Cornerstone.Sync;
 /// </summary>
 public class SyncRequest : ServiceRequest<SyncObject>
 {
+	#region Constructors
+
+	/// <summary>
+	/// Instantiates a sync request.
+	/// </summary>
+	public SyncRequest() : this(new SyncObject[0])
+	{
+	}
+
+	/// <summary>
+	/// Instantiates a sync request.
+	/// </summary>
+	public SyncRequest(params SyncObject[] collection) : this(collection.ToList())
+	{
+	}
+
+	/// <summary>
+	/// Instantiates a sync request.
+	/// </summary>
+	public SyncRequest(IEnumerable<SyncObject> collection) : base(collection)
+	{
+		Reset();
+	}
+
+	#endregion
+
 	#region Properties
 
 	/// <summary>
@@ -31,10 +60,10 @@ public class SyncRequest : ServiceRequest<SyncObject>
 	/// <summary>
 	/// Resets the filter back to defaults.
 	/// </summary>
-	public void Reset(DateTime utcNow)
+	public void Reset()
 	{
 		Since = DateTime.MinValue;
-		Until = utcNow;
+		Until = DateTimeProvider.RealTime.UtcNow;
 	}
 
 	#endregion

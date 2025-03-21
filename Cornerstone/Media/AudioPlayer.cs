@@ -20,6 +20,10 @@ public class AudioPlayerStub : AudioPlayer
 
 	#region Methods
 
+	public override int CurrentPosition { get; }
+
+	public override int Duration { get; }
+
 	/// <inheritdoc />
 	public override void Pause()
 	{
@@ -38,6 +42,12 @@ public class AudioPlayerStub : AudioPlayer
 	/// <inheritdoc />
 	public override void Stop()
 	{
+	}
+
+	/// <inheritdoc />
+	public override void Speak(string message)
+	{
+
 	}
 
 	/// <inheritdoc />
@@ -72,6 +82,10 @@ public abstract class AudioPlayer : Bindable, IDisposable
 
 	public bool IsPlaying { get; protected set; }
 
+	public abstract int CurrentPosition { get; }
+	
+	public abstract int Duration { get; }
+
 	protected bool IsDisposed { get; set; }
 
 	#endregion
@@ -100,6 +114,12 @@ public abstract class AudioPlayer : Bindable, IDisposable
 	public abstract void Seek(double position);
 
 	public abstract void Stop();
+
+	/// <summary>
+	/// Speak out a text phrase.
+	/// </summary>
+	/// <param name="message"> The message to speak. </param>
+	public abstract void Speak(string message);
 
 	/// <summary>
 	/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
@@ -131,14 +151,4 @@ public abstract class AudioPlayer : Bindable, IDisposable
 	public event EventHandler PlaybackEnded;
 
 	#endregion
-}
-
-public enum MediaButton
-{
-	Unknown,
-	Previous,
-	Next,
-	Pause,
-	Play,
-	Stop
 }

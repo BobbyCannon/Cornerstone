@@ -3,6 +3,7 @@
 using System.Runtime.CompilerServices;
 using Cornerstone.Attributes;
 using Cornerstone.Collections;
+using Cornerstone.Data;
 
 #endregion
 
@@ -63,6 +64,44 @@ public class TargetFramework : TargetFrameworkMoniker
 	#endregion
 
 	#region Methods
+
+	/// <summary>
+	/// Update the TargetFramework with an update.
+	/// </summary>
+	/// <param name="update"> The update to be applied. </param>
+	/// <param name="settings"> The settings for controlling the updating of the entity. </param>
+	public virtual bool UpdateWith(TargetFramework update, IncludeExcludeSettings settings)
+	{
+		// Code Generated - UpdateWith - TargetFramework
+
+		// If the update is null then there is nothing to do.
+		if (update == null)
+		{
+			return false;
+		}
+
+		// ****** This code has been auto generated, do not edit this. ******
+
+		UpdateProperty(IsNetFramework, update.IsNetFramework, settings.ShouldProcessProperty(nameof(IsNetFramework)), x => IsNetFramework = x);
+		UpdateProperty(IsNetStandard, update.IsNetStandard, settings.ShouldProcessProperty(nameof(IsNetStandard)), x => IsNetStandard = x);
+		UpdateProperty(IsUniversalFramework, update.IsUniversalFramework, settings.ShouldProcessProperty(nameof(IsUniversalFramework)), x => IsUniversalFramework = x);
+		UpdateProperty(NetStandard, update.NetStandard, settings.ShouldProcessProperty(nameof(NetStandard)), x => NetStandard = x);
+		UpdateProperty(Platform, update.Platform, settings.ShouldProcessProperty(nameof(Platform)), x => Platform = x);
+
+		// Code Generated - /UpdateWith - TargetFramework
+
+		return base.UpdateWith(update, settings);
+	}
+
+	/// <inheritdoc />
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
+	{
+		return update switch
+		{
+			TargetFramework value => UpdateWith(value, settings),
+			_ => base.UpdateWith(update, settings)
+		};
+	}
 
 	/// <inheritdoc />
 	protected override void OnPropertyChanged([CallerMemberName] string propertyName = null)

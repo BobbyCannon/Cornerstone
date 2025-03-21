@@ -11,12 +11,12 @@ public enum SyncObjectStatus
 	Added = 0,
 
 	/// <summary>
-	/// This entity was modified.
+	/// This entity was last modified.
 	/// </summary>
 	Modified = 1,
 
 	/// <summary>
-	/// This entity was delete.
+	/// This entity was deleted.
 	/// </summary>
 	Deleted = 2
 }

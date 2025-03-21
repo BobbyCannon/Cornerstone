@@ -8,7 +8,9 @@ using System.Diagnostics.Tracing;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using Cornerstone.Collections;
+using Cornerstone.Extensions;
 using Cornerstone.Logging;
 using Cornerstone.Presentation;
 using Cornerstone.Presentation.Managers;
@@ -28,7 +30,6 @@ public class SyncManager : Manager
 	#region Fields
 
 	private readonly SpeedyQueue<Guid> _syncQueue;
-
 	private readonly ConcurrentDictionary<string, SyncSettings> _syncSettingsForSyncType;
 	private readonly ConcurrentDictionary<string, SyncTimer> _syncTimers;
 	private readonly IDateTimeProvider _timeProvider;
@@ -46,10 +47,13 @@ public class SyncManager : Manager
 	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <param name="dispatcher"> The optional dispatcher to use. </param>
 	/// <param name="supportedSyncTypes"> The types this sync manager supports. </param>
-	public SyncManager(ISyncClientProvider clientSyncClientProvider,
+	public SyncManager(
+		ISyncClientProvider clientSyncClientProvider,
 		IServerSyncClientProvider serverSyncClientProvider,
-		IRuntimeInformation runtimeInformation, IDateTimeProvider timeProvider,
-		IDispatcher dispatcher, params string[] supportedSyncTypes)
+		IRuntimeInformation runtimeInformation,
+		IDateTimeProvider timeProvider,
+		IDispatcher dispatcher,
+		params string[] supportedSyncTypes)
 		: base(dispatcher)
 	{
 		_timeProvider = timeProvider;
@@ -64,13 +68,16 @@ public class SyncManager : Manager
 		SyncClientProfilerForServer = new Profiler("Server Profiler");
 		ServerSyncClientProvider = serverSyncClientProvider;
 		SupportedSyncTypes = supportedSyncTypes;
-		SyncSession = new SyncSession(this, Guid.Empty, default, timeProvider, dispatcher);
+		SyncSession = new SyncSession(this, Guid.Empty, null, timeProvider, dispatcher);
 		SyncWaitTimeout = TimeSpan.FromMilliseconds(60000);
 
 		foreach (var type in SupportedSyncTypes)
 		{
+			GetOrAddSyncSettings(type);
 			GetOrAddSyncTimer(type);
 		}
+
+		StartSyncCommand = new RelayCommand(x => ProcessAsync(x.ToString()));
 	}
 
 	#endregion
@@ -96,6 +103,11 @@ public class SyncManager : Manager
 	/// The server provider to get a sync client.
 	/// </summary>
 	public IServerSyncClientProvider ServerSyncClientProvider { get; }
+
+	/// <summary>
+	/// Start a sync based on the command parameter.
+	/// </summary>
+	public ICommand StartSyncCommand { get; }
 
 	/// <summary>
 	/// The profiler for the client.
@@ -201,6 +213,8 @@ public class SyncManager : Manager
 	public SyncSession Process(string syncType, Action<SyncSettings> updateSettings = null,
 		TimeSpan? waitFor = null, Action<SyncSession> postAction = null)
 	{
+		this.Dispatch(StartSyncCommand.Refresh);
+
 		ValidateSyncType(syncType);
 
 		var sessionId = Guid.NewGuid();
@@ -306,12 +320,12 @@ public class SyncManager : Manager
 	/// <summary>
 	/// Update the LastSyncedOn Server/Client for a sync type.
 	/// </summary>
-	/// <param name="type"> The type to get settings for. </param>
+	/// <param name="syncType"> The type name to get settings for. </param>
 	/// <param name="lastSyncedOnClient"> The date and time of the client of the last sync. </param>
 	/// <param name="lastSyncedOnServer"> The date and time of the server of the last sync. </param>
-	public virtual void UpdateLastSyncedOn(string type, DateTime lastSyncedOnClient, DateTime lastSyncedOnServer)
+	public virtual void UpdateLastSyncedOn(string syncType, DateTime lastSyncedOnClient, DateTime lastSyncedOnServer)
 	{
-		var settings = GetSyncSettings(type);
+		var settings = GetSyncSettings(syncType);
 		if (settings == null)
 		{
 			return;
@@ -425,6 +439,8 @@ public class SyncManager : Manager
 			});
 		}
 
+		this.Dispatch(StartSyncCommand.Refresh);
+
 		SyncCompleted?.Invoke(this, session);
 	}
 
@@ -433,6 +449,20 @@ public class SyncManager : Manager
 	/// </summary>
 	protected virtual void OnSyncRunning(SyncSession session)
 	{
+	}
+
+	protected bool ReadyToSync(string syncType, TimeSpan interval)
+	{
+		if (!SyncSettingsForSyncType.TryGetValue(syncType, out var settings))
+		{
+			// Never synced
+			return true;
+		}
+
+		return ((_timeProvider.UtcNow - settings.LastSyncedOnClient) >= interval)
+			&& ((settings.LastSyncAttemptedOn <= DateTime.MinValue)
+				|| ((_timeProvider.UtcNow - settings.LastSyncAttemptedOn) >= interval)
+			);
 	}
 
 	/// <summary>

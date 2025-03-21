@@ -7,6 +7,7 @@ using System.Linq;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Sync;
+using Sample.Shared.Storage.Sync;
 
 #endregion
 
@@ -15,7 +16,7 @@ namespace Sample.Shared.Storage.Server;
 /// <summary>
 /// Represents the account entity.
 /// </summary>
-public class AccountEntity : SyncEntity<int>
+public class AccountEntity : SyncEntity<int, Account>
 {
 	#region Constructors
 
@@ -60,23 +61,6 @@ public class AccountEntity : SyncEntity<int>
 	#endregion
 
 	#region Methods
-
-	/// <inheritdoc />
-	public override HashSet<string> GetDefaultIncludedProperties(UpdateableAction action)
-	{
-		var response = base.GetDefaultIncludedProperties(action);
-
-		switch (action)
-		{
-			case UpdateableAction.SyncOutgoing:
-			{
-				response.Add(nameof(EmailAddress), nameof(Name), nameof(Roles));
-				break;
-			}
-		}
-
-		return response;
-	}
 
 	public bool InRole(params AccountRole[] roles)
 	{

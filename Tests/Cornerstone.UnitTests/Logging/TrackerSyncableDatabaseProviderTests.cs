@@ -2,6 +2,7 @@
 
 using System;
 using System.Linq;
+using Cornerstone.Data;
 using Cornerstone.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Sample.Server.Data;
@@ -19,7 +20,7 @@ public class TrackerProviderTests : CornerstoneUnitTest
 	[TestMethod]
 	public void AddTrackerPaths()
 	{
-		var databaseProvider = new ServerMemoryDatabaseProvider(this);
+		var databaseProvider = new ServerMemoryDatabaseProvider(this, null);
 		var trackerProvider = new TrackerProvider<IServerDatabase>(databaseProvider, this, TimeSpan.FromMinutes(5));
 		using var database = databaseProvider.GetDatabase();
 
@@ -51,7 +52,9 @@ public class TrackerProviderTests : CornerstoneUnitTest
 				Value02 = "1",
 				Value03 = "True"
 			},
-			expected
+			expected,
+			null,
+			expected.GetIncludeExcludeSettings(UpdateableAction.UnwrapProxyEntity)
 		);
 
 		var expected2 = database.TrackerPathConfigurations.First();

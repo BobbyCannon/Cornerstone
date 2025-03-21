@@ -86,7 +86,7 @@ public class SampleOscCommandTests : CornerstoneUnitTest
 		var data = "/sample,3,\"Bob\",{ Time: 2020-02-14T11:36:15.0000000Z },True,{ SampleValue: 1,2,3 },{ Time: 2020-02-14T11:36:16.123Z }";
 		var parser = new OscArgumentParser<SampleCustomValue>();
 		var message = OscPacket.Parse(data, parser) as OscMessage;
-		Assert.IsNotNull(message);
+		IsNotNull(message);
 
 		var command = OscCommand.FromMessage<SampleOscCommand>(message);
 		command.Version = 2;
@@ -121,7 +121,7 @@ public class SampleOscCommandTests : CornerstoneUnitTest
 	{
 		var data = "/sample,3,\"Bob\",{ Time: 2020-02-14T11:36:15.0000000Z },True,{ SampleValue: 1,2,3 }";
 		var message = OscPacket.Parse(data, new OscArgumentParser<SampleCustomValue>()) as OscMessage;
-		Assert.IsNotNull(message);
+		IsNotNull(message);
 
 		var actual = OscCommand.FromMessage<SampleOscCommand>(message);
 		AreEqual(new DateTime(2020, 02, 14, 11, 36, 15, DateTimeKind.Utc), actual.BirthDate);
@@ -133,7 +133,7 @@ public class SampleOscCommandTests : CornerstoneUnitTest
 	{
 		var data = "/sample,3,\"Bob\",{ Time: 2020-02-14T11:36:15.0000000Z },True,{ SampleValue: 1,2,3 }";
 		var message = OscPacket.Parse(data) as OscMessage;
-		Assert.IsNotNull(message);
+		IsNotNull(message);
 
 		ExpectedException<InvalidCastException>(() => OscCommand.FromMessage<SampleOscCommand>(message),
 			"Unable to cast object of type 'System.String' to type 'Cornerstone.UnitTests.Protocols.Samples.SampleCustomValue'.",

@@ -1,0 +1,68 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		mc:Ignorable="d" d:DesignWidth="600"
+		x:Class="Cornerstone.Sample.Tabs.TabResponsiveGrid">
+	<Grid>
+		<Grid.Styles>
+			<Style Selector="Border">
+				<Setter Property="BorderThickness" Value="1" />
+				<Setter Property="BorderBrush" Value="DarkGray" />
+				<Setter Property="Margin" Value="3" />
+				<Setter Property="Height" Value="60" />
+			</Style>
+			<Style Selector="Border.Header">
+				<Setter Property="ResponsiveGrid.XS" Value="12" />
+			</Style>
+			<Style Selector="Border.Section1">
+				<Setter Property="ResponsiveGrid.XS" Value="6" />
+				<Setter Property="ResponsiveGrid.SM" Value="3" />
+				<Setter Property="ResponsiveGrid.MD" Value="2" />
+			</Style>
+			<Style Selector="Border.Section2">
+				<Setter Property="ResponsiveGrid.XS" Value="8" />
+				<Setter Property="ResponsiveGrid.SM" Value="4" />
+				<Setter Property="ResponsiveGrid.MD" Value="2" />
+			</Style>
+			<Style Selector="TextBlock">
+				<Setter Property="HorizontalAlignment" Value="Center" />
+				<Setter Property="VerticalAlignment" Value="Center" />
+			</Style>
+		</Grid.Styles>
+
+		<ResponsiveGrid>
+			<Border Classes="Header">
+				<TextBlock Text="12" />
+			</Border>
+			<Border Classes="Section1">
+				<TextBlock Text="6,3,2" />
+			</Border>
+			<Border Classes="Section1">
+				<TextBlock Text="6,3,2" />
+			</Border>
+			<Border Classes="Section1">
+				<TextBlock Text="6,3,2" />
+			</Border>
+			<Border Classes="Section1">
+				<TextBlock Text="6,3,2" />
+			</Border>
+			<Border Classes="Section2">
+				<TextBlock Text="8,4,2" />
+			</Border>
+			<Border ResponsiveGrid.XS="4" ResponsiveGrid.MD="2">
+				<TextBlock Text="4,2" />
+			</Border>
+			<Border Classes="Section2">
+				<TextBlock Text="8,4,2" />
+			</Border>
+			<Border ResponsiveGrid.XS="4"  ResponsiveGrid.MD="2">
+				<TextBlock Text="4,2" />
+			</Border>
+			<Border ResponsiveGrid.MD="12" ResponsiveGrid.LG="6">
+				<TextBlock Text="12,6" />
+			</Border>
+		</ResponsiveGrid>
+	</Grid>
+</UserControl>

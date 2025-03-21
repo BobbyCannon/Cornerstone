@@ -1,6 +1,7 @@
 ﻿#region References
 
 using Cornerstone.Runtime;
+using Cornerstone.Storage;
 using Cornerstone.Sync;
 using Sample.Shared.Storage;
 
@@ -8,23 +9,15 @@ using Sample.Shared.Storage;
 
 namespace Sample.Server.Data;
 
-public abstract class ServerDatabaseProvider : SyncableDatabaseProvider<IServerDatabase>
+public abstract class ServerDatabaseProvider 
+	: SyncableDatabaseProvider<IServerDatabase>
 {
 	#region Constructors
 
 	/// <inheritdoc />
-	protected ServerDatabaseProvider(IDateTimeProvider dateTimeProvider) : base(dateTimeProvider)
+	protected ServerDatabaseProvider(IDateTimeProvider dateTimeProvider, DatabaseKeyCache keyCache)
+		: base(dateTimeProvider, keyCache, IServerDatabase.GetDefaultDatabaseSettings())
 	{
-	}
-
-	#endregion
-
-	#region Methods
-
-	/// <inheritdoc />
-	public override string[] GetSyncOrder()
-	{
-		return ServerMemoryDatabase.GetSyncOrder();
 	}
 
 	#endregion

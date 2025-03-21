@@ -1,0 +1,87 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		xmlns:converters="clr-namespace:Cornerstone.Avalonia.Converters;assembly=Cornerstone.Avalonia"
+		mc:Ignorable="d" d:DesignWidth="600"
+		x:Class="Cornerstone.Sample.Tabs.TabWebView"
+		x:DataType="tabs:TabWebView">
+	<DockPanel Margin="10">
+		<Grid DockPanel.Dock="Top">
+			<TextBlock Classes="HeaderSix"
+					HorizontalAlignment="Center"
+					Text="Web View" />
+		</Grid>
+		<ScrollViewer DockPanel.Dock="Bottom"
+				MaxHeight="300">
+			<Grid ColumnDefinitions="*,*">
+				<StackPanel Grid.Column="0">
+					<TextBox Text="{Binding Uri, Mode=TwoWay}"
+							HorizontalAlignment="Stretch" />
+					<Button Click="UpdateUri"
+							HorizontalAlignment="Stretch">
+						Update
+					</Button>
+
+					<Button HorizontalAlignment="Stretch"
+							Click="SetContent">
+						Set Content
+					</Button>
+					<Button HorizontalAlignment="Stretch"
+							Click="SendScript">
+						Send Script
+					</Button>
+					<Grid ColumnDefinitions="*,*"
+							RowDefinitions="*,*">
+						<StackPanel Grid.Row="0" Grid.Column="0"
+								Orientation="Horizontal">
+							<Button Click="Refresh"
+									HorizontalAlignment="Stretch"
+									ToolTip.Tip="Refresh">
+								<PathIcon
+										Classes.Rotating="{Binding ElementName=WebView, Path=IsNavigating}"
+										Data="{StaticResource FontAwesome.Sync.Solid}"
+										Width="16" Height="16"
+										Margin="10" />
+							</Button>
+							<Border BorderThickness="1" BorderBrush="DimGray"
+									Height="32" Width="32">
+								<Image Source="{Binding ElementName=WebView, Path=Favicon, Mode=OneWay, Converter={x:Static converters:ImageConverters.ToBitmap}}"
+										Width="16" Height="16"
+										HorizontalAlignment="Center"
+										VerticalAlignment="Center" />
+							</Border>
+						</StackPanel>
+						<StackPanel Grid.Row="0" Grid.Column="1"
+								Orientation="Horizontal"
+								HorizontalAlignment="Right">
+							<Button Content="1" Click="SampleSite" />
+							<Button Content="2" Click="SampleSite" />
+							<Button Content="3" Click="SampleSite" />
+							<Button Content="4" Click="SampleSite" />
+						</StackPanel>
+						<StackPanel Grid.Row="1"
+								Grid.Column="0"
+								Grid.ColumnSpan="2">
+							<TextBlock Text="{Binding ScriptResults, Mode=OneWay}" />
+						</StackPanel>
+					</Grid>
+				</StackPanel>
+				<StackPanel Grid.Column="1">
+					<TextEditorControl x:Name="HtmlEditor"
+							Margin="0,0,0,0"
+							MinHeight="120"
+							MaxHeight="150" />
+					<TextEditorControl x:Name="ScriptEditor"
+							Margin="0,0,0,0"
+							MinHeight="120"
+							MaxHeight="150" />
+				</StackPanel>
+			</Grid>
+		</ScrollViewer>
+		<WebView x:Name="WebView" 
+				Uri="https://github.com/BobbyCannon/Cornerstone" />
+	</DockPanel>
+</UserControl>

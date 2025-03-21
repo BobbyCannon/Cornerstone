@@ -22,7 +22,8 @@ namespace Cornerstone.Storage;
 /// <typeparam name="T"> The type contained in the repository. </typeparam>
 /// <typeparam name="T2"> The type of the entity key. </typeparam>
 [Serializable]
-internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where T : Entity<T2>
+internal class Repository<T, T2> : Repository<T>, IRepository<T, T2>
+	where T : Entity<T2>
 {
 	#region Fields
 
@@ -61,36 +62,33 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	#region Properties
 
 	/// <inheritdoc />
-	public int Count => _cache.Count(x => x.State != EntityStateType.Added);
+	public override int Count => _cache.Count(x => x.State != EntityStateType.Added);
 
 	/// <inheritdoc />
-	public bool IsReadOnly => false;
+	public override Type ElementType => _query.ElementType;
+
+	/// <inheritdoc />
+	public override Expression Expression => _query.Expression;
 
 	/// <summary>
 	/// Will keep the repository items in cache for the life cycle of the repository.
 	/// </summary>
-	public bool NeverClearCache { get; set; }
+	public override bool NeverClearCache { get; set; }
+
+	/// <inheritdoc />
+	public override IQueryProvider Provider => _query.Provider;
 
 	/// <summary>
 	/// The database this repository is for.
 	/// </summary>
-	protected Database Database { get; }
-
-	/// <inheritdoc />
-	Type IQueryable.ElementType => _query.ElementType;
-
-	/// <inheritdoc />
-	Expression IQueryable.Expression => _query.Expression;
-
-	/// <inheritdoc />
-	IQueryProvider IQueryable.Provider => _query.Provider;
+	protected override Database Database { get; }
 
 	#endregion
 
 	#region Methods
 
 	/// <inheritdoc />
-	public void Add(T entity)
+	public override void Add(T entity)
 	{
 		if (entity == null)
 		{
@@ -114,7 +112,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	}
 
 	/// <inheritdoc />
-	public void AddOrUpdate(T entity)
+	public override void AddOrUpdate(T entity)
 	{
 		if (!entity.IdIsSet())
 		{
@@ -138,7 +136,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	/// update.
 	/// </summary>
 	/// <param name="entity"> The entity to be added. </param>
-	public void AddOrUpdate(object entity)
+	public override void AddOrUpdate(object entity)
 	{
 		if (entity is not T myEntity)
 		{
@@ -149,13 +147,13 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	}
 
 	/// <inheritdoc />
-	public void ApplyChangesTo(object destination)
+	public override void ApplyChangesTo(object destination)
 	{
 		throw new NotImplementedException();
 	}
 
 	/// <inheritdoc />
-	public void AssignKey(IEntity entity, List<IEntity> processed)
+	public override void AssignKey(IEntity entity, List<IEntity> processed)
 	{
 		if (processed?.Contains(entity) == true)
 		{
@@ -196,18 +194,24 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	}
 
 	/// <inheritdoc />
-	public void AssignKeys(List<IEntity> processed)
+	public override void AssignKeys()
 	{
+		var processed = new List<IEntity>();
 		foreach (var entityState in _cache)
 		{
 			AssignKey(entityState.Entity, processed);
+			_primaryLookup.GetOrAdd(entityState.Entity.Id, entityState);
+
+			if (entityState.Entity is ISyncEntity syncEntity)
+			{
+				_secondaryLookup.GetOrAdd(syncEntity.GetEntitySyncId(), entityState);
+			}
 		}
 	}
 
 	/// <inheritdoc />
-	public void Clear()
+	public override void Clear()
 	{
-		throw new NotImplementedException();
 	}
 
 	/// <summary>
@@ -215,20 +219,20 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	/// </summary>
 	/// <param name="entity"> The entity to test for. </param>
 	/// <returns> True if the entity exist or false it otherwise. </returns>
-	public bool Contains(T entity)
+	public override bool Contains(T entity)
 	{
 		return _cache.Any(x => entity == x.Entity) || _query.Any(x => Equals(x.Id, entity.Id));
 	}
 
 	/// <inheritdoc />
-	public void CopyTo(T[] array, int arrayIndex)
+	public override void CopyTo(T[] array, int arrayIndex)
 	{
 		var items = _query.ToArray();
 		Array.Copy(items, 0, array, arrayIndex, items.Length);
 	}
 
 	/// <inheritdoc />
-	public int DiscardChanges()
+	public override int DiscardChanges()
 	{
 		var response = _cache.Count;
 		ResetCache();
@@ -236,19 +240,19 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	}
 
 	/// <inheritdoc />
-	public void Dispose()
+	public override void Dispose()
 	{
 		ResetCache();
 	}
 
 	/// <inheritdoc />
-	public ReadOnlySet<string> GetChangedProperties()
+	public override ReadOnlySet<string> GetChangedProperties()
 	{
 		return ReadOnlySet<string>.Empty;
 	}
 
 	/// <inheritdoc />
-	public IEnumerator<T> GetEnumerator()
+	public override IEnumerator<T> GetEnumerator()
 	{
 		return _query.GetEnumerator();
 	}
@@ -258,7 +262,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	/// </summary>
 	/// <param name="filter"> </param>
 	/// <returns> </returns>
-	public IQueryable<T> GetRawQueryable(Func<T, bool> filter)
+	public override IQueryable<T> GetRawQueryable(Func<T, bool> filter)
 	{
 		return _cache
 			.Select(x => x.Entity)
@@ -267,42 +271,36 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	}
 
 	/// <inheritdoc />
-	public bool HasChanges()
-	{
-		return HasChanges(IncludeExcludeSettings.Empty);
-	}
-
-	/// <inheritdoc />
-	public bool HasChanges(IncludeExcludeSettings settings)
+	public override bool HasChanges(IncludeExcludeSettings settings)
 	{
 		return GetChanges().Any();
 	}
 
 	/// <inheritdoc />
-	public bool HasDependentRelationship(object[] value, object id)
+	public override bool HasDependentRelationship(object[] value, object id)
 	{
 		var foreignKeyFunction = (Func<T, object>) value[4];
 		return this.Any(x => id.Equals(foreignKeyFunction.Invoke(x)));
 	}
 
-	public IIncludableQueryable<T, object> Include(Expression<Func<T, object>> include)
+	public override IIncludableQueryable<T, object> Include(Expression<Func<T, object>> include)
 	{
 		return new IncludableQueryable<T, object>(_query);
 	}
 
 	/// <inheritdoc />
-	public IIncludableQueryable<T, T3> Include<T3>(Expression<Func<T, T3>> include)
+	public override IIncludableQueryable<T, T3> Include<T3>(Expression<Func<T, T3>> include)
 	{
 		return new IncludableQueryable<T, T3>(_query);
 	}
 
 	/// <inheritdoc />
-	public IIncludableQueryable<T, object> Including(params Expression<Func<T, object>>[] includes)
+	public override IIncludableQueryable<T, object> Including(params Expression<Func<T, object>>[] includes)
 	{
 		return new IncludableQueryable<T, object>(_query);
 	}
 
-	public IIncludableQueryable<T, T3> Including<T3>(params Expression<Func<T, T3>>[] includes)
+	public override IIncludableQueryable<T, T3> Including<T3>(params Expression<Func<T, T3>>[] includes)
 	{
 		return new IncludableQueryable<T, T3>(_query);
 	}
@@ -312,7 +310,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	/// </summary>
 	/// <param name="entity"> The entity to be added. </param>
 	/// <param name="targetEntity"> The entity to locate insert point. </param>
-	public void InsertBefore(T entity, T targetEntity)
+	public override void InsertBefore(T entity, T targetEntity)
 	{
 		if (_cache.Any(x => entity == x.Entity))
 		{
@@ -331,7 +329,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	}
 
 	/// <inheritdoc />
-	public object Read(object id)
+	public override object Read(object id)
 	{
 		return Read((T2) id);
 	}
@@ -357,7 +355,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	}
 
 	/// <inheritdoc />
-	public bool Remove(T2 id)
+	public  bool Remove(T2 id)
 	{
 		var state = _cache.FirstOrDefault(x => Equals(x.Entity.Id, id));
 
@@ -377,7 +375,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	}
 
 	/// <inheritdoc />
-	public bool Remove(T entity)
+	public override bool Remove(T entity)
 	{
 		if (entity == null)
 		{
@@ -388,7 +386,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	}
 
 	/// <inheritdoc />
-	public int Remove(Expression<Func<T, bool>> filter)
+	public override int Remove(Expression<Func<T, bool>> filter)
 	{
 		return _cache
 			.Select(x => x.Entity)
@@ -398,20 +396,20 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	}
 
 	/// <inheritdoc />
-	public void RemoveDependent(object[] value, object id)
+	public override void RemoveDependent(object[] value, object id)
 	{
 		var foreignKeyFunction = (Func<T, object>) value[4];
 		Remove(x => id.Equals(foreignKeyFunction.Invoke(x)));
 	}
 
 	/// <inheritdoc />
-	public void ResetHasChanges()
+	public override void ResetHasChanges()
 	{
 		// not supported for repositories
 	}
 
 	/// <inheritdoc />
-	public int SaveChanges()
+	public override int SaveChanges()
 	{
 		_collectionChangeTracker.Reset();
 
@@ -541,7 +539,7 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	}
 
 	/// <inheritdoc />
-	public void SetDependentToNull(object[] value, object id)
+	public override void SetDependentToNull(object[] value, object id)
 	{
 		var entityExpression = (LambdaExpression) value[1];
 		var foreignKeyExpression = (LambdaExpression) value[3];
@@ -559,13 +557,13 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	}
 
 	/// <inheritdoc />
-	public void UpdateRelationships()
+	public override void UpdateRelationships()
 	{
 		_cache.ToList().ForEach(OnUpdateEntityRelationships);
 	}
 
 	/// <inheritdoc />
-	public void ValidateEntities()
+	public override void ValidateEntities()
 	{
 		_cache.Where(x => x.State is EntityStateType.Added or EntityStateType.Modified)
 			.ToList()
@@ -773,6 +771,224 @@ internal class Repository<T, T2> : IDatabaseRepository, IRepository<T, T2> where
 	/// Occurs when an entity is being validated.
 	/// </summary>
 	internal event Action<T, IRepository<T, T2>> ValidateEntity;
+
+	#endregion
+}
+
+/// <summary>
+/// Represents a collection of entities for a Cornerstone database.
+/// </summary>
+/// <typeparam name="T"> The type contained in the repository. </typeparam>
+internal abstract class Repository<T> : IDatabaseRepository, IRepository<T>
+	where T : Entity
+{
+	#region Properties
+
+	/// <inheritdoc />
+	public abstract int Count { get; }
+
+	public abstract Type ElementType { get; }
+
+	public abstract Expression Expression { get; }
+
+	/// <inheritdoc />
+	public bool IsReadOnly => false;
+
+	/// <summary>
+	/// Will keep the repository items in cache for the life cycle of the repository.
+	/// </summary>
+	public abstract bool NeverClearCache { get; set; }
+
+	public abstract IQueryProvider Provider { get; }
+
+	/// <summary>
+	/// The database this repository is for.
+	/// </summary>
+	protected abstract Database Database { get; }
+
+	#endregion
+
+	#region Methods
+
+	/// <inheritdoc />
+	public abstract void Add(T entity);
+
+	/// <inheritdoc />
+	public abstract void AddOrUpdate(T entity);
+
+	/// <summary>
+	/// Adds or updates an entity in the repository. The ID of the entity must be the default value to add and a value to
+	/// update.
+	/// </summary>
+	/// <param name="entity"> The entity to be added. </param>
+	public abstract void AddOrUpdate(object entity);
+
+	/// <inheritdoc />
+	public abstract void ApplyChangesTo(object destination);
+
+	/// <inheritdoc />
+	public abstract void AssignKey(IEntity entity, List<IEntity> processed);
+
+	/// <inheritdoc />
+	public abstract void AssignKeys();
+
+	/// <inheritdoc />
+	public abstract void Clear();
+
+	/// <summary>
+	/// Check to see if the repository contains this entity.
+	/// </summary>
+	/// <param name="entity"> The entity to test for. </param>
+	/// <returns> True if the entity exist or false it otherwise. </returns>
+	public abstract bool Contains(T entity);
+
+	/// <inheritdoc />
+	public abstract void CopyTo(T[] array, int arrayIndex);
+
+	/// <inheritdoc />
+	public abstract int DiscardChanges();
+
+	/// <inheritdoc />
+	public abstract void Dispose();
+
+	/// <inheritdoc />
+	public abstract ReadOnlySet<string> GetChangedProperties();
+
+	/// <inheritdoc />
+	public abstract IEnumerator<T> GetEnumerator();
+
+	/// <summary>
+	/// Returns a raw queryable.
+	/// </summary>
+	/// <param name="filter"> </param>
+	/// <returns> </returns>
+	public abstract IQueryable<T> GetRawQueryable(Func<T, bool> filter);
+
+	/// <inheritdoc />
+	public bool HasChanges()
+	{
+		return HasChanges(IncludeExcludeSettings.Empty);
+	}
+
+	/// <inheritdoc />
+	public abstract bool HasChanges(IncludeExcludeSettings settings);
+
+	/// <inheritdoc />
+	public abstract bool HasDependentRelationship(object[] value, object id);
+
+	public abstract IIncludableQueryable<T, object> Include(Expression<Func<T, object>> include);
+
+	/// <inheritdoc />
+	public abstract IIncludableQueryable<T, T3> Include<T3>(Expression<Func<T, T3>> include);
+
+	/// <inheritdoc />
+	public abstract IIncludableQueryable<T, object> Including(params Expression<Func<T, object>>[] includes);
+
+	public abstract IIncludableQueryable<T, T3> Including<T3>(params Expression<Func<T, T3>>[] includes);
+
+	/// <summary>
+	/// Insert an entity to the repository before the provided entity. The ID of the entity must be the default value.
+	/// </summary>
+	/// <param name="entity"> The entity to be added. </param>
+	/// <param name="targetEntity"> The entity to locate insert point. </param>
+	public abstract void InsertBefore(T entity, T targetEntity);
+
+	/// <inheritdoc />
+	public abstract object Read(object id);
+
+	/// <inheritdoc />
+	public abstract bool Remove(T entity);
+
+	/// <inheritdoc />
+	public abstract int Remove(Expression<Func<T, bool>> filter);
+
+	/// <inheritdoc />
+	public abstract void RemoveDependent(object[] value, object id);
+
+	/// <inheritdoc />
+	public abstract void ResetHasChanges();
+
+	/// <inheritdoc />
+	public abstract int SaveChanges();
+
+	/// <inheritdoc />
+	public abstract void SetDependentToNull(object[] value, object id);
+
+	/// <inheritdoc />
+	public abstract void UpdateRelationships();
+
+	/// <inheritdoc />
+	public abstract void ValidateEntities();
+
+	/// <inheritdoc />
+	IEnumerator IEnumerable.GetEnumerator()
+	{
+		return GetEnumerator();
+	}
+
+	#endregion
+}
+
+/// <summary>
+/// Represents a collection of entities for a Cornerstone database.
+/// </summary>
+/// <typeparam name="T"> The type of the entity of the collection. </typeparam>
+/// <typeparam name="T2"> The type of the entity key. </typeparam>
+public interface IRepository<T, in T2> : IRepository<T>
+	where T : Entity<T2>
+{
+	#region Methods
+
+	/// <summary>
+	/// Removes an entity from the repository.
+	/// </summary>
+	/// <param name="id"> The ID of the entity to remove. </param>
+	bool Remove(T2 id);
+
+	#endregion
+}
+
+/// <summary>
+/// Represents a collection of entities for a Cornerstone database.
+/// </summary>
+/// <typeparam name="T"> The type of the entity of the collection. </typeparam>
+public interface IRepository<T> : ICollection<T>, IQueryable<T> where T : Entity
+{
+	#region Methods
+
+	/// <summary>
+	/// Adds or updates an entity in the repository. The ID of the entity must be the default value to add and a value to
+	/// update.
+	/// </summary>
+	/// <param name="entity"> The entity to be added. </param>
+	void AddOrUpdate(T entity);
+
+	/// <summary>
+	/// Configures the query to include related entities in the results.
+	/// </summary>
+	/// <param name="include"> The related entities to include. </param>
+	/// <returns> The results of the query including the related entities. </returns>
+	IIncludableQueryable<T, T3> Include<T3>(Expression<Func<T, T3>> include);
+
+	/// <summary>
+	/// Configures the query to include multiple related entities in the results.
+	/// </summary>
+	/// <param name="includes"> The related entities to include. </param>
+	/// <returns> The results of the query including the related entities. </returns>
+	IIncludableQueryable<T, object> Including(params Expression<Func<T, object>>[] includes);
+
+	/// <summary>
+	/// Configures the query to include multiple related entities in the results.
+	/// </summary>
+	/// <param name="includes"> The related entities to include. </param>
+	/// <returns> The results of the query including the related entities. </returns>
+	IIncludableQueryable<T, T3> Including<T3>(params Expression<Func<T, T3>>[] includes);
+
+	/// <summary>
+	/// Removes a set of entities from the repository.
+	/// </summary>
+	/// <param name="filter"> The filter of the entities to remove. </param>
+	int Remove(Expression<Func<T, bool>> filter);
 
 	#endregion
 }

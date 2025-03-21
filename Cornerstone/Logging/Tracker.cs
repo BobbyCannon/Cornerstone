@@ -3,6 +3,7 @@
 using System;
 using System.Diagnostics.Tracing;
 using System.Linq;
+using Cornerstone.Attributes;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
 using Cornerstone.Runtime;
@@ -16,10 +17,17 @@ namespace Cornerstone.Logging;
 /// </summary>
 public class Tracker : Bindable, IDisposable
 {
+	#region Constants
+
+	public const string SessionName = "Session";
+
+	#endregion
+
 	#region Fields
 
-	private readonly TrackerPath _session;
 	private readonly IDateTimeProvider _dateTimeProvider;
+
+	private readonly TrackerPath _session;
 
 	#endregion
 
@@ -31,14 +39,14 @@ public class Tracker : Bindable, IDisposable
 	/// <param name="pathRepository"> The final repository used to store the data. </param>
 	/// <param name="dateTimeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	private Tracker(ITrackerRepository pathRepository, IDateTimeProvider dateTimeProvider, IDispatcher dispatcher) : base(dispatcher)
+	[DependencyInjectionConstructor]
+	public Tracker(ITrackerRepository pathRepository, IDateTimeProvider dateTimeProvider, IDispatcher dispatcher) : base(dispatcher)
 	{
 		_dateTimeProvider = dateTimeProvider;
 		_session = new TrackerPath(dateTimeProvider, dispatcher)
 		{
-			Name = "Session",
-			StartedOn = _dateTimeProvider.UtcNow,
-			Type = "Session",
+			Name = SessionName,
+			Type = SessionName,
 			Data = string.Empty
 		};
 
@@ -66,7 +74,7 @@ public class Tracker : Bindable, IDisposable
 	public void AddException(Exception exception, params TrackerPathValue[] values)
 	{
 		ValidateTrackerState();
-		WriteAndSave(TrackerPath.CreatePath(_dateTimeProvider, exception, values));
+		WriteAndSave(TrackerPath.CreatePathForException(_dateTimeProvider, exception, values));
 
 		if (exception.InnerException != null)
 		{

@@ -30,7 +30,7 @@ public class MemoryTrackerRepository : Bindable, ITrackerRepository
 	/// <summary>
 	/// The paths for this repository.
 	/// </summary>
-	public ISpeedyList<TrackerPath> Paths { get; }
+	public SpeedyList<TrackerPath> Paths { get; }
 
 	#endregion
 

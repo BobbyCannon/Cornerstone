@@ -13,7 +13,7 @@ namespace Cornerstone.UnitTests.Generators.CodeGenerators;
 public class CodeGeneratorTests<T> : CornerstoneUnitTest
     where T : CodeGenerator, new()
 {
-    #region Constructors
+	#region Constructors
 
     public CodeGeneratorTests()
     {
@@ -24,9 +24,9 @@ public class CodeGeneratorTests<T> : CornerstoneUnitTest
 
     #region Properties
 
-    public T Generator { get; }
+	public T Generator { get; }
 
-    #endregion
+	#endregion
 
     #region Methods
 

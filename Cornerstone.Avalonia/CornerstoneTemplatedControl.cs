@@ -10,7 +10,6 @@ using Cornerstone.Weaver;
 
 namespace Cornerstone.Avalonia;
 
-[DoNotNotify]
 public class CornerstoneTemplatedControl : TemplatedControl, IDispatchable
 {
 	#region Fields

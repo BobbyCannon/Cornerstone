@@ -3,7 +3,6 @@
 using System.Runtime.CompilerServices;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
-using Cornerstone.Internal;
 
 #endregion
 
@@ -41,38 +40,6 @@ public abstract class Bindable<T> : Bindable, ICloneable<T>, IUpdateable<T>
 	}
 
 	/// <inheritdoc />
-	public virtual bool ShouldUpdate(T update, IncludeExcludeSettings settings)
-	{
-		return UpdateableExtensions.ShouldUpdate(this, update, settings);
-	}
-
-	/// <inheritdoc />
-	public bool TryUpdateWith(T update)
-	{
-		return TryUpdateWith(update, IncludeExcludeSettings.Empty);
-	}
-
-	/// <inheritdoc />
-	public bool TryUpdateWith(T update, IncludeExcludeSettings settings)
-	{
-		return ShouldUpdate(update, settings)
-			&& UpdateWith(update, settings);
-	}
-
-	/// <inheritdoc />
-	public bool UpdateWith(T update)
-	{
-		return UpdateWith((object) update);
-	}
-
-	/// <inheritdoc />
-	public bool UpdateWith(T update, UpdateableAction action)
-	{
-		var options = Cache.GetSettings(GetRealType(), action);
-		return UpdateWith(update, options);
-	}
-
-	/// <inheritdoc />
 	public abstract bool UpdateWith(T update, IncludeExcludeSettings settings);
 
 	/// <inheritdoc />
@@ -91,7 +58,7 @@ public abstract class Bindable<T> : Bindable, ICloneable<T>, IUpdateable<T>
 /// <summary>
 /// Represents a bindable object for a UI bindings.
 /// </summary>
-public abstract class Bindable : Notifiable, IBindable, IDispatchable
+public abstract class Bindable : Notifiable, IBindable
 {
 	#region Fields
 
@@ -157,17 +124,9 @@ public abstract class Bindable : Notifiable, IBindable, IDispatchable
 /// <summary>
 /// Represents a bindable object.
 /// </summary>
-public interface IBindable : INotifiable
+public interface IBindable : INotifiable, IDispatchable
 {
 	#region Methods
-
-	/// <summary>
-	/// Get the current dispatcher in use.
-	/// </summary>
-	/// <returns>
-	/// The dispatcher that is currently being used. Null if no dispatcher is assigned.
-	/// </returns>
-	public IDispatcher GetDispatcher();
 
 	/// <summary>
 	/// Updates the entity for this entity.

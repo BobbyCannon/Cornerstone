@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 using Cornerstone.Collections;
 using Cornerstone.Data;
 using Cornerstone.Presentation;
-using Cornerstone.Text.Human;
+using Cornerstone.Text;
 
 #endregion
 
@@ -20,21 +20,6 @@ namespace Cornerstone.Extensions;
 public static class CollectionExtensions
 {
 	#region Methods
-
-	/// <summary>
-	/// Add multiple items to a collection
-	/// </summary>
-	/// <param name="set"> The set to add items to. </param>
-	/// <param name="items"> The items to add. </param>
-	public static IList Add(this IList set, IEnumerable items)
-	{
-		foreach (var item in items)
-		{
-			set.Add(item);
-		}
-
-		return set;
-	}
 
 	/// <summary>
 	/// Add multiple items to a collection
@@ -105,6 +90,11 @@ public static class CollectionExtensions
 	/// <param name="action"> The action to execute for each item. </param>
 	public static void ForEach<T>(this IEnumerable<T> items, Action<T> action)
 	{
+		if ((items == null) || (action == null))
+		{
+			return;
+		}
+
 		foreach (var item in items)
 		{
 			action(item);
@@ -169,6 +159,14 @@ public static class CollectionExtensions
 		}
 
 		return missingValues;
+	}
+
+	public static List<T> Order<T>(this List<T> list, OrderBy<T>[] order)
+	{
+		var firstOrder = order.First();
+		var thenBy = order.Skip(1).ToArray();
+		var ordered = firstOrder.Process(list.AsQueryable(), thenBy).ToList();
+		return ordered;
 	}
 
 	/// <summary>
@@ -267,36 +265,6 @@ public static class CollectionExtensions
 		{
 			collection.Remove(item);
 		}
-	}
-
-	/// <summary>
-	/// Sorts the enumerable
-	/// </summary>
-	/// <typeparam name="T"> </typeparam>
-	/// <param name="source"> </param>
-	/// <param name="dependencies"> </param>
-	/// <param name="throwOnCycle"> </param>
-	/// <returns> </returns>
-	public static IEnumerable<T> Sort<T>(this IEnumerable<T> source, Func<T, IEnumerable<T>> dependencies, bool throwOnCycle = false)
-	{
-		var sorted = new List<T>();
-		var visited = new HashSet<T>();
-
-		foreach (var item in source)
-		{
-			Visit(item, visited, sorted, dependencies, throwOnCycle);
-		}
-
-		return sorted;
-	}
-
-	/// <summary>
-	/// Sort one collection based on keys defined in another
-	/// </summary>
-	/// <returns> Items sorted </returns>
-	public static IEnumerable<TResult> SortBy<TResult, TKey>(this IEnumerable<TResult> itemsToSort, IEnumerable<TKey> sortKeys, Func<TResult, TKey> matchFunc)
-	{
-		return sortKeys.Join(itemsToSort, key => key, matchFunc, (key, item) => item);
 	}
 
 	/// <summary>
@@ -441,28 +409,6 @@ public static class CollectionExtensions
 			{
 				toUpdate.UpdateWithUsingReflection(update);
 				break;
-			}
-		}
-	}
-
-	private static void Visit<T>(T item, HashSet<T> visited, List<T> sorted, Func<T, IEnumerable<T>> dependencies, bool throwOnCycle)
-	{
-		if (!visited.Contains(item))
-		{
-			visited.Add(item);
-
-			foreach (var dep in dependencies(item))
-			{
-				Visit(dep, visited, sorted, dependencies, throwOnCycle);
-			}
-
-			sorted.Add(item);
-		}
-		else
-		{
-			if (throwOnCycle && !sorted.Contains(item))
-			{
-				throw new Exception("Cyclic dependency found");
 			}
 		}
 	}

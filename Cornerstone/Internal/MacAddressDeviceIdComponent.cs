@@ -3,15 +3,6 @@
 using System.Linq;
 using System.Net.NetworkInformation;
 using Cornerstone.Runtime;
-/* Unmerged change from project 'Cornerstone (netstandard2.0)'
-Before:
-using Cornerstone.Runtime;
-After:
-using Cornerstone;
-using Cornerstone.Internal;
-using Cornerstone.Internal;
-using Cornerstone.Runtime;
-*/
 
 #endregion
 

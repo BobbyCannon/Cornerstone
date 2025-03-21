@@ -658,14 +658,14 @@ public static class CmdletHelpGenerator
 			{
 				var set = temp.ParameterSetName + "";
 				List<PropertyInfo> piList = null;
-				if (!parameterSets.ContainsKey(set))
+				if (!parameterSets.TryGetValue(set, out var set1))
 				{
 					piList = [];
 					parameterSets.Add(set, piList);
 				}
 				else
 				{
-					piList = parameterSets[set];
+					piList = set1;
 				}
 
 				parameterSets[set].Add(pi);

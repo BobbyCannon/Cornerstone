@@ -58,13 +58,13 @@ public class IsoDateTimeTests : CornerstoneUnitTest
 	{
 		var iso1 = NewIsoDateTime("2022-08-23T19:13:45.2434501Z", "01:23:45.789");
 		var iso2 = NewIsoDateTime("2022-08-23T19:13:45.2434501Z", "01:23:45.789");
-		Assert.IsTrue(iso1 == iso2);
-		Assert.IsTrue(iso1.Equals(iso2));
-		Assert.IsTrue(iso1.Equals((object) iso2));
-		Assert.IsTrue(Equals(iso1, iso2));
+		IsTrue(iso1 == iso2);
+		IsTrue(iso1.Equals(iso2));
+		IsTrue(iso1.Equals((object) iso2));
+		IsTrue(Equals(iso1, iso2));
 
 		// Also not equals 
-		Assert.IsFalse(iso1 != iso2);
+		IsFalse(iso1 != iso2);
 	}
 
 	[TestMethod]
@@ -124,11 +124,11 @@ public class IsoDateTimeTests : CornerstoneUnitTest
 
 		var iso = NewIsoDateTime("2022-08-23T00:00:00.000Z", "01:23:45.789");
 		iso.ExpiresAfter.ToString("O").Dump();
-		Assert.IsFalse(iso.IsExpired(this));
+		IsFalse(iso.IsExpired(this));
 
 		SetTime("2022-08-23T01:23:45.790Z".ToUtcDateTime());
 		iso.ExpiresAfter.ToString("O").Dump();
-		Assert.IsTrue(iso.IsExpired(this));
+		IsTrue(iso.IsExpired(this));
 	}
 
 	[TestMethod]

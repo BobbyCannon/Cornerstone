@@ -112,7 +112,7 @@ public class CollectionExtensionsTests : CornerstoneUnitTest
 		{
 			var actual = scenario.value.ToHexString();
 			AreEqual(scenario.expected, actual);
-			AreEqual(scenario.value, actual.FromHexStringToArray());
+			AreEqual(scenario.value, actual.FromHexStringToByteArray());
 		}	
 	}
 

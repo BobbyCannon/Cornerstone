@@ -249,7 +249,7 @@ public static class StringExtensions
 	/// </summary>
 	/// <param name="value"> The hex string to be converter. </param>
 	/// <returns> The byte array. </returns>
-	public static byte[] FromHexStringToArray(this string value)
+	public static byte[] FromHexStringToByteArray(this string value)
 	{
 		var bytes = new byte[value.Length / 2];
 

@@ -12,7 +12,7 @@ namespace Cornerstone.Parsers;
 /// </summary>
 public class ParserException : CornerstoneException
 {
-    #region Constructors
+	#region Constructors
 
     /// <summary>
     /// Initializes a new parser exception which contains line number and position
@@ -33,16 +33,16 @@ public class ParserException : CornerstoneException
 
     #region Properties
 
-    /// <summary>
-    /// The line number, where the error occurred. Line numbers start at 1.
-    /// </summary>
-    public int LineNumber { get; }
+	/// <summary>
+	/// The line number, where the error occurred. Line numbers start at 1.
+	/// </summary>
+	public int LineNumber { get; }
 
-    /// <summary>
-    /// The character position within the line, where the error occurred. Character positions
-    /// start at 1.
-    /// </summary>
-    public int Position { get; }
+	/// <summary>
+	/// The character position within the line, where the error occurred. Character positions
+	/// start at 1.
+	/// </summary>
+	public int Position { get; }
 
-    #endregion
+	#endregion
 }

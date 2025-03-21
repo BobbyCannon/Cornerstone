@@ -20,7 +20,6 @@ public class StringGapBufferTests : CornerstoneUnitTest
 		{
 			//                   012345678901234567890123456789012345678901234
 			new StringGapBuffer("The quick brown fox jumped over the lazy dog."),
-			new StringRopeBuffer("The quick brown fox jumped over the lazy dog.")
 		};
 
 		foreach (var buffer in buffers)

@@ -1,6 +1,7 @@
 #region References
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Cornerstone.Compare;
@@ -50,8 +51,9 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 	{
 		_collectionChangeTracker = new CollectionChangeTracker();
 
+		DateTimeProvider = Runtime.DateTimeProvider.RealTime;
 		DbContextOptions = startup;
-		DatabaseSettings = settings ?? new DatabaseSettings();
+		DatabaseSettings = settings?.DeepClone() ?? new DatabaseSettings();
 	}
 
 	#endregion
@@ -75,19 +77,6 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 	#endregion
 
 	#region Methods
-
-	/// <inheritdoc />
-	public T Add<T, T2>(T item) where T : Entity<T2>
-	{
-		GetRepository<T, T2>().Add(item);
-		return item;
-	}
-
-	/// <inheritdoc />
-	public virtual bool CanMigrate()
-	{
-		return true;
-	}
 
 	/// <summary>
 	/// Discard all changes made in this context to the underlying database.
@@ -155,6 +144,18 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 	public IRepository<T, T2> GetReadOnlyRepository<T, T2>() where T : Entity<T2>
 	{
 		return new ReadOnlyEntityFrameworkRepository<T, T2>(this, Set<T>());
+	}
+
+	/// <inheritdoc />
+	public IRepository<T> GetRepository<T>() where T : Entity
+	{
+		var entityType = typeof(T);
+		var entityKey = entityType.BaseType?.GetGenericArguments().FirstOrDefault();
+		var genericMethod = typeof(EntityFrameworkDatabase)
+			.GetCachedGenericMethod(nameof(GetRepository), [entityType, entityKey],
+				[], ReflectionExtensions.DefaultPublicFlags
+			);
+		return (IRepository<T>) genericMethod.Invoke(this, []);
 	}
 
 	/// <inheritdoc />
@@ -630,6 +631,15 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 				break;
 			}
 		}
+
+		#if DEBUG
+		if ((entity is ICreatedEntity c && (c.CreatedOn == DateTime.MinValue))
+			|| (entity is IModifiableEntity m && (m.ModifiedOn == DateTime.MinValue))
+			|| (entity is ISyncEntity s && (s.SyncId == Guid.Empty)))
+		{
+			Debugger.Break();
+		}
+		#endif
 	}
 
 	#endregion

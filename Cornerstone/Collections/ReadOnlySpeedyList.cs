@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
 using Cornerstone.Data;
 using Cornerstone.Presentation;
@@ -16,7 +17,7 @@ namespace Cornerstone.Collections;
 /// <summary>
 /// A readonly proxy for a speedy list.
 /// </summary>
-public class ReadOnlySpeedyList<T> : Notifiable, ISpeedyList<T>, IList, IViewModel
+public class ReadOnlySpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 {
 	#region Fields
 
@@ -30,8 +31,14 @@ public class ReadOnlySpeedyList<T> : Notifiable, ISpeedyList<T>, IList, IViewMod
 	/// Create an instance of the list.
 	/// </summary>
 	public ReadOnlySpeedyList(SpeedyList<T> list)
+		: base(list, list.GetDispatcher())
 	{
 		_list = list;
+
+		var weakEventManager = Platform.GetInstance<WeakEventManager>();
+		weakEventManager.AddSpeedyListUpdated<SpeedyList<T>, T, ReadOnlySpeedyList<T>>(_list, this, ListOnListUpdated);
+		weakEventManager.AddCollectionChanged(_list, this, ListOnCollectionChanged);
+			weakEventManager.AddPropertyChanged(_list, this, ListOnPropertyChanged);
 	}
 
 	#endregion
@@ -43,11 +50,8 @@ public class ReadOnlySpeedyList<T> : Notifiable, ISpeedyList<T>, IList, IViewMod
 
 	public bool IsFiltering => _list.IsFiltering;
 
-	/// <inheritdoc />
+	/// <inheritdoc cref="ISpeedyList" />
 	public bool IsFixedSize => false;
-
-	/// <inheritdoc />
-	public bool IsInitialized { get; private set; }
 
 	/// <summary>
 	/// True if the list is currently loading items.
@@ -69,12 +73,18 @@ public class ReadOnlySpeedyList<T> : Notifiable, ISpeedyList<T>, IList, IViewMod
 	[SuppressPropertyChangedWarnings]
 	public T this[int index]
 	{
-		get => _list[index];
+		get => ((IList<T>) _list)[index];
 		set => throw new NotSupportedException();
 	}
 
-	/// <inheritdoc />
-	public object SyncRoot => ((IList) _list)?.SyncRoot;
+	public object SyncRoot => _list.SyncRoot;
+
+	[SuppressPropertyChangedWarnings]
+	object ISpeedyList.this[int index]
+	{
+		get => this[index];
+		set => throw new NotSupportedException();
+	}
 
 	/// <inheritdoc />
 	[SuppressPropertyChangedWarnings]
@@ -93,7 +103,7 @@ public class ReadOnlySpeedyList<T> : Notifiable, ISpeedyList<T>, IList, IViewMod
 	/// </summary>
 	/// <param name="item"> The item to add. </param>
 	/// <returns> The index where the item exist after add. </returns>
-	public virtual T Add(T item)
+	public void Add(T item)
 	{
 		throw new NotSupportedException();
 	}
@@ -117,12 +127,6 @@ public class ReadOnlySpeedyList<T> : Notifiable, ISpeedyList<T>, IList, IViewMod
 	}
 
 	/// <inheritdoc />
-	public IDispatcher GetDispatcher()
-	{
-		return _list.GetDispatcher();
-	}
-
-	/// <inheritdoc />
 	public IEnumerator<T> GetEnumerator()
 	{
 		var list = _list.ToList();
@@ -143,13 +147,6 @@ public class ReadOnlySpeedyList<T> : Notifiable, ISpeedyList<T>, IList, IViewMod
 	}
 
 	/// <inheritdoc />
-	public void Initialize()
-	{
-		_list.CollectionChanged += ListOnCollectionChanged;
-		IsInitialized = false;
-	}
-
-	/// <inheritdoc />
 	public void Insert(int index, T item)
 	{
 		throw new NotSupportedException();
@@ -157,6 +154,12 @@ public class ReadOnlySpeedyList<T> : Notifiable, ISpeedyList<T>, IList, IViewMod
 
 	/// <inheritdoc />
 	public void Load(params T[] items)
+	{
+		throw new NotSupportedException();
+	}
+
+	/// <inheritdoc />
+	public void Move(int oldIndex, int newIndex)
 	{
 		throw new NotSupportedException();
 	}
@@ -188,16 +191,9 @@ public class ReadOnlySpeedyList<T> : Notifiable, ISpeedyList<T>, IList, IViewMod
 		return _list.ShouldOrder();
 	}
 
-	/// <inheritdoc />
-	public void Uninitialize()
+	void ISpeedyList.Add(object item)
 	{
-		_list.CollectionChanged -= ListOnCollectionChanged;
-		IsInitialized = false;
-	}
-
-	protected virtual void OnListUpdated(SpeedyListUpdatedEventArg<T> e)
-	{
-		ListUpdated?.Invoke(this, e);
+		throw new NotSupportedException();
 	}
 
 	/// <inheritdoc />
@@ -215,8 +211,12 @@ public class ReadOnlySpeedyList<T> : Notifiable, ISpeedyList<T>, IList, IViewMod
 	/// <inheritdoc />
 	bool IList.Contains(object item)
 	{
-		return _list is IList list
-			&& list.Contains(item);
+		return Contains((T) item);
+	}
+
+	bool ISpeedyList.Contains(object item)
+	{
+		return Contains((T) item);
 	}
 
 	/// <inheritdoc />
@@ -234,6 +234,16 @@ public class ReadOnlySpeedyList<T> : Notifiable, ISpeedyList<T>, IList, IViewMod
 		return GetEnumerator();
 	}
 
+	int ISpeedyList.IndexOf(object item)
+	{
+		if (item is not T value)
+		{
+			return -1;
+		}
+
+		return _list.IndexOf(value);
+	}
+
 	/// <inheritdoc />
 	int IList.IndexOf(object item)
 	{
@@ -245,20 +255,43 @@ public class ReadOnlySpeedyList<T> : Notifiable, ISpeedyList<T>, IList, IViewMod
 		return _list.IndexOf(value);
 	}
 
-	/// <inheritdoc />
-	void IList.Insert(int index, object value)
+	void ISpeedyList.Insert(int index, object item)
 	{
 		throw new NotSupportedException();
 	}
 
+	/// <inheritdoc />
+	void IList.Insert(int index, object item)
+	{
+		throw new NotSupportedException();
+	}
+
+	[SuppressPropertyChangedWarnings]
 	private void ListOnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
 	{
 		OnPropertyChanged(nameof(Count));
 		CollectionChanged?.Invoke(this, e);
 	}
 
+	private void ListOnListUpdated(object sender, SpeedyListUpdatedEventArg<T> e)
+	{
+		OnPropertyChanged(nameof(Count));
+		ListUpdated?.Invoke(this, e);
+	}
+
+	private void ListOnPropertyChanged(object sender, PropertyChangedEventArgs e)
+	{
+		// Pass all property changes to the proxy.
+		OnPropertyChanged(e.PropertyName);
+	}
+
+	void ISpeedyList.Remove(object item)
+	{
+		throw new NotSupportedException();
+	}
+
 	/// <inheritdoc />
-	void IList.Remove(object value)
+	void IList.Remove(object item)
 	{
 		throw new NotSupportedException();
 	}

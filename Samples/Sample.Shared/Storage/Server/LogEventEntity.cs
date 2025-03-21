@@ -2,13 +2,13 @@
 
 using System;
 using Cornerstone.Sync;
-using Sample.Shared.Sync;
+using Sample.Shared.Storage.Sync;
 
 #endregion
 
 namespace Sample.Shared.Storage.Server;
 
-public class LogEventEntity : SyncEntity<long>, ILogEventSync
+public class LogEventEntity : SyncEntity<long, LogEvent>, ILogEvent
 {
 	#region Constructors
 

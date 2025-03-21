@@ -448,7 +448,7 @@ public sealed class TextEditorDocument : ITextEditorDocument, INotifyPropertyCha
 	/// <inheritdoc />
 	public string GetText(int offset, int length)
 	{
-		VerifyAccess();
+		//VerifyAccess();
 		return _buffer.SubString(offset, length);
 	}
 
@@ -497,6 +497,11 @@ public sealed class TextEditorDocument : ITextEditorDocument, INotifyPropertyCha
 	/// </remarks>
 	public void Insert(int offset, string text)
 	{
+		if (string.IsNullOrEmpty(text))
+		{
+			return;
+		}
+
 		Replace(offset, 0, new StringTextSource(text), null);
 	}
 
@@ -567,12 +572,12 @@ public sealed class TextEditorDocument : ITextEditorDocument, INotifyPropertyCha
 	}
 
 	/// <inheritdoc />
-	public int LastIndexOf(string searchText,  StringComparison comparisonType)
+	public int LastIndexOf(string searchText, StringComparison comparisonType)
 	{
 		DebugVerifyAccess();
 		return _buffer.LastIndexOf(searchText, 0, _buffer.Count, comparisonType);
 	}
-	
+
 	/// <inheritdoc />
 	public int LastIndexOf(string searchText, int startIndex, int count, StringComparison comparisonType)
 	{
@@ -955,7 +960,6 @@ public sealed class TextEditorDocument : ITextEditorDocument, INotifyPropertyCha
 		TextChangingInternal?.Invoke(this, args);
 
 		_undoStack.Push(this, args);
-
 		_cachedText = null; // reset cache of complete document text
 		_fireTextChanged = true;
 		var delayedEvents = new DelayedEvents();
@@ -1274,7 +1278,10 @@ public interface ITextEditorDocument : ITextSource, IServiceProvider
 	/// <summary>
 	/// Gets/Sets the text of the whole document.
 	/// </summary>
-	new string Text { get; set; } // hides ITextSource.Text to add the setter
+	/// <remarks>
+	/// hides ITextSource.Text to add the setter
+	/// </remarks>
+	new string Text { get; set; }
 
 	#endregion
 

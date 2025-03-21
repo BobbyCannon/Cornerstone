@@ -7,10 +7,10 @@ using System.Text;
 using Avalonia;
 using Cornerstone.Sample.ViewModels;
 using Cornerstone.Avalonia;
-using Cornerstone.Avalonia.Windows;
+using Cornerstone.Avalonia.Platforms.Windows;
 using Cornerstone.Extensions;
+using Cornerstone.Platforms.Windows;
 using Cornerstone.Runtime;
-using Cornerstone.Windows;
 
 #endregion
 
@@ -34,7 +34,11 @@ public class Program
 			.UsePlatformDetect()
 			.WithInterFont()
 			.LogToTrace()
-			.UseCornerstoneWindows();
+			.UseCornerstone();
+
+		#if DEBUG
+		response.AfterSetup(x => x.Instance.AttachDevTools());
+		#endif
 
 		return response;
 	}

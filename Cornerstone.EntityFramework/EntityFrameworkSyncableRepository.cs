@@ -61,13 +61,13 @@ public class EntityFrameworkSyncableRepository<T, T2>
 	/// <inheritdoc />
 	public int GetChangeCount(DateTime since, DateTime until, SyncRepositoryFilter filter)
 	{
-		return GetChangesQuery(since, until).Count();
+		return GetChangesQuery(since, until, filter).Count();
 	}
 
 	/// <inheritdoc />
 	public IEnumerable<SyncObject> GetChanges(DateTime since, DateTime until, int skip, int take, SyncRepositoryFilter filter)
 	{
-		var query = GetChangesQuery(since, until);
+		var query = GetChangesQuery(since, until, filter);
 
 		if (skip > 0)
 		{
@@ -89,23 +89,17 @@ public class EntityFrameworkSyncableRepository<T, T2>
 	}
 
 	/// <inheritdoc />
-	public ISyncEntity Read(ISyncEntity entity, SyncRepositoryFilter filter)
-	{
-		throw new NotImplementedException();
-	}
-
-	/// <inheritdoc />
-	public ISyncEntity Read(ISyncEntity syncEntity)
+	public ISyncEntity Read(ISyncEntity syncEntity, SyncRepositoryFilter filter)
 	{
 		if (!(syncEntity is T entity))
 		{
-			throw new CornerstoneException(CornerstoneException.SyncEntityIncorrectType);
+			throw new CornerstoneException(Babel.Tower[BabelKeys.SyncEntityIncorrectType]);
 		}
 
-		//if (filter is SyncRepositoryFilter<T, T3> srf && srf.HasLookupFilter)
-		//{
-		//	return Set.FirstOrDefault(srf.LookupFilter.Invoke(entity));
-		//}
+		if (filter is SyncRepositoryFilter<T> { HasLookupFilter: true } srf)
+		{
+			return Set.FirstOrDefault(srf.LookupFilter.Invoke(entity));
+		}
 
 		var syncId = syncEntity.GetEntitySyncId();
 		return Set.FirstOrDefault(x => Equals(x.SyncId, syncId));
@@ -136,7 +130,7 @@ public class EntityFrameworkSyncableRepository<T, T2>
 		base.Remove((T) entity);
 	}
 
-	private IQueryable<T> GetChangesQuery(DateTime since, DateTime until)
+	private IQueryable<T> GetChangesQuery(DateTime since, DateTime until, SyncRepositoryFilter filter)
 	{
 		var query = Set
 			.AsNoTracking()
@@ -145,10 +139,10 @@ public class EntityFrameworkSyncableRepository<T, T2>
 
 		// Disable merge because merged expression is very hard to read
 		// ReSharper disable once MergeSequentialPatterns
-		//if (filter is SyncRepositoryFilter<T, T3> srf && (srf.OutgoingExpression != null))
-		//{
-		//	query = query.Where(srf.OutgoingFilter);
-		//}
+		if (filter is SyncRepositoryFilter<T> srf && (srf.OutgoingExpression != null))
+		{
+			query = query.Where(srf.OutgoingFilter);
+		}
 
 		// If we have never synced, meaning we are syncing from DateTime.MinValue, and
 		// the repository has a filter that say we should skip deleted item on initial sync.
@@ -156,7 +150,7 @@ public class EntityFrameworkSyncableRepository<T, T2>
 		// but it still exist in the database. If an item is "soft deleted" we will normally
 		// still sync the item to allow the clients (non-server) to have the opportunity to
 		// hard delete the item on their end.
-		if (since == DateTime.MinValue) // && (filter?.SkipDeletedItemsOnInitialSync == true))
+		if ((since == DateTime.MinValue) && (filter?.SkipDeletedItemsOnInitialSync == true))
 		{
 			// We can skip soft deleted items that we will hard deleted on clients anyways
 			query = query.Where(x => !x.IsDeleted);

@@ -129,7 +129,7 @@ public sealed class OffsetChangeMap : Collection<OffsetChangeMapEntry>
 	/// <returns> Returns a frozen OffsetChangeMap with a single entry. </returns>
 	public static OffsetChangeMap FromSingleElement(OffsetChangeMapEntry entry)
 	{
-		return new OffsetChangeMap(new[] { entry }, true);
+		return new OffsetChangeMap([entry], true);
 	}
 
 	/// <summary>

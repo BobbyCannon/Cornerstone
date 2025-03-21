@@ -39,7 +39,7 @@ public class SyncIssueException : SyncException
 		: base(message, inner)
 	{
 		IssueType = type;
-		Issues = issues ?? Array.Empty<SyncIssue>();
+		Issues = issues ?? [];
 	}
 
 	#endregion

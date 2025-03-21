@@ -13,41 +13,42 @@ public abstract class DatabaseProvider<T> : IDatabaseProvider<T> where T : IData
 {
 	#region Fields
 
-	protected readonly IDateTimeProvider DateTimeProvider;
+	private readonly IDateTimeProvider _dateTimeProvider;
 
 	#endregion
 
 	#region Constructors
 
-	protected DatabaseProvider(IDateTimeProvider dateTimeProvider)
+	protected DatabaseProvider(IDateTimeProvider dateTimeProvider, DatabaseSettings settings)
 	{
-		DateTimeProvider = dateTimeProvider;
+		_dateTimeProvider = dateTimeProvider;
+
+		Settings = settings;
 	}
+
+	#endregion
+
+	#region Properties
+
+	public DatabaseSettings Settings { get; set; }
 
 	#endregion
 
 	#region Methods
 
-	/// <summary>
-	/// Add the entity to the database.
-	/// </summary>
-	/// <typeparam name="TEntity"> The entity type. </typeparam>
-	/// <typeparam name="TKey"> The entity primary key type. </typeparam>
-	/// <param name="entity"> The entity to be added. </param>
-	public TEntity AddToDatabase<TEntity, TKey>(TEntity entity) where TEntity : Entity<TKey>
-	{
-		using var database = GetDatabase();
-		var r = database.GetRepository<TEntity, TKey>();
-		r.Add(entity);
-		database.SaveChanges();
-		return entity;
-	}
-
 	/// <inheritdoc />
 	public T GetDatabase()
 	{
-		var response = GetDatabaseFromProvider();
-		response.UpdateDateTimeProvider(DateTimeProvider);
+		var response = GetDatabaseFromProvider(Settings, null);
+		response.UpdateDateTimeProvider(_dateTimeProvider);
+		return response;
+	}
+
+	/// <inheritdoc />
+	public T GetDatabase(DatabaseSettings settings, DatabaseKeyCache keyCache)
+	{
+		var response = GetDatabaseFromProvider(settings, keyCache);
+		response.UpdateDateTimeProvider(_dateTimeProvider);
 		return response;
 	}
 
@@ -57,10 +58,22 @@ public abstract class DatabaseProvider<T> : IDatabaseProvider<T> where T : IData
 	/// <returns> The database instance. </returns>
 	protected abstract T GetDatabaseFromProvider();
 
+	/// <summary>
+	/// Gets an instance of the database from the provider.
+	/// </summary>
+	/// <returns> The database instance. </returns>
+	protected abstract T GetDatabaseFromProvider(DatabaseSettings settings, DatabaseKeyCache keyCache);
+
 	/// <inheritdoc />
 	IDatabase IDatabaseProvider.GetDatabase()
 	{
 		return GetDatabase();
+	}
+
+	/// <inheritdoc />
+	IDatabase IDatabaseProvider.GetDatabase(DatabaseSettings settings, DatabaseKeyCache keyCache)
+	{
+		return GetDatabase(settings, keyCache);
 	}
 
 	#endregion
@@ -80,6 +93,12 @@ public interface IDatabaseProvider<out T> : IDatabaseProvider
 	/// <returns> The database instance. </returns>
 	new T GetDatabase();
 
+	/// <summary>
+	/// Gets an instance of the database.
+	/// </summary>
+	/// <returns> The database instance. </returns>
+	new T GetDatabase(DatabaseSettings settings, DatabaseKeyCache keyCache);
+
 	#endregion
 }
 
@@ -88,6 +107,15 @@ public interface IDatabaseProvider<out T> : IDatabaseProvider
 /// </summary>
 public interface IDatabaseProvider
 {
+	#region Properties
+
+	/// <summary>
+	/// Gets or sets the options for the database provider.
+	/// </summary>
+	DatabaseSettings Settings { get; set; }
+
+	#endregion
+
 	#region Methods
 
 	/// <summary>
@@ -95,6 +123,12 @@ public interface IDatabaseProvider
 	/// </summary>
 	/// <returns> The database instance. </returns>
 	IDatabase GetDatabase();
+
+	/// <summary>
+	/// Gets an instance of the database.
+	/// </summary>
+	/// <returns> The database instance. </returns>
+	IDatabase GetDatabase(DatabaseSettings settings, DatabaseKeyCache keyCache);
 
 	#endregion
 }

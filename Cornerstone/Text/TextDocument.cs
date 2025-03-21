@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Cornerstone.Collections;
-using Cornerstone.Data;
+using Cornerstone.Extensions;
 using Cornerstone.Presentation;
 using Cornerstone.Text.Buffers;
 using Cornerstone.Text.Document;
@@ -237,6 +237,66 @@ public class TextDocument : ITextRange
 
 		index = -1;
 		return false;
+	}
+
+	/// <summary>
+	/// Match characters provided in the order requested.
+	/// </summary>
+	/// <param name="index"> The index to start at. </param>
+	/// <param name="expected"> The characters to look for. </param>
+	/// <param name="ignore"> The optional character to ignore (skip). </param>
+	/// <param name="until"> The characters that will stop processing if found. </param>
+	/// <returns> The array of indexes of the expected characters. </returns>
+	/// <remarks>
+	/// .                      01234546789
+	/// Ex. #{} would match on ### { red } Header
+	/// - result [0,4,9]
+	/// </remarks>
+	public int[] FindCharactersIndexes(int index, char[] expected, char[] ignore = null, char[] until = null)
+	{
+		var response = new int[expected.Length];
+		var i = index;
+		var expectedIndex = 0;
+
+		ignore ??= [];
+		until ??= [NullChar];
+
+		while (i < EndIndex)
+		{
+			if (ignore.Any(e => e == this[i]))
+			{
+				i++;
+				continue;
+			}
+
+			if (this[i] == expected[expectedIndex])
+			{
+				// Capture first index
+				response[expectedIndex] = i;
+
+				// Skip duplicate characters
+				while ((i < EndIndex) && (this[i] == expected[expectedIndex]))
+				{
+					i++;
+				}
+
+				expectedIndex++;
+			}
+
+			if (expectedIndex == response.Length)
+			{
+				return response;
+			}
+
+			if (until.Any(e => e == this[i]))
+			{
+				return response;
+			}
+
+			i++;
+		}
+
+		return response.SubArray(0, expectedIndex);
 	}
 
 	/// <summary>

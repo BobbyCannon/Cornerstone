@@ -15,17 +15,6 @@ public class TextDocumentTests : CornerstoneUnitTest
 	#region Methods
 
 	[TestMethod]
-	public void SubStringUsing()
-	{
-		//             01234567890123456789012
-		var content = "[Test](http://test.com)";
-		var document = TextDocument.Load(content);
-
-		AreEqual("[Test]", document.SubStringUsingAbsoluteIndexes(0, 5, true));
-		AreEqual("Test", document.SubStringUsingAbsoluteIndexes(0, 5, false));
-	}
-
-	[TestMethod]
 	public void FindAnyCharacter()
 	{
 		//             01234567890123456789012
@@ -56,7 +45,7 @@ public class TextDocumentTests : CornerstoneUnitTest
 		var content = "[Test](http://test.com)";
 		var document = TextDocument.Load(content);
 
-		IsTrue(document.FindAnyCharacterExceptInReverse(0, 5, ['[',']'], out var actual) && (actual == 4));
+		IsTrue(document.FindAnyCharacterExceptInReverse(0, 5, ['[', ']'], out var actual) && (actual == 4));
 		IsTrue(document.FindAnyCharacterExceptInReverse(0, 22, [' '], out actual) && (actual == 22));
 	}
 
@@ -80,6 +69,24 @@ public class TextDocumentTests : CornerstoneUnitTest
 
 		// t will not match T
 		IsTrue(!document.FindAnyCharacterInReverse(-3, 2, ['t'], out actual) && (actual == -1));
+	}
+
+	[TestMethod]
+	public void FindCharactersIndexes()
+	{
+		//             0123456789012345678901234
+		var content = "## { Red } Header\r\nMore";
+		var document = TextDocument.Load(content);
+		var actual = document.FindCharactersIndexes(0, ['#', '{', '}'], [' '], ['\r', '\n', '\0']);
+		var expected = new[] { 0, 3, 9 };
+		AreEqual(expected, actual);
+		
+		//         01234567890123456
+		content = "## Header\r\nMore";
+		document = TextDocument.Load(content);
+		actual = document.FindCharactersIndexes(0, ['#', '{', '}'], ['\r', '\n', '\0']);
+		expected = [0];
+		AreEqual(expected, actual);
 	}
 
 	[TestMethod]
@@ -237,6 +244,17 @@ public class TextDocumentTests : CornerstoneUnitTest
 		var actualValues = actual.Select(x => x.ToString());
 
 		AreEqual(expectedValues, actualValues);
+	}
+
+	[TestMethod]
+	public void SubStringUsing()
+	{
+		//             01234567890123456789012
+		var content = "[Test](http://test.com)";
+		var document = TextDocument.Load(content);
+
+		AreEqual("[Test]", document.SubStringUsingAbsoluteIndexes(0, 5, true));
+		AreEqual("Test", document.SubStringUsingAbsoluteIndexes(0, 5, false));
 	}
 
 	#endregion

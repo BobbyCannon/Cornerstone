@@ -63,16 +63,16 @@ public abstract class EntityFrameworkSyncableDatabase : EntityFrameworkDatabase,
 	#region Methods
 
 	/// <inheritdoc />
-	public IEnumerable<ISyncableRepository> GetSyncableRepositories(SyncSettings settings)
+	public IEnumerable<ISyncableRepository> GetSyncableRepositories()
 	{
 		//
-		// NOTE: If you change this then update Cornerstone.Database
+		// NOTE: If you change this then update Cornerstone.SyncableDatabase
 		//
 
 		if (_syncableRepositories.Count <= 0)
 		{
 			// Refresh the syncable repositories
-			DetectSyncableRepositories(settings);
+			DetectSyncableRepositories();
 		}
 
 		if (SyncOrder.Length <= 0)
@@ -138,12 +138,17 @@ public abstract class EntityFrameworkSyncableDatabase : EntityFrameworkDatabase,
 	/// <summary>
 	/// Reads all repositories and puts all the syncable ones in an internal list.
 	/// </summary>
-	private void DetectSyncableRepositories(SyncSettings settings)
+	private void DetectSyncableRepositories()
 	{
 		var type = GetType();
 		var syncEntityType = typeof(ISyncEntity);
 		var cachedProperties = type.GetCachedProperties();
-		var properties = cachedProperties.Where(x => (x.PropertyType.Name == typeof(IRepository<,>).Name) || (x.PropertyType.Name == typeof(ISyncableRepository<,>).Name)).ToList();
+		var properties = cachedProperties
+			.Where(x =>
+				(x.PropertyType.Name == typeof(IRepository<,>).Name)
+				|| (x.PropertyType.Name == typeof(ISyncableRepository<,>).Name)
+			)
+			.ToList();
 
 		_syncableRepositories.Clear();
 
@@ -151,13 +156,7 @@ public abstract class EntityFrameworkSyncableDatabase : EntityFrameworkDatabase,
 		{
 			var property = properties[i];
 			var genericType = property.PropertyType.GetCachedGenericArguments().First();
-			var assemblyName = genericType.ToAssemblyName();
-
-			if (settings.ShouldExcludeRepository(assemblyName))
-			{
-				continue;
-			}
-
+			
 			if (!syncEntityType.IsAssignableFrom(genericType))
 			{
 				continue;

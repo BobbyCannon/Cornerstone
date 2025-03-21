@@ -6,9 +6,9 @@ using Android.Content.PM;
 using Android.Nfc;
 using Avalonia;
 using Avalonia.Android;
-using Cornerstone.Android;
 using Cornerstone.Avalonia;
-using Cornerstone.Avalonia.Android;
+using Cornerstone.Avalonia.Platforms.Android;
+using Cornerstone.Platforms.Android;
 
 #endregion
 
@@ -36,9 +36,10 @@ public class MainActivity : AvaloniaMainActivity<App>
 
 		AndroidPlatform.Initialize(this, dependencyProvider);
 
-		var response = base.CustomizeAppBuilder(builder)
+		var response = base
+			.CustomizeAppBuilder(builder)
 			.WithInterFont()
-			.UseCornerstoneAndroid();
+			.UseCornerstone();
 
 		return response;
 	}

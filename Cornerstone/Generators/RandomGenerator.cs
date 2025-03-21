@@ -9,7 +9,6 @@ using System.Security.Cryptography;
 using System.Text;
 using Cornerstone.Extensions;
 using Cornerstone.Text;
-using Cornerstone.Text.Human;
 
 #endregion
 
@@ -925,7 +924,7 @@ public static class RandomGenerator
 
 		var assembly = Assembly.GetExecutingAssembly();
 		var resourceName = "Cornerstone.Resources.City.txt";
-		_cities = assembly.GetManifestResourceStream(resourceName).ReadString().Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).ToArray();
+		_cities = assembly.GetManifestResourceStream(resourceName).ReadString().Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries).ToArray();
 	}
 
 	private static void LoadFirstNames()

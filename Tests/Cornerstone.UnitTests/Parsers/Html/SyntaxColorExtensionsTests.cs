@@ -15,7 +15,7 @@ namespace Cornerstone.UnitTests.Parsers.Html;
 public class SyntaxColorExtensionsTests : CornerstoneUnitTest
 {
 	[TestMethod]
-	public void Name()
+	public void Debugging()
 	{
 		var writer = new HtmlWriter();
 		writer.Start();

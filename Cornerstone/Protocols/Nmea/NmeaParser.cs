@@ -39,7 +39,7 @@ public class NmeaParser
 
 		var values = Enum.GetValues(typeof(NmeaMessageType))
 			.Cast<NmeaMessageType>()
-			.Except(new[] { NmeaMessageType.Unknown });
+			.Except([NmeaMessageType.Unknown]);
 
 		values.ForEach(AddMessageParser);
 	}
@@ -79,9 +79,8 @@ public class NmeaParser
 	{
 		lock (_parsersLock)
 		{
-			if (_parsers.ContainsKey(message.Type))
+			if (_parsers.TryGetValue(message.Type, out var parser))
 			{
-				var parser = _parsers[message.Type];
 				parser.NmeaMessageParsed -= OnMessageParsed;
 				_parsers.Remove(message.Type);
 			}
@@ -132,9 +131,8 @@ public class NmeaParser
 
 			lock (_parsersLock)
 			{
-				if (_parsers.ContainsKey(type))
+				if (_parsers.TryGetValue(type, out var p))
 				{
-					var p = _parsers[type];
 					if (p == null)
 					{
 						return null;
@@ -176,13 +174,13 @@ public class NmeaParser
 	private static NmeaMessagePrefix GetMessagePrefix(string prefix)
 	{
 		prefix = prefix?.ToUpper() ?? string.Empty;
-		return _messagePrefixByShortName.ContainsKey(prefix) ? _messagePrefixByShortName[prefix] : NmeaMessagePrefix.Unknown;
+		return _messagePrefixByShortName.TryGetValue(prefix, out var value) ? value : NmeaMessagePrefix.Unknown;
 	}
 
 	private static NmeaMessageType GetMessageType(string type)
 	{
 		type = type?.ToUpper() ?? string.Empty;
-		return _messageTypeByShortName.ContainsKey(type) ? _messageTypeByShortName[type] : NmeaMessageType.Unknown;
+		return _messageTypeByShortName.TryGetValue(type, out var value) ? value : NmeaMessageType.Unknown;
 	}
 
 	private void OnMessageParsed(object sender, NmeaMessage e)

@@ -12,9 +12,9 @@ namespace Cornerstone.Presentation.Managers;
 /// <summary>
 /// Represents a manager of a set of views.
 /// </summary>
-public abstract class HierarchyViewManager<T, TEntity, TEntityKey>
-	: ViewManager<T, TEntity, TEntityKey>
-	where T : HierarchyListItem<T>
+public abstract class HierarchyViewManager<TModel, TEntity, TEntityKey>
+	: ViewManager<TModel, TEntity, TEntityKey>
+	where TModel : HierarchyListItem<TModel>
 	where TEntity : SyncEntity<TEntityKey>
 {
 	#region Constructors
@@ -24,17 +24,23 @@ public abstract class HierarchyViewManager<T, TEntity, TEntityKey>
 		IDateTimeProvider dateTimeProvider,
 		IDependencyProvider dependencyProvider,
 		IDispatcher dispatcher,
-		Func<T, T, bool> distinctCheck,
-		params OrderBy<T>[] orderBy)
+		Func<TModel, TModel, bool> distinctCheck,
+		params OrderBy<TModel>[] orderBy)
 		: base(dateTimeProvider, dependencyProvider, dispatcher, distinctCheck, orderBy)
 	{
 	}
 
 	#endregion
 
+	#region Properties
+
+	protected override Func<TModel, TEntity, bool> LookupPredicate => (m, e) => m.SyncId == e.SyncId;
+
+	#endregion
+
 	#region Methods
 
-	public bool AnyDescendants(Func<T, bool> check)
+	public bool AnyDescendants(Func<TModel, bool> check)
 	{
 		foreach (var item in this)
 		{
@@ -47,7 +53,7 @@ public abstract class HierarchyViewManager<T, TEntity, TEntityKey>
 		return false;
 	}
 
-	public override T FirstOrDefault(Func<T, bool> check)
+	public override TModel FirstOrDefault(Func<TModel, bool> check)
 	{
 		try
 		{
@@ -55,14 +61,14 @@ public abstract class HierarchyViewManager<T, TEntity, TEntityKey>
 
 			foreach (var item in this)
 			{
-				var response = item.FirstOrDefault(check);
+				var response = item.FirstOrDefaultDescendants(check);
 				if (response != null)
 				{
 					return response;
 				}
 			}
 
-			return default;
+			return null;
 		}
 		finally
 		{

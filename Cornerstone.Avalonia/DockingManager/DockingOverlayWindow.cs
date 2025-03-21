@@ -549,7 +549,13 @@ internal class DockingOverlayWindow : CornerstoneWindow
 
 	#endregion
 
-	public record AreaEnteredEventArgs(Control Control);
+	public record AreaEnteredEventArgs(Control Control)
+	{
+		public Control Control { get; init; } = Control;
+	}
 
-	public record AreaExitedEventArgs(Control Control);
+	public record AreaExitedEventArgs(Control Control)
+	{
+		public Control Control { get; init; } = Control;
+	}
 }

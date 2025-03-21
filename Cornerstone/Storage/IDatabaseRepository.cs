@@ -25,8 +25,7 @@ internal interface IDatabaseRepository : ITrackPropertyChanges, IDisposable
 	/// <summary>
 	/// Assign primary keys to all entities.
 	/// </summary>
-	/// <param name="processed"> The list of entities that have already been processed. </param>
-	void AssignKeys(List<IEntity> processed);
+	void AssignKeys();
 
 	/// <summary>
 	/// Discard all changes made in this repository.

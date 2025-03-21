@@ -47,7 +47,7 @@ internal class DotNetSolutionGlobalSectionParser : ISolutionTextParser<IList<Dot
 			Type = ExtractType(header)
 		};
 
-		var settingLines = record.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
+		var settingLines = record.Split(['\n'], StringSplitOptions.RemoveEmptyEntries)
 			.Skip(1)
 			.Select(l => l.Trim())
 			.Where(l => l != string.Empty)
@@ -55,7 +55,7 @@ internal class DotNetSolutionGlobalSectionParser : ISolutionTextParser<IList<Dot
 
 		foreach (var settingLine in settingLines)
 		{
-			var nameValue = settingLine.Split(new[] { " = " }, StringSplitOptions.None).ToArray();
+			var nameValue = settingLine.Split([" = "], StringSplitOptions.None).ToArray();
 
 			gc.Settings.Add(nameValue[0], nameValue.Length > 1 ? nameValue[1] : string.Empty);
 		}

@@ -97,7 +97,7 @@ public static class ObjectExtensions
 		{
 			case IUpdateable updateable:
 			{
-				var allOptions = Cache.GetSettings(type, UpdateableAction.Updateable).WithMoreOptions(settings);
+				var allOptions = Cache.GetSettings(type, UpdateableAction.Updateable).WithMoreSettings(settings);
 				updateable.UpdateWith(value, allOptions);
 				break;
 			}
@@ -206,7 +206,45 @@ public static class ObjectExtensions
 			}
 			default:
 			{
-				response = DeepCloneUsingSerializer(value, 0);
+				response = Activator.CreateInstance<T>();
+				response.UpdateWithUsingReflection(value, settings);
+				break;
+			}
+		}
+
+		if (response is ITrackPropertyChanges trackable)
+		{
+			trackable.ResetHasChanges();
+		}
+
+		return response;
+	}
+
+	/// <summary>
+	/// Global shallow clone from one type to another.
+	/// If the object is ICloneable then the interface implementation will be used.
+	/// </summary>
+	/// <typeparam name="T"> The type to convert from. </typeparam>
+	/// <typeparam name="T2"> The type to convert to. </typeparam>
+	/// <param name="value"> The value to clone. </param>
+	/// <param name="settings"> An optional set of included or excluded properties. </param>
+	/// <returns> The cloned value. </returns>
+	public static T2 ShallowClone<T, T2>(this T value, IncludeExcludeSettings settings = null)
+	{
+		T2 response;
+
+		switch (value)
+		{
+			case IUpdateable:
+			{
+				response = Activator.CreateInstance<T2>();
+				response.UpdateWith(value, settings);
+				break;
+			}
+			default:
+			{
+				response = Activator.CreateInstance<T2>();
+				response.UpdateWithUsingReflection(value, settings);
 				break;
 			}
 		}

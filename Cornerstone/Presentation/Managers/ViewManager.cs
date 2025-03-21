@@ -16,8 +16,9 @@ namespace Cornerstone.Presentation.Managers;
 /// <summary>
 /// Represents a manager of a set of views.
 /// </summary>
-public abstract class ViewManager<T, TEntity, TEntityKey> : ViewManager<T>
-	where T : class, IUpdateable, ISyncEntity
+public abstract class ViewManager<TView, TEntity, TEntityKey>
+	: ViewManager<TView>
+	where TView : class, IUpdateable
 	where TEntity : SyncEntity<TEntityKey>
 {
 	#region Constructors
@@ -27,8 +28,8 @@ public abstract class ViewManager<T, TEntity, TEntityKey> : ViewManager<T>
 		IDateTimeProvider dateTimeProvider,
 		IDependencyProvider dependencyProvider,
 		IDispatcher dispatcher,
-		Func<T, T, bool> distinctCheck,
-		params OrderBy<T>[] orderBy)
+		Func<TView, TView, bool> distinctCheck,
+		params OrderBy<TView>[] orderBy)
 		: base(dateTimeProvider, dependencyProvider, dispatcher, distinctCheck, orderBy)
 	{
 	}
@@ -41,6 +42,8 @@ public abstract class ViewManager<T, TEntity, TEntityKey> : ViewManager<T>
 
 	protected virtual Func<TEntity, bool> UpdatePredicate => x => !x.IsDeleted;
 
+	protected abstract Func<TView, TEntity, bool> LookupPredicate { get; }
+
 	#endregion
 
 	#region Methods
@@ -50,15 +53,15 @@ public abstract class ViewManager<T, TEntity, TEntityKey> : ViewManager<T>
 	/// </summary>
 	/// <param name="update"> The entity update. </param>
 	/// <returns> The view that was added or updated. </returns>
-	public T AddOrUpdate(TEntity update)
+	public TView AddOrUpdate(TEntity update)
 	{
 		// Locate account view to update, or see if our account is a view, or build a new account view from the account
-		var foundView = FirstOrDefault(x => x.SyncId == update.SyncId);
+		var foundView = FirstOrDefault(x => LookupPredicate.Invoke(x, update));
 
 		if (foundView == null)
 		{
 			foundView = CreateView();
-			UpdateAndInitializeView(foundView, update);
+			UpdateView(foundView, update);
 			OnViewUpdated(foundView);
 			return foundView;
 		}
@@ -70,7 +73,7 @@ public abstract class ViewManager<T, TEntity, TEntityKey> : ViewManager<T>
 		return foundView;
 	}
 
-	public virtual IEnumerable<T> AddOrUpdate(params TEntity[] updates)
+	public virtual IEnumerable<TView> AddOrUpdate(params TEntity[] updates)
 	{
 		return ProcessThenOrder(() =>
 		{
@@ -80,7 +83,7 @@ public abstract class ViewManager<T, TEntity, TEntityKey> : ViewManager<T>
 			// Remove entities that should be removed
 			updates
 				.Where(RemovePredicateByEntity)
-				.ForEach(x => RemoveBySyncId(x.SyncId));
+				.ForEach(x => Remove(v => LookupPredicate(v, x)));
 
 			// Add or update new items
 			var updatedViews = updates
@@ -91,17 +94,31 @@ public abstract class ViewManager<T, TEntity, TEntityKey> : ViewManager<T>
 			return updatedViews;
 		});
 	}
-
-	public T RemoveBySyncId(Guid id)
+	
+	protected virtual TView Convert(TEntity entity)
 	{
-		// Need to ensure this is thread safe
-		var view = FirstOrDefault(x => x.SyncId == id);
-		if (view != null)
+		var view = CreateView();
+		UpdateView(view, entity);
+		return view;
+	}
+
+	protected virtual bool UpdateView(TView view, TEntity update)
+	{
+		return base.UpdateView(view, update);
+	}
+
+	/// <summary>
+	/// Sealed to Hide / limit overriding of the generic "object" update.
+	/// If you need a customer override then use the TEntity update override.
+	/// </summary>
+	protected sealed override bool UpdateView(TView view, object update)
+	{
+		if (update is TEntity entity)
 		{
-			Remove(view);
+			return UpdateView(view, entity);
 		}
 
-		return view;
+		return base.UpdateView(view, update);
 	}
 
 	#endregion
@@ -111,7 +128,7 @@ public abstract class ViewManager<T, TEntity, TEntityKey> : ViewManager<T>
 /// Represents a manager of a set of views.
 /// </summary>
 public abstract class ViewManager<T>
-	: SpeedyList<T>, IDisposable, IManager
+	: SpeedyList<T>, IManager
 	where T : class, IUpdateable
 {
 	#region Constructors
@@ -170,7 +187,7 @@ public abstract class ViewManager<T>
 		if (foundView == null)
 		{
 			foundView = update;
-			UpdateAndInitializeView(foundView, update);
+			UpdateView(foundView, update);
 			Add(update);
 			OnViewUpdated(update);
 			return update;
@@ -198,12 +215,11 @@ public abstract class ViewManager<T>
 		if (foundView == null)
 		{
 			foundView = CreateView();
-			UpdateAndInitializeView(foundView, update);
+			UpdateView(foundView, update);
 			Add(foundView);
 			OnViewUpdated(foundView);
 			return foundView;
 		}
-
 		if (UpdateView(foundView, update))
 		{
 			OnViewUpdated(foundView);
@@ -215,15 +231,6 @@ public abstract class ViewManager<T>
 	{
 		base.Clear();
 		LastUpdated = DateTime.MinValue;
-	}
-
-	/// <summary>
-	/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-	/// </summary>
-	public void Dispose()
-	{
-		Dispose(true);
-		GC.SuppressFinalize(this);
 	}
 
 	/// <inheritdoc />
@@ -270,21 +277,7 @@ public abstract class ViewManager<T>
 	{
 		return DependencyProvider.GetInstance<T>();
 	}
-
-	/// <summary>
-	/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-	/// </summary>
-	/// <param name="disposing"> True if disposing and false if otherwise. </param>
-	protected virtual void Dispose(bool disposing)
-	{
-		if (!disposing)
-		{
-			return;
-		}
-
-		Clear();
-	}
-
+	
 	protected override void OnListUpdated(SpeedyListUpdatedEventArg<T> e)
 	{
 		ProcessOldItems(e.Removed);
@@ -316,19 +309,12 @@ public abstract class ViewManager<T>
 		itemsToRemove.ForEach(x => Remove(x));
 	}
 
-	protected virtual bool UpdateAndInitializeView(T view, object update)
-	{
-		// Just call update by default.
-		return UpdateView(view, update);
-	}
-
 	protected virtual bool UpdateView(T view, object update)
 	{
 		if ((view == null) || (update == null))
 		{
 			return false;
 		}
-
 		view.UpdateWith(update);
 		return true;
 	}

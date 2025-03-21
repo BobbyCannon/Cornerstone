@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 
 namespace Cornerstone.Security.Vault;
 
-public class WindowsHelloServiceDummy : IWindowsHelloService
+public class WindowsHelloServiceStub : IWindowsHelloService
 {
 	#region Constructors
 
-	public WindowsHelloServiceDummy()
+	public WindowsHelloServiceStub()
 	{
 		IsSupported = false;
 		HasBeenSetup = false;

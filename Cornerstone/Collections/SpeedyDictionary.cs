@@ -1,8 +1,11 @@
 ﻿#region References
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Cornerstone.Data;
+using Cornerstone.Extensions;
 using Cornerstone.Presentation;
 using Cornerstone.Weaver;
 
@@ -139,6 +142,26 @@ public class SpeedyDictionary<T, T2> : ReaderWriterLockBindable, IDictionary<T, 
 		}
 	}
 
+	public void AddOrUpdate(T key, Func<T2> value, Func<T2, T2> update)
+	{
+		try
+		{
+			EnterWriteLock();
+
+			if (_dictionary.ContainsKey(key))
+			{
+				_dictionary[key] = update(_dictionary[key]);
+				return;
+			}
+
+			_dictionary.Add(key, value.Invoke());
+		}
+		finally
+		{
+			ExitWriteLock();
+		}
+	}
+
 	/// <inheritdoc />
 	public void Clear()
 	{
@@ -239,6 +262,18 @@ public class SpeedyDictionary<T, T2> : ReaderWriterLockBindable, IDictionary<T, 
 		{
 			ExitReadLock();
 		}
+	}
+
+	/// <inheritdoc />
+	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
+	{
+		if (update is IDictionary<T, T2> list)
+		{
+			this.Reconcile(list);
+			return true;
+		}
+
+		return false;
 	}
 
 	/// <inheritdoc />

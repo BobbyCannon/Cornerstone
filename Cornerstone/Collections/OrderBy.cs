@@ -33,11 +33,10 @@ public class OrderBy<T>
 	/// <summary>
 	/// Instantiate an instance of the order by value.
 	/// </summary>
-	/// <param name="keySelector"> The </param>
+	/// <param name="keySelector"> The key selector expression. </param>
 	/// <param name="descending"> True to order descending and otherwise sort ascending. Default value is false for ascending order. </param>
 	public OrderBy(Expression<Func<T, object>> keySelector, bool descending = false)
 	{
-		CompiledKeySelector = keySelector.Compile();
 		KeySelector = keySelector;
 		Descending = descending;
 	}
@@ -56,45 +55,55 @@ public class OrderBy<T>
 	/// </summary>
 	public Expression<Func<T, object>> KeySelector { get; set; }
 
-	/// <summary>
-	/// The compiled function for extracting a key from an element.
-	/// </summary>
-	internal Func<T, object> CompiledKeySelector { get; }
-
 	#endregion
 
 	#region Methods
 
 	/// <summary>
-	/// Locate the insert index for an item.
+	/// Locates the insert index for an item in a sorted list.
 	/// </summary>
-	/// <typeparam name="T2"> The type of the item. </typeparam>
-	/// <param name="list"> The current item list. </param>
+	/// <param name="list"> The current sorted item list. </param>
 	/// <param name="item"> The item to determine index for. </param>
-	/// <param name="orderBy"> The list of order by requirements. </param>
-	/// <returns> The index to insert the item at. </returns>
-	public static int GetInsertIndex<T2>(IList<T2> list, T2 item, params OrderBy<T2>[] orderBy)
+	/// <param name="orderBy"> The list of ordering criteria. </param>
+	/// <returns> The index where the item should be inserted to maintain sort order. </returns>
+	public static int GetInsertIndex(IList<T> list, T item, params OrderBy<T>[] orderBy)
 	{
-		var array = new T2[2];
-		var firstOrder = orderBy[0];
-		var thenBy = orderBy.Length == 1
-			? Array.Empty<OrderBy<T2>>()
-			: orderBy.Skip(1).ToArray();
-
-		array[0] = item;
-
-		for (var i = 0; i < list.Count; i++)
+		if (list == null)
 		{
-			array[1] = list[i];
+			throw new ArgumentNullException(nameof(list));
+		}
+		if ((orderBy == null) || (orderBy.Length == 0))
+		{
+			throw new ArgumentNullException(nameof(orderBy));
+		}
 
-			var sorted = firstOrder.Process(array, thenBy).First();
-			if (Equals(sorted, item))
+		var left = 0;
+		var right = list.Count - 1;
+		var firstOrder = orderBy[0];
+		var thenBy = orderBy.Length > 1 ? orderBy.Skip(1).ToArray() : null;
+
+		// Binary search implementation
+		while (left <= right)
+		{
+			// Avoid potential integer overflow
+			var mid = left + ((right - left) / 2);
+			var comparison = CompareItems(item, list[mid], firstOrder, thenBy);
+
+			if (comparison == 0)
 			{
-				return i;
+				return mid;
+			}
+			if (comparison < 0)
+			{
+				right = mid - 1;
+			}
+			else
+			{
+				left = mid + 1;
 			}
 		}
 
-		return list.Count;
+		return left;
 	}
 
 	/// <summary>
@@ -113,50 +122,29 @@ public class OrderBy<T>
 
 		var firstOrder = orderBy.First();
 		var thenBy = orderBy.Skip(1).ToArray();
-		var sorted = firstOrder.Process(items, thenBy).ToList();
+		var sorted = firstOrder.Process(items.AsQueryable(), thenBy).ToList();
 		return sorted;
 	}
 
 	/// <summary>
-	/// Processes a query through the "order by" that will return the query ordered base on the value.
+	/// Processes a query through the "order by" that will return the query ordered based on the value.
 	/// </summary>
 	/// <param name="query"> The query to order. </param>
 	/// <param name="thenBys"> An optional set of subsequent orderings. </param>
 	/// <returns> The ordered queryable for the provided query. </returns>
-	public IOrderedEnumerable<T> Process(IEnumerable<T> query, params OrderBy<T>[] thenBys)
+	public IOrderedQueryable<T> Process(IEnumerable<T> query, params OrderBy<T>[] thenBys)
 	{
-		var response = Descending
-			? query.OrderByDescending(CompiledKeySelector)
-			: query.OrderBy(CompiledKeySelector);
-
-		if (thenBys is not { Length: > 0 })
-		{
-			return response;
-		}
-
-		foreach (var thenBy in thenBys)
-		{
-			response = thenBy.Descending
-				? response.ThenByDescending(thenBy.CompiledKeySelector)
-				: response.ThenBy(thenBy.CompiledKeySelector);
-		}
-
-		return response;
+		return Process(query.AsQueryable(), thenBys);
 	}
 
 	/// <summary>
-	/// Processes a query through the "order by" that will return the query ordered base on the value.
+	/// Processes a query through the "order by" that will return the query ordered based on the value.
 	/// </summary>
 	/// <param name="query"> The query to order. </param>
 	/// <param name="thenBys"> An optional set of subsequent orderings. </param>
 	/// <returns> The ordered queryable for the provided query. </returns>
 	public IOrderedQueryable<T> Process(IQueryable<T> query, params OrderBy<T>[] thenBys)
 	{
-		if (KeySelector == null)
-		{
-			return (IOrderedQueryable<T>) query;
-		}
-
 		var response = Descending
 			? query.OrderByDescending(KeySelector)
 			: query.OrderBy(KeySelector);
@@ -174,6 +162,13 @@ public class OrderBy<T>
 		}
 
 		return response;
+	}
+
+	private static int CompareItems<T2>(T2 item1, T2 item2, OrderBy<T2> firstOrder, OrderBy<T2>[] thenBy)
+	{
+		var array = new[] { item1, item2 };
+		var sorted = firstOrder.Process(array.AsQueryable(), thenBy ?? []).ToArray();
+		return Array.IndexOf(sorted, item1) - Array.IndexOf(sorted, item2);
 	}
 
 	#endregion

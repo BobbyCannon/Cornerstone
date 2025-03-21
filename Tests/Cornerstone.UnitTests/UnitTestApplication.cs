@@ -58,12 +58,11 @@ public class UnitTestApplication : Application
 		//
 		//Source = new Uri("/CornerstoneTheme.xaml", UriKind.Relative)
 
+		var rootUri = new Uri("avares://Cornerstone.Avalonia");
+
 		var styles = new[]
 		{
-			new StyleInclude(new Uri("avares://Cornerstone.Avalonia"))
-			{
-				Source = new Uri("/AvaloniaEdit/Themes/AvaloniaEdit.axaml", UriKind.Relative)
-			}
+			new StyleInclude(rootUri) { Source = new Uri("/TextEditor/Themes/TextEditor.axaml", UriKind.Relative) },
 		};
 
 		foreach (var style in styles)
@@ -73,9 +72,9 @@ public class UnitTestApplication : Application
 
 		var resources = new[]
 		{
-			new ResourceInclude(new Uri("avares://Cornerstone.Avalonia")) { Source = new Uri("/Themes/Theme.axaml", UriKind.Relative) },
-			new ResourceInclude(new Uri("avares://Cornerstone.Avalonia")) { Source = new Uri("/Themes/Theme.Dark.axaml", UriKind.Relative) },
-			new ResourceInclude(new Uri("avares://Cornerstone.Avalonia")) { Source = new Uri("/Themes/Theme.Shared.axaml", UriKind.Relative) }
+			new ResourceInclude(rootUri) { Source = new Uri("/Themes/Theme.axaml", UriKind.Relative) },
+			new ResourceInclude(rootUri) { Source = new Uri("/Themes/Theme.Dark.axaml", UriKind.Relative) },
+			new ResourceInclude(rootUri) { Source = new Uri("/Themes/Theme.Shared.axaml", UriKind.Relative) }
 		};
 
 		foreach (var resource in resources)

@@ -2,6 +2,7 @@
 
 using System.IO;
 using System.Xml;
+using Cornerstone.Generators;
 using Cornerstone.Text;
 using Cornerstone.UnitTests.Generators;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -18,6 +19,11 @@ public class FontAwesomeIconsTests : CodeGeneratorTests
 	[TestMethod]
 	public void GenerateScenarios()
 	{
+		if (!EnableFileUpdates && !IsDebugging)
+		{
+			return;
+		}
+
 		var xmlPath = $"{SolutionDirectory}\\Cornerstone.Avalonia\\Themes\\FontAwesomeIcons.axaml";
 		IsTrue(File.Exists(xmlPath));
 
@@ -39,10 +45,7 @@ public class FontAwesomeIconsTests : CodeGeneratorTests
 
 		reader.Close();
 
-		if (EnableFileUpdates || IsDebugging)
-		{
-			UpdateFileIfNecessary("<!-- Generated Code -->\r\n", "<!-- /Generated Code -->", xmlPath, output.ToString());
-		}
+		FileModifier.UpdateFileIfNecessary("<!-- Generated Code - Preview -->\r\n", "<!-- /Generated Code - Preview -->", xmlPath, output.ToString());
 	}
 
 	#endregion

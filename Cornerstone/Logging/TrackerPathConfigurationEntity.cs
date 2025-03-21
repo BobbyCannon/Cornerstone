@@ -54,6 +54,8 @@ public class TrackerPathConfigurationEntity : SyncEntity<int>
 
 	public string PathType { get; set; }
 
+	public bool IsException { get; set; }
+
 	public string StartedOnName { get; set; }
 
 	public TrackerPathValueDataType Type01 { get; set; }

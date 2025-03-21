@@ -98,7 +98,7 @@ public class OscPacketTests : CornerstoneUnitTest
 		var packet = OscPacket.Parse(Now, command, CultureInfo.CurrentCulture);
 		var actual = packet as OscMessage;
 
-		Assert.IsNotNull(actual);
+		IsNotNull(actual);
 		AreEqual("/command", actual.Address);
 		AreEqual(2, actual.Arguments.Count);
 		AreEqual("value1, value2", actual.Arguments[0]);
@@ -117,7 +117,7 @@ public class OscPacketTests : CornerstoneUnitTest
 		var packet = OscPacket.Parse(Now, command, CultureInfo.CurrentCulture);
 		var actual = packet as OscMessage;
 
-		Assert.IsNotNull(actual);
+		IsNotNull(actual);
 		AreEqual("/command", actual.Address);
 		AreEqual(1, actual.Arguments.Count);
 		AreEqual(1234.5678, actual.Arguments[0]);
@@ -148,7 +148,7 @@ public class OscPacketTests : CornerstoneUnitTest
 			var packet = OscPacket.Parse(Now, command, CultureInfo.CurrentCulture);
 			var actual = packet as OscMessage;
 
-			Assert.IsNotNull(actual);
+			IsNotNull(actual);
 			AreEqual("/command", actual.Address);
 			AreEqual(2, actual.Arguments.Count);
 			AreEqual("value1, value2", actual.Arguments[0]);
@@ -167,7 +167,7 @@ public class OscPacketTests : CornerstoneUnitTest
 			var packet = OscPacket.Parse(Now, command, CultureInfo.CurrentCulture);
 			var actual = packet as OscMessage;
 
-			Assert.IsNotNull(actual);
+			IsNotNull(actual);
 			AreEqual("/command", actual.Address);
 			AreEqual(2, actual.Arguments.Count);
 			AreEqual(0.1234, actual.Arguments[0]);

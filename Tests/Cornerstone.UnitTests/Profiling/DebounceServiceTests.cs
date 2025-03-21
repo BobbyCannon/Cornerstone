@@ -72,7 +72,7 @@ public class DebounceServiceTests : CornerstoneUnitTest
 		service.Trigger(3);
 
 		IncrementTime(delay);
-		var r = this.WaitUntil(() => !service.IsActive, 1000, 10);
+		var r = this.WaitUntil(() => !service.IsActive, 1000, 0);
 		IsTrue(r, "Should not have timed out... debounce never completed...");
 		IsFalse(service.IsTriggered);
 

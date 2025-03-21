@@ -40,12 +40,10 @@
 			<Setter Property="Content" Value="Unchecked" />
 		</Style>
 	</UserControl.Styles>
-	<ScrollViewer
+	<ScrollViewer Margin="10"
 			HorizontalScrollBarVisibility="Auto"
 			VerticalScrollBarVisibility="Auto">
-		<Grid
-				Margin="8"
-				VerticalAlignment="Top"
+		<Grid VerticalAlignment="Top"
 				HorizontalAlignment="Left"
 				ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
 				RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">

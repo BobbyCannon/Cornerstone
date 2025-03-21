@@ -20,7 +20,7 @@ public partial class TabRuntimeInformation : CornerstoneUserControl
 
 	#region Constructors
 
-	public TabRuntimeInformation() : this(DesignModeDependencyProvider.Get<IRuntimeInformation>(), null)
+	public TabRuntimeInformation() : this(ViewDependencyProvider.Get<IRuntimeInformation>(), null)
 	{
 	}
 

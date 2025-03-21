@@ -14,6 +14,7 @@ public static class DoubleConverters
 	public static readonly FuncValueConverter<double, bool> IsGreaterThanOrEqualToZero;
 	public static readonly FuncValueConverter<double, bool> IsGreaterThanZero;
 	public static readonly FuncValueConverter<double, bool> IsZero;
+	public static readonly FuncValueConverter<double, string, string> ToPercent;
 
 	#endregion
 
@@ -25,6 +26,7 @@ public static class DoubleConverters
 		IsGreaterThanOrEqualToZero = new(x => x >= 0);
 		IsGreaterThanZero = new(x => x > 0);
 		IsZero = new(x => x == 0);
+		ToPercent = new((x, p) => (x / 100).ToString(p));
 	}
 
 	#endregion

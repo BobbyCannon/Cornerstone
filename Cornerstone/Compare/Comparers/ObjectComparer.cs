@@ -16,7 +16,7 @@ public class ObjectComparer : BaseComparer
 	#region Methods
 
 	/// <inheritdoc />
-	public override bool IsSupported(object expected, object actual)
+	public override bool IsSupported(CompareSession session, object expected, object actual)
 	{
 		var expectedType = expected?.GetType();
 		var actualType = actual?.GetType();

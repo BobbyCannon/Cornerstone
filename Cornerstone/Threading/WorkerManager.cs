@@ -21,7 +21,6 @@ public abstract class WorkerManager : Manager
 {
 	#region Fields
 
-	protected readonly IWeakEventManager WeakEventManager;
 	private readonly BackgroundWorker _worker;
 	private bool _workerStarting;
 	private bool _workerStopping;
@@ -41,10 +40,9 @@ public abstract class WorkerManager : Manager
 		//_worker.ProgressChanged += WorkerProgressChanged;
 		//_worker.RunWorkerCompleted += WorkerRunWorkerCompleted;
 
-		WeakEventManager = weakEventManager;
-		WeakEventManager.Add<BackgroundWorker, DoWorkEventArgs>(_worker, nameof(_worker.DoWork), WorkerDoWork);
-		WeakEventManager.Add<BackgroundWorker, ProgressChangedEventArgs>(_worker, nameof(_worker.ProgressChanged), WorkerProgressChanged);
-		WeakEventManager.Add<BackgroundWorker, RunWorkerCompletedEventArgs>(_worker, nameof(_worker.RunWorkerCompleted), WorkerRunWorkerCompleted);
+		weakEventManager.Add<BackgroundWorker, WorkerManager, DoWorkEventArgs>(_worker, nameof(_worker.DoWork), this, WorkerDoWork);
+		weakEventManager.Add<BackgroundWorker, WorkerManager, ProgressChangedEventArgs>(_worker, nameof(_worker.ProgressChanged), this, WorkerProgressChanged);
+		weakEventManager.Add<BackgroundWorker, WorkerManager, RunWorkerCompletedEventArgs>(_worker, nameof(_worker.RunWorkerCompleted), this, WorkerRunWorkerCompleted);
 		WorkerDelay = workerDelay;
 
 		_worker.WorkerReportsProgress = true;

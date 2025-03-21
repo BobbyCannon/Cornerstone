@@ -4,7 +4,7 @@ using System;
 using System.Linq.Expressions;
 using Cornerstone.Extensions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Sample.Shared.Sync;
+using Sample.Shared.Storage.Sync;
 
 #endregion
 
@@ -18,7 +18,7 @@ public class ExpressionExtensionsTests : CornerstoneUnitTest
 	[TestMethod]
 	public void TryGetPropertyName()
 	{
-		Expression<Func<AccountSync, object>> test = x => x.IsDeleted;
+		Expression<Func<Account, object>> test = x => x.IsDeleted;
 		IsTrue(test.TryGetPropertyName(out var actual));
 	}
 

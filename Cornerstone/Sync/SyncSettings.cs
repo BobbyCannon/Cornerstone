@@ -15,7 +15,7 @@ using Cornerstone.Presentation;
 namespace Cornerstone.Sync;
 
 /// <summary>
-/// Represents options to be used during a sync.
+/// Represents settings to be used during a sync.
 /// </summary>
 public class SyncSettings : Bindable<SyncSettings>
 {
@@ -60,6 +60,11 @@ public class SyncSettings : Bindable<SyncSettings>
 	public int ItemsPerSyncRequest { get; set; }
 
 	/// <summary>
+	/// Gets or sets the client was last sync was attempted.
+	/// </summary>
+	public DateTime LastSyncAttemptedOn { get; set; }
+
+	/// <summary>
 	/// Gets or sets the client was last synced on date and time.
 	/// </summary>
 	public DateTime LastSyncedOnClient { get; set; }
@@ -96,19 +101,19 @@ public class SyncSettings : Bindable<SyncSettings>
 	/// <summary>
 	/// Adds a syncable filter to the options.
 	/// </summary>
-	public void AddSyncableFilter<T>(Expression<Func<T, bool>> outgoingFilter = null,
+	public void AddFilter<T>(Expression<Func<T, bool>> outgoingFilter = null,
 		Expression<Func<T, bool>> incomingFilter = null,
 		Func<T, Expression<Func<T, bool>>> lookupFilter = null,
 		bool skipDeletedItemsOnInitialSync = true)
 	{
-		AddSyncableFilter(new SyncRepositoryFilter<T>(outgoingFilter, incomingFilter, lookupFilter, skipDeletedItemsOnInitialSync));
+		AddFilter(new SyncRepositoryFilter<T>(outgoingFilter, incomingFilter, lookupFilter, skipDeletedItemsOnInitialSync));
 	}
 
 	/// <summary>
 	/// Adds a syncable filter to the options.
 	/// </summary>
 	/// <param name="filter"> The syncable filter to be added. </param>
-	public void AddSyncableFilter(SyncRepositoryFilter filter)
+	public void AddFilter(SyncRepositoryFilter filter)
 	{
 		if (_filters.ContainsKey(filter.RepositoryType))
 		{
@@ -149,25 +154,22 @@ public class SyncSettings : Bindable<SyncSettings>
 	/// </summary>
 	/// <param name="type"> The type to check for. </param>
 	/// <returns> True if the type is filter or false if otherwise. </returns>
-	public bool ShouldExcludeRepository(Type type)
+	public bool ShouldSyncRepository(Type type)
 	{
-		//
-		// If we do not have a filter then consider the repository as excluded.
-		//
-		return ShouldExcludeRepository(type?.ToAssemblyName());
+		return ShouldSyncRepository(type?.ToAssemblyName());
 	}
 
 	/// <summary>
-	/// Check to see if a repository has been excluded from syncing.
+	/// Check to see if a repository has been included in syncing.
 	/// </summary>
 	/// <param name="typeAssemblyName"> The type name to check for. Should be in assembly name format. </param>
 	/// <returns> True if the type is filter or false if otherwise. </returns>
-	public bool ShouldExcludeRepository(string typeAssemblyName)
+	public bool ShouldSyncRepository(string typeAssemblyName)
 	{
 		//
-		// If we do not have a filter then consider the repository as excluded.
+		// If we have a filter then consider the repository as included for syncing.
 		//
-		return (_filters.Count > 0) && !_filters.ContainsKey(typeAssemblyName);
+		return _filters.ContainsKey(typeAssemblyName);
 	}
 
 	/// <summary>
@@ -177,36 +179,27 @@ public class SyncSettings : Bindable<SyncSettings>
 	/// <param name="settings"> The settings for controlling the updating of the entity. </param>
 	public override bool UpdateWith(SyncSettings update, IncludeExcludeSettings settings)
 	{
+		// Code Generated - UpdateWith - SyncSettings
+
 		// If the update is null then there is nothing to do.
 		if (update == null)
 		{
 			return false;
 		}
 
-		// ****** You can use GenerateUpdateWith to update this ******
+		// ****** This code has been auto generated, do not edit this. ******
 
-		if ((settings == null) || settings.IsEmpty())
-		{
-			IncludeIssueDetails = UpdateProperty(IncludeIssueDetails, update.IncludeIssueDetails);
-			ItemsPerSyncRequest = UpdateProperty(ItemsPerSyncRequest, update.ItemsPerSyncRequest);
-			LastSyncedOnClient = UpdateProperty(LastSyncedOnClient, update.LastSyncedOnClient);
-			LastSyncedOnServer = UpdateProperty(LastSyncedOnServer, update.LastSyncedOnServer);
-			PermanentDeletions = UpdateProperty(PermanentDeletions, update.PermanentDeletions);
-			SyncDirection = UpdateProperty(SyncDirection, update.SyncDirection);
-			SyncType = UpdateProperty(SyncType, update.SyncType);
-			Values = UpdateProperty(Values, update.Values);
-		}
-		else
-		{
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(IncludeIssueDetails)), x => x.IncludeIssueDetails = UpdateProperty(IncludeIssueDetails, update.IncludeIssueDetails));
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(ItemsPerSyncRequest)), x => x.ItemsPerSyncRequest = UpdateProperty(ItemsPerSyncRequest, update.ItemsPerSyncRequest));
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(LastSyncedOnClient)), x => x.LastSyncedOnClient = UpdateProperty(LastSyncedOnClient, update.LastSyncedOnClient));
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(LastSyncedOnServer)), x => x.LastSyncedOnServer = UpdateProperty(LastSyncedOnServer, update.LastSyncedOnServer));
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(PermanentDeletions)), x => x.PermanentDeletions = UpdateProperty(PermanentDeletions, update.PermanentDeletions));
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(SyncDirection)), x => x.SyncDirection = UpdateProperty(SyncDirection, update.SyncDirection));
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(SyncType)), x => x.SyncType = UpdateProperty(SyncType, update.SyncType));
-			this.IfThen(_ => settings.ShouldProcessProperty(nameof(Values)), x => x.Values = UpdateProperty(Values, update.Values));
-		}
+		UpdateProperty(IncludeIssueDetails, update.IncludeIssueDetails, settings.ShouldProcessProperty(nameof(IncludeIssueDetails)), x => IncludeIssueDetails = x);
+		UpdateProperty(ItemsPerSyncRequest, update.ItemsPerSyncRequest, settings.ShouldProcessProperty(nameof(ItemsPerSyncRequest)), x => ItemsPerSyncRequest = x);
+		UpdateProperty(LastSyncAttemptedOn, update.LastSyncAttemptedOn, settings.ShouldProcessProperty(nameof(LastSyncAttemptedOn)), x => LastSyncAttemptedOn = x);
+		UpdateProperty(LastSyncedOnClient, update.LastSyncedOnClient, settings.ShouldProcessProperty(nameof(LastSyncedOnClient)), x => LastSyncedOnClient = x);
+		UpdateProperty(LastSyncedOnServer, update.LastSyncedOnServer, settings.ShouldProcessProperty(nameof(LastSyncedOnServer)), x => LastSyncedOnServer = x);
+		UpdateProperty(PermanentDeletions, update.PermanentDeletions, settings.ShouldProcessProperty(nameof(PermanentDeletions)), x => PermanentDeletions = x);
+		UpdateProperty(SyncDirection, update.SyncDirection, settings.ShouldProcessProperty(nameof(SyncDirection)), x => SyncDirection = x);
+		UpdateProperty(SyncType, update.SyncType, settings.ShouldProcessProperty(nameof(SyncType)), x => SyncType = x);
+		UpdateProperty(Values, update.Values, settings.ShouldProcessProperty(nameof(Values)), x => Values = x);
+
+		// Code Generated - /UpdateWith - SyncSettings
 
 		return true;
 	}

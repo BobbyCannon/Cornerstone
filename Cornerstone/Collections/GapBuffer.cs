@@ -248,7 +248,7 @@ public class GapBuffer<T> : Buffer<T>
 				return foundAt - GapSize;
 			}
 		}
-		
+
 		// Search before the gap.
 		if ((startIndex >= 0) && (startIndex < _gapStartIndex))
 		{
@@ -261,7 +261,7 @@ public class GapBuffer<T> : Buffer<T>
 			var difference = _gapStartIndex - startIndex;
 			length -= difference;
 		}
-		
+
 		if ((length <= 0) || (_gapEndIndex == Capacity))
 		{
 			return -1;
@@ -408,17 +408,6 @@ public class GapBuffer<T> : Buffer<T>
 	}
 
 	/// <inheritdoc />
-	public override void RemoveAt(int index)
-	{
-		VerifyRange(index);
-		MoveGap(index);
-
-		// Allow garbage collection.
-		_buffer[_gapEndIndex] = default;
-		_gapEndIndex++;
-	}
-
-	/// <inheritdoc />
 	public override void Remove(int index, int length)
 	{
 		if (length < 1)
@@ -434,6 +423,17 @@ public class GapBuffer<T> : Buffer<T>
 		{
 			RemoveAt(idx--);
 		}
+	}
+
+	/// <inheritdoc />
+	public override void RemoveAt(int index)
+	{
+		VerifyRange(index);
+		MoveGap(index);
+
+		// Allow garbage collection.
+		_buffer[_gapEndIndex] = default;
+		_gapEndIndex++;
 	}
 
 	/// <inheritdoc />

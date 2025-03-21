@@ -3,6 +3,7 @@
 using System;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
+using Cornerstone.Internal;
 using Cornerstone.Presentation;
 
 #endregion
@@ -12,7 +13,8 @@ namespace Cornerstone.Location;
 /// <summary>
 /// Represents a horizontal location.
 /// </summary>
-public class HorizontalLocation : LocationInformation<IHorizontalLocation>, IHorizontalLocation
+public class HorizontalLocation : LocationInformation<IHorizontalLocation>,
+	IHorizontalLocation, IEquatable<HorizontalLocation>
 {
 	#region Constants
 
@@ -71,6 +73,51 @@ public class HorizontalLocation : LocationInformation<IHorizontalLocation>, IHor
 		var response = new HorizontalLocation(GetDispatcher());
 		response.UpdateWith(this);
 		return response;
+	}
+
+	public bool Equals(HorizontalLocation other)
+	{
+		if (other is null)
+		{
+			return false;
+		}
+		if (ReferenceEquals(this, other))
+		{
+			return true;
+		}
+		return Latitude.Equals(other.Latitude) && Longitude.Equals(other.Longitude);
+	}
+
+	public override bool Equals(object obj)
+	{
+		if (obj is null)
+		{
+			return false;
+		}
+		if (ReferenceEquals(this, obj))
+		{
+			return true;
+		}
+		if (obj.GetType() != GetType())
+		{
+			return false;
+		}
+		return Equals((HorizontalLocation) obj);
+	}
+
+	public override int GetHashCode()
+	{
+		return HashCodeCalculator.Combine(Latitude, Longitude);
+	}
+
+	public static bool operator ==(HorizontalLocation left, HorizontalLocation right)
+	{
+		return Equals(left, right);
+	}
+
+	public static bool operator !=(HorizontalLocation left, HorizontalLocation right)
+	{
+		return !Equals(left, right);
 	}
 
 	/// <inheritdoc />

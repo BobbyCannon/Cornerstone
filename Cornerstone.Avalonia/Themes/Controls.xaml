@@ -38,8 +38,10 @@
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/MenuItemWithCheckBox.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/MenuScrollViewer.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/NativeMenuBar.axaml" />
+				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/NavigationMenu.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/NotificationCard.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/NumericUpDown.axaml" />
+				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/OrderableMenu.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/OverlayPopupHost.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/PopupRoot.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/ProgressBar.axaml" />
@@ -60,6 +62,7 @@
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/TabStripItem.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/ThemeVariantScope.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/TimePicker.axaml" />
+				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/TimeSinceUntil.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/TitleBar.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/ToggleButton.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/ToggleSwitch.axaml" />
@@ -76,20 +79,25 @@
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Controls/UserControl.axaml" />
 
 	<!-- Include Custom styles. -->
-	<StyleInclude Source="avares://Cornerstone.Avalonia/AvaloniaEdit/Themes/AvaloniaEdit.axaml" />
+	<StyleInclude Source="avares://Cornerstone.Avalonia/TextEditor/Themes/TextEditor.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Controls/Button.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Controls/Border.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Controls/CornerstoneWindow.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Controls/ListBox.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Controls/Path.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Controls/PathIcon.axaml" />
+	<StyleInclude Source="avares://Cornerstone.Avalonia/Controls/PopupView.axaml" />
+	<StyleInclude Source="avares://Cornerstone.Avalonia/Controls/PropertyGridControl.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Controls/TextBlock.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Controls/TextBox.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Controls/Window.axaml" />
 
 	<StyleInclude Source="avares://Cornerstone.Avalonia/DockingManager/DockingTabControl.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/DockingManager/DockableTabItem.axaml" />
+	
+	<StyleInclude Source="avares://Cornerstone.Avalonia/HexEditor/HexEditor.axaml" />
 
+	<StyleInclude Source="avares://Cornerstone.Avalonia/Themes/Styles/MenuItem.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Themes/Styles/StatusBar.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Themes/Styles/ToolBar.axaml" />
 </Styles>

@@ -7,24 +7,16 @@ using System.Collections.Specialized;
 
 namespace Cornerstone.Internal.WeakEvents;
 
-internal class CollectionChangedWeakEventListener<T> : WeakEventListenerBase<T, NotifyCollectionChangedEventArgs>
+internal class CollectionChangedWeakEventListener<T, T2>
+	: WeakEventListener<T, T2, NotifyCollectionChangedEventArgs>
 	where T : class, INotifyCollectionChanged
+	where T2 : class
 {
 	#region Constructors
 
-	public CollectionChangedWeakEventListener(T source, EventHandler<NotifyCollectionChangedEventArgs> handler)
-		: base(source, handler)
+	public CollectionChangedWeakEventListener(T source, T2 destination, NotifyCollectionChangedEventHandler handler)
+		: base(source, nameof(source.CollectionChanged), destination, handler.Method)
 	{
-		source.CollectionChanged += HandleEvent;
-	}
-
-	#endregion
-
-	#region Methods
-
-	protected override void StopListening(T source)
-	{
-		source.CollectionChanged -= HandleEvent;
 	}
 
 	#endregion

@@ -41,37 +41,32 @@ public class StringValueGenerator : ValueGenerator
 	{
 		if ((type == typeof(char)) || (type == typeof(char?)))
 		{
-			return new object[] { char.MinValue, char.MaxValue };
+			return [char.MinValue, char.MaxValue];
 		}
 
 		if (type == typeof(string))
 		{
-			return new object[] { string.Empty, "", " " };
+			return [string.Empty, "", " "];
 		}
 
 		if (type == typeof(GapBuffer<char>))
 		{
-			return new object[] { new GapBuffer<char>() };
-		}
-
-		if (type == typeof(RopeBuffer<char>))
-		{
-			return new object[] { new RopeBuffer<char>() };
+			return [new GapBuffer<char>()];
 		}
 
 		if (type == typeof(StringBuilder))
 		{
-			return new object[] { new StringBuilder() };
+			return [new StringBuilder()];
 		}
 
 		if (type == typeof(TextBuilder))
 		{
-			return new object[] { new TextBuilder() };
+			return [new TextBuilder()];
 		}
 
 		if (type == typeof(JsonString))
 		{
-			return new object[] { new JsonString() };
+			return [new JsonString()];
 		}
 
 		throw new NotSupportedException($"The type ({type.FullName}) is not supported.");

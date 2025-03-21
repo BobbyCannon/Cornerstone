@@ -2,14 +2,10 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Cornerstone.Automation;
-using Cornerstone.Automation.Web;
 using Cornerstone.Automation.Web.Browsers;
 using Cornerstone.Extensions;
 using Cornerstone.Parsers;
 using Cornerstone.Parsers.CSharp;
-using Cornerstone.Parsers.Html;
-using Cornerstone.Parsers.Markdown;
 using Cornerstone.Profiling;
 using Cornerstone.Testing;
 using Microsoft.CodeAnalysis;
@@ -26,7 +22,18 @@ public class CSharpTokenizerTests : TokenizerTest
 	#region Methods
 
 	[TestMethod]
-	public void Name()
+	public void AllTokens()
+	{
+		var expected = GetExpectedTokens();
+		var t = new CSharpTokenizer();
+		t.Add(GetContentToTokenize());
+		var actual = t.GetTokens().ToArray();
+		CopyToClipboard(actual.DumpCSharpArray());
+		AreEqual(expected, actual);
+	}
+
+	[TestMethod]
+	public void Debugging()
 	{
 		var t = new CSharpTokenizer();
 		//t.Add(GetContentToTokenize());
@@ -34,13 +41,13 @@ public class CSharpTokenizerTests : TokenizerTest
 		//     0123456789012345678 9 0 1 23456789012345 6 7 8 9012345678
 		t.Add("""
 			#region References
-			
+
 			using System;
-			
+
 			#endregion
-			
+
 			namespace Test.Assembly;
-			
+
 			public static class MyTestExtensions
 			{
 				public static string GetString(this MyTests test)
@@ -48,7 +55,7 @@ public class CSharpTokenizerTests : TokenizerTest
 					return test.ToString();
 				}
 			}
-			
+
 			[TestClass]
 			public class MyTests : CornerstoneTests
 			{
@@ -57,7 +64,7 @@ public class CSharpTokenizerTests : TokenizerTest
 					return a + b;
 				}
 			}
-			
+
 			""");
 		t.ToString().Escape().Dump();
 
@@ -82,17 +89,6 @@ public class CSharpTokenizerTests : TokenizerTest
 			browser.AutoClose = false;
 			browser.SetHtml(syntaxHtml);
 		}
-	}
-
-	[TestMethod]
-	public void AllTokens()
-	{
-		var expected = GetExpectedTokens();
-		var t = new CSharpTokenizer();
-		t.Add(GetContentToTokenize());
-		var actual = t.GetTokens().ToArray();
-		CopyToClipboard(actual.DumpCSharpArray());
-		AreEqual(expected, actual);
 	}
 
 	[TestMethod]
@@ -122,32 +118,17 @@ public class CSharpTokenizerTests : TokenizerTest
 		}
 	}
 
-	[TestMethod]
-	public void ToHtml()
-	{
-		var markdown = GetContentToTokenize();
-		var tokenizer = new MarkdownTokenizer();
-		tokenizer.Add(markdown);
-
-		if (EnableBrowserSamples)
-		{
-			var actual = tokenizer.ToHtml();
-			HtmlWriter.WrapHtmlSnippet(actual).Dump();
-			actual.DumpInBrowser(BrowserType.Chrome);
-		}
-	}
-
 	protected override string GetContentToTokenize()
 	{
 		return """
 				#region References
-				
+
 				using System;
-				
+
 				#endregion
-				
+
 				namespace MyTest.Assembly;
-				
+
 				public class MyClass : BaseClass
 				{
 				}

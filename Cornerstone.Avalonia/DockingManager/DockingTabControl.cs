@@ -45,7 +45,7 @@ public class DockingTabControl : TabControl
 	private readonly RearrangePreventFlicker _dragRearrangePreventFlicker;
 	private ItemsPresenter _itemsPresenterPart;
 	private readonly SpeedyList<DockableTabItem> _selectedOrder;
-	private readonly WeakEventManager _weakEventManager;
+	private readonly IWeakEventManager _weakEventManager;
 
 	#endregion
 
@@ -60,7 +60,7 @@ public class DockingTabControl : TabControl
 		_dockingManager = dockingManager;
 		_dragRearrangePreventFlicker = new();
 		_weakEventManager = new WeakEventManager();
-		_weakEventManager.Add<ItemCollection, NotifyCollectionChangedEventArgs>(Items, nameof(Items.CollectionChanged), ItemsCollectionChanged);
+		_weakEventManager.Add<ItemCollection, DockingTabControl, NotifyCollectionChangedEventArgs>(Items, nameof(Items.CollectionChanged), this, ItemsCollectionChanged);
 		_selectedOrder = new SpeedyList<DockableTabItem>(null, new OrderBy<DockableTabItem>(x => x.LastSelectedOn)) { DistinctCheck = (x, y) => x.TabModel.Id == y.TabModel.Id };
 
 		IsHitTestVisible = true;
@@ -239,6 +239,7 @@ public class DockingTabControl : TabControl
 		var tabModel = closeableTabItem.Content as DockableTabModel;
 		tabModel?.UpdateState(DockingState.IsClosing);
 		tabModel?.Uninitialize();
+		_dockingManager?.OnTabModelRemoved(tabModel);
 	}
 
 	private void ItemsCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)

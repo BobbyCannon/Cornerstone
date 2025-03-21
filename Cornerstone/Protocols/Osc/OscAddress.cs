@@ -25,7 +25,7 @@ public class OscAddress : IEnumerable<string>
 
 	public OscAddress(string address)
 	{
-		_addressParts = new List<string>();
+		_addressParts = [];
 
 		ParseAddress(address);
 	}
@@ -101,7 +101,7 @@ public class OscAddress : IEnumerable<string>
 		}
 
 		// Break down the parts
-		_addressParts = address.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+		_addressParts = address.Split(['/'], StringSplitOptions.RemoveEmptyEntries).ToList();
 
 		// Keep the original value
 		Value = address;

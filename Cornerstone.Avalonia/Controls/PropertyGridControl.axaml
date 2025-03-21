@@ -1,13 +1,23 @@
-<CornerstoneUserControl xmlns="https://github.com/avaloniaui"
+<Styles xmlns="https://github.com/avaloniaui"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-		x:Class="Cornerstone.Avalonia.Controls.PropertyGridControl"
-		mc:Ignorable="d"
-		d:DesignWidth="600"
-		d:DesignHeight="450">
-
-	<Grid RowDefinitions="Auto,*">
-		<Grid Grid.Row="1" x:Name="PropertiesGrid" />
-	</Grid>
-</CornerstoneUserControl>
+		xmlns:runtime="clr-namespace:Cornerstone.Runtime;assembly=Cornerstone">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type PropertyGridControl}"
+					TargetType="PropertyGridControl">
+				<Setter Property="Template">
+					<ControlTemplate>
+						<ResponsiveGrid x:Name="PropertiesGrid" />
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+	<Design.PreviewWith>
+		<ScrollViewer Width="800" Height="400">
+			<StackPanel>
+				<PropertyGridControl Source="{x:Static runtime:RuntimeInformationExtensions.Sample}" />
+			</StackPanel>
+		</ScrollViewer>
+	</Design.PreviewWith>
+</Styles>

@@ -7,24 +7,16 @@ using System.ComponentModel;
 
 namespace Cornerstone.Internal.WeakEvents;
 
-internal class PropertyChangedWeakEventListener<T> : WeakEventListenerBase<T, PropertyChangedEventArgs>
+internal class PropertyChangedWeakEventListener<T, T2>
+	: WeakEventListener<T, T2, PropertyChangedEventArgs>
 	where T : class, INotifyPropertyChanged
+	where T2 : class
 {
 	#region Constructors
 
-	public PropertyChangedWeakEventListener(T source, EventHandler<PropertyChangedEventArgs> handler)
-		: base(source, handler)
+	public PropertyChangedWeakEventListener(T source, T2 destination, PropertyChangedEventHandler handler)
+		: base(source, nameof(source.PropertyChanged), destination, handler.Method)
 	{
-		source.PropertyChanged += HandleEvent;
-	}
-
-	#endregion
-
-	#region Methods
-
-	protected override void StopListening(T source)
-	{
-		source.PropertyChanged -= HandleEvent;
 	}
 
 	#endregion

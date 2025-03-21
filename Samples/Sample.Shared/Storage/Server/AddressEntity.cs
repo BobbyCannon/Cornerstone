@@ -3,14 +3,15 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Cornerstone.Data;
 using Cornerstone.Sync;
-using Sample.Shared.Sync;
+using Sample.Shared.Storage.Sync;
 
 #endregion
 
 namespace Sample.Shared.Storage.Server;
 
-public class AddressEntity : SyncEntity<long>, IAddressSync
+public class AddressEntity : SyncEntity<long, Address>, IAddress
 {
 	#region Constructors
 

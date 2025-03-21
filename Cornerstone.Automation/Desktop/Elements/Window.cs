@@ -4,8 +4,8 @@ using System;
 using System.Drawing;
 using System.Linq;
 using Cornerstone.Extensions;
-using Cornerstone.Windows;
-using Cornerstone.Windows.Native;
+using Cornerstone.Platforms.Windows;
+using Cornerstone.Platforms.Windows.Native;
 using Interop.UIAutomationClient;
 
 #endregion

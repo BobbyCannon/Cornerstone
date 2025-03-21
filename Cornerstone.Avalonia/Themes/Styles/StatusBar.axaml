@@ -24,6 +24,7 @@
 			<Setter Property="Orientation" Value="Horizontal" />
 		</Style>
 		<Style Selector="^ TextBlock.Label">
+			<Setter Property="Foreground" Value="{DynamicResource Foreground03}" />
 			<Setter Property="FontSize" Value="14" />
 			<Setter Property="Margin" Value="12,0,6,0" />
 			<Setter Property="VerticalAlignment" Value="Center" />

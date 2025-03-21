@@ -51,7 +51,7 @@
 		</StackPanel>
 	</Design.PreviewWith>
 
-	<x:Double x:Key="TabItemMinHeight">32</x:Double>
+	<x:Double x:Key="TabItemMinHeight">28</x:Double>
 
 	<ControlTheme x:Key="{x:Type TabItem}" TargetType="TabItem">
 		<Setter Property="FontSize" Value="{DynamicResource StandardFontSize}" />
@@ -59,7 +59,7 @@
 		<Setter Property="Background" Value="{DynamicResource TabItemHeaderBackgroundUnselected}" />
 		<Setter Property="BorderBrush" Value="{DynamicResource TabControlBorder}" />
 		<Setter Property="BorderThickness" Value="0" />
-		<Setter Property="Padding" Value="12,4" />
+		<Setter Property="Padding" Value="12,0" />
 		<Setter Property="Foreground" Value="{DynamicResource TabItemHeaderForegroundUnselected}" />
 		<Setter Property="MinHeight" Value="{DynamicResource TabItemMinHeight}" />
 		<Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -73,7 +73,8 @@
 							BorderBrush="{TemplateBinding BorderBrush}"
 							BorderThickness="{TemplateBinding BorderThickness}"
 							CornerRadius="{TemplateBinding CornerRadius}"
-							Margin="{TemplateBinding Margin}">
+							Margin="{TemplateBinding Margin}"
+							MinHeight="{TemplateBinding MinHeight}">
 
 						<ContentPresenter
 								Name="PART_ContentPresenter"
@@ -85,14 +86,7 @@
 								FontSize="{TemplateBinding FontSize}"
 								FontWeight="{TemplateBinding FontWeight}"
 								Margin="{TemplateBinding Padding}" />
-
 					</Border>
-
-					<!-- Tab highlight. -->
-					<Border Name="PART_Highlight"
-							ClipToBounds="True"
-							CornerRadius="{TemplateBinding CornerRadius}"
-							Margin="{TemplateBinding Margin}" />
 				</Panel>
 			</ControlTemplate>
 		</Setter>
@@ -112,18 +106,12 @@
 
 			<Style Selector="^ /template/ Border#PART_LayoutRoot">
 				<Setter Property="BorderThickness" Value="1,1,1,0" />
-				<Setter Property="Margin" Value="2,0,2,1" />
 			</Style>
 			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
-				<Setter Property="Margin" Value="2,0" />
+				<Setter Property="HorizontalAlignment" Value="Stretch" />
 			</Style>
-			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
-				<Setter Property="Padding" Value="0" />
-			</Style>
-			<Style Selector="^ /template/ Border#PART_Highlight">
+			<Style Selector="^ /template/ Border#PART_LayoutRoot">
 				<Setter Property="Background" Value="{DynamicResource TabItemHeaderHighlightUnselected}" />
-				<Setter Property="VerticalAlignment" Value="Top" />
-				<Setter Property="Height" Value="4" />
 				<Setter Property="Margin" Value="2,0" />
 			</Style>
 		</Style>
@@ -134,18 +122,12 @@
 
 			<Style Selector="^ /template/ Border#PART_LayoutRoot">
 				<Setter Property="BorderThickness" Value="1,0,1,1" />
-				<Setter Property="Margin" Value="2,1,2,0" />
 			</Style>
 			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
-				<Setter Property="Margin" Value="2,0" />
+				<Setter Property="HorizontalAlignment" Value="Stretch" />
 			</Style>
-			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
-				<Setter Property="Padding" Value="0,0,0,4" />
-			</Style>
-			<Style Selector="^ /template/ Border#PART_Highlight">
+			<Style Selector="^ /template/ Border#PART_LayoutRoot">
 				<Setter Property="Background" Value="{DynamicResource TabItemHeaderHighlightUnselected}" />
-				<Setter Property="VerticalAlignment" Value="Bottom" />
-				<Setter Property="Height" Value="4" />
 				<Setter Property="Margin" Value="2,0" />
 			</Style>
 		</Style>
@@ -157,16 +139,12 @@
 
 			<Style Selector="^ /template/ Border#PART_LayoutRoot">
 				<Setter Property="BorderThickness" Value="1,1,0,1" />
-				<Setter Property="Margin" Value="0,2,1,2" />
-			</Style>
-			<Style Selector="^ /template/ Border#PART_Highlight">
-				<Setter Property="Background" Value="{DynamicResource TabItemHeaderHighlightUnselected}" />
-				<Setter Property="HorizontalAlignment" Value="Left" />
-				<Setter Property="Width" Value="4" />
-				<Setter Property="Margin" Value="0,2" />
 			</Style>
 			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
 				<Setter Property="HorizontalAlignment" Value="Stretch" />
+			</Style>
+			<Style Selector="^ /template/ Border#PART_LayoutRoot">
+				<Setter Property="Background" Value="{DynamicResource TabItemHeaderHighlightUnselected}" />
 				<Setter Property="Margin" Value="0,2" />
 			</Style>
 		</Style>
@@ -178,29 +156,25 @@
 
 			<Style Selector="^ /template/ Border#PART_LayoutRoot">
 				<Setter Property="BorderThickness" Value="0,1,1,1" />
-				<Setter Property="Margin" Value="1,2,0,2" />
-			</Style>
-			<Style Selector="^ /template/ Border#PART_Highlight">
-				<Setter Property="Background" Value="{DynamicResource TabItemHeaderHighlightUnselected}" />
-				<Setter Property="HorizontalAlignment" Value="Right" />
-				<Setter Property="Width" Value="4" />
-				<Setter Property="Margin" Value="0,2" />
 			</Style>
 			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
 				<Setter Property="HorizontalAlignment" Value="Stretch" />
+			</Style>
+			<Style Selector="^ /template/ Border#PART_LayoutRoot">
+				<Setter Property="Background" Value="{DynamicResource TabItemHeaderHighlightUnselected}" />
 				<Setter Property="Margin" Value="0,2" />
 			</Style>
 		</Style>
 
 		<!-- Set highlight color if selected. -->
-		<Style Selector="^:selected /template/ Border#PART_Highlight">
+		<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
 			<Setter Property="Background" Value="{DynamicResource TabItemHeaderHighlightSelected}" />
 		</Style>
 
 		<!-- Red highlight color. -->
 
 		<Style Selector="^[(Theme.Color)=Red]">
-			<Style Selector="^:selected /template/ Border#PART_Highlight">
+			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
 				<Setter Property="Background" Value="{DynamicResource Red07}" />
 			</Style>
 		</Style>
@@ -208,7 +182,7 @@
 		<!-- Pink highlight color. -->
 
 		<Style Selector="^[(Theme.Color)=Pink]">
-			<Style Selector="^:selected /template/ Border#PART_Highlight">
+			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
 				<Setter Property="Background" Value="{DynamicResource Pink07}" />
 			</Style>
 		</Style>
@@ -216,7 +190,7 @@
 		<!-- Purple highlight color. -->
 
 		<Style Selector="^[(Theme.Color)=Purple]">
-			<Style Selector="^:selected /template/ Border#PART_Highlight">
+			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
 				<Setter Property="Background" Value="{DynamicResource Purple07}" />
 			</Style>
 		</Style>
@@ -224,7 +198,7 @@
 		<!-- Deep Purple highlight color. -->
 
 		<Style Selector="^[(Theme.Color)=DeepPurple]">
-			<Style Selector="^:selected /template/ Border#PART_Highlight">
+			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
 				<Setter Property="Background" Value="{DynamicResource DeepPurple07}" />
 			</Style>
 		</Style>
@@ -232,7 +206,7 @@
 		<!-- Indigo highlight color. -->
 
 		<Style Selector="^[(Theme.Color)=Indigo]">
-			<Style Selector="^:selected /template/ Border#PART_Highlight">
+			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
 				<Setter Property="Background" Value="{DynamicResource Indigo07}" />
 			</Style>
 		</Style>
@@ -240,7 +214,7 @@
 		<!-- Blue highlight color. -->
 
 		<Style Selector="^[(Theme.Color)=Blue]">
-			<Style Selector="^:selected /template/ Border#PART_Highlight">
+			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
 				<Setter Property="Background" Value="{DynamicResource Blue07}" />
 			</Style>
 		</Style>
@@ -248,7 +222,7 @@
 		<!-- Teal highlight color. -->
 
 		<Style Selector="^[(Theme.Color)=Teal]">
-			<Style Selector="^:selected /template/ Border#PART_Highlight">
+			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
 				<Setter Property="Background" Value="{DynamicResource Teal07}" />
 			</Style>
 		</Style>
@@ -256,7 +230,7 @@
 		<!-- Green highlight color. -->
 
 		<Style Selector="^[(Theme.Color)=Green]">
-			<Style Selector="^:selected /template/ Border#PART_Highlight">
+			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
 				<Setter Property="Background" Value="{DynamicResource Green07}" />
 			</Style>
 		</Style>
@@ -264,7 +238,7 @@
 		<!-- Amber highlight color. -->
 
 		<Style Selector="^[(Theme.Color)=Amber]">
-			<Style Selector="^:selected /template/ Border#PART_Highlight">
+			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
 				<Setter Property="Background" Value="{DynamicResource Amber07}" />
 			</Style>
 		</Style>
@@ -272,7 +246,7 @@
 		<!-- Orange highlight color. -->
 
 		<Style Selector="^[(Theme.Color)=Orange]">
-			<Style Selector="^:selected /template/ Border#PART_Highlight">
+			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
 				<Setter Property="Background" Value="{DynamicResource Orange07}" />
 			</Style>
 		</Style>
@@ -280,7 +254,7 @@
 		<!-- Deep Orange highlight color. -->
 
 		<Style Selector="^[(Theme.Color)=DeepOrange]">
-			<Style Selector="^:selected /template/ Border#PART_Highlight">
+			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
 				<Setter Property="Background" Value="{DynamicResource DeepOrange07}" />
 			</Style>
 		</Style>
@@ -288,7 +262,7 @@
 		<!-- Brown highlight color. -->
 
 		<Style Selector="^[(Theme.Color)=Brown]">
-			<Style Selector="^:selected /template/ Border#PART_Highlight">
+			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
 				<Setter Property="Background" Value="{DynamicResource Brown07}" />
 			</Style>
 		</Style>
@@ -296,7 +270,7 @@
 		<!-- Blue Gray highlight color. -->
 
 		<Style Selector="^[(Theme.Color)=BlueGray]">
-			<Style Selector="^:selected /template/ Border#PART_Highlight">
+			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
 				<Setter Property="Background" Value="{DynamicResource BlueGray07}" />
 			</Style>
 		</Style>

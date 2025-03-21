@@ -1,32 +1,13 @@
 <CornerstoneApplication xmlns="https://github.com/avaloniaui"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		xmlns:sample="clr-namespace:Cornerstone.Sample"
 		x:Class="Cornerstone.Sample.App"
 		RequestedThemeVariant="Dark">
-	<CornerstoneApplication.DataTemplates>
-		<DataTemplate DataType="tabs:TextBoxTabModel">
-			<DockPanel>
-				<StackPanel DockPanel.Dock="Top"
-						Orientation="Horizontal">
-					<Button Command="{Binding PopupCommand}">
-						Popup
-					</Button>
-					<TextBlock Text="{Binding Popup}" />
-				</StackPanel>
-				<TextBox Text="{Binding Text, Mode=TwoWay}"
-						AcceptsReturn="True"
-						VerticalContentAlignment="Top" />
-			</DockPanel>
-		</DataTemplate>
-		<DataTemplate DataType="tabs:TextBoxSamplePopup">
-			<TextBlock Text="Sample Popup" />
-		</DataTemplate>
-		<DataTemplate DataType="tabs:TextTabModel">
-			<TextBlock Text="{Binding Text}" />
-		</DataTemplate>
-	</CornerstoneApplication.DataTemplates>
+	<Application.DataTemplates>
+		<sample:ViewModelLocator />
+	</Application.DataTemplates>
 	<CornerstoneApplication.Styles>
-		<CornerstoneTheme ThemeColor="Blue" />
+		<CornerstoneTheme ThemeColor="DeepPurple" />
 		<StyleInclude Source="avares://Cornerstone.Avalonia.DataGrid/Index.axaml" />
 		<StyleInclude Source="avares://Cornerstone.Avalonia.ColorPicker/Index.axaml" />
 	</CornerstoneApplication.Styles>

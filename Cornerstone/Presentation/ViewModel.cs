@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System.Diagnostics;
+using Cornerstone.Data;
 
 #endregion
 
@@ -102,7 +103,7 @@ public interface IViewModel<T> : IViewModel
 /// <summary>
 /// Represents an object that subscribes to events.
 /// </summary>
-public interface IViewModel
+public interface IViewModel : INotifiable
 {
 	#region Properties
 

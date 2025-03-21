@@ -25,9 +25,11 @@ public static class UriExtensions
 
 	public static string[] ToApplicationArguments(this Uri uri)
 	{
-		var response = new List<string>();
-		response.Add("-Schema", uri.Scheme);
-		response.Add("-Host", uri.Host);
+		var response = new List<string>
+		{
+			{ "-Schema", uri.Scheme },
+			{ "-Host", uri.Host }
+		};
 		if (!string.IsNullOrWhiteSpace(uri.AbsolutePath))
 		{
 			response.Add("-Path", uri.AbsolutePath);

@@ -2,13 +2,19 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Cornerstone.Extensions;
+using Cornerstone.Newtonsoft;
 using Cornerstone.Serialization;
+using Cornerstone.Serialization.Json;
+using Cornerstone.Testing;
 using Cornerstone.Text;
 using Cornerstone.UnitTests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json;
+using JsonSerializer = Cornerstone.Serialization.Json.JsonSerializer;
 
 #endregion
 
@@ -32,6 +38,46 @@ public class JsonSerializationTests : CornerstoneUnitTest
 		var json = File.ReadAllText(filePath);
 		var actual = json.FromJson<ObjectJson>();
 		AreEqual(expected, actual);
+	}
+
+	[TestMethod]
+	public void SpeedTest()
+	{
+		var serializers = GetSerializers();
+		var value = GetExpected();
+
+		"Warm Up".Dump();
+		
+		foreach (var serializer in serializers)
+		{
+			serializer.GetType().Name.Dump();
+
+			var w = Stopwatch.StartNew();
+			serializer.ToJson(value);
+			w.Stop();
+
+			w.Elapsed.Dump();
+		}
+
+		"\nAfter".Dump();
+		
+		foreach (var serializer in serializers)
+		{
+			serializer.GetType().Name.Dump();
+
+			var w = Stopwatch.StartNew();
+			serializer.ToJson(value);
+			w.Stop();
+
+			w.Elapsed.Dump();
+		}
+
+	}
+
+	private IEnumerable<IJsonSerializer> GetSerializers()
+	{
+		yield return new JsonSerializer();
+		yield return new NewtonsoftJsonSerializer();
 	}
 
 	private ObjectJson GetExpected()

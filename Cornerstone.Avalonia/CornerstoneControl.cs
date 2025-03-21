@@ -11,30 +11,30 @@ namespace Cornerstone.Avalonia;
 
 public class CornerstoneControl : Control, IDispatchable
 {
-    #region Fields
+	#region Fields
 
-    private PropertyChangedEventHandler _propertyChangedHandler;
+	private PropertyChangedEventHandler _propertyChangedHandler;
 
-    #endregion
+	#endregion
 
-    #region Methods
+	#region Methods
 
-    /// <inheritdoc />
-    public IDispatcher GetDispatcher()
-    {
-        return CornerstoneDispatcher.Instance;
-    }
+	/// <inheritdoc />
+	public IDispatcher GetDispatcher()
+	{
+		return CornerstoneDispatcher.Instance;
+	}
 
-    public static T GetInstance<T>()
-    {
-        return CornerstoneApplication.GetInstance<T>();
-    }
+	public static T GetInstance<T>()
+	{
+		return CornerstoneApplication.GetInstance<T>();
+	}
 
-    public void OnPropertyChanged(string propertyName)
-    {
-        _propertyChangedHandler ??= this.GetPropertyChangedHandler();
-        _propertyChangedHandler?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
+	public void OnPropertyChanged(string propertyName)
+	{
+		_propertyChangedHandler ??= this.GetPropertyChangedHandler();
+		_propertyChangedHandler?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+	}
 
-    #endregion
+	#endregion
 }

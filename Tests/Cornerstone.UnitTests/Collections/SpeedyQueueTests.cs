@@ -9,7 +9,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Cornerstone.UnitTests.Collections;
 
 [TestClass]
-public class SpeedyQueueTests : BaseCollectionTests
+public class SpeedyQueueTests : CornerstoneUnitTest
 {
 	#region Methods
 

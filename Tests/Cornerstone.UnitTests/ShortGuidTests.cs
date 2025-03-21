@@ -42,17 +42,17 @@ public class ShortGuidTests : CornerstoneUnitTest
 		var guid1 = ShortGuid.Parse("B2751797-F420-4FFD-A9B9-722C0A3C4FDF");
 		var guid2 = new ShortGuid(expected);
 
-		Assert.IsTrue(guid1 == guid2);
-		Assert.IsTrue(guid1.Equals(guid2));
-		Assert.IsTrue(Equals(guid1, guid2));
-		Assert.IsTrue(Equals(guid1, expected));
-		Assert.IsTrue(Equals(guid1, "lxd1siD0_U-puXIsCjxP3w"));
+		IsTrue(guid1 == guid2);
+		IsTrue(guid1.Equals(guid2));
+		IsTrue(Equals(guid1, guid2));
+		IsTrue(Equals(guid1, expected));
+		IsTrue(Equals(guid1, "lxd1siD0_U-puXIsCjxP3w"));
 
 		// Not equal but using Equals method
-		Assert.IsFalse(guid1.Equals(ShortGuid.Empty));
-		Assert.IsFalse(guid1.Equals(null));
-		Assert.IsFalse(guid1.Equals(21));
-		Assert.IsFalse(guid1.Equals(true));
+		IsFalse(guid1.Equals(ShortGuid.Empty));
+		IsFalse(guid1.Equals(null));
+		IsFalse(guid1.Equals(21));
+		IsFalse(guid1.Equals(true));
 	}
 
 	[TestMethod]
@@ -61,7 +61,7 @@ public class ShortGuidTests : CornerstoneUnitTest
 		var guid1 = ShortGuid.Empty;
 		var guid2 = new ShortGuid(Guid.Parse("B2751797-F420-4FFD-A9B9-722C0A3C4FDF"));
 
-		Assert.IsTrue(guid1 != guid2);
+		IsTrue(guid1 != guid2);
 	}
 
 	[TestMethod]
@@ -96,8 +96,8 @@ public class ShortGuidTests : CornerstoneUnitTest
 	public void NewGuid()
 	{
 		var actual = ShortGuid.NewGuid();
-		Assert.AreNotEqual(ShortGuid.Empty, actual);
-		Assert.AreNotEqual(0, actual.GetHashCode());
+		AreNotEqual(ShortGuid.Empty, actual);
+		AreNotEqual(0, actual.GetHashCode());
 	}
 
 	[TestMethod]

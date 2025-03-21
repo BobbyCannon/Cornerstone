@@ -98,10 +98,12 @@ public class MarkdownTokenData : TokenData<MarkdownTokenData, MarkdownTokenType>
 			}
 			case MarkdownTokenType.Header:
 			{
-				if (TokenIndexes.Length == 4)
+				if (TokenIndexes.Length == 3)
 				{
-					var className = SubStringUsingAbsoluteIndexes(TokenIndexes[2], TokenIndexes[3], false);
-					writer.WriteElement("span", SubStringUsingAbsoluteIndexes(StartIndex, EndIndex - 1, true), new XmlAttribute("class", className));
+					var className = SubStringUsingAbsoluteIndexes(TokenIndexes[1], TokenIndexes[2], false);
+					writer.WriteElement("span", SubStringUsingAbsoluteIndexes(TokenIndexes[2]+1, EndIndex - 1, true),
+						string.IsNullOrWhiteSpace(className) ? [] : [new XmlAttribute("class", className)]
+					);
 					return;
 				}
 
@@ -223,10 +225,13 @@ public class MarkdownTokenData : TokenData<MarkdownTokenData, MarkdownTokenType>
 				{
 					writer.WriteElement(ElementName, SubStringUsingAbsoluteIndexes(TokenIndexes[0], EndIndex, false));
 				}
-				else if (TokenIndexes.Length == 4)
+				else if (TokenIndexes.Length == 3)
 				{
-					var className = SubStringUsingAbsoluteIndexes(TokenIndexes[2], TokenIndexes[3], false);
-					writer.WriteElement(ElementName, SubStringUsingAbsoluteIndexes(TokenIndexes[1], TokenIndexes[2], false), new XmlAttribute("class", className));
+					var className = SubStringUsingAbsoluteIndexes(TokenIndexes[1], TokenIndexes[2], false);
+					var headerText = SubStringUsingAbsoluteIndexes(TokenIndexes[2] + 1, EndIndex, false);
+					writer.WriteElement(ElementName, headerText,
+						string.IsNullOrWhiteSpace(className) ? [] : [new XmlAttribute("class", className)]
+					);
 				}
 				return;
 			}

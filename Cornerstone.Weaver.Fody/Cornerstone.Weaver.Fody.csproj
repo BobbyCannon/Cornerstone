@@ -9,6 +9,6 @@
 		<GenerateDocumentationFile>false</GenerateDocumentationFile>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="FodyHelpers" Version="6.9.1" />
+		<PackageReference Include="FodyHelpers" Version="6.9.2" />
 	</ItemGroup>
 </Project>

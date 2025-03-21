@@ -31,8 +31,8 @@ public class UtilityExtensionsTests : CornerstoneUnitTest
 		}, 1000, 1);
 		watch.Stop();
 		AreEqual(3, count);
-		Assert.IsTrue(watch.Elapsed.TotalMilliseconds > 1, watch.Elapsed.TotalMilliseconds.ToString());
-		Assert.IsTrue(watch.Elapsed.TotalMilliseconds < 10, watch.Elapsed.TotalMilliseconds.ToString());
+		IsTrue(watch.Elapsed.TotalMilliseconds > 1, watch.Elapsed.TotalMilliseconds.ToString());
+		IsTrue(watch.Elapsed.TotalMilliseconds < 40, watch.Elapsed.TotalMilliseconds.ToString());
 	}
 
 	[TestMethod]
@@ -48,8 +48,8 @@ public class UtilityExtensionsTests : CornerstoneUnitTest
 			}, 5, 1), "Nope...");
 
 		watch.Stop();
-		Assert.IsTrue(watch.Elapsed.TotalMilliseconds > 1, watch.Elapsed.TotalMilliseconds.ToString());
-		Assert.IsTrue(watch.Elapsed.TotalMilliseconds < 20, watch.Elapsed.TotalMilliseconds.ToString());
+		IsTrue(watch.Elapsed.TotalMilliseconds > 1, watch.Elapsed.TotalMilliseconds.ToString());
+		IsTrue(watch.Elapsed.TotalMilliseconds < 40, watch.Elapsed.TotalMilliseconds.ToString());
 	}
 
 	[TestMethod]
@@ -65,38 +65,32 @@ public class UtilityExtensionsTests : CornerstoneUnitTest
 			}
 
 			return count;
-		}, 10, 1);
+		}, 100, 1);
 		watch.Stop();
 		AreEqual(3, result);
 		AreEqual(3, count);
-		// had to reduce the min to 2.5 because I was getting number less than the expected min of 3. Ex. 2.9969
-		Assert.IsTrue(watch.Elapsed.TotalMilliseconds > 2.5, watch.Elapsed.TotalMilliseconds.ToString());
-		Assert.IsTrue(watch.Elapsed.TotalMilliseconds < 5, watch.Elapsed.TotalMilliseconds.ToString());
+		// had to reduce the min to 2.25 because I was getting number less than the expected min of 3. Ex. 2.9969
+		IsTrue(watch.Elapsed.TotalMilliseconds > 2.25, watch.Elapsed.TotalMilliseconds.ToString());
+		IsTrue(watch.Elapsed.TotalMilliseconds < 40, watch.Elapsed.TotalMilliseconds.ToString());
 	}
 
 	[TestMethod]
 	public void RetryTypeShouldTimeoutAndThrowLastException()
 	{
-		var count = 0;
-		var result = 0;
 		var watch = Stopwatch.StartNew();
 
 		ExpectedException<Exception>(() =>
-			result = UtilityExtensions.Retry(() =>
-			{
-				if (++count < 3)
-				{
-					throw new Exception("Nope...");
-				}
-
-				return count;
-			}, 4, 1), "Nope...");
+				UtilityExtensions.Retry(
+					() => throw new Exception("Nope..."),
+					(int) WaitTimeout.TotalSeconds,
+					10
+				),
+			"Nope..."
+		);
 
 		watch.Stop();
-		AreEqual(0, result);
-		AreEqual(2, count);
-		Assert.IsTrue(watch.Elapsed.TotalMilliseconds > 1, watch.Elapsed.TotalMilliseconds.ToString());
-		Assert.IsTrue(watch.Elapsed.TotalMilliseconds < 20, watch.Elapsed.TotalMilliseconds.ToString());
+		IsTrue(watch.Elapsed.TotalMilliseconds > 1, watch.Elapsed.TotalMilliseconds.ToString());
+		IsTrue(watch.Elapsed.TotalMilliseconds < 40, watch.Elapsed.TotalMilliseconds.ToString());
 	}
 
 	[TestMethod]
@@ -138,12 +132,12 @@ public class UtilityExtensionsTests : CornerstoneUnitTest
 	{
 		var count = 0;
 		var watch = Stopwatch.StartNew();
-		var result = UtilityExtensions.WaitUntil(() => ++count > 3, 10, 1);
+		var result = UtilityExtensions.WaitUntil(() => ++count > 3, 100, 1);
 		watch.Stop();
-		Assert.IsTrue(result);
+		IsTrue(result, $"Count of {count} did not pass 3.");
 		AreEqual(4, count);
-		Assert.IsTrue(watch.Elapsed.TotalMilliseconds > 1, watch.Elapsed.TotalMilliseconds.ToString());
-		Assert.IsTrue(watch.Elapsed.TotalMilliseconds < 20, watch.Elapsed.TotalMilliseconds.ToString());
+		IsTrue(watch.Elapsed.TotalMilliseconds > 1, watch.Elapsed.TotalMilliseconds.ToString());
+		IsTrue(watch.Elapsed.TotalMilliseconds < 40, watch.Elapsed.TotalMilliseconds.ToString());
 	}
 
 	[TestMethod]

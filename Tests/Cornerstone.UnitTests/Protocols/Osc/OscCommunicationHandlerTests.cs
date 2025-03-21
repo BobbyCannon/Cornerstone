@@ -27,7 +27,7 @@ public class OscCommunicationHandlerTests : CornerstoneUnitTest
 		var expected = new SampleOscCommand();
 		var handler = new OscCommandHandler<SampleOscCommand>(test);
 		handler.Process(handler, expected.ToMessage());
-		Assert.IsTrue(actual, "Handler was not called");
+		IsTrue(actual, "Handler was not called");
 	}
 
 	#endregion

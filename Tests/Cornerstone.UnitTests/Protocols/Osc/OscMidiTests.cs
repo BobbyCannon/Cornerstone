@@ -18,9 +18,9 @@ public class OscMidiTests : CornerstoneUnitTest
 	{
 		var expected = new OscMidi(1, 2, 3, 4);
 		var actual = new OscMidi([1, 2, 3, 4]);
-		Assert.IsTrue(expected == actual);
-		Assert.IsTrue(expected.Equals(actual));
-		Assert.IsTrue(expected.Equals(new byte[] { 1, 2, 3, 4 }));
+		IsTrue(expected == actual);
+		IsTrue(expected.Equals(actual));
+		IsTrue(expected.Equals(new byte[] { 1, 2, 3, 4 }));
 		AreEqual(62884804, expected.GetHashCode());
 		AreEqual(62884804, actual.GetHashCode());
 	}
@@ -51,9 +51,9 @@ public class OscMidiTests : CornerstoneUnitTest
 		var notExpected = new OscMidi(1, 2, 3, 4);
 		var actual = new OscMidi([4, 3, 2, 1]);
 		AreEqual(250755124, actual.GetHashCode());
-		Assert.IsTrue(notExpected != actual);
+		IsTrue(notExpected != actual);
 		// ReSharper disable once SuspiciousTypeConversion.Global
-		Assert.IsFalse(actual.Equals(true));
+		IsFalse(actual.Equals(true));
 	}
 
 	[TestMethod]

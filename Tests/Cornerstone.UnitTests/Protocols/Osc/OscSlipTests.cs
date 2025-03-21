@@ -36,7 +36,7 @@ public class OscSlipTests : CornerstoneUnitTest
 		AreEqual(1, packets.Count);
 
 		var actual = packets[0] as OscBundle;
-		Assert.IsNotNull(actual);
+		IsNotNull(actual);
 		AreEqual(2, actual.Count);
 	}
 
@@ -82,7 +82,7 @@ public class OscSlipTests : CornerstoneUnitTest
 
 		var index = 0;
 		var actual = packets[0] as OscMessage;
-		Assert.IsNotNull(actual);
+		IsNotNull(actual);
 		AreEqual("/Address", actual.Address);
 		AreEqual(20, actual.Arguments.Count);
 		AreEqual(123, actual.Arguments[index++]);
@@ -126,7 +126,7 @@ public class OscSlipTests : CornerstoneUnitTest
 		AreEqual(1, packets.Count);
 
 		var actual = packets[0] as OscMessage;
-		Assert.IsNotNull(actual);
+		IsNotNull(actual);
 		AreEqual("/test", actual.Address);
 		AreEqual(1, actual.Arguments.Count);
 		AreEqual(1234.5678d, actual.Arguments[0]);
@@ -151,7 +151,7 @@ public class OscSlipTests : CornerstoneUnitTest
 		AreEqual(1, packets.Count);
 
 		var actual = packets[0] as OscMessage;
-		Assert.IsNotNull(actual);
+		IsNotNull(actual);
 		AreEqual("/test", actual.Address);
 		AreEqual(1, actual.Arguments.Count);
 		AreEqual(1234.5678f, actual.Arguments[0]);
@@ -176,7 +176,7 @@ public class OscSlipTests : CornerstoneUnitTest
 		AreEqual(1, packets.Count);
 
 		var actual = packets[0] as OscMessage;
-		Assert.IsNotNull(actual);
+		IsNotNull(actual);
 		AreEqual("/test", actual.Address);
 		AreEqual(1, actual.Arguments.Count);
 		AreEqual(1234, actual.Arguments[0]);
@@ -201,7 +201,7 @@ public class OscSlipTests : CornerstoneUnitTest
 		AreEqual(1, packets.Count);
 
 		var actual = packets[0] as OscMessage;
-		Assert.IsNotNull(actual);
+		IsNotNull(actual);
 		AreEqual("/test", actual.Address);
 		AreEqual(0, actual.Arguments.Count);
 	}
@@ -225,7 +225,7 @@ public class OscSlipTests : CornerstoneUnitTest
 		AreEqual(1, packets.Count);
 
 		var actual = packets[0] as OscMessage;
-		Assert.IsNotNull(actual);
+		IsNotNull(actual);
 		AreEqual("/test", actual.Address);
 		AreEqual(1, actual.Arguments.Count);
 		AreEqual("FooBar", actual.Arguments[0]);
@@ -242,7 +242,7 @@ public class OscSlipTests : CornerstoneUnitTest
 		AreEqual(1, packets.Count);
 
 		var actual = packets[0] as OscBundle;
-		Assert.IsNotNull(actual);
+		IsNotNull(actual);
 		AreEqual(2, actual.Count);
 	}
 
@@ -258,7 +258,7 @@ public class OscSlipTests : CornerstoneUnitTest
 		actual.Dump();
 
 		AreEqual(expected, actual);
-		Assert.IsTrue((actual.Length % 4) == 1);
+		IsTrue((actual.Length % 4) == 1);
 	}
 
 	[TestMethod]
@@ -273,7 +273,7 @@ public class OscSlipTests : CornerstoneUnitTest
 		data.Dump();
 
 		AreEqual(expected, data);
-		Assert.IsTrue((data.Length % 4) == 1);
+		IsTrue((data.Length % 4) == 1);
 
 		var packets = new List<OscPacket>();
 		var processor = new OscSlip();
@@ -290,7 +290,7 @@ public class OscSlipTests : CornerstoneUnitTest
 		AreEqual(1, packets.Count);
 
 		var actual = packets[0] as OscMessage;
-		Assert.IsNotNull(actual);
+		IsNotNull(actual);
 		AreEqual("/test", actual.Address);
 		AreEqual(1, actual.Arguments.Count);
 		AreEqual(new OscRgba(1, 2, 3, 4), actual.Arguments[0]);
@@ -308,7 +308,7 @@ public class OscSlipTests : CornerstoneUnitTest
 		data.Dump();
 
 		AreEqual(expected, data);
-		Assert.IsTrue((data.Length % 4) == 1);
+		IsTrue((data.Length % 4) == 1);
 
 		var packets = new List<OscPacket>();
 		var processor = new OscSlip();
@@ -325,7 +325,7 @@ public class OscSlipTests : CornerstoneUnitTest
 		AreEqual(1, packets.Count);
 
 		var actual = packets[0] as OscMessage;
-		Assert.IsNotNull(actual);
+		IsNotNull(actual);
 		AreEqual("/test", actual.Address);
 		AreEqual(1, actual.Arguments.Count);
 		AreEqual("Test", actual.Arguments[0]);
@@ -344,7 +344,7 @@ public class OscSlipTests : CornerstoneUnitTest
 		data.Dump();
 
 		AreEqual(expected, data);
-		Assert.IsTrue((data.Length % 4) == 1);
+		IsTrue((data.Length % 4) == 1);
 
 		var packets = new List<OscPacket>();
 		var processor = new OscSlip();
@@ -361,7 +361,7 @@ public class OscSlipTests : CornerstoneUnitTest
 		AreEqual(1, packets.Count);
 
 		var actual = packets[0] as OscMessage;
-		Assert.IsNotNull(actual);
+		IsNotNull(actual);
 		AreEqual("/test", actual.Address);
 		AreEqual(1, actual.Arguments.Count);
 		AreEqual(new OscSymbol("Test"), actual.Arguments[0]);
@@ -395,7 +395,7 @@ public class OscSlipTests : CornerstoneUnitTest
 		AreEqual(1, packets.Count);
 
 		var actual = packets[0] as OscMessage;
-		Assert.IsNotNull(actual);
+		IsNotNull(actual);
 		AreEqual("/test", actual.Address);
 		AreEqual(0, actual.Arguments.Count);
 	}

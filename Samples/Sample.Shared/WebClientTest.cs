@@ -33,7 +33,7 @@ public class WebClientTest : Bindable
 		_worker.WorkerSupportsCancellation = true;
 
 		Log = log;
-		Count = new Counter(dispatcher: dispatcher);
+		Count = new Counter(dispatcher);
 		Delay = 10;
 
 		// Commands

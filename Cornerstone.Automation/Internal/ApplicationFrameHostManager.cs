@@ -2,9 +2,9 @@
 
 using System;
 using System.Diagnostics;
-using Cornerstone.Automation.Desktop;
 using Cornerstone.Automation.Desktop.Elements;
 using Cornerstone.Extensions;
+using Cornerstone.Platforms.Windows;
 
 #endregion
 

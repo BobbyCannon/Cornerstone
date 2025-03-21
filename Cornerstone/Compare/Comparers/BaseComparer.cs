@@ -107,10 +107,11 @@ public abstract class BaseComparer
 	/// <summary>
 	/// Check to see if this comparer supports the supplied value.
 	/// </summary>
+	/// <param name="session"> </param>
 	/// <param name="expected"> The expected value. </param>
 	/// <param name="actual"> The actual value. </param>
 	/// <returns> True if the comparer supports the value otherwise false. </returns>
-	public virtual bool IsSupported(object expected, object actual)
+	public virtual bool IsSupported(CompareSession session, object expected, object actual)
 	{
 		return TryValidate(expected, actual, out _);
 	}

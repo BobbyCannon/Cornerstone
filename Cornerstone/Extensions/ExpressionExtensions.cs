@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
+using Cornerstone.Exceptions;
 using Cornerstone.Storage;
 
 #endregion
@@ -35,6 +36,17 @@ public static class ExpressionExtensions
 	}
 
 	/// <summary>
+	/// Try to get the name of an expression where the expression must be an event.
+	/// </summary>
+	/// <typeparam name="T"> The type passed into the expression. </typeparam>
+	/// <param name="expression"> The expression to process. </param>
+	/// <returns> The name of the expression. </returns>
+	public static string GetEventName<T>(this Expression<Func<T, object>> expression)
+	{
+		return TryGetEventName(expression, out var name) ? name : throw new CornerstoneException("Failed to get the event name.");
+	}
+
+	/// <summary>
 	/// Creates an expression that represents a conditional OR operation.
 	/// </summary>
 	/// <typeparam name="T"> The type used in the expression. </typeparam>
@@ -63,6 +75,37 @@ public static class ExpressionExtensions
 	public static IIncludableQueryable<T, TProperty> ThenInclude<T, TPreviousProperty, TProperty>(this IIncludableQueryable<T, ICollection<TPreviousProperty>> source, Expression<Func<TPreviousProperty, TProperty>> include) where T : class
 	{
 		return source.ThenInclude(include);
+	}
+
+	/// <summary>
+	/// Try to get the name of an expression where the expression must be an event.
+	/// </summary>
+	/// <typeparam name="T"> The type passed into the expression. </typeparam>
+	/// <param name="expression"> The expression to process. </param>
+	/// <param name="name"> The name of the expression. </param>
+	/// <returns> True if the event name was found otherwise false. </returns>
+	public static bool TryGetEventName<T>(this Expression<Func<T, object>> expression, out string name)
+	{
+		if (expression.Body is MemberExpression memberExpression)
+		{
+			var member = memberExpression.Member;
+			switch (member)
+			{
+				case EventInfo eventInfo:
+				{
+					name = eventInfo.Name;
+					return true;
+				}
+				case FieldInfo fieldInfo:
+				{
+					name = fieldInfo.Name;
+					return true;
+				}
+			}
+		}
+
+		name = null;
+		return false;
 	}
 
 	/// <summary>

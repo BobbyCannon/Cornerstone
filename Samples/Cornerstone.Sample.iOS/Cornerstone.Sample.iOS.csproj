@@ -2,16 +2,19 @@
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
 		<TargetFrameworks>net9.0-ios</TargetFrameworks>
+		<ApplicationId>com.bobbycannon.cornerstone.sample</ApplicationId>
+		<RuntimeIdentifier>ios-arm64</RuntimeIdentifier>
 		<SupportedOSPlatformVersion>13.0</SupportedOSPlatformVersion>
 		<ProvisioningType>manual</ProvisioningType>
-		<RuntimeIdentifier>iossimulator-x64</RuntimeIdentifier>
-		<!-- These properties need to be set in order to run on a real iDevice -->
-		<!--<RuntimeIdentifier>ios-arm64</RuntimeIdentifier>-->
-		<!--<CodesignKey></CodesignKey>-->
+		<CodesignKey>iPhone Developer</CodesignKey>
+		<CodesignProvision />
 	</PropertyGroup>
-	<PropertyGroup Condition="'$(TargetFramework)'=='net9.0-ios'">
-	  <ProvisioningType>automatic</ProvisioningType>
-	  <CodesignKey>iPhone Developer</CodesignKey>
+	<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+		<DebugType>full</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+		<Optimize>false</Optimize>
+		<UseInterpreter>true</UseInterpreter>
+		<AotAssemblies>false</AotAssemblies>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Avalonia.iOS" Version="$(AvaloniaVersion)" />

@@ -10,7 +10,7 @@ public partial class TabToggleButton : CornerstoneUserControl
 {
 	#region Constants
 
-	public const string HeaderName = "ToggleButton";
+	public const string HeaderName = "Toggle Button";
 
 	#endregion
 

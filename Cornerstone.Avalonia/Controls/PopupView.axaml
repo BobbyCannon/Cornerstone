@@ -1,0 +1,141 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:p="clr-namespace:Cornerstone.Presentation;assembly=Cornerstone">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type PopupView}" TargetType="PopupView">
+				<Setter Property="Background" Value="{DynamicResource Background02}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+				<Setter Property="BorderThickness" Value="1,0,1,1" />
+				<Setter Property="CornerRadius" Value="0,0,8,8" />
+				<Setter Property="PopupMinWidth" Value="500" />
+				<Setter Property="PopupHorizontalAlignment" Value="Center" />
+				<Setter Property="PopupVerticalAlignment" Value="Top" />
+				<Setter Property="ShowBackground" Value="false" />
+				<Setter Property="HorizontalAlignment" Value="Stretch" />
+				<Setter Property="VerticalAlignment" Value="Stretch" />
+				<Setter Property="Template">
+					<ControlTemplate x:DataType="p:PopupViewModel">
+						<Grid>
+							<Grid Background="{TemplateBinding BorderBrush}"
+									Opacity="0.5"
+									IsVisible="{TemplateBinding ShowBackground}" />
+							<Border
+									Background="{TemplateBinding Background}"
+									BorderBrush="{TemplateBinding BorderBrush}"
+									BorderThickness="{TemplateBinding BorderThickness}"
+									CornerRadius="{TemplateBinding CornerRadius}"
+									MinWidth="{TemplateBinding MinWidth}"
+									HorizontalAlignment="{TemplateBinding PopupHorizontalAlignment}"
+									VerticalAlignment="{TemplateBinding PopupVerticalAlignment}">
+								<Border.Effect>
+									<DropShadowEffect BlurRadius="8"
+											OffsetX="0"
+											OffsetY="0"
+											Color="Black"
+											Opacity=".5" />
+								</Border.Effect>
+								<StackPanel Margin="14"
+										MinWidth="{TemplateBinding PopupMinWidth}"
+										HorizontalAlignment="Center"
+										Orientation="Vertical">
+									<!-- Popup Widget -->
+									<ContentPresenter
+											Content="{TemplateBinding DataContext, Mode=OneWay}"
+											IsHitTestVisible="{Binding !InProgress}" />
+
+									<!-- Options -->
+									<StackPanel Margin="0,14,0,0"
+											Orientation="Horizontal"
+											HorizontalAlignment="Right"
+											IsVisible="{Binding ShowButtons}">
+										<Button
+												MinWidth="80"
+												Content="Ok"
+												Command="{Binding StartProcessCommand}" />
+										<Button
+												MinWidth="80"
+												Margin="8,0,0,0"
+												Content="Cancel"
+												Command="{Binding CancelCommand}" />
+									</StackPanel>
+
+									<!-- Running -->
+									<StackPanel Orientation="Vertical"
+											IsVisible="{Binding InProgress}">
+										<Rectangle Height="1"
+												Margin="0,8,0,0"
+												HorizontalAlignment="Stretch"
+												Fill="{DynamicResource ControlBorder}" />
+										<StackPanel Orientation="Horizontal"
+												Margin="0,8"
+												HorizontalAlignment="Center">
+											<Path Width="16" Height="16"
+													Classes.Waiting="{Binding InProgress}"
+													Data="{StaticResource Icons.Waiting}"
+													Fill="{DynamicResource ThemeColor06}"
+													IsVisible="{Binding InProgress}" />
+											<TextBlock Margin="6,0,0,0"
+													FontSize="14"
+													Text="Running" />
+										</StackPanel>
+										<TextBlock HorizontalAlignment="Stretch"
+												TextWrapping="Wrap"
+												FontSize="14"
+												FontStyle="Italic"
+												Text="{Binding ProgressDescription}"
+												IsVisible="{Binding ProgressDescription, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+										<ProgressBar Margin="0,8,0,0"
+												HorizontalAlignment="Stretch"
+												IsIndeterminate="{Binding InProgress}"
+												Background="{DynamicResource Foreground09}"
+												Foreground="{DynamicResource ThemeColor06}"
+												Minimum="0"
+												Maximum="100" />
+									</StackPanel>
+								</StackPanel>
+							</Border>
+						</Grid>
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Style Selector="PopupView.Banner">
+		<Setter Property="BorderThickness" Value="0,1" />
+		<Setter Property="ShowBackground" Value="True" />
+		<Setter Property="PopupHorizontalAlignment" Value="Stretch" />
+		<Setter Property="PopupVerticalAlignment" Value="Center" />
+	</Style>
+
+	<Design.PreviewWith>
+		<Grid RowDefinitions="*,*"
+				Background="DarkGreen"
+				Height="400"
+				Width="800">
+			<PopupView Grid.Row="0">
+				<PopupView.DataContext>
+					<p:PopupViewModel
+							ProgressDescription="I'm running stuff"
+							IsDestructive="True"
+							ShowButtons="True"
+							InProgress="False">
+					</p:PopupViewModel>
+				</PopupView.DataContext>
+			</PopupView>
+			<Grid Grid.Row="1">
+				<PopupView Classes="Banner">
+					<PopupView.DataContext>
+						<p:PopupViewModel
+								ProgressDescription="I'm running stuff"
+								IsDestructive="False"
+								ShowButtons="True"
+								InProgress="False">
+						</p:PopupViewModel>
+					</PopupView.DataContext>
+				</PopupView>
+			</Grid>
+		</Grid>
+	</Design.PreviewWith>
+</Styles>

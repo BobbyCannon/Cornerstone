@@ -7,7 +7,7 @@ using Cornerstone.Automation.Web;
 using Cornerstone.Collections;
 using Cornerstone.Parsers.Html;
 using Cornerstone.Sync;
-using Cornerstone.Windows;
+using Cornerstone.Platforms.Windows;
 
 #endregion
 

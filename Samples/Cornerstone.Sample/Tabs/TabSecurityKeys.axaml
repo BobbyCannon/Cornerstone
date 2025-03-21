@@ -4,37 +4,103 @@
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
-		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="800"
+		xmlns:converters="clr-namespace:Cornerstone.Avalonia.Converters;assembly=Cornerstone.Avalonia"
+		xmlns:rendering="clr-namespace:Cornerstone.Avalonia.HexEditor.Rendering;assembly=Cornerstone.Avalonia"
+		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
 		x:Class="Cornerstone.Sample.Tabs.TabSecurityKeys"
 		x:DataType="tabs:TabSecurityKeys">
 	<DockPanel Margin="10">
-		<StackPanel DockPanel.Dock="Top"
+		<WrapPanel DockPanel.Dock="Top"
 				Orientation="Horizontal"
 				Margin="0,0,0,6">
-			<StackPanel.Styles>
-				<Style Selector="Button">
-					<Setter Property="Margin" Value="0,0,6,0" />
-				</Style>
-				<Style Selector="StackPanel">
-					<Setter Property="Orientation" Value="Horizontal" />
-				</Style>
-				<Style Selector="TextBlock">
-					<Setter Property="Margin" Value="0,0,6,0" />
-					<Setter Property="VerticalAlignment" Value="Center" />
-				</Style>
-			</StackPanel.Styles>
-			<Button Click="RefreshOnClick">Refresh</Button>
-			<Button Click="ClearOnClick">Clear</Button>
+			<Button Click="RefreshOnClick"
+					Margin="0,0,6,0"
+					Content="Refresh" />
+			<Button Click="ClearOnClick"
+					Margin="0,0,6,0"
+					Content="Clear" />
 			<ToggleSwitch IsChecked="{Binding VerboseLogging}"
 					OnContent="Verbose Logging"
-					OffContent="Verbose Logging" />
+					OffContent="Verbose Logging"
+					Margin="0,0,6,0" />
+			<NumericUpDown Increment="16"
+					Minimum="16"
+					Maximum="1024"
+					Value="{Binding MaximumDataToRead}"
+					InnerLeftContent="Data To Read"
+					Margin="0,0,6,0" />
 			<StackPanel Margin="30,0,0,0"
+					Orientation="Horizontal"
 					IsVisible="{Binding SmartCardReader.Card, Converter={x:Static ObjectConverters.IsNotNull}}">
 				<TextBlock Text="Card Available" />
 				<TextBlock Text="{Binding SmartCardReader.Card.UniqueId}" />
 			</StackPanel>
-		</StackPanel>
+			
+		</WrapPanel>
+		<Grid DockPanel.Dock="Top"
+				ColumnDefinitions="Auto,Auto,*"
+				Margin="0,0,0,6">
+			<NumericUpDown Grid.Column="0"
+					InnerLeftContent="Block"
+					Increment="1"
+					Minimum="0"
+					Maximum="63"
+					Value="{Binding Block}"
+					Margin="0,0,6,0" />
 
-		<TextEditorControl x:Name="Output" />
+			<StackPanel Grid.Column="1"
+					Orientation="Horizontal">
+				<Button Content="Read"
+						Click="ReadBlock"
+						Margin="0,0,6,0" />
+				<Button Content="Write"
+						Click="WriteBlock"
+						Margin="0,0,6,0"
+						IsEnabled="{Binding Block, Converter={x:Static converters:IntegerConverters.IsGreaterThanZero}}" />
+			</StackPanel>
+
+			<TextBox Grid.Column="2"
+					Text="{Binding BlockData}" />
+		</Grid>
+
+		<Grid RowDefinitions="Auto,*,Auto">
+			<WrapPanel Grid.Row="0">
+				<ToggleSwitch
+						IsChecked="{Binding ElementName=OffsetColumn, Path=IsVisible}"
+						OnContent="Offset"
+						OffContent="Offset"
+						Margin="0,0,20,0"/>
+				<ToggleSwitch
+						IsChecked="{Binding ElementName=HexColumn, Path=IsVisible}"
+						OnContent="Hex"
+						OffContent="Hex"
+						Margin="0,0,20,0"/>
+				<ToggleSwitch
+						IsChecked="{Binding ElementName=AsciiColumn, Path=IsVisible}"
+						OnContent="Ascii"
+						OffContent="Ascii"
+						Margin="0,0,20,0"/>
+				<ToggleSwitch
+						IsChecked="{Binding ElementName=BinaryColumn, Path=IsVisible}"
+						OnContent="Binary"
+						OffContent="Binary" />
+			</WrapPanel>
+
+			<HexEditor Grid.Row="1"
+					x:Name="HexEditor"
+					Padding="6"
+					MinHeight="320">
+				<HexEditor.Columns>
+					<rendering:OffsetColumn x:Name="OffsetColumn" />
+					<rendering:HexColumn x:Name="HexColumn" />
+					<rendering:AsciiColumn x:Name="AsciiColumn" InvalidCellChar="?" />
+					<rendering:BinaryColumn x:Name="BinaryColumn" />
+				</HexEditor.Columns>
+			</HexEditor>
+
+			<TextEditorControl Grid.Row="2"
+					x:Name="Output"
+					MinHeight="120" />
+		</Grid>
 	</DockPanel>
 </UserControl>

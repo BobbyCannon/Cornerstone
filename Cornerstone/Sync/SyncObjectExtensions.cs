@@ -1,8 +1,4 @@
-﻿#region References
-
-#endregion
-
-namespace Cornerstone.Sync;
+﻿namespace Cornerstone.Sync;
 
 /// <summary>
 /// Extensions for sync object.

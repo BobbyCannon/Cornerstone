@@ -47,8 +47,6 @@ public class DockableTabItem : TabItem
 
 	#region Properties
 
-	public Button CloseButton { get; private set; }
-
 	/// <summary>
 	/// Gets or sets if this is the currently active dockable.
 	/// </summary>
