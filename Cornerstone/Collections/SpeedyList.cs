@@ -478,15 +478,18 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 		{
 			EnterUpgradeableReadLock();
 
-			if (InternalDistinct(item, out _))
+			if (InternalIndexOf(_allItems, item, DistinctCheck) < 0)
 			{
-				return;
+				_allItems.Add(item);
 			}
-
-			_allItems.Add(item);
 
 			if ((FilterCheck == null) || FilterCheck(item))
 			{
+				if (InternalDistinct(item, out _))
+				{
+					return;
+				}
+
 				if (!InternalInsert(index, item))
 				{
 					return;
@@ -1028,14 +1031,19 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 
 	internal int InternalIndexOf(T item)
 	{
-		if (DistinctCheck == null)
+		return InternalIndexOf(_activeItems, item, DistinctCheck);
+	}
+	
+	internal static int InternalIndexOf(IList<T> list, T item, Func<T, T, bool> distinctCheck)
+	{
+		if (distinctCheck == null)
 		{
-			return _activeItems.IndexOf(item);
+			return list.IndexOf(item);
 		}
 
-		for (var i = 0; i < _activeItems.Count; i++)
+		for (var i = 0; i < list.Count; i++)
 		{
-			if (DistinctCheck.Invoke(item, _activeItems[i]))
+			if (distinctCheck.Invoke(item, list[i]))
 			{
 				return i;
 			}
@@ -1110,13 +1118,15 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 		{
 			EnterUpgradeableReadLock();
 
-			var limitFromStart = !ShouldOrder();
-
-			_allItems.Add(item);
+			if (InternalIndexOf(_allItems, item, DistinctCheck) < 0)
+			{
+				_allItems.Add(item);
+			}
 
 			if ((FilterCheck == null) || FilterCheck(item))
 			{
 				var response = InternalAdd(item);
+				var limitFromStart = !ShouldOrder();
 				InternalEnforceLimit(limitFromStart);
 				return response;
 			}
@@ -1132,7 +1142,7 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 	/// <inheritdoc cref="ISpeedyList" />
 	private bool Contains(object item)
 	{
-		return item is T value ? Contains(value) : false;
+		return item is T value && Contains(value);
 	}
 
 	/// <inheritdoc cref="ISpeedyList" />

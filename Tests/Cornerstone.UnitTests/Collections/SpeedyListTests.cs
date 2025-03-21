@@ -308,6 +308,17 @@ public class SpeedyListTests : CornerstoneUnitTest
 		collection.Add("test", "test", "test", "test");
 		AreEqual(1, collection.Count);
 		AreEqual("test", collection[0]);
+
+		var allItems = (List<string>) collection.GetMemberValue("_allItems");
+		IsNotNull(allItems, "Could not find all items.");
+		AreEqual(1, allItems.Count);
+
+		collection.Insert(0, "test");
+		collection.Insert(1, "test");
+		AreEqual(1, collection.Count);
+		AreEqual(1, allItems.Count);
+		AreEqual("test", collection[0]);
+		AreEqual("test", allItems[0]);
 	}
 
 	[TestMethod]
@@ -323,6 +334,14 @@ public class SpeedyListTests : CornerstoneUnitTest
 		collection.Add(account1);
 		collection.Add(account2);
 		AreEqual(1, collection.Count);
+
+		var allItems = (List<ClientAccount>)collection.GetMemberValue("_allItems");
+		IsNotNull(allItems, "Could not find all items.");
+		AreEqual(1, allItems.Count);
+
+		collection.Add(account2);
+		AreEqual(1, collection.Count);
+		AreEqual(1, allItems.Count);
 	}
 
 	[TestMethod]
