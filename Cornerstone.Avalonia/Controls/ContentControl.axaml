@@ -3,16 +3,9 @@
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		x:ClassModifier="internal">
 
-	<!-- ContentControl control theme. -->
-
 	<ControlTheme x:Key="{x:Type ContentControl}" TargetType="ContentControl">
-
-		<!-- Template. -->
-
 		<Setter Property="Template">
-
 			<ControlTemplate>
-
 				<ContentPresenter
 						Name="PART_ContentPresenter"
 						Background="{TemplateBinding Background}"
@@ -24,11 +17,8 @@
 						Padding="{TemplateBinding Padding}"
 						VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
 						HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" />
-
 			</ControlTemplate>
-
 		</Setter>
-
 	</ControlTheme>
 
 </ResourceDictionary>

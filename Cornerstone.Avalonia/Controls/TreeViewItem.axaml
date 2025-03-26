@@ -107,7 +107,15 @@
 								<ToggleButton Name="PART_ExpandCollapseArrow"
 										Theme="{StaticResource TreeViewExpandCollapseArrow}"
 										Focusable="False"
-										IsChecked="{TemplateBinding IsExpanded, Mode=TwoWay}" />
+										IsChecked="{TemplateBinding IsExpanded, Mode=TwoWay}"
+										IsVisible="{TemplateBinding TreeViewItemExtensions.IsRefreshing, Mode=OneWay, Converter={x:Static BoolConverters.Not}}"/>
+								<CircularProgress Theme="{TemplateBinding Theme}"
+										Height="{StaticResource TreeViewItemExpandCollapseArrowSize}"
+										Width="{StaticResource TreeViewItemExpandCollapseArrowSize}"
+										StrokeThickness="2"
+										IsIndeterminate="{TemplateBinding TreeViewItemExtensions.IsRefreshing, Mode=OneWay}"
+										IsVisible="{TemplateBinding TreeViewItemExtensions.IsRefreshing, Mode=OneWay}"
+										Value="10" />
 							</Panel>
 							<ContentPresenter Name="PART_HeaderPresenter"
 									Grid.Column="1"

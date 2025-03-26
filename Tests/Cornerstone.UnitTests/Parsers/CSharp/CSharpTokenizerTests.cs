@@ -105,12 +105,12 @@ public class CSharpTokenizerTests : TokenizerTest
 	public void ToCodeSyntaxHtml()
 	{
 		var timer = Timer.StartNewTimer();
-		var json = GetContentToTokenize();
-		var actual = Tokenizer.ToCodeSyntaxHtml<CSharpTokenizer>(json, true);
+		var code = GetContentToTokenize();
+		var actual = Tokenizer.ToCodeSyntaxHtml<CSharpTokenizer>(code, true);
 		timer.Elapsed.Dump();
 		actual.Dump();
 
-		if (EnableBrowserSamples)
+		if (EnableBrowserSamples || IsDebugging)
 		{
 			using var browser = Chrome.AttachOrCreate();
 			browser.AutoClose = false;
@@ -131,6 +131,7 @@ public class CSharpTokenizerTests : TokenizerTest
 
 				public class MyClass : BaseClass
 				{
+					// This is a comment
 				}
 				""";
 	}
@@ -168,7 +169,10 @@ public class CSharpTokenizerTests : TokenizerTest
 			new CSharpTokenData { EndIndex = 117, StartIndex = 115, Type = SyntaxKind.EndOfLineTrivia },
 			new CSharpTokenData { EndIndex = 118, StartIndex = 117, Type = SyntaxKind.OpenBraceToken },
 			new CSharpTokenData { EndIndex = 120, StartIndex = 118, Type = SyntaxKind.EndOfLineTrivia },
-			new CSharpTokenData { EndIndex = 121, StartIndex = 120, Type = SyntaxKind.CloseBraceToken }
+			new CSharpTokenData { EndIndex = 121, StartIndex = 120, Type = SyntaxKind.WhitespaceTrivia },
+			new CSharpTokenData { EndIndex = 141, StartIndex = 121, Type = SyntaxKind.SingleLineCommentTrivia },
+			new CSharpTokenData { EndIndex = 143, StartIndex = 141, Type = SyntaxKind.EndOfLineTrivia },
+			new CSharpTokenData { EndIndex = 144, StartIndex = 143, Type = SyntaxKind.CloseBraceToken }
 			// </Scenarios>
 		]);
 

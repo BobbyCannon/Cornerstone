@@ -27,11 +27,7 @@ public class WindowsGamepad : Gamepad
 	#region Constructors
 
 	[DependencyInjectionConstructor]
-	public WindowsGamepad(
-		IDateTimeProvider dateTimeProvider,
-		WeakEventManager weakEventManager,
-		IDispatcher dispatcher)
-		: base(weakEventManager, dispatcher)
+	public WindowsGamepad(IDateTimeProvider dateTimeProvider, IDispatcher dispatcher) : base(dispatcher)
 	{
 		_dateTimeProvider = dateTimeProvider;
 		_lastPacketNumber = 0;

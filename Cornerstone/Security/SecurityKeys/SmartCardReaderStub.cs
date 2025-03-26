@@ -13,7 +13,7 @@ public class SmartCardReaderStub : SmartCardReader
 
 	/// <inheritdoc />
 	[DependencyInjectionConstructor]
-	public SmartCardReaderStub(WeakEventManager weakEventManager, IDispatcher dispatcher) : base(weakEventManager, dispatcher)
+	public SmartCardReaderStub(IDispatcher dispatcher) : base(dispatcher)
 	{
 	}
 

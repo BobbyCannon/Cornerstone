@@ -35,7 +35,10 @@ public class AverageCounter : Bindable, IDisposable
 	/// <param name="limit"> The maximum amount of timespans to keep track of. </param>
 	/// <param name="timeProvider"> An optional time provider. Defaults to DateTimeProvider.RealTime if not provided. </param>
 	/// <param name="dispatcher"> The dispatcher. </param>
-	public AverageCounter(TimeSpan interval, int limit, IDateTimeProvider timeProvider, IDispatcher dispatcher) : base(dispatcher)
+	public AverageCounter(TimeSpan interval, int limit,
+		IDateTimeProvider timeProvider,
+		IDispatcher dispatcher
+		) : base(dispatcher)
 	{
 		_interval = interval;
 		_timeProvider = timeProvider ?? DateTimeProvider.RealTime;

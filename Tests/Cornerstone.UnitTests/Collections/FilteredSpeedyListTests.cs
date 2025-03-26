@@ -4,7 +4,6 @@ using System.Linq;
 using Cornerstone.Collections;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Sample.Shared.Storage.Client;
-using Account = Sample.Shared.Storage.Sync.Account;
 
 #pragma warning disable CA1861
 
@@ -58,6 +57,11 @@ public class FilteredSpeedyListTests : CornerstoneUnitTest
 		// 3 should have been re-added
 		AreEqual(3, filteredList.Count);
 		AreEqual(new[] { 3, 6, 9 }, filteredList.ToArray());
+
+		completeList.Clear();
+
+		AreEqual(0, completeList.Count);
+		AreEqual(0, filteredList.Count);
 	}
 
 	[TestMethod]
@@ -91,39 +95,12 @@ public class FilteredSpeedyListTests : CornerstoneUnitTest
 		AreEqual(new[] { "Jack", "John", "Zack" },
 			filteredList.Select(x => x.Name).ToArray()
 		);
+
+		completeList.Clear();
+
+		AreEqual(0, completeList.Count);
+		AreEqual(0, filteredList.Count);
 	}
 
-	[TestMethod]
-	public void FilterCollectionShouldRefreshOnFilterChange()
-	{
-		var list = new SpeedyList<Account>
-		{
-			FilterCheck = x => x.Name.Contains("Bar")
-		};
-
-		// First entry should not be included in filtered collection
-		list.Add(new Account { Name = "Hello" });
-		AreEqual(0, list.Count);
-
-		// Second entry should be included in filtered collection
-		var fooAccount = new Account { Name = "Foo Bar" };
-		list.Add(fooAccount);
-		AreEqual(1, list.Count);
-
-		// Changing the second entry should not change anything until after RefreshFilter.
-		fooAccount.Name = "foo";
-		AreEqual("foo", list[0].Name);
-		AreEqual(1, list.Count);
-
-		// After refresh the filter collection should be empty
-		list.RefreshFilter();
-		AreEqual(0, list.Count);
-
-		list.FilterCheck = x => x.Name.Contains("foo");
-		AreEqual("foo", list[0].Name);
-		AreEqual(1, list.Count);
-	}
-
-	
 	#endregion
 }

@@ -81,8 +81,8 @@ public static class RandomGenerator
 	#region Fields
 
 	private static string[] _animals;
-	private static string[] _colors;
 	private static string[] _cities;
+	private static string[] _colors;
 	private static string[] _firstNames;
 	private static string[] _lastNames;
 	private static string[] _stateAbbreviations;
@@ -128,17 +128,18 @@ public static class RandomGenerator
 
 	static RandomGenerator()
 	{
-		#if NETSTANDARD2_0
-		_oldRandom = new Random();
-		_rng = RandomNumberGenerator.Create();
-		#endif
-
 		_syncLockForRandom = new object();
 	}
 
 	#endregion
 
 	#region Methods
+
+	public static string GetAnimal()
+	{
+		LoadAnimalList();
+		return GetItem(_animals);
+	}
 
 	/// <summary>
 	/// Returns a byte array with random data values.
@@ -165,12 +166,6 @@ public static class RandomGenerator
 		}
 
 		return GetItem(_cities);
-	}
-
-	public static string GetAnimal()
-	{
-		LoadAnimalList();
-		return GetItem(_animals);
 	}
 
 	public static string GetColor()
@@ -251,6 +246,18 @@ public static class RandomGenerator
 	}
 
 	/// <summary>
+	/// Get a random password as an Unsecure string.
+	/// </summary>
+	/// <param name="settings"> The settings for the new password. </param>
+	/// <returns> </returns>
+	public static string GetPasswordAsUnsecureString(PasswordSettings settings = null)
+	{
+		using var secureString = new SecureString();
+		SetPassword(secureString, settings);
+		return secureString.ToUnsecureString();
+	}
+
+	/// <summary>
 	/// Gets a randomly generated phone.
 	/// </summary>
 	/// <param name="formatted"> If true then format the number as "(123) 456-7890". </param>
@@ -289,6 +296,16 @@ public static class RandomGenerator
 		}
 
 		return abbreviation ? GetItem(_stateAbbreviations) : GetItem(_states);
+	}
+
+	public static string[] GetStates(bool abbreviation = false)
+	{
+		if (_states == null)
+		{
+			LoadStates();
+		}
+
+		return abbreviation ? _stateAbbreviations : _states;
 	}
 
 	public static string GetStreet()
@@ -377,16 +394,6 @@ public static class RandomGenerator
 	}
 
 	/// <summary>
-	/// Returns a random char value.
-	/// </summary>
-	/// <returns> The random char value. </returns>
-	public static char NextChar()
-	{
-		var value = NextInteger(char.MinValue, char.MaxValue);
-		return (char) value;
-	}
-
-	/// <summary>
 	/// Returns a random byte value.
 	/// </summary>
 	/// <returns> The random byte value. </returns>
@@ -394,6 +401,16 @@ public static class RandomGenerator
 	{
 		var value = NextInteger(byte.MinValue, byte.MaxValue);
 		return (byte) value;
+	}
+
+	/// <summary>
+	/// Returns a random char value.
+	/// </summary>
+	/// <returns> The random char value. </returns>
+	public static char NextChar()
+	{
+		var value = NextInteger(char.MinValue, char.MaxValue);
+		return (char) value;
 	}
 
 	/// <summary>
@@ -778,105 +795,6 @@ public static class RandomGenerator
 		}
 	}
 
-	private static void SetPasswordUsingWords(SecureString secureString, PasswordSettings settings)
-	{
-		var color = GetColor();
-		var animal = GetAnimal();
-		secureString.Append(color.ToPascalCase());
-
-		if (settings.UseWordSeparator)
-		{
-			secureString.AppendChar(settings.WordSeparator);
-		}
-
-		secureString.Append(animal.ToPascalCase());
-
-		if (settings.UseWordSeparator)
-		{
-			secureString.AppendChar(settings.WordSeparator);
-		}
-
-		if (settings.AppendNumberToWords)
-		{
-			var remainingSize = Math.Max(2, settings.MinLength - secureString.Length);
-			var maxValue = (int) Math.Pow(10, remainingSize);
-			secureString.Append(NextInteger(0, maxValue).ToString(new string('0', remainingSize)));
-		}
-	}
-
-	private static void SetPasswordUsingRandomCharacters(SecureString secureString, PasswordSettings settings)
-	{
-		var buffer = new char[settings.MinLength];
-		var nextCharacter = char.MinValue;
-		var lastCharacter = nextCharacter;
-		var characters = settings.UseSymbols ? AlphabetNumbersAndSymbols : AlphabetAndNumbers;
-		var uppercaseCount = 0;
-		var lowercaseCount = 0;
-		var count = 0;
-
-		secureString.Clear();
-
-		try
-		{
-			while (count < buffer.Length)
-			{
-				nextCharacter = characters[NextInteger(0, characters.Length - 1)];
-				while (nextCharacter == lastCharacter)
-				{
-					nextCharacter = characters[NextInteger(0, characters.Length - 1)];
-				}
-
-				var duplicateIndex = Array.IndexOf(buffer, nextCharacter);
-				while ((duplicateIndex != -1) && ((count - duplicateIndex) < 2))
-				{
-					nextCharacter = characters[NextInteger(0, characters.Length - 1)];
-					duplicateIndex = Array.IndexOf(buffer, nextCharacter);
-				}
-
-				if (char.IsUpper(nextCharacter))
-				{
-					lowercaseCount = 0;
-					uppercaseCount++;
-				}
-				else if (char.IsLower(nextCharacter))
-				{
-					lowercaseCount++;
-					uppercaseCount = 0;
-				}
-				else
-				{
-					lowercaseCount = 0;
-					uppercaseCount = 0;
-				}
-
-				if ((lowercaseCount > 2) || (uppercaseCount > 2))
-				{
-					continue;
-				}
-
-				buffer[count++] = nextCharacter;
-				secureString.AppendChar(nextCharacter);
-				lastCharacter = nextCharacter;
-			}
-		}
-		finally
-		{
-			Array.Clear(buffer, 0, buffer.Length);
-		}
-	}
-
-	/// <summary>
-	/// Get a random password as an Unsecure string.
-	/// </summary>
-	/// <param name="settings"> The settings for the new password. </param>
-	/// <returns> </returns>
-	public static string GetPasswordAsUnsecureString(PasswordSettings settings = null)
-	{
-		using var secureString = new SecureString();
-		SetPassword(secureString, settings);
-		return secureString.ToUnsecureString();
-	}
-
 	/// <summary>
 	/// Shuffle a list of items into a random order.
 	/// </summary>
@@ -915,6 +833,18 @@ public static class RandomGenerator
 		return response;
 	}
 
+	private static void LoadAnimalList()
+	{
+		if (_animals is { Length: > 0 })
+		{
+			return;
+		}
+
+		var assembly = Assembly.GetExecutingAssembly();
+		var resourceName = "Cornerstone.Resources.Animals.txt";
+		_animals = assembly.GetManifestResourceStream(resourceName).ReadString().Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
+	}
+
 	private static void LoadCities()
 	{
 		if (_cities is { Length: > 0 })
@@ -925,6 +855,18 @@ public static class RandomGenerator
 		var assembly = Assembly.GetExecutingAssembly();
 		var resourceName = "Cornerstone.Resources.City.txt";
 		_cities = assembly.GetManifestResourceStream(resourceName).ReadString().Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries).ToArray();
+	}
+
+	private static void LoadColors()
+	{
+		if (_colors is { Length: > 0 })
+		{
+			return;
+		}
+
+		var assembly = Assembly.GetExecutingAssembly();
+		var resourceName = "Cornerstone.Resources.Colors.txt";
+		_colors = assembly.GetManifestResourceStream(resourceName).ReadString().Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
 	}
 
 	private static void LoadFirstNames()
@@ -989,34 +931,92 @@ public static class RandomGenerator
 		_streetTypes = assembly.GetManifestResourceStream(resourceName).ReadString().Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries).ToArray();
 	}
 
-	private static void LoadColors()
+	private static void SetPasswordUsingRandomCharacters(SecureString secureString, PasswordSettings settings)
 	{
-		if (_colors is { Length: > 0 })
-		{
-			return;
-		}
+		var buffer = new char[settings.MinLength];
+		var nextCharacter = char.MinValue;
+		var lastCharacter = nextCharacter;
+		var characters = settings.UseSymbols ? AlphabetNumbersAndSymbols : AlphabetAndNumbers;
+		var uppercaseCount = 0;
+		var lowercaseCount = 0;
+		var count = 0;
 
-		var assembly = Assembly.GetExecutingAssembly();
-		var resourceName = "Cornerstone.Resources.Colors.txt";
-		_colors = assembly.GetManifestResourceStream(resourceName).ReadString().Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
+		secureString.Clear();
+
+		try
+		{
+			while (count < buffer.Length)
+			{
+				nextCharacter = characters[NextInteger(0, characters.Length - 1)];
+				while (nextCharacter == lastCharacter)
+				{
+					nextCharacter = characters[NextInteger(0, characters.Length - 1)];
+				}
+
+				var duplicateIndex = Array.IndexOf(buffer, nextCharacter);
+				while ((duplicateIndex != -1) && ((count - duplicateIndex) < 2))
+				{
+					nextCharacter = characters[NextInteger(0, characters.Length - 1)];
+					duplicateIndex = Array.IndexOf(buffer, nextCharacter);
+				}
+
+				if (char.IsUpper(nextCharacter))
+				{
+					lowercaseCount = 0;
+					uppercaseCount++;
+				}
+				else if (char.IsLower(nextCharacter))
+				{
+					lowercaseCount++;
+					uppercaseCount = 0;
+				}
+				else
+				{
+					lowercaseCount = 0;
+					uppercaseCount = 0;
+				}
+
+				if ((lowercaseCount > 2) || (uppercaseCount > 2))
+				{
+					continue;
+				}
+
+				buffer[count++] = nextCharacter;
+				secureString.AppendChar(nextCharacter);
+				lastCharacter = nextCharacter;
+			}
+		}
+		finally
+		{
+			Array.Clear(buffer, 0, buffer.Length);
+		}
 	}
 
-	private static void LoadAnimalList()
+	private static void SetPasswordUsingWords(SecureString secureString, PasswordSettings settings)
 	{
-		if (_animals is { Length: > 0 })
+		var color = GetColor();
+		var animal = GetAnimal();
+		secureString.Append(color.ToPascalCase());
+
+		if (settings.UseWordSeparator)
 		{
-			return;
+			secureString.AppendChar(settings.WordSeparator);
 		}
 
-		var assembly = Assembly.GetExecutingAssembly();
-		var resourceName = "Cornerstone.Resources.Animals.txt";
-		_animals = assembly.GetManifestResourceStream(resourceName).ReadString().Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
+		secureString.Append(animal.ToPascalCase());
+
+		if (settings.UseWordSeparator)
+		{
+			secureString.AppendChar(settings.WordSeparator);
+		}
+
+		if (settings.AppendNumberToWords)
+		{
+			var remainingSize = Math.Max(2, settings.MinLength - secureString.Length);
+			var maxValue = (int) Math.Pow(10, remainingSize);
+			secureString.Append(NextInteger(0, maxValue).ToString(new string('0', remainingSize)));
+		}
 	}
 
 	#endregion
-
-	#if NETSTANDARD2_0
-	private static readonly Random _oldRandom;
-	private static readonly RandomNumberGenerator _rng;
-	#endif
 }

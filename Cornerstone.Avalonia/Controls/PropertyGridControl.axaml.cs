@@ -35,14 +35,12 @@ public class PropertyGridControl : CornerstoneContentControl
 
 	public PropertyGridControl()
 	{
-		var weakEventManager = GetInstance<IWeakEventManager>();
-
 		AllProperties = new SpeedyList<PropertyDescriptor>();
 		Categories = new SpeedyDictionary<string, SpeedyList<PropertyDescriptor>>();
 		Factories = PropertyCellFactoryCollection.Default;
 		PropertyViews = new SpeedyList<PropertyCellContext>();
 
-		weakEventManager.AddCollectionChanged(AllProperties, this, AllPropertiesListChanged);
+		WeakEventManager.AddCollectionChanged(AllProperties, this, AllPropertiesListChanged);
 	}
 
 	static PropertyGridControl()

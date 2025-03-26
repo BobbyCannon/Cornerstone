@@ -688,9 +688,7 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 		}
 	}
 
-	/// <summary>
-	/// Refresh the filter.
-	/// </summary>
+	/// <inheritdoc />
 	public void RefreshFilter()
 	{
 		try
@@ -704,6 +702,7 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 		}
 	}
 
+	/// <inheritdoc />
 	public void RefreshOrder()
 	{
 		if (!ShouldOrder())
@@ -950,7 +949,7 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 			}
 			case nameof(OrderBy):
 			{
-				RefreshOrder();;
+				RefreshOrder();
 				break;
 			}
 		}
@@ -1033,7 +1032,7 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 	{
 		return InternalIndexOf(_activeItems, item, DistinctCheck);
 	}
-	
+
 	internal static int InternalIndexOf(IList<T> list, T item, Func<T, T, bool> distinctCheck)
 	{
 		if (distinctCheck == null)
@@ -1456,6 +1455,20 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 [SuppressMessage("ReSharper", "PossibleInterfaceMemberAmbiguity")]
 public interface ISpeedyList<T> : IList<T>, ISpeedyList
 {
+	#region Properties
+
+	/// <summary>
+	/// An optional filter to restrict the collection.
+	/// </summary>
+	Func<T, bool> FilterCheck { get; set; }
+
+	/// <summary>
+	/// The expression to order this collection by.
+	/// </summary>
+	public OrderBy<T>[] OrderBy { get; set; }
+
+	#endregion
+
 	#region Methods
 
 	/// <summary>
@@ -1529,12 +1542,15 @@ public interface ISpeedyList : IEnumerable, INotifyCollectionChanged, IDispatcha
 
 	#region Methods
 
-	/// <summary> Adds an item to the list. </summary>
+	/// <summary>
+	/// Adds an item to the list.
+	/// </summary>
 	/// <param name="item"> The object to add to the list. </param>
 	void Add(object item);
 
-	/// <summary> Removes all items from the list. </summary>
-	/// <exception cref="T:System.NotSupportedException"> The list is read-only. </exception>
+	/// <summary>
+	/// Removes all items from the list.
+	/// </summary>
 	void Clear();
 
 	/// <summary> Determines whether the list contains a specific item. </summary>
@@ -1544,12 +1560,16 @@ public interface ISpeedyList : IEnumerable, INotifyCollectionChanged, IDispatcha
 	/// </returns>
 	bool Contains(object item);
 
-	/// <summary> Determines the index of a specific item in the list. </summary>
+	/// <summary>
+	/// Determines the index of a specific item in the list.
+	/// </summary>
 	/// <param name="item"> The object to locate in the list. </param>
 	/// <returns> The index of item if found in the list otherwise -1; </returns>
 	int IndexOf(object item);
 
-	/// <summary> Inserts an item to the list at the specified index. </summary>
+	/// <summary>
+	/// Inserts an item to the list at the specified index.
+	/// </summary>
 	/// <param name="index"> The zero-based index at which item should be inserted. </param>
 	/// <param name="item"> The object to insert into the list. </param>
 	void Insert(int index, object item);
@@ -1561,7 +1581,19 @@ public interface ISpeedyList : IEnumerable, INotifyCollectionChanged, IDispatcha
 	/// <param name="newIndex"> The index to move the item to. </param>
 	void Move(int oldIndex, int newIndex);
 
-	/// <summary> Removes the first occurrence of a specific object from the list. </summary>
+	/// <summary>
+	/// Refresh the filter.
+	/// </summary>
+	void RefreshFilter();
+
+	/// <summary>
+	/// Refresh the order.
+	/// </summary>
+	public void RefreshOrder();
+
+	/// <summary>
+	/// Removes the first occurrence of a specific object from the list.
+	/// </summary>
 	/// <param name="item"> The object to remove from the list. </param>
 	void Remove(object item);
 

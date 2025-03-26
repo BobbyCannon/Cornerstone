@@ -24,9 +24,9 @@ internal class WeakEventListener<T, T2, TArgs> : IWeakEventListener
 
 	#region Constructors
 
-	public WeakEventListener(T source, string eventName, T2 destination, MethodInfo methodInfo)
+	public WeakEventListener(T source, Type type, string eventName, T2 destination, MethodInfo methodInfo)
 	{
-		_eventInfo = source.GetType().GetMatchingEvent(eventName, methodInfo) ?? throw new ArgumentException("Unknown Event Name", nameof(eventName));
+		_eventInfo = type.GetMatchingEvent(eventName, methodInfo) ?? throw new ArgumentException("Unknown Event Name", nameof(eventName));
 		_eventInfo.AddEventHandler(source,
 			_eventInfo.EventHandlerType == typeof(EventHandler<TArgs>)
 				? new EventHandler<TArgs>(HandleEvent)

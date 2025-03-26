@@ -17,14 +17,13 @@ public abstract class WorkerViewModel : ViewModel
 {
 	#region Fields
 
-	protected readonly IWeakEventManager WeakEventManager;
 	private readonly BackgroundWorker _worker;
 
 	#endregion
 
 	#region Constructors
 
-	protected WorkerViewModel(int workerDelay, IWeakEventManager weakEventManager, IDispatcher dispatcher)
+	protected WorkerViewModel(int workerDelay, IDispatcher dispatcher)
 		: base(dispatcher)
 	{
 		WorkerStatus = WorkerStatus.Stopped;
@@ -35,7 +34,6 @@ public abstract class WorkerViewModel : ViewModel
 		//_worker.ProgressChanged += WorkerProgressChanged;
 		_worker.RunWorkerCompleted += WorkerRunWorkerCompleted;
 
-		WeakEventManager = weakEventManager;
 		WeakEventManager.Add<BackgroundWorker, WorkerViewModel, DoWorkEventArgs>(_worker, nameof(_worker.DoWork), this, WorkerDoWork);
 		WeakEventManager.Add<BackgroundWorker, WorkerViewModel, ProgressChangedEventArgs>(_worker, nameof(_worker.ProgressChanged), this, WorkerProgressChanged);
 		//WeakEventManager.Add<BackgroundWorker, RunWorkerCompletedEventArgs>(_worker, nameof(_worker.RunWorkerCompleted), WorkerRunWorkerCompleted);

@@ -1,6 +1,7 @@
 #region References
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -35,8 +36,15 @@ public partial class TabSpeedyTree : CornerstoneUserControl
 	{
 		RuntimeInformation = GetInstance<IRuntimeInformation>();
 		Dispatcher = GetInstance<IDispatcher>();
-		FolderManager = new FolderManager(RuntimeInformation.ApplicationLocation, GetDispatcher());
+		FolderManager = new FolderManager(RuntimeInformation.ApplicationLocation, GetDispatcher())
+		{
+			FilterCheck = x => string.IsNullOrEmpty(TreeFilter) || (x.Name?.Contains(TreeFilter, StringComparison.OrdinalIgnoreCase) == true)
+		};
 		Progress = 0;
+		SampleTree = new MenuItemData
+		{
+			FilterCheck = x => string.IsNullOrEmpty(TreeFilter) || (x.Name?.Contains(TreeFilter, StringComparison.OrdinalIgnoreCase) == true)
+		};
 
 		// Commands
 		ClearCommand = new RelayCommand(_ => Clear());
@@ -73,6 +81,8 @@ public partial class TabSpeedyTree : CornerstoneUserControl
 
 	public IRuntimeInformation RuntimeInformation { get; }
 
+	public MenuItemData SampleTree { get; }
+
 	public ICommand SelectFolderCommand { get; }
 
 	public string TreeFilter { get; set; }
@@ -81,6 +91,34 @@ public partial class TabSpeedyTree : CornerstoneUserControl
 
 	#region Methods
 
+	public static IEnumerable<MenuItemData> GetSampleTreeData()
+	{
+		var appetizers = new MenuItemData { Name = "Appetizers", IsParent = true, Order = 1 };
+		appetizers.Add(new MenuItemData { Name = "Spring Rolls", Order = 1 });
+		appetizers.Add(new MenuItemData { Name = "Garlic Bread", Order = 2 });
+		appetizers.Add(new MenuItemData { Name = "Cheese Sticks", Order = 3 });
+		appetizers.Add(new MenuItemData { Name = "Steak Bits", Order = 4 });
+		appetizers.Add(new MenuItemData { Name = "Buffalo Wings", Order = 5 });
+		appetizers.Add(new MenuItemData { Name = "Shrimp Cocktail", Order = 6 });
+
+		var mainCourses = new MenuItemData { Name = "Main Courses", IsParent = true, Order = 2 };
+		var pasta = new MenuItemData { Name = "Pasta", IsParent = true, Order = 1 };
+		mainCourses.Add(pasta);
+		pasta.Add(new MenuItemData { Name = "Spaghetti", Order = 1 });
+		pasta.Add(new MenuItemData { Name = "Lasagna", Order = 2 });
+		mainCourses.Add(new MenuItemData { Name = "Grilled Chicken", Order = 2 });
+		mainCourses.Add(new MenuItemData { Name = "New York Strip Steak", Order = 3 });
+		mainCourses.Add(new MenuItemData { Name = "Shrimp Scampi", Order = 4 });
+
+
+		var desserts = new MenuItemData { Name = "Desserts", IsParent = true, Order = 3 };
+		desserts.Add(new MenuItemData { Name = "Cheesecake", Order = 1 });
+		desserts.Add(new MenuItemData { Name = "Ice Cream", Order = 2 });
+		desserts.Add(new MenuItemData { Name = "Banana Bread", Order = 3 });
+
+		return [appetizers, mainCourses, desserts];
+	}
+
 	/// <inheritdoc />
 	public override void OnPropertyChanged(string propertyName)
 	{
@@ -88,10 +126,8 @@ public partial class TabSpeedyTree : CornerstoneUserControl
 		{
 			case nameof(TreeFilter):
 			{
-				FolderManager.FilterCheck = string.IsNullOrWhiteSpace(TreeFilter)
-					? null
-					: x => x.Name?.Contains(TreeFilter) ?? false;
 				FolderManager.RefreshFilter();
+				SampleTree.RefreshFilter();
 				break;
 			}
 		}
@@ -102,15 +138,23 @@ public partial class TabSpeedyTree : CornerstoneUserControl
 	/// <inheritdoc />
 	protected override void OnLoaded(RoutedEventArgs e)
 	{
-		if (Design.IsDesignMode)
-		{
-		}
+		SampleTree.Load(GetSampleTreeData());
 		base.OnLoaded(e);
 	}
 
 	private void Clear()
 	{
 		FolderManager.Clear();
+	}
+
+	private void CollapseAllSample(object sender, RoutedEventArgs e)
+	{
+		SampleTree.ForEachDescendants(x => x.IsExpanded = false);
+	}
+
+	private void ExpandAllSamples(object sender, RoutedEventArgs e)
+	{
+		SampleTree.ForEachDescendants(x => x.IsExpanded = true);
 	}
 
 	private void Process()
@@ -179,7 +223,16 @@ public partial class TabSpeedyTree : CornerstoneUserControl
 
 	private void TreeViewItemOnDoubleTapped(object sender, TappedEventArgs e)
 	{
-		if (((Visual) e.Source)?.DataContext is DirectoryOrFileInfo info)
+		if (((Visual) e.Source)?.DataContext is DirectoryOrFileInfo info
+			&& (info.Children.Count <= 0))
+		{
+			info.Refresh();
+		}
+	}
+
+	private void TreeViewItemOnPointerPressed(object sender, PointerPressedEventArgs e)
+	{
+		if (((Visual) e.Source)?.Parent?.DataContext is DirectoryOrFileInfo info)
 		{
 			info.Refresh();
 		}

@@ -1,7 +1,6 @@
 ﻿#region References
 
 using System;
-using System.Threading;
 using Cornerstone.Presentation;
 using Cornerstone.Threading;
 
@@ -14,8 +13,7 @@ public class DebounceAndThrottleManager : WorkerManager
 	#region Constructors
 
 	/// <inheritdoc />
-	public DebounceAndThrottleManager(IWeakEventManager weakEventManager, IDispatcher dispatcher)
-		: base(10, weakEventManager, dispatcher)
+	public DebounceAndThrottleManager( IDispatcher dispatcher) : base(10, dispatcher)
 	{
 		
 	}

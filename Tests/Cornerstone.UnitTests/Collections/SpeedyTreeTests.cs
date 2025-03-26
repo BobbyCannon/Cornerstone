@@ -1,9 +1,9 @@
 ﻿#region References
 
-using System.Collections.Generic;
 using Cornerstone.Collections;
+using Cornerstone.Extensions;
 using Cornerstone.Presentation;
-using Cornerstone.Testing;
+using Cornerstone.Sample.Tabs;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
@@ -16,52 +16,38 @@ public class SpeedyTreeTests : CornerstoneUnitTest
 	#region Methods
 
 	[TestMethod]
-	public void Name()
+	public void Filter()
 	{
-		var tree = new SpeedyTree<MenuItemData2>(null, null)
-		{
-			new()
-			{
-				Name = "One",
-				Order = 1,
-				Children =
-				{
-					new MenuItemData2 { Name = "Hello"}
-				}
-			},
-			new() { Name = "Two", Order = 2 }
-		};
+		var tree = GetTreeSample();
+		tree.FilterCheck = x => x.Name == "bar 1";
+		var expected = "{\"Children\":[{\"Children\":[{\"Children\":[],\"Name\":\"bar 1\",\"Order\":1}],\"Name\":\"foo\",\"Order\":1}]}";
+		AreEqual(expected, tree.ToJson(MinimalSerializeSettings));
 
-		tree.DumpJson();
+		tree.FilterCheck = x => x.Name == "foo";
+		expected = "{\"Children\":[{\"Children\":[],\"Name\":\"foo\",\"Order\":1}]}";
+		AreEqual(expected, tree.ToJson(MinimalSerializeSettings));
+		
+		tree.FilterCheck = x => x.Name == "Header 1";
+		expected = "{\"Children\":[{\"Children\":[],\"Name\":\"foo\",\"Order\":1}]}";
+		AreEqual(expected, tree.ToJson(MinimalSerializeSettings));
 	}
 
-	#endregion
-
-	#region Classes
-
-	public class MenuItemData2 : SpeedyTree<MenuItemData2>
+	[TestMethod]
+	public void ToFromJson()
 	{
-		#region Constructors
+		var tree = GetTreeSample();
+		var expected = "{\"Children\":[{\"Children\":[{\"Children\":[],\"Name\":\"bar 1\",\"Order\":1},{\"Children\":[{\"Children\":[],\"Name\":\"Header 1\"}],\"Name\":\"bar 2\",\"Order\":2}],\"Name\":\"foo\",\"Order\":1},{\"Children\":[{\"Children\":[],\"Name\":\"world\",\"Order\":1}],\"Name\":\"hello\",\"Order\":2}]}";
+		AreEqual(expected, tree.ToJson(MinimalSerializeSettings));
 
-		public MenuItemData2() : this(null)
-		{
-		}
+		var fromJson = expected.FromJson<SpeedyTree<MenuItemData>>();
+		AreEqual(tree, fromJson);
+	}
 
-		public MenuItemData2(IDispatcher dispatcher) : base(null, dispatcher)
-		{
-		}
-
-		#endregion
-
-		#region Properties
-
-		public ISpeedyList<MenuItemData2> Children => GetChildren();
-
-		public string Name { get; set; }
-
-		public int Order { get; set; }
-
-		#endregion
+	private SpeedyTree<MenuItemData> GetTreeSample()
+	{
+		var tree = new SpeedyTree<MenuItemData>();
+		tree.Load(TabSpeedyTree.GetSampleTreeData());
+		return tree;
 	}
 
 	#endregion

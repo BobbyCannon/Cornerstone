@@ -14,10 +14,8 @@ public abstract class SmartCardReader : Manager
 	#region Constructors
 
 	/// <inheritdoc />
-	protected SmartCardReader(WeakEventManager weakEventManager, IDispatcher dispatcher)
-		: base(dispatcher)
+	protected SmartCardReader(IDispatcher dispatcher) : base(dispatcher)
 	{
-		WeakEventManager = weakEventManager;
 	}
 
 	#endregion
@@ -25,8 +23,6 @@ public abstract class SmartCardReader : Manager
 	#region Properties
 
 	public SecurityCard Card { get; protected set; }
-
-	public WeakEventManager WeakEventManager { get; }
 
 	#endregion
 

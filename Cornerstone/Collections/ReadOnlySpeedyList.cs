@@ -35,10 +35,9 @@ public class ReadOnlySpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, I
 	{
 		_list = list;
 
-		var weakEventManager = Platform.GetInstance<WeakEventManager>();
-		weakEventManager.AddSpeedyListUpdated<SpeedyList<T>, T, ReadOnlySpeedyList<T>>(_list, this, ListOnListUpdated);
-		weakEventManager.AddCollectionChanged(_list, this, ListOnCollectionChanged);
-			weakEventManager.AddPropertyChanged(_list, this, ListOnPropertyChanged);
+		WeakEventManager.AddSpeedyListUpdated<SpeedyList<T>, T, ReadOnlySpeedyList<T>>(_list, this, ListOnListUpdated);
+		WeakEventManager.AddCollectionChanged(_list, this, ListOnCollectionChanged);
+		WeakEventManager.AddPropertyChanged(_list, this, ListOnPropertyChanged);
 	}
 
 	#endregion
@@ -47,6 +46,15 @@ public class ReadOnlySpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, I
 
 	/// <inheritdoc cref="IList" />
 	public int Count => _list.Count;
+
+	/// <inheritdoc />
+	public Func<T, bool> FilterCheck
+	{
+		get => _list.FilterCheck;
+		set => throw new NotSupportedException();
+	}
+
+	public OrderBy<T>[] OrderBy { get; set; }
 
 	public bool IsFiltering => _list.IsFiltering;
 
@@ -162,6 +170,18 @@ public class ReadOnlySpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, I
 	public void Move(int oldIndex, int newIndex)
 	{
 		throw new NotSupportedException();
+	}
+
+	/// <inheritdoc />
+	public void RefreshFilter()
+	{
+		_list.RefreshFilter();
+	}
+
+	/// <inheritdoc />
+	public void RefreshOrder()
+	{
+		_list.RefreshOrder();
 	}
 
 	/// <inheritdoc />

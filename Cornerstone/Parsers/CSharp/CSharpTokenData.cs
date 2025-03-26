@@ -92,6 +92,11 @@ public class CSharpTokenData : TokenData<CSharpTokenData, SyntaxKind>
 				writer.WriteSpan(ToString(), SyntaxColor.Keyword);
 				return;
 			}
+			case SyntaxKind.SingleLineCommentTrivia:
+			{
+				writer.WriteSpan(ToString(), SyntaxColor.Comment);
+				return;
+				}
 			default:
 			{
 				writer.WriteRaw(ToString());

@@ -20,6 +20,12 @@ public partial class MainWindow : CornerstoneWindow<MainViewModel>
 
 	public MainWindow(MainViewModel viewModel, IDispatcher dispatcher) : base(viewModel, dispatcher)
 	{
+		// Prevent the designer from null referencing
+		if (!Design.IsDesignMode)
+		{
+			RestoreWindowLocation(ViewModel.ApplicationSettings.MainWindowLocation);
+		}
+
 		MainView = new MainView(viewModel, dispatcher);
 		InitializeComponent();
 	}
@@ -59,18 +65,6 @@ public partial class MainWindow : CornerstoneWindow<MainViewModel>
 		}
 
 		base.OnInitialized();
-	}
-
-	/// <inheritdoc />
-	protected override void OnOpened(EventArgs e)
-	{
-		// Prevent the designer from null referencing
-		if (!Design.IsDesignMode)
-		{
-			RestoreWindowLocation(ViewModel.ApplicationSettings.MainWindowLocation);
-		}
-
-		base.OnOpened(e);
 	}
 
 	#endregion

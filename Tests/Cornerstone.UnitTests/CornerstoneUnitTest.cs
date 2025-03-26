@@ -3,6 +3,7 @@
 using System.IO;
 using Cornerstone.Extensions;
 using Cornerstone.Newtonsoft;
+using Cornerstone.Platforms.Windows;
 using Cornerstone.Serialization;
 using Cornerstone.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

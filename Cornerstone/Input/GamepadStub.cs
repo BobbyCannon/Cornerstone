@@ -15,8 +15,7 @@ public class GamepadStub : Gamepad
 
 	/// <inheritdoc />
 	[DependencyInjectionConstructor]
-	public GamepadStub(WeakEventManager weakEventManager, IDispatcher dispatcher)
-		: base(weakEventManager, dispatcher)
+	public GamepadStub(IDispatcher dispatcher) : base(dispatcher)
 	{
 		WorkerDelay = 1000;
 	}

@@ -15,7 +15,6 @@ public class PropertyChangeEventTracker<T>
 
 	private readonly Action<string> _eventTracer;
 	private readonly T _source;
-	private readonly IWeakEventManager _weakEventManager;
 
 	#endregion
 
@@ -25,7 +24,6 @@ public class PropertyChangeEventTracker<T>
 	{
 		_source = source;
 		_eventTracer = eventTracer;
-		_weakEventManager = new WeakEventManager();
 	}
 
 	#endregion
@@ -40,7 +38,7 @@ public class PropertyChangeEventTracker<T>
 	public void SubscribeEventsUsingWeak()
 	{
 		//_source.PropertyChanged += SourceOnPropertyChanged;
-		_weakEventManager.AddPropertyChanged(_source, this, SourceOnPropertyChanged);
+		WeakEventManager.AddPropertyChanged(_source, this, SourceOnPropertyChanged);
 	}
 
 	public void UnsubscribeEvents()
@@ -51,7 +49,7 @@ public class PropertyChangeEventTracker<T>
 	public void UnsubscribeEventsUsingWeak()
 	{
 		//_source.PropertyChanged -= SourceOnPropertyChanged;
-		_weakEventManager.Remove(_source);
+		WeakEventManager.Remove(_source);
 	}
 
 	private void SourceOnPropertyChanged(object sender, PropertyChangedEventArgs e)

@@ -6,7 +6,7 @@
 	<!-- Design preview. -->
 
 	<Design.PreviewWith>
-		<Border Padding="20">
+		<Border Padding="20" Width="200" Height="200">
 			<StackPanel Spacing="20">
 				<TreeView>
 					<TreeViewItem Header="Root" IsExpanded="True">

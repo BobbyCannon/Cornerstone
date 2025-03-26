@@ -29,8 +29,7 @@ public class WindowsSmartCardReader : Security.SecurityKeys.SmartCardReader
 
 	/// <inheritdoc />
 	[DependencyInjectionConstructor]
-	public WindowsSmartCardReader(WeakEventManager weakEventManager, IDispatcher dispatcher)
-		: base(weakEventManager, dispatcher)
+	public WindowsSmartCardReader(IDispatcher dispatcher) : base(dispatcher)
 	{
 	}
 

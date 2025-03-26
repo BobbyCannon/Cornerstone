@@ -21,7 +21,7 @@ public class CollectionExtensionsTests : CornerstoneUnitTest
 	public void AddRange()
 	{
 		var hashset = new HashSet<int>();
-		hashset.AddRange(1, 2, 3, 4);
+		hashset.Add(1, 2, 3, 4);
 		AreEqual(new[] { 1, 2, 3, 4 }, hashset);
 	}
 

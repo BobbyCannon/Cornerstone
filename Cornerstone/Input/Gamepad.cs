@@ -18,8 +18,7 @@ public abstract class Gamepad : WorkerManager
 	/// <summary>
 	/// Initializes a new instance of the <see cref="Gamepad" />.
 	/// </summary>
-	protected Gamepad(WeakEventManager weakEventManager, IDispatcher dispatcher)
-		: base(10, weakEventManager, dispatcher)
+	protected Gamepad(IDispatcher dispatcher) : base(10, dispatcher)
 	{
 		State = new GamepadState();
 	}

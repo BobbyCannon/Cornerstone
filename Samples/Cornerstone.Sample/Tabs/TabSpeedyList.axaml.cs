@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Cornerstone.Avalonia;
@@ -44,6 +45,10 @@ public partial class TabSpeedyList : CornerstoneUserControl
 		MiddleListFilterProxy = new FilteredSpeedyList<SelectionOption<int>>(MiddleList, x => (x.Id % 3) == 0);
 		RightList = new SpeedyList<SelectionOption<int>>(Dispatcher);
 		RightListFilterProxy = new FilteredSpeedyList<SelectionOption<int>>(RightList, x => (x.Id % 10) == 0);
+		States = new SpeedyList<string>(RandomGenerator.GetStates())
+		{
+			FilterCheck = x => string.IsNullOrEmpty(StateFilter) || (x?.IndexOf(StateFilter, StringComparison.OrdinalIgnoreCase) >= 0)
+		};
 
 		ReaderWriterLockValues =
 		[
@@ -150,6 +155,10 @@ public partial class TabSpeedyList : CornerstoneUserControl
 
 	public SelectionOption<int> SelectedThrottleDelay { get; set; }
 
+	public string StateFilter { get; set; }
+
+	public SpeedyList<string> States { get; }
+
 	public SpeedyList<SelectionOption<int>> TestLoopValues { get; }
 
 	public SpeedyList<SelectionOption<int>> ThrottleDelayValues { get; }
@@ -191,6 +200,16 @@ public partial class TabSpeedyList : CornerstoneUserControl
 				RightList.RefreshFilter();
 				break;
 			}
+			case nameof(StateFilter):
+			{
+				States.RefreshFilter();
+				break;
+			}
+			case nameof(UseOrder):
+			{
+				States.OrderBy = UseOrder ? [new OrderBy<string>(x => x)] : null;
+				break;
+			}
 		}
 
 		base.OnPropertyChanged(propertyName);
@@ -210,6 +229,7 @@ public partial class TabSpeedyList : CornerstoneUserControl
 			RightList.Add(new SelectionOption<int>(5, "Five"));
 			RightList.Add(new SelectionOption<int>(6, "Six"));
 		}
+
 		base.OnLoaded(e);
 	}
 

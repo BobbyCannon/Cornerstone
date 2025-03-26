@@ -3,6 +3,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Cornerstone.Collections;
 using Cornerstone.Presentation;
 
@@ -32,7 +34,7 @@ public class DirectoryOrFileInfo : SpeedyTree<DirectoryOrFileInfo>
 
 	public bool IsDirectory => FileInfo == null;
 
-	public bool IsExpanded { get; set; }
+	public bool IsRefreshing { get; set; }
 
 	public string Name => FileInfo?.Name ?? DirectoryInfo.Name;
 
@@ -58,31 +60,43 @@ public class DirectoryOrFileInfo : SpeedyTree<DirectoryOrFileInfo>
 
 	public void Refresh()
 	{
-		if (!IsDirectory)
+		Task.Run(() =>
 		{
-			#if !ANDROID
-			FileInfo?.Refresh();
-			#endif
-			return;
-		}
+			try
+			{
+				IsRefreshing = true;
 
-		DirectoryInfo.Refresh();
+				if (!IsDirectory)
+				{
+					#if !ANDROID
+					FileInfo?.Refresh();
+					#endif
+					return;
+				}
 
-		var results = new List<DirectoryOrFileInfo>();
-		var infos = DirectoryInfo
-			.GetDirectories()
-			.Select(x => Create(x, this))
-			.ToArray();
+				DirectoryInfo.Refresh();
 
-		var files = DirectoryInfo
-			.GetFiles()
-			.Select(x => Create(x, this))
-			.ToArray();
+				var results = new List<DirectoryOrFileInfo>();
+				var infos = DirectoryInfo
+					.GetDirectories()
+					.Select(x => Create(x, this))
+					.ToArray();
 
-		results.AddRange(infos);
-		results.AddRange(files);
+				var files = DirectoryInfo
+					.GetFiles()
+					.Select(x => Create(x, this))
+					.ToArray();
 
-		Load(results);
+				results.AddRange(infos);
+				results.AddRange(files);
+
+				Load(results);
+			}
+			finally
+			{
+				IsRefreshing = false;
+			}
+		});
 	}
 
 	#endregion

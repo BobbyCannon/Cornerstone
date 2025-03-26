@@ -14,17 +14,17 @@ public class GamepadInput : WorkerManager
 	#region Constructors
 
 	[DependencyInjectionConstructor]
-	public GamepadInput(Gamepad gamepad, Keyboard keyboard, Mouse mouse, WeakEventManager weakEventManager, IDispatcher dispatcher)
-		: base(1000 / 60, weakEventManager, dispatcher)
+	public GamepadInput(Gamepad gamepad, Keyboard keyboard, Mouse mouse, IDispatcher dispatcher)
+		: base(1000 / 60, dispatcher)
 	{
 		Gamepad = gamepad;
 		Keyboard = keyboard;
 		Mouse = mouse;
 		MouseMoveSpeed = 0.015;
 
-		//weakEventManager.Add<Gamepad, GamepadInput, GamepadButton, bool>(Gamepad, nameof(Gamepad.ButtonChanged), this, GamepadOnButtonChanged);
-		weakEventManager.Add<Gamepad, GamepadInput, GamepadState>(Gamepad, nameof(Gamepad.Changed), this, GamepadOnChanged);
-		weakEventManager.Add<Mouse, GamepadInput, MouseState>(Mouse, nameof(Mouse.MouseChanged), this, MouseOnMouseChanged);
+		//WeakEventManager.Add<Gamepad, GamepadInput, GamepadButton, bool>(Gamepad, nameof(Gamepad.ButtonChanged), this, GamepadOnButtonChanged);
+		WeakEventManager.Add<Gamepad, GamepadInput, GamepadState>(Gamepad, nameof(Gamepad.Changed), this, GamepadOnChanged);
+		WeakEventManager.Add<Mouse, GamepadInput, MouseState>(Mouse, nameof(Mouse.MouseChanged), this, MouseOnMouseChanged);
 	}
 
 	#endregion

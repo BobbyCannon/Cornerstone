@@ -5,83 +5,138 @@
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
 		xmlns:fileSystem="clr-namespace:Cornerstone.FileSystem;assembly=Cornerstone"
+		xmlns:presentation="clr-namespace:Cornerstone.Presentation;assembly=Cornerstone"
 		mc:Ignorable="d" d:DesignHeight="400" d:DesignWidth="600"
 		x:Class="Cornerstone.Sample.Tabs.TabSpeedyTree"
 		x:DataType="tabs:TabSpeedyTree">
 	<DockPanel Margin="10">
-		<Border DockPanel.Dock="Top"
-				BorderBrush="{DynamicResource ButtonBorderBrush}"
-				BorderThickness="0,0,0,1"
-				Margin="0,0,0,10">
-			<WrapPanel
-					Orientation="Horizontal"
-					Margin="0,0,0,8">
+		<StackPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+			<TextBox Classes="Search ClearButton"
+					Text="{Binding TreeFilter, Mode=TwoWay}"
+					Watermark="Filter" />
+		</StackPanel>
+		<TabControl>
+			<TabItem Header="Sample">
+				<DockPanel>
+					<Border DockPanel.Dock="Top">
+						<WrapPanel Orientation="Horizontal" Margin="10">
+							<Button Click="ExpandAllSamples">Expand All</Button>
+							<Button Click="CollapseAllSample">Collapse All</Button>
+						</WrapPanel>
+					</Border>
+					<TreeView ItemsSource="{Binding SampleTree.Children}"
+							Margin="10,0,10,10">
+						<TreeView.Styles>
+							<Style Selector="TreeViewItem"
+									x:DataType="presentation:MenuItemData">
+								<Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+							</Style>
+						</TreeView.Styles>
+						<TreeView.DataTemplates>
+							<TreeDataTemplate ItemsSource="{Binding Children}"
+									DataType="presentation:MenuItemData">
+								<Grid Height="24">
+									<TextBlock Classes="Mono"
+											Text="{Binding Name}"
+											FontSize="12"
+											Margin="6,0,0,0" />
+								</Grid>
+							</TreeDataTemplate>
+						</TreeView.DataTemplates>
+					</TreeView>
+				</DockPanel>
+			</TabItem>
+			<TabItem Header="Folders">
+				<DockPanel>
+					<Border DockPanel.Dock="Top">
+						<WrapPanel
+								Orientation="Horizontal"
+								Margin="10">
 
-				<Button Command="{Binding SelectFolderCommand, Mode=OneTime}"
-						Content="Select Folder"
-						IsVisible="{Binding CanSelectFolder}"
-						Margin="0,0,10,0" />
+							<Button Command="{Binding SelectFolderCommand, Mode=OneTime}"
+									Content="Select Folder"
+									IsVisible="{Binding CanSelectFolder}"
+									Margin="0,0,10,0" />
 
-				<Button Command="{Binding RefreshCommand, Mode=OneTime}"
-						Margin="0,0,10,0">
-					<Grid>
-						<Label Content="Refresh" IsVisible="{Binding !IsRunning}" />
-						<Label Content="Cancel" IsVisible="{Binding IsRunning}" />
-					</Grid>
-				</Button>
+							<Button Command="{Binding RefreshCommand, Mode=OneTime}"
+									Margin="0,0,10,0">
+								<Grid>
+									<Label Content="Refresh" IsVisible="{Binding !IsRunning}" />
+									<Label Content="Cancel" IsVisible="{Binding IsRunning}" />
+								</Grid>
+							</Button>
 
-				<Button Command="{Binding ClearCommand, Mode=OneTime}"
-						Margin="0,0,10,0"
-						IsEnabled="{Binding !IsRunning}">
-					<Label Content="Clear" />
-				</Button>
-			</WrapPanel>
-		</Border>
-		<Border DockPanel.Dock="Bottom">
-			<Grid RowDefinitions="*,*">
-				<TextBlock Grid.Row="0"
-						Margin="0,10"
-						Text="{Binding FolderManager.DirectoryInfo.FullName}"
-						TextWrapping="Wrap" />
-				<ProgressBar Grid.Row="1" IsIndeterminate="{Binding IsRunning}" />
-			</Grid>
-		</Border>
-		<Grid Margin="10">
-			<TreeView ItemsSource="{Binding FolderManager}">
-				<TreeView.Styles>
-					<Style Selector="TreeViewItem"
-							x:DataType="fileSystem:DirectoryOrFileInfo">
-						<Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-					</Style>
-				</TreeView.Styles>
-				<TreeView.DataTemplates>
-					<TreeDataTemplate ItemsSource="{Binding}"
-							DataType="fileSystem:DirectoryOrFileInfo">
-						<Grid Height="24"
-								ColumnDefinitions="16,*"
-								Background="Transparent"
-								DoubleTapped="TreeViewItemOnDoubleTapped">
-							<Path Grid.Column="0"
-									Width="14" Height="14"
-									Margin="0,2,0,0"
-									IsVisible="{Binding IsDirectory}"
-									Data="{StaticResource Icons.Folder.Fill}"
-									Fill="Goldenrod"
-									VerticalAlignment="Center" />
-							<Path Grid.Column="0"
-									Width="14" Height="14"
-									IsVisible="{Binding !IsDirectory}"
-									Data="{StaticResource Icons.File}"
-									VerticalAlignment="Center" />
-							<TextBlock Grid.Column="1"
-									Classes="Mono"
-									Text="{Binding Name}"
-									FontSize="12"
-									Margin="6,0,0,0" />
+							<Button Command="{Binding ClearCommand, Mode=OneTime}"
+									Margin="0,0,10,0"
+									IsEnabled="{Binding !IsRunning}">
+								<Label Content="Clear" />
+							</Button>
+						</WrapPanel>
+					</Border>
+					<Border DockPanel.Dock="Bottom"
+							Padding="10,0,10,10">
+						<Grid RowDefinitions="*,*">
+							<TextBlock Grid.Row="0"
+									Margin="0,10"
+									Text="{Binding FolderManager.DirectoryInfo.FullName}"
+									TextWrapping="Wrap" />
+							<ProgressBar Grid.Row="1" IsIndeterminate="{Binding IsRunning}" />
 						</Grid>
-					</TreeDataTemplate>
-				</TreeView.DataTemplates>
-			</TreeView>
-		</Grid>
+					</Border>
+					<TreeView ItemsSource="{Binding FolderManager.Children}"
+							Margin="10,10,10,0">
+						<TreeView.Styles>
+							<Style Selector="TreeViewItem"
+									x:DataType="fileSystem:DirectoryOrFileInfo">
+								<Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+								<Setter Property="TreeViewItemExtensions.IsRefreshing" Value="{Binding IsRefreshing, Mode=TwoWay}" />
+							</Style>
+						</TreeView.Styles>
+						<TreeView.DataTemplates>
+							<TreeDataTemplate ItemsSource="{Binding Children}"
+									DataType="fileSystem:DirectoryOrFileInfo">
+								<Grid Height="24"
+										ColumnDefinitions="16,*,Auto"
+										Background="Transparent"
+										DoubleTapped="TreeViewItemOnDoubleTapped">
+									<Grid.ContextMenu>
+										<ContextMenu>
+											<MenuItem Header="Refresh" PointerPressed="TreeViewItemOnPointerPressed" />
+										</ContextMenu>
+									</Grid.ContextMenu>
+									<Path Grid.Column="0"
+											Width="14" Height="14"
+											Margin="0,2,0,0"
+											IsVisible="{Binding IsDirectory}"
+											Data="{StaticResource Icons.Folder.Fill}"
+											Fill="Goldenrod"
+											VerticalAlignment="Center" />
+									<Path Grid.Column="0"
+											Width="14" Height="14"
+											IsVisible="{Binding !IsDirectory}"
+											Data="{StaticResource Icons.File}"
+											VerticalAlignment="Center" />
+									<TextBlock Grid.Column="1"
+											Classes="Mono"
+											Text="{Binding Name}"
+											FontSize="12"
+											Margin="6,0,0,0" />
+									<StackPanel Grid.Column="2"
+											Orientation="Horizontal"
+											Margin="0,0,20,0">
+										<CheckBox IsChecked="{Binding IsExpanded}">
+											<TextBlock Text="Expanded" />
+										</CheckBox>
+										<CheckBox IsChecked="{Binding IsRefreshing}">
+											<TextBlock Text="Refreshing" />
+										</CheckBox>
+									</StackPanel>
+								</Grid>
+							</TreeDataTemplate>
+						</TreeView.DataTemplates>
+					</TreeView>
+				</DockPanel>
+			</TabItem>
+		</TabControl>
 	</DockPanel>
 </UserControl>

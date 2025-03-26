@@ -1,18 +1,34 @@
 ﻿#region References
 
 using System.Windows.Input;
+using Cornerstone.Attributes;
 using Cornerstone.Collections;
 
 #endregion
 
 namespace Cornerstone.Presentation;
 
-public class MenuItemData : HierarchyListItem<MenuItemData>, IMenuItemData
+public class MenuItemData : SpeedyTree<MenuItemData>, IMenuItemData
 {
+	#region Constructors
+
+	public MenuItemData() : this(null)
+	{
+	}
+
+	public MenuItemData(IDispatcher dispatcher)
+		: base(null, dispatcher)
+	{
+	}
+
+	#endregion
+
 	#region Properties
 
+	[SerializationIgnore]
 	public ICommand Command { get; set; }
 
+	[SerializationIgnore]
 	public object CommandParameter { get; set; }
 
 	public string InputGesture { get; set; }
@@ -35,6 +51,11 @@ public class MenuItemData : HierarchyListItem<MenuItemData>, IMenuItemData
 	public ISpeedyList GetMenuItems()
 	{
 		return Children;
+	}
+
+	public override string ToString()
+	{
+		return Name;
 	}
 
 	#endregion
@@ -60,7 +81,7 @@ public interface IMenuItemData
 
 	#region Methods
 
-	ISpeedyList GetMenuItems();
+	public ISpeedyList GetMenuItems();
 
 	#endregion
 }

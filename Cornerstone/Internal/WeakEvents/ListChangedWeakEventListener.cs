@@ -15,7 +15,7 @@ internal class ListChangedWeakEventListener<T, T2, T3>
 	#region Constructors
 
 	public ListChangedWeakEventListener(T source, T3 destination, EventHandler<SpeedyListUpdatedEventArg<T2>> handler)
-		: base(source, nameof(source.ListUpdated), destination, handler.Method)
+		: base(source, typeof(ISpeedyList<T2>), nameof(source.ListUpdated), destination, handler.Method)
 	{
 	}
 

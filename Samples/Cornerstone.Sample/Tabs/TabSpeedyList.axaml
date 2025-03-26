@@ -4,234 +4,282 @@
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
-		mc:Ignorable="d" d:DesignHeight="400" d:DesignWidth="600"
+		mc:Ignorable="d" d:DesignHeight="400" d:DesignWidth="800"
 		x:Class="Cornerstone.Sample.Tabs.TabSpeedyList"
 		x:DataType="tabs:TabSpeedyList">
-	<DockPanel Margin="10">
-		<Border DockPanel.Dock="Top"
-				BorderBrush="{DynamicResource ButtonBorderBrush}"
-				BorderThickness="0,0,0,1"
-				Margin="0,0,0,10">
-			<WrapPanel Orientation="Horizontal"
-					Margin="0,0,0,8">
-				<NumericUpDown
-						InnerLeftContent="Items"
-						Value="{Binding NumberOfItems, Mode=TwoWay}" />
-
-				<ComboBox
-						ItemsSource="{Binding TestLoopValues, Mode=OneTime}"
-						SelectedItem="{Binding SelectedTestLoopValue, Mode=TwoWay}"
-						DisplayMemberBinding="{Binding Name}"
-						MinWidth="100" />
-
-				<NumericUpDown
-						InnerLeftContent="Threads"
-						Value="{Binding NumberOfThreads, Mode=TwoWay}" />
-
-				<CheckBox Margin="10,0"
-						Content="Order"
-						IsChecked="{Binding UseOrder, Mode=TwoWay}" />
-
-				<CheckBox Margin="10,0"
-						Content="Limit"
-						IsChecked="{Binding UseLimit, Mode=TwoWay}" />
-
-				<TextBox Text="{Binding Limit, Mode=TwoWay}"
-						IsReadOnly="false"
-						TextAlignment="Center"
-						Padding="10,2"
-						Margin="0,2,10,2" />
-
-				<ComboBox ItemsSource="{Binding ThrottleDelayValues, Mode=OneTime}"
-						SelectedItem="{Binding SelectedThrottleDelay, Mode=TwoWay}"
-						DisplayMemberBinding="{Binding Name}" />
-
-				<CheckBox Margin="10,0"
-						IsChecked="{Binding LoopTest, Mode=TwoWay}">
-					<Label Content="Loop Test" />
-				</CheckBox>
-
-				<ComboBox ItemsSource="{Binding ReaderWriterLockValues, Mode=OneTime}"
-						SelectedItem="{Binding SelectedReaderWriterLock, Mode=TwoWay}"
-						DisplayMemberBinding="{Binding Name}" />
-
-				<Button Command="{Binding RandomizeCommand, Mode=OneTime}"
-						Margin="10,0,0,0">
-					<Grid>
-						<Label Content="Randomize" IsVisible="{Binding !IsRunning}" />
-						<Label Content="Cancel" IsVisible="{Binding IsRunning}" />
-					</Grid>
-				</Button>
-
-				<Button Command="{Binding ClearCommand, Mode=OneTime}"
-						Margin="10,0,0,0"
-						IsEnabled="{Binding !IsRunning}">
-					<Label Content="Clear" />
-				</Button>
-			</WrapPanel>
-		</Border>
-		<Border DockPanel.Dock="Bottom">
-			<Grid RowDefinitions="*,*"
-					Margin="0,10,0,0">
-				<StackPanel Grid.Row="0"
-						Orientation="Horizontal">
-					<TextBlock Text="Generate: "/>
-					<TextBlock Text="{Binding GenerateDataTimer.Elapsed}"/>
-
-					<TextBlock Text="Add: "
-							Margin="20,0,0,0" />
-					<TextBlock Text="{Binding AddAverage.Average}"
-							Margin="0,0,6,0" />
-					<TextBlock Text="{Binding AddAverage.Count}" />
-					
-					<TextBlock Text="Insert: "
-							Margin="20,0,0,0" />
-					<TextBlock Text="{Binding InsertAverage.Average}"
-							Margin="0,0,6,0" />
-					<TextBlock Text="{Binding InsertAverage.Count}" />
-				</StackPanel>
-				<ProgressBar Grid.Row="1"
-						Maximum="{Binding SelectedTestLoopValue.Id}"
-						Value="{Binding Progress}" />
-			</Grid>
-		</Border>
-		<Grid ColumnDefinitions="*,*,*">
-			<Grid Grid.Column="0"
-					RowDefinitions="*,Auto,Auto">
+	<TabControl Margin="0,4,0,0">
+		<TabItem Header="Sample"
+				x:Name="SampleTab">
+			<Grid RowDefinitions="Auto,*">
 				<Grid Grid.Row="0"
-						RowDefinitions="Auto,*"
-						ColumnDefinitions="*,*">
-					<TextBlock Grid.Column="0"
-							Grid.Row="0"
-							Foreground="{StaticResource Gray03}"
-							Text="List Only" />
-					<ListBox Grid.Column="0"
-							Grid.Row="1"
-							x:Name="LeftListBox"
-							ItemsSource="{Binding LeftList, Mode=OneWay}">
-						<ListBox.ItemTemplate>
-							<DataTemplate>
-								<TextBlock Text="{Binding Name}" />
-							</DataTemplate>
-						</ListBox.ItemTemplate>
-					</ListBox>
-					<TextBlock Grid.Column="1"
-							Grid.Row="0"
-							Foreground="{StaticResource Gray03}"
-							Text="Filtered (even)" />
-					<Grid Grid.Column="1"
-							Grid.Row="1">
-						<ListBox Grid.Column="0"
-								x:Name="LeftListFilteredBox"
-								ItemsSource="{Binding LeftListFilterProxy, Mode=OneWay}">
-							<ListBox.ItemTemplate>
-								<DataTemplate>
-									<TextBlock Text="{Binding Name}" />
-								</DataTemplate>
-							</ListBox.ItemTemplate>
-						</ListBox>
+						Background="{DynamicResource Background01}"
+						ColumnDefinitions="*,Auto"
+						Margin="0,0,0,6">
+					<TextBox Classes="Search ClearButton"
+							BorderThickness="0,0,0,1"
+							Text="{Binding StateFilter, Mode=TwoWay}"
+							Watermark="Filter">
+						<TextBox.InnerRightContent>
+							<StackPanel Grid.Column="1"
+									Orientation="Horizontal"
+									Margin="10,0,10,0">
+								<CheckBox IsChecked="{Binding UseOrder}">Order</CheckBox>
+							</StackPanel>
+						</TextBox.InnerRightContent>
+					</TextBox>
+				</Grid>
+				<ItemsControl Grid.Row="1"
+						ItemsSource="{Binding States}">
+					<ItemsControl.ItemsPanel>
+						<ItemsPanelTemplate>
+							<WrapPanel ItemsAlignment="Start"
+									ItemHeight="28"
+									ItemWidth="150" />
+						</ItemsPanelTemplate>
+					</ItemsControl.ItemsPanel>
+					<ItemsControl.ItemTemplate>
+						<DataTemplate>
+							<TextBlock Text="{Binding}"
+									Margin="10,2"/>
+						</DataTemplate>
+					</ItemsControl.ItemTemplate>
+				</ItemsControl>
+			</Grid>
+		</TabItem>
+		<TabItem Header="Performance">
+			<DockPanel Margin="10">
+				<Border DockPanel.Dock="Top"
+						BorderBrush="{DynamicResource ButtonBorderBrush}"
+						BorderThickness="0,0,0,1"
+						Margin="0,0,0,10">
+					<WrapPanel Orientation="Horizontal"
+							Margin="0,0,0,8">
+						<NumericUpDown
+								InnerLeftContent="Items"
+								Value="{Binding NumberOfItems, Mode=TwoWay}" />
+
+						<ComboBox
+								ItemsSource="{Binding TestLoopValues, Mode=OneTime}"
+								SelectedItem="{Binding SelectedTestLoopValue, Mode=TwoWay}"
+								DisplayMemberBinding="{Binding Name}"
+								MinWidth="100" />
+
+						<NumericUpDown
+								InnerLeftContent="Threads"
+								Value="{Binding NumberOfThreads, Mode=TwoWay}" />
+
+						<CheckBox Margin="10,0"
+								Content="Order"
+								IsChecked="{Binding UseOrder, Mode=TwoWay}" />
+
+						<CheckBox Margin="10,0"
+								Content="Limit"
+								IsChecked="{Binding UseLimit, Mode=TwoWay}" />
+
+						<TextBox Text="{Binding Limit, Mode=TwoWay}"
+								IsReadOnly="false"
+								TextAlignment="Center"
+								Padding="10,2"
+								Margin="0,2,10,2" />
+
+						<ComboBox ItemsSource="{Binding ThrottleDelayValues, Mode=OneTime}"
+								SelectedItem="{Binding SelectedThrottleDelay, Mode=TwoWay}"
+								DisplayMemberBinding="{Binding Name}" />
+
+						<CheckBox Margin="10,0"
+								IsChecked="{Binding LoopTest, Mode=TwoWay}">
+							<Label Content="Loop Test" />
+						</CheckBox>
+
+						<ComboBox ItemsSource="{Binding ReaderWriterLockValues, Mode=OneTime}"
+								SelectedItem="{Binding SelectedReaderWriterLock, Mode=TwoWay}"
+								DisplayMemberBinding="{Binding Name}" />
+
+						<Button Command="{Binding RandomizeCommand, Mode=OneTime}"
+								Margin="10,0,0,0">
+							<Grid>
+								<Label Content="Randomize" IsVisible="{Binding !IsRunning}" />
+								<Label Content="Cancel" IsVisible="{Binding IsRunning}" />
+							</Grid>
+						</Button>
+
+						<Button Command="{Binding ClearCommand, Mode=OneTime}"
+								Margin="10,0,0,0"
+								IsEnabled="{Binding !IsRunning}">
+							<Label Content="Clear" />
+						</Button>
+					</WrapPanel>
+				</Border>
+				<Border DockPanel.Dock="Bottom">
+					<Grid RowDefinitions="*,*"
+							Margin="0,10,0,0">
+						<StackPanel Grid.Row="0"
+								Orientation="Horizontal">
+							<TextBlock Text="Generate: "/>
+							<TextBlock Text="{Binding GenerateDataTimer.Elapsed}"/>
+
+							<TextBlock Text="Add: "
+									Margin="20,0,0,0" />
+							<TextBlock Text="{Binding AddAverage.Average}"
+									Margin="0,0,6,0" />
+							<TextBlock Text="{Binding AddAverage.Count}" />
+
+							<TextBlock Text="Insert: "
+									Margin="20,0,0,0" />
+							<TextBlock Text="{Binding InsertAverage.Average}"
+									Margin="0,0,6,0" />
+							<TextBlock Text="{Binding InsertAverage.Count}" />
+						</StackPanel>
+						<ProgressBar Grid.Row="1"
+								Maximum="{Binding SelectedTestLoopValue.Id}"
+								Value="{Binding Progress}" />
+					</Grid>
+				</Border>
+				<Grid ColumnDefinitions="*,*,*">
+					<Grid Grid.Column="0"
+							RowDefinitions="*,Auto,Auto">
+						<Grid Grid.Row="0"
+								RowDefinitions="Auto,*"
+								ColumnDefinitions="*,*">
+							<TextBlock Grid.Column="0"
+									Grid.Row="0"
+									Foreground="{StaticResource Gray03}"
+									Text="List Only" />
+							<ListBox Grid.Column="0"
+									Grid.Row="1"
+									x:Name="LeftListBox"
+									ItemsSource="{Binding LeftList, Mode=OneWay}"
+									Padding="4,2">
+								<ListBox.ItemTemplate>
+									<DataTemplate>
+										<TextBlock Text="{Binding Name}" />
+									</DataTemplate>
+								</ListBox.ItemTemplate>
+							</ListBox>
+							<TextBlock Grid.Column="1"
+									Grid.Row="0"
+									Foreground="{StaticResource Gray03}"
+									Text="Filtered (even)" />
+							<Grid Grid.Column="1"
+									Grid.Row="1">
+								<ListBox Grid.Column="0"
+										x:Name="LeftListFilteredBox"
+										ItemsSource="{Binding LeftListFilterProxy, Mode=OneWay}"
+										Padding="4,2">
+									<ListBox.ItemTemplate>
+										<DataTemplate>
+											<TextBlock Text="{Binding Name}" />
+										</DataTemplate>
+									</ListBox.ItemTemplate>
+								</ListBox>
+							</Grid>
+						</Grid>
+						<StackPanel Grid.Row="1"
+								Margin="0,10,0,0"
+								Orientation="Horizontal">
+							<TextBlock Text="Count" Margin="0,0,10,0" />
+							<TextBlock Text="{Binding LeftList.Count}" />
+						</StackPanel>
+						<TextBox Grid.Row="2"
+								Watermark="Filter Left (live)"
+								Text="{Binding ListFilterForLeft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+					</Grid>
+					<Grid Grid.Column="1" RowDefinitions="*,Auto,Auto">
+						<Grid Grid.Row="0"
+								RowDefinitions="Auto,*"
+								ColumnDefinitions="*,*">
+							<TextBlock Grid.Column="0"
+									Grid.Row="0"
+									Foreground="{StaticResource Gray03}"
+									Text="List Only" />
+							<ListBox Grid.Column="0"
+									Grid.Row="1"
+									x:Name="MiddleListBox"
+									ItemsSource="{Binding MiddleList, Mode=OneWay}"
+									Padding="4,2">
+								<ListBox.ItemTemplate>
+									<DataTemplate>
+										<TextBlock Text="{Binding Name}" />
+									</DataTemplate>
+								</ListBox.ItemTemplate>
+							</ListBox>
+							<TextBlock Grid.Column="1"
+									Grid.Row="0"
+									Foreground="{StaticResource Gray03}"
+									Text="Filtered (Mod 3)" />
+							<Grid Grid.Column="1"
+									Grid.Row="1">
+								<ListBox Grid.Column="0"
+										x:Name="MiddleListFilteredBox"
+										ItemsSource="{Binding MiddleListFilterProxy, Mode=OneWay}"
+										Padding="4,2">
+									<ListBox.ItemTemplate>
+										<DataTemplate>
+											<TextBlock Text="{Binding Name}" />
+										</DataTemplate>
+									</ListBox.ItemTemplate>
+								</ListBox>
+							</Grid>
+						</Grid>
+						<StackPanel Grid.Row="1"
+								Margin="0,10,0,0"
+								Orientation="Horizontal">
+							<TextBlock Text="Count" Margin="0,0,10,0" />
+							<TextBlock Text="{Binding MiddleList.Count}" />
+						</StackPanel>
+						<TextBox Grid.Row="2"
+								Watermark="Filter Middle"
+								Text="{Binding ListFilterForMiddle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+					</Grid>
+					<Grid Grid.Column="2" RowDefinitions="*,Auto,Auto">
+						<Grid Grid.Row="0"
+								RowDefinitions="Auto,*"
+								ColumnDefinitions="*,*">
+							<TextBlock Grid.Column="0"
+									Grid.Row="0"
+									Foreground="{StaticResource Gray03}"
+									Text="List Only" />
+							<ListBox Grid.Column="0"
+									Grid.Row="1"
+									x:Name="RightListBox"
+									ItemsSource="{Binding RightList, Mode=OneWay}"
+									Padding="4,2">
+								<ListBox.ItemTemplate>
+									<DataTemplate>
+										<TextBlock Text="{Binding Name}" />
+									</DataTemplate>
+								</ListBox.ItemTemplate>
+							</ListBox>
+							<TextBlock Grid.Column="1"
+									Grid.Row="0"
+									Foreground="{StaticResource Gray03}"
+									Text="Filtered (Mod 10)" />
+							<Grid Grid.Column="1"
+									Grid.Row="1">
+								<ListBox Grid.Column="0"
+										x:Name="RightListFilteredBox"
+										ItemsSource="{Binding RightListFilterProxy, Mode=OneWay}"
+										Padding="4,2">
+									<ListBox.ItemTemplate>
+										<DataTemplate>
+											<TextBlock Text="{Binding Name}" />
+										</DataTemplate>
+									</ListBox.ItemTemplate>
+								</ListBox>
+							</Grid>
+						</Grid>
+						<StackPanel Grid.Row="1"
+								Margin="0,10,0,0"
+								Orientation="Horizontal">
+							<TextBlock Text="Count" Margin="0,0,10,0" />
+							<TextBlock Text="{Binding RightList.Count}" />
+						</StackPanel>
+						<TextBox Grid.Row="2"
+								Watermark="Filter Right"
+								Text="{Binding ListFilterForRight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 					</Grid>
 				</Grid>
-				<StackPanel Grid.Row="1"
-						Margin="0,10,0,0"
-						Orientation="Horizontal">
-					<TextBlock Text="Count" Margin="0,0,10,0" />
-					<TextBlock Text="{Binding LeftList.Count}" />
-				</StackPanel>
-				<TextBox Grid.Row="2"
-						Watermark="Filter Left (live)"
-						Text="{Binding ListFilterForLeft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-			</Grid>
-			<Grid Grid.Column="1" RowDefinitions="*,Auto,Auto">
-				<Grid Grid.Row="0"
-						RowDefinitions="Auto,*"
-						ColumnDefinitions="*,*">
-					<TextBlock Grid.Column="0"
-							Grid.Row="0"
-							Foreground="{StaticResource Gray03}"
-							Text="List Only" />
-					<ListBox Grid.Column="0"
-							Grid.Row="1"
-							x:Name="MiddleListBox"
-							ItemsSource="{Binding MiddleList, Mode=OneWay}">
-						<ListBox.ItemTemplate>
-							<DataTemplate>
-								<TextBlock Text="{Binding Name}" />
-							</DataTemplate>
-						</ListBox.ItemTemplate>
-					</ListBox>
-					<TextBlock Grid.Column="1"
-							Grid.Row="0"
-							Foreground="{StaticResource Gray03}"
-							Text="Filtered (Mod 3)" />
-					<Grid Grid.Column="1"
-							Grid.Row="1">
-						<ListBox Grid.Column="0"
-								x:Name="MiddleListFilteredBox"
-								ItemsSource="{Binding MiddleListFilterProxy, Mode=OneWay}">
-							<ListBox.ItemTemplate>
-								<DataTemplate>
-									<TextBlock Text="{Binding Name}" />
-								</DataTemplate>
-							</ListBox.ItemTemplate>
-						</ListBox>
-					</Grid>
-				</Grid>
-				<StackPanel Grid.Row="1"
-						Margin="0,10,0,0"
-						Orientation="Horizontal">
-					<TextBlock Text="Count" Margin="0,0,10,0" />
-					<TextBlock Text="{Binding MiddleList.Count}" />
-				</StackPanel>
-				<TextBox Grid.Row="2"
-						Watermark="Filter Middle"
-						Text="{Binding ListFilterForMiddle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-			</Grid>
-			<Grid Grid.Column="2" RowDefinitions="*,Auto,Auto">
-				<Grid Grid.Row="0"
-						RowDefinitions="Auto,*"
-						ColumnDefinitions="*,*">
-					<TextBlock Grid.Column="0"
-							Grid.Row="0"
-							Foreground="{StaticResource Gray03}"
-							Text="List Only" />
-					<ListBox Grid.Column="0"
-							Grid.Row="1"
-							x:Name="RightListBox"
-							ItemsSource="{Binding RightList, Mode=OneWay}">
-						<ListBox.ItemTemplate>
-							<DataTemplate>
-								<TextBlock Text="{Binding Name}" />
-							</DataTemplate>
-						</ListBox.ItemTemplate>
-					</ListBox>
-					<TextBlock Grid.Column="1"
-							Grid.Row="0"
-							Foreground="{StaticResource Gray03}"
-							Text="Filtered (Mod 10)" />
-					<Grid Grid.Column="1"
-							Grid.Row="1">
-						<ListBox Grid.Column="0"
-								x:Name="RightListFilteredBox"
-								ItemsSource="{Binding RightListFilterProxy, Mode=OneWay}">
-							<ListBox.ItemTemplate>
-								<DataTemplate>
-									<TextBlock Text="{Binding Name}" />
-								</DataTemplate>
-							</ListBox.ItemTemplate>
-						</ListBox>
-					</Grid>
-				</Grid>
-				<StackPanel Grid.Row="1"
-						Margin="0,10,0,0"
-						Orientation="Horizontal">
-					<TextBlock Text="Count" Margin="0,0,10,0" />
-					<TextBlock Text="{Binding RightList.Count}" />
-				</StackPanel>
-				<TextBox Grid.Row="2"
-						Watermark="Filter Right"
-						Text="{Binding ListFilterForRight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-			</Grid>
-		</Grid>
-	</DockPanel>
+			</DockPanel>
+		</TabItem>
+	</TabControl>
 </UserControl>

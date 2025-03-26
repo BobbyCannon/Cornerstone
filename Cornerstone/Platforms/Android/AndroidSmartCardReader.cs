@@ -25,8 +25,7 @@ public class AndroidSmartCardReader : SmartCardReader
 
 	/// <inheritdoc />
 	[DependencyInjectionConstructor]
-	public AndroidSmartCardReader(WeakEventManager weakEventManager, IDispatcher dispatcher)
-		: base(weakEventManager, dispatcher)
+	public AndroidSmartCardReader(IDispatcher dispatcher) : base(dispatcher)
 	{
 		_implementation = new InternalNfcAdapter();
 	}

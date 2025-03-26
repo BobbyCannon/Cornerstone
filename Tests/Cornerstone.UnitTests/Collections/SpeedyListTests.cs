@@ -741,7 +741,7 @@ public class SpeedyListTests : CornerstoneUnitTest
 		// This should push the items into the second position on sort
 		changeEvents.Clear();
 		client1.IsDeleted = true;
-		collection.Order();
+		collection.RefreshOrder();
 
 		// Should be a single move event
 		AreEqual(1, changeEvents.Count);
@@ -842,7 +842,7 @@ public class SpeedyListTests : CornerstoneUnitTest
 		accounts[3].Name = "a";
 		accounts[4].Name = "d";
 
-		collection.Order();
+		collection.RefreshOrder();
 
 		Console.WriteLine(string.Join("", collection.SelectMany(x => x.Name)));
 
@@ -882,7 +882,7 @@ public class SpeedyListTests : CornerstoneUnitTest
 		accounts[4].Name = "b2";
 		accounts[4].Id = 2;
 
-		collection.Order();
+		collection.RefreshOrder();
 
 		var displayNames = string.Join("", collection.SelectMany(x => x.Name));
 		var ids = string.Join("", collection.SelectMany(x => x.Id.ToString()));

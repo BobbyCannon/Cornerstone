@@ -11,12 +11,21 @@
 		<Setter Property="BorderThickness" Value="0" />
 	</Style>
 
+	<Style Selector="Border.Sample">
+		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+		<Setter Property="BorderThickness" Value="2" />
+		<Setter Property="CornerRadius" Value="8" />
+		<Setter Property="Padding" Value="8" />
+	</Style>
+
 	<Design.PreviewWith>
-		<Border Width="300">
-			<WrapPanel Orientation="Horizontal"
-					ItemHeight="48">
-				<Border>
+		<Border Width="300" Height="48">
+			<WrapPanel Orientation="Horizontal">
+				<Border Margin="4">
 					<TextBlock Text="Border" />
+				</Border>
+				<Border Margin="4" Classes="Sample">
+					<TextBlock Text="Sample" />
 				</Border>
 			</WrapPanel>
 		</Border>

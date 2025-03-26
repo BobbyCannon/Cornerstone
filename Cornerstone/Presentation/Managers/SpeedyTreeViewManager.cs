@@ -12,15 +12,15 @@ namespace Cornerstone.Presentation.Managers;
 /// <summary>
 /// Represents a manager of a set of views.
 /// </summary>
-public abstract class HierarchyViewManager<TModel, TEntity, TEntityKey>
+public abstract class SpeedyTreeViewManager<TModel, TEntity, TEntityKey>
 	: ViewManager<TModel, TEntity, TEntityKey>
-	where TModel : HierarchyListItem<TModel>
+	where TModel : SpeedyTree<TModel>
 	where TEntity : SyncEntity<TEntityKey>
 {
 	#region Constructors
 
 	/// <inheritdoc />
-	protected HierarchyViewManager(
+	protected SpeedyTreeViewManager(
 		IDateTimeProvider dateTimeProvider,
 		IDependencyProvider dependencyProvider,
 		IDispatcher dispatcher,

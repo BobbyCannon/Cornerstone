@@ -32,23 +32,14 @@ public partial class TabWeakEvents : CornerstoneUserControl
 
 	#region Constructors
 
-	public TabWeakEvents() : this(
-		GetInstance<IDateTimeProvider>(),
-		GetInstance<WeakEventManager>(),
-		GetInstance<IDispatcher>()
-	)
+	public TabWeakEvents() : this(GetInstance<IDateTimeProvider>(), GetInstance<IDispatcher>())
 	{
 	}
 
-	public TabWeakEvents(
-		IDateTimeProvider dateTimeProvider,
-		IWeakEventManager weakEventManager,
-		IDispatcher dispatcher
-	) : base(dispatcher)
+	public TabWeakEvents(IDateTimeProvider dateTimeProvider, IDispatcher dispatcher) : base(dispatcher)
 	{
 		LogList = new SpeedyList<string>(dispatcher);
 		DateTimeProvider = dateTimeProvider;
-		WeakEventManager = weakEventManager;
 		DataContext = this;
 		InitializeComponent();
 	}
@@ -62,8 +53,6 @@ public partial class TabWeakEvents : CornerstoneUserControl
 	public IDateTimeProvider DateTimeProvider { get; }
 
 	public SpeedyList<string> LogList { get; }
-
-	public IWeakEventManager WeakEventManager { get; }
 
 	#endregion
 
@@ -276,7 +265,7 @@ public partial class TabWeakEvents : CornerstoneUserControl
 			_page = page;
 			//_page.WeakTrigger += OnWeakTrigger;
 
-			_page.WeakEventManager.Add<TabWeakEvents, PageWeakProcessor, EventArgs>(_page, nameof(_page.WeakTrigger), this, OnWeakTrigger);
+			WeakEventManager.Add<TabWeakEvents, PageWeakProcessor, EventArgs>(_page, nameof(_page.WeakTrigger), this, OnWeakTrigger);
 		}
 
 		#endregion

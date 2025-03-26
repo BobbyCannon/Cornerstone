@@ -1,6 +1,5 @@
 ﻿#region References
 
-using System;
 using System.ComponentModel;
 
 #endregion
@@ -15,7 +14,7 @@ internal class PropertyChangedWeakEventListener<T, T2>
 	#region Constructors
 
 	public PropertyChangedWeakEventListener(T source, T2 destination, PropertyChangedEventHandler handler)
-		: base(source, nameof(source.PropertyChanged), destination, handler.Method)
+		: base(source, typeof(INotifyPropertyChanged), nameof(source.PropertyChanged), destination, handler.Method)
 	{
 	}
 

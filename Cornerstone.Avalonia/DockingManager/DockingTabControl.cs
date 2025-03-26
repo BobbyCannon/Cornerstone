@@ -45,7 +45,6 @@ public class DockingTabControl : TabControl
 	private readonly RearrangePreventFlicker _dragRearrangePreventFlicker;
 	private ItemsPresenter _itemsPresenterPart;
 	private readonly SpeedyList<DockableTabItem> _selectedOrder;
-	private readonly IWeakEventManager _weakEventManager;
 
 	#endregion
 
@@ -59,9 +58,9 @@ public class DockingTabControl : TabControl
 	{
 		_dockingManager = dockingManager;
 		_dragRearrangePreventFlicker = new();
-		_weakEventManager = new WeakEventManager();
-		_weakEventManager.Add<ItemCollection, DockingTabControl, NotifyCollectionChangedEventArgs>(Items, nameof(Items.CollectionChanged), this, ItemsCollectionChanged);
 		_selectedOrder = new SpeedyList<DockableTabItem>(null, new OrderBy<DockableTabItem>(x => x.LastSelectedOn)) { DistinctCheck = (x, y) => x.TabModel.Id == y.TabModel.Id };
+
+		WeakEventManager.Add<ItemCollection, DockingTabControl, NotifyCollectionChangedEventArgs>(Items, nameof(Items.CollectionChanged), this, ItemsCollectionChanged);
 
 		IsHitTestVisible = true;
 		Margin = new Thickness(0);

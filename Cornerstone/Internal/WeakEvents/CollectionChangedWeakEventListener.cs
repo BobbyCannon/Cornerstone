@@ -1,6 +1,5 @@
 ﻿#region References
 
-using System;
 using System.Collections.Specialized;
 
 #endregion
@@ -15,7 +14,7 @@ internal class CollectionChangedWeakEventListener<T, T2>
 	#region Constructors
 
 	public CollectionChangedWeakEventListener(T source, T2 destination, NotifyCollectionChangedEventHandler handler)
-		: base(source, nameof(source.CollectionChanged), destination, handler.Method)
+		: base(source, typeof(INotifyCollectionChanged), nameof(source.CollectionChanged), destination, handler.Method)
 	{
 	}
 

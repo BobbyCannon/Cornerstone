@@ -308,19 +308,18 @@ public class DependencyProvider : IDependencyProvider
 	/// <summary>
 	/// Setup the default Cornerstone services.
 	/// </summary>
-	public void SetupCornerstoneServices(
+	public IDependencyProvider SetupCornerstoneServices(
 		IDateTimeProvider dateTimeProvider = null,
 		IRuntimeInformation runtimeInformation = null,
-		IDispatcher dispatcher = null,
-		IWeakEventManager weakEventManager = null)
+		IDispatcher dispatcher = null)
 	{
 		AddSingleton(dateTimeProvider ?? DateTimeProvider.RealTime);
 		AddSingleton(dispatcher);
 		AddSingleton(runtimeInformation ?? new RuntimeInformation());
+		AddSingleton<IRuntimeInformation, RuntimeInformation>();
 		AddSingleton(this);
 		AddSingleton<IDependencyProvider, DependencyProvider>();
 		AddSingleton<IPopupManager, PopupManager>();
-		AddSingleton(weakEventManager ?? new WeakEventManager());
 
 		// Add stub placeholders
 		AddSingleton<AudioPlayer, AudioPlayerStub>();
@@ -333,6 +332,8 @@ public class DependencyProvider : IDependencyProvider
 		AddSingleton<PlatformCredentialVault, PlatformCredentialVaultStub>();
 		AddSingleton<SmartCardReader, SmartCardReaderStub>();
 		AddSingleton<IWindowsHelloService, WindowsHelloServiceStub>();
+
+		return this;
 	}
 
 	private T CreateInstanceForDependencyInjection<T>(Action<T> initialize = null)

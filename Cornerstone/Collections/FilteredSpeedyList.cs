@@ -43,12 +43,11 @@ public class FilteredSpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, I
 			FilterCheck = filterExpression
 		};
 
-		var weakEventManager = Platform.GetInstance<WeakEventManager>();
-		weakEventManager.AddSpeedyListUpdated<SpeedyList<T>, T, FilteredSpeedyList<T>>(_list, this, ListOnListUpdated);
-		weakEventManager.AddPropertyChanged(_list, this, ListOnPropertyChanged);
-		weakEventManager.AddSpeedyListUpdated<SpeedyList<T>, T, FilteredSpeedyList<T>>(_filteredList, this, FilteredListOnListUpdated);
-		weakEventManager.AddCollectionChanged(_filteredList, this, FilteredListOnCollectionChanged);
-		weakEventManager.AddPropertyChanged(_filteredList, this, FilteredListOnPropertyChanged);
+		WeakEventManager.AddSpeedyListUpdated<SpeedyList<T>, T, FilteredSpeedyList<T>>(_list, this, ListOnListUpdated);
+		WeakEventManager.AddPropertyChanged(_list, this, ListOnPropertyChanged);
+		WeakEventManager.AddSpeedyListUpdated<SpeedyList<T>, T, FilteredSpeedyList<T>>(_filteredList, this, FilteredListOnListUpdated);
+		WeakEventManager.AddCollectionChanged(_filteredList, this, FilteredListOnCollectionChanged);
+		WeakEventManager.AddPropertyChanged(_filteredList, this, FilteredListOnPropertyChanged);
 	}
 
 	#endregion
@@ -66,6 +65,8 @@ public class FilteredSpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, I
 		get => _filteredList.FilterCheck;
 		set => _filteredList.FilterCheck = value;
 	}
+
+	public OrderBy<T>[] OrderBy { get; set; }
 
 	/// <summary>
 	/// True if the list is currently filtering items.
@@ -186,20 +187,16 @@ public class FilteredSpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, I
 		throw new NotSupportedException();
 	}
 
-	/// <summary>
-	/// Refresh the filter.
-	/// </summary>
+	/// <inheritdoc />
 	public void RefreshFilter()
 	{
-		try
-		{
-			EnterUpgradeableReadLock();
-			_filteredList.InternalFilter();
-		}
-		finally
-		{
-			ExitUpgradeableReadLock();
-		}
+		_filteredList.RefreshFilter();
+	}
+
+	/// <inheritdoc />
+	public void RefreshOrder()
+	{
+		_filteredList.RefreshOrder();
 	}
 
 	/// <inheritdoc />

@@ -24,7 +24,6 @@ public class Profiler : Bindable<Profiler>, IDetailedTimer
 	private readonly ReaderWriterLockTiny _lock;
 	private readonly IDateTimeProvider _timeProvider;
 	private readonly Dictionary<string, DetailedTimer> _timerLookup;
-	private readonly IWeakEventManager _weakEventManager;
 
 	#endregion
 
@@ -51,13 +50,12 @@ public class Profiler : Bindable<Profiler>, IDetailedTimer
 		Name = name ?? "Profiler";
 		Timers = new SpeedyList<DetailedTimer>(dispatcher);
 
-		_weakEventManager = new WeakEventManager();
-		_weakEventManager.AddCollectionChanged(Timers, this, TimersOnCollectionChanged);
+		WeakEventManager.AddCollectionChanged(Timers, this, TimersOnCollectionChanged);
 	}
 
 	~Profiler()
 	{
-		_weakEventManager.Remove(Timers);
+		WeakEventManager.Remove(Timers);
 	}
 
 	#endregion
@@ -96,7 +94,6 @@ public class Profiler : Bindable<Profiler>, IDetailedTimer
 
 		_currentTimer = null;
 		_timerLookup.Clear();
-		_weakEventManager.Reset();
 	}
 
 	public void Start(string name)

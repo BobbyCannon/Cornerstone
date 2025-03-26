@@ -21,6 +21,7 @@ using Cornerstone.Generators.CodeGenerators;
 using Cornerstone.Internal;
 using Cornerstone.Presentation;
 using Cornerstone.Runtime;
+using Cornerstone.Serialization;
 using Cornerstone.Serialization.Json.Values;
 using Cornerstone.Settings;
 using Cornerstone.Storage;
@@ -62,9 +63,20 @@ public abstract partial class CornerstoneTest : DependencyProvider, IDateTimePro
 		);
 		_currentDateTime = StartDateTime;
 
-		RuntimeInformation = RuntimeInformationData.GetSample();
 		EnableFileUpdates = false;
+		MinimalSerializeSettings = new SerializationSettings
+		{
+			EnumFormat = EnumFormat.Value,
+			IgnoreNullValues = true,
+			IgnoreDefaultValues = true,
+			IgnoreReadOnly = false,
+			MaxDepth = 0,
+			NamingConvention = NamingConvention.PascalCase,
+			TextFormat = TextFormat.None,
+			UpdateableAction = UpdateableAction.None
+		};
 		RunTestAgainstDatabase = false;
+		RuntimeInformation = RuntimeInformationData.GetSample();
 	}
 
 	static CornerstoneTest()
@@ -95,6 +107,8 @@ public abstract partial class CornerstoneTest : DependencyProvider, IDateTimePro
 	/// Returns true if the debugger is attached.
 	/// </summary>
 	public static bool IsDebugging => Debugger.IsAttached;
+
+	public SerializationSettings MinimalSerializeSettings { get; }
 
 	/// <inheritdoc />
 	public DateTime Now => _defaultDateTimeProvider.Now;
@@ -1675,7 +1689,7 @@ public override bool UpdateWith(object update, IncludeExcludeSettings settings)
 				// Everything is excluded and nothing is included, aka nothing to check
 				return;
 			}
-			
+
 			areEqualSettings.TypeIncludeExcludeSettings.AddOrUpdate(destinationType, () => settings, x => x.WithMoreSettings(settings));
 
 			AreEqual(destination, source,
