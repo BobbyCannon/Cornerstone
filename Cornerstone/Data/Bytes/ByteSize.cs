@@ -20,14 +20,14 @@ public readonly partial struct ByteSize : IComparable<ByteSize>, IEquatable<Byte
 
 	public const string Bit = "bit";
 	public const long BitsInByte = 8;
-	public const long BitsInGigabit = 1000000000;
-	public const long BitsInGigabyte = 8000000000;
-	public const long BitsInKilobit = 1000;
-	public const long BitsInKilobyte = 8000;
-	public const long BitsInMegabit = 1000000;
-	public const long BitsInMegabyte = 8000000;
-	public const long BitsInTerabit = 1000000000000;
-	public const long BitsInTerabyte = 8000000000000;
+	public const long BitsInGigabit = BitsInByte * BytesInGigabit;
+	public const long BitsInGigabyte = BitsInByte * BytesInGigabyte;
+	public const long BitsInKilobit = BitsInByte * BytesInKilobit;
+	public const long BitsInKilobyte = BitsInByte * BytesInKilobyte;
+	public const long BitsInMegabit = BitsInByte * BytesInMegabit;
+	public const long BitsInMegabyte = BitsInByte * BytesInMegabyte;
+	public const long BitsInTerabit = BitsInByte * BytesInTerabit;
+	public const long BitsInTerabyte = BitsInByte * BytesInTerabyte;
 	public const string BitSymbol = "b";
 	public const string Byte = "byte";
 	public const long BytesInGigabit = 125000000;

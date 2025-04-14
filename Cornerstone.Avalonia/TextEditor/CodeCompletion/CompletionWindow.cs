@@ -1,12 +1,14 @@
 ﻿#region References
 
 using System;
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives.PopupPositioning;
 using Avalonia.Input;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Editing;
-using Cornerstone.Text.Document;
+using Cornerstone.Extensions;
 
 #endregion
 
@@ -52,7 +54,7 @@ public class CompletionWindow : CompletionWindowBase
 		{
 			IsLightDismissEnabled = true,
 			PlacementTarget = this,
-			PlacementAnchor = PopupAnchor.TopRight,
+			PlacementAnchor = PopupAnchor.TopLeft,
 			Child = _toolTipContent
 		};
 
@@ -208,49 +210,7 @@ public class CompletionWindow : CompletionWindowBase
 
 	private void CompletionListSelectionChanged(object sender, SelectionChangedEventArgs e)
 	{
-		if (_toolTipContent == null)
-		{
-			return;
-		}
-
-		var item = CompletionList.SelectedItem;
-		var description = item?.Description;
-
-		if ((description != null) && Host is Control placementTarget)
-		{
-			_toolTipContent.Content = description;
-
-			var yOffset = 0.0;
-			var selectedIndex = CompletionList.ListBox.SelectedIndex;
-			var itemContainer = CompletionList.ListBox.ContainerFromIndex(selectedIndex);
-
-			if (itemContainer != null)
-			{
-				var position = itemContainer.TranslatePoint(new Point(0, 0), placementTarget);
-				if (position.HasValue)
-				{
-					yOffset = position.Value.Y;
-				}
-				_toolTip.Offset = new Point(2, yOffset);
-				_toolTip.Placement = PlacementMode.RightEdgeAlignedTop;
-			}
-			else
-			{
-				// When scrolling down the container is not always ready
-				// If that happens we align the tooltip at the bottom or top
-				_toolTip.Offset = new Point(placementTarget.Width + 2, yOffset);
-				_toolTip.Placement = CompletionList.ListBox.FirstVisibleItem < selectedIndex
-					? PlacementMode.RightEdgeAlignedBottom
-					: PlacementMode.RightEdgeAlignedTop;
-			}
-
-			_toolTip.PlacementTarget = placementTarget;
-			_toolTip.IsOpen = true;
-		}
-		else
-		{
-			_toolTip.IsOpen = false;
-		}
+		UpdateTooltip();
 	}
 
 	private Control GetScrollEventTarget()
@@ -270,6 +230,64 @@ public class CompletionWindow : CompletionWindowBase
 	private void TextAreaPreviewTextInput(object sender, TextInputEventArgs e)
 	{
 		e.Handled = RaiseEventPair(this, null, TextInputEvent, new TextInputEventArgs { Text = e.Text });
+	}
+
+	private void UpdateTooltip()
+	{
+		if (_toolTipContent == null)
+		{
+			return;
+		}
+
+		var item = CompletionList.SelectedItem;
+		var description = item?.Description;
+
+		if ((description != null)
+			&& Host is Control placementTarget
+			&& (CompletionList.ListBox != null))
+		{
+			_toolTipContent.Content = description;
+
+			double yOffset = 0;
+			var selectedIndex = CompletionList.ListBox.SelectedIndex;
+			var itemContainer = CompletionList.ListBox.ContainerFromIndex(selectedIndex);
+
+			if (itemContainer != null)
+			{
+				_toolTip.Placement = PlacementMode.RightEdgeAlignedTop;
+
+				var position = itemContainer.TranslatePoint(new Point(0, 0), placementTarget);
+				if (position.HasValue)
+				{
+					yOffset = position.Value.Y;
+				}
+			}
+			else
+			{
+				// When scrolling down the container is not always ready
+				// If that happens we align the tooltip at the bottom or top
+				_toolTip.Placement = CompletionList.ListBox.FirstVisibleItem < selectedIndex
+					? PlacementMode.RightEdgeAlignedBottom
+					// temp fix: needs to be better.
+					: PlacementMode.RightEdgeAlignedTop;
+
+				var position = CompletionList.ListBox.TranslatePoint(new Point(0, 0), placementTarget);
+				if (position.HasValue)
+				{
+					yOffset = position.Value.Y;
+				}
+			}
+
+			_toolTip.Offset = new Point(0, yOffset);
+			_toolTip.PlacementTarget = placementTarget;
+			_toolTip.IsOpen = true;
+
+			Debug.WriteLine($"{_toolTip.PlacementTarget.Name} {_toolTip.Offset} {_toolTip.Placement}");
+		}
+		else
+		{
+			_toolTip.IsOpen = false;
+		}
 	}
 
 	#endregion

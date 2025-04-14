@@ -1,38 +1,53 @@
 ﻿#region References
 
 using System.Runtime.InteropServices.JavaScript;
+using System.Threading.Tasks;
+using Cornerstone.Web;
 
 #endregion
 
 namespace Cornerstone.Avalonia.Platforms.Browser;
 
-public partial class BrowserInterop
+public class BrowserInterop : IBrowserInterop
 {
 	#region Methods
 
-	[JSImport("globalThis.document.createElement")]
-	public static partial JSObject CreateElement(string tagName);
+	public Task<string> CheckPermission(string permissionName)
+	{
+		//return Task.FromResult(string.Empty);
+		return BrowserInteropProxy.CheckPermission(permissionName);
+	}
 
-	[JSImport("document.createElement", "Cornerstone.Browser.js")]
-	public static partial JSObject CreateElement(JSObject parent, string tagName);
+	public JSObject CreateElement(JSObject parent, string tagName)
+	{
+		return BrowserInteropProxy.CreateElement(parent, tagName);
+	}
 
-	[JSImport("localStorage.getValue", "Cornerstone.Browser.js")]
-	public static partial string GetLocalStorageValue(string key);
+	public string GetLocalStorageValue(string key)
+	{
+		return BrowserInteropProxy.GetLocalStorageValue(key);
+	}
 
-	[JSImport("window.getLocation", "Cornerstone.Browser.js")]
-	public static partial string GetWindowLocation();
+	public string GetWindowLocation()
+	{
+		return BrowserInteropProxy.GetWindowLocation();
+	}
 
-	[JSImport("document.hideElement", "Cornerstone.Browser.js")]
-	public static partial JSObject HideElement(JSObject parent);
+	public Task<string> RequestMediaPermission(string mediaType)
+	{
+		return Task.FromResult(string.Empty);
+		//return BrowserInteropProxy.RequestMediaPermission(mediaType);
+	}
 
-	[JSImport("localStorage.setValue", "Cornerstone.Browser.js")]
-	public static partial void SetLocalStorageValue(string key, string value);
+	public void SetLocalStorageValue(string key, string value)
+	{
+		BrowserInteropProxy.SetLocalStorageValue(key, value);
+	}
 
-	[JSImport("window.setLocation", "Cornerstone.Browser.js")]
-	public static partial string SetWindowLocation(string location);
-
-	[JSImport("document.showElement", "Cornerstone.Browser.js")]
-	public static partial JSObject ShowElement(JSObject parent);
+	public string SetWindowLocation(string location)
+	{
+		return BrowserInteropProxy.SetWindowLocation(location);
+	}
 
 	#endregion
 }

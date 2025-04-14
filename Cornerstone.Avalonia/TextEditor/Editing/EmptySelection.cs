@@ -3,9 +3,9 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Collections;
 using Cornerstone.Internal;
-using Cornerstone.Text.Document;
 
 #endregion
 

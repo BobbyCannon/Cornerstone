@@ -1,0 +1,58 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="800"
+		x:Class="Cornerstone.Sample.Tabs.TabBrowserInterop"
+		x:DataType="tabs:TabBrowserInterop">
+	<DockPanel Margin="10">
+		<Grid DockPanel.Dock="Top">
+			<TextBlock Classes="HeaderSix"
+					HorizontalAlignment="Center"
+					Text="Browser Interop" />
+		</Grid>
+		<ScrollViewer>
+			<StackPanel>
+				<TextBlock Classes="HeaderSix"
+						Text="Window"
+						Margin="0,00,0,10" />
+				<StackPanel Orientation="Horizontal"
+						Margin="0,0,0,10">
+					<Button Content="Get Window Location"
+							Click="GetWindowLocationOnClick"
+							Margin="0,0,10,0"/>
+					<Button Content="Set Window Location"
+							Click="SetWindowLocationOnClick" />
+				</StackPanel>
+				<TextBox x:Name="WindowLocation" />
+
+
+				<TextBlock Classes="HeaderSix"
+						Text="Permissions"
+						Margin="0,20,0,10" />
+				<StackPanel Orientation="Horizontal">
+					<Button Content="Check Permission"
+							Click="CheckPermissionOnClick"
+							Margin="0,0,10,00" />
+					<ComboBox x:Name="PermissionType"
+							SelectedIndex="0">
+						<ComboBox.Items>
+							<x:String>accelerometer</x:String>
+							<x:String>camera</x:String>
+							<x:String>clipboard-read</x:String>
+							<x:String>clipboard-write</x:String>
+							<x:String>gyroscope</x:String>
+							<x:String>geolocation</x:String>
+							<x:String>magnetometer</x:String>
+							<x:String>notifications</x:String>
+							<x:String>persistent-storage</x:String>
+						</ComboBox.Items>
+					</ComboBox>
+				</StackPanel>
+				<TextBlock x:Name="PermissionResult" />
+			</StackPanel>
+		</ScrollViewer>
+	</DockPanel>
+</UserControl>

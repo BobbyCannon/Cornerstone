@@ -1,4 +1,10 @@
-﻿namespace Cornerstone.Platforms.iOS;
+﻿#region References
+
+using Cornerstone.Runtime;
+
+#endregion
+
+namespace Cornerstone.Platforms.iOS;
 
 public static class IOSPlatform
 {
@@ -13,6 +19,7 @@ public static class IOSPlatform
 	public static void Initialize(DependencyProvider dependencyProvider)
 	{
 		DependencyProvider = dependencyProvider;
+		DependencyProvider.AddSingleton<IPermissions, IOSPermissions>();
 	}
 
 	#endregion

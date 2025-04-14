@@ -2,9 +2,9 @@
 
 using System.Text;
 using Avalonia.Headless.NUnit;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Editing;
 using Cornerstone.Testing;
-using Cornerstone.Text.Document;
 using Cornerstone.UnitTests;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;

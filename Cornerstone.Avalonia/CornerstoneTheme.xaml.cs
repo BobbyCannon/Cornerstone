@@ -17,7 +17,7 @@ public class CornerstoneTheme : Style
 {
 	#region Fields
 
-	public static readonly StyledProperty<ThemeColor> ThemeColorProperty = AvaloniaProperty.Register<CornerstoneTheme, ThemeColor>(nameof(ThemeColor), ThemeColor.Blue);
+	public static readonly StyledProperty<ThemeColor> ThemeColorProperty;
 
 	private ResourceInclude _colorTheme;
 	private readonly ResourceInclude _colorThemeAmber;
@@ -82,6 +82,7 @@ public class CornerstoneTheme : Style
 
 	static CornerstoneTheme()
 	{
+		ThemeColorProperty = AvaloniaProperty.Register<CornerstoneTheme, ThemeColor>(nameof(ThemeColor), ThemeColor.Blue);
 		DejaVuSansLight = new("avares://Cornerstone.Avalonia/Assets/Fonts/DejaVuSansLight.ttf#DejaVu Sans Light");
 		DejaVuSansMono = new("avares://Cornerstone.Avalonia/Assets/Fonts/DejaVuSansMono.ttf#DejaVu Sans Mono");
 	}
@@ -94,6 +95,9 @@ public class CornerstoneTheme : Style
 
 	public static FontFamily DejaVuSansLight { get; }
 
+	/// <summary>
+	/// Manages the global theme color.
+	/// </summary>
 	public ThemeColor ThemeColor
 	{
 		get => GetValue(ThemeColorProperty);

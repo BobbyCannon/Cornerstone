@@ -22,10 +22,9 @@ namespace Cornerstone.Avalonia.TextEditor.CodeCompletion;
 [DoNotNotify]
 public class CompletionList : TemplatedControl
 {
-	private readonly SpeedyList<ICompletionData> _completionData;
-
 	#region Fields
 
+	private readonly SpeedyList<ICompletionData> _completionData;
 	private CompletionListBox _listBox;
 
 	#endregion
@@ -35,8 +34,8 @@ public class CompletionList : TemplatedControl
 	public CompletionList(ICompletionProvider provider)
 		: this(provider.GetTextToReplace(), provider.Data)
 	{
-
 	}
+
 	public CompletionList(string prefix, SpeedyList<ICompletionData> completionData)
 	{
 		_completionData = completionData;
@@ -56,6 +55,15 @@ public class CompletionList : TemplatedControl
 	/// Gets or sets the array of keys that are supposed to request insertion of the completion
 	/// </summary>
 	public Key[] CompletionAcceptKeys { get; }
+
+	public SpeedyList<ICompletionData> CompletionData { get; }
+
+	/// <summary>
+	/// This is all typed characters after the list is created.
+	/// <see cref="SetFilter" /> gets called twice for every typed character (once from FormatLine),
+	/// this helps execute <see cref="SetFilter" /> only once.
+	/// </summary>
+	public string CurrentFilter { get; private set; }
 
 	/// <summary>
 	/// Gets the list box.
@@ -101,15 +109,6 @@ public class CompletionList : TemplatedControl
 			}
 		}
 	}
-
-	public SpeedyList<ICompletionData> CompletionData { get; }
-
-	/// <summary>
-	/// This is all typed characters after the list is created.
-	/// <see cref="SetFilter" /> gets called twice for every typed character (once from FormatLine),
-	/// this helps execute <see cref="SetFilter" /> only once.
-	/// </summary>
-	public string CurrentFilter { get; private set; }
 
 	#endregion
 
@@ -319,11 +318,9 @@ public class CompletionList : TemplatedControl
 		base.OnApplyTemplate(e);
 
 		_listBox = e.NameScope.Find("PART_ListBox") as CompletionListBox;
-
 		if (_listBox != null)
 		{
 			_listBox.ItemsSource = CompletionData;
-			_listBox.SelectedItem = _completionData.FirstOrDefault();
 		}
 	}
 
@@ -334,6 +331,15 @@ public class CompletionList : TemplatedControl
 		{
 			HandleKey(e);
 		}
+	}
+
+	protected override void OnLoaded(RoutedEventArgs e)
+	{
+		if (_listBox != null)
+		{
+			_listBox.SelectedItem = CompletionData.FirstOrDefault();
+		}
+		base.OnLoaded(e);
 	}
 
 	private void OnPointerPressed(object sender, PointerPressedEventArgs e)

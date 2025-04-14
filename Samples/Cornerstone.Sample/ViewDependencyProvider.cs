@@ -22,9 +22,11 @@ internal static class ViewDependencyProvider
 
 		DependencyProvider = new DependencyProvider("Sample Design Time");
 		RuntimeInformation = RuntimeInformationData.GetSample();
+
 		LocationProvider = new LocationProvider();
 		LocationProvider.CurrentValue.HorizontalLocation.Latitude = 33.751599;
 		LocationProvider.CurrentValue.HorizontalLocation.Longitude = -84.390641;
+
 		DependencyProvider.AddSingleton(LocationProvider);
 
 		App.RegisterServices(DependencyProvider);

@@ -81,30 +81,43 @@
 		<Setter Property="Margin" Value="0,10,0,2" />
 		<Setter Property="Orientation" Value="Horizontal" />
 	</Style>
-	<Style Selector="TextBlock.LabelName">
+
+	<Style Selector="TextBlock.InputHeader">
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansLight}" />
+		<Setter Property="FontSize" Value="20" />
+		<Setter Property="Margin" Value="0,0,0,10" />
+		<Setter Property="HorizontalAlignment" Value="Center" />
+		<Setter Property="VerticalAlignment" Value="Top" />
+	</Style>
+	<Style Selector="TextBlock.InputName">
 		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
 		<Setter Property="HorizontalAlignment" Value="Right" />
 		<Setter Property="VerticalAlignment" Value="Top" />
 		<Setter Property="Margin" Value="0,8,10,0" />
 	</Style>
-	<Style Selector="TextBlock.LabelValue">
+	<Style Selector="TextBlock.InputValue">
 		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
 		<Setter Property="FontSize" Value="14" />
 		<Setter Property="Margin" Value="0,8,0,0" />
+		<Setter Property="HorizontalAlignment" Value="Left" />
+		<Setter Property="VerticalAlignment" Value="Top" />
 	</Style>
 	
 	<Design.PreviewWith>
 		<StackPanel Width="320" Margin="10">
 			<StackPanel>
+				<TextBlock Classes="InputHeader"
+						Text="Add Folder" />
+
 				<Grid ColumnDefinitions="96,*"
 						RowDefinitions="36,36,36"
 						Margin="0,0,0,10">
-					<TextBlock Grid.Row="0" Grid.Column="0" Classes="LabelName" Text="Name 1" />
-					<TextBlock Grid.Row="0" Grid.Column="1" Classes="LabelValue" Text="Value One" />
-					<TextBlock Grid.Row="1" Grid.Column="0" Classes="LabelName" Text="Name 2" />
-					<TextBox Grid.Row="1" Grid.Column="1" Classes="LabelValue" Text="Value Two" />
-					<TextBlock Grid.Row="2" Grid.Column="0" Classes="LabelName" Text="Name 3" />
-					<ToggleSwitch Grid.Row="2" Grid.Column="1" Classes="LabelValue" />
+					<TextBlock Grid.Row="0" Grid.Column="0" Classes="InputName" Text="Name 1" />
+					<TextBlock Grid.Row="0" Grid.Column="1" Classes="InputValue" Text="Value One" />
+					<TextBlock Grid.Row="1" Grid.Column="0" Classes="InputName" Text="Name 2" />
+					<TextBox Grid.Row="1" Grid.Column="1" Classes="InputValue" Text="Value Two" />
+					<TextBlock Grid.Row="2" Grid.Column="0" Classes="InputName" Text="Name 3" />
+					<ToggleSwitch Grid.Row="2" Grid.Column="1" Classes="InputValue" />
 				</Grid>
 
 				<TextBlock Classes="Header" Text="This is a test" />
@@ -139,16 +152,16 @@
 				<TextBlock Text="The quick brown fox jumped" />
 
 				<StackPanel Classes="ValueSet">
-					<TextBlock Classes="LabelName" Text="Name" />
-					<TextBlock Classes="LabelValue" Text="Value" />
+					<TextBlock Classes="InputName" Text="Name" />
+					<TextBlock Classes="InputValue" Text="Value" />
 				</StackPanel>
 				<StackPanel Classes="ValueSet">
-					<TextBlock Classes="LabelName" Text="Text Box"/>
-					<TextBox Classes="LabelValue" Text="The quick brown fox jumped" />
+					<TextBlock Classes="InputName" Text="Text Box"/>
+					<TextBox Classes="InputValue" Text="The quick brown fox jumped" />
 				</StackPanel>
 				<StackPanel Classes="ValueSet">
-					<TextBlock Classes="LabelName" Text="Toggle Switch" />
-					<ToggleSwitch Classes="LabelValue" />
+					<TextBlock Classes="InputName" Text="Toggle Switch" />
+					<ToggleSwitch Classes="InputValue" />
 				</StackPanel>
 
 			</StackPanel>

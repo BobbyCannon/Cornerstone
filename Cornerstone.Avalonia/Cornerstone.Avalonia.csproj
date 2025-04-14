@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFrameworks>net9.0;net9.0-android;net9.0-browser;net9.0-windows10.0.19041.0;</TargetFrameworks>
+		<TargetFrameworks>net9.0;net9.0-android;net9.0-browser;net9.0-ios;net9.0-windows10.0.19041.0;</TargetFrameworks>
 		<UseWindowsWpf Condition="'$(TargetFramework)' == 'net9.0-windows10.0.19041.0'">true</UseWindowsWpf>
 		<UseWindowsForms Condition="'$(TargetFramework)' == 'net9.0-windows10.0.19041.0'">true</UseWindowsForms>
 		<PackageId>Cornerstone.Avalonia</PackageId>
@@ -11,12 +11,8 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 	<ItemGroup>
-		<Compile Remove="Platforms\Android\**" />
-		<None Include="Platforms\Android\**" />
-		<Compile Remove="Platforms\Browser\**" />
-		<None Include="Platforms\Browser\**" />
-		<Compile Remove="Platforms\Windows\**" />
-		<None Include="Platforms\Windows\**" />
+		<Compile Remove="Platforms\**" />
+		<None Include="Platforms\**" />
 	</ItemGroup>
 	<ItemGroup>
 		<EmbeddedResource Include="**\*.xshd;**\*.resx;" Exclude="bin\**;obj\**;**\*.xproj;packages\**;@(EmbeddedResource)" />
@@ -31,20 +27,24 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
-		<PackageReference Include="Microsoft.Extensions.FileProviders.Abstractions" Version="9.0.2" />
+		<PackageReference Include="Microsoft.Extensions.FileProviders.Abstractions" Version="9.0.3" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Cornerstone\Cornerstone.csproj" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0-android'">
+		<PackageReference Include="Avalonia.Android" Version="$(AvaloniaVersion)" />
 		<Compile Include="Platforms\Android\**\*.cs" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0-browser'">
 		<Compile Include="Platforms\Browser\**\*.cs" />
 	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0-ios'">
+		<Compile Include="Platforms\iOS\**\*.cs" />
+	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0-windows10.0.19041.0'">
 		<Compile Include="Platforms\Windows\**\*.cs" />
-		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3065.39" />
+		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3124.44" />
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Update="TextEditor\SR.Designer.cs">

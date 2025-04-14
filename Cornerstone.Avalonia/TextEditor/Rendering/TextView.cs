@@ -19,10 +19,10 @@ using Avalonia.Media.Immutable;
 using Avalonia.Media.TextFormatting;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Utils;
 using Cornerstone.Collections;
 using Cornerstone.Internal;
-using Cornerstone.Text.Document;
 using Cornerstone.Weaver;
 
 #endregion

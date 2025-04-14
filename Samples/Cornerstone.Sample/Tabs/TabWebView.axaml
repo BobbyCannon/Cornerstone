@@ -81,7 +81,6 @@
 				</StackPanel>
 			</Grid>
 		</ScrollViewer>
-		<WebView x:Name="WebView" 
-				Uri="https://github.com/BobbyCannon/Cornerstone" />
+		<WebView x:Name="WebView" />
 	</DockPanel>
 </UserControl>

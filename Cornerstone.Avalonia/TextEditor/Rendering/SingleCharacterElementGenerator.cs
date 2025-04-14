@@ -6,9 +6,9 @@ using Avalonia;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Avalonia.Media.TextFormatting;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Utils;
-using Cornerstone.Text.Document;
-using LogicalDirection = Cornerstone.Text.Document.LogicalDirection;
+using LogicalDirection = Cornerstone.Avalonia.TextEditor.Document.LogicalDirection;
 
 #endregion
 

@@ -5,10 +5,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Avalonia.Input;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Collections;
 using Cornerstone.Data;
 using Cornerstone.Internal;
-using Cornerstone.Text.Document;
 
 #endregion
 

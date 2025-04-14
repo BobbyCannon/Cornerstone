@@ -30,9 +30,9 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter
 
 	public WebViewAdapter()
 	{
-		_root = BrowserInterop.CreateElement("div");
-		_iframe = BrowserInterop.CreateElement(_root, "iframe");
-		_content = BrowserInterop.CreateElement(_root, "div");
+		_root = BrowserInteropProxy.CreateElement(null, "div");
+		_iframe = BrowserInteropProxy.CreateElement(_root, "iframe");
+		_content = BrowserInteropProxy.CreateElement(_root, "div");
 		_jsObjectControl = new JSObjectControlHandle(_root);
 	}
 
@@ -116,21 +116,21 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter
 	/// <inheritdoc />
 	public void Navigate(Uri uri)
 	{
-		BrowserInterop.HideElement(_content);
+		BrowserInteropProxy.HideElement(_content);
 		_content.SetProperty("innerHTML", string.Empty);
 
 		_iframe.SetProperty("src", uri.ToString());
-		BrowserInterop.ShowElement(_iframe);
+		BrowserInteropProxy.ShowElement(_iframe);
 	}
 
 	/// <inheritdoc />
 	public string NavigateToString(string text)
 	{
-		BrowserInterop.HideElement(_iframe);
+		BrowserInteropProxy.HideElement(_iframe);
 		_iframe.SetProperty("src", string.Empty);
 
 		_content.SetProperty("innerHTML", text);
-		BrowserInterop.ShowElement(_content);
+		BrowserInteropProxy.ShowElement(_content);
 		return text;
 	}
 

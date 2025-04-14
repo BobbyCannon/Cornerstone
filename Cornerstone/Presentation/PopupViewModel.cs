@@ -2,7 +2,6 @@
 
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -69,6 +68,8 @@ public class PopupViewModel : Bindable
 
 	public string ProgressDescription { get; set; }
 
+	public string ProgressError { get; set; }
+
 	public bool ShowButtons
 	{
 		get => _showButtons && !InProgress;
@@ -106,15 +107,41 @@ public class PopupViewModel : Bindable
 		return Task.FromResult(true);
 	}
 
-	protected void SendNotification(string message)
+	protected override void OnPropertyChanged(string propertyName = null)
 	{
-		Debugger.Break();
-		//Dispatch(() => App.SendNotification(HostPageId, message));
+		Check();
+		base.OnPropertyChanged(propertyName);
 	}
 
 	protected void SetProgressDescription(string description)
 	{
 		this.Dispatch(() => ProgressDescription = description);
+	}
+
+	protected virtual bool ValidateAllProperties()
+	{
+		var propertiesToValidate = GetPropertiesToValidate();
+		foreach (var entry in propertiesToValidate)
+		{
+			var value = entry.Key.GetValue(this);
+			if (entry.Key.PropertyType == typeof(string))
+			{
+				if ((entry.Value.AllowEmptyStrings && (value == null))
+					|| string.IsNullOrWhiteSpace(value as string))
+				{
+					ValidationError = entry.Value.ErrorMessage;
+					return false;
+				}
+			}
+
+			if (value == null)
+			{
+				ValidationError = entry.Value.ErrorMessage;
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	private void Cancel()
@@ -129,7 +156,8 @@ public class PopupViewModel : Bindable
 			return _propertiesToValidate;
 		}
 
-		_propertiesToValidate = this.GetCachedProperties()
+		_propertiesToValidate = this
+			.GetCachedProperties()
 			.Select(x => new { p = x, a = x.GetCustomAttribute<RequiredAttribute>() })
 			.Where(x => x.a != null)
 			.ToDictionary(x => x.p, x => x.a);
@@ -140,22 +168,6 @@ public class PopupViewModel : Bindable
 	private void StartProcess()
 	{
 		_popupManager?.ProcessPopupAsync();
-	}
-
-	protected virtual bool ValidateAllProperties()
-	{
-		var propertiesToValidate = GetPropertiesToValidate();
-		foreach (var entry in propertiesToValidate)
-		{
-			var value = entry.Key.GetValue(this);
-			if (value == null)
-			{
-				ValidationError = entry.Value.ErrorMessage;
-				return false;
-			}
-		}
-
-		return true;
 	}
 
 	#endregion

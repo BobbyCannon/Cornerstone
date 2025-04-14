@@ -12,6 +12,7 @@ using Cornerstone.Media;
 using Cornerstone.Runtime;
 using Cornerstone.Security;
 using Cornerstone.Security.SecurityKeys;
+using Cornerstone.Threading;
 using Point = Android.Graphics.Point;
 using SettingSecure = Android.Provider.Settings.Secure;
 
@@ -21,11 +22,17 @@ namespace Cornerstone.Platforms.Android;
 
 public static class AndroidPlatform
 {
+	#region Fields
+
+	private static int _requestId;
+
+	#endregion
+
 	#region Properties
 
 	public static AppCompatActivity Activity { get; private set; }
 
-	public static AndroidSmartCardReader AndroidSmartCardReader { get; set; }
+	public static AndroidSmartCardReader AndroidSmartCardReader { get; private set; }
 
 	public static Context ApplicationContext { get; private set; }
 
@@ -56,12 +63,23 @@ public static class AndroidPlatform
 		AndroidSmartCardReader?.OnHandleIntent(intent);
 	}
 
+	internal static int GetRequestId()
+	{
+		var id = ThreadSafe.Increment(ref _requestId);
+		if (id == int.MaxValue)
+		{
+			id = ThreadSafe.Set(ref _requestId, 0);
+		}
+		return id;
+	}
+
 	private static void AddPlatformImplementations()
 	{
 		DependencyProvider.AddSingleton<AudioPlayer, AndroidAudioPlayer>();
 		DependencyProvider.AddSingleton<FileService, AndroidFileService>();
 		DependencyProvider.AddSingleton<ILocationProvider>(() => new AndroidLocationProvider(Activity));
 		DependencyProvider.AddSingleton<SmartCardReader, AndroidSmartCardReader>();
+		DependencyProvider.AddSingleton<IPermissions, AndroidPermissions>();
 		DependencyProvider.AddSingleton<PlatformCredentialVault, AndroidPlatformCredentialVault>();
 	}
 

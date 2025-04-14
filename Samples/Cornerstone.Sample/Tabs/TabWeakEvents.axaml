@@ -7,7 +7,12 @@
 		mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
 		x:Class="Cornerstone.Sample.Tabs.TabWeakEvents"
 		x:DataType="tabs:TabWeakEvents">
-	<DockPanel>
+	<DockPanel Margin="10">
+		<Grid DockPanel.Dock="Top">
+			<TextBlock Classes="HeaderSix"
+					HorizontalAlignment="Center"
+					Text="Weak Events" />
+		</Grid>
 		<StackPanel DockPanel.Dock="Top"
 				Orientation="Horizontal"
 				Margin="10">

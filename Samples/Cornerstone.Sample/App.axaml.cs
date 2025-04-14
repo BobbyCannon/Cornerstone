@@ -3,6 +3,7 @@
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Cornerstone.Avalonia;
+using Cornerstone.Avalonia.Camera;
 using Cornerstone.Presentation;
 using Cornerstone.Sample.ViewModels;
 using Cornerstone.Sample.Views;

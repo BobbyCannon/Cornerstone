@@ -2,9 +2,9 @@
 
 using System;
 using Avalonia.Media;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Rendering;
 using Cornerstone.Internal;
-using Cornerstone.Text.Document;
 
 #endregion
 

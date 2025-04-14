@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
@@ -20,7 +21,7 @@ namespace Cornerstone.Collections;
 /// <typeparam name="T2"> The type of value. </typeparam>
 [DebuggerDisplay("Count = {Count}")]
 [DebuggerTypeProxy(typeof(SpeedyDictionary<,>))]
-public class SpeedyDictionary<T, T2> : ReaderWriterLockBindable, IDictionary<T, T2>
+public class SpeedyDictionary<T, T2> : ReaderWriterLockBindable, ISpeedyDictionary<T, T2>
 {
 	#region Fields
 
@@ -117,6 +118,10 @@ public class SpeedyDictionary<T, T2> : ReaderWriterLockBindable, IDictionary<T, 
 		}
 	}
 
+	IEnumerable<T> IReadOnlyDictionary<T, T2>.Keys => Keys;
+
+	IEnumerable<T2> IReadOnlyDictionary<T, T2>.Values => Values;
+
 	#endregion
 
 	#region Methods
@@ -150,11 +155,15 @@ public class SpeedyDictionary<T, T2> : ReaderWriterLockBindable, IDictionary<T, 
 
 			if (_dictionary.ContainsKey(key))
 			{
-				_dictionary[key] = update(_dictionary[key]);
-				return;
+				var oldValue = _dictionary[key];
+				var newValue = update(oldValue);
+				_dictionary[key] = newValue;
 			}
-
-			_dictionary.Add(key, value.Invoke());
+			else
+			{
+				var newValue = value.Invoke();
+				_dictionary.Add(key, newValue);
+			}
 		}
 		finally
 		{
@@ -183,7 +192,7 @@ public class SpeedyDictionary<T, T2> : ReaderWriterLockBindable, IDictionary<T, 
 		return ContainsKey(item.Key);
 	}
 
-	/// <inheritdoc />
+	/// <inheritdoc cref="IDictionary" />
 	public bool ContainsKey(T key)
 	{
 		try
@@ -228,6 +237,64 @@ public class SpeedyDictionary<T, T2> : ReaderWriterLockBindable, IDictionary<T, 
 		}
 	}
 
+	/// <inheritdoc cref="IDictionary" />
+	public T2 GetOrAdd(T key, T2 value)
+	{
+		try
+		{
+			EnterUpgradeableReadLock();
+
+			if (_dictionary.TryGetValue(key, out var result))
+			{
+				return result;
+			}
+
+			try
+			{
+				EnterWriteLock();
+				_dictionary.Add(key, value);
+				return value;
+			}
+			finally
+			{
+				ExitWriteLock();
+			}
+		}
+		finally
+		{
+			ExitUpgradeableReadLock();
+		}
+	}
+
+	public async Task<T2> GetOrAdd(T key, Func<T, Task<T2>> create)
+	{
+		try
+		{
+			EnterUpgradeableReadLock();
+
+			if (_dictionary.TryGetValue(key, out var result))
+			{
+				return result;
+			}
+
+			try
+			{
+				EnterWriteLock();
+				result = await create(key);
+				_dictionary.Add(key, result);
+				return result;
+			}
+			finally
+			{
+				ExitWriteLock();
+			}
+		}
+		finally
+		{
+			ExitUpgradeableReadLock();
+		}
+	}
+
 	/// <inheritdoc />
 	public bool Remove(KeyValuePair<T, T2> item)
 	{
@@ -249,7 +316,7 @@ public class SpeedyDictionary<T, T2> : ReaderWriterLockBindable, IDictionary<T, 
 		}
 	}
 
-	/// <inheritdoc />
+	/// <inheritdoc cref="IDictionary" />
 	public bool TryGetValue(T key, out T2 value)
 	{
 		try
@@ -283,4 +350,8 @@ public class SpeedyDictionary<T, T2> : ReaderWriterLockBindable, IDictionary<T, 
 	}
 
 	#endregion
+}
+
+public interface ISpeedyDictionary<T, T2> : IDictionary<T, T2>, IReadOnlyDictionary<T, T2>
+{
 }

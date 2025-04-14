@@ -9,10 +9,10 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.TextFormatting;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Internal;
-using Cornerstone.Text.Document;
 using Cornerstone.Weaver;
-using LogicalDirection = Cornerstone.Text.Document.LogicalDirection;
+using LogicalDirection = Cornerstone.Avalonia.TextEditor.Document.LogicalDirection;
 
 #endregion
 

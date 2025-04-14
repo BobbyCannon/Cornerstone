@@ -8,7 +8,6 @@ using Cornerstone.Collections;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
 using Cornerstone.Text.Buffers;
-using Cornerstone.Text.Document;
 
 #endregion
 
@@ -556,11 +555,6 @@ public class TextDocument : ITextRange
 		return c;
 	}
 
-	protected virtual void OnChanged(DocumentChanged e)
-	{
-		Changed?.Invoke(this, new EventArgs<DocumentChanged>(e));
-	}
-
 	/// <summary>
 	/// Peek the next char.
 	/// </summary>
@@ -603,12 +597,6 @@ public class TextDocument : ITextRange
 			}
 		}
 	}
-
-	#endregion
-
-	#region Events
-
-	public event EventHandler<EventArgs<DocumentChanged>> Changed;
 
 	#endregion
 }

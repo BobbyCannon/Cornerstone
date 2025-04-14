@@ -14,7 +14,6 @@ public class PopupView : CornerstoneContentControl
 	#region Fields
 
 	public static readonly StyledProperty<HorizontalAlignment> PopupHorizontalAlignmentProperty;
-	public static readonly StyledProperty<int> PopupMinWidthProperty;
 	public static readonly StyledProperty<VerticalAlignment> PopupVerticalAlignmentProperty;
 	public static readonly StyledProperty<bool> ShowBackgroundProperty;
 
@@ -25,7 +24,6 @@ public class PopupView : CornerstoneContentControl
 	static PopupView()
 	{
 		PopupHorizontalAlignmentProperty = AvaloniaProperty.Register<PopupView, HorizontalAlignment>(nameof(PopupHorizontalAlignment));
-		PopupMinWidthProperty = AvaloniaProperty.Register<PopupView, int>(nameof(PopupMinWidth), PopupViewModel.DefaultWidth);
 		PopupVerticalAlignmentProperty = AvaloniaProperty.Register<PopupView, VerticalAlignment>(nameof(PopupVerticalAlignment));
 		ShowBackgroundProperty = AvaloniaProperty.Register<PopupView, bool>(nameof(ShowBackground));
 	}
@@ -38,12 +36,6 @@ public class PopupView : CornerstoneContentControl
 	{
 		get => GetValue(PopupHorizontalAlignmentProperty);
 		set => SetValue(PopupHorizontalAlignmentProperty, value);
-	}
-
-	public int PopupMinWidth
-	{
-		get => GetValue(PopupMinWidthProperty);
-		set => SetValue(PopupMinWidthProperty, value);
 	}
 
 	public VerticalAlignment PopupVerticalAlignment

@@ -1,0 +1,80 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignWidth="600"
+		x:Class="Cornerstone.Sample.Tabs.TabColorPicker"
+		x:DataType="tabs:TabColorPicker">
+	<DockPanel Margin="10">
+		<Grid DockPanel.Dock="Top">
+			<TextBlock Classes="HeaderSix"
+					HorizontalAlignment="Center"
+					Text="Color Picker" />
+		</Grid>
+		<WrapPanel DockPanel.Dock="Top"
+				ItemWidth="190">
+			<ToggleSwitch x:Name="IsColorSpectrumVisible"
+					IsChecked="True"
+					OnContent="Spectrum Tab"
+					OffContent="Spectrum Tab" />
+			<ToggleSwitch x:Name="IsColorPaletteVisible"
+					IsChecked="True"
+					OnContent="Palette Tab"
+					OffContent="Palette Tab" />
+			<ToggleSwitch x:Name="IsColorComponentsVisible"
+					IsChecked="True"
+					OnContent="Components Tab"
+					OffContent="Components Tab" />
+		</WrapPanel>
+		<WrapPanel DockPanel.Dock="Top"
+				ItemWidth="290"
+				Margin="0,20,0,0">
+			<ToggleSwitch x:Name="IsAccentColorsVisible"
+					IsChecked="True"
+					OnContent="Accent Colors Visible"
+					OffContent="Accent Colors Visible" />
+			<ToggleSwitch x:Name="IsAlphaVisible"
+					IsChecked="True"
+					OnContent="Alpha Slider Visible"
+					OffContent="Alpha Slider Visible" />
+			<ToggleSwitch x:Name="IsColorPreviewVisible"
+					IsChecked="True"
+					OnContent="Color Preview Visible"
+					OffContent="Color Preview Visible" />
+			<ToggleSwitch x:Name="IsColorModelVisible"
+					IsChecked="True"
+					OnContent="Color Model Visible"
+					OffContent="Color Model Visible" />
+			<ToggleSwitch x:Name="IsColorSpectrumSliderVisible"
+					IsChecked="True"
+					OnContent="Spectrum Slider Visible"
+					OffContent="Spectrum Slider Visible" />
+		</WrapPanel>
+		<StackPanel>
+			<ColorPicker x:Name="ColorPicker" 
+					Color="Red"
+					IsColorSpectrumVisible="{Binding ElementName=IsColorSpectrumVisible, Path=IsChecked, Mode=OneWay}"
+					IsColorPaletteVisible="{Binding ElementName=IsColorPaletteVisible, Path=IsChecked, Mode=OneWay}"
+					IsColorComponentsVisible="{Binding ElementName=IsColorComponentsVisible, Path=IsChecked, Mode=OneWay}"
+					IsAccentColorsVisible="{Binding ElementName=IsAccentColorsVisible, Path=IsChecked, Mode=OneWay}"
+					IsAlphaVisible="{Binding ElementName=IsAlphaVisible, Path=IsChecked, Mode=OneWay}"
+					IsColorPreviewVisible="{Binding ElementName=IsColorPreviewVisible, Path=IsChecked, Mode=OneWay}"
+					IsColorModelVisible="{Binding ElementName=IsColorModelVisible, Path=IsChecked, Mode=OneWay}"
+					IsColorSpectrumSliderVisible="{Binding ElementName=IsColorSpectrumSliderVisible, Path=IsChecked, Mode=OneWay}"
+					/>
+			<ColorView x:Name="ColorView"
+					IsColorSpectrumVisible="{Binding ElementName=IsColorSpectrumVisible, Path=IsChecked, Mode=OneWay}"
+					IsColorPaletteVisible="{Binding ElementName=IsColorPaletteVisible, Path=IsChecked, Mode=OneWay}"
+					IsColorComponentsVisible="{Binding ElementName=IsColorComponentsVisible, Path=IsChecked, Mode=OneWay}"
+					Color="{Binding ElementName=ColorPicker, Path=Color, Mode=TwoWay}"
+					IsAccentColorsVisible="{Binding ElementName=IsAccentColorsVisible, Path=IsChecked, Mode=OneWay}"
+					IsAlphaVisible="{Binding ElementName=IsAlphaVisible, Path=IsChecked, Mode=OneWay}"
+					IsColorPreviewVisible="{Binding ElementName=IsColorPreviewVisible, Path=IsChecked, Mode=OneWay}"
+					IsColorModelVisible="{Binding ElementName=IsColorModelVisible, Path=IsChecked, Mode=OneWay}"
+					IsColorSpectrumSliderVisible="{Binding ElementName=IsColorSpectrumSliderVisible, Path=IsChecked, Mode=OneWay}"
+					Margin="0,20,0,0"/>
+		</StackPanel>
+	</DockPanel>
+</UserControl>

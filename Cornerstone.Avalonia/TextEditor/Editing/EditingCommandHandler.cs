@@ -9,9 +9,9 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Cornerstone.Avalonia.Extensions;
 using Cornerstone.Avalonia.Input;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Utils;
 using Cornerstone.Collections;
-using Cornerstone.Text.Document;
 
 #endregion
 

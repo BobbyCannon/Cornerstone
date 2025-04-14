@@ -1,8 +1,8 @@
 ﻿#region References
 
 using System.Linq;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Rendering;
-using Cornerstone.Text.Document;
 using Cornerstone.UnitTests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

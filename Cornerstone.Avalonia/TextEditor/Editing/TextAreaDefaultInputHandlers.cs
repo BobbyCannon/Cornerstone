@@ -2,7 +2,7 @@
 
 using System;
 using Cornerstone.Avalonia.Input;
-using Cornerstone.Text.Document;
+using Cornerstone.Avalonia.TextEditor.Document;
 
 #endregion
 

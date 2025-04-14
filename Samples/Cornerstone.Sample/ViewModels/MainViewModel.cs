@@ -4,6 +4,7 @@ using System;
 using Cornerstone.Attributes;
 using Cornerstone.Avalonia.Controls;
 using Cornerstone.Collections;
+using Cornerstone.Extensions;
 using Cornerstone.Location;
 using Cornerstone.Presentation;
 using Cornerstone.Runtime;
@@ -21,7 +22,7 @@ public class MainViewModel : ViewModel
 	[DependencyInjectionConstructor]
 	public MainViewModel(
 		ApplicationSettings applicationSettings,
-		BrowserInteropProxy browserInteropProxy,
+		IBrowserInterop browserInteropProxy,
 		IDependencyProvider dependencyProvider,
 		ILocationProvider locationProvider,
 		IDateTimeProvider timeProvider,
@@ -38,23 +39,31 @@ public class MainViewModel : ViewModel
 
 		Tabs = [];
 
+		var allPlatformExceptBrowser = DevicePlatform.All.ClearFlag(DevicePlatform.Browser);
+
 		AddTabItemViewModel(TabThemes.HeaderName, "Icons.Color", typeof(TabThemes));
+		AddTabItemViewModel(TabBrowserInterop.HeaderName, "Icons.Browser", typeof(TabBrowserInterop), DevicePlatform.Browser);
 		AddTabItemViewModel(TabButton.HeaderName, "Icons.Button", typeof(TabButton));
+		AddTabItemViewModel(TabCamera.HeaderName, "Icons.Camera", typeof(TabCamera), allPlatformExceptBrowser);
 		AddTabItemViewModel(TabCircularProgress.HeaderName, "Icons.Info", typeof(TabCircularProgress));
-		AddTabItemViewModel(TabDebounceAndThrottle.HeaderName, "Icons.Signal", typeof(TabDebounceAndThrottle), browser: false);
-		AddTabItemViewModel(TabDockingManager.HeaderName, "Icons.Window.Restore", typeof(TabDockingManager), browser: false);
+		AddTabItemViewModel(TabColorPicker.HeaderName, "Icons.Color", typeof(TabColorPicker));
+		AddTabItemViewModel(TabDebounceAndThrottle.HeaderName, "Icons.Signal", typeof(TabDebounceAndThrottle));
+		AddTabItemViewModel(TabDockingManager.HeaderName, "Icons.Window.Restore", typeof(TabDockingManager), allPlatformExceptBrowser);
+		AddTabItemViewModel(TabFonts.HeaderName, "Icons.Font", typeof(TabFonts));
+		AddTabItemViewModel(TabMediaPlayer.HeaderName, "Icons.TriangleRight", typeof(TabMediaPlayer), allPlatformExceptBrowser);
 		AddTabItemViewModel(TabMenu.HeaderName, "Icons.Menu", typeof(TabMenu));
 		AddTabItemViewModel(TabNavigationMenu.HeaderName, "Icons.Grid", typeof(TabNavigationMenu));
 		AddTabItemViewModel(TabNotificationCard.HeaderName, "Icons.Copy", typeof(TabNotificationCard));
+		AddTabItemViewModel(TabPermissions.HeaderName, "Icons.Permissions", typeof(TabPermissions));
 		AddTabItemViewModel(TabResponsiveGrid.HeaderName, "Icons.List", typeof(TabResponsiveGrid));
 		AddTabItemViewModel(TabRuntimeInformation.HeaderName, "Icons.Info", typeof(TabRuntimeInformation));
-		AddTabItemViewModel(TabSecurityKeys.HeaderName, "Icons.Tag", typeof(TabSecurityKeys), browser: false);
+		AddTabItemViewModel(TabSecurityKeys.HeaderName, "Icons.Tag", typeof(TabSecurityKeys), DevicePlatform.Android | DevicePlatform.Windows);
 		AddTabItemViewModel(TabSpeedyList.HeaderName, "Icons.Stashes", typeof(TabSpeedyList));
 		AddTabItemViewModel(TabSpeedyTree.HeaderName, "Icons.Tree", typeof(TabSpeedyTree));
 		AddTabItemViewModel(TabToggleButton.HeaderName, "Icons.Toggle.Button", typeof(TabToggleButton));
 		AddTabItemViewModel(TabToggleSwitch.HeaderName, "Icons.Toggle.Switches", typeof(TabToggleSwitch));
-		AddTabItemViewModel(TabWeakEvents.HeaderName, "Icons.Blame", typeof(TabWeakEvents), browser: false);
-		AddTabItemViewModel(TabWebView.HeaderName, "Icons.Globe", typeof(TabWebView), browser: false);
+		AddTabItemViewModel(TabWeakEvents.HeaderName, "Icons.Blame", typeof(TabWeakEvents), allPlatformExceptBrowser);
+		AddTabItemViewModel(TabWebView.HeaderName, "Icons.Globe", typeof(TabWebView));
 		AddTabItemViewModel(TabWrapPanel.HeaderName, "Icons.Window.Maximize", typeof(TabWrapPanel));
 
 		#if DEBUG
@@ -68,7 +77,7 @@ public class MainViewModel : ViewModel
 
 	public ApplicationSettings ApplicationSettings { get; }
 
-	public BrowserInteropProxy BrowserInteropProxy { get; }
+	public IBrowserInterop BrowserInteropProxy { get; }
 
 	public IDependencyProvider DependencyProvider { get; }
 
@@ -104,9 +113,9 @@ public class MainViewModel : ViewModel
 		base.Uninitialize();
 	}
 
-	private void AddTabItemViewModel(string name, string icon, Type type, bool browser = true)
+	private void AddTabItemViewModel(string name, string icon, Type type, DevicePlatform platforms = DevicePlatform.All)
 	{
-		if ((RuntimeInformation.DevicePlatform == DevicePlatform.Browser) && !browser)
+		if (!platforms.HasFlag(RuntimeInformation.DevicePlatform))
 		{
 			return;
 		}

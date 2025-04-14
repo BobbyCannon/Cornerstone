@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Avalonia.Threading;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Utils;
 using Cornerstone.Internal;
-using Cornerstone.Text.Document;
 using SpanStack = System.Collections.Immutable.ImmutableStack<Cornerstone.Avalonia.TextEditor.Highlighting.HighlightingSpan>;
 
 #endregion

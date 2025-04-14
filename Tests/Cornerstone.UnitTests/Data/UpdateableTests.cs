@@ -12,6 +12,7 @@ using Cornerstone.Avalonia.TextEditor.CodeCompletion;
 using Cornerstone.Compare;
 using Cornerstone.Data;
 using Cornerstone.EntityFramework;
+using Cornerstone.Presentation;
 using Cornerstone.Profiling;
 using Cornerstone.Runtime;
 using Cornerstone.Storage;
@@ -78,6 +79,12 @@ public class UpdateableTests : CornerstoneUnitTest
 		);
 		settings.TypeIncludeExcludeSettings.Add(typeof(ContextMenu),
 			new[] { nameof(ContextMenu.Bounds), nameof(ContextMenu.FontFamily) }.ToOnlyExcludingSettings()
+		);
+		settings.TypeIncludeExcludeSettings.Add(typeof(MenuItemData),
+			new[]
+			{
+				nameof(MenuItemData.FilterCheck)
+			}.ToOnlyExcludingSettings()
 		);
 		settings.TypeIncludeExcludeSettings.Add(typeof(SplitFractions),
 			new[]

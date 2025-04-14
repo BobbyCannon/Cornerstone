@@ -212,6 +212,12 @@ public class FilteredSpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, I
 	}
 
 	/// <inheritdoc />
+	public void Swap(int firstIndex, int secondIndex)
+	{
+		throw new NotSupportedException();
+	}
+
+	/// <inheritdoc />
 	public override void ResetHasChanges()
 	{
 		throw new NotSupportedException();

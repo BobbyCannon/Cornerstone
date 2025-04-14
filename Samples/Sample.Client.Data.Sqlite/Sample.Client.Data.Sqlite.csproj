@@ -4,7 +4,7 @@
 		<GenerateDocumentationFile>false</GenerateDocumentationFile>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.2" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.3" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Sample.Client.Data\Sample.Client.Data.csproj" />

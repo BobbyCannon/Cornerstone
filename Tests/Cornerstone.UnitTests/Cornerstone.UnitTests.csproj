@@ -19,10 +19,10 @@
 			<PrivateAssets>All</PrivateAssets>
 		</PackageReference>
 		<PackageReference Include="Moq" Version="4.20.72" />
-		<PackageReference Include="MSTest.TestAdapter" Version="3.8.2" />
-		<PackageReference Include="MSTest.TestFramework" Version="3.8.2" />
+		<PackageReference Include="MSTest.TestAdapter" Version="3.8.3" />
+		<PackageReference Include="MSTest.TestFramework" Version="3.8.3" />
 		<PackageReference Include="NUnit" Version="4.3.2" />
-		<PackageReference Include="System.IO.Ports" Version="9.0.2" />
+		<PackageReference Include="System.IO.Ports" Version="9.0.3" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\Cornerstone.Automation\Cornerstone.Automation.csproj" />

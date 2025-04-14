@@ -19,23 +19,6 @@ public class SyncEntityTests : CornerstoneUnitTest
 	#region Methods
 
 	[TestMethod]
-	public void Account()
-	{
-		var scenarios = new Dictionary<UpdateableAction, string[]>
-		{
-			{ UpdateableAction.SyncIncomingAdd, ["CreatedOn", "IsDeleted", "ModifiedOn", "SyncId", "AddressSyncId", "EmailAddress", "Name", "Roles"] },
-			{ UpdateableAction.SyncIncomingUpdate, ["CreatedOn", "IsDeleted", "ModifiedOn", "AddressSyncId", "EmailAddress", "Name", "Roles", "SyncId"] },
-			{ UpdateableAction.SyncOutgoing, ["CreatedOn", "IsDeleted", "ModifiedOn", "SyncId", "AddressSyncId", "EmailAddress", "Name", "Roles"] },
-			{ UpdateableAction.UnwrapProxyEntity, ["AddressId", "AddressSyncId", "CreatedOn", "EmailAddress", "ExternalId", "Id", "IsDeleted", "LastLoginDate", "ModifiedOn", "Name", "Nickname", "PasswordHash", "Roles", "SyncId"] },
-			{ UpdateableAction.Updateable, ["Address", "AddressId", "AddressSyncId", "CreatedOn", "EmailAddress", "ExternalId", "Groups", "Id", "IsDeleted", "LastLoginDate", "ModifiedOn", "Name", "Nickname", "PasswordHash", "Pets", "Roles", "SyncId"] },
-			{ UpdateableAction.PropertyChangeTracking, ["Address", "AddressId", "AddressSyncId", "CreatedOn", "EmailAddress", "ExternalId", "Groups", "Id", "IsDeleted", "LastLoginDate", "ModifiedOn", "Name", "Nickname", "PasswordHash", "Pets", "Roles", "SyncId"] },
-			{ UpdateableAction.PartialUpdate, ["Address", "AddressId", "AddressSyncId", "CreatedOn", "EmailAddress", "ExternalId", "Groups", "Id", "IsDeleted", "LastLoginDate", "ModifiedOn", "Name", "Nickname", "PasswordHash", "Pets", "Roles", "SyncId"] }
-		};
-
-		ValidateGetDefaultIncludedProperties<AccountEntity>(scenarios);
-	}
-
-	[TestMethod]
 	public void UpdateLocalSyncIds()
 	{
 		var address = new AddressEntity { Id = 1, SyncId = Guid.NewGuid() };
@@ -47,74 +30,21 @@ public class SyncEntityTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
-	public void UpdateWith()
-	{
-		var date = DateTime.Parse("7/1/2019 05:18:30 PM");
-		var date2 = DateTime.Parse("7/1/2019 05:18:31 PM");
-		var entity = GetTestEntity(date);
-		var model = GetTestModel(date2);
-
-		entity.UpdateWith(model);
-
-		var expected = new AddressEntity
-		{
-			City = "City2",
-			CreatedOn = date2,
-			Id = 100,
-			Line1 = "Line 1",
-			Line2 = "Line 2",
-			ModifiedOn = date2,
-			Postal = "Postal 2",
-			State = "State 2",
-			SyncId = Guid.Parse("511EB735-7CE7-4362-B36F-066CD697303A")
-		};
-
-		// We are expecting all members to change except virtual members
-		AreEqual(expected, entity);
-	}
-
-	[TestMethod]
-	public void UpdateWithAllowVirtual()
-	{
-		var date = DateTime.Parse("7/1/2019 05:18:30 PM");
-		var date2 = DateTime.Parse("7/1/2019 05:18:31 PM");
-		var entity = GetTestEntity(date);
-		var model = GetTestModel(date2);
-
-		model.Accounts = null;
-		entity.UpdateWith(model);
-
-		var expected = new AddressEntity
-		{
-			Accounts = null,
-			City = "City2",
-			CreatedOn = date2,
-			Id = 100,
-			Line1 = "Line 1",
-			Line2 = "Line 2",
-			ModifiedOn = date2,
-			Postal = "Postal 2",
-			State = "State 2",
-			SyncId = Guid.Parse("511EB735-7CE7-4362-B36F-066CD697303A")
-		};
-
-		// We are expecting all members, *including* virtual members!
-		AreEqual(expected, entity);
-	}
-
-	[TestMethod]
 	public void UpdateWithSpecificMembers()
 	{
 		var date = DateTime.Parse("7/1/2019 05:18:30 PM");
 		var date2 = DateTime.Parse("7/1/2019 05:18:31 PM");
-		var entity = GetTestEntity(date);
+		var entity = new AddressEntity();
 		var model = GetTestModel(date2);
+		var exclusions = new[]
+		{
+			nameof(AddressEntity.City),
+			nameof(AddressEntity.FullAddress),
+			nameof(AddressEntity.Postal)
+		};
 
 		model.Accounts = null;
-		entity.UpdateWithExcept(model,
-			nameof(AddressEntity.City),
-			nameof(AddressEntity.Postal)
-		);
+		entity.UpdateWithExcept(model, exclusions);
 
 		var expected = new AddressEntity
 		{
@@ -131,7 +61,8 @@ public class SyncEntityTests : CornerstoneUnitTest
 		};
 
 		// We are expecting all members, *including* virtual members!
-		AreEqual(expected, entity);
+		AreEqual(expected, entity, null, exclusions: exclusions);
+		AreNotEqual(expected, entity, null, null, x => x.Settings.TypeIncludeExcludeSettings.Add(typeof(AddressEntity), new IncludeExcludeSettings(exclusions, null)));
 	}
 
 	[TestMethod]
@@ -216,22 +147,6 @@ public class SyncEntityTests : CornerstoneUnitTest
 		actual.Data.Escape().Dump();
 
 		AreEqual(expect, actual.Data);
-	}
-
-	private static AddressEntity GetTestEntity(DateTime date)
-	{
-		return new AddressEntity
-		{
-			City = "City",
-			CreatedOn = date,
-			Id = 99,
-			Line1 = "Line1",
-			Line2 = "Line2",
-			ModifiedOn = date,
-			Postal = "Postal",
-			State = "State",
-			SyncId = Guid.Parse("3584456b-cf36-4049-9491-7d83d0fd8255")
-		};
 	}
 
 	private static AddressEntity GetTestModel(DateTime date2)

@@ -1,0 +1,71 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d"  d:DesignWidth="500"
+		x:Class="Cornerstone.Sample.Tabs.TabFonts"
+		x:DataType="tabs:TabFonts">
+	<Grid RowDefinitions="Auto,*"
+			Margin="10">
+		<WrapPanel Grid.Row="0">
+			<StackPanel Orientation="Horizontal"
+					Margin="0,0,20,0">
+				<TextBlock Text="Font Size"
+						Margin="0,0,10,0" />
+				<TextBlock Text="{Binding ElementName=Size, Path=Value}" />
+			</StackPanel>
+			<Slider x:Name="Size"
+					Width="240"
+					Minimum="16" Maximum="32"
+					TickFrequency="2"
+					IsSnapToTickEnabled="True" />
+		</WrapPanel>
+		<ScrollViewer Grid.Row="1"
+				HorizontalScrollBarVisibility="Auto"
+				Margin="0,20,0,0">
+			<StackPanel>
+				<TextBlock FontFamily="{x:Static CornerstoneTheme.DejaVuSansLight}"
+						FontSize="{Binding ElementName=Size, Path=Value}"
+						Text="Deja Vu Sans Light (x:Static)"></TextBlock>
+				<TextBlock FontFamily="{x:Static CornerstoneTheme.DejaVuSansLight}"
+						FontSize="{Binding ElementName=Size, Path=Value}"
+						Text="{Binding ElementName=Text, Path=Text}"></TextBlock>
+
+				<TextBlock FontFamily="{x:Static CornerstoneTheme.DejaVuSansMono}"
+						FontSize="{Binding ElementName=Size, Path=Value}"
+						Margin="0,20,0,0"
+						Text="Deja Vu Sans Mono (x:Static)"></TextBlock>
+				<TextBlock FontFamily="{x:Static CornerstoneTheme.DejaVuSansMono}"
+						FontSize="{Binding ElementName=Size, Path=Value}"
+						Text="{Binding ElementName=Text, Path=Text}"></TextBlock>
+
+				<TextBlock FontFamily="{StaticResource DejaVuSansLight}"
+						FontSize="{Binding ElementName=Size, Path=Value}"
+						Margin="0,20,0,0"
+						Text="Deja Vu Sans Light (StaticResource)"></TextBlock>
+				<TextBlock FontFamily="{StaticResource DejaVuSansLight}"
+						FontSize="{Binding ElementName=Size, Path=Value}"
+						Text="{Binding ElementName=Text, Path=Text}"></TextBlock>
+
+				<TextBlock FontFamily="{StaticResource DejaVuSansMono}"
+						FontSize="{Binding ElementName=Size, Path=Value}"
+						Margin="0,20,0,0"
+						Text="Deja Vu Sans Mono (StaticResource)"></TextBlock>
+				<TextBlock FontFamily="{StaticResource DejaVuSansMono}"
+						FontSize="{Binding ElementName=Size, Path=Value}"
+						Text="{Binding ElementName=Text, Path=Text}"></TextBlock>
+
+				<TextBox x:Name="Text"
+						FontFamily="{StaticResource DejaVuSansMono}"
+						Height="64"
+						Margin="0,20,0,0"
+						Padding="8"
+						Text="The quick brown fox jumped over the lazy dog. 01lIL"
+						TextWrapping="Wrap"
+						VerticalContentAlignment="Top" />
+			</StackPanel>
+		</ScrollViewer>
+	</Grid>
+</UserControl>

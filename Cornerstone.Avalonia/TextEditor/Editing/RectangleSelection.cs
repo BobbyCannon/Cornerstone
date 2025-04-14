@@ -7,10 +7,10 @@ using System.Text;
 using Avalonia;
 using Avalonia.Input;
 using Cornerstone.Avalonia.Input;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Utils;
 using Cornerstone.Collections;
 using Cornerstone.Internal;
-using Cornerstone.Text.Document;
 
 #endregion
 

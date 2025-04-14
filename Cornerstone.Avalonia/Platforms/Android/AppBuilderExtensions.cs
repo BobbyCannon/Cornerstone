@@ -1,6 +1,8 @@
 ﻿#region References
 
 using Avalonia;
+using Cornerstone.Avalonia.Camera;
+using Cornerstone.Avalonia.MediaPlayer;
 using Cornerstone.Avalonia.WebView;
 
 #endregion
@@ -16,6 +18,8 @@ public static class AppBuilderExtensions
 		return builder.AfterPlatformServicesSetup(_ =>
 		{
 			var dependencyProvider = CornerstoneApplication.DependencyProvider;
+			dependencyProvider.AddOrUpdateTransient<ICameraAdapter, CameraAdapter>();
+			dependencyProvider.AddSingleton<IMediaPlayerAdapter, MediaPlayerAdapter>();
 			dependencyProvider.AddOrUpdateTransient<IWebViewAdapter, WebViewAdapter>();
 		});
 	}

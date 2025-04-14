@@ -1,0 +1,34 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignWidth="600"
+		x:Class="Cornerstone.Sample.Tabs.TabMediaPlayer"
+		x:DataType="tabs:TabMediaPlayer">
+	<DockPanel Margin="10">
+		<Grid DockPanel.Dock="Top">
+			<TextBlock Classes="HeaderSix"
+					HorizontalAlignment="Center"
+					Text="Media Player" />
+		</Grid>
+		<WrapPanel DockPanel.Dock="Top"
+				Orientation="Horizontal"
+				HorizontalAlignment="Center">
+			<Button Click="PlayOnClick"
+					Margin="4">
+				Play
+			</Button>
+			<Button Click="PauseOnClick"
+					Margin="4">
+				Pause
+			</Button>
+			<Button Click="StopOnClick"
+					Margin="4">
+				Stop
+			</Button>
+		</WrapPanel>
+		<MediaPlayerControl x:Name="MediaPlayer" />
+	</DockPanel>
+</UserControl>

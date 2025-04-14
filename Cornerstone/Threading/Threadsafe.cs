@@ -38,11 +38,12 @@ public static class ThreadSafe
 	/// <param name="value"> The value to be decremented. </param>
 	/// <param name="decrease"> An optional decrease. The value defaults to the smallest possible value. </param>
 	/// <returns> The incremented value. </returns>
-	public static void Decrement(ref float value, float decrease = float.Epsilon)
+	public static float Decrement(ref float value, float decrease = float.Epsilon)
 	{
 		lock (_doubleLock)
 		{
 			value = value.Decrement(decrease);
+			return value;
 		}
 	}
 
@@ -52,11 +53,12 @@ public static class ThreadSafe
 	/// <param name="value"> The value to be decremented. </param>
 	/// <param name="decrease"> An optional decrease. The value defaults to the smallest possible value. </param>
 	/// <returns> The incremented value. </returns>
-	public static void Decrement(ref double value, double decrease = double.Epsilon)
+	public static double Decrement(ref double value, double decrease = double.Epsilon)
 	{
 		lock (_doubleLock)
 		{
 			value = value.Decrement(decrease);
+			return value;
 		}
 	}
 
@@ -66,11 +68,12 @@ public static class ThreadSafe
 	/// <param name="value"> The value to be decremented. </param>
 	/// <param name="decrease"> An optional decrease. The value defaults to the smallest possible value. </param>
 	/// <returns> The incremented value. </returns>
-	public static void Decrement(ref ulong value, ulong decrease = 1)
+	public static ulong Decrement(ref ulong value, ulong decrease = 1)
 	{
 		lock (_ulongLock)
 		{
 			value -= decrease;
+			return value;
 		}
 	}
 
@@ -79,9 +82,9 @@ public static class ThreadSafe
 	/// </summary>
 	/// <param name="value"> The value to be decremented. </param>
 	/// <param name="decrease"> An optional decrease. The value defaults to the smallest possible value. </param>
-	public static void Decrement(ref int value, int decrease = 1)
+	public static int Decrement(ref int value, int decrease = 1)
 	{
-		Interlocked.Add(ref value, decrease * -1);
+		return Interlocked.Add(ref value, decrease * -1);
 	}
 
 	/// <summary>
@@ -89,11 +92,12 @@ public static class ThreadSafe
 	/// </summary>
 	/// <param name="value"> The value to be decremented. </param>
 	/// <param name="decrease"> An optional decrease. The value defaults to the smallest possible value. </param>
-	public static void Decrement(ref decimal value, decimal decrease = 1)
+	public static decimal Decrement(ref decimal value, decimal decrease = 1)
 	{
 		lock (_decimalLock)
 		{
 			value -= decrease;
+			return value;
 		}
 	}
 
@@ -102,9 +106,9 @@ public static class ThreadSafe
 	/// </summary>
 	/// <param name="value"> The value to be decremented. </param>
 	/// <param name="decrease"> An optional decrease. The value defaults to the smallest possible value. </param>
-	public static void Decrement(ref long value, long decrease = 1)
+	public static long Decrement(ref long value, long decrease = 1)
 	{
-		Interlocked.Add(ref value, decrease * -1);
+		return Interlocked.Add(ref value, decrease * -1);
 	}
 
 	/// <summary>
@@ -113,11 +117,12 @@ public static class ThreadSafe
 	/// <param name="value"> The value to be incremented. </param>
 	/// <param name="increase"> An optional increase. The value defaults to the smallest possible value. </param>
 	/// <returns> The incremented value. </returns>
-	public static void Increment(ref float value, float increase = float.Epsilon)
+	public static float Increment(ref float value, float increase = float.Epsilon)
 	{
 		lock (_floatLock)
 		{
 			value = value.Increment(increase);
+			return value;
 		}
 	}
 
@@ -127,11 +132,12 @@ public static class ThreadSafe
 	/// <param name="value"> The value to be incremented. </param>
 	/// <param name="increase"> An optional increase. The value defaults to the smallest possible value. </param>
 	/// <returns> The incremented value. </returns>
-	public static void Increment(ref double value, double increase = double.Epsilon)
+	public static double Increment(ref double value, double increase = double.Epsilon)
 	{
 		lock (_doubleLock)
 		{
 			value = value.Increment(increase);
+			return value;
 		}
 	}
 
@@ -141,11 +147,12 @@ public static class ThreadSafe
 	/// <param name="value"> The value to be incremented. </param>
 	/// <param name="increase"> An optional increase. The value defaults to the smallest possible value. </param>
 	/// <returns> The incremented value. </returns>
-	public static void Increment(ref decimal value, decimal increase = 1)
+	public static decimal Increment(ref decimal value, decimal increase = 1)
 	{
 		lock (_doubleLock)
 		{
 			value += increase;
+			return value;
 		}
 	}
 
@@ -154,9 +161,9 @@ public static class ThreadSafe
 	/// </summary>
 	/// <param name="value"> The value to be incremented. </param>
 	/// <param name="increase"> An optional increase. The value defaults to the smallest possible value. </param>
-	public static void Increment(ref int value, int increase = 1)
+	public static int Increment(ref int value, int increase = 1)
 	{
-		Interlocked.Add(ref value, increase);
+		return Interlocked.Add(ref value, increase);
 	}
 
 	/// <summary>
@@ -164,9 +171,9 @@ public static class ThreadSafe
 	/// </summary>
 	/// <param name="value"> The value to be incremented. </param>
 	/// <param name="increase"> An optional increase. The value defaults to the smallest possible value. </param>
-	public static void Increment(ref long value, long increase = 1)
+	public static long Increment(ref long value, long increase = 1)
 	{
-		Interlocked.Add(ref value, increase);
+		return Interlocked.Add(ref value, increase);
 	}
 
 	/// <summary>
@@ -174,11 +181,12 @@ public static class ThreadSafe
 	/// </summary>
 	/// <param name="value"> The value to be incremented. </param>
 	/// <param name="increase"> An optional increase. The value defaults to the smallest possible value. </param>
-	public static void Increment(ref ulong value, ulong increase = 1)
+	public static ulong Increment(ref ulong value, ulong increase = 1)
 	{
 		lock (_ulongLock)
 		{
 			value += increase;
+			return value;
 		}
 	}
 
@@ -187,9 +195,9 @@ public static class ThreadSafe
 	/// </summary>
 	/// <param name="value"> The value to be updated. </param>
 	/// <param name="newValue"> The new value to be set. </param>
-	public static void Set(ref int value, int newValue)
+	public static int Set(ref int value, int newValue)
 	{
-		Interlocked.Exchange(ref value, newValue);
+		return Interlocked.Exchange(ref value, newValue);
 	}
 
 	/// <summary>
@@ -197,9 +205,9 @@ public static class ThreadSafe
 	/// </summary>
 	/// <param name="value"> The value to be updated. </param>
 	/// <param name="newValue"> The new value to be set. </param>
-	public static void Set(ref double value, double newValue)
+	public static double Set(ref double value, double newValue)
 	{
-		Interlocked.Exchange(ref value, newValue);
+		return Interlocked.Exchange(ref value, newValue);
 	}
 
 	/// <summary>
@@ -207,9 +215,9 @@ public static class ThreadSafe
 	/// </summary>
 	/// <param name="value"> The value to be updated. </param>
 	/// <param name="newValue"> The new value to be set. </param>
-	public static void Set(ref float value, float newValue)
+	public static float Set(ref float value, float newValue)
 	{
-		Interlocked.Exchange(ref value, newValue);
+		return Interlocked.Exchange(ref value, newValue);
 	}
 
 	/// <summary>
@@ -217,11 +225,12 @@ public static class ThreadSafe
 	/// </summary>
 	/// <param name="value"> The value to be updated. </param>
 	/// <param name="newValue"> The new value to be set. </param>
-	public static void Set(ref ulong value, ulong newValue)
+	public static ulong Set(ref ulong value, ulong newValue)
 	{
 		lock (_ulongLock)
 		{
 			value = newValue;
+			return value;
 		}
 	}
 
@@ -230,11 +239,12 @@ public static class ThreadSafe
 	/// </summary>
 	/// <param name="value"> The value to be updated. </param>
 	/// <param name="newValue"> The new value to be set. </param>
-	public static void Set(ref decimal value, decimal newValue)
+	public static decimal Set(ref decimal value, decimal newValue)
 	{
 		lock (_decimalLock)
 		{
 			value = newValue;
+			return value;
 		}
 	}
 

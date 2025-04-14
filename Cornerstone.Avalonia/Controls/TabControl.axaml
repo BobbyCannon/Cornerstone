@@ -89,6 +89,12 @@
 			</ControlTemplate>
 		</Setter>
 
+		<Style Selector="^.HideHeader">
+			<Style Selector="^ /template/ ScrollViewer#PART_ScrollViewer">
+				<Setter Property="IsVisible" Value="false" />
+			</Style>
+		</Style>
+
 		<!-- Arranges tabs vertically when set to display on right or left sides. -->
 		<Style Selector="^[TabStripPlacement=Left] /template/ ScrollViewer#PART_ScrollViewer">
 			<Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />

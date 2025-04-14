@@ -4,10 +4,10 @@ using System;
 using System.Diagnostics;
 using Avalonia;
 using Avalonia.Media;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Rendering;
 using Cornerstone.Internal;
 using Cornerstone.Presentation;
-using Cornerstone.Text.Document;
 using Dispatcher = Avalonia.Threading.Dispatcher;
 
 #endregion

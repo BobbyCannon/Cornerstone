@@ -17,13 +17,13 @@ public class ByteSizeTests : CornerstoneUnitTest
 	[TestMethod]
 	public void NoLoss()
 	{
-		AreEqual(1, ByteSize.FromBits(ByteSize.BitsInByte).Bytes);
-		AreEqual(1, ByteSize.FromBits(ByteSize.BitsInKilobit).Kilobits);
-		AreEqual(1, ByteSize.FromBits(ByteSize.BitsInKilobyte).Kilobytes);
-		AreEqual(1, ByteSize.FromBits(ByteSize.BitsInMegabit).Megabits);
-		AreEqual(1, ByteSize.FromBits(ByteSize.BitsInMegabyte).Megabytes);
-		AreEqual(1, ByteSize.FromBits(ByteSize.BitsInGigabit).Gigabits);
-		AreEqual(1, ByteSize.FromBits(ByteSize.BitsInGigabyte).Gigabytes);
+		AreEqual(1.0m, ByteSize.FromBits(ByteSize.BitsInByte).Bytes);
+		AreEqual(1.0m, ByteSize.FromBits(ByteSize.BitsInKilobit).Kilobits);
+		AreEqual(1.0m, ByteSize.FromBits(ByteSize.BitsInKilobyte).Kilobytes);
+		AreEqual(1.0m, ByteSize.FromBits(ByteSize.BitsInMegabit).Megabits);
+		AreEqual(1.0m, ByteSize.FromBits(ByteSize.BitsInMegabyte).Megabytes);
+		AreEqual(1.0m, ByteSize.FromBits(ByteSize.BitsInGigabit).Gigabits);
+		AreEqual(1.0m, ByteSize.FromBits(ByteSize.BitsInGigabyte).Gigabytes);
 	}
 
 	[TestMethod]

@@ -10,6 +10,11 @@
 		x:Class="Cornerstone.Sample.Tabs.TabSpeedyTree"
 		x:DataType="tabs:TabSpeedyTree">
 	<DockPanel Margin="10">
+		<Grid DockPanel.Dock="Top">
+			<TextBlock Classes="HeaderSix"
+					HorizontalAlignment="Center"
+					Text="Speedy Tree" />
+		</Grid>
 		<StackPanel DockPanel.Dock="Top" Margin="0,0,0,10">
 			<TextBox Classes="Search ClearButton"
 					Text="{Binding TreeFilter, Mode=TwoWay}"

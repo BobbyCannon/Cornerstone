@@ -1,12 +1,20 @@
 ﻿#region References
 
+using System;
+using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 using Avalonia;
 using Avalonia.Browser;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Rendering;
+using Avalonia.Threading;
 using Cornerstone.Avalonia;
-using Cornerstone.Avalonia.Platforms.Browser;
 using Cornerstone.Avalonia.Extensions;
+using Cornerstone.Avalonia.Platforms.Browser;
 using Cornerstone.Platforms.Browser;
+using AppBuilderExtension = Cornerstone.Avalonia.AppBuilderExtension;
 
 #endregion
 
@@ -21,13 +29,12 @@ internal class Program
 		var dependencyProvider = CornerstoneApplication.DependencyProvider;
 
 		BrowserPlatform.Initialize(dependencyProvider);
-		ApplicationLifecycleExtensions.SetBrowserArgs(args);
-
+		
 		await AppBuilder
 			.Configure<App>()
 			.WithInterFont()
-			.UseCornerstone()
-			.StartBrowserAppAsync("out");
+			.UseCornerstone(args, out var options)
+			.StartBrowserAppAsync("out", options);
 	}
 
 	#endregion

@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Xml;
-using Cornerstone.Text.Document;
+using Cornerstone.Avalonia.TextEditor.Document;
 
 #endregion
 

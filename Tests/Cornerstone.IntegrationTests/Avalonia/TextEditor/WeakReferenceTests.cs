@@ -1,28 +1,27 @@
-﻿#if !DEBUG
-
-#region References
+﻿#region References
 
 using System;
 using System.Runtime.CompilerServices;
+using Avalonia.Headless.NUnit;
 using Cornerstone.Avalonia.TextEditor;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Editing;
 using Cornerstone.Avalonia.TextEditor.Rendering;
-using Cornerstone.Text;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Cornerstone.UnitTests;
 
 #endregion
 
-namespace Cornerstone.UnitTests.Avalonia.TextEditor;
+namespace Cornerstone.IntegrationTests.Avalonia.TextEditor;
 
-[TestClass]
+//[TestFixture]
 public class WeakReferenceTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	//[AvaloniaTest] currently failing due to Headless platform doesn't behave as the previous UnitTestApplication
+	//[AvaloniaTest]
 	public void DocumentDoesNotHoldReferenceToLineMargin()
 	{
-		var textDocument = new TextDocument();
+		var textDocument = new TextEditorDocument();
 		var wr = CreateControl<TextView>(t =>
 		{
 			t.Document = textDocument;
@@ -33,10 +32,28 @@ public class WeakReferenceTests : CornerstoneUnitTest
 		GC.KeepAlive(textDocument);
 	}
 
-	//[AvaloniaTest] currently failing due to Headless platform doesn't behave as the previous UnitTestApplication
+	//[AvaloniaTest]
+	public void DocumentDoesNotHoldReferenceToTextArea()
+	{
+		var textDocument = new TextEditorDocument();
+		var wr = CreateControl<TextArea>(t => t.Document = textDocument);
+		IsFalse(wr.IsAlive);
+		GC.KeepAlive(textDocument);
+	}
+
+	//[AvaloniaTest]
+	public void DocumentDoesNotHoldReferenceToTextEditor()
+	{
+		var textDocument = new TextEditorDocument();
+		var wr = CreateControl<TextEditorControl>(t => t.Document = textDocument);
+		IsFalse(wr.IsAlive);
+		GC.KeepAlive(textDocument);
+	}
+
+	//[AvaloniaTest]
 	public void DocumentDoesNotHoldReferenceToTextView()
 	{
-		var textDocument = new TextDocument();
+		var textDocument = new TextEditorDocument();
 		AreEqual(0, textDocument.LineTrackers.Count);
 
 		var wr = CreateControl<TextView>(t => t.Document = textDocument);
@@ -50,7 +67,7 @@ public class WeakReferenceTests : CornerstoneUnitTest
 		AreEqual(0, textDocument.LineTrackers.Count);
 	}
 
-	//[AvaloniaTest] currently failing due to Headless platform doesn't behave as the previous UnitTestApplication
+	//[AvaloniaTest]
 	public void TextViewCanBeCollectedTest()
 	{
 		var wr = CreateControl<TextView>();
@@ -73,24 +90,6 @@ public class WeakReferenceTests : CornerstoneUnitTest
 		return wr;
 	}
 
-	//[AvaloniaTest] // currently fails due to some Avalonia static
-	private void DocumentDoesNotHoldReferenceToTextArea()
-	{
-		var textDocument = new TextDocument();
-		var wr = CreateControl<TextArea>(t => t.Document = textDocument);
-		IsFalse(wr.IsAlive);
-		GC.KeepAlive(textDocument);
-	}
-
-	//[AvaloniaTest] // currently fails due to some Avalonia static
-	private void DocumentDoesNotHoldReferenceToTextEditor()
-	{
-		var textDocument = new TextDocument();
-		var wr = CreateControl<TextEditor>(t => t.Document = textDocument);
-		IsFalse(wr.IsAlive);
-		GC.KeepAlive(textDocument);
-	}
-
 	private static void GarbageCollect()
 	{
 		for (var i = 0; i < 3; i++)
@@ -102,4 +101,3 @@ public class WeakReferenceTests : CornerstoneUnitTest
 
 	#endregion
 }
-#endif

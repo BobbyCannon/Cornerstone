@@ -2,6 +2,9 @@
 
 using Avalonia;
 using Avalonia.iOS;
+using Cornerstone.Avalonia;
+using Cornerstone.Avalonia.Platforms.iOS;
+using Cornerstone.Platforms.iOS;
 using Foundation;
 
 #endregion
@@ -18,8 +21,16 @@ public class AppDelegate : AvaloniaAppDelegate<App>
 
 	protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
 	{
-		return base.CustomizeAppBuilder(builder)
-			.WithInterFont();
+		var dependencyProvider = CornerstoneApplication.DependencyProvider;
+
+		IOSPlatform.Initialize(dependencyProvider);
+
+		var response = base
+			.CustomizeAppBuilder(builder)
+			.WithInterFont()
+			.UseCornerstone();
+
+		return response;
 	}
 
 	#endregion

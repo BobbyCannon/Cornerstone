@@ -2,7 +2,10 @@
 
 using System;
 using Avalonia;
+using Cornerstone.Avalonia.Camera;
+using Cornerstone.Avalonia.MediaPlayer;
 using Cornerstone.Avalonia.WebView;
+using Cornerstone.Runtime;
 using Microsoft.Web.WebView2.Core;
 
 #endregion
@@ -18,6 +21,8 @@ public static class AppBuilderExtensions
 		return appBuilder.AfterPlatformServicesSetup(_ =>
 		{
 			var dependencyProvider = CornerstoneApplication.DependencyProvider;
+			dependencyProvider.AddSingleton<ICameraAdapter, CameraAdapter>();
+			dependencyProvider.AddSingleton<IMediaPlayerAdapter, MediaPlayerAdapter>();
 
 			if (IsWebView2AvailableInternal())
 			{

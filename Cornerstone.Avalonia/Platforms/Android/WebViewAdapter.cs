@@ -38,7 +38,7 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter
 		_webChromeClient = new CornerstoneWebChromeClient(this);
 		webView.SetWebViewClient(_webViewClient);
 		webView.SetWebChromeClient(_webChromeClient);
-		
+
 		var settings = webView.Settings;
 		settings.JavaScriptEnabled = true;
 

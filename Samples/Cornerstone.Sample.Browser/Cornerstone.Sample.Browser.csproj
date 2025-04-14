@@ -13,6 +13,7 @@
 		<ProjectReference Include="..\Cornerstone.Sample\Cornerstone.Sample.csproj" />
 	</ItemGroup>
 	<Target Name="CopyFiles" AfterTargets="Build">
+		<Copy SourceFiles="$(ProjectDir)..\..\Cornerstone.Avalonia\Platforms\Browser\Cornerstone.Browser.css" DestinationFiles="$(ProjectDir)wwwroot\css\Cornerstone.Browser.css" />
 		<Copy SourceFiles="$(ProjectDir)..\..\Cornerstone.Avalonia\Platforms\Browser\Cornerstone.Browser.js" DestinationFiles="$(ProjectDir)wwwroot\Cornerstone.Browser.js" />
 	</Target>
 </Project>

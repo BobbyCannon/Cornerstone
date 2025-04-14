@@ -22,7 +22,7 @@ public class BrowserLocationProvider : BrowserLocationProvider<Location.Location
 	/// <summary>
 	/// Constructor for Implementation
 	/// </summary>
-	public BrowserLocationProvider(BrowserInteropProxy browserInterop, IDispatcher dispatcher)
+	public BrowserLocationProvider(IBrowserInterop browserInterop, IDispatcher dispatcher)
 		: base(browserInterop, dispatcher)
 	{
 	}
@@ -42,7 +42,7 @@ public class BrowserLocationProvider<TLocation, THorizontal, TVertical, TLocatio
 {
 	#region Fields
 
-	private readonly BrowserInteropProxy _browserInterop;
+	private readonly IBrowserInterop _browserInterop;
 
 	#endregion
 
@@ -51,7 +51,7 @@ public class BrowserLocationProvider<TLocation, THorizontal, TVertical, TLocatio
 	/// <summary>
 	/// Constructor for Implementation
 	/// </summary>
-	public BrowserLocationProvider(BrowserInteropProxy browserInterop, IDispatcher dispatcher) : base(dispatcher)
+	public BrowserLocationProvider(IBrowserInterop browserInterop, IDispatcher dispatcher) : base(dispatcher)
 	{
 		_browserInterop = browserInterop;
 

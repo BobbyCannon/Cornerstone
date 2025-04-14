@@ -3,9 +3,9 @@
 using System;
 using System.Diagnostics;
 using Avalonia;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Rendering;
 using Cornerstone.Avalonia.TextEditor.Utils;
-using Cornerstone.Text.Document;
 using Cornerstone.Weaver;
 
 #endregion

@@ -16,12 +16,17 @@ using Cornerstone.Extensions;
 using Cornerstone.Generators.CodeGenerators;
 using Cornerstone.Presentation;
 using Cornerstone.Sync;
+
+#region References
+
 #if ANDROID
 using Microsoft.Maui.Devices;
 
 #else
 using Cornerstone.Internal.Windows;
 #endif
+
+#endregion
 
 #endregion
 
@@ -92,6 +97,14 @@ public class RuntimeInformation : Bindable, IRuntimeInformation, IObjectCodeWrit
 	public bool ApplicationIsElevated => GetOrCache<bool>(nameof(ApplicationIsElevated));
 
 	/// <inheritdoc />
+	[Browsable(false)]
+	public bool ApplicationIsLoaded { get; private set; }
+
+	/// <inheritdoc />
+	[Browsable(false)]
+	public bool ApplicationIsShuttingDown { get; private set; }
+
+	/// <inheritdoc />
 	public string ApplicationLocation => GetOrCache<string>(nameof(ApplicationLocation));
 
 	/// <inheritdoc />
@@ -138,14 +151,6 @@ public class RuntimeInformation : Bindable, IRuntimeInformation, IObjectCodeWrit
 	public Version DotNetRuntimeVersion => GetOrCache<Version>(nameof(DotNetRuntimeVersion));
 
 	/// <inheritdoc />
-	[Browsable(false)]
-	public bool IsLoaded { get; private set; }
-
-	/// <inheritdoc />
-	[Browsable(false)]
-	public bool IsShuttingDown { get; private set; }
-
-	/// <inheritdoc />
 	public object this[string key] => _cache[key];
 
 	/// <inheritdoc />
@@ -165,7 +170,7 @@ public class RuntimeInformation : Bindable, IRuntimeInformation, IObjectCodeWrit
 	/// </summary>
 	public void CompleteLoad()
 	{
-		IsLoaded = true;
+		ApplicationIsLoaded = true;
 	}
 
 	/// <inheritdoc />
@@ -299,7 +304,7 @@ public class RuntimeInformation : Bindable, IRuntimeInformation, IObjectCodeWrit
 	/// </summary>
 	public void Shutdown()
 	{
-		IsShuttingDown = true;
+		ApplicationIsShuttingDown = true;
 	}
 
 	/// <inheritdoc />
@@ -685,6 +690,16 @@ public interface IRuntimeInformation : IReadOnlyDictionary<string, object>, ISyn
 	bool ApplicationIsElevated { get; }
 
 	/// <summary>
+	/// The flag to track when the application has been loaded.
+	/// </summary>
+	bool ApplicationIsLoaded { get; }
+
+	/// <summary>
+	/// The flag to track when the application is shutting down.
+	/// </summary>
+	bool ApplicationIsShuttingDown { get; }
+
+	/// <summary>
 	/// The directory of where the application is located.
 	/// </summary>
 	string ApplicationLocation { get; }
@@ -718,16 +733,6 @@ public interface IRuntimeInformation : IReadOnlyDictionary<string, object>, ISyn
 	/// The DotNet runtime version.
 	/// </summary>
 	Version DotNetRuntimeVersion { get; }
-
-	/// <summary>
-	/// The flag to track when the application has been loaded.
-	/// </summary>
-	bool IsLoaded { get; }
-
-	/// <summary>
-	/// The flag to track when the application is shutting down.
-	/// </summary>
-	bool IsShuttingDown { get; }
 
 	#endregion
 }

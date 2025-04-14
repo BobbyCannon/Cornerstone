@@ -6,6 +6,7 @@ using Cornerstone.Data.Bytes;
 using Cornerstone.Input;
 using Cornerstone.Location;
 using Cornerstone.Media;
+using Cornerstone.Runtime;
 using Cornerstone.Security;
 using Cornerstone.Security.SecurityKeys;
 using RuntimeInformation = Cornerstone.Runtime.RuntimeInformation;
@@ -50,6 +51,7 @@ public static class WindowsPlatform
 		DependencyProvider.AddSingleton<Keyboard, WindowsKeyboard>();
 		DependencyProvider.AddSingleton<Mouse, WindowsMouse>();
 		DependencyProvider.AddSingleton<SmartCardReader, WindowsSmartCardReader>();
+		DependencyProvider.AddSingleton<IPermissions, WindowsPermissions>();
 		DependencyProvider.AddSingleton<PlatformCredentialVault, WindowsPlatformCredentialVault>();
 	}
 

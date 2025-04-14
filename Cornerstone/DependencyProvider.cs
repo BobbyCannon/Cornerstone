@@ -59,7 +59,7 @@ public class DependencyProvider : IDependencyProvider
 	/// </summary>
 	/// <typeparam name="T"> The type (interface/abstract) to add or update. </typeparam>
 	/// <typeparam name="T2"> The type of the implementation. </typeparam>
-	public void AddOrUpdateTransient<T, T2>()
+	public void AddOrUpdateTransient<T, T2>() where T2 : T
 	{
 		AddOrUpdateTransient<T, T2>(() => CreateInstanceForDependencyInjection<T2>());
 	}
@@ -70,7 +70,7 @@ public class DependencyProvider : IDependencyProvider
 	/// <typeparam name="T"> The type (interface/abstract) to add. </typeparam>
 	/// <typeparam name="T2"> The type of the implementation. </typeparam>
 	/// <param name="create"> The function to create the type. </param>
-	public void AddOrUpdateTransient<T, T2>(Func<T2> create)
+	public void AddOrUpdateTransient<T, T2>(Func<T2> create) where T2 : T
 	{
 		FactoriesAddOrUpdate(typeof(T),
 			new TypeActivator<T2>(_ => create.Invoke())
@@ -95,8 +95,7 @@ public class DependencyProvider : IDependencyProvider
 	/// </summary>
 	/// <typeparam name="T"> The type (interface/abstract) to add. </typeparam>
 	/// <typeparam name="T2"> The type of the implementation. </typeparam>
-	public void AddSingleton<T, T2>(Action<T2> initialize = null)
-		where T2 : T
+	public void AddSingleton<T, T2>(Action<T2> initialize = null) where T2 : T
 	{
 		AddSingleton<T, T2>(() => CreateInstanceForDependencyInjection(initialize));
 	}
@@ -127,7 +126,7 @@ public class DependencyProvider : IDependencyProvider
 	/// <typeparam name="T"> The type (interface/abstract) to add. </typeparam>
 	/// <typeparam name="T2"> The type of the implementation. </typeparam>
 	/// <param name="value"> The value of the type. </param>
-	public void AddSingleton<T, T2>(T2 value)
+	public void AddSingleton<T, T2>(T2 value) where T2 : T
 	{
 		AddSingleton<T, T2>(() => value);
 	}
@@ -138,7 +137,7 @@ public class DependencyProvider : IDependencyProvider
 	/// <typeparam name="T"> The type (interface/abstract) to add. </typeparam>
 	/// <typeparam name="T2"> The type of the implementation. </typeparam>
 	/// <param name="create"> The function to create the type. </param>
-	public void AddSingleton<T, T2>(Func<T2> create)
+	public void AddSingleton<T, T2>(Func<T2> create) where T2 : T
 	{
 		FactoriesGetOrAdd(typeof(T),
 			new TypeActivator<T2>(_ => create())
@@ -155,7 +154,7 @@ public class DependencyProvider : IDependencyProvider
 	/// <typeparam name="T"> The type (interface/abstract) to add. </typeparam>
 	/// <typeparam name="T2"> The type of the provider. </typeparam>
 	/// <param name="create"> The function to provide the type. </param>
-	public void AddSingleton<T, T2>(Func<T2, T> create)
+	public void AddSingleton<T, T2>(Func<T2, T> create) where T2 : T
 	{
 		FactoriesGetOrAdd(typeof(T),
 			new TypeActivator<T>(_ => create(GetInstance<T2>()))
@@ -180,7 +179,7 @@ public class DependencyProvider : IDependencyProvider
 	/// </summary>
 	/// <typeparam name="T"> The type (interface/abstract) to add. </typeparam>
 	/// <typeparam name="T2"> The type of the implementation. </typeparam>
-	public void AddTransient<T, T2>()
+	public void AddTransient<T, T2>() where T2 : T
 	{
 		AddTransient<T, T2>(() => CreateInstanceForDependencyInjection<T2>());
 	}
@@ -211,7 +210,7 @@ public class DependencyProvider : IDependencyProvider
 	/// <typeparam name="T"> The type (interface/abstract) to add. </typeparam>
 	/// <typeparam name="T2"> The type of the implementation. </typeparam>
 	/// <param name="create"> The function to create the type. </param>
-	public void AddTransient<T, T2>(Func<T2> create)
+	public void AddTransient<T, T2>(Func<T2> create) where T2 : T
 	{
 		FactoriesGetOrAdd(typeof(T),
 			new TypeActivator<T2>(_ => create.Invoke())
@@ -323,12 +322,13 @@ public class DependencyProvider : IDependencyProvider
 
 		// Add stub placeholders
 		AddSingleton<AudioPlayer, AudioPlayerStub>();
-		AddSingleton<BrowserInteropProxy, BrowserInteropProxyStub>();
+		AddSingleton<IBrowserInterop, BrowserInteropStub>();
 		AddSingleton<IClipboardService, ClipboardServiceStub>();
 		AddSingleton<FileService>();
 		AddSingleton<Gamepad, GamepadStub>();
 		AddSingleton<Keyboard, KeyboardStub>();
 		AddSingleton<Mouse, MouseStub>();
+		AddSingleton<IPermissions, Permissions>();
 		AddSingleton<PlatformCredentialVault, PlatformCredentialVaultStub>();
 		AddSingleton<SmartCardReader, SmartCardReaderStub>();
 		AddSingleton<IWindowsHelloService, WindowsHelloServiceStub>();

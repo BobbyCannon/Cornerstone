@@ -19,12 +19,6 @@ namespace Cornerstone.Collections;
 /// </summary>
 public class ReadOnlySpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 {
-	#region Fields
-
-	private readonly SpeedyList<T> _list;
-
-	#endregion
-
 	#region Constructors
 
 	/// <summary>
@@ -33,11 +27,11 @@ public class ReadOnlySpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, I
 	public ReadOnlySpeedyList(SpeedyList<T> list)
 		: base(list, list.GetDispatcher())
 	{
-		_list = list;
+		List = list;
 
-		WeakEventManager.AddSpeedyListUpdated<SpeedyList<T>, T, ReadOnlySpeedyList<T>>(_list, this, ListOnListUpdated);
-		WeakEventManager.AddCollectionChanged(_list, this, ListOnCollectionChanged);
-		WeakEventManager.AddPropertyChanged(_list, this, ListOnPropertyChanged);
+		WeakEventManager.AddSpeedyListUpdated<SpeedyList<T>, T, ReadOnlySpeedyList<T>>(List, this, ListOnListUpdated);
+		WeakEventManager.AddCollectionChanged(List, this, ListOnCollectionChanged);
+		WeakEventManager.AddPropertyChanged(List, this, ListOnPropertyChanged);
 	}
 
 	#endregion
@@ -45,18 +39,16 @@ public class ReadOnlySpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, I
 	#region Properties
 
 	/// <inheritdoc cref="IList" />
-	public int Count => _list.Count;
+	public int Count => List.Count;
 
 	/// <inheritdoc />
 	public Func<T, bool> FilterCheck
 	{
-		get => _list.FilterCheck;
+		get => List.FilterCheck;
 		set => throw new NotSupportedException();
 	}
 
-	public OrderBy<T>[] OrderBy { get; set; }
-
-	public bool IsFiltering => _list.IsFiltering;
+	public bool IsFiltering => List.IsFiltering;
 
 	/// <inheritdoc cref="ISpeedyList" />
 	public bool IsFixedSize => false;
@@ -64,12 +56,12 @@ public class ReadOnlySpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, I
 	/// <summary>
 	/// True if the list is currently loading items.
 	/// </summary>
-	public bool IsLoading => _list.IsLoading;
+	public bool IsLoading => List.IsLoading;
 
 	/// <summary>
 	/// True if the list is in the process of ordering.
 	/// </summary>
-	public bool IsOrdering => _list.IsOrdering;
+	public bool IsOrdering => List.IsOrdering;
 
 	/// <inheritdoc cref="IList" />
 	public bool IsReadOnly => true;
@@ -81,11 +73,15 @@ public class ReadOnlySpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, I
 	[SuppressPropertyChangedWarnings]
 	public T this[int index]
 	{
-		get => ((IList<T>) _list)[index];
+		get => ((IList<T>) List)[index];
 		set => throw new NotSupportedException();
 	}
 
-	public object SyncRoot => _list.SyncRoot;
+	public OrderBy<T>[] OrderBy { get; set; }
+
+	public object SyncRoot => List.SyncRoot;
+
+	protected SpeedyList<T> List { get; }
 
 	[SuppressPropertyChangedWarnings]
 	object ISpeedyList.this[int index]
@@ -125,33 +121,33 @@ public class ReadOnlySpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, I
 	/// <inheritdoc />
 	public bool Contains(T item)
 	{
-		return _list.Contains(item);
+		return List.Contains(item);
 	}
 
 	/// <inheritdoc />
 	public void CopyTo(T[] array, int arrayIndex)
 	{
-		_list.CopyTo(array, arrayIndex);
+		List.CopyTo(array, arrayIndex);
 	}
 
 	/// <inheritdoc />
 	public IEnumerator<T> GetEnumerator()
 	{
-		var list = _list.ToList();
+		var list = List.ToList();
 		return list.GetEnumerator();
 	}
 
 	/// <inheritdoc />
 	public override bool HasChanges(IncludeExcludeSettings settings)
 	{
-		return _list is ITrackPropertyChanges trackPropertyChanges
+		return List is ITrackPropertyChanges trackPropertyChanges
 			&& trackPropertyChanges.HasChanges(settings);
 	}
 
 	/// <inheritdoc />
 	public int IndexOf(T item)
 	{
-		return _list.IndexOf(item);
+		return List.IndexOf(item);
 	}
 
 	/// <inheritdoc />
@@ -175,13 +171,13 @@ public class ReadOnlySpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, I
 	/// <inheritdoc />
 	public void RefreshFilter()
 	{
-		_list.RefreshFilter();
+		List.RefreshFilter();
 	}
 
 	/// <inheritdoc />
 	public void RefreshOrder()
 	{
-		_list.RefreshOrder();
+		List.RefreshOrder();
 	}
 
 	/// <inheritdoc />
@@ -208,7 +204,13 @@ public class ReadOnlySpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, I
 	/// <returns> True if the list should order or false otherwise. </returns>
 	public bool ShouldOrder()
 	{
-		return _list.ShouldOrder();
+		return List.ShouldOrder();
+	}
+
+	/// <inheritdoc />
+	public void Swap(int firstIndex, int secondIndex)
+	{
+		throw new NotSupportedException();
 	}
 
 	void ISpeedyList.Add(object item)
@@ -242,7 +244,7 @@ public class ReadOnlySpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, I
 	/// <inheritdoc />
 	void ICollection.CopyTo(Array array, int arrayIndex)
 	{
-		if (_list is IList list)
+		if (List is IList list)
 		{
 			list.CopyTo(array, arrayIndex);
 		}
@@ -261,7 +263,7 @@ public class ReadOnlySpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, I
 			return -1;
 		}
 
-		return _list.IndexOf(value);
+		return List.IndexOf(value);
 	}
 
 	/// <inheritdoc />
@@ -272,7 +274,7 @@ public class ReadOnlySpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, I
 			return -1;
 		}
 
-		return _list.IndexOf(value);
+		return List.IndexOf(value);
 	}
 
 	void ISpeedyList.Insert(int index, object item)

@@ -13,9 +13,9 @@ using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Editing;
 using Cornerstone.Avalonia.TextEditor.Rendering;
-using Cornerstone.Text.Document;
 using Cornerstone.Weaver;
 
 #endregion

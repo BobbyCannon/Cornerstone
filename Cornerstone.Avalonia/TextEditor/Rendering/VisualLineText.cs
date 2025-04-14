@@ -3,8 +3,8 @@
 using System;
 using System.Collections.Generic;
 using Avalonia.Media.TextFormatting;
-using Cornerstone.Text.Document;
-using LogicalDirection = Cornerstone.Text.Document.LogicalDirection;
+using Cornerstone.Avalonia.TextEditor.Document;
+using LogicalDirection = Cornerstone.Avalonia.TextEditor.Document.LogicalDirection;
 
 #endregion
 

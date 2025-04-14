@@ -257,6 +257,26 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 		}
 	}
 
+	/// <summary>
+	/// See https://learn.microsoft.com/en-us/archive/technet-wiki/40666.sql-server-2017-identity-cache-feature
+	/// </summary>
+	/// <param name="enabled"> True to turn on identity cache otherwise false will turn off. </param>
+	public void SetIdentityCache(bool enabled)
+	{
+		var expectedString = enabled ? "ON" : "OFF";
+		var currentSetting = Database
+			.SqlQueryRaw<bool>("SELECT value FROM sys.database_scoped_configurations WHERE name = 'IDENTITY_CACHE'")
+			.FirstOrDefault();
+
+		if (currentSetting == enabled)
+		{
+			return;
+		}
+
+		var query = $"ALTER DATABASE SCOPED CONFIGURATION SET IDENTITY_CACHE = {expectedString}";
+		Database.ExecuteSqlRaw(query);
+	}
+
 	/// <inheritdoc />
 	public void UpdateDateTimeProvider(IDateTimeProvider dateTimeProvider)
 	{

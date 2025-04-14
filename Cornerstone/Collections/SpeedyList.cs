@@ -485,8 +485,12 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 
 			if ((FilterCheck == null) || FilterCheck(item))
 			{
-				if (InternalDistinct(item, out _))
+				if (InternalDistinct(item, out var foundIndex))
 				{
+					if (foundIndex != index)
+					{
+						InternalMove(foundIndex, index);
+					}
 					return;
 				}
 
@@ -496,7 +500,6 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 				}
 			}
 
-			InternalOrderWithoutLocking();
 			InternalEnforceLimit(false);
 		}
 		finally
@@ -685,6 +688,7 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 			PauseOrdering = false;
 
 			RefreshOrder();
+			InternalEnforceLimit();
 		}
 	}
 
@@ -731,16 +735,19 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 		{
 			EnterWriteLock();
 
+			_allItems.Remove(item);
+
 			index = InternalIndexOf(item);
+
 			if (index < 0)
 			{
+				// item was filter and not active
 				return false;
 			}
 
 			removedItem = _activeItems[index];
 
 			_activeItems.RemoveAt(index);
-			_allItems.Remove(item);
 
 			Profiler?.RemovedCount.Increment();
 		}
@@ -865,6 +872,23 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 			&& !IsOrdering
 			&& (_activeItems.Count > 0)
 			&& OrderBy is { Length: > 0 };
+	}
+
+	/// <inheritdoc />
+	public void Swap(int firstIndex, int secondIndex)
+	{
+		if (OrderBy is { Length: > 0 }
+			|| (firstIndex == secondIndex))
+		{
+			// Do not move when ordering...
+			return;
+		}
+
+		var minIndex = Math.Min(firstIndex, secondIndex);
+		var maxIndex = Math.Max(firstIndex, secondIndex);
+
+		Move(maxIndex, minIndex);
+		Move(minIndex + 1, maxIndex);
 	}
 
 	/// <summary>
@@ -1125,8 +1149,10 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 			if ((FilterCheck == null) || FilterCheck(item))
 			{
 				var response = InternalAdd(item);
-				var limitFromStart = !ShouldOrder();
-				InternalEnforceLimit(limitFromStart);
+				if (!PauseOrdering)
+				{
+					InternalEnforceLimit();
+				}
 				return response;
 			}
 
@@ -1249,6 +1275,12 @@ public class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, IList
 
 		index = -1;
 		return false;
+	}
+
+	private void InternalEnforceLimit()
+	{
+		var limitFromStart = OrderBy is null or { Length: <= 0 };
+		InternalEnforceLimit(limitFromStart);
 	}
 
 	private void InternalEnforceLimit(bool start)
@@ -1600,6 +1632,13 @@ public interface ISpeedyList : IEnumerable, INotifyCollectionChanged, IDispatcha
 	/// <summary> Removes the list item at the specified index. </summary>
 	/// <param name="index"> The zero-based index of the item to remove. </param>
 	void RemoveAt(int index);
+
+	/// <summary>
+	/// Swap items in two location.
+	/// </summary>
+	/// <param name="firstIndex"> The index of the item to move. </param>
+	/// <param name="secondIndex"> The index of the item to move. </param>
+	void Swap(int firstIndex, int secondIndex);
 
 	/// <summary>
 	/// Determine if the list should order.

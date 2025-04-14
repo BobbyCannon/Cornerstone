@@ -1,7 +1,7 @@
 ﻿#region References
 
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Testing;
-using Cornerstone.Text.Document;
 using Cornerstone.UnitTests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

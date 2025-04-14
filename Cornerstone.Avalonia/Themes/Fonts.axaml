@@ -2,7 +2,7 @@
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 	<Design.PreviewWith>
 		<StackPanel Spacing="10">
-			<TextBlock Classes="Header" Text="Using: x:Static" />
+			<TextBlock Classes="Header" Text="x:Static" />
 			<TextBlock FontFamily="{x:Static CornerstoneTheme.DejaVuSansMono}"
 					FontSize="22"
 					Text="DejaVu Sans Mono : 0oO1LlIi The quick brown foxed jumped..."/>
@@ -10,15 +10,9 @@
 					FontSize="22"
 					Text="DejaVu Sans Light   : 0oO1LlIi The quick brown foxed jumped..."/>
 			
-			<TextBlock Classes="Header" Text="Using: Dynamic Resource" />
-			<TextBlock FontFamily="{DynamicResource DejaVuSansMono}"
-					FontSize="22"
-					Text="DejaVu Sans Mono : 0oO1LlIi"/>
-			<TextBlock FontFamily="{DynamicResource DejaVuSansLight}"
-					FontSize="22"
-					Text="DejaVu Sans Light   : 0oO1LlIi"/>
-			
-			<TextBlock Classes="Header" Text="Using: Static Resource" />
+			<TextBlock Classes="Header"
+					Text="Static Resource"
+					Margin="0,20,0,0" />
 			<TextBlock FontFamily="{StaticResource DejaVuSansMono}"
 					FontSize="22"
 					Text="DejaVu Sans Mono : 0oO1LlIi"/>

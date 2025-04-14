@@ -8,11 +8,11 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Media;
 using Cornerstone.Avalonia.Input;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Editing;
 using Cornerstone.Avalonia.TextEditor.Rendering;
 using Cornerstone.Avalonia.TextEditor.Utils;
 using Cornerstone.Collections;
-using Cornerstone.Text.Document;
 using Cornerstone.Weaver;
 
 #endregion

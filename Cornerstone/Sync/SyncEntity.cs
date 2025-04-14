@@ -126,17 +126,29 @@ public class SyncEntity<TKey> : Entity<TKey>, ISyncEntity
 	/// Add model to the set.
 	/// </summary>
 	/// <typeparam name="T"> The type of the items in the collection. </typeparam>
+	/// <param name="exceptions"> Optional properties to ignore. </param>
+	protected static HashSet<string> AddModel<T>(params string[] exceptions)
+	{
+		var set = new HashSet<string>();
+		return AddModel<T>(set, exceptions);
+	}
+
+	/// <summary>
+	/// Add model to the set.
+	/// </summary>
+	/// <typeparam name="T"> The type of the items in the collection. </typeparam>
 	/// <param name="set"> The set to add items to. </param>
-	/// <param name="except"> Optional properties to ignore. </param>
-	protected static void AddModel<T>(ISet<string> set, params string[] except)
+	/// <param name="exceptions"> Optional properties to ignore. </param>
+	protected static HashSet<string> AddModel<T>(HashSet<string> set, params string[] exceptions)
 	{
 		var properties = typeof(T)
 			.GetCachedProperties()
 			.Select(x => x.Name)
-			.Except(except)
+			.Except(exceptions)
 			.ToList();
 
 		set.Add(properties);
+		return set;
 	}
 
 	#endregion

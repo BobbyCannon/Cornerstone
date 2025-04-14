@@ -302,9 +302,10 @@
 					</SplitView>
 					<ToggleButton x:Name="HamburgerMenuButton"
 							Width="{StaticResource PaneCollapsedWidth}"
-							BorderThickness="0"
+							BorderThickness="1"
+							BorderBrush="Transparent"
 							Height="36"
-							Margin="1"
+							Margin="0"
 							Padding="0"
 							HorizontalAlignment="Left"
 							VerticalAlignment="Top"
@@ -314,7 +315,7 @@
 							IsChecked="{TemplateBinding IsOpen, Mode=TwoWay}">
 						<PathIcon Data="{StaticResource Icons.Grid}"
 								Foreground="{TemplateBinding Foreground}"
-								Margin="0,1,0,0"
+								Margin="0,0,0,0"
 								Height="16"
 								Width="16"
 								VerticalAlignment="Top" />

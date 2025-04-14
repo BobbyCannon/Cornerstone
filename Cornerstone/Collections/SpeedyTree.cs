@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Cornerstone.Attributes;
 using Cornerstone.Presentation;
 using Cornerstone.Sync;
@@ -203,22 +202,13 @@ public class SpeedyTree<T> : SyncModel, IDispatchable
 
 	private void ApplyFilterRecursively(Func<T, bool> filter)
 	{
-		Func<T, bool> recursiveFilter = item =>
-		{
-			var result = ComputeFilterResult(item, filter);
-			Debug.WriteLine($"Filter check for {item}: {result}");
-			return result;
-		};
-
-
 		// Apply to this node's children
-		Children.FilterCheck = recursiveFilter;
-		//Children.FilterCheck = x => ComputeFilterResult(x, filter);
+		Children.FilterCheck = x => ComputeFilterResult(x, filter);
 
 		// Recursively apply to all child trees
 		foreach (var child in Children)
 		{
-			child?.ApplyFilterRecursively(recursiveFilter);
+			child?.ApplyFilterRecursively(filter);
 		}
 	}
 
@@ -250,7 +240,6 @@ public class SpeedyTree<T> : SyncModel, IDispatchable
 			foreach (var item in e.Added)
 			{
 				item.Parent = this;
-				item.FilterCheck = _filterCheck;
 				OnChildAdded(item);
 			}
 		}

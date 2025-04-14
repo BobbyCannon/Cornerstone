@@ -5,6 +5,7 @@
 			<ResourceDictionary.MergedDictionaries>
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/AdornerLayer.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/AutoCompleteBox.axaml" />
+				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/BrowserThreads.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/ButtonSpinner.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/Calendar.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/CalendarButton.axaml" />
@@ -83,6 +84,7 @@
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Controls/Button.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Controls/Border.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Controls/CornerstoneWindow.axaml" />
+	<StyleInclude Source="avares://Cornerstone.Avalonia/Controls/Image.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Controls/ListBox.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Controls/Path.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Controls/PathIcon.axaml" />
@@ -95,6 +97,7 @@
 	<StyleInclude Source="avares://Cornerstone.Avalonia/DockingManager/DockingTabControl.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/DockingManager/DockableTabItem.axaml" />
 	
+	<StyleInclude Source="avares://Cornerstone.Avalonia/FileEditor/FileEditor.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/HexEditor/HexEditor.axaml" />
 
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Themes/Styles/MenuItem.axaml" />

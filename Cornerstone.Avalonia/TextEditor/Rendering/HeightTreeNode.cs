@@ -2,7 +2,7 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
-using Cornerstone.Text.Document;
+using Cornerstone.Avalonia.TextEditor.Document;
 
 #endregion
 

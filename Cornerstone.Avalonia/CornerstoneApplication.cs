@@ -49,6 +49,8 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 
 	public static CornerstoneDispatcher Dispatcher => _dispatcher ??= new CornerstoneDispatcher();
 
+	public static IPermissions Permissions { get; }
+
 	public static RuntimeInformation RuntimeInformation { get; }
 
 	#endregion
@@ -107,7 +109,7 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 			}
 			case ISingleViewApplicationLifetime sValue:
 			{
-				ApplicationArguments.Parse(sValue.GetBrowserArgs());
+				ApplicationArguments.Parse(sValue.GetSingleViewArgs());
 				break;
 			}
 		}

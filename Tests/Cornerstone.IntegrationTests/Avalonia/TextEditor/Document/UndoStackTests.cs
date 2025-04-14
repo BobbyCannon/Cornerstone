@@ -1,6 +1,6 @@
 ﻿#region References
 
-using Cornerstone.Text.Document;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.UnitTests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

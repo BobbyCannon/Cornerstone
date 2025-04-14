@@ -3,8 +3,8 @@
 using System;
 using System.Linq;
 using Avalonia.Media;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Rendering;
-using Cornerstone.Text.Document;
 
 #endregion
 

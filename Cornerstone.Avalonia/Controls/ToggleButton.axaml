@@ -523,6 +523,18 @@
 			<Style Selector="^:disabled">
 				<Setter Property="Foreground" Value="{DynamicResource ToggleButtonForegroundDisabled}" />
 			</Style>
+
+			<Style Selector="^.Inverted">
+				<Setter Property="Foreground" Value="{DynamicResource ToggleButtonBackgroundChecked}" />
+
+				<Style Selector="^:checked">
+					<Setter Property="Foreground" Value="{StaticResource Blue06}" />
+				</Style>
+
+				<Style Selector="^:disabled">
+					<Setter Property="Foreground" Value="{DynamicResource ToggleButtonForegroundDisabled}" />
+				</Style>
+			</Style>
 		</Style>
 
 		<Style Selector="^.Icon">
@@ -743,6 +755,10 @@
 				<ToggleButton Classes="Hyperlink" Content="settings" />
 				<ToggleButton Classes="Hyperlink" Content="settings" IsChecked="True" />
 				<ToggleButton Classes="Hyperlink" Content="settings" IsChecked="True" IsEnabled="False" />
+				
+				<ToggleButton Classes="Hyperlink Inverted" Content="settings" />
+				<ToggleButton Classes="Hyperlink Inverted" Content="settings" IsChecked="True" />
+				<ToggleButton Classes="Hyperlink Inverted" Content="settings" IsChecked="True" IsEnabled="False" />
 			</WrapPanel>
 		</Grid>
 	</Design.PreviewWith>

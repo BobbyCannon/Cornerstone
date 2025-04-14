@@ -185,17 +185,22 @@ public abstract partial class CornerstoneTest : DependencyProvider, IDateTimePro
 	/// </summary>
 	/// <param name="expected"> The value that is expected. </param>
 	/// <param name="actual"> The value to compare with expected. </param>
+	/// <param name="includeExcludeSettings"> An optional set of included or excluded properties. </param>
+	public void AreEqual<T>(T expected, T actual, IncludeExcludeSettings includeExcludeSettings)
+	{
+		AreEqual(expected, actual, null, includeExcludeSettings);
+	}
+
+	/// <summary>
+	/// Validates that the actual is equal to the expected. If they are not equal a <see cref="CompareException" /> is thrown.
+	/// </summary>
+	/// <param name="expected"> The value that is expected. </param>
+	/// <param name="actual"> The value to compare with expected. </param>
 	/// <param name="message"> An optional prefix to include with the assert message. </param>
 	/// <param name="includeExcludeSettings"> An optional set of included or excluded properties. </param>
-	public void AreEqual<T, T2>(T expected, T2 actual, Func<string> message, IncludeExcludeSettings includeExcludeSettings)
+	public void AreEqual<T>(T expected, T actual, Func<string> message, IncludeExcludeSettings includeExcludeSettings)
 	{
-		var settings = new ComparerSettings
-		{
-			TypeIncludeExcludeSettings =
-			{
-				{ typeof(T), includeExcludeSettings }
-			}
-		};
+		var settings = new ComparerSettings { GlobalIncludeExcludeSettings = includeExcludeSettings };
 		AreEqual(expected, actual, message, settings);
 	}
 
@@ -203,13 +208,12 @@ public abstract partial class CornerstoneTest : DependencyProvider, IDateTimePro
 	/// Validates that the actual is equal to the expected. If they are not equal a <see cref="CompareException" /> is thrown.
 	/// </summary>
 	/// <typeparam name="T"> The data type of the expected value. </typeparam>
-	/// <typeparam name="T2"> The data type of the actual value. </typeparam>
 	/// <param name="expected"> The value that is expected. </param>
 	/// <param name="actual"> The value to compare with expected. </param>
 	/// <param name="message"> An optional prefix to include with the assert message. </param>
 	/// <param name="settings"> The settings for the compare session. </param>
 	/// <param name="configure"> Optional configuration before the session processes. </param>
-	public static void AreEqual<T, T2>(T expected, T2 actual, Func<string> message = null, ComparerSettings? settings = null, Action<CompareSession<T, T2>> configure = null)
+	public static void AreEqual<T>(T expected, T actual, Func<string> message = null, ComparerSettings? settings = null, Action<CompareSession<T, T>> configure = null)
 	{
 		var session = Compare(expected, actual, settings, configure);
 		session.Assert(CompareResult.AreEqual, message);

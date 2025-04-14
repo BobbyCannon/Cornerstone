@@ -6,8 +6,8 @@ using System.Diagnostics.CodeAnalysis;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.TextFormatting;
-using Cornerstone.Text.Document;
-using LogicalDirection = Cornerstone.Text.Document.LogicalDirection;
+using Cornerstone.Avalonia.TextEditor.Document;
+using LogicalDirection = Cornerstone.Avalonia.TextEditor.Document.LogicalDirection;
 
 #endregion
 

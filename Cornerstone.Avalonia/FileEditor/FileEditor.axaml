@@ -1,0 +1,27 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type FileEditor}" TargetType="FileEditor">
+				<Setter Property="Background" Value="{DynamicResource Background02}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground02}" />
+				<Setter Property="Template">
+					<ControlTemplate>
+						<Border Background="{TemplateBinding Background}">
+							<ScrollViewer>
+
+							</ScrollViewer>
+						</Border>
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Design.PreviewWith>
+		<Border Width="600" Height="400">
+			<FileEditor />
+
+		</Border>
+	</Design.PreviewWith>
+</Styles>

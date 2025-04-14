@@ -335,7 +335,7 @@ public class SpeedyListTests : CornerstoneUnitTest
 		collection.Add(account2);
 		AreEqual(1, collection.Count);
 
-		var allItems = (List<ClientAccount>)collection.GetMemberValue("_allItems");
+		var allItems = (List<ClientAccount>) collection.GetMemberValue("_allItems");
 		IsNotNull(allItems, "Could not find all items.");
 		AreEqual(1, allItems.Count);
 
@@ -565,19 +565,45 @@ public class SpeedyListTests : CornerstoneUnitTest
 		AreEqual(44, list[0]);
 		AreEqual(42, list[1]);
 
-		// This insert should not duplicate because 44 already in list
+		// This insert should not duplicate because 44 already in list,
+		// however it should move the item.
 		list.DistinctCheck = (x, y) => x.Equals(y);
 		((IList) list).Insert(1, 44);
 
 		AreEqual(2, list.Count);
-		AreEqual(44, list[0]);
-		AreEqual(42, list[1]);
+		AreEqual(42, list[0]);
+		AreEqual(44, list[1]);
 
 		list.Insert(1, 46);
 		AreEqual(3, list.Count);
-		AreEqual(44, list[0]);
+		AreEqual(42, list[0]);
 		AreEqual(46, list[1]);
-		AreEqual(42, list[2]);
+		AreEqual(44, list[2]);
+	}
+
+	[TestMethod]
+	public void InsertShouldDuplicateValueWithoutDistinctCheck()
+	{
+		var list = new SpeedyList<int> { { 1, 2, 3 } };
+
+		AreEqual(new[] { 1, 2, 3 }, list.ToList());
+
+		list.Insert(0, 3);
+
+		AreEqual(new[] { 3, 1, 2, 3 }, list.ToList());
+	}
+
+	[TestMethod]
+	public void InsertShouldMoveExistingItemWithDistinctCheck()
+	{
+		var list = new SpeedyList<int> { DistinctCheck = (x, y) => x == y };
+		list.Add(1, 2, 3);
+
+		AreEqual(new[] { 1, 2, 3 }, list.ToList());
+
+		list.Insert(0, 3);
+
+		AreEqual(new[] { 3, 1, 2 }, list.ToList());
 	}
 
 	[TestMethod]
@@ -958,9 +984,34 @@ public class SpeedyListTests : CornerstoneUnitTest
 		AreEqual(new[] { 1, 3, 2 }, list.ToArray());
 
 		list.OrderBy = [new OrderBy<int>()];
-		list.Order();
 
 		AreEqual(new[] { 1, 2, 3 }, list.ToArray());
+	}
+
+	[TestMethod]
+	public void ProcessThenOrderShouldStillLimitCorrectly()
+	{
+		var list = new SpeedyList<int>
+		{
+			Limit = 10,
+			OrderBy = [new OrderBy<int>(x => x)]
+		};
+
+		var expected = Enumerable.Range(1, 10).ToArray();
+		list.InitializeProfiler();
+
+		AreEqual(0, list.Profiler.OrderCount.Value);
+
+		list.ProcessThenOrder(() =>
+		{
+			for (var x = 99; x > 0; x--)
+			{
+				list.ProcessThenOrder(() => { list.Add(x); });
+			}
+		});
+
+		AreEqual(expected, list.ToArray());
+		AreEqual(1, list.Profiler.OrderCount.Value);
 	}
 
 	[TestMethod]
@@ -1067,6 +1118,37 @@ public class SpeedyListTests : CornerstoneUnitTest
 
 		list.Remove(x => x <= 6);
 		AreEqual(new[] { 7, 8, 9 }, list.ToArray());
+	}
+
+	[TestMethod]
+	public void Swap()
+	{
+		var scenarios = new[]
+		{
+			new SpeedyList<int>(),
+			new SpeedyList<int> { DistinctCheck = (x, y) => x == y }
+		};
+
+		foreach (var list in scenarios)
+		{
+			list.Add(1, 2, 3, 4, 5, 6);
+			AreEqual(new[] { 1, 2, 3, 4, 5, 6 }, list.ToList());
+
+			list.Swap(0, 2);
+			AreEqual(new[] { 3, 2, 1, 4, 5, 6 }, list.ToList());
+			
+			list.Swap(5, 0);
+			AreEqual(new[] { 6, 2, 1, 4, 5, 3 }, list.ToList());
+			
+			list.Swap(0, 0);
+			AreEqual(new[] { 6, 2, 1, 4, 5, 3 }, list.ToList());
+			
+			list.Swap(0, 1);
+			AreEqual(new[] { 2, 6, 1, 4, 5, 3 }, list.ToList());
+			
+			list.Swap(4, 5);
+			AreEqual(new[] { 2, 6, 1, 4, 3, 5 }, list.ToList());
+		}
 	}
 
 	[TestMethod]

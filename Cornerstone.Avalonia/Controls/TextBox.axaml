@@ -241,6 +241,11 @@
 						</Template>
 					</Setter>
 				</Style>
+				<Style Selector="^.InputValue">
+					<Setter Property="HorizontalAlignment" Value="Stretch" />
+					<Setter Property="VerticalAlignment" Value="Top" />
+					<Setter Property="Margin" Value="0,0,0,10" />
+				</Style>
 			</ControlTheme>
 		</ResourceDictionary>
 	</Styles.Resources>

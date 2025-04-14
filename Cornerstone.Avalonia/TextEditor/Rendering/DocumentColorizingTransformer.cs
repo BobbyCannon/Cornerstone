@@ -3,7 +3,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
-using Cornerstone.Text.Document;
+using Cornerstone.Avalonia.TextEditor.Document;
 
 #endregion
 

@@ -16,12 +16,12 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Cornerstone.Avalonia.Input;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Indentation;
 using Cornerstone.Avalonia.TextEditor.Rendering;
 using Cornerstone.Avalonia.TextEditor.Utils;
 using Cornerstone.Collections;
 using Cornerstone.Internal;
-using Cornerstone.Text.Document;
 using Cornerstone.Weaver;
 
 #endregion

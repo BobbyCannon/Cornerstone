@@ -18,7 +18,7 @@ public abstract class Theme : Styles
 {
 	#region Fields
 
-	public static readonly AttachedProperty<ThemeColor> ColorProperty = AvaloniaProperty.RegisterAttached<Theme, Control, ThemeColor>("Color");
+	public static readonly AttachedProperty<ThemeColor> ColorProperty;
 	public static readonly IMultiValueConverter ColorsMatch;
 
 	#endregion
@@ -27,6 +27,8 @@ public abstract class Theme : Styles
 
 	static Theme()
 	{
+		ColorProperty = AvaloniaProperty.RegisterAttached<Theme, Control, ThemeColor>("Color");
+
 		ColorsMatch = new FuncMultiValueConverter<ThemeColor, bool>(x =>
 		{
 			var a = x.ToArray();
@@ -83,8 +85,11 @@ public abstract class Theme : Styles
 	public static ThemeColor GetNextThemeColor(ThemeColor current)
 	{
 		var index = Array.IndexOf(Colors, current) + 1;
+
+		// Stay in range, skip first two values (Default, Current)
 		if ((index <= 2) || (index >= Colors.Length))
 		{
+			// Start at the first color.
 			return Colors[2];
 		}
 

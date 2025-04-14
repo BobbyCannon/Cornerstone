@@ -161,6 +161,23 @@ public class Tracker : Bindable, IDisposable
 	}
 
 	/// <summary>
+	/// Starts a new path. Once the path is done be sure to call <seealso cref="TrackerPath.Complete" />.
+	/// </summary>
+	/// <param name="initialize"> Action to initialize the path. </param>
+	/// <returns> The path for tracking a path. </returns>
+	public TrackerPath StartPath<T>(Action<T> initialize)
+		where T : TrackerPath, new()
+	{
+		ValidateTrackerState();
+		var response = new T();
+		initialize(response);
+		response.ParentId = _session.Id;
+		response.Completed += ResponseOnCompleted;
+		response.Disposed += ResponseOnDisposed;
+		return response;
+	}
+
+	/// <summary>
 	/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
 	/// </summary>
 	/// <param name="disposing"> Should be true if managed resources should be disposed. </param>

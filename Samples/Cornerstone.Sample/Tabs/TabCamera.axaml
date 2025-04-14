@@ -1,0 +1,31 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignWidth="600"
+		x:Class="Cornerstone.Sample.Tabs.TabCamera"
+		x:DataType="tabs:TabCamera">
+	<DockPanel Margin="10">
+		<Grid DockPanel.Dock="Top">
+			<TextBlock Classes="HeaderSix"
+					HorizontalAlignment="Center"
+					Text="Camera" />
+		</Grid>
+		<WrapPanel DockPanel.Dock="Top"
+				Orientation="Horizontal"
+				HorizontalAlignment="Center">
+			<Button Click="TogglePreviewingOnClick"
+					Margin="4">
+				<Grid>
+					<TextBlock Text="Start"
+							IsVisible="{Binding ElementName=Camera, Path=!IsPreviewing, Mode=OneWay}" />
+					<TextBlock Text="Stop"
+							IsVisible="{Binding ElementName=Camera, Path=IsPreviewing, Mode=OneWay}" />
+				</Grid>
+			</Button>
+		</WrapPanel>
+		<CameraView x:Name="Camera" />
+	</DockPanel>
+</UserControl>

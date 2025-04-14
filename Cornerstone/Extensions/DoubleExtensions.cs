@@ -14,6 +14,35 @@ public static class DoubleExtensions
 	#region Methods
 
 	/// <summary>
+	/// Compare two values using a precision.
+	/// </summary>
+	/// <param name="a"> The first version. </param>
+	/// <param name="b"> The second version. </param>
+	/// <param name="epsilon"> The precision. </param>
+	/// <returns> True if the values are equal or close otherwise false. </returns>
+	public static bool ComparePrecision(this double a, double b, double epsilon = double.Epsilon)
+	{
+		var absA = Math.Abs(a);
+		var absB = Math.Abs(b);
+		var diff = Math.Abs(a - b);
+
+		if (a.Equals(b))
+		{
+			// shortcut, handles infinities and NaN
+			return true;
+		}
+		if ((a == 0) || (b == 0) || ((absA + absB) < double.MinValue))
+		{
+			// a or b is zero or both are extremely close to it
+			// relative error is less meaningful here
+			return diff < (epsilon * double.MinValue);
+		}
+
+		// use relative error
+		return (diff / (absA + absB)) < epsilon;
+	}
+
+	/// <summary>
 	/// Decrement a double by a value or double.Epsilon if not provided.
 	/// </summary>
 	/// <param name="value"> The value to be decremented. </param>

@@ -5,32 +5,64 @@
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		mc:Ignorable="d" d:DesignWidth="600"
 		x:Class="Cornerstone.Sample.Tabs.TabWrapPanel">
-	<WrapPanel>
-		<WrapPanel.Styles>
-			<Style Selector="Border">
-				<Setter Property="BorderThickness" Value="1" />
-				<Setter Property="BorderBrush" Value="DarkGray" />
-				<Setter Property="Margin" Value="3" />
-				<Setter Property="Height" Value="60" />
-				<Setter Property="Width" Value="120" />
-			</Style>
-			<Style Selector="TextBlock">
-				<Setter Property="HorizontalAlignment" Value="Center" />
-				<Setter Property="VerticalAlignment" Value="Center" />
-			</Style>
-		</WrapPanel.Styles>
+	<DockPanel Margin="10">
+		<Grid DockPanel.Dock="Top">
+			<TextBlock Classes="HeaderSix"
+					HorizontalAlignment="Center"
+					Text="Wrap Panel" />
+		</Grid>
+		<WrapPanel>
+			<WrapPanel.Styles>
+				<Style Selector="Border">
+					<Setter Property="BorderThickness" Value="1" />
+					<Setter Property="BorderBrush" Value="DarkGray" />
+					<Setter Property="Margin" Value="3" />
+					<Setter Property="Height" Value="60" />
+					<Setter Property="Width" Value="120" />
+				</Style>
+				<Style Selector="TextBlock">
+					<Setter Property="HorizontalAlignment" Value="Center" />
+					<Setter Property="VerticalAlignment" Value="Center" />
+				</Style>
+			</WrapPanel.Styles>
 
-		<Border Classes="Header"><TextBlock Text="A" /></Border>
-		<Border Classes="Header" Width="160"><TextBlock Text="B" /></Border>
-		<Border Classes="Header"><TextBlock Text="C" /></Border>
-		<Border Classes="Header"><TextBlock Text="D" /></Border>
-		<Border Classes="Header" Width="100"><TextBlock Text="E" /></Border>
-		<Border Classes="Header"><TextBlock Text="F" /></Border>
-		<Border Classes="Header"><TextBlock Text="G" /></Border>
-		<Border Classes="Header" Width="200"><TextBlock Text="H" /></Border>
-		<Border Classes="Header"><TextBlock Text="I" /></Border>
-		<Border Classes="Header"><TextBlock Text="J" /></Border>
-		<Border Classes="Header"><TextBlock Text="K" /></Border>
-		<Border Classes="Header"><TextBlock Text="L" /></Border>
-	</WrapPanel>
+			<Border Classes="Header">
+				<TextBlock Text="A" />
+			</Border>
+			<Border Classes="Header" Width="160">
+				<TextBlock Text="B" />
+			</Border>
+			<Border Classes="Header">
+				<TextBlock Text="C" />
+			</Border>
+			<Border Classes="Header">
+				<TextBlock Text="D" />
+			</Border>
+			<Border Classes="Header" Width="100">
+				<TextBlock Text="E" />
+			</Border>
+			<Border Classes="Header">
+				<TextBlock Text="F" />
+			</Border>
+			<Border Classes="Header">
+				<TextBlock Text="G" />
+			</Border>
+			<Border Classes="Header" Width="200">
+				<TextBlock Text="H" />
+			</Border>
+			<Border Classes="Header">
+				<TextBlock Text="I" />
+			</Border>
+			<Border Classes="Header">
+				<TextBlock Text="J" />
+			</Border>
+			<Border Classes="Header">
+				<TextBlock Text="K" />
+			</Border>
+			<Border Classes="Header">
+				<TextBlock Text="L" />
+			</Border>
+		</WrapPanel>
+	</DockPanel>
+
 </UserControl>

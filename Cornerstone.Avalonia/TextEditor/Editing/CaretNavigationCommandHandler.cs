@@ -8,11 +8,11 @@ using Avalonia.Input;
 using Avalonia.Media.TextFormatting;
 using Cornerstone.Avalonia.Extensions;
 using Cornerstone.Avalonia.Input;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Rendering;
 using Cornerstone.Avalonia.TextEditor.Utils;
 using Cornerstone.Internal;
-using Cornerstone.Text.Document;
-using LogicalDirection = Cornerstone.Text.Document.LogicalDirection;
+using LogicalDirection = Cornerstone.Avalonia.TextEditor.Document.LogicalDirection;
 
 #endregion
 

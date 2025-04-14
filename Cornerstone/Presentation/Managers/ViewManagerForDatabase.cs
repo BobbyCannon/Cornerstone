@@ -57,8 +57,36 @@ public abstract class ViewManagerForDatabase<TModel, TEntity, TEntityKey, TDatab
 
 	public override void Initialize()
 	{
-		RefreshFromDatabase();
+		LoadFromDatabase();
 		base.Initialize();
+	}
+
+	/// <summary>
+	/// Called to loads the views from the database.
+	/// This should be call only once and the first call.
+	/// </summary>
+	/// <returns> True if there were changes otherwise false. </returns>
+	public virtual bool LoadFromDatabase()
+	{
+		// This is called after sync which could be on another thread other than dispatcher.
+		if (!TryGetEntitiesToLoad(out var updatedEntities, out var until))
+		{
+			return false;
+		}
+
+		if (updatedEntities.Length <= 0)
+		{
+			LastUpdated = until;
+			return false;
+		}
+
+		this.Dispatch(() =>
+		{
+			base.AddOrUpdate(updatedEntities);
+			LastUpdated = until;
+		});
+
+		return true;
 	}
 
 	/// <summary>
@@ -80,28 +108,21 @@ public abstract class ViewManagerForDatabase<TModel, TEntity, TEntityKey, TDatab
 			return false;
 		}
 
-		var views = updatedEntities.Select(Convert).ToList();
-
 		this.Dispatch(() =>
 		{
-			views.ForEach(x => AddOrUpdate(x));
+			base.AddOrUpdate(updatedEntities);
 			LastUpdated = until;
 		});
 
 		return true;
 	}
 
-	protected virtual bool TryGetEntitiesToLoad(TDatabase database, out TEntity[] entities, out DateTime until)
+	protected virtual bool TryGetEntitiesToLoad(out TEntity[] entities, out DateTime until)
 	{
-		if (!CheckIfManagerShouldRefresh(out var now))
-		{
-			entities = [];
-			until = DateTime.MinValue;
-			return false;
-		}
+		CheckIfManagerShouldRefresh(out var now);
 
-		var repo = database
-			.GetReadOnlyRepository<TEntity, TEntityKey>();
+		using var database = DatabaseProvider.GetDatabase();
+		var repo = database.GetReadOnlyRepository<TEntity, TEntityKey>();
 
 		if (Included is { Length: > 0 })
 		{
@@ -133,8 +154,7 @@ public abstract class ViewManagerForDatabase<TModel, TEntity, TEntityKey, TDatab
 		}
 
 		using var database = DatabaseProvider.GetDatabase();
-		var repo = database
-			.GetReadOnlyRepository<TEntity, TEntityKey>();
+		var repo = database.GetReadOnlyRepository<TEntity, TEntityKey>();
 
 		if (Included is { Length: > 0 })
 		{

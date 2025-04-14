@@ -36,10 +36,13 @@ public struct RuntimeInformationData : IRuntimeInformation
 	public bool ApplicationIsElevated { get; set; }
 
 	/// <inheritdoc />
-	public string ApplicationLocation { get; set; }
+	public bool ApplicationIsLoaded { get; set; }
 
 	/// <inheritdoc />
-	public Size DeviceDisplaySize { get; set; }
+	public bool ApplicationIsShuttingDown { get; set; }
+
+	/// <inheritdoc />
+	public string ApplicationLocation { get; set; }
 
 	/// <inheritdoc />
 	public string ApplicationName { get; set; }
@@ -49,6 +52,9 @@ public struct RuntimeInformationData : IRuntimeInformation
 
 	/// <inheritdoc />
 	public int Count => Keys.Count();
+
+	/// <inheritdoc />
+	public Size DeviceDisplaySize { get; set; }
 
 	/// <inheritdoc />
 	public string DeviceId { get; set; }
@@ -79,12 +85,6 @@ public struct RuntimeInformationData : IRuntimeInformation
 
 	/// <inheritdoc />
 	public Version DotNetRuntimeVersion { get; set; }
-
-	/// <inheritdoc />
-	public bool IsLoaded { get; set; }
-
-	/// <inheritdoc />
-	public bool IsShuttingDown { get; set; }
 
 	/// <inheritdoc />
 	public object this[string key]
@@ -121,12 +121,12 @@ public struct RuntimeInformationData : IRuntimeInformation
 
 		var properties = typeof(RuntimeInformationData)
 			.GetCachedProperties()
-			.Where(x => 
-				!ignore.Contains(x.Name) 
+			.Where(x =>
+				!ignore.Contains(x.Name)
 				&& !x.IsIndexer()
 			)
 			.ToList();
-		
+
 		foreach (var property in properties)
 		{
 			yield return new KeyValuePair<string, object>(property.Name, property.GetValue(this));

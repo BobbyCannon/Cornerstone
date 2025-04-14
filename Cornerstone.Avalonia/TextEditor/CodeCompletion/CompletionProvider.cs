@@ -2,9 +2,9 @@
 
 using System.Linq;
 using Avalonia.Input;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Collections;
 using Cornerstone.Presentation;
-using Cornerstone.Text.Document;
 using IDispatcher = Cornerstone.Presentation.IDispatcher;
 
 #endregion

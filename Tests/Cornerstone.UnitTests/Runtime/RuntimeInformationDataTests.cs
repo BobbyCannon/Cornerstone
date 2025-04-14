@@ -28,6 +28,8 @@ public class RuntimeInformationDataTests : CornerstoneUnitTest
 			"ApplicationFilePath",
 			"ApplicationIsDevelopmentBuild",
 			"ApplicationIsElevated",
+			"ApplicationIsLoaded",
+			"ApplicationIsShuttingDown",
 			"ApplicationLocation",
 			"ApplicationName",
 			"ApplicationVersion",
@@ -41,9 +43,7 @@ public class RuntimeInformationDataTests : CornerstoneUnitTest
 			"DevicePlatformBitness",
 			"DevicePlatformVersion",
 			"DeviceType",
-			"DotNetRuntimeVersion",
-			"IsLoaded",
-			"IsShuttingDown"
+			"DotNetRuntimeVersion"
 		};
 
 		AreEqual(expected, actual, () => actual.DumpCSharp(new CodeWriterSettings { TextFormat = TextFormat.Indented }));

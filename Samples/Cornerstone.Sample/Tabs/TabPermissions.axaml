@@ -1,0 +1,44 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		xmlns:runtime="clr-namespace:Cornerstone.Runtime;assembly=Cornerstone"
+		mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="800"
+		x:Class="Cornerstone.Sample.Tabs.TabPermissions"
+		x:DataType="tabs:TabPermissions">
+	<DockPanel Margin="10">
+		<Grid DockPanel.Dock="Top">
+			<TextBlock Classes="HeaderSix"
+					HorizontalAlignment="Center"
+					Text="Permissions" />
+		</Grid>
+		<StackPanel DockPanel.Dock="Top"
+				Orientation="Horizontal"
+				Margin="0,0,0,12">
+			<Button Content="Refresh"
+					Click="RefreshOnClick"/>
+		</StackPanel>
+
+		<ScrollViewer>
+			<ItemsControl ItemsSource="{Binding Permissions}">
+				<ItemsControl.ItemTemplate>
+					<DataTemplate DataType="runtime:Permission">
+						<Grid ColumnDefinitions="Auto,*,Auto">
+							<TextBlock Grid.Column="0"
+									Text="{Binding Type}"
+									MinWidth="140" />
+							<TextBlock Grid.Column="1"
+									Text="{Binding Status}" />
+							<Button Grid.Column="2"
+									Command="{Binding RequestPermissionCommand}">
+								Request
+							</Button>
+						</Grid>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</ScrollViewer>
+	</DockPanel>
+</UserControl>

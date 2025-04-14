@@ -8,7 +8,6 @@
 				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
 				<Setter Property="BorderThickness" Value="1,0,1,1" />
 				<Setter Property="CornerRadius" Value="0,0,8,8" />
-				<Setter Property="PopupMinWidth" Value="500" />
 				<Setter Property="PopupHorizontalAlignment" Value="Center" />
 				<Setter Property="PopupVerticalAlignment" Value="Top" />
 				<Setter Property="ShowBackground" Value="false" />
@@ -36,13 +35,17 @@
 											Opacity=".5" />
 								</Border.Effect>
 								<StackPanel Margin="14"
-										MinWidth="{TemplateBinding PopupMinWidth}"
-										HorizontalAlignment="Center"
+										MaxWidth="500"
+										HorizontalAlignment="Stretch"
 										Orientation="Vertical">
 									<!-- Popup Widget -->
 									<ContentPresenter
 											Content="{TemplateBinding DataContext, Mode=OneWay}"
 											IsHitTestVisible="{Binding !InProgress}" />
+
+									<!-- Error -->
+									<TextBlock Text="{Binding ProgressError}"
+											IsVisible="{Binding ProgressError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
 
 									<!-- Options -->
 									<StackPanel Margin="0,14,0,0"
@@ -52,12 +55,14 @@
 										<Button
 												MinWidth="80"
 												Content="Ok"
-												Command="{Binding StartProcessCommand}" />
+												Command="{Binding StartProcessCommand}"
+												IsEnabled="{Binding OkButtonEnabled}"/>
 										<Button
 												MinWidth="80"
 												Margin="8,0,0,0"
 												Content="Cancel"
-												Command="{Binding CancelCommand}" />
+												Command="{Binding CancelCommand}"
+												IsEnabled="{Binding CancelButtonEnabled}" />
 									</StackPanel>
 
 									<!-- Running -->

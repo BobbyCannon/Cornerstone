@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System;
 using Cornerstone.Collections;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
@@ -19,16 +20,12 @@ public class SpeedyTreeTests : CornerstoneUnitTest
 	public void Filter()
 	{
 		var tree = GetTreeSample();
-		tree.FilterCheck = x => x.Name == "bar 1";
-		var expected = "{\"Children\":[{\"Children\":[{\"Children\":[],\"Name\":\"bar 1\",\"Order\":1}],\"Name\":\"foo\",\"Order\":1}]}";
+		tree.FilterCheck = x => x.Name.Contains("steak", StringComparison.OrdinalIgnoreCase);
+		var expected = "{\"Children\":[{\"Children\":[{\"Children\":[],\"Name\":\"Steak Bits\",\"Order\":4}],\"IsParent\":true,\"Name\":\"Appetizers\",\"Order\":1},{\"Children\":[{\"Children\":[],\"Name\":\"New York Strip Steak\",\"Order\":3}],\"IsParent\":true,\"Name\":\"Main Courses\",\"Order\":2}]}";
 		AreEqual(expected, tree.ToJson(MinimalSerializeSettings));
 
-		tree.FilterCheck = x => x.Name == "foo";
-		expected = "{\"Children\":[{\"Children\":[],\"Name\":\"foo\",\"Order\":1}]}";
-		AreEqual(expected, tree.ToJson(MinimalSerializeSettings));
-		
-		tree.FilterCheck = x => x.Name == "Header 1";
-		expected = "{\"Children\":[{\"Children\":[],\"Name\":\"foo\",\"Order\":1}]}";
+		tree.FilterCheck = x => x.Name.Contains("banana", StringComparison.OrdinalIgnoreCase);
+		expected = "{\"Children\":[{\"Children\":[{\"Children\":[],\"Name\":\"Banana Bread\",\"Order\":3}],\"IsParent\":true,\"Name\":\"Desserts\",\"Order\":3}]}";
 		AreEqual(expected, tree.ToJson(MinimalSerializeSettings));
 	}
 
@@ -36,7 +33,7 @@ public class SpeedyTreeTests : CornerstoneUnitTest
 	public void ToFromJson()
 	{
 		var tree = GetTreeSample();
-		var expected = "{\"Children\":[{\"Children\":[{\"Children\":[],\"Name\":\"bar 1\",\"Order\":1},{\"Children\":[{\"Children\":[],\"Name\":\"Header 1\"}],\"Name\":\"bar 2\",\"Order\":2}],\"Name\":\"foo\",\"Order\":1},{\"Children\":[{\"Children\":[],\"Name\":\"world\",\"Order\":1}],\"Name\":\"hello\",\"Order\":2}]}";
+		var expected = "{\"Children\":[{\"Children\":[{\"Children\":[],\"Name\":\"Spring Rolls\",\"Order\":1},{\"Children\":[],\"Name\":\"Garlic Bread\",\"Order\":2},{\"Children\":[],\"Name\":\"Cheese Sticks\",\"Order\":3},{\"Children\":[],\"Name\":\"Steak Bits\",\"Order\":4},{\"Children\":[],\"Name\":\"Buffalo Wings\",\"Order\":5},{\"Children\":[],\"Name\":\"Shrimp Cocktail\",\"Order\":6}],\"IsParent\":true,\"Name\":\"Appetizers\",\"Order\":1},{\"Children\":[{\"Children\":[{\"Children\":[],\"Name\":\"Spaghetti\",\"Order\":1},{\"Children\":[],\"Name\":\"Lasagna\",\"Order\":2}],\"IsParent\":true,\"Name\":\"Pasta\",\"Order\":1},{\"Children\":[],\"Name\":\"Grilled Chicken\",\"Order\":2},{\"Children\":[],\"Name\":\"New York Strip Steak\",\"Order\":3},{\"Children\":[],\"Name\":\"Shrimp Scampi\",\"Order\":4}],\"IsParent\":true,\"Name\":\"Main Courses\",\"Order\":2},{\"Children\":[{\"Children\":[],\"Name\":\"Cheesecake\",\"Order\":1},{\"Children\":[],\"Name\":\"Ice Cream\",\"Order\":2},{\"Children\":[],\"Name\":\"Banana Bread\",\"Order\":3}],\"IsParent\":true,\"Name\":\"Desserts\",\"Order\":3}]}";
 		AreEqual(expected, tree.ToJson(MinimalSerializeSettings));
 
 		var fromJson = expected.FromJson<SpeedyTree<MenuItemData>>();

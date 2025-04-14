@@ -92,6 +92,12 @@ public class IncludeExcludeSettings : Cloneable<IncludeExcludeSettings>, IObject
 		return new IncludeExcludeSettings(IncludedProperties, ExcludedProperties);
 	}
 
+	public static IncludeExcludeSettings ForType<T>()
+	{
+		var properties = typeof(T).GetCachedProperties().Select(x => x.Name);
+		return new IncludeExcludeSettings(properties, []);
+	}
+
 	/// <summary>
 	/// Returns true if the settings are empty.
 	/// </summary>

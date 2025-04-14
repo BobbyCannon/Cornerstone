@@ -4,9 +4,9 @@ using System;
 using System.Linq;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Rendering;
 using Cornerstone.Collections;
-using Cornerstone.Text.Document;
 
 #endregion
 

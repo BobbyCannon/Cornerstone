@@ -3,9 +3,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Collections;
-using Cornerstone.Text.Document;
-using TextRange = Cornerstone.Text.Document.TextRange;
+using TextRange = Cornerstone.Avalonia.TextEditor.Document.TextRange;
 
 #endregion
 

@@ -4,7 +4,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Platform;
 using Avalonia.Interactivity;
-using Avalonia.Styling;
 using Cornerstone.Presentation;
 
 #endregion

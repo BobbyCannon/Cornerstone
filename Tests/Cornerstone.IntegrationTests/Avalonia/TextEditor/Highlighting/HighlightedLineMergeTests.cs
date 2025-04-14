@@ -1,8 +1,8 @@
 ﻿#region References
 
 using System.Collections.Generic;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Highlighting;
-using Cornerstone.Text.Document;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Assert;

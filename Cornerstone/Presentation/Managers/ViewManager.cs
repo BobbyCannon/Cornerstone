@@ -62,6 +62,7 @@ public abstract class ViewManager<TView, TEntity, TEntityKey>
 		{
 			foundView = CreateView();
 			UpdateView(foundView, update);
+			Add(foundView);
 			OnViewUpdated(foundView);
 			return foundView;
 		}

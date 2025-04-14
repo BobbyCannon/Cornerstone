@@ -8,9 +8,9 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Rendering;
 using Cornerstone.Avalonia.TextEditor.Utils;
-using Cornerstone.Text.Document;
 
 #endregion
 

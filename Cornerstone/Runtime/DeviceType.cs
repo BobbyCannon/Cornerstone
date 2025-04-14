@@ -1,42 +1,49 @@
-﻿namespace Cornerstone.Runtime;
+﻿#region References
+
+using System;
+
+#endregion
+
+namespace Cornerstone.Runtime;
 
 /// <summary>
 /// Represents the type of device
 /// </summary>
+[Flags]
 public enum DeviceType
 {
 	/// <summary>
 	/// Unknown
 	/// </summary>
-	Unknown = 0,
+	Unknown = 0b0000,
 
 	/// <summary>
 	/// Desktop
 	/// </summary>
-	Desktop = 1,
+	Desktop = 0b0001,
 
 	/// <summary>
 	/// Phone
 	/// </summary>
-	Phone = 2,
+	Phone = 0b0010,
 
 	/// <summary>
 	/// Watch
 	/// </summary>
-	Watch = 3,
+	Watch = 0b0100,
 
 	/// <summary>
 	/// Tablet
 	/// </summary>
-	Tablet = 4,
+	Tablet = 0b1000,
 
 	/// <summary>
 	/// TV
 	/// </summary>
-	TV = 5,
+	TV = 0b0001_0000,
 
 	/// <summary>
 	/// Browser
 	/// </summary>
-	Browser = 6
+	Browser = 0b0010_0000
 }

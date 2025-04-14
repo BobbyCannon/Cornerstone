@@ -1,9 +1,9 @@
 ﻿#region References
 
 using System.Diagnostics;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Rendering;
 using Cornerstone.Avalonia.TextEditor.Utils;
-using Cornerstone.Text.Document;
 
 #endregion
 

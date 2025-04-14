@@ -91,6 +91,15 @@ public static class RuntimeInformationExtensions
 	/// Determine if the platform is a desktop platform.
 	/// </summary>
 	/// <returns> True if the platform is a desktop otherwise false. </returns>
+	public static bool IsBrowser(this IRuntimeInformation runtimeInformation)
+	{
+		return runtimeInformation.DevicePlatform is DevicePlatform.Browser;
+	}
+
+	/// <summary>
+	/// Determine if the platform is a desktop platform.
+	/// </summary>
+	/// <returns> True if the platform is a desktop otherwise false. </returns>
 	public static bool IsDesktop(this IRuntimeInformation runtimeInformation)
 	{
 		return runtimeInformation.DevicePlatform

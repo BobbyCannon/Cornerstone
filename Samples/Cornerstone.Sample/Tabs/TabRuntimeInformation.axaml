@@ -7,7 +7,14 @@
 		mc:Ignorable="d" d:DesignHeight="300" d:DesignWidth="300"
 		x:Class="Cornerstone.Sample.Tabs.TabRuntimeInformation"
 		x:DataType="tabs:TabRuntimeInformation">
-	<ScrollViewer>
-		<PropertyGridControl Source="{Binding RuntimeInformation}"/>
-	</ScrollViewer>
+	<DockPanel Margin="10">
+		<Grid DockPanel.Dock="Top">
+			<TextBlock Classes="HeaderSix"
+					HorizontalAlignment="Center"
+					Text="Runtime Information" />
+		</Grid>
+		<ScrollViewer>
+			<PropertyGridControl Source="{Binding RuntimeInformation}"/>
+		</ScrollViewer>
+	</DockPanel>
 </UserControl>

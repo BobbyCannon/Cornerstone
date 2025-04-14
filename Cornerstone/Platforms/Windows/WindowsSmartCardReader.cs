@@ -82,7 +82,7 @@ public class WindowsSmartCardReader : Security.SecurityKeys.SmartCardReader
 	/// <summary>
 	/// Try to initialize an existing card if found during initializing.
 	/// </summary>
-	private void InitializeCard()
+	private async void InitializeCard()
 	{
 		var reader = _reader;
 		if ((reader == null) || (Card != null))
@@ -90,7 +90,8 @@ public class WindowsSmartCardReader : Security.SecurityKeys.SmartCardReader
 			return;
 		}
 
-		var foundCard = _reader.FindAllCardsAsync().AwaitResults().FirstOrDefault();
+		var foundCards = await _reader.FindAllCardsAsync();
+		var foundCard = foundCards.FirstOrDefault();
 		if (foundCard == null)
 		{
 			return;
@@ -99,7 +100,7 @@ public class WindowsSmartCardReader : Security.SecurityKeys.SmartCardReader
 		ProcessInsertedCard(foundCard);
 	}
 
-	private void LocateReader()
+	private async void LocateReader()
 	{
 		if (_reader != null)
 		{
@@ -113,14 +114,13 @@ public class WindowsSmartCardReader : Security.SecurityKeys.SmartCardReader
 			return;
 		}
 
-		var readers = DeviceInformation.FindAllAsync(SmartCardReader.GetDeviceSelector(SmartCardReaderKind.Nfc)).AwaitResults();
-
-		// if none, fall back to generic
+		var readers = await DeviceInformation.FindAllAsync(SmartCardReader.GetDeviceSelector(SmartCardReaderKind.Nfc));
+		
 		if (readers.Count == 0)
 		{
-			readers = DeviceInformation.FindAllAsync(SmartCardReader.GetDeviceSelector(SmartCardReaderKind.Generic)).AwaitResults();
+			readers = await DeviceInformation.FindAllAsync(SmartCardReader.GetDeviceSelector(SmartCardReaderKind.Any));
 		}
-
+		
 		if (readers.Count == 0)
 		{
 			OnWriteLine("No smart card readers found.");
@@ -128,7 +128,8 @@ public class WindowsSmartCardReader : Security.SecurityKeys.SmartCardReader
 		}
 
 		// Use the first reader for simplicity
-		_reader = SmartCardReader.FromIdAsync(readers[0].Id).AwaitResults();
+		_reader = await SmartCardReader.FromIdAsync(readers[0].Id);
+
 		if (_reader == null)
 		{
 			OnWriteLine("Failed to connect to the reader.");

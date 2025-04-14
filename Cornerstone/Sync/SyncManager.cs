@@ -280,6 +280,23 @@ public class SyncManager : Manager
 	/// start then the settings will be null as they were never read or set.
 	/// </param>
 	/// <returns> The task for the process. </returns>
+	public Task<SyncSession> ProcessAsync(object syncType, Action<SyncSettings> updateSettings = null,
+		TimeSpan? waitFor = null, Action<SyncSession> postAction = null)
+	{
+		return ProcessAsync(syncType.ToString(), updateSettings, waitFor, postAction);
+	}
+
+	/// <summary>
+	/// Processes a sync request.
+	/// </summary>
+	/// <param name="syncType"> The type of the sync to process. </param>
+	/// <param name="updateSettings"> Optional action to possibly update settings when the sync starts. </param>
+	/// <param name="waitFor"> Optional timeout to wait for the active sync to complete. </param>
+	/// <param name="postAction">
+	/// An optional action to run after sync is completed but before notification goes out. If the sync cannot
+	/// start then the settings will be null as they were never read or set.
+	/// </param>
+	/// <returns> The task for the process. </returns>
 	public Task<SyncSession> ProcessAsync(string syncType, Action<SyncSettings> updateSettings = null,
 		TimeSpan? waitFor = null, Action<SyncSession> postAction = null)
 	{

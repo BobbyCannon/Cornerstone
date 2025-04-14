@@ -1,7 +1,7 @@
 ﻿#region References
 
 using System;
-using Cornerstone.Text.Document;
+using Cornerstone.Avalonia.TextEditor.Document;
 
 #endregion
 

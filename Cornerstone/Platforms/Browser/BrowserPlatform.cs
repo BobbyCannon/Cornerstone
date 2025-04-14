@@ -1,5 +1,6 @@
 ﻿#region References
 
+using Cornerstone.Input;
 using Cornerstone.Location;
 using Cornerstone.Runtime;
 
@@ -28,7 +29,9 @@ public static class BrowserPlatform
 
 	private static void AddPlatformImplementations()
 	{
+		DependencyProvider.AddSingleton<Gamepad, BrowserGamepad>();
 		DependencyProvider.AddSingleton<ILocationProvider, BrowserLocationProvider>();
+		DependencyProvider.AddSingleton<IPermissions, BrowserPermissions>();
 	}
 
 	#endregion

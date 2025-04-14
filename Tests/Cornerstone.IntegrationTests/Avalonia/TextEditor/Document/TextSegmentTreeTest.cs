@@ -2,8 +2,8 @@
 
 using System;
 using System.Collections.Generic;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Generators;
-using Cornerstone.Text.Document;
 using Cornerstone.UnitTests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NUnit.Framework.Legacy;

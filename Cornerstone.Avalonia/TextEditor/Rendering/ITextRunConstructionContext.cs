@@ -3,8 +3,8 @@
 #region References
 
 using Avalonia.Media.TextFormatting;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Utils;
-using Cornerstone.Text.Document;
 
 #endregion
 

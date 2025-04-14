@@ -2,7 +2,7 @@
 
 #endregion
 
-using Cornerstone.Text.Document;
+using Cornerstone.Avalonia.TextEditor.Document;
 
 namespace Cornerstone.Avalonia.TextEditor.Indentation;
 

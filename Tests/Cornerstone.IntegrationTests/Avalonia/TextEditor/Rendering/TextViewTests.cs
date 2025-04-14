@@ -3,8 +3,8 @@
 using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Headless.NUnit;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Rendering;
-using Cornerstone.Text.Document;
 using Cornerstone.UnitTests;
 
 #endregion

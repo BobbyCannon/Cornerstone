@@ -4,7 +4,6 @@ using System;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Cornerstone.Avalonia;
-using Cornerstone.Avalonia.WebView;
 
 #endregion
 

@@ -18,6 +18,7 @@ using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Cornerstone.Avalonia.Extensions;
 using Cornerstone.Avalonia.TextEditor.CodeCompletion;
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Avalonia.TextEditor.Editing;
 using Cornerstone.Avalonia.TextEditor.Highlighting;
 using Cornerstone.Avalonia.TextEditor.Rendering;
@@ -26,7 +27,6 @@ using Cornerstone.Avalonia.TextEditor.Utils;
 using Cornerstone.Collections;
 using Cornerstone.Internal;
 using Cornerstone.Presentation;
-using Cornerstone.Text.Document;
 
 #endregion
 

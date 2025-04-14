@@ -2,8 +2,8 @@
 
 #endregion
 
+using Cornerstone.Avalonia.TextEditor.Document;
 using Cornerstone.Collections;
-using Cornerstone.Text.Document;
 
 namespace Cornerstone.Avalonia.TextEditor.Snippets;
 

@@ -7,21 +7,23 @@
 		x:CompileBindings="True">
 	
 	<Design.PreviewWith>
-		<StackPanel>
-			<ColorPicker x:Name="Picker" Color="Yellow" />
-			<ColorView x:Name="ColorView"
-					Color="{Binding ElementName=Picker, Path=Color, Mode=TwoWay}" />
-			<ToggleSwitch IsChecked="{Binding ElementName=ColorView, Path=IsAccentColorsVisible}"
-					OnContent="IsAccentColorsVisible"
-					OffContent="IsAccentColorsVisible" />
-			<ToggleSwitch IsChecked="{Binding ElementName=ColorView, Path=IsColorComponentsVisible}"
-					OnContent="IsColorComponentsVisible"
-					OffContent="IsColorComponentsVisible" />
-			<ToggleSwitch IsChecked="{Binding ElementName=ColorView, Path=IsColorPaletteVisible}"
-					OnContent="IsColorPaletteVisible"
-					OffContent="IsColorPaletteVisible" />
+		<Grid Height="600" Width="400">
+			<StackPanel>
+				<ColorView x:Name="ColorView"
+						Color="{Binding ElementName=Picker, Path=Color, Mode=TwoWay}" />
+				<ToggleSwitch IsChecked="{Binding ElementName=ColorView, Path=IsAccentColorsVisible}"
+						OnContent="IsAccentColorsVisible"
+						OffContent="IsAccentColorsVisible" />
+				<ToggleSwitch IsChecked="{Binding ElementName=ColorView, Path=IsColorComponentsVisible}"
+						OnContent="IsColorComponentsVisible"
+						OffContent="IsColorComponentsVisible" />
+				<ToggleSwitch IsChecked="{Binding ElementName=ColorView, Path=IsColorPaletteVisible}"
+						OnContent="IsColorPaletteVisible"
+						OffContent="IsColorPaletteVisible" />
+				<ColorPicker x:Name="Picker" Color="Yellow" />
 
-		</StackPanel>
+			</StackPanel>
+		</Grid>
 	</Design.PreviewWith>
 
 	<ResourceDictionary.MergedDictionaries>

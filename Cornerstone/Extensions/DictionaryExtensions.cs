@@ -5,6 +5,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Cornerstone.Collections;
+using Microsoft.VisualBasic.FileIO;
 
 #endregion
 
@@ -109,6 +111,11 @@ public static class DictionaryExtensions
 		if (dictionary is ConcurrentDictionary<T1, T2> concurrent)
 		{
 			return concurrent.GetOrAdd(key, create);
+		}
+		
+		if (dictionary is SpeedyDictionary<T1,T2> speedyDictionary)
+		{
+			return speedyDictionary.GetOrAdd(key, create);
 		}
 
 		if (dictionary.TryGetValue(key, out var values))

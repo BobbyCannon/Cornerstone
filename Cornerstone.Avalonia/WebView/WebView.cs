@@ -24,7 +24,7 @@ public class WebView : NativeControlHost, IWebView, IDisposable
 	public static readonly StyledProperty<Uri> UriProperty;
 
 	private PropertyChangedEventHandler _propertyChangedHandler;
-	private IWebViewAdapter _webViewAdapter;
+	private IWebViewAdapter _platformAdapter;
 	private TaskCompletionSource _webViewReadyCompletion;
 
 	#endregion
@@ -47,9 +47,9 @@ public class WebView : NativeControlHost, IWebView, IDisposable
 
 	#region Properties
 
-	public bool CanGoBack => _webViewAdapter?.CanGoBack ?? false;
+	public bool CanGoBack => _platformAdapter?.CanGoBack ?? false;
 
-	public bool CanGoForward => _webViewAdapter?.CanGoForward ?? false;
+	public bool CanGoForward => _platformAdapter?.CanGoForward ?? false;
 
 	public string Content
 	{
@@ -57,7 +57,7 @@ public class WebView : NativeControlHost, IWebView, IDisposable
 		set => SetValue(ContentProperty, value);
 	}
 
-	public byte[] Favicon => _webViewAdapter?.Favicon;
+	public byte[] Favicon => _platformAdapter?.Favicon;
 
 	public bool IsNavigating
 	{
@@ -65,7 +65,7 @@ public class WebView : NativeControlHost, IWebView, IDisposable
 		set => SetValue(IsNavigatingProperty, value);
 	}
 
-	public string Title => _webViewAdapter?.Title;
+	public string Title => _platformAdapter?.Title;
 
 	public Uri Uri
 	{
@@ -89,37 +89,37 @@ public class WebView : NativeControlHost, IWebView, IDisposable
 	/// <inheritdoc />
 	public string GetContent()
 	{
-		return _webViewAdapter?.GetContent();
+		return _platformAdapter?.GetContent();
 	}
 
 	public bool GoBack()
 	{
-		return _webViewAdapter?.GoBack() ?? false;
+		return _platformAdapter?.GoBack() ?? false;
 	}
 
 	public bool GoForward()
 	{
-		return _webViewAdapter?.GoForward() ?? false;
+		return _platformAdapter?.GoForward() ?? false;
 	}
 
 	public Task<string> InvokeScriptAsync(string script)
 	{
-		return _webViewAdapter?.InvokeScriptAsync(script);
+		return _platformAdapter?.InvokeScriptAsync(script);
 	}
 
 	public void Navigate(string uri)
 	{
-		_webViewAdapter?.Navigate(new Uri(uri));
+		_platformAdapter?.Navigate(new Uri(uri));
 	}
 
 	public void Navigate(Uri uri)
 	{
-		_webViewAdapter?.Navigate(uri);
+		_platformAdapter?.Navigate(uri);
 	}
 
 	public string NavigateToString(string text)
 	{
-		_webViewAdapter?.NavigateToString(text);
+		_platformAdapter?.NavigateToString(text);
 		return text;
 	}
 
@@ -131,12 +131,12 @@ public class WebView : NativeControlHost, IWebView, IDisposable
 
 	public void Reload()
 	{
-		_webViewAdapter.Reload();
+		_platformAdapter.Reload();
 	}
 
 	public void Stop()
 	{
-		_webViewAdapter.Stop();
+		_platformAdapter.Stop();
 	}
 
 	public Task WaitForNativeHost()
@@ -147,28 +147,28 @@ public class WebView : NativeControlHost, IWebView, IDisposable
 	/// <inheritdoc />
 	protected override IPlatformHandle CreateNativeControlCore(IPlatformHandle parent)
 	{
-		if (_webViewAdapter != null)
+		if (_platformAdapter != null)
 		{
-			return _webViewAdapter.PlatformHandle;
+			return _platformAdapter.PlatformHandle;
 		}
 
-		_webViewAdapter = CornerstoneApplication
+		_platformAdapter = CornerstoneApplication
 			.DependencyProvider
 			.GetInstance<IWebViewAdapter>();
 
-		_webViewAdapter.NavigationStarted += WebViewAdapterOnNavigationStarted;
-		_webViewAdapter.NavigationCompleted += WebViewAdapterOnNavigationCompleted;
-		_webViewAdapter.NewWindowRequested += WebViewAdapterOnNewWindowRequested;
-		_webViewAdapter.PropertyChanged += WebViewAdapterOnPropertyChanged;
+		_platformAdapter.NavigationStarted += WebViewAdapterOnNavigationStarted;
+		_platformAdapter.NavigationCompleted += WebViewAdapterOnNavigationCompleted;
+		_platformAdapter.NewWindowRequested += WebViewAdapterOnNewWindowRequested;
+		_platformAdapter.PropertyChanged += WebViewAdapterOnPropertyChanged;
 		_webViewReadyCompletion.TrySetResult();
-		_webViewAdapter.Uri = Uri;
+		_platformAdapter.Uri = Uri;
 
 		if (!string.IsNullOrWhiteSpace(Content))
 		{
-			_webViewAdapter.NavigateToString(Content);
+			_platformAdapter.NavigateToString(Content);
 		}
 
-		return _webViewAdapter.PlatformHandle;
+		return _platformAdapter.PlatformHandle;
 	}
 
 	protected override void DestroyNativeControlCore(IPlatformHandle control)
@@ -187,18 +187,18 @@ public class WebView : NativeControlHost, IWebView, IDisposable
 			return;
 		}
 
-		if (_webViewAdapter is null)
+		if (_platformAdapter is null)
 		{
 			return;
 		}
 
 		_webViewReadyCompletion = new TaskCompletionSource();
-		_webViewAdapter.NavigationStarted -= WebViewAdapterOnNavigationStarted;
-		_webViewAdapter.NavigationCompleted -= WebViewAdapterOnNavigationCompleted;
-		_webViewAdapter.NewWindowRequested -= WebViewAdapterOnNewWindowRequested;
-		_webViewAdapter.PropertyChanged -= WebViewAdapterOnPropertyChanged;
+		_platformAdapter.NavigationStarted -= WebViewAdapterOnNavigationStarted;
+		_platformAdapter.NavigationCompleted -= WebViewAdapterOnNavigationCompleted;
+		_platformAdapter.NewWindowRequested -= WebViewAdapterOnNewWindowRequested;
+		_platformAdapter.PropertyChanged -= WebViewAdapterOnPropertyChanged;
 
-		if (_webViewAdapter is IDisposable d)
+		if (_platformAdapter is IDisposable d)
 		{
 			d.Dispose();
 		}
@@ -206,7 +206,7 @@ public class WebView : NativeControlHost, IWebView, IDisposable
 
 	protected override void OnKeyDown(KeyEventArgs e)
 	{
-		e.Handled = _webViewAdapter?.HandleKeyDown(e.Key, e.KeyModifiers) ?? false;
+		e.Handled = _platformAdapter?.HandleKeyDown(e.Key, e.KeyModifiers) ?? false;
 		base.OnKeyDown(e);
 	}
 
@@ -231,7 +231,7 @@ public class WebView : NativeControlHost, IWebView, IDisposable
 		var newValue = change.GetNewValue<Rect>();
 		var scaling = (float) (VisualRoot?.RenderScaling ?? 1.0f);
 
-		_webViewAdapter?.HandleResize((int) (newValue.Width * scaling), (int) (newValue.Height * scaling), scaling);
+		_platformAdapter?.HandleResize((int) (newValue.Width * scaling), (int) (newValue.Height * scaling), scaling);
 	}
 
 	private void WebViewAdapterOnNavigationCompleted(object sender, WebViewNavigationEventArgs e)
@@ -255,34 +255,34 @@ public class WebView : NativeControlHost, IWebView, IDisposable
 	{
 		switch (e.PropertyName)
 		{
-			case nameof(_webViewAdapter.CanGoBack):
+			case nameof(_platformAdapter.CanGoBack):
 			{
 				OnPropertyChanged(nameof(CanGoBack));
 				break;
 			}
-			case nameof(_webViewAdapter.CanGoForward):
+			case nameof(_platformAdapter.CanGoForward):
 			{
 				OnPropertyChanged(nameof(CanGoForward));
 				break;
 			}
-			case nameof(_webViewAdapter.Favicon):
+			case nameof(_platformAdapter.Favicon):
 			{
 				OnPropertyChanged(nameof(Favicon));
 				break;
 			}
-			case nameof(_webViewAdapter.Content):
+			case nameof(_platformAdapter.Content):
 			{
-				Content = _webViewAdapter.Content;
+				Content = _platformAdapter.Content;
 				break;
 			}
-			case nameof(_webViewAdapter.Title):
+			case nameof(_platformAdapter.Title):
 			{
 				OnPropertyChanged(nameof(Title));
 				break;
 			}
-			case nameof(_webViewAdapter.Uri):
+			case nameof(_platformAdapter.Uri):
 			{
-				Uri = _webViewAdapter.Uri;
+				Uri = _platformAdapter.Uri;
 				break;
 			}
 		}
