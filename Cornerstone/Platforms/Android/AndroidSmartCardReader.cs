@@ -1,9 +1,11 @@
 ﻿#region References
 
+using System.Threading.Tasks;
 using Android.Content;
 using Android.Nfc;
 using Android.OS;
 using Cornerstone.Attributes;
+using Cornerstone.Collections;
 using Cornerstone.Platforms.Android.Internal;
 using Cornerstone.Presentation;
 using Cornerstone.Security.SecurityKeys;
@@ -28,7 +30,15 @@ public class AndroidSmartCardReader : SmartCardReader
 	public AndroidSmartCardReader(IDispatcher dispatcher) : base(dispatcher)
 	{
 		_implementation = new InternalNfcAdapter();
+
+		AvailableReaders = new ReadOnlySpeedyList<SelectionOption<string>>([]);
 	}
+
+	#endregion
+
+	#region Properties
+
+	public override ReadOnlySpeedyList<SelectionOption<string>> AvailableReaders { get; }
 
 	#endregion
 

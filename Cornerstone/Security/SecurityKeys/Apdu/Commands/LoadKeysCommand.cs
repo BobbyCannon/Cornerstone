@@ -8,8 +8,10 @@ public class LoadKeysCommand : ApduCommand
 		: base(
 			(byte) Apdu.Cla.ProtocolTypeSelection,
 			(byte) Apdu.Ins.LoadKeys,
-			0, (byte) keys.Length, keys)
+			0, 0, keys)
 	{
+		// FF-82-00-00-06-FF-FF-FF-FF-FF-FF
+		// 90-00
 	}
 
 	#endregion

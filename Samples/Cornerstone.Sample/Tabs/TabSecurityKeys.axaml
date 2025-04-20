@@ -13,9 +13,14 @@
 		<WrapPanel DockPanel.Dock="Top"
 				Orientation="Horizontal"
 				Margin="0,0,0,6">
-			<Button Click="RefreshOnClick"
-					Margin="0,0,6,0"
-					Content="Refresh" />
+			<Button Click="RefreshReadersOnClick"
+					Content="Refresh Readers"
+					Margin="0,0,6,0" />
+			<ComboBox ItemsSource="{Binding SmartCardReader.AvailableReaders}"
+					SelectedItem="{Binding SmartCardReader.SelectedReader}"
+					DisplayMemberBinding="{Binding Name}"
+					Margin="0,0,6,0" />
+
 			<Button Click="ClearOnClick"
 					Margin="0,0,6,0"
 					Content="Clear" />
@@ -29,17 +34,22 @@
 					Value="{Binding MaximumDataToRead}"
 					InnerLeftContent="Data To Read"
 					Margin="0,0,6,0" />
+			<Button Click="RefreshCardOnClick"
+					Margin="6,0"
+					Content="Refresh Card" />
 			<StackPanel Margin="30,0,0,0"
 					Orientation="Horizontal"
+					VerticalAlignment="Center"
 					IsVisible="{Binding SmartCardReader.Card, Converter={x:Static ObjectConverters.IsNotNull}}">
-				<TextBlock Text="Card Available" />
+				<TextBlock Text="Card Available" Margin="0,0,4,0" />
 				<TextBlock Text="{Binding SmartCardReader.Card.UniqueId}" />
 			</StackPanel>
-			
 		</WrapPanel>
 		<Grid DockPanel.Dock="Top"
 				ColumnDefinitions="Auto,Auto,*"
-				Margin="0,0,0,6">
+				Margin="0,0,0,6"
+				IsEnabled="{Binding SmartCardReader.Card, Mode=OneWay, Converter={x:Static ObjectConverters.IsNotNull}}">
+			
 			<NumericUpDown Grid.Column="0"
 					InnerLeftContent="Block"
 					Increment="1"
@@ -100,7 +110,7 @@
 
 			<TextEditorControl Grid.Row="2"
 					x:Name="Output"
-					MinHeight="120" />
+					Height="160" />
 		</Grid>
 	</DockPanel>
 </UserControl>

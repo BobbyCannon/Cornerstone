@@ -1,0 +1,33 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignHeight="450" d:DesignWidth="360"
+		x:Class="Cornerstone.Sample.Tabs.TabTextBox"
+		x:Name="ThisControl"
+		x:DataType="tabs:TabTextBox">
+	<DockPanel Margin="10">
+		<Grid DockPanel.Dock="Top">
+			<TextBlock Classes="HeaderSix"
+					HorizontalAlignment="Center"
+					Text="TextBox" />
+		</Grid>
+		<ScrollViewer HorizontalScrollBarVisibility="Auto"
+				VerticalScrollBarVisibility="Auto">
+			<StackPanel Spacing="20" Margin="0,0,10,10">
+				<TextBox Watermark="email" />
+				<TextBox Watermark="email" Text="email" />
+				<TextBox Watermark="password" />
+				<TextBox Classes="RevealPasswordButton"
+						Watermark="password"
+						Text="123456" />
+				<TextBox Classes="Search ClearButton" Watermark="Search" />
+				<TextBox Classes="Search ClearButton" Watermark="Search" Text="Existing Data" />
+				<TextBox TextAlignment="Center">Center</TextBox>
+				
+			</StackPanel>
+		</ScrollViewer>
+	</DockPanel>
+</UserControl>

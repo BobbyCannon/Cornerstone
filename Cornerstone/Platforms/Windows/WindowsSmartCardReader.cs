@@ -3,10 +3,12 @@
 using System;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Devices.SmartCards;
 using Windows.Foundation.Metadata;
 using Cornerstone.Attributes;
+using Cornerstone.Collections;
 using Cornerstone.Presentation;
 using Cornerstone.Security.SecurityKeys;
 using Buffer = Windows.Storage.Streams.Buffer;
@@ -20,6 +22,7 @@ public class WindowsSmartCardReader : Security.SecurityKeys.SmartCardReader
 {
 	#region Fields
 
+	private readonly SpeedyList<SelectionOption<string>> _availableReaders;
 	private SmartCardReader _reader;
 	private SmartCard _smartCard;
 
@@ -31,7 +34,16 @@ public class WindowsSmartCardReader : Security.SecurityKeys.SmartCardReader
 	[DependencyInjectionConstructor]
 	public WindowsSmartCardReader(IDispatcher dispatcher) : base(dispatcher)
 	{
+		_availableReaders = new SpeedyList<SelectionOption<string>>();
+
+		AvailableReaders = new ReadOnlySpeedyList<SelectionOption<string>>(_availableReaders);
 	}
+
+	#endregion
+
+	#region Properties
+
+	public override ReadOnlySpeedyList<SelectionOption<string>> AvailableReaders { get; }
 
 	#endregion
 
@@ -40,22 +52,77 @@ public class WindowsSmartCardReader : Security.SecurityKeys.SmartCardReader
 	/// <inheritdoc />
 	public override void Initialize()
 	{
-		LocateReader();
-		InitializeCard();
+		_ = RefreshReadersAsync();
 		base.Initialize();
+	}
+
+	public override async Task RefreshReadersAsync()
+	{
+		// Get all smart card readers
+		// Make sure we have the API we need
+		if (!ApiInformation.IsTypePresent(typeof(SmartCardConnection).FullName))
+		{
+			return;
+		}
+
+		var readers = await DeviceInformation.FindAllAsync(SmartCardReader.GetDeviceSelector(SmartCardReaderKind.Nfc));
+
+		if (readers.Count == 0)
+		{
+			readers = await DeviceInformation.FindAllAsync(SmartCardReader.GetDeviceSelector(SmartCardReaderKind.Any));
+		}
+
+		if (readers.Count == 0)
+		{
+			OnWriteLine("No smart card readers found.");
+			return;
+		}
+
+		_availableReaders.Load(readers.Select(x => new SelectionOption<string>(x.Id, x.Name)));
+
+		if ((SelectedReader == null) || !_availableReaders.Contains(SelectedReader))
+		{
+			SelectedReader = _availableReaders.FirstOrDefault();
+		}
 	}
 
 	/// <inheritdoc />
 	public override void Uninitialize()
 	{
-		_smartCard = null;
-		if (_reader != null)
-		{
-			_reader.CardAdded -= ReaderCardAdded;
-			_reader.CardRemoved -= ReaderCardRemoved;
-		}
-		_reader = null;
+		ResetCard();
+		ResetReader();
 		base.Uninitialize();
+	}
+
+	protected override async void OnPropertyChanged(string propertyName = null)
+	{
+		if (propertyName == nameof(SelectedReader))
+		{
+			ResetCard();
+			ResetReader();
+
+			if (SelectedReader == null)
+			{
+				return;
+			}
+
+			_reader = await SmartCardReader.FromIdAsync(SelectedReader.Id);
+
+			if (_reader == null)
+			{
+				OnWriteLine("Failed to connect to the reader.");
+				return;
+			}
+
+			_reader.CardAdded += ReaderCardAdded;
+			_reader.CardRemoved += ReaderCardRemoved;
+
+			OnWriteLine($"{_reader.Name} {_reader.Kind} was selected.");
+
+			InitializeCard();
+		}
+
+		base.OnPropertyChanged(propertyName);
 	}
 
 	/// <inheritdoc />
@@ -100,48 +167,6 @@ public class WindowsSmartCardReader : Security.SecurityKeys.SmartCardReader
 		ProcessInsertedCard(foundCard);
 	}
 
-	private async void LocateReader()
-	{
-		if (_reader != null)
-		{
-			return;
-		}
-
-		// Get all smart card readers
-		// Make sure we have the API we need
-		if (!ApiInformation.IsTypePresent(typeof(SmartCardConnection).FullName))
-		{
-			return;
-		}
-
-		var readers = await DeviceInformation.FindAllAsync(SmartCardReader.GetDeviceSelector(SmartCardReaderKind.Nfc));
-		
-		if (readers.Count == 0)
-		{
-			readers = await DeviceInformation.FindAllAsync(SmartCardReader.GetDeviceSelector(SmartCardReaderKind.Any));
-		}
-		
-		if (readers.Count == 0)
-		{
-			OnWriteLine("No smart card readers found.");
-			return;
-		}
-
-		// Use the first reader for simplicity
-		_reader = await SmartCardReader.FromIdAsync(readers[0].Id);
-
-		if (_reader == null)
-		{
-			OnWriteLine("Failed to connect to the reader.");
-			return;
-		}
-
-		_reader.CardAdded += ReaderCardAdded;
-		_reader.CardRemoved += ReaderCardRemoved;
-
-		OnWriteLine($"{_reader.Name} {_reader.Kind} was found...");
-	}
-
 	private void ProcessInsertedCard(SmartCard smartCard)
 	{
 		var atr = smartCard.GetAnswerToResetAsync().AwaitResults();
@@ -169,9 +194,27 @@ public class WindowsSmartCardReader : Security.SecurityKeys.SmartCardReader
 
 	private void ReaderCardRemoved(object sender, CardRemovedEventArgs e)
 	{
+		ResetCard();
+	}
+
+	private void ResetCard()
+	{
 		_smartCard = null;
-		OnCardRemoved(Card);
+		if (Card != null)
+		{
+			OnCardRemoved(Card);
+		}
 		Card = null;
+	}
+
+	private void ResetReader()
+	{
+		if (_reader != null)
+		{
+			_reader.CardAdded -= ReaderCardAdded;
+			_reader.CardRemoved -= ReaderCardRemoved;
+		}
+		_reader = null;
 	}
 
 	#endregion

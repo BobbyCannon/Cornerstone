@@ -3,6 +3,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -136,7 +137,7 @@ public class OrderableMenu : Menu
 
 	private void Drop(object sender, DragEventArgs e)
 	{
-		if (!e.Data.Contains("MenuItem"))
+		if (!DragDropState.IsDragging || !e.Data.Contains("MenuItem"))
 		{
 			e.DragEffects = DragDropEffects.None;
 			ResetBorder(e);
@@ -267,6 +268,14 @@ public class OrderableMenu : Menu
 
 	private void MenuPointerMoved(object sender, PointerEventArgs e)
 	{
+		var p = e.GetCurrentPoint(this);
+
+		if ((_potentialDragItem != null) && !p.Properties.IsLeftButtonPressed)
+		{
+			_potentialDragItem = null;
+			return;
+		}
+
 		if ((_potentialDragItem == null) || DragDropState.IsDragging)
 		{
 			return;

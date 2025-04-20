@@ -35,11 +35,18 @@ public partial class CameraView : CornerstoneUserControl
 		InitializeComponent();
 	}
 
+	~CameraView()
+	{
+		_cameraAdapter.Dispose();
+	}
+
 	#endregion
 
 	#region Properties
 
 	public Bitmap Frame => _cameraAdapter.Frame;
+
+	public byte[] FrameData => _cameraAdapter.FrameData;
 
 	public bool IsPreviewing => _cameraAdapter.IsPreviewing;
 
@@ -72,6 +79,7 @@ public partial class CameraView : CornerstoneUserControl
 				CameraPreview.InvalidateVisual();
 				break;
 			}
+			case nameof(FrameData):
 			case nameof(IsPreviewing):
 			{
 				OnPropertyChanged(e.PropertyName);
@@ -88,16 +96,16 @@ public partial class CameraView : CornerstoneUserControl
 		}
 	}
 
-	private void RecordButtonOnClick(object sender, RoutedEventArgs e)
+	private async void RecordButtonOnClick(object sender, RoutedEventArgs e)
 	{
 		if (_cameraAdapter.IsRecording)
 		{
-			_cameraAdapter.StopRecordingAsync();
+			await _cameraAdapter.StopRecordingAsync();
 			return;
 		}
 
 		var outputPath = Path.Combine(_runtimeInformation.ApplicationDataLocation, "camera.mp4");
-		_cameraAdapter.StartRecordingAsync(outputPath);
+		await _cameraAdapter.StartRecordingAsync(outputPath);
 	}
 
 	#endregion

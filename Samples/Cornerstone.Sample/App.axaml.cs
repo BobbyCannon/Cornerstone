@@ -23,6 +23,8 @@ public class App : CornerstoneApplication
 
 	public override void OnFrameworkInitializationCompleted()
 	{
+		base.OnFrameworkInitializationCompleted();
+
 		RuntimeInformation.Initialize();
 
 		var viewModel = GetInstance<MainViewModel>();
@@ -41,8 +43,6 @@ public class App : CornerstoneApplication
 				break;
 			}
 		}
-
-		base.OnFrameworkInitializationCompleted();
 	}
 
 	/// <inheritdoc />

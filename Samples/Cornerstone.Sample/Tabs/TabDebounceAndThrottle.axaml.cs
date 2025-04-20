@@ -205,7 +205,7 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 
 	private void DebounceResetOnClick(object sender, RoutedEventArgs e)
 	{
-		Debounce.Reset();
+		_ = Debounce.ResetAsync();
 	}
 
 	private static string Formatter(DateTime date)
@@ -262,7 +262,7 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 
 	private void ThrottleResetOnClick(object sender, RoutedEventArgs e)
 	{
-		Throttle.Reset();
+		_ = Throttle.ResetAsync();
 	}
 
 	private void TimerTick(object sender, EventArgs e)

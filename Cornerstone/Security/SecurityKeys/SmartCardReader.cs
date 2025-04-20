@@ -1,6 +1,8 @@
 ﻿#region References
 
 using System;
+using System.Threading.Tasks;
+using Cornerstone.Collections;
 using Cornerstone.Presentation;
 using Cornerstone.Presentation.Managers;
 using Cornerstone.Security.SecurityKeys.Apdu;
@@ -22,7 +24,11 @@ public abstract class SmartCardReader : Manager
 
 	#region Properties
 
+	public abstract ReadOnlySpeedyList<SelectionOption<string>> AvailableReaders { get; }
+
 	public SecurityCard Card { get; protected set; }
+
+	public SelectionOption<string> SelectedReader { get; set; }
 
 	#endregion
 
@@ -31,6 +37,11 @@ public abstract class SmartCardReader : Manager
 	public virtual void OnWriteLine(string e)
 	{
 		WriteLine?.Invoke(this, e);
+	}
+
+	public virtual Task RefreshReadersAsync()
+	{
+		return Task.CompletedTask;
 	}
 
 	public ApduResponse Transmit(ApduCommand command)

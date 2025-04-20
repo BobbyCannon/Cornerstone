@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
@@ -24,6 +25,8 @@ internal abstract class BaseCameraAdapter : Bindable, ICameraAdapter
 
 	public Bitmap Frame { get; protected set; }
 
+	public virtual byte[] FrameData { get; protected set; }
+
 	public bool IsPreviewing { get; protected set; }
 
 	public bool IsRecording { get; protected set; }
@@ -31,6 +34,15 @@ internal abstract class BaseCameraAdapter : Bindable, ICameraAdapter
 	#endregion
 
 	#region Methods
+
+	/// <summary>
+	/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+	/// </summary>
+	public void Dispose()
+	{
+		Dispose(true);
+		GC.SuppressFinalize(this);
+	}
 
 	public virtual Task StartPreviewAsync()
 	{
@@ -52,14 +64,24 @@ internal abstract class BaseCameraAdapter : Bindable, ICameraAdapter
 		return Task.CompletedTask;
 	}
 
+	/// <summary>
+	/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+	/// </summary>
+	/// <param name="disposing"> True if disposing and false if otherwise. </param>
+	protected virtual void Dispose(bool disposing)
+	{
+	}
+
 	#endregion
 }
 
-public interface ICameraAdapter : INotifyPropertyChanged
+public interface ICameraAdapter : INotifyPropertyChanged, IDisposable
 {
 	#region Properties
 
 	Bitmap Frame { get; }
+
+	byte[] FrameData { get; }
 
 	bool IsPreviewing { get; }
 

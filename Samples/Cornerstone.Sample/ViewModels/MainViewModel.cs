@@ -50,6 +50,7 @@ public class MainViewModel : ViewModel
 		AddTabItemViewModel(TabDebounceAndThrottle.HeaderName, "Icons.Signal", typeof(TabDebounceAndThrottle));
 		AddTabItemViewModel(TabDockingManager.HeaderName, "Icons.Window.Restore", typeof(TabDockingManager), allPlatformExceptBrowser);
 		AddTabItemViewModel(TabFonts.HeaderName, "Icons.Font", typeof(TabFonts));
+		AddTabItemViewModel(TabHexEditor.HeaderName, "Icons.Binary", typeof(TabHexEditor));
 		AddTabItemViewModel(TabMediaPlayer.HeaderName, "Icons.TriangleRight", typeof(TabMediaPlayer), allPlatformExceptBrowser);
 		AddTabItemViewModel(TabMenu.HeaderName, "Icons.Menu", typeof(TabMenu));
 		AddTabItemViewModel(TabNavigationMenu.HeaderName, "Icons.Grid", typeof(TabNavigationMenu));
@@ -60,6 +61,7 @@ public class MainViewModel : ViewModel
 		AddTabItemViewModel(TabSecurityKeys.HeaderName, "Icons.Tag", typeof(TabSecurityKeys), DevicePlatform.Android | DevicePlatform.Windows);
 		AddTabItemViewModel(TabSpeedyList.HeaderName, "Icons.Stashes", typeof(TabSpeedyList));
 		AddTabItemViewModel(TabSpeedyTree.HeaderName, "Icons.Tree", typeof(TabSpeedyTree));
+		AddTabItemViewModel(TabTextBox.HeaderName, "Icons.Rename", typeof(TabTextBox));
 		AddTabItemViewModel(TabToggleButton.HeaderName, "Icons.Toggle.Button", typeof(TabToggleButton));
 		AddTabItemViewModel(TabToggleSwitch.HeaderName, "Icons.Toggle.Switches", typeof(TabToggleSwitch));
 		AddTabItemViewModel(TabWeakEvents.HeaderName, "Icons.Blame", typeof(TabWeakEvents), allPlatformExceptBrowser);

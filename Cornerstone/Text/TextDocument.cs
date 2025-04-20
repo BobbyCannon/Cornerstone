@@ -5,8 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Cornerstone.Collections;
-using Cornerstone.Extensions;
-using Cornerstone.Presentation;
 using Cornerstone.Text.Buffers;
 
 #endregion
@@ -247,13 +245,13 @@ public class TextDocument : ITextRange
 	/// <param name="until"> The characters that will stop processing if found. </param>
 	/// <returns> The array of indexes of the expected characters. </returns>
 	/// <remarks>
-	/// .                      01234546789
+	/// .                      012345467890123454
 	/// Ex. #{} would match on ### { red } Header
-	/// - result [0,4,9]
+	/// - result [0,4,9,14]
 	/// </remarks>
 	public int[] FindCharactersIndexes(int index, char[] expected, char[] ignore = null, char[] until = null)
 	{
-		var response = new int[expected.Length];
+		var response = new int[expected.Length + 1];
 		var i = index;
 		var expectedIndex = 0;
 
@@ -268,7 +266,8 @@ public class TextDocument : ITextRange
 				continue;
 			}
 
-			if (this[i] == expected[expectedIndex])
+			if ((expectedIndex < expected.Length)
+				&& (this[i] == expected[expectedIndex]))
 			{
 				// Capture first index
 				response[expectedIndex] = i;
@@ -282,20 +281,17 @@ public class TextDocument : ITextRange
 				expectedIndex++;
 			}
 
-			if (expectedIndex == response.Length)
-			{
-				return response;
-			}
-
 			if (until.Any(e => e == this[i]))
 			{
+				response[response.Length - 1] = i - 1;
 				return response;
 			}
 
 			i++;
 		}
 
-		return response.SubArray(0, expectedIndex);
+		response[response.Length - 1] = EndIndex;
+		return response;
 	}
 
 	/// <summary>

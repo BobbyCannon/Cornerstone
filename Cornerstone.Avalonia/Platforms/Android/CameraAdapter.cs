@@ -13,10 +13,17 @@ namespace Cornerstone.Avalonia.Platforms.Android;
 
 internal class CameraAdapter : BaseCameraAdapter
 {
+	#region Fields
+
+	private int _currentRequest;
+
+	#endregion
+
 	#region Constructors
 
 	public CameraAdapter(IDispatcher dispatcher) : base(dispatcher)
 	{
+		CameraActivity.Adapters.Add(this);
 	}
 
 	#endregion
@@ -25,16 +32,30 @@ internal class CameraAdapter : BaseCameraAdapter
 
 	public override Task StartPreviewAsync()
 	{
-		var id = AndroidPlatform.GetRequestId();
-		AndroidPlatform.ApplicationContext.StartActivity(CreateMediaIntent(id));
+		_currentRequest = AndroidPlatform.GetRequestId();
+		AndroidPlatform.ApplicationContext.StartActivity(CreateMediaIntent(_currentRequest));
 		return Task.CompletedTask;
 	}
 
 	public override Task StartRecordingAsync(string outputFile)
 	{
-		var id = AndroidPlatform.GetRequestId();
-		AndroidPlatform.ApplicationContext.StartActivity(CreateMediaIntent(id));
+		_currentRequest = AndroidPlatform.GetRequestId();
+		AndroidPlatform.ApplicationContext.StartActivity(CreateMediaIntent(_currentRequest));
 		return Task.CompletedTask;
+	}
+
+	protected override void Dispose(bool disposing)
+	{
+		CameraActivity.Adapters.Remove(this);
+		base.Dispose(disposing);
+	}
+
+	internal void SetVideoData(int request, byte[] data)
+	{
+		if (request == _currentRequest)
+		{
+			base.FrameData = data;
+		}
 	}
 
 	private Intent CreateMediaIntent(int id)

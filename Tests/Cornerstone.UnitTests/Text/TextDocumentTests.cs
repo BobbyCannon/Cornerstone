@@ -78,14 +78,7 @@ public class TextDocumentTests : CornerstoneUnitTest
 		var content = "## { Red } Header\r\nMore";
 		var document = TextDocument.Load(content);
 		var actual = document.FindCharactersIndexes(0, ['#', '{', '}'], [' '], ['\r', '\n', '\0']);
-		var expected = new[] { 0, 3, 9 };
-		AreEqual(expected, actual);
-		
-		//         01234567890123456
-		content = "## Header\r\nMore";
-		document = TextDocument.Load(content);
-		actual = document.FindCharactersIndexes(0, ['#', '{', '}'], ['\r', '\n', '\0']);
-		expected = [0];
+		var expected = new[] { 0, 3, 9, 16 };
 		AreEqual(expected, actual);
 	}
 

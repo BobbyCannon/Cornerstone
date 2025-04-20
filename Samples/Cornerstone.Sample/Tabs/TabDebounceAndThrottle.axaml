@@ -13,7 +13,18 @@
 			<Style Selector="WrapPanel > TextBlock">
 				<Setter Property="VerticalAlignment" Value="Center" />
 			</Style>
+			<Style Selector="WrapPanel > Button">
+				<Setter Property="Width" Value="100" />
+			</Style>
+			<Style Selector="WrapPanel > :is(Control)">
+				<Setter Property="Margin" Value="5" />
+			</Style>
 		</DockPanel.Styles>
+		<Grid DockPanel.Dock="Top">
+			<TextBlock Classes="HeaderSix"
+					HorizontalAlignment="Center"
+					Text="Debounce and Throttle" />
+		</Grid>
 		<Border DockPanel.Dock="Right"
 				Background="{DynamicResource TextEditorBackground}"
 				BorderBrush="{DynamicResource ButtonBorderBrush}"
@@ -38,166 +49,167 @@
 				</StackPanel>
 			</Grid>
 		</Border>
-		<WrapPanel DockPanel.Dock="Top" Orientation="Horizontal">
-			<Button Margin="0,0,10,0"
-					Width="100"
-					Click="DebounceOnClick">
-				Debounced
-			</Button>
-			<Button Margin="0,0,10,0"
-					Width="100"
-					Click="DebounceCancelOnClick">
-				Cancel
-			</Button>
-			<Button Margin="0,0,10,0"
-					Width="100"
-					Click="DebounceResetOnClick">
-				Reset
-			</Button>
-			<NumericUpDown
-					Minimum="1"
-					Maximum="10"
-					Increment="1"
-					Margin="0,0,20,0"
-					MinWidth="260"
-					HorizontalContentAlignment="Right"
-					Value="{ReflectionBinding Debounce.Interval, Mode=TwoWay, Converter={StaticResource TimeSpanConverter}}">
-				<NumericUpDown.InnerLeftContent>
-					<TextBlock Text="Debounce Interval" />
-				</NumericUpDown.InnerLeftContent>
-				<NumericUpDown.InnerRightContent>
-					<TextBlock Text="secs" />
-				</NumericUpDown.InnerRightContent>
-			</NumericUpDown>
-			<ToggleSwitch
-					IsChecked="{ReflectionBinding Debounce.AllowTriggerDuringProcessing, Mode=TwoWay}"
-					OnContent="Allow Trigger During Processing"
-					OffContent="Allow Trigger During Processing"
-					Margin="0,0,20,0" />
-		</WrapPanel>
-		<WrapPanel DockPanel.Dock="Top"
-				Orientation="Horizontal">
-			<TextBlock Text="Debounce"
-					Foreground="{DynamicResource ThemeColor03}"
-					MinWidth="90"
-					Padding="10,0,10,0" />
-			<CheckBox IsChecked="{ReflectionBinding Debounce.IsTriggered, Mode=OneWay}"
-					IsEnabled="False"
-					Margin="0,0,10,0">
-				Is Triggered
-			</CheckBox>
-			<CheckBox IsChecked="{ReflectionBinding Debounce.IsProcessing, Mode=OneWay}"
-					IsEnabled="False"
-					Margin="0,0,10,0">
-				Is Processing
-			</CheckBox>
-			<TextBlock Text="Last Triggered" Margin="0,0,10,0" Foreground="{DynamicResource Gray01}" />
-			<TextBlock Text="{ReflectionBinding Debounce.TriggeredOn, Mode=OneWay}" />
-			<TextBlock Text="Last Processed" Margin="20,0,10,0" Foreground="{DynamicResource Gray01}" />
-			<TextBlock Text="{ReflectionBinding Debounce.LastProcessedOn, Mode=OneWay}" />
-		</WrapPanel>
-		<WrapPanel DockPanel.Dock="Top" Orientation="Horizontal">
-			<Button Margin="0,0,10,0"
-					Width="100"
-					Click="ThrottleOnClick">
-				Throttled
-			</Button>
-			<Button Margin="0,0,10,0"
-					Width="100"
-					Click="ThrottleCancelOnClick">
-				Cancel
-			</Button>
-			<Button Margin="0,0,10,0"
-					Width="100"
-					Click="ThrottleResetOnClick">
-				Reset
-			</Button>
-			<NumericUpDown
-					Minimum="1"
-					Maximum="10"
-					Increment="1"
-					Margin="0,0,20,0"
-					MinWidth="260"
-					HorizontalContentAlignment="Right"
-					Value="{ReflectionBinding Throttle.Interval, Mode=TwoWay, Converter={StaticResource TimeSpanConverter}}">
-				<NumericUpDown.InnerLeftContent>
-					<TextBlock Text="Throttle Interval" />
-				</NumericUpDown.InnerLeftContent>
-				<NumericUpDown.InnerRightContent>
-					<TextBlock Text="secs" />
-				</NumericUpDown.InnerRightContent>
-			</NumericUpDown>
-			<ToggleSwitch
-					IsChecked="{ReflectionBinding Throttle.AllowTriggerDuringProcessing, Mode=TwoWay}"
-					OnContent="Allow Trigger During Processing"
-					OffContent="Allow Trigger During Processing"
-					Margin="0,0,20,0" />
-			<ToggleSwitch
-					IsChecked="{ReflectionBinding Throttle.QueueTriggers, Mode=TwoWay}"
-					OnContent="Queue Triggers"
-					OffContent="Queue Triggers"
-					Margin="0,0,20,0" />
-		</WrapPanel>
-		<WrapPanel DockPanel.Dock="Top">
-			<TextBlock Text="Throttle"
-					Foreground="{DynamicResource ThemeColor03}"
-					Padding="10,0,10,0"
-					MinWidth="90" />
-			<CheckBox IsChecked="{ReflectionBinding Throttle.IsTriggered, Mode=OneWay}"
-					IsEnabled="False"
-					Margin="0,0,10,0">
-				Is Triggered
-			</CheckBox>
-			<CheckBox IsChecked="{ReflectionBinding Throttle.IsProcessing, Mode=OneWay}"
-					IsEnabled="False"
-					Margin="0,0,10,0">
-				Is Processing
-			</CheckBox>
-			<TextBlock Text="Last Triggered" Margin="0,0,10,0" Foreground="{DynamicResource Gray01}" />
-			<TextBlock Text="{ReflectionBinding Throttle.TriggeredOn, Mode=OneWay}" />
-			<TextBlock Text="Last Processed" Margin="20,0,10,0" Foreground="{DynamicResource Gray01}" />
-			<TextBlock Text="{ReflectionBinding Throttle.LastProcessedOn, Mode=OneWay}" />
-		</WrapPanel>
-		<WrapPanel DockPanel.Dock="Top">
-			<NumericUpDown
-					Minimum="1"
-					Maximum="10"
-					Increment="1"
-					Margin="0,0,10,0"
-					MinWidth="220"
-					HorizontalContentAlignment="Right"
-					Value="{Binding WorkDelay, Mode=TwoWay}">
-				<NumericUpDown.InnerLeftContent>
-					<TextBlock Text="Work Time" />
-				</NumericUpDown.InnerLeftContent>
-				<NumericUpDown.InnerRightContent>
-					<TextBlock Text="secs" />
-				</NumericUpDown.InnerRightContent>
-			</NumericUpDown>
-			<ToggleSwitch
-					IsChecked="{Binding WorkCanCancel, Mode=TwoWay}"
-					OnContent="Allow Work To Cancel"
-					OffContent="Allow Work To Cancel"
-					Margin="0,0,20,0" />
-		</WrapPanel>
-		<avalonia:CartesianChart
-				x:Name="Chart"
-				DockPanel.Dock="Top"
-				Margin="0"
-				Height="320"
-				Series="{Binding Series}"
-				XAxes="{Binding XAxes}"
-				YAxes="{Binding YAxes}"
-				ZoomMode="None" />
-		<avalonia:CartesianChart
-				x:Name="Chart2"
-				DockPanel.Dock="Top"
-				Margin="0"
-				Height="320"
-				Series="{Binding Series2}"
-				XAxes="{Binding XAxes}"
-				YAxes="{Binding YAxes}"
-				ZoomMode="None" />
-		<Grid />
+		<TabControl DockPanel.Dock="Top">
+			<TabItem Header="Debounce">
+				<DockPanel Margin="5">
+					<WrapPanel DockPanel.Dock="Top"
+							Orientation="Horizontal">
+						<Button Click="DebounceOnClick">Debounced</Button>
+						<Button Click="DebounceCancelOnClick">Cancel</Button>
+						<Button Click="DebounceResetOnClick">Reset</Button>
+						<NumericUpDown
+								Minimum="1"
+								Maximum="10"
+								Increment="1"
+								MinWidth="260"
+								HorizontalContentAlignment="Right"
+								Value="{ReflectionBinding Debounce.Interval, Mode=TwoWay, Converter={StaticResource TimeSpanConverter}}">
+							<NumericUpDown.InnerLeftContent>
+								<TextBlock Text="Debounce Interval" />
+							</NumericUpDown.InnerLeftContent>
+							<NumericUpDown.InnerRightContent>
+								<TextBlock Text="secs" />
+							</NumericUpDown.InnerRightContent>
+						</NumericUpDown>
+						<ToggleSwitch
+								IsChecked="{ReflectionBinding Debounce.AllowTriggerDuringProcessing, Mode=TwoWay}"
+								OnContent="Allow Trigger During Processing"
+								OffContent="Allow Trigger During Processing" />
+					</WrapPanel>
+					<WrapPanel DockPanel.Dock="Top"
+							Orientation="Horizontal">
+						<TextBlock Text="Debounce"
+								Foreground="{DynamicResource ThemeColor03}"
+								MinWidth="90" />
+						<CheckBox IsChecked="{ReflectionBinding Debounce.IsTriggered, Mode=OneWay}"
+								IsEnabled="False">
+							Is Triggered
+						</CheckBox>
+						<CheckBox IsChecked="{ReflectionBinding Debounce.IsTriggeredForced, Mode=OneWay}"
+								IsEnabled="False">
+							Was Forced
+						</CheckBox>
+						<CheckBox IsChecked="{ReflectionBinding Debounce.IsProcessing, Mode=OneWay}"
+								IsEnabled="False">
+							Is Processing
+						</CheckBox>
+						<CheckBox IsChecked="{ReflectionBinding Debounce.ResetRequested, Mode=OneWay}"
+								IsEnabled="False">
+							Reset Requested
+						</CheckBox>
+						<TextBlock Text="Last Triggered" Foreground="{DynamicResource Gray01}" />
+						<TextBlock Text="{ReflectionBinding Debounce.TriggeredOn, Mode=OneWay}" />
+						<TextBlock Text="Last Processed" Foreground="{DynamicResource Gray01}" />
+						<TextBlock Text="{ReflectionBinding Debounce.LastProcessedOn, Mode=OneWay}" />
+					</WrapPanel>
+				</DockPanel>
+			</TabItem>
+			<TabItem Header="Throttle">
+				<DockPanel Margin="5">
+					<WrapPanel DockPanel.Dock="Top"
+							Orientation="Horizontal">
+						<Button Click="ThrottleOnClick">Throttled</Button>
+						<Button Click="ThrottleCancelOnClick">Cancel</Button>
+						<Button Click="ThrottleResetOnClick">Reset</Button>
+						<NumericUpDown
+								Minimum="1"
+								Maximum="10"
+								Increment="1"
+								MinWidth="260"
+								HorizontalContentAlignment="Right"
+								Value="{ReflectionBinding Throttle.Interval, Mode=TwoWay, Converter={StaticResource TimeSpanConverter}}">
+							<NumericUpDown.InnerLeftContent>
+								<TextBlock Text="Throttle Interval" />
+							</NumericUpDown.InnerLeftContent>
+							<NumericUpDown.InnerRightContent>
+								<TextBlock Text="secs" />
+							</NumericUpDown.InnerRightContent>
+						</NumericUpDown>
+						<ToggleSwitch
+								IsChecked="{ReflectionBinding Throttle.AllowTriggerDuringProcessing, Mode=TwoWay}"
+								OnContent="Allow Trigger During Processing"
+								OffContent="Allow Trigger During Processing" />
+						<ToggleSwitch
+								IsChecked="{ReflectionBinding Throttle.QueueTriggers, Mode=TwoWay}"
+								OnContent="Queue Triggers"
+								OffContent="Queue Triggers" />
+					</WrapPanel>
+					<WrapPanel DockPanel.Dock="Top">
+						<TextBlock Text="Throttle"
+								Foreground="{DynamicResource ThemeColor03}"
+								Padding="10,0,10,0"
+								MinWidth="90" />
+						<CheckBox IsChecked="{ReflectionBinding Throttle.IsTriggered, Mode=OneWay}"
+								IsEnabled="False">
+							Is Triggered
+						</CheckBox>
+						<CheckBox IsChecked="{ReflectionBinding Throttle.IsTriggeredForced, Mode=OneWay}"
+								IsEnabled="False">
+							Was Forced
+						</CheckBox>
+						<CheckBox IsChecked="{ReflectionBinding Throttle.IsProcessing, Mode=OneWay}"
+								IsEnabled="False">
+							Is Processing
+						</CheckBox>
+						<CheckBox IsChecked="{ReflectionBinding Throttle.ResetRequested, Mode=OneWay}"
+								IsEnabled="False">
+							Reset Requested
+						</CheckBox>
+						<TextBlock Text="Last Triggered" Foreground="{DynamicResource Gray01}" />
+						<TextBlock Text="{ReflectionBinding Throttle.TriggeredOn, Mode=OneWay}" />
+						<TextBlock Text="Last Processed" Foreground="{DynamicResource Gray01}" />
+						<TextBlock Text="{ReflectionBinding Throttle.LastProcessedOn, Mode=OneWay}" />
+					</WrapPanel>
+					<Grid />
+				</DockPanel>
+			</TabItem>
+		</TabControl>
+		<Border DockPanel.Dock="Top"
+				Background="{DynamicResource Background03}"
+				BorderBrush="{DynamicResource BorderBrush}"
+				BorderThickness="1"
+				CornerRadius="4"
+				Padding="5">
+			<WrapPanel>
+				<NumericUpDown
+						Minimum="1"
+						Maximum="10"
+						Increment="1"
+						MinWidth="220"
+						HorizontalContentAlignment="Right"
+						Value="{Binding WorkDelay, Mode=TwoWay}">
+					<NumericUpDown.InnerLeftContent>
+						<TextBlock Text="Work Time" />
+					</NumericUpDown.InnerLeftContent>
+					<NumericUpDown.InnerRightContent>
+						<TextBlock Text="secs" />
+					</NumericUpDown.InnerRightContent>
+				</NumericUpDown>
+				<ToggleSwitch
+						IsChecked="{Binding WorkCanCancel, Mode=TwoWay}"
+						OnContent="Allow Work To Cancel"
+						OffContent="Allow Work To Cancel" />
+			</WrapPanel>
+		</Border>
+		<Grid RowDefinitions="*,*">
+			<avalonia:CartesianChart
+					x:Name="Chart"
+					Grid.Row="0"
+					Margin="0"
+					Height="320"
+					Series="{Binding Series}"
+					XAxes="{Binding XAxes}"
+					YAxes="{Binding YAxes}"
+					ZoomMode="None" />
+			<avalonia:CartesianChart
+					x:Name="Chart2"
+					Grid.Row="1"
+					Margin="0"
+					Height="320"
+					Series="{Binding Series2}"
+					XAxes="{Binding XAxes}"
+					YAxes="{Binding YAxes}"
+					ZoomMode="None" />
+		</Grid>
 	</DockPanel>
 </UserControl>

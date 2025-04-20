@@ -45,16 +45,20 @@ public class MarkdownTokenizer
 					case '#':
 					{
 						var headerNumber = MatchCharacter(CurrentToken.StartIndex, '#', 6);
-						CurrentToken.Type = MarkdownTokenType.Header;
-						CurrentToken.ElementName = "h" + headerNumber;
-
+						
 						// todo: this is broken, it's expect exact 1 character per match
 						// meaning ## { } aoeu won't match correctly
 						var offsets = FindCharactersIndexes(CurrentToken.StartIndex, expected: ['#', '{', '}'], ignore: [' '], until: ['\r', '\n', '\0']);
-						CurrentToken.TokenIndexes = offsets;
-						CurrentToken.TokenIndexes[0] += headerNumber;
-						ParseUntil('\0', '\r', '\n');
-						return true;
+						if (offsets.Length > 1)
+						{
+							CurrentToken.Type = MarkdownTokenType.Header;
+							CurrentToken.ElementName = "h" + headerNumber;
+							CurrentToken.TokenIndexes = offsets;
+							CurrentToken.TokenIndexes[0] += headerNumber;
+							MoveTo(offsets[offsets.Length - 1] + 1);
+							return true;
+						}
+						break;
 					}
 					case '-':
 					case '*':
@@ -69,15 +73,19 @@ public class MarkdownTokenizer
 							return true;
 						}
 
-						var count = MatchCharacter(CurrentToken.StartIndex, '*', 6);
-						var keys = new string('*', count);
+						var count = MatchCharacter(CurrentToken.StartIndex, c, 6);
+						var keys = new string(c, count);
 						var indexes = MatchStrings(CurrentToken.StartIndex, [keys, keys], ['\0']);
-						CurrentToken.Type = count == 1 ? MarkdownTokenType.Italic : MarkdownTokenType.Bold;
-						CurrentToken.TokenIndexes = [indexes[0] + count, indexes[1]];
-						CurrentToken.ElementName = count == 1 ? "em" : "strong";
-						MoveTo(indexes[1] + count);
-						//ParseUntil('\0', '\r', '\n');
-						return true;
+						if (indexes.Length > 0)
+						{
+							CurrentToken.Type = count == 1 ? MarkdownTokenType.Italic : MarkdownTokenType.Bold;
+							CurrentToken.TokenIndexes = [indexes[0] + count, indexes[1]];
+							CurrentToken.ElementName = count == 1 ? "em" : "strong";
+							MoveTo(indexes[1] + count);
+							//ParseUntil('\0', '\r', '\n');
+							return true;
+						}
+						break;
 					}
 					case '1':
 					{

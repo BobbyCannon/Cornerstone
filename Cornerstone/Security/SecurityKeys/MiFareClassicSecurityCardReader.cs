@@ -126,6 +126,10 @@ public class MiFareClassicSecurityCardReader : SecurityCardReader
 	{
 		var command = new LoadKeysCommand(KeyA);
 		var result = Connection.Transmit(command);
+		if (result.Status != 0x9000)
+		{
+			Connection.OnWriteLine("Failed to load the keys.");
+		}
 	}
 
 	#endregion

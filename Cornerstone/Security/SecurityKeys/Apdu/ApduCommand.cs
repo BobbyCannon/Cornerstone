@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System;
 using System.IO;
 
 #endregion
@@ -90,6 +91,11 @@ public class ApduCommand
 
 			return ms.ToArray();
 		}
+	}
+
+	public override string ToString()
+	{
+		return BitConverter.ToString(ToByteArray());
 	}
 
 	#endregion

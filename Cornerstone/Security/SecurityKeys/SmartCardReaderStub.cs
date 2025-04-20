@@ -1,6 +1,8 @@
 ﻿#region References
 
+using System.Threading.Tasks;
 using Cornerstone.Attributes;
+using Cornerstone.Collections;
 using Cornerstone.Presentation;
 
 #endregion
@@ -15,7 +17,14 @@ public class SmartCardReaderStub : SmartCardReader
 	[DependencyInjectionConstructor]
 	public SmartCardReaderStub(IDispatcher dispatcher) : base(dispatcher)
 	{
+		AvailableReaders = new ReadOnlySpeedyList<SelectionOption<string>>([]);
 	}
+
+	#endregion
+
+	#region Properties
+
+	public override ReadOnlySpeedyList<SelectionOption<string>> AvailableReaders { get; }
 
 	#endregion
 

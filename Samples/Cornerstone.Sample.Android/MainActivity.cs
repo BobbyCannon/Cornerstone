@@ -15,9 +15,10 @@ using Cornerstone.Platforms.Android;
 
 namespace Cornerstone.Sample.Android;
 
-[Activity(Label = "Cornerstone Sample",
+[Activity(
+	Label = "Cornerstone Sample",
 	Theme = "@style/MyTheme.NoActionBar",
-	Icon = "@drawable/icon",
+	Icon = "@drawable/Icon",
 	MainLauncher = true,
 	ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.ScreenSize | ConfigChanges.UiMode)]
 [IntentFilter([NfcAdapter.ActionTagDiscovered], Categories = [Intent.CategoryDefault], DataMimeType = DataMimeType)]

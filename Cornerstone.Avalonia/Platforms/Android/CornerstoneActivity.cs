@@ -2,6 +2,8 @@
 
 using System;
 using Android.Content;
+using Android.OS;
+using Android.Window;
 using Avalonia;
 using Avalonia.Android;
 using Cornerstone.Platforms.Android;
@@ -12,7 +14,8 @@ using Permission = Android.Content.PM.Permission;
 
 namespace Cornerstone.Avalonia.Platforms.Android;
 
-public class CornerstoneActivity<TApplication> : AvaloniaMainActivity<TApplication>, IDependencyProvider
+public class CornerstoneActivity<TApplication>
+	: AvaloniaMainActivity<TApplication>, IDependencyProvider
 	where TApplication : Application, new()
 {
 	#region Fields

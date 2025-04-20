@@ -9,6 +9,18 @@
 		<AndroidPackageFormat>apk</AndroidPackageFormat>
 		<AndroidEnableProfiledAot>False</AndroidEnableProfiledAot>
 	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<Optimize>true</Optimize>
+		<PublishTrimmed>false</PublishTrimmed>
+		<TrimMode>none</TrimMode>
+		<OptimizationPreference>Speed</OptimizationPreference>
+		<PublishAot>false</PublishAot>
+		<DebugSymbols>false</DebugSymbols>
+		<DebugType>none</DebugType>
+		<RunAOTCompilation>false</RunAOTCompilation>
+		<EnableAssemblyILStripping>false</EnableAssemblyILStripping>
+		<NoWarn>$(NoWarn);IL2026;IL2111</NoWarn>
+	</PropertyGroup>
 	<ItemGroup>
 		<AndroidResource Include="Icon.png">
 			<Link>Resources\drawable\Icon.png</Link>

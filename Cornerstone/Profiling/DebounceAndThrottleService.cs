@@ -1,7 +1,7 @@
 ﻿#region References
 
 using System;
-using System.ComponentModel;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Cornerstone.Collections;
@@ -23,10 +23,10 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 
 	private readonly Action<CancellationToken, T> _action;
 	private CancellationTokenSource _cancellationTokenSource;
-	private bool _force;
 	private bool _disposed;
 	private readonly IDateTimeProvider _timeProvider;
-	private BackgroundWorker _worker;
+	private CancellationTokenSource _workerCancellationTokenSource;
+	private Task _workerTask;
 
 	#endregion
 
@@ -44,16 +44,15 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 		AllowTriggerDuringProcessing = false;
 		Interval = interval;
 		Lock = new ReaderWriterLockTiny();
+		ResetRequested = false;
 		TriggeredOn = DateTime.MinValue;
 		Queue = new SpeedyQueue<T> { Limit = 1 };
 		Queue.QueueChanged += QueueOnQueueChanged;
 
 		_action = action;
 		_timeProvider = timeProvider ?? DateTimeProvider.RealTime;
-		_worker = new BackgroundWorker();
-		_worker.DoWork += WorkerOnDoWork;
-		_worker.WorkerSupportsCancellation = true;
-		_worker.RunWorkerAsync();
+		_workerCancellationTokenSource = new CancellationTokenSource();
+		_workerTask = Task.Run(() => WorkerLoop(_workerCancellationTokenSource.Token), _workerCancellationTokenSource.Token);
 	}
 
 	#endregion
@@ -98,6 +97,11 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	public bool IsTriggeredAndReadyToProcess => IsTriggered && IsReadyToProcess;
 
 	/// <summary>
+	/// True if the next trigger was forced.
+	/// </summary>
+	public bool IsTriggeredForced { get; private set; }
+
+	/// <summary>
 	/// The Date / Time the service was last processed on.
 	/// </summary>
 	public DateTime LastProcessedOn { get; protected set; }
@@ -116,6 +120,11 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 		get => Queue.Limit > 1;
 		set => Queue.Limit = value ? int.MaxValue : 1;
 	}
+
+	/// <summary>
+	/// A reset has been requested.
+	/// </summary>
+	public bool ResetRequested { get; private set; }
 
 	/// <summary>
 	/// The timespan until next trigger
@@ -169,25 +178,28 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	/// <summary>
 	/// Reset the throttle service
 	/// </summary>
-	public async void Reset()
+	public async Task ResetAsync()
 	{
-		await Task.Run(() =>
+		if (_disposed)
 		{
-			try
-			{
-				Lock.EnterWriteLock();
+			return;
+		}
 
-				_force = false;
+		ResetRequested = true;
 
-				Queue.Clear();
-				LastProcessedOn = DateTime.MinValue;
-				TriggeredOn = DateTime.MinValue;
-			}
-			finally
+		// Wait for worker to process reset
+		const int maxAttempts = 100; // Wait up to ~1 second (10ms * 100)
+		for (var i = 0; i < maxAttempts; i++)
+		{
+			if (!ResetRequested)
 			{
-				Lock.ExitWriteLock();
+				return; // Reset completed
 			}
-		});
+			await Task.Delay(10).ConfigureAwait(false);
+		}
+
+		// Optional: Log or throw if reset not completed
+		// throw new TimeoutException("Reset not completed within timeout period.");
 	}
 
 	/// <summary>
@@ -217,7 +229,7 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 		}
 
 		// Optionally turn on force
-		_force |= force;
+		IsTriggeredForced |= force;
 
 		Queue.Enqueue(value);
 		TriggeredOn = NextTriggerDate;
@@ -231,32 +243,33 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 	/// <param name="disposing"> True if disposing and false if otherwise. </param>
 	protected virtual void Dispose(bool disposing)
 	{
+		if (_disposed)
+		{
+			return;
+		}
+
+		_disposed = true;
+
+		// Call ResetAsync synchronously for compatibility
+		ResetAsync().GetAwaiter().GetResult();
+
+		Queue.QueueChanged -= QueueOnQueueChanged;
+
+		_workerCancellationTokenSource?.Cancel();
 		try
 		{
-			_disposed = true;
-
-			Reset();
-
-			Queue.QueueChanged -= QueueOnQueueChanged;
-
-			var worker = _worker;
-			if (worker == null)
-			{
-				return;
-			}
-
-			if (worker.IsBusy)
-			{
-				worker.CancelAsync();
-			}
-
-			worker.DoWork -= WorkerOnDoWork;
-			worker.Dispose();
+			_workerTask?.Wait(1000); // Wait briefly for task to complete
 		}
-		finally
+		catch (OperationCanceledException)
 		{
-			_worker = null;
 		}
+		catch (AggregateException)
+		{
+		}
+
+		_workerCancellationTokenSource?.Dispose();
+		_workerCancellationTokenSource = null;
+		_workerTask = null;
 	}
 
 	private void QueueOnQueueChanged(object sender, EventArgs e)
@@ -265,16 +278,37 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 		OnPropertyChanged(nameof(QueueCount));
 	}
 
-	private void WorkerOnDoWork(object sender, DoWorkEventArgs e)
+	private async Task WorkerLoop(CancellationToken cancellationToken)
 	{
-		var worker = (BackgroundWorker) sender;
-
-		while (!worker.CancellationPending && !_disposed)
+		while (!cancellationToken.IsCancellationRequested && !_disposed)
 		{
-			if (!IsTriggeredAndReadyToProcess && !_force)
+			// Check for reset request
+			if (ResetRequested)
 			{
-				// Nothing to do...
-				Thread.Sleep(10);
+				try
+				{
+					Lock.EnterWriteLock();
+
+					IsTriggeredForced = false;
+
+					Queue.Clear();
+					LastProcessedOn = DateTime.MinValue;
+					TriggeredOn = DateTime.MinValue;
+					ResetRequested = false;
+				}
+				finally
+				{
+					Lock.ExitWriteLock();
+				}
+
+				await Task.Delay(10, cancellationToken).ConfigureAwait(false);
+				continue;
+			}
+
+			if (!IsTriggeredAndReadyToProcess && !IsTriggeredForced)
+			{
+				// Nothing to do, wait briefly
+				await Task.Delay(10, cancellationToken).ConfigureAwait(false);
 				continue;
 			}
 
@@ -282,7 +316,7 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 			{
 				Lock.EnterWriteLock();
 
-				_force = false;
+				IsTriggeredForced = false;
 
 				LastProcessedOn = TriggeredOn;
 				IsProcessing = true;
@@ -293,7 +327,19 @@ public abstract class DebounceOrThrottleService<T> : Bindable, IDisposable
 				}
 
 				_cancellationTokenSource = new CancellationTokenSource();
-				_action(_cancellationTokenSource.Token, data);
+
+				try
+				{
+					_action(_cancellationTokenSource.Token, data);
+				}
+				catch (OperationCanceledException)
+				{
+				}
+				catch (Exception ex)
+				{
+					// Handle or log exception as needed
+					Debug.WriteLine($"Error in action: {ex.Message}");
+				}
 
 				// See if we need to re-trigger due to queued data
 				if (!Queue.IsEmpty)

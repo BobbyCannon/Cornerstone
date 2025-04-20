@@ -92,7 +92,7 @@ public class SyncManager : Manager
 	/// <summary>
 	/// Gets a value indicating the sync manager is enabled.
 	/// </summary>
-	public bool IsEnabled { get; set; }
+	public virtual bool IsEnabled { get; set; }
 
 	/// <summary>
 	/// The runtime information provider.
@@ -303,6 +303,12 @@ public class SyncManager : Manager
 		return Task.Run(() => Process(syncType, updateSettings, waitFor, postAction));
 	}
 
+	public void Reset()
+	{
+		SyncTimers.Values.ForEach(x => x.Reset());
+		SyncSettingsForSyncType.Values.ForEach(x => x.Reset());
+	}
+
 	/// <summary>
 	/// Cancel the current running sync and wait for it to stop.
 	/// </summary>
@@ -318,6 +324,13 @@ public class SyncManager : Manager
 
 		syncSession.Cancel();
 		syncSession.WaitForSyncToComplete(timeout ?? SyncWaitTimeout);
+	}
+
+	/// <inheritdoc />
+	public override void Uninitialize()
+	{
+		Reset();
+		base.Uninitialize();
 	}
 
 	/// <summary>

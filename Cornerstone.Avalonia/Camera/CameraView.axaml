@@ -5,7 +5,8 @@
 		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
 		x:Class="Cornerstone.Avalonia.Camera.CameraView"
 		x:DataType="CameraView">
-	<Grid IsVisible="{Binding IsPreviewing}">
+	<Grid IsVisible="{Binding IsPreviewing}"
+			Background="{DynamicResource Background02}">
 		<Image x:Name="CameraPreview" Stretch="Uniform" />
 		<Button x:Name="RecordButton"
 				Classes="Icon" Height="50" Width="50"

@@ -31,7 +31,11 @@ public class PopupViewModel : Bindable
 
 	#region Constructors
 
-	public PopupViewModel()
+	public PopupViewModel() : this(null)
+	{
+	}
+
+	public PopupViewModel(IDispatcher dispatcher) : base(dispatcher)
 	{
 		ProgressDescription = string.Empty;
 		ShowButtons = true;

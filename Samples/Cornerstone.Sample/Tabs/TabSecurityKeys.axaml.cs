@@ -167,13 +167,26 @@ public partial class TabSecurityKeys : CornerstoneUserControl
 
 	private void ReadBlock(object sender, RoutedEventArgs e)
 	{
-		var data = SmartCardReader.Card.ReadBlock((ushort) Block);
-		BlockData = data.ToHexString();
+		var data = SmartCardReader.Card?.ReadBlock((ushort) Block);
+		if (data != null)
+		{
+			BlockData = data.ToHexString();
+		}
+		else
+		{
+			Output.AppendText($"Error reading from block {Block}.");
+			Output.AppendText(Environment.NewLine);
+		}
 	}
 
-	private void RefreshOnClick(object sender, RoutedEventArgs e)
+	private void RefreshCardOnClick(object sender, RoutedEventArgs e)
 	{
 		SmartCardReader.Card?.Refresh();
+	}
+
+	private void RefreshReadersOnClick(object sender, RoutedEventArgs e)
+	{
+		SmartCardReader.RefreshReadersAsync();
 	}
 
 	private void SmartCardReaderOnCardInserted(object sender, SecurityCard e)
@@ -218,8 +231,10 @@ public partial class TabSecurityKeys : CornerstoneUserControl
 				document.Write(0, e.Data);
 			}
 
-			_changesHighlighter.Ranges.Clear();
+			BlockData = string.Empty;
 
+			_changesHighlighter.Ranges.Clear();
+			
 			Output.AppendText("--- ");
 			Output.AppendText(e?.UniqueId);
 			Output.AppendText(Environment.NewLine);
