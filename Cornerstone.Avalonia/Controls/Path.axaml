@@ -1,0 +1,94 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Style Selector="Path">
+		<Setter Property="Fill" Value="{DynamicResource Foreground00}" />
+		<Setter Property="Height" Value="20" />
+		<Setter Property="Width" Value="20" />
+		<Setter Property="Stretch" Value="Uniform" />
+		<Setter Property="HorizontalAlignment" Value="Center" />
+		<Setter Property="VerticalAlignment" Value="Center" />
+
+		<Style Selector="^[IsVisible=True].Rotating">
+			<Style.Animations>
+				<Animation Duration="0:0:2" IterationCount="Infinite">
+					<KeyFrame Cue="0%">
+						<Setter Property="RotateTransform.Angle" Value="0.0" />
+					</KeyFrame>
+					<KeyFrame Cue="100%">
+						<Setter Property="RotateTransform.Angle" Value="360.0" />
+					</KeyFrame>
+				</Animation>
+			</Style.Animations>
+		</Style>
+		<Style Selector="^[IsVisible=True].Rotating2">
+			<Style.Animations>
+				<Animation Duration="0:0:2" IterationCount="Infinite">
+					<KeyFrame Cue="0%">
+						<Setter Property="RotateTransform.Angle" Value="0.0" />
+					</KeyFrame>
+					<KeyFrame Cue="100%">
+						<Setter Property="RotateTransform.Angle" Value="-360.0" />
+					</KeyFrame>
+				</Animation>
+			</Style.Animations>
+		</Style>
+		<Style Selector="^[IsVisible=True].Waiting">
+			<Setter Property="Opacity" Value="0" />
+			<Style.Animations>
+				<Animation Duration="0:0:1.5" IterationCount="Infinite">
+					<KeyFrame Cue="0%">
+						<Setter Property="Opacity" Value="0.0" />
+					</KeyFrame>
+					<KeyFrame Cue="50%">
+						<Setter Property="Opacity" Value="1" />
+					</KeyFrame>
+					<KeyFrame Cue="100%">
+						<Setter Property="Opacity" Value="0.0" />
+					</KeyFrame>
+				</Animation>
+			</Style.Animations>
+		</Style>
+	</Style>
+
+	<Style Selector="Path.Invert">
+		<Setter Property="RenderTransform" Value="rotate(180deg)" />
+	</Style>
+
+	<Style Selector="Path.FlipV">
+		<Setter Property="RenderTransform" Value="scaley(-1)" />
+	</Style>
+
+	<Style Selector="Path.FlipH">
+		<Setter Property="RenderTransform" Value="scalex(-1)" />
+	</Style>
+
+	<Style Selector="Path.Flip">
+		<Setter Property="RenderTransform" Value="scale(1,-1)" />
+	</Style>
+
+	<Design.PreviewWith>
+		<Border Width="300">
+			<WrapPanel>
+				<WrapPanel.Styles>
+					<Style Selector="Path">
+						<Setter Property="Height" Value="60"></Setter>
+						<Setter Property="Width" Value="60"></Setter>
+					</Style>
+				</WrapPanel.Styles>
+				<Path Data="{StaticResource Icons.Cog}" Fill="Red" />
+				<Path Data="{StaticResource Icons.Cog}" 
+						Classes="Rotating"
+						Height="60" Width="58" />
+				<Path Data="{StaticResource Icons.Sync}" 
+						Classes="Rotating2"
+						Height="60" Width="42"
+						Margin="10" />
+				<Path Data="{StaticResource Icons.Lock}" Classes="Invert" />
+				<Path Data="{StaticResource Icons.Lock}" Classes="FlipV" />
+				<Path Data="{StaticResource Icons.Lock}" Classes="FlipH" />
+				<Path Data="{StaticResource Icons.Lock}" Classes="Flip" />
+				<Path Data="{StaticResource Unlock}" />
+			</WrapPanel>
+		</Border>
+	</Design.PreviewWith>
+</Styles>

@@ -1,0 +1,65 @@
+<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+	<ControlTheme x:Key="{x:Type Flyout}" TargetType="Flyout">
+	</ControlTheme>
+
+	<ControlTheme x:Key="{x:Type FlyoutPresenter}" TargetType="FlyoutPresenter">
+		<Setter Property="HorizontalContentAlignment" Value="Stretch" />
+		<Setter Property="VerticalContentAlignment" Value="Stretch" />
+		<Setter Property="Background" Value="{DynamicResource Background02}" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+		<Setter Property="BorderThickness" Value="{DynamicResource ControlBorderThickness}" />
+		<Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
+		<Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+		<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+		<Setter Property="ClipToBounds" Value="False" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border Name="LayoutRoot"
+						Background="{TemplateBinding Background}"
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}"
+						Padding="{DynamicResource FlyoutBorderThemePadding}"
+						CornerRadius="{TemplateBinding CornerRadius}">
+					<ScrollViewer
+							HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+							VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
+						<ContentPresenter x:Name="PART_ContentPresenter"
+								Content="{TemplateBinding Content}"
+								ContentTemplate="{TemplateBinding ContentTemplate}"
+								Foreground="{TemplateBinding Foreground}"
+								Margin="{TemplateBinding Padding}"
+								HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+								VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+								HorizontalContentAlignment="Stretch"
+								VerticalContentAlignment="Stretch" />
+					</ScrollViewer>
+				</Border>
+			</ControlTemplate>
+		</Setter>
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="600">
+			<PreviewCodeSnippet.ItemTemplate>
+				<DataTemplate DataType="ThemeColor">
+					<Grid>
+						<Grid.ContextFlyout>
+							<Flyout>
+								<Menu>
+									<MenuItem Header="Item 1" />
+									<MenuItem Header="Item 2" />
+								</Menu>
+							</Flyout>
+						</Grid.ContextFlyout>
+						<TextBlock Text="{Binding}" />
+					</Grid>
+				</DataTemplate>
+			</PreviewCodeSnippet.ItemTemplate>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

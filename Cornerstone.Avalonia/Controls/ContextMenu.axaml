@@ -1,0 +1,102 @@
+<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+	<Design.PreviewWith>
+		<StackPanel
+				Margin="8"
+				VerticalAlignment="Top"
+				HorizontalAlignment="Left"
+				Orientation="Vertical"
+				Spacing="8">
+			<StackPanel.Resources>
+				<ControlTemplate x:Key="Test" TargetType="ContextMenu">
+					<ContextMenu>
+						<MenuItem Header="Standard _Menu Item"
+								Icon="{StaticResource Icons.Cog}"
+								InputGesture="Ctrl+F1" />
+						<MenuItem Header="Disabled" IsEnabled="False" />
+						<Separator />
+						<MenuItem Header="Menu with _Submenu">
+							<MenuItem Header="Submenu _1" />
+							<MenuItem Header="Submenu _2" />
+						</MenuItem>
+						<MenuItem Header="Menu Item with _Icon">
+							<MenuItem.Icon>
+								<TextBlock Text="😀" />
+							</MenuItem.Icon>
+						</MenuItem>
+						<MenuItem Header="Menu Item with _Checkbox">
+							<MenuItem.Icon>
+								<CheckBox BorderThickness="0" IsHitTestVisible="False" IsChecked="True" />
+							</MenuItem.Icon>
+						</MenuItem>
+						<MenuItem Header="_About">
+							<MenuItem.Icon>
+								<PathIcon Data="{DynamicResource Icons.Lock}" />
+							</MenuItem.Icon>
+						</MenuItem>
+					</ContextMenu>
+				</ControlTemplate>
+			</StackPanel.Resources>
+			<Border
+					Background="{DynamicResource Background05}"
+					Width="400"
+					Height="200"
+					CornerRadius="8">
+				<Border.ContextMenu>
+					<ContextMenu Template="{StaticResource Test}" />
+				</Border.ContextMenu>
+				<TextBlock
+						Text="Right click to show context menu."
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center" />
+			</Border>
+			<ContextMenu Template="{StaticResource Test}"
+					Margin="0,8,0,0" />
+			<ContextMenu>
+				<MenuItem Header="Add Group">
+					<MenuItem.Icon>
+						<Path Width="12" Height="12"
+								Data="{DynamicResource Icons.Folder.Add}" />
+					</MenuItem.Icon>
+				</MenuItem>
+			</ContextMenu>
+		</StackPanel>
+	</Design.PreviewWith>
+	<ControlTheme x:Key="{x:Type ContextMenu}" TargetType="ContextMenu">
+		<Setter Property="Background" Value="{DynamicResource Background02}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+		<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+		<Setter Property="FontWeight" Value="Normal" />
+		<Setter Property="MaxWidth" Value="{DynamicResource FlyoutThemeMaxWidth}" />
+		<Setter Property="Padding" Value="0" />
+		<Setter Property="HorizontalAlignment" Value="Stretch" />
+		<Setter Property="WindowManagerAddShadowHint" Value="False" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border
+						Background="{TemplateBinding Background}"
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}"
+						Padding="{TemplateBinding Padding}"
+						MaxWidth="{TemplateBinding MaxWidth}"
+						MinHeight="{TemplateBinding MinHeight}"
+						HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
+						CornerRadius="{TemplateBinding CornerRadius}">
+					<ScrollViewer Theme="{StaticResource MenuScrollViewerForVertical}">
+						<ItemsPresenter
+								Name="PART_ItemsPresenter"
+								ItemsPanel="{TemplateBinding ItemsPanel}"
+								Margin="0,4"
+								KeyboardNavigation.TabNavigation="Continue"
+								Grid.IsSharedSizeScope="True" />
+					</ScrollViewer>
+				</Border>
+			</ControlTemplate>
+		</Setter>
+	</ControlTheme>
+</ResourceDictionary>

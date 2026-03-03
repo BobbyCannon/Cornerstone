@@ -1,0 +1,85 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type TextEditor}"
+					TargetType="TextEditor">
+				<Setter Property="Background" Value="{DynamicResource Background03}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+				<Setter Property="BorderThickness" Value="1" />
+				<Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}" />
+				<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+				<Setter Property="FontSize" Value="{StaticResource ControlFontSize}" />
+				<Setter Property="Padding" Value="8" />
+				<Setter Property="Focusable" Value="True" />
+				<Setter Property="(TextInputOptions.Multiline)" Value="True" />
+				<Setter Property="Template">
+					<ControlTemplate>
+						<Border Background="{TemplateBinding Background}"
+								BorderThickness="{TemplateBinding BorderThickness}"
+								BorderBrush="{TemplateBinding BorderBrush}">
+							<Grid ColumnDefinitions="Auto,*">
+								<Border Grid.Column="0" 
+										BorderThickness="0,0,1,0"
+										CornerRadius="0"
+										Padding="{TemplateBinding Padding}"
+										IsVisible="{TemplateBinding ShowMargins}">
+									<ItemsControl
+											ItemsSource="{TemplateBinding LeftMargins}">
+										<ItemsControl.ItemsPanel>
+											<ItemsPanelTemplate>
+												<StackPanel Orientation="Horizontal" Spacing="8" />
+											</ItemsPanelTemplate>
+										</ItemsControl.ItemsPanel>
+									</ItemsControl>
+								</Border>
+								<ScrollViewer Grid.Column="1"
+										x:Name="PART_ScrollViewer"
+										Focusable="False"
+										AllowAutoHide="{TemplateBinding ScrollViewer.AllowAutoHide}"
+										HorizontalScrollBarVisibility="Auto"
+										VerticalScrollBarVisibility="Auto">
+									<TextRenderer Name="PART_TextRenderer"
+											Cursor="IBeam"
+											Foreground="{TemplateBinding Foreground}"
+											FontFamily="{TemplateBinding FontFamily}"
+											FontSize="{TemplateBinding FontSize, Mode=TwoWay}"
+											Margin="{TemplateBinding Padding}"
+											ViewModel="{TemplateBinding ViewModel}" />
+								</ScrollViewer>
+							</Grid>
+						</Border>
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet Height="500" Width="600">
+			<Grid RowDefinitions="Auto,*">
+				<WrapPanel Grid.Row="0"
+						ItemSpacing="20"
+						LineSpacing="20"
+						Margin="0,0,0,10">
+					<NumericUpDown x:Name="FontSize2"
+							ControlHelper.DisplayName="FontSize"
+							FormatString="0"
+							HorizontalContentAlignment="Center"
+							Minimum="10"
+							Maximum="40"
+							Value="{Binding ElementName=Editor, Path=FontSize}"
+							Width="200" />
+					<CheckBox IsChecked="{Binding ElementName=Editor, Path=ViewModel.ShowLineNumbers}">Line Numbers</CheckBox>
+					<CheckBox IsChecked="{Binding ElementName=Editor, Path=ViewModel.WordWrap}">Word Wrap</CheckBox>
+				</WrapPanel>
+				<TextEditor x:Name="Editor"
+						Grid.Row="1"
+						FontSize="20"
+						ScrollViewer.AllowAutoHide="false"
+						Text="The quick brown fox jumped over the lazy dog's back." />
+			</Grid>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</Styles>

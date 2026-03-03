@@ -1,0 +1,144 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<!-- Generated Code - Colors -->
+	<Color x:Key="Background00">#FFFFFF</Color>
+	<Color x:Key="Background01">#F4F4F4</Color>
+	<Color x:Key="Background02">#E8E8E8</Color>
+	<Color x:Key="Background03">#DDDDDD</Color>
+	<Color x:Key="Background04">#D2D2D2</Color>
+	<Color x:Key="Background05">#C6C6C6</Color>
+	<Color x:Key="Background06">#BBBBBB</Color>
+	<Color x:Key="Background07">#B0B0B0</Color>
+	<Color x:Key="Background08">#A4A4A4</Color>
+	<Color x:Key="Background09">#999999</Color>
+	<Color x:Key="Foreground00">#000000</Color>
+	<Color x:Key="Foreground01">#090909</Color>
+	<Color x:Key="Foreground02">#131313</Color>
+	<Color x:Key="Foreground03">#1C1C1C</Color>
+	<Color x:Key="Foreground04">#262626</Color>
+	<Color x:Key="Foreground05">#2F2F2F</Color>
+	<Color x:Key="Foreground06">#393939</Color>
+	<Color x:Key="Foreground07">#424242</Color>
+	<Color x:Key="Foreground08">#4C4C4C</Color>
+	<Color x:Key="Foreground09">#555555</Color>
+	<!-- Generated Code - /Colors -->
+
+	<ResourceDictionary.MergedDictionaries>
+		<ResourceInclude Source="avares://Cornerstone.Avalonia/Themes/Theme.Shared.axaml" />
+	</ResourceDictionary.MergedDictionaries>
+
+	<Design.PreviewWith>
+		<Border>
+			<AutoGrid RowCount="10" ColumnCount="10">
+				<AutoGrid.Styles>
+					<Style Selector="TextBlock">
+						<Setter Property="Padding" Value="10,4" />
+					</Style>
+				</AutoGrid.Styles>
+				<!-- Generated Code - PreviewWith -->
+				<TextBlock Background="{DynamicResource Background00}" Foreground="{DynamicResource Foreground00}" Text="B00 - F00" />
+				<TextBlock Background="{DynamicResource Background00}" Foreground="{DynamicResource Foreground01}" Text="B00 - F01" />
+				<TextBlock Background="{DynamicResource Background00}" Foreground="{DynamicResource Foreground02}" Text="B00 - F02" />
+				<TextBlock Background="{DynamicResource Background00}" Foreground="{DynamicResource Foreground03}" Text="B00 - F03" />
+				<TextBlock Background="{DynamicResource Background00}" Foreground="{DynamicResource Foreground04}" Text="B00 - F04" />
+				<TextBlock Background="{DynamicResource Background00}" Foreground="{DynamicResource Foreground05}" Text="B00 - F05" />
+				<TextBlock Background="{DynamicResource Background00}" Foreground="{DynamicResource Foreground06}" Text="B00 - F06" />
+				<TextBlock Background="{DynamicResource Background00}" Foreground="{DynamicResource Foreground07}" Text="B00 - F07" />
+				<TextBlock Background="{DynamicResource Background00}" Foreground="{DynamicResource Foreground08}" Text="B00 - F08" />
+				<TextBlock Background="{DynamicResource Background00}" Foreground="{DynamicResource Foreground09}" Text="B00 - F09" />
+				<TextBlock Background="{DynamicResource Background01}" Foreground="{DynamicResource Foreground00}" Text="B01 - F00" />
+				<TextBlock Background="{DynamicResource Background01}" Foreground="{DynamicResource Foreground01}" Text="B01 - F01" />
+				<TextBlock Background="{DynamicResource Background01}" Foreground="{DynamicResource Foreground02}" Text="B01 - F02" />
+				<TextBlock Background="{DynamicResource Background01}" Foreground="{DynamicResource Foreground03}" Text="B01 - F03" />
+				<TextBlock Background="{DynamicResource Background01}" Foreground="{DynamicResource Foreground04}" Text="B01 - F04" />
+				<TextBlock Background="{DynamicResource Background01}" Foreground="{DynamicResource Foreground05}" Text="B01 - F05" />
+				<TextBlock Background="{DynamicResource Background01}" Foreground="{DynamicResource Foreground06}" Text="B01 - F06" />
+				<TextBlock Background="{DynamicResource Background01}" Foreground="{DynamicResource Foreground07}" Text="B01 - F07" />
+				<TextBlock Background="{DynamicResource Background01}" Foreground="{DynamicResource Foreground08}" Text="B01 - F08" />
+				<TextBlock Background="{DynamicResource Background01}" Foreground="{DynamicResource Foreground09}" Text="B01 - F09" />
+				<TextBlock Background="{DynamicResource Background02}" Foreground="{DynamicResource Foreground00}" Text="B02 - F00" />
+				<TextBlock Background="{DynamicResource Background02}" Foreground="{DynamicResource Foreground01}" Text="B02 - F01" />
+				<TextBlock Background="{DynamicResource Background02}" Foreground="{DynamicResource Foreground02}" Text="B02 - F02" />
+				<TextBlock Background="{DynamicResource Background02}" Foreground="{DynamicResource Foreground03}" Text="B02 - F03" />
+				<TextBlock Background="{DynamicResource Background02}" Foreground="{DynamicResource Foreground04}" Text="B02 - F04" />
+				<TextBlock Background="{DynamicResource Background02}" Foreground="{DynamicResource Foreground05}" Text="B02 - F05" />
+				<TextBlock Background="{DynamicResource Background02}" Foreground="{DynamicResource Foreground06}" Text="B02 - F06" />
+				<TextBlock Background="{DynamicResource Background02}" Foreground="{DynamicResource Foreground07}" Text="B02 - F07" />
+				<TextBlock Background="{DynamicResource Background02}" Foreground="{DynamicResource Foreground08}" Text="B02 - F08" />
+				<TextBlock Background="{DynamicResource Background02}" Foreground="{DynamicResource Foreground09}" Text="B02 - F09" />
+				<TextBlock Background="{DynamicResource Background03}" Foreground="{DynamicResource Foreground00}" Text="B03 - F00" />
+				<TextBlock Background="{DynamicResource Background03}" Foreground="{DynamicResource Foreground01}" Text="B03 - F01" />
+				<TextBlock Background="{DynamicResource Background03}" Foreground="{DynamicResource Foreground02}" Text="B03 - F02" />
+				<TextBlock Background="{DynamicResource Background03}" Foreground="{DynamicResource Foreground03}" Text="B03 - F03" />
+				<TextBlock Background="{DynamicResource Background03}" Foreground="{DynamicResource Foreground04}" Text="B03 - F04" />
+				<TextBlock Background="{DynamicResource Background03}" Foreground="{DynamicResource Foreground05}" Text="B03 - F05" />
+				<TextBlock Background="{DynamicResource Background03}" Foreground="{DynamicResource Foreground06}" Text="B03 - F06" />
+				<TextBlock Background="{DynamicResource Background03}" Foreground="{DynamicResource Foreground07}" Text="B03 - F07" />
+				<TextBlock Background="{DynamicResource Background03}" Foreground="{DynamicResource Foreground08}" Text="B03 - F08" />
+				<TextBlock Background="{DynamicResource Background03}" Foreground="{DynamicResource Foreground09}" Text="B03 - F09" />
+				<TextBlock Background="{DynamicResource Background04}" Foreground="{DynamicResource Foreground00}" Text="B04 - F00" />
+				<TextBlock Background="{DynamicResource Background04}" Foreground="{DynamicResource Foreground01}" Text="B04 - F01" />
+				<TextBlock Background="{DynamicResource Background04}" Foreground="{DynamicResource Foreground02}" Text="B04 - F02" />
+				<TextBlock Background="{DynamicResource Background04}" Foreground="{DynamicResource Foreground03}" Text="B04 - F03" />
+				<TextBlock Background="{DynamicResource Background04}" Foreground="{DynamicResource Foreground04}" Text="B04 - F04" />
+				<TextBlock Background="{DynamicResource Background04}" Foreground="{DynamicResource Foreground05}" Text="B04 - F05" />
+				<TextBlock Background="{DynamicResource Background04}" Foreground="{DynamicResource Foreground06}" Text="B04 - F06" />
+				<TextBlock Background="{DynamicResource Background04}" Foreground="{DynamicResource Foreground07}" Text="B04 - F07" />
+				<TextBlock Background="{DynamicResource Background04}" Foreground="{DynamicResource Foreground08}" Text="B04 - F08" />
+				<TextBlock Background="{DynamicResource Background04}" Foreground="{DynamicResource Foreground09}" Text="B04 - F09" />
+				<TextBlock Background="{DynamicResource Background05}" Foreground="{DynamicResource Foreground00}" Text="B05 - F00" />
+				<TextBlock Background="{DynamicResource Background05}" Foreground="{DynamicResource Foreground01}" Text="B05 - F01" />
+				<TextBlock Background="{DynamicResource Background05}" Foreground="{DynamicResource Foreground02}" Text="B05 - F02" />
+				<TextBlock Background="{DynamicResource Background05}" Foreground="{DynamicResource Foreground03}" Text="B05 - F03" />
+				<TextBlock Background="{DynamicResource Background05}" Foreground="{DynamicResource Foreground04}" Text="B05 - F04" />
+				<TextBlock Background="{DynamicResource Background05}" Foreground="{DynamicResource Foreground05}" Text="B05 - F05" />
+				<TextBlock Background="{DynamicResource Background05}" Foreground="{DynamicResource Foreground06}" Text="B05 - F06" />
+				<TextBlock Background="{DynamicResource Background05}" Foreground="{DynamicResource Foreground07}" Text="B05 - F07" />
+				<TextBlock Background="{DynamicResource Background05}" Foreground="{DynamicResource Foreground08}" Text="B05 - F08" />
+				<TextBlock Background="{DynamicResource Background05}" Foreground="{DynamicResource Foreground09}" Text="B05 - F09" />
+				<TextBlock Background="{DynamicResource Background06}" Foreground="{DynamicResource Foreground00}" Text="B06 - F00" />
+				<TextBlock Background="{DynamicResource Background06}" Foreground="{DynamicResource Foreground01}" Text="B06 - F01" />
+				<TextBlock Background="{DynamicResource Background06}" Foreground="{DynamicResource Foreground02}" Text="B06 - F02" />
+				<TextBlock Background="{DynamicResource Background06}" Foreground="{DynamicResource Foreground03}" Text="B06 - F03" />
+				<TextBlock Background="{DynamicResource Background06}" Foreground="{DynamicResource Foreground04}" Text="B06 - F04" />
+				<TextBlock Background="{DynamicResource Background06}" Foreground="{DynamicResource Foreground05}" Text="B06 - F05" />
+				<TextBlock Background="{DynamicResource Background06}" Foreground="{DynamicResource Foreground06}" Text="B06 - F06" />
+				<TextBlock Background="{DynamicResource Background06}" Foreground="{DynamicResource Foreground07}" Text="B06 - F07" />
+				<TextBlock Background="{DynamicResource Background06}" Foreground="{DynamicResource Foreground08}" Text="B06 - F08" />
+				<TextBlock Background="{DynamicResource Background06}" Foreground="{DynamicResource Foreground09}" Text="B06 - F09" />
+				<TextBlock Background="{DynamicResource Background07}" Foreground="{DynamicResource Foreground00}" Text="B07 - F00" />
+				<TextBlock Background="{DynamicResource Background07}" Foreground="{DynamicResource Foreground01}" Text="B07 - F01" />
+				<TextBlock Background="{DynamicResource Background07}" Foreground="{DynamicResource Foreground02}" Text="B07 - F02" />
+				<TextBlock Background="{DynamicResource Background07}" Foreground="{DynamicResource Foreground03}" Text="B07 - F03" />
+				<TextBlock Background="{DynamicResource Background07}" Foreground="{DynamicResource Foreground04}" Text="B07 - F04" />
+				<TextBlock Background="{DynamicResource Background07}" Foreground="{DynamicResource Foreground05}" Text="B07 - F05" />
+				<TextBlock Background="{DynamicResource Background07}" Foreground="{DynamicResource Foreground06}" Text="B07 - F06" />
+				<TextBlock Background="{DynamicResource Background07}" Foreground="{DynamicResource Foreground07}" Text="B07 - F07" />
+				<TextBlock Background="{DynamicResource Background07}" Foreground="{DynamicResource Foreground08}" Text="B07 - F08" />
+				<TextBlock Background="{DynamicResource Background07}" Foreground="{DynamicResource Foreground09}" Text="B07 - F09" />
+				<TextBlock Background="{DynamicResource Background08}" Foreground="{DynamicResource Foreground00}" Text="B08 - F00" />
+				<TextBlock Background="{DynamicResource Background08}" Foreground="{DynamicResource Foreground01}" Text="B08 - F01" />
+				<TextBlock Background="{DynamicResource Background08}" Foreground="{DynamicResource Foreground02}" Text="B08 - F02" />
+				<TextBlock Background="{DynamicResource Background08}" Foreground="{DynamicResource Foreground03}" Text="B08 - F03" />
+				<TextBlock Background="{DynamicResource Background08}" Foreground="{DynamicResource Foreground04}" Text="B08 - F04" />
+				<TextBlock Background="{DynamicResource Background08}" Foreground="{DynamicResource Foreground05}" Text="B08 - F05" />
+				<TextBlock Background="{DynamicResource Background08}" Foreground="{DynamicResource Foreground06}" Text="B08 - F06" />
+				<TextBlock Background="{DynamicResource Background08}" Foreground="{DynamicResource Foreground07}" Text="B08 - F07" />
+				<TextBlock Background="{DynamicResource Background08}" Foreground="{DynamicResource Foreground08}" Text="B08 - F08" />
+				<TextBlock Background="{DynamicResource Background08}" Foreground="{DynamicResource Foreground09}" Text="B08 - F09" />
+				<TextBlock Background="{DynamicResource Background09}" Foreground="{DynamicResource Foreground00}" Text="B09 - F00" />
+				<TextBlock Background="{DynamicResource Background09}" Foreground="{DynamicResource Foreground01}" Text="B09 - F01" />
+				<TextBlock Background="{DynamicResource Background09}" Foreground="{DynamicResource Foreground02}" Text="B09 - F02" />
+				<TextBlock Background="{DynamicResource Background09}" Foreground="{DynamicResource Foreground03}" Text="B09 - F03" />
+				<TextBlock Background="{DynamicResource Background09}" Foreground="{DynamicResource Foreground04}" Text="B09 - F04" />
+				<TextBlock Background="{DynamicResource Background09}" Foreground="{DynamicResource Foreground05}" Text="B09 - F05" />
+				<TextBlock Background="{DynamicResource Background09}" Foreground="{DynamicResource Foreground06}" Text="B09 - F06" />
+				<TextBlock Background="{DynamicResource Background09}" Foreground="{DynamicResource Foreground07}" Text="B09 - F07" />
+				<TextBlock Background="{DynamicResource Background09}" Foreground="{DynamicResource Foreground08}" Text="B09 - F08" />
+				<TextBlock Background="{DynamicResource Background09}" Foreground="{DynamicResource Foreground09}" Text="B09 - F09" />
+				<!-- Generated Code - /PreviewWith -->
+			</AutoGrid>
+		</Border>
+	</Design.PreviewWith>
+</ResourceDictionary>

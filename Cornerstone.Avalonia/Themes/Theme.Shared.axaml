@@ -1,0 +1,35 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<!-- See Theme.Constants.axaml for constants -->
+
+	<SolidColorBrush x:Key="BorderBrush" Color="{DynamicResource Background06}" />
+	<SolidColorBrush x:Key="BorderBrushFocused" Color="{DynamicResource Background08}" />
+
+	<Color x:Key="SelectionColor">#660055FF</Color>
+	<SolidColorBrush x:Key="SelectionBrush" Color="{DynamicResource SelectionColor}" />
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet Width="600">
+			<ScrollViewer>
+				<StackPanel Spacing="10"
+						Margin="10">
+					<WrapPanel ItemSpacing="10"
+							LineSpacing="10">
+						<Button Theme.Color="None">Button</Button>
+						<ToggleButton Theme.Color="None">Toggle Button</ToggleButton>
+						<ToggleSwitch Theme.Color="None" />
+						<SelectableTextBlock Text="The quick brown fox." VerticalAlignment="Center" />
+					</WrapPanel>
+					<StackPanel.Styles>
+						<Style Selector="TextBlock">
+							<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+						</Style>
+					</StackPanel.Styles>
+					<HeaderedContentControl Header="Unselected">
+						<WrapPanel ItemSpacing="10" LineSpacing="10" />
+					</HeaderedContentControl>
+				</StackPanel>
+			</ScrollViewer>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

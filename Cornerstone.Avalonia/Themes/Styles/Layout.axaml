@@ -1,0 +1,169 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<!-- ReSharper disable Xaml.MissingGridIndex -->
+
+	<Style Selector="TextBlock.InputHeader">
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansLight}" />
+		<Setter Property="FontSize" Value="20" />
+		<Setter Property="Margin" Value="0,0,0,10" />
+		<Setter Property="HorizontalAlignment" Value="Center" />
+		<Setter Property="VerticalAlignment" Value="Top" />
+	</Style>
+
+	<Style Selector=":is(Control).Input">
+		<Style Selector="^ TextBlock.InputName">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+			<Setter Property="FontSize" Value="14" />
+			<Setter Property="HorizontalAlignment" Value="Right" />
+			<Setter Property="Margin" Value="0,6,0,0" />
+			<Setter Property="VerticalAlignment" Value="Top" />
+		</Style>
+
+		<Style Selector="^ SelectableTextBlock.InputValue">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+			<Setter Property="FontSize" Value="14" />
+			<Setter Property="HorizontalAlignment" Value="Left" />
+			<Setter Property="Margin" Value="0,6,0,0" />
+			<Setter Property="VerticalAlignment" Value="Top" />
+			<Setter Property="TextWrapping" Value="Wrap" />
+		</Style>
+		<Style Selector="^ TextBlock.InputValue">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+			<Setter Property="FontSize" Value="14" />
+			<Setter Property="HorizontalAlignment" Value="Left" />
+			<Setter Property="Margin" Value="0,6,0,0" />
+			<Setter Property="VerticalAlignment" Value="Top" />
+			<Setter Property="TextWrapping" Value="Wrap" />
+		</Style>
+
+		<Style Selector="^ CheckBox.InputValue">
+			<Setter Property="HorizontalAlignment" Value="Stretch" />
+			<Setter Property="Margin" Value="0" />
+			<Setter Property="MinHeight" Value="32" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+		<Style Selector="^ ComboBox.InputValue">
+			<Setter Property="HorizontalAlignment" Value="Stretch" />
+			<Setter Property="Margin" Value="0" />
+			<Setter Property="MinHeight" Value="32" />
+			<Setter Property="VerticalAlignment" Value="Top" />
+		</Style>
+		<Style Selector="^ StackPanel.InputValue">
+			<Setter Property="Margin" Value="0,0,0,0" />
+		</Style>
+		<Style Selector="^ ToggleSwitch.InputValue">
+			<Setter Property="HorizontalAlignment" Value="Stretch" />
+			<Setter Property="Margin" Value="0" />
+			<Setter Property="MinHeight" Value="32" />
+			<Setter Property="VerticalAlignment" Value="Top" />
+		</Style>
+		<Style Selector="^ TextBox.InputValue">
+			<Setter Property="HorizontalAlignment" Value="Stretch" />
+			<Setter Property="Margin" Value="0" />
+			<Setter Property="MinHeight" Value="32" />
+			<Setter Property="VerticalAlignment" Value="Top" />
+		</Style>
+	</Style>
+
+	<Style Selector="AutoGrid.Input">
+		<Setter Property="RowSpacing" Value="10" />
+		<Setter Property="ColumnSpacing" Value="16" />
+
+		<Style Selector="^.Compact">
+			<Setter Property="RowSpacing" Value="0" />
+			<Setter Property="ColumnSpacing" Value="16" />
+
+			<Style Selector="^ TextBlock.InputName">
+				<Setter Property="Margin" Value="0,4" />
+			</Style>
+			<Style Selector="^ TextBlock.InputValue">
+				<Setter Property="Margin" Value="0,4" />
+			</Style>
+			<Style Selector="^ SelectableTextBlock.InputValue">
+				<Setter Property="Margin" Value="0,4" />
+			</Style>
+			<Style Selector="^ StackPanel.InputValue">
+				<Setter Property="Margin" Value="0" />
+			</Style>
+		</Style>
+	</Style>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet Width="480">
+			<StackPanel HorizontalAlignment="Stretch"
+					VerticalAlignment="Top"
+					Spacing="10">
+				<HeaderedContentControl Header="Labels Only">
+					<AutoGrid Classes="Input Compact" ColumnDefinitions="Auto,*" RowCount="2">
+						<TextBlock Classes="InputName" Text="Test:" />
+						<TextBlock Classes="InputValue" Text="123456" />
+						<TextBlock Classes="InputName" Text="Test:" />
+						<TextBlock Classes="InputValue" Text="123456" />
+					</AutoGrid>
+				</HeaderedContentControl>
+				<HeaderedContentControl Header="AutoGrid">
+					<AutoGrid Classes="Input"
+							ColumnDefinitions="Auto,*"
+							RowCount="7">
+						<TextBlock Classes="InputName"
+								Text="TextBlock" />
+						<TextBlock Classes="InputValue"
+								Text="123456" />
+						<TextBlock Classes="InputName"
+								Text="TextBlock" />
+						<SelectableTextBlock Classes="InputValue"
+								Text="2165465-546541321654-65465413213-455465416-54616465464-546546546" />
+
+						<TextBlock Classes="InputName"
+								Text="TextBox" />
+						<TextBox Classes="InputValue" />
+
+						<TextBlock Classes="InputName"
+								Text="StackPanel" />
+						<StackPanel>
+							<CheckBox Classes="InputValue" Content="Value 1" />
+							<CheckBox Classes="InputValue" Content="Value 2" />
+						</StackPanel>
+
+						<TextBlock Classes="InputName"
+								Text="StackPanel" />
+						<CheckBox Classes="InputValue" Content="Value 1" />
+					</AutoGrid>
+				</HeaderedContentControl>
+				<HeaderedContentControl Header="AutoGrid Compact">
+					<AutoGrid Classes="Input Compact"
+							ColumnDefinitions="Auto,*"
+							RowCount="7">
+						<TextBlock Classes="InputName"
+								Text="TextBlock" />
+						<TextBlock Classes="InputValue"
+								Text="123456" />
+						<TextBlock Classes="InputName"
+								Text="TextBlock" />
+						<SelectableTextBlock Classes="InputValue"
+								Text="2165465-546541321654-65465413213-455465416-54616465464-546546546" />
+
+						<TextBlock Classes="InputName"
+								Text="TextBox" />
+						<TextBox Classes="InputValue" />
+
+						<TextBlock Classes="InputName"
+								Text="StackPanel" />
+						<StackPanel>
+							<CheckBox Classes="InputValue" Content="Value 1" />
+							<CheckBox Classes="InputValue" Content="Value 2" />
+						</StackPanel>
+
+						<TextBlock Classes="InputName"
+								Text="StackPanel" />
+						<CheckBox Classes="InputValue" Content="Value 1" />
+					</AutoGrid>
+				</HeaderedContentControl>
+			</StackPanel>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</Styles>

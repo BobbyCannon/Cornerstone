@@ -1,0 +1,156 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:p="clr-namespace:Cornerstone.Presentation;assembly=Cornerstone">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type PopupView}" TargetType="PopupView">
+				<Setter Property="Background" Value="{DynamicResource Background02}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+				<Setter Property="BorderThickness" Value="1,0,1,1" />
+				<Setter Property="CornerRadius" Value="0,0,8,8" />
+				<Setter Property="PopupHorizontalAlignment" Value="Center" />
+				<Setter Property="PopupVerticalAlignment" Value="Top" />
+				<Setter Property="ShowBackground" Value="false" />
+				<Setter Property="HorizontalAlignment" Value="Stretch" />
+				<Setter Property="VerticalAlignment" Value="Stretch" />
+				<Setter Property="Template">
+					<ControlTemplate x:DataType="p:PopupViewModel">
+						<Grid>
+							<Grid Background="{TemplateBinding BorderBrush}"
+									Opacity="0.5"
+									IsVisible="{TemplateBinding ShowBackground}" />
+							<Border
+									Background="{TemplateBinding Background}"
+									BorderBrush="{TemplateBinding BorderBrush}"
+									BorderThickness="{TemplateBinding BorderThickness}"
+									CornerRadius="{TemplateBinding CornerRadius}"
+									MinWidth="{TemplateBinding MinWidth}"
+									HorizontalAlignment="{TemplateBinding PopupHorizontalAlignment}"
+									VerticalAlignment="{TemplateBinding PopupVerticalAlignment}">
+								<StackPanel Margin="14"
+										Width="500"
+										HorizontalAlignment="Stretch"
+										Orientation="Vertical">
+									<!-- Popup Widget -->
+									<ContentPresenter
+											Content="{TemplateBinding DataContext, Mode=OneWay}"
+											IsEnabled="{Binding !InProgress}"
+											IsHitTestVisible="{Binding !InProgress}" />
+
+									<!-- Error -->
+									<TextBlock Text="{Binding ProgressError}"
+											IsVisible="{Binding ProgressError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+									<!-- Options -->
+									<StackPanel Margin="0,14,0,0"
+											Orientation="Horizontal"
+											Spacing="10"
+											HorizontalAlignment="Right">
+										<StackPanel.IsVisible>
+											<MultiBinding Converter="{x:Static BoolConverters.And}">
+												<Binding Path="ShowButtons" />
+												<Binding Path="!InProgress" />
+											</MultiBinding>
+										</StackPanel.IsVisible>
+										<Button Theme.Color="None"
+												Classes="NoDescender"
+												MinWidth="80"
+												Content="{Binding ButtonYesText}"
+												Command="{Binding ExecuteYesCommand}"
+												IsVisible="{Binding ButtonYesVisible}" />
+										<Button Theme.Color="None"
+												Classes="NoDescender"
+												MinWidth="80"
+												Content="{Binding ButtonNoText}"
+												Command="{Binding ExecuteNoCommand}"
+												IsVisible="{Binding ButtonNoVisible}" />
+										<Button Theme.Color="None"
+												Classes="NoDescender"
+												MinWidth="80"
+												Content="{Binding ButtonCancelText}"
+												Command="{Binding ExecuteCancelCommand}"
+												IsVisible="{Binding ButtonCancelVisible}" />
+									</StackPanel>
+
+									<!-- Running -->
+									<AutoGrid x:Name="RunningPanel"
+											ColumnDefinitions="Auto,*"
+											RowCount="3"
+											IsVisible="{Binding InProgress}">
+										<Rectangle Grid.ColumnSpan="2"
+												Height="1"
+												Margin="0,20,0,10"
+												HorizontalAlignment="Stretch"
+												Fill="{DynamicResource BorderBrush}" />
+										<PathIcon Width="16" Height="16"
+												Classes.Waiting="{Binding InProgress}"
+												Data="{StaticResource Icons.Hourglass}"
+												Foreground="{DynamicResource ThemeColor06}"
+												Margin="4"
+												VerticalAlignment="Center" />
+										<TextBlock TextWrapping="NoWrap"
+												TextTrimming="CharacterEllipsis"
+												FontSize="14"
+												FontStyle="Italic"
+												Margin="4,6,4,4"
+												Text="{Binding ProgressDescription}"
+												VerticalAlignment="Center" />
+										<LinearProgress Grid.ColumnSpan="2"
+												Margin="0,16,0,10"
+												HorizontalAlignment="Stretch"
+												IsIndeterminate="{Binding ElementName=RunningPanel, Path=IsVisible}"
+												InDeterminateDuration="1.5"
+												Background="{DynamicResource Foreground09}"
+												Foreground="{DynamicResource ThemeColor06}"
+												Theme.Color="Current"
+												Height="4"
+												Minimum="0"
+												Value="25"
+												Maximum="100" />
+
+									</AutoGrid>
+								</StackPanel>
+							</Border>
+						</Grid>
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Style Selector="PopupView.Banner">
+		<Setter Property="BorderThickness" Value="0,1" />
+		<Setter Property="CornerRadius" Value="0" />
+		<Setter Property="ShowBackground" Value="True" />
+		<Setter Property="PopupHorizontalAlignment" Value="Stretch" />
+		<Setter Property="PopupVerticalAlignment" Value="Center" />
+	</Style>
+
+	<Design.PreviewWith>
+		<Grid RowDefinitions="*,*"
+				Background="DarkGreen"
+				Height="400"
+				Width="800">
+			<PopupView Grid.Row="0">
+				<PopupView.DataContext>
+					<p:PopupViewModel
+							ProgressDescription="I'm running stuff"
+							IsDestructive="True"
+							ShowButtons="True"
+							InProgress="False" />
+				</PopupView.DataContext>
+			</PopupView>
+			<Grid Grid.Row="1">
+				<PopupView Classes="Banner">
+					<PopupView.DataContext>
+						<p:PopupViewModel
+								ProgressDescription="I'm running stuff with a really long description that should wrap or at least be truncated"
+								IsDestructive="False"
+								ShowButtons="True"
+								InProgress="False" />
+					</PopupView.DataContext>
+				</PopupView>
+			</Grid>
+		</Grid>
+	</Design.PreviewWith>
+</Styles>

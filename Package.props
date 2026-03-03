@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Project>
+	<PropertyGroup>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<SignAssembly>true</SignAssembly>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Include="$(MSBuildThisFileDirectory)..\Cornerstone\License.txt">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="$(MSBuildThisFileDirectory)..\Cornerstone\readme.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+</Project>

@@ -1,0 +1,86 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type PreviewCodeSnippet}"
+					TargetType="PreviewCodeSnippet">
+				<Setter Property="Template">
+					<ControlTemplate>
+						<!-- ReSharper disable Xaml.MissingGridIndex -->
+						<ThemeVariantScope RequestedThemeVariant="{TemplateBinding ThemeVariant}">
+							<Border Background="{TemplateBinding Background}"
+									BorderThickness="0">
+								<Grid x:Name="PART_MainGrid"
+										RowDefinitions="Auto,Auto,*"
+										Margin="10">
+									<WrapPanel Grid.Row="0"
+											ItemSpacing="10"
+											LineSpacing="10"
+											HorizontalAlignment="Center">
+										<ComboBox x:Name="ThemeColor"
+												ControlHelper.DisplayName="Theme:"
+												ItemsSource="{x:Static Theme.Colors}"
+												SelectedItem="{TemplateBinding ThemeColor, Mode=TwoWay}" />
+										<ComboBox x:Name="ThemeVariant"
+												ControlHelper.DisplayName="Theme Variant:"
+												ItemsSource="{x:Static Theme.ThemeVariants}"
+												SelectedItem="{TemplateBinding ThemeVariant, Mode=TwoWay}" />
+										<Button Theme.Color="None"
+												Content="Toggle"
+												Command="{TemplateBinding ToggleVariantCommand}"
+												MinWidth="90" />
+									</WrapPanel>
+									<ContentPresenter
+											Grid.Row="1"
+											Background="Transparent"
+											Content="{TemplateBinding ContentControl.Content}"
+											HorizontalAlignment="Stretch"
+											IsVisible="{TemplateBinding ContentControl.Content, Converter={x:Static ObjectConverters.IsNotNull}}"
+											Margin="0,20,0,0" />
+									<ScrollViewer
+											Grid.Row="2"
+											IsVisible="{TemplateBinding ItemTemplate, Converter={x:Static ObjectConverters.IsNotNull}}"
+											Margin="0,20,0,0">
+										<ItemsControl ItemsSource="{x:Static Theme.ThemeColors}"
+												ItemsPanel="{TemplateBinding ItemsPanel, Mode=OneWay}"
+												ItemTemplate="{TemplateBinding ItemTemplate}" />
+									</ScrollViewer>
+								</Grid>
+							</Border>
+						</ThemeVariantScope>
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Design.PreviewWith>
+		<Grid MaxWidth="600" Height="600"
+				RowDefinitions="*,*">
+			<PreviewCodeSnippet Grid.Row="0">
+				<StackPanel>
+					<TextBlock Text="The quick brown fox jumped over the lazy dog's back."
+							HorizontalAlignment="Center" />
+				</StackPanel>
+				<PreviewCodeSnippet.ItemTemplate>
+					<DataTemplate DataType="ThemeColor">
+						<StackPanel Spacing="10" Orientation="Horizontal">
+							<Button Theme.Color="{Binding}" Content="Button" />
+							<ToggleButton Theme.Color="{Binding}" Content="Toggle Button" IsChecked="True" />
+							<ToggleSwitch Theme.Color="{Binding}" IsChecked="True" />
+							<CheckBox Theme.Color="{Binding}" IsChecked="True" Content="Sample" />
+							<Slider Theme.Color="{Binding}" Minimum="0" Maximum="100" Value="50" Width="120" />
+						</StackPanel>
+					</DataTemplate>
+				</PreviewCodeSnippet.ItemTemplate>
+			</PreviewCodeSnippet>
+
+			<PreviewCodeSnippet Grid.Row="1">
+				<Border BorderBrush="Red"
+						Padding="10">
+					<TextBlock Text="Border Should Fill Height" />
+				</Border>
+			</PreviewCodeSnippet>
+		</Grid>
+	</Design.PreviewWith>
+</Styles>

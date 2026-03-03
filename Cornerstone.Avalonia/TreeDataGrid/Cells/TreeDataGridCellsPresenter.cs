@@ -1,0 +1,205 @@
+﻿#region References
+
+using System;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Layout;
+using Avalonia.LogicalTree;
+using Avalonia.VisualTree;
+using Cornerstone.Avalonia.TreeDataGrid.Models;
+using Cornerstone.Avalonia.TreeDataGrid.Selection;
+
+#endregion
+
+namespace Cornerstone.Avalonia.TreeDataGrid.Cells;
+
+public class TreeDataGridCellsPresenter : TreeDataGridColumnarPresenterBase<IColumn>, IChildIndexProvider
+{
+	#region Fields
+
+	public static readonly DirectProperty<TreeDataGridCellsPresenter, IRows> RowsProperty =
+		AvaloniaProperty.RegisterDirect<TreeDataGridCellsPresenter, IRows>(
+			nameof(Rows),
+			o => o.Rows,
+			(o, v) => o.Rows = v);
+
+	private IRows _rows;
+
+	#endregion
+
+	#region Properties
+
+	public int RowIndex { get; private set; } = -1;
+
+	public IRows Rows
+	{
+		get => _rows;
+		set => SetAndRaise(RowsProperty, ref _rows, value);
+	}
+
+	protected override Orientation Orientation => Orientation.Horizontal;
+
+	#endregion
+
+	#region Methods
+
+	public int GetChildIndex(ILogical child)
+	{
+		if (child is TreeDataGridCell cell)
+		{
+			return cell.ColumnIndex;
+		}
+
+		return -1;
+	}
+
+	public void Realize(int index)
+	{
+		if (RowIndex != -1)
+		{
+			throw new InvalidOperationException("Row is already realized.");
+		}
+		RowIndex = index;
+		InvalidateMeasure();
+	}
+
+	public bool TryGetTotalCount(out int count)
+	{
+		if (Items is null)
+		{
+			count = 0;
+			return false;
+		}
+
+		count = Items.Count;
+		return true;
+	}
+
+	public void Unrealize()
+	{
+		if (RowIndex == -1)
+		{
+			throw new InvalidOperationException("Row is not realized.");
+		}
+		RowIndex = -1;
+		RecycleAllElements();
+	}
+
+	public void UpdateRowIndex(int index)
+	{
+		if ((index < 0) || Rows is null || (index >= Rows.Count))
+		{
+			throw new ArgumentOutOfRangeException(nameof(index));
+		}
+		if (RowIndex == -1)
+		{
+			throw new InvalidOperationException("Row is not realized.");
+		}
+
+		RowIndex = index;
+
+		foreach (var element in RealizedElements)
+		{
+			if (element is TreeDataGridCell { RowIndex: >= 0, ColumnIndex: >= 0 } cell)
+			{
+				cell.UpdateRowIndex(index);
+			}
+		}
+	}
+
+	protected override Control GetElementFromFactory(IColumn column, int index)
+	{
+		var model = _rows!.RealizeCell(column, index, RowIndex);
+		var cell = (TreeDataGridCell) GetElementFromFactory(model, index, this);
+		cell.Realize(ElementFactory!, GetSelection(), model, index, RowIndex);
+		return cell;
+	}
+
+	protected override Size MeasureElement(int index, Control element, Size availableSize)
+	{
+		element.Measure(availableSize);
+		return ((IColumns) Items!).CellMeasured(index, RowIndex, element.DesiredSize);
+	}
+
+	protected override Size MeasureOverride(Size availableSize)
+	{
+		return RowIndex == -1 ? default : base.MeasureOverride(availableSize);
+	}
+
+	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+	{
+		base.OnPropertyChanged(change);
+
+		if (change.Property == BackgroundProperty)
+		{
+			InvalidateVisual();
+		}
+	}
+
+	protected override void RealizeElement(Control element, IColumn column, int index)
+	{
+		var cell = (TreeDataGridCell) element;
+
+		if ((cell.ColumnIndex == index) && (cell.RowIndex == RowIndex))
+		{
+			ChildIndexChanged?.Invoke(this, new ChildIndexChangedEventArgs(element, index));
+		}
+		else if ((cell.ColumnIndex == -1) && (cell.RowIndex == -1))
+		{
+			var model = _rows!.RealizeCell(column, index, RowIndex);
+			((TreeDataGridCell) element).Realize(ElementFactory!, GetSelection(), model, index, RowIndex);
+			ChildIndexChanged?.Invoke(this, new ChildIndexChangedEventArgs(element, index));
+		}
+		else
+		{
+			throw new InvalidOperationException("Cell already realized");
+		}
+	}
+
+	protected override void UnrealizeElement(Control element)
+	{
+		var cell = (TreeDataGridCell) element;
+		_rows!.UnrealizeCell(cell.Model!, cell.ColumnIndex, cell.RowIndex);
+		cell.Unrealize();
+		ChildIndexChanged?.Invoke(this, new ChildIndexChangedEventArgs(element, cell.RowIndex));
+	}
+
+	protected override void UpdateElementIndex(Control element, int oldIndex, int newIndex)
+	{
+		ChildIndexChanged?.Invoke(this, new ChildIndexChangedEventArgs(element, newIndex));
+	}
+
+	internal void UnrealizeOnRowRemoved()
+	{
+		if (RowIndex == -1)
+		{
+			throw new InvalidOperationException("Row is not realized.");
+		}
+		RowIndex = -1;
+		RecycleAllElementsOnItemRemoved();
+	}
+
+	internal void UpdateSelection(ITreeDataGridSelectionInteraction selection)
+	{
+		foreach (var element in RealizedElements)
+		{
+			if (element is TreeDataGridCell { RowIndex: >= 0, ColumnIndex: >= 0 } cell)
+			{
+				cell.UpdateSelection(selection);
+			}
+		}
+	}
+
+	private ITreeDataGridSelectionInteraction GetSelection()
+	{
+		return this.FindAncestorOfType<TreeDataGrid>()?.SelectionInteraction;
+	}
+
+	#endregion
+
+	#region Events
+
+	public event EventHandler<ChildIndexChangedEventArgs> ChildIndexChanged;
+
+	#endregion
+}

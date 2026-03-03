@@ -1,0 +1,59 @@
+<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+	<ControlTheme
+			x:Key="{x:Type GridSplitter}"
+			TargetType="GridSplitter">
+		<Setter Property="Focusable" Value="False" />
+		<Setter Property="MinWidth" Value="3" />
+		<Setter Property="MinHeight" Value="3" />
+		<Setter Property="Background" Value="{DynamicResource Background04}" />
+		<Setter Property="PreviewContent">
+			<Template>
+				<Rectangle Fill="{DynamicResource ThemeColor05}" />
+			</Template>
+		</Setter>
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}"
+						CornerRadius="{TemplateBinding CornerRadius}"
+						Background="{TemplateBinding Background}" />
+			</ControlTemplate>
+		</Setter>
+		<Style Selector="^:pointerover">
+			<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
+			<Style.Animations>
+				<Animation Duration="0:0:0.25" IterationCount="1">
+					<KeyFrame Cue="0%">
+						<Setter Property="Opacity" Value="0.0" />
+					</KeyFrame>
+					<KeyFrame Cue="100%">
+						<Setter Property="Opacity" Value="1.0" />
+					</KeyFrame>
+				</Animation>
+			</Style.Animations>
+		</Style>
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<Grid
+				Height="100"
+				Width="200"
+				ColumnDefinitions="*,Auto,*">
+			<Border
+					Grid.Column="0"
+					HorizontalAlignment="Stretch"
+					VerticalAlignment="Stretch"
+					Background="{DynamicResource Gray06}" />
+			<GridSplitter Grid.Column="1" />
+			<Border
+					Grid.Column="2"
+					HorizontalAlignment="Stretch"
+					VerticalAlignment="Stretch"
+					Background="{DynamicResource Gray03}" />
+		</Grid>
+	</Design.PreviewWith>
+</ResourceDictionary>

@@ -1,0 +1,92 @@
+﻿<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+
+	<ControlTheme x:Key="{x:Type Separator}" TargetType="Separator">
+		<Setter Property="Theme.Color" Value="{Binding $parent[Menu].(Theme.Color)}"/>
+		<Setter Property="Background" Value="{DynamicResource Background09}" />
+		<Setter Property="Focusable" Value="False" />
+		<Setter Property="Height" Value="1" />
+		<Setter Property="HorizontalAlignment" Value="Stretch" />
+		<Setter Property="Margin" Value="0,4" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border
+						Padding="{TemplateBinding Margin}"
+						Height="{TemplateBinding Height}"
+						HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
+						VerticalAlignment="{TemplateBinding VerticalAlignment}"
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}"
+						CornerRadius="{TemplateBinding CornerRadius}"
+						Background="{TemplateBinding Background}" />
+			</ControlTemplate>
+		</Setter>
+
+		<!-- Code Template - Color -->
+		<Style Selector="^[(Theme.Color)=Current]">
+			<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
+		</Style>
+		<!-- Code Template - /Color -->
+
+		<!-- Generated Code - Colors -->
+		<Style Selector="^[(Theme.Color)=Amber]">
+			<Setter Property="Background" Value="{DynamicResource Amber05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Blue]">
+			<Setter Property="Background" Value="{DynamicResource Blue05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=BlueGray]">
+			<Setter Property="Background" Value="{DynamicResource BlueGray05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Brown]">
+			<Setter Property="Background" Value="{DynamicResource Brown05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepOrange]">
+			<Setter Property="Background" Value="{DynamicResource DeepOrange05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepPurple]">
+			<Setter Property="Background" Value="{DynamicResource DeepPurple05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Gray]">
+			<Setter Property="Background" Value="{DynamicResource Gray05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Green]">
+			<Setter Property="Background" Value="{DynamicResource Green05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Indigo]">
+			<Setter Property="Background" Value="{DynamicResource Indigo05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Orange]">
+			<Setter Property="Background" Value="{DynamicResource Orange05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Pink]">
+			<Setter Property="Background" Value="{DynamicResource Pink05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Purple]">
+			<Setter Property="Background" Value="{DynamicResource Purple05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Red]">
+			<Setter Property="Background" Value="{DynamicResource Red05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Teal]">
+			<Setter Property="Background" Value="{DynamicResource Teal05}" />
+		</Style>
+		<!-- Generated Code - /Colors -->
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="800">
+			<PreviewCodeSnippet.ItemTemplate>
+				<DataTemplate DataType="ThemeColor">
+					<ContextMenu Theme.Color="{Binding}">
+						<MenuItem Header="{Binding}" />
+						<Separator Theme.Color="{Binding}" />
+						<MenuItem Header="Selected" IsSelected="True" IsChecked="True" />
+					</ContextMenu>
+				</DataTemplate>
+			</PreviewCodeSnippet.ItemTemplate>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

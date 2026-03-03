@@ -1,0 +1,43 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="400"
+		x:Class="Cornerstone.Sample.Tabs.TabWelcome"
+		x:DataType="tabs:TabWelcome"
+		x:Name="This">
+	<!-- ReSharper disable Xaml.MissingGridIndex -->
+	<DockPanel>
+		<DockPanel.Styles>
+			<Style Selector="SelectableTextBlock">
+				<Setter Property="FontSize" Value="16" />
+				<Setter Property="TextWrapping" Value="Wrap" />
+			</Style>
+		</DockPanel.Styles>
+		<Grid DockPanel.Dock="Top" Margin="10">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Margin="0,0,0,20"
+					Text="Welcome to Cornerstone" />
+		</Grid>
+		<ScrollViewer>
+			<AutoGrid ColumnCount="1"
+					RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*"
+					RowSpacing="20"
+					Margin="10">
+				<SelectableTextBlock>
+					<SelectableTextBlock.Text>
+						Hi, I’m Bobby, a software architect who loves designing and
+						building software. I created Cornerstone to document my personal
+						journey of growth and learning through code. Driven by my passion
+						for crafting code and embracing challenges, Cornerstone is a
+						flexible, robust platform for developers to build their
+						applications.
+					</SelectableTextBlock.Text>
+				</SelectableTextBlock>
+			</AutoGrid>
+		</ScrollViewer>
+	</DockPanel>
+</UserControl>

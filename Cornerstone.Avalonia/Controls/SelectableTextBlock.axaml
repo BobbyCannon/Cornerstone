@@ -1,0 +1,118 @@
+﻿<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+
+	<MenuFlyout
+			x:Key="SelectableTextBlockContextFlyout"
+			Placement="Bottom">
+
+		<MenuItem
+				x:Name="SelectableTextBlockContextFlyoutCopyItem"
+				Header="Copy"
+				Command="{Binding $parent[SelectableTextBlock].Copy}"
+				IsEnabled="{Binding $parent[SelectableTextBlock].CanCopy}"
+				InputGesture="{x:Static TextBox.CopyGesture}" />
+
+	</MenuFlyout>
+
+	<ControlTheme x:Key="{x:Type SelectableTextBlock}" TargetType="SelectableTextBlock">
+		<Setter Property="Theme.Color" Value="Current" />
+
+		<Style Selector="^.Mono">
+			<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+		</Style>
+		<Style Selector="^.MonoLight">
+			<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansLight}" />
+		</Style>
+
+		<Style Selector="^[IsEnabled=True]">
+			<Setter Property="Cursor" Value="IBeam" />
+			<Setter Property="ContextFlyout" Value="{StaticResource SelectableTextBlockContextFlyout}" />
+		</Style>
+
+		<Style Selector="^[(Theme.Color)=None]">
+			<Setter Property="SelectionBrush" Value="{DynamicResource Background05}" />
+			<Setter Property="SelectionForegroundBrush" Value="{DynamicResource Foreground00}" />
+		</Style>
+
+		<!-- Code Template - Color -->
+		<Style Selector="^[(Theme.Color)=Current]">
+			<Setter Property="SelectionBrush" Value="{DynamicResource ThemeColor05}" />
+			<Setter Property="SelectionForegroundBrush" Value="{DynamicResource ThemeForeground05}" />
+		</Style>
+		<!-- Code Template - /Color -->
+
+		<!-- Generated Code - Colors -->
+		<Style Selector="^[(Theme.Color)=Amber]">
+			<Setter Property="SelectionBrush" Value="{DynamicResource Amber05}" />
+			<Setter Property="SelectionForegroundBrush" Value="{DynamicResource AmberText05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Blue]">
+			<Setter Property="SelectionBrush" Value="{DynamicResource Blue05}" />
+			<Setter Property="SelectionForegroundBrush" Value="{DynamicResource BlueText05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=BlueGray]">
+			<Setter Property="SelectionBrush" Value="{DynamicResource BlueGray05}" />
+			<Setter Property="SelectionForegroundBrush" Value="{DynamicResource BlueGrayText05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Brown]">
+			<Setter Property="SelectionBrush" Value="{DynamicResource Brown05}" />
+			<Setter Property="SelectionForegroundBrush" Value="{DynamicResource BrownText05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepOrange]">
+			<Setter Property="SelectionBrush" Value="{DynamicResource DeepOrange05}" />
+			<Setter Property="SelectionForegroundBrush" Value="{DynamicResource DeepOrangeText05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepPurple]">
+			<Setter Property="SelectionBrush" Value="{DynamicResource DeepPurple05}" />
+			<Setter Property="SelectionForegroundBrush" Value="{DynamicResource DeepPurpleText05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Gray]">
+			<Setter Property="SelectionBrush" Value="{DynamicResource Gray05}" />
+			<Setter Property="SelectionForegroundBrush" Value="{DynamicResource GrayText05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Green]">
+			<Setter Property="SelectionBrush" Value="{DynamicResource Green05}" />
+			<Setter Property="SelectionForegroundBrush" Value="{DynamicResource GreenText05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Indigo]">
+			<Setter Property="SelectionBrush" Value="{DynamicResource Indigo05}" />
+			<Setter Property="SelectionForegroundBrush" Value="{DynamicResource IndigoText05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Orange]">
+			<Setter Property="SelectionBrush" Value="{DynamicResource Orange05}" />
+			<Setter Property="SelectionForegroundBrush" Value="{DynamicResource OrangeText05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Pink]">
+			<Setter Property="SelectionBrush" Value="{DynamicResource Pink05}" />
+			<Setter Property="SelectionForegroundBrush" Value="{DynamicResource PinkText05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Purple]">
+			<Setter Property="SelectionBrush" Value="{DynamicResource Purple05}" />
+			<Setter Property="SelectionForegroundBrush" Value="{DynamicResource PurpleText05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Red]">
+			<Setter Property="SelectionBrush" Value="{DynamicResource Red05}" />
+			<Setter Property="SelectionForegroundBrush" Value="{DynamicResource RedText05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Teal]">
+			<Setter Property="SelectionBrush" Value="{DynamicResource Teal05}" />
+			<Setter Property="SelectionForegroundBrush" Value="{DynamicResource TealText05}" />
+		</Style>
+		<!-- Generated Code - /Colors -->
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="800">
+			<PreviewCodeSnippet.ItemTemplate>
+				<DataTemplate DataType="ThemeColor">
+					<SelectableTextBlock
+							Theme.Color="{Binding}"
+							Margin="16"
+							Text="{Binding}" />
+				</DataTemplate>
+			</PreviewCodeSnippet.ItemTemplate>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

@@ -1,0 +1,25 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:controls="clr-namespace:Avalonia.Diagnostics.Controls">
+	<Design.PreviewWith>
+		<Grid Width="300">
+			<controls:BrushEditor />
+		</Grid>
+	</Design.PreviewWith>
+
+	<Style Selector=":is(controls|BrushEditor)">
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Grid>
+					<Button x:Name="PART_ClearButton"
+							Classes="Icon Medium"
+							Background="Red"
+							HorizontalAlignment="Right"
+							VerticalContentAlignment="Center">
+						<Path Data="{StaticResource Icons.Close}" />
+					</Button>
+				</Grid>
+			</ControlTemplate>
+		</Setter>
+	</Style>
+</Styles>

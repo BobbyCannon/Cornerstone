@@ -1,0 +1,168 @@
+<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<ControlTheme x:Key="{x:Type TabControl}" TargetType="TabControl">
+		<Setter Property="Theme.Color" Value="None" />
+		<Setter Property="Background" Value="{DynamicResource Background02}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="CornerRadius" Value="0" />
+		<Setter Property="Margin" Value="0" />
+		<Setter Property="Padding" Value="0" />
+		<Setter Property="HorizontalAlignment" Value="Stretch" />
+		<Setter Property="VerticalAlignment" Value="Stretch" />
+		<Setter Property="ItemsPanel">
+			<Setter.Value>
+				<ItemsPanelTemplate>
+					<StackPanel />
+				</ItemsPanelTemplate>
+			</Setter.Value>
+		</Setter>
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Grid RowDefinitions="Auto,*,Auto"
+						ColumnDefinitions="Auto,*,Auto"
+						Margin="{TemplateBinding Margin}"
+						HorizontalAlignment="{TemplateBinding HorizontalAlignment}">
+					<Border Grid.Row="1"
+							Grid.Column="1"
+							Background="{TemplateBinding Background}"
+							BorderBrush="{TemplateBinding BorderBrush}"
+							BorderThickness="{TemplateBinding BorderThickness}"
+							CornerRadius="{TemplateBinding CornerRadius}"
+							Padding="0">
+						<ContentPresenter
+								Name="PART_SelectedContentHost"
+								Margin="{TemplateBinding Padding}"
+								HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+								VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+								Content="{TemplateBinding SelectedContent}"
+								ContentTemplate="{TemplateBinding SelectedContentTemplate}" />
+					</Border>
+					<ScrollViewer
+							Name="PART_ScrollViewer"
+							Grid.Row="0"
+							Grid.Column="0">
+						<ItemsPresenter
+								Name="PART_ItemsPresenter"
+								ItemsPanel="{TemplateBinding ItemsPanel}">
+						</ItemsPresenter>
+					</ScrollViewer>
+				</Grid>
+			</ControlTemplate>
+		</Setter>
+
+		<Style Selector="^.HideHeader">
+			<Style Selector="^ /template/ ScrollViewer#PART_ScrollViewer">
+				<Setter Property="IsVisible" Value="false" />
+			</Style>
+		</Style>
+
+		<!-- Arranges tabs vertically when set to display on right or left sides. -->
+		<Style Selector="^[TabStripPlacement=Left] /template/ ScrollViewer#PART_ScrollViewer">
+			<Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+			<Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+		</Style>
+		<Style Selector="^[TabStripPlacement=Left] /template/ ItemsPresenter#PART_ItemsPresenter > StackPanel">
+			<Setter Property="Orientation" Value="Vertical" />
+		</Style>
+		<Style Selector="^[TabStripPlacement=Right] /template/ ScrollViewer#PART_ScrollViewer">
+			<Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+			<Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+		</Style>
+		<Style Selector="^[TabStripPlacement=Right] /template/ ItemsPresenter#PART_ItemsPresenter > StackPanel">
+			<Setter Property="Orientation" Value="Vertical" />
+		</Style>
+
+		<!-- Arranges tabs horizontal when set to display on top or bottom sides. -->
+		<Style Selector="^[TabStripPlacement=Top] /template/ ScrollViewer#PART_ScrollViewer">
+			<Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+			<Setter Property="VerticalScrollBarVisibility" Value="Disabled" />
+		</Style>
+		<Style Selector="^[TabStripPlacement=Top] /template/ ItemsPresenter#PART_ItemsPresenter > StackPanel">
+			<Setter Property="Orientation" Value="Horizontal" />
+		</Style>
+		<Style Selector="^[TabStripPlacement=Bottom] /template/ ScrollViewer#PART_ScrollViewer">
+			<Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+			<Setter Property="VerticalScrollBarVisibility" Value="Disabled" />
+		</Style>
+		<Style Selector="^[TabStripPlacement=Bottom] /template/ ItemsPresenter#PART_ItemsPresenter > StackPanel">
+			<Setter Property="Orientation" Value="Horizontal" />
+		</Style>
+
+		<!-- Set tab header placement on top. -->
+		<Style Selector="^[TabStripPlacement=Top] /template/ ScrollViewer#PART_ScrollViewer">
+			<Setter Property="Grid.Row" Value="0" />
+			<Setter Property="Grid.Column" Value="0" />
+			<Setter Property="Grid.ColumnSpan" Value="3" />
+			<Setter Property="Margin" Value="0,0,0,-1" />
+		</Style>
+
+		<!-- Set tab header placement on bottom. -->
+		<Style Selector="^[TabStripPlacement=Bottom] /template/ ScrollViewer#PART_ScrollViewer">
+			<Setter Property="Grid.Row" Value="2" />
+			<Setter Property="Grid.Column" Value="0" />
+			<Setter Property="Grid.ColumnSpan" Value="3" />
+			<Setter Property="Margin" Value="0,-1,0,0" />
+		</Style>
+
+		<!-- Set tab header placement on the left. -->
+		<Style Selector="^[TabStripPlacement=Left] /template/ ScrollViewer#PART_ScrollViewer">
+			<Setter Property="Grid.Row" Value="0" />
+			<Setter Property="Grid.Column" Value="0" />
+			<Setter Property="Grid.RowSpan" Value="3" />
+			<Setter Property="Margin" Value="0,0,-1,0" />
+		</Style>
+
+		<!-- Set tab header placement on right. -->
+		<Style Selector="^[TabStripPlacement=Right] /template/ ScrollViewer#PART_ScrollViewer">
+			<Setter Property="Grid.Row" Value="0" />
+			<Setter Property="Grid.Column" Value="2" />
+			<Setter Property="Grid.RowSpan" Value="3" />
+			<Setter Property="Margin" Value="-1,0,0,0" />
+		</Style>
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<Border Height="400" Width="600">
+			<StackPanel>
+				<TabControl TabStripPlacement="Top">
+					<TabItem Header="Tab 1">
+						<Grid Height="25">
+							<TextBlock Text="Tab One" />
+						</Grid>
+					</TabItem>
+					<TabItem Header="Arch">
+						<Border Background="AntiqueWhite" Padding="10">
+							<TextBlock Text="Content" Foreground="Black" FontSize="20" />
+						</Border>
+					</TabItem>
+					<TabItem Header="Leaf">
+						<Border Background="Green" />
+					</TabItem>
+					<TabItem Header="Disabled long header" IsEnabled="False" />
+					<TabItem Header="Tab 2" />
+					<TabItem Header="Tab 3" />
+				</TabControl>
+				<TabControl TabStripPlacement="Right">
+					<TabItem Header="Tab 1" />
+					<TabItem Header="Tab 2" />
+					<TabItem Header="Tab 3" />
+				</TabControl>
+				<TabControl TabStripPlacement="Left">
+					<TabItem Header="Tab 1" />
+					<TabItem Header="Tab 2" />
+					<TabItem Header="Tab 3" />
+				</TabControl>
+				<TabControl TabStripPlacement="Bottom">
+					<TabItem Header="Tab 1">
+						<Grid Height="25" />
+					</TabItem>
+					<TabItem Header="Tab 2" />
+					<TabItem Header="Tab 3" />
+				</TabControl>
+			</StackPanel>
+		</Border>
+	</Design.PreviewWith>
+</ResourceDictionary>

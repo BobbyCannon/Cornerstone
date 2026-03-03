@@ -1,0 +1,118 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:profiling="clr-namespace:Cornerstone.Profiling;assembly=Cornerstone">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type LineChart}"
+					TargetType="LineChart">
+				<Setter Property="Theme.Color" Value="Current" />
+				<Setter Property="ClipToBounds" Value="True" />
+				<Setter Property="Background" Value="{DynamicResource Background03}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+				<Setter Property="BorderThickness" Value="{DynamicResource ControlBorderThickness}" />
+				<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+				<Setter Property="Height" Value="48" />
+				<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+				<Setter Property="FontSize" Value="{StaticResource ControlFontSize}" />
+				<Setter Property="Padding" Value="0,0" />
+				<Setter Property="Stroke" Value="{DynamicResource Foreground05}" />
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Style Selector="LineChart">
+		<Style Selector="^[(Theme.Color)=None]">
+			<Setter Property="Stroke" Value="{DynamicResource Foreground05}" />
+		</Style>
+
+		<!-- Code Template - Color -->
+		<Style Selector="^[(Theme.Color)=Current]">
+			<Setter Property="Stroke" Value="{DynamicResource ThemeColor05}" />
+		</Style>
+		<!-- Code Template - /Color -->
+
+		<!-- Generated Code - Colors -->
+		<Style Selector="^[(Theme.Color)=Amber]">
+			<Setter Property="Stroke" Value="{DynamicResource Amber05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Blue]">
+			<Setter Property="Stroke" Value="{DynamicResource Blue05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=BlueGray]">
+			<Setter Property="Stroke" Value="{DynamicResource BlueGray05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Brown]">
+			<Setter Property="Stroke" Value="{DynamicResource Brown05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepOrange]">
+			<Setter Property="Stroke" Value="{DynamicResource DeepOrange05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepPurple]">
+			<Setter Property="Stroke" Value="{DynamicResource DeepPurple05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Gray]">
+			<Setter Property="Stroke" Value="{DynamicResource Gray05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Green]">
+			<Setter Property="Stroke" Value="{DynamicResource Green05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Indigo]">
+			<Setter Property="Stroke" Value="{DynamicResource Indigo05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Orange]">
+			<Setter Property="Stroke" Value="{DynamicResource Orange05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Pink]">
+			<Setter Property="Stroke" Value="{DynamicResource Pink05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Purple]">
+			<Setter Property="Stroke" Value="{DynamicResource Purple05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Red]">
+			<Setter Property="Stroke" Value="{DynamicResource Red05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Teal]">
+			<Setter Property="Stroke" Value="{DynamicResource Teal05}" />
+		</Style>
+		<!-- Generated Code - /Colors -->
+	</Style>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet Width="630">
+			<PreviewCodeSnippet.ItemTemplate>
+				<DataTemplate DataType="ThemeColor">
+					<LineChart Theme.Color="{Binding}"
+							Height="80"
+							Width="300"
+							CornerRadius="10">
+						<LineChart.Data>
+							<profiling:SeriesDataProvider>
+								<x:Double>60</x:Double>
+								<x:Double>48</x:Double>
+								<x:Double>32</x:Double>
+								<x:Double>2</x:Double>
+								<x:Double>48</x:Double>
+								<x:Double>90</x:Double>
+								<x:Double>60</x:Double>
+								<x:Double>12</x:Double>
+								<x:Double>14</x:Double>
+								<x:Double>11</x:Double>
+								<x:Double>30</x:Double>
+								<x:Double>28</x:Double>
+								<x:Double>37</x:Double>
+								<x:Double>2</x:Double>
+								<x:Double>4</x:Double>
+								<x:Double>60</x:Double>
+								<x:Double>50</x:Double>
+								<x:Double>12</x:Double>
+								<x:Double>18</x:Double>
+								<x:Double>46</x:Double>
+							</profiling:SeriesDataProvider>
+						</LineChart.Data>
+					</LineChart>
+				</DataTemplate>
+			</PreviewCodeSnippet.ItemTemplate>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</Styles>

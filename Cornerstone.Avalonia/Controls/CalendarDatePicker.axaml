@@ -1,0 +1,125 @@
+<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:c="clr-namespace:Cornerstone.Avalonia.Converters"
+		x:ClassModifier="internal">
+
+	<ControlTheme x:Key="{x:Type CalendarDatePicker}" TargetType="CalendarDatePicker">
+		<Setter Property="Background" Value="{DynamicResource Background04}" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+		<Setter Property="Height" Value="32" />
+		<Setter Property="Padding" Value="0" />
+		<Setter Property="Margin" Value="0" />
+		<Setter Property="HorizontalAlignment" Value="Left" />
+		<Setter Property="VerticalAlignment" Value="Center" />
+		<Setter Property="HorizontalContentAlignment" Value="Left" />
+		<Setter Property="VerticalContentAlignment" Value="Center" />
+		<Setter Property="IsTodayHighlighted" Value="True" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<DataValidationErrors>
+					<Border x:Name="LayoutRoot"
+							HorizontalAlignment="Stretch"
+							Background="{TemplateBinding Background}"
+							BorderBrush="{TemplateBinding BorderBrush}"
+							BorderThickness="{TemplateBinding BorderThickness}"
+							CornerRadius="{TemplateBinding CornerRadius}"
+							VerticalAlignment="{TemplateBinding VerticalAlignment}"
+							Padding="10,0,0,0">
+						<Grid ColumnDefinitions="Auto,*,Auto">
+							<TextBlock x:Name="Label"
+									Grid.Column="0"
+									FontFamily="{TemplateBinding FontFamily}"
+									FontSize="{TemplateBinding FontSize}"
+									Margin="0,0,10,0"
+									Text="{TemplateBinding (ControlHelper.DisplayName)}"
+									MinWidth="{TemplateBinding (ControlHelper.DisplayNameWidth)}"
+									IsVisible="{TemplateBinding (ControlHelper.DisplayName), Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+									VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+							<TextBox x:Name="PART_TextBox"
+									Grid.Column="1"
+									Grid.ColumnSpan="2"
+									Background="Transparent"
+									BorderThickness="0"
+									FontFamily="{TemplateBinding FontFamily}"
+									FontSize="{TemplateBinding FontSize}"
+									Height="{TemplateBinding Height}"
+									Padding="{TemplateBinding Padding}"
+									TextAlignment="{TemplateBinding HorizontalContentAlignment, Converter={x:Static c:ControlConverters.ToTextAlignment}}"
+									Watermark="{TemplateBinding Watermark}"
+									VerticalAlignment="Center">
+								<TextBox.InnerRightContent>
+									<Button x:Name="PART_Button"
+											Grid.Column="1"
+											Theme.Color="None"
+											BorderThickness="0"
+											Focusable="False"
+											Background="Transparent"
+											VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}">
+										<Path Data="{StaticResource Icons.Calendar}"
+												Margin="2,-2,0,0"
+												Height="16"
+												Width="16" />
+									</Button>
+								</TextBox.InnerRightContent>
+							</TextBox>
+							
+							<Popup x:Name="PART_Popup"
+									Grid.Column="0"
+									PlacementTarget="{TemplateBinding}"
+									IsLightDismissEnabled="True">
+								<Calendar x:Name="PART_Calendar"
+										FirstDayOfWeek="{TemplateBinding FirstDayOfWeek}"
+										IsTodayHighlighted="{TemplateBinding IsTodayHighlighted}"
+										SelectedDate="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=SelectedDate, Mode=TwoWay}"
+										DisplayDate="{TemplateBinding DisplayDate}"
+										DisplayDateStart="{TemplateBinding DisplayDateStart}"
+										DisplayDateEnd="{TemplateBinding DisplayDateEnd}" />
+							</Popup>
+						</Grid>
+					</Border>
+				</DataValidationErrors>
+			</ControlTemplate>
+		</Setter>
+
+		<!-- Error state. -->
+		<Style Selector="^:error">
+			<Style Selector="^ /template/ TextBox#PART_TextBox">
+				<Setter Property="BorderBrush" Value="{DynamicResource Red05}" />
+				<Setter Property="BorderThickness" Value="{DynamicResource ControlBorderThickness}" />
+			</Style>
+		</Style>
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<Border Height="800" Width="400">
+			<StackPanel
+					VerticalAlignment="Center"
+					Spacing="10">
+				<CalendarDatePicker
+						CustomDateFormatString="MM/dd/yyyy"
+						SelectedDateFormat="Custom"
+						VerticalAlignment="Center"
+						HorizontalAlignment="Center">
+				</CalendarDatePicker>
+
+				<CalendarDatePicker
+						ControlHelper.DisplayName="Custom"
+						CustomDateFormatString="dddd, MMMM dd, yyyy"
+						SelectedDateFormat="Custom"
+						HorizontalAlignment="Stretch"
+						Width="300" />
+				
+				<CalendarDatePicker
+						CustomDateFormatString="dddd, MMMM dd, yyyy"
+						SelectedDateFormat="Custom"
+						HorizontalAlignment="Stretch"
+						HorizontalContentAlignment="Center" />
+			</StackPanel>
+		</Border>
+	</Design.PreviewWith>
+
+</ResourceDictionary>

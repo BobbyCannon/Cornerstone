@@ -1,0 +1,81 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="600"
+		x:Class="Cornerstone.Sample.Tabs.TabProfiling"
+		x:DataType="tabs:TabProfiling"
+		x:Name="This">
+	<!-- ReSharper disable Xaml.MissingGridIndex -->
+	<DockPanel>
+		<Grid DockPanel.Dock="Top" Margin="10">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="{x:Static tabs:TabProfiling.HeaderName}" />
+		</Grid>
+		<PreviewCodeSnippet>
+			<DockPanel>
+				<WrapPanel DockPanel.Dock="Top"
+						HorizontalAlignment="Center"
+						ItemSpacing="10"
+						LineSpacing="10"
+						Margin="0,0,0,14">
+					<WrapPanel.Styles>
+						<Style Selector="Button.Color">
+							<Setter Property="CornerRadius" Value="15" />
+							<Setter Property="Height" Value="30" />
+							<Setter Property="Width" Value="30" />
+						</Style>
+					</WrapPanel.Styles>
+					<NumericUpDown x:Name="FontSize2"
+							ControlHelper.DisplayName="FontSize"
+							FormatString="0"
+							HorizontalContentAlignment="Center"
+							Minimum="10"
+							Maximum="40"
+							Width="200" />
+
+					<Slider x:Name="RandomDelaySlider"
+							ControlHelper.DisplayName="Delay"
+							Minimum="2"
+							Maximum="100"
+							Value="{Binding RandomDelay, Mode=TwoWay,Converter={StaticResource TimeSpanConverter}, ConverterParameter=ms}"
+							Width="160" />
+					<TextBlock Text="{Binding RandomDelay, Converter={x:Static ConvertersForString.Humanize}}"
+							VerticalAlignment="Center"
+							Width="60"/>
+				</WrapPanel>
+				<StackPanel Spacing="10">
+					<LineChart
+							Title="Random Data"
+							Data="{Binding RandomData}"
+							Height="60"
+							Profiler="{Binding Profiler}"
+							FontSize="{Binding ElementName=FontSize2, Path=Value, Mode=TwoWay}" />
+					<LineChart x:Name="RenderChart"
+							Title="Render Times"
+							Data="{Binding RenderData}"
+							Height="60" />
+				</StackPanel>
+			</DockPanel>
+			<PreviewCodeSnippet.ItemsPanel>
+				<ItemsPanelTemplate>
+					<UniformGrid 
+							Columns="2"
+							ColumnSpacing="10"
+							RowSpacing="10"/>
+				</ItemsPanelTemplate>
+			</PreviewCodeSnippet.ItemsPanel>
+			<PreviewCodeSnippet.ItemTemplate>
+				<DataTemplate DataType="ThemeColor">
+					<LineChart Theme.Color="{Binding}" 
+							Title="{Binding}"
+							Data="{Binding ElementName=This, Path=RandomData}"
+							Height="60" />
+				</DataTemplate>
+			</PreviewCodeSnippet.ItemTemplate>
+		</PreviewCodeSnippet>
+	</DockPanel>
+</UserControl>

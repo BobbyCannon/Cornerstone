@@ -1,0 +1,406 @@
+﻿<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+	<ControlTheme x:Key="TopLevelMenuItem" TargetType="MenuItem">
+		<Setter Property="Theme.Color" Value="{Binding $parent[Menu].(Theme.Color)}"/>
+		<Setter Property="Background" Value="{DynamicResource Background04}" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+		<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+		<Setter Property="Padding" Value="8,0" />
+		<Setter Property="CornerRadius" Value="0" />
+		<Setter Property="ContextMenu.Placement" Value="BottomEdgeAlignedLeft" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border
+						Name="PART_LayoutRoot"
+						Background="{TemplateBinding Background}"
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}"
+						CornerRadius="{TemplateBinding CornerRadius}">
+					<Panel>
+						<ContentPresenter
+								Name="PART_HeaderPresenter"
+								Content="{TemplateBinding Header}"
+								ContentTemplate="{TemplateBinding HeaderTemplate}"
+								VerticalAlignment="Center"
+								HorizontalAlignment="Stretch"
+								RecognizesAccessKey="True"
+								Margin="{TemplateBinding Padding}" />
+						<Popup
+								Name="PART_Popup"
+								WindowManagerAddShadowHint="False"
+								MinWidth="{Binding Bounds.Width, RelativeSource={RelativeSource TemplatedParent}}"
+								IsLightDismissEnabled="True"
+								IsOpen="{TemplateBinding IsSubMenuOpen, Mode=TwoWay}"
+								Placement="{TemplateBinding ContextMenu.Placement}"
+								OverlayInputPassThroughElement="{Binding $parent[Menu]}">
+							<Border
+									Background="{DynamicResource Background04}"
+									BorderBrush="{DynamicResource BorderBrush}"
+									BorderThickness="1"
+									Padding="0"
+									MaxWidth="{DynamicResource FlyoutThemeMaxWidth}"
+									HorizontalAlignment="Stretch"
+									CornerRadius="{DynamicResource ControlCornerRadius}">
+								<ScrollViewer Theme="{StaticResource MenuScrollViewerForVertical}">
+									<ItemsPresenter
+											Name="PART_ItemsPresenter"
+											ItemsPanel="{TemplateBinding ItemsPanel}"
+											Margin="0"
+											Grid.IsSharedSizeScope="True" />
+								</ScrollViewer>
+							</Border>
+						</Popup>
+					</Panel>
+				</Border>
+			</ControlTemplate>
+		</Setter>
+		<Style Selector="^:selected">
+			<Setter Property="Background" Value="{DynamicResource Background07}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		</Style>
+		<!-- Pointer over state.                              -->
+		<!-- Listen for PART_LayoutRoot:pointerover, so it    -->
+		<!-- will not be triggered when subitem is pressed.   -->
+		<Style Selector="^:pressed">
+			<Setter Property="Background" Value="{DynamicResource Background05}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		</Style>
+		<Style Selector="^:disabled">
+			<Setter Property="Background" Value="{DynamicResource Background04}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+		</Style>
+
+		<!-- Code Template - Color -->
+		<Style Selector="^[(Theme.Color)=Current]">
+			<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
+			<Setter Property="Foreground" Value="{DynamicResource ThemeForeground05}" />
+
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource ThemeColor04}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground04}" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource ThemeColor09}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+		<!-- Code Template - /Color -->
+
+		<!-- Generated Code - Colors -->
+		<Style Selector="^[(Theme.Color)=Amber]">
+			<Setter Property="Background" Value="{DynamicResource Amber05}" />
+			<Setter Property="Foreground" Value="{DynamicResource AmberText05}" />
+
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Amber06}" />
+				<Setter Property="Foreground" Value="{DynamicResource AmberText06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Amber04}" />
+				<Setter Property="Foreground" Value="{DynamicResource AmberText04}" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Amber09}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Blue]">
+			<Setter Property="Background" Value="{DynamicResource Blue05}" />
+			<Setter Property="Foreground" Value="{DynamicResource BlueText05}" />
+
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Blue06}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueText06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Blue04}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueText04}" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Blue09}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=BlueGray]">
+			<Setter Property="Background" Value="{DynamicResource BlueGray05}" />
+			<Setter Property="Foreground" Value="{DynamicResource BlueGrayText05}" />
+
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource BlueGray06}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueGrayText06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource BlueGray04}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueGrayText04}" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource BlueGray09}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Brown]">
+			<Setter Property="Background" Value="{DynamicResource Brown05}" />
+			<Setter Property="Foreground" Value="{DynamicResource BrownText05}" />
+
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Brown06}" />
+				<Setter Property="Foreground" Value="{DynamicResource BrownText06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Brown04}" />
+				<Setter Property="Foreground" Value="{DynamicResource BrownText04}" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Brown09}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepOrange]">
+			<Setter Property="Background" Value="{DynamicResource DeepOrange05}" />
+			<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText05}" />
+
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource DeepOrange06}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource DeepOrange04}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText04}" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource DeepOrange09}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepPurple]">
+			<Setter Property="Background" Value="{DynamicResource DeepPurple05}" />
+			<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText05}" />
+
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource DeepPurple06}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource DeepPurple04}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText04}" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource DeepPurple09}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Gray]">
+			<Setter Property="Background" Value="{DynamicResource Gray05}" />
+			<Setter Property="Foreground" Value="{DynamicResource GrayText05}" />
+
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Gray06}" />
+				<Setter Property="Foreground" Value="{DynamicResource GrayText06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Gray04}" />
+				<Setter Property="Foreground" Value="{DynamicResource GrayText04}" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Gray09}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Green]">
+			<Setter Property="Background" Value="{DynamicResource Green05}" />
+			<Setter Property="Foreground" Value="{DynamicResource GreenText05}" />
+
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Green06}" />
+				<Setter Property="Foreground" Value="{DynamicResource GreenText06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Green04}" />
+				<Setter Property="Foreground" Value="{DynamicResource GreenText04}" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Green09}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Indigo]">
+			<Setter Property="Background" Value="{DynamicResource Indigo05}" />
+			<Setter Property="Foreground" Value="{DynamicResource IndigoText05}" />
+
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Indigo06}" />
+				<Setter Property="Foreground" Value="{DynamicResource IndigoText06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Indigo04}" />
+				<Setter Property="Foreground" Value="{DynamicResource IndigoText04}" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Indigo09}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Orange]">
+			<Setter Property="Background" Value="{DynamicResource Orange05}" />
+			<Setter Property="Foreground" Value="{DynamicResource OrangeText05}" />
+
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Orange06}" />
+				<Setter Property="Foreground" Value="{DynamicResource OrangeText06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Orange04}" />
+				<Setter Property="Foreground" Value="{DynamicResource OrangeText04}" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Orange09}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Pink]">
+			<Setter Property="Background" Value="{DynamicResource Pink05}" />
+			<Setter Property="Foreground" Value="{DynamicResource PinkText05}" />
+
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Pink06}" />
+				<Setter Property="Foreground" Value="{DynamicResource PinkText06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Pink04}" />
+				<Setter Property="Foreground" Value="{DynamicResource PinkText04}" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Pink09}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Purple]">
+			<Setter Property="Background" Value="{DynamicResource Purple05}" />
+			<Setter Property="Foreground" Value="{DynamicResource PurpleText05}" />
+
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Purple06}" />
+				<Setter Property="Foreground" Value="{DynamicResource PurpleText06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Purple04}" />
+				<Setter Property="Foreground" Value="{DynamicResource PurpleText04}" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Purple09}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Red]">
+			<Setter Property="Background" Value="{DynamicResource Red05}" />
+			<Setter Property="Foreground" Value="{DynamicResource RedText05}" />
+
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Red06}" />
+				<Setter Property="Foreground" Value="{DynamicResource RedText06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Red04}" />
+				<Setter Property="Foreground" Value="{DynamicResource RedText04}" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Red09}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Teal]">
+			<Setter Property="Background" Value="{DynamicResource Teal05}" />
+			<Setter Property="Foreground" Value="{DynamicResource TealText05}" />
+
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Teal06}" />
+				<Setter Property="Foreground" Value="{DynamicResource TealText06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Teal04}" />
+				<Setter Property="Foreground" Value="{DynamicResource TealText04}" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Teal09}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+		<!-- Generated Code - /Colors -->
+	</ControlTheme>
+
+	<ControlTheme x:Key="{x:Type Menu}" TargetType="Menu">
+		<Setter Property="Theme.Color" Value="None" />
+		<Setter Property="Background" Value="{DynamicResource Background04}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+		<Setter Property="BorderThickness" Value="0,0,0,1" />
+		<Setter Property="Height" Value="32" />
+		<Setter Property="ItemContainerTheme" Value="{StaticResource TopLevelMenuItem}" />
+		<Setter Property="Padding" Value="0" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border
+						Background="{TemplateBinding Background}"
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}"
+						CornerRadius="{TemplateBinding CornerRadius}"
+						HorizontalAlignment="Stretch"
+						Padding="{TemplateBinding Padding}">
+					<ScrollViewer HorizontalScrollBarVisibility="Auto">
+						<ItemsPresenter
+								Name="PART_ItemsPresenter"
+								ItemsPanel="{TemplateBinding ItemsPanel}"
+								Margin="0"
+								KeyboardNavigation.TabNavigation="Continue"
+								VerticalAlignment="Stretch" />
+					</ScrollViewer>
+				</Border>
+			</ControlTemplate>
+		</Setter>
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="800">
+			<WrapPanel Margin="0,0,0,40">
+				<Menu>
+					<MenuItem Header="File" IsSubMenuOpen="True">
+						<MenuItem Header="Open" />
+						<MenuItem Header="Save" />
+						<Separator />
+						<MenuItem Header="Exit" />
+					</MenuItem>
+					<MenuItem Header="Edit" />
+					<MenuItem Header="View" />
+					<MenuItem Header="Git" />
+					<MenuItem Header="Project" />
+					<MenuItem Header="Build" />
+					<MenuItem Header="Help" />
+				</Menu>
+			</WrapPanel>
+			<PreviewCodeSnippet.ItemTemplate>
+				<DataTemplate DataType="ThemeColor">
+					<Menu Theme.Color="{Binding}">
+						<MenuItem Header="File">
+							<MenuItem Header="Open" />
+							<MenuItem Header="Save" />
+							<Separator />
+							<MenuItem Header="Exit" />
+						</MenuItem>
+						<MenuItem Header="Edit" />
+						<MenuItem Header="View" />
+						<MenuItem Header="Git" />
+						<MenuItem Header="Project" />
+						<MenuItem Header="Build" />
+						<MenuItem Header="Help" />
+					</Menu>
+				</DataTemplate>
+			</PreviewCodeSnippet.ItemTemplate>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

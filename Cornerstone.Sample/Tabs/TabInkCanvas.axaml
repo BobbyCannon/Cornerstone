@@ -1,0 +1,85 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="600"
+		x:Class="Cornerstone.Sample.Tabs.TabInkCanvas"
+		x:DataType="tabs:TabInkCanvas"
+		x:Name="Root">
+	<!-- ReSharper disable Xaml.MissingGridIndex -->
+	<DockPanel>
+		<Grid DockPanel.Dock="Top" Margin="10">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="{x:Static tabs:TabInkCanvas.HeaderName}" />
+		</Grid>
+		<PreviewCodeSnippet>
+			<DockPanel>
+				<WrapPanel DockPanel.Dock="Top"
+						HorizontalAlignment="Center"
+						ItemSpacing="10"
+						Margin="0,0,0,14">
+					<WrapPanel.Styles>
+						<Style Selector="Button.Color">
+							<Setter Property="CornerRadius" Value="15" />
+							<Setter Property="Height" Value="30" />
+							<Setter Property="Width" Value="30" />
+						</Style>
+					</WrapPanel.Styles>
+					<Button Background="{DynamicResource Foreground00}" Classes="Color" Click="ColorOnClick" />
+					<Button Theme.Color="Red" Classes="Color" Click="ColorOnClick" />
+					<Button Theme.Color="Green" Classes="Color" Click="ColorOnClick" />
+					<Button Theme.Color="Blue" Classes="Color" Click="ColorOnClick" />
+					<Button Theme.Color="None" Click="ClearOnClick" Content="Clear" />
+				</WrapPanel>
+				<Border DockPanel.Dock="Top"
+						BorderBrush="{Binding ElementName=InkCanvas, Path=Stroke}"
+						BorderThickness="1"
+						Margin="0,0,0,14">
+				</Border>
+				<Border DockPanel.Dock="Right"
+						Background="{DynamicResource Background03}"
+						BorderThickness="1"
+						Margin="10,0,0,0"
+						Width="230">
+					<Grid RowDefinitions="Auto,*">
+						<TextBlock Classes="SubHeader"
+								HorizontalAlignment="Center"
+								Margin="0,4,0,10"
+								Text="Strokes" />
+						<ScrollViewer Grid.Row="1">
+							<ItemsControl ItemsSource="{Binding ElementName=InkCanvas, Path=History}">
+								<ItemsControl.ItemsPanel>
+									<ItemsPanelTemplate>
+										<VirtualizingStackPanel />
+									</ItemsPanelTemplate>
+								</ItemsControl.ItemsPanel>
+								<ItemsControl.ItemTemplate>
+									<DataTemplate DataType="InkCanvasStroke">
+										<PressHoldButton
+												Content="{Binding Id}"
+												BorderBrush="{Binding Brush}"
+												HoldBackground="Red"
+												HoldCommand="{Binding ElementName=Root, Path=RemoveStrokeCommand}"
+												HoldCommandParameter="{Binding}"
+												Margin="0,4"
+												HorizontalAlignment="Stretch">
+										</PressHoldButton>
+									</DataTemplate>
+								</ItemsControl.ItemTemplate>
+							</ItemsControl>
+						</ScrollViewer>
+					</Grid>
+				</Border>
+				<Border Background="{DynamicResource Background03}"
+						BorderThickness="1"
+						ClipToBounds="True">
+					<InkCanvas x:Name="InkCanvas"
+							Stroke="{Binding ElementName=Root, Path=Stroke}" />
+				</Border>
+			</DockPanel>
+		</PreviewCodeSnippet>
+	</DockPanel>
+</UserControl>

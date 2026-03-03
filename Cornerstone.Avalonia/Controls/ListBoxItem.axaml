@@ -1,0 +1,85 @@
+<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+	<ControlTheme x:Key="{x:Type ListBoxItem}" TargetType="ListBoxItem">
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+		<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+		<Setter Property="CornerRadius" Value="0" />
+		<Setter Property="Padding" Value="0" />
+		<Setter Property="Margin" Value="0" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<ContentPresenter Name="PART_ContentPresenter"
+						Background="{TemplateBinding Background}"
+						Foreground="{TemplateBinding Foreground}"
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}"
+						CornerRadius="{TemplateBinding CornerRadius}"
+						ContentTemplate="{TemplateBinding ContentTemplate}"
+						Content="{TemplateBinding Content}"
+						FontSize="{DynamicResource ControlFontSize}"
+						Padding="{TemplateBinding Padding}"
+						Margin="{TemplateBinding Margin}"
+						VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+						HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" />
+			</ControlTemplate>
+		</Setter>
+		<Style Selector="^:nth-child(1)">
+			<Setter Property="Margin" Value="{DynamicResource ListBoxItemFirstItemMargin}" />
+		</Style>
+		<Style Selector="^:nth-last-child(1)">
+			<Setter Property="Margin" Value="{DynamicResource ListBoxItemLastItemMargin}" />
+		</Style>
+		<Style Selector="^:disabled /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+		</Style>
+		<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{DynamicResource Background07}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		</Style>
+		<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{DynamicResource Background05}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		</Style>
+		<Style Selector="^:selected">
+			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Background05}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+			</Style>
+			<Style Selector="^:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Background05}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+			</Style>
+			<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Background09}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+			</Style>
+			<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Background08}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+			</Style>
+		</Style>
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="600">
+			<PreviewCodeSnippet.ItemTemplate>
+				<DataTemplate DataType="ThemeColor">
+					<ListBox Theme.Color="{Binding}"
+							SelectedIndex="1"
+							Margin="10"
+							Width="100">
+						<ListBoxItem>
+							<TextBlock Text="{Binding}" />
+						</ListBoxItem>
+						<ListBoxItem>Item 2</ListBoxItem>
+						<ListBoxItem>Item 3</ListBoxItem>
+					</ListBox>
+				</DataTemplate>
+			</PreviewCodeSnippet.ItemTemplate>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

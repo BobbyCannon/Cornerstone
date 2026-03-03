@@ -1,0 +1,133 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type ActivityControl}"
+					TargetType="ActivityControl">
+				<Setter Property="Background" Value="{DynamicResource Background02}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+				<Setter Property="HorizontalAlignment" Value="Left" />
+				<Setter Property="VerticalAlignment" Value="Top" />
+				<Setter Property="Height" Value="140" />
+				<Setter Property="MinWidth" Value="800" />
+				<Setter Property="Template">
+					<ControlTemplate TargetType="ActivityControl">
+						<Border Background="{TemplateBinding Background}"
+								BorderBrush="{TemplateBinding BorderBrush}"
+								BorderThickness="1"
+								Padding="10"
+								CornerRadius="10">
+							<Grid ColumnDefinitions="Auto,*"
+									RowDefinitions="Auto,*">
+								<StackPanel Grid.Column="0"
+										Grid.Row="1"
+										Margin="0,0,6,0">
+									<StackPanel.Styles>
+										<Style Selector="TextBlock">
+											<Setter Property="FontFamily" Value="{StaticResource DejaVuSansMono}" />
+											<Setter Property="FontSize" Value="12" />
+										</Style>
+									</StackPanel.Styles>
+									<TextBlock Text="Mon"
+											Margin="0,16,0,0" />
+									<TextBlock Text="Wed"
+											Margin="0,16,0,0" />
+									<TextBlock Text="Fri"
+											Margin="0,15,0,0" />
+								</StackPanel>
+								<ItemsControl Grid.Column="1"
+										Grid.Row="0"
+										HorizontalAlignment="Stretch"
+										ItemsSource="{TemplateBinding Months}">
+									<ItemsControl.ItemsPanel>
+										<ItemsPanelTemplate>
+											<AutoGrid ColumnDefinitions="*,*,*,*,*,*,*,*,*,*,*,*,*"
+													Orientation="Horizontal"
+													HorizontalAlignment="Stretch" />
+										</ItemsPanelTemplate>
+									</ItemsControl.ItemsPanel>
+									<ItemsControl.ItemTemplate>
+										<DataTemplate>
+											<TextBlock FontFamily="{StaticResource DejaVuSansMono}"
+													FontSize="12"
+													Text="{Binding}"
+													TextAlignment="Center" />
+										</DataTemplate>
+									</ItemsControl.ItemTemplate>
+								</ItemsControl>
+								<ItemsControl ItemsSource="{TemplateBinding ItemsSource}"
+										Grid.Column="1"
+										Grid.Row="1">
+									<ItemsControl.ItemsPanel>
+										<ItemsPanelTemplate>
+											<AutoGrid
+													RowCount="7"
+													ColumnCount="54"
+													Orientation="Vertical" />
+										</ItemsPanelTemplate>
+									</ItemsControl.ItemsPanel>
+									<ItemsControl.ItemTemplate>
+										<DataTemplate DataType="ActivityItem">
+											<Border Background="{Binding Count, Converter={StaticResource ActivityLevelConverter}, ConverterParameter={TemplateBinding Theme.Color}}"
+													Width="10" Height="10" Margin="2"
+													CornerRadius="2"
+													ToolTip.Tip="{Binding Description}"
+													BorderBrush="{Binding Count, Converter={StaticResource ActivityLevelConverter}, ConverterParameter={TemplateBinding Theme.Color}}"
+													BorderThickness="1" />
+										</DataTemplate>
+									</ItemsControl.ItemTemplate>
+								</ItemsControl>
+							</Grid>
+						</Border>
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Design.PreviewWith>
+		<ScrollViewer>
+			<StackPanel>
+				<ThemeVariantScope RequestedThemeVariant="Dark">
+					<ActivityControl Theme.Color="Red">
+						<ActivityControl.ItemsSource>
+							<ActivityItem Count="0" Date="06/16/2025" />
+							<ActivityItem Count="2" Date="06/17/2025" />
+							<ActivityItem Count="4" Date="06/18/2025" />
+							<ActivityItem Count="6" Date="06/19/2025" />
+							<ActivityItem Count="8" Date="06/20/2025" />
+							<ActivityItem Count="10" Date="06/21/2025" />
+							<ActivityItem Count="8" Date="06/22/2025" />
+							<ActivityItem Count="6" Date="06/23/2025" />
+							<ActivityItem Count="4" Date="06/24/2025" />
+							<ActivityItem Count="2" Date="06/25/2025" />
+							<ActivityItem Count="0" Date="06/26/2025" />
+							<ActivityItem Count="0" Date="06/27/2025" />
+							<ActivityItem Count="0" Date="06/28/2025" />
+						</ActivityControl.ItemsSource>
+					</ActivityControl>
+				</ThemeVariantScope>
+				<ThemeVariantScope RequestedThemeVariant="Light">
+					<ActivityControl>
+						<ActivityControl.ItemsSource>
+							<ActivityItem Count="0" Date="06/16/2025" />
+							<ActivityItem Count="2" Date="06/17/2025" />
+							<ActivityItem Count="4" Date="06/18/2025" />
+							<ActivityItem Count="6" Date="06/19/2025" />
+							<ActivityItem Count="8" Date="06/20/2025" />
+							<ActivityItem Count="10" Date="06/21/2025" />
+							<ActivityItem Count="8" Date="06/22/2025" />
+							<ActivityItem Count="6" Date="06/23/2025" />
+							<ActivityItem Count="4" Date="06/24/2025" />
+							<ActivityItem Count="2" Date="06/25/2025" />
+							<ActivityItem Count="0" Date="06/26/2025" />
+							<ActivityItem Count="0" Date="06/27/2025" />
+							<ActivityItem Count="0" Date="06/28/2025" />
+						</ActivityControl.ItemsSource>
+					</ActivityControl>
+				</ThemeVariantScope>
+			</StackPanel>
+		</ScrollViewer>
+	</Design.PreviewWith>
+</Styles>

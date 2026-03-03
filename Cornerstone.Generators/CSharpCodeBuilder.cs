@@ -1,0 +1,329 @@
+﻿#region References
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+using Cornerstone.Generators.Models;
+using Microsoft.CodeAnalysis;
+
+#endregion
+
+namespace Cornerstone.Generators;
+
+public class CSharpCodeBuilder
+{
+	#region Constants
+
+	public const char IndentChar = '\t';
+	public const int IndentLength = 1;
+
+	#endregion
+
+	#region Fields
+
+	private readonly StringBuilder _builder;
+
+	#endregion
+
+	#region Constructors
+
+	public CSharpCodeBuilder()
+	{
+		_builder = new(16384);
+	}
+
+	public CSharpCodeBuilder(StringBuilder builder, int indent)
+	{
+		_builder = builder;
+		Indent = indent;
+	}
+
+	#endregion
+
+	#region Properties
+
+	public int Indent { get; set; }
+
+	public int Length => _builder.Length;
+
+	#endregion
+
+	#region Methods
+
+	public void Clear()
+	{
+		_builder.Clear();
+		Indent = 0;
+	}
+
+	public void DecreaseIndent()
+	{
+		if (Indent >= IndentLength)
+		{
+			Indent -= IndentLength;
+		}
+	}
+
+	public void EndType()
+	{
+		DecreaseIndent();
+		IndentWriteLine("}");
+	}
+
+	public static string GetConstantLiteral(object value)
+	{
+		if (value == null)
+		{
+			return "null";
+		}
+		if (value is bool b)
+		{
+			return b ? "true" : "false";
+		}
+		if (value is string s)
+		{
+			return @$"""{s}""";
+		}
+		if (value is float f)
+		{
+			return f.ToString("G9");
+		}
+		if (value is double d)
+		{
+			return d.ToString("G17");
+		}
+		return value.ToString();
+	}
+
+	public void IncreaseIndent()
+	{
+		Indent += IndentLength;
+	}
+
+	public void IndentWrite(string value)
+	{
+		WriteIndent();
+		_builder.Append(value);
+	}
+
+	public void IndentWriteLine(string value)
+	{
+		WriteIndent();
+		_builder.AppendLine(value);
+	}
+
+	public void InsertWriteLine(int offset, string value)
+	{
+		_builder.Insert(offset, "\r\n");
+		_builder.Insert(offset, value);
+	}
+
+	public void StartType(ISymbol item)
+	{
+		WriteIndent();
+
+		//_builder.Append(AccessibilityToString(item.DeclaredAccessibility));
+		//_builder.Append(" ");
+		if (item.IsAbstract)
+		{
+			_builder.Append("abstract ");
+		}
+		_builder.Append("partial ");
+		_builder.Append(item.ToDisplayString(SymbolDisplayFormats.TypeDeclaration));
+		_builder.AppendLine("");
+
+		WriteIndent();
+
+		_builder.AppendLine("{");
+
+		IncreaseIndent();
+	}
+
+	public override string ToString()
+	{
+		return _builder.ToString();
+	}
+
+	public void Write(string value)
+	{
+		_builder.Append(value);
+	}
+
+	public void WriteArray(string value, Action block, string end = null)
+	{
+		IndentWrite(value);
+		WriteArray(block, end);
+	}
+
+	public void WriteArray(Action block, string end = null)
+	{
+		WriteLine(" [");
+		if (block != null)
+		{
+			IncreaseIndent();
+			block.Invoke();
+			DecreaseIndent();
+		}
+		IndentWriteLine($"]{end}");
+	}
+
+	public void WriteArrayInitializer(string itemType, params string[] items)
+	{
+		if ((items == null) || (items.Length == 0))
+		{
+			Write($"{Generator.GlobalSystemArrayEmpty}<{itemType}>()");
+			return;
+		}
+
+		Write($"new {itemType}[] {{ ");
+		for (var i = 0; i < items.Length; i++)
+		{
+			Write(items[i]);
+			if (i < (items.Length - 1))
+			{
+				Write(", ");
+			}
+		}
+		Write(" }");
+	}
+
+	public void WriteAssignment(string property, object[] values, bool statement = false, bool lastAssignment = false)
+	{
+		var end = lastAssignment ? string.Empty : statement ? ";" : ",";
+		if (values.Length <= 0)
+		{
+			IndentWriteLine($"{property} = []{end}");
+		}
+		else
+		{
+			IndentWriteLine($"{property} = [");
+			IncreaseIndent();
+			var isFirst = true;
+			foreach (var value in values)
+			{
+				if (!isFirst)
+				{
+					WriteLine(",");
+				}
+				IndentWrite(GetConstantLiteral(value));
+				isFirst = false;
+			}
+			WriteLine();
+			DecreaseIndent();
+			IndentWriteLine($"]{end}");
+		}
+	}
+	
+	public void WriteAssignment(string property, IDictionary<string, object> values, bool statement = false, bool lastAssignment = false)
+	{
+		var end = lastAssignment ? string.Empty : statement ? ";" : ",";
+		if (values.Count <= 0)
+		{
+			IndentWriteLine($"{property} = new Dictionary<string, object>(){end}");
+		}
+		else
+		{
+			IndentWriteLine($"{property} = new Dictionary<string, object>");
+			IndentWriteLine("{");
+			IncreaseIndent();
+			var isFirst = true;
+			foreach (var kv in values)
+			{
+				if (!isFirst)
+				{
+					WriteLine(",");
+				}
+				IndentWrite($"{{ \"{kv.Key}\", {GetConstantLiteral(kv.Value)} }}");
+				isFirst = false;
+			}
+			WriteLine();
+			DecreaseIndent();
+			IndentWriteLine($"}}{end}");
+		}
+	}
+
+	public void WriteAssignment(string property, object value, bool statement = false, bool lastAssignment = false)
+	{
+		var literal = GetConstantLiteral(value);
+		var end = lastAssignment ? string.Empty : statement ? ";" : ",";
+		IndentWriteLine($"{property} = {literal}{end}");
+	}
+
+	public void WriteAssignmentRaw(string property, string value, bool statement = false, bool lastAssignment = false)
+	{
+		var end = lastAssignment ? string.Empty : statement ? ";" : ",";
+		IndentWriteLine($"{property} = {value}{end}");
+	}
+
+	public void WriteAutoGeneratedComment()
+	{
+		IndentWriteLine("// <auto-generated>");
+		IndentWriteLine("// Auto-generated by Cornerstone.Generators");
+		IndentWriteLine("// </auto-generated>");
+	}
+
+	public void WriteBlock(string value, Action block, string end = null)
+	{
+		IndentWriteLine(value);
+		WriteBlock(block, end);
+	}
+
+	public void WriteBlock(Action block, string end = null)
+	{
+		IndentWriteLine("{");
+		if (block != null)
+		{
+			IncreaseIndent();
+			block.Invoke();
+			DecreaseIndent();
+		}
+		IndentWriteLine($"}}{end}");
+	}
+
+	public void WriteLine()
+	{
+		_builder.AppendLine();
+	}
+
+	public void WriteLine(string value)
+	{
+		_builder.AppendLine(value);
+	}
+
+	public void WriteMethodArguments(CSharpCodeBuilder builder, List<SourceParameterInfo> parameters)
+	{
+		for (var i = 0; i < parameters.Count; i++)
+		{
+			if (i > 0)
+			{
+				builder.Write(", ");
+			}
+			var parameter = parameters[i];
+			builder.Write($"({parameter.ParameterType}) parameters[{i}]");
+		}
+	}
+
+	internal void WriteIndent()
+	{
+		if (Indent > 0)
+		{
+			_builder.Append(IndentChar, Indent);
+		}
+	}
+
+	internal static string AccessibilityToString(Accessibility accessibility)
+	{
+		return accessibility switch
+		{
+			Accessibility.Public => "public",
+			Accessibility.ProtectedOrInternal => "protected internal",
+			Accessibility.Internal => "internal",
+			Accessibility.Protected => "protected",
+			Accessibility.ProtectedAndInternal => "private protected",
+			Accessibility.Private => "private",
+			_ => throw new ArgumentException("Unknown member", nameof(accessibility))
+		};
+	}
+
+	#endregion
+}

@@ -1,0 +1,369 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type ListBox}" TargetType="ListBox">
+				<Setter Property="Theme.Color" Value="Current" />
+				<Setter Property="Background" Value="{DynamicResource Background02}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+				<Setter Property="BorderThickness" Value="0" />
+				<Setter Property="CornerRadius" Value="0" />
+				<Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+				<Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+				<Setter Property="ScrollViewer.IsScrollChainingEnabled" Value="True" />
+				<Setter Property="ScrollViewer.IsScrollInertiaEnabled" Value="True" />
+				<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+				<Setter Property="Template">
+					<ControlTemplate>
+						<Border Name="border"
+								ClipToBounds="{TemplateBinding ClipToBounds}"
+								Background="{TemplateBinding Background}"
+								BorderBrush="{TemplateBinding BorderBrush}"
+								BorderThickness="{TemplateBinding BorderThickness}"
+								CornerRadius="{TemplateBinding CornerRadius}">
+							<ScrollViewer Name="PART_ScrollViewer"
+									VerticalSnapPointsType="{TemplateBinding (ScrollViewer.VerticalSnapPointsType)}"
+									HorizontalSnapPointsType="{TemplateBinding (ScrollViewer.HorizontalSnapPointsType)}"
+									HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
+									VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
+									IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
+									IsScrollInertiaEnabled="{TemplateBinding (ScrollViewer.IsScrollInertiaEnabled)}"
+									AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
+									BringIntoViewOnFocusChange="{TemplateBinding (ScrollViewer.BringIntoViewOnFocusChange)}"
+									Margin="{TemplateBinding Padding}">
+								<ItemsPresenter Name="PART_ItemsPresenter"
+										ItemsPanel="{TemplateBinding ItemsPanel}"
+										Margin="{TemplateBinding Padding}" />
+							</ScrollViewer>
+						</Border>
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<!-- Code Template - Color -->
+	<Style Selector="ListBox[(Theme.Color)=Current]">
+		<Style Selector="^ ListBoxItem:selected">
+			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground06}" />
+			</Style>
+			<Style Selector="^:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground05}" />
+			</Style>
+			<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground05}" />
+			</Style>
+			<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource ThemeColor04}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground04}" />
+			</Style>
+		</Style>
+	</Style>
+	<!-- Code Template - /Color -->
+
+	<!-- Generated Code - Colors -->
+	<Style Selector="ListBox[(Theme.Color)=Amber]">
+		<Style Selector="^ ListBoxItem:selected">
+			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Amber06}" />
+				<Setter Property="Foreground" Value="{DynamicResource AmberText06}" />
+			</Style>
+			<Style Selector="^:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Amber05}" />
+				<Setter Property="Foreground" Value="{DynamicResource AmberText05}" />
+			</Style>
+			<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Amber05}" />
+				<Setter Property="Foreground" Value="{DynamicResource AmberText05}" />
+			</Style>
+			<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Amber04}" />
+				<Setter Property="Foreground" Value="{DynamicResource AmberText04}" />
+			</Style>
+		</Style>
+	</Style>
+	<Style Selector="ListBox[(Theme.Color)=Blue]">
+		<Style Selector="^ ListBoxItem:selected">
+			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Blue06}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueText06}" />
+			</Style>
+			<Style Selector="^:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Blue05}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueText05}" />
+			</Style>
+			<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Blue05}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueText05}" />
+			</Style>
+			<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Blue04}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueText04}" />
+			</Style>
+		</Style>
+	</Style>
+	<Style Selector="ListBox[(Theme.Color)=BlueGray]">
+		<Style Selector="^ ListBoxItem:selected">
+			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource BlueGray06}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueGrayText06}" />
+			</Style>
+			<Style Selector="^:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource BlueGray05}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueGrayText05}" />
+			</Style>
+			<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource BlueGray05}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueGrayText05}" />
+			</Style>
+			<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource BlueGray04}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueGrayText04}" />
+			</Style>
+		</Style>
+	</Style>
+	<Style Selector="ListBox[(Theme.Color)=Brown]">
+		<Style Selector="^ ListBoxItem:selected">
+			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Brown06}" />
+				<Setter Property="Foreground" Value="{DynamicResource BrownText06}" />
+			</Style>
+			<Style Selector="^:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Brown05}" />
+				<Setter Property="Foreground" Value="{DynamicResource BrownText05}" />
+			</Style>
+			<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Brown05}" />
+				<Setter Property="Foreground" Value="{DynamicResource BrownText05}" />
+			</Style>
+			<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Brown04}" />
+				<Setter Property="Foreground" Value="{DynamicResource BrownText04}" />
+			</Style>
+		</Style>
+	</Style>
+	<Style Selector="ListBox[(Theme.Color)=DeepOrange]">
+		<Style Selector="^ ListBoxItem:selected">
+			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource DeepOrange06}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText06}" />
+			</Style>
+			<Style Selector="^:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource DeepOrange05}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText05}" />
+			</Style>
+			<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource DeepOrange05}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText05}" />
+			</Style>
+			<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource DeepOrange04}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText04}" />
+			</Style>
+		</Style>
+	</Style>
+	<Style Selector="ListBox[(Theme.Color)=DeepPurple]">
+		<Style Selector="^ ListBoxItem:selected">
+			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource DeepPurple06}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText06}" />
+			</Style>
+			<Style Selector="^:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource DeepPurple05}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText05}" />
+			</Style>
+			<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource DeepPurple05}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText05}" />
+			</Style>
+			<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource DeepPurple04}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText04}" />
+			</Style>
+		</Style>
+	</Style>
+	<Style Selector="ListBox[(Theme.Color)=Gray]">
+		<Style Selector="^ ListBoxItem:selected">
+			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Gray06}" />
+				<Setter Property="Foreground" Value="{DynamicResource GrayText06}" />
+			</Style>
+			<Style Selector="^:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Gray05}" />
+				<Setter Property="Foreground" Value="{DynamicResource GrayText05}" />
+			</Style>
+			<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Gray05}" />
+				<Setter Property="Foreground" Value="{DynamicResource GrayText05}" />
+			</Style>
+			<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Gray04}" />
+				<Setter Property="Foreground" Value="{DynamicResource GrayText04}" />
+			</Style>
+		</Style>
+	</Style>
+	<Style Selector="ListBox[(Theme.Color)=Green]">
+		<Style Selector="^ ListBoxItem:selected">
+			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Green06}" />
+				<Setter Property="Foreground" Value="{DynamicResource GreenText06}" />
+			</Style>
+			<Style Selector="^:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Green05}" />
+				<Setter Property="Foreground" Value="{DynamicResource GreenText05}" />
+			</Style>
+			<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Green05}" />
+				<Setter Property="Foreground" Value="{DynamicResource GreenText05}" />
+			</Style>
+			<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Green04}" />
+				<Setter Property="Foreground" Value="{DynamicResource GreenText04}" />
+			</Style>
+		</Style>
+	</Style>
+	<Style Selector="ListBox[(Theme.Color)=Indigo]">
+		<Style Selector="^ ListBoxItem:selected">
+			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Indigo06}" />
+				<Setter Property="Foreground" Value="{DynamicResource IndigoText06}" />
+			</Style>
+			<Style Selector="^:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Indigo05}" />
+				<Setter Property="Foreground" Value="{DynamicResource IndigoText05}" />
+			</Style>
+			<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Indigo05}" />
+				<Setter Property="Foreground" Value="{DynamicResource IndigoText05}" />
+			</Style>
+			<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Indigo04}" />
+				<Setter Property="Foreground" Value="{DynamicResource IndigoText04}" />
+			</Style>
+		</Style>
+	</Style>
+	<Style Selector="ListBox[(Theme.Color)=Orange]">
+		<Style Selector="^ ListBoxItem:selected">
+			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Orange06}" />
+				<Setter Property="Foreground" Value="{DynamicResource OrangeText06}" />
+			</Style>
+			<Style Selector="^:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Orange05}" />
+				<Setter Property="Foreground" Value="{DynamicResource OrangeText05}" />
+			</Style>
+			<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Orange05}" />
+				<Setter Property="Foreground" Value="{DynamicResource OrangeText05}" />
+			</Style>
+			<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Orange04}" />
+				<Setter Property="Foreground" Value="{DynamicResource OrangeText04}" />
+			</Style>
+		</Style>
+	</Style>
+	<Style Selector="ListBox[(Theme.Color)=Pink]">
+		<Style Selector="^ ListBoxItem:selected">
+			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Pink06}" />
+				<Setter Property="Foreground" Value="{DynamicResource PinkText06}" />
+			</Style>
+			<Style Selector="^:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Pink05}" />
+				<Setter Property="Foreground" Value="{DynamicResource PinkText05}" />
+			</Style>
+			<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Pink05}" />
+				<Setter Property="Foreground" Value="{DynamicResource PinkText05}" />
+			</Style>
+			<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Pink04}" />
+				<Setter Property="Foreground" Value="{DynamicResource PinkText04}" />
+			</Style>
+		</Style>
+	</Style>
+	<Style Selector="ListBox[(Theme.Color)=Purple]">
+		<Style Selector="^ ListBoxItem:selected">
+			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Purple06}" />
+				<Setter Property="Foreground" Value="{DynamicResource PurpleText06}" />
+			</Style>
+			<Style Selector="^:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Purple05}" />
+				<Setter Property="Foreground" Value="{DynamicResource PurpleText05}" />
+			</Style>
+			<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Purple05}" />
+				<Setter Property="Foreground" Value="{DynamicResource PurpleText05}" />
+			</Style>
+			<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Purple04}" />
+				<Setter Property="Foreground" Value="{DynamicResource PurpleText04}" />
+			</Style>
+		</Style>
+	</Style>
+	<Style Selector="ListBox[(Theme.Color)=Red]">
+		<Style Selector="^ ListBoxItem:selected">
+			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Red06}" />
+				<Setter Property="Foreground" Value="{DynamicResource RedText06}" />
+			</Style>
+			<Style Selector="^:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Red05}" />
+				<Setter Property="Foreground" Value="{DynamicResource RedText05}" />
+			</Style>
+			<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Red05}" />
+				<Setter Property="Foreground" Value="{DynamicResource RedText05}" />
+			</Style>
+			<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Red04}" />
+				<Setter Property="Foreground" Value="{DynamicResource RedText04}" />
+			</Style>
+		</Style>
+	</Style>
+	<Style Selector="ListBox[(Theme.Color)=Teal]">
+		<Style Selector="^ ListBoxItem:selected">
+			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Teal06}" />
+				<Setter Property="Foreground" Value="{DynamicResource TealText06}" />
+			</Style>
+			<Style Selector="^:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Teal05}" />
+				<Setter Property="Foreground" Value="{DynamicResource TealText05}" />
+			</Style>
+			<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Teal05}" />
+				<Setter Property="Foreground" Value="{DynamicResource TealText05}" />
+			</Style>
+			<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Teal04}" />
+				<Setter Property="Foreground" Value="{DynamicResource TealText04}" />
+			</Style>
+		</Style>
+	</Style>
+	<!-- Generated Code - /Colors -->
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="600">
+			<PreviewCodeSnippet.ItemTemplate>
+				<DataTemplate DataType="ThemeColor">
+					<ListBox Theme.Color="{Binding}"
+							SelectedIndex="0"
+							Width="120">
+						<ListBoxItem>
+							<TextBlock Text="{Binding}" />
+						</ListBoxItem>
+						<ListBoxItem IsEnabled="False">Disabled</ListBoxItem>
+						<ListBoxItem>Item 3</ListBoxItem>
+					</ListBox>
+				</DataTemplate>
+			</PreviewCodeSnippet.ItemTemplate>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</Styles>

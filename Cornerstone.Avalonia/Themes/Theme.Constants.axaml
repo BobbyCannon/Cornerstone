@@ -1,0 +1,23 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:ac="clr-namespace:Avalonia.Controls.Converters;assembly=Avalonia.Controls">
+
+	<ac:CornerRadiusFilterConverter x:Key="LeftCornerRadiusFilterConverter" Filter="TopLeft, BottomLeft" />
+	<ac:CornerRadiusFilterConverter x:Key="RightCornerRadiusFilterConverter" Filter="TopRight, BottomRight" />
+	<ac:CornerRadiusFilterConverter x:Key="TopCornerRadiusFilterConverter" Filter="TopLeft, TopRight" />
+	<ac:CornerRadiusFilterConverter x:Key="BottomCornerRadiusFilterConverter" Filter="BottomLeft, BottomRight" />
+	<ac:CornerRadiusToDoubleConverter x:Key="TopLeftCornerRadiusConverter" Corner="TopLeft" />
+	<ac:CornerRadiusToDoubleConverter x:Key="BottomRightCornerRadiusConverter" Corner="BottomRight" />
+	<ac:StringFormatConverter x:Key="StringFormatConverter" />
+
+	<PercentWidthConverter x:Key="PercentWidthConverter" />
+	<CornerRadiusConverter x:Key="CornerRadiusConverter" />
+	<ThicknessConverter x:Key="ThicknessConverter" />
+	<TimeSpanConverter x:Key="TimeSpanConverter" />
+
+	<Thickness x:Key="ControlBorderThickness">1</Thickness>
+	<CornerRadius x:Key="ControlCornerRadius">4</CornerRadius>
+
+	<x:Double x:Key="ControlFontSize">14</x:Double>
+
+</ResourceDictionary>

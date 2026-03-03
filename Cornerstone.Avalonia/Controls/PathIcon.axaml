@@ -1,0 +1,58 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type PathIcon}" TargetType="PathIcon">
+				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="Height" Value="20" />
+				<Setter Property="Width" Value="20" />
+				<Setter Property="Template">
+					<ControlTemplate>
+						<Border Background="{TemplateBinding Background}">
+							<Viewbox Height="{TemplateBinding Height}"
+									Width="{TemplateBinding Width}">
+								<Path Fill="{TemplateBinding Foreground}"
+										Data="{TemplateBinding Data}"
+										Stretch="Uniform" />
+							</Viewbox>
+						</Border>
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Style Selector="PathIcon.Invert">
+		<Setter Property="RenderTransform" Value="rotate(180deg)" />
+	</Style>
+
+	<Style Selector="PathIcon.FlipV">
+		<Setter Property="RenderTransform" Value="scaley(-1)" />
+	</Style>
+
+	<Style Selector="PathIcon.FlipH">
+		<Setter Property="RenderTransform" Value="scalex(-1)" />
+	</Style>
+
+	<Style Selector="PathIcon.Turn">
+		<Setter Property="RenderTransform" Value="scale(-1)" />
+	</Style>
+	
+	<Design.PreviewWith>
+		<WrapPanel>
+			<WrapPanel.Styles>
+				<Style Selector="PathIcon">
+					<Setter Property="Height" Value="60"></Setter>
+					<Setter Property="Width" Value="60"></Setter>
+				</Style>
+			</WrapPanel.Styles>
+			<PathIcon Data="{StaticResource Icons.Cog}" Foreground="Red" />
+			<PathIcon Data="{StaticResource Icons.Cog}" />
+			<PathIcon Data="{StaticResource Icons.Lock}" Classes="Invert" />
+			<PathIcon Data="{StaticResource Icons.Lock}" Classes="FlipV" />
+			<PathIcon Data="{StaticResource Icons.Lock}" Classes="FlipH" />
+			<PathIcon Data="{StaticResource Icons.Lock}" Classes="Turn" />
+		</WrapPanel>
+	</Design.PreviewWith>
+</Styles>

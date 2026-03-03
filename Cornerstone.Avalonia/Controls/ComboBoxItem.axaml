@@ -1,0 +1,748 @@
+﻿<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+	<ControlTheme x:Key="{x:Type ComboBoxItem}"
+			TargetType="ComboBoxItem">
+		<Setter Property="Theme.Color" Value="{Binding $parent[ComboBox].(Theme.Color)}" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="Background" Value="{DynamicResource Background04}" />
+		<Setter Property="Padding" Value="8,4" />
+		<Setter Property="Margin" Value="0" />
+		<Setter Property="Height" Value="32" />
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+		<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+		<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+		<Setter Property="HorizontalContentAlignment" Value="Stretch" />
+		<Setter Property="VerticalContentAlignment" Value="Center" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<ContentPresenter
+						Name="PART_ContentPresenter"
+						Foreground="{TemplateBinding Foreground}"
+						Background="{TemplateBinding Background}"
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}"
+						CornerRadius="{TemplateBinding CornerRadius}"
+						ContentTemplate="{TemplateBinding ContentTemplate}"
+						Content="{TemplateBinding Content}"
+						HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+						VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+						Padding="{TemplateBinding Padding}"
+						Margin="{TemplateBinding Margin}" />
+			</ControlTemplate>
+		</Setter>
+
+		<!-- Disabled state. -->
+		<Style Selector="^:disabled /template/ ContentPresenter">
+			<Setter Property="Background" Value="{DynamicResource Background04}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+		</Style>
+
+		<!-- Pointer-over state. -->
+		<Style Selector="^:pointerover /template/ ContentPresenter">
+			<Setter Property="Background" Value="{DynamicResource Background07}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		</Style>
+
+		<!-- Pressed state. -->
+		<Style Selector="^:pressed /template/ ContentPresenter">
+			<Setter Property="Background" Value="{DynamicResource Background05}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		</Style>
+
+		<!-- Selected state. -->
+		<Style Selector="^:selected">
+			<!-- Default selected state. -->
+			<Style Selector="^ /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Background05}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+			</Style>
+
+			<!-- Selected and pointer-over state. -->
+			<Style Selector="^:pointerover /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Background09}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+			</Style>
+
+			<!-- Selected and pressed state. -->
+			<Style Selector="^:pressed /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Background08}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+			</Style>
+
+			<!-- Selected and disabled state. -->
+			<Style Selector="^:disabled /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Background04}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+
+		<!-- Code Template - Color -->
+		<Style Selector="^[(Theme.Color)=Current]">
+			<!-- Disabled state. -->
+			<Style Selector="^:disabled /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource ThemeColor03}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground03}" />
+			</Style>
+
+			<!-- Pointer-over state. -->
+			<Style Selector="^:pointerover /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground06}" />
+			</Style>
+
+			<!-- Pressed state. -->
+			<Style Selector="^:pressed /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource ThemeColor07}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground07}" />
+			</Style>
+
+			<!-- Selected state. -->
+			<Style Selector="^:selected">
+				<!-- Default selected state. -->
+				<Style Selector="^ /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
+					<Setter Property="Foreground" Value="{DynamicResource ThemeForeground05}" />
+				</Style>
+				<!-- Selected and pointer-over state. -->
+				<Style Selector="^:pointerover /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
+					<Setter Property="Foreground" Value="{DynamicResource ThemeForeground06}" />
+				</Style>
+				<!-- Selected and pressed state. -->
+				<Style Selector="^:pressed /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource ThemeColor07}" />
+					<Setter Property="Foreground" Value="{DynamicResource ThemeForeground07}" />
+				</Style>
+				<!-- Selected and disabled state. -->
+				<Style Selector="^:disabled /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource ThemeColor03}" />
+					<Setter Property="Foreground" Value="{DynamicResource ThemeForeground03}" />
+				</Style>
+			</Style>
+		</Style>
+		<!-- Code Template - /Color -->
+
+		<!-- Generated Code - Colors -->
+		<Style Selector="^[(Theme.Color)=Amber]">
+			<!-- Disabled state. -->
+			<Style Selector="^:disabled /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Amber03}" />
+				<Setter Property="Foreground" Value="{DynamicResource AmberText03}" />
+			</Style>
+
+			<!-- Pointer-over state. -->
+			<Style Selector="^:pointerover /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Amber06}" />
+				<Setter Property="Foreground" Value="{DynamicResource AmberText06}" />
+			</Style>
+
+			<!-- Pressed state. -->
+			<Style Selector="^:pressed /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Amber07}" />
+				<Setter Property="Foreground" Value="{DynamicResource AmberText07}" />
+			</Style>
+
+			<!-- Selected state. -->
+			<Style Selector="^:selected">
+				<!-- Default selected state. -->
+				<Style Selector="^ /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Amber05}" />
+					<Setter Property="Foreground" Value="{DynamicResource AmberText05}" />
+				</Style>
+				<!-- Selected and pointer-over state. -->
+				<Style Selector="^:pointerover /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Amber06}" />
+					<Setter Property="Foreground" Value="{DynamicResource AmberText06}" />
+				</Style>
+				<!-- Selected and pressed state. -->
+				<Style Selector="^:pressed /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Amber07}" />
+					<Setter Property="Foreground" Value="{DynamicResource AmberText07}" />
+				</Style>
+				<!-- Selected and disabled state. -->
+				<Style Selector="^:disabled /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Amber03}" />
+					<Setter Property="Foreground" Value="{DynamicResource AmberText03}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Blue]">
+			<!-- Disabled state. -->
+			<Style Selector="^:disabled /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Blue03}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueText03}" />
+			</Style>
+
+			<!-- Pointer-over state. -->
+			<Style Selector="^:pointerover /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Blue06}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueText06}" />
+			</Style>
+
+			<!-- Pressed state. -->
+			<Style Selector="^:pressed /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Blue07}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueText07}" />
+			</Style>
+
+			<!-- Selected state. -->
+			<Style Selector="^:selected">
+				<!-- Default selected state. -->
+				<Style Selector="^ /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Blue05}" />
+					<Setter Property="Foreground" Value="{DynamicResource BlueText05}" />
+				</Style>
+				<!-- Selected and pointer-over state. -->
+				<Style Selector="^:pointerover /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Blue06}" />
+					<Setter Property="Foreground" Value="{DynamicResource BlueText06}" />
+				</Style>
+				<!-- Selected and pressed state. -->
+				<Style Selector="^:pressed /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Blue07}" />
+					<Setter Property="Foreground" Value="{DynamicResource BlueText07}" />
+				</Style>
+				<!-- Selected and disabled state. -->
+				<Style Selector="^:disabled /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Blue03}" />
+					<Setter Property="Foreground" Value="{DynamicResource BlueText03}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=BlueGray]">
+			<!-- Disabled state. -->
+			<Style Selector="^:disabled /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource BlueGray03}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueGrayText03}" />
+			</Style>
+
+			<!-- Pointer-over state. -->
+			<Style Selector="^:pointerover /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource BlueGray06}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueGrayText06}" />
+			</Style>
+
+			<!-- Pressed state. -->
+			<Style Selector="^:pressed /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource BlueGray07}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueGrayText07}" />
+			</Style>
+
+			<!-- Selected state. -->
+			<Style Selector="^:selected">
+				<!-- Default selected state. -->
+				<Style Selector="^ /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource BlueGray05}" />
+					<Setter Property="Foreground" Value="{DynamicResource BlueGrayText05}" />
+				</Style>
+				<!-- Selected and pointer-over state. -->
+				<Style Selector="^:pointerover /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource BlueGray06}" />
+					<Setter Property="Foreground" Value="{DynamicResource BlueGrayText06}" />
+				</Style>
+				<!-- Selected and pressed state. -->
+				<Style Selector="^:pressed /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource BlueGray07}" />
+					<Setter Property="Foreground" Value="{DynamicResource BlueGrayText07}" />
+				</Style>
+				<!-- Selected and disabled state. -->
+				<Style Selector="^:disabled /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource BlueGray03}" />
+					<Setter Property="Foreground" Value="{DynamicResource BlueGrayText03}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Brown]">
+			<!-- Disabled state. -->
+			<Style Selector="^:disabled /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Brown03}" />
+				<Setter Property="Foreground" Value="{DynamicResource BrownText03}" />
+			</Style>
+
+			<!-- Pointer-over state. -->
+			<Style Selector="^:pointerover /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Brown06}" />
+				<Setter Property="Foreground" Value="{DynamicResource BrownText06}" />
+			</Style>
+
+			<!-- Pressed state. -->
+			<Style Selector="^:pressed /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Brown07}" />
+				<Setter Property="Foreground" Value="{DynamicResource BrownText07}" />
+			</Style>
+
+			<!-- Selected state. -->
+			<Style Selector="^:selected">
+				<!-- Default selected state. -->
+				<Style Selector="^ /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Brown05}" />
+					<Setter Property="Foreground" Value="{DynamicResource BrownText05}" />
+				</Style>
+				<!-- Selected and pointer-over state. -->
+				<Style Selector="^:pointerover /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Brown06}" />
+					<Setter Property="Foreground" Value="{DynamicResource BrownText06}" />
+				</Style>
+				<!-- Selected and pressed state. -->
+				<Style Selector="^:pressed /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Brown07}" />
+					<Setter Property="Foreground" Value="{DynamicResource BrownText07}" />
+				</Style>
+				<!-- Selected and disabled state. -->
+				<Style Selector="^:disabled /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Brown03}" />
+					<Setter Property="Foreground" Value="{DynamicResource BrownText03}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepOrange]">
+			<!-- Disabled state. -->
+			<Style Selector="^:disabled /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource DeepOrange03}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText03}" />
+			</Style>
+
+			<!-- Pointer-over state. -->
+			<Style Selector="^:pointerover /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource DeepOrange06}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText06}" />
+			</Style>
+
+			<!-- Pressed state. -->
+			<Style Selector="^:pressed /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource DeepOrange07}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText07}" />
+			</Style>
+
+			<!-- Selected state. -->
+			<Style Selector="^:selected">
+				<!-- Default selected state. -->
+				<Style Selector="^ /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource DeepOrange05}" />
+					<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText05}" />
+				</Style>
+				<!-- Selected and pointer-over state. -->
+				<Style Selector="^:pointerover /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource DeepOrange06}" />
+					<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText06}" />
+				</Style>
+				<!-- Selected and pressed state. -->
+				<Style Selector="^:pressed /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource DeepOrange07}" />
+					<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText07}" />
+				</Style>
+				<!-- Selected and disabled state. -->
+				<Style Selector="^:disabled /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource DeepOrange03}" />
+					<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText03}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepPurple]">
+			<!-- Disabled state. -->
+			<Style Selector="^:disabled /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource DeepPurple03}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText03}" />
+			</Style>
+
+			<!-- Pointer-over state. -->
+			<Style Selector="^:pointerover /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource DeepPurple06}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText06}" />
+			</Style>
+
+			<!-- Pressed state. -->
+			<Style Selector="^:pressed /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource DeepPurple07}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText07}" />
+			</Style>
+
+			<!-- Selected state. -->
+			<Style Selector="^:selected">
+				<!-- Default selected state. -->
+				<Style Selector="^ /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource DeepPurple05}" />
+					<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText05}" />
+				</Style>
+				<!-- Selected and pointer-over state. -->
+				<Style Selector="^:pointerover /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource DeepPurple06}" />
+					<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText06}" />
+				</Style>
+				<!-- Selected and pressed state. -->
+				<Style Selector="^:pressed /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource DeepPurple07}" />
+					<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText07}" />
+				</Style>
+				<!-- Selected and disabled state. -->
+				<Style Selector="^:disabled /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource DeepPurple03}" />
+					<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText03}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Gray]">
+			<!-- Disabled state. -->
+			<Style Selector="^:disabled /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Gray03}" />
+				<Setter Property="Foreground" Value="{DynamicResource GrayText03}" />
+			</Style>
+
+			<!-- Pointer-over state. -->
+			<Style Selector="^:pointerover /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Gray06}" />
+				<Setter Property="Foreground" Value="{DynamicResource GrayText06}" />
+			</Style>
+
+			<!-- Pressed state. -->
+			<Style Selector="^:pressed /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Gray07}" />
+				<Setter Property="Foreground" Value="{DynamicResource GrayText07}" />
+			</Style>
+
+			<!-- Selected state. -->
+			<Style Selector="^:selected">
+				<!-- Default selected state. -->
+				<Style Selector="^ /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Gray05}" />
+					<Setter Property="Foreground" Value="{DynamicResource GrayText05}" />
+				</Style>
+				<!-- Selected and pointer-over state. -->
+				<Style Selector="^:pointerover /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Gray06}" />
+					<Setter Property="Foreground" Value="{DynamicResource GrayText06}" />
+				</Style>
+				<!-- Selected and pressed state. -->
+				<Style Selector="^:pressed /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Gray07}" />
+					<Setter Property="Foreground" Value="{DynamicResource GrayText07}" />
+				</Style>
+				<!-- Selected and disabled state. -->
+				<Style Selector="^:disabled /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Gray03}" />
+					<Setter Property="Foreground" Value="{DynamicResource GrayText03}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Green]">
+			<!-- Disabled state. -->
+			<Style Selector="^:disabled /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Green03}" />
+				<Setter Property="Foreground" Value="{DynamicResource GreenText03}" />
+			</Style>
+
+			<!-- Pointer-over state. -->
+			<Style Selector="^:pointerover /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Green06}" />
+				<Setter Property="Foreground" Value="{DynamicResource GreenText06}" />
+			</Style>
+
+			<!-- Pressed state. -->
+			<Style Selector="^:pressed /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Green07}" />
+				<Setter Property="Foreground" Value="{DynamicResource GreenText07}" />
+			</Style>
+
+			<!-- Selected state. -->
+			<Style Selector="^:selected">
+				<!-- Default selected state. -->
+				<Style Selector="^ /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Green05}" />
+					<Setter Property="Foreground" Value="{DynamicResource GreenText05}" />
+				</Style>
+				<!-- Selected and pointer-over state. -->
+				<Style Selector="^:pointerover /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Green06}" />
+					<Setter Property="Foreground" Value="{DynamicResource GreenText06}" />
+				</Style>
+				<!-- Selected and pressed state. -->
+				<Style Selector="^:pressed /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Green07}" />
+					<Setter Property="Foreground" Value="{DynamicResource GreenText07}" />
+				</Style>
+				<!-- Selected and disabled state. -->
+				<Style Selector="^:disabled /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Green03}" />
+					<Setter Property="Foreground" Value="{DynamicResource GreenText03}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Indigo]">
+			<!-- Disabled state. -->
+			<Style Selector="^:disabled /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Indigo03}" />
+				<Setter Property="Foreground" Value="{DynamicResource IndigoText03}" />
+			</Style>
+
+			<!-- Pointer-over state. -->
+			<Style Selector="^:pointerover /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Indigo06}" />
+				<Setter Property="Foreground" Value="{DynamicResource IndigoText06}" />
+			</Style>
+
+			<!-- Pressed state. -->
+			<Style Selector="^:pressed /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Indigo07}" />
+				<Setter Property="Foreground" Value="{DynamicResource IndigoText07}" />
+			</Style>
+
+			<!-- Selected state. -->
+			<Style Selector="^:selected">
+				<!-- Default selected state. -->
+				<Style Selector="^ /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Indigo05}" />
+					<Setter Property="Foreground" Value="{DynamicResource IndigoText05}" />
+				</Style>
+				<!-- Selected and pointer-over state. -->
+				<Style Selector="^:pointerover /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Indigo06}" />
+					<Setter Property="Foreground" Value="{DynamicResource IndigoText06}" />
+				</Style>
+				<!-- Selected and pressed state. -->
+				<Style Selector="^:pressed /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Indigo07}" />
+					<Setter Property="Foreground" Value="{DynamicResource IndigoText07}" />
+				</Style>
+				<!-- Selected and disabled state. -->
+				<Style Selector="^:disabled /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Indigo03}" />
+					<Setter Property="Foreground" Value="{DynamicResource IndigoText03}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Orange]">
+			<!-- Disabled state. -->
+			<Style Selector="^:disabled /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Orange03}" />
+				<Setter Property="Foreground" Value="{DynamicResource OrangeText03}" />
+			</Style>
+
+			<!-- Pointer-over state. -->
+			<Style Selector="^:pointerover /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Orange06}" />
+				<Setter Property="Foreground" Value="{DynamicResource OrangeText06}" />
+			</Style>
+
+			<!-- Pressed state. -->
+			<Style Selector="^:pressed /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Orange07}" />
+				<Setter Property="Foreground" Value="{DynamicResource OrangeText07}" />
+			</Style>
+
+			<!-- Selected state. -->
+			<Style Selector="^:selected">
+				<!-- Default selected state. -->
+				<Style Selector="^ /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Orange05}" />
+					<Setter Property="Foreground" Value="{DynamicResource OrangeText05}" />
+				</Style>
+				<!-- Selected and pointer-over state. -->
+				<Style Selector="^:pointerover /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Orange06}" />
+					<Setter Property="Foreground" Value="{DynamicResource OrangeText06}" />
+				</Style>
+				<!-- Selected and pressed state. -->
+				<Style Selector="^:pressed /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Orange07}" />
+					<Setter Property="Foreground" Value="{DynamicResource OrangeText07}" />
+				</Style>
+				<!-- Selected and disabled state. -->
+				<Style Selector="^:disabled /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Orange03}" />
+					<Setter Property="Foreground" Value="{DynamicResource OrangeText03}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Pink]">
+			<!-- Disabled state. -->
+			<Style Selector="^:disabled /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Pink03}" />
+				<Setter Property="Foreground" Value="{DynamicResource PinkText03}" />
+			</Style>
+
+			<!-- Pointer-over state. -->
+			<Style Selector="^:pointerover /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Pink06}" />
+				<Setter Property="Foreground" Value="{DynamicResource PinkText06}" />
+			</Style>
+
+			<!-- Pressed state. -->
+			<Style Selector="^:pressed /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Pink07}" />
+				<Setter Property="Foreground" Value="{DynamicResource PinkText07}" />
+			</Style>
+
+			<!-- Selected state. -->
+			<Style Selector="^:selected">
+				<!-- Default selected state. -->
+				<Style Selector="^ /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Pink05}" />
+					<Setter Property="Foreground" Value="{DynamicResource PinkText05}" />
+				</Style>
+				<!-- Selected and pointer-over state. -->
+				<Style Selector="^:pointerover /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Pink06}" />
+					<Setter Property="Foreground" Value="{DynamicResource PinkText06}" />
+				</Style>
+				<!-- Selected and pressed state. -->
+				<Style Selector="^:pressed /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Pink07}" />
+					<Setter Property="Foreground" Value="{DynamicResource PinkText07}" />
+				</Style>
+				<!-- Selected and disabled state. -->
+				<Style Selector="^:disabled /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Pink03}" />
+					<Setter Property="Foreground" Value="{DynamicResource PinkText03}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Purple]">
+			<!-- Disabled state. -->
+			<Style Selector="^:disabled /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Purple03}" />
+				<Setter Property="Foreground" Value="{DynamicResource PurpleText03}" />
+			</Style>
+
+			<!-- Pointer-over state. -->
+			<Style Selector="^:pointerover /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Purple06}" />
+				<Setter Property="Foreground" Value="{DynamicResource PurpleText06}" />
+			</Style>
+
+			<!-- Pressed state. -->
+			<Style Selector="^:pressed /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Purple07}" />
+				<Setter Property="Foreground" Value="{DynamicResource PurpleText07}" />
+			</Style>
+
+			<!-- Selected state. -->
+			<Style Selector="^:selected">
+				<!-- Default selected state. -->
+				<Style Selector="^ /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Purple05}" />
+					<Setter Property="Foreground" Value="{DynamicResource PurpleText05}" />
+				</Style>
+				<!-- Selected and pointer-over state. -->
+				<Style Selector="^:pointerover /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Purple06}" />
+					<Setter Property="Foreground" Value="{DynamicResource PurpleText06}" />
+				</Style>
+				<!-- Selected and pressed state. -->
+				<Style Selector="^:pressed /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Purple07}" />
+					<Setter Property="Foreground" Value="{DynamicResource PurpleText07}" />
+				</Style>
+				<!-- Selected and disabled state. -->
+				<Style Selector="^:disabled /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Purple03}" />
+					<Setter Property="Foreground" Value="{DynamicResource PurpleText03}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Red]">
+			<!-- Disabled state. -->
+			<Style Selector="^:disabled /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Red03}" />
+				<Setter Property="Foreground" Value="{DynamicResource RedText03}" />
+			</Style>
+
+			<!-- Pointer-over state. -->
+			<Style Selector="^:pointerover /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Red06}" />
+				<Setter Property="Foreground" Value="{DynamicResource RedText06}" />
+			</Style>
+
+			<!-- Pressed state. -->
+			<Style Selector="^:pressed /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Red07}" />
+				<Setter Property="Foreground" Value="{DynamicResource RedText07}" />
+			</Style>
+
+			<!-- Selected state. -->
+			<Style Selector="^:selected">
+				<!-- Default selected state. -->
+				<Style Selector="^ /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Red05}" />
+					<Setter Property="Foreground" Value="{DynamicResource RedText05}" />
+				</Style>
+				<!-- Selected and pointer-over state. -->
+				<Style Selector="^:pointerover /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Red06}" />
+					<Setter Property="Foreground" Value="{DynamicResource RedText06}" />
+				</Style>
+				<!-- Selected and pressed state. -->
+				<Style Selector="^:pressed /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Red07}" />
+					<Setter Property="Foreground" Value="{DynamicResource RedText07}" />
+				</Style>
+				<!-- Selected and disabled state. -->
+				<Style Selector="^:disabled /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Red03}" />
+					<Setter Property="Foreground" Value="{DynamicResource RedText03}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Teal]">
+			<!-- Disabled state. -->
+			<Style Selector="^:disabled /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Teal03}" />
+				<Setter Property="Foreground" Value="{DynamicResource TealText03}" />
+			</Style>
+
+			<!-- Pointer-over state. -->
+			<Style Selector="^:pointerover /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Teal06}" />
+				<Setter Property="Foreground" Value="{DynamicResource TealText06}" />
+			</Style>
+
+			<!-- Pressed state. -->
+			<Style Selector="^:pressed /template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Teal07}" />
+				<Setter Property="Foreground" Value="{DynamicResource TealText07}" />
+			</Style>
+
+			<!-- Selected state. -->
+			<Style Selector="^:selected">
+				<!-- Default selected state. -->
+				<Style Selector="^ /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Teal05}" />
+					<Setter Property="Foreground" Value="{DynamicResource TealText05}" />
+				</Style>
+				<!-- Selected and pointer-over state. -->
+				<Style Selector="^:pointerover /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Teal06}" />
+					<Setter Property="Foreground" Value="{DynamicResource TealText06}" />
+				</Style>
+				<!-- Selected and pressed state. -->
+				<Style Selector="^:pressed /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Teal07}" />
+					<Setter Property="Foreground" Value="{DynamicResource TealText07}" />
+				</Style>
+				<!-- Selected and disabled state. -->
+				<Style Selector="^:disabled /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Teal03}" />
+					<Setter Property="Foreground" Value="{DynamicResource TealText03}" />
+				</Style>
+			</Style>
+		</Style>
+		<!-- Generated Code - /Colors -->
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="600">
+			<PreviewCodeSnippet.ItemTemplate>
+				<DataTemplate DataType="ThemeColor">
+					<ComboBox Theme.Color="{Binding}"
+							SelectedIndex="0"
+							Width="160">
+						<ComboBoxItem Content="{Binding}" />
+						<ComboBoxItem>Item 2</ComboBoxItem>
+						<ComboBoxItem>Item 3</ComboBoxItem>
+					</ComboBox>
+				</DataTemplate>
+			</PreviewCodeSnippet.ItemTemplate>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

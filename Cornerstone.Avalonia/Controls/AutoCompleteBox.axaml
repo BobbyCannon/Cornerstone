@@ -1,0 +1,85 @@
+<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:generic="using:System.Collections.Generic"
+		x:ClassModifier="internal">
+	<Design.PreviewWith>
+		<Border Padding="20" Width="300" Height="600">
+			<AutoCompleteBox 
+					IsDropDownOpen="True"
+					Text="Al">
+				<AutoCompleteBox.ItemsSource>
+					<generic:List x:TypeArguments="x:String">
+						Alabama
+						Alaska
+						Arizona
+						Arkansas
+						California
+						Colorado
+						Connecticut
+						Delaware
+					</generic:List>
+				</AutoCompleteBox.ItemsSource>
+			</AutoCompleteBox>
+		</Border>
+	</Design.PreviewWith>
+	<ControlTheme x:Key="{x:Type AutoCompleteBox}" TargetType="AutoCompleteBox">
+		<Setter Property="Theme.Color" Value="Current" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="Background" Value="{DynamicResource Background04}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+		<Setter Property="BorderThickness" Value="{DynamicResource ControlBorderThickness}" />
+		<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+		<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+		<Setter Property="Padding" Value="0" />
+		<Setter Property="MaxDropDownHeight" Value="200" />
+		<Setter Property="HorizontalAlignment" Value="Stretch" />
+		<Setter Property="VerticalAlignment" Value="Top" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Grid Name="PART_LayoutRoot">
+					<TextBox Name="PART_TextBox"
+							Theme.Color="{TemplateBinding Theme.Color}"
+							Watermark="{TemplateBinding Watermark}"
+							Width="{TemplateBinding Width}"
+							Foreground="{TemplateBinding Foreground}"
+							Background="{TemplateBinding Background}"
+							BorderBrush="{TemplateBinding BorderBrush}"
+							BorderThickness="{TemplateBinding BorderThickness}"
+							CornerRadius="{TemplateBinding CornerRadius}"
+							FontSize="{TemplateBinding FontSize}"
+							FontFamily="{TemplateBinding FontFamily}"
+							FontWeight="{TemplateBinding FontWeight}"
+							Padding="{TemplateBinding Padding}"
+							Margin="0"
+							InnerLeftContent="{TemplateBinding InnerLeftContent}"
+							InnerRightContent="{TemplateBinding InnerRightContent}"
+							DataValidationErrors.Errors="{TemplateBinding (DataValidationErrors.Errors)}"
+							TextAlignment="Center" />
+					<Popup
+							Name="PART_Popup"
+							WindowManagerAddShadowHint="False"
+							MinWidth="{Binding Bounds.Width, RelativeSource={RelativeSource TemplatedParent}}"
+							MaxHeight="{TemplateBinding MaxDropDownHeight}"
+							IsLightDismissEnabled="True"
+							PlacementTarget="{TemplateBinding}">
+						<Border
+								Name="PART_SuggestionsContainer"
+								BorderBrush="{TemplateBinding BorderBrush}"
+								BorderThickness="{TemplateBinding BorderThickness}"
+								Background="{TemplateBinding Background}"
+								CornerRadius="{TemplateBinding CornerRadius}">
+							<ListBox Theme.Color="{TemplateBinding Theme.Color}"
+									Name="PART_SelectingItemsControl"
+									BorderThickness="0"
+									Background="Transparent"
+									ItemTemplate="{TemplateBinding ItemTemplate}"
+									Margin="4,2" />
+						</Border>
+					</Popup>
+				</Grid>
+			</ControlTemplate>
+		</Setter>
+	</ControlTheme>
+</ResourceDictionary>

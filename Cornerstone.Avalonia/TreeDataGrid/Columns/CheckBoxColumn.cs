@@ -1,0 +1,114 @@
+﻿#region References
+
+using Avalonia.Controls;
+using Avalonia.Layout;
+using Cornerstone.Avalonia.TreeDataGrid.Experimental.Data;
+using Cornerstone.Avalonia.TreeDataGrid.Models;
+using System;
+using System.Linq.Expressions;
+
+#endregion
+
+namespace Cornerstone.Avalonia.TreeDataGrid.Columns;
+
+/// <summary>
+/// A column in an <see cref="ITreeDataGridSource" /> which displays a checkbox.
+/// </summary>
+/// <typeparam name="TModel"> The model type. </typeparam>
+public class CheckBoxColumn<TModel> : ColumnBase<TModel, bool?>
+	where TModel : class
+{
+	#region Constructors
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="CheckBoxColumn{TModel}" /> class.
+	/// </summary>
+	/// <param name="header"> The column header. </param>
+	/// <param name="getter">
+	/// An expression which given a row model, returns a boolean cell value for the column.
+	/// </param>
+	/// <param name="setter">
+	/// A method which given a row model and a cell value, writes the cell value to the
+	/// row model. If not supplied then the column will be read-only.
+	/// </param>
+	/// <param name="width">
+	/// The column width. If null defaults to <see cref="GridLength.Auto" />.
+	/// </param>
+	/// <param name="horizontalAlignment"> An optional horizontal alignment </param>
+	/// <param name="options"> Additional column options. </param>
+	public CheckBoxColumn(
+		object header,
+		Expression<Func<TModel, bool>> getter,
+		Action<TModel, bool> setter = null,
+		GridLength? width = null,
+		HorizontalAlignment? horizontalAlignment = null,
+		CheckBoxColumnOptions<TModel> options = null
+	) : base(header, ToNullable(getter), ToNullable(getter, setter), width, horizontalAlignment, options)
+	{
+	}
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="CheckBoxColumn{TModel}" /> class that
+	/// displays a three-state check box.
+	/// </summary>
+	/// <param name="header"> The column header. </param>
+	/// <param name="getter">
+	/// An expression which given a row model, returns a nullable boolean cell value for the
+	/// column.
+	/// </param>
+	/// <param name="setter">
+	/// A method which given a row model and a cell value, writes the cell value to the
+	/// row model. If not supplied then the column will be read-only.
+	/// </param>
+	/// <param name="width">
+	/// The column width. If null defaults to <see cref="GridLength.Auto" />.
+	/// </param>
+	/// <param name="horizontalAlignment"> An optional horizontal alignment </param>
+	/// <param name="options"> Additional column options. </param>
+	public CheckBoxColumn(
+		object header,
+		Expression<Func<TModel, bool?>> getter,
+		Action<TModel, bool?> setter = null,
+		GridLength? width = null,
+		HorizontalAlignment? horizontalAlignment = null,
+		CheckBoxColumnOptions<TModel> options = null
+	) : base(header, getter, setter, width, horizontalAlignment, options ?? new())
+	{
+		IsThreeState = true;
+	}
+
+	#endregion
+
+	#region Properties
+
+	public bool IsThreeState { get; }
+
+	#endregion
+
+	#region Methods
+
+	public override ICell CreateCell(IRow<TModel> row)
+	{
+		var binding = CreateBindingExpression(row.Model);
+		return new CheckBoxCell(binding, binding, Binding.Write is null, IsThreeState);
+	}
+
+	private static Func<TModel, bool?> ToNullable(Expression<Func<TModel, bool>> getter)
+	{
+		var c = getter.Compile();
+		return x => c(x);
+	}
+
+	private static TypedBinding<TModel, bool?> ToNullable(
+		Expression<Func<TModel, bool>> getter,
+		Action<TModel, bool> setter)
+	{
+		var g = Expression.Lambda<Func<TModel, bool?>>(
+			Expression.Convert(getter.Body, typeof(bool?)),
+			getter.Parameters);
+
+		return setter is null ? TypedBinding<TModel>.OneWay(g) : TypedBinding<TModel>.TwoWay(g, (m, v) => setter(m, v ?? false));
+	}
+
+	#endregion
+}

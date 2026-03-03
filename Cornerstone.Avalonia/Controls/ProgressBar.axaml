@@ -1,0 +1,248 @@
+﻿<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+
+	<!-- 
+		Indeterminate bug: https://github.com/AvaloniaUI/Avalonia/pull/14684
+		Removed animations as it will crash due to bug listed above.
+	-->
+
+	<ControlTheme x:Key="{x:Type ProgressBar}" TargetType="ProgressBar">
+		<Setter Property="Foreground" Value="{DynamicResource ProgressBarValueFill}" />
+		<Setter Property="Background" Value="{DynamicResource Background04}" />
+		<Setter Property="BorderThickness" Value="{DynamicResource ProgressBarBorderThickness}" />
+		<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource ProgressBarBorderBrush}" />
+		<Setter Property="VerticalAlignment" Value="Center" />
+		<Setter Property="Template">
+			<ControlTemplate TargetType="ProgressBar">
+				<Border
+						x:Name="ProgressBarRoot"
+						Background="{TemplateBinding Background}"
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}"
+						ClipToBounds="True"
+						CornerRadius="{TemplateBinding CornerRadius}">
+					<Panel>
+						<Panel
+								x:Name="DeterminateRoot"
+								Opacity="1">
+							<Panel.Transitions>
+								<Transitions>
+									<DoubleTransition Property="Opacity" Duration="0:0:0.197" />
+								</Transitions>
+							</Panel.Transitions>
+							<Border
+									x:Name="PART_Indicator"
+									Margin="{TemplateBinding Padding}"
+									Background="{TemplateBinding Foreground}"
+									CornerRadius="{TemplateBinding CornerRadius}" />
+						</Panel>
+						<Panel
+								x:Name="IndeterminateRoot"
+								Opacity="0">
+							<Panel.Transitions>
+								<Transitions>
+									<DoubleTransition Property="Opacity" Duration="0:0:0.197" />
+								</Transitions>
+							</Panel.Transitions>
+							<Border
+									x:Name="IndeterminateProgressBarIndicator"
+									Margin="{TemplateBinding Padding}"
+									Background="{TemplateBinding Foreground}"
+									CornerRadius="{TemplateBinding CornerRadius}" />
+							<Border
+									x:Name="IndeterminateProgressBarIndicator2"
+									Margin="{TemplateBinding Padding}"
+									Background="{TemplateBinding Foreground}"
+									CornerRadius="{TemplateBinding CornerRadius}" />
+						</Panel>
+						<LayoutTransformControl
+								x:Name="PART_LayoutTransformControl"
+								HorizontalAlignment="Center"
+								VerticalAlignment="Center"
+								Margin="2"
+								IsVisible="{TemplateBinding ShowProgressText}">
+							<TextBlock Foreground="{DynamicResource ProgressBarForeground}"
+									Margin="0,0,0,2"
+									VerticalAlignment="Center">
+								<TextBlock.Text>
+									<MultiBinding Converter="{StaticResource StringFormatConverter}">
+										<TemplateBinding Property="ProgressTextFormat" />
+										<Binding Path="Value" RelativeSource="{RelativeSource TemplatedParent}" />
+										<TemplateBinding Property="Percentage" />
+										<TemplateBinding Property="Minimum" />
+										<TemplateBinding Property="Maximum" />
+									</MultiBinding>
+								</TextBlock.Text>
+							</TextBlock>
+						</LayoutTransformControl>
+					</Panel>
+				</Border>
+			</ControlTemplate>
+		</Setter>
+		<Style Selector="^:disabled">
+			<Setter Property="Foreground" Value="{DynamicResource ProgressBarValueFillDisabled}" />
+			<Setter Property="Background" Value="{DynamicResource ProgressBarBackgroundDisabled}" />
+		</Style>
+
+		<!-- Horizontal state. -->
+		<Style Selector="^:horizontal /template/ Border#PART_Indicator">
+			<Setter Property="HorizontalAlignment" Value="Left" />
+			<Setter Property="VerticalAlignment" Value="Stretch" />
+		</Style>
+		<Style Selector="^:horizontal">
+			<Setter Property="MinWidth" Value="50" />
+			<Setter Property="MinHeight" Value="8" />
+		</Style>
+
+		<!-- Vertical state. -->
+		<Style Selector="^:vertical /template/ Border#PART_Indicator">
+			<Setter Property="HorizontalAlignment" Value="Stretch" />
+			<Setter Property="VerticalAlignment" Value="Bottom" />
+		</Style>
+		<Style Selector="^:vertical">
+			<Setter Property="MinWidth" Value="8" />
+			<Setter Property="MinHeight" Value="50" />
+		</Style>
+		<Style Selector="^:vertical /template/ LayoutTransformControl#PART_LayoutTransformControl">
+			<Setter Property="LayoutTransform">
+				<Setter.Value>
+					<RotateTransform Angle="90" />
+				</Setter.Value>
+			</Setter>
+		</Style>
+
+		<!-- Indeterminate state. -->
+		<Style Selector="^:indeterminate /template/ Panel#DeterminateRoot">
+			<Setter Property="Opacity" Value="0" />
+		</Style>
+		<Style Selector="^:indeterminate /template/ Panel#IndeterminateRoot">
+			<Setter Property="Opacity" Value="1" />
+		</Style>
+
+		<!-- Code Template - Color -->
+		<Style Selector="^[(Theme.Color)=Current]">
+			<Setter Property="Foreground" Value="{DynamicResource ThemeColor05}" />
+			<Style Selector="^:disabled">
+				<Setter Property="Foreground" Value="{DynamicResource ThemeColor03}" />
+			</Style>
+		</Style>
+		<!-- Code Template - /Color -->
+
+		<!-- Generated Code - Colors -->
+		<Style Selector="^[(Theme.Color)=Amber]">
+			<Setter Property="Foreground" Value="{DynamicResource Amber05}" />
+			<Style Selector="^:disabled">
+				<Setter Property="Foreground" Value="{DynamicResource Amber03}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Blue]">
+			<Setter Property="Foreground" Value="{DynamicResource Blue05}" />
+			<Style Selector="^:disabled">
+				<Setter Property="Foreground" Value="{DynamicResource Blue03}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=BlueGray]">
+			<Setter Property="Foreground" Value="{DynamicResource BlueGray05}" />
+			<Style Selector="^:disabled">
+				<Setter Property="Foreground" Value="{DynamicResource BlueGray03}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Brown]">
+			<Setter Property="Foreground" Value="{DynamicResource Brown05}" />
+			<Style Selector="^:disabled">
+				<Setter Property="Foreground" Value="{DynamicResource Brown03}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepOrange]">
+			<Setter Property="Foreground" Value="{DynamicResource DeepOrange05}" />
+			<Style Selector="^:disabled">
+				<Setter Property="Foreground" Value="{DynamicResource DeepOrange03}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepPurple]">
+			<Setter Property="Foreground" Value="{DynamicResource DeepPurple05}" />
+			<Style Selector="^:disabled">
+				<Setter Property="Foreground" Value="{DynamicResource DeepPurple03}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Gray]">
+			<Setter Property="Foreground" Value="{DynamicResource Gray05}" />
+			<Style Selector="^:disabled">
+				<Setter Property="Foreground" Value="{DynamicResource Gray03}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Green]">
+			<Setter Property="Foreground" Value="{DynamicResource Green05}" />
+			<Style Selector="^:disabled">
+				<Setter Property="Foreground" Value="{DynamicResource Green03}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Indigo]">
+			<Setter Property="Foreground" Value="{DynamicResource Indigo05}" />
+			<Style Selector="^:disabled">
+				<Setter Property="Foreground" Value="{DynamicResource Indigo03}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Orange]">
+			<Setter Property="Foreground" Value="{DynamicResource Orange05}" />
+			<Style Selector="^:disabled">
+				<Setter Property="Foreground" Value="{DynamicResource Orange03}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Pink]">
+			<Setter Property="Foreground" Value="{DynamicResource Pink05}" />
+			<Style Selector="^:disabled">
+				<Setter Property="Foreground" Value="{DynamicResource Pink03}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Purple]">
+			<Setter Property="Foreground" Value="{DynamicResource Purple05}" />
+			<Style Selector="^:disabled">
+				<Setter Property="Foreground" Value="{DynamicResource Purple03}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Red]">
+			<Setter Property="Foreground" Value="{DynamicResource Red05}" />
+			<Style Selector="^:disabled">
+				<Setter Property="Foreground" Value="{DynamicResource Red03}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Teal]">
+			<Setter Property="Foreground" Value="{DynamicResource Teal05}" />
+			<Style Selector="^:disabled">
+				<Setter Property="Foreground" Value="{DynamicResource Teal03}" />
+			</Style>
+		</Style>
+		<!-- Generated Code - /Colors -->
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<Border Padding="20">
+			<StackPanel Orientation="Horizontal" Spacing="10">
+				<StackPanel Spacing="10">
+					<ProgressBar Theme.Color="Current" Value="3" Maximum="10" />
+					<ProgressBar Theme.Color="Red" Value="5" Maximum="10" />
+					<ProgressBar Theme.Color="Orange" Value="7.4" Maximum="10" />
+					<ProgressBar Value="5" Maximum="10" />
+					<ProgressBar Value="50" />
+					<ProgressBar Value="50" Minimum="25" Maximum="75" />
+					<ProgressBar IsIndeterminate="True" />
+					<ProgressBar ShowProgressText="True" Value="50" />
+					<ProgressBar
+							ShowProgressText="True"
+							ProgressTextFormat="\{1\} percent"
+							Minimum="50"
+							Maximum="100"
+							Value="70" />
+				</StackPanel>
+				<ProgressBar IsIndeterminate="True" Orientation="Vertical" />
+				<ProgressBar ShowProgressText="True" Value="50" Orientation="Vertical" />
+				<ProgressBar Theme.Color="Purple" ShowProgressText="True" Value="35" Orientation="Vertical" />
+				<ProgressBar Theme.Color="DeepPurple" ShowProgressText="True" Value="75" Orientation="Vertical" />
+			</StackPanel>
+		</Border>
+	</Design.PreviewWith>
+</ResourceDictionary>

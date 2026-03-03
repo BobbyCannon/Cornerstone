@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+	<PropertyGroup>
+		<TargetFrameworks>net10.0-browser</TargetFrameworks>
+		<OutputType>Exe</OutputType>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<PublishAot>false</PublishAot>
+		<PublishTrimmed>false</PublishTrimmed>
+		<TrimMode>none</TrimMode>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<Optimize>true</Optimize>
+		<OptimizationPreference>Speed</OptimizationPreference>
+		<PublishTrimmed>true</PublishTrimmed>
+		<TrimMode>full</TrimMode>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Avalonia.Browser" Version="$(AvaloniaVersion)" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Cornerstone.Sample\Cornerstone.Sample.csproj" />
+	</ItemGroup>
+	<Target Name="CopyFiles" AfterTargets="Build">
+		<Copy SourceFiles="$(ProjectDir)..\Cornerstone.Avalonia\Platforms\Browser\Cornerstone.Browser.css"
+				DestinationFiles="$(ProjectDir)wwwroot\css\Cornerstone.Browser.css" />
+		<Copy SourceFiles="$(ProjectDir)..\Cornerstone.Avalonia\Platforms\Browser\Cornerstone.Browser.js"
+				DestinationFiles="$(ProjectDir)wwwroot\Cornerstone.Browser.js" />
+	</Target>
+</Project>

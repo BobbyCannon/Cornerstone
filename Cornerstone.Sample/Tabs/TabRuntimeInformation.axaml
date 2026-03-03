@@ -1,0 +1,99 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignHeight="800" d:DesignWidth="460"
+		x:Class="Cornerstone.Sample.Tabs.TabRuntimeInformation"
+		x:DataType="tabs:TabRuntimeInformation"
+		x:Name="Root">
+	<!-- ReSharper disable Xaml.MissingGridIndex -->
+	<DockPanel>
+		<Grid DockPanel.Dock="Top" Margin="10">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="{x:Static tabs:TabRuntimeInformation.HeaderName}" />
+		</Grid>
+		<ScrollViewer Margin="0,20,0,0">
+			<StackPanel>
+				<StackPanel.Styles>
+					<Style Selector="TextBlock.InputName">
+						<Setter Property="Foreground" Value="{StaticResource Gray02}" />
+					</Style>
+				</StackPanel.Styles>
+				<!-- ReSharper disable Xaml.MissingGridIndex -->
+				<AutoGrid Classes="Input Compact"
+						ColumnDefinitions="*,*"
+						HorizontalAlignment="Center"
+						Margin="0,0,0,20"
+						RowCount="22">
+					<TextBlock Classes="InputName" Text="Startup" />
+					<TextBlock Classes="InputValue" Text="{Binding RuntimeInformation.ApplicationStartup}" />
+					<!--<TextBlock Classes="InputName" Text="dotnet" />
+					<TextBlock Classes="InputValue" Text="{Binding RuntimeInformation.DotNetRuntimeVersion}" />
+					<TextBlock Classes="InputName" Text="avalonia" />
+					<TextBlock Classes="InputValue" Text="{Binding RuntimeInformation.AvaloniaRuntimeVersion}" />-->
+
+					<TextBlock Classes="SubHeader"
+							Grid.ColumnSpan="2"
+							Foreground="{StaticResource Amber}"
+							HorizontalAlignment="Center"
+							Text="Application"
+							Margin="0,20,0,10" />
+					<TextBlock Classes="InputName" Text="Name" />
+					<TextBlock Classes="InputValue" Text="{Binding RuntimeInformation.ApplicationName}" />
+					<TextBlock Classes="InputName" Text="Development Build" />
+					<TextBlock Classes="InputValue" Text="{Binding RuntimeInformation.ApplicationIsDevelopmentBuild}" />
+					<TextBlock Classes="InputName" Text="Native Build" />
+					<TextBlock Classes="InputValue" Text="{Binding RuntimeInformation.ApplicationIsNativeBuild}" />
+					<TextBlock Classes="InputName"
+							Grid.ColumnSpan="2"
+							HorizontalAlignment="Center"
+							TextAlignment="Center"
+							Text="Data Location" />
+					<TextBlock Classes="InputValue"
+							Grid.ColumnSpan="2"
+							MaxWidth="230"
+							HorizontalAlignment="Center"
+							Text="{Binding RuntimeInformation.ApplicationDataLocation}"
+							TextAlignment="Center"
+							TextWrapping="Wrap" />
+					<!--<TextBlock Classes="InputName" Text="Arguments" />
+					<SelectableTextBlock Classes="InputValue"
+							Text="{Binding ApplicationArguments}"
+							TextWrapping="Wrap"
+							MaxWidth="220" />-->
+
+					<TextBlock Classes="SubHeader"
+							Grid.ColumnSpan="2"
+							Foreground="{StaticResource Amber}"
+							HorizontalAlignment="Center"
+							Text="Device"
+							Margin="0,20,0,10" />
+					<TextBlock Classes="InputName" Text="Platform" />
+					<TextBlock Classes="InputValue" Text="{Binding RuntimeInformation.DevicePlatform}" />
+					<TextBlock Classes="InputName" Text="Type" />
+					<TextBlock Classes="InputValue" Text="{Binding RuntimeInformation.DeviceType}" />
+
+					<TextBlock Classes="SubHeader"
+							Grid.ColumnSpan="2"
+							Foreground="{StaticResource Amber}"
+							HorizontalAlignment="Center"
+							Text="Platform Overrides"
+							Margin="0,20,0,10" />
+					<ItemsControl
+							ItemsSource="{Binding ElementName=Root, Path=PlatformOverrides}"
+							Grid.ColumnSpan="2">
+						<ItemsControl.ItemTemplate>
+							<DataTemplate>
+								<TextBlock Text="{Binding}"
+										TextAlignment="Center" />
+							</DataTemplate>
+						</ItemsControl.ItemTemplate>
+					</ItemsControl>
+				</AutoGrid>
+			</StackPanel>
+		</ScrollViewer>
+	</DockPanel>
+</UserControl>

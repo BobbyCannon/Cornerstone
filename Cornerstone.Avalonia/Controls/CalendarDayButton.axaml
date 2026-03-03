@@ -1,0 +1,987 @@
+﻿<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:system="clr-namespace:System;assembly=System.Runtime"
+		x:ClassModifier="internal">
+
+	<ControlTheme x:Key="{x:Type CalendarDayButton}" TargetType="CalendarDayButton">
+		<Setter Property="Theme.Color" Value="{Binding $parent[Calendar].(Theme.Color)}" />
+		<Setter Property="ClickMode" Value="Release" />
+		<Setter Property="MinWidth" Value="40" />
+		<Setter Property="MinHeight" Value="40" />
+		<Setter Property="Margin" Value="0" />
+		<Setter Property="Padding" Value="0" />
+		<Setter Property="Background" Value="{DynamicResource Background04}" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource Background04}" />
+		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="FontSize" Value="18" />
+		<Setter Property="ClipToBounds" Value="False" />
+		<Setter Property="HorizontalContentAlignment" Value="Center" />
+		<Setter Property="VerticalContentAlignment" Value="Center" />
+		<Setter Property="Tag" Value="{Binding $parent[Calendar].SelectionMode}" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Panel>
+					<Border x:Name="Root"
+							Background="{TemplateBinding Background}"
+							BorderBrush="{TemplateBinding BorderBrush}"
+							BorderThickness="{TemplateBinding BorderThickness}"
+							ClipToBounds="True">
+						<Grid>
+							<Ellipse x:Name="TodayHighlight"
+									IsVisible="False"
+									HorizontalAlignment="Stretch"
+									VerticalAlignment="Stretch"
+									Margin="4" />
+							<ContentControl x:Name="Content"
+									ContentTemplate="{TemplateBinding ContentTemplate}"
+									Content="{TemplateBinding Content}"
+									HorizontalAlignment="Center"
+									VerticalAlignment="Center"
+									FontSize="{TemplateBinding FontSize}" />
+						</Grid>
+					</Border>
+				</Panel>
+			</ControlTemplate>
+		</Setter>
+
+		<Style Selector="^:inactive">
+			<Style Selector="^ /template/ Border#Root">
+				<Setter Property="Background" Value="Transparent" />
+			</Style>
+			<Style Selector="^ /template/ ContentControl#Content">
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+
+		<Style Selector="^[(Theme.Color)=None]">
+			<Style Selector="^:pointerover /template/ Border#Root">
+				<Setter Property="Background" Value="{DynamicResource Background05}" />
+			</Style>
+			<Style Selector="^:today">
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="IsVisible" Value="True" />
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Height" Value="30" />
+						<Setter Property="Width" Value="30" />
+					</Style>
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background02}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^:selected">
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource Foreground09}" />
+				</Style>
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Background07}" />
+				</Style>
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Border#Root">
+						<Setter Property="Background" Value="{DynamicResource Background04}" />
+					</Style>
+					<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background03}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^[Tag=SingleDate][Tag=SingleRange][Tag=MultipleRange]:pressed">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Background08}" />
+				</Style>
+				<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Background05}" />
+				</Style>
+			</Style>
+			<Style Selector="^:blackout">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Background09}" />
+				</Style>
+
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource Foreground09}" />
+				</Style>
+			</Style>
+		</Style>
+
+		<!-- Code Template - Color -->
+		<Style Selector="^[(Theme.Color)=Current]">
+			<Style Selector="^:pointerover /template/ Border#Root">
+				<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
+			</Style>
+			<Style Selector="^:today">
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="IsVisible" Value="True" />
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Height" Value="30" />
+						<Setter Property="Width" Value="30" />
+					</Style>
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background02}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^:selected">
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource ThemeForeground09}" />
+				</Style>
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource ThemeColor07}" />
+				</Style>
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Border#Root">
+						<Setter Property="Background" Value="{DynamicResource ThemeColor04}" />
+					</Style>
+					<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background03}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^[Tag=SingleDate][Tag=SingleRange][Tag=MultipleRange]:pressed">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Background08}" />
+				</Style>
+				<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource ThemeColor05}" />
+				</Style>
+			</Style>
+			<Style Selector="^:blackout">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource ThemeColor09}" />
+				</Style>
+
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource ThemeForeground09}" />
+				</Style>
+			</Style>
+		</Style>
+		<!-- Code Template - /Color -->
+
+		<!-- Generated Code - Colors -->
+		<Style Selector="^[(Theme.Color)=Amber]">
+			<Style Selector="^:pointerover /template/ Border#Root">
+				<Setter Property="Background" Value="{DynamicResource Amber05}" />
+			</Style>
+			<Style Selector="^:today">
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="IsVisible" Value="True" />
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Height" Value="30" />
+						<Setter Property="Width" Value="30" />
+					</Style>
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background02}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^:selected">
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource AmberText09}" />
+				</Style>
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Amber07}" />
+				</Style>
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Border#Root">
+						<Setter Property="Background" Value="{DynamicResource Amber04}" />
+					</Style>
+					<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background03}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^[Tag=SingleDate][Tag=SingleRange][Tag=MultipleRange]:pressed">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Background08}" />
+				</Style>
+				<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Amber05}" />
+				</Style>
+			</Style>
+			<Style Selector="^:blackout">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Amber09}" />
+				</Style>
+
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource AmberText09}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Blue]">
+			<Style Selector="^:pointerover /template/ Border#Root">
+				<Setter Property="Background" Value="{DynamicResource Blue05}" />
+			</Style>
+			<Style Selector="^:today">
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="IsVisible" Value="True" />
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Height" Value="30" />
+						<Setter Property="Width" Value="30" />
+					</Style>
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background02}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^:selected">
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource BlueText09}" />
+				</Style>
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Blue07}" />
+				</Style>
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Border#Root">
+						<Setter Property="Background" Value="{DynamicResource Blue04}" />
+					</Style>
+					<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background03}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^[Tag=SingleDate][Tag=SingleRange][Tag=MultipleRange]:pressed">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Background08}" />
+				</Style>
+				<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Blue05}" />
+				</Style>
+			</Style>
+			<Style Selector="^:blackout">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Blue09}" />
+				</Style>
+
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource BlueText09}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=BlueGray]">
+			<Style Selector="^:pointerover /template/ Border#Root">
+				<Setter Property="Background" Value="{DynamicResource BlueGray05}" />
+			</Style>
+			<Style Selector="^:today">
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="IsVisible" Value="True" />
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Height" Value="30" />
+						<Setter Property="Width" Value="30" />
+					</Style>
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background02}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^:selected">
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource BlueGrayText09}" />
+				</Style>
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource BlueGray07}" />
+				</Style>
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Border#Root">
+						<Setter Property="Background" Value="{DynamicResource BlueGray04}" />
+					</Style>
+					<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background03}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^[Tag=SingleDate][Tag=SingleRange][Tag=MultipleRange]:pressed">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Background08}" />
+				</Style>
+				<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource BlueGray05}" />
+				</Style>
+			</Style>
+			<Style Selector="^:blackout">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource BlueGray09}" />
+				</Style>
+
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource BlueGrayText09}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Brown]">
+			<Style Selector="^:pointerover /template/ Border#Root">
+				<Setter Property="Background" Value="{DynamicResource Brown05}" />
+			</Style>
+			<Style Selector="^:today">
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="IsVisible" Value="True" />
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Height" Value="30" />
+						<Setter Property="Width" Value="30" />
+					</Style>
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background02}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^:selected">
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource BrownText09}" />
+				</Style>
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Brown07}" />
+				</Style>
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Border#Root">
+						<Setter Property="Background" Value="{DynamicResource Brown04}" />
+					</Style>
+					<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background03}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^[Tag=SingleDate][Tag=SingleRange][Tag=MultipleRange]:pressed">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Background08}" />
+				</Style>
+				<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Brown05}" />
+				</Style>
+			</Style>
+			<Style Selector="^:blackout">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Brown09}" />
+				</Style>
+
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource BrownText09}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepOrange]">
+			<Style Selector="^:pointerover /template/ Border#Root">
+				<Setter Property="Background" Value="{DynamicResource DeepOrange05}" />
+			</Style>
+			<Style Selector="^:today">
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="IsVisible" Value="True" />
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Height" Value="30" />
+						<Setter Property="Width" Value="30" />
+					</Style>
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background02}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^:selected">
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText09}" />
+				</Style>
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource DeepOrange07}" />
+				</Style>
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Border#Root">
+						<Setter Property="Background" Value="{DynamicResource DeepOrange04}" />
+					</Style>
+					<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background03}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^[Tag=SingleDate][Tag=SingleRange][Tag=MultipleRange]:pressed">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Background08}" />
+				</Style>
+				<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource DeepOrange05}" />
+				</Style>
+			</Style>
+			<Style Selector="^:blackout">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource DeepOrange09}" />
+				</Style>
+
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText09}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepPurple]">
+			<Style Selector="^:pointerover /template/ Border#Root">
+				<Setter Property="Background" Value="{DynamicResource DeepPurple05}" />
+			</Style>
+			<Style Selector="^:today">
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="IsVisible" Value="True" />
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Height" Value="30" />
+						<Setter Property="Width" Value="30" />
+					</Style>
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background02}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^:selected">
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText09}" />
+				</Style>
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource DeepPurple07}" />
+				</Style>
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Border#Root">
+						<Setter Property="Background" Value="{DynamicResource DeepPurple04}" />
+					</Style>
+					<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background03}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^[Tag=SingleDate][Tag=SingleRange][Tag=MultipleRange]:pressed">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Background08}" />
+				</Style>
+				<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource DeepPurple05}" />
+				</Style>
+			</Style>
+			<Style Selector="^:blackout">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource DeepPurple09}" />
+				</Style>
+
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText09}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Gray]">
+			<Style Selector="^:pointerover /template/ Border#Root">
+				<Setter Property="Background" Value="{DynamicResource Gray05}" />
+			</Style>
+			<Style Selector="^:today">
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="IsVisible" Value="True" />
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Height" Value="30" />
+						<Setter Property="Width" Value="30" />
+					</Style>
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background02}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^:selected">
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource GrayText09}" />
+				</Style>
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Gray07}" />
+				</Style>
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Border#Root">
+						<Setter Property="Background" Value="{DynamicResource Gray04}" />
+					</Style>
+					<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background03}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^[Tag=SingleDate][Tag=SingleRange][Tag=MultipleRange]:pressed">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Background08}" />
+				</Style>
+				<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Gray05}" />
+				</Style>
+			</Style>
+			<Style Selector="^:blackout">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Gray09}" />
+				</Style>
+
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource GrayText09}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Green]">
+			<Style Selector="^:pointerover /template/ Border#Root">
+				<Setter Property="Background" Value="{DynamicResource Green05}" />
+			</Style>
+			<Style Selector="^:today">
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="IsVisible" Value="True" />
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Height" Value="30" />
+						<Setter Property="Width" Value="30" />
+					</Style>
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background02}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^:selected">
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource GreenText09}" />
+				</Style>
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Green07}" />
+				</Style>
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Border#Root">
+						<Setter Property="Background" Value="{DynamicResource Green04}" />
+					</Style>
+					<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background03}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^[Tag=SingleDate][Tag=SingleRange][Tag=MultipleRange]:pressed">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Background08}" />
+				</Style>
+				<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Green05}" />
+				</Style>
+			</Style>
+			<Style Selector="^:blackout">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Green09}" />
+				</Style>
+
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource GreenText09}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Indigo]">
+			<Style Selector="^:pointerover /template/ Border#Root">
+				<Setter Property="Background" Value="{DynamicResource Indigo05}" />
+			</Style>
+			<Style Selector="^:today">
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="IsVisible" Value="True" />
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Height" Value="30" />
+						<Setter Property="Width" Value="30" />
+					</Style>
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background02}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^:selected">
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource IndigoText09}" />
+				</Style>
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Indigo07}" />
+				</Style>
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Border#Root">
+						<Setter Property="Background" Value="{DynamicResource Indigo04}" />
+					</Style>
+					<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background03}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^[Tag=SingleDate][Tag=SingleRange][Tag=MultipleRange]:pressed">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Background08}" />
+				</Style>
+				<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Indigo05}" />
+				</Style>
+			</Style>
+			<Style Selector="^:blackout">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Indigo09}" />
+				</Style>
+
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource IndigoText09}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Orange]">
+			<Style Selector="^:pointerover /template/ Border#Root">
+				<Setter Property="Background" Value="{DynamicResource Orange05}" />
+			</Style>
+			<Style Selector="^:today">
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="IsVisible" Value="True" />
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Height" Value="30" />
+						<Setter Property="Width" Value="30" />
+					</Style>
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background02}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^:selected">
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource OrangeText09}" />
+				</Style>
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Orange07}" />
+				</Style>
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Border#Root">
+						<Setter Property="Background" Value="{DynamicResource Orange04}" />
+					</Style>
+					<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background03}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^[Tag=SingleDate][Tag=SingleRange][Tag=MultipleRange]:pressed">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Background08}" />
+				</Style>
+				<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Orange05}" />
+				</Style>
+			</Style>
+			<Style Selector="^:blackout">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Orange09}" />
+				</Style>
+
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource OrangeText09}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Pink]">
+			<Style Selector="^:pointerover /template/ Border#Root">
+				<Setter Property="Background" Value="{DynamicResource Pink05}" />
+			</Style>
+			<Style Selector="^:today">
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="IsVisible" Value="True" />
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Height" Value="30" />
+						<Setter Property="Width" Value="30" />
+					</Style>
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background02}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^:selected">
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource PinkText09}" />
+				</Style>
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Pink07}" />
+				</Style>
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Border#Root">
+						<Setter Property="Background" Value="{DynamicResource Pink04}" />
+					</Style>
+					<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background03}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^[Tag=SingleDate][Tag=SingleRange][Tag=MultipleRange]:pressed">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Background08}" />
+				</Style>
+				<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Pink05}" />
+				</Style>
+			</Style>
+			<Style Selector="^:blackout">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Pink09}" />
+				</Style>
+
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource PinkText09}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Purple]">
+			<Style Selector="^:pointerover /template/ Border#Root">
+				<Setter Property="Background" Value="{DynamicResource Purple05}" />
+			</Style>
+			<Style Selector="^:today">
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="IsVisible" Value="True" />
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Height" Value="30" />
+						<Setter Property="Width" Value="30" />
+					</Style>
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background02}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^:selected">
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource PurpleText09}" />
+				</Style>
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Purple07}" />
+				</Style>
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Border#Root">
+						<Setter Property="Background" Value="{DynamicResource Purple04}" />
+					</Style>
+					<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background03}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^[Tag=SingleDate][Tag=SingleRange][Tag=MultipleRange]:pressed">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Background08}" />
+				</Style>
+				<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Purple05}" />
+				</Style>
+			</Style>
+			<Style Selector="^:blackout">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Purple09}" />
+				</Style>
+
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource PurpleText09}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Red]">
+			<Style Selector="^:pointerover /template/ Border#Root">
+				<Setter Property="Background" Value="{DynamicResource Red05}" />
+			</Style>
+			<Style Selector="^:today">
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="IsVisible" Value="True" />
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Height" Value="30" />
+						<Setter Property="Width" Value="30" />
+					</Style>
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background02}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^:selected">
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource RedText09}" />
+				</Style>
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Red07}" />
+				</Style>
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Border#Root">
+						<Setter Property="Background" Value="{DynamicResource Red04}" />
+					</Style>
+					<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background03}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^[Tag=SingleDate][Tag=SingleRange][Tag=MultipleRange]:pressed">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Background08}" />
+				</Style>
+				<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Red05}" />
+				</Style>
+			</Style>
+			<Style Selector="^:blackout">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Red09}" />
+				</Style>
+
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource RedText09}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Teal]">
+			<Style Selector="^:pointerover /template/ Border#Root">
+				<Setter Property="Background" Value="{DynamicResource Teal05}" />
+			</Style>
+			<Style Selector="^:today">
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="IsVisible" Value="True" />
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Height" Value="30" />
+						<Setter Property="Width" Value="30" />
+					</Style>
+					<Style Selector="^ /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background02}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^:selected">
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource TealText09}" />
+				</Style>
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Teal07}" />
+				</Style>
+				<Style Selector="^ /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Background02}" />
+				</Style>
+				<Style Selector="^:pointerover">
+					<Style Selector="^ /template/ Border#Root">
+						<Setter Property="Background" Value="{DynamicResource Teal04}" />
+					</Style>
+					<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+						<Setter Property="Fill" Value="{DynamicResource Background03}" />
+					</Style>
+				</Style>
+			</Style>
+			<Style Selector="^[Tag=SingleDate][Tag=SingleRange][Tag=MultipleRange]:pressed">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Background08}" />
+				</Style>
+				<Style Selector="^:today /template/ Ellipse#TodayHighlight">
+					<Setter Property="Fill" Value="{DynamicResource Teal05}" />
+				</Style>
+			</Style>
+			<Style Selector="^:blackout">
+				<Style Selector="^ /template/ Border#Root">
+					<Setter Property="Background" Value="{DynamicResource Teal09}" />
+				</Style>
+
+				<Style Selector="^ /template/ ContentControl#Content">
+					<Setter Property="Foreground" Value="{DynamicResource TealText09}" />
+				</Style>
+			</Style>
+		</Style>
+		<!-- Generated Code - /Colors -->
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="800">
+			<PreviewCodeSnippet.ItemTemplate>
+				<DataTemplate DataType="ThemeColor">
+					<Calendar Theme.Color="{Binding}"
+							SelectionMode="SingleDate"
+							DisplayDate="01/01/2026"
+							IsTodayHighlighted="True">
+						<Calendar.BlackoutDates>
+							<CalendarDateRange>
+								<x:Arguments>
+									<system:DateTime>2026-01-01</system:DateTime>
+									<system:DateTime>2026-01-05</system:DateTime>
+								</x:Arguments>
+							</CalendarDateRange>
+						</Calendar.BlackoutDates>
+						<Calendar.SelectedDates>
+							<system:DateTime>2026-01-10</system:DateTime>
+						</Calendar.SelectedDates>
+					</Calendar>
+				</DataTemplate>
+			</PreviewCodeSnippet.ItemTemplate>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+
+</ResourceDictionary>

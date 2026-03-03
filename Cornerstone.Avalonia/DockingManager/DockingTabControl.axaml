@@ -1,0 +1,112 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:p="clr-namespace:Cornerstone.Presentation;assembly=Cornerstone">
+
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type DockingTabControl}"
+					TargetType="DockingTabControl"
+					BasedOn="{StaticResource {x:Type TabControl}}">
+				<Setter Property="Background" Value="{DynamicResource Background03}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+				<Setter Property="BorderThickness" Value="1" />
+				<Setter Property="CornerRadius" Value="0" />
+				<Setter Property="Template">
+					<ControlTemplate>
+						<!-- Layout grid. -->
+						<Grid RowDefinitions="Auto,*,Auto"
+								Background="{TemplateBinding Background}"
+								ColumnDefinitions="Auto,*,Auto"
+								Margin="{TemplateBinding Margin}">
+							<!-- Content area container and background. -->
+							<Border Grid.Row="1" Grid.Column="1"
+									BorderBrush="{TemplateBinding BorderBrush}"
+									BorderThickness="{TemplateBinding BorderThickness}"
+									CornerRadius="{TemplateBinding CornerRadius}">
+								<Grid>
+									<!-- Content. -->
+									<ContentPresenter Name="PART_SelectedContentHost"
+											Margin="0"
+											HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+											VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+											Content="{TemplateBinding SelectedContent}"
+											ContentTemplate="{TemplateBinding SelectedContentTemplate}" />
+
+									<Grid IsVisible="{TemplateBinding SelectedContent,  Converter={x:Static ObjectConverters.IsNotNull}}">
+										<Grid DataContext="{TemplateBinding SelectedContent, Mode=OneWay}"
+												x:DataType="p:IPopupManager"
+												IsVisible="{Binding Popup, Converter={x:Static ObjectConverters.IsNotNull}}">
+											<PopupView DataContext="{Binding Popup, Mode=OneWay}"
+													MinWidth="500" />
+										</Grid>
+									</Grid>
+								</Grid>
+							</Border>
+
+							<!-- TabItem header (tabs, new tab button) -->
+							<ScrollViewer Name="PART_ScrollViewer"
+									Theme="{StaticResource MenuScrollViewerForHorizontal}"
+									Grid.Row="0" Grid.Column="1">
+								<StackPanel Orientation="Horizontal">
+									<ItemsPresenter
+											Name="PART_ItemsPresenter"
+											ItemsPanel="{TemplateBinding ItemsPanel}" />
+									<Button Classes="Icon"
+											Command="{TemplateBinding NewTabCommand}"
+											CommandParameter="{TemplateBinding}"
+											IsVisible="{TemplateBinding NewTabCommand, Converter={x:Static ObjectConverters.IsNotNull}}">
+										<PathIcon Data="{StaticResource Icons.Plus}" />
+									</Button>
+								</StackPanel>
+							</ScrollViewer>
+						</Grid>
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<!-- This is the tab at the top -->
+	<Style Selector="DockingTabControl:active DockableTabView">
+		<Style Selector="^:selected /template/ Button#PART_CloseButton">
+			<Setter Property="Opacity" Value="0.3" />
+			<Style Selector="^:pointerover">
+				<Setter Property="Opacity" Value="1" />
+			</Style>
+		</Style>
+		<Style Selector="^:selected /template/ Button#PART_CloseButton">
+			<Setter Property="IsVisible" Value="True" />
+			<Setter Property="Opacity" Value="1" />
+		</Style>
+	</Style>
+
+	<Design.PreviewWith>
+		<DockPanel MaxWidth="600">
+			<DockingTabControl DockPanel.Dock="Top" Height="300">
+				<DockableTabView>
+					<DockableTabView.TabModel>
+						<DockableTabModel Header="aoeu222"
+								IsSelected="True">
+							<DockableTabModel.HeaderMenu>
+								<ContextMenu>
+									<MenuItem Header="sub-item" />
+								</ContextMenu>
+							</DockableTabModel.HeaderMenu>
+							<DockableTabModel.Popup>
+								<p:PopupViewModel
+										ProgressDescription="I'm running stuff"
+										IsDestructive="True"
+										ShowButtons="True"
+										InProgress="False" />
+							</DockableTabModel.Popup>
+						</DockableTabModel>
+					</DockableTabView.TabModel>
+				</DockableTabView>
+				<DockableTabView Header="Test 1" />
+				<DockableTabView Header="Test 2" />
+				<DockableTabView Header="Test 3" />
+				<DockableTabView Header="Test 4" />
+			</DockingTabControl>
+		</DockPanel>
+	</Design.PreviewWith>
+</Styles>

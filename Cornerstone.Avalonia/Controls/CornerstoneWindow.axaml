@@ -1,0 +1,162 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:presentation="clr-namespace:Cornerstone.Presentation;assembly=Cornerstone"
+		xmlns:converters="clr-namespace:Cornerstone.Avalonia.Converters">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type CornerstoneWindow}" TargetType="CornerstoneWindow">
+				<Setter Property="Background" Value="{DynamicResource Background02}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource Foreground09}" />
+				<Setter Property="TransparencyBackgroundFallback" Value="{DynamicResource Background02}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+				<Setter Property="FontSize" Value="{StaticResource ControlFontSize}" />
+				<Setter Property="ExtendClientAreaToDecorationsHint" Value="True" />
+				<Setter Property="ExtendClientAreaChromeHints" Value="NoChrome" />
+				<Setter Property="Template">
+					<ControlTemplate>
+						<Grid x:Name="WindowGrid"
+								RowDefinitions="Auto,*">
+							<Border Grid.Row="0"
+									x:Name="TitleBar"
+									BorderThickness="0">
+								<Grid ColumnDefinitions="Auto,*,Auto,Auto">
+									<StackPanel Grid.Column="0"
+											Background="{DynamicResource Background04}"
+											Orientation="Horizontal"
+											HorizontalAlignment="Left"
+											Spacing="0">
+										<Image Source="{TemplateBinding Icon}"
+												Height="20"
+												Width="20"
+												VerticalAlignment="Center"
+												Margin="5,0,5,0"
+												Name="WindowIcon" />
+										<Menu BorderThickness="0"
+												ItemsSource="{TemplateBinding MainMenu}"
+												Margin="4,0,10,0">
+											<Menu.Styles>
+												<Style Selector="MenuItem" x:DataType="presentation:MenuItemView">
+													<Setter Property="Header" Value="{Binding Name}" />
+													<Setter Property="ItemsSource" Value="{Binding Children}" />
+													<Setter Property="Command" Value="{Binding Command}" />
+													<Setter Property="CommandParameter" Value="{Binding CommandParameter}" />
+													<Setter Property="InputGesture" Value="{Binding InputGesture, Converter={x:Static converters:KeyGestureConverters.ToKeyGesture}}" />
+													<Setter Property="HotKey" Value="{Binding InputGesture, Converter={x:Static converters:KeyGestureConverters.ToKeyGesture}}" />
+												</Style>
+											</Menu.Styles>
+										</Menu>
+									</StackPanel>
+
+									<Grid Grid.Column="1"
+											IsHitTestVisible="False"
+											Background="{DynamicResource Background04}">
+										<TextBlock Text="{TemplateBinding Title}"
+												FontSize="14"
+												HorizontalAlignment="Center"
+												VerticalAlignment="Center"
+												IsHitTestVisible="False"
+												Name="SystemChromeTitle" />
+									</Grid>
+									<Grid Grid.Column="2"
+											Background="{DynamicResource Background04}">
+										<ContentPresenter Content="{TemplateBinding InnerRightContent}" />
+									</Grid>
+									
+									<!-- Window Button -->
+									<StackPanel Grid.Column="3"
+											Background="{DynamicResource Background04}"
+											Orientation="Horizontal">
+										<Button Theme.Color="None"
+												Width="46"
+												BorderThickness="0"
+												Name="MinimizeButton">
+											<Path Margin="10,10,10,0"
+													Stretch="Uniform"
+													Data="M2048 1229v-205h-2048v205h2048z"
+													Height="10"
+													Width="12" />
+										</Button>
+										<Button Theme.Color="None"
+												Width="46"
+												BorderThickness="0"
+												Name="MaximizeButton">
+											<Path Margin="10,0,10,0"
+													Stretch="Uniform"
+													Name="MaximizeIcon"
+													Data="M2048 2048v-2048h-2048v2048h2048zM1843 1843h-1638v-1638h1638v1638z"
+													Height="10"
+													Width="10" />
+										</Button>
+										<Button Theme.Color="None"
+												Width="46"
+												BorderThickness="0"
+												Name="CloseButton">
+											<Button.Resources>
+											</Button.Resources>
+											<Button.Styles>
+												<Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+													<Setter Property="Background" Value="Red" />
+												</Style>
+												<Style Selector="Button:pointerover > Path">
+													<Setter Property="Fill" Value="White" />
+												</Style>
+											</Button.Styles>
+											<Path Margin="10,0,10,0"
+													Stretch="Uniform"
+													Data="M1169 1024l879 -879l-145 -145l-879 879l-879 -879l-145 145l879 879l-879 879l145 145l879 -879l879 879l145 -145z"
+													Height="12"
+													Width="12" />
+										</Button>
+									</StackPanel>
+								</Grid>
+							</Border>
+							<Panel Grid.Row="1">
+								<Border Name="PART_TransparencyFallback"
+										BorderThickness="0"
+										IsHitTestVisible="False" />
+								<Border Background="{TemplateBinding Background}"
+										BorderThickness="0"
+										IsHitTestVisible="False" />
+								<Panel Background="Transparent" Margin="{TemplateBinding WindowDecorationMargin}" />
+								<VisualLayerManager>
+									<VisualLayerManager.ChromeOverlayLayer>
+										<TitleBar />
+									</VisualLayerManager.ChromeOverlayLayer>
+									<ContentPresenter
+											Name="PART_ContentPresenter"
+											ContentTemplate="{TemplateBinding ContentTemplate}"
+											Content="{TemplateBinding Content}"
+											Margin="{TemplateBinding Padding}"
+											HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+											VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+								</VisualLayerManager>
+							</Panel>
+						</Grid>
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+	<Design.PreviewWith>
+		<CornerstoneWindow x:TypeArguments="x:String"
+				Height="200"
+				Width="400">
+			<CornerstoneWindow.InnerRightContent>
+				<StackPanel Orientation="Horizontal">
+					<Button BorderThickness="0"
+							Theme.Color="None">
+						Log Out
+					</Button>
+				</StackPanel>
+			</CornerstoneWindow.InnerRightContent>
+			<StackPanel HorizontalAlignment="Center"
+					VerticalAlignment="Center">
+				<TextBlock Text="Ul01O"
+						FontSize="24" />
+				<TextBlock Text="Ul01O"
+						FontFamily="{x:Static CornerstoneTheme.DejaVuSansMono}"
+						FontSize="24" />
+			</StackPanel>
+		</CornerstoneWindow>
+	</Design.PreviewWith>
+</Styles>

@@ -1,0 +1,38 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<Style Selector="Border">
+		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+		<Setter Property="BorderThickness" Value="0" />
+		<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+	</Style>
+
+	<Design.PreviewWith>
+		<StackPanel Width="300" Background="Black">
+			<ThemeVariantScope RequestedThemeVariant="Dark"
+					Margin="10">
+				<WrapPanel Orientation="Horizontal"
+						Background="{DynamicResource Background04}">
+					<Border Margin="4"
+							CornerRadius="4"
+							Padding="10">
+						<TextBlock Text="Border"
+								Foreground="{DynamicResource Foreground00}" />
+					</Border>
+				</WrapPanel>
+			</ThemeVariantScope>
+			<ThemeVariantScope RequestedThemeVariant="Light"
+					Margin="10">
+				<WrapPanel Orientation="Horizontal"
+						Background="{DynamicResource Background04}">
+					<Border Margin="4"
+							CornerRadius="4"
+							Padding="10">
+						<TextBlock Text="Border"
+								Foreground="{DynamicResource Foreground00}" />
+					</Border>
+				</WrapPanel>
+			</ThemeVariantScope>
+		</StackPanel>
+	</Design.PreviewWith>
+</Styles>

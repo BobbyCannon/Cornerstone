@@ -1,0 +1,35 @@
+<Solution>
+  <Folder Name="/Build/">
+    <File Path="Cornerstone.slnx.DotSettings" />
+    <File Path="development.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="readme.md" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="../.gitattributes" />
+    <File Path="../.gitignore" />
+    <File Path="../global.json" />
+    <File Path=".editorconfig" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/Cornerstone.AutomationTests/Cornerstone.AutomationTests.csproj" />
+    <Project Path="Tests/Cornerstone.Generators.UnitTests.Sample/Cornerstone.Generators.UnitTests.Sample.csproj" />
+    <Project Path="Tests/Cornerstone.Generators.UnitTests/Cornerstone.Generators.UnitTests.csproj" />
+    <Project Path="Tests/Cornerstone.PerformanceTests/Cornerstone.PerformanceTests.csproj" />
+    <Project Path="Tests/Cornerstone.UnitTests/Cornerstone.UnitTests.csproj" />
+  </Folder>
+  <Project Path="Avalonia.Diagnostics/Avalonia.Diagnostics.csproj" />
+  <Project Path="Cornerstone.Automation/Cornerstone.Automation.csproj" />
+  <Project Path="Cornerstone.Avalonia/Cornerstone.Avalonia.csproj" />
+  <Project Path="Cornerstone.Generators/Cornerstone.Generators.csproj" />
+  <Project Path="Cornerstone.Sample.Android/Cornerstone.Sample.Android.csproj">
+    <Deploy />
+  </Project>
+  <Project Path="Cornerstone.Sample.Browser/Cornerstone.Sample.Browser.csproj" />
+  <Project Path="Cornerstone.Sample.Desktop/Cornerstone.Sample.Desktop.csproj" />
+  <Project Path="Cornerstone.Sample.iOS/Cornerstone.Sample.iOS.csproj">
+    <Deploy />
+  </Project>
+  <Project Path="Cornerstone.Sample/Cornerstone.Sample.csproj" />
+  <Project Path="Cornerstone/Cornerstone.csproj" />
+</Solution>

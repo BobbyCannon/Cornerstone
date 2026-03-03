@@ -1,0 +1,47 @@
+<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+
+	<ControlTheme x:Key="{x:Type ItemsControl}"
+			TargetType="ItemsControl">
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border
+						Background="{TemplateBinding Background}"
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}"
+						CornerRadius="{TemplateBinding CornerRadius}"
+						Padding="{TemplateBinding Padding}">
+					<ItemsPresenter
+							Name="PART_ItemsPresenter"
+							ItemsPanel="{TemplateBinding ItemsPanel}" />
+				</Border>
+			</ControlTemplate>
+		</Setter>
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet>
+			<ItemsControl>
+				<ItemsControl.Styles>
+					<Style Selector="ContentPresenter:nth-child(1)">
+						<Setter Property="Background" Value="Red" />
+						<Setter Property="Margin" Value="0,0,0,20" />
+					</Style>
+					<Style Selector="ContentPresenter:nth-child(2)">
+						<Setter Property="Background" Value="Blue" />
+						<Setter Property="Margin" Value="0,0,0,10" />
+					</Style>
+				</ItemsControl.Styles>
+				<ItemsControl.Items>
+					<x:String>First</x:String>
+					<x:String>Second</x:String>
+					<x:String>Third</x:String>
+					<x:String>Fourth</x:String>
+					<x:String>Fifth</x:String>
+				</ItemsControl.Items>
+			</ItemsControl>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

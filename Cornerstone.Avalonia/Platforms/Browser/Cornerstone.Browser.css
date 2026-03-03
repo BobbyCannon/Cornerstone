@@ -1,0 +1,100 @@
+﻿@font-face {
+	font-family: 'DejaVuSansMono';
+	src: url('../Fonts/DejaVuSansMono.ttf') format('truetype');
+	font-weight: normal;
+	font-style: normal;
+}
+
+@font-face {
+	font-family: 'DejaVuSansLight';
+	src: url('../Fonts/DejaVuSansLight.ttf') format('truetype');
+	font-weight: normal;
+	font-style: normal;
+}
+
+.font-normal {
+	font-family: "DejaVuSansMono", "Anonymous", "Lucida Console", "Consolas";
+}
+
+.font-light {
+	font-family: "DejaVuSansLight", "Tahoma", "Verdana", "Arial", "sans-serif";
+}
+
+.font-mono {
+	font-family: "DejaVuSansMono", "Anonymous", "Lucida Console", "Consolas";
+}
+
+body#cornerstone {
+	margin: 0;
+	padding: 0;
+}
+
+.block-center {
+	display: inline-block;
+	margin: 0 auto;
+}
+
+.hide {
+	display: none;
+}
+
+.avalonia-splash {
+	position: absolute;
+	color: white;
+	height: 100%;
+	width: 100%;
+	background: #212121;
+	font-family: 'DejaVuSansLight', sans-serif;
+	justify-content: center;
+	align-items: center;
+	display: flex;
+	pointer-events: none;
+}
+
+	.avalonia-splash.splash-close {
+		transition: opacity 200ms, display 200ms;
+		display: none;
+		opacity: 0;
+	}
+
+progress {
+	background: #1E88E5;
+	border-radius: 4px;
+	height: 8px;
+}
+
+	progress::-webkit-progress-bar {
+		border-radius: 10px;
+	}
+
+	progress::-webkit-progress-value {
+		border-radius: 10px;
+	}
+
+	progress::-moz-progress-bar {
+		border-radius: 10px;
+	}
+
+	progress::-webkit-progress-value {
+		background: #1E88E5;
+	}
+
+	progress::-moz-progress-bar {
+		background: #1E88E5;
+	}
+
+h1 {
+	display: block;
+	width: 100%;
+	margin: 10px 0 0 0;
+}
+
+iframe {
+	border: none;
+	height: 100%;
+	width: 100%;
+}
+
+.text-center {
+	text-align: center;
+}

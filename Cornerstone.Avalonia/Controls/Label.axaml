@@ -1,0 +1,28 @@
+<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+	<ControlTheme x:Key="{x:Type Label}" TargetType="Label">
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="Padding" Value="4" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<ContentPresenter
+						Name="PART_ContentPresenter"
+						Background="{TemplateBinding Background}"
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}"
+						CornerRadius="{TemplateBinding CornerRadius}"
+						ContentTemplate="{TemplateBinding ContentTemplate}"
+						Content="{TemplateBinding Content}"
+						Padding="{TemplateBinding Padding}"
+						RecognizesAccessKey="True"
+						VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+						HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" />
+			</ControlTemplate>
+		</Setter>
+		<Style Selector="^:disabled">
+			<Setter Property="Foreground" Value="{DynamicResource LabelDisabledForeground}" />
+		</Style>
+	</ControlTheme>
+</ResourceDictionary>

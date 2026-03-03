@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Library</OutputType>
+		<TargetFrameworks>net10.0</TargetFrameworks>
+		<SignAssembly>true</SignAssembly>
+		<IsTestProject>true</IsTestProject>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+		<PublishAot>false</PublishAot>
+		<TrimMode>partial</TrimMode>
+		<InvariantGlobalization>false</InvariantGlobalization>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Remove="coverage.xml" />
+		<Compile Remove="**/*.received.cs" />
+		<None Include="**/*.received.cs" />
+		<Compile Remove="**/*.verified.cs" />
+		<None Include="**/*.verified.cs" />
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Include="..\Cornerstone.UnitTests\CornerstoneUnitTest.cs" Link="CornerstoneUnitTest.cs" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+		<PackageReference Include="MSTest.TestAdapter" Version="4.1.0" />
+		<PackageReference Include="MSTest.TestFramework" Version="4.1.0" />
+		<PackageReference Include="NUnit" Version="4.4.0" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
+		<ProjectReference Include="..\..\Cornerstone.Generators\Cornerstone.Generators.csproj" />
+		<ProjectReference Include="..\..\Cornerstone\Cornerstone.csproj" />
+		<ProjectReference Include="..\Cornerstone.Generators.UnitTests.Sample\Cornerstone.Generators.UnitTests.Sample.csproj" />
+	</ItemGroup>
+</Project>

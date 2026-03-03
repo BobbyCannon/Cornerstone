@@ -1,0 +1,185 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<ControlTheme x:Key="{x:Type CircularProgress}"
+			TargetType="CircularProgress">
+		<Setter Property="Theme.Color" Value="Current" />
+		<Setter Property="BorderThickness" Value="0" />
+		<Setter Property="Background" Value="{DynamicResource Background04}" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+		<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+		<Setter Property="Stroke" Value="{DynamicResource Background09}" />
+		<Setter Property="StrokeThickness" Value="8" />
+		<Setter Property="Minimum" Value="0" />
+		<Setter Property="Maximum" Value="100" />
+		<Setter Property="Value" Value="0" />
+		<Setter Property="Height" Value="100" />
+		<Setter Property="Width" Value="100" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Grid>
+					<LayoutTransformControl
+							x:Name="PART_LayoutTransformControl"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center">
+						<StackPanel>
+							<ContentPresenter
+									Background="Transparent"
+									Content="{TemplateBinding ContentControl.Content}"
+									HorizontalAlignment="Center" />
+							<TextBlock x:Name="Percent"
+									Foreground="{TemplateBinding Foreground}"
+									HorizontalAlignment="Center"
+									IsVisible="{TemplateBinding ShowProgressText}">
+								<TextBlock.Text>
+									<MultiBinding Converter="{StaticResource StringFormatConverter}">
+										<TemplateBinding Property="ProgressTextFormat" />
+										<Binding Path="Value" RelativeSource="{RelativeSource TemplatedParent}" />
+										<TemplateBinding Property="Percentage" />
+										<TemplateBinding Property="Minimum" />
+										<TemplateBinding Property="Maximum" />
+									</MultiBinding>
+								</TextBlock.Text>
+							</TextBlock>
+						</StackPanel>
+					</LayoutTransformControl>
+					<Grid x:Name="Arc">
+						<Arc Stroke="{TemplateBinding Background}"
+								StrokeThickness="{TemplateBinding Converter={x:Static CircularProgress.GetStrokeBorderThickness}}"
+								StartAngle="-90"
+								SweepAngle="360"
+								StrokeJoin="Bevel"
+								StrokeLineCap="{Binding StrokeLineCap, RelativeSource={RelativeSource TemplatedParent}}" />
+						<Arc x:Name="Stroke"
+								Stroke="{TemplateBinding Stroke}"
+								StrokeThickness="{TemplateBinding Converter={x:Static CircularProgress.GetStrokeBorderThickness}}"
+								StartAngle="-90"
+								SweepAngle="{Binding SweepAngle, RelativeSource={RelativeSource TemplatedParent}}"
+								StrokeJoin="Bevel"
+								StrokeLineCap="{Binding StrokeLineCap, RelativeSource={RelativeSource TemplatedParent}}" />
+					</Grid>
+				</Grid>
+			</ControlTemplate>
+		</Setter>
+		<Style Selector="^[IsIndeterminate=True] /template/ Grid#Arc">
+			<Style.Animations>
+				<Animation Duration="0:0:2" IterationCount="INFINITE">
+					<KeyFrame Cue="0%">
+						<Setter Property="RotateTransform.Angle" Value="0" />
+					</KeyFrame>
+					<KeyFrame Cue="100%">
+						<Setter Property="RotateTransform.Angle" Value="360" />
+					</KeyFrame>
+				</Animation>
+			</Style.Animations>
+		</Style>
+
+		<!-- Code Template - Color -->
+		<Style Selector="^[(Theme.Color)=Current]">
+			<Setter Property="Stroke" Value="{DynamicResource ThemeColor05}" />
+		</Style>
+		<!-- Code Template - /Color -->
+
+		<!-- Generated Code - Colors -->
+		<Style Selector="^[(Theme.Color)=Amber]">
+			<Setter Property="Stroke" Value="{DynamicResource Amber05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Blue]">
+			<Setter Property="Stroke" Value="{DynamicResource Blue05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=BlueGray]">
+			<Setter Property="Stroke" Value="{DynamicResource BlueGray05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Brown]">
+			<Setter Property="Stroke" Value="{DynamicResource Brown05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepOrange]">
+			<Setter Property="Stroke" Value="{DynamicResource DeepOrange05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepPurple]">
+			<Setter Property="Stroke" Value="{DynamicResource DeepPurple05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Gray]">
+			<Setter Property="Stroke" Value="{DynamicResource Gray05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Green]">
+			<Setter Property="Stroke" Value="{DynamicResource Green05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Indigo]">
+			<Setter Property="Stroke" Value="{DynamicResource Indigo05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Orange]">
+			<Setter Property="Stroke" Value="{DynamicResource Orange05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Pink]">
+			<Setter Property="Stroke" Value="{DynamicResource Pink05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Purple]">
+			<Setter Property="Stroke" Value="{DynamicResource Purple05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Red]">
+			<Setter Property="Stroke" Value="{DynamicResource Red05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Teal]">
+			<Setter Property="Stroke" Value="{DynamicResource Teal05}" />
+		</Style>
+		<!-- Generated Code - /Colors -->
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="600">
+			<Grid RowDefinitions="Auto,Auto,*">
+				<StackPanel Orientation="Horizontal"
+						HorizontalAlignment="Left"
+						VerticalAlignment="Top"
+						Spacing="10">
+					<CircularProgress
+							x:Name="Progress"
+							StrokeThickness="8"
+							IsIndeterminate="False"
+							IsVisible="False"
+							Width="100"
+							Height="100"
+							Value="25" />
+					<WrapPanel
+							ItemSpacing="10"
+							LineSpacing="10"
+							Margin="20">
+						<Slider Value="{Binding #Progress.Value, Mode=TwoWay}"
+								Maximum="{Binding #Progress.Maximum}"
+								Minimum="{Binding #Progress.Minimum}"
+								Width="160" />
+						<CheckBox IsChecked="{Binding #Progress.ShowProgressText, Mode=TwoWay}"
+								Content="Show Progress Text" />
+						<CheckBox IsChecked="{Binding #Progress.IsIndeterminate, Mode=TwoWay}"
+								Content="Indeterminate" />
+					</WrapPanel>
+				</StackPanel>
+				<ItemsControl Grid.Row="1"
+						ItemsSource="{x:Static Theme.ThemeColors}">
+					<ItemsControl.ItemsPanel>
+						<ItemsPanelTemplate>
+							<WrapPanel ItemSpacing="10"
+									LineSpacing="10" />
+						</ItemsPanelTemplate>
+					</ItemsControl.ItemsPanel>
+					<ItemsControl.ItemTemplate>
+						<DataTemplate DataType="ThemeColor" />
+					</ItemsControl.ItemTemplate>
+				</ItemsControl>
+			</Grid>
+			<PreviewCodeSnippet.ItemTemplate>
+				<DataTemplate DataType="ThemeColor">
+					<CircularProgress Theme.Color="{Binding}"
+							IsIndeterminate="{Binding #Progress.IsIndeterminate, Mode=OneWay}"
+							ShowProgressText="{Binding #Progress.ShowProgressText, Mode=OneWay}"
+							Value="{Binding #Progress.Value, Mode=OneWay}"
+							Minimum="{Binding #Progress.Minimum, Mode=OneWay}"
+							Maximum="{Binding #Progress.Maximum, Mode=OneWay}"
+							Content="{Binding}"
+							Margin="10" />
+				</DataTemplate>
+			</PreviewCodeSnippet.ItemTemplate>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

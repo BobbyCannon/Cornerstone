@@ -1,0 +1,14 @@
+﻿<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Design.PreviewWith>
+		<PreviewCodeSnippet>
+			<Border BorderBrush="{DynamicResource BorderBrush}"
+					BorderThickness="1"
+					Height="300"
+					Width="600">
+				<InkCanvas />
+			</Border>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

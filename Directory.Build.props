@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+	<PropertyGroup>
+		<ApplicationIcon>$(MSBuildThisFileDirectory)Cornerstone.ico</ApplicationIcon>
+		<Company>Bobby Cannon</Company>
+		<Authors>Bobby Cannon</Authors>
+		<Copyright>© Copyright 2014</Copyright>
+		<Version>3.0.0.0</Version>
+		<AssemblyVersion>$(Version)</AssemblyVersion>
+		<FileVersion>$(Version)</FileVersion>
+		<AvaloniaVersion>11.3.12.1</AvaloniaVersion>
+		<AvaloniaBaseVersion>11.3.12</AvaloniaBaseVersion>
+		<AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+		<LangVersion>latest</LangVersion>
+		<GenerateDocumentationFile>false</GenerateDocumentationFile>
+		<SignAssembly>true</SignAssembly>
+		<DelaySign>false</DelaySign>
+		<AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)..\Cornerstone\Cornerstone.snk</AssemblyOriginatorKeyFile>
+		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+		<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+		<BuiltInComInteropSupport>false</BuiltInComInteropSupport>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<Nullable>disable</Nullable>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<NoWarn>$(NoWarn);CS8002;IL2026;IL2037;IL2065;IL2067;IL2070;IL2075;IL2104;IL3000;IL3002;IL3050;IL3053;IL3058;IL3073;</NoWarn>
+		<!-- AOT -->
+		<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+		<VerifyReferenceAotCompatibility>true</VerifyReferenceAotCompatibility>
+		<PublishAot>true</PublishAot>
+		<PublishTrimmed>true</PublishTrimmed>
+		<TrimMode>full</TrimMode>
+		<IsAotCompatible>true</IsAotCompatible>
+		<!-- Nuget -->
+		<Description>Cornerstone in as development framework to help speed up and make building applications and systems much easier.</Description>
+		<PackageIcon>Cornerstone.png</PackageIcon>
+		<PackageIconUrl>https://raw.githubusercontent.com/BobbyCannon/Cornerstone/master/Cornerstone.png</PackageIconUrl>
+		<PackageLicenseFile>License.txt</PackageLicenseFile>
+		<PackageProjectUrl>https://github.com/BobbyCannon/Cornerstone</PackageProjectUrl>
+		<PackageReadmeFile>readme.md</PackageReadmeFile>
+		<RepositoryType>git</RepositoryType>
+		<RepositoryUrl>https://github.com/BobbyCannon/Cornerstone</RepositoryUrl>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+		<PublishAot>false</PublishAot>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Include="$(MSBuildThisFileDirectory)..\Cornerstone\Cornerstone.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+	<ItemGroup Condition="$(MSBuildProjectName)!='Cornerstone.Generators' AND $(MSBuildProjectName)!='Cornerstone.Generators.Vsix' AND $(MSBuildProjectName)!='Cornerstone.Generators.UnitTests'">
+		<ProjectReference Include="$(MSBuildThisFileDirectory)..\Cornerstone\Cornerstone.Generators\Cornerstone.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	</ItemGroup>
+</Project>

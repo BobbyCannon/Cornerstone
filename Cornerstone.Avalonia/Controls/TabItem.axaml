@@ -1,0 +1,307 @@
+﻿<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<x:Double x:Key="TabItemMinHeight">24</x:Double>
+
+	<ControlTheme x:Key="{x:Type TabItem}" TargetType="TabItem">
+		<Setter Property="Theme.Color" Value="None" />
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+		<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+		<Setter Property="Background" Value="{DynamicResource Background02}" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground02}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="Padding" Value="12,2" />
+		<Setter Property="MinHeight" Value="{DynamicResource TabItemMinHeight}" />
+		<Setter Property="HorizontalContentAlignment" Value="Center" />
+		<Setter Property="VerticalContentAlignment" Value="Center" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Panel>
+					<!-- Tab background. -->
+					<Border Name="PART_LayoutRoot"
+							Background="{TemplateBinding Background}"
+							BorderBrush="{TemplateBinding BorderBrush}"
+							BorderThickness="{TemplateBinding BorderThickness}"
+							CornerRadius="{TemplateBinding CornerRadius}"
+							Margin="{TemplateBinding Margin}"
+							MinHeight="{TemplateBinding MinHeight}">
+
+						<ContentPresenter
+								Name="PART_ContentPresenter"
+								HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+								VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+								Content="{TemplateBinding Header}"
+								ContentTemplate="{TemplateBinding HeaderTemplate}"
+								FontFamily="{TemplateBinding FontFamily}"
+								FontSize="{TemplateBinding FontSize}"
+								FontWeight="{TemplateBinding FontWeight}"
+								Margin="{TemplateBinding Padding}" />
+					</Border>
+				</Panel>
+			</ControlTemplate>
+		</Setter>
+
+		<Style Selector="^:pointerover">
+			<Setter Property="Background" Value="{DynamicResource Background07}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		</Style>
+		<Style Selector="^:disabled">
+			<Setter Property="Background" Value="{DynamicResource Background04}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+		</Style>
+
+		<!-- Top placement. -->
+		<Style Selector="^[TabStripPlacement=Top]">
+			<Style Selector="^:selected">
+				<Setter Property="HorizontalAlignment" Value="Stretch" />
+			</Style>
+		</Style>
+
+		<!-- Bottom placement. -->
+		<Style Selector="^[TabStripPlacement=Bottom]">
+			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
+				<Setter Property="BorderThickness" Value="1,0,1,1" />
+				<Setter Property="HorizontalAlignment" Value="Stretch" />
+			</Style>
+		</Style>
+
+		<!-- Left placement. -->
+		<Style Selector="^[TabStripPlacement=Left]">
+			<Setter Property="HorizontalContentAlignment" Value="Left" />
+			<Setter Property="BorderThickness" Value="1" />
+			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
+				<Setter Property="BorderThickness" Value="1,1,0,1" />
+				<Setter Property="HorizontalAlignment" Value="Stretch" />
+			</Style>
+		</Style>
+
+		<!-- Right placement. -->
+		<Style Selector="^[TabStripPlacement=Right]">
+			<Setter Property="HorizontalContentAlignment" Value="Right" />
+			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
+				<Setter Property="BorderThickness" Value="0,1,1,1" />
+				<Setter Property="HorizontalAlignment" Value="Stretch" />
+			</Style>
+		</Style>
+
+		<!-- Set highlight color if selected. -->
+		<Style Selector="^[(Theme.Color)=None]">
+			<Style Selector="^:selected">
+				<Setter Property="Background" Value="{DynamicResource Background04}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+				<Style Selector="^:pointerover">
+					<Setter Property="Background" Value="{DynamicResource Background07}" />
+					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+				</Style>
+			</Style>
+		</Style>
+
+		<!-- Code Template - Color -->
+		<Style Selector="^[(Theme.Color)=Current]">
+			<Style Selector="^:selected">
+				<Setter Property="Background" Value="{DynamicResource ThemeColor07}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground07}" />
+				<Style Selector="^:pointerover">
+					<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
+					<Setter Property="Foreground" Value="{DynamicResource ThemeForeground05}" />
+				</Style>
+			</Style>
+		</Style>
+		<!-- Code Template - /Color -->
+
+		<!-- Generated Code - Colors -->
+		<Style Selector="^[(Theme.Color)=Amber]">
+			<Style Selector="^:selected">
+				<Setter Property="Background" Value="{DynamicResource Amber07}" />
+				<Setter Property="Foreground" Value="{DynamicResource AmberText07}" />
+				<Style Selector="^:pointerover">
+					<Setter Property="Background" Value="{DynamicResource Amber05}" />
+					<Setter Property="Foreground" Value="{DynamicResource AmberText05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Blue]">
+			<Style Selector="^:selected">
+				<Setter Property="Background" Value="{DynamicResource Blue07}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueText07}" />
+				<Style Selector="^:pointerover">
+					<Setter Property="Background" Value="{DynamicResource Blue05}" />
+					<Setter Property="Foreground" Value="{DynamicResource BlueText05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=BlueGray]">
+			<Style Selector="^:selected">
+				<Setter Property="Background" Value="{DynamicResource BlueGray07}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueGrayText07}" />
+				<Style Selector="^:pointerover">
+					<Setter Property="Background" Value="{DynamicResource BlueGray05}" />
+					<Setter Property="Foreground" Value="{DynamicResource BlueGrayText05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Brown]">
+			<Style Selector="^:selected">
+				<Setter Property="Background" Value="{DynamicResource Brown07}" />
+				<Setter Property="Foreground" Value="{DynamicResource BrownText07}" />
+				<Style Selector="^:pointerover">
+					<Setter Property="Background" Value="{DynamicResource Brown05}" />
+					<Setter Property="Foreground" Value="{DynamicResource BrownText05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepOrange]">
+			<Style Selector="^:selected">
+				<Setter Property="Background" Value="{DynamicResource DeepOrange07}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText07}" />
+				<Style Selector="^:pointerover">
+					<Setter Property="Background" Value="{DynamicResource DeepOrange05}" />
+					<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepPurple]">
+			<Style Selector="^:selected">
+				<Setter Property="Background" Value="{DynamicResource DeepPurple07}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText07}" />
+				<Style Selector="^:pointerover">
+					<Setter Property="Background" Value="{DynamicResource DeepPurple05}" />
+					<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Gray]">
+			<Style Selector="^:selected">
+				<Setter Property="Background" Value="{DynamicResource Gray07}" />
+				<Setter Property="Foreground" Value="{DynamicResource GrayText07}" />
+				<Style Selector="^:pointerover">
+					<Setter Property="Background" Value="{DynamicResource Gray05}" />
+					<Setter Property="Foreground" Value="{DynamicResource GrayText05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Green]">
+			<Style Selector="^:selected">
+				<Setter Property="Background" Value="{DynamicResource Green07}" />
+				<Setter Property="Foreground" Value="{DynamicResource GreenText07}" />
+				<Style Selector="^:pointerover">
+					<Setter Property="Background" Value="{DynamicResource Green05}" />
+					<Setter Property="Foreground" Value="{DynamicResource GreenText05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Indigo]">
+			<Style Selector="^:selected">
+				<Setter Property="Background" Value="{DynamicResource Indigo07}" />
+				<Setter Property="Foreground" Value="{DynamicResource IndigoText07}" />
+				<Style Selector="^:pointerover">
+					<Setter Property="Background" Value="{DynamicResource Indigo05}" />
+					<Setter Property="Foreground" Value="{DynamicResource IndigoText05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Orange]">
+			<Style Selector="^:selected">
+				<Setter Property="Background" Value="{DynamicResource Orange07}" />
+				<Setter Property="Foreground" Value="{DynamicResource OrangeText07}" />
+				<Style Selector="^:pointerover">
+					<Setter Property="Background" Value="{DynamicResource Orange05}" />
+					<Setter Property="Foreground" Value="{DynamicResource OrangeText05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Pink]">
+			<Style Selector="^:selected">
+				<Setter Property="Background" Value="{DynamicResource Pink07}" />
+				<Setter Property="Foreground" Value="{DynamicResource PinkText07}" />
+				<Style Selector="^:pointerover">
+					<Setter Property="Background" Value="{DynamicResource Pink05}" />
+					<Setter Property="Foreground" Value="{DynamicResource PinkText05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Purple]">
+			<Style Selector="^:selected">
+				<Setter Property="Background" Value="{DynamicResource Purple07}" />
+				<Setter Property="Foreground" Value="{DynamicResource PurpleText07}" />
+				<Style Selector="^:pointerover">
+					<Setter Property="Background" Value="{DynamicResource Purple05}" />
+					<Setter Property="Foreground" Value="{DynamicResource PurpleText05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Red]">
+			<Style Selector="^:selected">
+				<Setter Property="Background" Value="{DynamicResource Red07}" />
+				<Setter Property="Foreground" Value="{DynamicResource RedText07}" />
+				<Style Selector="^:pointerover">
+					<Setter Property="Background" Value="{DynamicResource Red05}" />
+					<Setter Property="Foreground" Value="{DynamicResource RedText05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Teal]">
+			<Style Selector="^:selected">
+				<Setter Property="Background" Value="{DynamicResource Teal07}" />
+				<Setter Property="Foreground" Value="{DynamicResource TealText07}" />
+				<Style Selector="^:pointerover">
+					<Setter Property="Background" Value="{DynamicResource Teal05}" />
+					<Setter Property="Foreground" Value="{DynamicResource TealText05}" />
+				</Style>
+			</Style>
+		</Style>
+		<!-- Generated Code - /Colors -->
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<StackPanel Width="600">
+			<TabControl TabStripPlacement="Top">
+				<TabItem Header="Theme">
+					<TextBlock Text="Tab with theme highlight." />
+				</TabItem>
+				<TabItem Header="Red" Theme.Color="Red">
+					<TextBlock Text="Tab with red highlight." />
+				</TabItem>
+				<TabItem Header="Pink" Theme.Color="Pink">
+					<TextBlock Text="Tab with pink highlight." />
+				</TabItem>
+				<TabItem Header="Disabled long header" IsEnabled="False" />
+			</TabControl>
+			<TabControl TabStripPlacement="Left">
+				<TabItem Header="Theme">
+					<TextBlock Text="Tab with theme highlight." />
+				</TabItem>
+				<TabItem Header="Red" Theme.Color="Red">
+					<TextBlock Text="Tab with red highlight." />
+				</TabItem>
+				<TabItem Header="Pink" Theme.Color="Pink">
+					<TextBlock Text="Tab with pink highlight." />
+				</TabItem>
+			</TabControl>
+			<TabControl TabStripPlacement="Right">
+				<TabItem Header="Theme">
+					<TextBlock Text="Tab with theme highlight." />
+				</TabItem>
+				<TabItem Header="Red" Theme.Color="Red">
+					<TextBlock Text="Tab with red highlight." />
+				</TabItem>
+				<TabItem Header="Pink" Theme.Color="Pink">
+					<TextBlock Text="Tab with pink highlight." />
+				</TabItem>
+			</TabControl>
+			<TabControl TabStripPlacement="Bottom">
+				<TabItem Header="Theme">
+					<TextBlock Text="Tab with theme highlight." />
+				</TabItem>
+				<TabItem Header="Red" Theme.Color="Red">
+					<TextBlock Text="Tab with red highlight." />
+				</TabItem>
+				<TabItem Header="Pink" Theme.Color="Pink">
+					<TextBlock Text="Tab with pink highlight." />
+				</TabItem>
+			</TabControl>
+		</StackPanel>
+	</Design.PreviewWith>
+</ResourceDictionary>

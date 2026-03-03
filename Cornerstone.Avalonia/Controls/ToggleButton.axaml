@@ -1,0 +1,1379 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type ToggleButton}" TargetType="ToggleButton">
+				<Setter Property="Theme.Color" Value="Current" />
+				<Setter Property="Background" Value="{DynamicResource Background04}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+				<Setter Property="BorderThickness" Value="{DynamicResource ControlBorderThickness}" />
+				<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+				<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+				<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+				<Setter Property="Height" Value="32" />
+				<Setter Property="Padding" Value="8,0" />
+				<Setter Property="HorizontalContentAlignment" Value="Center" />
+				<Setter Property="VerticalContentAlignment" Value="Center" />
+				<Setter Property="Template">
+					<ControlTemplate>
+						<Border x:Name="PART_RootBorder"
+								Background="{TemplateBinding Background}"
+								BorderBrush="{TemplateBinding BorderBrush}"
+								BorderThickness="{TemplateBinding BorderThickness}"
+								CornerRadius="{TemplateBinding CornerRadius}"
+								ClipToBounds="True">
+							<ContentPresenter
+									x:Name="PART_ContentPresenter"
+									Content="{TemplateBinding Content}"
+									ContentTemplate="{TemplateBinding ContentTemplate}"
+									FontFamily="{TemplateBinding FontFamily}"
+									FontSize="{TemplateBinding FontSize}"
+									Padding="{TemplateBinding Padding}"
+									RecognizesAccessKey="True"
+									HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+									VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+						</Border>
+					</ControlTemplate>
+				</Setter>
+
+				<Style Selector="^:pointerover">
+					<Setter Property="Background" Value="{DynamicResource Background07}" />
+				</Style>
+				<Style Selector="^:pressed">
+					<Setter Property="RenderTransform" Value="scale(0.98)" />
+					<Setter Property="Background" Value="{DynamicResource Background06}" />
+				</Style>
+				<Style Selector="^:disabled">
+					<Setter Property="Background" Value="{DynamicResource Background03}" />
+					<Setter Property="Foreground" Value="{DynamicResource Foreground03}" />
+				</Style>
+				<Style Selector="^:checked">
+					<Setter Property="Background" Value="{DynamicResource Background07}" />
+					<Style Selector="^:pointerover">
+						<Setter Property="Background" Value="{DynamicResource Background09}" />
+					</Style>
+					<Style Selector="^:pressed">
+						<Setter Property="Background" Value="{DynamicResource Background06}" />
+					</Style>
+					<Style Selector="^:disabled">
+						<Setter Property="Background" Value="{DynamicResource Background04}" />
+						<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+					</Style>
+				</Style>
+				<Style Selector="^:indeterminate">
+					<Setter Property="Background" Value="{DynamicResource Background06}" />
+					<Style Selector="^:pointerover">
+						<Setter Property="Background" Value="{DynamicResource Background08}" />
+					</Style>
+					<Style Selector="^:pressed">
+						<Setter Property="Background" Value="{DynamicResource Background07}" />
+					</Style>
+					<Style Selector="^:disabled">
+						<Setter Property="Background" Value="{DynamicResource Background05}" />
+						<Setter Property="Foreground" Value="{DynamicResource Foreground05}" />
+					</Style>
+				</Style>
+				<Style Selector="^.Inverted">
+					<Setter Property="Background" Value="{DynamicResource Background07}" />
+					<Style Selector="^:pointerover">
+						<Setter Property="Background" Value="{DynamicResource Background09}" />
+					</Style>
+					<Style Selector="^:pressed">
+						<Setter Property="Background" Value="{DynamicResource Background06}" />
+					</Style>
+					<Style Selector="^:disabled">
+						<Setter Property="Background" Value="{DynamicResource Background04}" />
+						<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+					</Style>
+				</Style>
+				<Style Selector="^.Inverted:checked">
+					<Setter Property="Background" Value="{DynamicResource Background04}" />
+					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+					<Style Selector="^:pointerover">
+						<Setter Property="Background" Value="{DynamicResource Background07}" />
+					</Style>
+					<Style Selector="^:pressed">
+						<Setter Property="RenderTransform" Value="scale(0.98)" />
+						<Setter Property="Background" Value="{DynamicResource Background06}" />
+					</Style>
+					<Style Selector="^:disabled">
+						<Setter Property="Background" Value="{DynamicResource Background03}" />
+						<Setter Property="Foreground" Value="{DynamicResource Foreground03}" />
+					</Style>
+				</Style>
+
+				<!-- Code Template - Color -->
+				<Style Selector="^[(Theme.Color)=Current]">
+					<Setter Property="Background" Value="{DynamicResource Background05}" />
+					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+					<Style Selector="^:pointerover">
+						<Setter Property="Background" Value="{DynamicResource ThemeColor07}" />
+					</Style>
+					<Style Selector="^:pressed">
+						<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
+					</Style>
+					<Style Selector="^:disabled">
+						<Setter Property="Background" Value="{DynamicResource ThemeColor03}" />
+						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+					</Style>
+					<Style Selector="^:checked">
+						<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource ThemeColor07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource ThemeColor04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^:indeterminate">
+						<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource ThemeColor08}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource ThemeColor07}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted">
+						<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource ThemeColor07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource ThemeColor04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted:checked">
+						<Setter Property="Background" Value="{DynamicResource Background05}" />
+						<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource ThemeColor07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource ThemeColor03}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						</Style>
+					</Style>
+				</Style>
+				<!-- Code Template - /Color -->
+
+				<!-- Generated Code - Colors -->
+				<Style Selector="^[(Theme.Color)=Amber]">
+					<Setter Property="Background" Value="{DynamicResource Background05}" />
+					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+					<Style Selector="^:pointerover">
+						<Setter Property="Background" Value="{DynamicResource Amber07}" />
+					</Style>
+					<Style Selector="^:pressed">
+						<Setter Property="Background" Value="{DynamicResource Amber06}" />
+					</Style>
+					<Style Selector="^:disabled">
+						<Setter Property="Background" Value="{DynamicResource Amber03}" />
+						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+					</Style>
+					<Style Selector="^:checked">
+						<Setter Property="Background" Value="{DynamicResource Amber05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Amber07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Amber06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Amber04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^:indeterminate">
+						<Setter Property="Background" Value="{DynamicResource Amber06}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Amber08}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Amber07}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Amber05}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted">
+						<Setter Property="Background" Value="{DynamicResource Amber05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Amber07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Amber06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Amber04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted:checked">
+						<Setter Property="Background" Value="{DynamicResource Background05}" />
+						<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Amber07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Amber06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Amber03}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						</Style>
+					</Style>
+				</Style>
+				<Style Selector="^[(Theme.Color)=Blue]">
+					<Setter Property="Background" Value="{DynamicResource Background05}" />
+					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+					<Style Selector="^:pointerover">
+						<Setter Property="Background" Value="{DynamicResource Blue07}" />
+					</Style>
+					<Style Selector="^:pressed">
+						<Setter Property="Background" Value="{DynamicResource Blue06}" />
+					</Style>
+					<Style Selector="^:disabled">
+						<Setter Property="Background" Value="{DynamicResource Blue03}" />
+						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+					</Style>
+					<Style Selector="^:checked">
+						<Setter Property="Background" Value="{DynamicResource Blue05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Blue07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Blue06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Blue04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^:indeterminate">
+						<Setter Property="Background" Value="{DynamicResource Blue06}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Blue08}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Blue07}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Blue05}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted">
+						<Setter Property="Background" Value="{DynamicResource Blue05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Blue07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Blue06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Blue04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted:checked">
+						<Setter Property="Background" Value="{DynamicResource Background05}" />
+						<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Blue07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Blue06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Blue03}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						</Style>
+					</Style>
+				</Style>
+				<Style Selector="^[(Theme.Color)=BlueGray]">
+					<Setter Property="Background" Value="{DynamicResource Background05}" />
+					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+					<Style Selector="^:pointerover">
+						<Setter Property="Background" Value="{DynamicResource BlueGray07}" />
+					</Style>
+					<Style Selector="^:pressed">
+						<Setter Property="Background" Value="{DynamicResource BlueGray06}" />
+					</Style>
+					<Style Selector="^:disabled">
+						<Setter Property="Background" Value="{DynamicResource BlueGray03}" />
+						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+					</Style>
+					<Style Selector="^:checked">
+						<Setter Property="Background" Value="{DynamicResource BlueGray05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource BlueGray07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource BlueGray06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource BlueGray04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^:indeterminate">
+						<Setter Property="Background" Value="{DynamicResource BlueGray06}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource BlueGray08}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource BlueGray07}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource BlueGray05}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted">
+						<Setter Property="Background" Value="{DynamicResource BlueGray05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource BlueGray07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource BlueGray06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource BlueGray04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted:checked">
+						<Setter Property="Background" Value="{DynamicResource Background05}" />
+						<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource BlueGray07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource BlueGray06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource BlueGray03}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						</Style>
+					</Style>
+				</Style>
+				<Style Selector="^[(Theme.Color)=Brown]">
+					<Setter Property="Background" Value="{DynamicResource Background05}" />
+					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+					<Style Selector="^:pointerover">
+						<Setter Property="Background" Value="{DynamicResource Brown07}" />
+					</Style>
+					<Style Selector="^:pressed">
+						<Setter Property="Background" Value="{DynamicResource Brown06}" />
+					</Style>
+					<Style Selector="^:disabled">
+						<Setter Property="Background" Value="{DynamicResource Brown03}" />
+						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+					</Style>
+					<Style Selector="^:checked">
+						<Setter Property="Background" Value="{DynamicResource Brown05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Brown07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Brown06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Brown04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^:indeterminate">
+						<Setter Property="Background" Value="{DynamicResource Brown06}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Brown08}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Brown07}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Brown05}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted">
+						<Setter Property="Background" Value="{DynamicResource Brown05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Brown07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Brown06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Brown04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted:checked">
+						<Setter Property="Background" Value="{DynamicResource Background05}" />
+						<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Brown07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Brown06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Brown03}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						</Style>
+					</Style>
+				</Style>
+				<Style Selector="^[(Theme.Color)=DeepOrange]">
+					<Setter Property="Background" Value="{DynamicResource Background05}" />
+					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+					<Style Selector="^:pointerover">
+						<Setter Property="Background" Value="{DynamicResource DeepOrange07}" />
+					</Style>
+					<Style Selector="^:pressed">
+						<Setter Property="Background" Value="{DynamicResource DeepOrange06}" />
+					</Style>
+					<Style Selector="^:disabled">
+						<Setter Property="Background" Value="{DynamicResource DeepOrange03}" />
+						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+					</Style>
+					<Style Selector="^:checked">
+						<Setter Property="Background" Value="{DynamicResource DeepOrange05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource DeepOrange07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource DeepOrange06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource DeepOrange04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^:indeterminate">
+						<Setter Property="Background" Value="{DynamicResource DeepOrange06}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource DeepOrange08}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource DeepOrange07}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource DeepOrange05}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted">
+						<Setter Property="Background" Value="{DynamicResource DeepOrange05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource DeepOrange07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource DeepOrange06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource DeepOrange04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted:checked">
+						<Setter Property="Background" Value="{DynamicResource Background05}" />
+						<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource DeepOrange07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource DeepOrange06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource DeepOrange03}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						</Style>
+					</Style>
+				</Style>
+				<Style Selector="^[(Theme.Color)=DeepPurple]">
+					<Setter Property="Background" Value="{DynamicResource Background05}" />
+					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+					<Style Selector="^:pointerover">
+						<Setter Property="Background" Value="{DynamicResource DeepPurple07}" />
+					</Style>
+					<Style Selector="^:pressed">
+						<Setter Property="Background" Value="{DynamicResource DeepPurple06}" />
+					</Style>
+					<Style Selector="^:disabled">
+						<Setter Property="Background" Value="{DynamicResource DeepPurple03}" />
+						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+					</Style>
+					<Style Selector="^:checked">
+						<Setter Property="Background" Value="{DynamicResource DeepPurple05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource DeepPurple07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource DeepPurple06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource DeepPurple04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^:indeterminate">
+						<Setter Property="Background" Value="{DynamicResource DeepPurple06}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource DeepPurple08}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource DeepPurple07}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource DeepPurple05}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted">
+						<Setter Property="Background" Value="{DynamicResource DeepPurple05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource DeepPurple07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource DeepPurple06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource DeepPurple04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted:checked">
+						<Setter Property="Background" Value="{DynamicResource Background05}" />
+						<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource DeepPurple07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource DeepPurple06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource DeepPurple03}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						</Style>
+					</Style>
+				</Style>
+				<Style Selector="^[(Theme.Color)=Gray]">
+					<Setter Property="Background" Value="{DynamicResource Background05}" />
+					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+					<Style Selector="^:pointerover">
+						<Setter Property="Background" Value="{DynamicResource Gray07}" />
+					</Style>
+					<Style Selector="^:pressed">
+						<Setter Property="Background" Value="{DynamicResource Gray06}" />
+					</Style>
+					<Style Selector="^:disabled">
+						<Setter Property="Background" Value="{DynamicResource Gray03}" />
+						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+					</Style>
+					<Style Selector="^:checked">
+						<Setter Property="Background" Value="{DynamicResource Gray05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Gray07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Gray06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Gray04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^:indeterminate">
+						<Setter Property="Background" Value="{DynamicResource Gray06}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Gray08}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Gray07}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Gray05}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted">
+						<Setter Property="Background" Value="{DynamicResource Gray05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Gray07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Gray06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Gray04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted:checked">
+						<Setter Property="Background" Value="{DynamicResource Background05}" />
+						<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Gray07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Gray06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Gray03}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						</Style>
+					</Style>
+				</Style>
+				<Style Selector="^[(Theme.Color)=Green]">
+					<Setter Property="Background" Value="{DynamicResource Background05}" />
+					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+					<Style Selector="^:pointerover">
+						<Setter Property="Background" Value="{DynamicResource Green07}" />
+					</Style>
+					<Style Selector="^:pressed">
+						<Setter Property="Background" Value="{DynamicResource Green06}" />
+					</Style>
+					<Style Selector="^:disabled">
+						<Setter Property="Background" Value="{DynamicResource Green03}" />
+						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+					</Style>
+					<Style Selector="^:checked">
+						<Setter Property="Background" Value="{DynamicResource Green05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Green07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Green06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Green04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^:indeterminate">
+						<Setter Property="Background" Value="{DynamicResource Green06}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Green08}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Green07}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Green05}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted">
+						<Setter Property="Background" Value="{DynamicResource Green05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Green07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Green06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Green04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted:checked">
+						<Setter Property="Background" Value="{DynamicResource Background05}" />
+						<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Green07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Green06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Green03}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						</Style>
+					</Style>
+				</Style>
+				<Style Selector="^[(Theme.Color)=Indigo]">
+					<Setter Property="Background" Value="{DynamicResource Background05}" />
+					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+					<Style Selector="^:pointerover">
+						<Setter Property="Background" Value="{DynamicResource Indigo07}" />
+					</Style>
+					<Style Selector="^:pressed">
+						<Setter Property="Background" Value="{DynamicResource Indigo06}" />
+					</Style>
+					<Style Selector="^:disabled">
+						<Setter Property="Background" Value="{DynamicResource Indigo03}" />
+						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+					</Style>
+					<Style Selector="^:checked">
+						<Setter Property="Background" Value="{DynamicResource Indigo05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Indigo07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Indigo06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Indigo04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^:indeterminate">
+						<Setter Property="Background" Value="{DynamicResource Indigo06}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Indigo08}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Indigo07}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Indigo05}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted">
+						<Setter Property="Background" Value="{DynamicResource Indigo05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Indigo07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Indigo06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Indigo04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted:checked">
+						<Setter Property="Background" Value="{DynamicResource Background05}" />
+						<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Indigo07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Indigo06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Indigo03}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						</Style>
+					</Style>
+				</Style>
+				<Style Selector="^[(Theme.Color)=Orange]">
+					<Setter Property="Background" Value="{DynamicResource Background05}" />
+					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+					<Style Selector="^:pointerover">
+						<Setter Property="Background" Value="{DynamicResource Orange07}" />
+					</Style>
+					<Style Selector="^:pressed">
+						<Setter Property="Background" Value="{DynamicResource Orange06}" />
+					</Style>
+					<Style Selector="^:disabled">
+						<Setter Property="Background" Value="{DynamicResource Orange03}" />
+						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+					</Style>
+					<Style Selector="^:checked">
+						<Setter Property="Background" Value="{DynamicResource Orange05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Orange07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Orange06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Orange04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^:indeterminate">
+						<Setter Property="Background" Value="{DynamicResource Orange06}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Orange08}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Orange07}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Orange05}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted">
+						<Setter Property="Background" Value="{DynamicResource Orange05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Orange07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Orange06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Orange04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted:checked">
+						<Setter Property="Background" Value="{DynamicResource Background05}" />
+						<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Orange07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Orange06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Orange03}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						</Style>
+					</Style>
+				</Style>
+				<Style Selector="^[(Theme.Color)=Pink]">
+					<Setter Property="Background" Value="{DynamicResource Background05}" />
+					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+					<Style Selector="^:pointerover">
+						<Setter Property="Background" Value="{DynamicResource Pink07}" />
+					</Style>
+					<Style Selector="^:pressed">
+						<Setter Property="Background" Value="{DynamicResource Pink06}" />
+					</Style>
+					<Style Selector="^:disabled">
+						<Setter Property="Background" Value="{DynamicResource Pink03}" />
+						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+					</Style>
+					<Style Selector="^:checked">
+						<Setter Property="Background" Value="{DynamicResource Pink05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Pink07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Pink06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Pink04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^:indeterminate">
+						<Setter Property="Background" Value="{DynamicResource Pink06}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Pink08}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Pink07}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Pink05}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted">
+						<Setter Property="Background" Value="{DynamicResource Pink05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Pink07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Pink06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Pink04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted:checked">
+						<Setter Property="Background" Value="{DynamicResource Background05}" />
+						<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Pink07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Pink06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Pink03}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						</Style>
+					</Style>
+				</Style>
+				<Style Selector="^[(Theme.Color)=Purple]">
+					<Setter Property="Background" Value="{DynamicResource Background05}" />
+					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+					<Style Selector="^:pointerover">
+						<Setter Property="Background" Value="{DynamicResource Purple07}" />
+					</Style>
+					<Style Selector="^:pressed">
+						<Setter Property="Background" Value="{DynamicResource Purple06}" />
+					</Style>
+					<Style Selector="^:disabled">
+						<Setter Property="Background" Value="{DynamicResource Purple03}" />
+						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+					</Style>
+					<Style Selector="^:checked">
+						<Setter Property="Background" Value="{DynamicResource Purple05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Purple07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Purple06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Purple04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^:indeterminate">
+						<Setter Property="Background" Value="{DynamicResource Purple06}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Purple08}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Purple07}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Purple05}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted">
+						<Setter Property="Background" Value="{DynamicResource Purple05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Purple07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Purple06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Purple04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted:checked">
+						<Setter Property="Background" Value="{DynamicResource Background05}" />
+						<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Purple07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Purple06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Purple03}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						</Style>
+					</Style>
+				</Style>
+				<Style Selector="^[(Theme.Color)=Red]">
+					<Setter Property="Background" Value="{DynamicResource Background05}" />
+					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+					<Style Selector="^:pointerover">
+						<Setter Property="Background" Value="{DynamicResource Red07}" />
+					</Style>
+					<Style Selector="^:pressed">
+						<Setter Property="Background" Value="{DynamicResource Red06}" />
+					</Style>
+					<Style Selector="^:disabled">
+						<Setter Property="Background" Value="{DynamicResource Red03}" />
+						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+					</Style>
+					<Style Selector="^:checked">
+						<Setter Property="Background" Value="{DynamicResource Red05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Red07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Red06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Red04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^:indeterminate">
+						<Setter Property="Background" Value="{DynamicResource Red06}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Red08}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Red07}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Red05}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted">
+						<Setter Property="Background" Value="{DynamicResource Red05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Red07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Red06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Red04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted:checked">
+						<Setter Property="Background" Value="{DynamicResource Background05}" />
+						<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Red07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Red06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Red03}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						</Style>
+					</Style>
+				</Style>
+				<Style Selector="^[(Theme.Color)=Teal]">
+					<Setter Property="Background" Value="{DynamicResource Background05}" />
+					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+					<Style Selector="^:pointerover">
+						<Setter Property="Background" Value="{DynamicResource Teal07}" />
+					</Style>
+					<Style Selector="^:pressed">
+						<Setter Property="Background" Value="{DynamicResource Teal06}" />
+					</Style>
+					<Style Selector="^:disabled">
+						<Setter Property="Background" Value="{DynamicResource Teal03}" />
+						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+					</Style>
+					<Style Selector="^:checked">
+						<Setter Property="Background" Value="{DynamicResource Teal05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Teal07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Teal06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Teal04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^:indeterminate">
+						<Setter Property="Background" Value="{DynamicResource Teal06}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Teal08}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Teal07}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Teal05}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted">
+						<Setter Property="Background" Value="{DynamicResource Teal05}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Teal07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Teal06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Teal04}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+						</Style>
+					</Style>
+					<Style Selector="^.Inverted:checked">
+						<Setter Property="Background" Value="{DynamicResource Background05}" />
+						<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+						<Style Selector="^:pointerover">
+							<Setter Property="Background" Value="{DynamicResource Teal07}" />
+						</Style>
+						<Style Selector="^:pressed">
+							<Setter Property="Background" Value="{DynamicResource Teal06}" />
+						</Style>
+						<Style Selector="^:disabled">
+							<Setter Property="Background" Value="{DynamicResource Teal03}" />
+							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						</Style>
+					</Style>
+				</Style>
+				<!-- Generated Code - /Colors -->
+
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Style Selector="ToggleButton.Flat">
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="BorderBrush" Value="Transparent" />
+		<Setter Property="BorderThickness" Value="0" />
+		<Setter Property="Margin" Value="0" />
+		<Setter Property="Padding" Value="0" />
+
+		<Style Selector="^.Dim">
+			<Setter Property="Opacity" Value="0.5" />
+		</Style>
+		<Style Selector="^:disabled">
+			<Setter Property="Opacity" Value="0.3" />
+		</Style>
+		<Style Selector="^[IsChecked=True] Path">
+			<Setter Property="Fill" Value="{DynamicResource Foreground00}" />
+		</Style>
+		<Style Selector="^[IsChecked=True] PathIcon">
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		</Style>
+		<Style Selector="^[IsChecked=True]">
+			<Setter Property="Opacity" Value="1" />
+		</Style>
+		<Style Selector="^[IsChecked=True]">
+			<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		</Style>
+		<Style Selector="^[IsChecked=True].Round">
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+			<Setter Property="CornerRadius" Value="16" />
+		</Style>
+		<Style Selector="^[IsChecked=True].IconOnly">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="BorderBrush" Value="Transparent" />
+			<Setter Property="BorderThickness" Value="1" />
+			<Setter Property="Foreground" Value="{DynamicResource ThemeColor06}" />
+		</Style>
+		<Style Selector="^:pointerover">
+			<Setter Property="Background" Value="{DynamicResource Background05}" />
+		</Style>
+	</Style>
+
+	<Style Selector="ToggleButton.Hyperlink">
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="BorderBrush" Value="Transparent" />
+		<Setter Property="BorderThickness" Value="0" />
+		<Setter Property="CornerRadius" Value="0" />
+		<Setter Property="Foreground" Value="{StaticResource Blue05}" />
+		<Setter Property="Margin" Value="0" />
+		<Setter Property="Padding" Value="0" />
+		<Setter Property="Height" Value="NaN" />
+		<Setter Property="Width" Value="NaN" />
+		<Style Selector="^:checked">
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		</Style>
+		<Style Selector="^:pointerover">
+			<Setter Property="Foreground" Value="{StaticResource Blue06}" />
+		</Style>
+		<Style Selector="^:pressed">
+			<Setter Property="Foreground" Value="{StaticResource Blue05}" />
+		</Style>
+
+		<Style Selector="^:disabled">
+			<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+		</Style>
+		<Style Selector="^.Inverted">
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+
+			<Style Selector="^:checked">
+				<Setter Property="Foreground" Value="{StaticResource Blue06}" />
+			</Style>
+
+			<Style Selector="^:disabled">
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+	</Style>
+
+	<Style Selector="ToggleButton.Icon">
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="BorderBrush" Value="Transparent" />
+		<Setter Property="BorderThickness" Value="0" />
+		<Setter Property="Margin" Value="0" />
+		<Setter Property="Padding" Value="0" />
+		<Setter Property="Height" Value="32" />
+		<Setter Property="Width" Value="32" />
+
+		<Style Selector="^.Dim">
+			<Setter Property="Opacity" Value="0.5" />
+		</Style>
+		<Style Selector="^ Path">
+			<Setter Property="Fill" Value="{Binding $parent[Button].Foreground}" />
+			<Setter Property="Height" Value="16" />
+			<Setter Property="Width" Value="16" />
+		</Style>
+		<Style Selector="^ PathIcon">
+			<Setter Property="Foreground" Value="{Binding $parent[Button].Foreground}" />
+			<Setter Property="Height" Value="16" />
+			<Setter Property="Width" Value="16" />
+		</Style>
+		<Style Selector="^:disabled">
+			<Setter Property="Opacity" Value="0.3" />
+		</Style>
+		<Style Selector="^[IsChecked=True] Path">
+			<Setter Property="Fill" Value="{DynamicResource Foreground00}" />
+		</Style>
+		<Style Selector="^[IsChecked=True] PathIcon">
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		</Style>
+		<Style Selector="^[IsChecked=True]">
+			<Setter Property="Opacity" Value="1" />
+		</Style>
+		<Style Selector="^[IsChecked=True]">
+			<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		</Style>
+		<Style Selector="^[IsChecked=True].Round">
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+			<Setter Property="CornerRadius" Value="16" />
+		</Style>
+		<Style Selector="^[IsChecked=True].IconOnly">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="BorderBrush" Value="Transparent" />
+			<Setter Property="BorderThickness" Value="1" />
+			<Setter Property="Foreground" Value="{DynamicResource ThemeColor06}" />
+		</Style>
+		<Style Selector="^:pointerover">
+			<Setter Property="Opacity" Value="1.0" />
+		</Style>
+
+		<Style Selector="^.LayoutDirection">
+			<Setter Property="Template">
+				<ControlTemplate>
+					<Border x:Name="ContentBorder"
+							Background="{TemplateBinding Background}"
+							BorderBrush="{TemplateBinding BorderBrush}"
+							BorderThickness="{TemplateBinding BorderThickness}"
+							CornerRadius="{TemplateBinding CornerRadius}">
+						<Path x:Name="PART_IndicatorIcon"
+								Margin="{TemplateBinding Padding}"
+								Stretch="Fill"
+								Data="{StaticResource Icons.Orientation}"
+								Fill="{DynamicResource Foreground00}"
+								HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+								Opacity=".8"
+								RenderTransformOrigin="50%,50%"
+								RenderTransform="rotate(180deg)">
+							<Path.Transitions>
+								<Transitions>
+									<TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" />
+								</Transitions>
+							</Path.Transitions>
+						</Path>
+					</Border>
+				</ControlTemplate>
+			</Setter>
+			<Style Selector="^ Path">
+				<Setter Property="Height" Value="15" />
+				<Setter Property="Width" Value="15" />
+			</Style>
+			<Style Selector="^ PathIcon">
+				<Setter Property="Height" Value="15" />
+				<Setter Property="Width" Value="15" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="RenderTransform" Value="scale(1)" />
+			</Style>
+			<Style Selector="^:pointerover /template/ Border#ContentBorder">
+				<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+				<Setter Property="BorderThickness" Value="1" />
+				<Setter Property="Opacity" Value="1" />
+			</Style>
+			<Style Selector="^:checked /template/ Path#PART_IndicatorIcon">
+				<Setter Property="RenderTransform" Value="rotate(90deg)" />
+			</Style>
+			<Style Selector="^:pointerover /template/ Path#PART_IndicatorIcon">
+				<Setter Property="Fill" Value="{DynamicResource Foreground00}" />
+				<Setter Property="Opacity" Value="1" />
+			</Style>
+		</Style>
+	</Style>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="660">
+			<WrapPanel ItemSpacing="10"
+					LineSpacing="10">
+				<Button Classes="Icon Dim">
+					<PathIcon Data="{StaticResource Icons.Close}" />
+				</Button>
+				<ToggleButton Classes="Icon Dim">
+					<PathIcon Data="{StaticResource Icons.Close}" />
+				</ToggleButton>
+
+				<ToggleButton Theme.Color="None"
+						Content="Default"
+						IsThreeState="True"
+						Width="120" />
+				<ToggleButton Theme.Color="None"
+						Content="Default"
+						IsThreeState="True"
+						IsChecked="{x:Null}"
+						Width="120" />
+				<ToggleButton Theme.Color="None"
+						Classes="Inverted"
+						Content="Inverted"
+						IsChecked="True"
+						Width="120" />
+				<ToggleButton Classes="Hyperlink"
+						Content="Hyperlink"
+						Width="120" />
+				<ToggleButton Classes="Hyperlink Inverted"
+						Content="Inverted"
+						Width="120" />
+				
+				<ToggleButton Classes="Flat"
+						Content="Flat"
+						Width="120" />
+			</WrapPanel>
+			<PreviewCodeSnippet.ItemTemplate>
+				<DataTemplate DataType="ThemeColor">
+					<StackPanel Spacing="4">
+						<ToggleButton
+								Theme.Color="{Binding}"
+								Content="{Binding}"
+								Width="150" />
+						<ToggleButton
+								Theme.Color="{Binding}"
+								Content="Checked"
+								IsChecked="True"
+								Width="150" />
+						<ToggleButton
+								Theme.Color="{Binding}"
+								Content="Indeterminate"
+								IsThreeState="True"
+								IsChecked="{x:Null}"
+								Width="150" />
+						<ToggleButton
+								Theme.Color="{Binding}"
+								Content="disabled"
+								IsEnabled="False"
+								Width="150" />
+						<ToggleButton
+								Theme.Color="{Binding}"
+								Classes="Inverted"
+								Content="Inverted"
+								Width="150" />
+						<ToggleButton
+								Theme.Color="{Binding}"
+								Classes="Inverted"
+								Content="Inverted"
+								IsChecked="True"
+								Width="150" />
+
+					</StackPanel>
+				</DataTemplate>
+			</PreviewCodeSnippet.ItemTemplate>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</Styles>

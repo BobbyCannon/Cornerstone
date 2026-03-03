@@ -1,0 +1,353 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<ControlTheme x:Key="{x:Type RadioButton}" TargetType="RadioButton">
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+		<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+		<Setter Property="Padding" Value="8,0,0,0" />
+		<Setter Property="HorizontalAlignment" Value="Left" />
+		<Setter Property="VerticalAlignment" Value="Center" />
+		<Setter Property="HorizontalContentAlignment" Value="Left" />
+		<Setter Property="VerticalContentAlignment" Value="Center" />
+		<Setter Property="Template">
+			<ControlTemplate TargetType="RadioButton">
+				<Border
+						Name="RootBorder"
+						Background="{TemplateBinding Background}"
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}"
+						CornerRadius="{TemplateBinding CornerRadius}">
+					<Grid ColumnDefinitions="20,*">
+						<Grid Height="32" VerticalAlignment="Top">
+							<Ellipse
+									Name="OuterEllipse"
+									Width="20"
+									Height="20"
+									Fill="{DynamicResource Background06}"
+									StrokeThickness="0"
+									UseLayoutRounding="False" />
+							<Ellipse
+									Name="CheckOuterEllipse"
+									Width="20"
+									Height="20"
+									Fill="{DynamicResource Background06}"
+									Opacity="0"
+									StrokeThickness="0"
+									UseLayoutRounding="False" />
+							<Ellipse
+									Name="CheckInnerEllipse"
+									Width="8"
+									Height="8"
+									Fill="{DynamicResource Foreground00}"
+									Opacity="0"
+									UseLayoutRounding="False" />
+						</Grid>
+						<ContentPresenter
+								Name="PART_ContentPresenter"
+								Grid.Column="1"
+								Margin="{TemplateBinding Padding}"
+								HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+								VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+								Content="{TemplateBinding Content}"
+								ContentTemplate="{TemplateBinding ContentTemplate}"
+								Foreground="{TemplateBinding Foreground}"
+								RecognizesAccessKey="True" />
+					</Grid>
+				</Border>
+			</ControlTemplate>
+		</Setter>
+
+		<!-- Pressed state. -->
+		<Style Selector="^:pressed">
+			<Style Selector="^ /template/ Ellipse#OuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Background06}" />
+			</Style>
+		</Style>
+
+		<!-- Disabled state. -->
+		<Style Selector="^:disabled">
+			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+
+			<Style Selector="^ /template/ Ellipse#OuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Background04}" />
+			</Style>
+
+			<Style Selector="^ /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Background04}" />
+			</Style>
+
+			<Style Selector="^ /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+
+		<!-- Code Template - Color -->
+		<Style Selector="^[(Theme.Color)=Current]">
+			<Style Selector="^ /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource ThemeColor07}" />
+			</Style>
+			<Style Selector="^ /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource ThemeForeground07}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource ThemeColor03}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource ThemeColor09}" />
+			</Style>
+		</Style>
+		<!-- Code Template - /Color -->
+
+		<!-- Generated Code - Colors -->
+		<Style Selector="^[(Theme.Color)=Amber]">
+			<Style Selector="^ /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Amber07}" />
+			</Style>
+			<Style Selector="^ /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource AmberText07}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Amber03}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Amber09}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Blue]">
+			<Style Selector="^ /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Blue07}" />
+			</Style>
+			<Style Selector="^ /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource BlueText07}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Blue03}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Blue09}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=BlueGray]">
+			<Style Selector="^ /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource BlueGray07}" />
+			</Style>
+			<Style Selector="^ /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource BlueGrayText07}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource BlueGray03}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource BlueGray09}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Brown]">
+			<Style Selector="^ /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Brown07}" />
+			</Style>
+			<Style Selector="^ /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource BrownText07}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Brown03}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Brown09}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepOrange]">
+			<Style Selector="^ /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource DeepOrange07}" />
+			</Style>
+			<Style Selector="^ /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource DeepOrangeText07}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource DeepOrange03}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource DeepOrange09}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepPurple]">
+			<Style Selector="^ /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource DeepPurple07}" />
+			</Style>
+			<Style Selector="^ /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource DeepPurpleText07}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource DeepPurple03}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource DeepPurple09}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Gray]">
+			<Style Selector="^ /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Gray07}" />
+			</Style>
+			<Style Selector="^ /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource GrayText07}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Gray03}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Gray09}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Green]">
+			<Style Selector="^ /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Green07}" />
+			</Style>
+			<Style Selector="^ /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource GreenText07}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Green03}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Green09}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Indigo]">
+			<Style Selector="^ /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Indigo07}" />
+			</Style>
+			<Style Selector="^ /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource IndigoText07}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Indigo03}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Indigo09}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Orange]">
+			<Style Selector="^ /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Orange07}" />
+			</Style>
+			<Style Selector="^ /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource OrangeText07}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Orange03}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Orange09}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Pink]">
+			<Style Selector="^ /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Pink07}" />
+			</Style>
+			<Style Selector="^ /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource PinkText07}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Pink03}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Pink09}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Purple]">
+			<Style Selector="^ /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Purple07}" />
+			</Style>
+			<Style Selector="^ /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource PurpleText07}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Purple03}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Purple09}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Red]">
+			<Style Selector="^ /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Red07}" />
+			</Style>
+			<Style Selector="^ /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource RedText07}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Red03}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Red09}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Teal]">
+			<Style Selector="^ /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Teal07}" />
+			</Style>
+			<Style Selector="^ /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource TealText07}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckOuterEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Teal03}" />
+			</Style>
+			<Style Selector="^:disabled /template/ Ellipse#CheckInnerEllipse">
+				<Setter Property="Fill" Value="{DynamicResource Teal09}" />
+			</Style>
+		</Style>
+		<!-- Generated Code - /Colors -->
+
+		<!-- Checked state. -->
+		<Style Selector="^:checked /template/ Ellipse#CheckInnerEllipse">
+			<Setter Property="Opacity" Value="1" />
+		</Style>
+		<Style Selector="^:checked /template/ Ellipse#OuterEllipse">
+			<Setter Property="Opacity" Value="0" />
+		</Style>
+		<Style Selector="^:checked /template/ Ellipse#CheckOuterEllipse">
+			<Setter Property="Opacity" Value="1" />
+		</Style>
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="600">
+			<ItemsControl ItemsSource="{x:Static Theme.ThemeColors}">
+				<ItemsControl.ItemsPanel>
+					<ItemsPanelTemplate>
+						<WrapPanel
+								ItemSpacing="10"
+								LineSpacing="20" />
+					</ItemsPanelTemplate>
+				</ItemsControl.ItemsPanel>
+				<ItemsControl.ItemTemplate>
+					<DataTemplate DataType="ThemeColor">
+						<StackPanel Spacing="4">
+							<RadioButton Theme.Color="{Binding}"
+									Content="{Binding}"
+									GroupName="{Binding}"
+									IsChecked="True"
+									Width="120" />
+							<RadioButton Theme.Color="{Binding}"
+									Content="Option 2"
+									GroupName="{Binding}"
+									Width="120" />
+							<RadioButton Theme.Color="{Binding}"
+									Content="Disabled"
+									GroupName="{Binding}"
+									IsEnabled="False"
+									Width="120" />
+							<RadioButton Theme.Color="{Binding}"
+									Content="Disabled"
+									GroupName="4"
+									IsEnabled="False"
+									IsChecked="True"
+									Width="120" />
+						</StackPanel>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

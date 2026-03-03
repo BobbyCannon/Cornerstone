@@ -1,0 +1,20 @@
+﻿<Styles x:Class="Cornerstone.Avalonia.CornerstoneTheme"
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ResourceDictionary.ThemeDictionaries>
+				<ResourceInclude x:Key="Light" Source="avares://Cornerstone.Avalonia/Themes/Theme.Light.axaml" />
+				<ResourceInclude x:Key="Dark" Source="avares://Cornerstone.Avalonia/Themes/Theme.Dark.axaml" />
+				<ResourceInclude x:Key="Default" Source="avares://Cornerstone.Avalonia/Themes/Theme.Dark.axaml" />
+			</ResourceDictionary.ThemeDictionaries>
+			<ResourceDictionary.MergedDictionaries>
+				<ResourceInclude Source="avares://Cornerstone.Avalonia/Themes/Fonts.axaml" />
+				<ResourceInclude Source="avares://Cornerstone.Avalonia/Themes/FullPalette.axaml" />
+				<ResourceInclude Source="avares://Cornerstone.Avalonia/Themes/Icons.axaml" />
+				<ResourceInclude Source="avares://Cornerstone.Avalonia/Themes/Theme.Constants.axaml" />
+			</ResourceDictionary.MergedDictionaries>
+		</ResourceDictionary>
+	</Styles.Resources>
+	<StyleInclude Source="avares://Cornerstone.Avalonia/Themes/Controls.axaml" />
+</Styles>

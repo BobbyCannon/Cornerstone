@@ -1,0 +1,101 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<Style Selector="TextBlock.Header">
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansLight}" />
+		<Setter Property="FontSize" Value="24" />
+	</Style>
+
+	<Style Selector="TextBlock.SubHeader">
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansLight}" />
+		<Setter Property="FontSize" Value="20" />
+	</Style>
+
+	<Style Selector="TextBlock.GroupHeader">
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansLight}" />
+		<Setter Property="FontSize" Value="16" />
+	</Style>
+
+	<Style Selector="TextBlock.Mono">
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+	</Style>
+	<Style Selector="TextBlock.MonoLight">
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansLight}" />
+	</Style>
+
+	<Style Selector="TextBlock.HeaderOne">
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansLight}" />
+		<Setter Property="FontSize" Value="30" />
+		<Setter Property="Margin" Value="0,0,0,10" />
+	</Style>
+	<Style Selector="TextBlock.HeaderTwo">
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansLight}" />
+		<Setter Property="FontSize" Value="28" />
+		<Setter Property="Margin" Value="0,0,0,10" />
+	</Style>
+	<Style Selector="TextBlock.HeaderThree">
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansLight}" />
+		<Setter Property="FontSize" Value="26" />
+		<Setter Property="Margin" Value="0,0,0,10" />
+	</Style>
+	<Style Selector="TextBlock.HeaderFour">
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansLight}" />
+		<Setter Property="FontSize" Value="24" />
+		<Setter Property="Margin" Value="0,0,0,10" />
+	</Style>
+	<Style Selector="TextBlock.HeaderFive">
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansLight}" />
+		<Setter Property="FontSize" Value="22" />
+		<Setter Property="Margin" Value="0,0,0,10" />
+	</Style>
+	<Style Selector="TextBlock.HeaderSix">
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansLight}" />
+		<Setter Property="FontSize" Value="20" />
+		<Setter Property="Margin" Value="0,0,0,10" />
+	</Style>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet Width="600">
+			<StackPanel>
+				<TextBlock Classes="Disableable" Text="Disabled" IsEnabled="False" />
+
+				<TextBlock Classes="Header" Text="Header" />
+				<TextBlock Classes="Header MonoLight" Text="Header MonoLight" />
+				<TextBlock Classes="SubHeader" Text="SubHeader" />
+				<TextBlock Classes="SubHeader MonoLight" Text="SubHeader MonoLight" />
+
+				<TextBlock Classes="GroupHeader" Text="GroupHeader" />
+				<TextBlock Classes="GroupHeader MonoLight" Text="GroupHeader MonoLight" />
+
+				<TextBlock Classes="MonoLight"
+						Text="The quick brown fox jumped over the lazy dog's back."
+						TextWrapping="Wrap"
+						Margin="10" />
+
+				<TextBlock Classes="Mono" Text="Regular Monospaced." />
+				<TextBlock Classes="MonoLight" Text="Light Monospaced." />
+
+				<Border Margin="0,10" />
+
+				<TextBlock Classes="HeaderOne" Text="Header 1" />
+				<TextBlock Foreground="{DynamicResource Foreground00}"
+						Text="The quick brown fox jumped" />
+				<TextBlock Classes="HeaderTwo" Text="Header 2" />
+				<TextBlock Foreground="{DynamicResource Foreground00}"
+						Text="The quick brown fox jumped" />
+				<TextBlock Classes="HeaderThree" Text="Header 3" />
+				<TextBlock Foreground="{DynamicResource Foreground00}"
+						Text="The quick brown fox jumped" />
+				<TextBlock Classes="HeaderFour" Text="Header 4" />
+				<TextBlock Foreground="{DynamicResource Foreground00}"
+						Text="The quick brown fox jumped" />
+				<TextBlock Classes="HeaderFive" Text="Header 5" />
+				<TextBlock Foreground="{DynamicResource Foreground00}"
+						Text="The quick brown fox jumped" />
+				<TextBlock Classes="HeaderSix" Text="Header 6" />
+				<TextBlock Foreground="{DynamicResource Foreground00}"
+						Text="The quick brown fox jumped" />
+			</StackPanel>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</Styles>

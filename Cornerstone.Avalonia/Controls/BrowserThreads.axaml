@@ -1,0 +1,25 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+	<ControlTheme x:Key="{x:Type BrowserThreads}" TargetType="BrowserThreads">
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border x:Name="PART_OuterBorder">
+					<ContentPresenter x:Name="PART_ContentPresenter"
+							Content="{TemplateBinding Content}"
+							ContentTemplate="{TemplateBinding ContentTemplate}" />
+				</Border>
+			</ControlTemplate>
+		</Setter>
+		<ControlTheme.Animations>
+			<Animation Duration="0:1:0" IterationCount="Infinite" PlaybackDirection="Alternate">
+				<KeyFrame Cue="0%">
+					<Setter Property="BorderBrush" Value="Transparent" />
+				</KeyFrame>
+				<KeyFrame Cue="100%">
+					<Setter Property="BorderBrush" Value="Transparent" />
+				</KeyFrame>
+			</Animation>
+		</ControlTheme.Animations>
+	</ControlTheme>
+</ResourceDictionary>

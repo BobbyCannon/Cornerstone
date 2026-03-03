@@ -1,0 +1,180 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:system="clr-namespace:System;assembly=System.Runtime">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type NumericUpDown}" TargetType="NumericUpDown">
+				<Setter Property="Background" Value="{DynamicResource Background04}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+				<Setter Property="BorderThickness" Value="{DynamicResource ControlBorderThickness}" />
+				<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+				<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+				<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+				<Setter Property="MinHeight" Value="32" />
+				<Setter Property="Padding" Value="0" />
+				<Setter Property="HorizontalContentAlignment" Value="Stretch" />
+				<Setter Property="VerticalContentAlignment" Value="Center" />
+				<Setter Property="HorizontalAlignment" Value="Left" />
+				<Setter Property="VerticalAlignment" Value="Top" />
+				<Setter Property="TextAlignment" Value="Left" />
+				<Setter Property="Template">
+					<ControlTemplate>
+						<DataValidationErrors Errors="{TemplateBinding (DataValidationErrors.Errors)}">
+							<ButtonSpinner
+									Name="PART_Spinner"
+									Background="{TemplateBinding Background}"
+									BorderThickness="{TemplateBinding BorderThickness}"
+									BorderBrush="{TemplateBinding BorderBrush}"
+									CornerRadius="{TemplateBinding CornerRadius}"
+									MinHeight="{TemplateBinding MinHeight}"
+									Padding="{TemplateBinding Padding}"
+									HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
+									VerticalAlignment="{TemplateBinding VerticalAlignment}"
+									HorizontalContentAlignment="Stretch"
+									VerticalContentAlignment="Stretch"
+									AllowSpin="{TemplateBinding AllowSpin}"
+									ShowButtonSpinner="{TemplateBinding ShowButtonSpinner}"
+									ButtonSpinnerLocation="{TemplateBinding ButtonSpinnerLocation}"
+									Tag="{Binding #PART_TextBox.IsFocused}"
+									IsTabStop="False"
+									Width="{TemplateBinding Width}">
+								<Grid ColumnDefinitions="Auto,Auto,*,Auto">
+									<ContentPresenter
+											Grid.Column="0"
+											Content="{TemplateBinding InnerLeftContent}"
+											IsVisible="{TemplateBinding InnerLeftContent, Mode=OneWay, Converter={x:Static ObjectConverters.IsNotNull}}"
+											Margin="0"
+											VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+									<TextBlock x:Name="Label"
+											Grid.Column="1"
+											DockPanel.Dock="Left"
+											FontFamily="{TemplateBinding FontFamily}"
+											FontSize="{TemplateBinding FontSize}"
+											Margin="10,0,0,0"
+											Text="{TemplateBinding (ControlHelper.DisplayName)}"
+											MinWidth="{TemplateBinding (ControlHelper.DisplayNameWidth)}"
+											IsVisible="{TemplateBinding (ControlHelper.DisplayName), Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+											VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+									<TextBox
+											Grid.Column="2"
+											Name="PART_TextBox"
+											Background="Transparent"
+											BorderBrush="Transparent"
+											BorderThickness="0"
+											Padding="0"
+											Margin="0"
+											Foreground="{TemplateBinding Foreground}"
+											FontFamily="{TemplateBinding FontFamily}"
+											FontSize="{TemplateBinding FontSize}"
+											Watermark="{TemplateBinding Watermark}"
+											IsReadOnly="{TemplateBinding IsReadOnly}"
+											VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+											HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+											Text="{TemplateBinding Text}"
+											TextAlignment="{TemplateBinding TextAlignment}"
+											AcceptsReturn="False"
+											TextWrapping="NoWrap"
+											ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+											ScrollViewer.VerticalScrollBarVisibility="Disabled"
+											TextInputOptions.ContentType="Number" />
+									<ContentPresenter
+											Grid.Column="3"
+											Content="{TemplateBinding InnerRightContent}"
+											IsVisible="{TemplateBinding InnerRightContent, Mode=OneWay, Converter={x:Static ObjectConverters.IsNotNull}}"
+											Margin="0"
+											VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+								</Grid>
+							</ButtonSpinner>
+						</DataValidationErrors>
+					</ControlTemplate>
+				</Setter>
+
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Style Selector="NumericUpDown TextBox">
+		<Setter Property="(TextInputOptions.ContentType)" Value="Number"/>
+	</Style>
+
+	<Style Selector="NumericUpDown.NoErrors">
+		<Style Selector="^ DataValidationErrors">
+			<Setter Property="Template">
+				<Setter.Value>
+					<ControlTemplate>
+						<ContentPresenter Name="PART_ContentPresenter"
+								Background="{TemplateBinding Background}"
+								BorderBrush="{TemplateBinding BorderBrush}"
+								BorderThickness="{TemplateBinding BorderThickness}"
+								CornerRadius="{TemplateBinding CornerRadius}"
+								Content="{TemplateBinding Content}"
+								ContentTemplate="{TemplateBinding ContentTemplate}"
+								Padding="{TemplateBinding Padding}" />
+					</ControlTemplate>
+				</Setter.Value>
+			</Setter>
+		</Style>
+
+	</Style>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet Width="600">
+			<WrapPanel ItemSpacing="10"
+					LineSpacing="10">
+				<NumericUpDown Watermark="Enter text" />
+				<NumericUpDown Watermark="disabled" IsEnabled="False" />
+				<NumericUpDown Value="4.5"
+						ControlHelper.DisplayName="Apples"
+						ButtonSpinnerLocation="Right"
+						Watermark="Enter text" />
+				<NumericUpDown Value="5"
+						ButtonSpinnerLocation="Left"
+						Watermark="Enter text">
+					<NumericUpDown.InnerRightContent>
+						<TextBlock Text="Foo" Margin="10,0,12,0" />
+					</NumericUpDown.InnerRightContent>
+				</NumericUpDown>
+				<NumericUpDown Value="5"
+						ButtonSpinnerLocation="Left"
+						Watermark="Enter text">
+					<NumericUpDown.InnerLeftContent>
+						<TextBlock Text="Bar" Margin="10,0,2,0" />
+					</NumericUpDown.InnerLeftContent>
+				</NumericUpDown>
+				<NumericUpDown Value="5"
+						HorizontalContentAlignment="Right"
+						Watermark="Delay">
+					<NumericUpDown.InnerLeftContent>
+						<TextBlock Text="Bar" Margin="10,0,4,0" />
+					</NumericUpDown.InnerLeftContent>
+					<NumericUpDown.InnerRightContent>
+						<TextBlock Text="sec" Margin="4,0,10,0" />
+					</NumericUpDown.InnerRightContent>
+				</NumericUpDown>
+				<NumericUpDown Value="123"
+						FormatString="N0"
+						Width="200" />
+
+				<HeaderedContentControl Header="Error">
+					<StackPanel Spacing="10">
+						<NumericUpDown Classes="NoErrors">
+							<DataValidationErrors.Error>
+								<system:Exception />
+							</DataValidationErrors.Error>
+							<NumericUpDown.InnerLeftContent>
+								<TextBlock Text="Disable Error" />
+							</NumericUpDown.InnerLeftContent>
+						</NumericUpDown>
+						<NumericUpDown>
+							<DataValidationErrors.Error>
+								<system:Exception />
+							</DataValidationErrors.Error>
+						</NumericUpDown>
+					</StackPanel>
+				</HeaderedContentControl>
+
+			</WrapPanel>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</Styles>

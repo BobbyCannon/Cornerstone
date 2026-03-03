@@ -1,0 +1,28 @@
+<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal"
+		x:CompileBindings="True">
+
+	<ControlTheme x:Key="{x:Type ThemeVariantScope}"
+			TargetType="ThemeVariantScope" />
+
+	<Design.PreviewWith>
+		<StackPanel Width="300">
+			<ThemeVariantScope RequestedThemeVariant="Dark">
+				<Border Padding="20">
+					<StackPanel Spacing="20">
+						<Button>Button</Button>
+					</StackPanel>
+				</Border>
+			</ThemeVariantScope>
+			<ThemeVariantScope RequestedThemeVariant="Light">
+				<Border Padding="20">
+					<StackPanel Spacing="20">
+						<Button>Button</Button>
+					</StackPanel>
+				</Border>
+			</ThemeVariantScope>
+		</StackPanel>
+	</Design.PreviewWith>
+</ResourceDictionary>

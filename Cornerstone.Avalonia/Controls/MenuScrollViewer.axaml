@@ -1,0 +1,179 @@
+<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:converters="using:Avalonia.Controls.Converters"
+		x:ClassModifier="internal">
+
+	<Design.PreviewWith>
+		<Grid RowDefinitions="Auto,*">
+			<Grid.Styles>
+				<Style Selector="TextBlock">
+					<Setter Property="HorizontalAlignment" Value="Center" />
+					<Setter Property="Padding" Value="4,6" />
+				</Style>
+			</Grid.Styles>
+			<ScrollViewer
+					Grid.Column="0"
+					Grid.Row="0"
+					HorizontalScrollBarVisibility="Auto"
+					Width="300"
+					Theme="{DynamicResource MenuScrollViewerForHorizontal}">
+				<StackPanel Orientation="Horizontal">
+					<TextBlock>Item 1</TextBlock>
+					<TextBlock>Item 2</TextBlock>
+					<TextBlock>Item 3</TextBlock>
+					<TextBlock>Item 4</TextBlock>
+					<TextBlock>Item 5</TextBlock>
+					<TextBlock>Item 6</TextBlock>
+					<TextBlock>Item 7</TextBlock>
+					<TextBlock>Item 8</TextBlock>
+					<TextBlock>Item 9</TextBlock>
+				</StackPanel>
+			</ScrollViewer>
+			<ScrollViewer
+					Grid.Column="0"
+					Grid.Row="1"
+					Height="90"
+					Theme="{DynamicResource MenuScrollViewerForVertical}">
+				<StackPanel>
+					<TextBlock>Item 1</TextBlock>
+					<TextBlock>Item 2</TextBlock>
+					<TextBlock>Item 3</TextBlock>
+					<TextBlock>Item 4</TextBlock>
+					<TextBlock>Item 5</TextBlock>
+					<TextBlock>Item 6</TextBlock>
+					<TextBlock>Item 7</TextBlock>
+					<TextBlock>Item 8</TextBlock>
+					<TextBlock>Item 9</TextBlock>
+				</StackPanel>
+			</ScrollViewer>
+		</Grid>
+	</Design.PreviewWith>
+
+	<ControlTheme x:Key="MenuScrollViewerForHorizontal"
+			TargetType="ScrollViewer">
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<DockPanel>
+					<RepeatButton
+							DockPanel.Dock="Left"
+							Command="{Binding PageLeft, RelativeSource={RelativeSource TemplatedParent}}"
+							BorderThickness="0"
+							Background="Transparent"
+							HorizontalAlignment="Stretch"
+							HorizontalContentAlignment="Center"
+							RenderTransform="{x:Null}"
+							Width="20">
+						<RepeatButton.IsVisible>
+							<MultiBinding Converter="{x:Static converters:MenuScrollingVisibilityConverter.Instance}"
+									ConverterParameter="0">
+								<Binding RelativeSource="{RelativeSource TemplatedParent}" Path="HorizontalScrollBarVisibility" />
+								<Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Offset.X" />
+								<Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Extent.Width" />
+								<Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Viewport.Width" />
+							</MultiBinding>
+						</RepeatButton.IsVisible>
+						<Path Data="M 4 8 L 4 0 L 0 4 Z"
+								Height="16"
+								Width="8"
+								Margin="4" />
+					</RepeatButton>
+					<RepeatButton
+							DockPanel.Dock="Right"
+							Command="{Binding PageRight, RelativeSource={RelativeSource TemplatedParent}}"
+							BorderThickness="0"
+							Background="Transparent"
+							HorizontalAlignment="Stretch"
+							HorizontalContentAlignment="Center"
+							RenderTransform="{x:Null}"
+							Width="20">
+						<RepeatButton.IsVisible>
+							<MultiBinding Converter="{x:Static converters:MenuScrollingVisibilityConverter.Instance}"
+									ConverterParameter="100">
+								<Binding RelativeSource="{RelativeSource TemplatedParent}" Path="HorizontalScrollBarVisibility" />
+								<Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Offset.X" />
+								<Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Extent.Width" />
+								<Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Viewport.Width" />
+							</MultiBinding>
+						</RepeatButton.IsVisible>
+						<Path Data="M 4 0 L 4 8 L 8 4 Z"
+								Height="16"
+								Width="8"
+								Margin="4" />
+					</RepeatButton>
+					<ScrollContentPresenter Name="PART_ContentPresenter">
+						<ScrollContentPresenter.GestureRecognizers>
+							<ScrollGestureRecognizer
+									CanHorizontallyScroll="{Binding CanHorizontallyScroll, ElementName=PART_ContentPresenter}"
+									CanVerticallyScroll="{Binding CanVerticallyScroll, ElementName=PART_ContentPresenter}" />
+						</ScrollContentPresenter.GestureRecognizers>
+					</ScrollContentPresenter>
+				</DockPanel>
+			</ControlTemplate>
+		</Setter>
+	</ControlTheme>
+	<ControlTheme x:Key="MenuScrollViewerForVertical"
+			TargetType="ScrollViewer">
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<DockPanel>
+					<RepeatButton
+							DockPanel.Dock="Top"
+							Command="{Binding LineUp, RelativeSource={RelativeSource TemplatedParent}}"
+							BorderThickness="0"
+							Background="Transparent"
+							HorizontalAlignment="Stretch"
+							HorizontalContentAlignment="Center"
+							RenderTransform="{x:Null}">
+						<!-- Display scroll up button if not already scrolled to the top. -->
+						<RepeatButton.IsVisible>
+							<MultiBinding Converter="{x:Static converters:MenuScrollingVisibilityConverter.Instance}"
+									ConverterParameter="0">
+								<Binding RelativeSource="{RelativeSource TemplatedParent}" Path="VerticalScrollBarVisibility" />
+								<Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Offset.Y" />
+								<Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Extent.Height" />
+								<Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Viewport.Height" />
+							</MultiBinding>
+						</RepeatButton.IsVisible>
+						<Path Data="M 0 4 L 8 4 L 4 0 Z"
+								Height="8"
+								Width="16"
+								Margin="4" />
+					</RepeatButton>
+					<RepeatButton
+							DockPanel.Dock="Bottom"
+							Command="{Binding LineDown, RelativeSource={RelativeSource TemplatedParent}}"
+							BorderThickness="0"
+							Background="Transparent"
+							HorizontalAlignment="Stretch"
+							HorizontalContentAlignment="Center"
+							RenderTransform="{x:Null}">
+						<RepeatButton.IsVisible>
+							<MultiBinding Converter="{x:Static converters:MenuScrollingVisibilityConverter.Instance}"
+									ConverterParameter="100">
+								<Binding RelativeSource="{RelativeSource TemplatedParent}" Path="VerticalScrollBarVisibility" />
+								<Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Offset.Y" />
+								<Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Extent.Height" />
+								<Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Viewport.Height" />
+							</MultiBinding>
+						</RepeatButton.IsVisible>
+						<Path Data="M 0 0 L 4 4 L 8 0 Z"
+								Height="8"
+								Width="16"
+								Margin="4" />
+					</RepeatButton>
+
+					<ScrollContentPresenter Name="PART_ContentPresenter">
+						<ScrollContentPresenter.GestureRecognizers>
+							<ScrollGestureRecognizer
+									CanHorizontallyScroll="{Binding CanHorizontallyScroll, ElementName=PART_ContentPresenter}"
+									CanVerticallyScroll="{Binding CanVerticallyScroll, ElementName=PART_ContentPresenter}" />
+						</ScrollContentPresenter.GestureRecognizers>
+					</ScrollContentPresenter>
+				</DockPanel>
+			</ControlTemplate>
+		</Setter>
+	</ControlTheme>
+</ResourceDictionary>

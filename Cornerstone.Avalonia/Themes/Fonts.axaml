@@ -1,0 +1,41 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<FontFamily x:Key="DejaVuSansMono">avares://Cornerstone.Avalonia/Assets/Fonts/DejaVuSansMono.ttf#DejaVu Sans Mono</FontFamily>
+	<FontFamily x:Key="DejaVuSansLight">avares://Cornerstone.Avalonia/Assets/Fonts/DejaVuSansLight.ttf#DejaVu Sans Light</FontFamily>
+	<FontFamily x:Key="OpenSansLight">avares://Cornerstone.Avalonia/Assets/Fonts/OpenSansLight.ttf#Open Sans</FontFamily>
+	<FontFamily x:Key="OpenSansRegular">avares://Cornerstone.Avalonia/Assets/Fonts/OpenSansRegular.ttf#Open Sans</FontFamily>
+
+	<Design.PreviewWith>
+		<StackPanel Spacing="10">
+			<TextBlock Classes="Header" Text="x:Static" />
+			<TextBlock FontFamily="{x:Static CornerstoneTheme.DejaVuSansMono}"
+					FontSize="22"
+					Text="DejaVu Sans Mono : 0oO1LlIi The quick brown fox jumped..." />
+			<TextBlock FontFamily="{x:Static CornerstoneTheme.DejaVuSansLight}"
+					FontSize="22"
+					Text="DejaVu Sans Light   : 0oO1LlIi The quick brown fox jumped..." />
+			<TextBlock FontFamily="{x:Static CornerstoneTheme.OpenSansRegular}"
+					FontSize="22"
+					Text="Open Sans Regular : The quick brown fox jumped..." />
+			<TextBlock FontFamily="{x:Static CornerstoneTheme.OpenSansLight}"
+					FontSize="22"
+					Text="Open Sans Light : The quick brown fox jumped..." />
+
+			<TextBlock Classes="Header"
+					Text="Static Resource"
+					Margin="0,20,0,0" />
+			<TextBlock FontFamily="{StaticResource DejaVuSansMono}"
+					FontSize="22"
+					Text="DejaVu Sans Mono : 0oO1LlIi" />
+			<TextBlock FontFamily="{StaticResource DejaVuSansLight}"
+					FontSize="22"
+					Text="DejaVu Sans Light   : 0oO1LlIi" />
+			<TextBlock FontFamily="{StaticResource OpenSansRegular}"
+					FontSize="22"
+					Text="Open Sans Regular : The quick brown fox jumped..." />
+			<TextBlock FontFamily="{StaticResource OpenSansLight}"
+					FontSize="22"
+					Text="Open Sans Light : The quick brown fox jumped..." />
+		</StackPanel>
+	</Design.PreviewWith>
+</ResourceDictionary>

@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFrameworks>net10.0-android</TargetFrameworks>
+		<SupportedOSPlatformVersion>34</SupportedOSPlatformVersion>
+		<ApplicationId>com.bobbycannon.cornerstone.sample</ApplicationId>
+		<AndroidPackageFormat>apk</AndroidPackageFormat>
+		<AndroidEnableProfiledAot>False</AndroidEnableProfiledAot>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<Optimize>true</Optimize>
+		<PublishTrimmed>false</PublishTrimmed>
+		<TrimMode>none</TrimMode>
+		<OptimizationPreference>Speed</OptimizationPreference>
+		<PublishAot>false</PublishAot>
+		<DebugSymbols>false</DebugSymbols>
+		<DebugType>none</DebugType>
+		<RunAOTCompilation>false</RunAOTCompilation>
+		<EnableAssemblyILStripping>false</EnableAssemblyILStripping>
+		<NoWarn>$(NoWarn);IL2026;IL2111</NoWarn>
+	</PropertyGroup>
+	<ItemGroup>
+		<AndroidResource Include="Icon.png">
+			<Link>Resources\drawable\Icon.png</Link>
+		</AndroidResource>
+		<None Remove="hs_err_pid*.log" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Avalonia.Android" Version="$(AvaloniaVersion)" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Cornerstone.Sample\Cornerstone.Sample.csproj" />
+	</ItemGroup>
+</Project>

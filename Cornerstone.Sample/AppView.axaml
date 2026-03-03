@@ -1,0 +1,93 @@
+<CornerstoneUserControl xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:sample="clr-namespace:Cornerstone.Sample"
+		xmlns:converters="clr-namespace:Cornerstone.Avalonia.Converters;assembly=Cornerstone.Avalonia"
+		mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
+		Background="{DynamicResource Background02}"
+		x:Class="Cornerstone.Sample.AppView"
+		x:DataType="sample:AppViewModel"
+		x:Name="This">
+	<Grid>
+		<NavigationMenu x:Name="Menu"
+				AutoExpandOnResize="False"
+				AutoCollapseOnSelectionChange="False"
+				DisplayMode="CompactInline"
+				IsOpen="true"
+				ItemsSource="{Binding Tabs}"
+				SelectedItem="{Binding SelectedTab, Mode=TwoWay}">
+			<NavigationMenu.InnerTopContent>
+				<Grid>
+					<Button Theme.Color="None"
+							Width="36"
+							Height="36"
+							BorderThickness="0"
+							Command="{x:Static CornerstoneTheme.ToggleThemeCommand}"
+							IsVisible="{Binding ElementName=Menu, Path=IsOpen}"
+							Margin="0,-34,2,0"
+							HorizontalAlignment="Right"
+							VerticalAlignment="Top"
+							ToolTip.Tip="Toggle Theme">
+						<PathIcon Height="16" Width="16"
+								Data="{Binding ElementName=This, Path=ActualThemeVariant, Converter={x:Static converters:ThemeConverters.ToThemeIconInverted}}"
+								HorizontalAlignment="Center"
+								VerticalAlignment="Center" />
+					</Button>
+					<Border CornerRadius="80"
+							ClipToBounds="True"
+							Margin="10"
+							MaxHeight="160"
+							MaxWidth="160">
+						<Image Source="/Assets/profile.jpg" />
+					</Border>
+				</Grid>
+			</NavigationMenu.InnerTopContent>
+			<FlyoutBase.AttachedFlyout>
+				<Flyout>
+					<StackPanel Margin="10"
+							Spacing="2">
+						<ComboBox SelectedItem="{Binding ElementName=Menu, Path=DisplayMode, Mode=TwoWay}"
+								Margin="0,0,0,6">
+							<ComboBox.Items>
+								<SplitViewDisplayMode>CompactInline</SplitViewDisplayMode>
+								<SplitViewDisplayMode>CompactOverlay</SplitViewDisplayMode>
+								<SplitViewDisplayMode>Inline</SplitViewDisplayMode>
+								<SplitViewDisplayMode>Overlay</SplitViewDisplayMode>
+							</ComboBox.Items>
+						</ComboBox>
+						<ToggleSwitch
+								IsChecked="{Binding ElementName=Menu, Path=IsOpen, Mode=TwoWay}"
+								OnContent="IsOpen"
+								OffContent="IsOpen"
+								Margin="0,0,20,0" />
+
+						<ToggleSwitch
+								IsChecked="{Binding ElementName=Menu, Path=AutoCollapseOnSelectionChange, Mode=TwoWay}"
+								OnContent="Auto Collapse On Change"
+								OffContent="Auto Collapse On Change" />
+						<ToggleSwitch
+								IsChecked="{Binding ElementName=Menu, Path=AutoExpandOnResize, Mode=TwoWay}"
+								OnContent="Auto Expand On Resize"
+								OffContent="Auto Expand On Resize" />
+					</StackPanel>
+				</Flyout>
+			</FlyoutBase.AttachedFlyout>
+			<NavigationMenu.DataTemplates>
+				<ViewLocator />
+			</NavigationMenu.DataTemplates>
+			<NavigationMenu.ItemTemplate>
+				<DataTemplate x:DataType="TabItemReferenceViewModel">
+					<StackPanel Orientation="Horizontal">
+						<Path Data="{Binding TabIcon, Converter={x:Static converters:ResourceConverters.GetSvg}}"
+								Height="16" Width="16"
+								Margin="{Binding TabIconMargin}" />
+						<TextBlock Text="{Binding TabName}"
+								Margin="14,0,0,0" />
+					</StackPanel>
+				</DataTemplate>
+			</NavigationMenu.ItemTemplate>
+		</NavigationMenu>
+		<BrowserThreads />
+	</Grid>
+</CornerstoneUserControl>

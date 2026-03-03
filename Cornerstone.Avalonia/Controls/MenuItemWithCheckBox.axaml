@@ -1,0 +1,16 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:controls="clr-namespace:Cornerstone.Avalonia.Controls">
+	<Design.PreviewWith>
+		<Border Padding="10" Height="200" MinWidth="200">
+			<Menu VerticalAlignment="Top">
+				<MenuItem Header="Tools">
+					<MenuItemWithCheckBox Header="Testing" />
+				</MenuItem>
+			</Menu>
+		</Border>
+	</Design.PreviewWith>
+	<ControlTheme x:Key="{x:Type controls:MenuItemWithCheckBox}"
+			TargetType="controls:MenuItemWithCheckBox"
+			BasedOn="{StaticResource {x:Type MenuItem}}" />
+</ResourceDictionary>

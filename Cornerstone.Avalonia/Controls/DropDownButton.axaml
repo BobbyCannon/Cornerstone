@@ -1,0 +1,426 @@
+﻿<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+
+	<x:Double x:Key="DropDownButtonMinHeight">32</x:Double>
+
+	<ControlTheme x:Key="{x:Type DropDownButton}" TargetType="DropDownButton">
+		<Setter Property="Background" Value="{DynamicResource Background04}" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+		<Setter Property="BorderThickness" Value="{DynamicResource ControlBorderThickness}" />
+		<Setter Property="Padding" Value="8,0,8,1" />
+		<Setter Property="MinHeight" Value="{DynamicResource DropDownButtonMinHeight}" />
+		<Setter Property="HorizontalAlignment" Value="Left" />
+		<Setter Property="VerticalAlignment" Value="Center" />
+		<Setter Property="HorizontalContentAlignment" Value="Stretch" />
+		<Setter Property="VerticalContentAlignment" Value="Center" />
+		<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border
+						x:Name="PART_Container"
+						Padding="0,0,0,1">
+					<Border
+							x:Name="RootBorder"
+							Background="{TemplateBinding Background}"
+							BorderBrush="{TemplateBinding BorderBrush}"
+							BorderThickness="{TemplateBinding BorderThickness}"
+							CornerRadius="{TemplateBinding CornerRadius}"
+							ClipToBounds="True"
+							Margin="0">
+						<Grid x:Name="InnerGrid"
+								ColumnDefinitions="*,Auto">
+							<ContentPresenter
+									x:Name="PART_ContentPresenter"
+									Grid.Column="0"
+									Foreground="{TemplateBinding Foreground}"
+									Content="{TemplateBinding Content}"
+									ContentTemplate="{TemplateBinding ContentTemplate}"
+									Padding="{TemplateBinding Padding}"
+									RecognizesAccessKey="True"
+									HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+									VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+							<!-- Arrow. -->
+							<PathIcon
+									x:Name="DropDownGlyph"
+									Grid.Column="1"
+									UseLayoutRounding="False"
+									IsHitTestVisible="False"
+									Height="10"
+									Width="16"
+									Margin="0,4,6,0"
+									Data="M 0 0 L 2.5 3.5 L 5 0"
+									HorizontalAlignment="Right"
+									VerticalAlignment="Center"
+									Foreground="{TemplateBinding Foreground}"
+									IsVisible="{TemplateBinding Foreground, Converter={x:Static ObjectConverters.NotEqual}, ConverterParameter={x:Static Brushes.Transparent}}" />
+						</Grid>
+					</Border>
+				</Border>
+			</ControlTemplate>
+		</Setter>
+
+		<!-- Default states. -->
+		<Style Selector="^[(Theme.Color)=None]">
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Background07}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Background05}" />
+				<Setter Property="RenderTransform" Value="scale(0.98)" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Background04}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+
+		<!-- Code Template - Color -->
+		<Style Selector="^[(Theme.Color)=Current]">
+			<Setter Property="Background" Value="{DynamicResource ThemeColor07}" />
+			<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
+				<Setter Property="RenderTransform" Value="scale(0.98)" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource ThemeColor03}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource ThemeColor01}" />
+			</Style>
+			<Style Selector="^:disabled /template/ PathIcon#DropDownGlyph">
+				<Setter Property="Foreground" Value="{DynamicResource ThemeColor01}" />
+			</Style>
+		</Style>
+		<!-- Code Template - /Color -->
+
+		<!-- Generated Code - Colors -->
+		<Style Selector="^[(Theme.Color)=Amber]">
+			<Setter Property="Background" Value="{DynamicResource Amber07}" />
+			<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Amber06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Amber06}" />
+				<Setter Property="RenderTransform" Value="scale(0.98)" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Amber03}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Amber01}" />
+			</Style>
+			<Style Selector="^:disabled /template/ PathIcon#DropDownGlyph">
+				<Setter Property="Foreground" Value="{DynamicResource Amber01}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Blue]">
+			<Setter Property="Background" Value="{DynamicResource Blue07}" />
+			<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Blue06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Blue06}" />
+				<Setter Property="RenderTransform" Value="scale(0.98)" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Blue03}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Blue01}" />
+			</Style>
+			<Style Selector="^:disabled /template/ PathIcon#DropDownGlyph">
+				<Setter Property="Foreground" Value="{DynamicResource Blue01}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=BlueGray]">
+			<Setter Property="Background" Value="{DynamicResource BlueGray07}" />
+			<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource BlueGray06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource BlueGray06}" />
+				<Setter Property="RenderTransform" Value="scale(0.98)" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource BlueGray03}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource BlueGray01}" />
+			</Style>
+			<Style Selector="^:disabled /template/ PathIcon#DropDownGlyph">
+				<Setter Property="Foreground" Value="{DynamicResource BlueGray01}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Brown]">
+			<Setter Property="Background" Value="{DynamicResource Brown07}" />
+			<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Brown06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Brown06}" />
+				<Setter Property="RenderTransform" Value="scale(0.98)" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Brown03}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Brown01}" />
+			</Style>
+			<Style Selector="^:disabled /template/ PathIcon#DropDownGlyph">
+				<Setter Property="Foreground" Value="{DynamicResource Brown01}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepOrange]">
+			<Setter Property="Background" Value="{DynamicResource DeepOrange07}" />
+			<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource DeepOrange06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource DeepOrange06}" />
+				<Setter Property="RenderTransform" Value="scale(0.98)" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource DeepOrange03}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource DeepOrange01}" />
+			</Style>
+			<Style Selector="^:disabled /template/ PathIcon#DropDownGlyph">
+				<Setter Property="Foreground" Value="{DynamicResource DeepOrange01}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepPurple]">
+			<Setter Property="Background" Value="{DynamicResource DeepPurple07}" />
+			<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource DeepPurple06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource DeepPurple06}" />
+				<Setter Property="RenderTransform" Value="scale(0.98)" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource DeepPurple03}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource DeepPurple01}" />
+			</Style>
+			<Style Selector="^:disabled /template/ PathIcon#DropDownGlyph">
+				<Setter Property="Foreground" Value="{DynamicResource DeepPurple01}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Gray]">
+			<Setter Property="Background" Value="{DynamicResource Gray07}" />
+			<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Gray06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Gray06}" />
+				<Setter Property="RenderTransform" Value="scale(0.98)" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Gray03}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Gray01}" />
+			</Style>
+			<Style Selector="^:disabled /template/ PathIcon#DropDownGlyph">
+				<Setter Property="Foreground" Value="{DynamicResource Gray01}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Green]">
+			<Setter Property="Background" Value="{DynamicResource Green07}" />
+			<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Green06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Green06}" />
+				<Setter Property="RenderTransform" Value="scale(0.98)" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Green03}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Green01}" />
+			</Style>
+			<Style Selector="^:disabled /template/ PathIcon#DropDownGlyph">
+				<Setter Property="Foreground" Value="{DynamicResource Green01}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Indigo]">
+			<Setter Property="Background" Value="{DynamicResource Indigo07}" />
+			<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Indigo06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Indigo06}" />
+				<Setter Property="RenderTransform" Value="scale(0.98)" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Indigo03}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Indigo01}" />
+			</Style>
+			<Style Selector="^:disabled /template/ PathIcon#DropDownGlyph">
+				<Setter Property="Foreground" Value="{DynamicResource Indigo01}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Orange]">
+			<Setter Property="Background" Value="{DynamicResource Orange07}" />
+			<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Orange06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Orange06}" />
+				<Setter Property="RenderTransform" Value="scale(0.98)" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Orange03}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Orange01}" />
+			</Style>
+			<Style Selector="^:disabled /template/ PathIcon#DropDownGlyph">
+				<Setter Property="Foreground" Value="{DynamicResource Orange01}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Pink]">
+			<Setter Property="Background" Value="{DynamicResource Pink07}" />
+			<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Pink06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Pink06}" />
+				<Setter Property="RenderTransform" Value="scale(0.98)" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Pink03}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Pink01}" />
+			</Style>
+			<Style Selector="^:disabled /template/ PathIcon#DropDownGlyph">
+				<Setter Property="Foreground" Value="{DynamicResource Pink01}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Purple]">
+			<Setter Property="Background" Value="{DynamicResource Purple07}" />
+			<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Purple06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Purple06}" />
+				<Setter Property="RenderTransform" Value="scale(0.98)" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Purple03}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Purple01}" />
+			</Style>
+			<Style Selector="^:disabled /template/ PathIcon#DropDownGlyph">
+				<Setter Property="Foreground" Value="{DynamicResource Purple01}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Red]">
+			<Setter Property="Background" Value="{DynamicResource Red07}" />
+			<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Red06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Red06}" />
+				<Setter Property="RenderTransform" Value="scale(0.98)" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Red03}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Red01}" />
+			</Style>
+			<Style Selector="^:disabled /template/ PathIcon#DropDownGlyph">
+				<Setter Property="Foreground" Value="{DynamicResource Red01}" />
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Teal]">
+			<Setter Property="Background" Value="{DynamicResource Teal07}" />
+			<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
+			<Style Selector="^:pointerover">
+				<Setter Property="Background" Value="{DynamicResource Teal06}" />
+			</Style>
+			<Style Selector="^:pressed">
+				<Setter Property="Background" Value="{DynamicResource Teal06}" />
+				<Setter Property="RenderTransform" Value="scale(0.98)" />
+			</Style>
+			<Style Selector="^:disabled">
+				<Setter Property="Background" Value="{DynamicResource Teal03}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Teal01}" />
+			</Style>
+			<Style Selector="^:disabled /template/ PathIcon#DropDownGlyph">
+				<Setter Property="Foreground" Value="{DynamicResource Teal01}" />
+			</Style>
+		</Style>
+		<!-- Generated Code - /Colors -->
+
+		<Style Selector="^.Icon">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="BorderBrush" Value="Transparent" />
+			<Setter Property="BorderThickness" Value="0" />
+			<Setter Property="Padding" Value="10,0,4,0" />
+			<Setter Property="Foreground" Value="{DynamicResource ThemeForeground07}" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+			<Setter Property="Height" Value="32" />
+			<Style Selector="^:disabled /template/ Border#RootBorder">
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground06}" />
+			</Style>
+		</Style>
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet Width="600">
+			<StackPanel Spacing="20" Orientation="Horizontal">
+				<DropDownButton Content="Click Me!">
+					<DropDownButton.Flyout>
+						<MenuFlyout>
+							<MenuItem Header="Text 1" />
+							<MenuItem Header="Text 2" />
+						</MenuFlyout>
+					</DropDownButton.Flyout>
+				</DropDownButton>
+				<DropDownButton Theme.Color="Current" Foreground="Yellow" Content="Click Me!" />
+				<DropDownButton Content="Disabled" IsEnabled="False" />
+				<DropDownButton Foreground="Transparent"
+						BorderThickness="0"
+						CornerRadius="32"
+						Height="64"
+						Width="64"
+						HorizontalAlignment="Center">
+					<DropDownButton.ContentTemplate>
+						<DataTemplate>
+							<TextBlock Foreground="Red"
+									HorizontalAlignment="Center"
+									Text="aoeu" />
+						</DataTemplate>
+					</DropDownButton.ContentTemplate>
+					<DropDownButton.Flyout>
+						<Flyout Placement="BottomEdgeAlignedRight">
+							<TextBlock Text="aoeu" />
+						</Flyout>
+					</DropDownButton.Flyout>
+				</DropDownButton>
+				<DropDownButton Classes="Icon"
+						IsEnabled="False"
+						ToolTip.Tip="Open Browser">
+					<PathIcon Data="{DynamicResource Icons.Globe}"
+							Height="18" Width="18" />
+					<DropDownButton.Flyout>
+						<MenuFlyout>
+							<MenuItem Header="Text 1" />
+							<MenuItem Header="Text 2" />
+						</MenuFlyout>
+					</DropDownButton.Flyout>
+				</DropDownButton>
+			</StackPanel>
+			<PreviewCodeSnippet.ItemTemplate>
+				<DataTemplate DataType="ThemeColor">
+					<DropDownButton Theme.Color="{Binding}"
+							Width="100">
+						<TextBlock Text="{Binding}" />
+					</DropDownButton>
+				</DataTemplate>
+			</PreviewCodeSnippet.ItemTemplate>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

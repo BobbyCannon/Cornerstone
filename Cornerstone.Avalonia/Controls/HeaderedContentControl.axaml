@@ -1,0 +1,129 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+	<ControlTheme x:Key="{x:Type HeaderedContentControl}"
+			TargetType="HeaderedContentControl">
+		<Setter Property="Theme.Color" Value="None" />
+		<Setter Property="Background" Value="{DynamicResource Background02}" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+		<Setter Property="BorderThickness" Value="{DynamicResource ControlBorderThickness}" />
+		<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+		<Setter Property="Padding" Value="10" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Grid RowDefinitions="Auto,*"
+						ColumnDefinitions="Auto,*"
+						Background="{TemplateBinding Background}">
+					<Border ZIndex="1"
+							Background="{TemplateBinding Background}"
+							Padding="8,0"
+							Margin="10,0,0,0">
+						<TextBlock Text="{TemplateBinding Header}" />
+					</Border>
+
+					<!-- Content Area -->
+					<Border Background="{TemplateBinding Background}"
+							Grid.Row="0"
+							Grid.RowSpan="2"
+							Grid.Column="0"
+							Grid.ColumnSpan="2"
+							CornerRadius="{TemplateBinding CornerRadius}"
+							Margin="0,10,0,0"
+							Padding="{TemplateBinding Padding}"
+							BorderBrush="{TemplateBinding BorderBrush}"
+							BorderThickness="1">
+						<ContentPresenter
+								Name="PART_ContentPresenter"
+								Content="{TemplateBinding Content}" />
+					</Border>
+				</Grid>
+			</ControlTemplate>
+		</Setter>
+
+		<!-- Code Template - Color -->
+		<Style Selector="^[(Theme.Color)=Current]">
+			<Setter Property="BorderBrush" Value="{DynamicResource ThemeColor05}" />
+		</Style>
+		<!-- Code Template - /Color -->
+
+		<!-- Generated Code - Colors -->
+		<Style Selector="^[(Theme.Color)=Amber]">
+			<Setter Property="BorderBrush" Value="{DynamicResource Amber05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Blue]">
+			<Setter Property="BorderBrush" Value="{DynamicResource Blue05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=BlueGray]">
+			<Setter Property="BorderBrush" Value="{DynamicResource BlueGray05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Brown]">
+			<Setter Property="BorderBrush" Value="{DynamicResource Brown05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepOrange]">
+			<Setter Property="BorderBrush" Value="{DynamicResource DeepOrange05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepPurple]">
+			<Setter Property="BorderBrush" Value="{DynamicResource DeepPurple05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Gray]">
+			<Setter Property="BorderBrush" Value="{DynamicResource Gray05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Green]">
+			<Setter Property="BorderBrush" Value="{DynamicResource Green05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Indigo]">
+			<Setter Property="BorderBrush" Value="{DynamicResource Indigo05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Orange]">
+			<Setter Property="BorderBrush" Value="{DynamicResource Orange05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Pink]">
+			<Setter Property="BorderBrush" Value="{DynamicResource Pink05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Purple]">
+			<Setter Property="BorderBrush" Value="{DynamicResource Purple05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Red]">
+			<Setter Property="BorderBrush" Value="{DynamicResource Red05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Teal]">
+			<Setter Property="BorderBrush" Value="{DynamicResource Teal05}" />
+		</Style>
+		<!-- Generated Code - /Colors -->
+
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet Width="630" Margin="10">
+			<WrapPanel>
+				<HeaderedContentControl Header="Labels Only">
+					<!-- ReSharper disable Xaml.MissingGridIndex -->
+					<AutoGrid Classes="Input Compact"
+							ColumnDefinitions="Auto,*"
+							RowCount="2">
+						<TextBlock Classes="InputName"
+								Text="Test:" />
+						<TextBlock Classes="InputValue"
+								Text="123456" />
+
+						<TextBlock Classes="InputName"
+								Text="Test:" />
+						<TextBlock Classes="InputValue"
+								Text="123456" />
+					</AutoGrid>
+				</HeaderedContentControl>
+			</WrapPanel>
+			<PreviewCodeSnippet.ItemTemplate>
+				<DataTemplate DataType="ThemeColor">
+					<HeaderedContentControl
+							Theme.Color="{Binding}"
+							Header="{Binding}"
+							Width="300">
+						<TextBlock Text="The quick brown fox." />
+					</HeaderedContentControl>
+				</DataTemplate>
+			</PreviewCodeSnippet.ItemTemplate>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

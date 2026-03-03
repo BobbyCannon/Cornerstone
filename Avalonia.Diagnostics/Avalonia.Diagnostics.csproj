@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net10.0</TargetFrameworks>
+		<SignAssembly>true</SignAssembly>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<NoWarn>$(NoWarn);IL2046;IL2092;</NoWarn>
+		<AssemblyOriginatorKeyFile>avalonia.snk</AssemblyOriginatorKeyFile>
+		<DefineConstants>$(DefineConstants);DATAGRID_INTERNAL</DefineConstants>
+	</PropertyGroup>
+	<ItemGroup>
+		<AvaloniaResource Include="**\*.xaml;Assets\**;" Exclude="bin\**;obj\**;**\*.xproj;packages\**;@(EmbeddedResource)" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
+		<PackageReference Include="Avalonia.Controls.ColorPicker" Version="$(AvaloniaVersion)" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\Cornerstone\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
+	</ItemGroup>
+</Project>

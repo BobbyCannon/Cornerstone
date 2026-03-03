@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFrameworks>net10.0-windows10.0.26100.0</TargetFrameworks>
+		<SignAssembly>true</SignAssembly>
+		<NoWarn>$(NoWarn);CS8002</NoWarn>
+		<GenerateProgramFile>false</GenerateProgramFile>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+		<OutputType>Library</OutputType>
+		<IsTestProject>true</IsTestProject>
+		<IsPackable>false</IsPackable>
+		<PublishAot>false</PublishAot>
+		<TrimMode>partial</TrimMode>
+		<InvariantGlobalization>false</InvariantGlobalization>
+	</PropertyGroup>
+	<ItemGroup>
+	  <Compile Include="..\Cornerstone.UnitTests\CornerstoneUnitTest.cs" Link="CornerstoneUnitTest.cs" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Avalonia.Headless" Version="$(AvaloniaVersion)" />
+		<PackageReference Include="Avalonia.Headless.NUnit" Version="$(AvaloniaVersion)" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+		<PackageReference Include="MSTest.TestAdapter" Version="4.1.0" />
+		<PackageReference Include="MSTest.TestFramework" Version="4.1.0" />
+		<PackageReference Include="NUnit" Version="4.4.0" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\Cornerstone.Generators\Cornerstone.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+		<ProjectReference Include="..\..\Cornerstone\Cornerstone.csproj" />
+	</ItemGroup>
+</Project>

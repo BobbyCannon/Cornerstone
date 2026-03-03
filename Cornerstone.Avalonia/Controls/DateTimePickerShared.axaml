@@ -1,0 +1,150 @@
+<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+
+	<ControlTheme
+			x:Key="DateTimePickerItem"
+			TargetType="ListBoxItem">
+		<Setter Property="Background" Value="{DynamicResource Background04}" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="Margin" Value="2,0" />
+		<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+		<Setter Property="VerticalContentAlignment" Value="Center" />
+		<Setter Property="HorizontalContentAlignment" Value="Center" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<ContentPresenter
+						Name="PART_ContentPresenter"
+						Background="{TemplateBinding Background}"
+						Foreground="{TemplateBinding Foreground}"
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}"
+						CornerRadius="{TemplateBinding CornerRadius}"
+						ContentTemplate="{TemplateBinding ContentTemplate}"
+						Content="{TemplateBinding Content}"
+						FontSize="{DynamicResource ControlFontSize}"
+						Padding="{DynamicResource ControlPadding}"
+						VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+						HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+						Margin="0" />
+			</ControlTemplate>
+		</Setter>
+		<Style Selector="^:selected">
+			<Setter Property="IsHitTestVisible" Value="False" />
+			<Style Selector="^/template/ Rectangle#PressedBackground">
+				<Setter Property="Fill" Value="Transparent" />
+			</Style>
+			<Style Selector="^/template/ ContentPresenter">
+				<Setter Property="Background" Value="{DynamicResource Background05}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+			</Style>
+		</Style>
+		<Style Selector="^.MonthItem /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Padding" Value="14,0" />
+			<Setter Property="HorizontalContentAlignment" Value="Left" />
+		</Style>
+	</ControlTheme>
+	<ControlTheme x:Key="DateTimePickerButton" TargetType="Button">
+		<Setter Property="Background" Value="{DynamicResource Background04}" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="Height" Value="22" />
+		<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+		<Setter Property="HorizontalContentAlignment" Value="Center" />
+		<Setter Property="VerticalContentAlignment" Value="Center" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border
+						x:Name="PART_Container"
+						Padding="0,0,0,1">
+					<ContentPresenter
+							x:Name="PART_ContentPresenter"
+							Background="{TemplateBinding Background}"
+							Foreground="{TemplateBinding Foreground}"
+							BorderBrush="{DynamicResource BorderBrush}"
+							BorderThickness="{DynamicResource ControlBorderThickness}"
+							Content="{TemplateBinding Content}"
+							ContentTemplate="{TemplateBinding ContentTemplate}"
+							Padding="{TemplateBinding Padding}"
+							HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+							VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+							CornerRadius="{TemplateBinding CornerRadius}" />
+				</Border>
+			</ControlTemplate>
+		</Setter>
+		<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{DynamicResource Background07}" />
+			<Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrushPointerOver}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		</Style>
+		<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{DynamicResource Background05}" />
+			<Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrushPressed}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		</Style>
+		<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="RenderTransform" Value="scale(0.98)" />
+		</Style>
+	</ControlTheme>
+	<ControlTheme
+			x:Key="DateTimePickerUpButton"
+			TargetType="RepeatButton"
+			BasedOn="{StaticResource DateTimePickerButton}">
+		<Setter Property="Background" Value="{DynamicResource Background06}" />
+		<Setter Property="VerticalAlignment" Value="Top" />
+		<Setter Property="Height" Value="22" />
+		<Setter Property="HorizontalAlignment" Value="Stretch" />
+		<Setter Property="Focusable" Value="False" />
+		<Setter Property="IsVisible" Value="False" />
+		<Setter Property="Content">
+			<Template>
+				<Viewbox
+						Height="10"
+						Width="10"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center">
+					<Path
+							Fill="{DynamicResource Foreground00}"
+							Data="M 0 7 L 5 0 L 10 7" />
+				</Viewbox>
+			</Template>
+		</Setter>
+	</ControlTheme>
+
+	<ControlTheme
+			x:Key="DateTimePickerDownButton"
+			TargetType="RepeatButton"
+			BasedOn="{StaticResource DateTimePickerButton}">
+		<Setter Property="Background" Value="{DynamicResource Background06}" />
+		<Setter Property="VerticalAlignment" Value="Bottom" />
+		<Setter Property="Height" Value="22" />
+		<Setter Property="HorizontalAlignment" Value="Stretch" />
+		<Setter Property="Focusable" Value="False" />
+		<Setter Property="IsVisible" Value="False" />
+		<Setter Property="Content">
+			<Template>
+				<Viewbox
+						Height="10"
+						Width="10"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center">
+					<Path
+							Fill="{DynamicResource Foreground00}"
+							Data="M 0 0 L 5 7 L 10 0" />
+				</Viewbox>
+			</Template>
+		</Setter>
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<Border Padding="20" Width="200">
+			<StackPanel Spacing="0">
+				<ListBoxItem Theme="{DynamicResource DateTimePickerItem}" Height="40" IsSelected="True">Standard Item</ListBoxItem>
+				<ListBoxItem Theme="{DynamicResource DateTimePickerItem}" Height="40" Classes="MonthItem">Month Item</ListBoxItem>
+				<RepeatButton Theme="{DynamicResource DateTimePickerButton}">Button</RepeatButton>
+				<RepeatButton Theme="{DynamicResource DateTimePickerUpButton}" IsVisible="True" />
+				<RepeatButton Theme="{DynamicResource DateTimePickerDownButton}" IsVisible="True" />
+			</StackPanel>
+		</Border>
+	</Design.PreviewWith>
+</ResourceDictionary>

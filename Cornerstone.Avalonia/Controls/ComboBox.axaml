@@ -1,0 +1,240 @@
+<ResourceDictionary
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+
+	<x:Int32 x:Key="ComboBoxPopupMaxNumberOfItems">15</x:Int32>
+	<x:Int32 x:Key="ComboBoxPopupMaxNumberOfItemsThatCanBeShownOnOneSide">7</x:Int32>
+
+	<ControlTheme x:Key="{x:Type ComboBox}" TargetType="ComboBox">
+		<Setter Property="Theme.Color" Value="Current" />
+		<Setter Property="FocusAdorner" Value="{x:Null}" />
+		<Setter Property="MaxDropDownHeight" Value="504" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="Background" Value="{DynamicResource Background04}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+		<Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+		<Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+		<Setter Property="Margin" Value="0" />
+		<Setter Property="Padding" Value="0" />
+		<Setter Property="Height" Value="32" />
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+		<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+		<Setter Property="HorizontalContentAlignment" Value="Stretch" />
+		<Setter Property="VerticalContentAlignment" Value="Center" />
+		<Setter Property="HorizontalAlignment" Value="Stretch" />
+		<Setter Property="VerticalAlignment" Value="Center" />
+		<Setter Property="PlaceholderForeground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<DataValidationErrors
+						HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
+						VerticalAlignment="{TemplateBinding VerticalAlignment}">
+					<Border x:Name="Background"
+							Background="{TemplateBinding Background}"
+							BorderBrush="{TemplateBinding BorderBrush}"
+							BorderThickness="{TemplateBinding BorderThickness}"
+							CornerRadius="{TemplateBinding CornerRadius}">
+						<DockPanel Height="{TemplateBinding Height}"
+								MinHeight="{TemplateBinding MinHeight}"
+								MinWidth="{TemplateBinding MinWidth}"
+								Width="{TemplateBinding Width}">
+							<Grid ColumnDefinitions="Auto,*,Auto,32"
+									Margin="{TemplateBinding Padding}">
+								<TextBlock x:Name="Label"
+										Grid.Column="0"
+										DockPanel.Dock="Left"
+										FontFamily="{TemplateBinding FontFamily}"
+										FontSize="{TemplateBinding FontSize}"
+										Margin="10,0,0,0"
+										Text="{TemplateBinding (ControlHelper.DisplayName)}"
+										MinWidth="{TemplateBinding (ControlHelper.DisplayNameWidth)}"
+										IsVisible="{TemplateBinding (ControlHelper.DisplayName), Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+										VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+								<TextBlock x:Name="PlaceholderTextBlock"
+										Grid.Column="1"
+										Opacity="0.3"
+										FontFamily="{TemplateBinding FontFamily}"
+										FontSize="{TemplateBinding FontSize}"
+										Margin="10,0,0,0"
+										HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+										VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+										Text="{TemplateBinding PlaceholderText}"
+										Foreground="{TemplateBinding PlaceholderForeground}">
+									<TextBlock.IsVisible>
+										<MultiBinding Converter="{x:Static BoolConverters.And}">
+											<Binding Path="SelectionBoxItem" RelativeSource="{RelativeSource TemplatedParent}" Converter="{x:Static ObjectConverters.IsNull}" />
+											<Binding Path="!IsEditable" RelativeSource="{RelativeSource TemplatedParent}" />
+											<Binding Path="PlaceholderText" RelativeSource="{RelativeSource TemplatedParent}" Converter="{x:Static StringConverters.IsNotNullOrEmpty}" />
+										</MultiBinding>
+									</TextBlock.IsVisible>
+								</TextBlock>
+								<ContentControl x:Name="ContentPresenter"
+										Content="{TemplateBinding SelectionBoxItem}"
+										Grid.Column="1"
+										Margin="10,0"
+										HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+										ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+										VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+										IsVisible="{TemplateBinding IsEditable, Converter={x:Static BoolConverters.Not}}" />
+								<TextBox Name="PART_EditableTextBox"
+										Grid.Column="1"
+										HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+										VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+										Foreground="{TemplateBinding Foreground}"
+										Background="Transparent"
+										Text="{TemplateBinding Text, Mode=TwoWay}"
+										Watermark="{TemplateBinding PlaceholderText}"
+										BorderThickness="0"
+										Padding="0"
+										Margin="0"
+										IsVisible="{TemplateBinding IsEditable}">
+									<TextBox.Resources>
+										<SolidColorBrush x:Key="TextControlBackgroundFocused">Transparent</SolidColorBrush>
+										<SolidColorBrush x:Key="TextControlBackgroundPointerOver">Transparent</SolidColorBrush>
+										<Thickness x:Key="TextControlBorderThemeThicknessFocused">0</Thickness>
+									</TextBox.Resources>
+								</TextBox>
+
+								<ContentPresenter Grid.Column="2" 
+										Content="{TemplateBinding (ControlHelper.InnerRightContent)}"
+										IsVisible="{TemplateBinding (ControlHelper.InnerRightContent), Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+								<Border
+										x:Name="DropDownOverlay"
+										Grid.Column="3"
+										Background="Transparent"
+										Margin="0,1,1,1"
+										Width="32"
+										IsVisible="False"
+										HorizontalAlignment="Right" />
+								<PathIcon
+										x:Name="DropDownGlyph"
+										Grid.Column="3"
+										UseLayoutRounding="False"
+										IsHitTestVisible="False"
+										Height="10"
+										Width="16"
+										Margin="0,4,0,0"
+										HorizontalAlignment="Center"
+										VerticalAlignment="Center"
+										Foreground="{DynamicResource Foreground00}"
+										Data="M 0 0 L 2.5 3.5 L 5 0" />
+								<Popup
+										Grid.Column="0"
+										Name="PART_Popup"
+										WindowManagerAddShadowHint="False"
+										IsOpen="{TemplateBinding IsDropDownOpen, Mode=TwoWay}"
+										MinWidth="{Binding Bounds.Width, RelativeSource={RelativeSource TemplatedParent}}"
+										MaxHeight="{TemplateBinding MaxDropDownHeight}"
+										PlacementTarget="Background"
+										IsLightDismissEnabled="True"
+										InheritsTransform="True">
+									<Border
+											x:Name="PopupBorder"
+											Background="{DynamicResource Background04}"
+											BorderBrush="{DynamicResource BorderBrush}"
+											BorderThickness="{DynamicResource ControlBorderThickness}"
+											Padding="0"
+											HorizontalAlignment="Stretch"
+											CornerRadius="{DynamicResource ControlCornerRadius}">
+										<ScrollViewer
+												HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+												VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
+											<ItemsPresenter
+													Name="PART_ItemsPresenter"
+													Margin="4"
+													ItemsPanel="{TemplateBinding ItemsPanel}" />
+										</ScrollViewer>
+									</Border>
+								</Popup>
+							</Grid>
+						</DockPanel>
+					</Border>
+				</DataValidationErrors>
+			</ControlTemplate>
+		</Setter>
+		<Style Selector="^[HorizontalContentAlignment=Right] /template/ TextBlock#Label">
+			<Setter Property="DockPanel.Dock" Value="Right" />
+			<Setter Property="Margin" Value="0,0,10,0" />
+		</Style>
+		<Style Selector="^:pointerover /template/ Border#Background">
+			<Setter Property="Background" Value="{DynamicResource Background07}" />
+		</Style>
+		<Style Selector="^:pressed /template/ Border#Background">
+			<Setter Property="Background" Value="{DynamicResource Background05}" />
+		</Style>
+		<Style Selector="^:focused:pressed">
+			<Style Selector="^ /template/ ContentControl#ContentPresenter">
+				<Setter Property="Foreground" Value="{DynamicResource ControlForegroundFocusedPressed}" />
+			</Style>
+			<Style Selector="^ /template/ TextBlock#PlaceholderTextBlock">
+				<Setter Property="Foreground" Value="{DynamicResource ControlForegroundFocusedPressed}" />
+			</Style>
+			<Style Selector="^ /template/ PathIcon#DropDownGlyph">
+				<Setter Property="Foreground" Value="{DynamicResource ControlForegroundFocusedPressed}" />
+			</Style>
+		</Style>
+		<Style Selector="^:disabled">
+			<Style Selector="^ /template/ Border#Background">
+				<Setter Property="Background" Value="{DynamicResource Background04}" />
+			</Style>
+			<Style Selector="^ /template/ ContentControl#ContentPresenter">
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+			<Style Selector="^ /template/ TextBlock#PlaceholderTextBlock">
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+			<Style Selector="^ /template/ PathIcon#DropDownGlyph">
+				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+			</Style>
+		</Style>
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="600">
+			<WrapPanel ItemSpacing="10"
+					LineSpacing="10">
+				<StackPanel Spacing="8"
+						Orientation="Horizontal"
+						VerticalAlignment="Center">
+					<TextBlock Text="Height" />
+					<TextBlock Text="{Binding ElementName=Default, Path=Bounds.Height}" />
+				</StackPanel>
+				<ComboBox Name="Default"
+						ControlHelper.DisplayName="Count"
+						SelectedIndex="0">
+					<ComboBoxItem>1</ComboBoxItem>
+					<ComboBoxItem>2</ComboBoxItem>
+				</ComboBox>
+				<ComboBox IsEditable="True"
+						Text="Hello World">
+					<ComboBoxItem>Foo</ComboBoxItem>
+					<ComboBoxItem>Bar</ComboBoxItem>
+				</ComboBox>
+				<ComboBox PlaceholderText="select"></ComboBox>
+				<ComboBox PlaceholderText="inner right content">
+					<ControlHelper.InnerRightContent>
+						<Button Theme.Color="None"
+								BorderThickness="0,1">
+							test
+						</Button>
+					</ControlHelper.InnerRightContent>
+				</ComboBox>
+			</WrapPanel>
+			<PreviewCodeSnippet.ItemTemplate>
+				<DataTemplate DataType="ThemeColor">
+					<ComboBox Theme.Color="{Binding}"
+							SelectedIndex="0"
+							Width="150">
+						<ComboBoxItem Content="{Binding}" />
+						<ComboBoxItem>Item 2</ComboBoxItem>
+						<ComboBoxItem>Item 3</ComboBoxItem>
+					</ComboBox>
+				</DataTemplate>
+			</PreviewCodeSnippet.ItemTemplate>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>
