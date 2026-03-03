@@ -8,7 +8,7 @@ development of reliable, observable, syncable, and testable applications — wit
 or introducing reflection-based surprises.
 
 It is the complete evolution and replacement of the **Speedy** framework, rebuilt from the ground
-up for .NET 9+ priorities: maximum performance, zero-compromise AOT compatibility, and
+up for .NET 10+ priorities: maximum performance, zero-compromise AOT compatibility, and
 uncompromising reliability.
 
 ![GitHub](https://img.shields.io/github/license/BobbyCannon/Cornerstone?style=flat-square&color=purple)
