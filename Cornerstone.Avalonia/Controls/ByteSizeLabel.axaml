@@ -1,0 +1,95 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type ByteSizeLabel}"
+					TargetType="ByteSizeLabel">
+				<Setter Property="Theme.Color" Value="None" />
+				<Setter Property="ClipToBounds" Value="True" />
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+				<Setter Property="BorderThickness" Value="0" />
+				<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+				<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+				<Setter Property="FontSize" Value="{StaticResource ControlFontSize}" />
+				<Setter Property="Padding" Value="10,0" />
+				<Setter Property="HorizontalAlignment" Value="Left" />
+				<Setter Property="VerticalAlignment" Value="Center" />
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Style Selector="ByteSizeLabel">
+		<Style Selector="^[(Theme.Color)=None]">
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		</Style>
+
+		<!-- Code Template - Color -->
+		<Style Selector="^[(Theme.Color)=Current]">
+			<Setter Property="Foreground" Value="{DynamicResource ThemeColor05}" />
+		</Style>
+		<!-- Code Template - /Color -->
+
+		<!-- Generated Code - Colors -->
+		<Style Selector="^[(Theme.Color)=Amber]">
+			<Setter Property="Foreground" Value="{DynamicResource Amber05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Blue]">
+			<Setter Property="Foreground" Value="{DynamicResource Blue05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=BlueGray]">
+			<Setter Property="Foreground" Value="{DynamicResource BlueGray05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Brown]">
+			<Setter Property="Foreground" Value="{DynamicResource Brown05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepOrange]">
+			<Setter Property="Foreground" Value="{DynamicResource DeepOrange05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepPurple]">
+			<Setter Property="Foreground" Value="{DynamicResource DeepPurple05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Gray]">
+			<Setter Property="Foreground" Value="{DynamicResource Gray05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Green]">
+			<Setter Property="Foreground" Value="{DynamicResource Green05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Indigo]">
+			<Setter Property="Foreground" Value="{DynamicResource Indigo05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Orange]">
+			<Setter Property="Foreground" Value="{DynamicResource Orange05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Pink]">
+			<Setter Property="Foreground" Value="{DynamicResource Pink05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Purple]">
+			<Setter Property="Foreground" Value="{DynamicResource Purple05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Red]">
+			<Setter Property="Foreground" Value="{DynamicResource Red05}" />
+		</Style>
+		<Style Selector="^[(Theme.Color)=Teal]">
+			<Setter Property="Foreground" Value="{DynamicResource Teal05}" />
+		</Style>
+		<!-- Generated Code - /Colors -->
+	</Style>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet Width="630">
+			<WrapPanel LineSpacing="10" ItemSpacing="20">
+			</WrapPanel>
+			<PreviewCodeSnippet.ItemTemplate>
+				<DataTemplate DataType="ThemeColor">
+					<ByteSizeLabel Theme.Color="{Binding}"
+							Title="{Binding}"
+							CornerRadius="8"
+							Value="5463489216546">
+					</ByteSizeLabel>
+				</DataTemplate>
+			</PreviewCodeSnippet.ItemTemplate>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</Styles>

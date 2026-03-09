@@ -30,9 +30,13 @@ public partial class AppViewModel : ViewModel
 		Tabs = [];
 
 		AddTabItemViewModel(TabWelcome.HeaderName, "Icons.Smile", typeof(TabWelcome));
+		AddTabItemViewModel(TabChannels.HeaderName, "Icons.Share.Fill", typeof(TabChannels));
+		AddTabItemViewModel(TabDebounceAndThrottle.HeaderName, "Icons.Signal", new Thickness(0, 3, 0, -3), typeof(TabDebounceAndThrottle));
 		AddTabItemViewModel(TabDockingManager.HeaderName, "Icons.Folder", typeof(TabDockingManager));
 		AddTabItemViewModel(TabInkCanvas.HeaderName, "Icons.Pencil.Square", typeof(TabInkCanvas));
-		AddTabItemViewModel(TabProfiling.HeaderName, "Icons.Chart.Bar", typeof(TabProfiling));
+		AddTabItemViewModel(TabSpeedyPack.HeaderName, "Icons.BoxLayered", typeof(TabSpeedyPack));
+		AddTabItemViewModel(TabProgress.HeaderName, "Icons.Progress", new Thickness(0, 6, 0, -6), typeof(TabProgress));
+		AddTabItemViewModel(TabProfiling.HeaderName, "Icons.Chart.Bar", new Thickness(0, 2, 0, -2), typeof(TabProfiling));
 		AddTabItemViewModel(TabRuntimeInformation.HeaderName, "Icons.Info.Circle", typeof(TabRuntimeInformation));
 		AddTabItemViewModel(TabTextEditor.HeaderName, "Icons.File.Binary", typeof(TabTextEditor));
 	}

@@ -24,6 +24,7 @@ public static class Comparer
 			new DictionaryComparer(),
 			new ListComparer(),
 			new StringComparer(),
+			new EnumComparer(),
 			new EnumerableComparer(),
 			new TypeComparer(),
 			new ObjectComparer()

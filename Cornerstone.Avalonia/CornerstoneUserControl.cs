@@ -1,9 +1,12 @@
 ﻿#region References
 
 using System;
+using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Cornerstone.Avalonia.Extensions;
+using Cornerstone.Presentation;
 using Cornerstone.Profiling;
 
 #endregion
@@ -48,24 +51,29 @@ public partial class CornerstoneUserControl<T>
 	#endregion
 }
 
-public partial class CornerstoneUserControl : UserControl
+public partial class CornerstoneUserControl : UserControl, IDispatchable
 {
 	#region Fields
 
 	private Typeface? _cachedTypeface;
+	private PropertyChangedEventHandler _propertyChangedHandler;
 
 	#endregion
 
 	#region Properties
 
-	[StyledProperty]
-	public partial Profiler Profiler { get; set; }
+	public Profiler Profiler { get; set; }
 
 	public Typeface Typeface => _cachedTypeface ??= CornerstoneExtensions.CreateTypeface(this);
 
 	#endregion
 
 	#region Methods
+
+	public IDispatcher GetDispatcher()
+	{
+		return CornerstoneApplication.Dispatcher;
+	}
 
 	public static T GetInstance<T>()
 	{
@@ -89,6 +97,12 @@ public partial class CornerstoneUserControl : UserControl
 			_cachedTypeface = null;
 			InvalidateVisual();
 		}
+	}
+
+	protected virtual void OnPropertyChanged(string propertyName)
+	{
+		_propertyChangedHandler ??= AvaloniaExtensions.GetPropertyChangedHandler(this);
+		_propertyChangedHandler?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 	}
 
 	#endregion

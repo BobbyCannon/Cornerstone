@@ -13,7 +13,7 @@ public class SourceTypeInfo : SourceMemberInfo
 {
 	#region Fields
 
-	private string _fullyQualifiedNameForCode;
+	private string _fullyQualifiedSourceReflectorName;
 
 	#endregion
 
@@ -40,8 +40,8 @@ public class SourceTypeInfo : SourceMemberInfo
 	public string EnumUnderlyingType { get; set; }
 	public List<SourceFieldInfo> Fields { get; }
 	public string FullyGlobalQualifiedName { get; set; }
-	public string FullyQualifiedCodeName => _fullyQualifiedNameForCode ??= ToSafeCodeName(TypeSymbol);
 	public string FullyQualifiedName { get; set; }
+	public string FullyQualifiedSourceReflectorName => _fullyQualifiedSourceReflectorName ??= ToSourceReflectorName(TypeSymbol);
 	public List<SourceGenericInfo> Generics { get; }
 	public bool HasBaseRequiredMembers { get; set; }
 	public List<SourceInterfaceInfo> Interfaces { get; }
@@ -65,14 +65,7 @@ public class SourceTypeInfo : SourceMemberInfo
 
 	#region Methods
 
-	private static string ToSafeCodeName(ITypeSymbol typeSymbol, bool includeNamespace = false)
-	{
-		var builder = new StringBuilder();
-		ToSafeCodeName(typeSymbol, builder, includeNamespace);
-		return builder.ToString();
-	}
-
-	private static void ToSafeCodeName(ITypeSymbol typeSymbol, StringBuilder builder, bool includeNamespace = false)
+	private static void ToSafeCodeName(ITypeSymbol typeSymbol, StringBuilder builder, bool includeNamespace = false, string delimiter = "_")
 	{
 		if (typeSymbol is null)
 		{
@@ -84,7 +77,7 @@ public class SourceTypeInfo : SourceMemberInfo
 			var ns = typeSymbol.ContainingNamespace.ToDisplayString();
 			if (!string.IsNullOrEmpty(ns))
 			{
-				builder.Append(ns.Replace('.', '_')).Append('_');
+				builder.Append(ns.Replace(".", delimiter)).Append(delimiter);
 			}
 		}
 
@@ -130,6 +123,13 @@ public class SourceTypeInfo : SourceMemberInfo
 		{
 			builder.Append("Ptr");
 		}
+	}
+
+	private static string ToSourceReflectorName(ITypeSymbol typeSymbol)
+	{
+		var builder = new StringBuilder();
+		ToSafeCodeName(typeSymbol, builder, true, string.Empty);
+		return builder.ToString();
 	}
 
 	#endregion

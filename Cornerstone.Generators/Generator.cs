@@ -147,7 +147,7 @@ public partial class Generator : IIncrementalGenerator
 					continue;
 				}
 
-				spc.AddSource($"{typeInfo.FullyQualifiedCodeName}.g.cs", generatedSource);
+				spc.AddSource($"{typeInfo.FullyQualifiedSourceReflectorName}.g.cs", generatedSource);
 			}
 
 			GenerateModuleInitializer(spc, typesToProcess);

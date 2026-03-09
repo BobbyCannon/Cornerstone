@@ -15,7 +15,7 @@
 		<InvariantGlobalization>false</InvariantGlobalization>
 	</PropertyGroup>
 	<ItemGroup>
-	  <Compile Include="..\Cornerstone.UnitTests\CornerstoneUnitTest.cs" Link="CornerstoneUnitTest.cs" />
+		<Compile Include="..\Cornerstone.UnitTests\CornerstoneUnitTest.cs" Link="CornerstoneUnitTest.cs" />
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Avalonia.Headless" Version="$(AvaloniaVersion)" />

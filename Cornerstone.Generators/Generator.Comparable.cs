@@ -34,7 +34,7 @@ public partial class Generator
 	private static void AppendCompareGenericMethod(CSharpCodeBuilder builder, SourceTypeInfo typeInfo, List<SourcePropertyInfo> comparableProperties)
 	{
 		builder.WriteLine();
-		builder.IndentWriteLine($"public int CompareTo({typeInfo.FullyQualifiedCodeName} value)");
+		builder.IndentWriteLine($"public int CompareTo({typeInfo.FullyGlobalQualifiedName} value)");
 		builder.IndentWriteLine("{");
 		builder.IncreaseIndent();
 		AppendCompareProperties(builder, comparableProperties);
@@ -154,6 +154,29 @@ public partial class Generator
 			.Any(x => x is { IsGenericType: true }
 				&& (x.OriginalDefinition.ToDisplayString() == ComparableT)
 				&& SymbolEqualityComparer.Default.Equals(x.TypeArguments[0], type));
+	}
+
+	private static bool ImplementsSelfComparable(SourceTypeInfo typeInfo)
+	{
+		const string ComparableT = "System.IComparable<T>";
+
+		return typeInfo.TypeSymbol
+			.AllInterfaces
+			.Any(x =>
+			{
+				var d = x.OriginalDefinition.ToDisplayString();
+				if (x is not { IsGenericType: true })
+				{
+					return false;
+				}
+				if (d != ComparableT)
+				{
+					return false;
+				}
+				var genericType = x.TypeArguments[0];
+				var genericTypeName = genericType.ToDisplayString(SymbolDisplayFormats.GlobalFullyQualifiedName);
+				return genericTypeName == typeInfo.FullyGlobalQualifiedName;
+			});
 	}
 
 	private static bool ShouldImplementComparable(INamedTypeSymbol symbol)

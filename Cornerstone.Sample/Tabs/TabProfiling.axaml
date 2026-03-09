@@ -36,7 +36,6 @@
 							Minimum="10"
 							Maximum="40"
 							Width="200" />
-
 					<Slider x:Name="RandomDelaySlider"
 							ControlHelper.DisplayName="Delay"
 							Minimum="2"
@@ -46,6 +45,9 @@
 					<TextBlock Text="{Binding RandomDelay, Converter={x:Static ConvertersForString.Humanize}}"
 							VerticalAlignment="Center"
 							Width="60"/>
+					
+					<CheckBox x:Name="Labels" IsChecked="True">Labels</CheckBox>
+					<CheckBox x:Name="Stepped" IsChecked="True">Stepped</CheckBox>
 				</WrapPanel>
 				<StackPanel Spacing="10">
 					<LineChart
@@ -53,11 +55,21 @@
 							Data="{Binding RandomData}"
 							Height="60"
 							Profiler="{Binding Profiler}"
-							FontSize="{Binding ElementName=FontSize2, Path=Value, Mode=TwoWay}" />
+							FontSize="{Binding ElementName=FontSize2, Path=Value, Mode=TwoWay}"
+							ShowLabels="{Binding ElementName=Labels, Path=IsChecked}"
+							Stepped="{Binding ElementName=Stepped, Path=IsChecked}" />
 					<LineChart x:Name="RenderChart"
 							Title="Render Times"
 							Data="{Binding RenderData}"
-							Height="60" />
+							Height="60"
+							ShowLabels="{Binding ElementName=Labels, Path=IsChecked}"
+							Stepped="{Binding ElementName=Stepped, Path=IsChecked}" />
+					<LineChart x:Name="PerSecondChart"
+							Title="Per Second"
+							Data="{Binding PerSecondData}"
+							Height="60"
+							ShowLabels="{Binding ElementName=Labels, Path=IsChecked}"
+							Stepped="{Binding ElementName=Stepped, Path=IsChecked}" />
 				</StackPanel>
 			</DockPanel>
 			<PreviewCodeSnippet.ItemsPanel>
@@ -73,7 +85,9 @@
 					<LineChart Theme.Color="{Binding}" 
 							Title="{Binding}"
 							Data="{Binding ElementName=This, Path=RandomData}"
-							Height="60" />
+							Height="60"
+							ShowLabels="{Binding ElementName=Labels, Path=IsChecked}"
+							Stepped="{Binding ElementName=Stepped, Path=IsChecked}" />
 				</DataTemplate>
 			</PreviewCodeSnippet.ItemTemplate>
 		</PreviewCodeSnippet>

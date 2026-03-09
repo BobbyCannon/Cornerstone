@@ -1,0 +1,88 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="600"
+		x:Class="Cornerstone.Sample.Tabs.TabChannels"
+		x:DataType="tabs:TabChannels"
+		x:Name="Root">
+	<!-- ReSharper disable Xaml.MissingGridIndex -->
+	<DockPanel>
+		<Grid DockPanel.Dock="Top" Margin="10">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="{x:Static tabs:TabChannels.HeaderName}" />
+		</Grid>
+		<PreviewCodeSnippet>
+			<DockPanel VerticalSpacing="10">
+				<WrapPanel DockPanel.Dock="Top"
+						ItemSpacing="20">
+					<ToggleSwitch IsChecked="{Binding IsBenchmarking}"
+							OnContent="Benchmark"
+							OffContent="Benchmark" />
+					<ToggleSwitch IsChecked="{Binding GraphDuringBenchmarking}"
+							IsEnabled="{Binding !IsBenchmarking}"
+							OnContent="Graph During Benchmarking"
+							OffContent="Graph During Benchmarking"
+							ToolTip.Tip="This will reduce overall speed."/>
+				</WrapPanel>
+				<LineChart x:Name="RenderChart"
+						DockPanel.Dock="Top"
+						Title="Round Trip"
+						Data="{Binding RoundTripData}"
+						Height="60" />
+				<LineChart x:Name="PerSecondChart"
+						DockPanel.Dock="Top"
+						Title="Per Second"
+						Data="{Binding PerSecondData}"
+						Height="60" />
+				<AutoGrid DockPanel.Dock="Top"
+						ColumnDefinitions="*,*"
+						ColumnSpacing="10"
+						RowSpacing="4"
+						RowDefinitions="Auto,*,Auto,*,Auto">
+					<Button Theme.Color="None"
+							Grid.ColumnSpan="2"
+							Click="ReadFromServer"
+							IsEnabled="{Binding !IsBenchmarking}">
+						Read from Server
+					</Button>
+					<ChannelControl x:Name="ServerChannel"
+							Grid.ColumnSpan="2" />
+
+					<Button Theme.Color="None"
+							Click="SendMessageToClient"
+							IsEnabled="{Binding !IsBenchmarking}">
+						<StackPanel Orientation="Horizontal">
+							<Path Data="{StaticResource Icons.DoubleArrow.Down}"
+									Height="12" Width="12"
+									Margin="0,0,10,0"/>
+							<TextBlock Text="Write Client" />
+						</StackPanel>
+					</Button>
+					<Button Theme.Color="None"
+							Click="SendMessageToServer"
+							IsEnabled="{Binding !IsBenchmarking}">
+						<StackPanel Orientation="Horizontal">
+							<Path Data="{StaticResource Icons.DoubleArrow.Up}"
+									Height="12" Width="12"
+									Margin="0,0,10,0"/>
+							<TextBlock Text="Write Server" />
+						</StackPanel>
+					</Button>
+					<ChannelControl x:Name="ClientChannel"
+							Grid.ColumnSpan="2" />
+					<Button Theme.Color="None"
+							Grid.ColumnSpan="2"
+							Click="ReadFromClient"
+							IsEnabled="{Binding !IsBenchmarking}">
+						Read from Client
+					</Button>
+				</AutoGrid>
+				<TextEditor x:Name="Monitor" />
+			</DockPanel>
+		</PreviewCodeSnippet>
+	</DockPanel>
+</UserControl>

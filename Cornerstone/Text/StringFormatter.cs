@@ -67,7 +67,7 @@ public static class StringFormatter
 	{
 		if (value == TimeSpan.Zero)
 		{
-			return string.Empty;
+			return "0";
 		}
 
 		settings ??= new HumanizeSettings();

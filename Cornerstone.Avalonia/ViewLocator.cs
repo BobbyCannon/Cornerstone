@@ -26,7 +26,7 @@ public class ViewLocator : IDataTemplate
 			DockableTabModel dockableTabModel => Build(dockableTabModel),
 			PopupViewModel popup => Build(popup),
 			TabItemReferenceViewModel tabItem => Build(tabItem),
-			_ => new TextBlock { Text = $"Failed to find control for [{data}]..." }
+			_ => new TextBlock { Text = $"Failed to find control for [{data}]." }
 		};
 	}
 
@@ -41,7 +41,7 @@ public class ViewLocator : IDataTemplate
 	private Control Build(TabItemReferenceViewModel tabItem)
 	{
 		tabItem.Control = SourceReflector.CreateInstance(tabItem.TabTypeName) as Control
-			?? new TextBlock { Text = $"Failed to find control for [{tabItem.TabName}]..." };
+			?? new TextBlock { Text = $"Failed to find control for [{tabItem.TabName}]." };
 
 		tabItem.Control.Tag = tabItem;
 		tabItem.Control.Unloaded += ControlOnUnloaded;

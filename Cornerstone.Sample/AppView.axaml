@@ -4,7 +4,7 @@
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:sample="clr-namespace:Cornerstone.Sample"
 		xmlns:converters="clr-namespace:Cornerstone.Avalonia.Converters;assembly=Cornerstone.Avalonia"
-		mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
+		mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="600"
 		Background="{DynamicResource Background02}"
 		x:Class="Cornerstone.Sample.AppView"
 		x:DataType="sample:AppViewModel"

@@ -43,7 +43,7 @@ public partial class TabProfiling : CornerstoneUserControl
 		Profiler = new Profiler();
 		RandomData = new SeriesDataProvider(60);
 		RandomDelay = _timer.Interval;
-		RenderData = Profiler.SetupScopeHistory("Render");
+		(RenderData, PerSecondData) = Profiler.SetupScopeHistory("Render");
 		RuntimeInformation = GetInstance<IRuntimeInformation>();
 		DataContext = this;
 
@@ -54,12 +54,14 @@ public partial class TabProfiling : CornerstoneUserControl
 
 	#region Properties
 
+	public ISeriesDataProvider PerSecondData { get; }
+
 	public SeriesDataProvider RandomData { get; }
 
 	[StyledProperty]
 	public partial TimeSpan RandomDelay { get; set; }
 
-	public SeriesDataProvider RenderData { get; }
+	public ISeriesDataProvider RenderData { get; }
 
 	public IRuntimeInformation RuntimeInformation { get; }
 

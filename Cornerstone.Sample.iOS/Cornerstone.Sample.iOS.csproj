@@ -2,7 +2,18 @@
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
 		<TargetFrameworks>net10.0-ios</TargetFrameworks>
-		<SupportedOSPlatformVersion>13.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion>18.0</SupportedOSPlatformVersion>
+		<ProvisioningType>manual</ProvisioningType>
+		<CodesignKey>iPhone Developer</CodesignKey>
+		<CodesignProvision />
+
+		<!-- Disable AOT -->
+		<UseInterpreter>true</UseInterpreter>
+		<MtouchLink>None</MtouchLink>
+		<MtouchDebug>true</MtouchDebug>
+		<PublishTrimmed>true</PublishTrimmed>
+		<PublishAot>false</PublishAot>
+		<EnableTrimAnalyzer>false</EnableTrimAnalyzer>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Avalonia.iOS" Version="$(AvaloniaVersion)" />

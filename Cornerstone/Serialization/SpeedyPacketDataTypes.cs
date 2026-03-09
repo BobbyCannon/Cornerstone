@@ -10,296 +10,174 @@
 /// </remarks>
 public enum SpeedyPacketDataTypes : byte
 {
-	Unknown = 0x00,
-	Packet = 0x01,
-	True = 0x02,
-	False = 0x03,
-	Null = 0x04,
-	String = 0x05,
-	EmptyString = 0x06,
-	Char = 0x07,
+	Unknown = 0x0,
+	Packet = 0x1,
+	True = 0x2,
+	False = 0x3,
+	Null = 0x4,
+	String = 0x5,
+	StringOfEmpty = 0x6,
 
-	/// <summary>
-	/// 0
-	/// </summary>
-	CharMin = 0x08,
+	Char = 0x7,
+	CharMin = 0x8,
+	CharMax = 0x9,
 
-	/// <summary>
-	/// 65535, 0xFFFF
-	/// </summary>
-	CharMax = 0x09,
-	Byte = 0x0A,
+	Byte = 0xA,
+	ByteMin = 0xB,
+	ByteMax = 0xC,
+	ByteOne = 0xD,
+	ByteTwo = 0xE,
+	ByteArray = 0xF,
 
-	/// <summary>
-	/// 0
-	/// </summary>
-	ByteMin = 0x0B,
+	SByte = 0x10,
+	SByteMin = 0x11,
+	SByteMax = 0x12,
+	SByteNegativeOne = 0x13,
+	SByteZero = 0x14,
+	SByteOne = 0x15,
+	SByteTwo = 0x16,
 
-	/// <summary>
-	/// 255, 0xFF
-	/// </summary>
-	ByteMax = 0x0C,
-	ByteOne = 0x0D,
-	ByteArray = 0x0E,
-	SByte = 0x0F,
-
-	/// <summary>
-	/// -128, 0x80
-	/// </summary>
-	SByteMin = 0x10,
-
-	/// <summary>
-	/// 127, 0x7F
-	/// </summary>
-	SByteMax = 0x11,
-	SByteZero = 0x12,
-	SByteOne = 0x13,
-	SByteNegativeOne = 0x14,
-	Int16 = 0x15,
-
-	/// <summary>
-	/// -32768, 0x8000
-	/// </summary>
-	Int16Min = 0x16,
-
-	/// <summary>
-	/// 32767, 0x7FFF
-	/// </summary>
-	Int16Max = 0x17,
-	Int16Zero = 0x18,
-	Int16One = 0x19,
+	Int16 = 0x17,
+	Int16Min = 0x18,
+	Int16Max = 0x19,
 	Int16NegativeOne = 0x1A,
-	UInt16 = 0x1B,
+	Int16Zero = 0x1B,
+	Int16One = 0x1C,
+	Int16Two = 0x1D,
 
-	/// <summary>
-	/// 0
-	/// </summary>
-	UInt16Min = 0x1C,
+	UInt16 = 0x1E,
+	UInt16Min = 0x1F,
+	UInt16Max = 0x20,
+	UInt16One = 0x21,
+	UInt16Two = 0x22,
 
-	/// <summary>
-	/// 65535, 0xFFFF
-	/// </summary>
-	UInt16Max = 0x1D,
-	Int32 = 0x1E,
+	Int32 = 0x23,
+	Int32Min = 0x24,
+	Int32Max = 0x25,
+	Int32NegativeOne = 0x26,
+	Int32Zero = 0x27,
+	Int32One = 0x28,
+	Int32Two = 0x29,
 
-	/// <summary>
-	/// -2147483648, 0x80000000
-	/// </summary>
-	Int32Min = 0x1F,
+	UInt32 = 0x2A,
+	UInt32Min = 0x2B,
+	UInt32Max = 0x2C,
+	UInt32One = 0x2D,
+	UInt32Two = 0x2E,
 
-	/// <summary>
-	/// 2147483647, 0x7FFFFFFF
-	/// </summary>
-	Int32Max = 0x20,
-	UInt32 = 0x21,
-	UInt32Min = 0x22,
+	Int64 = 0x2F,
+	Int64Min = 0x30,
+	Int64Max = 0x31,
+	Int64NegativeOne = 0x32,
+	Int64Zero = 0x33,
+	Int64One = 0x34,
+	Int64Two = 0x35,
 
-	/// <summary>
-	/// 4294967295, 0xFFFFFFFF
-	/// </summary>
-	UInt32Max = 0x23,
-	Int64 = 0x24,
+	UInt64 = 0x36,
+	UInt64Min = 0x37,
+	UInt64Max = 0x38,
+	UInt64One = 0x39,
+	UInt64Two = 0x3A,
 
-	/// <summary>
-	/// -9223372036854775808, 0x8000000000000000
-	/// </summary>
-	Int64Min = 0x25,
+	Int128 = 0x3B,
+	Int128Min = 0x3C,
+	Int128Max = 0x3D,
+	Int128NegativeOne = 0x3E,
+	Int128Zero = 0x3F,
+	Int128One = 0x40,
+	Int128Two = 0x41,
 
-	/// <summary>
-	/// 9223372036854775807, 0x7FFFFFFFFFFFFFFF
-	/// </summary>
-	Int64Max = 0x26,
-	UInt64 = 0x27,
-	UInt64Min = 0x28,
+	UInt128 = 0x42,
+	UInt128Min = 0x43,
+	UInt128Max = 0x44,
+	UInt128One = 0x45,
+	UInt128Two = 0x46,
 
-	/// <summary>
-	/// 18446744073709551615, 0xFFFFFFFFFFFFFFFF
-	/// </summary>
-	UInt64Max = 0x29,
-	Int128 = 0x2A,
+	IntPtr = 0x47,
+	IntPtrMin = 0x48,
+	IntPtrMax = 0x49,
 
-	/// <summary>
-	/// 170141183460469231731687303715884105727
-	/// 7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-	/// </summary>
-	Int128Min = 0x2B,
+	UIntPtr = 0x4A,
+	UIntPtrMin = 0x4B,
+	UIntPtrMax = 0x4C,
 
-	/// <summary>
-	/// -170141183460469231731687303715884105728
-	/// 80000000000000000000000000000000
-	/// </summary>
-	Int128Max = 0x2C,
-	UInt128 = 0x2D,
-	UInt128Min = 0x2E,
+	Float = 0x4D,
+	FloatMin = 0x4E,
+	FloatMax = 0x4F,
+	FloatNegativeInfinity = 0x50,
+	FloatPositiveInfinity = 0x51,
+	FloatNaN = 0x52,
+	FloatNegativeZero = 0x53,
+	FloatZero = 0x54,
+	FloatE = 0x55,
+	FloatEpsilon = 0x56,
+	FloatPi = 0x57,
+	FloatTau = 0x58,
+	FloatHalf = 0x59,
+	FloatNegativeOne = 0x5A,
+	FloatOne = 0x5B,
+	FloatTwo = 0x5C,
 
-	/// <summary>
-	/// 340282366920938463463374607431768211455
-	/// 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-	/// </summary>
-	UInt128Max = 0x2F,
-	IntPtr = 0x30,
+	Double = 0x5D,
+	DoubleMin = 0x5E,
+	DoubleMax = 0x5F,
+	DoubleNegativeInfinity = 0x60,
+	DoublePositiveInfinity = 0x61,
+	DoubleNaN = 0x62,
+	DoubleNegativeZero = 0x63,
+	DoubleZero = 0x64,
+	DoubleE = 0x65,
+	DoubleEpsilon = 0x66,
+	DoublePi = 0x67,
+	DoubleTau = 0x68,
+	DoubleHalf = 0x69,
+	DoubleNegativeOne = 0x6A,
+	DoubleOne = 0x6B,
+	DoubleTwo = 0x6C,
 
-	/// <summary>
-	/// -9223372036854775808
-	/// 0x8000000000000000
-	/// </summary>
-	IntPtrMin = 0x31,
+	Decimal = 0x6D,
+	DecimalMin = 0x6E,
+	DecimalMax = 0x6F,
+	DecimalNegativeOne = 0x70,
+	DecimalZero = 0x71,
+	DecimalOne = 0x72,
+	DecimalTwo = 0x73,
 
-	/// <summary>
-	/// 9223372036854775807
-	/// 0x7FFFFFFFFFFFFFFF
-	/// </summary>
-	IntPtrMax = 0x32,
-	UIntPtr = 0x33,
-	UIntPtrMin = 0x34,
+	DateOnly = 0x74,
+	DateOnlyMin = 0x75,
+	DateOnlyMax = 0x76,
+	DateOnlyUnixEpoch = 0x77,
+	DateOnlyWindowsEpoch = 0x78,
 
-	/// <summary>
-	/// 18446744073709551615
-	/// 0xFFFFFFFFFFFFFFFF
-	/// </summary>
-	UIntPtrMax = 0x35,
-	Float = 0x36,
+	DateTime = 0x79,
+	DateTimeMin = 0x7A,
+	DateTimeMax = 0x7B,
+	DateTimeUnixEpoch = 0x7C,
+	DateTimeWindowsEpoch = 0x7D,
 
-	/// <summary>
-	/// -3.4028235E+38
-	/// </summary>
-	FloatMin = 0x37,
+	DateTimeOffset = 0x7E,
+	DateTimeOffsetMin = 0x7F,
+	DateTimeOffsetMax = 0x80,
+	DateTimeOffsetUnixEpoch = 0x81,
+	DateTimeOffsetWindowsEpoch = 0x82,
 
-	/// <summary>
-	/// 3.4028235E+38
-	/// </summary>
-	FloatMax = 0x38,
-	FloatNegativeInfinity = 0x39,
-	FloatPositiveInfinity = 0x3A,
-	FloatNaN = 0x3B,
-	FloatNegativeZero = 0x3C,
-	FloatE = 0x3D,
-	FloatEpsilon = 0x3E,
-	FloatPi = 0x3F,
-	FloatTau = 0x40,
-	Double = 0x41,
+	TimeOnly = 0x83,
+	TimeOnlyMin = 0x84,
+	TimeOnlyMax = 0x85,
 
-	/// <summary>
-	/// -1.7976931348623157E+308
-	/// </summary>
-	DoubleMin = 0x42,
+	TimeSpan = 0x86,
+	TimeSpanMin = 0x87,
+	TimeSpanMax = 0x88,
+	TimeSpanZero = 0x89,
 
-	/// <summary>
-	/// 1.7976931348623157E+308
-	/// </summary>
-	DoubleMax = 0x43,
-	DoubleZero = 0x44,
-	DoubleNegativeInfinity = 0x45,
-	DoublePositiveInfinity = 0x46,
-	DoubleNaN = 0x47,
-	DoubleNegativeZero = 0x48,
-	DoubleE = 0x49,
-	DoubleEpsilon = 0x4A,
-	DoublePi = 0x4B,
-	DoubleTau = 0x4C,
-	Decimal = 0x4D,
+	Guid = 0x8A,
+	GuidEmpty = 0x8B,
+	GuidAllBitsSet = 0x8C,
 
-	/// <summary>
-	/// -79228162514264337593543950335
-	/// </summary>
-	DecimalMin = 0x4E,
+	Version = 0x8D,
+	VersionOneZero = 0x8E,
+	VersionOneZeroZero = 0x8F,
+	VersionOneZeroZeroZero = 0x90,
 
-	/// <summary>
-	/// 79228162514264337593543950335
-	/// </summary>
-	DecimalMax = 0x4F,
-	DecimalZero = 0x50,
-	DecimalOne = 0x51,
-	DecimalMinusOne = 0x52,
-	DateOnly = 0x53,
-
-	/// <summary>
-	/// 1/1/0001
-	/// </summary>
-	DateOnlyMin = 0x54,
-
-	/// <summary>
-	/// 12/31/9999
-	/// </summary>
-	DateOnlyMax = 0x55,
-
-	/// <summary>
-	/// 1970-01-01 UTC
-	/// </summary>
-	DateOnlyUnixEpoch = 0x56,
-
-	/// <summary>
-	/// 1601-01-01 UTC
-	/// </summary>
-	DateOnlyWindowsEpoch = 0x57,
-	DateTime = 0x58,
-
-	/// <summary>
-	/// 1/1/0001 12:00:00 AM
-	/// </summary>
-	DateTimeMin = 0x59,
-
-	/// <summary>
-	/// 12/31/9999 11:59:59 PM
-	/// </summary>
-	DateTimeMax = 0x5A,
-	DateTimeUnixEpoch = 0x5B,
-	DateTimeWindowsEpoch = 0x5C,
-	DateTimeOffset = 0x5D,
-
-	/// <summary>
-	/// 1/1/0001 12:00:00 AM +00:00
-	/// </summary>
-	DateTimeOffsetMin = 0x5E,
-
-	/// <summary>
-	/// 12/31/9999 11:59:59 PM +00:00
-	/// </summary>
-	DateTimeOffsetMax = 0x5F,
-	DateTimeOffsetUnixEpoch = 0x60,
-	DateTimeOffsetWindowsEpoch = 0x61,
-	TimeOnly = 0x62,
-
-	/// <summary>
-	/// 12:00 AM
-	/// </summary>
-	TimeOnlyMin = 0x63,
-
-	/// <summary>
-	/// 11:59 PM
-	/// </summary>
-	TimeOnlyMax = 0x64,
-	TimeSpan = 0x65,
-
-	/// <summary>
-	/// -10675199.02:48:05.4775808
-	/// </summary>
-	TimeSpanMin = 0x66,
-
-	/// <summary>
-	/// 10675199.02:48:05.4775807
-	/// </summary>
-	TimeSpanMax = 0x67,
-	TimeSpanZero = 0x68,
-	Guid = 0x69,
-
-	/// <summary>
-	/// 00000000-0000-0000-0000-000000000000
-	/// </summary>
-	GuidEmpty = 0x6A,
-
-	/// <summary>
-	/// FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF
-	/// </summary>
-	GuidAllBitsSet = 0x6B,
-
-	/// <summary>
-	/// Version number 1.2, 1.2.3, 1.2.3.4
-	/// </summary>
-	Version = 0x6C,
-
-	/// <summary>
-	/// End of the header
-	/// </summary>
 	EndOfHeader = 0xFF
 }

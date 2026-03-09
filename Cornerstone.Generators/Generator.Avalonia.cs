@@ -90,11 +90,11 @@ public partial class Generator
 			builder.Write($" = global::Avalonia.AvaloniaProperty.RegisterAttached<{classFqtn}, {classFqtn}, {memberTypeFullName}>(nameof({member.Name})");
 			if (TryGetNamedArgument(property.Value, "DefaultValue", out var defaultValue))
 			{
-				builder.Write($", defaultValue: {defaultValue.Value}");
+				builder.Write($", defaultValue: {CSharpCodeBuilder.GetConstantLiteral(defaultValue.Value)}");
 			}
 			if (TryGetNamedArgument(property.Value, "Inherits", out var inheritsValue))
 			{
-				builder.Write($", inheritsValue: {inheritsValue.Value}");
+				builder.Write($", inheritsValue: {CSharpCodeBuilder.GetConstantLiteral(inheritsValue.Value)}");
 			}
 			builder.WriteLine(");");
 
@@ -163,7 +163,7 @@ public partial class Generator
 
 			if (TryGetNamedArgument(property.Value, "DefaultValue", out var defaultValue))
 			{
-				builder.Write($", defaultValue: {defaultValue.Value}");
+				builder.Write($", defaultValue: {CSharpCodeBuilder.GetConstantLiteral(defaultValue)}");
 			}
 			else if (TryGetNamedArgument(property.Value, "DefaultValueCallback", out var defaultValueCallback))
 			{

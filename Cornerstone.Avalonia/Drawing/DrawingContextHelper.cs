@@ -8,6 +8,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Media.TextFormatting;
+using Cornerstone.Data.Bytes;
 
 #endregion
 
@@ -34,7 +35,6 @@ public class DrawingContextHelper : IDisposable
 	private static readonly string[] _extraChars;
 	private readonly TemplatedControl _owner;
 	private readonly string[] _spriteCharacters;
-	private double _spriteHeight;
 	private RenderTargetBitmap _spriteSheet;
 
 	#endregion
@@ -73,7 +73,6 @@ public class DrawingContextHelper : IDisposable
 		}
 
 		_charToIndex = charToIndex.ToFrozenDictionary();
-
 		_owner.PropertyChanged += OnOwnerPropertyChanged;
 
 		RefreshSprintSheet();
@@ -106,6 +105,8 @@ public class DrawingContextHelper : IDisposable
 
 	#region Properties
 
+	public double SpriteHeight { get; private set; }
+
 	public Func<double, string> ValueFormatter { get; set; }
 
 	#endregion
@@ -123,6 +124,22 @@ public class DrawingContextHelper : IDisposable
 	/// <summary>
 	/// Draws numeric value using pre-rendered sprites (zero heap allocations in hot path)
 	/// </summary>
+	public void Draw(DrawingContext context, decimal value, ref double visualX, ref double visualY, int precision = 2)
+	{
+		if (_spriteSheet == null)
+		{
+			return;
+		}
+
+		// 24 digits + sign + dot + safety
+		Span<int> buffer = stackalloc int[32];
+		var formatted = FormattedNumberSpan.Create(value, precision, buffer);
+		Draw(context, formatted, ref visualX, ref visualY, precision);
+	}
+
+	/// <summary>
+	/// Draws numeric value using pre-rendered sprites (zero heap allocations in hot path)
+	/// </summary>
 	public void Draw(DrawingContext context, double value, ref double visualX, ref double visualY, int precision = 2)
 	{
 		if (_spriteSheet == null)
@@ -130,11 +147,20 @@ public class DrawingContextHelper : IDisposable
 			return;
 		}
 
-		// Handle negative sign
-		var negative = value < 0;
-		if (negative)
+		// 24 digits + sign + dot + safety
+		Span<int> buffer = stackalloc int[32];
+		var formatted = FormattedNumberSpan.Create(value, precision, buffer);
+		Draw(context, formatted, ref visualX, ref visualY, precision);
+	}
+
+	/// <summary>
+	/// Draws numeric value using pre-rendered sprites (zero heap allocations in hot path)
+	/// </summary>
+	public void Draw(DrawingContext context, FormattedNumberSpan formatted, ref double visualX, ref double visualY, int precision = 2)
+	{
+		// Handle sign (outside the span — keeps span clean)
+		if (formatted.HasSign)
 		{
-			value = -value;
 			var idx = GetSpriteIndex('-');
 			if (idx >= 0)
 			{
@@ -142,101 +168,16 @@ public class DrawingContextHelper : IDisposable
 			}
 		}
 
-		if (value == 0)
+		foreach (var val in formatted.Digits)
 		{
-			var zeroIdx = GetSpriteIndex('0');
-			if (zeroIdx >= 0)
+			var idx = val == -1
+				? GetSpriteIndex('.')
+				: GetSpriteIndex((char) ('0' + val));
+
+			if (idx >= 0)
 			{
-				DrawSprite(context, zeroIdx, ref visualX, visualY);
+				DrawSprite(context, idx, ref visualX, visualY);
 			}
-			return;
-		}
-
-		// Scale and round
-		var multiplier = Math.Pow(10, precision);
-		var scaled = (long) Math.Round(value * multiplier);
-
-		// Extract digits right → left
-		const int MaxDigits = 24;
-		Span<int> digits = stackalloc int[MaxDigits];
-		var count = 0;
-
-		do
-		{
-			digits[count++] = (int) (scaled % 10);
-			scaled /= 10;
-		} while ((scaled > 0) || (count < precision));
-
-		// Find last non-zero decimal digit (for smart precision)
-		var lastSignificantDecimal = precision - 1;
-		while (lastSignificantDecimal >= 0)
-		{
-			var pos = count - 1 - lastSignificantDecimal; // position in digits[]
-			if ((pos < 0) || (digits[pos] != 0))
-			{
-				break;
-			}
-			lastSignificantDecimal--;
-		}
-
-		// Effective decimal places to draw
-		var decimalsToDraw = lastSignificantDecimal >= 0 ? lastSignificantDecimal + 1 : 0;
-
-		// Position where decimal point goes (counting from right)
-		var decimalIndex = decimalsToDraw + 1;
-
-		// Draw left → right
-		var integerStarted = false;
-		var decimalDrawn = false;
-
-		for (var i = count - 1; i >= 0; i--)
-		{
-			var digit = digits[i];
-
-			// Are we still in the integer part?
-			var isDecimalPart = i < decimalIndex;
-
-			// Skip leading zeros in integer part
-			if (!integerStarted && (digit == 0) && !isDecimalPart)
-			{
-				continue;
-			}
-
-			integerStarted = true;
-
-			// Draw digit
-			var digitIdx = GetSpriteIndex((char) ('0' + digit));
-			if (digitIdx >= 0)
-			{
-				DrawSprite(context, digitIdx, ref visualX, visualY);
-			}
-
-			// Draw decimal point exactly once — right after last integer digit
-			if (!decimalDrawn && isDecimalPart && (decimalsToDraw > 0))
-			{
-				var dotIdx = GetSpriteIndex('.');
-				if (dotIdx >= 0)
-				{
-					DrawSprite(context, dotIdx, ref visualX, visualY);
-				}
-				decimalDrawn = true;
-			}
-		}
-
-		// Edge case: value was like 0.0005 → show at least "0."
-		if (!integerStarted && (decimalsToDraw > 0))
-		{
-			var zeroIdx = GetSpriteIndex('0');
-			if (zeroIdx >= 0)
-			{
-				DrawSprite(context, zeroIdx, ref visualX, visualY);
-			}
-			var dotIdx = GetSpriteIndex('.');
-			if (dotIdx >= 0)
-			{
-				DrawSprite(context, dotIdx, ref visualX, visualY);
-			}
-			decimalDrawn = true;
 		}
 	}
 
@@ -280,7 +221,7 @@ public class DrawingContextHelper : IDisposable
 			if (c == '\n')
 			{
 				visualX = x;
-				visualY += _spriteHeight;
+				visualY += SpriteHeight;
 				continue;
 			}
 			if ((c == '\r') || (c == '\t'))
@@ -305,6 +246,111 @@ public class DrawingContextHelper : IDisposable
 
 			DrawSprite(context, idx, ref visualX, visualY);
 		}
+	}
+
+	public void Draw(DrawingContext context, ByteUnit unit, ref double visualX, ref double visualY)
+	{
+		switch (unit)
+		{
+			case ByteUnit.Terabyte:
+			{
+				Draw(context, ByteSize.TerabyteSymbol, ref visualX, ref visualY);
+				break;
+			}
+			case ByteUnit.Terabit:
+			{
+				Draw(context, ByteSize.TerabitSymbol, ref visualX, ref visualY);
+				break;
+			}
+			case ByteUnit.Megabyte:
+			{
+				Draw(context, ByteSize.MegabyteSymbol, ref visualX, ref visualY);
+				break;
+			}
+			case ByteUnit.Megabit:
+			{
+				Draw(context, ByteSize.MegabitSymbol, ref visualX, ref visualY);
+				break;
+			}
+			case ByteUnit.Kilobyte:
+			{
+				Draw(context, ByteSize.KilobyteSymbol, ref visualX, ref visualY);
+				break;
+			}
+			case ByteUnit.Kilobit:
+			{
+				Draw(context, ByteSize.KilobitSymbol, ref visualX, ref visualY);
+				break;
+			}
+			case ByteUnit.Gigabyte:
+			{
+				Draw(context, ByteSize.GigabyteSymbol, ref visualX, ref visualY);
+				break;
+			}
+			case ByteUnit.Gigabit:
+			{
+				Draw(context, ByteSize.GigabitSymbol, ref visualX, ref visualY);
+				break;
+			}
+			default:
+			{
+				Draw(context, ByteSize.ByteSymbol, ref visualX, ref visualY);
+				break;
+			}
+		}
+	}
+
+	public double Measure(ByteUnit unit)
+	{
+		return unit switch
+		{
+			ByteUnit.Terabyte => Measure(ByteSize.TerabyteSymbol),
+			ByteUnit.Terabit => Measure(ByteSize.TerabitSymbol),
+			ByteUnit.Megabyte => Measure(ByteSize.MegabyteSymbol),
+			ByteUnit.Megabit => Measure(ByteSize.MegabitSymbol),
+			ByteUnit.Kilobyte => Measure(ByteSize.KilobyteSymbol),
+			ByteUnit.Kilobit => Measure(ByteSize.KilobitSymbol),
+			ByteUnit.Gigabyte => Measure(ByteSize.GigabyteSymbol),
+			ByteUnit.Gigabit => Measure(ByteSize.GigabitSymbol),
+			_ => Measure(ByteSize.ByteSymbol)
+		};
+	}
+
+	public double Measure(ReadOnlySpan<char> text)
+	{
+		if (text.IsEmpty)
+		{
+			return 0;
+		}
+
+		double total = 0;
+		foreach (var c in text)
+		{
+			var idx = _charToIndex.GetValueOrDefault(c, -1);
+			if (idx >= 0)
+			{
+				total += _charWidths[idx];
+			}
+			else
+			{
+				total += _charWidths[0];
+			}
+		}
+		return total;
+	}
+
+	public double Measure(decimal value, int precision = 2)
+	{
+		Span<int> buffer = stackalloc int[32];
+		var fmt = FormattedNumberSpan.Create(value, precision, buffer);
+		return Measure(fmt);
+	}
+
+	public double Measure(double value, int precision = 2)
+	{
+		Span<int> buffer = stackalloc int[32];
+		var fmt = FormattedNumberSpan.Create(value, precision, buffer);
+		return Measure(fmt);
 	}
 
 	public void OnOwnerPropertyChanged(object sender, AvaloniaPropertyChangedEventArgs change)
@@ -350,7 +396,7 @@ public class DrawingContextHelper : IDisposable
 			x += w;
 		}
 
-		_spriteHeight = maxHeight;
+		SpriteHeight = maxHeight;
 
 		if ((x <= 0) || (maxHeight <= 0))
 		{
@@ -385,7 +431,7 @@ public class DrawingContextHelper : IDisposable
 		}
 
 		var src = _charSourceRects[index];
-		var dest = new Rect(x, y, _charWidths[index], _spriteHeight);
+		var dest = new Rect(x, y, _charWidths[index], SpriteHeight);
 		context.DrawImage(_spriteSheet!, src, dest);
 
 		x += _charWidths[index];
@@ -402,10 +448,211 @@ public class DrawingContextHelper : IDisposable
 		};
 	}
 
+	private double GetCharWidth(char c)
+	{
+		var idx = _charToIndex.GetValueOrDefault(c, -1);
+		return idx >= 0 ? _charWidths[idx] : _charWidths[0]; // fallback to space
+	}
+
 	private int GetSpriteIndex(char c)
 	{
 		return _charToIndex.TryGetValue(c, out var idx) ? idx :
 			_charToIndex.TryGetValue('?', out idx) ? idx : -1;
+	}
+
+	private double Measure(FormattedNumberSpan value)
+	{
+		double totalWidth = 0;
+
+		if (value.HasSign)
+		{
+			totalWidth += GetCharWidth('-');
+		}
+
+		foreach (var d in value.Digits)
+		{
+			totalWidth += GetCharWidth(d == -1 ? '.' : (char) ('0' + d));
+		}
+
+		return totalWidth;
+	}
+
+	#endregion
+
+	#region Structures
+
+	public ref struct FormattedNumberSpan
+	{
+		#region Fields
+
+		private readonly Span<int> _buffer;
+		private int _length;
+
+		#endregion
+
+		#region Constructors
+
+		public FormattedNumberSpan(Span<int> destinationBuffer)
+		{
+			_buffer = destinationBuffer;
+			_length = 0;
+			DecimalPosition = 0;
+			HasSign = false;
+		}
+
+		#endregion
+
+		#region Properties
+
+		public int DecimalPosition { get; private set; }
+
+		public ReadOnlySpan<int> Digits => _buffer[.._length];
+
+		public bool HasSign { get; private set; }
+
+		#endregion
+
+		#region Methods
+
+		public static FormattedNumberSpan Create(double value, int precision, Span<int> destinationBuffer)
+		{
+			var fmt = new FormattedNumberSpan(destinationBuffer);
+
+			var negative = value < 0;
+			if (negative)
+			{
+				value = -value; // we don't try to preserve -0.0 sign here
+			}
+
+			fmt.HasSign = negative;
+
+			if (double.IsNaN(value) || double.IsInfinity(value))
+			{
+				fmt.AppendDigit(0);
+				return fmt;
+			}
+
+			if (value == 0)
+			{
+				fmt.AppendDigit(0);
+				if (precision > 0)
+				{
+					fmt.AppendSpecial(-1);
+					for (var i = 0; i < precision; i++)
+					{
+						fmt.AppendDigit(0);
+					}
+				}
+				fmt.DecimalPosition = precision;
+				return fmt;
+			}
+
+			var scaled = value * Math.Pow(10, precision);
+			var truncated = (long) scaled;
+			return FormatNumber(precision, truncated, fmt);
+		}
+
+		public static FormattedNumberSpan Create(decimal value, int precision, Span<int> destinationBuffer)
+		{
+			var fmt = new FormattedNumberSpan(destinationBuffer);
+
+			var negative = value < 0;
+			if (negative)
+			{
+				value = -value;
+			}
+
+			fmt.HasSign = negative;
+
+			if (value == 0)
+			{
+				fmt.AppendDigit(0);
+				if (precision > 0)
+				{
+					fmt.AppendSpecial(-1);
+					for (var i = 0; i < precision; i++)
+					{
+						fmt.AppendDigit(0);
+					}
+				}
+				fmt.DecimalPosition = precision;
+				return fmt;
+			}
+
+			var scaled = value * (decimal) Math.Pow(10, precision);
+			var truncated = (long) scaled;
+			return FormatNumber(precision, truncated, fmt);
+		}
+
+		private void AppendDigit(int d)
+		{
+			AppendSpecial(d);
+		}
+
+		private void AppendSpecial(int val)
+		{
+			if (_length >= _buffer.Length)
+			{
+				throw new InvalidOperationException("Buffer too small");
+			}
+
+			_buffer[_length++] = val;
+		}
+
+		private static FormattedNumberSpan FormatNumber(int precision, long truncated, FormattedNumberSpan fmt)
+		{
+			// Extract digits (little-endian: least significant first)
+			Span<int> digits = stackalloc int[32];
+			var count = 0;
+
+			var temp = truncated;
+			do
+			{
+				digits[count++] = (int) (temp % 10);
+				temp /= 10;
+			} while (temp > 0);
+
+			// Make sure we have enough slots for decimal places
+			var requiredDecimalSlots = precision;
+			while (count < (requiredDecimalSlots + 1)) // +1 for possible integer 0
+			{
+				digits[count++] = 0;
+			}
+
+			var started = false;
+
+			// Integer part (from most significant digit)
+			for (var i = count - 1; i >= precision; i--)
+			{
+				var d = digits[i];
+				if (started || (d != 0))
+				{
+					started = true;
+					fmt.AppendDigit(d);
+				}
+			}
+
+			if (!started)
+			{
+				fmt.AppendDigit(0);
+			}
+
+			// Decimal part — always exactly 'precision' digits
+			if (precision > 0)
+			{
+				fmt.AppendSpecial(-1);
+
+				for (var i = precision - 1; i >= 0; i--)
+				{
+					fmt.AppendDigit(digits[i]);
+				}
+			}
+
+			fmt.DecimalPosition = precision;
+			return fmt;
+		}
+
+		#endregion
 	}
 
 	#endregion

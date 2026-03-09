@@ -110,6 +110,16 @@ public partial class DockingTabControl : TabControl
 		Items.CollectionChanged += ItemsCollectionChanged;
 	}
 
+	public void Insert(int index, DockableTabModel tabModel)
+	{
+		if (!tabModel.IsInitialized)
+		{
+			tabModel.Initialize();
+		}
+		var tabView = new DockableTabView(tabModel);
+		Insert(index, tabView);
+	}
+
 	public void Insert(int index, DockableTabView tabView)
 	{
 		Items.Insert(index, tabView);

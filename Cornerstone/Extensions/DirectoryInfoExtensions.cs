@@ -20,7 +20,7 @@ public static class DirectoryInfoExtensions
 	/// <param name="info"> The information on the directory to create. </param>
 	public static bool SafeCreate(this DirectoryInfo info)
 	{
-		UtilityExtensions.Retry(() =>
+		Utility.Retry(() =>
 			{
 				info.Refresh();
 
@@ -33,7 +33,7 @@ public static class DirectoryInfoExtensions
 			TimeSpan.FromMilliseconds(10)
 		);
 
-		return UtilityExtensions.WaitUntil(() =>
+		return Utility.WaitUntil(() =>
 			{
 				info.Refresh();
 				return info.Exists;
@@ -49,7 +49,7 @@ public static class DirectoryInfoExtensions
 	/// <param name="info"> The information of the directory to delete. </param>
 	public static bool SafeDelete(this DirectoryInfo info)
 	{
-		UtilityExtensions.Retry(() =>
+		Utility.Retry(() =>
 			{
 				info.Refresh();
 
@@ -62,7 +62,7 @@ public static class DirectoryInfoExtensions
 			TimeSpan.FromMilliseconds(10)
 		);
 
-		return UtilityExtensions.WaitUntil(() =>
+		return Utility.WaitUntil(() =>
 			{
 				info.Refresh();
 				return info.Exists;

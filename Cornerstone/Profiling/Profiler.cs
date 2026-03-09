@@ -86,17 +86,19 @@ public class Profiler : IEnumerable<TimedScopeStats>, IProfiler
 			Interlocked.Exchange(ref stats.TotalTicks, 0);
 			Interlocked.Exchange(ref stats.Count, 0);
 
-			stats.History?.Add(averageTicks);
+			stats.AverageHistory?.Add(averageTicks);
+			stats.PerSecondHistory?.Add(callsPerSeconds);
 		}
 
 		_lastResetTimestamp = now;
 	}
 
-	public SeriesDataProvider SetupScopeHistory(string name, int size = 60)
+	public (ISeriesDataProvider Average, ISeriesDataProvider PerSecond) SetupScopeHistory(string name, int size = 60)
 	{
 		var stats = _stats.GetOrAdd(name, static _ => new TimedScopeStats());
-		stats.History = new SeriesDataProvider(size);
-		return stats.History;
+		stats.AverageHistory ??= new SeriesDataProvider(size);
+		stats.PerSecondHistory ??= new SeriesDataProvider(size);
+		return (stats.AverageHistory, stats.PerSecondHistory);
 	}
 
 	IEnumerator IEnumerable.GetEnumerator()

@@ -2,13 +2,7 @@
   "profiles": {
     "Debug": {
       "commandName": "DebugRoslynComponent",
-      "targetProject": "..\\Cornerstone\\Cornerstone.csproj"
-    },
-    "Debug Vsix": {
-      "commandName": "Executable",
-      "executablePath": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\Common7\\IDE\\devenv.exe",
-      "commandLineArgs": "/rootsuffix Exp \"..\\Cornerstone\\Cornerstone\\Cornerstone.csproj\"",
-      "workingDirectory": "$(SolutionDir)"
+      "targetProject": "..\\Cornerstone.Sample\\Cornerstone.Sample.csproj"
     }
   }
 }

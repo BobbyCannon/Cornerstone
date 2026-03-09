@@ -171,8 +171,8 @@
 			<PreviewCodeSnippet.ItemTemplate>
 				<DataTemplate DataType="ThemeColor">
 					<CircularProgress Theme.Color="{Binding}"
-							IsIndeterminate="{Binding #Progress.IsIndeterminate, Mode=OneWay}"
-							ShowProgressText="{Binding #Progress.ShowProgressText, Mode=OneWay}"
+							IsIndeterminate="{Binding #Progress.IsIndeterminate}"
+							ShowProgressText="{Binding #Progress.ShowProgressText}"
 							Value="{Binding #Progress.Value, Mode=OneWay}"
 							Minimum="{Binding #Progress.Minimum, Mode=OneWay}"
 							Maximum="{Binding #Progress.Maximum, Mode=OneWay}"

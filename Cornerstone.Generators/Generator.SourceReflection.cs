@@ -28,7 +28,7 @@ public partial class Generator
 		builder.WriteBlock("internal static partial class __CornerstoneSourceReflectorInitializer",
 			() =>
 			{
-				builder.WriteBlock($"private static readonly {GlobalSourceTypeInfo} {type.FullyQualifiedCodeName} = new {GlobalSourceTypeInfo}()",
+				builder.WriteBlock($"private static readonly {GlobalSourceTypeInfo} {type.FullyQualifiedSourceReflectorName} = new {GlobalSourceTypeInfo}()",
 					() =>
 					{
 						builder.IndentWriteLine($"Accessibility = {GlobalSourceAccessibility}.{type.Accessibility},");
@@ -218,7 +218,7 @@ public partial class Generator
 			}
 
 			builder.IndentWrite($"{GlobalSourceReflector}.Add(");
-			builder.Write(typeInfo.FullyQualifiedCodeName);
+			builder.Write(typeInfo.FullyQualifiedSourceReflectorName);
 			builder.WriteLine(");");
 		}
 		builder.Indent--;

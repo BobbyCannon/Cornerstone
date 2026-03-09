@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Cornerstone.Avalonia.Drawing;
+using Cornerstone.Avalonia.Text;
 using Cornerstone.Profiling;
 
 #endregion
@@ -34,12 +35,34 @@ public partial class LineChart : CornerstoneTemplatedControl
 		}
 	}
 
+	static LineChart()
+	{
+		AffectsRender<TextRenderer>(
+			ForegroundProperty,
+			ShowLabelsProperty,
+			SteppedProperty
+		);
+
+		AffectsMeasure<TextRenderer>(
+			FontFamilyProperty,
+			FontSizeProperty,
+			FontStyleProperty,
+			FontWeightProperty
+		);
+	}
+
 	#endregion
 
 	#region Properties
 
 	[StyledProperty]
 	public partial ISeriesDataProvider Data { get; set; }
+
+	[StyledProperty(DefaultValue = true)]
+	public partial bool ShowLabels { get; set; }
+
+	[StyledProperty(DefaultValue = true)]
+	public partial bool Stepped { get; set; }
 
 	[StyledProperty]
 	public partial IBrush Stroke { get; set; }
@@ -104,8 +127,9 @@ public partial class LineChart : CornerstoneTemplatedControl
 				var gWidth = backgroundArea.Width - Padding.Left - Padding.Right;
 				var gHeight = backgroundArea.Height - Padding.Top - Padding.Bottom;
 				var xStep = gWidth / (data.Length - 1);
+				var lastPoint = new Point(offsetX, offsetY + gHeight);
 
-				ctxFill.BeginFigure(new Point(offsetX, offsetY + gHeight), true);
+				ctxFill.BeginFigure(lastPoint, true);
 
 				for (var i = 0; i < data.Length; i++)
 				{
@@ -116,6 +140,8 @@ public partial class LineChart : CornerstoneTemplatedControl
 					}
 				}
 
+				maxValue = Math.Max(1, maxValue);
+
 				for (var i = 0; i < data.Length; i++)
 				{
 					lastValue = data[i];
@@ -123,7 +149,14 @@ public partial class LineChart : CornerstoneTemplatedControl
 					var x = (i * xStep) + offsetX;
 					var y = (gHeight - (((lastValue - minValue) / (maxValue - minValue)) * gHeight)) + offsetY;
 
-					ctxFill.LineTo(new Point(x, y));
+					if (Stepped)
+					{
+						// Horizontal segment to this x (hold previous height)
+						ctxFill.LineTo(new Point(x, lastPoint.Y));
+					}
+
+					var nextPoint = new Point(x, y);
+					ctxFill.LineTo(nextPoint);
 
 					if (i == 0)
 					{
@@ -131,8 +164,16 @@ public partial class LineChart : CornerstoneTemplatedControl
 					}
 					else
 					{
-						ctxLine.LineTo(new Point(x, y));
+						if (Stepped)
+						{
+							// Horizontal segment to this x (hold previous height)
+							ctxLine.LineTo(new Point(x, lastPoint.Y));
+						}
+
+						ctxLine.LineTo(nextPoint);
 					}
+
+					lastPoint = nextPoint;
 				}
 
 				var lastX = ((Data.Length - 1) * xStep) + offsetX;
@@ -149,21 +190,24 @@ public partial class LineChart : CornerstoneTemplatedControl
 			context.DrawGeometry(null, _linePen, lineGeometry);
 		}
 
-		var visualX = 10d;
-		var visualY = 8d;
-		_contextHelper.Draw(context, Title, ref visualX, ref visualY);
-		_contextHelper.Draw(context, ":", ref visualX, ref visualY);
-		_contextHelper.Draw(context, " MAX: ", ref visualX, ref visualY);
-		_contextHelper.Draw(context, maxValue, ref visualX, ref visualY);
-		_contextHelper.Draw(context, " VAL: ", ref visualX, ref visualY);
+		if (ShowLabels)
+		{
+			var visualX = 10d;
+			var visualY = 8d;
+			_contextHelper.Draw(context, Title, ref visualX, ref visualY);
+			_contextHelper.Draw(context, ":", ref visualX, ref visualY);
+			_contextHelper.Draw(context, " MAX: ", ref visualX, ref visualY);
+			_contextHelper.Draw(context, maxValue, ref visualX, ref visualY);
+			_contextHelper.Draw(context, " VAL: ", ref visualX, ref visualY);
 
-		if (ValueFormatter != null)
-		{
-			_contextHelper.Draw(context, ValueFormatter.Invoke(lastValue), ref visualX, ref visualY);
-		}
-		else
-		{
-			_contextHelper.Draw(context, lastValue, ref visualX, ref visualY);
+			if (ValueFormatter != null)
+			{
+				_contextHelper.Draw(context, ValueFormatter.Invoke(lastValue), ref visualX, ref visualY);
+			}
+			else
+			{
+				_contextHelper.Draw(context, lastValue, ref visualX, ref visualY);
+			}
 		}
 
 		base.Render(context);

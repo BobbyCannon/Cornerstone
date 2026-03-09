@@ -12,7 +12,7 @@ namespace Cornerstone.Extensions;
 /// <summary>
 /// General utility extensions
 /// </summary>
-public static class UtilityExtensions
+public static class Utility
 {
 	#region Methods
 

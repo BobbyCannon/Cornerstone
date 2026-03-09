@@ -17,7 +17,7 @@ uncompromising reliability.
 ## ✨ Key Features
 
 - **Full Native AOT compatibility** — zero runtime reflection, trimmable, fast startup, tiny binaries
-- **Source-generation** (via Cornerstone Generator):
+- **Source-generation** (via Cornerstone Generators):
   - Binary serialization (`Packable`) — fast, compact, AOT-safe alternative to BinaryFormatter/MessagePack in many cases
   - Automatic property change notifications (`INotifyPropertyChanging` / `INotifyPropertyChanged`)
   - Source-generated reflection helpers (safe, fast metadata access)
@@ -39,7 +39,7 @@ Cornerstone is built with three non-negotiable goals:
 ### How is this achieved
 
 - Every feature is developed with AOT in mind from day one
-- **Cornerstone Generator** compiles **all** unit, integration, performance, and automation tests into a native AOT executable
+- **Cornerstone Generators** compiles **all** unit, integration, performance, and automation tests into a native AOT executable
 - Tests run constantly in real AOT context during development (not just JIT)
 - Aim: **100% code coverage + high context coverage** (edge cases, boundary conditions, threading scenarios, etc.)
 - Continuous profiling to eliminate allocations and hot paths

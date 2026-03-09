@@ -16,6 +16,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Cornerstone.Collections;
 using Cornerstone.Extensions;
+using Cornerstone.Reflection;
 using Cornerstone.Runtime;
 using ControlCollection = Avalonia.Controls.Controls;
 
@@ -33,19 +34,28 @@ public partial class DockingManager : DockSplitPanel
 	private readonly Dictionary<SplitPanel, NotifyCollectionChangedEventHandler> _registeredSplitPanels;
 	private readonly Dictionary<DockingTabControl, NotifyCollectionChangedEventHandler> _registeredTabControls;
 	private DockingManager _rootDockingManager;
+	private readonly Dictionary<string, SourceTypeInfo> _tabLookup;
 
 	#endregion
 
 	#region Constructors
 
-	public DockingManager()
+	public DockingManager() : this(CornerstoneApplication.DependencyProvider, CornerstoneApplication.RuntimeInformation)
+	{
+	}
+
+	[DependencyInjectionConstructor]
+	public DockingManager(
+		IDependencyProvider dependencyProvider,
+		IRuntimeInformation runtimeInformation)
 	{
 		_ignoreModified = [];
 		_registeredSplitPanels = [];
 		_registeredTabControls = [];
+		_tabLookup = [];
 
-		DependencyProvider = CornerstoneApplication.DependencyProvider;
-		RuntimeInformation = DependencyProvider.GetInstance<IRuntimeInformation>();
+		DependencyProvider = dependencyProvider;
+		RuntimeInformation = runtimeInformation;
 		Windows = [];
 
 		DockIndicatorBackground = new SolidColorBrush(Colors.CornflowerBlue, 0.1);
@@ -115,6 +125,20 @@ public partial class DockingManager : DockSplitPanel
 	#endregion
 
 	#region Methods
+
+	public void Add(string tabId)
+	{
+		if (_tabLookup.TryGetValue(tabId, out var info))
+		{
+			Add((DockableTabModel) DependencyProvider.GetInstance(info.Type));
+		}
+	}
+
+	public void Add<T>() where T : DockableTabModel
+	{
+		// todo: add "singleton tab" check
+		Add(DependencyProvider.GetInstance<T>());
+	}
 
 	public void Add(DockableTabModel tabModel)
 	{
@@ -297,18 +321,46 @@ public partial class DockingManager : DockSplitPanel
 		Children.Add(CreateTabControl());
 	}
 
+	public void Register<T>()
+	{
+		var typeInfo = SourceReflector.GetRequiredSourceType<T>();
+		var id = typeInfo.DeclaredFields.FirstOrDefault(x => x.Name == "TypeId");
+		_tabLookup.TryAdd((string) id.GetValue(null), typeInfo);
+	}
+
+	public bool ReplaceTab(DockableTabModel oldModel, string tabId)
+	{
+		if (_tabLookup.TryGetValue(tabId, out var info))
+		{
+			return ReplaceTab(oldModel, (DockableTabModel) DependencyProvider.GetInstance(info.Type));
+		}
+
+		return false;
+	}
+
+	public bool ReplaceTab<T>(DockableTabModel oldModel) where T : DockableTabModel
+	{
+		return ReplaceTab(oldModel, DependencyProvider.GetInstance<T>());
+	}
+
 	public bool ReplaceTab(DockableTabModel oldModel, DockableTabModel newModel)
 	{
 		foreach (var tabControl in GetTabControls(Children))
 		{
-			foreach (var tabItem in tabControl.Items.OfType<DockableTabView>())
+			for (var index = 0; index < tabControl.Items.Count; index++)
 			{
+				var item = tabControl.Items[index];
+				if (item is not DockableTabView tabItem)
+				{
+					continue;
+				}
+
 				if (tabItem.TabModel != oldModel)
 				{
 					continue;
 				}
 
-				tabControl.Add(newModel);
+				tabControl.Insert(index, newModel);
 				tabItem.Close(true);
 				return true;
 			}

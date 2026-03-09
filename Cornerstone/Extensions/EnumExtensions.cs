@@ -99,7 +99,7 @@ public static class EnumExtensions
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public static bool IsSingleFlag(this Enum value)
 	{
-		var nValue = Convert.ToUInt64(value);
+		var nValue = System.Convert.ToUInt64(value);
 		if (nValue == 0)
 		{
 			return false;
@@ -143,7 +143,7 @@ public static class EnumExtensions
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	private static ulong ToUInt64<T>(T value)
 	{
-		return Convert.ToUInt64(value);
+		return System.Convert.ToUInt64(value);
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]

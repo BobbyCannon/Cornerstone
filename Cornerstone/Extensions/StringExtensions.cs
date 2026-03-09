@@ -92,7 +92,7 @@ public static class StringExtensions
 			data = data.Substring(index + Key.Length);
 		}
 
-		return Convert.FromBase64String(data);
+		return System.Convert.FromBase64String(data);
 	}
 
 	/// <summary>

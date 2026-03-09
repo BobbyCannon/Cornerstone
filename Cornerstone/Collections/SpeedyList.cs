@@ -10,7 +10,6 @@ using System.Runtime.CompilerServices;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
-using Cornerstone.Reflection;
 using Cornerstone.Threading;
 
 #endregion
@@ -1012,7 +1011,8 @@ public partial class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, I
 
 	internal bool InternalFilter()
 	{
-		if (IsFiltering)
+		if (IsFiltering
+			|| _allItems.Count == 0)
 		{
 			return false;
 		}
@@ -1021,12 +1021,10 @@ public partial class SpeedyList<T> : ReaderWriterLockBindable, ISpeedyList<T>, I
 
 		try
 		{
-			var currentItems = _activeItems.ToArray();
-			var filteredSource = FilterCheck == null ? _allItems.ToArray() : _allItems.Where(FilterCheck).ToArray();
-			var toRemove = currentItems.Where(x => !filteredSource.Contains(x)).ToArray();
-			var toAdd = filteredSource
-				.Where(x => !_activeItems.Contains(x))
-				.ToArray();
+			var activeHashSet = _activeItems.ToHashSet();
+			var filteredSource = FilterCheck == null ? _allItems.ToHashSet() : _allItems.Where(FilterCheck).ToHashSet();
+			var toRemove = activeHashSet.Where(x => !filteredSource.Contains(x)).ToArray();
+			var toAdd = filteredSource.Where(x => !activeHashSet.Contains(x)).ToArray();
 
 			if ((toRemove.Length <= 0) && (toAdd.Length <= 0))
 			{

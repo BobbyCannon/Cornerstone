@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="600"
+		x:Class="Cornerstone.Sample.Tabs.TabSpeedyPack"
+		x:DataType="tabs:TabSpeedyPack">
+	<!-- ReSharper disable Xaml.MissingGridIndex -->
+	<DockPanel>
+		<Grid DockPanel.Dock="Top" Margin="10">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Margin="0,0,0,0"
+					Text="Speedy Pack" />
+		</Grid>
+		<PreviewCodeSnippet>
+			<DockPanel VerticalSpacing="10">
+				<WrapPanel DockPanel.Dock="Top"
+						ItemSpacing="20">
+					<ToggleSwitch IsChecked="{Binding IsBenchmarking}"
+							OnContent="Benchmark"
+							OffContent="Benchmark" />
+				</WrapPanel>
+				<LineChart x:Name="SpeedyPackChart"
+						DockPanel.Dock="Top"
+						Title="SpeedyPack Average"
+						Data="{Binding SpeedyPackAverageData}"
+						Height="80" />
+				<HeaderedContentControl DockPanel.Dock="Top"
+						Header="Data Size">
+					<StackPanel Orientation="Horizontal"
+							Spacing="0"
+							Margin="0,2,0,0">
+						<TextBlock Text="SpeedyPack:" />
+						<ByteSizeLabel Value="{Binding SpeedyPackSize}"
+								Margin="0,2,10,0" />
+						<TextBlock Text="SystemJson:" />
+						<ByteSizeLabel Value="{Binding SystemJsonSize}"
+								Margin="0,2,0,0" />
+					</StackPanel>
+				</HeaderedContentControl>
+				<LineChart x:Name="SystemJsonChart"
+						DockPanel.Dock="Top"
+						Title="SystemJson Average"
+						Data="{Binding SystemJsonAverageData}"
+						Height="80" />
+				<TextEditor x:Name="Monitor" />
+			</DockPanel>
+		</PreviewCodeSnippet>
+	</DockPanel>
+</UserControl>

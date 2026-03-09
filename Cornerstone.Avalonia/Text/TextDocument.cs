@@ -48,6 +48,13 @@ public partial class TextDocument : Notifiable<TextDocument>
 
 	#region Methods
 
+	public void Add(string message)
+	{
+		var offset = Buffer.Count;
+		Buffer.Add(message);
+		OnDocumentChanged(offset, message.Length);
+	}
+
 	public int Delete(int offset, bool forward)
 	{
 		return forward

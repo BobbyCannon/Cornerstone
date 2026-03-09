@@ -12,11 +12,13 @@
 				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
 				<Setter Property="BorderThickness" Value="{DynamicResource ControlBorderThickness}" />
 				<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
-				<Setter Property="Height" Value="48" />
+				<Setter Property="MinHeight" Value="48" />
 				<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
 				<Setter Property="FontSize" Value="{StaticResource ControlFontSize}" />
 				<Setter Property="Padding" Value="0,0" />
 				<Setter Property="Stroke" Value="{DynamicResource Foreground05}" />
+				<Setter Property="HorizontalAlignment" Value="Stretch" />
+				<Setter Property="VerticalAlignment" Value="Stretch" />
 			</ControlTheme>
 		</ResourceDictionary>
 	</Styles.Resources>
@@ -80,15 +82,22 @@
 
 	<Design.PreviewWith>
 		<PreviewCodeSnippet Width="630">
+			<WrapPanel LineSpacing="10" ItemSpacing="20">
+				<CheckBox x:Name="Labels" IsChecked="True">Labels</CheckBox>
+				<CheckBox x:Name="Stepped" IsChecked="True">Stepped</CheckBox>
+			</WrapPanel>
 			<PreviewCodeSnippet.ItemTemplate>
 				<DataTemplate DataType="ThemeColor">
 					<LineChart Theme.Color="{Binding}"
+							Title="{Binding}"
 							Height="80"
 							Width="300"
-							CornerRadius="10">
+							CornerRadius="8"
+							ShowLabels="{Binding ElementName=Labels, Path=IsChecked}"
+							Stepped="{Binding ElementName=Stepped, Path=IsChecked}">
 						<LineChart.Data>
 							<profiling:SeriesDataProvider>
-								<x:Double>60</x:Double>
+								<x:Double>6</x:Double>
 								<x:Double>48</x:Double>
 								<x:Double>32</x:Double>
 								<x:Double>2</x:Double>

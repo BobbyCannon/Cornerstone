@@ -10,8 +10,9 @@
 	<ac:CornerRadiusToDoubleConverter x:Key="BottomRightCornerRadiusConverter" Corner="BottomRight" />
 	<ac:StringFormatConverter x:Key="StringFormatConverter" />
 
-	<PercentWidthConverter x:Key="PercentWidthConverter" />
 	<CornerRadiusConverter x:Key="CornerRadiusConverter" />
+	<PercentWidthConverter x:Key="PercentWidthConverter" />
+	<ProgressWidthConverter x:Key="ProgressWidthConverter" />
 	<ThicknessConverter x:Key="ThicknessConverter" />
 	<TimeSpanConverter x:Key="TimeSpanConverter" />
 

@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Cornerstone.Generators.Models;
 using Microsoft.CodeAnalysis;
@@ -68,6 +69,29 @@ public class CSharpCodeBuilder
 	{
 		DecreaseIndent();
 		IndentWriteLine("}");
+	}
+
+	public static string GetConstantLiteral(TypedConstant constant)
+	{
+		if (constant is { Kind: TypedConstantKind.Enum, Type: INamedTypeSymbol { EnumUnderlyingType: not null } enumType })
+		{
+			var enumTypeName = enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
+			// Find the enum member with this exact value
+			var matchingMember = enumType.GetMembers()
+				.OfType<IFieldSymbol>()
+				.FirstOrDefault(f =>
+					f.IsStatic &&
+					f.IsConst &&
+					f.HasConstantValue &&
+					Equals(f.ConstantValue, constant.Value));
+
+			return matchingMember != null
+				? $"{enumTypeName}.{matchingMember.Name}"
+				: $"{enumTypeName}.({constant.Value})";
+		}
+
+		return GetConstantLiteral(constant.Value);
 	}
 
 	public static string GetConstantLiteral(object value)
@@ -213,7 +237,7 @@ public class CSharpCodeBuilder
 			IndentWriteLine($"]{end}");
 		}
 	}
-	
+
 	public void WriteAssignment(string property, IDictionary<string, object> values, bool statement = false, bool lastAssignment = false)
 	{
 		var end = lastAssignment ? string.Empty : statement ? ";" : ",";
@@ -303,14 +327,6 @@ public class CSharpCodeBuilder
 		}
 	}
 
-	internal void WriteIndent()
-	{
-		if (Indent > 0)
-		{
-			_builder.Append(IndentChar, Indent);
-		}
-	}
-
 	internal static string AccessibilityToString(Accessibility accessibility)
 	{
 		return accessibility switch
@@ -323,6 +339,14 @@ public class CSharpCodeBuilder
 			Accessibility.Private => "private",
 			_ => throw new ArgumentException("Unknown member", nameof(accessibility))
 		};
+	}
+
+	internal void WriteIndent()
+	{
+		if (Indent > 0)
+		{
+			_builder.Append(IndentChar, Indent);
+		}
 	}
 
 	#endregion

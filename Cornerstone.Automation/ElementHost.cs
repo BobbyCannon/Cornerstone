@@ -80,7 +80,7 @@ public abstract class ElementHost
 	{
 		T response = null;
 
-		UtilityExtensions.WaitUntil(() =>
+		Utility.WaitUntil(() =>
 		{
 			try
 			{

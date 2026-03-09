@@ -1,0 +1,141 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		xmlns:c="clr-namespace:Cornerstone.Avalonia.Converters;assembly=Cornerstone.Avalonia"
+		mc:Ignorable="d" d:DesignWidth="690" d:DesignHeight="600"
+		x:Class="Cornerstone.Sample.Tabs.TabProgress"
+		x:DataType="tabs:TabProgress">
+	<!-- ReSharper disable Xaml.MissingGridIndex -->
+	<DockPanel>
+		<Grid DockPanel.Dock="Top" Margin="10">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Margin="0,0,0,20"
+					Text="Progress" />
+		</Grid>
+		<TabControl>
+			<TabItem Header="Circular">
+				<ScrollViewer>
+					<PreviewCodeSnippet>
+						<WrapPanel
+								ItemSpacing="10"
+								LineSpacing="10"
+								Orientation="Horizontal"
+								HorizontalAlignment="Center">
+							<StackPanel Orientation="Horizontal" Spacing="8">
+								<TextBlock Text="Value:"
+										VerticalAlignment="Center" />
+								<TextBlock Text="{Binding ElementName=Value, Path=Value}"
+										VerticalAlignment="Center" />
+								<Slider x:Name="Value"
+										Value="25"
+										Width="160" />
+							</StackPanel>
+							<CheckBox x:Name="ShowProgressText" Content="Show Progress Text" />
+							<CheckBox x:Name="Indeterminate" Content="Indeterminate" />
+						</WrapPanel>
+						<PreviewCodeSnippet.ItemTemplate>
+							<DataTemplate DataType="ThemeColor">
+								<CircularProgress Theme.Color="{Binding}"
+										IsIndeterminate="{Binding ElementName=Indeterminate, Path=IsChecked}"
+										ShowProgressText="{Binding ElementName=ShowProgressText, Path=IsChecked}"
+										Value="{Binding ElementName=Value, Path=Value}"
+										Content="{Binding}" />
+							</DataTemplate>
+						</PreviewCodeSnippet.ItemTemplate>
+					</PreviewCodeSnippet>
+				</ScrollViewer>
+			</TabItem>
+			<TabItem Header="Linear">
+				<ScrollViewer>
+					<PreviewCodeSnippet>
+						<AutoGrid RowDefinitions="Auto,Auto,Auto,*">
+							<WrapPanel
+									ItemSpacing="10"
+									LineSpacing="10"
+									HorizontalAlignment="Center">
+								<StackPanel Orientation="Horizontal" Spacing="8">
+									<TextBlock Text="Height:"
+											Width="50"
+											VerticalAlignment="Center" />
+									<TextBlock Text="{Binding #Progress.Height, Converter={x:Static c:ConvertersForString.Format}, ConverterParameter=0}"
+											Width="20"
+											VerticalAlignment="Center" />
+									<Slider ControlHelper.DisplayName="Height"
+											Value="{Binding #Progress.Height}"
+											Width="160" />
+								</StackPanel>
+
+								<StackPanel Orientation="Horizontal" Spacing="8">
+									<TextBlock Text="Value:"
+											Width="40"
+											VerticalAlignment="Center" />
+									<TextBlock Text="{Binding #Progress.Value, Converter={x:Static c:ConvertersForString.Format}, ConverterParameter=0}"
+											Width="20"
+											VerticalAlignment="Center" />
+									<Slider ControlHelper.DisplayName="Value"
+											Value="{Binding #Progress.Value}"
+											Maximum="{Binding #Progress.Maximum}"
+											Minimum="{Binding #Progress.Minimum}"
+											Width="160" />
+								</StackPanel>
+
+								<NumericUpDown
+										ControlHelper.DisplayName="Indeterminate"
+										Increment="100"
+										FormatString="0"
+										HorizontalAlignment="Stretch"
+										InnerRightContent="ms"
+										Value="{Binding #Progress.InDeterminateDuration, Converter={StaticResource TimeSpanConverter}, ConverterParameter=ms}" />
+
+								<CheckBox IsChecked="{Binding #Progress.ShowProgressText, Mode=TwoWay}"
+										Content="Show Progress Text" />
+								<CheckBox IsChecked="{Binding #Progress.IsIndeterminate, Mode=TwoWay}"
+										Content="Indeterminate" />
+							</WrapPanel>
+							<Grid IsVisible="False">
+								<LinearProgress x:Name="Progress"
+										Theme.Color="Current"
+										IsIndeterminate="{Binding #Progress.IsIndeterminate}"
+										ShowProgressText="{Binding #Progress.ShowProgressText}"
+										Value="10"
+										Minimum="0"
+										Maximum="100"
+										Height="15" />
+							</Grid>
+						</AutoGrid>
+						<PreviewCodeSnippet.ItemsPanel>
+							<ItemsPanelTemplate>
+								<UniformGrid ColumnSpacing="10"
+										Columns="1"
+										RowSpacing="10"
+										VerticalAlignment="Top" />
+							</ItemsPanelTemplate>
+						</PreviewCodeSnippet.ItemsPanel>
+						<PreviewCodeSnippet.ItemTemplate>
+							<DataTemplate DataType="ThemeColor">
+								<Grid>
+									<LinearProgress Theme.Color="{Binding}"
+											IsIndeterminate="{Binding #Progress.IsIndeterminate}"
+											InDeterminateDuration="{Binding #Progress.InDeterminateDuration}"
+											ShowProgressText="{Binding #Progress.ShowProgressText}"
+											Value="{Binding #Progress.Value}"
+											Minimum="{Binding #Progress.Minimum}"
+											Maximum="{Binding #Progress.Maximum}"
+											Height="{Binding #Progress.Height}" />
+									<TextBlock Text="{Binding}"
+											Margin="10,0,0,0"
+											IsVisible="{Binding #Progress.ShowProgressText}"
+											VerticalAlignment="Center" />
+								</Grid>
+							</DataTemplate>
+						</PreviewCodeSnippet.ItemTemplate>
+					</PreviewCodeSnippet>
+				</ScrollViewer>
+			</TabItem>
+		</TabControl>
+	</DockPanel>
+</UserControl>

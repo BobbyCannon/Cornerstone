@@ -1,21 +1,33 @@
-﻿using System;
+﻿#region References
+
+using System;
 using System.Linq.Expressions;
 using System.Text;
+
+#endregion
 
 namespace Cornerstone.Storage.Sql;
 
 public class OrderByExpressionVisitor : ExpressionVisitor
 {
+	#region Fields
+
 	private readonly StringBuilder _sb = new();
 
-	public string Translate(LambdaExpression expr)
+	#endregion
+
+	#region Methods
+
+	public string Translate(LambdaExpression expression)
 	{
 		_sb.Clear();
 
-		if (expr.Parameters.Count != 1)
+		if (expression.Parameters.Count != 1)
+		{
 			throw new ArgumentException("OrderBy lambda must have exactly one parameter");
+		}
 
-		Visit(expr.Body);
+		Visit(expression.Body);
 		return _sb.ToString();
 	}
 
@@ -43,4 +55,6 @@ public class OrderByExpressionVisitor : ExpressionVisitor
 		// Allow (x => x.Id) even if wrapped in Convert etc.
 		return Visit(node.Operand);
 	}
+
+	#endregion
 }

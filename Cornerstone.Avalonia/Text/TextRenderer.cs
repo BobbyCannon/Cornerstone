@@ -47,7 +47,7 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 		CanVerticallyScroll = true;
 		Focusable = false;
 		TextMetrics = new TextMetrics();
-
+		
 		VisualChildren.Add(CaretVisual);
 	}
 
@@ -109,7 +109,7 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 
 	internal TextMetrics TextMetrics { get; }
 
-	internal Typeface Typeface { get; private set; }
+	internal Typeface? Typeface { get; private set; }
 
 	#endregion
 
@@ -127,9 +127,11 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 
 	public TextLayout GetTextLayout(string lineText)
 	{
+		var typeface = Typeface ??= CornerstoneExtensions.CreateTypeface(this);
+
 		return new TextLayout(
 			lineText,
-			Typeface,
+			typeface,
 			FontSize,
 			Foreground ?? Brushes.White,
 			textWrapping: ViewModel.WordWrap
@@ -183,7 +185,6 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 
 	protected override Size MeasureOverride(Size availableSize)
 	{
-		Typeface = CornerstoneExtensions.CreateTypeface(this);
 		InvalidateDefaultTextMetrics();
 		Extent = ViewModel.Document.Lines.Measure(availableSize, !CanHorizontallyScroll, TextMetrics);
 		OnScrollInvalidated();
@@ -320,6 +321,14 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 		}
 
 		base.OnPropertyChanged(change);
+	
+		if ((change.Property == FontFamilyProperty)
+			|| (change.Property == FontSizeProperty)
+			|| (change.Property == ForegroundProperty))
+		{
+			Typeface = null;
+			InvalidateVisual();
+		}
 	}
 
 	protected virtual void OnScrollInvalidated()
