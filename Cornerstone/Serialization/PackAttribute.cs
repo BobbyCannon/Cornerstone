@@ -6,7 +6,7 @@ using System;
 
 namespace Cornerstone.Serialization;
 
-[AttributeUsage(AttributeTargets.Property)]
+[AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
 public class PackAttribute : CornerstoneAttribute
 {
 	#region Constructors

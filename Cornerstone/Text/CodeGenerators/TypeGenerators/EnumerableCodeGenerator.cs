@@ -33,7 +33,16 @@ public class EnumerableCodeGenerator : CodeGenerator
 
 		if (list.Count <= 0)
 		{
-			builder.Write(propertyMode ? " []" : $" new {CodeBuilder.GetCodeTypeName(type.Type)}()");
+			if (propertyMode)
+			{
+				builder.Write(" []");
+			}
+			else
+			{
+				builder.Write(" new ");
+				builder.Write(CodeBuilder.GetCodeTypeName(type.Type));
+				builder.Write("()");
+			}
 			return;
 		}
 
@@ -44,7 +53,8 @@ public class EnumerableCodeGenerator : CodeGenerator
 		}
 		else
 		{
-			builder.Write($"new {CodeBuilder.GetCodeTypeName(type.Type)}");
+			builder.Write("new ");
+			builder.WriteLine(CodeBuilder.GetCodeTypeName(type.Type));
 			builder.WriteLine("{");
 		}
 

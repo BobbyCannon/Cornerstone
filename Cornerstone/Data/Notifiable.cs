@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using Cornerstone.Reflection;
 
@@ -17,7 +18,6 @@ namespace Cornerstone.Data;
 /// </summary>
 /// todo: support generics in code generation
 /// [SourceReflection]
-[Updateable(false)]
 public abstract class Notifiable<T> : Notifiable
 	where T : class, new()
 {
@@ -27,13 +27,17 @@ public abstract class Notifiable<T> : Notifiable
 /// Represents a notifiable object.
 /// </summary>
 [SourceReflection]
-[Updateable(false)]
 public abstract class Notifiable : INotifiable, IUpdateable, ITrackPropertyChanges
 {
 	#region Fields
 
-	private readonly HashSet<string> _changedProperties;
+	/// <summary>
+	/// Supports up to 64 properties
+	/// </summary>
+	private ulong _changedBits;
+
 	private bool _notificationsEnabled;
+	private readonly SourceTypeInfo _sourceType;
 
 	#endregion
 
@@ -44,7 +48,7 @@ public abstract class Notifiable : INotifiable, IUpdateable, ITrackPropertyChang
 	/// </summary>
 	protected Notifiable()
 	{
-		_changedProperties = new HashSet<string>(StringComparer.Ordinal);
+		_sourceType = SourceReflector.GetSourceType(this);
 		_notificationsEnabled = true;
 	}
 
@@ -54,7 +58,7 @@ public abstract class Notifiable : INotifiable, IUpdateable, ITrackPropertyChang
 
 	public void ApplyChangesTo(object destination)
 	{
-		destination.UpdateWithOnly(this, _changedProperties.ToArray());
+		destination.UpdateWithOnly(this, GetChangedProperties().ToArray());
 	}
 
 	public virtual void DisablePropertyChangeNotifications()
@@ -69,7 +73,22 @@ public abstract class Notifiable : INotifiable, IUpdateable, ITrackPropertyChang
 
 	public virtual IEnumerable<string> GetChangedProperties()
 	{
-		return [.._changedProperties];
+		if ((_changedBits == 0) || (_sourceType == null))
+		{
+			yield break;
+		}
+
+		var bits = _changedBits;
+		while (bits != 0)
+		{
+			var bit = BitOperations.TrailingZeroCount(bits);
+			var name = _sourceType.GetPropertyNameByBit(bit);
+			if (name != null)
+			{
+				yield return name;
+			}
+			bits &= bits - 1; // clear lowest set bit
+		}
 	}
 
 	public virtual HashSet<string> GetDefaultIncludedProperties(UpdateableAction action)
@@ -77,14 +96,14 @@ public abstract class Notifiable : INotifiable, IUpdateable, ITrackPropertyChang
 		return [];
 	}
 
-	public bool HasChanges()
+	public bool HasNotifiableChanges()
 	{
-		return HasChanges(IncludeExcludeSettings.Empty);
+		return HasNotifiableChanges(IncludeExcludeSettings.Empty);
 	}
 
-	public virtual bool HasChanges(IncludeExcludeSettings settings)
+	public virtual bool HasNotifiableChanges(IncludeExcludeSettings settings)
 	{
-		if (_changedProperties.Count == 0)
+		if (_changedBits == 0)
 		{
 			return false;
 		}
@@ -94,7 +113,7 @@ public abstract class Notifiable : INotifiable, IUpdateable, ITrackPropertyChang
 			return true;
 		}
 
-		foreach (var property in _changedProperties)
+		foreach (var property in GetChangedProperties())
 		{
 			if (settings.ShouldProcessProperty(property))
 			{
@@ -144,7 +163,7 @@ public abstract class Notifiable : INotifiable, IUpdateable, ITrackPropertyChang
 
 	public virtual void ResetHasChanges()
 	{
-		_changedProperties.Clear();
+		_changedBits = 0;
 	}
 
 	public virtual bool ShouldUpdate(object update, IncludeExcludeSettings settings)
@@ -193,7 +212,11 @@ public abstract class Notifiable : INotifiable, IUpdateable, ITrackPropertyChang
 			return;
 		}
 
-		_changedProperties.Add(propertyName);
+		var bit = _sourceType?.GetPropertyBit(propertyName) ?? -1;
+		if (bit >= 0)
+		{
+			_changedBits |= 1UL << bit;
+		}
 
 		PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 	}

@@ -2,388 +2,306 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Cornerstone.Extensions;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq.Expressions;
 using Cornerstone.Reflection;
+using Cornerstone.Text;
 using Cornerstone.Text.CodeGenerators;
 
 #endregion
 
 namespace Cornerstone.Storage.Sql;
 
+[SourceReflection]
 public static class SqlGenerator
 {
+	#region Constants
+
+	public const string SqlTableAttributeTypeFullName = "Cornerstone.Storage.Sql.SqlTableAttribute";
+	public const string SqlTableColumnAttributeTypeFullName = "Cornerstone.Storage.Sql.SqlTableColumnAttribute";
+
+	#endregion
+
+	#region Fields
+
+	private static readonly Dictionary<(Type, SqlProvider), string> _deleteScripts;
+	private static readonly (string Open, string Close) _identifierBracketsSqlite = ("\"", "\"");
+	private static readonly (string Open, string Close) _identifierBracketsSqlServer = ("[", "]");
+	private static readonly Dictionary<(Type, SqlProvider), Func<object, (object, Type)>> _primaryKeyExtractors;
+	private static readonly Dictionary<(Type, SqlProvider), string> _tableScripts;
+	private static readonly Dictionary<(Type, SqlProvider), Func<object, IDictionary<string, (object, Type)>>> _upsertParameterExtractors;
+	private static readonly Dictionary<(Type, SqlProvider), string> _upsertScripts;
+
+	#endregion
+
+	#region Constructors
+
+	static SqlGenerator()
+	{
+		_tableScripts = [];
+		_upsertScripts = [];
+		_upsertParameterExtractors = [];
+		_deleteScripts = [];
+		_primaryKeyExtractors = [];
+	}
+
+	#endregion
+
 	#region Methods
 
-	public static string GetCreateTableScript(SourceTypeInfo sourceTypeInfo, SqlProvider provider)
+	/// <summary>
+	/// Builds a SELECT COUNT(*) ... WHERE from an expression predicate.
+	/// </summary>
+	public static (string Sql, object[] Parameters) GetCountWhereQuery<T>(
+		Expression<Func<T, bool>> predicate, SqlProvider provider)
+	{
+		var sourceType = SourceReflector.GetRequiredSourceType<T>();
+		var tableName = GetTableName(sourceType);
+
+		using var rented = StringBuilderPool.Rent();
+		var builder = rented.Value;
+
+		var (open, close) = GetIdentifierBrackets(provider);
+		builder.Append("SELECT COUNT(*) FROM ");
+		builder.Append(open);
+		builder.Append(tableName);
+		builder.Append(close);
+		builder.Append(" WHERE ");
+
+		var visitor = new PredicateToSqlVisitor();
+		var (whereSql, parameters) = visitor.Translate(predicate);
+		builder.Append(whereSql);
+
+		return (builder.ToString(), parameters);
+	}
+
+	public static string GetCreateDatabaseScript(string databaseName, SqlProvider provider)
 	{
 		using var rented = CodeBuilderPool.Rent();
 		var builder = rented.Value;
-		var tableName = GetTableName(sourceTypeInfo);
-		var columns = GetColumnProperties(sourceTypeInfo);
-		var sql = provider == SqlProvider.Sqlite
-			? GetCreateTableForSqlite(builder, tableName, columns)
-			: GetCreateTableForSqlServer(builder, tableName, columns);
+		var sql = provider == SqlProvider.SqlServer
+			? GetCreateDatabaseForSqlServer(builder, databaseName)
+			: string.Empty;
 		return sql;
 	}
 
-	public static (string Sql, IDictionary<string, object> Parameters) GetInsertQuery<T>(T entity, SqlProvider provider)
+	public static string GetCreateTableScript(SourceTypeInfo sourceTypeInfo, SqlProvider provider)
+	{
+		if ((sourceTypeInfo.Type != null)
+			&& _tableScripts.TryGetValue((sourceTypeInfo.Type, provider), out var script))
+		{
+			return script;
+		}
+
+		throw new InvalidOperationException(
+			$"No generated CREATE TABLE script registered for type '{sourceTypeInfo.Name}' and provider '{provider}'. "
+			+ "Ensure the type has the [SourceReflection] and [SqlTable] attributes so the source generator can emit the script.");
+	}
+
+	/// <summary>
+	/// Gets a parameterized DELETE by primary key for a single entity.
+	/// </summary>
+	public static (string Sql, (object, Type) PkValue) GetDeleteQuery<T>(T entity, SqlProvider provider)
 		where T : Entity
 	{
-		var sourceTypeInfo = SourceReflector.GetRequiredSourceType<T>();
-		var columns = GetColumnProperties(sourceTypeInfo);
-		var values = GetColumnValues(entity, columns);
-		var tableName = GetTableName(sourceTypeInfo);
+		var key = (typeof(T), provider);
 
-		return provider == SqlProvider.Sqlite
-			? GetInsertEntityForSqlite(tableName, columns, values)
-			: GetInsertEntityForSqlServer(tableName, columns, values);
-	}
-
-	private static string GetColumnName(SourcePropertyInfo prop)
-	{
-		var attr = prop.GetAttribute<ColumnAttribute>();
-		var s = attr?.Name;
-		return !string.IsNullOrWhiteSpace(s) ? s : prop.Name;
-	}
-
-	private static List<SourcePropertyInfo> GetColumnProperties(SourceTypeInfo type)
-	{
-		return type
-			.GetProperties()
-			.Where(p => !p.IsStatic
-				&& !p.IsIndexer
-				&& p.CanRead
-				&& p.CanWrite)
-			.OrderBy(x => x.Name)
-			.ToList();
-	}
-
-	private static IDictionary<string, object> GetColumnValues(object entity, List<SourcePropertyInfo> properties)
-	{
-		return properties.ToDictionary(x => x.Name, x => x.PropertyInfo.GetValue(entity));
-	}
-
-	private static string GetCreateTableForSqlite(CodeBuilder builder, string tableName, List<SourcePropertyInfo> columns)
-	{
-		builder.WriteLine($"CREATE TABLE IF NOT EXISTS \"{tableName}\"");
-		builder.Write("(");
-		builder.IncreaseIndent();
-
-		for (var index = 0; index < columns.Count; index++)
+		if (_deleteScripts.TryGetValue(key, out var template)
+			&& _primaryKeyExtractors.TryGetValue(key, out var extractor))
 		{
-			builder.WriteLine(index > 0 ? "," : string.Empty);
-
-			var propertyInfo = columns[index];
-			var columnInfo = propertyInfo.GetAttribute<ColumnAttribute>();
-			var columnName = GetColumnName(propertyInfo);
-			var sqlType = GetSqliteType(propertyInfo);
-			builder.IndentWrite($"\"{columnName}\" {sqlType}");
-
-			if ((!propertyInfo.PropertyInfo.PropertyType.IsNullable()
-					&& !propertyInfo.PropertyInfo.PropertyType.IsClass)
-				|| (columnInfo?.IsNullable == false))
-			{
-				builder.Write(" NOT NULL");
-			}
-
-			if (columnInfo?.IsPrimaryKey == true)
-			{
-				builder.Write(columnInfo.IsAutoIncrement
-					? " PRIMARY KEY AUTOINCREMENT"
-					: " PRIMARY KEY"
-				);
-			}
+			return (template, extractor(entity));
 		}
 
-		builder.WriteLine();
-		builder.DecreaseIndent();
-		builder.Write(");");
-
-		return builder.ToString();
+		throw new InvalidOperationException(
+			$"No generated DELETE script registered for type '{typeof(T).Name}' and provider '{provider}'. "
+			+ "Ensure the type has the [SourceReflection] and [SqlTable] attributes.");
 	}
 
-	private static string GetCreateTableForSqlServer(CodeBuilder builder, string tableName, List<SourcePropertyInfo> columns)
+	/// <summary>
+	/// Builds a DELETE ... WHERE from an expression predicate.
+	/// </summary>
+	public static (string Sql, object[] Parameters) GetDeleteWhereQuery<T>(
+		Expression<Func<T, bool>> predicate, SqlProvider provider)
 	{
-		builder.WriteLine($"IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = '{tableName}')");
+		var sourceType = SourceReflector.GetRequiredSourceType<T>();
+		var tableName = GetTableName(sourceType);
+
+		using var rented = StringBuilderPool.Rent();
+		var builder = rented.Value;
+
+		var (open, close) = GetIdentifierBrackets(provider);
+		builder.Append("DELETE FROM ");
+		builder.Append(open);
+		builder.Append(tableName);
+		builder.Append(close);
+		builder.Append(" WHERE ");
+
+		var visitor = new PredicateToSqlVisitor();
+		var (whereSql, parameters) = visitor.Translate(predicate);
+		builder.Append(whereSql);
+
+		return (builder.ToString(), parameters);
+	}
+
+	/// <summary>
+	/// Returns the open and close identifier-quoting characters for the given provider.
+	/// </summary>
+	public static (string Open, string Close) GetIdentifierBrackets(SqlProvider provider)
+	{
+		return provider == SqlProvider.SqlServer
+			? _identifierBracketsSqlServer
+			: _identifierBracketsSqlite;
+	}
+
+	public static (string Sql, IDictionary<string, (object, Type)> Parameters) GetInsertQuery<T>(T entity, SqlProvider provider)
+		where T : Entity
+	{
+		var key = (typeof(T), provider);
+
+		if (_upsertScripts.TryGetValue(key, out var template)
+			&& _upsertParameterExtractors.TryGetValue(key, out var extractor))
+		{
+			return (template, extractor(entity));
+		}
+
+		throw new InvalidOperationException(
+			$"No generated INSERT/UPSERT script registered for type '{typeof(T).Name}' and provider '{provider}'. "
+			+ "Ensure the type has the [SourceReflection] and [SqlTable] attributes so the source generator can emit the script.");
+	}
+
+	public static string GetTableName(SourceTypeInfo type)
+	{
+		// Check for explicit [SqlTable] attribute first
+		var tableName = type.GetAttributeNamedArgument<string>(SqlTableAttributeTypeFullName, nameof(SqlTableAttribute.TableName))
+			?? type.GetAttributeConstructorArgument<string>(SqlTableAttributeTypeFullName, 0);
+
+		// todo: add a bit better pluralization technique.
+		return !string.IsNullOrWhiteSpace(tableName)
+			? tableName
+			: string.Concat(type.Name, "s");
+	}
+
+	[SuppressMessage("ReSharper", "StringLiteralTypo")]
+	public static string GetTableQueryScript(SqlProvider provider)
+	{
+		return provider switch
+		{
+			SqlProvider.Sqlite =>
+				"""
+				SELECT
+					m.name AS TableName,
+					'' AS SchemaName,
+					p.cid AS Ordinal,
+					p.name AS ColumnName,
+					p."type" AS TypeName,
+					p."notnull" AS IsNullable,
+					p.dflt_value AS "Default",
+					p.pk AS IsPrimaryKey,
+					CASE 
+						WHEN p.pk = 1 AND p."type" = 'INTEGER' 
+								AND EXISTS (
+									SELECT 1 
+									FROM sqlite_schema 
+									WHERE type = 'table' 
+									AND name = m.name 
+									AND sql LIKE '%AUTOINCREMENT%'
+								) 
+						THEN 1 
+						ELSE 0 
+					END AS IsAutoIncrement,
+					0 AS IsUnique,
+					CASE 
+						WHEN UPPER(p."type") LIKE '%CHAR%' 
+								OR UPPER(p."type") LIKE '%TEXT%' 
+								OR UPPER(p."type") LIKE '%BLOB%' 
+						THEN -1
+						ELSE 0 
+					END AS MaxLength
+				FROM sqlite_schema AS m
+				CROSS JOIN pragma_table_info(m.name) AS p
+				WHERE m.type = 'table' 
+					AND m.name NOT LIKE 'sqlite_%'
+				ORDER BY m.name, p.cid;
+				""",
+			_ => """
+				SELECT
+				    t.name AS TableName,
+				    SCHEMA_NAME(t.schema_id) AS SchemaName,
+				    c.column_id AS Ordinal,
+				    c.name AS ColumnName,
+				    ty.name AS TypeName,
+				    CASE WHEN c.is_nullable = 1 THEN 0 ELSE 1 END AS IsNullable,
+				    dc.definition AS "Default",
+				    CASE WHEN ic.index_id IS NOT NULL AND pk.is_primary_key = 1
+				         THEN 1 ELSE 0 END AS IsPrimaryKey,
+				    c.is_identity AS IsAutoIncrement,
+				    CASE WHEN uq.is_unique = 1 OR pk.is_primary_key = 1 
+				         THEN 1 ELSE 0 END AS IsUnique,
+				    c.max_length AS MaxLength
+				FROM sys.tables t
+				INNER JOIN sys.columns c ON t.object_id = c.object_id
+				INNER JOIN sys.types ty ON c.user_type_id = ty.user_type_id
+				LEFT JOIN sys.default_constraints dc ON dc.object_id = c.default_object_id
+				LEFT JOIN sys.index_columns ic ON ic.object_id = c.object_id 
+				                              AND ic.column_id = c.column_id
+				LEFT JOIN sys.indexes pk ON pk.object_id = ic.object_id 
+				                        AND pk.index_id = ic.index_id 
+				                        AND pk.is_primary_key = 1
+				LEFT JOIN sys.indexes uq ON uq.object_id = t.object_id 
+				                        AND uq.is_unique = 1
+				                        AND EXISTS (
+				                            SELECT 1 
+				                            FROM sys.index_columns ic2 
+				                            WHERE ic2.object_id = uq.object_id 
+				                              AND ic2.index_id = uq.index_id 
+				                              AND ic2.column_id = c.column_id
+				                        )
+				WHERE t.is_ms_shipped = 0
+				ORDER BY t.name, c.column_id;
+				"""
+		};
+	}
+
+	/// <summary>
+	/// Registers a pre-computed CREATE TABLE script for a given type and provider.
+	/// Called from the source-generated module initializer.
+	/// </summary>
+	public static void RegisterCreateTableScript(Type type, SqlProvider provider, string script)
+	{
+		_tableScripts[(type, provider)] = script;
+	}
+
+	/// <summary>
+	/// Registers a pre-computed DELETE script and PK extractor for a given type and provider.
+	/// Called from the source-generated module initializer.
+	/// </summary>
+	public static void RegisterDeleteQuery(Type type, SqlProvider provider, string sqlTemplate, Func<object, (object, Type)> primaryKeyExtractor)
+	{
+		_deleteScripts[(type, provider)] = sqlTemplate;
+		_primaryKeyExtractors[(type, provider)] = primaryKeyExtractor;
+	}
+
+	/// <summary>
+	/// Registers a pre-computed INSERT/UPSERT template and parameter extractor for a given type and provider.
+	/// Called from the source-generated module initializer.
+	/// </summary>
+	public static void RegisterInsertQuery(Type type, SqlProvider provider, string sqlTemplate, Func<object, IDictionary<string, (object, Type)>> parameterExtractor)
+	{
+		_upsertScripts[(type, provider)] = sqlTemplate;
+		_upsertParameterExtractors[(type, provider)] = parameterExtractor;
+	}
+
+	private static string GetCreateDatabaseForSqlServer(CodeBuilder builder, string databaseName)
+	{
+		builder.Write("IF NOT EXISTS (SELECT * FROM [sys].[databases] WHERE [name] = N'");
+		builder.Write(databaseName);
+		builder.WriteLine("')");
 		builder.WriteLine("BEGIN");
-		builder.IncreaseIndent();
-		builder.IndentWriteLine($"CREATE TABLE [{tableName}]");
-		builder.IndentWrite("(");
-		builder.IncreaseIndent();
-
-		var primaryKeys = new List<SourcePropertyInfo>();
-		for (var index = 0; index < columns.Count; index++)
-		{
-			builder.WriteLine(index > 0 ? "," : string.Empty);
-
-			var propertyInfo = columns[index];
-			var columnInfo = propertyInfo.GetAttribute<ColumnAttribute>();
-			var columnName = GetColumnName(propertyInfo);
-			var sqlType = GetSqlServerType(propertyInfo);
-			builder.IndentWrite($"\"{columnName}\" {sqlType}");
-
-			if ((!propertyInfo.PropertyInfo.PropertyType.IsNullable()
-					&& !propertyInfo.PropertyInfo.PropertyType.IsClass)
-				|| (columnInfo?.IsNullable == false))
-			{
-				builder.Write(" NOT NULL");
-			}
-
-			if (columnInfo?.IsPrimaryKey == true)
-			{
-				if (columnInfo.IsAutoIncrement)
-				{
-					builder.Write(" IDENTITY(1,1)");
-				}
-
-				primaryKeys.Add(propertyInfo);
-			}
-		}
-
-		if (primaryKeys.Count > 0)
-		{
-			builder.WriteLine(",");
-			builder.IndentWrite($"CONSTRAINT PK_{tableName} PRIMARY KEY CLUSTERED (");
-			foreach (var key in primaryKeys)
-			{
-				builder.Write("[");
-				builder.Write(key.Name);
-				builder.Write("]");
-			}
-			builder.Write(")");
-		}
-
-		builder.WriteLine();
-		builder.DecreaseIndent();
-		builder.IndentWriteLine(")");
-		builder.DecreaseIndent();
-		builder.Write("END");
-
-		return builder.ToString();
-	}
-
-	private static (string Sql, IDictionary<string, object> Values) GetInsertEntityForSqlite(
-		string tableName, List<SourcePropertyInfo> columns, IDictionary<string, object> values)
-	{
-		if ((columns == null) || (columns.Count == 0))
-		{
-			throw new ArgumentException("Columns list cannot be empty.", nameof(columns));
-		}
-
-		// todo: find primary key based on attribute
-		var pkColumn = columns.FirstOrDefault(x => x.Name == "Id") ?? columns[0];
-		var pkName = GetColumnName(pkColumn);
-		var columnNames = columns
-			.Where(x => x.Name != pkColumn.Name)
-			.Select(GetColumnName)
-			.ToArray();
-
-		var index = 0;
-		var paramNames = columnNames.ToDictionary(x => x, _ => $"@p{index++}");
-		using var rented = CodeBuilderPool.Rent();
-		var builder = rented.Value;
-
-		builder.Write($"INSERT INTO \"{tableName}\" (\"");
-		builder.Write(string.Join("\", \"", columnNames));
-		builder.WriteLine("\")");
-		builder.IncreaseIndent();
-		builder.IndentWrite("VALUES (");
-		builder.Write(string.Join(", ", paramNames.Values));
-		builder.WriteLine(")");
-		builder.DecreaseIndent();
-
-		builder.Write("ON CONFLICT(\"");
-		builder.Write(pkName);
-		builder.Write("\") DO UPDATE SET");
-		builder.IncreaseIndent();
-
-		// Update only the non-PK columns
-		var updateAssignments = columnNames
-			.Zip(paramNames)
-			.Select(pair => $"\"{pair.First}\" = {pair.Second}")
-			.ToArray();
-
-		for (var i = 0; i < updateAssignments.Length; i++)
-		{
-			builder.WriteLine(i > 0 ? "," : string.Empty);
-
-			var assignment = updateAssignments[i];
-			builder.IndentWrite(assignment);
-		}
-
-		builder.WriteLine();
-		builder.DecreaseIndent();
-		builder.Write("RETURNING \"");
-		builder.Write(pkName);
-		builder.Write("\";");
-
-		return (builder.ToString(), paramNames.ToDictionary(x => x.Value, x => values[x.Key]));
-	}
-
-	private static (string Sql, IDictionary<string, object> Values) GetInsertEntityForSqlServer(
-		string tableName, List<SourcePropertyInfo> columns, IDictionary<string, object> values)
-	{
-		if ((columns == null) || (columns.Count == 0))
-		{
-			throw new ArgumentException("Columns list cannot be empty.", nameof(columns));
-		}
-
-		// todo: find primary key based on attribute (same logic as SQLite version)
-		var pkColumn = columns.FirstOrDefault(x => x.Name == "Id") ?? columns[0];
-		var pkName = GetColumnName(pkColumn);
-
-		var allColumnNames = columns.Select(GetColumnName).ToList();
-		var nonPkColumnNames = allColumnNames.Where(name => name != pkName).ToList();
-		var index = 0;
-		var paramNames = nonPkColumnNames.ToDictionary(x => x, _ => $"@p{index++}");
-		using var rented = CodeBuilderPool.Rent();
-		var builder = rented.Value;
-
-		builder.WriteLine($"MERGE INTO [{tableName}] AS x");
-		builder.Write("USING (VALUES (");
-		builder.Write(string.Join(", ", paramNames));
-		builder.WriteLine("))");
-		builder.IncreaseIndent();
-		builder.IndentWrite("AS y ([");
-		builder.Write(string.Join("], [", allColumnNames));
-		builder.WriteLine("])");
-		builder.DecreaseIndent();
-
-		builder.Write("ON x.[");
-		builder.Write(pkName);
-		builder.Write("] = y.[");
-		builder.Write(pkName);
+		builder.Write("\tCREATE DATABASE [");
+		builder.Write(databaseName);
 		builder.WriteLine("]");
-
-		builder.WriteLine("WHEN MATCHED THEN");
-		builder.IncreaseIndent();
-		builder.IndentWrite("UPDATE SET");
-		builder.IncreaseIndent();
-
-		for (var i = 0; i < nonPkColumnNames.Count; i++)
-		{
-			builder.WriteLine(i > 0 ? "," : string.Empty);
-
-			var name = nonPkColumnNames[i];
-			builder.IndentWrite($"[{name}] = y.[{name}]");
-		}
-
-		builder.DecreaseIndent();
-		builder.WriteLine();
-		builder.WriteLine("WHEN NOT MATCHED THEN");
-		builder.IndentWrite("INSERT ([");
-		builder.Write(string.Join("], [", allColumnNames));
-		builder.WriteLine("])");
-
-		builder.IndentWrite("VALUES (");
-		builder.Write(string.Join(", ", allColumnNames.Select(name => $"y.[{name}]")));
-		builder.WriteLine(")");
-
-		builder.Write("OUTPUT inserted.[");
-		builder.Write(pkName);
-		builder.Write("];");
-
-		return (builder.ToString(), paramNames.ToDictionary(x => x.Value, x => values[x.Key]));
-	}
-
-	private static string GetSqliteType(SourcePropertyInfo info)
-	{
-		var type = Nullable.GetUnderlyingType(info.PropertyInfo.PropertyType)
-			?? info.PropertyInfo.PropertyType;
-
-		if (type == typeof(string))
-		{
-			return "TEXT";
-		}
-		if (type == typeof(int))
-		{
-			return "INTEGER";
-		}
-		if (type == typeof(long))
-		{
-			return "INTEGER";
-		}
-		if (type == typeof(bool))
-		{
-			return "INTEGER";
-		}
-		if (type == typeof(DateTime))
-		{
-			return "DATE";
-		}
-		if (type == typeof(decimal))
-		{
-			return "REAL";
-		}
-		if (type == typeof(double))
-		{
-			return "REAL";
-		}
-		if (type == typeof(Guid))
-		{
-			return "TEXT";
-		}
-		if (type == typeof(byte[]))
-		{
-			return "BLOB";
-		}
-
-		throw new NotSupportedException($"Type not supported for SQLite mapping: {info.PropertyInfo.PropertyType.Name}");
-	}
-
-	private static string GetSqlServerType(SourcePropertyInfo info)
-	{
-		var type = Nullable.GetUnderlyingType(info.PropertyInfo.PropertyType) ?? info.PropertyInfo.PropertyType;
-
-		if (type == typeof(string))
-		{
-			var attr = info.Attributes.FirstOrDefault(x => x.Type == typeof(ColumnAttribute));
-			var maxLength = (attr != null) && attr.NamedArguments.TryGetValue(nameof(ColumnAttribute.MaxLength), out var value) ? value : 0;
-			return maxLength is > 0 and <= 4000
-				? $"NVARCHAR({maxLength})"
-				: "NVARCHAR(MAX)";
-		}
-		if (type == typeof(int))
-		{
-			return "INT";
-		}
-		if (type == typeof(long))
-		{
-			return "BIGINT";
-		}
-		if (type == typeof(bool))
-		{
-			return "BIT";
-		}
-		if (type == typeof(DateTime))
-		{
-			return "DATETIME2";
-		}
-		if (type == typeof(decimal))
-		{
-			return "DECIMAL(18,6)";
-		}
-		if (type == typeof(double))
-		{
-			return "FLOAT";
-		}
-		if (type == typeof(Guid))
-		{
-			return "UNIQUEIDENTIFIER";
-		}
-		if (type == typeof(byte[]))
-		{
-			return "VARBINARY(MAX)";
-		}
-
-		throw new NotSupportedException($"Type not supported for SQL Server mapping: {info.PropertyInfo.PropertyType.Name}");
-	}
-
-	private static string GetTableName(SourceTypeInfo type)
-	{
-		// You can later support [Table("CustomName")] attribute
-		return $"{type.Name}s"; // same convention as in SqlQuery
+		builder.WriteLine("END");
+		return builder.ToString();
 	}
 
 	#endregion

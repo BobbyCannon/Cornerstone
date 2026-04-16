@@ -61,7 +61,7 @@
 									<TextBlock Text="Height:"
 											Width="50"
 											VerticalAlignment="Center" />
-									<TextBlock Text="{Binding #Progress.Height, Converter={x:Static c:ConvertersForString.Format}, ConverterParameter=0}"
+									<TextBlock Text="{Binding #Progress.Height, Converter={x:Static c:Converters.Format}, ConverterParameter=0}"
 											Width="20"
 											VerticalAlignment="Center" />
 									<Slider ControlHelper.DisplayName="Height"
@@ -73,7 +73,7 @@
 									<TextBlock Text="Value:"
 											Width="40"
 											VerticalAlignment="Center" />
-									<TextBlock Text="{Binding #Progress.Value, Converter={x:Static c:ConvertersForString.Format}, ConverterParameter=0}"
+									<TextBlock Text="{Binding #Progress.Value, Converter={x:Static c:Converters.Format}, ConverterParameter=0}"
 											Width="20"
 											VerticalAlignment="Center" />
 									<Slider ControlHelper.DisplayName="Value"

@@ -6,25 +6,24 @@ using System;
 
 namespace Cornerstone.Data;
 
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = true)]
 public class UpdateableAttribute : CornerstoneAttribute
 {
 	#region Constructors
 
-	public UpdateableAttribute() : this(false)
+	public UpdateableAttribute(UpdateableAction action, string[] properties)
 	{
-	}
-
-	public UpdateableAttribute(bool invokeBase)
-	{
-		InvokeBase = invokeBase;
+		Action = action;
+		Properties = properties;
 	}
 
 	#endregion
 
 	#region Properties
 
-	public bool InvokeBase { get; set; }
+	public UpdateableAction Action { get; set; }
+
+	public string[] Properties { get; set;  }
 
 	#endregion
 }

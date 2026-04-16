@@ -2,21 +2,21 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using Cornerstone.Extensions;
 using Cornerstone.Profiling;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.UnitTests.Profiling;
 
+[TestClass]
 public class DebounceThrottleManagerTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	[Test]
+	[TestMethod]
 	public void DebounceShouldOnlyFireOnLastTriggeredData()
 	{
 		var actual = new List<int>();
@@ -31,7 +31,7 @@ public class DebounceThrottleManagerTests : CornerstoneUnitTest
 		debounce.Trigger(3);
 
 		IncrementTime(delay);
-		var r = this.WaitUntil(() => !debounce.IsActive, WaitTimeout, TimeSpan.Zero);
+		var r = this.WaitUntil(_ => !debounce.IsActive, (int) WaitTimeout.TotalMilliseconds, 0);
 		IsTrue(r, () => "Should not have timed out... debounce never completed...");
 		IsFalse(debounce.IsTriggered);
 
@@ -46,7 +46,7 @@ public class DebounceThrottleManagerTests : CornerstoneUnitTest
 		}
 	}
 
-	[Test]
+	[TestMethod]
 	public void DebounceCanCancel()
 	{
 		var triggered = false;

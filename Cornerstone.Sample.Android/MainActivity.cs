@@ -21,7 +21,7 @@ namespace Cornerstone.Sample.Android;
 		| ConfigChanges.ScreenSize
 		| ConfigChanges.UiMode
 		| ConfigChanges.Keyboard)]
-public class MainActivity : AvaloniaMainActivity<App>
+public class MainActivity : AvaloniaMainActivity
 {
 	#region Constructors
 

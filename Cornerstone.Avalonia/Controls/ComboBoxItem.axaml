@@ -83,19 +83,19 @@
 			<!-- Disabled state. -->
 			<Style Selector="^:disabled /template/ ContentPresenter">
 				<Setter Property="Background" Value="{DynamicResource ThemeColor03}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground03}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
 			</Style>
 
 			<!-- Pointer-over state. -->
 			<Style Selector="^:pointerover /template/ ContentPresenter">
 				<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground06}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeText06}" />
 			</Style>
 
 			<!-- Pressed state. -->
 			<Style Selector="^:pressed /template/ ContentPresenter">
 				<Setter Property="Background" Value="{DynamicResource ThemeColor07}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground07}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeText07}" />
 			</Style>
 
 			<!-- Selected state. -->
@@ -103,22 +103,22 @@
 				<!-- Default selected state. -->
 				<Style Selector="^ /template/ ContentPresenter">
 					<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
-					<Setter Property="Foreground" Value="{DynamicResource ThemeForeground05}" />
+					<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
 				</Style>
 				<!-- Selected and pointer-over state. -->
 				<Style Selector="^:pointerover /template/ ContentPresenter">
 					<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
-					<Setter Property="Foreground" Value="{DynamicResource ThemeForeground06}" />
+					<Setter Property="Foreground" Value="{DynamicResource ThemeText06}" />
 				</Style>
 				<!-- Selected and pressed state. -->
 				<Style Selector="^:pressed /template/ ContentPresenter">
 					<Setter Property="Background" Value="{DynamicResource ThemeColor07}" />
-					<Setter Property="Foreground" Value="{DynamicResource ThemeForeground07}" />
+					<Setter Property="Foreground" Value="{DynamicResource ThemeText07}" />
 				</Style>
 				<!-- Selected and disabled state. -->
 				<Style Selector="^:disabled /template/ ContentPresenter">
 					<Setter Property="Background" Value="{DynamicResource ThemeColor03}" />
-					<Setter Property="Foreground" Value="{DynamicResource ThemeForeground03}" />
+					<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
 				</Style>
 			</Style>
 		</Style>

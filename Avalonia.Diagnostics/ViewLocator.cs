@@ -4,6 +4,7 @@ using System;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Cornerstone.Presentation;
+using Cornerstone.Reflection;
 
 #endregion
 
@@ -27,7 +28,7 @@ public class ViewLocator : IDataTemplate
 
 		if (type != null)
 		{
-			return (Control) Activator.CreateInstance(type)!;
+			return (Control) SourceReflector.CreateInstance(type)!;
 		}
 		return new TextBlock { Text = name };
 	}

@@ -28,7 +28,7 @@ public struct ComparerSettings
 		ignoreMissingProperties: false,
 		ignoreObjectTypes: true,
 		maxDepth: int.MaxValue,
-		stringComparison: StringComparison.CurrentCulture,
+		stringComparison: StringComparison.Ordinal,
 		typeIncludeExcludeOptions: new())
 	{
 	}

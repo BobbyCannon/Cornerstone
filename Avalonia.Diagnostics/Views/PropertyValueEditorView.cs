@@ -223,7 +223,7 @@ public class PropertyValueEditorView : UserControl
 		var tb = CreateControl<CommitTextBox>(
 			CommitTextBox.CommittedTextProperty,
 			new TextToValueConverter(),
-			t => { t.Watermark = "(null)"; },
+			t => { t.PlaceholderText = "(null)"; },
 			TextBox.IsReadOnlyProperty);
 
 		tb.IsReadOnly |= (propertyType == typeof(object)) ||

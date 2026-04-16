@@ -49,7 +49,7 @@
 									Height="{TemplateBinding Height}"
 									Padding="{TemplateBinding Padding}"
 									TextAlignment="{TemplateBinding HorizontalContentAlignment, Converter={x:Static c:ControlConverters.ToTextAlignment}}"
-									Watermark="{TemplateBinding Watermark}"
+									PlaceholderText="{TemplateBinding PlaceholderText}"
 									VerticalAlignment="Center">
 								<TextBox.InnerRightContent>
 									<Button x:Name="PART_Button"

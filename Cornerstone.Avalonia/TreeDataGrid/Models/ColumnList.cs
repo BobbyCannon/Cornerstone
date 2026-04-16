@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Utilities;
+using Cornerstone.Extensions;
 
 #endregion
 
@@ -198,7 +199,7 @@ public class ColumnList<TModel> : NotifyingListBase<IColumn<TModel>>, IColumns
 			// If the width of any star columns was constrained by their min/max size, and we
 			// actually had any space to distribute between star columns, then we need to update
 			// the star width for the non-constrained columns.
-			if (starWidthWasConstrained && MathUtilities.GreaterThan(availableSpace, 0))
+			if (starWidthWasConstrained && DoubleExtensions.GreaterThan(availableSpace, 0))
 			{
 				for (var i = 0; i < Count; ++i)
 				{

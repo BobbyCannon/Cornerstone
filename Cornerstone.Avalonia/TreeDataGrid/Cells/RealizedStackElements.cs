@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Utilities;
 using Cornerstone.Avalonia.TreeDataGrid.Models;
+using Cornerstone.Extensions;
 
 #endregion
 
@@ -224,7 +225,7 @@ internal class RealizedStackElements
 		}
 
 		// If we're at 0 then display the first item.
-		if (MathUtilities.IsZero(viewportStartU))
+		if (DoubleExtensions.IsZero(viewportStartU))
 		{
 			return (0, 0);
 		}

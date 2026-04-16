@@ -1,6 +1,5 @@
 ﻿#region References
 
-using System;
 using Avalonia;
 using Avalonia.Media;
 
@@ -38,37 +37,18 @@ public partial class CaretVisual : CornerstoneControl
 		var caret = _renderer.ViewModel.Caret;
 		var line = caret?.Line;
 
-		if ((caret?.ShouldShow(true) != true)
+		if ((caret?.ToggleBlink() != true)
 			|| (line == null))
 		{
 			return;
 		}
 
-		var lineText = line.ToString();
-		var textLayout = _renderer.GetTextLayout(lineText);
-		var localPosition = caret.Offset - line.StartOffset;
-		localPosition = Math.Clamp(localPosition, 0, lineText.Length);
-
-		var caretRect = textLayout.HitTestTextPosition(localPosition);
-		if ((localPosition == lineText.Length) && (caretRect.Width <= 0))
-		{
-			// Place caret right after the last character
-			caretRect = new Rect(
-				textLayout.WidthIncludingTrailingWhitespace,
-				caretRect.Y,
-				1,
-				caretRect.Height > 0
-					? caretRect.Height
-					: _renderer.TextMetrics.CharacterHeight
-			);
-		}
-
-		var documentY = line.VisualLayout.Top + caretRect.Y;
+		var caretRect = caret.VisualLayout;
 		var renderX = caretRect.X - _renderer.Offset.X;
-		var renderY = documentY - _renderer.Offset.Y;
+		var renderY = caretRect.Y - _renderer.Offset.Y;
 
-		var caretWidth = caret.OverstrikeMode ? _renderer.TextMetrics.CharacterWidth : 1;
-		var finalRect = new Rect(renderX, renderY, caretWidth, caretRect.Height);
+		var caretWidth = caret.OverstrikeMode ? _renderer.ViewModel.ViewMetrics.CharacterWidth : 1;
+		var finalRect = new Rect(renderX, renderY, caretWidth, caret.VisualLayout.Height);
 		var caretBrush = _renderer.Foreground;
 
 		if (caret.OverstrikeMode

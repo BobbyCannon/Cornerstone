@@ -1,6 +1,5 @@
 ﻿#region References
 
-using Cornerstone.Platforms.Windows.Native;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,7 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
-
+using Cornerstone.Platforms.Windows;
 
 #endregion
 
@@ -203,7 +202,12 @@ public class WindowsApplication : Application
 		var result = NativeGeneral.MoveWindow(_process.MainWindowHandle, x, y, width, height, true);
 		if (!result)
 		{
-			Debugger.Break();
+			#if DEBUG
+			if (Debugger.IsAttached)
+			{
+				Debugger.Break();
+			}
+			#endif
 		}
 		return this;
 	}
@@ -289,7 +293,12 @@ public class WindowsApplication : Application
 		{
 			// Unexpected — log it, but don't crash caller
 			// Console.WriteLine($"Wait failed: {ex.Message}");
-			Debugger.Break();
+			#if DEBUG
+			if (Debugger.IsAttached)
+			{
+				Debugger.Break();
+			}
+			#endif
 		}
 
 		return process;

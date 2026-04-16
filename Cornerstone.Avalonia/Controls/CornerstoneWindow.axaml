@@ -11,7 +11,6 @@
 				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 				<Setter Property="FontSize" Value="{StaticResource ControlFontSize}" />
 				<Setter Property="ExtendClientAreaToDecorationsHint" Value="True" />
-				<Setter Property="ExtendClientAreaChromeHints" Value="NoChrome" />
 				<Setter Property="Template">
 					<ControlTemplate>
 						<Grid x:Name="WindowGrid"
@@ -111,19 +110,11 @@
 								</Grid>
 							</Border>
 							<Panel Grid.Row="1">
-								<Border Name="PART_TransparencyFallback"
-										BorderThickness="0"
-										IsHitTestVisible="False" />
-								<Border Background="{TemplateBinding Background}"
-										BorderThickness="0"
-										IsHitTestVisible="False" />
+								<Border Name="PART_TransparencyFallback" IsHitTestVisible="False" />
+								<Border Background="{TemplateBinding Background}" IsHitTestVisible="False" />
 								<Panel Background="Transparent" Margin="{TemplateBinding WindowDecorationMargin}" />
-								<VisualLayerManager>
-									<VisualLayerManager.ChromeOverlayLayer>
-										<TitleBar />
-									</VisualLayerManager.ChromeOverlayLayer>
-									<ContentPresenter
-											Name="PART_ContentPresenter"
+								<VisualLayerManager Name="PART_VisualLayerManager">
+									<ContentPresenter Name="PART_ContentPresenter"
 											ContentTemplate="{TemplateBinding ContentTemplate}"
 											Content="{TemplateBinding Content}"
 											Margin="{TemplateBinding Padding}"

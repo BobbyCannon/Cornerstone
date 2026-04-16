@@ -24,7 +24,7 @@ public class DockableTabView : TabItem
 
 	#region Constructors
 
-	public DockableTabView() : this(new DockableTabModel())
+	public DockableTabView() : this(new DocumentTabModel())
 	{
 	}
 
@@ -89,14 +89,12 @@ public class DockableTabView : TabItem
 		RaiseEvent(new RoutedEventArgs(ClosedEvent));
 	}
 
-	/// <inheritdoc />
 	protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
 	{
 		TabModel.CloseRequested += (_, force) => Close(force);
 		base.OnApplyTemplate(e);
 	}
 
-	/// <inheritdoc />
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
 	{
 		switch (change.Property.Name)

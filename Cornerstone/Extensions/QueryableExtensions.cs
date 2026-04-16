@@ -1,9 +1,9 @@
 ﻿#region References
 
+using Cornerstone.Collections;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Cornerstone.Collections;
 
 #endregion
 
@@ -62,13 +62,12 @@ public static class QueryableExtensions
 
 	public static IEnumerable<T> Order<T>(this IEnumerable<T> source, OrderBy<T>[] orderBys)
 	{
-		if (source == null)
-		{
-			throw new ArgumentNullException(nameof(source));
-		}
+		ArgumentNullException.ThrowIfNull(source);
+		ArgumentNullException.ThrowIfNull(orderBys);
+
 		if ((orderBys == null) || (orderBys.Length == 0))
 		{
-			return source;
+			throw new InvalidOperationException("At least one ordering must be provided.");
 		}
 
 		var ordered = orderBys[0].Descending
@@ -91,7 +90,7 @@ public static class QueryableExtensions
 		ArgumentNullException.ThrowIfNull(query);
 		ArgumentNullException.ThrowIfNull(orderBys);
 
-		if (orderBys.Length == 0)
+		if ((orderBys == null) || (orderBys.Length == 0))
 		{
 			throw new InvalidOperationException("At least one ordering must be provided.");
 		}

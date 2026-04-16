@@ -1,8 +1,10 @@
 ﻿#region References
 
-using System;
 using Cornerstone.Data;
 using Cornerstone.Storage;
+using Cornerstone.Storage.Sql;
+using System;
+using System.Collections.Generic;
 
 #endregion
 
@@ -12,27 +14,36 @@ namespace Cornerstone.Sync;
 /// Represent an entity that can be synced.
 /// </summary>
 /// <typeparam name="TKey"> The type of the entity primary ID. </typeparam>
-[Updateable]
+[Notifiable([nameof(CreatedOn), nameof(IsDeleted), nameof(ModifiedOn), nameof(SyncId)])]
+[Updateable(UpdateableAction.All, [nameof(IsDeleted)])]
+[Updateable(UpdateableAction.EverythingExceptSync, [nameof(Id)])]
+[Updateable(UpdateableAction.EverythingExceptSyncUpdate, [nameof(CreatedOn), nameof(ModifiedOn)])]
 public abstract partial class SyncEntity<TKey> : Entity<TKey>, ISyncEntity
 {
 	#region Properties
 
-	[UpdateableAction(UpdateableAction.EverythingExceptSyncUpdate)]
-	public DateTime CreatedOn { get; set; }
+	public partial DateTime CreatedOn { get; set; }
 
-	[Column(IsAutoIncrement = true, IsPrimaryKey = true)]
-	[UpdateableAction(UpdateableAction.EverythingExceptSync)]
-	public sealed override TKey Id { get; set; }
+	[SqlTableColumn(IsAutoIncrement = true, IsPrimaryKey = true)]
+	public sealed override TKey Id
+	{
+		get;
+		set
+		{
+			if (!EqualityComparer<TKey>.Default.Equals(field, value))
+			{
+				field = value;
+				OnPropertyChanged();
+			}
+		}
+	}
 
-	[UpdateableAction(UpdateableAction.All)]
-	public bool IsDeleted { get; set; }
+	public partial bool IsDeleted { get; set; }
 
-	[UpdateableAction(UpdateableAction.EverythingExceptSyncUpdate)]
-	public DateTime ModifiedOn { get; set; }
+	public partial DateTime ModifiedOn { get; set; }
 
-	[Column(IsUnique = true)]
-	[UpdateableAction(UpdateableAction.EverythingExceptSyncUpdate)]
-	public Guid SyncId { get; set; }
+	[SqlTableColumn(IsUnique = true)]
+	public partial Guid SyncId { get; set; }
 
 	#endregion
 }

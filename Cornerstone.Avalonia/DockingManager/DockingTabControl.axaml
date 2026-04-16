@@ -11,20 +11,22 @@
 				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
 				<Setter Property="BorderThickness" Value="1" />
 				<Setter Property="CornerRadius" Value="0" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground02}" />
 				<Setter Property="Template">
 					<ControlTemplate>
-						<!-- Layout grid. -->
+						<!-- Layout grid -->
 						<Grid RowDefinitions="Auto,*,Auto"
-								Background="{TemplateBinding Background}"
 								ColumnDefinitions="Auto,*,Auto"
 								Margin="{TemplateBinding Margin}">
-							<!-- Content area container and background. -->
+							<!-- Content area container and background -->
 							<Border Grid.Row="1" Grid.Column="1"
+									Background="{TemplateBinding Background}"
 									BorderBrush="{TemplateBinding BorderBrush}"
 									BorderThickness="{TemplateBinding BorderThickness}"
-									CornerRadius="{TemplateBinding CornerRadius}">
+									CornerRadius="{TemplateBinding CornerRadius}"
+									IsVisible="{TemplateBinding IsCollapsed, Converter={x:Static BoolConverters.Not}}">
 								<Grid>
-									<!-- Content. -->
+									<!-- Content -->
 									<ContentPresenter Name="PART_SelectedContentHost"
 											Margin="0"
 											HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
@@ -51,12 +53,27 @@
 									<ItemsPresenter
 											Name="PART_ItemsPresenter"
 											ItemsPanel="{TemplateBinding ItemsPanel}" />
-									<Button Classes="Icon"
+									<Button Theme.Color="None"
+											Classes="Icon IconOnly"
 											Command="{TemplateBinding NewTabCommand}"
 											CommandParameter="{TemplateBinding}"
 											IsVisible="{TemplateBinding NewTabCommand, Converter={x:Static ObjectConverters.IsNotNull}}">
-										<PathIcon Data="{StaticResource Icons.Plus}" />
+										<Path Data="{StaticResource Icons.Plus}" />
 									</Button>
+									<ToggleButton
+											Theme.Color="None"
+											Classes="Icon IconOnly"
+											IsChecked="{TemplateBinding IsCollapsed, Mode=TwoWay}"
+											IsVisible="False">
+										<Grid>
+											<Path Data="{StaticResource Icons.Angle.Down}"
+													IsVisible="{TemplateBinding IsCollapsed}"
+													Margin="0,6,0,0" />
+											<Path Data="{StaticResource Icons.Angle.Up}"
+													IsVisible="{TemplateBinding IsCollapsed, Converter={x:Static BoolConverters.Not}}"
+													Margin="0,4,0,0" />
+										</Grid>
+									</ToggleButton>
 								</StackPanel>
 							</ScrollViewer>
 						</Grid>
@@ -81,11 +98,11 @@
 	</Style>
 
 	<Design.PreviewWith>
-		<DockPanel MaxWidth="600">
-			<DockingTabControl DockPanel.Dock="Top" Height="300">
+		<PreviewCodeSnippet Height="600" Width="800">
+			<DockingTabControl TabStripPlacement="Top">
 				<DockableTabView>
 					<DockableTabView.TabModel>
-						<DockableTabModel Header="aoeu222"
+						<DocumentTabModel Header="aoeu222"
 								IsSelected="True">
 							<DockableTabModel.HeaderMenu>
 								<ContextMenu>
@@ -99,14 +116,11 @@
 										ShowButtons="True"
 										InProgress="False" />
 							</DockableTabModel.Popup>
-						</DockableTabModel>
+						</DocumentTabModel>
 					</DockableTabView.TabModel>
 				</DockableTabView>
 				<DockableTabView Header="Test 1" />
-				<DockableTabView Header="Test 2" />
-				<DockableTabView Header="Test 3" />
-				<DockableTabView Header="Test 4" />
 			</DockingTabControl>
-		</DockPanel>
+		</PreviewCodeSnippet>
 	</Design.PreviewWith>
 </Styles>

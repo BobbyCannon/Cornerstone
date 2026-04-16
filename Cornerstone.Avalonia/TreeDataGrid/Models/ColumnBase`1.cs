@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Utilities;
 using Cornerstone.Data;
+using Cornerstone.Extensions;
 
 #endregion
 
@@ -142,7 +143,7 @@ public abstract class ColumnBase<TModel> : Notifiable, IColumn<TModel>, IUpdateC
 
 		var width = (availableWidth / totalStars) * Width.Value;
 		_starWidth = CoerceActualWidth(width);
-		_starWidthWasConstrained = !MathUtilities.AreClose(_starWidth, width);
+		_starWidthWasConstrained = !DoubleExtensions.AreClose(_starWidth, width);
 	}
 
 	double IUpdateColumnLayout.CellMeasured(double width, int rowIndex)
@@ -184,7 +185,7 @@ public abstract class ColumnBase<TModel> : Notifiable, IColumn<TModel>, IUpdateC
 		ActualWidth = width;
 		_starWidthWasConstrained = false;
 
-		// MathUtilities.AreClose will return true for this condition.
+		// DoubleExtensions.AreClose will return true for this condition.
 		// If the user has auto columns that are not yet realized, then the
 		// _autoWidth will remain NaN.
 		// This will lead to an endless layout cycle causing the whole UI
@@ -195,7 +196,7 @@ public abstract class ColumnBase<TModel> : Notifiable, IColumn<TModel>, IUpdateC
 			return false;
 		}
 
-		return !MathUtilities.AreClose(oldWidth, ActualWidth);
+		return !DoubleExtensions.AreClose(oldWidth, ActualWidth);
 	}
 
 	private static double NonNaN(double v)

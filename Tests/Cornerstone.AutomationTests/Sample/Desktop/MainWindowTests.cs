@@ -1,16 +1,17 @@
 ﻿#region References
 
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.AutomationTests.Sample.Desktop;
 
+[TestClass]
 public class MainWindowTests : AutomationTest
 {
 	#region Methods
 
-	[Test]
+	[TestMethod]
 	public void MoveWindowWithLocationAndSize()
 	{
 		using var app = StartTestApplication();

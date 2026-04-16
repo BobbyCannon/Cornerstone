@@ -1,12 +1,12 @@
 ﻿#region References
 
+using System;
 using Avalonia;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Cornerstone.Avalonia.Resources;
 using Cornerstone.Collections;
-using Cornerstone.Extensions;
 
 #endregion
 
@@ -18,7 +18,6 @@ public sealed partial class InkCanvas : CornerstoneControl
 
 	private ImmutablePen _currentPen;
 	private InkCanvasStroke _currentStroke;
-	private bool _isErasing;
 	private IBrush _lastBrush;
 
 	#endregion
@@ -27,9 +26,10 @@ public sealed partial class InkCanvas : CornerstoneControl
 
 	public InkCanvas()
 	{
-		History = [];
 		Stroke ??= ResourceService.GetColorAsBrush("Foreground00");
 		Background ??= Brushes.Transparent;
+		History = [];
+		IsErasing = false;
 	}
 
 	#endregion
@@ -39,7 +39,10 @@ public sealed partial class InkCanvas : CornerstoneControl
 	[StyledProperty]
 	public partial IBrush Background { get; set; }
 
-	public SpeedyList<InkCanvasStroke> History { get; }
+	public PresentationList<InkCanvasStroke> History { get; }
+
+	[StyledProperty]
+	public partial bool IsErasing { get; set; }
 
 	[StyledProperty]
 	public partial IBrush Stroke { get; set; }
@@ -107,7 +110,7 @@ public sealed partial class InkCanvas : CornerstoneControl
 			_currentStroke.Points.Add(point);
 			InvalidateVisual();
 		}
-		else if (_isErasing)
+		else if (IsErasing && (e.Properties.IsLeftButtonPressed || e.Properties.IsRightButtonPressed))
 		{
 			EraseAt(e.GetCurrentPoint(this).Position);
 		}
@@ -119,27 +122,22 @@ public sealed partial class InkCanvas : CornerstoneControl
 	{
 		base.OnPointerPressed(e);
 
+		if (IsErasing)
+		{
+			// Do not allow new lines starts in erase mode.
+			return;
+		}
+
 		var point = e.GetCurrentPoint(this).Position;
 
-		if (e.GetCurrentPoint(this).Properties.IsRightButtonPressed
-			|| e.KeyModifiers.HasAllFlags(KeyModifiers.Control))
+		_currentStroke = new InkCanvasStroke
 		{
-			_isErasing = true;
+			Brush = Stroke.ToImmutable(),
+			Id = ShortGuid.NewGuid().ToString(),
+			Points = [point]
+		};
 
-			EraseAt(point);
-		}
-		else
-		{
-			_isErasing = false;
-			_currentStroke = new InkCanvasStroke
-			{
-				Brush = Stroke.ToImmutable(),
-				Id = ShortGuid.NewGuid().ToString(),
-				Points = [point]
-			};
-
-			History.Add(_currentStroke);
-		}
+		History.Add(_currentStroke);
 
 		e.Pointer.Capture(this);
 		e.Handled = true;
@@ -149,8 +147,13 @@ public sealed partial class InkCanvas : CornerstoneControl
 	{
 		base.OnPointerReleased(e);
 
+		if (_currentStroke != null)
+		{
+			OnStrokeCompleted(_currentStroke);
+		}
+
 		_currentStroke = null;
-		_isErasing = false;
+
 		e.Pointer.Capture(null);
 		e.Handled = true;
 	}
@@ -167,6 +170,7 @@ public sealed partial class InkCanvas : CornerstoneControl
 
 	private void EraseAt(Point point)
 	{
+		// Simple whole-stroke erase: check if point is near any stroke, remove it
 		for (var i = History.Count - 1; i >= 0; i--)
 		{
 			var stroke = History[i];
@@ -183,10 +187,21 @@ public sealed partial class InkCanvas : CornerstoneControl
 		}
 	}
 
-	private void HistoryOnListUpdated(object sender, SpeedyListUpdatedEventArg<InkCanvasStroke> e)
+	private void HistoryOnListUpdated(object sender, PresentationListUpdatedEventArg<InkCanvasStroke> e)
 	{
 		InvalidateVisual();
 	}
+
+	private void OnStrokeCompleted(InkCanvasStroke e)
+	{
+		StrokeCompleted?.Invoke(this, e);
+	}
+
+	#endregion
+
+	#region Events
+
+	public event EventHandler<InkCanvasStroke> StrokeCompleted;
 
 	#endregion
 }

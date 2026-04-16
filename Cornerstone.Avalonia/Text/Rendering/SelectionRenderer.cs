@@ -41,8 +41,12 @@ internal class SelectionRenderer : IRenderer
 	public void Draw(TextRenderer renderer, DrawingContext drawingContext)
 	{
 		var vm = _renderer.ViewModel;
-		var selection = vm.Selection;
+		if (vm == null)
+		{
+			return;
+		}
 
+		var selection = vm.Caret.Selection;
 		if (selection.Length <= 0)
 		{
 			return;
@@ -53,12 +57,12 @@ internal class SelectionRenderer : IRenderer
 		var bottomY = offset.Y + _renderer.Bounds.Height;
 		var startOffset = Math.Min(selection.StartOffset, selection.EndOffset);
 		var endOffset = Math.Max(selection.StartOffset, selection.EndOffset);
-		var firstLine = vm.Document.Lines.GetLineForOffset(startOffset);
-		var lastLine = vm.Document.Lines.GetLineForOffset(endOffset);
+		var firstLine = vm.Lines.GetLineFromOffset(startOffset);
+		var lastLine = vm.Lines.GetLineFromOffset(endOffset);
 
 		for (var lineNumber = firstLine.LineNumber; lineNumber <= lastLine.LineNumber; lineNumber++)
 		{
-			var line = vm.Document.Lines[lineNumber - 1];
+			var line = vm.Lines[lineNumber - 1];
 			if (line.VisualLayout.Bottom < topY)
 			{
 				continue;
@@ -79,7 +83,11 @@ internal class SelectionRenderer : IRenderer
 
 			var localStart = lineSelStart - line.StartOffset;
 			var localLength = lineSelEnd - lineSelStart;
-			var textLayout = _renderer.GetTextLayout(line.ToString());
+			using var textLayout = _renderer.GetTextLayout(
+				line.ToString(),
+				_renderer.Bounds.Width,
+				_renderer.ViewModel.WordWrap,
+				_renderer.Foreground);
 
 			// Get bounding rectangles for the selected range in **this line**
 			var rects = textLayout.HitTestTextRange(localStart, localLength);
@@ -90,7 +98,7 @@ internal class SelectionRenderer : IRenderer
 				// rect is in local line coordinates → translate to screen
 				var screenRect = new Rect(
 					rect.X - offset.X,
-					(rect.Y + line.VisualLayout.Top) - offset.Y, // ← important: use precomputed line top
+					(rect.Y + line.VisualLayout.Top) - offset.Y,
 					rect.Width,
 					rect.Height
 				);

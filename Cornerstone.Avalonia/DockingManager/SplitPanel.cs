@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -319,7 +318,7 @@ public class SplitPanel : Panel
 			return;
 		}
 
-		Debug.WriteLine($"Clicked on separator between slot {splitIndex} and {splitIndex + 1}");
+		//Debug.WriteLine($"Clicked on separator between slot {splitIndex} and {splitIndex + 1}");
 
 		_draggedSplitLine = (splitIndex, e.GetPosition(this));
 	}

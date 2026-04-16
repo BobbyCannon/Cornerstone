@@ -102,10 +102,10 @@
 		<Style Selector="^[(Theme.Color)=Current]">
 			<Style Selector="^:selected">
 				<Setter Property="Background" Value="{DynamicResource ThemeColor07}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground07}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeText07}" />
 				<Style Selector="^:pointerover">
 					<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
-					<Setter Property="Foreground" Value="{DynamicResource ThemeForeground05}" />
+					<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
 				</Style>
 			</Style>
 		</Style>

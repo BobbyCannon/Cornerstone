@@ -4,24 +4,25 @@ using System.Collections.Frozen;
 using System.Linq;
 using Cornerstone.Data.Times;
 using Cornerstone.Reflection;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.UnitTests.Reflection;
 
+[TestClass]
 public class SourceReflectorTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	[Test]
+	[TestMethod]
 	public void CreateSourceTypeInfoUsingReflection()
 	{
 		var actual = SourceReflector.CreateSourceTypeInfoUsingReflection(typeof(FrozenSet<string>));
 		IsNotNull(actual);
 	}
 
-	[Test]
+	[TestMethod]
 	public void GetEnumDetailsDictionary()
 	{
 		var actual = SourceReflector.GetEnumDetailsDictionary<TimeUnit>();

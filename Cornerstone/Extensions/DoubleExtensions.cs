@@ -12,7 +12,31 @@ namespace Cornerstone.Extensions;
 /// </summary>
 public static class DoubleExtensions
 {
+	#region Constants
+
+	internal const double DoubleEpsilon = 2.2204460492503131e-016;
+
+	#endregion
+
 	#region Methods
+
+	/// <summary>
+	/// AreClose - Returns whether two doubles are "close".
+	/// That is, whether they are within epsilon of each other.
+	/// </summary>
+	/// <param name="value1"> The first double to compare. </param>
+	/// <param name="value2"> The second double to compare. </param>
+	public static bool AreClose(double value1, double value2)
+	{
+		//in case they are Infinities (then epsilon check does not work)
+		if (value1 == value2)
+		{
+			return true;
+		}
+		var eps = (Math.Abs(value1) + Math.Abs(value2) + 10.0) * DoubleEpsilon;
+		var delta = value1 - value2;
+		return (-eps < delta) && (eps > delta);
+	}
 
 	/// <summary>
 	/// Compares two double values for equality within a specified tolerance.
@@ -47,6 +71,50 @@ public static class DoubleExtensions
 
 		// Compare within epsilon
 		return Math.Abs(d1 - d2) <= effectiveEpsilon;
+	}
+
+	/// <summary>
+	/// GreaterThan - Returns whether the first double is greater than the second double.
+	/// That is, whether the first is strictly greater than *and* not within epsilon of
+	/// the other number.
+	/// </summary>
+	/// <param name="value1"> The first double to compare. </param>
+	/// <param name="value2"> The second double to compare. </param>
+	public static bool GreaterThan(double value1, double value2)
+	{
+		return (value1 > value2) && !AreClose(value1, value2);
+	}
+
+	/// <summary>
+	/// Compares Y to see if it is greater than or equal to X.
+	/// </summary>
+	/// <param name="x"> The first value. </param>
+	/// <param name="y"> The second value. </param>
+	/// <returns> True if the value is greater than or equal otherwise false. </returns>
+	public static bool GreaterThanOrEqualTo(this double x, double y)
+	{
+		return (x > y) || x.Equals(y);
+	}
+
+	/// <summary>
+	/// IsZero - Returns whether the double is "close" to 0.  Same as AreClose(double, 0),
+	/// but this is faster.
+	/// </summary>
+	/// <param name="value"> The double to compare to 0. </param>
+	public static bool IsZero(double value)
+	{
+		return Math.Abs(value) < (10.0 * DoubleEpsilon);
+	}
+
+	/// <summary>
+	/// Compares Y to see if it is less than or equal to X.
+	/// </summary>
+	/// <param name="x"> The first value. </param>
+	/// <param name="y"> The second value. </param>
+	/// <returns> True if the value is less than or equal otherwise false. </returns>
+	public static bool LessThanOrEqualTo(this double x, double y)
+	{
+		return (x < y) || x.Equals(y);
 	}
 
 	#endregion

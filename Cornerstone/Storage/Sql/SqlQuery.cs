@@ -15,7 +15,7 @@ using Microsoft.Data.Sqlite;
 
 namespace Cornerstone.Storage.Sql;
 
-public class SqlQuery<T>
+public class SqlQuery<T> : SqlQuery
 	where T : class, new()
 {
 	#region Fields
@@ -96,6 +96,8 @@ public class SqlQuery<T>
 
 		builder.Append("SELECT ");
 
+		var (open, close) = SqlGenerator.GetIdentifierBrackets(query.Provider);
+
 		var ps = query._sourceType.GetProperties();
 		var first = true;
 		for (var index = 0; index < ps.Length; index++)
@@ -105,13 +107,13 @@ public class SqlQuery<T>
 				builder.Append(", ");
 			}
 			var p = ps[index];
-			builder.Append('[');
+			builder.Append(open);
 			builder.Append(p.Name);
-			builder.Append(']');
+			builder.Append(close);
 			first = false;
 		}
 
-		builder.Append($" FROM [{query._sourceType.Name}s]");
+		builder.Append($" FROM {open}{SqlGenerator.GetTableName(query._sourceType)}{close}");
 
 		if (query._wherePredicates.Count > 0)
 		{
@@ -173,7 +175,7 @@ public class SqlQuery<T>
 		if ((dbValue == null)
 			|| (dbValue == DBNull.Value))
 		{
-			return targetType.IsValueType ? Activator.CreateInstance(targetType) : null;
+			return targetType.IsValueType ? SourceReflector.CreateInstance(targetType) : null;
 		}
 
 		if (targetType.IsInstanceOfType(dbValue))
@@ -182,6 +184,13 @@ public class SqlQuery<T>
 		}
 
 		var underlyingType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+
+		if (Converters.TryGetValue(underlyingType, out var converter))
+		{
+			return converter(dbValue);
+		}
+
+		// fall through to DateTime, Guid, enum, etc. handling
 
 		try
 		{
@@ -312,18 +321,7 @@ public class SqlQuery<T>
 			}
 			if (underlyingType.IsEnum)
 			{
-				if (dbValue is string str)
-				{
-					return Enum.Parse(underlyingType, str, true);
-				}
-
-				var numeric = System.Convert.ToInt64(dbValue);
-				if (Enum.IsDefined(underlyingType, numeric))
-				{
-					return Enum.ToObject(underlyingType, numeric);
-				}
-
-				throw new InvalidCastException($"Value {numeric} is not defined in enum {underlyingType.Name}");
+				return ConvertToEnum(underlyingType, dbValue);
 			}
 
 			return System.Convert.ChangeType(dbValue, underlyingType, CultureInfo.InvariantCulture);
@@ -334,6 +332,45 @@ public class SqlQuery<T>
 					or OverflowException)
 		{
 			throw new InvalidCastException($"Cannot convert database value '{dbValue}' (type: {dbValue.GetType().Name}) to property type {targetType.Name}", ex);
+		}
+	}
+
+	private static object ConvertToEnum(Type enumType, object dbValue)
+	{
+		if ((dbValue == null)
+			|| (dbValue == DBNull.Value))
+		{
+			return null;
+		}
+
+		var underlyingType = Enum.GetUnderlyingType(enumType);
+
+		// 1. If the DB returned a string (e.g. you stored enum names as TEXT/VARCHAR)
+		if (dbValue is string strValue)
+		{
+			return Enum.Parse(enumType, strValue, true);
+		}
+
+		// 2. Numeric value from database, convert to the exact underlying type first
+		try
+		{
+			// Convert to the enum's actual underlying type (byte, int, long, ulong, etc.)
+			var converted = System.Convert.ChangeType(dbValue, underlyingType);
+
+			// For safety: check if the value is defined (skip for Flags enums if you allow any bit combination)
+			if (!enumType.IsDefined(typeof(FlagsAttribute), false))
+			{
+				if (!Enum.IsDefined(enumType, converted))
+				{
+					throw new InvalidCastException($"Value '{converted}' is not defined in enum {enumType.Name}");
+				}
+			}
+
+			return Enum.ToObject(enumType, converted);
+		}
+		catch (Exception ex)
+		{
+			throw new InvalidCastException($"Cannot convert value '{dbValue}' (type {dbValue.GetType().Name}) to enum {enumType.Name}", ex);
 		}
 	}
 
@@ -349,8 +386,6 @@ public class SqlQuery<T>
 		{
 			command.Parameters.AddWithValue($"@p{i}", parameters[i] ?? DBNull.Value);
 		}
-
-		Debug.WriteLine(query);
 
 		return ReadResults(command);
 	}
@@ -376,20 +411,62 @@ public class SqlQuery<T>
 		var results = new List<T>();
 		using var reader = command.ExecuteReader();
 
+		// Build column-to-property map once
+		var fieldCount = reader.FieldCount;
+		var propertyMap = new SourcePropertyInfo[fieldCount];
+		var typeMap = new Type[fieldCount];
+		for (var i = 0; i < fieldCount; i++)
+		{
+			var prop = _sourceType.GetProperty(reader.GetName(i));
+			propertyMap[i] = prop;
+			typeMap[i] = prop.PropertyInfo.PropertyType;
+		}
+
 		while (reader.Read())
 		{
 			var item = new T();
-			for (var i = 0; i < reader.FieldCount; i++)
+			for (var i = 0; i < fieldCount; i++)
 			{
-				var name = reader.GetName(i);
-				var prop = _sourceType.GetProperty(name);
 				var value = reader.IsDBNull(i) ? null : reader.GetValue(i);
-				prop.SetValue(item, ConvertTo(value, prop.PropertyInfo.PropertyType));
+				propertyMap[i].SetValue(item, ConvertTo(value, typeMap[i]));
 			}
 			results.Add(item);
 		}
 
-		return results.ToArray();
+		return results;
+	}
+
+	#endregion
+}
+
+public class SqlQuery
+{
+	#region Fields
+
+	protected static readonly Dictionary<Type, Func<object, object>> Converters;
+
+	#endregion
+
+	#region Constructors
+
+	static SqlQuery()
+	{
+		Converters = new()
+		{
+			[typeof(string)] = v => v.ToString(),
+			[typeof(bool)] = v => System.Convert.ToBoolean(v),
+			[typeof(int)] = v => System.Convert.ToInt32(v),
+			[typeof(long)] = v => System.Convert.ToInt64(v),
+			[typeof(short)] = v => System.Convert.ToInt16(v),
+			[typeof(byte)] = v => System.Convert.ToByte(v),
+			[typeof(uint)] = v => System.Convert.ToUInt32(v),
+			[typeof(ulong)] = v => System.Convert.ToUInt64(v),
+			[typeof(ushort)] = v => System.Convert.ToUInt16(v),
+			[typeof(sbyte)] = v => System.Convert.ToSByte(v),
+			[typeof(double)] = v => System.Convert.ToDouble(v),
+			[typeof(float)] = v => System.Convert.ToSingle(v),
+			[typeof(decimal)] = v => System.Convert.ToDecimal(v)
+		};
 	}
 
 	#endregion

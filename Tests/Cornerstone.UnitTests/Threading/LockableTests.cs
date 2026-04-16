@@ -230,7 +230,7 @@ public class LockableTests : BaseLockableTests
 				{
 					// Wait until the main test thread is awaiting the write lock
 					// once it's waiting we can release the read lock
-					var result = lockable.WaitUntil(x => x.IsAwaitingWriteLock, TimeSpan.FromSeconds(1));
+					var result = lockable.WaitUntil(x => x.IsAwaitingWriteLock, 1000);
 					IsTrue(result, () => "The thread was never awaiting lock...");
 					builder.Append("+3");
 					lockable.ExitReadLock();

@@ -1,0 +1,55 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="600"
+		x:Class="Cornerstone.Sample.Tabs.TabShortcutBox"
+		x:DataType="tabs:TabShortcutBox"
+		x:Name="This">
+	<!-- ReSharper disable Xaml.MissingGridIndex -->
+	<DockPanel>
+		<Grid DockPanel.Dock="Top" Margin="10">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="{x:Static tabs:TabShortcutBox.HeaderName}" />
+		</Grid>
+		<PreviewCodeSnippet>
+			<DockPanel VerticalSpacing="10">
+				<HeaderedContentControl Header="Options"
+						DockPanel.Dock="Top"
+						Padding="20">
+					<WrapPanel 
+							ItemSpacing="20"
+							LineSpacing="20">
+						<TextBlock Text="Label" VerticalAlignment="Center"/>
+						<TextBox x:Name="LabelInput"
+								Text="{Binding ShortcutBinding.Name}"
+								Width="260"/>
+					</WrapPanel>
+				</HeaderedContentControl>
+				<ShortcutBox
+						DockPanel.Dock="Top"
+						Theme.Color="Red"
+						Binding="{Binding ShortcutBinding}"
+						Label="{Binding ElementName=LabelInput, Path=Text}"
+						Margin="0,20,0,0" />
+				<HeaderedContentControl Header="Log">
+					<Grid>
+						<TextRenderer x:Name="Log" />
+						<Button Classes="Icon Dim"
+								Margin="0,-8,-8,0"
+								ToolTip.Tip="Clear History"
+								HorizontalAlignment="Right"
+								VerticalAlignment="Top">
+							<Path Data="{StaticResource Icons.Clear.All}"
+									Height="20" Width="20"
+									Margin="0,6,0,0" />
+						</Button>
+					</Grid>
+				</HeaderedContentControl>
+			</DockPanel>
+		</PreviewCodeSnippet>
+	</DockPanel>
+</UserControl>

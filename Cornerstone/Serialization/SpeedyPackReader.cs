@@ -26,23 +26,23 @@ public ref struct SpeedyPackReader
 
 	#region Constructors
 
-	public SpeedyPackReader(ReadOnlySpan<byte> buffer)
+	public SpeedyPackReader(ReadOnlySpan<byte> data)
 	{
 		// One-time scan to locate EndOfHeader (zero allocation, just spans)
 		var headerLen = 0;
-		while ((headerLen < buffer.Length)
-				&& (buffer[headerLen] != (byte) SpeedyPacketDataTypes.EndOfHeader))
+		while ((headerLen < data.Length)
+				&& (data[headerLen] != (byte) SpeedyPacketDataTypes.EndOfHeader))
 		{
 			headerLen++;
 		}
 
-		if (headerLen == buffer.Length)
+		if (headerLen == data.Length)
 		{
 			throw new InvalidDataContractException("EndOfHeader marker (0xFF) not found in packet.");
 		}
 
-		Header = buffer[..headerLen];
-		Data = buffer[(headerLen + 1)..];
+		Header = data[..headerLen];
+		Data = data[(headerLen + 1)..];
 
 		_headerOffset = 0;
 		_dataOffset = 0;

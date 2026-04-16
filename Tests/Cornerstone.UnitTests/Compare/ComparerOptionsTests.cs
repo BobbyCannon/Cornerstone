@@ -31,7 +31,7 @@ public class ComparerSettingsTests : CornerstoneUnitTest
 			{ nameof(ComparerSettings.IgnoreMissingDictionaryEntries), false },
 			{ nameof(ComparerSettings.IgnoreMissingProperties), false },
 			{ nameof(ComparerSettings.MaxDepth), int.MaxValue },
-			{ nameof(ComparerSettings.StringComparison), StringComparison.CurrentCulture },
+			{ nameof(ComparerSettings.StringComparison), StringComparison.Ordinal },
 			{ nameof(ComparerSettings.TypeIncludeExcludeSettings), new Dictionary<Type, string[]>() }
 		};
 

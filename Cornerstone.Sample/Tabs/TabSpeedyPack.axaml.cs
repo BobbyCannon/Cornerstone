@@ -130,7 +130,7 @@ public partial class TabSpeedyPack : CornerstoneUserControl
 
 	private void BenchmarkOnDoWork(object sender, DoWorkEventArgs e)
 	{
-		var buffer = new SpeedyBuffer<byte>();
+		var buffer = new SpeedyList<byte>();
 		var options = new JsonSerializerOptions
 		{
 			TypeInfoResolver = AppJsonSerializerContext.Default
@@ -148,15 +148,17 @@ public partial class TabSpeedyPack : CornerstoneUserControl
 
 			account.CreatedOn = DateTime.UtcNow;
 			account.ModifiedOn = DateTime.UtcNow;
-			account.DisplayName = RandomGenerator.NextString(RandomGenerator.NextInteger(10, 100));
+			account.Name = RandomGenerator.NextString(RandomGenerator.NextInteger(10, 100));
 			account.EmailAddress = RandomGenerator.NextString(RandomGenerator.NextInteger(25, 255));
 			account.SyncId = Guid.NewGuid();
 			account.TimeZoneId = TimeZoneInfo.Local.Id;
-			account.IsEnabled = true;
+			account.Status = AccountStatus.Enabled;
 			account.LastLoginDate = DateTime.UtcNow;
 
 			try
 			{
+				buffer.Clear();
+
 				var t1 = ProfilerExtensions.Start(Profiler, "SpeedyPack");
 				SpeedyPackWriter.Write([account], buffer);
 				var r = new SpeedyPackReader(buffer.AsSpan());
@@ -167,15 +169,15 @@ public partial class TabSpeedyPack : CornerstoneUserControl
 				var account2 = JsonSerializer.Deserialize<Account>(json, options);
 				t2.Dispose();
 
-				SpeedyPackSize += (uint) buffer.Length;
+				SpeedyPackSize += (uint) buffer.Count;
 				SystemJsonSize += (uint) json.Length;
 			}
 			catch (Exception ex)
 			{
 				this.Dispatch(() =>
 				{
-					Monitor.ViewModel.Document.Add(ex.Message);
-					Monitor.ViewModel.Document.Add(Environment.NewLine);
+					Monitor.ViewModel.Append(ex.Message);
+					Monitor.ViewModel.Append(Environment.NewLine);
 				});
 
 				Thread.Sleep(100);

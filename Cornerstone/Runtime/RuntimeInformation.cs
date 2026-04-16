@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Cornerstone.Data;
+using Cornerstone.Reflection;
 #if ANDROID || IOS || BROWSER
 using Microsoft.Maui.Devices;
 #endif
@@ -22,6 +23,7 @@ namespace Cornerstone.Runtime;
 /// <summary>
 /// Gets information about the current runtime.
 /// </summary>
+[SourceReflection]
 public class RuntimeInformation : Notifiable, IRuntimeInformation
 {
 	#region Fields
@@ -55,6 +57,10 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 
 	public string ApplicationDataLocation => GetOrCache(nameof(ApplicationDataLocation), GetApplicationDataLocation);
 
+	public string ApplicationFileName => GetOrCache(nameof(ApplicationFileName), GetApplicationFileName);
+
+	public string ApplicationFilePath => GetOrCache(nameof(ApplicationFilePath), GetApplicationFilePath);
+
 	public bool ApplicationIsDevelopmentBuild => GetOrCache(nameof(ApplicationIsDevelopmentBuild), GetApplicationIsDevelopmentBuild);
 
 	public bool ApplicationIsElevated => GetOrCache(nameof(ApplicationIsElevated), GetApplicationIsElevated);
@@ -75,6 +81,8 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 
 	public Version ApplicationVersion => GetOrCache(nameof(ApplicationVersion), GetApplicationVersion);
 
+	public Version AvaloniaRuntimeVersion => GetOrCache(nameof(AvaloniaRuntimeVersion), GetAvaloniaRuntimeVersion);
+
 	[Browsable(false)]
 	public int Count => _cache.Count;
 
@@ -83,6 +91,9 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 	public DevicePlatform DevicePlatform => GetOrCache(nameof(DevicePlatform), GetDevicePlatform);
 
 	public DeviceType DeviceType => GetOrCache(nameof(DeviceType), GetDeviceType);
+
+	public Version DotNetRuntimeVersion => GetOrCache(nameof(DotNetRuntimeVersion), GetDotNetRuntimeVersion);
+
 	public object this[string key] => _cache[key];
 
 	[Browsable(false)]
@@ -140,9 +151,8 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 	{
 		//_ = ApplicationBitness;
 		_ = ApplicationDataLocation;
-
-		//_ = ApplicationFileName;
-		//_ = ApplicationFilePath;
+		_ = ApplicationFileName;
+		_ = ApplicationFilePath;
 		_ = ApplicationIsDevelopmentBuild;
 		_ = ApplicationIsElevated;
 
@@ -154,7 +164,8 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 		_ = ApplicationName;
 		_ = ApplicationVersion;
 
-		//_ = AvaloniaRuntimeVersion;
+		_ = AvaloniaRuntimeVersion;
+
 		//_ = DeviceDisplaySize;
 		//_ = DeviceId;
 		//_ = DeviceManufacturer;
@@ -166,8 +177,7 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 		//_ = DevicePlatformBitness;
 		//_ = DevicePlatformVersion;
 		_ = DeviceType;
-
-		//_ = DotNetRuntimeVersion;
+		_ = DotNetRuntimeVersion;
 	}
 
 	/// <summary>
@@ -255,6 +265,30 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 	}
 
 	/// <summary>
+	/// The file name of the application.
+	/// </summary>
+	protected string GetApplicationFileName()
+	{
+		return Path.GetFileName(GetApplicationFilePath());
+	}
+
+	/// <summary>
+	/// The file path of the application.
+	/// </summary>
+	protected string GetApplicationFilePath()
+	{
+		// This is to support PublishSingleFile because Location (above) will be empty
+		var path = Path.Combine(AppContext.BaseDirectory, GetApplicationName() + ".exe");
+
+		if (path.EndsWith(".dll"))
+		{
+			path = path.Replace(".dll", ".exe");
+		}
+
+		return path;
+	}
+
+	/// <summary>
 	/// Get flag indicating if the application is a development build.
 	/// </summary>
 	protected bool GetApplicationIsDevelopmentBuild()
@@ -318,6 +352,14 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 	}
 
 	/// <summary>
+	/// The version of the avalonia runtime version.
+	/// </summary>
+	protected virtual Version GetAvaloniaRuntimeVersion()
+	{
+		return new Version();
+	}
+
+	/// <summary>
 	/// The name of the device.
 	/// </summary>
 	protected virtual string GetDeviceName()
@@ -370,6 +412,14 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 		#else
 		return DeviceType.Desktop;
 		#endif
+	}
+
+	/// <summary>
+	/// The version of the dotnet runtime version.
+	/// </summary>
+	protected virtual Version GetDotNetRuntimeVersion()
+	{
+		return Environment.Version;
 	}
 
 	/// <summary>
@@ -428,6 +478,16 @@ public interface IRuntimeInformation : IReadOnlyDictionary<string, object>
 	string ApplicationDataLocation { get; }
 
 	/// <summary>
+	/// The file name of the application.
+	/// </summary>
+	string ApplicationFileName { get; }
+
+	/// <summary>
+	/// The file path of the application.
+	/// </summary>
+	string ApplicationFilePath { get; }
+
+	/// <summary>
 	/// Flag indicating if the application is a development build.
 	/// </summary>
 	bool ApplicationIsDevelopmentBuild { get; }
@@ -473,6 +533,11 @@ public interface IRuntimeInformation : IReadOnlyDictionary<string, object>
 	Version ApplicationVersion { get; }
 
 	/// <summary>
+	/// The Avalonia runtime version.
+	/// </summary>
+	Version AvaloniaRuntimeVersion { get; }
+
+	/// <summary>
 	/// The platform of the device.
 	/// </summary>
 	DevicePlatform DevicePlatform { get; }
@@ -481,6 +546,11 @@ public interface IRuntimeInformation : IReadOnlyDictionary<string, object>
 	/// The type of the device.
 	/// </summary>
 	DeviceType DeviceType { get; }
+
+	/// <summary>
+	/// The DotNet runtime version.
+	/// </summary>
+	Version DotNetRuntimeVersion { get; }
 
 	#endregion
 

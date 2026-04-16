@@ -3,17 +3,18 @@
 using System;
 using Cornerstone.Avalonia.Drawing;
 using Cornerstone.Testing;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.UnitTests.Avalonia.Drawing;
 
+[TestClass]
 public class DrawingContextHelperTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	[Test]
+	[TestMethod]
 	public void FormatNumber()
 	{
 		// 24 digits + sign + dot + safety

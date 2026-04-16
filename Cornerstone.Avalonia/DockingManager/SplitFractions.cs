@@ -10,7 +10,7 @@ using Cornerstone.Collections;
 
 namespace Cornerstone.Avalonia.DockingManager;
 
-public class SplitFractions : SpeedyList<int>
+public class SplitFractions : PresentationList<int>
 {
 	#region Constructors
 

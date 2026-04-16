@@ -6,30 +6,62 @@ using Avalonia.Controls;
 using Cornerstone.Data;
 using Cornerstone.Presentation;
 using Cornerstone.Reflection;
+using Cornerstone.Serialization;
 
 #endregion
 
 namespace Cornerstone.Avalonia.DockingManager;
 
 [SourceReflection]
-public partial class DockableTabModel : PopupManager
+public partial class ToolbarTabModel : DockableTabModel
 {
 	#region Constructors
 
-	public DockableTabModel()
-		: this(Guid.Empty, string.Empty, string.Empty, 24, new Thickness())
+	public ToolbarTabModel()
+		: base(Guid.Empty, string.Empty, string.Empty, 24, new Thickness())
 	{
 	}
 
-	protected DockableTabModel(Guid id, string header, string iconName)
-		: this(id, header, iconName, 24, new Thickness())
+	protected ToolbarTabModel(Guid id, string header, string iconName)
+		: base(id, header, iconName, 24, new Thickness())
 	{
 	}
 
-	protected DockableTabModel(Guid id, string header, string iconName, Thickness iconMargin)
-		: this(id, header, iconName, 24, iconMargin)
+	protected ToolbarTabModel(Guid id, string header, string iconName, Thickness iconMargin)
+		: base(id, header, iconName, 24, iconMargin)
 	{
 	}
+
+	#endregion
+}
+
+[SourceReflection]
+public partial class DocumentTabModel : DockableTabModel
+{
+	#region Constructors
+
+	public DocumentTabModel()
+		: base(Guid.Empty, string.Empty, string.Empty, 24, new Thickness())
+	{
+	}
+
+	protected DocumentTabModel(Guid id, string header, string iconName)
+		: base(id, header, iconName, 24, new Thickness())
+	{
+	}
+
+	protected DocumentTabModel(Guid id, string header, string iconName, Thickness iconMargin)
+		: base(id, header, iconName, 24, iconMargin)
+	{
+	}
+
+	#endregion
+}
+
+[SourceReflection]
+public abstract partial class DockableTabModel : PopupManager
+{
+	#region Constructors
 
 	protected DockableTabModel(Guid id, string header, string iconName, int? iconSize, Thickness iconMargin)
 	{
@@ -43,8 +75,6 @@ public partial class DockableTabModel : PopupManager
 	#endregion
 
 	#region Properties
-
-	public ContextMenu ContextMenu => GetContextMenu();
 
 	[Notify]
 	[UpdateableAction(UpdateableAction.All)]
@@ -96,6 +126,23 @@ public partial class DockableTabModel : PopupManager
 		CloseRequested?.Invoke(this, parameter is true);
 	}
 
+	public string ReadLayoutData()
+	{
+		var response = new PartialUpdate();
+		response.AddOrUpdate(nameof(Id), Id.ToString());
+		response.AddOrUpdate(nameof(Header), Header);
+		ReadLayoutData(response);
+		return response.ToJson();
+	}
+
+	public void RestoreLayoutData(string data)
+	{
+		var update = data.FromJson<PartialUpdate>();
+		update.TryUpdate<Guid>(x => Id = x, nameof(Id));
+		update.TryUpdate<string>(x => Header = x, nameof(Header));
+		RestoreLayoutData(update);
+	}
+
 	public override string ToString()
 	{
 		return Header;
@@ -105,9 +152,12 @@ public partial class DockableTabModel : PopupManager
 	{
 	}
 
-	protected virtual ContextMenu GetContextMenu()
+	protected virtual void ReadLayoutData(PartialUpdate update)
 	{
-		return null;
+	}
+
+	protected virtual void RestoreLayoutData(PartialUpdate update)
+	{
 	}
 
 	#endregion

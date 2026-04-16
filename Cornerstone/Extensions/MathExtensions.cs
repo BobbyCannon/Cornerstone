@@ -1,4 +1,6 @@
-﻿namespace Cornerstone.Extensions;
+﻿using System;
+
+namespace Cornerstone.Extensions;
 
 public static class MathExtensions
 {

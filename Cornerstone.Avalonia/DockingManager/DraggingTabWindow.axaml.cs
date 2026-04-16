@@ -95,7 +95,7 @@ internal partial class DraggingTabWindow : CornerstoneWindow
 		_lastPointerEvent = null;
 
 		DragEnd?.Invoke(this, e);
-		SystemDecorations = SystemDecorations.Full;
+		WindowDecorations = WindowDecorations.Full;
 	}
 
 	public void OnDragging(PointerEventArgs e)
@@ -115,7 +115,7 @@ internal partial class DraggingTabWindow : CornerstoneWindow
 
 	public void OnDragStart(PointerEventArgs e)
 	{
-		SystemDecorations = SystemDecorations.None;
+		WindowDecorations = WindowDecorations.None;
 		_dragInfo = new(e.GetPosition(this));
 		_lastPointerEvent = e;
 	}
@@ -178,13 +178,13 @@ internal partial class DraggingTabWindow : CornerstoneWindow
 	{
 		base.OnPropertyChanged(change);
 
-		if ((change.Property != SystemDecorationsProperty)
+		if ((change.Property != WindowDecorationsProperty)
 			|| (_tabBackground == null))
 		{
 			return;
 		}
 
-		Background = SystemDecorations == SystemDecorations.None ? null : _tabBackground;
+		Background = WindowDecorations == WindowDecorations.None ? null : _tabBackground;
 	}
 
 	private void TabViewClosed(object sender, RoutedEventArgs e)

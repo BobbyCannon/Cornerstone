@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 
@@ -7,22 +8,17 @@ using Microsoft.CodeAnalysis;
 
 namespace Cornerstone.Generators.Models;
 
-public class SourceMethodInfo : SourceMemberInfo
+public class SourceMethodInfo : Reflection.SourceMethodInfo
 {
 	#region Properties
 
-	public Accessibility Accessibility { get; init; }
-	public string FullyQualifiedTypeName { get; init; }
-	public bool IsAbstract { get; init; }
-	public bool IsGenericMethod { get; init; }
-	public bool IsOverride { get; init; }
-	public bool IsPartial { get; init; }
-	public bool IsStatic { get; init; }
-	public bool IsVirtual { get; init; }
-	public SourceParameterInfo[] Parameters { get; init; }
-	public NullableAnnotation ReturnNullableAnnotation { get; init; }
-	public string ReturnType { get; init; }
-	public SourceTypeParameterInfo[] TypeParameters { get; init; }
+	public new Accessibility Accessibility { get; set; }
+	public new List<SourceAttributeInfo> Attributes { get; } = [];
+	public bool IsPartial { get; set; }
+	public new SourceParameterInfo[] Parameters { get; set; }
+	public NullableAnnotation ReturnNullableAnnotation { get; set; }
+	public new string ReturnType { get; set; }
+	public SourceTypeParameterInfo[] TypeParameters { get; set; }
 
 	#endregion
 

@@ -29,14 +29,14 @@ public interface ITrackPropertyChanges
 	/// Determines if the object has changes.
 	/// </summary>
 	/// <returns> True if the object has changes otherwise false. </returns>
-	public bool HasChanges();
+	public bool HasNotifiableChanges();
 
 	/// <summary>
 	/// Determines if the object has changes.
 	/// </summary>
 	/// <param name="settings"> An optional set of options. </param>
 	/// <returns> True if the object has changes otherwise false. </returns>
-	public bool HasChanges(IncludeExcludeSettings settings);
+	public bool HasNotifiableChanges(IncludeExcludeSettings settings);
 
 	/// <summary>
 	/// Reset the "has changes" state.

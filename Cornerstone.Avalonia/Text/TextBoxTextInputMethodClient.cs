@@ -12,8 +12,16 @@ internal class TextEditorTextInputMethodClient : TextInputMethodClient
 {
 	#region Fields
 
-	private TextEditor _parent;
-	private TextRenderer _presenter;
+	private TextEditor _editor;
+
+	#endregion
+
+	#region Constructors
+
+	public TextEditorTextInputMethodClient(TextEditor editor)
+	{
+		SetPresenter(editor);
+	}
 
 	#endregion
 
@@ -23,8 +31,8 @@ internal class TextEditorTextInputMethodClient : TextInputMethodClient
 
 	public override TextSelection Selection
 	{
-		get => new();
-		set { }
+		get => _editor.Renderer?.ViewModel.Caret.Selection;
+		set => _editor.Renderer?.ViewModel.Caret.Selection.Update(value);
 	}
 
 	public override bool SupportsPreedit => true;
@@ -33,7 +41,7 @@ internal class TextEditorTextInputMethodClient : TextInputMethodClient
 
 	public override string SurroundingText => string.Empty;
 
-	public override Visual TextViewVisual => _presenter!;
+	public override Visual TextViewVisual => _editor.Renderer;
 
 	#endregion
 
@@ -46,47 +54,6 @@ internal class TextEditorTextInputMethodClient : TextInputMethodClient
 
 	public override void SetPreeditText(string preeditText, int? cursorPos)
 	{
-		if ((_presenter == null) || (_parent == null))
-		{
-		}
-
-		//_presenter.SetCurrentValue(TextRenderer.PreeditTextProperty, preeditText);
-		//_presenter.SetCurrentValue(TextRenderer.PreeditTextCursorPositionProperty, cursorPos);
-	}
-
-	public void SetPresenter(TextRenderer presenter, TextEditor parent)
-	{
-		if (_parent != null)
-		{
-			_parent.PropertyChanged -= OnParentPropertyChanged;
-			_parent.Tapped -= OnParentTapped;
-		}
-
-		_parent = parent;
-
-		if (_parent != null)
-		{
-			_parent.PropertyChanged += OnParentPropertyChanged;
-			_parent.Tapped += OnParentTapped;
-		}
-
-		var oldPresenter = _presenter;
-
-		if (oldPresenter != null)
-		{
-			//oldPresenter.ClearValue(TextRenderer.PreeditTextProperty);
-			//oldPresenter.CaretBoundsChanged -= (s, e) => RaiseCursorRectangleChanged();
-		}
-
-		_presenter = presenter;
-
-		if (_presenter != null)
-		{
-			//_presenter.CaretBoundsChanged += (s, e) => RaiseCursorRectangleChanged();
-		}
-
-		RaiseTextViewVisualChanged();
-		RaiseCursorRectangleChanged();
 	}
 
 	private void OnParentPropertyChanged(object sender, AvaloniaPropertyChangedEventArgs e)
@@ -95,23 +62,31 @@ internal class TextEditorTextInputMethodClient : TextInputMethodClient
 		{
 			RaiseSurroundingTextChanged();
 		}
-
-		//if ((e.Property == TextEditor.SelectionStartProperty) || (e.Property == TextEditor.SelectionEndProperty))
-		//{
-		//	if (_isInChange)
-		//	{
-		//		_selectionChanged = true;
-		//	}
-		//	else
-		//	{
-		//		RaiseSelectionChanged();
-		//	}
-		//}
 	}
 
 	private void OnParentTapped(object sender, TappedEventArgs e)
 	{
 		RaiseInputPaneActivationRequested();
+	}
+
+	private void SetPresenter(TextEditor editor)
+	{
+		if (_editor != null)
+		{
+			_editor.PropertyChanged -= OnParentPropertyChanged;
+			_editor.Tapped -= OnParentTapped;
+		}
+
+		_editor = editor;
+
+		if (_editor != null)
+		{
+			_editor.PropertyChanged += OnParentPropertyChanged;
+			_editor.Tapped += OnParentTapped;
+		}
+
+		RaiseTextViewVisualChanged();
+		RaiseCursorRectangleChanged();
 	}
 
 	#endregion

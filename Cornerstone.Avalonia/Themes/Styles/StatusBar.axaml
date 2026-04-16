@@ -1,0 +1,168 @@
+<!-- ReSharper disable Xaml.MissingGridIndex -->
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<Style Selector="Border.StatusBar">
+		<Setter Property="Background" Value="{DynamicResource Background02}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+		<Setter Property="BorderThickness" Value="0,1,0,0" />
+		<Setter Property="Height" Value="28" />
+		<Style Selector="^ Path">
+			<Setter Property="Height" Value="14" />
+			<Setter Property="Width" Value="14" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+		<Style Selector="^ > Grid">
+			<Style Selector="^ > StackPanel">
+				<Setter Property="Orientation" Value="Horizontal" />
+			</Style>
+			<Style Selector="^ > WrapPanel">
+				<Setter Property="Orientation" Value="Horizontal" />
+			</Style>
+			<Style Selector="^ > StackPanel, ^ > WrapPanel">
+				<Setter Property="VerticalAlignment" Value="Center" />
+				<Setter Property="HorizontalAlignment" Value="Left" />
+			</Style>
+			<Style Selector="^ > StackPanel:nth-child(1), ^ > WrapPanel:nth-child(1)">
+				<Setter Property="Grid.Column" Value="0" />
+			</Style>
+			<Style Selector="^ > StackPanel:nth-child(2), ^ > WrapPanel:nth-child(2)">
+				<Setter Property="Grid.Column" Value="1" />
+				<Setter Property="HorizontalAlignment" Value="Center" />
+			</Style>
+			<Style Selector="^ > StackPanel:nth-child(3), ^ > WrapPanel:nth-child(3)">
+				<Setter Property="Grid.Column" Value="2" />
+				<Setter Property="HorizontalAlignment" Value="Right" />
+			</Style>
+		</Style>
+		<Style Selector="^ TextBlock.Label">
+			<Setter Property="Foreground" Value="{DynamicResource Foreground03}" />
+			<Setter Property="FontSize" Value="14" />
+			<Setter Property="Margin" Value="12,0,6,0" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+		<Style Selector="^ TextBlock.Value">
+			<Setter Property="FontSize" Value="14" />
+			<Setter Property="Margin" Value="0" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+		<Style Selector="^ SelectableTextBlock">
+			<Setter Property="FontSize" Value="14" />
+			<Setter Property="Margin" Value="0" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+		<Style Selector="^ Button">
+			<Setter Property="Height" Value="28" />
+			<Setter Property="MinHeight" Value="28" />
+			<Setter Property="Width" Value="28" />
+			<Setter Property="MinWidth" Value="28" />
+			<Style Selector="^.Icon Path">
+				<Setter Property="Height" Value="18" />
+				<Setter Property="Width" Value="18" />
+			</Style>
+			<Style Selector="^.Icon PathIcon">
+				<Setter Property="Height" Value="18" />
+				<Setter Property="Width" Value="18" />
+			</Style>
+		</Style>
+		<Style Selector="^ ToggleButton">
+			<Setter Property="Height" Value="28" />
+			<Setter Property="MinHeight" Value="28" />
+			<Setter Property="Width" Value="28" />
+			<Setter Property="MinWidth" Value="28" />
+			<Style Selector="^.Icon Path">
+				<Setter Property="Height" Value="18" />
+				<Setter Property="Width" Value="18" />
+			</Style>
+			<Style Selector="^.Icon PathIcon">
+				<Setter Property="Height" Value="18" />
+				<Setter Property="Width" Value="18" />
+			</Style>
+		</Style>
+		<Style Selector="^ ComboBox">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="BorderThickness" Value="0" />
+			<Setter Property="Height" Value="28" />
+			<Setter Property="MinWidth" Value="28" />
+			<Setter Property="Padding" Value="4,0,0,0" />
+		</Style>
+	</Style>
+
+	<Design.PreviewWith>
+		<StackPanel Width="620">
+			<Grid Height="120" />
+			<Border Classes="StatusBar"
+					DockPanel.Dock="Bottom">
+				<Grid ColumnDefinitions="*,*,*">
+					<StackPanel>
+						<Path Data="{StaticResource Icons.Asterisk}"
+								Margin="8,0,0,0" />
+						<PathIcon Data="{StaticResource Icons.Asterisk}"
+								Margin="8,0,0,0" />
+						<TextBlock Classes="Label" Text="Font" />
+						<TextBlock Classes="Value" Text="12" />
+					</StackPanel>
+					<StackPanel>
+						<Button Classes="Icon">
+							<Path Data="{StaticResource Icons.Bell}" />
+						</Button>
+						<ToggleButton Classes="Icon" IsChecked="True">
+							<Path Data="{StaticResource Icons.Bookmark}"
+									Margin="4,0,0,0" />
+						</ToggleButton>
+					</StackPanel>
+					<StackPanel>
+						<Button Classes="Icon">
+							<PathIcon Data="{StaticResource Icons.Bell}" />
+						</Button>
+						<ToggleButton Classes="Icon">
+							<PathIcon Data="{StaticResource Icons.Bookmark}"
+									Margin="4,0,0,0" />
+						</ToggleButton>
+						<ComboBox SelectedIndex="0"
+								ControlHelper.DisplayName="Option">
+							<ComboBoxItem>Test 1</ComboBoxItem>
+							<ComboBoxItem>Test 2</ComboBoxItem>
+						</ComboBox>
+					</StackPanel>
+				</Grid>
+			</Border>
+			<Border Classes="StatusBar"
+					DockPanel.Dock="Bottom">
+				<Grid ColumnDefinitions="*,*,*">
+					<WrapPanel>
+						<Path Data="{StaticResource Icons.Asterisk}"
+								Margin="8,0,0,0" />
+						<PathIcon Data="{StaticResource Icons.Asterisk}"
+								Margin="8,0,0,0" />
+						<TextBlock Classes="Label" Text="Font" />
+						<TextBlock Classes="Value" Text="12" />
+					</WrapPanel>
+					<WrapPanel>
+						<Button Classes="Icon">
+							<Path Data="{StaticResource Icons.Bell}" />
+						</Button>
+						<ToggleButton Classes="Icon" IsChecked="True">
+							<Path Data="{StaticResource Icons.Bookmark}"
+									Margin="4,0,0,0" />
+						</ToggleButton>
+					</WrapPanel>
+					<WrapPanel>
+						<Button Classes="Icon">
+							<PathIcon Data="{StaticResource Icons.Bell}" />
+						</Button>
+						<ToggleButton Classes="Icon">
+							<PathIcon Data="{StaticResource Icons.Bookmark}"
+									Margin="4,0,0,0" />
+						</ToggleButton>
+						<ComboBox SelectedIndex="0"
+								ControlHelper.DisplayName="Option">
+							<ComboBoxItem>Test 1</ComboBoxItem>
+							<ComboBoxItem>Test 2</ComboBoxItem>
+						</ComboBox>
+					</WrapPanel>
+				</Grid>
+			</Border>
+		</StackPanel>
+	</Design.PreviewWith>
+</Styles>

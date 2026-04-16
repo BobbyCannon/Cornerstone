@@ -1,0 +1,48 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="600"
+		x:Class="Cornerstone.Sample.Tabs.TabTreeDataGrid"
+		x:DataType="tabs:TabTreeDataGrid"
+		x:Name="This">
+	<!-- ReSharper disable Xaml.MissingGridIndex -->
+	<DockPanel>
+		<Grid DockPanel.Dock="Top" Margin="10">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="{x:Static tabs:TabTreeDataGrid.HeaderName}" />
+		</Grid>
+		<Grid ColumnDefinitions="*,*"
+				DockPanel.Dock="Top">
+			<WrapPanel Grid.Column="0"
+					ItemSpacing="10"
+					LineSpacing="10"
+					Margin="10">
+				<Button Theme.Color="None" Content="10k accounts" Command="{Binding Load}" CommandParameter="sample" />
+				<Button Theme.Color="None" Content="500k Accounts" Command="{Binding Load}" CommandParameter="large" />
+				<Button Theme.Color="None" Content="1m Accounts (Huge)" Command="{Binding Load}" CommandParameter="huge" />
+			</WrapPanel>
+			<WrapPanel Grid.Column="1"
+					ItemSpacing="10"
+					LineSpacing="10"
+					Margin="10"
+					HorizontalAlignment="Right">
+				<Button Theme.Color="None" Click="ExpandAllSamples">Expand All</Button>
+				<Button Theme.Color="None" Click="CollapseAllSample">Collapse All</Button>
+			</WrapPanel>
+		</Grid>
+		<TabControl>
+			<TabItem Header="Hierarchy List">
+				<TreeDataGrid x:Name="TreeDataGridHierarchy"
+						ItemsSource="{Binding TreeDataGridHierarchicalSource}" />
+			</TabItem>
+			<TabItem Header="Flat List">
+				<TreeDataGrid x:Name="TreeDataGridFlat"
+						ItemsSource="{Binding TreeDataGridFlatSource}" />
+			</TabItem>
+		</TabControl>
+	</DockPanel>
+</UserControl>

@@ -13,6 +13,8 @@ using Cornerstone.Reflection;
 [assembly: XmlnsDefinition("https://github.com/avaloniaui", "Cornerstone.Avalonia.Controls")]
 [assembly: XmlnsDefinition("https://github.com/avaloniaui", "Cornerstone.Avalonia.Converters")]
 [assembly: XmlnsDefinition("https://github.com/avaloniaui", "Cornerstone.Avalonia.DockingManager")]
+[assembly: XmlnsDefinition("https://github.com/avaloniaui", "Cornerstone.Avalonia.NumberBox")]
+[assembly: XmlnsDefinition("https://github.com/avaloniaui", "Cornerstone.Avalonia.ResponsiveGrid")]
 [assembly: XmlnsDefinition("https://github.com/avaloniaui", "Cornerstone.Avalonia.Text")]
 [assembly: XmlnsDefinition("https://github.com/avaloniaui", "Cornerstone.Avalonia.Themes")]
 [assembly: XmlnsDefinition("https://github.com/avaloniaui", "Cornerstone.Avalonia.TreeDataGrid")]

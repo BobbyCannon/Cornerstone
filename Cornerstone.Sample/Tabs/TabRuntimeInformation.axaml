@@ -29,11 +29,11 @@
 						Margin="0,0,0,20"
 						RowCount="22">
 					<TextBlock Classes="InputName" Text="Startup" />
-					<TextBlock Classes="InputValue" Text="{Binding RuntimeInformation.ApplicationStartup}" />
-					<!--<TextBlock Classes="InputName" Text="dotnet" />
+					<TextBlock Classes="InputValue" Text="{Binding RuntimeInformation.ApplicationStartup, Converter={x:Static Converters.Humanize}}" />
+					<TextBlock Classes="InputName" Text="dotnet" />
 					<TextBlock Classes="InputValue" Text="{Binding RuntimeInformation.DotNetRuntimeVersion}" />
 					<TextBlock Classes="InputName" Text="avalonia" />
-					<TextBlock Classes="InputValue" Text="{Binding RuntimeInformation.AvaloniaRuntimeVersion}" />-->
+					<TextBlock Classes="InputValue" Text="{Binding RuntimeInformation.AvaloniaRuntimeVersion}" />
 
 					<TextBlock Classes="SubHeader"
 							Grid.ColumnSpan="2"
@@ -41,8 +41,12 @@
 							HorizontalAlignment="Center"
 							Text="Application"
 							Margin="0,20,0,10" />
-					<TextBlock Classes="InputName" Text="Name" />
-					<TextBlock Classes="InputValue" Text="{Binding RuntimeInformation.ApplicationName}" />
+					<TextBlock Classes="InputValue"
+							Grid.ColumnSpan="2"
+							HorizontalAlignment="Center"
+							Text="{Binding RuntimeInformation.ApplicationName}" />
+					<TextBlock Classes="InputName" Text="Version" />
+					<TextBlock Classes="InputValue" Text="{Binding RuntimeInformation.ApplicationVersion}" />
 					<TextBlock Classes="InputName" Text="Development Build" />
 					<TextBlock Classes="InputValue" Text="{Binding RuntimeInformation.ApplicationIsDevelopmentBuild}" />
 					<TextBlock Classes="InputName" Text="Native Build" />

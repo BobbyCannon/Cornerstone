@@ -1,0 +1,367 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:controls="clr-namespace:Cornerstone.Avalonia.Controls">
+
+	<ControlTheme x:Key="{x:Type controls:ShortcutBox}"
+			TargetType="controls:ShortcutBox">
+		<Setter Property="Theme.Color" Value="Current" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="Background" Value="{DynamicResource Background04}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+		<Setter Property="BorderThickness" Value="{DynamicResource ControlBorderThickness}" />
+		<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+		<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+		<Setter Property="MinHeight" Value="32" />
+		<Setter Property="MinWidth" Value="32" />
+		<Setter Property="Padding" Value="8,0" />
+		<Setter Property="ClipToBounds" Value="False" />
+		<Setter Property="HorizontalAlignment" Value="Stretch" />
+		<Setter Property="HorizontalContentAlignment" Value="Center" />
+		<Setter Property="VerticalAlignment" Value="Top" />
+		<Setter Property="Template">
+			<ControlTemplate TargetType="ShortcutBox">
+				<Grid RowDefinitions="Auto,*">
+					<TextBlock x:Name="PART_Label"
+							Grid.Row="0"
+							HorizontalAlignment="Left"
+							Margin="0,0,0,4"
+							Text="{TemplateBinding Label}"
+							IsVisible="{TemplateBinding Label, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+					<Border x:Name="PART_Border"
+							Grid.Row="1"
+							Background="{TemplateBinding Background}"
+							BorderBrush="{TemplateBinding BorderBrush}"
+							BorderThickness="{TemplateBinding BorderThickness}"
+							CornerRadius="{TemplateBinding CornerRadius}"
+							IsHitTestVisible="True"
+							MinHeight="{TemplateBinding MinHeight}">
+						<Grid ColumnDefinitions="Auto,*,Auto">
+							<TextBlock x:Name="PART_Watermark"
+									Grid.Column="0"
+									Grid.Row="0"
+									Margin="8,0,0,0"
+									Text="{TemplateBinding Watermark}"
+									VerticalAlignment="Center">
+								<TextBlock.IsVisible>
+									<MultiBinding Converter="{x:Static BoolConverters.And}">
+										<Binding ElementName="PART_Display" Path="Text" Converter="{x:Static StringConverters.IsNullOrEmpty}" />
+										<TemplateBinding Property="Watermark" Converter="{x:Static StringConverters.IsNotNullOrEmpty}" />
+									</MultiBinding>
+								</TextBlock.IsVisible>
+							</TextBlock>
+							<Grid Grid.Column="1"
+									Margin="{TemplateBinding Padding}">
+								<TextBlock x:Name="PART_Display"
+										Grid.Column="0"
+										HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+										VerticalAlignment="Center" />
+							</Grid>
+							<ContentPresenter Grid.Column="2"
+									Content="{TemplateBinding InnerRightContent}"
+									IsVisible="{TemplateBinding InnerRightContent, Converter={x:Static ObjectConverters.IsNotNull}}" />
+						</Grid>
+					</Border>
+				</Grid>
+			</ControlTemplate>
+		</Setter>
+		
+		<Style Selector="^ /template/ TextBlock#PART_Label">
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+			<Setter Property="Opacity" Value="0.7" />
+		</Style>
+
+		<Style Selector="^[(Theme.Color)=None]">
+			<Style Selector="^ /template/ TextBlock#PART_Watermark">
+				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+			</Style>
+			<Style Selector="^:focus">
+				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrushFocused}" />
+			</Style>
+			<Style Selector="^[IsTriggered=True] /template/ Border#PART_Border">
+				<Setter Property="Background" Value="{DynamicResource Background05}" />
+			</Style>
+		</Style>
+
+		<!-- Code Template - Color -->
+		<Style Selector="^[(Theme.Color)=Current]">
+			<Style Selector="^ /template/ TextBlock#PART_Watermark">
+				<Setter Property="Foreground" Value="{DynamicResource ThemeColor05}" />
+			</Style>
+			<Style Selector="^:focus">
+				<Setter Property="BorderBrush" Value="{DynamicResource ThemeColor05}" />
+			</Style>
+			<Style Selector="^[IsTriggered=True]">
+				<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+				<Style Selector="^ /template/ Border#PART_Border">
+					<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
+				</Style>
+			</Style>
+		</Style>
+		<!-- Code Template - /Color -->
+
+		<!-- Generated Code - Colors -->
+		<Style Selector="^[(Theme.Color)=Amber]">
+			<Style Selector="^ /template/ TextBlock#PART_Watermark">
+				<Setter Property="Foreground" Value="{DynamicResource Amber05}" />
+			</Style>
+			<Style Selector="^:focus">
+				<Setter Property="BorderBrush" Value="{DynamicResource Amber05}" />
+			</Style>
+			<Style Selector="^[IsTriggered=True]">
+				<Setter Property="Foreground" Value="{DynamicResource AmberText05}" />
+				<Style Selector="^ /template/ Border#PART_Border">
+					<Setter Property="Background" Value="{DynamicResource Amber05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Blue]">
+			<Style Selector="^ /template/ TextBlock#PART_Watermark">
+				<Setter Property="Foreground" Value="{DynamicResource Blue05}" />
+			</Style>
+			<Style Selector="^:focus">
+				<Setter Property="BorderBrush" Value="{DynamicResource Blue05}" />
+			</Style>
+			<Style Selector="^[IsTriggered=True]">
+				<Setter Property="Foreground" Value="{DynamicResource BlueText05}" />
+				<Style Selector="^ /template/ Border#PART_Border">
+					<Setter Property="Background" Value="{DynamicResource Blue05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=BlueGray]">
+			<Style Selector="^ /template/ TextBlock#PART_Watermark">
+				<Setter Property="Foreground" Value="{DynamicResource BlueGray05}" />
+			</Style>
+			<Style Selector="^:focus">
+				<Setter Property="BorderBrush" Value="{DynamicResource BlueGray05}" />
+			</Style>
+			<Style Selector="^[IsTriggered=True]">
+				<Setter Property="Foreground" Value="{DynamicResource BlueGrayText05}" />
+				<Style Selector="^ /template/ Border#PART_Border">
+					<Setter Property="Background" Value="{DynamicResource BlueGray05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Brown]">
+			<Style Selector="^ /template/ TextBlock#PART_Watermark">
+				<Setter Property="Foreground" Value="{DynamicResource Brown05}" />
+			</Style>
+			<Style Selector="^:focus">
+				<Setter Property="BorderBrush" Value="{DynamicResource Brown05}" />
+			</Style>
+			<Style Selector="^[IsTriggered=True]">
+				<Setter Property="Foreground" Value="{DynamicResource BrownText05}" />
+				<Style Selector="^ /template/ Border#PART_Border">
+					<Setter Property="Background" Value="{DynamicResource Brown05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepOrange]">
+			<Style Selector="^ /template/ TextBlock#PART_Watermark">
+				<Setter Property="Foreground" Value="{DynamicResource DeepOrange05}" />
+			</Style>
+			<Style Selector="^:focus">
+				<Setter Property="BorderBrush" Value="{DynamicResource DeepOrange05}" />
+			</Style>
+			<Style Selector="^[IsTriggered=True]">
+				<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText05}" />
+				<Style Selector="^ /template/ Border#PART_Border">
+					<Setter Property="Background" Value="{DynamicResource DeepOrange05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=DeepPurple]">
+			<Style Selector="^ /template/ TextBlock#PART_Watermark">
+				<Setter Property="Foreground" Value="{DynamicResource DeepPurple05}" />
+			</Style>
+			<Style Selector="^:focus">
+				<Setter Property="BorderBrush" Value="{DynamicResource DeepPurple05}" />
+			</Style>
+			<Style Selector="^[IsTriggered=True]">
+				<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText05}" />
+				<Style Selector="^ /template/ Border#PART_Border">
+					<Setter Property="Background" Value="{DynamicResource DeepPurple05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Gray]">
+			<Style Selector="^ /template/ TextBlock#PART_Watermark">
+				<Setter Property="Foreground" Value="{DynamicResource Gray05}" />
+			</Style>
+			<Style Selector="^:focus">
+				<Setter Property="BorderBrush" Value="{DynamicResource Gray05}" />
+			</Style>
+			<Style Selector="^[IsTriggered=True]">
+				<Setter Property="Foreground" Value="{DynamicResource GrayText05}" />
+				<Style Selector="^ /template/ Border#PART_Border">
+					<Setter Property="Background" Value="{DynamicResource Gray05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Green]">
+			<Style Selector="^ /template/ TextBlock#PART_Watermark">
+				<Setter Property="Foreground" Value="{DynamicResource Green05}" />
+			</Style>
+			<Style Selector="^:focus">
+				<Setter Property="BorderBrush" Value="{DynamicResource Green05}" />
+			</Style>
+			<Style Selector="^[IsTriggered=True]">
+				<Setter Property="Foreground" Value="{DynamicResource GreenText05}" />
+				<Style Selector="^ /template/ Border#PART_Border">
+					<Setter Property="Background" Value="{DynamicResource Green05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Indigo]">
+			<Style Selector="^ /template/ TextBlock#PART_Watermark">
+				<Setter Property="Foreground" Value="{DynamicResource Indigo05}" />
+			</Style>
+			<Style Selector="^:focus">
+				<Setter Property="BorderBrush" Value="{DynamicResource Indigo05}" />
+			</Style>
+			<Style Selector="^[IsTriggered=True]">
+				<Setter Property="Foreground" Value="{DynamicResource IndigoText05}" />
+				<Style Selector="^ /template/ Border#PART_Border">
+					<Setter Property="Background" Value="{DynamicResource Indigo05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Orange]">
+			<Style Selector="^ /template/ TextBlock#PART_Watermark">
+				<Setter Property="Foreground" Value="{DynamicResource Orange05}" />
+			</Style>
+			<Style Selector="^:focus">
+				<Setter Property="BorderBrush" Value="{DynamicResource Orange05}" />
+			</Style>
+			<Style Selector="^[IsTriggered=True]">
+				<Setter Property="Foreground" Value="{DynamicResource OrangeText05}" />
+				<Style Selector="^ /template/ Border#PART_Border">
+					<Setter Property="Background" Value="{DynamicResource Orange05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Pink]">
+			<Style Selector="^ /template/ TextBlock#PART_Watermark">
+				<Setter Property="Foreground" Value="{DynamicResource Pink05}" />
+			</Style>
+			<Style Selector="^:focus">
+				<Setter Property="BorderBrush" Value="{DynamicResource Pink05}" />
+			</Style>
+			<Style Selector="^[IsTriggered=True]">
+				<Setter Property="Foreground" Value="{DynamicResource PinkText05}" />
+				<Style Selector="^ /template/ Border#PART_Border">
+					<Setter Property="Background" Value="{DynamicResource Pink05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Purple]">
+			<Style Selector="^ /template/ TextBlock#PART_Watermark">
+				<Setter Property="Foreground" Value="{DynamicResource Purple05}" />
+			</Style>
+			<Style Selector="^:focus">
+				<Setter Property="BorderBrush" Value="{DynamicResource Purple05}" />
+			</Style>
+			<Style Selector="^[IsTriggered=True]">
+				<Setter Property="Foreground" Value="{DynamicResource PurpleText05}" />
+				<Style Selector="^ /template/ Border#PART_Border">
+					<Setter Property="Background" Value="{DynamicResource Purple05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Red]">
+			<Style Selector="^ /template/ TextBlock#PART_Watermark">
+				<Setter Property="Foreground" Value="{DynamicResource Red05}" />
+			</Style>
+			<Style Selector="^:focus">
+				<Setter Property="BorderBrush" Value="{DynamicResource Red05}" />
+			</Style>
+			<Style Selector="^[IsTriggered=True]">
+				<Setter Property="Foreground" Value="{DynamicResource RedText05}" />
+				<Style Selector="^ /template/ Border#PART_Border">
+					<Setter Property="Background" Value="{DynamicResource Red05}" />
+				</Style>
+			</Style>
+		</Style>
+		<Style Selector="^[(Theme.Color)=Teal]">
+			<Style Selector="^ /template/ TextBlock#PART_Watermark">
+				<Setter Property="Foreground" Value="{DynamicResource Teal05}" />
+			</Style>
+			<Style Selector="^:focus">
+				<Setter Property="BorderBrush" Value="{DynamicResource Teal05}" />
+			</Style>
+			<Style Selector="^[IsTriggered=True]">
+				<Setter Property="Foreground" Value="{DynamicResource TealText05}" />
+				<Style Selector="^ /template/ Border#PART_Border">
+					<Setter Property="Background" Value="{DynamicResource Teal05}" />
+				</Style>
+			</Style>
+		</Style>
+		<!-- Generated Code - /Colors -->
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet Width="600">
+			<PreviewCodeSnippet.Styles>
+				<Style Selector="StackPanel">
+					<Setter Property="Orientation" Value="Horizontal" />
+					<Setter Property="Margin" Value="20,0,0,0" />
+					<Setter Property="Spacing" Value="4" />
+				</Style>
+				<Style Selector="TextBlock">
+					<Setter Property="VerticalAlignment" Value="Center" />
+				</Style>
+			</PreviewCodeSnippet.Styles>
+			<WrapPanel ItemSpacing="10"
+					LineSpacing="10">
+				<ShortcutBox x:Name="Input"
+						MinWidth="200"
+						Watermark="enter shortcut">
+					<ShortcutBox.Binding>
+						<ShortcutBinding Key="Left" KeyModifiers="Alt" />
+					</ShortcutBox.Binding>
+				</ShortcutBox>
+				<StackPanel>
+					<TextBlock Text="Button:" />
+					<TextBlock Text="{Binding ElementName=Input, Path=Binding.GamepadButton}" />
+				</StackPanel>
+				<StackPanel>
+					<TextBlock Text="Key" />
+					<TextBlock Text="{Binding ElementName=Input, Path=Binding.Key}" />
+				</StackPanel>
+				<StackPanel>
+					<TextBlock Text="Modifiers:" />
+					<TextBlock Text="{Binding ElementName=Input, Path=Binding.KeyModifiers}" />
+				</StackPanel>
+				<ShortcutBox IsTriggered="True"
+						Label="Key Binding"
+						Watermark="Is Triggered"
+						Width="200" />
+			</WrapPanel>
+			<PreviewCodeSnippet.ItemTemplate>
+				<DataTemplate DataType="ThemeColor">
+					<StackPanel Orientation="Vertical">
+						<ShortcutBox
+								Label="{Binding}"
+								Theme.Color="{Binding}"
+								MinWidth="120">
+							<ShortcutBox.Binding>
+								<ShortcutBinding Key="A" KeyModifiers="Alt"
+										SecondKey="B" SecondKeyModifiers="Control" />
+							</ShortcutBox.Binding>
+						</ShortcutBox>
+						<ShortcutBox
+								Label="Triggered"
+								Theme.Color="{Binding}"
+								IsTriggered="True"
+								MinWidth="160">
+							<ShortcutBox.Binding>
+								<ShortcutBinding Key="A" KeyModifiers="Alt" />
+							</ShortcutBox.Binding>
+						</ShortcutBox>
+					</StackPanel>
+				</DataTemplate>
+			</PreviewCodeSnippet.ItemTemplate>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

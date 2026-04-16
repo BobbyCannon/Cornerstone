@@ -9,6 +9,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using Cornerstone.Compare;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
@@ -16,6 +17,9 @@ using Cornerstone.Internal;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
 using Cornerstone.Text.CodeGenerators;
+#if WINDOWS
+using Cornerstone.Platforms.Windows;
+#endif
 
 #endregion
 
@@ -31,6 +35,8 @@ namespace Cornerstone.Testing;
 public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 {
 	#region Fields
+
+	private static Action<string> _clipboardProvider;
 
 	private DateTime? _currentDateTime;
 	private readonly IDateTimeProvider _defaultDateTimeProvider;
@@ -117,6 +123,39 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 	{
 		using var session = Compare(expected, actual, settings, configure);
 		session.Assert(CompareResult.NotEqual, message);
+	}
+
+	/// <summary>
+	/// Copy the string version of the value to the clipboard.
+	/// </summary>
+	/// <typeparam name="T"> The type of the value. </typeparam>
+	/// <param name="value"> The object to copy to the clipboard. Calls ToString on the value. </param>
+	/// <returns> The value input to allow for method chaining. </returns>
+	public static T CopyToClipboard<T>(T value)
+	{
+		#if WINDOWS
+		var thread = new Thread(() =>
+		{
+			try
+			{
+				_clipboardProvider?.Invoke(value?.ToString() ?? string.Empty);
+			}
+			catch
+			{
+				// Ignore the clipboard set issue...
+			}
+		});
+
+		if (OperatingSystem.IsWindows())
+		{
+			thread.SetApartmentState(ApartmentState.STA);
+		}
+
+		thread.Start();
+		thread.Join();
+		#endif
+
+		return value;
 	}
 
 	/// <summary>
@@ -319,6 +358,15 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 	}
 
 	/// <summary>
+	/// Sets the clipboard provider.
+	/// </summary>
+	/// <param name="provider"> The provider to be set. </param>
+	public static void SetClipboardProvider(Action<string> provider)
+	{
+		_clipboardProvider = provider;
+	}
+
+	/// <summary>
 	/// Set the CurrentTime value.
 	/// </summary>
 	/// <param name="provider"> The provider for time. </param>
@@ -360,6 +408,9 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 	/// </summary>
 	public virtual void TestInitialize()
 	{
+		#if (WINDOWS)
+		SetClipboardProvider(Clipboard.SetText);
+		#endif
 		ResetCurrentTime(StartDateTime);
 		Babel.Tower.Reset();
 	}

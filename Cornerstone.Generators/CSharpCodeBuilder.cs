@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -96,25 +97,45 @@ public class CSharpCodeBuilder
 
 	public static string GetConstantLiteral(object value)
 	{
-		if (value == null)
+		switch (value)
 		{
-			return "null";
-		}
-		if (value is bool b)
-		{
-			return b ? "true" : "false";
-		}
-		if (value is string s)
-		{
-			return @$"""{s}""";
-		}
-		if (value is float f)
-		{
-			return f.ToString("G9");
-		}
-		if (value is double d)
-		{
-			return d.ToString("G17");
+			case null:
+			{
+				return "null";
+			}
+			case bool b:
+			{
+				return b ? "true" : "false";
+			}
+			case string s:
+			{
+				return $"\"{s}\"";
+			}
+			case float f:
+			{
+				return f.ToString("G9");
+			}
+			case double d:
+			{
+				return d.ToString("G17");
+			}
+			case IEnumerable a:
+			{
+				var b = new StringBuilder();
+				var first = true;
+				b.Append("new [] {");
+				foreach (var item in a)
+				{
+					if (!first)
+					{
+						b.Append(',');
+					}
+					b.Append(GetConstantLiteral(item));
+					first = false;
+				}
+				b.Append('}');
+				return b.ToString();
+			}
 		}
 		return value.ToString();
 	}

@@ -4,7 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using Avalonia.Utilities;
+using Cornerstone.Extensions;
 
 #endregion
 
@@ -144,7 +144,7 @@ public class HierarchicalRows<TModel> : ReadOnlyListBase<HierarchicalRow<TModel>
 
 	public (int index, double y) GetRowAt(double y)
 	{
-		if (MathUtilities.IsZero(y))
+		if (DoubleExtensions.IsZero(y))
 		{
 			return (0, 0);
 		}

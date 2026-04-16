@@ -4,14 +4,13 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
-using Avalonia.VisualTree;
 using Cornerstone.Avalonia.Extensions;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
@@ -45,6 +44,10 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 		ApplicationArguments = new ApplicationArguments();
 		DependencyProvider = new DependencyProvider("Cornerstone");
 		RuntimeInformation = new();
+		RuntimeInformation.SetPlatformOverride(
+			nameof(IRuntimeInformation.AvaloniaRuntimeVersion),
+			typeof(AppBuilder).Assembly.GetName().Version
+		);
 	}
 
 	#endregion
@@ -55,7 +58,7 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 
 	public static DependencyProvider DependencyProvider { get; }
 
-	public static CornerstoneDispatcher Dispatcher => _dispatcher ??= new CornerstoneDispatcher();
+	public static CornerstoneDispatcher CornerstoneDispatcher => _dispatcher ??= new CornerstoneDispatcher();
 
 	public static RuntimeInformation RuntimeInformation { get; }
 
@@ -65,7 +68,7 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 
 	public IDispatcher GetDispatcher()
 	{
-		return Dispatcher;
+		return CornerstoneDispatcher;
 	}
 
 	public static T GetInstance<T>()
@@ -80,22 +83,8 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 
 	public static TopLevel GetTopLevel()
 	{
-		switch (Current?.ApplicationLifetime)
-		{
-			case IClassicDesktopStyleApplicationLifetime desktop:
-			{
-				return desktop.MainWindow!;
-			}
-			case ISingleViewApplicationLifetime viewApp:
-			{
-				var visualRoot = viewApp.MainView?.GetVisualRoot();
-				return (visualRoot as TopLevel)!;
-			}
-			default:
-			{
-				return null!;
-			}
-		}
+		var response = Current.GetTopLevel();
+		return response;
 	}
 
 	public static void LogException(Exception ex)
@@ -128,8 +117,9 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 	public override void RegisterServices()
 	{
 		DependencyProvider.AddSingleton(ApplicationArguments);
+		DependencyProvider.AddSingleton<ClipboardService>();
 		DependencyProvider.SetupCornerstoneDependencies(
-			dispatcher: Dispatcher,
+			dispatcher: CornerstoneDispatcher,
 			runtimeInformation: RuntimeInformation
 		);
 
@@ -165,6 +155,7 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 
 	public static async Task<string> TrySelectFileForSave(
 		string startingDirectory = null,
+		string defaultExtension = null,
 		params FilePickerFileType[] fileTypeChoices)
 	{
 		var topLevel = GetTopLevel();
@@ -179,7 +170,9 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 		var options = new FilePickerSaveOptions
 		{
 			SuggestedStartLocation = defaultDirectory,
-			FileTypeChoices = fileTypeChoices
+			SuggestedFileType = defaultExtension == null ? null : fileTypeChoices.FirstOrDefault(x => x.Patterns.Any(p => p.EndsWith($".{defaultExtension}"))),
+			FileTypeChoices = fileTypeChoices,
+			DefaultExtension = defaultExtension,
 		};
 
 		var selected = await topLevel.StorageProvider.SaveFilePickerAsync(options);
@@ -201,7 +194,7 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 		return response;
 	}
 
-	protected void OnPropertyChanged(string propertyName)
+	protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
 	{
 		_propertyChangedHandler ??= AvaloniaExtensions.GetPropertyChangedHandler(this);
 		_propertyChangedHandler?.Invoke(this, new PropertyChangedEventArgs(propertyName));

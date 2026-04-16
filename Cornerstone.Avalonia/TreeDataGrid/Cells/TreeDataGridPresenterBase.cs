@@ -12,6 +12,7 @@ using Avalonia.Layout;
 using Avalonia.LogicalTree;
 using Avalonia.Utilities;
 using Avalonia.VisualTree;
+using Cornerstone.Extensions;
 using CollectionExtensions = Cornerstone.Avalonia.TreeDataGrid.Models.CollectionExtensions;
 
 #endregion
@@ -467,13 +468,11 @@ public abstract class TreeDataGridPresenterBase<TItem> : Border
 		var newViewportStart = vertical ? Viewport.Top : Viewport.Left;
 		var newViewportEnd = vertical ? Viewport.Bottom : Viewport.Right;
 
-		#pragma warning disable CS0618 // Type or member is obsolete
-		if (!MathUtilities.AreClose(oldViewportStart, newViewportStart) ||
-			!MathUtilities.AreClose(oldViewportEnd, newViewportEnd))
+		if (!DoubleExtensions.AreClose(oldViewportStart, newViewportStart) ||
+			!DoubleExtensions.AreClose(oldViewportEnd, newViewportEnd))
 		{
 			InvalidateMeasure();
 		}
-		#pragma warning restore CS0618 // Type or member is obsolete
 	}
 
 	protected abstract void RealizeElement(Control element, TItem item, int index);

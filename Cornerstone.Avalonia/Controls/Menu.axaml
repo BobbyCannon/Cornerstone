@@ -76,15 +76,15 @@
 		<!-- Code Template - Color -->
 		<Style Selector="^[(Theme.Color)=Current]">
 			<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
-			<Setter Property="Foreground" Value="{DynamicResource ThemeForeground05}" />
+			<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
 
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground06}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeText06}" />
 			</Style>
 			<Style Selector="^:pressed">
 				<Setter Property="Background" Value="{DynamicResource ThemeColor04}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground04}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
 			</Style>
 			<Style Selector="^:disabled">
 				<Setter Property="Background" Value="{DynamicResource ThemeColor09}" />

@@ -15,6 +15,7 @@ public enum BabelKeys
 	ArgumentInvalid,
 	ArgumentIsNull,
 	ArgumentOutOfRange,
+	ArgumentTooSmall,
 	IndexOutOfRange,
 	IndexAndLengthOutOfRange,
 	LengthCannotBeNegative,
@@ -72,5 +73,6 @@ public enum BabelKeys
 	TestingShouldBeNull,
 	TestingShouldBeTrue,
 	TestingShouldBeFalse,
-	TestingShouldNotBeNull
+	TestingShouldNotBeNull,
+	TestingShouldHaveFailed
 }

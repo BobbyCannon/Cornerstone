@@ -45,7 +45,7 @@ public partial class TabDockingManager : CornerstoneUserControl
 
 	protected override void OnInitialized()
 	{
-		DockingManager.Initialize();
+		DockingManager.Initialize([]);
 		DockingManager.NewTabCommand = NewTabRequestedCommand;
 		base.OnInitialized();
 	}
@@ -85,7 +85,7 @@ public partial class TabDockingManager : CornerstoneUserControl
 }
 
 [SourceReflection]
-public partial class TextTabViewModel : DockableTabModel
+public partial class TextTabViewModel : DocumentTabModel
 {
 	#region Constructors
 

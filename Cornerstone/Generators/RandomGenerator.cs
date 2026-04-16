@@ -78,6 +78,27 @@ public static class RandomGenerator
 	#region Fields
 
 	/// <summary>
+	/// Common first names (mix of male and female).
+	/// </summary>
+	public static readonly string[] FirstNames =
+	[
+		"James", "John", "Robert", "Michael", "William", "David", "Richard", "Joseph", "Thomas", "Charles",
+		"Mary", "Patricia", "Jennifer", "Linda", "Elizabeth", "Barbara", "Susan", "Jessica", "Sarah", "Karen",
+		"Emma", "Olivia", "Ava", "Isabella", "Sophia", "Charlotte", "Mia", "Amelia", "Harper", "Evelyn",
+		"Liam", "Noah", "Oliver", "Elijah", "Mateo", "Lucas", "Benjamin", "Henry", "Alexander", "Jack"
+	];
+
+	/// <summary>
+	/// Common last names.
+	/// </summary>
+	public static readonly string[] LastNames =
+	[
+		"Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez",
+		"Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin",
+		"Lee", "Perez", "Thompson", "White", "Harris", "Sanchez", "Clark", "Ramirez", "Lewis", "Robinson"
+	];
+
+	/// <summary>
 	/// The full array of characters for <see cref="Alphabet" />
 	/// </summary>
 	public static readonly char[] AlphabetCharacters = Alphabet.ToArray();
@@ -166,6 +187,49 @@ public static class RandomGenerator
 	}
 
 	/// <summary>
+	/// Appends a random string of the requested length to the provider builder.
+	/// </summary>
+	/// <param name="builder"> The builder to append to. </param>
+	/// <param name="length"> The length of the string to create. </param>
+	/// <param name="allowedChars"> The allowed characters. Defaults to <see cref="AlphabetAndNumbers" />. </param>
+	/// <returns> </returns>
+	/// <exception cref="ArgumentOutOfRangeException"> </exception>
+	public static void AppendString(StringGapBuffer builder, int length, string allowedChars = AlphabetAndNumbers)
+	{
+		if (length <= 0)
+		{
+			throw new ArgumentOutOfRangeException(nameof(length), "Length must be greater than zero.");
+		}
+
+		if (string.IsNullOrEmpty(allowedChars))
+		{
+			throw new ArgumentOutOfRangeException(nameof(allowedChars), "You must provide some characters.");
+		}
+
+		var uppercaseCount = 0;
+
+		for (var i = 0; i < length; i++)
+		{
+			var c = allowedChars[NextInteger(0, allowedChars.Length - 1)];
+			if (char.IsUpper(c))
+			{
+				uppercaseCount++;
+
+				if (uppercaseCount >= 2)
+				{
+					continue;
+				}
+			}
+			else
+			{
+				uppercaseCount = 0;
+			}
+
+			builder.Add(c);
+		}
+	}
+
+	/// <summary>
 	/// Returns a byte array with random data values.
 	/// </summary>
 	/// <param name="numberOfBytes"> The number of bytes to generate. </param>
@@ -180,6 +244,26 @@ public static class RandomGenerator
 		}
 
 		return response;
+	}
+
+	/// <summary>
+	/// Returns a random first name.
+	/// </summary>
+	/// <returns> A randomly generated first name. </returns>
+	public static string GetFirstName()
+	{
+		return GetItem(FirstNames);
+	}
+
+	/// <summary>
+	/// Returns a random full name (First Last).
+	/// </summary>
+	/// <returns> A randomly generated full name. </returns>
+	public static string GetFullName()
+	{
+		var first = GetItem(FirstNames);
+		var last = GetItem(LastNames);
+		return $"{first} {last}";
 	}
 
 	/// <summary>
@@ -202,6 +286,15 @@ public static class RandomGenerator
 	public static T GetItem<T>(IList<T> items)
 	{
 		return items.Count <= 0 ? default : items[NextInteger(0, items.Count)];
+	}
+
+	/// <summary>
+	/// Returns a random last name.
+	/// </summary>
+	/// <returns> A randomly generated last name. </returns>
+	public static string GetLastName()
+	{
+		return GetItem(LastNames);
 	}
 
 	/// <summary>
@@ -249,6 +342,57 @@ public static class RandomGenerator
 	/// <returns> The generated lorem ipsum data. </returns>
 	public static void LoremIpsum(StringBuilder builder, int minWords = 1, int maxWords = 25, int minSentences = 1, int maxSentences = 10, int numParagraphs = 1, string prefix = "", string suffix = "\r\n")
 	{
+		LoremIpsum(x => builder.Append(x), minWords, maxWords, minSentences, maxSentences, numParagraphs, prefix, suffix);
+	}
+
+	/// <summary>
+	/// Create a random string containing the "lorem ipsum" words. This is very useful during testing.
+	/// </summary>
+	/// <param name="buffer"> The builder to append to. </param>
+	/// <param name="minWords"> The minimumInclusive number of words per sentence. </param>
+	/// <param name="maxWords"> The maximumExclusive number of words per sentence. </param>
+	/// <param name="minSentences"> The minimumInclusive number of sentences per paragraph. </param>
+	/// <param name="maxSentences"> The maximumExclusive number of sentences per paragraph. </param>
+	/// <param name="numParagraphs"> The number of paragraphs to generate. </param>
+	/// <param name="prefix"> An optional paragraph prefix. </param>
+	/// <param name="suffix"> An optional paragraph suffix. </param>
+	/// <returns> The generated lorem ipsum data. </returns>
+	public static void LoremIpsum(IStringBuffer buffer, int minWords = 1, int maxWords = 25, int minSentences = 1, int maxSentences = 10, int numParagraphs = 1, string prefix = "", string suffix = "\r\n")
+	{
+		LoremIpsum(buffer.Append, minWords, maxWords, minSentences, maxSentences, numParagraphs, prefix, suffix);
+	}
+
+	/// <summary>
+	/// Create a random string containing the "lorem ipsum" words. This is very useful during testing.
+	/// </summary>
+	/// <param name="builder"> The builder to append to. </param>
+	/// <param name="minWords"> The minimumInclusive number of words per sentence. </param>
+	/// <param name="maxWords"> The maximumExclusive number of words per sentence. </param>
+	/// <param name="minSentences"> The minimumInclusive number of sentences per paragraph. </param>
+	/// <param name="maxSentences"> The maximumExclusive number of sentences per paragraph. </param>
+	/// <param name="numParagraphs"> The number of paragraphs to generate. </param>
+	/// <param name="prefix"> An optional paragraph prefix. </param>
+	/// <param name="suffix"> An optional paragraph suffix. </param>
+	/// <returns> The generated lorem ipsum data. </returns>
+	public static void LoremIpsum(StringGapBuffer builder, int minWords = 1, int maxWords = 25, int minSentences = 1, int maxSentences = 10, int numParagraphs = 1, string prefix = "", string suffix = "\r\n")
+	{
+		LoremIpsum(builder.Append, minWords, maxWords, minSentences, maxSentences, numParagraphs, prefix, suffix);
+	}
+
+	/// <summary>
+	/// Create a random string containing the "lorem ipsum" words. This is very useful during testing.
+	/// </summary>
+	/// <param name="append"> The action to use for appending. </param>
+	/// <param name="minWords"> The minimumInclusive number of words per sentence. </param>
+	/// <param name="maxWords"> The maximumExclusive number of words per sentence. </param>
+	/// <param name="minSentences"> The minimumInclusive number of sentences per paragraph. </param>
+	/// <param name="maxSentences"> The maximumExclusive number of sentences per paragraph. </param>
+	/// <param name="numParagraphs"> The number of paragraphs to generate. </param>
+	/// <param name="prefix"> An optional paragraph prefix. </param>
+	/// <param name="suffix"> An optional paragraph suffix. </param>
+	/// <returns> The generated lorem ipsum data. </returns>
+	public static void LoremIpsum(Action<string> append, int minWords = 1, int maxWords = 25, int minSentences = 1, int maxSentences = 10, int numParagraphs = 1, string prefix = "", string suffix = "\r\n")
+	{
 		// todo: add argument validation;
 
 		var numSentences = NextInteger(minSentences, maxSentences);
@@ -257,7 +401,7 @@ public static class RandomGenerator
 		{
 			if (prefix.Length > 0)
 			{
-				builder.Append(prefix);
+				append(prefix);
 			}
 
 			var numWords = NextInteger(minWords, maxWords);
@@ -268,24 +412,19 @@ public static class RandomGenerator
 				{
 					if (w > 0)
 					{
-						builder.Append(" ");
+						append(" ");
 					}
 
-					builder.Append(LoremIpsumWords[NextInteger(0, LoremIpsumWords.Length - 1)]);
+					append(LoremIpsumWords[NextInteger(0, LoremIpsumWords.Length - 1)]);
 				}
 
-				builder.Append(". ");
+				append(". ");
 			}
 
 			if (suffix.Length > 0)
 			{
-				builder.Append(suffix);
+				append(suffix);
 			}
-		}
-
-		if (suffix.Length > 0)
-		{
-			builder.Remove(builder.Length - suffix.Length - 1, suffix.Length + 1);
 		}
 	}
 
@@ -445,13 +584,26 @@ public static class RandomGenerator
 	/// <summary>
 	/// Returns a random integer that is within a specified range.
 	/// </summary>
+	/// <param name="maximumExclusive"> The exclusive upper bound of the random number returned. </param>
+	/// <returns>
+	/// A 32-bit signed integer greater than or equal to minimumInclusive and less than maximumExclusive; that is, the range
+	/// of return values includes minimumInclusive but not maximumExclusive. If minimumInclusive equals maximumExclusive, minimumInclusive is returned.
+	/// </returns>
+	public static int NextInteger(int maximumExclusive = int.MaxValue)
+	{
+		return NextInteger(0, maximumExclusive);
+	}
+
+	/// <summary>
+	/// Returns a random integer that is within a specified range.
+	/// </summary>
 	/// <param name="minimumInclusive"> The inclusive lower bound of the random number returned. </param>
 	/// <param name="maximumExclusive"> The exclusive upper bound of the random number returned. </param>
 	/// <returns>
 	/// A 32-bit signed integer greater than or equal to minimumInclusive and less than maximumExclusive; that is, the range
 	/// of return values includes minimumInclusive but not maximumExclusive. If minimumInclusive equals maximumExclusive, minimumInclusive is returned.
 	/// </returns>
-	public static int NextInteger(int minimumInclusive = int.MinValue, int maximumExclusive = int.MaxValue)
+	public static int NextInteger(int minimumInclusive, int maximumExclusive)
 	{
 		if (maximumExclusive <= minimumInclusive)
 		{
@@ -648,6 +800,18 @@ public static class RandomGenerator
 	public static ushort NextUnsignedShort()
 	{
 		return (ushort) NextInteger(ushort.MinValue, ushort.MaxValue);
+	}
+
+	/// <summary>
+	/// Populate an array of byte.
+	/// </summary>
+	/// <param name="data"> The array to populate. </param>
+	public static void Populate(ref byte[] data)
+	{
+		for (var i = 0; i < data.Length; i++)
+		{
+			data[i] = NextByte();
+		}
 	}
 
 	/// <summary>

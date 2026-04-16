@@ -4,17 +4,18 @@ using System;
 using Cornerstone.Data.Times;
 using Cornerstone.Testing;
 using Cornerstone.Text;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.UnitTests.Text;
 
+[TestClass]
 public class StringFormatterTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	[Test]
+	[TestMethod]
 	public void GetUnitName()
 	{
 		var scenarios = new (TimeUnit Unit, double Value, WordFormat Format, string Expected)[]
@@ -60,13 +61,13 @@ public class StringFormatterTests : CornerstoneUnitTest
 		}
 	}
 
-	[Test]
+	[TestMethod]
 	public void HumanizeForTimeSpan()
 	{
 		var scenarios = new (TimeSpan Value, IHumanizeSettings Settings, string Expected)[]
 		{
-			(TimeSpan.Zero, null, ""),
-			(new TimeSpan(0, 0, 0), null, ""),
+			(TimeSpan.Zero, null, "0"),
+			(new TimeSpan(0, 0, 0), null, "0"),
 			(TimeSpan.FromTicks(1), null, "100 ns"),
 			(new TimeSpan(0, 0, 0, 0, 0, 1), null, "1 µs"),
 			(new TimeSpan(0, 0, 0, 0, 1), null, "1 ms"),
@@ -100,11 +101,12 @@ public class StringFormatterTests : CornerstoneUnitTest
 
 		foreach (var scenario in scenarios)
 		{
+			scenario.Value.ToString().Dump();
 			AreEqual(scenario.Expected, scenario.Value.Humanize(scenario.Settings));
 		}
 	}
 
-	[Test]
+	[TestMethod]
 	public void HumanizeForTimeSpanUnusualSettings()
 	{
 		var scenarios = new (TimeSpan Value, IHumanizeSettings Settings, string Expected)[]
@@ -118,7 +120,7 @@ public class StringFormatterTests : CornerstoneUnitTest
 		}
 	}
 
-	[Test]
+	[TestMethod]
 	public void MaxUnit()
 	{
 		var scenarios = new (TimeSpan Value, TimeUnit? MinAllowed, TimeUnit Expected)[]
@@ -151,7 +153,7 @@ public class StringFormatterTests : CornerstoneUnitTest
 		}
 	}
 
-	[Test]
+	[TestMethod]
 	public void MinUnit()
 	{
 		var scenarios = new (TimeSpan Value, TimeUnit Expected)[]
@@ -179,7 +181,7 @@ public class StringFormatterTests : CornerstoneUnitTest
 		}
 	}
 
-	[Test]
+	[TestMethod]
 	public void MinUnitWithMinAllowed()
 	{
 		var scenarios = new (TimeSpan Value, TimeUnit MinAllowed, TimeUnit Expected)[]

@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Data.Converters;
 using Avalonia.Media;
 using Cornerstone.Avalonia.Themes;
 using Path = Avalonia.Controls.Shapes.Path;
@@ -15,6 +16,12 @@ namespace Cornerstone.Avalonia.Resources;
 
 public static class ResourceService
 {
+	#region Fields
+
+	public static readonly FuncValueConverter<string, Path> IconAsPath = new(x => TryGetSvgPath(x, out var path) ? path : null);
+
+	#endregion
+
 	#region Constructors
 
 	static ResourceService()
@@ -127,7 +134,12 @@ public static class ResourceService
 		var resource = Application.Current?.FindResource(key);
 		if ((resource == AvaloniaProperty.UnsetValue) && Debugger.IsAttached)
 		{
-			Debugger.Break();
+			#if DEBUG
+			if (Debugger.IsAttached)
+			{
+				Debugger.Break();
+			}
+			#endif
 		}
 
 		return resource is T response ? response : default;
@@ -197,6 +209,12 @@ public static class ResourceService
 
 	public static bool TryGet<T>(string key, out T value, T defaultValue = default!, StyledElement control = null)
 	{
+		if (key == null)
+		{
+			value = defaultValue;
+			return false;
+		}
+
 		var theme = control?.ActualThemeVariant
 			?? Application.Current?.ActualThemeVariant;
 
@@ -216,6 +234,32 @@ public static class ResourceService
 
 		value = defaultValue;
 		return false;
+	}
+
+	public static bool TryGetSvg(string key, out StreamGeometry geometry)
+	{
+		if (key == null)
+		{
+			geometry = null;
+			return false;
+		}
+
+		geometry = Application.Current?.FindResource(key) as StreamGeometry;
+		return geometry != null;
+	}
+
+	public static bool TryGetSvgPath(string key, out Path path)
+	{
+		path = TryGetSvg(key, out var data)
+			? path = new Path
+			{
+				Width = 12,
+				Height = 12,
+				Stretch = Stretch.Uniform,
+				Data = data
+			}
+			: null;
+		return path != null;
 	}
 
 	private static IEnumerable<IBrush> GetColorsAsBrush(string color)

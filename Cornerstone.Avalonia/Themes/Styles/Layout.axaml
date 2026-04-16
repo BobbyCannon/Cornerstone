@@ -17,7 +17,7 @@
 			<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
 			<Setter Property="FontSize" Value="14" />
 			<Setter Property="HorizontalAlignment" Value="Right" />
-			<Setter Property="Margin" Value="0,6,0,0" />
+			<Setter Property="Margin" Value="0,7,0,0" />
 			<Setter Property="VerticalAlignment" Value="Top" />
 		</Style>
 
@@ -26,7 +26,7 @@
 			<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
 			<Setter Property="FontSize" Value="14" />
 			<Setter Property="HorizontalAlignment" Value="Left" />
-			<Setter Property="Margin" Value="0,6,0,0" />
+			<Setter Property="Margin" Value="0,7,0,0" />
 			<Setter Property="VerticalAlignment" Value="Top" />
 			<Setter Property="TextWrapping" Value="Wrap" />
 		</Style>
@@ -35,7 +35,7 @@
 			<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
 			<Setter Property="FontSize" Value="14" />
 			<Setter Property="HorizontalAlignment" Value="Left" />
-			<Setter Property="Margin" Value="0,6,0,0" />
+			<Setter Property="Margin" Value="0,7,0,0" />
 			<Setter Property="VerticalAlignment" Value="Top" />
 			<Setter Property="TextWrapping" Value="Wrap" />
 		</Style>
@@ -47,6 +47,12 @@
 			<Setter Property="VerticalAlignment" Value="Center" />
 		</Style>
 		<Style Selector="^ ComboBox.InputValue">
+			<Setter Property="HorizontalAlignment" Value="Stretch" />
+			<Setter Property="Margin" Value="0" />
+			<Setter Property="MinHeight" Value="32" />
+			<Setter Property="VerticalAlignment" Value="Top" />
+		</Style>
+		<Style Selector="^ ShortcutBox.InputValue">
 			<Setter Property="HorizontalAlignment" Value="Stretch" />
 			<Setter Property="Margin" Value="0" />
 			<Setter Property="MinHeight" Value="32" />
@@ -92,6 +98,23 @@
 		</Style>
 	</Style>
 
+	<Style Selector="UniformGrid.Input">
+		<Setter Property="ColumnSpacing" Value="10" />
+		<Setter Property="RowSpacing" Value="10" />
+
+		<Style Selector="^ TextBlock.InputName">
+			<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+			<Setter Property="FontSize" Value="14" />
+			<Setter Property="HorizontalAlignment" Value="Right" />
+			<Setter Property="Margin" Value="0,7,0,0" />
+			<Setter Property="VerticalAlignment" Value="Top" />
+		</Style>
+
+		<Style Selector="^ ShortcutBox.InputValue">
+
+		</Style>
+	</Style>
+
 	<Design.PreviewWith>
 		<PreviewCodeSnippet Width="480">
 			<StackPanel HorizontalAlignment="Stretch"
@@ -107,7 +130,7 @@
 				</HeaderedContentControl>
 				<HeaderedContentControl Header="AutoGrid">
 					<AutoGrid Classes="Input"
-							ColumnDefinitions="Auto,*"
+							ColumnDefinitions="140,*"
 							RowCount="7">
 						<TextBlock Classes="InputName"
 								Text="TextBlock" />
@@ -118,9 +141,11 @@
 						<SelectableTextBlock Classes="InputValue"
 								Text="2165465-546541321654-65465413213-455465416-54616465464-546546546" />
 
-						<TextBlock Classes="InputName"
-								Text="TextBox" />
+						<TextBlock Classes="InputName" Text="TextBox" />
 						<TextBox Classes="InputValue" />
+
+						<TextBlock Classes="InputName" Text="Shortcut Input" />
+						<ShortcutBox Classes="InputValue" />
 
 						<TextBlock Classes="InputName"
 								Text="StackPanel" />
@@ -162,6 +187,16 @@
 								Text="StackPanel" />
 						<CheckBox Classes="InputValue" Content="Value 1" />
 					</AutoGrid>
+				</HeaderedContentControl>
+				<HeaderedContentControl Header="UniformGrid">
+					<UniformGrid Classes="Input" Columns="4">
+						<TextBlock Classes="InputName" Text="Open File" />
+						<ShortcutBox Classes="InputValue" />
+						<TextBlock Classes="InputName" Text="Save File" />
+						<ShortcutBox Classes="InputValue" />
+						<TextBlock Classes="InputName" Text="Exit App" />
+						<ShortcutBox Classes="InputValue" />
+					</UniformGrid>
 				</HeaderedContentControl>
 			</StackPanel>
 		</PreviewCodeSnippet>

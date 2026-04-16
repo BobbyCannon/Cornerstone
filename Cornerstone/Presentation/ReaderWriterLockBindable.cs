@@ -1,5 +1,6 @@
 ﻿#region References
 
+using Cornerstone.Reflection;
 using Cornerstone.Threading;
 
 #endregion
@@ -9,6 +10,7 @@ namespace Cornerstone.Presentation;
 /// <summary>
 /// Represents a bindable that is also lockable (thread-safe).
 /// </summary>
+[SourceReflection]
 public class ReaderWriterLockBindable : Bindable, IReaderWriterLock
 {
 	#region Fields

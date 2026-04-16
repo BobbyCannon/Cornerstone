@@ -176,6 +176,7 @@ public class Babel
 		AddOrUpdate("English", BabelKeys.ArgumentInvalid, "The argument is invalid.");
 		AddOrUpdate("English", BabelKeys.ArgumentIsNull, "The argument is null but is required.");
 		AddOrUpdate("English", BabelKeys.ArgumentOutOfRange, "The argument is out of range.");
+		AddOrUpdate("English", BabelKeys.ArgumentTooSmall, "The argument is not large enough.");
 		AddOrUpdate("English", BabelKeys.IndexOutOfRange, "The index is out of range.");
 		AddOrUpdate("English", BabelKeys.IndexAndLengthOutOfRange, "The index + length is out of range.");
 		AddOrUpdate("English", BabelKeys.LengthCannotBeNegative, "Length cannot be negative.");
@@ -233,6 +234,7 @@ public class Babel
 		AddOrUpdate("English", BabelKeys.TestingShouldNotBeNull, "The condition was incorrectly null and should have been not null.");
 		AddOrUpdate("English", BabelKeys.TestingShouldBeFalse, "The condition was incorrectly true and should have been false.");
 		AddOrUpdate("English", BabelKeys.TestingShouldBeTrue, "The condition was incorrectly false and should have been true.");
+		AddOrUpdate("English", BabelKeys.TestingShouldHaveFailed, "The condition did not fail as expected.");
 	}
 
 	public static void ThrowIndexOrLengthOutOfRange(int index, int length)

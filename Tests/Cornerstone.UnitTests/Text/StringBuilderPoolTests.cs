@@ -2,17 +2,18 @@
 
 using System.Text;
 using Cornerstone.Text;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.UnitTests.Text;
 
+[TestClass]
 public class StringBuilderPoolTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	[Test]
+	[TestMethod]
 	public void Rent()
 	{
 		StringBuilderPool.Reset();
@@ -32,7 +33,7 @@ public class StringBuilderPoolTests : CornerstoneUnitTest
 		}
 	}
 
-	[Test]
+	[TestMethod]
 	public void RentShouldResetCapacity()
 	{
 		StringBuilder builder;
@@ -46,7 +47,7 @@ public class StringBuilderPoolTests : CornerstoneUnitTest
 		AreEqual(StringBuilderPool.DefaultCapacity, builder.Capacity);
 	}
 
-	[Test]
+	[TestMethod]
 	public void Return()
 	{
 		StringBuilderPool.Return(null);

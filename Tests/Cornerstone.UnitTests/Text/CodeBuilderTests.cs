@@ -6,17 +6,18 @@ using Cornerstone.Collections;
 using Cornerstone.Reflection;
 using Cornerstone.Sample.Models;
 using Cornerstone.Text.CodeGenerators;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.UnitTests.Text;
 
+[TestClass]
 public class CodeBuilderTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	[Test]
+	[TestMethod]
 	public void AccessibilityToString()
 	{
 		AreEqual("", CodeBuilder.AccessibilityToString(SourceAccessibility.None));
@@ -28,12 +29,13 @@ public class CodeBuilderTests : CornerstoneUnitTest
 		AreEqual("protected internal", CodeBuilder.AccessibilityToString(SourceAccessibility.ProtectedOrInternal));
 	}
 
-	[Test]
+	[TestMethod]
 	[SuppressMessage("ReSharper", "ConvertNullableToShortForm")]
 	public void GetCodeTypeName()
 	{
 		var scenarios = new (Type Type, string Expected)[]
 		{
+			(typeof(PresentationList<int>), "PresentationList<int>"),
 			(typeof(SpeedyList<int>), "SpeedyList<int>"),
 			(typeof(Nullable<int>), "int?")
 		};
@@ -45,7 +47,7 @@ public class CodeBuilderTests : CornerstoneUnitTest
 		}
 	}
 
-	[Test]
+	[TestMethod]
 	public void TryAppendLiteral()
 	{
 		var items = new object[]
@@ -82,7 +84,7 @@ public class CodeBuilderTests : CornerstoneUnitTest
 		IsFalse(builder.TryAppendLiteral(new Exception()));
 	}
 
-	[Test]
+	[TestMethod]
 	public void TryDetectIndent()
 	{
 		var scenarios = new (string Content, char IndentChar, uint IndentLength, uint Indent)[]
@@ -105,7 +107,7 @@ public class CodeBuilderTests : CornerstoneUnitTest
 		}
 	}
 
-	[Test]
+	[TestMethod]
 	public void WriteObjectDeclarationForType()
 	{
 		var builder = new CodeBuilder
@@ -119,8 +121,17 @@ public class CodeBuilderTests : CornerstoneUnitTest
 				"""
 				public class Account
 				{
-					public DateTime? Birthday { get; set; }
+					public DateTime CreatedOn { get; set; }
+					public string EmailAddress { get; set; }
+					public bool IsDeleted { get; set; }
+					public DateTime LastLoginDate { get; set; }
+					public DateTime ModifiedOn { get; set; }
 					public string Name { get; set; }
+					public string Picture { get; set; }
+					public string Roles { get; set; }
+					public AccountStatus Status { get; set; }
+					public Guid SyncId { get; set; }
+					public string TimeZoneId { get; set; }
 				}
 				"""
 			)
@@ -134,7 +145,7 @@ public class CodeBuilderTests : CornerstoneUnitTest
 		}
 	}
 
-	[Test]
+	[TestMethod]
 	public void WriteObjectInstanceForPrimitiveTypes()
 	{
 		var builder = new CodeBuilder
@@ -161,26 +172,36 @@ public class CodeBuilderTests : CornerstoneUnitTest
 		}
 	}
 
-	[Test]
+	[TestMethod]
 	public void WriteObjectInstanceForType()
 	{
 		var builder = new CodeBuilder
 		{
-			Settings = { DesiredOutput = CodeBuilderOutput.Instance }
+			Settings = { DesiredOutput = CodeBuilderOutput.Instance, IgnoreDefaults = false }
 		};
 		var scenarios = new (object Value, string Expected)[]
 		{
 			(
-				new Account
+				new AccountEntity
 				{
-					Name = "John",
-					Birthday = new DateTime(2000, 02, 04)
+					EmailAddress = "john@domain.com",
+					Name = "John"
 				},
 				"""
-				new Account
+				new AccountEntity
 				{
-					Birthday = new DateTime(2000, 2, 4),
-					Name = "John"
+					CreatedOn = DateTime.MinValue,
+					EmailAddress = "john@domain.com",
+					Id = 0,
+					IsDeleted = false,
+					LastLoginDate = DateTime.MinValue,
+					ModifiedOn = DateTime.MinValue,
+					Name = "John",
+					Picture = null,
+					Roles = null,
+					Status = AccountStatus.Unknown,
+					SyncId = Guid.Empty,
+					TimeZoneId = null
 				}
 				"""
 			)
@@ -194,10 +215,10 @@ public class CodeBuilderTests : CornerstoneUnitTest
 		}
 	}
 
-	[Test]
+	[TestMethod]
 	public void WriteObjectInstanceWithFunc()
 	{
-		var builder = new CodeBuilder { Settings = { DesiredOutput = CodeBuilderOutput.Instance } };
+		var builder = new CodeBuilder { Settings = { DesiredOutput = CodeBuilderOutput.Instance, IgnoreDefaults = false } };
 		var scenarios = new (FuncTest Value, string Expected)[]
 		{
 			(
@@ -230,8 +251,17 @@ public class CodeBuilderTests : CornerstoneUnitTest
 					[
 						new Account
 						{
-							Birthday = null,
-							Name = "John"
+							CreatedOn = DateTime.MinValue,
+							EmailAddress = null,
+							IsDeleted = false,
+							LastLoginDate = DateTime.MinValue,
+							ModifiedOn = DateTime.MinValue,
+							Name = "John",
+							Picture = null,
+							Roles = null,
+							Status = AccountStatus.Unknown,
+							SyncId = Guid.Empty,
+							TimeZoneId = null
 						}
 					]
 				}

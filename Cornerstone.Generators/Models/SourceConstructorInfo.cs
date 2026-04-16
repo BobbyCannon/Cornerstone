@@ -1,20 +1,20 @@
 ﻿#region References
 
+using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 
 #endregion
 
 namespace Cornerstone.Generators.Models;
 
-public class SourceConstructorInfo : SourceMemberInfo
+public class SourceConstructorInfo : Reflection.SourceConstructorInfo
 {
-	#region Fields
+	#region Properties
 
-	public Accessibility Accessibility;
-	public INamedTypeSymbol ContainingType;
-	public bool IsDependencyConstructor;
-	public bool IsStatic;
-	public SourceParameterInfo[] Parameters;
+	public new Accessibility Accessibility { get; set; }
+	public new List<SourceAttributeInfo> Attributes { get; } = [];
+	public INamedTypeSymbol ContainingType { get; set; }
+	public new SourceParameterInfo[] Parameters { get; set; }
 
 	#endregion
 }

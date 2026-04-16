@@ -1,0 +1,209 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		mc:Ignorable="d" d:DesignHeight="500" d:DesignWidth="800"
+		x:Class="Cornerstone.Sample.Tabs.TabButton"
+		x:Name="This">
+	<UserControl.Resources>
+		<MenuFlyout x:Key="SharedMenuFlyout"
+				Placement="BottomEdgeAlignedLeft">
+			<MenuItem Header="Item 1">
+				<MenuItem Header="Subitem 1" />
+				<MenuItem Header="Subitem 2" />
+				<MenuItem Header="Subitem 3" />
+			</MenuItem>
+			<MenuItem Header="Item 2" InputGesture="Ctrl+A" />
+			<MenuItem Header="Item 3" />
+		</MenuFlyout>
+	</UserControl.Resources>
+	<UserControl.Styles>
+		<Style Selector="Button,ToggleButton,DropDownButton,Label,SplitButton,ToggleSplitButton">
+			<Setter Property="Width" Value="160" />
+		</Style>
+		<Style Selector="ToggleButton.ToggleText">
+			<Setter Property="Content" Value="Indeterminate" />
+		</Style>
+		<Style Selector="ToggleButton.ToggleText[IsChecked=True]">
+			<Setter Property="Content" Value="Checked" />
+		</Style>
+		<Style Selector="ToggleButton.ToggleText[IsChecked=False]">
+			<Setter Property="Content" Value="Unchecked" />
+		</Style>
+		<Style Selector="ToggleSplitButton.ToggleText[IsChecked=True]">
+			<Setter Property="Content" Value="Checked" />
+		</Style>
+		<Style Selector="ToggleSplitButton.ToggleText[IsChecked=False]">
+			<Setter Property="Content" Value="Unchecked" />
+		</Style>
+	</UserControl.Styles>
+	<DockPanel>
+		<Grid DockPanel.Dock="Top" Margin="10">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Margin="0,0,0,20"
+					Text="Buttons" />
+		</Grid>
+		<TabControl>
+			<TabItem Header="Press Hold">
+				<ScrollViewer>
+					<PreviewCodeSnippet>
+						<DockPanel>
+							<WrapPanel
+									DockPanel.Dock="Top"
+									ItemSpacing="10"
+									LineSpacing="10"
+									Margin="0,10,0,0">
+								<NumericUpDown
+										ControlHelper.DisplayName="Duration (MS)"
+										FormatString="000"
+										Increment="100"
+										Value="{Binding ElementName=HoldButton, Path=HoldDuration, Converter={StaticResource TimeSpanConverter}, ConverterParameter=ms}">
+								</NumericUpDown>
+								<NumericUpDown
+										ControlHelper.DisplayName="Height (px)"
+										FormatString="00"
+										Increment="1"
+										Value="{Binding ElementName=HoldButton, Path=Height}">
+								</NumericUpDown>
+								<NumericUpDown
+										ControlHelper.DisplayName="Width (px)"
+										FormatString="00"
+										Increment="10"
+										Value="{Binding ElementName=HoldButton, Path=Width}">
+								</NumericUpDown>
+								<ComboBox SelectedValue="{Binding ElementName=HoldButton, Path=Orientation, Mode=TwoWay}"
+										SelectedValueBinding="{Binding Content, DataType=ComboBoxItem}"
+										ControlHelper.DisplayName="Orientation:">
+									<ComboBoxItem>
+										<Orientation>Horizontal</Orientation>
+									</ComboBoxItem>
+									<ComboBoxItem>
+										<Orientation>Vertical</Orientation>
+									</ComboBoxItem>
+								</ComboBox>
+								<CheckBox Content="Enabled"
+										IsChecked="{Binding ElementName=HoldButton, Path=IsEnabled, Mode=TwoWay}" />
+								<PressHoldButton
+										x:Name="HoldButton"
+										Content="Press"
+										HoldCommand="{Binding ElementName=This, Path=ButtonCommand}"
+										HoldCommandParameter="Press"
+										Height="32"
+										HoldDuration="00:00:01"
+										IsVisible="False"
+										Orientation="Horizontal"
+										Width="120" />
+							</WrapPanel>
+							<WrapPanel Margin="0,10,0,0">
+								<PressHoldButton Classes="Flat">Flat</PressHoldButton>
+							</WrapPanel>
+						</DockPanel>
+						<PreviewCodeSnippet.ItemTemplate>
+							<DataTemplate DataType="ThemeColor">
+								<PressHoldButton
+										x:Name="ThemeButton"
+										Content="{Binding}"
+										HoldCommand="{Binding ElementName=This, Path=ButtonCommand}"
+										HoldCommandParameter="{Binding}"
+										Height="{Binding ElementName=HoldButton, Path=Height}"
+										HoldDuration="{Binding ElementName=HoldButton, Path=HoldDuration}"
+										IsEnabled="{Binding ElementName=HoldButton, Path=IsEnabled}"
+										Orientation="{Binding ElementName=HoldButton, Path=Orientation}"
+										Theme.Color="{Binding}"
+										Width="{Binding ElementName=HoldButton, Path=Width}" />
+							</DataTemplate>
+						</PreviewCodeSnippet.ItemTemplate>
+					</PreviewCodeSnippet>
+				</ScrollViewer>
+			</TabItem>
+			<TabItem Header="Standard">
+				<ScrollViewer>
+					<PreviewCodeSnippet>
+						<DockPanel>
+							<WrapPanel DockPanel.Dock="Top"
+									Orientation="Horizontal"
+									ItemSpacing="10"
+									LineSpacing="10"
+									Margin="0,10,0,0">
+								<CheckBox x:Name="ButtonIsEnable" IsChecked="True" Content="Enabled" />
+								<TextBlock Text="Width"
+										Margin="20,0,0,0"
+										VerticalAlignment="Center" />
+								<Slider x:Name="ButtonWidth"
+										ControlHelper.DisplayName="Width"
+										Minimum="120"
+										Maximum="300"
+										Value="100"
+										Width="160"
+										TickFrequency="10" />
+								<TextBlock Text="{Binding ElementName=ButtonWidth, Path=Value}"
+										VerticalAlignment="Center" />
+							</WrapPanel>
+							<WrapPanel>
+							</WrapPanel>
+						</DockPanel>
+						<PreviewCodeSnippet.ItemTemplate>
+							<DataTemplate DataType="ThemeColor">
+								<StackPanel Spacing="6">
+									<Button Theme.Color="{Binding}"
+											Content="{Binding}"
+											IsEnabled="{Binding ElementName=ButtonIsEnable, Path=IsChecked}"
+											Width="{Binding ElementName=ButtonWidth, Path=Value}" />
+								</StackPanel>
+							</DataTemplate>
+						</PreviewCodeSnippet.ItemTemplate>
+					</PreviewCodeSnippet>
+				</ScrollViewer>
+			</TabItem>
+			<TabItem Header="Toggle">
+				<ScrollViewer>
+					<PreviewCodeSnippet>
+						<PreviewCodeSnippet.ItemTemplate>
+							<DataTemplate DataType="ThemeColor">
+								<StackPanel Spacing="6">
+									<ToggleButton
+											x:Name="ToggleButton"
+											Theme.Color="{Binding}"
+											Classes="ToggleText"
+											IsChecked="True"
+											IsThreeState="True" />
+
+									<ToggleButton
+											Content="{Binding #ToggleButton.Content}"
+											Theme.Color="{Binding}"
+											IsChecked="{Binding #ToggleButton.IsChecked}"
+											IsEnabled="False"
+											IsThreeState="True" />
+								</StackPanel>
+							</DataTemplate>
+						</PreviewCodeSnippet.ItemTemplate>
+					</PreviewCodeSnippet>
+				</ScrollViewer>
+			</TabItem>
+			<TabItem Header="DropDownButton">
+				<ScrollViewer>
+					<PreviewCodeSnippet>
+						<PreviewCodeSnippet.ItemTemplate>
+							<DataTemplate DataType="ThemeColor">
+								<StackPanel Spacing="6">
+									<DropDownButton
+											Theme.Color="{Binding}"
+											Content="{Binding}"
+											Flyout="{StaticResource SharedMenuFlyout}" />
+
+									<DropDownButton
+											Theme.Color="{Binding}"
+											Content="(Disabled)"
+											IsEnabled="False"
+											Flyout="{StaticResource SharedMenuFlyout}" />
+								</StackPanel>
+							</DataTemplate>
+						</PreviewCodeSnippet.ItemTemplate>
+					</PreviewCodeSnippet>
+				</ScrollViewer>
+			</TabItem>
+		</TabControl>
+	</DockPanel>
+</UserControl>

@@ -11,6 +11,11 @@
 		<PackageReference Include="Avalonia.Controls.ColorPicker" Version="$(AvaloniaVersion)" />
 	</ItemGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
+		<ProjectReference Include="..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Compile Update="Tabs\TabGuaoeueurids.axaml.cs">
+	    <DependentUpon>TabGrids.axaml</DependentUpon>
+	  </Compile>
 	</ItemGroup>
 </Project>

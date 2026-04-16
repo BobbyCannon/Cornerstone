@@ -3,13 +3,14 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Cornerstone.Reflection;
 using Microsoft.CodeAnalysis;
 
 #endregion
 
 namespace Cornerstone.Generators.Models;
 
-public class SourceTypeInfo : SourceMemberInfo
+public class SourceTypeInfo : Reflection.SourceTypeInfo
 {
 	#region Fields
 
@@ -21,6 +22,7 @@ public class SourceTypeInfo : SourceMemberInfo
 
 	public SourceTypeInfo()
 	{
+		Attributes = [];
 		Constructors = [];
 		Fields = [];
 		Generics = [];
@@ -34,7 +36,8 @@ public class SourceTypeInfo : SourceMemberInfo
 
 	#region Properties
 
-	public Accessibility Accessibility { get; set; }
+	public new Accessibility Accessibility { get; set; }
+	public new List<SourceAttributeInfo> Attributes { get; } = [];
 	public string BaseFullyGlobalQualifiedTypeName { get; set; }
 	public List<SourceConstructorInfo> Constructors { get; }
 	public string EnumUnderlyingType { get; set; }
@@ -45,17 +48,8 @@ public class SourceTypeInfo : SourceMemberInfo
 	public List<SourceGenericInfo> Generics { get; }
 	public bool HasBaseRequiredMembers { get; set; }
 	public List<SourceInterfaceInfo> Interfaces { get; }
-	public bool IsAbstract { get; set; }
-	public bool IsClass { get; set; }
-	public bool IsEnum { get; set; }
-	public bool IsGenericType { get; set; }
-	public bool IsGenericTypeDefinition { get; set; }
-	public bool IsPartial { get; set; }
-	public bool IsReadOnly { get; set; }
 	public bool IsRefLikeType { get; set; }
 	public bool IsSourceReflectionType { get; set; }
-	public bool IsStatic { get; set; }
-	public bool IsStruct { get; set; }
 	public List<SourceMethodInfo> Methods { get; }
 	public List<string> OuterTypes { get; }
 	public List<SourcePropertyInfo> Properties { get; }
@@ -75,7 +69,7 @@ public class SourceTypeInfo : SourceMemberInfo
 		if (includeNamespace && (typeSymbol.ContainingNamespace != null))
 		{
 			var ns = typeSymbol.ContainingNamespace.ToDisplayString();
-			if (!string.IsNullOrEmpty(ns))
+			if (!string.IsNullOrEmpty(ns) && (ns != "<global namespace>"))
 			{
 				builder.Append(ns.Replace(".", delimiter)).Append(delimiter);
 			}
@@ -105,14 +99,12 @@ public class SourceTypeInfo : SourceMemberInfo
 					builder.Append("Of");
 				}
 
-				// Recurse for nested generics / arrays / pointers / type parameters
 				ToSafeCodeName(typeArg, builder, includeNamespace);
 				isFirst = false;
 			}
 		}
 		else if (typeSymbol.TypeKind == TypeKind.Array)
 		{
-			// Simple array handling — you can make fancier (e.g. Array2D, JaggedArray…)
 			builder.Append("Array");
 			if (typeSymbol is IArrayTypeSymbol { Rank: > 1 } array)
 			{

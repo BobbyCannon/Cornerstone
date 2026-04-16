@@ -408,11 +408,8 @@ public class DrawingContextHelper : IDisposable
 		_spriteSheet = new RenderTargetBitmap(sheetSize);
 
 		using var ctx = _spriteSheet.CreateDrawingContext();
-		ctx.PushRenderOptions(new RenderOptions
-		{
-			TextRenderingMode = TextRenderingMode.Antialias,
-			BitmapInterpolationMode = BitmapInterpolationMode.HighQuality
-		});
+		ctx.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.HighQuality });
+		ctx.PushTextOptions(new TextOptions { TextRenderingMode = TextRenderingMode.Antialias });
 
 		double offsetX = 0;
 		for (var i = 0; i < _spriteCharacters.Length; i++)

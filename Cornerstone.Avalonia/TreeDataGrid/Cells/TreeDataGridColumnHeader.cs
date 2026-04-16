@@ -8,8 +8,8 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
-using Avalonia.Utilities;
 using Cornerstone.Avalonia.TreeDataGrid.Models;
+using Cornerstone.Extensions;
 
 #endregion
 
@@ -221,12 +221,10 @@ public class TreeDataGridColumnHeader : Button
 
 	private void ResizerDragDelta(object sender, VectorEventArgs e)
 	{
-		#pragma warning disable CS0618 // Type or member is obsolete
-		if (_columns is null || _model is null || MathUtilities.IsZero(e.Vector.X))
+		if (_columns is null || _model is null || DoubleExtensions.IsZero(e.Vector.X))
 		{
 			return;
 		}
-		#pragma warning restore CS0618 // Type or member is obsolete
 
 		var pixelWidth = _model.Width.IsAbsolute ? _model.Width.Value : Bounds.Width;
 

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Cornerstone.Generators.Models;
+using Cornerstone.Generators.Processors;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -29,6 +30,7 @@ public partial class Generator : IIncrementalGenerator
 	public const string FullNameDependencyInjectionConstructorAttribute = "Cornerstone.Runtime.DependencyInjectionConstructorAttribute";
 	public const string FullNameDirectPropertyAttribute = "Cornerstone.Avalonia.DirectPropertyAttribute";
 	public const string FullNameIComparable = "System.IComparable";
+	public const string FullNameNotifiableAttribute = "Cornerstone.Data.NotifiableAttribute";
 	public const string FullNameNotifyAttribute = "Cornerstone.Data.NotifyAttribute";
 	public const string FullNamePackableAttribute = "Cornerstone.Serialization.PackableAttribute";
 	public const string FullNamePackAttribute = "Cornerstone.Serialization.PackAttribute";
@@ -36,10 +38,11 @@ public partial class Generator : IIncrementalGenerator
 	public const string FullNameRelayCommandAttribute = "Cornerstone.Presentation.RelayCommandAttribute";
 	public const string FullNameSourceReflectionAttribute = "Cornerstone.Reflection.SourceReflectionAttribute";
 	public const string FullNameSourceReflectionTypeAttribute = "Cornerstone.Reflection.SourceReflectionTypeAttribute";
+	public const string FullNameSqlTableAttribute = "Cornerstone.Storage.Sql.SqlTableAttribute";
+	public const string FullNameSqlTableColumnAttribute = "Cornerstone.Storage.Sql.SqlTableColumnAttribute";
 	public const string FullNameStyledPropertyAttribute = "Cornerstone.Avalonia.StyledPropertyAttribute";
 	public const string FullNameUpdateableActionAttribute = "Cornerstone.Data.UpdateableActionAttribute";
 	public const string FullNameUpdateableAttribute = "Cornerstone.Data.UpdateableAttribute";
-
 	public const string GlobalIncludeExcludeSettings = "global::Cornerstone.Data.IncludeExcludeSettings";
 	public const string GlobalReflectionExtensions = "global::Cornerstone.Extensions.ReflectionExtensions";
 	public const string GlobalRelayCommand = "global::Cornerstone.Presentation.RelayCommand";
@@ -54,22 +57,31 @@ public partial class Generator : IIncrementalGenerator
 	public const string GlobalSourcePropertyInfo = "global::Cornerstone.Reflection.SourcePropertyInfo";
 	public const string GlobalSourceReflector = "global::Cornerstone.Reflection.SourceReflector";
 	public const string GlobalSourceTypeInfo = "global::Cornerstone.Reflection.SourceTypeInfo";
+	public const string GlobalSqlGenerator = "global::Cornerstone.Storage.Sql.SqlGenerator";
+	public const string GlobalSqlProvider = "global::Cornerstone.Storage.Sql.SqlProvider";
+	public const string GlobalSqlTableAttribute = "global::Cornerstone.Storage.Sql.SqlTableAttribute";
+	public const string GlobalSqlTableColumnAttribute = "global::Cornerstone.Storage.Sql.SqlTableColumnAttribute";
 	public const string GlobalSystemArrayEmpty = "global::System.Array.Empty";
 	public const string GlobalSystemHashSet = "global::System.Collections.Generic.HashSet";
 	public const string GlobalSystemICommand = "global::System.Windows.Input.ICommand";
 	public const string GlobalUpdateableAction = "global::Cornerstone.Data.UpdateableAction";
 	public const string GlobalUpdateableActionAttribute = "global::Cornerstone.Data.UpdateableActionAttribute";
-	public const string NameAttachedPropertyAttribute = "AttachedPropertyAttribute";
 
+	public const string NameAttachedPropertyAttribute = "AttachedPropertyAttribute";
 	public const string NameDependencyInjectedPropertyAttribute = "DependencyInjectedPropertyAttribute";
 	public const string NameDependencyInjectionConstructorAttribute = "DependencyInjectionConstructorAttribute";
 	public const string NameDirectPropertyAttribute = "DirectPropertyAttribute";
 	public const string NameIComparable = "IComparable";
 	public const string NameIComparableOfT = "IComparable`1";
+	public const string NameNotifiableAttribute = "NotifiableAttribute";
+	public const string NameNotifyAttribute = "NotifyAttribute";
 	public const string NamePackableAttribute = "PackableAttribute";
 	public const string NamePackAttribute = "PackAttribute";
 	public const string NameRelayCommandAttribute = "RelayCommandAttribute";
+	public const string NameSourceReflectionAttribute = "SourceReflectionAttribute";
 	public const string NameSourceReflectionTypeAttribute = "SourceReflectionTypeAttribute";
+	public const string NameSqlTableAttribute = "SqlTableAttribute";
+	public const string NameSqlTableColumnAttribute = "SqlTableColumnAttribute";
 	public const string NameStyledPropertyAttribute = "StyledPropertyAttribute";
 	public const string UpdateableActionAttribute = "UpdateableActionAttribute";
 	public const string UpdateableAttribute = "UpdateableAttribute";
@@ -79,8 +91,9 @@ public partial class Generator : IIncrementalGenerator
 	#region Fields
 
 	private static readonly SymbolDisplayFormat _noGenericParameterTypeQualifiedNameFormat;
+	private static readonly ITypeProcessor[] _reflectionProcessors;
+	private static readonly ITypeProcessor[] _typeProcessors;
 	private Dictionary<string, SourceTypeInfo> _typesLookup;
-	private INamedTypeSymbol[] _typeSymbolsForCollectionDefinitions;
 
 	#endregion
 
@@ -88,6 +101,20 @@ public partial class Generator : IIncrementalGenerator
 
 	static Generator()
 	{
+		_reflectionProcessors =
+		[
+			new SourceReflectionProcessor(),
+			new SqlReflectionsProcessor()
+		];
+		_typeProcessors =
+		[
+			new AvaloniaProcessor(),
+			new ComparableProcessor(),
+			new NotifiableProcessor(),
+			new PackableProcessor(),
+			new RelayCommandProcessor(),
+			new UpdateableProcessor()
+		];
 		_noGenericParameterTypeQualifiedNameFormat = new(
 			genericsOptions: SymbolDisplayGenericsOptions.None,
 			typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces
@@ -108,8 +135,10 @@ public partial class Generator : IIncrementalGenerator
 			GetSourceTypeInfoForPropertyChange(context),
 			GetSourceTypeInfoForRelayCommand(context),
 			GetSourceTypeInfoForSourceReflection(context),
+			GetSourceTypeInfoForSqlReflection(context),
 			GetSourceTypeInfoForUnitTests(context),
-			GetSourceTypeInfoForUpdateable(context)
+			GetSourceTypeInfoForUpdateable(context),
+			GetSourceTypeInfoForUpdateableAction(context)
 		);
 
 		var compilationAndClasses = providers
@@ -126,18 +155,6 @@ public partial class Generator : IIncrementalGenerator
 			var (typesToProcess, compilation) = combined;
 
 			_typesLookup = typesToProcess.ToDictionary(x => x.FullyGlobalQualifiedName, x => x);
-			_typeSymbolsForCollectionDefinitions = new[]
-			{
-				compilation.GetTypeByMetadataName("Cornerstone.Collections.SpeedyList`1"),
-				compilation.GetTypeByMetadataName("Cornerstone.Collections.ISpeedyList`1"),
-				compilation.GetTypeByMetadataName("System.Array"),
-				compilation.GetTypeByMetadataName("System.Collections.Generic.IEnumerable`1"),
-				compilation.GetTypeByMetadataName("System.Collections.Generic.Collection`1"),
-				compilation.GetTypeByMetadataName("System.Collections.Generic.ICollection`1"),
-				compilation.GetTypeByMetadataName("System.Collections.Generic.IReadOnlyCollection`1"),
-				compilation.GetTypeByMetadataName("System.Collections.Generic.List`1"),
-				compilation.GetTypeByMetadataName("System.Collections.Generic.IList`1")
-			}.Where(s => s != null).ToArray();
 
 			foreach (var typeInfo in typesToProcess)
 			{
@@ -219,7 +236,123 @@ public partial class Generator : IIncrementalGenerator
 		return false;
 	}
 
-	protected static string ToFullQualifiedTypeName(TypedConstant typeConstant)
+	internal static (string property, string getter, string setter) CalculateAccessibilities(IPropertySymbol notifiable)
+	{
+		var getter = notifiable.GetMethod?.DeclaredAccessibility ?? Accessibility.Private;
+		var setter = notifiable.SetMethod?.DeclaredAccessibility ?? Accessibility.Private;
+		var access = getter > setter ? getter : setter;
+		return new(
+			CSharpCodeBuilder.AccessibilityToString(access),
+			getter < access ? CSharpCodeBuilder.AccessibilityToString(getter) : string.Empty,
+			setter < access ? CSharpCodeBuilder.AccessibilityToString(setter) : string.Empty
+		);
+	}
+
+	internal static string CalculateFieldName(ISymbol member)
+	{
+		var name = member.Name;
+		return $"_{char.ToLower(name[0])}{name.Substring(1)}";
+	}
+
+	internal static string CalculatePropertyName(ISymbol member)
+	{
+		var name = member.Name;
+		var removePrefixes = new[] { "_" };
+
+		foreach (var removePrefix in removePrefixes)
+		{
+			if (name.StartsWith(removePrefix))
+			{
+				name = name.Substring(removePrefix.Length);
+			}
+		}
+
+		name = $"{char.ToUpper(name[0])}{name.Substring(1)}";
+		return name;
+	}
+
+	internal static SourcePropertyInfo CreatePropertyInfo(IPropertySymbol property)
+	{
+		var propertyInfo = new SourcePropertyInfo
+		{
+			Accessibility = property.DeclaredAccessibility,
+			CanRead = property.GetMethod != null,
+			CanWrite = property.SetMethod != null,
+			GetMethodAccessibility = property.GetMethod?.DeclaredAccessibility ?? Accessibility.NotApplicable,
+			IsAbstract = property.IsAbstract,
+			IsDependencyInjected = property.GetAttributes().Any(x => x.AttributeClass?.Name == NameDependencyInjectedPropertyAttribute),
+			IsIndexer = property.IsIndexer,
+			IsInitOnly = property.SetMethod?.IsInitOnly == true,
+			IsPartial = property.IsPartialDefinition,
+			IsRequired = property.IsRequired,
+			IsReadOnly = property.IsReadOnly,
+			IsStatic = property.IsStatic,
+			IsVirtual = property.IsVirtual,
+			FullyQualifiedName = property.Type.ToDisplayString(SymbolDisplayFormats.FullyQualifiedName),
+			GlobalFullyQualifiedName = property.Type.ToDisplayString(SymbolDisplayFormats.GlobalFullyQualifiedName),
+			Name = property.Name,
+			PropertySymbol = property,
+			SetMethodAccessibility = property.SetMethod?.DeclaredAccessibility ?? Accessibility.NotApplicable
+		};
+		propertyInfo.Parameters.AddRange(
+			property.Parameters.Select(x =>
+				new SourceParameterInfo
+				{
+					Name = x.Name,
+					ParameterType = x.Type.ToDisplayString(SymbolDisplayFormats.FullyQualifiedName),
+					ParameterSymbol = x.Type,
+					NullableAnnotation = x.NullableAnnotation,
+					HasDefaultValue = x.HasExplicitDefaultValue,
+					HasNestedTypeParameter = x.Type.TypeKind == TypeKind.TypeParameter,
+					DefaultValue = (x.HasExplicitDefaultValue ? x.ExplicitDefaultValue : null)!
+				}));
+		UpdateAttributes(propertyInfo.Attributes, property);
+		return propertyInfo;
+	}
+
+	internal static IEnumerable<ISymbol> GetAllMembers(INamedTypeSymbol type)
+	{
+		var processedMembers = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+		var processedTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+
+		foreach (var member in GetAllMembersRecursive(type, processedMembers, processedTypes))
+		{
+			yield return member;
+		}
+	}
+
+	internal static int GetDepth(INamedTypeSymbol t)
+	{
+		var depth = 0;
+		while (t != null)
+		{
+			depth++;
+			t = t.BaseType;
+		}
+		return depth;
+	}
+
+	internal static IMethodSymbol ImplementsMethodRecursively(INamedTypeSymbol typeSymbol, string methodName, params string[] parameterTypes)
+	{
+		var allMembers = GetAllMembers(typeSymbol).OfType<IMethodSymbol>().ToArray();
+		return ImplementsMethod(allMembers, methodName, parameterTypes);
+	}
+
+	internal static bool RequiresOverride(IMethodSymbol methodSymbol)
+	{
+		if (methodSymbol
+			is { IsAbstract: false }
+			or { IsVirtual: true })
+		{
+			return true;
+		}
+
+		return methodSymbol is { IsAbstract: true }
+			&& methodSymbol.ContainingType.IsAbstract
+			&& (methodSymbol.ContainingType.TypeKind != TypeKind.Interface);
+	}
+
+	internal static string ToFullQualifiedTypeName(TypedConstant typeConstant)
 	{
 		if (typeConstant.IsNull)
 		{
@@ -237,41 +370,6 @@ public partial class Generator : IIncrementalGenerator
 			(TypedConstantKind.Enum, not null) => typeConstant.Type!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
 			_ => throw new ArgumentException("Invalid typed constant type")
 		};
-	}
-
-	private static (string property, string getter, string setter) CalculateAccessibilities(IPropertySymbol notifiable)
-	{
-		var getter = notifiable.GetMethod?.DeclaredAccessibility ?? Accessibility.Private;
-		var setter = notifiable.SetMethod?.DeclaredAccessibility ?? Accessibility.Private;
-		var access = getter > setter ? getter : setter;
-		return new(
-			CSharpCodeBuilder.AccessibilityToString(access),
-			getter < access ? CSharpCodeBuilder.AccessibilityToString(getter) : string.Empty,
-			setter < access ? CSharpCodeBuilder.AccessibilityToString(setter) : string.Empty
-		);
-	}
-
-	private static string CalculateFieldName(ISymbol member)
-	{
-		var name = member.Name;
-		return $"_{char.ToLower(name[0])}{name.Substring(1)}";
-	}
-
-	private static string CalculatePropertyName(ISymbol member)
-	{
-		var name = member.Name;
-		var removePrefixes = new[] { "_" };
-
-		foreach (var removePrefix in removePrefixes)
-		{
-			if (name.StartsWith(removePrefix))
-			{
-				name = name.Substring(removePrefix.Length);
-			}
-		}
-
-		name = $"{char.ToUpper(name[0])}{name.Substring(1)}";
-		return name;
 	}
 
 	private static IncrementalValueProvider<ImmutableArray<SourceTypeInfo>> Combine(params IncrementalValueProvider<ImmutableArray<SourceTypeInfo>>[] providers)
@@ -334,12 +432,10 @@ public partial class Generator : IIncrementalGenerator
 		builder.StartType(typeInfo.TypeSymbol);
 		var length = builder.Length;
 
-		ProcessAvalonia(builder, typeInfo);
-		ProcessComparable(builder, typeInfo);
-		ProcessPackable(builder, typeInfo);
-		ProcessNotifiable(builder, typeInfo);
-		ProcessRelayCommands(builder, typeInfo);
-		ProcessUpdateable(builder, typeInfo);
+		foreach (var processor in _typeProcessors)
+		{
+			processor.Process(builder, typeInfo);
+		}
 
 		if (length == builder.Length)
 		{
@@ -362,7 +458,10 @@ public partial class Generator : IIncrementalGenerator
 			}
 		}
 
-		ProcessSourceReflection(builder, typeInfo);
+		foreach (var processor in _reflectionProcessors)
+		{
+			processor.Process(builder, typeInfo);
+		}
 
 		if (builder.Length <= 0)
 		{
@@ -371,21 +470,90 @@ public partial class Generator : IIncrementalGenerator
 
 		builder.InsertWriteLine(0, "using System.Collections.Generic;");
 		builder.InsertWriteLine(0, "using System;");
-		
+
 		var text = builder.ToString();
 		Trace.WriteLine(text);
 		return text;
 	}
 
-	private static int GetDepth(INamedTypeSymbol t)
+	/// <summary>
+	/// Files should have already been source generated. This is just a module initialize to call the previously generated files.
+	/// </summary>
+	private void GenerateModuleInitializer(SourceProductionContext spc, ImmutableArray<SourceTypeInfo> typesToProcess)
 	{
-		var depth = 0;
-		while (t != null)
+		var builder = new CSharpCodeBuilder();
+		builder.WriteAutoGeneratedComment();
+		builder.IndentWriteLine("internal static partial class __CornerstoneGeneratedInitializer");
+		builder.IndentWriteLine("{");
+		builder.Indent++;
+		builder.IndentWriteLine("[global::System.Runtime.CompilerServices.ModuleInitializer]");
+		builder.IndentWriteLine("public static void Initialize()");
+		builder.IndentWriteLine("{");
+		builder.Indent++;
+		foreach (var typeInfo in typesToProcess)
 		{
-			depth++;
-			t = t.BaseType;
+			// if (ShouldGenerateSourceReflector(typeInfo))
+			if (SourceReflectionProcessor.ShouldProcess(typeInfo))
+			{
+				builder.IndentWrite($"{GlobalSourceReflector}.Add(");
+				builder.Write(typeInfo.FullyQualifiedSourceReflectorName);
+				builder.WriteLine(");");
+			}
+
+			// if (ShouldGenerateSqlQueries(typeInfo))
+			if (SqlReflectionsProcessor.ShouldProcess(typeInfo))
+			{
+				builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterCreateTableScript(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.Sqlite, {typeInfo.FullyQualifiedSourceReflectorName}CreateTableSqlite);");
+				builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterCreateTableScript(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.SqlServer, {typeInfo.FullyQualifiedSourceReflectorName}CreateTableSqlServer);");
+				builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterDeleteQuery(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.Sqlite, {typeInfo.FullyQualifiedSourceReflectorName}DeleteSqlite, {typeInfo.FullyQualifiedSourceReflectorName}GetPrimaryKey);");
+				builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterDeleteQuery(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.SqlServer, {typeInfo.FullyQualifiedSourceReflectorName}DeleteSqlServer, {typeInfo.FullyQualifiedSourceReflectorName}GetPrimaryKey);");
+				builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterInsertQuery(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.Sqlite, {typeInfo.FullyQualifiedSourceReflectorName}UpsertSqlite, {typeInfo.FullyQualifiedSourceReflectorName}GetUpsertParamsSqlite);");
+				builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterInsertQuery(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.SqlServer, {typeInfo.FullyQualifiedSourceReflectorName}UpsertSqlServer, {typeInfo.FullyQualifiedSourceReflectorName}GetUpsertParamsSqlServer);");
+			}
 		}
-		return depth;
+		builder.Indent--;
+		builder.IndentWriteLine("}");
+		builder.Indent--;
+		builder.IndentWriteLine("}");
+
+		var source = builder.ToString();
+		Trace.WriteLine(source);
+		spc.AddSource("__Cornerstone.Generated.g.cs", source);
+	}
+
+	private static IEnumerable<ISymbol> GetAllMembersRecursive(
+		INamedTypeSymbol type,
+		HashSet<ISymbol> processedMembers,
+		HashSet<INamedTypeSymbol> processedTypes)
+	{
+		if ((type == null) || !processedTypes.Add(type))
+		{
+			yield break;
+		}
+
+		foreach (var member in type.GetMembers())
+		{
+			if (processedMembers.Add(member))
+			{
+				yield return member;
+			}
+		}
+
+		if ((type.BaseType != null) && (type.BaseType.SpecialType != SpecialType.System_Object))
+		{
+			foreach (var member in GetAllMembersRecursive(type.BaseType, processedMembers, processedTypes))
+			{
+				yield return member;
+			}
+		}
+
+		foreach (var interfaceSymbol in type.Interfaces)
+		{
+			foreach (var member in GetAllMembersRecursive(interfaceSymbol, processedMembers, processedTypes))
+			{
+				yield return member;
+			}
+		}
 	}
 
 	private static BaseTypeDeclarationSyntax GetEnclosingTypeDeclaration(SyntaxNode node)
@@ -464,7 +632,8 @@ public partial class Generator : IIncrementalGenerator
 						return null;
 					}
 
-					return ShouldImplementComparable(symbol)
+					// Replace: return ShouldImplementComparable(symbol)
+					return ComparableProcessor.ShouldProcess(symbol)
 						? ProcessTypeSymbol(symbol)
 						: null;
 				})
@@ -477,13 +646,23 @@ public partial class Generator : IIncrementalGenerator
 
 	private IncrementalValueProvider<ImmutableArray<SourceTypeInfo>> GetSourceTypeInfoForPackable(IncrementalGeneratorInitializationContext context)
 	{
+		var packable = context.SyntaxProvider
+			.ForAttributeWithMetadataName(
+				FullNamePackableAttribute,
+				static (node, _) => node is ClassDeclarationSyntax or StructDeclarationSyntax,
+				TransformType)
+			.Where(static cls => cls is not null)
+			.Collect();
+
 		var pack = context.SyntaxProvider
 			.ForAttributeWithMetadataName(
 				FullNamePackAttribute,
 				static (node, _) => node is PropertyDeclarationSyntax,
-				TransformType).Where(static cls => cls is not null).Collect();
+				TransformType)
+			.Where(static cls => cls is not null)
+			.Collect();
 
-		var combined = Combine(pack);
+		var combined = Combine(packable, pack);
 		return combined;
 	}
 
@@ -493,15 +672,27 @@ public partial class Generator : IIncrementalGenerator
 			.ForAttributeWithMetadataName(
 				FullNameAlsoNotifyAttribute,
 				static (node, _) => node is PropertyDeclarationSyntax,
-				TransformType).Where(static cls => cls is not null).Collect();
+				TransformType)
+			.Where(static cls => cls is not null)
+			.Collect();
 
 		var notify = context.SyntaxProvider
 			.ForAttributeWithMetadataName(
 				FullNameNotifyAttribute,
 				static (node, _) => node is PropertyDeclarationSyntax,
-				TransformType).Where(static cls => cls is not null).Collect();
+				TransformType)
+			.Where(static cls => cls is not null)
+			.Collect();
 
-		var combined = Combine(alsoNotify, notify);
+		var notifiable = context.SyntaxProvider
+			.ForAttributeWithMetadataName(
+				FullNameNotifiableAttribute,
+				static (node, _) => node is ClassDeclarationSyntax,
+				TransformType)
+			.Where(static cls => cls is not null)
+			.Collect();
+
+		var combined = Combine(alsoNotify, notify, notifiable);
 		return combined;
 	}
 
@@ -523,7 +714,9 @@ public partial class Generator : IIncrementalGenerator
 			.ForAttributeWithMetadataName(
 				FullNameSourceReflectionAttribute,
 				IsInterestingType,
-				TransformType).Where(static x => x is not null).Collect();
+				TransformType)
+			.Where(static x => x is not null)
+			.Collect();
 
 		var assemblyLevelProvider = context
 			.CompilationProvider
@@ -558,6 +751,7 @@ public partial class Generator : IIncrementalGenerator
 						continue;
 					}
 
+					info.IsSourceReflectionType = true;
 					builder.Add(info);
 				}
 
@@ -568,33 +762,53 @@ public partial class Generator : IIncrementalGenerator
 		return combined;
 	}
 
+	private IncrementalValueProvider<ImmutableArray<SourceTypeInfo>> GetSourceTypeInfoForSqlReflection(IncrementalGeneratorInitializationContext context)
+	{
+		var sqlTables = context.SyntaxProvider
+			.ForAttributeWithMetadataName(
+				FullNameSqlTableAttribute,
+				static (node, _) => node is ClassDeclarationSyntax,
+				TransformType)
+			.Where(static cls => cls is not null)
+			.Collect();
+		var sqlColumns = context.SyntaxProvider
+			.ForAttributeWithMetadataName(
+				FullNameSqlTableAttribute,
+				static (node, _) => node is PropertyDeclarationSyntax,
+				TransformType)
+			.Where(static cls => cls is not null)
+			.Collect();
+		var combined = Combine(sqlTables, sqlColumns);
+		return combined;
+	}
+
 	private IncrementalValueProvider<ImmutableArray<SourceTypeInfo>> GetSourceTypeInfoForUnitTests(IncrementalGeneratorInitializationContext context)
 	{
 		var mstestProvider = context.SyntaxProvider
 			.ForAttributeWithMetadataName(
-				MSTestTestMethodAttributeFullName,
+				MsTestTestMethodAttributeFullName,
 				static (node, _) => node is MethodDeclarationSyntax,
-				TransformType).Where(static cls => cls is not null).Collect();
+				TransformType)
+			.Where(static cls => cls is not null)
+			.Collect();
 
 		var mstestInitializeProvider = context.SyntaxProvider
 			.ForAttributeWithMetadataName(
-				MSTestTestInitializeAttributeFullName,
+				MsTestTestInitializeAttributeFullName,
 				static (node, _) => node is MethodDeclarationSyntax,
-				TransformType).Where(static cls => cls is not null).Collect();
+				TransformType)
+			.Where(static cls => cls is not null)
+			.Collect();
 
 		var mstestCleanupProvider = context.SyntaxProvider
 			.ForAttributeWithMetadataName(
-				MSTestTestCleanupAttributeFullName,
+				MsTestTestCleanupAttributeFullName,
 				static (node, _) => node is MethodDeclarationSyntax,
-				TransformType).Where(static cls => cls is not null).Collect();
+				TransformType)
+			.Where(static cls => cls is not null)
+			.Collect();
 
-		var nunitProvider = context.SyntaxProvider
-			.ForAttributeWithMetadataName(
-				NUnitTestAttributeFullName,
-				static (node, _) => node is MethodDeclarationSyntax,
-				TransformType).Where(static cls => cls is not null).Collect();
-
-		var combined = Combine(mstestProvider, mstestInitializeProvider, mstestCleanupProvider, nunitProvider);
+		var combined = Combine(mstestProvider, mstestInitializeProvider, mstestCleanupProvider);
 		return combined;
 	}
 
@@ -602,9 +816,28 @@ public partial class Generator : IIncrementalGenerator
 	{
 		var updateableActionProvider = context.SyntaxProvider
 			.ForAttributeWithMetadataName(
+				FullNameUpdateableAttribute,
+				static (node, _) => node
+					is ClassDeclarationSyntax
+					or StructDeclarationSyntax
+					or RecordDeclarationSyntax,
+				TransformType)
+			.Where(static cls => cls is not null)
+			.Collect();
+
+		var combined = Combine(updateableActionProvider);
+		return combined;
+	}
+
+	private IncrementalValueProvider<ImmutableArray<SourceTypeInfo>> GetSourceTypeInfoForUpdateableAction(IncrementalGeneratorInitializationContext context)
+	{
+		var updateableActionProvider = context.SyntaxProvider
+			.ForAttributeWithMetadataName(
 				FullNameUpdateableActionAttribute,
 				static (node, _) => node is PropertyDeclarationSyntax,
-				TransformType).Where(static cls => cls is not null).Collect();
+				TransformType)
+			.Where(static cls => cls is not null)
+			.Collect();
 
 		var combined = Combine(updateableActionProvider);
 		return combined;
@@ -634,6 +867,36 @@ public partial class Generator : IIncrementalGenerator
 		}
 
 		return false;
+	}
+
+	private static IMethodSymbol ImplementsMethod(IMethodSymbol[] methods, string methodName, params string[] parameterTypes)
+	{
+		foreach (var method in methods)
+		{
+			if ((method.Name != methodName)
+				|| (method.Parameters.Length != parameterTypes.Length))
+			{
+				continue;
+			}
+
+			var parametersMatch = true;
+			for (var i = 0; i < parameterTypes.Length; i++)
+			{
+				var name = method.Parameters[i].Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
+				if (!Equals(name, parameterTypes[i]))
+				{
+					parametersMatch = false;
+					break;
+				}
+			}
+			if (parametersMatch)
+			{
+				return method;
+			}
+		}
+
+		return null;
 	}
 
 	private bool IsInterestingType(SyntaxNode node, CancellationToken cancellationToken)
@@ -674,7 +937,7 @@ public partial class Generator : IIncrementalGenerator
 			TypeSymbol = typeSymbol
 		};
 
-		UpdateAttributes(response, typeSymbol);
+		UpdateAttributes(response.Attributes, typeSymbol);
 		UpdateConstructors(response, typeSymbol);
 		UpdateFields(response, typeSymbol);
 		UpdateInterfaces(response, typeSymbol);
@@ -683,20 +946,6 @@ public partial class Generator : IIncrementalGenerator
 		UpdateProperties(response, typeSymbol);
 
 		return response;
-	}
-
-	private static bool RequiresOverride(IMethodSymbol methodSymbol)
-	{
-		if (methodSymbol
-			is { IsAbstract: false }
-			or { IsVirtual: true })
-		{
-			return true;
-		}
-
-		return methodSymbol is { IsAbstract: true }
-			&& methodSymbol.ContainingType.IsAbstract
-			&& (methodSymbol.ContainingType.TypeKind != TypeKind.Interface);
 	}
 
 	private SourceTypeInfo TransformType(GeneratorAttributeSyntaxContext ctx, CancellationToken cancellationToken)
@@ -717,7 +966,7 @@ public partial class Generator : IIncrementalGenerator
 		return response;
 	}
 
-	private static void UpdateAttributes(SourceMemberInfo info, ISymbol symbol)
+	private static void UpdateAttributes(List<SourceAttributeInfo> attributes, ISymbol symbol)
 	{
 		foreach (var attribute in symbol.GetAttributes())
 		{
@@ -729,17 +978,21 @@ public partial class Generator : IIncrementalGenerator
 			var attributeInfo = new SourceAttributeInfo
 			{
 				ConstructorArguments = attribute.ConstructorArguments
-					.SelectMany(x => x.Kind == TypedConstantKind.Array ? x.Values.Select(y => y.Value) : [x.Value])
+					.Select(x => x.Kind == TypedConstantKind.Array ? x.Values.Select(y => y.Value).ToArray() : x.Value)
 					.ToArray(),
 				Data = attribute,
 				FullyGlobalQualifiedName = attribute.AttributeClass?.ToDisplayString(SymbolDisplayFormats.GlobalFullyQualifiedName),
 				FullyQualifiedName = attribute.AttributeClass?.ToDisplayString(SymbolDisplayFormats.FullyQualifiedName),
 				Name = attribute.AttributeClass?.Name,
-				NamedArguments = attribute.NamedArguments.ToDictionary(x => x.Key, x => x.Value.Value),
+				NamedArguments = attribute.NamedArguments.ToDictionary(
+					x => x.Key,
+					x => x.Value.Kind == TypedConstantKind.Array
+						? x.Value.Values.Select(y => y.Value).ToArray()
+						: x.Value.Value),
 				TypeSymbol = attribute.AttributeClass
 			};
 
-			info.Attributes.Add(attributeInfo);
+			attributes.Add(attributeInfo);
 		}
 	}
 
@@ -758,7 +1011,7 @@ public partial class Generator : IIncrementalGenerator
 				Parameters = CreateParameters(constructor)
 			};
 
-			UpdateAttributes(constructorInfo, typeSymbol);
+			UpdateAttributes(constructorInfo.Attributes, typeSymbol);
 			info.Constructors.Add(constructorInfo);
 		}
 	}
@@ -787,7 +1040,7 @@ public partial class Generator : IIncrementalGenerator
 				FullyQualifiedTypeName = field.Type.ToDisplayString(SymbolDisplayFormats.FullyQualifiedName)
 			};
 
-			UpdateAttributes(fieldInfo, field);
+			UpdateAttributes(fieldInfo.Attributes, field);
 			info.Fields.Add(fieldInfo);
 		}
 	}
@@ -847,7 +1100,7 @@ public partial class Generator : IIncrementalGenerator
 				}).ToArray()
 			};
 
-			UpdateAttributes(methodInfo, method);
+			UpdateAttributes(methodInfo.Attributes, method);
 			info.Methods.Add(methodInfo);
 		}
 	}
@@ -870,40 +1123,7 @@ public partial class Generator : IIncrementalGenerator
 
 		foreach (var property in members.OfType<IPropertySymbol>())
 		{
-			var propertyInfo = new SourcePropertyInfo
-			{
-				Accessibility = property.DeclaredAccessibility,
-				CanRead = property.GetMethod != null,
-				CanWrite = property.SetMethod != null,
-				GetMethodAccessibility = property.GetMethod?.DeclaredAccessibility ?? Accessibility.NotApplicable,
-				IsAbstract = property.IsAbstract,
-				IsDependencyInjected = property.GetAttributes().Any(x => x.AttributeClass?.Name == NameDependencyInjectedPropertyAttribute),
-				IsIndexer = property.IsIndexer,
-				IsInitOnly = property.SetMethod?.IsInitOnly == true,
-				IsPartial = property.IsPartialDefinition,
-				IsRequired = property.IsRequired,
-				IsReadOnly = property.IsReadOnly,
-				IsStatic = property.IsStatic,
-				IsVirtual = property.IsVirtual,
-				FullyQualifiedName = property.Type.ToDisplayString(SymbolDisplayFormats.FullyQualifiedName),
-				GlobalFullyQualifiedName = property.Type.ToDisplayString(SymbolDisplayFormats.GlobalFullyQualifiedName),
-				Name = property.Name,
-				PropertySymbol = property,
-				SetMethodAccessibility = property.SetMethod?.DeclaredAccessibility ?? Accessibility.NotApplicable
-			};
-			propertyInfo.Parameters.AddRange(
-				property.Parameters.Select(x =>
-					new SourceParameterInfo
-					{
-						Name = x.Name,
-						ParameterType = x.Type.ToDisplayString(SymbolDisplayFormats.FullyQualifiedName),
-						ParameterSymbol = x.Type,
-						NullableAnnotation = x.NullableAnnotation,
-						HasDefaultValue = x.HasExplicitDefaultValue,
-						HasNestedTypeParameter = x.Type.TypeKind == TypeKind.TypeParameter,
-						DefaultValue = (x.HasExplicitDefaultValue ? x.ExplicitDefaultValue : null)!
-					}));
-			UpdateAttributes(propertyInfo, property);
+			var propertyInfo = CreatePropertyInfo(property);
 			info.Properties.Add(propertyInfo);
 		}
 	}

@@ -54,7 +54,7 @@ public abstract class Entity<T> : Entity
 /// <summary>
 /// Represents a Cornerstone entity.
 /// </summary>
-public abstract class Entity : Notifiable
+public abstract class Entity : Notifiable, IEntity
 {
 	#region Constructors
 

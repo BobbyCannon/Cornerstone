@@ -3,18 +3,19 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Avalonia.Controls;
 using Avalonia.Diagnostics.Controls;
 using Avalonia.Diagnostics.Views;
 using Avalonia.Input;
 using Avalonia.Input.Raw;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Metadata;
 using Avalonia.Reactive;
 using Avalonia.Rendering;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Cornerstone.Presentation;
 
 #endregion
@@ -66,24 +67,9 @@ public class MainViewModel : ViewModel, IDisposable
 			KeyboardDevice.Instance.PropertyChanged += KeyboardPropertyChanged;
 		}
 		SelectedTab = 0;
-		if (root is TopLevel topLevel)
-		{
-			_pointerOverRoot = topLevel;
-			_pointerOverSubscription = topLevel.GetObservable(TopLevel.PointerOverElementProperty)
-				.Subscribe(x => PointerOverElement = x);
-		}
-		else
-		{
-			_pointerOverSubscription = InputManager.Instance!.PreProcess
-				.Subscribe(e =>
-				{
-					if (e is RawPointerEventArgs pointerEventArgs)
-					{
-						PointerOverRoot = pointerEventArgs.Root;
-						PointerOverElement = pointerEventArgs.Root.InputHitTest(pointerEventArgs.Position);
-					}
-				});
-		}
+
+		// In the constructor, replace the old pointer-over code with:
+		_pointerOverSubscription = SubscribeToPointerOver(root);
 	}
 
 	#endregion
@@ -164,6 +150,7 @@ public class MainViewModel : ViewModel, IDisposable
 	public int SelectedTab
 	{
 		get => _selectedTab;
+
 		// [MemberNotNull(nameof(_content))]
 		set
 		{
@@ -384,6 +371,50 @@ public class MainViewModel : ViewModel, IDisposable
 		OnPropertyChanged(propertyName);
 	}
 
+	private IDisposable SubscribeToPointerOver(AvaloniaObject root)
+	{
+		// Get the best input root possible
+		var visualRoot = (root as Visual)?.GetVisualRoot() ?? root as Visual;
+		var inputRoot = visualRoot as IInputRoot ?? root as IInputRoot;
+
+		if (inputRoot is InputElement rootElement)
+		{
+			_pointerOverRoot = inputRoot;
+
+			// Subscribe using AddDisposableHandler (this returns IDisposable)
+			var subscription = rootElement.AddDisposableHandler(
+				InputElement.PointerMovedEvent,
+				(sender, e) => UpdatePointerOver(e),
+				RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
+
+			// Optional: also handle Entered/Exited for better coverage when pointer leaves/enters the root
+			rootElement.AddDisposableHandler(
+				InputElement.PointerEnteredEvent,
+				(sender, e) => UpdatePointerOver(e),
+				RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
+
+			rootElement.AddDisposableHandler(
+				InputElement.PointerExitedEvent,
+				(sender, e) => UpdatePointerOver(e),
+				RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
+
+			return subscription;
+		}
+
+		// Very last resort fallback (rarely needed)
+		return InputManager.Instance?.PreProcess
+			.Subscribe(e =>
+			{
+				if (e is RawPointerEventArgs raw && raw.Root is IInputRoot r)
+				{
+					PointerOverRoot = r;
+
+					// We no longer use InputHitTest here
+					PointerOverElement = null; // or keep previous value
+				}
+			});
+	}
+
 	private IRenderer TryGetRenderer()
 	{
 		return _root switch
@@ -405,6 +436,17 @@ public class MainViewModel : ViewModel, IDisposable
 			)
 		{
 			_currentFocusHighlightAdorner = ControlHighlightAdorner.Add(input, brush);
+		}
+	}
+
+	private void UpdatePointerOver(PointerEventArgs e)
+	{
+		// This is the recommended and most reliable way in Avalonia 12
+		PointerOverElement = e.Source as IInputElement;
+
+		if (e.Source is Visual visual)
+		{
+			PointerOverRoot = visual.GetVisualRoot() as IInputRoot;
 		}
 	}
 

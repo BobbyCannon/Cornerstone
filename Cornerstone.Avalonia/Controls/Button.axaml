@@ -65,27 +65,34 @@
 			<Style Selector="^:disabled">
 				<Setter Property="Background" Value="{DynamicResource Background04}" />
 				<Setter Property="Foreground" Value="{DynamicResource Foreground09}" />
+
+				<Style Selector="^ > Path">
+					<Setter Property="Fill" Value="{DynamicResource Background09}" />
+				</Style>
+				<Style Selector="^ > PathIcon">
+					<Setter Property="Foreground" Value="{DynamicResource Background09}" />
+				</Style>
 			</Style>
 		</Style>
 
 		<!-- Code Template - Color -->
 		<Style Selector="^[(Theme.Color)=Current]">
 			<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
-			<Setter Property="Foreground" Value="{DynamicResource ThemeForeground05}" />
+			<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
 			<Style Selector="^:focused">
 				<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
 			</Style>
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground06}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeText06}" />
 			</Style>
 			<Style Selector="^:pressed">
 				<Setter Property="Background" Value="{DynamicResource ThemeColor07}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground07}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeText07}" />
 			</Style>
 			<Style Selector="^:disabled">
 				<Setter Property="Background" Value="{DynamicResource ThemeColor03}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground03}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
 				<Style Selector="^ > Path">
 					<Setter Property="Fill" Value="{DynamicResource Background09}" />
 				</Style>
@@ -454,7 +461,7 @@
 		<Setter Property="Background" Value="Transparent" />
 		<Setter Property="BorderBrush" Value="Transparent" />
 		<Setter Property="BorderThickness" Value="0" />
-		<Setter Property="Foreground" Value="{DynamicResource ThemeForeground07}" />
+		<Setter Property="Foreground" Value="{DynamicResource ThemeText07}" />
 		<Setter Property="VerticalAlignment" Value="Center" />
 
 		<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
@@ -545,24 +552,24 @@
 		<Setter Property="Width" Value="32" />
 
 		<Style Selector="^ Path">
-			<Setter Property="Fill" Value="{Binding $parent[Button].Foreground}" />
+			<Setter Property="Fill" Value="{DynamicResource Foreground00}" />
 			<Setter Property="Height" Value="16" />
 			<Setter Property="Width" Value="16" />
 		</Style>
 		<Style Selector="^ PathIcon">
-			<Setter Property="Foreground" Value="{Binding $parent[Button].Foreground}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 			<Setter Property="Height" Value="16" />
 			<Setter Property="Width" Value="16" />
 		</Style>
 
 		<Style Selector="^:disabled">
-			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground09}" />
 			<Setter Property="Opacity" Value="1" />
 			<Style Selector="^ > Path">
-				<Setter Property="Fill" Value="{DynamicResource Foreground00}" />
+				<Setter Property="Fill" Value="{DynamicResource Foreground09}" />
 			</Style>
 			<Style Selector="^ > PathIcon">
-				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground09}" />
 			</Style>
 		</Style>
 

@@ -22,18 +22,23 @@
 		<Setter Property="Template">
 			<ControlTemplate>
 				<Border x:Name="PART_Container"
-						Background="{TemplateBinding Background}"
-						BorderBrush="{TemplateBinding BorderBrush}"
-						BorderThickness="{TemplateBinding BorderThickness}"
+						BorderThickness="0"
 						CornerRadius="{TemplateBinding CornerRadius}"
-						MinHeight="{TemplateBinding MinHeight}"
-						MaxHeight="{TemplateBinding MaxHeight}">
-					<Grid ClipToBounds="True">
+						ClipToBounds="True">
+					<Grid>
+						<Border x:Name="PART_Border"
+								Background="{TemplateBinding Background}"
+								BorderThickness="{TemplateBinding BorderThickness}"
+								BorderBrush="{TemplateBinding BorderBrush}"
+								CornerRadius="{TemplateBinding CornerRadius}"
+								ClipToBounds="True" />
 						<Border x:Name="PART_Indicator"
 								Background="{TemplateBinding HoldBackground}"
-								Height="{TemplateBinding Height}"
+								BorderThickness="{TemplateBinding BorderThickness}"
+								BorderBrush="Transparent"
 								HorizontalAlignment="Left"
-								VerticalAlignment="Bottom"
+								IsHitTestVisible="False"
+								ClipToBounds="True"
 								CornerRadius="{TemplateBinding CornerRadius}" />
 						<ContentPresenter x:Name="PART_ContentPresenter"
 								Content="{TemplateBinding Content}"
@@ -51,7 +56,7 @@
 
 		<Style Selector="^:horizontal /template/ Border#PART_Indicator">
 			<Setter Property="Height">
-				<Binding Path="Bounds.Width" RelativeSource="{RelativeSource TemplatedParent}" />
+				<Binding Path="Bounds.Height" RelativeSource="{RelativeSource TemplatedParent}" />
 			</Setter>
 			<Setter Property="Width">
 				<Setter.Value>
@@ -89,11 +94,26 @@
 			<Setter Property="Background" Value="{DynamicResource Background04}" />
 			<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
 		</Style>
+		<Style Selector="^.Flat">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="BorderBrush" Value="Transparent" />
+		</Style>
+
+		<Style Selector="^.Dim /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Opacity" Value="0.5" />
+		</Style>
+		<Style Selector="^.Dim:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Opacity" Value="1" />
+		</Style>
 
 		<!-- Code Template - Color -->
 		<Style Selector="^[(Theme.Color)=Current]">
 			<Setter Property="HoldBackground" Value="{DynamicResource ThemeColor07}" />
 			<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
+			<Style Selector="^.Flat">
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="BorderBrush" Value="Transparent" />
+			</Style>
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
 			</Style>
@@ -111,6 +131,10 @@
 		<Style Selector="^[(Theme.Color)=Amber]">
 			<Setter Property="HoldBackground" Value="{DynamicResource Amber07}" />
 			<Setter Property="Background" Value="{DynamicResource Amber05}" />
+			<Style Selector="^.Flat">
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="BorderBrush" Value="Transparent" />
+			</Style>
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Amber06}" />
 			</Style>
@@ -119,12 +143,16 @@
 			</Style>
 			<Style Selector="^:disabled">
 				<Setter Property="Background" Value="{DynamicResource Amber03}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+				<Setter Property="Foreground" Value="{DynamicResource AmberText03}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Blue]">
 			<Setter Property="HoldBackground" Value="{DynamicResource Blue07}" />
 			<Setter Property="Background" Value="{DynamicResource Blue05}" />
+			<Style Selector="^.Flat">
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="BorderBrush" Value="Transparent" />
+			</Style>
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Blue06}" />
 			</Style>
@@ -133,12 +161,16 @@
 			</Style>
 			<Style Selector="^:disabled">
 				<Setter Property="Background" Value="{DynamicResource Blue03}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueText03}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=BlueGray]">
 			<Setter Property="HoldBackground" Value="{DynamicResource BlueGray07}" />
 			<Setter Property="Background" Value="{DynamicResource BlueGray05}" />
+			<Style Selector="^.Flat">
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="BorderBrush" Value="Transparent" />
+			</Style>
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource BlueGray06}" />
 			</Style>
@@ -147,12 +179,16 @@
 			</Style>
 			<Style Selector="^:disabled">
 				<Setter Property="Background" Value="{DynamicResource BlueGray03}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+				<Setter Property="Foreground" Value="{DynamicResource BlueGrayText03}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Brown]">
 			<Setter Property="HoldBackground" Value="{DynamicResource Brown07}" />
 			<Setter Property="Background" Value="{DynamicResource Brown05}" />
+			<Style Selector="^.Flat">
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="BorderBrush" Value="Transparent" />
+			</Style>
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Brown06}" />
 			</Style>
@@ -161,12 +197,16 @@
 			</Style>
 			<Style Selector="^:disabled">
 				<Setter Property="Background" Value="{DynamicResource Brown03}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+				<Setter Property="Foreground" Value="{DynamicResource BrownText03}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=DeepOrange]">
 			<Setter Property="HoldBackground" Value="{DynamicResource DeepOrange07}" />
 			<Setter Property="Background" Value="{DynamicResource DeepOrange05}" />
+			<Style Selector="^.Flat">
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="BorderBrush" Value="Transparent" />
+			</Style>
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource DeepOrange06}" />
 			</Style>
@@ -175,12 +215,16 @@
 			</Style>
 			<Style Selector="^:disabled">
 				<Setter Property="Background" Value="{DynamicResource DeepOrange03}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText03}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=DeepPurple]">
 			<Setter Property="HoldBackground" Value="{DynamicResource DeepPurple07}" />
 			<Setter Property="Background" Value="{DynamicResource DeepPurple05}" />
+			<Style Selector="^.Flat">
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="BorderBrush" Value="Transparent" />
+			</Style>
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource DeepPurple06}" />
 			</Style>
@@ -189,12 +233,16 @@
 			</Style>
 			<Style Selector="^:disabled">
 				<Setter Property="Background" Value="{DynamicResource DeepPurple03}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+				<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText03}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Gray]">
 			<Setter Property="HoldBackground" Value="{DynamicResource Gray07}" />
 			<Setter Property="Background" Value="{DynamicResource Gray05}" />
+			<Style Selector="^.Flat">
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="BorderBrush" Value="Transparent" />
+			</Style>
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Gray06}" />
 			</Style>
@@ -203,12 +251,16 @@
 			</Style>
 			<Style Selector="^:disabled">
 				<Setter Property="Background" Value="{DynamicResource Gray03}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+				<Setter Property="Foreground" Value="{DynamicResource GrayText03}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Green]">
 			<Setter Property="HoldBackground" Value="{DynamicResource Green07}" />
 			<Setter Property="Background" Value="{DynamicResource Green05}" />
+			<Style Selector="^.Flat">
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="BorderBrush" Value="Transparent" />
+			</Style>
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Green06}" />
 			</Style>
@@ -217,12 +269,16 @@
 			</Style>
 			<Style Selector="^:disabled">
 				<Setter Property="Background" Value="{DynamicResource Green03}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+				<Setter Property="Foreground" Value="{DynamicResource GreenText03}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Indigo]">
 			<Setter Property="HoldBackground" Value="{DynamicResource Indigo07}" />
 			<Setter Property="Background" Value="{DynamicResource Indigo05}" />
+			<Style Selector="^.Flat">
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="BorderBrush" Value="Transparent" />
+			</Style>
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Indigo06}" />
 			</Style>
@@ -231,12 +287,16 @@
 			</Style>
 			<Style Selector="^:disabled">
 				<Setter Property="Background" Value="{DynamicResource Indigo03}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+				<Setter Property="Foreground" Value="{DynamicResource IndigoText03}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Orange]">
 			<Setter Property="HoldBackground" Value="{DynamicResource Orange07}" />
 			<Setter Property="Background" Value="{DynamicResource Orange05}" />
+			<Style Selector="^.Flat">
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="BorderBrush" Value="Transparent" />
+			</Style>
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Orange06}" />
 			</Style>
@@ -245,12 +305,16 @@
 			</Style>
 			<Style Selector="^:disabled">
 				<Setter Property="Background" Value="{DynamicResource Orange03}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+				<Setter Property="Foreground" Value="{DynamicResource OrangeText03}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Pink]">
 			<Setter Property="HoldBackground" Value="{DynamicResource Pink07}" />
 			<Setter Property="Background" Value="{DynamicResource Pink05}" />
+			<Style Selector="^.Flat">
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="BorderBrush" Value="Transparent" />
+			</Style>
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Pink06}" />
 			</Style>
@@ -259,12 +323,16 @@
 			</Style>
 			<Style Selector="^:disabled">
 				<Setter Property="Background" Value="{DynamicResource Pink03}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+				<Setter Property="Foreground" Value="{DynamicResource PinkText03}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Purple]">
 			<Setter Property="HoldBackground" Value="{DynamicResource Purple07}" />
 			<Setter Property="Background" Value="{DynamicResource Purple05}" />
+			<Style Selector="^.Flat">
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="BorderBrush" Value="Transparent" />
+			</Style>
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Purple06}" />
 			</Style>
@@ -273,12 +341,16 @@
 			</Style>
 			<Style Selector="^:disabled">
 				<Setter Property="Background" Value="{DynamicResource Purple03}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+				<Setter Property="Foreground" Value="{DynamicResource PurpleText03}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Red]">
 			<Setter Property="HoldBackground" Value="{DynamicResource Red07}" />
 			<Setter Property="Background" Value="{DynamicResource Red05}" />
+			<Style Selector="^.Flat">
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="BorderBrush" Value="Transparent" />
+			</Style>
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Red06}" />
 			</Style>
@@ -287,12 +359,16 @@
 			</Style>
 			<Style Selector="^:disabled">
 				<Setter Property="Background" Value="{DynamicResource Red03}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+				<Setter Property="Foreground" Value="{DynamicResource RedText03}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Teal]">
 			<Setter Property="HoldBackground" Value="{DynamicResource Teal07}" />
 			<Setter Property="Background" Value="{DynamicResource Teal05}" />
+			<Style Selector="^.Flat">
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="BorderBrush" Value="Transparent" />
+			</Style>
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Teal06}" />
 			</Style>
@@ -301,7 +377,7 @@
 			</Style>
 			<Style Selector="^:disabled">
 				<Setter Property="Background" Value="{DynamicResource Teal03}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+				<Setter Property="Foreground" Value="{DynamicResource TealText03}" />
 			</Style>
 		</Style>
 		<!-- Generated Code - /Colors -->
@@ -320,6 +396,10 @@
 				</StackPanel>
 				<PressHoldButton x:Name="Default">Default</PressHoldButton>
 				<PressHoldButton Height="24">Short (24px)</PressHoldButton>
+				<PressHoldButton Classes="Flat">Flat</PressHoldButton>
+				<PressHoldButton Classes="Flat" Theme.Color="Current">Flat (current)</PressHoldButton>
+				<PressHoldButton Classes="Flat" Theme.Color="Red">Flat (red)</PressHoldButton>
+				<PressHoldButton Classes="Flat Dim" Theme.Color="Red">Flat (red, dim)</PressHoldButton>
 			</WrapPanel>
 			<PreviewCodeSnippet.ItemTemplate>
 				<DataTemplate DataType="ThemeColor">

@@ -82,17 +82,39 @@ public static class StringExtensions
 	/// Convert string from a base 64 string.
 	/// </summary>
 	/// <param name="data"> The data to be converted. </param>
+	/// <returns> The unencoded string. </returns>
+	public static string FromBase64String(this string data)
+	{
+		var bytes = System.Convert.FromBase64String(data);
+		return Encoding.UTF8.GetString(bytes);
+	}
+
+	/// <summary>
+	/// Convert string from a base 64 string.
+	/// </summary>
+	/// <param name="data"> The data to be converted. </param>
 	/// <returns> The unencoded byte array. </returns>
 	public static byte[] FromBase64StringToByteArray(this string data)
 	{
-		const string Key = ";base64,";
-		var index = data.IndexOf(Key);
+		const string key = ";base64,";
+		var index = data.IndexOf(key);
 		if (index >= 0)
 		{
-			data = data.Substring(index + Key.Length);
+			data = data.Substring(index + key.Length);
 		}
 
 		return System.Convert.FromBase64String(data);
+	}
+
+	/// <summary>
+	/// Splits the values into an array using the delimiter
+	/// </summary>
+	/// <param name="value"> The roles for the account. </param>
+	/// <param name="delimiter"> The delimiter to split on </param>
+	/// <returns> The array of values. </returns>
+	public static string[] SplitTagsIntoArray(this string value, string delimiter = ",")
+	{
+		return value?.Split([delimiter], StringSplitOptions.RemoveEmptyEntries) ?? [];
 	}
 
 	/// <summary>

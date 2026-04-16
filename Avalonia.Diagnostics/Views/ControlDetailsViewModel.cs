@@ -15,6 +15,7 @@ using Cornerstone.Avalonia.TreeDataGrid.Columns;
 using Cornerstone.Collections;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
+using Cornerstone.Reflection;
 using Dispatcher = Avalonia.Threading.Dispatcher;
 
 #endregion
@@ -48,7 +49,7 @@ public class ControlDetailsViewModel : ViewModel, IDisposable, IClassesChangedLi
 		_pinnedProperties = pinnedProperties;
 		_selectedEntitiesStack = new();
 
-		Properties = new SpeedyList<PropertyViewModel>(null,
+		Properties = new PresentationList<PropertyViewModel>(null,
 			new OrderBy<PropertyViewModel>(x => x.IsPinned, true),
 			new OrderBy<PropertyViewModel>(x => char.IsAsciiLetter(x.Name.First()), true),
 			new OrderBy<PropertyViewModel>(x => x.Name)
@@ -117,7 +118,7 @@ public class ControlDetailsViewModel : ViewModel, IDisposable, IClassesChangedLi
 
 	public ControlLayoutViewModel Layout { get; }
 
-	public SpeedyList<PropertyViewModel> Properties { get; }
+	public PresentationList<PropertyViewModel> Properties { get; }
 
 	public ITreeDataGridSource<PropertyViewModel> PropertiesGridSource { get; }
 

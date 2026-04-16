@@ -93,6 +93,7 @@ public static class DateTimeExtensions
 		{
 			DateTimeKind.Unspecified => DateTime.SpecifyKind(value, DateTimeKind.Utc),
 			DateTimeKind.Local => value.ToUniversalTime(),
+			// Already UTC no need to adjust
 			_ => value
 		};
 	}

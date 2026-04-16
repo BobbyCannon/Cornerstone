@@ -27,8 +27,7 @@ public partial class TabProfiling : CornerstoneUserControl
 
 	#region Fields
 
-	private readonly DispatcherTimer _timer;
-	private readonly DispatcherTimer _timer2;
+	private readonly DispatcherTimer _timer, _timer2;
 
 	#endregion
 
@@ -37,12 +36,12 @@ public partial class TabProfiling : CornerstoneUserControl
 	[DependencyInjectionConstructor]
 	public TabProfiling()
 	{
-		_timer = new DispatcherTimer(TimeSpan.FromMilliseconds(25), DispatcherPriority.Normal, RandomUpdater) { IsEnabled = false };
-		_timer2 = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Background, ProviderUpdate) { IsEnabled = false };
+		_timer = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Normal, ProviderUpdate) { IsEnabled = false };
+		_timer2 = new DispatcherTimer(TimeSpan.FromMilliseconds(25), DispatcherPriority.Normal, RandomUpdater) { IsEnabled = false };
 
 		Profiler = new Profiler();
 		RandomData = new SeriesDataProvider(60);
-		RandomDelay = _timer.Interval;
+		RandomDelay = _timer2.Interval;
 		(RenderData, PerSecondData) = Profiler.SetupScopeHistory("Render");
 		RuntimeInformation = GetInstance<IRuntimeInformation>();
 		DataContext = this;
@@ -104,7 +103,7 @@ public partial class TabProfiling : CornerstoneUserControl
 		if ((change.Property == RandomDelayProperty)
 			&& change.NewValue is TimeSpan newValue)
 		{
-			_timer.Interval = newValue;
+			_timer2.Interval = newValue;
 		}
 
 		base.OnPropertyChanged(change);

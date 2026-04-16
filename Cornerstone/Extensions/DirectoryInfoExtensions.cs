@@ -21,26 +21,20 @@ public static class DirectoryInfoExtensions
 	public static bool SafeCreate(this DirectoryInfo info)
 	{
 		Utility.Retry(() =>
-			{
-				info.Refresh();
+		{
+			info.Refresh();
 
-				if (!info.Exists)
-				{
-					info.Create();
-				}
-			},
-			TimeSpan.FromSeconds(1),
-			TimeSpan.FromMilliseconds(10)
-		);
+			if (!info.Exists)
+			{
+				info.Create();
+			}
+		});
 
 		return Utility.WaitUntil(() =>
-			{
-				info.Refresh();
-				return info.Exists;
-			},
-			TimeSpan.FromSeconds(1),
-			TimeSpan.FromMilliseconds(10)
-		);
+		{
+			info.Refresh();
+			return info.Exists;
+		});
 	}
 
 	/// <summary>
@@ -50,26 +44,20 @@ public static class DirectoryInfoExtensions
 	public static bool SafeDelete(this DirectoryInfo info)
 	{
 		Utility.Retry(() =>
-			{
-				info.Refresh();
+		{
+			info.Refresh();
 
-				if (info.Exists)
-				{
-					info.Delete();
-				}
-			},
-			TimeSpan.FromSeconds(1),
-			TimeSpan.FromMilliseconds(10)
-		);
+			if (info.Exists)
+			{
+				info.Delete();
+			}
+		});
 
 		return Utility.WaitUntil(() =>
-			{
-				info.Refresh();
-				return info.Exists;
-			},
-			TimeSpan.FromSeconds(1),
-			TimeSpan.FromMilliseconds(10)
-		);
+		{
+			info.Refresh();
+			return info.Exists;
+		});
 	}
 
 	#endregion

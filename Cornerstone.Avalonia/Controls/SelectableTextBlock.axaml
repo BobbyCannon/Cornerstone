@@ -39,7 +39,7 @@
 		<!-- Code Template - Color -->
 		<Style Selector="^[(Theme.Color)=Current]">
 			<Setter Property="SelectionBrush" Value="{DynamicResource ThemeColor05}" />
-			<Setter Property="SelectionForegroundBrush" Value="{DynamicResource ThemeForeground05}" />
+			<Setter Property="SelectionForegroundBrush" Value="{DynamicResource ThemeText05}" />
 		</Style>
 		<!-- Code Template - /Color -->
 

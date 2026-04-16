@@ -10,6 +10,7 @@
 	<ac:CornerRadiusToDoubleConverter x:Key="BottomRightCornerRadiusConverter" Corner="BottomRight" />
 	<ac:StringFormatConverter x:Key="StringFormatConverter" />
 
+	<MarkdownBlockConverter x:Key="MarkdownBlockConverter" />
 	<CornerRadiusConverter x:Key="CornerRadiusConverter" />
 	<PercentWidthConverter x:Key="PercentWidthConverter" />
 	<ProgressWidthConverter x:Key="ProgressWidthConverter" />

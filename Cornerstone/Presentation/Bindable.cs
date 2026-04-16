@@ -1,6 +1,7 @@
 ﻿#region References
 
 using Cornerstone.Data;
+using Cornerstone.Reflection;
 
 #endregion
 
@@ -42,6 +43,7 @@ public abstract class Bindable<T> : Bindable, IUpdateable<T>
 /// <summary>
 /// Represents a bindable object for a UI bindings.
 /// </summary>
+[SourceReflection]
 public abstract class Bindable : Notifiable, IBindable
 {
 	#region Fields

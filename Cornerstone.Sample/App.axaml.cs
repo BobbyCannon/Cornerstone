@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System.Linq;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Cornerstone.Avalonia;
@@ -28,6 +29,15 @@ public class App : CornerstoneApplication
 	{
 		ViewModel = DependencyProvider.GetInstance<AppViewModel>();
 		ViewModel.Initialize();
+
+		if (ApplicationArguments.TryGetValue<string>("Tab", out var desiredTab))
+		{
+			var foundTab = ViewModel.Tabs.FirstOrDefault(x => x.TabName == desiredTab);
+			if (foundTab != null)
+			{
+				ViewModel.SelectedTab = foundTab;
+			}
+		}
 
 		switch (ApplicationLifetime)
 		{

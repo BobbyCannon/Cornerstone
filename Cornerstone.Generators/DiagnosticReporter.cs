@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 
@@ -17,12 +16,23 @@ public static class DiagnosticReporter
 	private static readonly DiagnosticDescriptor _typeIsNotPartial = CreateDescriptor(
 		"CSG001",
 		"Type is not partial",
-		"Type '{0}' must be partial in order for Cornerstone.Generators to generate properties or updateable.");
+		"Type '{0}' must be partial in order for Cornerstone.Generators to generate properties or updateable.",
+		DiagnosticSeverity.Error
+	);
+
+	private static readonly DiagnosticDescriptor _typeMissingTestClassAttribute = CreateDescriptor(
+		"CSG003",
+		"Type missing TestClass attribute",
+		"Type '{0}' is missing the [TestClass] attribute.",
+		DiagnosticSeverity.Error
+	);
 
 	private static readonly DiagnosticDescriptor _propertyIsNotPartial = CreateDescriptor(
 		"CSG002",
 		"Property is not partial",
-		"Type '{0}' Property {1} must be partial in order for Cornerstone.Generators to generate the property.");
+		"Type '{0}.{1}' Property must be partial in order for Cornerstone.Generators to generate the property.",
+		DiagnosticSeverity.Error
+	);
 
 	#endregion
 
@@ -37,6 +47,11 @@ public static class DiagnosticReporter
 	public static void Initialize(SourceProductionContext spc)
 	{
 		Context = spc;
+	}
+
+	public static void ReportMissingTestClassAttribute(INamedTypeSymbol typeSymbol)
+	{
+		CreateDiagnostic(_typeMissingTestClassAttribute, typeSymbol.Locations, typeSymbol.Name);
 	}
 
 	public static void ReportPropertyIsNotPartial(INamedTypeSymbol typeSymbol, IPropertySymbol property)
@@ -54,12 +69,12 @@ public static class DiagnosticReporter
 		Context.ReportDiagnostic(
 			Diagnostic.Create(
 				new DiagnosticDescriptor(
-					id: "CSG000",
-					title: "General Message",
-					messageFormat: message,
-					category: "GeneratorDebug",
-					defaultSeverity: DiagnosticSeverity.Info,
-					isEnabledByDefault: true),
+					"CSG000",
+					"General Message",
+					message,
+					"GeneratorDebug",
+					DiagnosticSeverity.Info,
+					true),
 				Location.None
 			));
 	}

@@ -2,17 +2,18 @@
 
 using System;
 using Cornerstone.Serialization;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.UnitTests.Serialization;
 
+[TestClass]
 public class SpeedyPackReaderTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	[Test]
+	[TestMethod]
 	public void Message()
 	{
 		var message = new TestMessage { Id = 123456, Price = 98.75, Version = 2 };

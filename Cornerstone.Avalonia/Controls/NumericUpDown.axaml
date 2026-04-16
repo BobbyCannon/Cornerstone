@@ -67,7 +67,7 @@
 											Foreground="{TemplateBinding Foreground}"
 											FontFamily="{TemplateBinding FontFamily}"
 											FontSize="{TemplateBinding FontSize}"
-											Watermark="{TemplateBinding Watermark}"
+											PlaceholderText="{TemplateBinding PlaceholderText}"
 											IsReadOnly="{TemplateBinding IsReadOnly}"
 											VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
 											HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
@@ -122,29 +122,29 @@
 		<PreviewCodeSnippet Width="600">
 			<WrapPanel ItemSpacing="10"
 					LineSpacing="10">
-				<NumericUpDown Watermark="Enter text" />
-				<NumericUpDown Watermark="disabled" IsEnabled="False" />
+				<NumericUpDown PlaceholderText="Enter text" />
+				<NumericUpDown PlaceholderText="disabled" IsEnabled="False" />
 				<NumericUpDown Value="4.5"
 						ControlHelper.DisplayName="Apples"
 						ButtonSpinnerLocation="Right"
-						Watermark="Enter text" />
+						PlaceholderText="Enter text" />
 				<NumericUpDown Value="5"
 						ButtonSpinnerLocation="Left"
-						Watermark="Enter text">
+						PlaceholderText="Enter text">
 					<NumericUpDown.InnerRightContent>
 						<TextBlock Text="Foo" Margin="10,0,12,0" />
 					</NumericUpDown.InnerRightContent>
 				</NumericUpDown>
 				<NumericUpDown Value="5"
 						ButtonSpinnerLocation="Left"
-						Watermark="Enter text">
+						PlaceholderText="Enter text">
 					<NumericUpDown.InnerLeftContent>
 						<TextBlock Text="Bar" Margin="10,0,2,0" />
 					</NumericUpDown.InnerLeftContent>
 				</NumericUpDown>
 				<NumericUpDown Value="5"
 						HorizontalContentAlignment="Right"
-						Watermark="Delay">
+						PlaceholderText="Delay">
 					<NumericUpDown.InnerLeftContent>
 						<TextBlock Text="Bar" Margin="10,0,4,0" />
 					</NumericUpDown.InnerLeftContent>

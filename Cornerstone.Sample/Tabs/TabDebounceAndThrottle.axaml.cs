@@ -8,6 +8,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Cornerstone.Avalonia;
+using Cornerstone.Data;
 using Cornerstone.Profiling;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
@@ -51,7 +52,6 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 		_triggered = 0d;
 
 		TimeProvider = timeProvider;
-		DataContext = this;
 		DebounceThrottleManager = DebounceThrottleManager.Start(timeProvider);
 		Debounce = DebounceThrottleManager.CreateDebounce(TimeSpan.FromSeconds(1), Debounced);
 		Throttle = DebounceThrottleManager.CreateThrottle(TimeSpan.FromSeconds(1), Throttled);
@@ -61,6 +61,7 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 		Processing = new SeriesDataProvider(500);
 		Triggers = new SeriesDataProvider(500);
 
+		DataContext = this;
 		InitializeComponent();
 
 		_monitorTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(50), DispatcherPriority.Normal, TimerTick) { IsEnabled = false };
@@ -82,7 +83,8 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 
 	public SeriesDataProvider Triggers { get; }
 
-	public bool WorkCanCancel { get; set; }
+	[Notify]
+	public partial bool WorkCanCancel { get; set; }
 
 	public int WorkDelay { get; set; }
 
@@ -112,12 +114,12 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 
 	private void AppendText(string message)
 	{
-		_dispatcher.Dispatch(() => { Log.ViewModel.Document.Add(message); });
+		_dispatcher.Dispatch(() => { Log.ViewModel.Append(message); });
 	}
 
 	private void ClearLog(object sender, RoutedEventArgs e)
 	{
-		Log.ViewModel.Document.Load(string.Empty);
+		Log.ViewModel.Load(string.Empty);
 	}
 
 	private void DebounceCancelOnClick(object sender, RoutedEventArgs e)
@@ -148,7 +150,7 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 	private void DebounceOnClick(object sender, RoutedEventArgs e)
 	{
 		Debounce.Trigger(1);
-		_triggered = 30d;
+		_triggered = 60d;
 	}
 
 	private void DebounceResetOnClick(object sender, RoutedEventArgs e)
@@ -195,10 +197,7 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 	private void TimerTick(object sender, EventArgs e)
 	{
 		Triggers.Add(_triggered);
-		Processing.Add(
-			Debounce.IsProcessing ? 30 :
-			Throttle.IsProcessing ? 60 : 0
-		);
+		Processing.Add(Debounce.IsProcessing | Throttle.IsProcessing ? 60 : 0);
 		_triggered = 0;
 	}
 

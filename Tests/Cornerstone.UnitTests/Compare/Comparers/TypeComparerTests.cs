@@ -2,17 +2,18 @@
 
 using Cornerstone.Compare;
 using Cornerstone.Compare.Comparers;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.UnitTests.Compare.Comparers;
 
+[TestClass]
 public class TypeComparerTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	[Test]
+	[TestMethod]
 	public void Compare()
 	{
 		var session = new CompareSession();

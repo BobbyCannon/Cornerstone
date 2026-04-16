@@ -1,0 +1,42 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<SolidColorBrush x:Key="SyntaxAttribute" Color="#2B91AF" />
+	<SolidColorBrush x:Key="SyntaxComment" Color="#008000" />
+	<SolidColorBrush x:Key="SyntaxError" Color="#FF0000" />
+	<SolidColorBrush x:Key="SyntaxKeyword" Color="#0000FF" />
+	<SolidColorBrush x:Key="SyntaxMethod" Color="#74531F" />
+	<SolidColorBrush x:Key="SyntaxNumber" Color="#000000" />
+	<SolidColorBrush x:Key="SyntaxOperator" Color="#0000FF" />
+	<SolidColorBrush x:Key="SyntaxPreprocessor" Color="#808080" />
+	<SolidColorBrush x:Key="SyntaxStatement" Color="#8F08C4" />
+	<SolidColorBrush x:Key="SyntaxString" Color="#A31515" />
+	<SolidColorBrush x:Key="SyntaxType" Color="#0000FF" />
+	<SolidColorBrush x:Key="SyntaxVariable" Color="#1F3792" />
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet ThemeVariant="Light"
+				Width="600">
+			<StackPanel>
+				<StackPanel.Styles>
+					<Style Selector="TextBlock">
+						<Setter Property="FontSize" Value="18" />
+						<Setter Property="Padding" Value="10,4" />
+					</Style>
+				</StackPanel.Styles>
+				<TextBlock Foreground="{StaticResource SyntaxAttribute}">Attribute</TextBlock>
+				<TextBlock Foreground="{StaticResource SyntaxComment}">Comment</TextBlock>
+				<TextBlock Foreground="{StaticResource SyntaxError}">Error</TextBlock>
+				<TextBlock Foreground="{StaticResource SyntaxKeyword}">Keyword (public, void, true, false)</TextBlock>
+				<TextBlock Foreground="{StaticResource SyntaxOperator}">Operator (is, typeof, nameof)</TextBlock>
+				<TextBlock Foreground="{StaticResource SyntaxPreprocessor}">Preprocessor (#if, etc)</TextBlock>
+				<TextBlock Foreground="{StaticResource SyntaxMethod}">Method (Math.Min)</TextBlock>
+				<TextBlock Foreground="{StaticResource SyntaxNumber}">Number (12.345, 987654)</TextBlock>
+				<TextBlock Foreground="{StaticResource SyntaxStatement}">Statements (switch, case, when, break, return, finally)</TextBlock>
+				<TextBlock Foreground="{StaticResource SyntaxString}">String ("foo", "bar")</TextBlock>
+				<TextBlock Foreground="{StaticResource SyntaxType}">Type (bool, Account)</TextBlock>
+				<TextBlock Foreground="{StaticResource SyntaxVariable}">Variable (i, account)</TextBlock>
+			</StackPanel>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

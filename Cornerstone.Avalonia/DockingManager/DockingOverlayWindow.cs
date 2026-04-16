@@ -82,23 +82,32 @@ internal class DockingOverlayWindow : Window
 			var hoveredTarget = _hoveredDropTarget;
 			var cornerRadius = dockUI.CornerRadius;
 
+			// Always draw split indicators (they are always allowed)
 			DrawDockControl(dockUI.LeftSplitRect, (0, .5), (0, 1), hoveredTarget.IsSplitDock(Dock.Left), cornerRadius, ctx);
 			DrawDockControl(dockUI.RightSplitRect, (.5, 1), (0, 1), hoveredTarget.IsSplitDock(Dock.Right), cornerRadius, ctx);
 			DrawDockControl(dockUI.TopSplitRect, (0, 1), (0, .5), hoveredTarget.IsSplitDock(Dock.Top), cornerRadius, ctx);
 			DrawDockControl(dockUI.BottomSplitRect, (0, 1), (.5, 1), hoveredTarget.IsSplitDock(Dock.Bottom), cornerRadius, ctx);
-			DrawDockControl(dockUI.CenterRect, (0, 1), (0, 1), hoveredTarget.IsFill(), cornerRadius, ctx);
 
+			// Center only if the control accepts the tab
+			var canFill = CanFillWith(_hoveredControl, draggedTabInfo);
+			if (canFill && (dockUI.CenterRect != default))
+			{
+				DrawDockControl(dockUI.CenterRect, (0, 1), (0, 1), hoveredTarget.IsFill(), cornerRadius, ctx);
+			}
+
+			// Preview fill / split area
 			if (_hoveredDropTarget.IsSplitDock(out var dock))
 			{
 				var rect = DockingManager.CalculateDockRect(draggedTabInfo, areaInfo.Bounds, dock);
 				ctx.FillRectangle(_dockingManager.DockIndicatorFieldFill, rect);
 			}
-			else if (_hoveredDropTarget.IsFill())
+			else if (_hoveredDropTarget.IsFill() && canFill)
 			{
 				ctx.FillRectangle(_dockingManager.DockIndicatorFieldFill, areaInfo.Bounds);
 			}
 		}
 
+		// Tab bar insert indicator (only if the tab is accepted)
 		if (_hoveredDropTarget.IsTabBar(out var tabIndex))
 		{
 			if (_hoveredControl is not TabControl tabControl)
@@ -106,6 +115,15 @@ internal class DockingOverlayWindow : Window
 				Debug.Fail("Invalid dropTarget for control");
 				return;
 			}
+
+			// Only show if the target tab control accepts this tab model
+			if (tabControl is DockingTabControl dtc &&
+				!dtc.CanAcceptTabModel(draggedTabInfo.TabModel))
+			{
+				// Skip drawing tab insert if not accepted
+				return;
+			}
+
 			var hoveredTabItem = (TabItem) tabControl.Items[tabIndex]!;
 			var rect = new Rect(_dockingManager.GetBoundsOf(hoveredTabItem).TopLeft, draggedTabInfo.TabItemSize);
 			ctx.FillRectangle(_dockingManager.DockIndicatorFieldHoveredFill, rect);
@@ -257,6 +275,16 @@ internal class DockingOverlayWindow : Window
 		cornerRadius = (float) (_dockingManager.DockIndicatorFieldCornerRadius * scaling);
 	}
 
+	/// <summary>
+	/// Determines whether the hovered control can accept the dragged tab for a **center/fill** operation.
+	/// </summary>
+	private bool CanFillWith(Control control, DockingManager.TabInfo draggedTabInfo)
+	{
+		return control is not DockingTabControl dtc
+			? _dockingManager.CanFill(control)
+			: dtc.CanAcceptTabModel(draggedTabInfo.TabModel);
+	}
+
 	private static Rect DockUIRect(ReadOnlySpan<Rect> rects, int x, int y)
 	{
 		var idx = Math.Clamp(x, -1, 1) + 1 + ((Math.Clamp(y, -1, 1) + 1) * 3);
@@ -358,31 +386,31 @@ internal class DockingOverlayWindow : Window
 		#endregion
 	}
 
-	public struct Result(Control control, DropTarget dropTarget)
+	public readonly struct Result(Control control, DropTarget dropTarget)
 	{
 		#region Methods
 
-		public readonly bool IsFillControl([NotNullWhen(true)] out Control target)
+		public bool IsFillControl([NotNullWhen(true)] out Control target)
 		{
 			target = control;
 			return (target != null) && dropTarget.IsFill();
 		}
 
-		public readonly bool IsInsertTab([NotNullWhen(true)] out TabControl target, out int index)
+		public bool IsInsertTab([NotNullWhen(true)] out TabControl target, out int index)
 		{
 			target = control as TabControl;
 			var isCorrectTarget = dropTarget.IsTabBar(out index);
 			return (target != null) && isCorrectTarget;
 		}
 
-		public readonly bool IsSplitControl([NotNullWhen(true)] out Control target, out Dock dock)
+		public bool IsSplitControl([NotNullWhen(true)] out Control target, out Dock dock)
 		{
 			target = control;
 			var isCorrectTarget = dropTarget.IsSplitDock(out dock);
 			return (target != null) && isCorrectTarget;
 		}
 
-		public readonly bool IsTarget()
+		public bool IsTarget()
 		{
 			return control != null;
 		}

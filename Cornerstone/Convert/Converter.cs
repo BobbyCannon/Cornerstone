@@ -1,8 +1,10 @@
 ﻿#region References
 
 using System;
+using System.Dynamic;
 using Cornerstone.Convert.Converters;
 using Cornerstone.Extensions;
+using Cornerstone.Reflection;
 
 #endregion
 
@@ -28,8 +30,17 @@ public static class Converter
 	{
 		_converters = new ConverterCollection<Type, BaseConverter>();
 
+		RegisterConverter(new BooleanConverter());
+		RegisterConverter(new DateConverter());
 		RegisterConverter(new EnumConverter());
+		RegisterConverter(new GuidConverter());
+		RegisterConverter(new NumberConverter());
+		RegisterConverter(new TimeConverter());
+		RegisterConverter(new CharConverter());
+		RegisterConverter(new StringConverter());
 		RegisterConverter(new UpdateableConverter());
+		RegisterConverter(new DictionaryConverter());
+		RegisterConverter(new CollectionConverter());
 	}
 
 	#endregion
@@ -111,41 +122,40 @@ public static class Converter
 	/// <returns> True if the object was converted otherwise false. </returns>
 	public static bool TryConvertTo(this object from, Type toType, out object to, IConverterSettings settings = null)
 	{
+		to = null;
+
+		// Fast identity check
 		if ((from != null) && (from.GetType() == toType))
 		{
 			to = from;
 			return true;
 		}
 
+		// Null handling
 		if (from == null)
 		{
 			if (toType.IsNullable())
 			{
-				// Type was nullable so just assign null
 				to = null;
 				return true;
 			}
-
-			// Type was not nullable so fail.
-			to = null;
 			return false;
 		}
 
 		var fromType = from.GetType();
-		if (fromType == toType)
-		{
-			to = from;
-			return true;
-		}
 
-		// Get the converter then try to convert
+		// Try registered specific converters
 		if (_converters.TryGetValue(fromType, toType, x => x.CanConvert(fromType, toType), out var converter))
 		{
 			return converter.TryConvertTo(from, fromType, toType, out to, settings);
 		}
 
-		// From / To converter not found
-		to = null;
+		// Built-in .NET fallback (for primitives, strings, enums, etc.)
+		if (TrySystemConvert(from, toType, out to))
+		{
+			return true;
+		}
+
 		return false;
 	}
 
@@ -193,6 +203,43 @@ public static class Converter
 				_converters.TryAdd(toType, fromType, converter);
 			}
 		}
+	}
+
+	private static bool TrySystemConvert(object from, Type toType, out object result)
+	{
+		result = null;
+
+		try
+		{
+			// System.Convert handles many common cases efficiently
+			result = System.Convert.ChangeType(from, toType);
+			return true;
+		}
+		catch
+		{
+			// Fall through - not all conversions are supported by System.Convert
+		}
+
+		// Additional common cases not covered well by ChangeType
+		if (toType == typeof(string))
+		{
+			result = from?.ToString();
+			return true;
+		}
+
+		if (from is IConvertible convertible)
+		{
+			try
+			{
+				result = convertible.ToType(toType, null);
+				return true;
+			}
+			catch
+			{
+			}
+		}
+
+		return false;
 	}
 
 	#endregion

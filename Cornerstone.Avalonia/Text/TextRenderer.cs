@@ -2,21 +2,22 @@
 
 using System;
 using System.ComponentModel;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
-using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Media.TextFormatting;
 using Avalonia.Threading;
 using Cornerstone.Avalonia.Text.Models;
 using Cornerstone.Avalonia.Text.Rendering;
+using Cornerstone.Avalonia.Themes;
 using Cornerstone.Collections;
+using Cornerstone.Profiling;
 using Cornerstone.Reflection;
+using DispatcherPriority = Avalonia.Threading.DispatcherPriority;
 using IRenderer = Cornerstone.Avalonia.Text.Rendering.IRenderer;
-using Line = Cornerstone.Avalonia.Text.Models.Line;
-using TextMetrics = Cornerstone.Avalonia.Text.Rendering.TextMetrics;
 
 #endregion
 
@@ -27,10 +28,15 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 {
 	#region Fields
 
-	private readonly SpeedyList<IRenderer> _backgroundRenderers;
+	private readonly PresentationList<IRenderer> _backgroundRenderers;
 	private readonly CurrentLineRenderer _currentLineRenderer;
 	private readonly DispatcherTimer _dispatchTimer;
+	private bool _eventsAttached;
 	private readonly SelectionRenderer _selectionRenderer;
+	private Typeface? _typefaceBold;
+	private Typeface? _typefaceBoldItalic;
+	private Typeface? _typefaceItalic;
+	private Typeface? _typefaceNormal;
 
 	#endregion
 
@@ -45,15 +51,17 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 
 		CaretVisual = new CaretVisual(this);
 		CanVerticallyScroll = true;
-		Focusable = false;
-		TextMetrics = new TextMetrics();
-		
+		Focusable = true;
+		FontSize = 16;
+		ViewModel = new TextEditorViewModel();
+
 		VisualChildren.Add(CaretVisual);
 	}
 
 	static TextRenderer()
 	{
 		AffectsRender<TextRenderer>(
+			CurrentLineBackgroundProperty,
 			ForegroundProperty,
 			OffsetProperty
 		);
@@ -71,13 +79,20 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 
 	#region Properties
 
-	[StyledProperty]
-	public partial bool CanHorizontallyScroll { get; set; }
+	[DirectProperty]
+	public bool CanHorizontallyScroll
+	{
+		get => !ViewModel.WordWrap;
+		set => ViewModel.WordWrap = !value;
+	}
 
 	[StyledProperty]
 	public partial bool CanVerticallyScroll { get; set; }
 
-	public Size Extent { get; private set; }
+	[StyledProperty]
+	public partial IBrush CurrentLineBackground { get; set; }
+
+	public Size Extent => ViewModel.ViewMetrics.DocumentSize;
 
 	[StyledProperty]
 	public partial FontFamily FontFamily { get; set; }
@@ -99,17 +114,20 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 	[StyledProperty]
 	public partial Vector Offset { get; set; }
 
-	public Size PageScrollSize => new(TextMetrics.CharacterWidth * 10, TextMetrics.CharacterWidth * 10);
+	public Size PageScrollSize => new(ViewModel.ViewMetrics.CharacterWidth * 10, ViewModel.ViewMetrics.CharacterWidth * 10);
 
-	public Size ScrollSize => new(TextMetrics.CharacterWidth, TextMetrics.CharacterHeight);
+	public Size ScrollSize => new(ViewModel.ViewMetrics.CharacterWidth, ViewModel.ViewMetrics.CharacterHeight);
 
-	public Size Viewport { get; private set; }
+	[DirectProperty]
+	public string Text
+	{
+		get => ViewModel.Buffer.ToString();
+		set => ViewModel.Load(value);
+	}
+
+	public Size Viewport => ViewModel.ViewMetrics.Viewport;
 
 	internal CaretVisual CaretVisual { get; }
-
-	internal TextMetrics TextMetrics { get; }
-
-	internal Typeface? Typeface { get; private set; }
 
 	#endregion
 
@@ -127,20 +145,32 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 
 	public TextLayout GetTextLayout(string lineText)
 	{
-		var typeface = Typeface ??= CornerstoneExtensions.CreateTypeface(this);
+		return GetTextLayout(lineText, Bounds.Width);
+	}
+
+	public TextLayout GetTextLayout(string lineText, double maxWidth)
+	{
+		return GetTextLayout(lineText, maxWidth, ViewModel.WordWrap, Foreground);
+	}
+
+	public TextLayout GetTextLayout(string lineText, double maxWidth, bool wrap, IBrush foreground,
+		bool bold = false, bool italic = false, TextDecorationCollection textDecorations = null)
+	{
+		var typeface = GetTypeface(bold, italic);
 
 		return new TextLayout(
 			lineText,
 			typeface,
 			FontSize,
-			Foreground ?? Brushes.White,
-			textWrapping: ViewModel.WordWrap
+			foreground ?? Foreground ?? Brushes.White,
+			textWrapping: wrap
 				? TextWrapping.Wrap
 				: TextWrapping.NoWrap,
-			maxWidth: ViewModel.WordWrap
-				? Extent.Width
+			maxWidth: wrap
+				? maxWidth
 				: 999999,
-			flowDirection: FlowDirection.LeftToRight
+			flowDirection: FlowDirection.LeftToRight,
+			textDecorations: textDecorations
 		);
 	}
 
@@ -151,6 +181,7 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 
 	public override void Render(DrawingContext drawingContext)
 	{
+		using var _ = ProfilerExtensions.Start(Profiler, nameof(Render));
 		drawingContext.FillRectangle(Brushes.Transparent, Bounds.Inflate(Margin));
 
 		// Uncomment to see the calculated extent area
@@ -161,79 +192,209 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 			renderer.Draw(this, drawingContext);
 		}
 
+		var leftX = Offset.X;
 		var topY = Offset.Y;
 		var bottomY = Offset.Y + Bounds.Bottom;
-		var leftX = Offset.X;
 
-		foreach (var line in ViewModel.Document.Lines)
+		foreach (var line in ViewModel.Lines)
 		{
-			if (line.VisualLayout.Bottom < topY)
+			if (line.VisualLayout.Bottom <= topY)
 			{
 				continue;
 			}
 
-			if (line.VisualLayout.Top > bottomY)
+			if (line.VisualLayout.Bottom >= bottomY)
 			{
 				break;
 			}
 
-			var lineText = line.ToString();
-			var textLayout = GetTextLayout(lineText);
-			textLayout.Draw(drawingContext, new(-leftX, line.VisualLayout.Top - topY));
+			if (line.WrappedStartOffsets.Count == 0)
+			{
+				Process(line.VisualLayout.Top, line.StartOffset, line.Length);
+				continue;
+			}
+
+			var subLineCount = line.WrappedStartOffsets.Count + 1;
+			var lineY = 0.0;
+
+			for (var sub = 0; sub < subLineCount; sub++)
+			{
+				var start = sub == 0 ? line.StartOffset : line.WrappedStartOffsets[sub - 1];
+				var endExclusive = sub < line.WrappedStartOffsets.Count
+					? line.WrappedStartOffsets[sub]
+					: line.EndOffset;
+
+				Process(line.VisualLayout.Top + lineY, start, endExclusive - start);
+				lineY += ViewModel.ViewMetrics.CharacterHeight;
+			}
+
+			// Uncomment to see the calculated visual layout
+			//drawingContext.DrawRectangle(new Pen(Brushes.Blue), line.VisualLayout);
 		}
+
+		return;
+
+		void Process(double visualY, int start, int length)
+		{
+			if (length <= 0)
+			{
+				return;
+			}
+
+			var lineEnd = start + length;
+			var tokens = ViewModel.TokenManager
+				.GetTokens(start, lineEnd)
+				.ToArray();
+
+			if (tokens.Length == 0)
+			{
+				var text = ViewModel.Buffer.Substring(start, length);
+				using var layout = GetTextLayout(text, Width, false, Foreground);
+				layout.Draw(drawingContext, new Point(-leftX, visualY - topY));
+				return;
+			}
+
+			var currentX = -leftX;
+			var currentPos = start;
+
+			foreach (var token in tokens)
+			{
+				// Print the gap before the token
+				if (token.StartOffset > currentPos)
+				{
+					var gapLen = Math.Min(token.StartOffset, lineEnd) - currentPos;
+					if (gapLen > 0)
+					{
+						var gapText = ViewModel.Buffer.Substring(currentPos, gapLen);
+						using var tl = GetTextLayout(gapText, Width, false, Foreground);
+						tl.Draw(drawingContext, new Point(currentX, visualY - topY));
+						currentX += tl.WidthIncludingTrailingWhitespace;
+					}
+					currentPos = token.StartOffset;
+				}
+
+				// The formatted part, clipped to current line
+				var runStart = Math.Max(token.StartOffset, currentPos);
+				var runEnd = Math.Min(token.EndOffset, lineEnd);
+
+				if (runStart < runEnd)
+				{
+					var brush = SyntaxBrushes.TryGetValue(token.Color, out var b) ? b : Foreground;
+					var runText = ViewModel.Buffer.Substring(runStart, runEnd - runStart);
+					using var tl = GetTextLayout(runText, Width, false, brush, token.Bold, token.Italic,
+						token.Strikethrough ? TextDecorations.Strikethrough : null);
+					tl.Draw(drawingContext, new Point(currentX, visualY - topY));
+					currentX += tl.WidthIncludingTrailingWhitespace;
+				}
+
+				currentPos = Math.Max(currentPos, token.EndOffset);
+			}
+
+			// Trailing unpainted gap after this token
+			if (currentPos < lineEnd)
+			{
+				var trailingLen = lineEnd - currentPos;
+				var trailingText = ViewModel.Buffer.Substring(currentPos, trailingLen);
+				using var tl = GetTextLayout(trailingText, Width, false, Foreground);
+				tl.Draw(drawingContext, new Point(currentX, visualY - topY));
+			}
+		}
+	}
+
+	protected override Size ArrangeOverride(Size finalSize)
+	{
+		OnScrollInvalidated();
+		return base.ArrangeOverride(finalSize);
 	}
 
 	protected override Size MeasureOverride(Size availableSize)
 	{
-		InvalidateDefaultTextMetrics();
-		Extent = ViewModel.Document.Lines.Measure(availableSize, !CanHorizontallyScroll, TextMetrics);
+		using var _ = ProfilerExtensions.Start(Profiler, nameof(MeasureOverride));
+		using var line = GetTextLayout("X", availableSize.Width);
+		ViewModel.Measure(line, availableSize);
 		OnScrollInvalidated();
-		return Extent;
+		return ViewModel.ViewMetrics.DocumentSize;
 	}
 
-	protected override void OnGotFocus(GotFocusEventArgs e)
+	protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
 	{
-		_dispatchTimer.Start();
+		base.OnAttachedToVisualTree(e);
+
+		AttachEvents(ViewModel);
+
+		// Force a full refresh after reattach
+		InvalidateMeasure();
+		InvalidateVisual();
+
+		// Re-raise scroll info so parent ScrollViewer knows the extent/viewport
+		RaiseScrollInvalidated(EventArgs.Empty);
+	}
+
+	protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+	{
+		base.OnDetachedFromVisualTree(e);
+		DetachEvents(ViewModel);
+		_dispatchTimer.Stop();
+		CaretVisual?.InvalidateVisual();
+	}
+
+	protected override void OnGotFocus(FocusChangedEventArgs e)
+	{
+		_dispatchTimer.IsEnabled = true;
+		ViewModel.Caret.IsVisible = true;
 		base.OnGotFocus(e);
 	}
 
 	protected override void OnKeyDown(KeyEventArgs e)
 	{
-		e.Handled = ViewModel.ProcessKeyDownEvent(e);
+		if (!e.Handled)
+		{
+			ViewModel.ProcessKeyDownEvent(e);
+		}
 		base.OnKeyDown(e);
 	}
 
 	protected override void OnKeyUp(KeyEventArgs e)
 	{
-		e.Handled = ViewModel.ProcessKeyUpEvent(e);
+		if (!e.Handled)
+		{
+			ViewModel.ProcessKeyUpEvent(e);
+		}
 		base.OnKeyUp(e);
 	}
 
-	protected override void OnLostFocus(RoutedEventArgs e)
+	protected override void OnLostFocus(FocusChangedEventArgs e)
 	{
-		ViewModel.Selection.EndSelection();
-		_dispatchTimer.Stop();
+		_dispatchTimer.IsEnabled = false;
+		ViewModel.Caret.IsVisible = false;
+		ViewModel.Caret.Selection.StopSelection();
+		CaretVisual.InvalidateVisual();
 		base.OnLostFocus(e);
 	}
 
 	protected override void OnPointerMoved(PointerEventArgs e)
 	{
-		if (ViewModel.Selection.IsSelectingUsingMouse)
+		if (ViewModel.Caret.Selection.IsSelectingUsingMouse
+			&& e.Properties.IsLeftButtonPressed)
 		{
 			var point = e.GetPosition(this);
-			var offset = ScreenPointToDocumentOffset(point);
+			var visualX = point.X + Offset.X;
+			var visualY = point.Y + Offset.Y;
 
-			if (ViewModel.Selection.EndOffset != offset)
+			if (!ViewModel.Lines.TryGetLineForOffset(visualY, visualY, out var line))
 			{
-				ViewModel.Selection.EndOffset = offset;
+				return;
+			}
+
+			var offset = line.GetNearestOffsetAtVisual(visualX, visualY, false);
+			if (ViewModel.Caret.Selection.EndOffset != offset)
+			{
+				ViewModel.Caret.Selection.EndOffset = offset;
 				ViewModel.Caret.Move(offset);
 
 				InvalidateVisual();
 			}
 		}
-
-		// Auto-scroll when dragging near edge
-		//AutoScrollIfNeeded(currentPoint);
 
 		base.OnPointerMoved(e);
 	}
@@ -242,27 +403,47 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 	{
 		var viewModel = ViewModel;
 		if ((viewModel == null)
-			|| !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+			|| !e.Properties.IsLeftButtonPressed)
 		{
 			base.OnPointerPressed(e);
 			return;
 		}
 
 		var point = e.GetPosition(this);
-		var caretOffset = ScreenPointToDocumentOffset(point);
-		ViewModel.Caret.Move(caretOffset);
+		var visualX = point.X + Offset.X;
+		var visualY = point.Y + Offset.Y;
 
-		if (ViewModel.Selection.IsSelecting)
+		if (!ViewModel.Lines.TryGetLineForOffset(visualY, visualY, out var line))
 		{
-			ViewModel.Selection.EndOffset = caretOffset;
+			base.OnPointerPressed(e);
+			return;
+		}
+
+		var caretOffset = line.GetNearestOffsetAtVisual(visualX, visualY, false);
+
+		if (e.ClickCount >= 2)
+		{
+			ViewModel.SelectWord(caretOffset);
+			base.OnPointerPressed(e);
+			return;
+		}
+
+		if (caretOffset != ViewModel.Caret.Offset)
+		{
+			ViewModel.Caret.Move(caretOffset);
+		}
+
+		if (ViewModel.Caret.Selection.IsSelecting)
+		{
+			ViewModel.Caret.Selection.EndOffset = caretOffset;
 			InvalidateVisual();
 		}
 		else
 		{
-			ViewModel.Selection.Reset(caretOffset);
+			ViewModel.Caret.Selection.Reset(caretOffset);
 		}
 
-		ViewModel.Selection.StartMouseSelection();
+		ViewModel.Caret.Selection.StartMouseSelection();
 
 		base.OnPointerPressed(e);
 	}
@@ -271,7 +452,7 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 	{
 		if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
 		{
-			ViewModel.Selection.EndMouseSelection();
+			ViewModel.Caret.Selection.StopMouseSelection();
 			InvalidateVisual();
 		}
 		base.OnPointerReleased(e);
@@ -303,30 +484,28 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 		{
 			ViewModel.WordWrap = !canHorizontallyScroll;
 		}
+		if ((change.Property == OffsetProperty)
+			&& change.NewValue is Vector offset)
+		{
+			ViewModel.ViewMetrics.Offset = offset;
+		}
 
 		if (change.Property == ViewModelProperty)
 		{
-			if (change.OldValue is TextEditorViewModel oldValue)
-			{
-				oldValue.PropertyChanged -= ViewModelOnPropertyChanged;
-				oldValue.Caret.PropertyChanged -= CaretOnPropertyChanged;
-				oldValue.Document.DocumentChanged -= OnDocumentChanged;
-			}
-			if (change.NewValue is TextEditorViewModel newValue)
-			{
-				newValue.PropertyChanged += ViewModelOnPropertyChanged;
-				newValue.Caret.PropertyChanged += CaretOnPropertyChanged;
-				newValue.Document.DocumentChanged += OnDocumentChanged;
-			}
+			DetachEvents(change.OldValue as TextEditorViewModel);
+			AttachEvents(change.NewValue as TextEditorViewModel);
 		}
 
 		base.OnPropertyChanged(change);
-	
+
 		if ((change.Property == FontFamilyProperty)
 			|| (change.Property == FontSizeProperty)
 			|| (change.Property == ForegroundProperty))
 		{
-			Typeface = null;
+			_typefaceNormal = null;
+			_typefaceBold = null;
+			_typefaceBoldItalic = null;
+			_typefaceItalic = null;
 			InvalidateVisual();
 		}
 	}
@@ -339,43 +518,32 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 		ScrollInvalidated?.Invoke(this, EventArgs.Empty);
 	}
 
-	protected override void OnSizeChanged(SizeChangedEventArgs e)
+	private void AttachEvents(TextEditorViewModel viewModel)
 	{
-		Viewport = e.NewSize;
-		OnScrollInvalidated();
-		base.OnSizeChanged(e);
-	}
-
-	private void CaretOnPropertyChanged(object sender, PropertyChangedEventArgs e)
-	{
-		switch (e.PropertyName)
+		if ((viewModel == null) || _eventsAttached)
 		{
-			case nameof(ViewModel.Caret.Offset):
-			{
-				// Only scroll when caret is out of view
-				var caret = (Caret) sender;
-				//var caretDocY = (caret.Line.LineNumber - 1) * TextMetrics.CharacterHeight;
-				//var caretDocX = (caret.Offset - caret.Line.StartOffset) * TextMetrics.CharacterWidth;
-				//var visibleRect = new Rect(Offset.X, Offset.Y, Viewport.Width, Viewport.Height);
-
-				
-
-				//if (!visibleRect.Contains(new Point(caretDocX, caretDocY)))
-				//{
-				//	// biased a bit left, show caret in upper third
-				//	var newX = Math.Max(0, caretDocX - (Viewport.Width / 4));
-				//	var newY = Math.Max(0, caretDocY - (Viewport.Height / 3));
-
-				//	Offset = new Vector(newX, newY);
-				//	RaiseScrollInvalidated(EventArgs.Empty);
-				//}
-
-				InvalidateVisual();
-				break;
-			}
+			return;
 		}
 
-		UpdateCaret();
+		_eventsAttached = true;
+		viewModel.PropertyChanged += ViewModelOnPropertyChanged;
+		viewModel.Caret.CaretMoved += OnCaretMoved;
+		viewModel.Caret.Selection.Updated += SelectionOnUpdated;
+		viewModel.DocumentChanged += OnDocumentChanged;
+	}
+
+	private void DetachEvents(TextEditorViewModel viewModel)
+	{
+		if (viewModel == null)
+		{
+			return;
+		}
+
+		viewModel.PropertyChanged -= ViewModelOnPropertyChanged;
+		viewModel.Caret.CaretMoved -= OnCaretMoved;
+		viewModel.Caret.Selection.Updated -= SelectionOnUpdated;
+		viewModel.DocumentChanged -= OnDocumentChanged;
+		_eventsAttached = false;
 	}
 
 	private void DispatchTimerCallback(object sender, EventArgs e)
@@ -383,65 +551,98 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 		UpdateCaret();
 	}
 
-	private TextHitTestResult HitTestLine(string lineText, Point pointInDocumentSpace)
+	private void EnsureCaretVisible(Caret caret)
 	{
-		if (string.IsNullOrEmpty(lineText))
+		// Only scroll when caret is out of view
+		var visibleRect = new Rect(Offset.X, Offset.Y, Viewport.Width, Viewport.Height);
+
+		if (visibleRect.Contains(caret.VisualLayout.TopLeft)
+			&& visibleRect.Contains(caret.VisualLayout.TopRight)
+			&& visibleRect.Contains(caret.VisualLayout.BottomRight)
+			&& visibleRect.Contains(caret.VisualLayout.BottomLeft))
 		{
-			return new TextHitTestResult();
+			return;
 		}
 
-		var textLayout = GetTextLayout(lineText);
+		// bug: this is processing before caret.VisualLayout is recalculated
 
-		// pointInDocumentSpace.X should already be relative to the start of THIS line
-		// (i.e. documentX - any line indent if you have indentation later)
-		return textLayout.HitTestPoint(pointInDocumentSpace);
+		var targetX = Offset.X;
+		var targetY = Offset.Y;
+
+		if (caret.VisualLayout.Y < Offset.Y)
+		{
+			// Scroll Up
+			targetY = Math.Max(0, caret.VisualLayout.Y);
+		}
+		else if (caret.VisualLayout.Bottom > (Offset.Y + Viewport.Height))
+		{
+			// Scroll Down
+			targetY = Math.Max(0, caret.VisualLayout.Bottom - Viewport.Height);
+		}
+
+		if (!ViewModel.WordWrap)
+		{
+			if ((caret.VisualLayout.X + caret.VisualLayout.Width) > (Offset.X + Viewport.Width))
+			{
+				targetX = Math.Max(0, (caret.VisualLayout.X - Viewport.Width) + caret.VisualLayout.Width + 16);
+			}
+			else if (caret.VisualLayout.X < Offset.X)
+			{
+				targetX = Math.Max(0, caret.VisualLayout.X - 8);
+			}
+		}
+
+		Offset = new Vector(targetX, targetY);
+		RaiseScrollInvalidated(EventArgs.Empty);
 	}
 
-	private void InvalidateDefaultTextMetrics()
+	private Typeface GetTypeface(bool bold, bool italic)
 	{
-		var line = GetTextLayout("X");
-		TextMetrics.CharacterHeight = line.Height;
-		TextMetrics.CharacterWidth = Math.Max(1, line.WidthIncludingTrailingWhitespace);
+		// Lazy initialization + caching based on exact combination
+		if (bold)
+		{
+			if (italic)
+			{
+				return _typefaceBoldItalic ??= this.CreateTypeface(FontWeight.SemiBold, FontStyle.Italic);
+			}
+
+			return _typefaceBold ??= this.CreateTypeface(FontWeight.SemiBold, FontStyle.Normal);
+		}
+
+		if (italic)
+		{
+			return _typefaceItalic ??= this.CreateTypeface(FontWeight.Normal, FontStyle.Italic);
+		}
+
+		return _typefaceNormal ??= this.CreateTypeface(FontWeight.Normal, FontStyle.Normal);
+	}
+
+	private void OnCaretMoved(object sender, EventArgs e)
+	{
+		var caret = (Caret) sender;
+		if (caret.Selection.IsSelectingUsingKeyboard)
+		{
+			caret.Selection.EndOffset = caret.Offset;
+			InvalidateVisual();
+		}
+
+		EnsureCaretVisible(caret);
+		UpdateCaret();
 	}
 
 	private void OnDocumentChanged(object sender, TextDocumentChangedArgs e)
 	{
+		if (e.Type == TextDocumentChangeType.Reset)
+		{
+			Offset = new Vector(0, 0);
+		}
+
 		InvalidateMeasure();
 	}
 
-	private Line ScreenPointToDocumentLine(Point screenPoint)
+	private void SelectionOnUpdated(object sender, EventArgs e)
 	{
-		var documentY = screenPoint.Y + Offset.Y;
-		Line line = null;
-		for (var index = 0; index < ViewModel.Document.Lines.Count; index++)
-		{
-			line = ViewModel.Document.Lines[index];
-			if ((documentY >= line.VisualLayout.Top)
-				&& (documentY <= line.VisualLayout.Bottom))
-			{
-				break;
-			}
-		}
-		return line!;
-	}
-
-	private int ScreenPointToDocumentOffset(Point screenPoint)
-	{
-		var documentX = screenPoint.X + Offset.X;
-		var documentY = screenPoint.Y + Offset.Y;
-		Line line = null;
-		for (var index = 0; index < ViewModel.Document.Lines.Count; index++)
-		{
-			line = ViewModel.Document.Lines[index];
-			if ((documentY >= line.VisualLayout.Top)
-				&& (documentY <= line.VisualLayout.Bottom))
-			{
-				break;
-			}
-		}
-		var hit = HitTestLine(line!.ToString(), new Point(documentX, documentY - line.VisualLayout.Top));
-		var offset = line.StartOffset + hit.TextPosition;
-		return offset;
+		InvalidateVisual();
 	}
 
 	private void UpdateCaret()
@@ -450,7 +651,7 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 
 		if (ViewModel.Caret.Line != _currentLineRenderer.CurrentLine)
 		{
-			InvalidateMeasure();
+			InvalidateVisual();
 		}
 	}
 
@@ -460,7 +661,7 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 		{
 			case nameof(ViewModel.WordWrap):
 			{
-				CanHorizontallyScroll = !ViewModel.WordWrap;
+				InvalidateMeasure();
 				break;
 			}
 		}

@@ -33,6 +33,9 @@
 					<Button Theme.Color="Green" Classes="Color" Click="ColorOnClick" />
 					<Button Theme.Color="Blue" Classes="Color" Click="ColorOnClick" />
 					<Button Theme.Color="None" Click="ClearOnClick" Content="Clear" />
+					<ToggleSwitch IsChecked="{Binding ElementName=InkCanvas, Path=IsErasing}"
+							OnContent="Erasing" OffContent="Drawing"
+							Margin="20,0,0,0" />
 				</WrapPanel>
 				<Border DockPanel.Dock="Top"
 						BorderBrush="{Binding ElementName=InkCanvas, Path=Stroke}"

@@ -30,12 +30,10 @@
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
 		<PackageReference Include="MSTest.TestAdapter" Version="4.1.0" />
 		<PackageReference Include="MSTest.TestFramework" Version="4.1.0" />
-		<PackageReference Include="NUnit" Version="4.4.0" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
 		<ProjectReference Include="..\..\Cornerstone.Generators\Cornerstone.Generators.csproj" />
 		<ProjectReference Include="..\..\Cornerstone\Cornerstone.csproj" />
-		<ProjectReference Include="..\Cornerstone.Generators.UnitTests.Sample\Cornerstone.Generators.UnitTests.Sample.csproj" />
 	</ItemGroup>
 </Project>

@@ -1,36 +1,58 @@
 ﻿#region References
 
+using System;
+using Avalonia;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
+using Cornerstone.Parsers;
+using Cornerstone.Reflection;
+using Cornerstone.Search;
 
 #endregion
 
 namespace Cornerstone.Avalonia.Text.Models;
 
+[SourceReflection]
 public partial class Caret : Notifiable
 {
 	#region Fields
 
+	internal Rect VisualLayout;
 	private bool _blink;
-	private readonly TextEditorViewModel _viewModel;
-	private int _virtualColumn;
+	private readonly TextEditorViewModel _document;
+	private Line _line;
+	private double _preferredVisualX;
+	private bool _wantsVisualStart;
 
 	#endregion
 
 	#region Constructors
 
-	public Caret(TextEditorViewModel viewModel)
+	public Caret(TextEditorViewModel document)
 	{
-		_viewModel = viewModel;
-		_virtualColumn = 0;
+		_document = document;
 		_blink = false;
 
 		IsVisible = false;
+		Selection = new Selection(this);
+		VisualLayout = new Rect();
 	}
 
 	#endregion
 
 	#region Properties
+
+	/// <summary>
+	/// When word-wrap is enabled and a line is wrapped at a position where there is no space character;
+	/// then both the end of the first Line and the beginning of the second Line refer to the same position
+	/// in the document. In this case, the IsAtEndOfLine property is used to distinguish between the two cases:
+	/// - the value True indicates that the position refers to the end of the previous Line.
+	/// - the value False indicates that the position refers to the beginning of the Line.
+	/// If this position is not at such a wrapping position, the value of this property has no effect.
+	/// </summary>
+	[Notify]
+	[UpdateableAction(UpdateableAction.All)]
+	public partial bool IsAtEndOfLine { get; set; }
 
 	[Notify]
 	[UpdateableAction(UpdateableAction.All)]
@@ -39,7 +61,21 @@ public partial class Caret : Notifiable
 	/// <summary>
 	/// Represents the line the caret is on.
 	/// </summary>
-	public Line Line => _viewModel.Document.Lines.GetLineForOffset(Offset);
+	public Line Line
+	{
+		get
+		{
+			if (_line != null)
+			{
+				return _line;
+			}
+
+			// note: There must be a better way of doing this.
+			_line = _document.Lines.GetLineFromOffset(Offset);
+			OnPropertyChanged();
+			return _line;
+		}
+	}
 
 	/// <summary>
 	/// Represents the document offset the caret represents.
@@ -60,7 +96,7 @@ public partial class Caret : Notifiable
 	public partial Selection Selection { get; set; }
 
 	/// <summary>
-	/// Represents the token where the token is located.
+	/// Represents the token where the caret is located.
 	/// </summary>
 	[Notify]
 	[UpdateableAction(UpdateableAction.All)]
@@ -72,25 +108,81 @@ public partial class Caret : Notifiable
 
 	public void Move(int offset)
 	{
-		Move(offset, true);
+		Move(offset, true, false);
 	}
 
-	public void MoveDown()
+	public void Move(CaretMoveDirection direction, bool extendSelection)
 	{
-		if (!_viewModel.Document.Lines.TryGetLine(Line.LineNumber + 1, out var line))
+		var currentOffset = Offset;
+		switch (direction)
 		{
-			return;
+			case CaretMoveDirection.CharLeft:
+			{
+				MoveLeft();
+				break;
+			}
+			case CaretMoveDirection.CharRight:
+			{
+				MoveRight();
+				break;
+			}
+			case CaretMoveDirection.DocumentEnd:
+			{
+				Move(_document.DocumentLength);
+				break;
+			}
+			case CaretMoveDirection.DocumentStart:
+			{
+				Move(0);
+				break;
+			}
+			case CaretMoveDirection.LineDown:
+			{
+				MoveLineDown();
+				break;
+			}
+			case CaretMoveDirection.LineUp:
+			{
+				MoveLineUp();
+				break;
+			}
+			case CaretMoveDirection.LineStart:
+			{
+				MoveToLineStart();
+				break;
+			}
+			case CaretMoveDirection.LineSmartStart:
+			{
+				MoveToSmartLineStart();
+				break;
+			}
+			case CaretMoveDirection.LineEnd:
+			{
+				MoveToLineEnd();
+				break;
+			}
+			case CaretMoveDirection.PageDown:
+			{
+				MovePageDown();
+				break;
+			}
+			case CaretMoveDirection.PageUp:
+			{
+				MovePageUp();
+				break;
+			}
 		}
 
-		var newOffset = line.StartOffset + _virtualColumn;
-		IntegerExtensions.EnsureRange(ref newOffset, line.StartOffset, line.EndOffset - line.LineEndingLength);
-		Move(newOffset, false);
+		if (extendSelection)
+		{
+			Selection.Update(Selection.Length > 0 ? Selection.StartOffset : currentOffset, Offset);
+		}
 	}
 
 	public void MoveLeft()
 	{
 		var offset = Offset - 1;
-		var buffer = _viewModel.Document.Buffer;
+		var buffer = _document.Buffer;
 
 		if (offset < 0)
 		{
@@ -115,10 +207,66 @@ public partial class Caret : Notifiable
 		}
 	}
 
+	public void MoveLineDown()
+	{
+		var visualY = VisualLayout.Bottom + 1;
+		if (!_document.Lines.TryGetLineForOffset(_preferredVisualX, visualY, out var line))
+		{
+			return;
+		}
+
+		var preferredVisualX = IsAtEndOfLine ? int.MaxValue : _preferredVisualX;
+		var newOffset = line.GetNearestOffsetAtVisual(preferredVisualX, visualY, IsAtEndOfLine);
+		var isAtEndOfLine = (line.WrappedStartOffsets.AsSpan().Contains(newOffset) || (newOffset == line.EndOffset)) && IsAtEndOfLine;
+		IntegerExtensions.EnsureRange(ref newOffset, line.StartOffset, line.EndOffset - line.LineEndingLength);
+		Move(newOffset, false, isAtEndOfLine);
+	}
+
+	public void MoveLineUp()
+	{
+		var visualY = VisualLayout.Top - 1;
+		if (!_document.Lines.TryGetLineForOffset(_preferredVisualX, visualY, out var line))
+		{
+			return;
+		}
+
+		var preferredVisualX = IsAtEndOfLine ? int.MaxValue : _preferredVisualX;
+		var newOffset = line.GetNearestOffsetAtVisual(preferredVisualX, visualY, IsAtEndOfLine);
+		var isAtEndOfLine = (line.WrappedStartOffsets.AsSpan().Contains(newOffset) || (newOffset == line.EndOffset)) && IsAtEndOfLine;
+		IntegerExtensions.EnsureRange(ref newOffset, line.StartOffset, line.EndOffset - line.LineEndingLength);
+		Move(newOffset, false, isAtEndOfLine);
+	}
+
+	public void MovePageDown()
+	{
+		var visualY = VisualLayout.Top + _document.ViewMetrics.Viewport.Height + _document.ViewMetrics.CharacterHeight;
+		if (!_document.Lines.TryGetLineForOffset(_preferredVisualX, visualY, out var line))
+		{
+			return;
+		}
+
+		var newOffset = line.GetNearestOffsetAtVisual(_preferredVisualX, visualY, IsAtEndOfLine);
+		IntegerExtensions.EnsureRange(ref newOffset, line.StartOffset, line.EndOffset - line.LineEndingLength);
+		Move(newOffset, false, IsAtEndOfLine);
+	}
+
+	public void MovePageUp()
+	{
+		var visualY = VisualLayout.Top - _document.ViewMetrics.Viewport.Height - _document.ViewMetrics.CharacterHeight;
+		if (!_document.Lines.TryGetLineForOffset(_preferredVisualX, visualY, out var line))
+		{
+			return;
+		}
+
+		var newOffset = line.GetNearestOffsetAtVisual(_preferredVisualX, visualY, IsAtEndOfLine);
+		IntegerExtensions.EnsureRange(ref newOffset, line.StartOffset, line.EndOffset - line.LineEndingLength);
+		Move(newOffset, false, IsAtEndOfLine);
+	}
+
 	public void MoveRight()
 	{
 		var offset = Offset;
-		var buffer = _viewModel.Document.Buffer;
+		var buffer = _document.Buffer;
 
 		if (offset >= buffer.Count)
 		{
@@ -140,65 +288,168 @@ public partial class Caret : Notifiable
 	public void MoveToLineEnd()
 	{
 		var line = Line;
-		Move(line.EndOffset - line.LineEndingLength);
+		var lineEndOffset = line.GetLineEnd(Offset, IsAtEndOfLine);
+		Move(lineEndOffset, true, true);
 	}
 
 	public void MoveToLineStart()
 	{
 		var line = Line;
-		Move(line.StartOffset);
+		var lineStartOffset = line.GetLineStart(this);
+		_wantsVisualStart = !_wantsVisualStart;
+		Move(lineStartOffset, true, false);
 	}
 
-	public void MoveUp()
+	/// <summary>
+	/// Smart line start with per-visual-subline support.
+	/// - First press: first non-whitespace char on the current visual subline.
+	/// - Subsequent presses: toggle between that position and the visual subline start.
+	/// </summary>
+	public void MoveToSmartLineStart(bool extendSelection = false)
 	{
-		if (!_viewModel.Document.Lines.TryGetLine(Line.LineNumber - 1, out var line))
+		var currentOffset = Offset;
+		var line = Line;
+		var buffer = _document.Buffer;
+
+		// Determine the current visual subline start and end
+		var subLineStart = GetCurrentVisualSubLineStart(line);
+		var subLineEnd = GetCurrentVisualSubLineEnd(line);
+
+		// Find first non-whitespace on this visual subline
+		var firstNonWhite = subLineStart;
+		while (firstNonWhite < subLineEnd)
 		{
-			return;
+			var ch = buffer[firstNonWhite];
+			if (!char.IsWhiteSpace(ch))
+			{
+				break;
+			}
+			firstNonWhite++;
 		}
 
-		var newOffset = line.StartOffset + _virtualColumn;
-		IntegerExtensions.EnsureRange(ref newOffset, line.StartOffset, line.EndOffset - line.LineEndingLength);
-		Move(newOffset, false);
+		// If the entire subline is whitespace, treat it as the subline start
+		if (firstNonWhite >= subLineEnd)
+		{
+			firstNonWhite = subLineStart;
+		}
+
+		int targetOffset;
+
+		if (currentOffset == firstNonWhite)
+		{
+			// Already at first non-whitespace, go to visual subline start
+			targetOffset = subLineStart;
+		}
+		else if (currentOffset == subLineStart)
+		{
+			// Already at visual start, go to first non-whitespace
+			targetOffset = firstNonWhite;
+		}
+		else
+		{
+			// Anywhere else, go to first non-whitespace (standard first action)
+			targetOffset = firstNonWhite;
+		}
+
+		Move(targetOffset, true, false);
+
+		if (extendSelection)
+		{
+			Selection.Update(Selection.Length > 0 ? Selection.StartOffset : currentOffset, Offset);
+		}
 	}
 
 	public void Reset()
 	{
-		IsVisible = false;
 		Move(0);
+		Selection.Reset();
 	}
 
-	public bool ShouldShow(bool toggleBlink)
+	public bool ToggleBlink()
 	{
 		_blink = !_blink;
 		return IsVisible && _blink;
 	}
 
-	protected override void OnPropertyChanged(string propertyName = null)
+	internal void OnCaretMoved(int offset)
 	{
-		switch (propertyName)
+		if (Selection.IsSelecting)
 		{
-			case nameof(Offset):
-			{
-				OnPropertyChanged(nameof(Line));
-				break;
-			}
+			Selection.EndOffset = offset;
 		}
-		base.OnPropertyChanged(propertyName);
+
+		CaretMoved?.Invoke(this, EventArgs.Empty);
 	}
 
-	private void Move(int offset, bool changeVirtualColumn)
+	internal void UpdateVisualLayout()
 	{
-		IntegerExtensions.EnsureRange(ref offset, 0, _viewModel.Document.Length);
+		_line = null;
 
+		var line = Line;
+		if (line != null)
+		{
+			VisualLayout = line.UpdateCaretVisual(this);
+		}
+	}
+
+	/// <summary>
+	/// Returns the exclusive end offset of the current visual subline.
+	/// </summary>
+	private int GetCurrentVisualSubLineEnd(Line line)
+	{
+		if (line.WrappedStartOffsets.Count == 0)
+		{
+			return line.EndOffset - line.LineEndingLength;
+		}
+
+		var index = BinarySearch.FindCeilIndex(line.WrappedStartOffsets, Offset + 1);
+		if ((index >= 0) && (index < line.WrappedStartOffsets.Count))
+		{
+			return line.WrappedStartOffsets[index];
+		}
+
+		return line.EndOffset - line.LineEndingLength;
+	}
+
+	/// <summary>
+	/// Returns the document offset of the start of the current visual subline
+	/// the caret is on (respects wrapping).
+	/// </summary>
+	private int GetCurrentVisualSubLineStart(Line line)
+	{
+		if (line.WrappedStartOffsets.Count == 0)
+		{
+			return line.StartOffset; // no wrapping
+		}
+
+		// Find the largest wrapped start offset that is <= current caret position
+		var index = BinarySearch.FindFloorIndex(line.WrappedStartOffsets, Offset);
+		return index >= 0
+			? line.WrappedStartOffsets[index]
+			: line.StartOffset;
+	}
+
+	private void Move(int offset, bool updatePreferred, bool isEndOfLine)
+	{
+		IntegerExtensions.EnsureRange(ref offset, 0, _document.Buffer.Count);
+
+		IsAtEndOfLine = isEndOfLine;
 		Offset = offset;
+		UpdateVisualLayout();
 
-		if (changeVirtualColumn)
+		if (updatePreferred)
 		{
-			_virtualColumn = Offset - Line.StartOffset;
+			_preferredVisualX = VisualLayout.X;
 		}
 
-		_viewModel.OnCaretMoved(offset);
+		OnCaretMoved(offset);
 	}
+
+	#endregion
+
+	#region Events
+
+	public event EventHandler CaretMoved;
 
 	#endregion
 }

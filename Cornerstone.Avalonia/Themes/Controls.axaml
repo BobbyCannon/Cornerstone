@@ -35,6 +35,7 @@
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/LinearProgress.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/ListBoxItem.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/ManagedFileChooser.axaml" />
+				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/MarkdownView.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/Menu.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/MenuFlyoutPresenter.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/MenuItem.axaml" />
@@ -54,6 +55,7 @@
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/ScrollViewer.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/SelectableTextBlock.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/Separator.axaml" />
+				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/ShortcutBox.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/Slider.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/SplitButton.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/SplitView.axaml" />
@@ -63,7 +65,6 @@
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/TabStripItem.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/ThemeVariantScope.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/TimePicker.axaml" />
-				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/TitleBar.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/ToggleSwitch.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/ToolTip.axaml" />
 				<MergeResourceInclude Source="avares://Cornerstone.Avalonia/Controls/TransitioningContentControl.axaml" />
@@ -98,7 +99,9 @@
 	<StyleInclude Source="avares://Cornerstone.Avalonia/DockingManager/DockingTabControl.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/DockingManager/DockableTabView.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Text/TextEditor.axaml" />
+	<StyleInclude Source="avares://Cornerstone.Avalonia/NumberBox/NumberBox.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/TreeDataGrid/TreeDataGrid.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Themes/Styles/Layout.axaml" />
+	<StyleInclude Source="avares://Cornerstone.Avalonia/Themes/Styles/StatusBar.axaml" />
 	<StyleInclude Source="avares://Cornerstone.Avalonia/Themes/Styles/ToolBar.axaml" />
 </Styles>

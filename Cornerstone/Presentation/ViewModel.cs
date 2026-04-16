@@ -10,7 +10,6 @@ namespace Cornerstone.Presentation;
 /// <summary>
 /// Represents a view model.
 /// </summary>
-[Updateable(false)]
 public abstract class ViewModel<T> : ViewModel, IViewModel<T>
 {
 	#region Properties
@@ -24,7 +23,6 @@ public abstract class ViewModel<T> : ViewModel, IViewModel<T>
 /// Represents a view model.
 /// </summary>
 [SourceReflection]
-[Updateable(false)]
 public abstract class ViewModel : Notifiable, IViewModel
 {
 	#region Properties

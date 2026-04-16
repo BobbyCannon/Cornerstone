@@ -27,194 +27,211 @@
 					HorizontalAlignment="Center"
 					Text="Debounce and Throttle" />
 		</Grid>
-		<Border DockPanel.Dock="Right"
-				BorderBrush="{DynamicResource ControlBorderBrush}"
-				CornerRadius="0"
-				Padding="10,0,0,0"
-				IsVisible="{Binding ElementName=Advanced, Path=IsChecked}">
-			<Grid RowDefinitions="23,*,Auto" Width="260">
-				<TextBlock
-						Grid.Row="0"
-						Text="Log"
-						HorizontalAlignment="Center"
-						Margin="0,-3,0,0" />
-				<TextEditor
-						Grid.Row="1"
-						x:Name="Log"
-						Background="{DynamicResource TextEditorBackground}" />
-				<StackPanel Grid.Row="2"
+		<PreviewCodeSnippet>
+			<DockPanel>
+				<Border DockPanel.Dock="Right"
+						BorderBrush="{DynamicResource BorderBrush}"
+						CornerRadius="0"
+						Padding="10,0,0,0"
+						IsVisible="{Binding ElementName=Advanced, Path=IsChecked}">
+					<Grid RowDefinitions="23,*,Auto" Width="260">
+						<TextBlock
+								Grid.Row="0"
+								Text="Log"
+								HorizontalAlignment="Center"
+								Margin="0,-3,0,0" />
+						<TextEditor
+								Grid.Row="1"
+								x:Name="Log"
+								Background="{DynamicResource TextEditorBackground}" />
+						<StackPanel Grid.Row="2"
+								Margin="0,10,0,0">
+							<Button Click="ClearLog">clear log</Button>
+						</StackPanel>
+					</Grid>
+				</Border>
+				<TabControl DockPanel.Dock="Top"
+						IsVisible="{Binding ElementName=Advanced, Path=IsChecked}">
+					<TabItem Header="Debounce">
+						<DockPanel Margin="5">
+							<WrapPanel DockPanel.Dock="Top">
+								<Button Click="DebounceOnClick">Debounce</Button>
+								<Button Click="DebounceCancelOnClick">Cancel</Button>
+								<Button Click="DebounceResetOnClick">Reset</Button>
+								<NumericUpDown
+										ControlHelper.DisplayName="Debounce Interval"
+										Minimum="1"
+										Maximum="10"
+										Increment="1"
+										MinWidth="260"
+										HorizontalContentAlignment="Right"
+										Value="{Binding Debounce.Interval, Mode=TwoWay, Converter={StaticResource TimeSpanConverter}}">
+									<NumericUpDown.InnerRightContent>
+										<TextBlock Text="secs" />
+									</NumericUpDown.InnerRightContent>
+								</NumericUpDown>
+								<ToggleSwitch
+										IsChecked="{Binding Debounce.AllowTriggerDuringProcessing, Mode=TwoWay}"
+										OnContent="Allow Trigger During Processing"
+										OffContent="Allow Trigger During Processing" />
+							</WrapPanel>
+							<WrapPanel DockPanel.Dock="Top">
+								<CheckBox IsChecked="{Binding Debounce.IsTriggered, Mode=OneWay}"
+										IsEnabled="False">
+									Is Triggered
+								</CheckBox>
+								<CheckBox IsChecked="{Binding Debounce.IsTriggeredForced, Mode=OneWay}"
+										IsEnabled="False">
+									Was Forced
+								</CheckBox>
+								<CheckBox IsChecked="{Binding Debounce.IsProcessing, Mode=OneWay}"
+										IsEnabled="False">
+									Is Processing
+								</CheckBox>
+								<CheckBox IsChecked="{Binding Debounce.ResetRequested, Mode=OneWay}"
+										IsEnabled="False">
+									Reset Requested
+								</CheckBox>
+								<TextBlock Text="Last Triggered" Foreground="{DynamicResource Gray01}" />
+								<TextBlock Text="{Binding Debounce.TriggeredOn, Mode=OneWay}" />
+								<TextBlock Text="Last Processed" Foreground="{DynamicResource Gray01}" />
+								<TextBlock Text="{Binding Debounce.LastProcessedOn, Mode=OneWay}" />
+							</WrapPanel>
+						</DockPanel>
+					</TabItem>
+					<TabItem Header="Throttle">
+						<DockPanel Margin="5">
+							<WrapPanel DockPanel.Dock="Top">
+								<Button Click="ThrottleOnClick">Throttle</Button>
+								<Button Click="ThrottleCancelOnClick">Cancel</Button>
+								<Button Click="ThrottleResetOnClick">Reset</Button>
+								<NumericUpDown
+										ControlHelper.DisplayName="Throttle Interval"
+										Minimum="1"
+										Maximum="10"
+										Increment="1"
+										MinWidth="260"
+										HorizontalContentAlignment="Right"
+										Value="{Binding Throttle.Interval, Mode=TwoWay, Converter={StaticResource TimeSpanConverter}}">
+									<NumericUpDown.InnerRightContent>
+										<TextBlock Text="secs" />
+									</NumericUpDown.InnerRightContent>
+								</NumericUpDown>
+								<ToggleSwitch
+										IsChecked="{Binding Throttle.AllowTriggerDuringProcessing, Mode=TwoWay}"
+										OnContent="Allow Trigger During Processing"
+										OffContent="Allow Trigger During Processing" />
+								<ToggleSwitch
+										IsChecked="{Binding Throttle.QueueTriggers, Mode=TwoWay}"
+										OnContent="Queue Triggers"
+										OffContent="Queue Triggers" />
+							</WrapPanel>
+							<WrapPanel DockPanel.Dock="Top">
+								<CheckBox IsChecked="{Binding Throttle.IsTriggered, Mode=OneWay}"
+										IsEnabled="False">
+									Is Triggered
+								</CheckBox>
+								<CheckBox IsChecked="{Binding Throttle.IsTriggeredForced, Mode=OneWay}"
+										IsEnabled="False">
+									Was Forced
+								</CheckBox>
+								<CheckBox IsChecked="{Binding Throttle.IsProcessing, Mode=OneWay}"
+										IsEnabled="False">
+									Is Processing
+								</CheckBox>
+								<CheckBox IsChecked="{Binding Throttle.ResetRequested, Mode=OneWay}"
+										IsEnabled="False">
+									Reset Requested
+								</CheckBox>
+								<TextBlock Text="Last Triggered" Foreground="{DynamicResource Gray01}" />
+								<TextBlock Text="{Binding Throttle.TriggeredOn, Mode=OneWay}" />
+								<TextBlock Text="Last Processed" Foreground="{DynamicResource Gray01}" />
+								<TextBlock Text="{Binding Throttle.LastProcessedOn, Mode=OneWay}" />
+							</WrapPanel>
+							<Grid />
+						</DockPanel>
+					</TabItem>
+				</TabControl>
+				<Border DockPanel.Dock="Top"
+						BorderBrush="{DynamicResource BorderBrush}"
+						BorderThickness="0,0,0,1"
+						CornerRadius="0"
+						Padding="0,0,0,20"
 						Margin="0,10,0,0">
-					<Button Click="ClearLog">clear log</Button>
-				</StackPanel>
-			</Grid>
-		</Border>
-		<TabControl DockPanel.Dock="Top"
-				IsVisible="{Binding ElementName=Advanced, Path=IsChecked}">
-			<TabItem Header="Debounce">
-				<DockPanel Margin="5">
-					<WrapPanel DockPanel.Dock="Top">
+					<WrapPanel HorizontalAlignment="Center">
+						<NumericUpDown
+								ControlHelper.DisplayName="Work Time"
+								Minimum="1"
+								Maximum="10"
+								Increment="1"
+								Width="220"
+								Value="{Binding WorkDelay, Mode=TwoWay}">
+							<NumericUpDown.InnerRightContent>
+								<TextBlock Text="secs " />
+							</NumericUpDown.InnerRightContent>
+						</NumericUpDown>
+						<ToggleSwitch
+								IsChecked="{Binding WorkCanCancel, Mode=TwoWay}"
+								OnContent="Allow Work To Cancel"
+								OffContent="Allow Work To Cancel" />
+						<CheckBox x:Name="Advanced"
+								Margin="10,0,0,0">
+							Advanced
+						</CheckBox>
+					</WrapPanel>
+				</Border>
+				<Border DockPanel.Dock="Top"
+						BorderBrush="{DynamicResource BorderBrush}"
+						BorderThickness="0"
+						CornerRadius="4"
+						Padding="5"
+						Margin="0,20,0,10"
+						IsVisible="{Binding ElementName=Advanced, Path=!IsChecked}">
+					<WrapPanel HorizontalAlignment="Center">
 						<Button Click="DebounceOnClick">Debounce</Button>
-						<Button Click="DebounceCancelOnClick">Cancel</Button>
-						<Button Click="DebounceResetOnClick">Reset</Button>
-						<NumericUpDown
-								ControlHelper.DisplayName="Debounce Interval"
-								Minimum="1"
-								Maximum="10"
-								Increment="1"
-								MinWidth="260"
-								HorizontalContentAlignment="Right"
-								Value="{Binding Debounce.Interval, Mode=TwoWay, Converter={StaticResource TimeSpanConverter}}">
-							<NumericUpDown.InnerRightContent>
-								<TextBlock Text="secs" />
-							</NumericUpDown.InnerRightContent>
-						</NumericUpDown>
-						<ToggleSwitch
-								IsChecked="{Binding Debounce.AllowTriggerDuringProcessing, Mode=TwoWay}"
-								OnContent="Allow Trigger During Processing"
-								OffContent="Allow Trigger During Processing" />
-					</WrapPanel>
-					<WrapPanel DockPanel.Dock="Top">
-						<CheckBox IsChecked="{Binding Debounce.IsTriggered, Mode=OneWay}"
-								IsEnabled="False">
-							Is Triggered
-						</CheckBox>
-						<CheckBox IsChecked="{Binding Debounce.IsTriggeredForced, Mode=OneWay}"
-								IsEnabled="False">
-							Was Forced
-						</CheckBox>
-						<CheckBox IsChecked="{Binding Debounce.IsProcessing, Mode=OneWay}"
-								IsEnabled="False">
-							Is Processing
-						</CheckBox>
-						<CheckBox IsChecked="{Binding Debounce.ResetRequested, Mode=OneWay}"
-								IsEnabled="False">
-							Reset Requested
-						</CheckBox>
-						<TextBlock Text="Last Triggered" Foreground="{DynamicResource Gray01}" />
-						<TextBlock Text="{Binding Debounce.TriggeredOn, Mode=OneWay}" />
-						<TextBlock Text="Last Processed" Foreground="{DynamicResource Gray01}" />
-						<TextBlock Text="{Binding Debounce.LastProcessedOn, Mode=OneWay}" />
-					</WrapPanel>
-				</DockPanel>
-			</TabItem>
-			<TabItem Header="Throttle">
-				<DockPanel Margin="5">
-					<WrapPanel DockPanel.Dock="Top">
+						<Button Click="DebounceCancelOnClick"
+								IsVisible="{Binding WorkCanCancel}">
+							Cancel
+						</Button>
+						<TextBlock Text="-" />
 						<Button Click="ThrottleOnClick">Throttle</Button>
-						<Button Click="ThrottleCancelOnClick">Cancel</Button>
-						<Button Click="ThrottleResetOnClick">Reset</Button>
-						<NumericUpDown
-								ControlHelper.DisplayName="Throttle Interval"
-								Minimum="1"
-								Maximum="10"
-								Increment="1"
-								MinWidth="260"
-								HorizontalContentAlignment="Right"
-								Value="{Binding Throttle.Interval, Mode=TwoWay, Converter={StaticResource TimeSpanConverter}}">
-							<NumericUpDown.InnerRightContent>
-								<TextBlock Text="secs" />
-							</NumericUpDown.InnerRightContent>
-						</NumericUpDown>
-						<ToggleSwitch
-								IsChecked="{Binding Throttle.AllowTriggerDuringProcessing, Mode=TwoWay}"
-								OnContent="Allow Trigger During Processing"
-								OffContent="Allow Trigger During Processing" />
-						<ToggleSwitch
-								IsChecked="{Binding Throttle.QueueTriggers, Mode=TwoWay}"
-								OnContent="Queue Triggers"
-								OffContent="Queue Triggers" />
+						<Button Click="ThrottleCancelOnClick"
+								IsVisible="{Binding WorkCanCancel}">
+							Cancel
+						</Button>
 					</WrapPanel>
-					<WrapPanel DockPanel.Dock="Top">
-						<CheckBox IsChecked="{Binding Throttle.IsTriggered, Mode=OneWay}"
-								IsEnabled="False">
-							Is Triggered
-						</CheckBox>
-						<CheckBox IsChecked="{Binding Throttle.IsTriggeredForced, Mode=OneWay}"
-								IsEnabled="False">
-							Was Forced
-						</CheckBox>
-						<CheckBox IsChecked="{Binding Throttle.IsProcessing, Mode=OneWay}"
-								IsEnabled="False">
-							Is Processing
-						</CheckBox>
-						<CheckBox IsChecked="{Binding Throttle.ResetRequested, Mode=OneWay}"
-								IsEnabled="False">
-							Reset Requested
-						</CheckBox>
-						<TextBlock Text="Last Triggered" Foreground="{DynamicResource Gray01}" />
-						<TextBlock Text="{Binding Throttle.TriggeredOn, Mode=OneWay}" />
-						<TextBlock Text="Last Processed" Foreground="{DynamicResource Gray01}" />
-						<TextBlock Text="{Binding Throttle.LastProcessedOn, Mode=OneWay}" />
-					</WrapPanel>
-					<Grid />
-				</DockPanel>
-			</TabItem>
-		</TabControl>
-		<Border DockPanel.Dock="Top"
-				BorderBrush="{DynamicResource ControlBorderBrush}"
-				BorderThickness="1"
-				CornerRadius="4"
-				Padding="5"
-				Margin="0,10,0,0">
-			<WrapPanel>
-				<Button Click="DebounceOnClick"
-						IsVisible="{Binding ElementName=Advanced, Path=!IsChecked}">
-					Debounce
-				</Button>
-				<Button Click="ThrottleOnClick"
-						IsVisible="{Binding ElementName=Advanced, Path=!IsChecked}">
-					Throttle
-				</Button>
-				<NumericUpDown
-						ControlHelper.DisplayName="Work Time"
-						Minimum="1"
-						Maximum="10"
-						Increment="1"
-						Width="220"
-						Value="{Binding WorkDelay, Mode=TwoWay}">
-					<NumericUpDown.InnerRightContent>
-						<TextBlock Text="secs " />
-					</NumericUpDown.InnerRightContent>
-				</NumericUpDown>
-				<ToggleSwitch
-						IsChecked="{Binding WorkCanCancel, Mode=TwoWay}"
-						OnContent="Allow Work To Cancel"
-						OffContent="Allow Work To Cancel" />
-				<CheckBox x:Name="Advanced"
-						Margin="10,0,0,0">
-					Advanced
-				</CheckBox>
-			</WrapPanel>
-		</Border>
-		<Grid RowDefinitions="Auto,*,Auto,*">
-			<TextBlock Grid.Row="0"
-					Classes="Header"
-					HorizontalAlignment="Center"
-					VerticalAlignment="Top"
-					Margin="0,20,0,10"
-					Text="Triggers" />
-			<LineChart
-					x:Name="Chart"
-					Grid.Row="1"
-					Margin="0"
-					Data="{Binding Triggers}"
-					MinHeight="60"
-					ShowLabels="False"
-					Stepped="True" />
-			<TextBlock Grid.Row="2"
-					Classes="Header"
-					HorizontalAlignment="Center"
-					VerticalAlignment="Top"
-					Margin="0,20,0,10"
-					Text="Processing" />
-			<LineChart
-					x:Name="Chart2"
-					Grid.Row="3"
-					Margin="0"
-					MinHeight="60"
-					Data="{Binding Processing}"
-					ShowLabels="False"
-					Stepped="True" />
-		</Grid>
+				</Border>
+				<Grid RowDefinitions="Auto,*,Auto,*">
+					<TextBlock Grid.Row="0"
+							Classes="Header"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Top"
+							Margin="0,10,0,10"
+							Text="Triggers" />
+					<LineChart
+							x:Name="Chart"
+							Grid.Row="1"
+							Margin="0"
+							Data="{Binding Triggers}"
+							MinHeight="60"
+							ShowLabels="False"
+							Stepped="True" />
+					<TextBlock Grid.Row="2"
+							Classes="Header"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Top"
+							Margin="0,20,0,10"
+							Text="Processing" />
+					<LineChart
+							x:Name="Chart2"
+							Grid.Row="3"
+							Margin="0"
+							MinHeight="60"
+							Data="{Binding Processing}"
+							ShowLabels="False"
+							Stepped="True" />
+				</Grid>
+			</DockPanel>
+		</PreviewCodeSnippet>
 	</DockPanel>
 </UserControl>

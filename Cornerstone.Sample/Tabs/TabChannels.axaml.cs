@@ -13,7 +13,7 @@ using Cornerstone.Avalonia;
 using Cornerstone.Avalonia.Charts;
 using Cornerstone.Communications;
 using Cornerstone.Data;
-using Cornerstone.Presentation;
+using Cornerstone.Generators;
 using Cornerstone.Profiling;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
@@ -73,7 +73,7 @@ public partial class TabChannels : CornerstoneUserControl
 		_clientControl = this.FindControl<ChannelControl>("ClientChannel")!;
 		_clientControl.Channel = _client;
 
-		_timer = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Background, TimerUpdate) { IsEnabled = false };
+		_timer = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Normal, TimerUpdate) { IsEnabled = false };
 	}
 
 	#endregion
@@ -147,9 +147,12 @@ public partial class TabChannels : CornerstoneUserControl
 
 	private void BenchmarkOnDoWork(object sender, DoWorkEventArgs e)
 	{
-		var testBuffer = new byte[8];
+		var testBuffer = new byte[16];
 		var readBuffer = new byte[64];
 		var lengthBuffer = new byte[4];
+		var testLength = 7;
+
+		RandomGenerator.Populate(ref testBuffer);
 
 		while (!_benchmark.CancellationPending)
 		{
@@ -159,9 +162,12 @@ public partial class TabChannels : CornerstoneUserControl
 				continue;
 			}
 
+			testLength = 8 + (((testLength + 1) - 8) % 9);
+			var start = 16 - testLength;
+
 			using (ProfilerExtensions.Start(Profiler, "RoundTrip"))
 			{
-				_server.Send(testBuffer, 0, testBuffer.Length);
+				_server.Send(testBuffer, start, testLength);
 				if (_client.TryToRead(readBuffer, lengthBuffer))
 				{
 					var readLength = BinaryPrimitives.ReadInt32LittleEndian(lengthBuffer);
@@ -182,7 +188,7 @@ public partial class TabChannels : CornerstoneUserControl
 		var length = BinaryPrimitives.ReadInt32LittleEndian(_lengthBuffer.AsSpan());
 		var ticks = BinaryPrimitives.ReadInt64LittleEndian(_readBuffer.AsSpan(0, 8));
 		var date = new DateTime(ticks);
-		Monitor.ViewModel.Document.Add($"R < Client: {date:G}{Environment.NewLine}");
+		Monitor.ViewModel.Append($"R < Client: {date:G}{Environment.NewLine}");
 	}
 
 	private void ReadFromServer(object sender, RoutedEventArgs e)
@@ -195,7 +201,7 @@ public partial class TabChannels : CornerstoneUserControl
 		var length = BinaryPrimitives.ReadInt32LittleEndian(_lengthBuffer.AsSpan());
 		var ticks = BinaryPrimitives.ReadInt64LittleEndian(_readBuffer.AsSpan(0, 8));
 		var date = new DateTime(ticks);
-		Monitor.ViewModel.Document.Add($"R < Server: {date:G}{Environment.NewLine}");
+		Monitor.ViewModel.Append($"R < Server: {date:G}{Environment.NewLine}");
 	}
 
 	private void SendMessageToClient(object sender, RoutedEventArgs e)
@@ -203,7 +209,7 @@ public partial class TabChannels : CornerstoneUserControl
 		var currentTime = DateTime.Now;
 		var bytes = BitConverter.GetBytes(currentTime.Ticks);
 		_server.Send(bytes, 0, bytes.Length);
-		Monitor.ViewModel.Document.Add($"W > Client {DateTime.Now:G}{Environment.NewLine}");
+		Monitor.ViewModel.Append($"W > Client {DateTime.Now:G}{Environment.NewLine}");
 		_clientControl.InvalidateVisual();
 	}
 
@@ -212,7 +218,7 @@ public partial class TabChannels : CornerstoneUserControl
 		var currentTime = DateTime.Now;
 		var bytes = BitConverter.GetBytes(currentTime.Ticks);
 		_client.Send(bytes, 0, bytes.Length);
-		Monitor.ViewModel.Document.Add($"W > Server {DateTime.Now:G}{Environment.NewLine}");
+		Monitor.ViewModel.Append($"W > Server {DateTime.Now:G}{Environment.NewLine}");
 		_serverControl.InvalidateVisual();
 	}
 

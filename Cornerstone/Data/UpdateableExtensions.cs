@@ -45,6 +45,19 @@ public static class UpdateableExtensions
 	}
 
 	/// <summary>
+	/// Shallow clone the IUpdateable using Updatable settings.
+	/// </summary>
+	/// <param name="value"> The value to be shallow cloned. </param>
+	/// <returns> The cloned object. </returns>
+	public static T ShallowClone<T>(this T value) where T : IUpdateable
+	{
+		var type = value.GetType();
+		var response = (T) SourceReflector.CreateInstance(type);
+		response.UpdateWith(value, IncludeExcludeSettingsExtensions.GetIncludeExcludeSettings(type, UpdateableAction.Updateable));
+		return response;
+	}
+
+	/// <summary>
 	/// Determine if the update should be applied.
 	/// </summary>
 	/// <param name="value"> The value to be tested. </param>

@@ -267,6 +267,7 @@ public class CompareSession : ReferenceTracker
 		if (expected is char c)
 		{
 			StringExtensions.TryProcessCharacter(c, buffer);
+			buffer.Append(c);
 			return;
 		}
 

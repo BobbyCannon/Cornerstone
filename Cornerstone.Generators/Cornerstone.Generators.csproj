@@ -14,6 +14,26 @@
 		<NoWarn>$(NoWarn);CS0649;RS1041;</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
+	  <Compile Remove="Reflection\**" />
+	  <EmbeddedResource Remove="Reflection\**" />
+	  <None Remove="Reflection\**" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Compile Include="Reflection\SourceAccessibility.cs" />
+	  <Compile Include="Reflection\SourceAttributeExtensions.cs" />
+	  <Compile Include="Reflection\SourceAttributeInfo.cs" />
+	  <Compile Include="Reflection\SourceConstructorInfo.cs" />
+	  <Compile Include="Reflection\SourceFieldInfo.cs" />
+	  <Compile Include="Reflection\SourceInterfaceInfo.cs" />
+	  <Compile Include="Reflection\SourceMethodInfo.cs" />
+	  <Compile Include="Reflection\SourceNullableAnnotation.cs" />
+	  <Compile Include="Reflection\SourceParameterInfo.cs" />
+	  <Compile Include="Reflection\SourcePropertyInfo.cs" />
+	  <Compile Include="Reflection\SourceReflectionAttribute.cs" />
+	  <Compile Include="Reflection\SourceReflectionTypeAttribute.cs" />
+	  <Compile Include="Reflection\SourceTypeInfo.cs" />
+	</ItemGroup>
+	<ItemGroup>
 		<EmbeddedResource Include="TestRunner.cs" />
 	</ItemGroup>
 	<ItemGroup>

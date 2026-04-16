@@ -8,7 +8,7 @@
 					<ControlTemplate>
 						<!-- ReSharper disable Xaml.MissingGridIndex -->
 						<ThemeVariantScope RequestedThemeVariant="{TemplateBinding ThemeVariant}">
-							<Border Background="{TemplateBinding Background}"
+							<Border Background="{DynamicResource Background02}"
 									BorderThickness="0">
 								<Grid x:Name="PART_MainGrid"
 										RowDefinitions="Auto,Auto,*"

@@ -15,14 +15,23 @@ public class PercentWidthConverter : IMultiValueConverter
 
 	public object Convert(IList<object> values, Type targetType, object parameter, CultureInfo culture)
 	{
-		if (values is not [double value, double totalWidth])
+		if (values is not [double progress, double total])
 		{
 			return 0.0;
 		}
 
-		var calculated = value * totalWidth;
-		var rounded = Math.Round(calculated / 2.0, MidpointRounding.ToEven) * 2.0;
-		return rounded;
+		if (progress <= 0)
+		{
+			return 0.0;
+		}
+		if (progress >= 1)
+		{
+			return total;
+		}
+
+		// Clamp to avoid any floating-point overshoot
+		var width = Math.Min(progress * total, total);
+		return width;
 	}
 
 	#endregion

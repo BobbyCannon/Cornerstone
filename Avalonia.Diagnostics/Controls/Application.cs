@@ -43,7 +43,7 @@ public class Application : TopLevelGroup
 		RendererRoot = application.ApplicationLifetime switch
 		{
 			Lifetimes.IClassicDesktopStyleApplicationLifetime classic => classic.MainWindow?.Renderer,
-			Lifetimes.ISingleViewApplicationLifetime single => single.MainView?.VisualRoot?.Renderer,
+			//Lifetimes.ISingleViewApplicationLifetime single => single.MainView?.VisualRoot?.Renderer,
 			_ => null
 		};
 
@@ -87,7 +87,7 @@ public class Application : TopLevelGroup
 	/// <summary>
 	/// Gets the root of the visual tree, if the control is attached to a visual tree.
 	/// </summary>
-	public IRenderer RendererRoot { get; }
+	internal IRenderer RendererRoot { get; }
 
 	/// <inheritdoc cref="ThemeVariantScope.RequestedThemeVariant" />
 	public ThemeVariant RequestedThemeVariant

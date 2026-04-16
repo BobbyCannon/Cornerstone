@@ -61,10 +61,10 @@ public partial class ApplicationSettings : SettingsFile<ApplicationSettings>
 
 	#region Methods
 
-	public override bool HasChanges(IncludeExcludeSettings settings)
+	public override bool HasNotifiableChanges(IncludeExcludeSettings settings)
 	{
-		return base.HasChanges(settings)
-			|| MainWindowLocation.HasChanges();
+		return base.HasNotifiableChanges(settings)
+			|| MainWindowLocation.HasNotifiableChanges();
 	}
 
 	public override void ResetHasChanges()

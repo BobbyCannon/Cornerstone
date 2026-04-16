@@ -2,10 +2,13 @@
 
 using System;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
 using Cornerstone.Avalonia.Extensions;
+using Cornerstone.Presentation;
 using Cornerstone.Profiling;
+using Cornerstone.Reflection;
 
 #endregion
 
@@ -25,9 +28,10 @@ public partial class CornerstoneControl<T>
 
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
 	{
-		if (change.Property == ViewModelProperty)
+		if ((change.Property == DataContextProperty)
+			&& DataContext is T viewModel)
 		{
-			DataContext = ViewModel;
+			ViewModel = viewModel;
 		}
 
 		base.OnPropertyChanged(change);
@@ -36,7 +40,8 @@ public partial class CornerstoneControl<T>
 	#endregion
 }
 
-public partial class CornerstoneControl : Control
+[SourceReflection]
+public partial class CornerstoneControl : Control, IDispatchable
 {
 	#region Fields
 
@@ -53,6 +58,11 @@ public partial class CornerstoneControl : Control
 
 	#region Methods
 
+	public IDispatcher GetDispatcher()
+	{
+		return CornerstoneApplication.CornerstoneDispatcher;
+	}
+
 	public static T GetInstance<T>()
 	{
 		return CornerstoneApplication.DependencyProvider.GetInstance<T>();
@@ -63,7 +73,7 @@ public partial class CornerstoneControl : Control
 		return CornerstoneApplication.DependencyProvider.GetInstance(type);
 	}
 
-	protected void OnPropertyChanged(string propertyName)
+	protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
 	{
 		_propertyChangedHandler ??= AvaloniaExtensions.GetPropertyChangedHandler(this);
 		_propertyChangedHandler?.Invoke(this, new PropertyChangedEventArgs(propertyName));

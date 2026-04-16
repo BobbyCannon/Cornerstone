@@ -9,7 +9,7 @@ using Cornerstone.Runtime;
 
 namespace Cornerstone.Sample;
 
-public partial class AppView : CornerstoneUserControl<AppViewModel>
+public partial class AppView : CornerstoneAppView<AppViewModel>
 {
 	#region Constructors
 

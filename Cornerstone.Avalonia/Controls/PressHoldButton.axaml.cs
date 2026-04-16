@@ -195,11 +195,13 @@ public sealed class PressHoldButton : Button
 	private async Task RunFlashAnimationAsync()
 	{
 		var originalBackground = _indicator.Background;
+		var originalOpacity = _indicator.Opacity;
 		var animation = new Animation
 		{
 			Duration = TimeSpan.FromSeconds(0.08),
 			IterationCount = new IterationCount(2),
-			PlaybackDirection = PlaybackDirection.Alternate
+			PlaybackDirection = PlaybackDirection.Alternate,
+			FillMode = FillMode.Forward
 		};
 
 		animation.Children.Add(new KeyFrame
@@ -216,8 +218,12 @@ public sealed class PressHoldButton : Button
 		// Run the animation
 		await animation.RunAsync(_indicator);
 
-		// Restore original background after animation
+		// Restore original state after animation
 		_indicator.Background = originalBackground;
+		_indicator.Opacity = originalOpacity;
+
+		// v12: Hack to fix render issue...
+		InvalidateMeasure();
 	}
 
 	private void StartHold()

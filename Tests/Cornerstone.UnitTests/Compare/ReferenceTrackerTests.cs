@@ -3,18 +3,18 @@
 using System.Collections.Generic;
 using Cornerstone.Compare;
 using Cornerstone.Reflection;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.UnitTests.Compare;
 
-[TestFixture]
+[TestClass]
 public class ReferenceTrackerTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	[Test]
+	[TestMethod]
 	public void CheckReferenceBothSidesAreSelfOrAlreadyProcessedReturnsTrue()
 	{
 		using var tracker = new ReferenceTracker();
@@ -33,7 +33,7 @@ public class ReferenceTrackerTests : CornerstoneUnitTest
 		IsTrue(tracker.CheckReference(parent, parent, child, child));
 	}
 
-	[Test]
+	[TestMethod]
 	public void CheckReferenceOneSideNotProcessedReturnsFalse()
 	{
 		using var tracker = new ReferenceTracker();
@@ -49,7 +49,7 @@ public class ReferenceTrackerTests : CornerstoneUnitTest
 		IsFalse(tracker.CheckReference(a, b, a, c));
 	}
 
-	[Test]
+	[TestMethod]
 	public void DisposeReturnsObjectToPoolCanBeReused()
 	{
 		ReferenceTracker firstTracker;
@@ -82,7 +82,7 @@ public class ReferenceTrackerTests : CornerstoneUnitTest
 		}
 	}
 
-	[Test]
+	[TestMethod]
 	public void RemoveReferenceExistingObjectRemovesIt()
 	{
 		using var tracker = new ReferenceTracker();
@@ -99,7 +99,7 @@ public class ReferenceTrackerTests : CornerstoneUnitTest
 		IsTrue(tracker.TrackReference(obj));
 	}
 
-	[Test]
+	[TestMethod]
 	public void RemoveReferenceNotTrackedReturnsFalse()
 	{
 		using var tracker = new ReferenceTracker();
@@ -109,14 +109,14 @@ public class ReferenceTrackerTests : CornerstoneUnitTest
 		IsFalse(removed);
 	}
 
-	[Test]
+	[TestMethod]
 	public void RemoveReferenceNullReturnsFalse()
 	{
 		using var tracker = new ReferenceTracker();
 		IsFalse(tracker.RemoveReference(null));
 	}
 
-	[Test]
+	[TestMethod]
 	public void TrackReferenceAlreadyTracked()
 	{
 		var tracker = new ReferenceTracker();
@@ -131,7 +131,7 @@ public class ReferenceTrackerTests : CornerstoneUnitTest
 		IsTrue(tracker.TrackReference(obj));
 	}
 
-	[Test]
+	[TestMethod]
 	public void TrackReferenceNewObjectReturnsTrueThenAlreadyProcessedReturnsTrue()
 	{
 		using var tracker = new ReferenceTracker();
@@ -145,14 +145,14 @@ public class ReferenceTrackerTests : CornerstoneUnitTest
 		IsTrue(tracker.AlreadyProcessed(sameObj));
 	}
 
-	[Test]
+	[TestMethod]
 	public void TrackReferenceNullReturnsTrueDoesNotThrow()
 	{
 		using var tracker = new ReferenceTracker();
 		IsTrue(tracker.TrackReference(null));
 	}
 
-	[Test]
+	[TestMethod]
 	public void TrackReferenceStringReturnsTrueNotAdded()
 	{
 		using var tracker = new ReferenceTracker();
@@ -162,7 +162,7 @@ public class ReferenceTrackerTests : CornerstoneUnitTest
 		IsFalse(tracker.AlreadyProcessed(str));
 	}
 
-	[Test]
+	[TestMethod]
 	public void TrackReferenceTwoDifferentObjectsBothTracked()
 	{
 		using var tracker = new ReferenceTracker();
@@ -177,7 +177,7 @@ public class ReferenceTrackerTests : CornerstoneUnitTest
 		IsTrue(tracker.AlreadyProcessed(b));
 	}
 
-	[Test]
+	[TestMethod]
 	public void TrackReferenceValueTypeReturnsTrueNotAdded()
 	{
 		using var tracker = new ReferenceTracker();

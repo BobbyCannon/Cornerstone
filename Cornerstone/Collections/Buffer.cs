@@ -30,7 +30,7 @@ public abstract class Buffer<T> : IBuffer<T>
 
 	public void Add(IEnumerable<T> items)
 	{
-		// Default slow path: element-by-element (override in GapBuffer!)
+		// Default slow path: element-by-element (override to optimize)
 		foreach (var item in items)
 		{
 			Add(item);
@@ -38,7 +38,7 @@ public abstract class Buffer<T> : IBuffer<T>
 	}
 
 	[OverloadResolutionPriority(1)]
-	public virtual void Add(ReadOnlySpan<T> items)
+	public void Add(ReadOnlySpan<T> items)
 	{
 		if (items.IsEmpty)
 		{

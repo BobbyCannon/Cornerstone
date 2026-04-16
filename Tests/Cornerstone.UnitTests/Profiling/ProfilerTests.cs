@@ -2,25 +2,25 @@
 
 using System.Linq;
 using Cornerstone.Profiling;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.UnitTests.Profiling;
 
-[TestFixture]
+[TestClass]
 public class ProfilerTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	[Test]
+	[TestMethod]
 	public void SimpleTest()
 	{
 		var profiler = new Profiler(this);
 		profiler.Refresh();
 		for (var i = 0; i < 12000; i++)
 		{
-			var scope = profiler.Start("Test", this);
+			var scope = profiler.Start("Test");
 			IncrementTime(milliseconds: 10);
 			scope.Dispose();
 		}

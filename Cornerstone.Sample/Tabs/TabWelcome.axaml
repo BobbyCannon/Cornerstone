@@ -22,22 +22,17 @@
 					Margin="0,0,0,20"
 					Text="Welcome to Cornerstone" />
 		</Grid>
-		<ScrollViewer>
-			<AutoGrid ColumnCount="1"
-					RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*"
-					RowSpacing="20"
-					Margin="10">
-				<SelectableTextBlock>
-					<SelectableTextBlock.Text>
-						Hi, I’m Bobby, a software architect who loves designing and
-						building software. I created Cornerstone to document my personal
-						journey of growth and learning through code. Driven by my passion
-						for crafting code and embracing challenges, Cornerstone is a
-						flexible, robust platform for developers to build their
-						applications.
-					</SelectableTextBlock.Text>
-				</SelectableTextBlock>
-			</AutoGrid>
+		<ScrollViewer HorizontalScrollBarVisibility="Disabled">
+			<SelectableTextBlock>
+				<SelectableTextBlock.Text>
+					Hi, I’m Bobby, a software architect who loves designing and
+					building software. I created Cornerstone to document my personal
+					journey of growth and learning through code. Driven by my passion
+					for crafting code and embracing challenges, Cornerstone is a
+					flexible, robust platform for developers to build their
+					applications.
+				</SelectableTextBlock.Text>
+			</SelectableTextBlock>
 		</ScrollViewer>
 	</DockPanel>
 </UserControl>

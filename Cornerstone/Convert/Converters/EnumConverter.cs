@@ -65,7 +65,7 @@ public class EnumConverter : BaseConverter
 				var enumString = settings?.EnumFormat == EnumFormat.Value
 					? ((Enum) from).ToString("D")
 					: ((Enum) from).ToString();
-				value = Activator.CreateInstance(toType, enumString);
+				value = SourceReflector.CreateInstance(toType, enumString);
 				return true;
 			}
 

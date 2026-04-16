@@ -10,28 +10,40 @@ using Cornerstone.Runtime;
 namespace Cornerstone.Extensions;
 
 /// <summary>
-/// General utility extensions
+/// General utility extensions with low-allocation retry and wait logic.
 /// </summary>
 public static class Utility
 {
 	#region Methods
 
 	/// <summary>
-	/// Continues to run the action until we hit the timeout. If an exception occurs then delay for the
-	/// provided delay time.
+	/// Retries the action until it succeeds or the timeout is reached.
+	/// Uses high-resolution timestamp for zero allocation timing.
 	/// </summary>
-	/// <param name="action"> The action to attempt to retry. </param>
-	/// <param name="timeout"> The timeout to attempt the action. This value is in milliseconds. </param>
-	/// <param name="delay"> The delay in between actions. This value is in milliseconds. </param>
-	/// <returns> The response from the action. </returns>
-	public static void Retry(Action action, TimeSpan timeout, TimeSpan delay)
+	/// <param name="action"> The action to retry. </param>
+	/// <param name="timeout"> Timeout in milliseconds (default 1000). </param>
+	/// <param name="delay"> Delay between retries in milliseconds (default 10). </param>
+	public static void Retry(Action action, int timeout = 1000, int delay = 10)
 	{
-		var stopwatch = Stopwatch.StartNew();
+		if (action is null)
+		{
+			throw new ArgumentNullException(nameof(action));
+		}
+		if (timeout < 0)
+		{
+			timeout = 0;
+		}
+		if (delay < 1)
+		{
+			delay = 1;
+		}
+
+		var startTimestamp = Stopwatch.GetTimestamp();
+		var timeoutTicks = timeout * (Stopwatch.Frequency / 1000L);
 
 		while (true)
 		{
-			Exception lastException;
-
+			Exception lastException = null;
 			try
 			{
 				action();
@@ -42,35 +54,34 @@ public static class Utility
 				lastException = ex;
 			}
 
-			var elapsed = stopwatch.Elapsed;
-			if (elapsed >= timeout)
+			var elapsedTicks = Stopwatch.GetTimestamp() - startTimestamp;
+			if (elapsedTicks >= timeoutTicks)
 			{
-				throw new AggregateException($"Operation failed after {stopwatch.ElapsedMilliseconds} ms ({timeout.TotalMilliseconds:F0} ms timeout).", lastException!);
+				throw new AggregateException(
+					$"Operation failed after {(elapsedTicks * 1000) / Stopwatch.Frequency} ms ({timeout} ms timeout).",
+					lastException!
+				);
 			}
 
-			Thread.Sleep(delay);
+			// Very light natural jitter for better behavior in concurrent scenarios (no extra param)
+			var sleepTime = delay;
+			if (delay > 5)
+			{
+				// Tiny spread (±10%) without any Random allocation in most cases
+				// -2 to +1 ms spread
+				sleepTime = (int) ((delay + (Stopwatch.GetTimestamp() & 0x3)) - 2);
+			}
+
+			Thread.Sleep(sleepTime);
 		}
 	}
 
 	public static bool WaitUntil(
 		Func<bool> action,
-		TimeSpan? timeout = null,
-		TimeSpan? delay = null,
-		TimeSpan minimum = default,
-		TimeSpan? maximum = null,
-		IDateTimeProvider timeProvider = null,
-		CancellationToken cancellationToken = default)
-	{
-		return WaitUntil<object>(null, _ => action(), timeout, delay, minimum, maximum, timeProvider, cancellationToken);
-	}
-
-	public static bool WaitUntil(
-		this object value,
-		Func<bool> action,
-		TimeSpan? timeout = null,
-		TimeSpan? delay = null,
-		TimeSpan minimum = default,
-		TimeSpan? maximum = null,
+		int timeout = 1000,
+		int delay = 10,
+		int minimum = 0,
+		int maximum = 10000,
 		IDateTimeProvider timeProvider = null,
 		CancellationToken cancellationToken = default)
 	{
@@ -80,64 +91,81 @@ public static class Utility
 	public static bool WaitUntil<T>(
 		this T value,
 		Func<T, bool> action,
-		TimeSpan? timeout = null,
-		TimeSpan? delay = null,
-		TimeSpan minimum = default,
-		TimeSpan? maximum = null,
+		int timeout = 1000,
+		int delay = 10,
+		int minimum = 0,
+		int maximum = 10000,
 		IDateTimeProvider timeProvider = null,
 		CancellationToken cancellationToken = default)
 	{
-		timeProvider ??= DateTimeProvider.RealTime;
-		timeout ??= TimeSpan.FromSeconds(1);
-		delay ??= TimeSpan.FromMilliseconds(1);
-		maximum ??= timeout.Value.Add(TimeSpan.FromSeconds(10));
-
-		if (delay <= TimeSpan.Zero)
+		if (action is null)
 		{
-			delay = TimeSpan.FromMilliseconds(1);
+			throw new ArgumentNullException(nameof(action));
 		}
 
-		// Fast path
-		if (action(value))
+		timeProvider ??= DateTimeProvider.RealTime;
+
+		if (delay < 1)
 		{
-			return true;
+			delay = 1;
+		}
+		if (timeout < 0)
+		{
+			timeout = 0;
+		}
+		if (minimum < 0)
+		{
+			minimum = 0;
+		}
+		if (maximum < timeout)
+		{
+			maximum = timeout;
 		}
 
 		var start = timeProvider.UtcNow;
+		var minTime = start.AddMilliseconds(minimum);
+		var timeoutTime = start.AddMilliseconds(timeout);
+		var maxTime = start.AddMilliseconds(maximum);
 
 		while (true)
 		{
 			cancellationToken.ThrowIfCancellationRequested();
 
 			var now = timeProvider.UtcNow;
-			var elapsed = now - start;
 
-			if (elapsed >= maximum)
+			if (now >= maxTime)
 			{
 				return false;
 			}
 
-			if (action(value))
+			var conditionMet = action(value);
+
+			if (conditionMet)
 			{
-				// still enforce minimum wait if requested
-				var remainingMin = minimum - elapsed;
-				if (remainingMin > TimeSpan.Zero)
+				// Always enforce minimum wait before returning true
+				if (now < minTime)
 				{
-					cancellationToken.WaitHandle.WaitOne(remainingMin);
+					var remainingMin = (int) (minTime - now).TotalMilliseconds;
+					if (remainingMin > 0)
+					{
+						cancellationToken.WaitHandle.WaitOne(remainingMin);
+					}
 				}
 				return true;
 			}
 
-			if (elapsed >= timeout)
+			// Condition not met yet
+			if (now >= timeoutTime)
 			{
 				return false;
 			}
 
-			// Sleep — but respect both timeout and cancellation
-			var sleepTime = TimeSpanExtensions.Min(delay.Value, timeout.Value - elapsed);
-			sleepTime = TimeSpanExtensions.Min(sleepTime, maximum.Value - elapsed);
+			// Calculate safe sleep time
+			var remainingToTimeout = (int) (timeoutTime - now).TotalMilliseconds;
+			var remainingToMax = (int) (maxTime - now).TotalMilliseconds;
+			var sleepTime = Math.Min(delay, Math.Min(remainingToTimeout, remainingToMax));
 
-			if (sleepTime <= TimeSpan.Zero)
+			if (sleepTime <= 0)
 			{
 				return false;
 			}

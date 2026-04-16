@@ -150,7 +150,7 @@ public class TreeDataGridTemplateCell : TreeDataGridCell
 		}
 	}
 
-	protected override void OnLostFocus(RoutedEventArgs e)
+	protected override void OnLostFocus(FocusChangedEventArgs e)
 	{
 		if (EndEditIfFocusLost())
 		{

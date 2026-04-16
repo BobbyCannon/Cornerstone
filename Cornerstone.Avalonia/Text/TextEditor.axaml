@@ -11,6 +11,7 @@
 				<Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}" />
 				<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
 				<Setter Property="FontSize" Value="{StaticResource ControlFontSize}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground03}" />
 				<Setter Property="Padding" Value="8" />
 				<Setter Property="Focusable" Value="True" />
 				<Setter Property="(TextInputOptions.Multiline)" Value="True" />
@@ -18,15 +19,16 @@
 					<ControlTemplate>
 						<Border Background="{TemplateBinding Background}"
 								BorderThickness="{TemplateBinding BorderThickness}"
-								BorderBrush="{TemplateBinding BorderBrush}">
+								BorderBrush="{TemplateBinding BorderBrush}"
+								CornerRadius="{TemplateBinding CornerRadius}">
 							<Grid ColumnDefinitions="Auto,*">
-								<Border Grid.Column="0" 
+								<Border Grid.Column="0"
 										BorderThickness="0,0,1,0"
 										CornerRadius="0"
-										Padding="{TemplateBinding Padding}"
 										IsVisible="{TemplateBinding ShowMargins}">
 									<ItemsControl
-											ItemsSource="{TemplateBinding LeftMargins}">
+											ItemsSource="{TemplateBinding LeftMargins}"
+											Padding="{TemplateBinding Padding}">
 										<ItemsControl.ItemsPanel>
 											<ItemsPanelTemplate>
 												<StackPanel Orientation="Horizontal" Spacing="8" />
@@ -38,26 +40,56 @@
 										x:Name="PART_ScrollViewer"
 										Focusable="False"
 										AllowAutoHide="{TemplateBinding ScrollViewer.AllowAutoHide}"
-										HorizontalScrollBarVisibility="Auto"
-										VerticalScrollBarVisibility="Auto">
+										HorizontalScrollBarVisibility="{TemplateBinding HorizontalScrollBarVisibility}"
+										VerticalScrollBarVisibility="Auto"
+										Padding="{TemplateBinding Padding}">
 									<TextRenderer Name="PART_TextRenderer"
 											Cursor="IBeam"
+											CurrentLineBackground="{DynamicResource Background02}"
 											Foreground="{TemplateBinding Foreground}"
 											FontFamily="{TemplateBinding FontFamily}"
-											FontSize="{TemplateBinding FontSize, Mode=TwoWay}"
-											Margin="{TemplateBinding Padding}"
-											ViewModel="{TemplateBinding ViewModel}" />
+											FontSize="{TemplateBinding FontSize, Mode=TwoWay}" />
 								</ScrollViewer>
 							</Grid>
 						</Border>
 					</ControlTemplate>
+				</Setter>
+				<Setter Property="ContextMenu">
+					<Setter.Value>
+						<ContextMenu>
+							<MenuItem x:Name="TextEditorContextFlyoutCutItem"
+									Header="Cut"
+									Command="{Binding $parent[TextEditor].ViewModel.Clipboard.CutCommand}"
+									InputGesture="{x:Static TextBox.CutGesture}">
+								<MenuItem.Icon>
+									<Path Data="{StaticResource Icons.Cut}" />
+								</MenuItem.Icon>
+							</MenuItem>
+							<MenuItem x:Name="TextEditorContextFlyoutCopyItem"
+									Header="Copy"
+									Command="{Binding $parent[TextEditor].ViewModel.Clipboard.CopyCommand}"
+									InputGesture="{x:Static TextBox.CopyGesture}">
+								<MenuItem.Icon>
+									<Path Data="{StaticResource Icons.Copy}" />
+								</MenuItem.Icon>
+							</MenuItem>
+							<MenuItem x:Name="TextEditorContextFlyoutPasteItem"
+									Header="Paste"
+									Command="{Binding $parent[TextEditor].ViewModel.Clipboard.PasteCommand}"
+									InputGesture="{x:Static TextBox.PasteGesture}">
+								<MenuItem.Icon>
+									<Path Data="{StaticResource Icons.Paste.Outline}" />
+								</MenuItem.Icon>
+							</MenuItem>
+						</ContextMenu>
+					</Setter.Value>
 				</Setter>
 			</ControlTheme>
 		</ResourceDictionary>
 	</Styles.Resources>
 
 	<Design.PreviewWith>
-		<PreviewCodeSnippet Height="500" Width="600">
+		<PreviewCodeSnippet Height="430" Width="600">
 			<Grid RowDefinitions="Auto,*">
 				<WrapPanel Grid.Row="0"
 						ItemSpacing="20"
@@ -78,7 +110,7 @@
 						Grid.Row="1"
 						FontSize="20"
 						ScrollViewer.AllowAutoHide="false"
-						Text="The quick brown fox jumped over the lazy dog's back." />
+						Text="aoeuthoeu&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;" />
 			</Grid>
 		</PreviewCodeSnippet>
 	</Design.PreviewWith>

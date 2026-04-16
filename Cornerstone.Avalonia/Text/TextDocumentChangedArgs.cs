@@ -1,18 +1,25 @@
-﻿#region References
+﻿namespace Cornerstone.Avalonia.Text;
 
-using System;
-
-#endregion
-
-namespace Cornerstone.Avalonia.Text;
-
-public class TextDocumentChangedArgs : EventArgs
+public readonly struct TextDocumentChangedArgs
 {
+	#region Constructors
+
+	public TextDocumentChangedArgs(int offset, string text, TextDocumentChangeType type)
+	{
+		Offset = offset;
+		Text = text;
+		Type = type;
+	}
+
+	#endregion
+
 	#region Properties
 
-	public int Length { get; set; }
+	public int Offset { get; init; }
 
-	public int Offset { get; set; }
+	public string Text { get; init; }
+
+	public TextDocumentChangeType Type { get; init; }
 
 	#endregion
 }

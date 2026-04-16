@@ -1,10 +1,9 @@
 ﻿#region References
 
+using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using Cornerstone.Runtime;
 
@@ -17,7 +16,7 @@ public class Profiler : IEnumerable<TimedScopeStats>, IProfiler
 	#region Fields
 
 	private readonly IDateTimeProvider _dateTimeProvider;
-	private long _lastResetTimestamp;
+	private long _lastRefreshTicks;
 	private readonly ConcurrentDictionary<string, TimedScopeStats> _stats;
 
 	#endregion
@@ -26,7 +25,7 @@ public class Profiler : IEnumerable<TimedScopeStats>, IProfiler
 
 	public Profiler(IDateTimeProvider dateTimeProvider = null)
 	{
-		_dateTimeProvider = dateTimeProvider;
+		_dateTimeProvider = dateTimeProvider ?? DateTimeProvider.RealTime;
 		_stats = new();
 	}
 
@@ -37,6 +36,11 @@ public class Profiler : IEnumerable<TimedScopeStats>, IProfiler
 	public IEnumerator<TimedScopeStats> GetEnumerator()
 	{
 		return _stats.Values.GetEnumerator();
+	}
+
+	public long GetTicks()
+	{
+		return _dateTimeProvider.UtcNow.Ticks;
 	}
 
 	public void OnScopeEnded(TimedScope timedScope, long elapsedTicks)
@@ -51,16 +55,16 @@ public class Profiler : IEnumerable<TimedScopeStats>, IProfiler
 
 	public void Refresh()
 	{
-		var now = _dateTimeProvider?.Now.Ticks ?? Stopwatch.GetTimestamp();
-		var intervalTicks = now - _lastResetTimestamp;
+		var timeStamp = _dateTimeProvider.UtcNow.Ticks;
+		var intervalTicks = timeStamp - _lastRefreshTicks;
 
 		if (intervalTicks <= 0)
 		{
-			_lastResetTimestamp = now;
+			_lastRefreshTicks = timeStamp;
 			return;
 		}
 
-		var intervalSeconds = (double) intervalTicks / Stopwatch.Frequency;
+		var intervalSeconds = (double) intervalTicks / TimeSpan.TicksPerSecond;
 
 		// Snapshot and compute
 		foreach (var kvp in _stats)
@@ -90,7 +94,7 @@ public class Profiler : IEnumerable<TimedScopeStats>, IProfiler
 			stats.PerSecondHistory?.Add(callsPerSeconds);
 		}
 
-		_lastResetTimestamp = now;
+		_lastRefreshTicks = timeStamp;
 	}
 
 	public (ISeriesDataProvider Average, ISeriesDataProvider PerSecond) SetupScopeHistory(string name, int size = 60)
@@ -113,22 +117,9 @@ public interface IProfiler
 {
 	#region Methods
 
+	long GetTicks();
+
 	void OnScopeEnded(TimedScope timedScope, long elapsedTicks);
-
-	#endregion
-}
-
-public static class ProfilerExtensions
-{
-	#region Methods
-
-	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	public static TimedScope Start(this IProfiler profiler, string name, IDateTimeProvider dateTimeProvider = null)
-	{
-		return profiler != null
-			? new TimedScope(name, profiler, dateTimeProvider)
-			: default;
-	}
 
 	#endregion
 }

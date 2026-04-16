@@ -108,8 +108,9 @@ public class DateTimeProvider : IDateTimeProvider
 
 	private static DateTime HighResolutionUtcNow()
 	{
+		// Use decimal for better (but still not perfect) precision
 		var elapsedPerf = Stopwatch.GetTimestamp() - _basePerfTimestamp;
-		var realTicksOffset = (long) (elapsedPerf * (10_000_000.0 / Stopwatch.Frequency));
+		var realTicksOffset = (long)(elapsedPerf * (10_000_000.0m / Stopwatch.Frequency));
 		return new DateTime(_baseRealTicks + realTicksOffset, DateTimeKind.Utc);
 	}
 

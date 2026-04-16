@@ -1,16 +1,17 @@
 ﻿#region References
 
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.UnitTests;
 
+[TestClass]
 public class CornerstoneExceptionTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	[Test]
+	[TestMethod]
 	public void Constructors()
 	{
 		var exception = new CornerstoneException();

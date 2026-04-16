@@ -12,6 +12,12 @@ namespace Cornerstone.Extensions;
 /// </summary>
 public static class FloatExtensions
 {
+	#region Constants
+
+	internal const float FloatEpsilon = 1.192092896e-07F;
+
+	#endregion
+
 	#region Methods
 
 	/// <summary>
@@ -47,6 +53,16 @@ public static class FloatExtensions
 
 		// Compare within epsilon
 		return Math.Abs(f1 - f2) <= effectiveEpsilon;
+	}
+
+	/// <summary>
+	/// IsZero - Returns whether the float is "close" to 0.  Same as AreClose(float, 0),
+	/// but this is faster.
+	/// </summary>
+	/// <param name="value"> The float to compare to 0. </param>
+	public static bool IsZero(float value)
+	{
+		return Math.Abs(value) < (10.0f * FloatEpsilon);
 	}
 
 	#endregion

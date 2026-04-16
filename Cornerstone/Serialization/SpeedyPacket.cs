@@ -8,6 +8,7 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Threading;
 using Cornerstone.Collections;
 using Cornerstone.Reflection;
 using Cornerstone.Text;
@@ -21,7 +22,7 @@ public class SpeedyPacket : IReadOnlyList<object>
 	#region Fields
 
 	private readonly List<object> _list;
-	private static readonly Dictionary<Type, TypeMetadata> _typeMetadataCache;
+	private static Dictionary<Type, TypeMetadata> _typeMetadataCache;
 	private static readonly Type _typeOfObject;
 
 	#endregion
@@ -82,11 +83,11 @@ public class SpeedyPacket : IReadOnlyList<object>
 		return Pack(values.Cast<object>());
 	}
 
-	public static ReadOnlySpan<byte> Pack(IEnumerable<object> values)
+	public static byte[] Pack(IEnumerable<object> values)
 	{
-		using var buffer = new SpeedyBuffer<byte>(16384);
+		using var buffer = new SpeedyList<byte>(16384);
 		SpeedyPackWriter.Write(values, buffer);
-		return buffer.AsSpan();
+		return buffer.ToArray();
 	}
 
 	public ReadOnlySpan<byte> ToByteArray()
@@ -131,11 +132,15 @@ public class SpeedyPacket : IReadOnlyList<object>
 			return null;
 		}
 
-		// Check cache or compute metadata
-		if (!_typeMetadataCache.TryGetValue(type, out var metadata))
+		// Lock-free read: the dictionary reference is always a complete, valid snapshot
+		var cache = Volatile.Read(ref _typeMetadataCache)!;
+		if (!cache.TryGetValue(type, out var metadata))
 		{
 			metadata = new TypeMetadata(type);
-			_typeMetadataCache[type] = metadata;
+			// Copy-on-write: create a new dictionary with the added entry and swap it in
+			var updated = new Dictionary<Type, TypeMetadata>(cache) { [type] = metadata };
+			// If another thread won the race, that's fine — we still use our local metadata
+			Interlocked.CompareExchange(ref _typeMetadataCache, updated, cache);
 		}
 
 		if ((metadata.Type == _typeOfObject)
@@ -147,7 +152,7 @@ public class SpeedyPacket : IReadOnlyList<object>
 		var packet = value as SpeedyPacket;
 		if ((packet != null) && metadata.IsPackable)
 		{
-			var response = (IPackable) Activator.CreateInstance(type);
+			var response = (IPackable) SourceReflector.CreateInstance(type);
 			response?.FromSpeedyPacket(packet);
 			return response;
 		}
@@ -234,7 +239,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 				case SpeedyPacketDataTypes.True: response.Add(true); break;
 				case SpeedyPacketDataTypes.False: response.Add(false); break;
 				case SpeedyPacketDataTypes.StringOfEmpty: response.Add(string.Empty); break;
-
 				case SpeedyPacketDataTypes.String:
 				{
 					if (!reader.TryReadString(out var utf8Bytes))
@@ -263,7 +267,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(Unpack(ref subReader));
 					continue;
 				}
-
 				case SpeedyPacketDataTypes.CharMin:
 				case SpeedyPacketDataTypes.CharMax:
 				case SpeedyPacketDataTypes.Char:
@@ -275,7 +278,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(c);
 					continue;
 				}
-
 				case SpeedyPacketDataTypes.ByteMin:
 				case SpeedyPacketDataTypes.ByteMax:
 				case SpeedyPacketDataTypes.ByteOne:
@@ -289,7 +291,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(b);
 					continue;
 				}
-
 				case SpeedyPacketDataTypes.SByteMin:
 				case SpeedyPacketDataTypes.SByteMax:
 				case SpeedyPacketDataTypes.SByteNegativeOne:
@@ -305,7 +306,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(sb);
 					continue;
 				}
-
 				case SpeedyPacketDataTypes.Int16Min:
 				case SpeedyPacketDataTypes.Int16Max:
 				case SpeedyPacketDataTypes.Int16NegativeOne:
@@ -321,7 +321,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(v);
 					continue;
 				}
-
 				case SpeedyPacketDataTypes.UInt16Min:
 				case SpeedyPacketDataTypes.UInt16Max:
 				case SpeedyPacketDataTypes.UInt16One:
@@ -335,7 +334,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(v);
 					continue;
 				}
-
 				case SpeedyPacketDataTypes.Int32Min:
 				case SpeedyPacketDataTypes.Int32Max:
 				case SpeedyPacketDataTypes.Int32NegativeOne:
@@ -351,7 +349,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(v);
 					continue;
 				}
-
 				case SpeedyPacketDataTypes.UInt32Min:
 				case SpeedyPacketDataTypes.UInt32Max:
 				case SpeedyPacketDataTypes.UInt32One:
@@ -365,7 +362,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(v);
 					continue;
 				}
-
 				case SpeedyPacketDataTypes.Int64Min:
 				case SpeedyPacketDataTypes.Int64Max:
 				case SpeedyPacketDataTypes.Int64NegativeOne:
@@ -381,7 +377,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(v);
 					continue;
 				}
-
 				case SpeedyPacketDataTypes.UInt64Min:
 				case SpeedyPacketDataTypes.UInt64Max:
 				case SpeedyPacketDataTypes.UInt64One:
@@ -395,7 +390,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(v);
 					continue;
 				}
-
 				case SpeedyPacketDataTypes.Int128Min:
 				case SpeedyPacketDataTypes.Int128Max:
 				case SpeedyPacketDataTypes.Int128NegativeOne:
@@ -411,7 +405,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(v);
 					continue;
 				}
-
 				case SpeedyPacketDataTypes.UInt128Min:
 				case SpeedyPacketDataTypes.UInt128Max:
 				case SpeedyPacketDataTypes.UInt128One:
@@ -425,7 +418,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(v);
 					continue;
 				}
-
 				case SpeedyPacketDataTypes.FloatMin:
 				case SpeedyPacketDataTypes.FloatMax:
 				case SpeedyPacketDataTypes.FloatNegativeInfinity:
@@ -450,7 +442,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(v);
 					continue;
 				}
-
 				case SpeedyPacketDataTypes.DoubleMin:
 				case SpeedyPacketDataTypes.DoubleMax:
 				case SpeedyPacketDataTypes.DoubleNegativeInfinity:
@@ -475,7 +466,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(v);
 					continue;
 				}
-
 				case SpeedyPacketDataTypes.DecimalMin:
 				case SpeedyPacketDataTypes.DecimalMax:
 				case SpeedyPacketDataTypes.DecimalNegativeOne:
@@ -491,7 +481,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(v);
 					continue;
 				}
-
 				case SpeedyPacketDataTypes.DateOnlyMin:
 				case SpeedyPacketDataTypes.DateOnlyMax:
 				case SpeedyPacketDataTypes.DateOnlyUnixEpoch:
@@ -519,7 +508,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(dateTime);
 					continue;
 				}
-
 				case SpeedyPacketDataTypes.DateTimeOffsetMin:
 				case SpeedyPacketDataTypes.DateTimeOffsetMax:
 				case SpeedyPacketDataTypes.DateTimeOffsetUnixEpoch:
@@ -533,7 +521,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(dateTimeOffset);
 					continue;
 				}
-
 				case SpeedyPacketDataTypes.TimeOnlyMin:
 				case SpeedyPacketDataTypes.TimeOnlyMax:
 				case SpeedyPacketDataTypes.TimeOnly:
@@ -545,7 +532,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(timeOnly);
 					continue;
 				}
-
 				case SpeedyPacketDataTypes.TimeSpanMin:
 				case SpeedyPacketDataTypes.TimeSpanMax:
 				case SpeedyPacketDataTypes.TimeSpanZero:
@@ -558,7 +544,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(timespan);
 					continue;
 				}
-
 				case SpeedyPacketDataTypes.GuidEmpty:
 				case SpeedyPacketDataTypes.GuidAllBitsSet:
 				case SpeedyPacketDataTypes.Guid:
@@ -570,7 +555,6 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(guid);
 					continue;
 				}
-
 				case SpeedyPacketDataTypes.Version:
 				case SpeedyPacketDataTypes.VersionOneZero:
 				case SpeedyPacketDataTypes.VersionOneZeroZero:
@@ -583,10 +567,14 @@ public class SpeedyPacket : IReadOnlyList<object>
 					response.Add(version);
 					continue;
 				}
-
 				default:
 				{
-					Debugger.Break();
+					#if DEBUG
+					if (Debugger.IsAttached)
+					{
+						Debugger.Break();
+					}
+					#endif
 					throw new NotImplementedException($"{type} is not supported.");
 				}
 			}

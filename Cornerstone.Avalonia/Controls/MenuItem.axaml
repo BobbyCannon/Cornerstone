@@ -160,6 +160,7 @@
 
 		<!-- Separator state. -->
 		<Style Selector="^:separator">
+			<Setter Property="Height" Value="8" />
 			<Setter Property="Template">
 				<ControlTemplate>
 					<Separator />
@@ -170,14 +171,14 @@
 		<!-- Code Template - Color -->
 		<Style Selector="^[(Theme.Color)=Current]">
 			<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
-			<Setter Property="Foreground" Value="{DynamicResource ThemeForeground05}" />
+			<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
 			<Style Selector="^:pointerover">
 				<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground06}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeText06}" />
 			</Style>
 			<Style Selector="^:pressed">
 				<Setter Property="Background" Value="{DynamicResource ThemeColor04}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground04}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
 			</Style>
 			<Style Selector="^:disabled">
 				<Setter Property="Background" Value="{DynamicResource ThemeColor09}" />
@@ -421,7 +422,7 @@
 					<MenuItem Header="File" IsSubMenuOpen="True">
 						<MenuItem Header="Open" Theme.Color="Green" />
 						<MenuItem Header="Save" Theme.Color="Red" />
-						<Separator />
+						<MenuItem Header="-" />
 						<MenuItem Header="Exit" />
 					</MenuItem>
 					<MenuItem Header="Edit" />

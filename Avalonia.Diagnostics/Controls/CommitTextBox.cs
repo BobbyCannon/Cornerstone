@@ -3,7 +3,6 @@
 using System;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Interactivity;
 
 #endregion
 
@@ -67,7 +66,7 @@ public sealed class CommitTextBox : TextBox
 		}
 	}
 
-	protected override void OnLostFocus(RoutedEventArgs e)
+	protected override void OnLostFocus(FocusChangedEventArgs e)
 	{
 		base.OnLostFocus(e);
 

@@ -1,34 +1,22 @@
 ﻿#region References
 
-using System;
-using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Cornerstone.Avalonia.Extensions;
 using Cornerstone.Presentation;
 using Cornerstone.Profiling;
+using Cornerstone.Reflection;
+using System;
+using System.ComponentModel;
 
 #endregion
 
 namespace Cornerstone.Avalonia;
 
 public partial class CornerstoneUserControl<T>
-	: CornerstoneUserControl
+	: CornerstoneUserControl where T : class
 {
-	#region Constructors
-
-	public CornerstoneUserControl() : this(default)
-	{
-	}
-
-	public CornerstoneUserControl(T viewModel)
-	{
-		ViewModel = viewModel;
-	}
-
-	#endregion
-
 	#region Properties
 
 	[StyledProperty]
@@ -40,9 +28,10 @@ public partial class CornerstoneUserControl<T>
 
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
 	{
-		if (change.Property == ViewModelProperty)
+		if ((change.Property == DataContextProperty)
+			&& DataContext is T viewModel)
 		{
-			DataContext = ViewModel;
+			ViewModel = viewModel;
 		}
 
 		base.OnPropertyChanged(change);
@@ -51,6 +40,7 @@ public partial class CornerstoneUserControl<T>
 	#endregion
 }
 
+[SourceReflection]
 public partial class CornerstoneUserControl : UserControl, IDispatchable
 {
 	#region Fields
@@ -72,7 +62,7 @@ public partial class CornerstoneUserControl : UserControl, IDispatchable
 
 	public IDispatcher GetDispatcher()
 	{
-		return CornerstoneApplication.Dispatcher;
+		return CornerstoneApplication.CornerstoneDispatcher;
 	}
 
 	public static T GetInstance<T>()

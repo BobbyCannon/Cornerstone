@@ -5,7 +5,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Cornerstone.Avalonia.Drawing;
-using Cornerstone.Avalonia.Text;
 using Cornerstone.Profiling;
 
 #endregion
@@ -37,13 +36,14 @@ public partial class LineChart : CornerstoneTemplatedControl
 
 	static LineChart()
 	{
-		AffectsRender<TextRenderer>(
+		AffectsRender<LineChart>(
 			ForegroundProperty,
 			ShowLabelsProperty,
+			OverLabelsProperty,
 			SteppedProperty
 		);
 
-		AffectsMeasure<TextRenderer>(
+		AffectsMeasure<LineChart>(
 			FontFamilyProperty,
 			FontSizeProperty,
 			FontStyleProperty,
@@ -54,6 +54,9 @@ public partial class LineChart : CornerstoneTemplatedControl
 	#endregion
 
 	#region Properties
+
+	[StyledProperty(DefaultValue = false)]
+	public partial bool OverLabels { get; set; }
 
 	[StyledProperty]
 	public partial ISeriesDataProvider Data { get; set; }
@@ -91,7 +94,7 @@ public partial class LineChart : CornerstoneTemplatedControl
 	{
 		using var start = ProfilerExtensions.Start(Profiler, "Render");
 		var borderThickness = CornerstoneExtensions.GetBestSingle(BorderThickness);
-		var cornerRadius = (float) CornerstoneExtensions.GetBestSingle(CornerRadius);
+		var cornerRadius = (float)CornerstoneExtensions.GetBestSingle(CornerRadius);
 		var backgroundArea = new Rect(Bounds.Size);
 
 		if ((BorderBrush != null) && (borderThickness > 0))
@@ -114,6 +117,9 @@ public partial class LineChart : CornerstoneTemplatedControl
 		var lastValue = 0d;
 		var data = Data;
 
+		// This prevents the chart fill/line from ever drawing into the top-left label area.
+		var topMargin = ShowLabels && !OverLabels ? _contextHelper.SpriteHeight + 10 : 0d;
+
 		if (data is not null)
 		{
 			var fillGeometry = new StreamGeometry();
@@ -123,9 +129,10 @@ public partial class LineChart : CornerstoneTemplatedControl
 			using (var ctxLine = lineGeometry.Open())
 			{
 				var offsetX = Padding.Left + backgroundArea.Left;
-				var offsetY = Padding.Top + backgroundArea.Top;
+				var offsetY = Padding.Top + backgroundArea.Top + topMargin;
 				var gWidth = backgroundArea.Width - Padding.Left - Padding.Right;
-				var gHeight = backgroundArea.Height - Padding.Top - Padding.Bottom;
+				var gHeight = backgroundArea.Height - Padding.Top - Padding.Bottom - topMargin;
+
 				var xStep = gWidth / (data.Length - 1);
 				var lastPoint = new Point(offsetX, offsetY + gHeight);
 
@@ -151,7 +158,6 @@ public partial class LineChart : CornerstoneTemplatedControl
 
 					if (Stepped)
 					{
-						// Horizontal segment to this x (hold previous height)
 						ctxFill.LineTo(new Point(x, lastPoint.Y));
 					}
 
@@ -166,7 +172,6 @@ public partial class LineChart : CornerstoneTemplatedControl
 					{
 						if (Stepped)
 						{
-							// Horizontal segment to this x (hold previous height)
 							ctxLine.LineTo(new Point(x, lastPoint.Y));
 						}
 
@@ -176,7 +181,7 @@ public partial class LineChart : CornerstoneTemplatedControl
 					lastPoint = nextPoint;
 				}
 
-				var lastX = ((Data.Length - 1) * xStep) + offsetX;
+				var lastX = ((data.Length - 1) * xStep) + offsetX;
 				ctxFill.LineTo(new Point(lastX, gHeight + offsetY));
 				ctxFill.LineTo(new Point(offsetX, gHeight + offsetY));
 				ctxFill.EndFigure(true);
@@ -237,7 +242,10 @@ public partial class LineChart : CornerstoneTemplatedControl
 
 	private void OnDataChanged(object sender, EventArgs e)
 	{
-		InvalidateVisual();
+		// v12: invalidate visual stops working when flooded
+		//	switching to measure until it is fixed
+		//InvalidateVisual();
+		InvalidateMeasure();
 	}
 
 	#endregion

@@ -9,7 +9,6 @@ using Cornerstone.Sync;
 namespace Cornerstone.Storage;
 
 /// <inheritdoc cref="SyncEntity{T}" />
-[Updateable]
 public abstract partial class ClientSyncEntity<TKey>
 	: SyncEntity<TKey>, IClientEntity
 {

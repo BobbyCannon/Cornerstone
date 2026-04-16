@@ -10,7 +10,6 @@ using Cornerstone.Reflection;
 namespace Cornerstone.Presentation;
 
 [SourceReflection]
-[Updateable(false)]
 public partial class PopupManager : ViewModel, IPopupManager
 {
 	#region Properties

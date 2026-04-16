@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using Avalonia.Utilities;
 using Cornerstone.Avalonia.TreeDataGrid.Utils;
+using Cornerstone.Extensions;
 
 #endregion
 
@@ -89,7 +90,7 @@ public class AnonymousSortableRows<TModel> : ReadOnlyListBase<IRow<TModel>>, IRo
 	{
 		// Rows in an AnonymousSortableRows collection have Auto height so we only
 		// know the start position of the first row.
-		if (MathUtilities.IsZero(y))
+		if (DoubleExtensions.IsZero(y))
 		{
 			return (0, 0);
 		}

@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.ComponentModel;
@@ -16,9 +17,6 @@ using Cornerstone.Text;
 
 #endregion
 
-#pragma warning disable IL2067
-#pragma warning disable IL3050
-
 namespace Cornerstone.Reflection;
 
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
@@ -32,6 +30,12 @@ public static class SourceReflector
 		System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors
 		| System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicConstructors
 		| System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicParameterlessConstructor;
+
+	#endregion
+
+	#region Fields
+
+	private static readonly Dictionary<Type, FrozenDictionary<string, Type>> _propertyTypesCache = new();
 
 	#endregion
 
@@ -99,24 +103,24 @@ public static class SourceReflector
 			//	collectionType.GetInterfaces().Any(i => i.IsGenericType && (i.GetGenericTypeDefinition() == typeof(ISpeedyList<>))))
 			//{
 			//	var listType = typeof(SpeedyList<>).MakeGenericType(elementType);
-			//	return Activator.CreateInstance(listType);
+			//	return SourceReflector.CreateInstance(listType);
 			//}
 
 			if ((genericTypeDefinition == typeof(IList<>)) ||
 				collectionType.GetInterfaces().Any(i => i.IsGenericType && (i.GetGenericTypeDefinition() == typeof(IList<>))))
 			{
 				var listType = typeof(List<>).MakeGenericType(elementType);
-				return Activator.CreateInstance(listType, elementsCount);
+				return SourceReflector.CreateInstance(listType, elementsCount);
 			}
 
 			// If the type itself is a concrete generic type (e.g., List<T>)
 			if (!collectionType.IsAbstract && !collectionType.IsInterface)
 			{
-				return Activator.CreateInstance(collectionType, elementsCount);
+				return SourceReflector.CreateInstance(collectionType, elementsCount);
 			}
 		}
 
-		var response = Activator.CreateInstance(collectionType);
+		var response = SourceReflector.CreateInstance(collectionType);
 		if (response != null)
 		{
 			return response;
@@ -157,6 +161,7 @@ public static class SourceReflector
 						is SourceAccessibility.Public
 						or SourceAccessibility.Internal
 					&& (x.Parameters.Length == 0)
+					&& !x.IsStatic
 				);
 
 			if (parameterless != null)
@@ -226,7 +231,7 @@ public static class SourceReflector
 			DeclaredMethodsInitializer = () => GetMethods(type),
 			DeclaredPropertiesInitializer = () => GetProperties(type)
 		};
-
+		Types.TryAdd(type, response);
 		return response;
 	}
 
@@ -246,9 +251,9 @@ public static class SourceReflector
 				{
 					Name = x.Name,
 					Value = x.GetValue(null),
-					DisplayName = x.GetAttributeValue(StringFormatter.DisplayAttributeTypeFullName, nameof(DisplayAttribute.Name)),
-					DisplayShortName = x.GetAttributeValue(StringFormatter.DisplayAttributeTypeFullName, nameof(DisplayAttribute.ShortName)),
-					DisplayOrder = x.GetAttributeValue<int>(StringFormatter.DisplayAttributeTypeFullName, nameof(DisplayAttribute.Order))
+					DisplayName = x.GetAttributeNamedArgument(StringFormatter.DisplayAttributeTypeFullName, nameof(DisplayAttribute.Name)),
+					DisplayShortName = x.GetAttributeNamedArgument(StringFormatter.DisplayAttributeTypeFullName, nameof(DisplayAttribute.ShortName)),
+					DisplayOrder = x.GetAttributeNamedArgument<int>(StringFormatter.DisplayAttributeTypeFullName, nameof(DisplayAttribute.Order))
 				})
 				.ToArray()
 		);
@@ -284,6 +289,23 @@ public static class SourceReflector
 	public static object GetMemberValue<T>(this T value, string name)
 	{
 		return value.TryGetMemberValue(name, out var m) ? m : null;
+	}
+
+	public static IReadOnlyDictionary<string, Type> GetPropertyTypes<T>()
+	{
+		return GetPropertyTypes(typeof(T));
+	}
+
+	public static FrozenDictionary<string, Type> GetPropertyTypes(Type type)
+	{
+		if (_propertyTypesCache.TryGetValue(type, out var cached))
+		{
+			return cached;
+		}
+
+		var dict = BuildPropertyTypes(type);
+		_propertyTypesCache[type] = dict;
+		return dict;
 	}
 
 	[return: NotNull]
@@ -322,6 +344,46 @@ public static class SourceReflector
 		return Lookup.TryGetValue(name, out var found)
 			? Types.GetValueOrDefault(found)
 			: null;
+	}
+
+	/// <summary>
+	/// Checks whether the type has a usable parameterless constructor
+	/// (the kind that SourceReflector.CreateInstance can call without arguments).
+	/// </summary>
+	/// <remarks>
+	/// - For classes: must have an explicit public or internal parameterless constructor.
+	/// - For structs: always have an implicit public parameterless constructor unless
+	/// they declare at least one constructor (in which case the implicit one is suppressed).
+	/// </remarks>
+	public static bool HasDefaultConstructor(this Type type)
+	{
+		if (type is null)
+		{
+			throw new ArgumentNullException(nameof(type));
+		}
+
+		var sourceType = GetSourceType(type);
+
+		// Value types get special handling because of the implicit constructor
+		if (type.IsValueType)
+		{
+			var declaredConstructors = sourceType.DeclaredConstructors;
+			if (declaredConstructors.Length == 0)
+			{
+				return true;
+			}
+
+			// Otherwise fall through to check explicit ones (same logic as classes)
+		}
+
+		// Common path for classes + structs that declare constructors
+		return sourceType.DeclaredConstructors.Any(static x =>
+			(x.Parameters.Length == 0)
+			&& !x.IsStatic
+			&& x.Accessibility
+				is SourceAccessibility.Public
+				or SourceAccessibility.Internal
+		);
 	}
 
 	public static bool TryGetMemberValue<T>(this T value, string name, out object memberValue)
@@ -419,6 +481,19 @@ public static class SourceReflector
 			return SourceAccessibility.Internal;
 		}
 		return SourceAccessibility.Private;
+	}
+
+	private static FrozenDictionary<string, Type> BuildPropertyTypes(Type type)
+	{
+		// Reuse the already-cached SourceTypeInfo + its properties
+		var sourceType = GetRequiredSourceType(type);
+		var properties = sourceType.GetProperties(); // array allocated only ONCE per type now
+
+		return properties.ToFrozenDictionary(
+			p => p.Name,
+			p => p.PropertyInfo.PropertyType,
+			StringComparer.OrdinalIgnoreCase
+		);
 	}
 
 	private static SourceParameterInfo[] CreateParameterInfos(ParameterInfo[] parameterInfos)
@@ -657,10 +732,7 @@ public static class SourceReflector
 		return requiredMods.Contains(typeof(IsExternalInit));
 	}
 
-	private static bool TryMatchAndConvert(
-		SourceParameterInfo[] parameters,
-		object[] suppliedArgs,
-		out object[] prepared)
+	private static bool TryMatchAndConvert(SourceParameterInfo[] parameters, object[] suppliedArgs, out object[] prepared)
 	{
 		prepared = null;
 

@@ -66,6 +66,7 @@ public class ViewLocator : IDataTemplate
 		var viewAssemblyName = modelAssemblyName?.Replace(modelName, modelName.Replace("Model", ""));
 		if (SourceReflector.CreateInstance(viewAssemblyName) is Control view)
 		{
+			view.DataContext = data;
 			return view;
 		}
 
@@ -73,6 +74,7 @@ public class ViewLocator : IDataTemplate
 		viewAssemblyName = modelAssemblyName?.Replace(modelName, modelName.Replace("ViewModel", ""));
 		if (SourceReflector.CreateInstance(viewAssemblyName) is Control view2)
 		{
+			view2.DataContext = data;
 			return view2;
 		}
 

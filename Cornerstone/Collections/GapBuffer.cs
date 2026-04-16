@@ -283,7 +283,17 @@ public class GapBuffer<T> : Buffer<T>
 		}
 	}
 
-	public ReadOnlySpans GetTwoSpans(int logicalOffset, int logicalLength)
+	public ReadOnlySpans GetReadOnlySpans()
+	{
+		return GetReadOnlySpans(0, Count);
+	}
+
+	public ReadOnlySpans GetReadOnlySpans(int logicalOffset)
+	{
+		return GetReadOnlySpans(logicalOffset, Count - logicalOffset);
+	}
+
+	public ReadOnlySpans GetReadOnlySpans(int logicalOffset, int logicalLength)
 	{
 		if (logicalLength < 0)
 		{

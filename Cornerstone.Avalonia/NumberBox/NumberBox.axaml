@@ -1,0 +1,303 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+
+			<Thickness x:Key="NumberBoxSpinButtonBorderThickness">0,1,1,1</Thickness>
+			<Thickness x:Key="NumberBoxIconMargin">10,0,0,0</Thickness>
+			<x:Double x:Key="NumberBoxPopupHorizonalOffset">-21</x:Double>
+			<x:Double x:Key="NumberBoxPopupVerticalOffset">-27</x:Double>
+			<x:Double x:Key="NumberBoxPopupShadowDepth">16</x:Double>
+			<Thickness x:Key="NumberBoxPopupIndicatorMargin">0,0,8,0</Thickness>
+
+			<ControlTheme x:Key="NumberBoxSpinButtonStyle" TargetType="RepeatButton">
+				<Setter Property="MinWidth" Value="24" />
+				<Setter Property="Padding" Value="0" />
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="BorderBrush" Value="Transparent" />
+				<Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+				<Setter Property="BorderThickness" Value="1" />
+				<Setter Property="CornerRadius" Value="{DynamicResource CornerRadius}" />
+				<Setter Property="VerticalContentAlignment" Value="Stretch" />
+				<Setter Property="Template">
+					<ControlTemplate>
+						<ContentPresenter Background="{TemplateBinding Background}"
+								BorderBrush="{TemplateBinding BorderBrush}"
+								BorderThickness="{TemplateBinding BorderThickness}"
+								Foreground="{TemplateBinding Foreground}"
+								Padding="{TemplateBinding Padding}"
+								CornerRadius="{TemplateBinding CornerRadius}"
+								Content="{TemplateBinding Content}"
+								HorizontalContentAlignment="Center"
+								VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+					</ControlTemplate>
+				</Setter>
+
+				<Style Selector="^:pointerover /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Background07}" />
+				</Style>
+				<Style Selector="^:pressed /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Background05}" />
+				</Style>
+				<Style Selector="^:disabled /template/ ContentPresenter">
+					<Setter Property="Background" Value="{DynamicResource Background04}" />
+					<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+				</Style>
+			</ControlTheme>
+
+			<ControlTheme x:Key="NumberBoxPopupButton"
+					BasedOn="{StaticResource NumberBoxSpinButtonStyle}"
+					TargetType="RepeatButton">
+				<Setter Property="Width" Value="32" />
+				<Setter Property="Height" Value="32" />
+			</ControlTheme>
+
+			<ControlTheme x:Key="{x:Type NumberBox}" TargetType="NumberBox">
+				<Setter Property="Theme.Color" Value="Current" />
+				<Setter Property="SelectionBrush" Value="{DynamicResource SelectionBrush}" />
+				<Setter Property="SpinButtonPlacementMode" Value="Inline" />
+				<Setter Property="Height" Value="32" />
+				<Setter Property="MinWidth" Value="140" />
+				<Setter Property="TextAlignment" Value="Left" />
+				<Setter Property="HorizontalAlignment" Value="Stretch" />
+				<Setter Property="VerticalAlignment" Value="Top" />
+				<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+				<Setter Property="Template">
+					<ControlTemplate>
+						<DataValidationErrors>
+							<Grid Name="Root" RowDefinitions="Auto,*,Auto"
+									ColumnDefinitions="*,Auto,Auto">
+
+								<ContentPresenter Name="HeaderContentPresenter"
+										Grid.ColumnSpan="3"
+										Content="{TemplateBinding Header}"
+										ContentTemplate="{TemplateBinding HeaderTemplate}"
+										FontWeight="Normal"
+										Margin="{DynamicResource TextBoxTopHeaderMargin}"
+										FontSize="{TemplateBinding FontSize}"
+										FontFamily="{TemplateBinding FontFamily}"
+										VerticalAlignment="Top"
+										IsVisible="{TemplateBinding Header, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+								<TextBox Name="InputBox"
+										Grid.Row="1"
+										Grid.Column="0"
+										Grid.ColumnSpan="3"
+										Foreground="{TemplateBinding Foreground}"
+										PlaceholderText="{TemplateBinding PlaceholderText}"
+										DataValidationErrors.Errors="{TemplateBinding DataValidationErrors.Errors}"
+										TextAlignment="{TemplateBinding TextAlignment}"
+										CornerRadius="{TemplateBinding CornerRadius}"
+										InnerLeftContent="{TemplateBinding InnerLeftContent}"
+										TextInputOptions.ContentType="Number" />
+
+								<Popup Name="UpDownPopup"
+										Focusable="False"
+										WindowManagerAddShadowHint="False"
+										IsLightDismissEnabled="True"
+										Placement="AnchorAndGravity"
+										PlacementAnchor="Right"
+										PlacementGravity="None"
+										Grid.Row="1"
+										Grid.Column="1"
+										HorizontalAlignment="Left">
+
+									<Border Name="PopupContentRoot"
+											Background="{DynamicResource Background02}"
+											BorderBrush="{DynamicResource BorderBrush}"
+											BorderThickness="1"
+											CornerRadius="{DynamicResource ControlCornerRadius}">
+
+										<Grid RowDefinitions="*,*">
+											<RepeatButton Name="PopupUpSpinButton" Focusable="False"
+													FontSize="18"
+													Theme="{StaticResource NumberBoxPopupButton}">
+												<PathIcon
+														Width="20"
+														Height="10"
+														Data="{StaticResource ButtonSpinnerIncreaseButtonIcon}"
+														Margin="0,3,0,0" />
+											</RepeatButton>
+
+											<RepeatButton Name="PopupDownSpinButton" Focusable="False"
+													FontSize="18"
+													Theme="{StaticResource NumberBoxPopupButton}"
+													Grid.Row="1">
+												<PathIcon
+														Width="20"
+														Height="10"
+														Data="{StaticResource ButtonSpinnerDecreaseButtonIcon}"
+														Margin="0,3,0,0" />
+											</RepeatButton>
+										</Grid>
+									</Border>
+								</Popup>
+
+								<Border Background="Transparent"
+										Grid.Row="1"
+										Grid.Column="1"
+										Grid.ColumnSpan="2"
+										Margin="4 0 0 0"
+										Name="InputEater"
+										IsVisible="False" />
+
+								<RepeatButton Name="UpSpinButton"
+										Grid.Row="1"
+										Grid.Column="1"
+										FontSize="18"
+										Theme="{StaticResource NumberBoxSpinButtonStyle}"
+										Focusable="False"
+										Margin="4"
+										IsVisible="False">
+									<PathIcon
+											Width="20"
+											Height="10"
+											Data="{StaticResource ButtonSpinnerIncreaseButtonIcon}"
+											Margin="0,3,0,0" />
+								</RepeatButton>
+
+								<RepeatButton Name="DownSpinButton"
+										Grid.Row="1"
+										Grid.Column="2"
+										FontSize="18"
+										Theme="{StaticResource NumberBoxSpinButtonStyle}"
+										Focusable="False"
+										Margin="0 4 4 4"
+										IsVisible="False">
+									<PathIcon
+											Width="20"
+											Height="10"
+											Data="{StaticResource ButtonSpinnerDecreaseButtonIcon}"
+											Margin="0,3,0,0" />
+								</RepeatButton>
+
+								<ContentPresenter Name="DescriptionPresenter"
+										Grid.Row="2"
+										Grid.Column="0"
+										Grid.ColumnSpan="3"
+										Content="{TemplateBinding Description}"
+										Foreground="{DynamicResource SystemControlDescriptionTextForegroundBrush}" />
+							</Grid>
+						</DataValidationErrors>
+					</ControlTemplate>
+				</Setter>
+
+				<Style Selector="^:disabled /template/ ContentPresenter#HeaderPresenter">
+					<Setter Property="Foreground" Value="{DynamicResource TextControlHeaderForegroundDisabled}" />
+				</Style>
+
+				<Style Selector="^:spinvisible">
+					<Style Selector="^ /template/ RepeatButton#UpSpinButton">
+						<Setter Property="IsVisible" Value="True" />
+					</Style>
+					<Style Selector="^ /template/ RepeatButton#DownSpinButton">
+						<Setter Property="IsVisible" Value="True" />
+					</Style>
+					<Style Selector="^ /template/ Border#InputEater">
+						<Setter Property="IsVisible" Value="True" />
+					</Style>
+				</Style>
+
+				<Style Selector="^:updisabled">
+					<Style Selector="^ /template/ RepeatButton#UpSpinButton">
+						<Setter Property="IsEnabled" Value="False" />
+					</Style>
+					<Style Selector="^ /template/ RepeatButton#PopupUpSpinButton">
+						<Setter Property="IsEnabled" Value="False" />
+					</Style>
+				</Style>
+				<Style Selector="^:downdisabled">
+					<Style Selector="^ /template/ RepeatButton#DownSpinButton">
+						<Setter Property="IsEnabled" Value="False" />
+					</Style>
+					<Style Selector="^ /template/ RepeatButton#PopupDownSpinButton">
+						<Setter Property="IsEnabled" Value="False" />
+					</Style>
+				</Style>
+
+				<Style Selector="^[(Theme.Color)=None] /template/ TextBox#InputBox">
+					<Setter Property="SelectionBrush" Value="{DynamicResource SelectionBrush}" />
+				</Style>
+
+				<!-- Code Template - Color -->
+				<Style Selector="^[(Theme.Color)=Current] /template/ TextBox#InputBox">
+					<Setter Property="SelectionBrush" Value="{DynamicResource ThemeColor05}" />
+				</Style>
+				<!-- Code Template - /Color -->
+
+				<!-- Generated Code - Colors -->
+				<Style Selector="^[(Theme.Color)=Amber] /template/ TextBox#InputBox">
+					<Setter Property="SelectionBrush" Value="{DynamicResource Amber05}" />
+				</Style>
+				<Style Selector="^[(Theme.Color)=Blue] /template/ TextBox#InputBox">
+					<Setter Property="SelectionBrush" Value="{DynamicResource Blue05}" />
+				</Style>
+				<Style Selector="^[(Theme.Color)=BlueGray] /template/ TextBox#InputBox">
+					<Setter Property="SelectionBrush" Value="{DynamicResource BlueGray05}" />
+				</Style>
+				<Style Selector="^[(Theme.Color)=Brown] /template/ TextBox#InputBox">
+					<Setter Property="SelectionBrush" Value="{DynamicResource Brown05}" />
+				</Style>
+				<Style Selector="^[(Theme.Color)=DeepOrange] /template/ TextBox#InputBox">
+					<Setter Property="SelectionBrush" Value="{DynamicResource DeepOrange05}" />
+				</Style>
+				<Style Selector="^[(Theme.Color)=DeepPurple] /template/ TextBox#InputBox">
+					<Setter Property="SelectionBrush" Value="{DynamicResource DeepPurple05}" />
+				</Style>
+				<Style Selector="^[(Theme.Color)=Gray] /template/ TextBox#InputBox">
+					<Setter Property="SelectionBrush" Value="{DynamicResource Gray05}" />
+				</Style>
+				<Style Selector="^[(Theme.Color)=Green] /template/ TextBox#InputBox">
+					<Setter Property="SelectionBrush" Value="{DynamicResource Green05}" />
+				</Style>
+				<Style Selector="^[(Theme.Color)=Indigo] /template/ TextBox#InputBox">
+					<Setter Property="SelectionBrush" Value="{DynamicResource Indigo05}" />
+				</Style>
+				<Style Selector="^[(Theme.Color)=Orange] /template/ TextBox#InputBox">
+					<Setter Property="SelectionBrush" Value="{DynamicResource Orange05}" />
+				</Style>
+				<Style Selector="^[(Theme.Color)=Pink] /template/ TextBox#InputBox">
+					<Setter Property="SelectionBrush" Value="{DynamicResource Pink05}" />
+				</Style>
+				<Style Selector="^[(Theme.Color)=Purple] /template/ TextBox#InputBox">
+					<Setter Property="SelectionBrush" Value="{DynamicResource Purple05}" />
+				</Style>
+				<Style Selector="^[(Theme.Color)=Red] /template/ TextBox#InputBox">
+					<Setter Property="SelectionBrush" Value="{DynamicResource Red05}" />
+				</Style>
+				<Style Selector="^[(Theme.Color)=Teal] /template/ TextBox#InputBox">
+					<Setter Property="SelectionBrush" Value="{DynamicResource Teal05}" />
+				</Style>
+				<!-- Generated Code - /Colors -->
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+	<Design.PreviewWith>
+		<PreviewCodeSnippet Width="630">
+			<PreviewCodeSnippet.Styles>
+				<Style Selector="NumberBox" />
+			</PreviewCodeSnippet.Styles>
+			<WrapPanel ItemSpacing="10"
+					LineSpacing="10"
+					ItemWidth="200">
+				<NumberBox SpinButtonPlacementMode="Compact" Minimum="0" Maximum="100" Value="10" />
+				<NumberBox SpinButtonPlacementMode="Inline" Minimum="0" Maximum="100" Value="10" />
+				<NumberBox SpinButtonPlacementMode="Hidden" Minimum="0" Maximum="100" Value="10" />
+				<NumberBox PlaceholderText="Enter Number" />
+				<NumberBox>
+					<NumberBox.InnerLeftContent>
+						<TextBlock Text="Left Content" />
+					</NumberBox.InnerLeftContent>
+				</NumberBox>
+			</WrapPanel>
+			<PreviewCodeSnippet.ItemTemplate>
+				<DataTemplate DataType="ThemeColor">
+					<StackPanel Spacing="4">
+						<TextBlock Text="{Binding}" Theme.Color="{Binding}" />
+						<NumberBox Theme.Color="{Binding}" MinWidth="140" Value="1234.56"/>
+					</StackPanel>
+				</DataTemplate>
+			</PreviewCodeSnippet.ItemTemplate>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</Styles>

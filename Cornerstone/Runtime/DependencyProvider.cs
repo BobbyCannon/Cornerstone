@@ -195,7 +195,12 @@ public class DependencyProvider : IDependencyProvider
 			return;
 		}
 
-		Debugger.Break();
+		#if DEBUG
+		if (Debugger.IsAttached)
+		{
+			Debugger.Break();
+		}
+		#endif
 		throw new ConstraintException("This can only be instantiated once.");
 	}
 
@@ -243,6 +248,12 @@ public class DependencyProvider : IDependencyProvider
 		{
 			resolving.Remove(type);
 		}
+	}
+
+	public bool IsSingleton(Type type)
+	{
+		return Factories.TryGetValue(type, out var activator)
+			&& (activator.Lifetime == TypeLifetime.Singleton);
 	}
 
 	/// <summary>
@@ -401,7 +412,12 @@ public class DependencyProvider : IDependencyProvider
 			if (missingParameters.Count > 0)
 			{
 				// How can we make this less configurable, more automatic...
-				Debugger.Break();
+				#if DEBUG
+				if (Debugger.IsAttached)
+				{
+					Debugger.Break();
+				}
+				#endif
 				return false;
 			}
 			return true;
@@ -409,7 +425,12 @@ public class DependencyProvider : IDependencyProvider
 
 		if (availableConstructor.Count != 1)
 		{
-			Debugger.Break();
+			#if DEBUG
+			if (Debugger.IsAttached)
+			{
+				Debugger.Break();
+			}
+			#endif
 			throw new DependencyInjectorConstructorException(
 				availableConstructor.Count == 0
 					? $"An injectable constructor could not be found for {type.FullName}."
@@ -517,6 +538,13 @@ public interface IDependencyProvider
 	/// <param name="type"> The type to get. </param>
 	/// <returns> The type from the configured types. </returns>
 	object GetInstance(Type type);
+
+	/// <summary>
+	/// Determine if a type has been configured as a singleton.
+	/// </summary>
+	/// <param name="type"> The type to check. </param>
+	/// <returns> True if the type is configured as a singleton otherwise false. </returns>
+	bool IsSingleton(Type type);
 
 	#endregion
 }

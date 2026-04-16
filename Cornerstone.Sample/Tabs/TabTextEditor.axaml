@@ -4,10 +4,11 @@
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
-		mc:Ignorable="d" d:DesignHeight="800" d:DesignWidth="460"
+		xmlns:parsers="clr-namespace:Cornerstone.Parsers;assembly=Cornerstone"
+		mc:Ignorable="d" d:DesignHeight="800" d:DesignWidth="900"
 		x:Class="Cornerstone.Sample.Tabs.TabTextEditor"
 		x:DataType="tabs:TabTextEditor"
-		x:Name="Root">
+		x:Name="This">
 	<!-- ReSharper disable Xaml.MissingGridIndex -->
 	<DockPanel>
 		<Grid DockPanel.Dock="Top" Margin="10">
@@ -19,20 +20,39 @@
 				ItemSpacing="10"
 				LineSpacing="10"
 				Margin="10">
+			<NumericUpDown x:Name="CornerRadius2"
+					ControlHelper.DisplayName="Corner Radius"
+					FormatString="0"
+					HorizontalContentAlignment="Center"
+					Minimum="0"
+					Value="4"
+					Maximum="20" />
 			<NumericUpDown x:Name="FontSize2"
 					ControlHelper.DisplayName="FontSize"
 					FormatString="0"
 					HorizontalContentAlignment="Center"
 					Minimum="10"
-					Maximum="40"
-					Width="200" />
-			<TextBox x:Name="Padding2"
+					Value="16"
+					Maximum="40" />
+			<NumericUpDown x:Name="Padding2"
 					ControlHelper.DisplayName="Padding"
-					Width="200" />
+					FormatString="0"
+					HorizontalContentAlignment="Center"
+					Minimum="0"
+					Value="8"
+					Maximum="20" />
+			<CheckBox Content="Enable Undo"
+					IsChecked="{Binding ElementName=TextEditor, Path=ViewModel.UndoManager.Enabled, Mode=TwoWay}" />
 			<CheckBox Content="Line Numbers"
 					IsChecked="{Binding ElementName=TextEditor, Path=ViewModel.ShowLineNumbers, Mode=TwoWay}" />
 			<CheckBox Content="Word Wrap"
 					IsChecked="{Binding ElementName=TextEditor, Path=ViewModel.WordWrap, Mode=TwoWay}" />
+			<ToggleSwitch IsChecked="{Binding IsBenchmarking}"
+					OnContent="Benchmark"
+					OffContent="Benchmark" />
+			<ToggleSwitch x:Name="ShowTokens"
+					OnContent="Show Tokens"
+					OffContent="Show Tokens" />
 		</WrapPanel>
 		<HeaderedContentControl DockPanel.Dock="Top"
 				Header="Sample Data"
@@ -46,6 +66,8 @@
 			<WrapPanel ItemSpacing="10"
 					LineSpacing="10"
 					Margin="0,4,0,0">
+				<Button Command="{Binding LoadCommand}" CommandParameter="Clear">Clear</Button>
+				<Button Command="{Binding LoadCommand}" CommandParameter="CSharp">C#</Button>
 				<Button Command="{Binding LoadCommand}" CommandParameter="JSON">JSON</Button>
 				<Button Command="{Binding LoadCommand}" CommandParameter="XML">XML</Button>
 				<Button Command="{Binding LoadCommand}" CommandParameter="Text">Text</Button>
@@ -55,75 +77,159 @@
 				<Button Command="{Binding LoadCommand}" CommandParameter="Huge">Huge</Button>
 			</WrapPanel>
 		</HeaderedContentControl>
-		<WrapPanel DockPanel.Dock="Bottom"
-				ItemSpacing="10"
-				LineSpacing="10"
-				Margin="10">
-			<StackPanel Orientation="Horizontal">
-				<TextBlock Text="Font " Foreground="{DynamicResource Gray02}" />
-				<TextBlock Text="{Binding ElementName=TextEditor, Path=FontSize}" />
+		<ScrollViewer DockPanel.Dock="Bottom"
+				MaxHeight="70">
+			<WrapPanel ItemSpacing="10"
+					LineSpacing="10"
+					Margin="10">
+				<StackPanel Orientation="Horizontal">
+					<TextBlock Text="Font " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding ElementName=TextEditor, Path=FontSize}" />
+				</StackPanel>
+				<StackPanel Orientation="Horizontal">
+					<TextBlock Text="Lines " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding ElementName=TextEditor, Path=ViewModel.Caret.Line.LineNumber}" />
+					<TextBlock Text=" of " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding ElementName=TextEditor, Path=ViewModel.Lines.Count}" />
+				</StackPanel>
+				<StackPanel Orientation="Horizontal">
+					<TextBlock Text="Caret " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding ElementName=TextEditor, Path=ViewModel.Caret.Offset}" />
+				</StackPanel>
+				<StackPanel Orientation="Horizontal">
+					<TextBlock Text="Length " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding ElementName=TextEditor, Path=ViewModel.DocumentLength}" />
+				</StackPanel>
+				<StackPanel Orientation="Horizontal">
+					<TextBlock Text="Selection " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding #TextEditor.ViewModel.Caret.Selection.Length, Converter={x:Static Converters.Format}, ConverterParameter=0}" />
+				</StackPanel>
+				<StackPanel Orientation="Horizontal">
+					<TextBlock Text="Start " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding #TextEditor.ViewModel.Caret.Selection.StartOffset, Converter={x:Static Converters.Format}, ConverterParameter=0}" />
+				</StackPanel>
+				<StackPanel Orientation="Horizontal">
+					<TextBlock Text="End " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding #TextEditor.ViewModel.Caret.Selection.EndOffset, Converter={x:Static Converters.Format}, ConverterParameter=0}" />
+				</StackPanel>
+				<StackPanel Orientation="Horizontal">
+					<TextBlock Text="EOL " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding ElementName=TextEditor, Path=ViewModel.Caret.IsAtEndOfLine}" />
+				</StackPanel>
+				<StackPanel Orientation="Horizontal">
+					<TextBlock Text="Keyboard " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding #TextEditor.ViewModel.Caret.Selection.IsSelectingUsingKeyboard}" />
+				</StackPanel>
+				<StackPanel Orientation="Horizontal">
+					<TextBlock Text="Mouse " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding #TextEditor.ViewModel.Caret.Selection.IsSelectingUsingMouse}" />
+				</StackPanel>
+				<StackPanel Orientation="Horizontal">
+					<TextBlock Text="Scroll Extent " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding #TextEditor.Renderer.Extent.Width, Converter={x:Static Converters.Format}, ConverterParameter=0}" />
+					<TextBlock Text=", " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding #TextEditor.Renderer.Extent.Height, Converter={x:Static Converters.Format}, ConverterParameter=0}" />
+				</StackPanel>
+				<StackPanel Orientation="Horizontal">
+					<TextBlock Text="Offset " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding #TextEditor.Renderer.Offset.X, Converter={x:Static Converters.Format}, ConverterParameter=0}" />
+					<TextBlock Text=", " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding #TextEditor.Renderer.Offset.Y, Converter={x:Static Converters.Format}, ConverterParameter=0}" />
+				</StackPanel>
+				<StackPanel Orientation="Horizontal">
+					<TextBlock Text="Viewport " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding #TextEditor.Renderer.Viewport.Width, Converter={x:Static Converters.Format}, ConverterParameter=0}" />
+					<TextBlock Text=", " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding #TextEditor.Renderer.Viewport.Height, Converter={x:Static Converters.Format}, ConverterParameter=0}" />
+				</StackPanel>
+				<StackPanel Orientation="Horizontal">
+					<TextBlock Text="Size " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding #TextEditor.Renderer.Bounds.Width, Converter={x:Static Converters.Format}, ConverterParameter=0}" />
+					<TextBlock Text=", " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding #TextEditor.Renderer.Bounds.Height, Converter={x:Static Converters.Format}, ConverterParameter=0}" />
+				</StackPanel>
+				<StackPanel Orientation="Horizontal">
+					<TextBlock Text="Undo/Redo " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding #TextEditor.ViewModel.UndoManager.UndoStack.Count}" />
+					<TextBlock Text=", " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding #TextEditor.ViewModel.UndoManager.RedoStack.Count}" />
+				</StackPanel>
+				<StackPanel Orientation="Horizontal">
+					<TextBlock Text="Tokens " Foreground="{DynamicResource Gray02}" />
+					<TextBlock Text="{Binding #TextEditor.ViewModel.TokenManager.Count}" />
+				</StackPanel>
+			</WrapPanel>
+		</ScrollViewer>
+		<ScrollViewer DockPanel.Dock="Right"
+				x:Name="Charts"
+				MinWidth="400">
+			<StackPanel>
+				<LineChart x:Name="RenderChart"
+						DockPanel.Dock="Bottom"
+						Title="Render"
+						Data="{Binding TextEditorRenderData}"
+						Height="60" />
+				<LineChart x:Name="MeasureChart"
+						DockPanel.Dock="Bottom"
+						Title="Measure"
+						Data="{Binding TextEditorMeasureData}"
+						Height="60" />
+				<LineChart x:Name="DocumentChangedChart"
+						DockPanel.Dock="Bottom"
+						Title="Document"
+						Data="{Binding TextEditorDocumentChangedData}"
+						Height="60" />
+				<LineChart x:Name="LineManagerChart"
+						DockPanel.Dock="Bottom"
+						Title="Line Manager"
+						Data="{Binding LineManagerRebuildData}"
+						Height="60" />
+				<LineChart x:Name="TokenManagerChart"
+						DockPanel.Dock="Bottom"
+						Title="Token Manager"
+						Data="{Binding TokenManagerRebuildData}"
+						Height="60" />
+				<LineChart x:Name="RandomGeneratorChart"
+						DockPanel.Dock="Bottom"
+						Title="Randomizing"
+						Data="{Binding RandomGeneratedData}"
+						Height="60" />
 			</StackPanel>
-			<StackPanel Orientation="Horizontal">
-				<TextBlock Text="Lines " Foreground="{DynamicResource Gray02}" />
-				<TextBlock Text="{Binding ElementName=TextEditor, Path=ViewModel.Caret.Line.LineNumber}" />
-				<TextBlock Text=" of " Foreground="{DynamicResource Gray02}" />
-				<TextBlock Text="{Binding ElementName=TextEditor, Path=ViewModel.Document.Lines.Count}" />
-			</StackPanel>
-			<StackPanel Orientation="Horizontal">
-				<TextBlock Text="Width " Foreground="{DynamicResource Gray02}" />
-				<TextBlock Text="{Binding ElementName=TextEditor, Path=ViewModel.Document.DocumentWidth}" />
-			</StackPanel>
-			<StackPanel Orientation="Horizontal">
-				<TextBlock Text="Caret " Foreground="{DynamicResource Gray02}" />
-				<TextBlock Text="{Binding ElementName=TextEditor, Path=ViewModel.Caret.Offset}" />
-			</StackPanel>
-			<StackPanel Orientation="Horizontal">
-				<TextBlock Text="Length " Foreground="{DynamicResource Gray02}" />
-				<TextBlock Text="{Binding ElementName=TextEditor, Path=ViewModel.Document.Length}" />
-			</StackPanel>
-			<StackPanel Orientation="Horizontal">
-				<TextBlock Text="Selection " Foreground="{DynamicResource Gray02}" />
-				<TextBlock Text="{Binding #TextEditor.ViewModel.Selection.Length, Converter={x:Static ConvertersForString.Format}, ConverterParameter=0}" />
-			</StackPanel>
-			<StackPanel Orientation="Horizontal">
-				<TextBlock Text="Start " Foreground="{DynamicResource Gray02}" />
-				<TextBlock Text="{Binding #TextEditor.ViewModel.Selection.StartOffset, Converter={x:Static ConvertersForString.Format}, ConverterParameter=0}" />
-			</StackPanel>
-			<StackPanel Orientation="Horizontal">
-				<TextBlock Text="End " Foreground="{DynamicResource Gray02}" />
-				<TextBlock Text="{Binding #TextEditor.ViewModel.Selection.EndOffset, Converter={x:Static ConvertersForString.Format}, ConverterParameter=0}" />
-			</StackPanel>
-			<StackPanel Orientation="Horizontal">
-				<TextBlock Text="Keyboard " Foreground="{DynamicResource Gray02}" />
-				<TextBlock Text="{Binding #TextEditor.ViewModel.Selection.IsSelectingUsingKeyboard}" />
-			</StackPanel>
-			<StackPanel Orientation="Horizontal">
-				<TextBlock Text="Mouse " Foreground="{DynamicResource Gray02}" />
-				<TextBlock Text="{Binding #TextEditor.ViewModel.Selection.IsSelectingUsingMouse}" />
-			</StackPanel>
-			<StackPanel Orientation="Horizontal">
-				<TextBlock Text="Scroll Extent " Foreground="{DynamicResource Gray02}" />
-				<TextBlock Text="{Binding #TextEditor.Renderer.Extent.Width, Converter={x:Static ConvertersForString.Format}, ConverterParameter=0}" />
-				<TextBlock Text=", " Foreground="{DynamicResource Gray02}" />
-				<TextBlock Text="{Binding #TextEditor.Renderer.Extent.Height, Converter={x:Static ConvertersForString.Format}, ConverterParameter=0}" />
-			</StackPanel>
-			<StackPanel Orientation="Horizontal">
-				<TextBlock Text="Offset " Foreground="{DynamicResource Gray02}" />
-				<TextBlock Text="{Binding #TextEditor.Renderer.Offset.X, Converter={x:Static ConvertersForString.Format}, ConverterParameter=0}" />
-				<TextBlock Text=", " Foreground="{DynamicResource Gray02}" />
-				<TextBlock Text="{Binding #TextEditor.Renderer.Offset.Y, Converter={x:Static ConvertersForString.Format}, ConverterParameter=0}" />
-			</StackPanel>
-			<StackPanel Orientation="Horizontal">
-				<TextBlock Text="Viewport " Foreground="{DynamicResource Gray02}" />
-				<TextBlock Text="{Binding #TextEditor.Renderer.Viewport.Width, Converter={x:Static ConvertersForString.Format}, ConverterParameter=0}" />
-				<TextBlock Text=", " Foreground="{DynamicResource Gray02}" />
-				<TextBlock Text="{Binding #TextEditor.Renderer.Viewport.Height, Converter={x:Static ConvertersForString.Format}, ConverterParameter=0}" />
-			</StackPanel>
-		</WrapPanel>
+		</ScrollViewer>
+		<ListBox x:Name="TokenItems"
+				Theme.Color="None"
+				DockPanel.Dock="Right"
+				IsVisible="{Binding #ShowTokens.IsChecked}"
+				ItemsSource="{Binding #TextEditor.ViewModel.TokenManager}"
+				SelectedItem="{Binding SelectedToken, Mode=TwoWay}"
+				MinWidth="300">
+			<ListBox.ItemsPanel>
+				<ItemsPanelTemplate>
+					<VirtualizingStackPanel />
+				</ItemsPanelTemplate>
+			</ListBox.ItemsPanel>
+			<ListBox.ItemTemplate>
+				<DataTemplate DataType="parsers:Token">
+					<Border Classes="Flat"
+							TextBlock.Foreground="{Binding Color, Converter={x:Static Converters.SyntaxColorBrush}}"
+							Padding="2">
+						<StackPanel Margin="8,4" Orientation="Horizontal">
+							<TextBlock Text="{Binding Type, Mode=OneWay, Converter={x:Static Converters.ToTokenDisplayName}}"
+									Margin="0,0,4,0" />
+							<TextBlock Text="{Binding StartOffset, Mode=OneWay}" />
+							<TextBlock Text=".." />
+							<TextBlock Text="{Binding EndOffset, Mode=OneWay}" />
+							<TextBlock Text=", " />
+							<TextBlock Text="{Binding Length, Mode=OneWay}" />
+						</StackPanel>
+					</Border>
+				</DataTemplate>
+			</ListBox.ItemTemplate>
+		</ListBox>
 		<TextEditor x:Name="TextEditor"
+				CornerRadius="{Binding ElementName=CornerRadius2, Path=Value, Mode=TwoWay, Converter={StaticResource CornerRadiusConverter}}"
 				FontSize="{Binding ElementName=FontSize2, Path=Value, Mode=TwoWay}"
-				Padding="{Binding ElementName=Padding2, Path=Text, Mode=TwoWay, Converter={StaticResource ThicknessConverter}}"
-				Profiler="{Binding Profiler}">
-		</TextEditor>
+				Padding="{Binding ElementName=Padding2, Path=Value, Mode=TwoWay, Converter={StaticResource ThicknessConverter}}"
+				Profiler="{Binding Profiler}" />
 	</DockPanel>
 </UserControl>

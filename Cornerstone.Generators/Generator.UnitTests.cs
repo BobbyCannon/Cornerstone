@@ -18,31 +18,24 @@ public partial class Generator
 {
 	#region Constants
 
-	public const string MSTestTestCleanupAttributeFullName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestCleanupAttribute";
-	public const string MSTestTestInitializeAttributeFullName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestInitializeAttribute";
-	public const string MSTestTestMethodAttributeFullName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute";
-	public const string NUnitSetupAttributeFullName = "NUnit.Framework.SetUpAttribute";
-	public const string NUnitTearDownAttributeFullName = "NUnit.Framework.TearDownAttribute";
-	public const string NUnitTestAttributeFullName = "NUnit.Framework.TestAttribute";
+	public const string MsTestTestClassAttributeFullName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute";
+	public const string MsTestTestCleanupAttributeFullName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestCleanupAttribute";
+	public const string MsTestTestInitializeAttributeFullName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestInitializeAttribute";
+	public const string MsTestTestMethodAttributeFullName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute";
 
 	#endregion
 
 	#region Methods
 
-	private SourceMemberInfo FindTestInitializeMethod(SourceTypeInfo type)
+	private SourceMethodInfo FindTestInitializeMethod(SourceTypeInfo type)
 	{
 		var current = type;
 
 		while (current != null)
 		{
-			var candidate = current
-				.Methods.FirstOrDefault(x =>
-					x.Attributes.Any(a =>
-						a.FullyQualifiedName
-							is MSTestTestInitializeAttributeFullName
-							or NUnitSetupAttributeFullName
-					)
-				);
+			var candidate = current.Methods.FirstOrDefault(x =>
+				x.Attributes.Any(a => a.FullyQualifiedName is MsTestTestInitializeAttributeFullName)
+			);
 
 			if (candidate != null)
 			{
@@ -77,17 +70,24 @@ public partial class Generator
 			return;
 		}
 
-		var testClasses = typesToProcess.Where(x => x.Methods.Any(m =>
-				m.Attributes.Any(a => a.FullyQualifiedName
-					is MSTestTestMethodAttributeFullName
-					or NUnitTestAttributeFullName
-				)
-			)
-		).OrderBy(x => x.Name).ToArray();
+		var testClasses = typesToProcess
+			.Where(x => x.Methods.Any(m => m.Attributes.Any(a => a.FullyQualifiedName is MsTestTestMethodAttributeFullName)))
+			.OrderBy(x => x.Name)
+			.ToArray();
 
 		if (testClasses.Length <= 0)
 		{
 			return;
+		}
+
+		foreach (var testClass in testClasses)
+		{
+			var isMsTest = testClass.Methods.Any(m => m.Attributes.Any(a => a.FullyQualifiedName is MsTestTestMethodAttributeFullName));
+			var hasTestClassAttribute = testClass.Attributes.Any(a => a.FullyQualifiedName is MsTestTestClassAttributeFullName);
+			if (isMsTest && !hasTestClassAttribute)
+			{
+				DiagnosticReporter.ReportMissingTestClassAttribute(testClass.TypeSymbol);
+			}
 		}
 
 		var testRunnerFile = GetEmbeddedText("TestRunner.cs");
@@ -131,11 +131,9 @@ public partial class Generator
 				builder.WriteLine("null,");
 			}
 
-			var cleanupMethod = testClass.Methods.FirstOrDefault(x => x.Attributes.Any(a =>
-				a.FullyQualifiedName
-					is MSTestTestCleanupAttributeFullName
-					or NUnitTearDownAttributeFullName
-			));
+			var cleanupMethod = testClass.Methods.FirstOrDefault(x =>
+				x.Attributes.Any(a => a.FullyQualifiedName is MsTestTestCleanupAttributeFullName)
+			);
 
 			builder.IndentWrite($"{nameof(TestClassInfo.CleanupMethod)} = ");
 			if (cleanupMethod != null)
@@ -158,11 +156,7 @@ public partial class Generator
 				var orderedMethods = testClass.Methods.OrderBy(x => x.Name);
 				foreach (var method in orderedMethods)
 				{
-					if (!method.Attributes.Any(a =>
-							a.FullyQualifiedName
-								is MSTestTestMethodAttributeFullName
-								or NUnitTestAttributeFullName
-						))
+					if (!method.Attributes.Any(a => a.FullyQualifiedName is MsTestTestMethodAttributeFullName))
 					{
 						continue;
 					}

@@ -3,6 +3,7 @@
 using System;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
+using Cornerstone.Reflection;
 
 #endregion
 
@@ -28,7 +29,7 @@ public class UpdateableConverter : BaseConverter
 
 	public override bool TryConvertTo(object from, Type fromType, Type toType, out object value, IConverterSettings settings = null)
 	{
-		if (Activator.CreateInstance(toType) is IUpdateable response)
+		if (SourceReflector.CreateInstance(toType) is IUpdateable response)
 		{
 			response.UpdateWith(from);
 			value = response;

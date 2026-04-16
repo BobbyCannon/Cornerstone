@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Cornerstone.Collections;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
@@ -14,11 +14,12 @@ namespace Cornerstone.UnitTests.Collections;
 [SuppressMessage("ReSharper", "StringLiteralTypo")]
 [SuppressMessage("ReSharper", "UseObjectOrCollectionInitializer")]
 [SuppressMessage("ReSharper", "CommentTypo")]
+[TestClass]
 public class GapBufferTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	[Test]
+	[TestMethod]
 	public void Add()
 	{
 		var actual = new GapBuffer<int>();
@@ -35,7 +36,7 @@ public class GapBufferTests : CornerstoneUnitTest
 		AreEqual([3, 4, 5], Enumerable.ToArray(actual));
 	}
 
-	[Test]
+	[TestMethod]
 	public void AddRangeAfterGapWasMovedFarAway()
 	{
 		var buffer = new GapBuffer<char>(16);
@@ -49,7 +50,7 @@ public class GapBufferTests : CornerstoneUnitTest
 		AreEqual("!Hello@World12345".ToCharArray(), buffer.ToArray(), () => buffer.ToString());
 	}
 
-	[Test]
+	[TestMethod]
 	public void Contains()
 	{
 		var buffer = new GapBuffer<int>(1, 2, 3, 4, 5, 6);
@@ -57,7 +58,7 @@ public class GapBufferTests : CornerstoneUnitTest
 		IsFalse(buffer.Contains(9));
 	}
 
-	[Test]
+	[TestMethod]
 	public void CopyToPartialRangeSpanningGap()
 	{
 		var buffer = new GapBuffer<char>();
@@ -80,7 +81,7 @@ public class GapBufferTests : CornerstoneUnitTest
 		AreEqual('\0', dest[9]);
 	}
 
-	[Test]
+	[TestMethod]
 	public void Enumerator()
 	{
 		var buffer = new GapBuffer<int>(1, 2, 3, 4, 5, 6);
@@ -94,7 +95,7 @@ public class GapBufferTests : CornerstoneUnitTest
 		AreEqual([1, 2, 3, 4, 5, 6], actual.ToArray());
 	}
 
-	[Test]
+	[TestMethod]
 	public void GapMovementWhenGapSizeBecomesZeroShouldRecover()
 	{
 		var buffer = new GapBuffer<char>(8);
@@ -109,7 +110,7 @@ public class GapBufferTests : CornerstoneUnitTest
 		AreEqual("!1234X678?".ToArray(), buffer.ToArray());
 	}
 
-	[Test]
+	[TestMethod]
 	public void IndexerAndCountAfterGapMovements()
 	{
 		var buffer = new GapBuffer<string>(4);
@@ -132,7 +133,7 @@ public class GapBufferTests : CornerstoneUnitTest
 		AreEqual("End", buffer[3]);
 	}
 
-	[Test]
+	[TestMethod]
 	public void IndexerGetSetAroundGapBoundaries()
 	{
 		var buffer = new GapBuffer<string>(8);
@@ -150,7 +151,7 @@ public class GapBufferTests : CornerstoneUnitTest
 		AreEqual("E", buffer[5]);
 	}
 
-	[Test]
+	[TestMethod]
 	public void IndexOf()
 	{
 		//                              0  1  2  3  4  5
@@ -160,7 +161,7 @@ public class GapBufferTests : CornerstoneUnitTest
 		AreEqual(-1, actual.IndexOf(2, 2));
 	}
 
-	[Test]
+	[TestMethod]
 	public void InsertWhenGapSizeZero()
 	{
 		var buffer = new GapBuffer<char>(8);
@@ -172,7 +173,7 @@ public class GapBufferTests : CornerstoneUnitTest
 		AreEqual("!12A34Z".ToCharArray(), buffer.ToArray(), () => buffer.ToString());
 	}
 
-	[Test]
+	[TestMethod]
 	public void MoveGapLeftAndRightMultipleTimes()
 	{
 		var buffer = new GapBuffer<char>();
@@ -222,7 +223,7 @@ public class GapBufferTests : CornerstoneUnitTest
 			() => new string(buffer.ToArray()));
 	}
 
-	[Test]
+	[TestMethod]
 	public void RemoveAtAtBothGapBordersMultipleTimes()
 	{
 		var buffer = new GapBuffer<char>();
@@ -242,7 +243,7 @@ public class GapBufferTests : CornerstoneUnitTest
 		AreEqual("bg".ToCharArray(), buffer.ToArray(), () => buffer.ToString());
 	}
 
-	[Test]
+	[TestMethod]
 	public void RemoveAtBorderCasesExpandGapBothDirections()
 	{
 		var buffer = new GapBuffer<char>();
@@ -264,7 +265,7 @@ public class GapBufferTests : CornerstoneUnitTest
 		AreEqual("bceg".ToCharArray(), buffer.ToArray());
 	}
 
-	[Test]
+	[TestMethod]
 	public void ResetBuffer()
 	{
 		//                              0  1  2  3  4  5
@@ -273,7 +274,7 @@ public class GapBufferTests : CornerstoneUnitTest
 		AreEqual([9, 8, 7, 6, 5, 4], actual.ToArray());
 	}
 
-	[Test]
+	[TestMethod]
 	public void StressInsertDeleteAlternatingAtSamePosition()
 	{
 		var buffer = new GapBuffer<char>(32);
@@ -289,7 +290,7 @@ public class GapBufferTests : CornerstoneUnitTest
 			() => "Buffer got corrupted after many insert+remove at same spot");
 	}
 
-	[Test]
+	[TestMethod]
 	public void ValidateToString()
 	{
 		var actual = new GapBuffer<int>();

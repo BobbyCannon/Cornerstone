@@ -3,31 +3,34 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Avalonia;
-using Cornerstone.Avalonia.Text.Rendering;
+using Cornerstone.Collections;
 using Cornerstone.Data;
+using Cornerstone.Profiling;
+using Cornerstone.Reflection;
 
 #endregion
 
 namespace Cornerstone.Avalonia.Text.Models;
 
-public class LineManager : Notifiable, IEnumerable<Line>
+[SourceReflection]
+public class LineManager : Notifiable, IEnumerable<Line>, IQueue<Line>
 {
 	#region Fields
 
-	private readonly List<Line> _lines;
-	private readonly Queue<Line> _pool;
+	private readonly IList<Line> _lines;
+	private readonly IQueue<Line> _pool;
 
 	#endregion
 
 	#region Constructors
 
-	internal LineManager(TextDocument document)
+	internal LineManager(TextEditorViewModel viewModel)
 	{
-		Document = document;
-		_pool = new Queue<Line>(256);
-		_lines = new List<Line>(1024);
+		ViewModel = viewModel;
+
+		_pool = new SpeedyQueue<Line>(65536);
+		_lines = new SpeedyList<Line>(isLongLivedBuffer: true, clearOnCleanup: false);
 	}
 
 	#endregion
@@ -38,7 +41,9 @@ public class LineManager : Notifiable, IEnumerable<Line>
 
 	public Line this[int index] => _lines[index];
 
-	internal TextDocument Document { get; }
+	public int LineRebuildIndex { get; private set; }
+
+	internal TextEditorViewModel ViewModel { get; }
 
 	#endregion
 
@@ -49,30 +54,131 @@ public class LineManager : Notifiable, IEnumerable<Line>
 		_lines.Add(line);
 	}
 
+	public void Clear()
+	{
+		// Not implemented
+	}
+
+	public void Enqueue(Line value)
+	{
+		_pool.Enqueue(value);
+	}
+
+	public void Enqueue(Line[] values)
+	{
+		_pool.Enqueue(values);
+	}
+
+	public void Enqueue(ReadOnlySpan<Line> values)
+	{
+		_pool.Enqueue(values);
+	}
+
 	public IEnumerator<Line> GetEnumerator()
 	{
 		return _lines.GetEnumerator();
 	}
 
-	public Line GetLineForOffset(int offset)
+	public Line GetLineFromOffset(int offset)
 	{
-		foreach (var line in _lines)
+		if (_lines.Count == 0)
 		{
+			return null;
+		}
+
+		if (_lines.Count == 1)
+		{
+			return _lines[0];
+		}
+
+		// Fast path for very likely case: offset at or beyond end
+		if (offset >= _lines[^1].EndOffset)
+		{
+			return _lines[^1];
+		}
+
+		var left = 0;
+		var right = _lines.Count - 1;
+
+		while (left <= right)
+		{
+			var mid = left + ((right - left) >> 1);
+			var line = _lines[mid];
+
 			if (line.Contains(offset))
 			{
 				return line;
 			}
+
+			if (offset < line.StartOffset)
+			{
+				right = mid - 1;
+			}
+			else
+			{
+				left = mid + 1;
+			}
 		}
 
-		return _lines.LastOrDefault();
+		// If we get here, offset lies between lines or after last line
+		// Because we already checked the after-last-line case, this means:
+		// between line[right] and line[right+1]
+		return _lines[right];
+	}
+
+	public int GetLineOffsetForDocumentOffset(int offset)
+	{
+		if (_lines.Count == 0)
+		{
+			return 0;
+		}
+
+		if (_lines.Count == 1)
+		{
+			return 0;
+		}
+
+		// Fast path for very likely case: offset at or beyond end
+		if (offset >= _lines[^1].EndOffset)
+		{
+			return _lines.Count - 1;
+		}
+
+		var left = 0;
+		var right = _lines.Count - 1;
+
+		while (left <= right)
+		{
+			var mid = left + ((right - left) >> 1);
+			var line = _lines[mid];
+
+			if (line.Contains(offset))
+			{
+				return mid;
+			}
+
+			if (offset < line.StartOffset)
+			{
+				right = mid - 1;
+			}
+			else
+			{
+				left = mid + 1;
+			}
+		}
+
+		// If we get here, offset lies between lines or after last line
+		// Because we already checked the after-last-line case, this means:
+		// between line[right] and line[right+1]
+		return right;
 	}
 
 	public Line LastOrDefault()
 	{
-		return _lines.LastOrDefault();
+		return _lines.Count == 0 ? null : _lines[_lines.Count - 1];
 	}
 
-	public Size Measure(Size availableSize, bool wordWrap, TextMetrics textMetrics)
+	public Size Measure(Size availableSize, bool wordWrap)
 	{
 		var offsetY = 0.0;
 		var documentWidth = 0.0;
@@ -80,7 +186,7 @@ public class LineManager : Notifiable, IEnumerable<Line>
 
 		foreach (var line in _lines)
 		{
-			line.UpdateLineMetrics(offsetY, textMetrics, maxWidth);
+			line.UpdateLineMetrics(offsetY, maxWidth);
 
 			if (line.VisualLayout.Width > documentWidth)
 			{
@@ -90,6 +196,17 @@ public class LineManager : Notifiable, IEnumerable<Line>
 		}
 
 		return new Size(documentWidth, offsetY);
+	}
+
+	public bool TryDequeue(out Line value)
+	{
+		if ((LineRebuildIndex >= 0) && (LineRebuildIndex < Count))
+		{
+			value = this[LineRebuildIndex];
+			return true;
+		}
+
+		return _pool.TryDequeue(out value);
 	}
 
 	public bool TryGetLine(int lineNumber, out Line line)
@@ -104,95 +221,127 @@ public class LineManager : Notifiable, IEnumerable<Line>
 		return true;
 	}
 
-	internal void Rebuild(int startOffset)
+	/// <summary>
+	/// Fast lookup: returns the line that contains the given document offset.
+	/// Uses binary search (O(log N)) on the ordered _lines collection.
+	/// </summary>
+	public bool TryGetLineForOffset(int offset, out Line line)
 	{
-		var index = startOffset;
-		var existingLine = GetLineForOffset(startOffset);
-		var documentWidth = 0;
-
-		if (existingLine != null)
+		line = null;
+		if ((offset < 0) || (_lines.Count == 0))
 		{
-			// Pool all lines that are past this line
-			var keepCount = existingLine.LineNumber - 1;
-			while (_lines.Count > keepCount)
+			return false;
+		}
+
+		// Binary search
+		var left = 0;
+		var right = _lines.Count - 1;
+
+		while (left <= right)
+		{
+			var mid = left + ((right - left) / 2);
+			var current = _lines[mid];
+
+			if (offset < current.StartOffset)
 			{
-				var lineToPool = _lines[_lines.Count - 1];
-				_lines.RemoveAt(_lines.Count - 1);
-				_pool.Enqueue(lineToPool);
+				right = mid - 1;
+			}
+			else if (offset >= current.EndOffset)
+			{
+				left = mid + 1;
+			}
+			else
+			{
+				line = current;
+				return true;
 			}
 		}
 
-		foreach (var x in _lines)
+		// Edge case: caret exactly at the very start or end of the document
+		if ((offset == ViewModel.Buffer.Count) && (_lines.Count > 0))
 		{
-			if (x.Length > documentWidth)
+			line = _lines[^1];
+			return true;
+		}
+
+		return false;
+	}
+
+	/// <summary>
+	/// Fast lookup: returns the line that contains the given document visual X/Y.
+	/// Uses binary search (O(log N)) on the ordered _lines collection based on VisualLayout.
+	/// Clamps to the first/last line (standard behavior in every major text editor for mouse clicks).
+	/// </summary>
+	public bool TryGetLineForOffset(double visualX, double visualY, out Line line)
+	{
+		line = null;
+
+		if (_lines.Count == 0)
+		{
+			return false;
+		}
+
+		// Binary search on cumulative Y position
+		var left = 0;
+		var right = _lines.Count - 1;
+
+		while (left <= right)
+		{
+			var mid = left + ((right - left) >> 1);
+			var rect = _lines[mid].VisualLayout;
+
+			if (visualY < rect.Y)
 			{
-				documentWidth = x.Length;
+				right = mid - 1;
+			}
+			else if (visualY >= rect.Bottom)
+			{
+				left = mid + 1;
+			}
+			else
+			{
+				line = _lines[mid];
+				return true;
 			}
 		}
 
-		var line = StartNewLine(
-			existingLine?.LineNumber ?? 1,
-			Math.Min(index, existingLine?.StartOffset ?? int.MaxValue)
-		);
+		// Clamp to nearest edge (essential for mouse hit-testing)
+		line = visualY < _lines[0].VisualLayout.Y ? _lines[0] : _lines[^1];
+		return true;
+	}
 
-		while ((line != null) && (index < Document.Buffer.Count))
+	internal void Rebuild(TextDocumentChangedArgs args)
+	{
+		using var _ = ProfilerExtensions.Start(ViewModel.Profiler, "LineManager.Rebuild");
+
+		LineRebuildIndex = GetLineOffsetForDocumentOffset(args.Offset);
+
+		var lineNumber = Count > 0 ? _lines[LineRebuildIndex]?.LineNumber ?? 1 : 1;
+		var index = Count > 0 ? _lines[LineRebuildIndex]?.StartOffset ?? 0 : 0;
+
+		while (NextLine(lineNumber, ref index) is { } line)
 		{
-			switch (Document.Buffer[index++])
+			if (LineRebuildIndex++ < Count)
 			{
-				case '\r':
-				{
-					if ((index < Document.Buffer.Count)
-						&& (Document.Buffer[index] == '\n'))
-					{
-						index++;
-						line.LineEndingLength = 2;
-					}
-					else
-					{
-						line.LineEndingLength = 1;
-					}
-					break;
-				}
-				case '\n':
-				{
-					line.LineEndingLength = 1;
-					break;
-				}
-				default:
-				{
-					continue;
-				}
+				// An existing line was updated so just continue
+				lineNumber++;
+				continue;
 			}
 
-			line.EndOffset = index;
-
-			if (line.Length > documentWidth)
-			{
-				documentWidth = line.Length;
-			}
-
-			_lines.Add(line);
-
-			line = (line.LineEndingLength > 0) || (index < Document.Buffer.Count)
-				? StartNewLine(line.LineNumber + 1, line.EndOffset)
-				: null;
+			Add(line);
+			lineNumber++;
 		}
 
-		if (line?.StartOffset <= Document.Buffer.Count)
+		while (LineRebuildIndex < Count)
 		{
-			line.EndOffset = Document.Buffer.Count;
-			line.LineEndingLength = 0;
-
-			_lines.Add(line);
-
-			if (line.Length > documentWidth)
-			{
-				documentWidth = line.Length;
-			}
+			// Pool the remaining lines.
+			var lineToPool = this[Count - 1];
+			_lines.RemoveAt(Count - 1);
+			_pool.Enqueue(lineToPool);
 		}
 
-		// Add 1 character for width.
-		Document.DocumentWidth = documentWidth + 1;
+		LineRebuildIndex = -1;
+
 		NotifyOfPropertyChanged(nameof(Count));
 	}
 
@@ -201,13 +350,69 @@ public class LineManager : Notifiable, IEnumerable<Line>
 		return GetEnumerator();
 	}
 
+	private Line NextLine(int lineNumber, ref int index)
+	{
+		var bufferCount = ViewModel.Buffer.Count;
+
+		// Already past end, only allow one empty line at very beginning
+		if (index > bufferCount)
+		{
+			return null;
+		}
+
+		// Document is completely empty, create a single empty line
+		if ((index == 0) && (bufferCount == 0))
+		{
+			return StartNewLine(lineNumber, index++);
+		}
+
+		// We are exactly at end, create empty line if previous line ended in new line
+		if (index == bufferCount)
+		{
+			var prev = ViewModel.Buffer[index - 1];
+			return prev is '\n' or '\r'
+				? StartNewLine(lineNumber, index++)
+				: null;
+		}
+
+		var line = StartNewLine(lineNumber, index);
+
+		while (index < bufferCount)
+		{
+			switch (ViewModel.Buffer[index++])
+			{
+				case '\r':
+				{
+					if ((index < bufferCount) && (ViewModel.Buffer[index] == '\n'))
+					{
+						index++;
+						line.LineEndingLength = 2;
+					}
+					else
+					{
+						line.LineEndingLength = 1;
+					}
+					line.EndOffset = index;
+					return line;
+				}
+				case '\n':
+				{
+					line.LineEndingLength = 1;
+					line.EndOffset = index;
+					return line;
+				}
+			}
+		}
+
+		// Reached natural end of buffer without newline
+		line.EndOffset = index;
+		return line;
+	}
+
 	private Line StartNewLine(int lineNumber, int startOffset)
 	{
-		var line = _pool.TryDequeue(out var p) ? p : new Line(this);
-		line.LineNumber = lineNumber;
-		line.StartOffset = startOffset;
-		line.EndOffset = startOffset;
-		line.LineEndingLength = 0;
+		var line = TryDequeue(out var p) ? p : new Line(this);
+		line.Reset(lineNumber, startOffset);
 		return line;
 	}
 

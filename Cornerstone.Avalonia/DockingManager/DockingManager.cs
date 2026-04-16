@@ -14,6 +14,7 @@ using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Cornerstone.Collections;
 using Cornerstone.Extensions;
 using Cornerstone.Reflection;
@@ -24,6 +25,7 @@ using ControlCollection = Avalonia.Controls.Controls;
 
 namespace Cornerstone.Avalonia.DockingManager;
 
+[SourceReflection]
 public partial class DockingManager : DockSplitPanel
 {
 	#region Fields
@@ -34,27 +36,35 @@ public partial class DockingManager : DockSplitPanel
 	private readonly Dictionary<SplitPanel, NotifyCollectionChangedEventHandler> _registeredSplitPanels;
 	private readonly Dictionary<DockingTabControl, NotifyCollectionChangedEventHandler> _registeredTabControls;
 	private DockingManager _rootDockingManager;
-	private readonly Dictionary<string, SourceTypeInfo> _tabLookup;
+	private readonly Dictionary<string, SourceTypeInfo> _tabAssemblyNamesLookup;
 
 	#endregion
 
 	#region Constructors
 
-	public DockingManager() : this(CornerstoneApplication.DependencyProvider, CornerstoneApplication.RuntimeInformation)
+	public DockingManager() : this(CornerstoneApplication.DependencyProvider, CornerstoneApplication.RuntimeInformation, [])
 	{
 	}
 
 	[DependencyInjectionConstructor]
+	public DockingManager(IDependencyProvider dependencyProvider, IRuntimeInformation runtimeInformation)
+		: this(dependencyProvider, runtimeInformation, [])
+	{
+	}
+
 	public DockingManager(
 		IDependencyProvider dependencyProvider,
-		IRuntimeInformation runtimeInformation)
+		IRuntimeInformation runtimeInformation,
+		params Type[] allowedDockTypes)
 	{
 		_ignoreModified = [];
 		_registeredSplitPanels = [];
 		_registeredTabControls = [];
-		_tabLookup = [];
+		_tabAssemblyNamesLookup = [];
 
+		DefaultDropDock = Dock.Bottom;
 		DependencyProvider = dependencyProvider;
+		RootTabControl = CreateTabControl(allowedDockTypes: allowedDockTypes);
 		RuntimeInformation = runtimeInformation;
 		Windows = [];
 
@@ -72,6 +82,13 @@ public partial class DockingManager : DockSplitPanel
 	#endregion
 
 	#region Properties
+
+	/// <summary>
+	/// Default dock side used when a tab is dropped in an invalid location
+	/// (instead of creating a floating window).
+	/// </summary>
+	[StyledProperty]
+	public partial Dock DefaultDropDock { get; set; }
 
 	public IDependencyProvider DependencyProvider { get; set; }
 
@@ -105,7 +122,8 @@ public partial class DockingManager : DockSplitPanel
 		_draggedWindow == null
 			? null
 			: new TabInfo(_draggedWindow.TabHeader, _draggedWindow.TabItemSize,
-				_draggedWindow.TabContentSize, _draggedWindow.TabControlSize);
+				_draggedWindow.TabContentSize, _draggedWindow.TabControlSize,
+				_draggedWindow.TabView.TabModel);
 
 	/// <summary>
 	/// Gets or sets if the new NewTab command.
@@ -115,44 +133,68 @@ public partial class DockingManager : DockSplitPanel
 
 	public DockingManager RootDockingManager => _rootDockingManager ?? this;
 
+	public DockingTabControl RootTabControl { get; }
+
 	public IRuntimeInformation RuntimeInformation { get; }
+
+	public Bitmap WindowsIcon { get; set; }
 
 	[StyledProperty]
 	public partial string WindowTitle { get; set; }
 
-	internal SpeedyList<DockingWindow> Windows { get; }
+	internal PresentationList<DockingWindow> Windows { get; }
 
 	#endregion
 
 	#region Methods
 
-	public void Add(string tabId)
+	public void Add(string tabAssemblyName)
 	{
-		if (_tabLookup.TryGetValue(tabId, out var info))
+		if (_tabAssemblyNamesLookup.TryGetValue(tabAssemblyName, out var info))
 		{
-			Add((DockableTabModel) DependencyProvider.GetInstance(info.Type));
+			Add(info.Type);
 		}
 	}
 
 	public void Add<T>() where T : DockableTabModel
 	{
-		// todo: add "singleton tab" check
-		Add(DependencyProvider.GetInstance<T>());
+		Add(typeof(T));
+	}
+
+	public void Add(Type type)
+	{
+		if (DependencyProvider.IsSingleton(type)
+			&& TrySelectTab(x => x.GetType() == type))
+		{
+			return;
+		}
+		var instance = (DockableTabModel) DependencyProvider.GetInstance(type);
+		Add(instance);
 	}
 
 	public void Add(DockableTabModel tabModel)
 	{
-		var tabControl = GetTabControls(Children).FirstOrDefault();
-		if (tabControl == null)
+		if (tabModel == null)
 		{
-			tabControl = CreateTabControl();
-			Children.Add(tabControl);
+			return;
 		}
 
-		if (tabModel != null)
+		// Try to add to an existing compatible tab control
+		var existingTabControl = GetTabControls(Children)
+			.FirstOrDefault(x => x.CanAcceptTabModel(tabModel));
+
+		if (existingTabControl != null)
 		{
-			tabControl.Add(tabModel);
+			existingTabControl.Add(tabModel);
+			return;
 		}
+
+		// No compatible tab control found, we need to create a new one
+		var newTabControl = CreateTabControl(allowedDockTypes: GetAllowedDockTypes(tabModel));
+		newTabControl.Add(tabModel);
+
+		// There are already other tab controls, split the layout Bottom by default
+		SplitNewTabControl(newTabControl, Dock.Bottom);
 	}
 
 	public static Rect CalculateDockRect(TabInfo tabInfo, Rect fitBounds, Dock dock)
@@ -251,22 +293,19 @@ public partial class DockingManager : DockSplitPanel
 	public bool CanSplit(Control control)
 	{
 		// we don't want to split empty TabControls as they are not supposed to be children of SplitPanel
-		return control is not TabControl tabControl
-			|| tabControl.Items.Any(x => x is not DummyTabItem);
+		return control is TabControl tabControl
+			&& ((tabControl.ItemCount > 0)
+				|| tabControl.Items.All(x => x is DummyTabItem)
+				|| (tabControl == RootTabControl));
 	}
 
 	/// <summary>
-	/// Close the docking manager (all children, all child windows)
+	/// Close the docking manager (all tabs (all non-primary tab controls), all child windows)
 	/// </summary>
 	public void Close()
 	{
 		CloseTabs();
-		Children.Clear();
-		foreach (var window in Windows)
-		{
-			window.Close();
-		}
-		Windows.Clear();
+		CloseWindows();
 	}
 
 	public void CloseTab(DockableTabModel tabModel)
@@ -285,6 +324,28 @@ public partial class DockingManager : DockSplitPanel
 				tab.Close(true);
 				tabControl.Items.Remove(tab);
 				return;
+			}
+		}
+	}
+
+	/// <summary>
+	/// Returns all DockableTabView instances in the main docking tree + all floating windows.
+	/// </summary>
+	public IEnumerable<DockableTabView> GetAllTabViews()
+	{
+		foreach (var tabControl in GetTabControls(Children))
+		{
+			foreach (var item in tabControl.Items.OfType<DockableTabView>())
+			{
+				yield return item;
+			}
+		}
+
+		foreach (var window in Windows)
+		{
+			foreach (var tabView in window.DockingManager.GetAllTabViews())
+			{
+				yield return tabView;
 			}
 		}
 	}
@@ -314,23 +375,24 @@ public partial class DockingManager : DockSplitPanel
 		return null;
 	}
 
-	public void Initialize()
+	public void Initialize(Type[] allowedDockTypes)
 	{
 		Windows.ListUpdated += WindowsOnListUpdated;
 		Children.CollectionChanged += ChildrenOnCollectionChanged;
-		Children.Add(CreateTabControl());
+		RootTabControl.AllowedDockTypes = allowedDockTypes;
+		Children.Add(RootTabControl);
 	}
 
-	public void Register<T>()
+	public void RegisterTab<T>()
 	{
 		var typeInfo = SourceReflector.GetRequiredSourceType<T>();
-		var id = typeInfo.DeclaredFields.FirstOrDefault(x => x.Name == "TypeId");
-		_tabLookup.TryAdd((string) id.GetValue(null), typeInfo);
+		var id = typeInfo.DeclaredFields.First(x => x.Name == "TypeId");
+		_tabAssemblyNamesLookup.TryAdd((string) id.GetValue(null), typeInfo);
 	}
 
 	public bool ReplaceTab(DockableTabModel oldModel, string tabId)
 	{
-		if (_tabLookup.TryGetValue(tabId, out var info))
+		if (_tabAssemblyNamesLookup.TryGetValue(tabId, out var info))
 		{
 			return ReplaceTab(oldModel, (DockableTabModel) DependencyProvider.GetInstance(info.Type));
 		}
@@ -382,11 +444,6 @@ public partial class DockingManager : DockSplitPanel
 		Close();
 		RestoreDockLayoutChildren(this, dockLayout);
 		RestoreDockingWindows(dockLayout);
-
-		if (Children.Count == 0)
-		{
-			Children.Add(CreateTabControl());
-		}
 	}
 
 	public void SelectTab(DockableTabModel tabModel)
@@ -411,23 +468,50 @@ public partial class DockingManager : DockSplitPanel
 		return DockLayoutItem.From(this);
 	}
 
-	public bool TryFindDockableTabModel(Func<DockableTabModel, bool> predicate, out DockableTabModel tabModel)
+	public bool TryFind<T>(Func<T, bool> predicate, out DockableTabModel tabModel)
+		where T : DockableTabModel
 	{
-		foreach (var tabControl in GetTabControls(Children))
+		foreach (var tabView in GetAllTabViews())
 		{
-			foreach (var tabItem in tabControl.Items.OfType<DockableTabView>())
+			if (tabView.TabModel is not T tModel
+				|| !predicate(tModel))
 			{
-				if (!predicate(tabItem.TabModel))
-				{
-					continue;
-				}
-
-				tabModel = tabItem.TabModel;
-				return true;
+				continue;
 			}
+
+			tabModel = tabView.TabModel;
+			return true;
 		}
 
 		tabModel = null;
+		return false;
+	}
+
+	public bool TrySelectTab(Func<DockableTabModel, bool> check)
+	{
+		return TrySelectTab<DockableTabModel>(check);
+	}
+
+	public bool TrySelectTab<T>(Func<T, bool> check)
+		where T : DockableTabModel
+	{
+		foreach (var tabView in GetAllTabViews())
+		{
+			if (tabView.TabModel is not T tModel || !check(tModel))
+			{
+				continue;
+			}
+
+			// Bring the containing tab control to front / activate window if needed
+			var containingWindow = FindContainingWindow(tabView);
+				
+			// or Focus, BringToFront, etc.
+			containingWindow?.Activate();
+
+			// assuming you expose TabControl on DockableTabView
+			tabView.TabControl?.SelectedItem = tabView; 
+			return true;
+		}
 		return false;
 	}
 
@@ -554,6 +638,34 @@ public partial class DockingManager : DockSplitPanel
 		TabDropped?.Invoke(this, e);
 	}
 
+	/// <summary>
+	/// Returns the top-level DockingWindow that contains the given tab view, or null if it's in the main docking area.
+	/// </summary>
+	internal DockingWindow FindContainingWindow(DockableTabView tabView)
+	{
+		if (tabView == null)
+		{
+			return null;
+		}
+
+		// Check main tree first (not in any floating window)
+		if (GetTabControls(Children).Any(tc => tc.Items.Contains(tabView)))
+		{
+			return null; // It's in the main window, not a floating one
+		}
+
+		// Search through all floating windows
+		foreach (var window in Windows)
+		{
+			if (window.DockingManager.ContainsTabView(tabView))
+			{
+				return window;
+			}
+		}
+
+		return null;
+	}
+
 	private void AddTab(DockableTabView tabView)
 	{
 		var tabControl = GetTabControls(Children).FirstOrDefault();
@@ -643,7 +755,8 @@ public partial class DockingManager : DockSplitPanel
 		{
 			foreach (var item in e.OldItems)
 			{
-				if (item is DockingTabControl tabControl)
+				if (item is DockingTabControl tabControl
+					&& !ReferenceEquals(tabControl, RootTabControl))
 				{
 					tabControl.Uninitialize();
 				}
@@ -668,14 +781,34 @@ public partial class DockingManager : DockSplitPanel
 		}
 	}
 
+	private void CloseWindows()
+	{
+		foreach (var window in Windows)
+		{
+			window.Close();
+		}
+	}
+
+	/// <summary>
+	/// Helper to check if a specific DockableTabView exists anywhere in this DockingManager's tree.
+	/// </summary>
+	private bool ContainsTabView(DockableTabView tabView)
+	{
+		return GetTabControls(Children).Any(tc => tc.Items.Contains(tabView));
+	}
+
 	/// <summary>
 	/// Creates a <see cref="DockingTabControl" /> that has been set up for Docking
 	/// </summary>
-	private DockingTabControl CreateTabControl(DockableTabView initialTabView = null)
+	private DockingTabControl CreateTabControl(DockableTabView initialTabView = null, params Type[] allowedDockTypes)
 	{
-		var tabControl = new DockingTabControl();
+		var tabControl = new DockingTabControl(allowedDockTypes);
 		tabControl.Initialize(this);
-		tabControl.Bind(DockingTabControl.NewTabCommandProperty, new Binding(nameof(NewTabCommand)) { Mode = BindingMode.OneWay, Source = this });
+		if ((allowedDockTypes.Length == 0)
+			|| allowedDockTypes.Contains(typeof(DocumentTabModel)))
+		{
+			tabControl.Bind(DockingTabControl.NewTabCommandProperty, new Binding(nameof(NewTabCommand)) { Mode = BindingMode.OneWay, Source = this });
+		}
 		tabControl.Bind(TemplatedControl.BackgroundProperty, new Binding(nameof(Background)) { Mode = BindingMode.OneWay, Source = this });
 		if (initialTabView != null)
 		{
@@ -689,24 +822,26 @@ public partial class DockingManager : DockSplitPanel
 		Debug.Assert(DraggedTabInfo.HasValue);
 
 		var tabInfo = DraggedTabInfo.Value;
-		var droppedResults = RootDockingManager.GetDroppedResult();
-
+		var droppedResults = GetDroppedResult();
 		RootDockingManager.HideOverlay();
 
 		var draggingWindow = (DraggingTabWindow) sender;
 		var draggingWindowPosition = draggingWindow.Position;
 		var tabItem = CloseDraggingWindow(draggingWindow);
 
-		if (droppedResults.IsInsertTab(out var tabControl, out var index))
+		if (droppedResults.IsInsertTab(out var tabControl, out var index)
+			&& (tabControl is not DockingTabControl dockingTabControl
+				|| dockingTabControl.CanAcceptTabModel(tabItem.TabModel)))
 		{
 			var items = tabControl.Items;
 			items.Insert(index, tabItem);
 		}
 		else if (droppedResults.IsFillControl(out var target))
 		{
-			if (target is not DockingTabControl tabControl2)
+			if (target is not DockingTabControl tabControl2
+				|| !tabControl2.CanAcceptTabModel(tabItem.TabModel))
 			{
-				Debug.Fail("Invalid dropTarget for control");
+				Debug.Fail("Invalid dropTarget for control or cannot accept model");
 				return;
 			}
 
@@ -715,7 +850,7 @@ public partial class DockingManager : DockSplitPanel
 		}
 		else if (droppedResults.IsSplitControl(out target, out var dock))
 		{
-			TabControl newTabControl = CreateTabControl(tabItem);
+			TabControl newTabControl = CreateTabControl(tabItem, GetAllowedDockTypes(tabItem.TabModel));
 			var dockSize = CalculateDockRect(tabInfo, new Rect(default, target.Bounds.Size), dock).Size;
 			ApplySplitDock(target, dock, dockSize, newTabControl);
 		}
@@ -728,6 +863,7 @@ public partial class DockingManager : DockSplitPanel
 
 			// Set the root docking manager, there is only one root manager
 			window.DockingManager._rootDockingManager = RootDockingManager;
+			window.DockingManager.Initialize(GetAllowedDockTypes(tabItem.TabModel));
 			window.DockingManager.AddTab(tabItem);
 			RootDockingManager.Windows.Add(window);
 			window.Show();
@@ -742,14 +878,19 @@ public partial class DockingManager : DockSplitPanel
 		RootDockingManager.ShowOverlay(draggedWindow, e);
 	}
 
+	private Type[] GetAllowedDockTypes(DockableTabModel tabModel)
+	{
+		Type[] allowedDockTypes = tabModel is ToolbarTabModel ? [typeof(ToolbarTabModel)] : [typeof(DocumentTabModel)];
+		return allowedDockTypes;
+	}
+
 	private DockableTabModel GetDockableTabModel(DockLayoutItem item)
 	{
 		DockableTabModel model = null;
 		if (item.DataModelType.TryGetType(out var modelType))
 		{
 			model = (DockableTabModel) DependencyProvider.GetInstance(modelType);
-
-			//model.RestoreLayoutData(item.Data);
+			model.RestoreLayoutData(item.Data);
 			model.Initialize();
 		}
 		return model;
@@ -763,17 +904,18 @@ public partial class DockingManager : DockSplitPanel
 			DataContext = hostWindow.DataContext,
 			Height = height,
 			Position = new PixelPoint(left, top),
-			SystemDecorations = SystemDecorations.Full,
+			WindowDecorations = WindowDecorations.Full,
 			Title = WindowTitle ?? "Window",
+			Icon = WindowsIcon,
 			Width = width,
 			DockingManager =
 			{
-				[BackgroundProperty] = this[BackgroundProperty],
-				[DockIndicatorFieldFillProperty] = this[DockIndicatorFieldFillProperty],
-				[DockIndicatorFieldHoveredFillProperty] = this[DockIndicatorFieldHoveredFillProperty]
+				[!BackgroundProperty] = this[!BackgroundProperty],
+				[!DockIndicatorFieldFillProperty] = this[!DockIndicatorFieldFillProperty],
+				[!DockIndicatorFieldHoveredFillProperty] = this[!DockIndicatorFieldHoveredFillProperty],
+				[!NewTabCommandProperty] = this[!NewTabCommandProperty]
 			}
 		};
-
 		return response;
 	}
 
@@ -794,12 +936,14 @@ public partial class DockingManager : DockSplitPanel
 			}
 		}
 
-		return response;
+		return RootDockingManager != this
+			? RootDockingManager.GetDroppedResult()
+			: response;
 	}
 
 	private Window GetHostWindow()
 	{
-		if (VisualRoot is Window window)
+		if (VisualRoot?.Parent is Window window)
 		{
 			return window;
 		}
@@ -978,7 +1122,11 @@ public partial class DockingManager : DockSplitPanel
 			}
 			case nameof(DockingTabControl):
 			{
-				var response = CreateTabControl();
+				var allowedDockTypeNames = item.AllowedDockTypeNames.Select(Type.GetType).ToArray();
+				var response = item.IsRootTabControl
+					? RootTabControl
+					: CreateTabControl(allowedDockTypes: allowedDockTypeNames);
+
 				response.Height = item.Height;
 				response.Width = item.Width;
 				ProcessChildren(response, item);
@@ -1045,6 +1193,11 @@ public partial class DockingManager : DockSplitPanel
 			var child = ProcessChild(item);
 			if (child != null)
 			{
+				if (RootTabControl == child)
+				{
+					Children.Remove(child);
+				}
+
 				splitPanel.Children.Add(child);
 			}
 		}
@@ -1053,7 +1206,7 @@ public partial class DockingManager : DockSplitPanel
 	private void RegisterSplitPanelForDocking(SplitPanel splitPanel)
 	{
 		Debug.Assert(!_registeredSplitPanels.ContainsKey(splitPanel));
-		NotifyCollectionChangedEventHandler handler = (s, e) => SplitPanelChildrenModified(splitPanel, e);
+		NotifyCollectionChangedEventHandler handler = (_, e) => SplitPanelChildrenModified(splitPanel, e);
 
 		splitPanel.Children.CollectionChanged += handler;
 		_registeredSplitPanels[splitPanel] = handler;
@@ -1133,7 +1286,11 @@ public partial class DockingManager : DockSplitPanel
 			}
 
 			SetDock(child, item.Dock);
-			splitPanel.Children.Add(child);
+
+			if (!splitPanel.Children.Contains(child))
+			{
+				splitPanel.Children.Add(child);
+			}
 		}
 	}
 
@@ -1145,7 +1302,7 @@ public partial class DockingManager : DockSplitPanel
 		{
 			_overlayWindow = new DockingOverlayWindow(this)
 			{
-				SystemDecorations = SystemDecorations.None,
+				WindowDecorations = WindowDecorations.None,
 				Background = null,
 				Opacity = 0.5
 			};
@@ -1166,6 +1323,31 @@ public partial class DockingManager : DockSplitPanel
 		{
 			w.DockingManager.ShowOverlay(draggedWindow, e);
 		}
+	}
+
+	/// <summary>
+	/// Creates a vertical split (Top/Bottom) and inserts the new tab control.
+	/// Uses ApplySplitDock so that registration, cleanup, and un-splitting work correctly.
+	/// </summary>
+	private void SplitNewTabControl(DockingTabControl newTabControl, Dock dock = Dock.Bottom)
+	{
+		// Use the primary tab control as the target to split, or fall back to the first one
+		var target = RootTabControl ??
+			GetTabControls(Children).FirstOrDefault();
+
+		if (target == null)
+		{
+			Children.Add(newTabControl);
+			return;
+		}
+
+		// Calculate a reasonable size for the new panel (half the height)
+		var tabInfo = new TabInfo(null, default, default, target.Bounds.Size, null);
+		var targetRect = new Rect(default, target.Bounds.Size);
+		var dockSize = CalculateDockRect(tabInfo, targetRect, dock).Size;
+
+		// This is the key call - it properly creates the SplitPanel and inserts everything
+		ApplySplitDock(target, dock, dockSize, newTabControl);
 	}
 
 	/// <summary>
@@ -1197,11 +1379,7 @@ public partial class DockingManager : DockSplitPanel
 		{
 			var child = splitPanel.Children[0];
 
-			// panel is still part of the UI Tree and as such can trigger a cascade of unwanted changes,
-			// and we can't remove it without triggering ChildrenModified
-			// or replacing it with a Dummy Control so we have to:
-			_ignoreModified.Add(splitPanel);
-
+			// Unregister BEFORE detaching anything
 			if (child is DockingTabControl childTabControl)
 			{
 				UnregisterTabControl(childTabControl);
@@ -1211,10 +1389,15 @@ public partial class DockingManager : DockSplitPanel
 				UnregisterSplitPanel(childSplitPanel);
 			}
 
-			splitPanel.Children.Clear();
-			_ignoreModified.Remove(splitPanel);
+			_ignoreModified.Add(splitPanel);
 
+			// Remove the child from the split panel first (so Clear() is safe)
+			splitPanel.Children.RemoveAt(0);
+
+			// Now replace the split panel with its former only child
 			parentPanel.Children[indexInParent] = child;
+
+			_ignoreModified.Remove(splitPanel);
 		}
 		else if (splitPanel.Children.Count == 0)
 		{
@@ -1228,30 +1411,9 @@ public partial class DockingManager : DockSplitPanel
 	/// </summary>
 	private void TabControlCollectionChanged(TabControl tabControl, NotifyCollectionChangedEventArgs e)
 	{
-		if (e.OldItems != null)
-		{
-			foreach (var item in e.OldItems)
-			{
-				if (item is DockableTabView { Content: DockableTabModel tabModel })
-				{
-					Debug.WriteLine(tabModel.GetType().ToAssemblyName());
-				}
-			}
-		}
-
-		if (e.NewItems != null)
-		{
-			foreach (var item in e.NewItems)
-			{
-				if (item is DockableTabView { Content: DockableTabModel tabModel })
-				{
-					Debug.WriteLine(tabModel.GetType().ToAssemblyName());
-				}
-			}
-		}
-
-		var items = tabControl.Items;
-		if ((items.Count > 0)
+		// Ignore tabs that have items or is the parent tab control.
+		if ((tabControl.Items.Count > 0)
+			|| (tabControl == RootTabControl)
 			|| tabControl.Parent is not Panel parent)
 		{
 			return;
@@ -1279,10 +1441,6 @@ public partial class DockingManager : DockSplitPanel
 				parentSplitPanel.RemoveSlot(indexInParent);
 			}
 		}
-		else if ((parent == this) && (tabControl == Children[^1]))
-		{
-			// Ignore the root parent, this gets
-		}
 		else
 		{
 			parent.Children.RemoveAt(indexInParent);
@@ -1298,7 +1456,7 @@ public partial class DockingManager : DockSplitPanel
 			DataContext = hostWindow.DataContext,
 			Width = tabControl.Bounds.Width,
 			Height = tabControl.Bounds.Height,
-			SystemDecorations = SystemDecorations.None,
+			WindowDecorations = WindowDecorations.None,
 			Position = hostWindow.PointToScreen(e.GetPosition(hostWindow))
 		};
 
@@ -1366,7 +1524,7 @@ public partial class DockingManager : DockSplitPanel
 		Windows.Remove(window);
 	}
 
-	private void WindowsOnListUpdated(object sender, SpeedyListUpdatedEventArg<DockingWindow> e)
+	private void WindowsOnListUpdated(object sender, PresentationListUpdatedEventArg<DockingWindow> e)
 	{
 		if (e.Removed != null)
 		{
@@ -1417,7 +1575,7 @@ public partial class DockingManager : DockSplitPanel
 
 	#region Records
 
-	public record struct TabInfo(object Header, Size TabItemSize, Size ContentSize, Size TabControlSize);
+	public record struct TabInfo(object Header, Size TabItemSize, Size ContentSize, Size TabControlSize, DockableTabModel TabModel);
 
 	#endregion
 }

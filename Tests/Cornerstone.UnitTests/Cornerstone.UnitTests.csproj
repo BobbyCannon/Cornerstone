@@ -4,6 +4,7 @@
 		<TargetFrameworks>net10.0-windows10.0.26100.0</TargetFrameworks>
 		<SignAssembly>true</SignAssembly>
 		<GenerateProgramFile>false</GenerateProgramFile>
+		<DisableAutomaticXpfInit>true</DisableAutomaticXpfInit>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
 		<OutputType>Library</OutputType>
@@ -19,16 +20,14 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Avalonia.Headless" Version="$(AvaloniaVersion)" />
-		<PackageReference Include="Avalonia.Headless.NUnit" Version="$(AvaloniaVersion)" />
+		<PackageReference Include="Avalonia.Skia" Version="$(AvaloniaVersion)" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
 		<PackageReference Include="MSTest.TestAdapter" Version="4.1.0" />
 		<PackageReference Include="MSTest.TestFramework" Version="4.1.0" />
-		<PackageReference Include="NUnit" Version="4.4.0" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\Cornerstone.Sample\Cornerstone.Sample.csproj" />
 		<ProjectReference Include="..\..\Cornerstone\Cornerstone.csproj" />
-		<ProjectReference Include="..\Cornerstone.Generators.UnitTests.Sample\Cornerstone.Generators.UnitTests.Sample.csproj" />
 		<ProjectReference Include="..\..\Cornerstone.Generators\Cornerstone.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	</ItemGroup>
 </Project>

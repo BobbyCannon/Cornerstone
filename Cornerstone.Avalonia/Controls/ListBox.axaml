@@ -48,19 +48,19 @@
 		<Style Selector="^ ListBoxItem:selected">
 			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
 				<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground06}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeText06}" />
 			</Style>
 			<Style Selector="^:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
 				<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground05}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
 			</Style>
 			<Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
 				<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground05}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
 			</Style>
 			<Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
 				<Setter Property="Background" Value="{DynamicResource ThemeColor04}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeForeground04}" />
+				<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
 			</Style>
 		</Style>
 	</Style>

@@ -1,6 +1,7 @@
 ﻿#region References
 
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Cornerstone.Avalonia;
 using Cornerstone.Presentation;
 using Cornerstone.Text;
@@ -45,10 +46,11 @@ public partial class AppWindow : CornerstoneWindow<AppViewModel>
 		base.OnClosing(e);
 	}
 
-	protected override void OnInitialized()
+	protected override void OnLoaded(RoutedEventArgs e)
 	{
-		Title += $" ({(ViewModel.RuntimeInformation.ApplicationIsElevated ? "administrator, " : "")}{ViewModel.RuntimeInformation.ApplicationStartup.Humanize()})";
-		base.OnInitialized();
+		Title += $" ({(ViewModel.RuntimeInformation.ApplicationIsElevated ? "administrator, " : "")}";
+		Title += $"{ViewModel.RuntimeInformation.ApplicationStartup.Humanize()})";
+		base.OnLoaded(e);
 	}
 
 	#endregion

@@ -8,3 +8,4 @@ using Cornerstone.Reflection;
 
 [assembly: SourceReflectionType<ColumnAttribute>]
 [assembly: SourceReflectionType<Version>]
+[assembly: SourceReflectionType<object>]

@@ -5,8 +5,10 @@ public class UpdateablePropertyOrder
 	#region Properties
 
 	public int Action { get; set; }
+	
+	public bool CanWrite { get; set; }
 
-	public bool IsReadOnly { get; set; }
+	public bool CanAccess { get; set; }
 
 	public string Name { get; set; }
 

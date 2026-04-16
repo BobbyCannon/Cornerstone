@@ -46,7 +46,7 @@ public static class AvaloniaExtensions
 			{
 				target.BringIntoView();
 				var ok = target.Focus(NavigationMethod.Tab);
-				Debug.WriteLine($"Delayed focus → {target.Name}  success:{ok}  focused:{target.IsFocused}");
+				//Debug.WriteLine($"Delayed focus → {target.Name}  success:{ok}  focused:{target.IsFocused}");
 			},
 			TimeSpan.FromMilliseconds(delayMs)
 		);

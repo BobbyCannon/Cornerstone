@@ -13,6 +13,7 @@ public class CodeBuilderSettings
 	public CodeBuilderSettings()
 	{
 		DesiredOutput = CodeBuilderOutput.Instance;
+		IgnoreDefaults = true;
 		IndentChar = '\t';
 		IndentLength = 1;
 		NewLineChars = Environment.NewLine;
@@ -23,6 +24,8 @@ public class CodeBuilderSettings
 	#region Properties
 
 	public CodeBuilderOutput DesiredOutput { get; set; }
+
+	public bool IgnoreDefaults { get; set; }
 
 	public char IndentChar { get; set; }
 

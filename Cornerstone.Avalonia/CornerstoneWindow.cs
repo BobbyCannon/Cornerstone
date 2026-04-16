@@ -3,7 +3,6 @@
 using System;
 using System.ComponentModel;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
@@ -15,6 +14,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Cornerstone.Avalonia.Extensions;
 using Cornerstone.Collections;
+using Cornerstone.Data;
 using Cornerstone.Presentation;
 using Cornerstone.Profiling;
 using Dispatcher = Avalonia.Threading.Dispatcher;
@@ -23,17 +23,14 @@ using Dispatcher = Avalonia.Threading.Dispatcher;
 
 namespace Cornerstone.Avalonia;
 
-public partial class CornerstoneWindow<T> : CornerstoneWindow
+public partial class CornerstoneWindow<T>
+	: CornerstoneWindow where T : class
 {
 	#region Constructors
 
-	public CornerstoneWindow() : this(default)
-	{
-	}
-
 	public CornerstoneWindow(T viewModel)
 	{
-		ViewModel = viewModel;
+		DataContext = viewModel;
 	}
 
 	#endregion
@@ -49,9 +46,10 @@ public partial class CornerstoneWindow<T> : CornerstoneWindow
 
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
 	{
-		if (change.Property == ViewModelProperty)
+		if ((change.Property == DataContextProperty)
+			&& DataContext is T viewModel)
 		{
-			DataContext = ViewModel;
+			ViewModel = viewModel;
 		}
 
 		base.OnPropertyChanged(change);
@@ -81,7 +79,7 @@ public partial class CornerstoneWindow : Window
 
 	public CornerstoneWindow()
 	{
-		MainMenu = new SpeedyList<MenuItemView>();
+		MainMenu = new PresentationList<MenuItemView>();
 	}
 
 	static CornerstoneWindow()
@@ -105,7 +103,7 @@ public partial class CornerstoneWindow : Window
 	public partial object InnerRightContent { get; set; }
 
 	[StyledProperty]
-	public partial SpeedyList<MenuItemView> MainMenu { get; set; }
+	public partial PresentationList<MenuItemView> MainMenu { get; set; }
 
 	[StyledProperty]
 	public partial Profiler Profiler { get; set; }
@@ -277,32 +275,19 @@ public partial class CornerstoneWindow : Window
 
 	private void CloseWindow(object sender, RoutedEventArgs e)
 	{
-		var hostWindow = (Window) VisualRoot;
-		if (hostWindow != null)
-		{
-			hostWindow.Close();
-		}
+		Close();
 	}
 
 	private void MaximizeWindow(object sender, RoutedEventArgs e)
 	{
-		var hostWindow = (Window) VisualRoot;
-
-		if (hostWindow != null)
-		{
-			hostWindow.WindowState = hostWindow.WindowState == WindowState.Normal
-				? WindowState.Maximized
-				: WindowState.Normal;
-		}
+		WindowState = WindowState == WindowState.Normal
+			? WindowState.Maximized
+			: WindowState.Normal;
 	}
 
 	private void MinimizeWindow(object sender, RoutedEventArgs e)
 	{
-		var hostWindow = (Window) VisualRoot;
-		if (hostWindow != null)
-		{
-			hostWindow.WindowState = WindowState.Minimized;
-		}
+		WindowState = WindowState.Minimized;
 	}
 
 	private void OnPositionChanged(object sender, PixelPointEventArgs e)
@@ -310,30 +295,18 @@ public partial class CornerstoneWindow : Window
 		OnPropertyChanged(nameof(Position));
 	}
 
-	private async void SubscribeToWindowState()
+	private void SubscribeToWindowState()
 	{
-		var hostWindow = (Window) VisualRoot;
-
-		while (hostWindow == null)
-		{
-			hostWindow = (Window) VisualRoot;
-			await Task.Delay(50);
-		}
-
-		hostWindow
-			.GetObservable(WindowStateProperty)
+		this.GetObservable(WindowStateProperty)
 			.Subscribe(s =>
 			{
 				if (s != WindowState.Maximized)
 				{
 					_maximizeIcon.Data = Geometry.Parse("M2048 2048v-2048h-2048v2048h2048zM1843 1843h-1638v-1638h1638v1638z");
-					_windowGrid.Margin = new Thickness(0, 0, 0, 0);
 				}
 				if (s == WindowState.Maximized)
 				{
 					_maximizeIcon.Data = Geometry.Parse("M2048 1638h-410v410h-1638v-1638h410v-410h1638v1638zm-614-1024h-1229v1229h1229v-1229zm409-409h-1229v205h1024v1024h205v-1229z");
-					// todo: remove this for Avalonia v12
-					_windowGrid.Margin = new Thickness(8, 8, 8, 0);
 				}
 			});
 	}

@@ -5,6 +5,7 @@
 		<Setter Property="Background" Value="{DynamicResource Background03}" />
 		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
 		<Setter Property="BorderThickness" Value="0,0,0,1" />
+		<Setter Property="CornerRadius" Value="0" />
 		<Setter Property="Height" Value="34" />
 		<Style Selector="^ > Grid">
 			<Style Selector="^ > StackPanel:nth-child(1)">
@@ -43,12 +44,12 @@
 					<Setter Property="Width" Value="32" />
 					<Setter Property="VerticalAlignment" Value="Center" />
 					<Style Selector="^.Icon Path">
-						<Setter Property="Height" Value="14" />
-						<Setter Property="Width" Value="14" />
+						<Setter Property="Height" Value="16" />
+						<Setter Property="Width" Value="16" />
 					</Style>
 					<Style Selector="^.Icon PathIcon">
-						<Setter Property="Height" Value="14" />
-						<Setter Property="Width" Value="14" />
+						<Setter Property="Height" Value="16" />
+						<Setter Property="Width" Value="16" />
 					</Style>
 				</Style>
 				<Style Selector="^ > TextBox">
@@ -60,12 +61,12 @@
 					<Setter Property="Width" Value="32" />
 					<Setter Property="VerticalAlignment" Value="Center" />
 					<Style Selector="^.Icon Path">
-						<Setter Property="Height" Value="14" />
-						<Setter Property="Width" Value="14" />
+						<Setter Property="Height" Value="16" />
+						<Setter Property="Width" Value="16" />
 					</Style>
 					<Style Selector="^.Icon PathIcon">
-						<Setter Property="Height" Value="14" />
-						<Setter Property="Width" Value="14" />
+						<Setter Property="Height" Value="16" />
+						<Setter Property="Width" Value="16" />
 					</Style>
 				</Style>
 				<Style Selector="^ > ToggleSwitch">

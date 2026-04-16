@@ -374,7 +374,7 @@
 
 								<TextBox
 										Text="{Binding FileName}"
-										Watermark="File name"
+										PlaceholderText="File name"
 										Margin="0"
 										Height="34"
 										IsVisible="{Binding !SelectingFolder}" />

@@ -17,14 +17,14 @@ public partial class SpeedyTree<T>
 
 	public SpeedyTree()
 	{
-		Children = new SpeedyList<T>();
+		Children = new PresentationList<T>();
 	}
 
 	#endregion
 
 	#region Properties
 
-	public ISpeedyList<T> Children { get; }
+	public IPresentationList<T> Children { get; }
 
 	public T Parent { get; set; }
 
@@ -36,7 +36,7 @@ public interface ISpeedyTree<T>
 {
 	#region Properties
 
-	public ISpeedyList<T> Children { get; }
+	public IPresentationList<T> Children { get; }
 
 	public T Parent { get; internal set; }
 

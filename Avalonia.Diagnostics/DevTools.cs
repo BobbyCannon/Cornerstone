@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Diagnostics;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -63,9 +62,7 @@ public static class DevTools
 
 	public static IDisposable Attach(Application application, DevToolsOptions options)
 	{
-		var openedDisposable = new SerialDisposableValue();
 		var result = new CompositeDisposable(2);
-		result.Add(openedDisposable);
 
 		// Skip if call on Design Mode
 		if (!Design.IsDesignMode)
@@ -88,7 +85,7 @@ public static class DevTools
 						&& (keyEventArgs.Type == RawKeyEventType.KeyUp)
 						&& options.Gesture.Matches(keyEventArgs))
 					{
-						openedDisposable.Disposable = Open(new ClassicDesktopStyleApplicationLifetimeTopLevelGroup(lifeTime), options, owner, application);
+						result.Add(Open(new ClassicDesktopStyleApplicationLifetimeTopLevelGroup(lifeTime), options, owner, application));
 						e.Handled = true;
 					}
 				}));

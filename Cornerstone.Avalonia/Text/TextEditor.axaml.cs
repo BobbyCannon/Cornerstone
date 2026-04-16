@@ -22,6 +22,7 @@ public partial class TextEditor : CornerstoneTemplatedControl<TextEditorViewMode
 
 	private readonly TextEditorTextInputMethodClient _imClient;
 	private readonly LineNumberMargin _lineNumbers;
+	private ScrollViewer _scrollViewer;
 
 	#endregion
 
@@ -31,7 +32,7 @@ public partial class TextEditor : CornerstoneTemplatedControl<TextEditorViewMode
 	{
 		ViewModel = new TextEditorViewModel();
 
-		_imClient = new();
+		_imClient = new(this);
 		_lineNumbers = new LineNumberMargin(this) { IsVisible = ViewModel.ShowLineNumbers };
 
 		LeftMargins = [_lineNumbers];
@@ -41,7 +42,10 @@ public partial class TextEditor : CornerstoneTemplatedControl<TextEditorViewMode
 	static TextEditor()
 	{
 		AffectsRender<TextRenderer>(
-			ForegroundProperty
+			BackgroundProperty,
+			CornerRadiusProperty,
+			ForegroundProperty,
+			WordWrapProperty
 		);
 
 		AffectsMeasure<TextRenderer>(
@@ -58,10 +62,17 @@ public partial class TextEditor : CornerstoneTemplatedControl<TextEditorViewMode
 	#region Properties
 
 	[DirectProperty]
+	public bool HighlightCurrentLine
+	{
+		get => ViewModel.HighlightCurrentLine;
+		set => ViewModel.HighlightCurrentLine = value;
+	}
+
+	[DirectProperty]
 	public ScrollBarVisibility HorizontalScrollBarVisibility
 	{
 		get => ViewModel.WordWrap ? ScrollBarVisibility.Disabled : ScrollBarVisibility.Auto;
-		set => ViewModel.WordWrap = value != ScrollBarVisibility.Disabled;
+		set => ViewModel.WordWrap = value is ScrollBarVisibility.Disabled or ScrollBarVisibility.Hidden;
 	}
 
 	[DirectProperty]
@@ -83,13 +94,25 @@ public partial class TextEditor : CornerstoneTemplatedControl<TextEditorViewMode
 	[DirectProperty]
 	public string Text
 	{
-		get => ViewModel.Document.ToString();
-		set => ViewModel.Document.Load(value);
+		get => ViewModel.ToString();
+		set => ViewModel.Load(value);
+	}
+
+	[DirectProperty]
+	public bool WordWrap
+	{
+		get => ViewModel.WordWrap;
+		set => ViewModel.WordWrap = value;
 	}
 
 	#endregion
 
 	#region Methods
+
+	public void ScrollToEnd()
+	{
+		_scrollViewer?.ScrollToEnd();
+	}
 
 	protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
 	{
@@ -97,30 +120,22 @@ public partial class TextEditor : CornerstoneTemplatedControl<TextEditorViewMode
 
 		if (e.NameScope.Find("PART_ScrollViewer") is ScrollViewer scrollViewer)
 		{
-			scrollViewer.ScrollChanged += ScrollViewerOnScrollChanged;
+			_scrollViewer = scrollViewer;
+			_scrollViewer.ScrollChanged += ScrollViewerOnScrollChanged;
 		}
 		if (e.NameScope.Find("PART_TextRenderer") is TextRenderer textRenderer)
 		{
+			// Override text renderers default viewmodel
+			textRenderer.ViewModel = ViewModel;
 			Renderer = textRenderer;
 		}
 	}
 
-	protected override void OnGotFocus(GotFocusEventArgs e)
+	protected override void OnGotFocus(FocusChangedEventArgs e)
 	{
-		ViewModel.Caret.IsVisible = true;
+		// Just pass focus to the renderer.
 		base.OnGotFocus(e);
-	}
-
-	protected override void OnKeyDown(KeyEventArgs e)
-	{
-		e.Handled = ViewModel.ProcessKeyDownEvent(e);
-		base.OnKeyDown(e);
-	}
-
-	protected override void OnKeyUp(KeyEventArgs e)
-	{
-		e.Handled = ViewModel.ProcessKeyUpEvent(e);
-		base.OnKeyUp(e);
+		Renderer.Focus();
 	}
 
 	protected override void OnLoaded(RoutedEventArgs e)
@@ -129,25 +144,20 @@ public partial class TextEditor : CornerstoneTemplatedControl<TextEditorViewMode
 		UpdateShowMargins();
 	}
 
-	protected override void OnLostFocus(RoutedEventArgs e)
-	{
-		ViewModel.Caret.IsVisible = false;
-		base.OnLostFocus(e);
-	}
-
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
 	{
-		if (change.Property == ViewModelProperty)
+		if (change.Property == DataContextProperty)
 		{
 			if (change.OldValue is TextEditorViewModel oldValue)
 			{
+				oldValue.DocumentChanged -= DocumentOnDocumentChanged;
 				oldValue.PropertyChanged -= ViewModelOnPropertyChanged;
-				oldValue.Document.DocumentChanged -= DocumentOnDocumentChanged;
 			}
 			if (change.NewValue is TextEditorViewModel newValue)
 			{
+				newValue.DocumentChanged += DocumentOnDocumentChanged;
 				newValue.PropertyChanged += ViewModelOnPropertyChanged;
-				newValue.Document.DocumentChanged += DocumentOnDocumentChanged;
+				InvalidateMeasure();
 			}
 		}
 
@@ -159,13 +169,22 @@ public partial class TextEditor : CornerstoneTemplatedControl<TextEditorViewMode
 		if (!e.Handled)
 		{
 			ViewModel.ProcessTextInput(e);
+			e.Handled = true;
 		}
 		base.OnTextInput(e);
 	}
 
 	private void DocumentOnDocumentChanged(object sender, TextDocumentChangedArgs e)
 	{
-		_lineNumbers.InvalidateMeasure();
+		if (e.Type == TextDocumentChangeType.Reset)
+		{
+			ViewModel.Caret.Reset();
+			InvalidateMeasure();
+		}
+		else
+		{
+			_lineNumbers.InvalidateMeasure();
+		}
 	}
 
 	private void ScrollViewerOnScrollChanged(object sender, ScrollChangedEventArgs e)

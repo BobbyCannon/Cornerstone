@@ -158,7 +158,7 @@ internal class EntityState<T, T2> : EntityState
 
 	private void EntityOnPropertyChanged(object sender, PropertyChangedEventArgs e)
 	{
-		if ((State == EntityStateType.Unmodified) && Entity.HasChanges())
+		if ((State == EntityStateType.Unmodified) && Entity.HasNotifiableChanges())
 		{
 			State = EntityStateType.Modified;
 		}

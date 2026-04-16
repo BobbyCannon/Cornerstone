@@ -28,7 +28,7 @@ public static class CollectionExtensions
 	/// <param name="collection"> The collection to modify. </param>
 	/// <param name="expected"> The expected collection state. </param>
 	/// <exception cref="ArgumentNullException"> Thrown if <paramref name="collection" /> or <paramref name="expected" /> is null. </exception>
-	public static void Reconcile<T>(this ISpeedyList<T> collection, IEnumerable expected)
+	public static void Reconcile<T>(this IPresentationList<T> collection, IEnumerable expected)
 	{
 		if (collection == null)
 		{
@@ -90,9 +90,9 @@ public static class CollectionExtensions
 	/// <param name="dispatcher"> The optional dispatcher to use. </param>
 	/// <param name="orderBy"> The optional set of order by settings. </param>
 	/// <returns> The SpeedyList containing the collection. </returns>
-	public static SpeedyList<T> ToSpeedyList<T>(this IEnumerable<T> collection, IDispatcher dispatcher = null, params OrderBy<T>[] orderBy)
+	public static PresentationList<T> ToSpeedyList<T>(this IEnumerable<T> collection, IDispatcher dispatcher = null, params OrderBy<T>[] orderBy)
 	{
-		var response = new SpeedyList<T>(dispatcher, orderBy);
+		var response = new PresentationList<T>(dispatcher, orderBy);
 		response.Load(collection);
 		return response;
 	}

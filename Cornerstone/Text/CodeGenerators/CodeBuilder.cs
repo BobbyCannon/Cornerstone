@@ -6,7 +6,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Cornerstone.Extensions;
 using Cornerstone.Reflection;
-using Cornerstone.Testing;
 using Cornerstone.Text.CodeGenerators.TypeGenerators;
 
 #endregion
@@ -20,13 +19,14 @@ public class CodeBuilder
 	private readonly StringGapBuffer _builder;
 	private static readonly IList<CodeGenerator> _builtInGenerators;
 	private readonly Stack<CodeBuilderMode> _consumerModes;
+	private static readonly List<Func<SourceTypeInfo, string, object, string>> _propertyValueProviders;
 	private static readonly ReadOnlyDictionary<Type, string> _simplifiedTypeNames;
 
 	#endregion
 
 	#region Constructors
 
-	public CodeBuilder() : this(4096)
+	public CodeBuilder() : this(16384)
 	{
 	}
 
@@ -74,6 +74,8 @@ public class CodeBuilder
 			new VersionCodeGenerator(),
 			new FuncCodeGenerator()
 		};
+
+		_propertyValueProviders = [];
 	}
 
 	#endregion
@@ -163,21 +165,34 @@ public class CodeBuilder
 	public void IndentWrite(string value)
 	{
 		WriteIndent();
-		_builder.Add(value);
+		_builder.Append(value);
 	}
 
 	public void IndentWriteLine(char value)
 	{
 		WriteIndent();
 		_builder.Add(value);
-		_builder.Add(Settings.NewLineChars);
+		_builder.Append(Settings.NewLineChars);
 	}
 
 	public void IndentWriteLine(string value)
 	{
 		WriteIndent();
-		_builder.Add(value);
-		_builder.Add(Settings.NewLineChars);
+		_builder.Append(value);
+		_builder.Append(Settings.NewLineChars);
+	}
+
+	public static void RegisterPropertyValueProvider(Func<SourceTypeInfo, string, object, string> provider)
+	{
+		_propertyValueProviders.Add(provider);
+	}
+
+	public static string ToCSharp(object value, Action<CodeBuilderSettings> update = null)
+	{
+		var writer = new CodeBuilder();
+		update?.Invoke(writer.Settings);
+		writer.WriteObject(value);
+		return writer.ToString();
 	}
 
 	public override string ToString()
@@ -239,18 +254,18 @@ public class CodeBuilder
 
 	public void Write(string value)
 	{
-		_builder.Add(value);
+		_builder.Append(value);
 	}
 
 	public void WriteLine()
 	{
-		_builder.Add(Settings.NewLineChars);
+		_builder.Append(Settings.NewLineChars);
 	}
 
 	public void WriteLine(string value)
 	{
-		_builder.Add(value);
-		_builder.Add(Settings.NewLineChars);
+		_builder.Append(value);
+		_builder.Append(Settings.NewLineChars);
 	}
 
 	public void WriteObject<T>(T actual)
@@ -266,7 +281,7 @@ public class CodeBuilder
 		WriteObject(sourceInfoType, actual);
 	}
 
-	public void WriteProperty(SourcePropertyInfo info, object value)
+	public void WriteProperty(SourceTypeInfo typeInfo, SourcePropertyInfo propertyInfo, object value)
 	{
 		PushConsumerMode(CodeBuilderMode.Property);
 
@@ -276,29 +291,29 @@ public class CodeBuilder
 			{
 				case CodeBuilderOutput.Declaration:
 				{
-					Write(AccessibilityToString(info.Accessibility));
+					Write(AccessibilityToString(propertyInfo.Accessibility));
 					Write(" ");
-					Write(GetCodeTypeName(info.PropertyInfo.PropertyType));
+					Write(GetCodeTypeName(propertyInfo.PropertyInfo.PropertyType));
 					Write(" ");
-					Write(info.Name);
+					Write(propertyInfo.Name);
 					Write(" {");
-					if (info.CanRead)
+					if (propertyInfo.CanRead)
 					{
-						if ((info.AccessibilityForGet != SourceAccessibility.None)
-							&& (info.AccessibilityForGet != info.Accessibility))
+						if ((propertyInfo.AccessibilityForGet != SourceAccessibility.None)
+							&& (propertyInfo.AccessibilityForGet != propertyInfo.Accessibility))
 						{
 							Write(" ");
-							Write(AccessibilityToString(info.AccessibilityForGet));
+							Write(AccessibilityToString(propertyInfo.AccessibilityForGet));
 						}
 						Write(" get;");
 					}
-					if (info.CanWrite)
+					if (propertyInfo.CanWrite)
 					{
-						if ((info.AccessibilityForSet != SourceAccessibility.None)
-							&& (info.AccessibilityForSet != info.Accessibility))
+						if ((propertyInfo.AccessibilityForSet != SourceAccessibility.None)
+							&& (propertyInfo.AccessibilityForSet != propertyInfo.Accessibility))
 						{
 							Write(" ");
-							Write(AccessibilityToString(info.AccessibilityForSet));
+							Write(AccessibilityToString(propertyInfo.AccessibilityForSet));
 						}
 						Write(" set;");
 					}
@@ -307,10 +322,20 @@ public class CodeBuilder
 				}
 				default:
 				{
-					Write(info.Name);
+					Write(propertyInfo.Name);
 					Write(" = ");
-					var propertyValue = info.GetValue(value);
-					WriteObject(propertyValue);
+
+					var rawValue = propertyInfo.GetValue(value);
+					var customCode = TryGetCustomCodeValue(typeInfo, propertyInfo, rawValue);
+
+					if (customCode != null)
+					{
+						Write(customCode);
+					}
+					else
+					{
+						WriteObject(rawValue);
+					}
 					break;
 				}
 			}
@@ -433,6 +458,30 @@ public class CodeBuilder
 		}
 	}
 
+	/// <summary>
+	/// Tries to get a custom code-friendly string for a property value.
+	/// Returns null if no custom handling applies.
+	/// </summary>
+	private string TryGetCustomCodeValue(SourceTypeInfo typeInfo, SourcePropertyInfo propertyInfo, object rawValue)
+	{
+		if (rawValue == null)
+		{
+			return null;
+		}
+
+		// 1. Check per-property providers first (highest priority)
+		foreach (var provider in _propertyValueProviders)
+		{
+			var result = provider(typeInfo, propertyInfo.Name, rawValue);
+			if (result != null)
+			{
+				return result;
+			}
+		}
+
+		return null;
+	}
+
 	private void WriteObject<T>(SourceTypeInfo sourceInfoType, T actual)
 	{
 		if ((Settings.DesiredOutput == CodeBuilderOutput.Instance)
@@ -452,16 +501,26 @@ public class CodeBuilder
 		IncreaseIndent();
 
 		var first = true;
-		var properties = sourceInfoType
-			.DeclaredProperties
-			.Where(x => x.CanWrite)
-			.ToArray();
 
-		$"{sourceInfoType.Name} - Properties: {properties.Length}/{sourceInfoType.Type.GetProperties().Length}".Dump();
+		// Get properties that can be written
+		var propertiesQuery = sourceInfoType
+			.GetProperties()
+			.Where(x => x.CanWrite);
+
+		// Filter out default values when requested (only for Instance output)
+		if (Settings.IgnoreDefaults && (Settings.DesiredOutput == CodeBuilderOutput.Instance))
+		{
+			propertiesQuery = propertiesQuery
+				.Where(sourcePropertyInfo =>
+					!ObjectExtensions.IsDefaultValue(sourceInfoType, sourcePropertyInfo, actual)
+				);
+		}
+
+		var properties = propertiesQuery.ToArray();
 
 		foreach (var property in properties)
 		{
-			property.Name.Dump();
+			//property.Name.Dump();
 
 			if (!first)
 			{
@@ -469,7 +528,7 @@ public class CodeBuilder
 			}
 
 			WriteIndent();
-			WriteProperty(property, actual);
+			WriteProperty(sourceInfoType, property, actual);
 			first = false;
 		}
 

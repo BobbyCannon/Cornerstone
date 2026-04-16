@@ -185,7 +185,7 @@
 					</Style>
 					<Style Selector="^:disabled">
 						<Setter Property="Background" Value="{DynamicResource Amber03}" />
-						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						<Setter Property="Foreground" Value="{DynamicResource AmberText03}" />
 					</Style>
 					<Style Selector="^:checked">
 						<Setter Property="Background" Value="{DynamicResource Amber05}" />
@@ -197,7 +197,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Amber04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource AmberText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^:indeterminate">
@@ -210,7 +210,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Amber05}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+							<Setter Property="Foreground" Value="{DynamicResource AmberText05}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted">
@@ -223,7 +223,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Amber04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource AmberText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted:checked">
@@ -237,7 +237,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Amber03}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+							<Setter Property="Foreground" Value="{DynamicResource AmberText03}" />
 						</Style>
 					</Style>
 				</Style>
@@ -252,7 +252,7 @@
 					</Style>
 					<Style Selector="^:disabled">
 						<Setter Property="Background" Value="{DynamicResource Blue03}" />
-						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						<Setter Property="Foreground" Value="{DynamicResource BlueText03}" />
 					</Style>
 					<Style Selector="^:checked">
 						<Setter Property="Background" Value="{DynamicResource Blue05}" />
@@ -264,7 +264,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Blue04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource BlueText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^:indeterminate">
@@ -277,7 +277,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Blue05}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+							<Setter Property="Foreground" Value="{DynamicResource BlueText05}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted">
@@ -290,7 +290,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Blue04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource BlueText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted:checked">
@@ -304,7 +304,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Blue03}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+							<Setter Property="Foreground" Value="{DynamicResource BlueText03}" />
 						</Style>
 					</Style>
 				</Style>
@@ -319,7 +319,7 @@
 					</Style>
 					<Style Selector="^:disabled">
 						<Setter Property="Background" Value="{DynamicResource BlueGray03}" />
-						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						<Setter Property="Foreground" Value="{DynamicResource BlueGrayText03}" />
 					</Style>
 					<Style Selector="^:checked">
 						<Setter Property="Background" Value="{DynamicResource BlueGray05}" />
@@ -331,7 +331,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource BlueGray04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource BlueGrayText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^:indeterminate">
@@ -344,7 +344,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource BlueGray05}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+							<Setter Property="Foreground" Value="{DynamicResource BlueGrayText05}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted">
@@ -357,7 +357,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource BlueGray04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource BlueGrayText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted:checked">
@@ -371,7 +371,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource BlueGray03}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+							<Setter Property="Foreground" Value="{DynamicResource BlueGrayText03}" />
 						</Style>
 					</Style>
 				</Style>
@@ -386,7 +386,7 @@
 					</Style>
 					<Style Selector="^:disabled">
 						<Setter Property="Background" Value="{DynamicResource Brown03}" />
-						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						<Setter Property="Foreground" Value="{DynamicResource BrownText03}" />
 					</Style>
 					<Style Selector="^:checked">
 						<Setter Property="Background" Value="{DynamicResource Brown05}" />
@@ -398,7 +398,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Brown04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource BrownText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^:indeterminate">
@@ -411,7 +411,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Brown05}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+							<Setter Property="Foreground" Value="{DynamicResource BrownText05}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted">
@@ -424,7 +424,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Brown04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource BrownText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted:checked">
@@ -438,7 +438,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Brown03}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+							<Setter Property="Foreground" Value="{DynamicResource BrownText03}" />
 						</Style>
 					</Style>
 				</Style>
@@ -453,7 +453,7 @@
 					</Style>
 					<Style Selector="^:disabled">
 						<Setter Property="Background" Value="{DynamicResource DeepOrange03}" />
-						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText03}" />
 					</Style>
 					<Style Selector="^:checked">
 						<Setter Property="Background" Value="{DynamicResource DeepOrange05}" />
@@ -465,7 +465,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource DeepOrange04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^:indeterminate">
@@ -478,7 +478,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource DeepOrange05}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+							<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText05}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted">
@@ -491,7 +491,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource DeepOrange04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted:checked">
@@ -505,7 +505,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource DeepOrange03}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+							<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText03}" />
 						</Style>
 					</Style>
 				</Style>
@@ -520,7 +520,7 @@
 					</Style>
 					<Style Selector="^:disabled">
 						<Setter Property="Background" Value="{DynamicResource DeepPurple03}" />
-						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText03}" />
 					</Style>
 					<Style Selector="^:checked">
 						<Setter Property="Background" Value="{DynamicResource DeepPurple05}" />
@@ -532,7 +532,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource DeepPurple04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^:indeterminate">
@@ -545,7 +545,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource DeepPurple05}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+							<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText05}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted">
@@ -558,7 +558,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource DeepPurple04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted:checked">
@@ -572,7 +572,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource DeepPurple03}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+							<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText03}" />
 						</Style>
 					</Style>
 				</Style>
@@ -587,7 +587,7 @@
 					</Style>
 					<Style Selector="^:disabled">
 						<Setter Property="Background" Value="{DynamicResource Gray03}" />
-						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						<Setter Property="Foreground" Value="{DynamicResource GrayText03}" />
 					</Style>
 					<Style Selector="^:checked">
 						<Setter Property="Background" Value="{DynamicResource Gray05}" />
@@ -599,7 +599,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Gray04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource GrayText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^:indeterminate">
@@ -612,7 +612,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Gray05}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+							<Setter Property="Foreground" Value="{DynamicResource GrayText05}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted">
@@ -625,7 +625,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Gray04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource GrayText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted:checked">
@@ -639,7 +639,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Gray03}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+							<Setter Property="Foreground" Value="{DynamicResource GrayText03}" />
 						</Style>
 					</Style>
 				</Style>
@@ -654,7 +654,7 @@
 					</Style>
 					<Style Selector="^:disabled">
 						<Setter Property="Background" Value="{DynamicResource Green03}" />
-						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						<Setter Property="Foreground" Value="{DynamicResource GreenText03}" />
 					</Style>
 					<Style Selector="^:checked">
 						<Setter Property="Background" Value="{DynamicResource Green05}" />
@@ -666,7 +666,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Green04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource GreenText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^:indeterminate">
@@ -679,7 +679,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Green05}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+							<Setter Property="Foreground" Value="{DynamicResource GreenText05}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted">
@@ -692,7 +692,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Green04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource GreenText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted:checked">
@@ -706,7 +706,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Green03}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+							<Setter Property="Foreground" Value="{DynamicResource GreenText03}" />
 						</Style>
 					</Style>
 				</Style>
@@ -721,7 +721,7 @@
 					</Style>
 					<Style Selector="^:disabled">
 						<Setter Property="Background" Value="{DynamicResource Indigo03}" />
-						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						<Setter Property="Foreground" Value="{DynamicResource IndigoText03}" />
 					</Style>
 					<Style Selector="^:checked">
 						<Setter Property="Background" Value="{DynamicResource Indigo05}" />
@@ -733,7 +733,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Indigo04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource IndigoText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^:indeterminate">
@@ -746,7 +746,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Indigo05}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+							<Setter Property="Foreground" Value="{DynamicResource IndigoText05}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted">
@@ -759,7 +759,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Indigo04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource IndigoText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted:checked">
@@ -773,7 +773,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Indigo03}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+							<Setter Property="Foreground" Value="{DynamicResource IndigoText03}" />
 						</Style>
 					</Style>
 				</Style>
@@ -788,7 +788,7 @@
 					</Style>
 					<Style Selector="^:disabled">
 						<Setter Property="Background" Value="{DynamicResource Orange03}" />
-						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						<Setter Property="Foreground" Value="{DynamicResource OrangeText03}" />
 					</Style>
 					<Style Selector="^:checked">
 						<Setter Property="Background" Value="{DynamicResource Orange05}" />
@@ -800,7 +800,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Orange04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource OrangeText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^:indeterminate">
@@ -813,7 +813,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Orange05}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+							<Setter Property="Foreground" Value="{DynamicResource OrangeText05}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted">
@@ -826,7 +826,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Orange04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource OrangeText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted:checked">
@@ -840,7 +840,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Orange03}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+							<Setter Property="Foreground" Value="{DynamicResource OrangeText03}" />
 						</Style>
 					</Style>
 				</Style>
@@ -855,7 +855,7 @@
 					</Style>
 					<Style Selector="^:disabled">
 						<Setter Property="Background" Value="{DynamicResource Pink03}" />
-						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						<Setter Property="Foreground" Value="{DynamicResource PinkText03}" />
 					</Style>
 					<Style Selector="^:checked">
 						<Setter Property="Background" Value="{DynamicResource Pink05}" />
@@ -867,7 +867,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Pink04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource PinkText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^:indeterminate">
@@ -880,7 +880,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Pink05}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+							<Setter Property="Foreground" Value="{DynamicResource PinkText05}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted">
@@ -893,7 +893,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Pink04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource PinkText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted:checked">
@@ -907,7 +907,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Pink03}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+							<Setter Property="Foreground" Value="{DynamicResource PinkText03}" />
 						</Style>
 					</Style>
 				</Style>
@@ -922,7 +922,7 @@
 					</Style>
 					<Style Selector="^:disabled">
 						<Setter Property="Background" Value="{DynamicResource Purple03}" />
-						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						<Setter Property="Foreground" Value="{DynamicResource PurpleText03}" />
 					</Style>
 					<Style Selector="^:checked">
 						<Setter Property="Background" Value="{DynamicResource Purple05}" />
@@ -934,7 +934,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Purple04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource PurpleText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^:indeterminate">
@@ -947,7 +947,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Purple05}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+							<Setter Property="Foreground" Value="{DynamicResource PurpleText05}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted">
@@ -960,7 +960,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Purple04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource PurpleText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted:checked">
@@ -974,7 +974,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Purple03}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+							<Setter Property="Foreground" Value="{DynamicResource PurpleText03}" />
 						</Style>
 					</Style>
 				</Style>
@@ -989,7 +989,7 @@
 					</Style>
 					<Style Selector="^:disabled">
 						<Setter Property="Background" Value="{DynamicResource Red03}" />
-						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						<Setter Property="Foreground" Value="{DynamicResource RedText03}" />
 					</Style>
 					<Style Selector="^:checked">
 						<Setter Property="Background" Value="{DynamicResource Red05}" />
@@ -1001,7 +1001,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Red04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource RedText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^:indeterminate">
@@ -1014,7 +1014,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Red05}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+							<Setter Property="Foreground" Value="{DynamicResource RedText05}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted">
@@ -1027,7 +1027,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Red04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource RedText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted:checked">
@@ -1041,7 +1041,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Red03}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+							<Setter Property="Foreground" Value="{DynamicResource RedText03}" />
 						</Style>
 					</Style>
 				</Style>
@@ -1056,7 +1056,7 @@
 					</Style>
 					<Style Selector="^:disabled">
 						<Setter Property="Background" Value="{DynamicResource Teal03}" />
-						<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+						<Setter Property="Foreground" Value="{DynamicResource TealText03}" />
 					</Style>
 					<Style Selector="^:checked">
 						<Setter Property="Background" Value="{DynamicResource Teal05}" />
@@ -1068,7 +1068,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Teal04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource TealText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^:indeterminate">
@@ -1081,7 +1081,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Teal05}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+							<Setter Property="Foreground" Value="{DynamicResource TealText05}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted">
@@ -1094,7 +1094,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Teal04}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText04}" />
+							<Setter Property="Foreground" Value="{DynamicResource TealText04}" />
 						</Style>
 					</Style>
 					<Style Selector="^.Inverted:checked">
@@ -1108,7 +1108,7 @@
 						</Style>
 						<Style Selector="^:disabled">
 							<Setter Property="Background" Value="{DynamicResource Teal03}" />
-							<Setter Property="Foreground" Value="{DynamicResource ThemeText03}" />
+							<Setter Property="Foreground" Value="{DynamicResource TealText03}" />
 						</Style>
 					</Style>
 				</Style>
@@ -1220,16 +1220,8 @@
 		<Style Selector="^:disabled">
 			<Setter Property="Opacity" Value="0.3" />
 		</Style>
-		<Style Selector="^[IsChecked=True] Path">
-			<Setter Property="Fill" Value="{DynamicResource Foreground00}" />
-		</Style>
-		<Style Selector="^[IsChecked=True] PathIcon">
-			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
-		</Style>
 		<Style Selector="^[IsChecked=True]">
 			<Setter Property="Opacity" Value="1" />
-		</Style>
-		<Style Selector="^[IsChecked=True]">
 			<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
 			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 		</Style>
@@ -1242,8 +1234,26 @@
 			<Setter Property="BorderBrush" Value="Transparent" />
 			<Setter Property="BorderThickness" Value="1" />
 			<Setter Property="Foreground" Value="{DynamicResource ThemeColor06}" />
+			
+			<Style Selector="^ Path">
+				<Setter Property="Fill" Value="{DynamicResource ThemeColor05}" />
+			</Style>
+			<Style Selector="^ PathIcon">
+				<Setter Property="Foreground" Value="{DynamicResource ThemeColor05}" />
+			</Style>
+
+			<Style Selector="^[(Theme.Color)=None]">
+				<Style Selector="^ Path">
+					<Setter Property="Fill" Value="{DynamicResource Foreground00}" />
+				</Style>
+				<Style Selector="^ PathIcon">
+					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+				</Style>
+			</Style>
+
 		</Style>
 		<Style Selector="^:pointerover">
+			<Setter Property="Background" Value="{DynamicResource Background05}" />
 			<Setter Property="Opacity" Value="1.0" />
 		</Style>
 
@@ -1309,6 +1319,23 @@
 				</Button>
 				<ToggleButton Classes="Icon Dim">
 					<PathIcon Data="{StaticResource Icons.Close}" />
+				</ToggleButton>
+				<ToggleButton Classes="Icon IconOnly">
+					<PathIcon Data="{StaticResource Icons.Heart}" />
+				</ToggleButton>
+
+				<ToggleButton
+						x:Name="ToggleNone"
+						Theme.Color="None"
+						Classes="Icon IconOnly">
+					<Grid>
+						<Path Data="{StaticResource Icons.Angle.Down}"
+								IsVisible="{Binding ElementName=ToggleNone, Path=IsChecked}"
+								Margin="0,6,0,0" />
+						<Path Data="{StaticResource Icons.Angle.Up}"
+								IsVisible="{Binding ElementName=ToggleNone, Path=!IsChecked}"
+								Margin="0,4,0,0" />
+					</Grid>
 				</ToggleButton>
 
 				<ToggleButton Theme.Color="None"

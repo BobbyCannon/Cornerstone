@@ -1,0 +1,143 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="400"
+		x:Class="Cornerstone.Sample.Tabs.TabGrids"
+		x:DataType="tabs:TabGrids"
+		x:Name="This">
+	<!-- ReSharper disable Xaml.MissingGridIndex -->
+	<DockPanel>
+		<DockPanel.Styles>
+			<Style Selector="SelectableTextBlock">
+				<Setter Property="FontSize" Value="16" />
+				<Setter Property="TextWrapping" Value="Wrap" />
+			</Style>
+		</DockPanel.Styles>
+		<Grid DockPanel.Dock="Top" Margin="10">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Margin="0,0,0,20"
+					Text="{x:Static tabs:TabGrids.HeaderName}" />
+		</Grid>
+		<TabControl>
+			<TabControl.Styles>
+				<Style Selector="TabItem">
+					<Setter Property="MinHeight" Value="32" />
+				</Style>
+			</TabControl.Styles>
+			<TabItem Header="Grid Panel">
+				<Grid RowDefinitions="Auto,*">
+					<WrapPanel Grid.Row="0"
+							ItemSpacing="10"
+							LineSpacing="10"
+							Margin="10">
+						<NumberBox x:Name="ColumnCount"
+								ControlHelper.DisplayName="Columns"
+								SpinButtonPlacementMode="Inline"
+								Minimum="1"
+								Value="2"
+								Maximum="9" />
+						<NumberBox x:Name="RowCount"
+								ControlHelper.DisplayName="Rows"
+								SpinButtonPlacementMode="Inline"
+								Minimum="1"
+								Value="2"
+								Maximum="9" />
+					</WrapPanel>
+					<ItemsControl Grid.Row="1"
+							ItemsSource="{Binding Blocks}">
+						<ItemsControl.ItemsPanel>
+							<ItemsPanelTemplate>
+								<GridPanel ColumnCount="{Binding ElementName=ColumnCount, Path=Value}"
+										RowCount="{Binding ElementName=RowCount, Path=Value}" />
+							</ItemsPanelTemplate>
+						</ItemsControl.ItemsPanel>
+						<ItemsControl.Styles>
+							<Style Selector="ItemsControl > ContentPresenter"
+									x:DataType="tabs:Block">
+								<Setter Property="Grid.Row" Value="{Binding Row, Mode=OneWay}" />
+								<Setter Property="Grid.Column" Value="{Binding Column, Mode=OneWay}" />
+							</Style>
+						</ItemsControl.Styles>
+						<ItemsControl.ItemTemplate>
+							<DataTemplate DataType="tabs:Block">
+								<Grid Background="{Binding Color}">
+									<StackPanel Spacing="10"
+											VerticalAlignment="Center">
+										<TextBlock Classes="Header"
+												Foreground="White"
+												FontFamily="Arial"
+												HorizontalAlignment="Center"
+												VerticalAlignment="Center"
+												Text="{Binding Text}" />
+										<NumberBox x:Name="Columns"
+												ControlHelper.DisplayName="Columns"
+												SpinButtonPlacementMode="Inline"
+												HorizontalAlignment="Center"
+												Minimum="0"
+												Value="{Binding Column}"
+												Maximum="9"
+												Width="160" />
+										<NumberBox x:Name="Rows"
+												ControlHelper.DisplayName="Rows"
+												SpinButtonPlacementMode="Inline"
+												HorizontalAlignment="Center"
+												Minimum="0"
+												Value="{Binding Row}"
+												Maximum="9"
+												Width="160" />
+									</StackPanel>
+								</Grid>
+							</DataTemplate>
+						</ItemsControl.ItemTemplate>
+					</ItemsControl>
+				</Grid>
+
+			</TabItem>
+			<TabItem Header="Auto Grid">
+				<Grid RowDefinitions="Auto,*">
+					<WrapPanel Grid.Row="0"
+							ItemSpacing="10"
+							LineSpacing="10"
+							Margin="10">
+						<NumberBox x:Name="Columns"
+								ControlHelper.DisplayName="Columns"
+								SpinButtonPlacementMode="Inline"
+								Minimum="1"
+								Value="2"
+								Maximum="9" />
+						<NumberBox x:Name="Rows"
+								ControlHelper.DisplayName="Rows"
+								SpinButtonPlacementMode="Inline"
+								Minimum="1"
+								Value="2"
+								Maximum="9" />
+					</WrapPanel>
+					<ItemsControl Grid.Row="1" ItemsSource="{Binding Blocks}">
+						<ItemsControl.ItemsPanel>
+							<ItemsPanelTemplate>
+								<AutoGrid RowCount="{Binding ElementName=Rows, Path=Value}"
+										ColumnCount="{Binding ElementName=Columns, Path=Value}" />
+							</ItemsPanelTemplate>
+						</ItemsControl.ItemsPanel>
+						<ItemsControl.ItemTemplate>
+							<DataTemplate DataType="tabs:Block">
+								<Border Background="{Binding Color}">
+									<TextBlock Classes="Header"
+											Foreground="White"
+											FontFamily="Arial"
+											HorizontalAlignment="Center"
+											VerticalAlignment="Center"
+											Text="{Binding Text}" />
+								</Border>
+							</DataTemplate>
+						</ItemsControl.ItemTemplate>
+					</ItemsControl>
+				</Grid>
+			</TabItem>
+		</TabControl>
+	</DockPanel>
+</UserControl>

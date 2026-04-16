@@ -14,12 +14,7 @@ public class AutomationTest : CornerstoneUnitTest
 
 	static AutomationTest()
 	{
-		FilePath = Path.Join(
-			@"C:\Workspaces\EpicSolution\Cornerstone",
-			@"Cornerstone.Sample.Desktop\bin\Release",
-			@"net10.0-windows10.0.26100.0\win-x64\publish",
-			"Cornerstone.Sample.Desktop.exe"
-		);
+		FilePath = Path.Join(@"C:\Users\Bobby\Desktop\Cornerstone.Sample.Desktop\Cornerstone.Sample.Desktop.exe");
 	}
 
 	#endregion

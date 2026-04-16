@@ -11,6 +11,10 @@ public class UpdateableActionAttribute : CornerstoneAttribute
 {
 	#region Constructors
 
+	public UpdateableActionAttribute() : this(UpdateableAction.None)
+	{
+	}
+
 	public UpdateableActionAttribute(UpdateableAction actions, int order = int.MaxValue)
 	{
 		Actions = actions;

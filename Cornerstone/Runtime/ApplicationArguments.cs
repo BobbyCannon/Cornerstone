@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using Cornerstone.Extensions;
 
 #endregion
 
@@ -32,6 +33,8 @@ public class ApplicationArguments
 	#region Properties
 
 	public string this[string key] => _parsed.TryGetValue(key, out var v) ? v : null;
+
+	public IEnumerable<string> OtherValues => _others;
 
 	#endregion
 
@@ -89,6 +92,25 @@ public class ApplicationArguments
 			{
 				_others.Add(arg);
 			}
+		}
+	}
+
+	public void ParseFromBrowser(string[] args)
+	{
+		if (args == null)
+		{
+			return;
+		}
+
+		foreach (var arg in args)
+		{
+			if (!Uri.TryCreate(arg, UriKind.RelativeOrAbsolute, out var uri))
+			{
+				continue;
+			}
+
+			Parse(uri.ToApplicationArguments());
+			break;
 		}
 	}
 

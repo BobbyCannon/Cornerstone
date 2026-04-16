@@ -1,16 +1,5 @@
 ﻿#region References
 
-using Avalonia.Controls;
-using Avalonia.Interactivity;
-using Cornerstone.Avalonia;
-using Cornerstone.Compare;
-using Cornerstone.Reflection;
-using Cornerstone.Testing;
-using Cornerstone.UnitTests;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Emit;
-using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -20,6 +9,18 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Cornerstone.Avalonia;
+using Cornerstone.Compare;
+using Cornerstone.Extensions;
+using Cornerstone.Reflection;
+using Cornerstone.Testing;
+using Cornerstone.UnitTests;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Emit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 
 #endregion
@@ -52,6 +53,8 @@ public abstract class GeneratorUnitTest : CornerstoneUnitTest
 			"using Cornerstone.Profiling;",
 			"using Cornerstone.Reflection;",
 			"using Cornerstone.Serialization;",
+			"using Cornerstone.Storage.Sql;",
+			"using Cornerstone.Sync;",
 			"using System;",
 			"using System.ComponentModel.DataAnnotations;",
 			"using System.Linq;",
@@ -117,6 +120,76 @@ public abstract class GeneratorUnitTest : CornerstoneUnitTest
 		return (output, stopwatch.Elapsed);
 	}
 
+	protected void ExpectErrors(
+		string input, string[] expectedErrors,
+		OutputKind outputKind = OutputKind.DynamicallyLinkedLibrary,
+		NullableContextOptions nullableContextOptions = NullableContextOptions.Disable,
+		[CallerMemberName] string callingMethodName = "")
+	{
+		var result = Run(input, outputKind, nullableContextOptions);
+		var diagnosticErrors = new List<string>();
+		var diagnostics = result.RunResult.Diagnostics;
+		diagnosticErrors.AddRange(diagnostics
+			.Where(x => x.Severity == DiagnosticSeverity.Error)
+			.Select(x => $"{x.Severity} {x.Id}: {x.GetMessage()}"));
+
+		diagnostics = result.InputCompilation.GetDiagnostics();
+		diagnosticErrors.AddRange(diagnostics
+			.Where(x => x.Severity == DiagnosticSeverity.Error)
+			.Select(x => $"{x.Severity} {x.Id}: {x.GetMessage()}"));
+
+		diagnostics = result.OutputCompilation.GetDiagnostics();
+		diagnosticErrors.AddRange(diagnostics
+			.Where(x => x.Severity == DiagnosticSeverity.Error)
+			.Select(x => $"{x.Severity} {x.Id}: {x.GetMessage()}"));
+
+		var areEqual = Compare(expectedErrors, diagnosticErrors).Result == CompareResult.AreEqual;
+
+		if (!string.IsNullOrWhiteSpace(SourceFileName)
+			&& (EnableFileUpdates || IsDebugging)
+			&& !areEqual)
+		{
+			var sourceFileInfo = new FileInfo(SourceFileName);
+			UpdateFile(callingMethodName, sourceFileInfo,
+				builder =>
+				{
+					builder.WriteLine();
+					builder.IndentWriteLine("var expected = new[]");
+					builder.IndentWriteLine("{");
+					builder.IncreaseIndent();
+
+					var first = true;
+					foreach (var error in diagnosticErrors)
+					{
+						if (!first)
+						{
+							builder.WriteLine(",");
+						}
+
+						builder.IndentWrite("\"");
+						builder.Write(error.Escape());
+						builder.Write("\"");
+						first = false;
+					}
+
+					builder.WriteLine();
+					builder.DecreaseIndent();
+					builder.IndentWriteLine("};");
+				});
+			Assert.Inconclusive("Test updated...");
+		}
+
+		if (!areEqual && (diagnosticErrors.Count > 0))
+		{
+			throw new CornerstoneException(string.Join("\r\n", diagnosticErrors));
+		}
+
+		if (!areEqual)
+		{
+			throw new CornerstoneException(Babel.Tower[BabelKeys.TestingShouldHaveFailed]);
+		}
+	}
+
 	protected RunResults Run(string input,
 		OutputKind outputKind = OutputKind.DynamicallyLinkedLibrary,
 		NullableContextOptions nullableContextOptions = NullableContextOptions.Disable)
@@ -124,6 +197,7 @@ public abstract class GeneratorUnitTest : CornerstoneUnitTest
 		var parseOptions = new CSharpParseOptions(LanguageVersion.Latest);
 		var inputCompilation = CreateCompilation(input, parseOptions, outputKind, nullableContextOptions);
 		var generator = new Generator();
+
 		//var profilingGenerator = new ProfilingGenerator();
 
 		// Example: enabling interceptors in specific namespaces
@@ -132,6 +206,7 @@ public abstract class GeneratorUnitTest : CornerstoneUnitTest
 			// bug: this is not working...
 			["InterceptorsNamespaces"] = "$(InterceptorsNamespaces);GeneratedInterceptors",
 			["InterceptorsPreviewNamespaces"] = "$(InterceptorsPreviewNamespaces);GeneratedInterceptors"
+
 			//["build_property.Nullable"] = "disable", // or "enable", "annotations", "warnings"
 			//["build_property.GlobalUsings"] = "System;System.Collections.Generic;",
 			//["build_property.MyCustomSetting"] = "SomeValue",       // your own props
@@ -141,7 +216,8 @@ public abstract class GeneratorUnitTest : CornerstoneUnitTest
 
 		GeneratorDriver driver = CSharpGeneratorDriver.Create(
 			[
-				generator.AsSourceGenerator(),
+				generator.AsSourceGenerator()
+
 				//profilingGenerator.AsSourceGenerator()
 			],
 			driverOptions: new GeneratorDriverOptions(IncrementalGeneratorOutputKind.None, true),
@@ -229,7 +305,7 @@ public abstract class GeneratorUnitTest : CornerstoneUnitTest
 					builder.DecreaseIndent();
 					builder.IndentWriteLine("};");
 				});
-			throw new InconclusiveException("Test updated...");
+			Assert.Inconclusive("Test updated...");
 		}
 
 		var session = new CompareSession();
@@ -296,11 +372,11 @@ public abstract class GeneratorUnitTest : CornerstoneUnitTest
 			MetadataReference.CreateFromFile(Path.Combine(netCoreAppPath, "System.Xml.dll")),
 			MetadataReference.CreateFromFile(typeof(Control).Assembly.Location), // Avalonia.Controls
 			MetadataReference.CreateFromFile(typeof(Interactive).Assembly.Location), // Avalonia.Base
+			MetadataReference.CreateFromFile(typeof(TestClassAttribute).Assembly.Location), // MSTest.TestFramework
 
 			// Add more assemblies
-			MetadataReference.CreateFromFile(typeof(SourceReflectionTypeAttribute).Assembly.Location),
-			MetadataReference.CreateFromFile(typeof(TestAttribute).Assembly.Location),
-			MetadataReference.CreateFromFile(typeof(StyledPropertyAttribute).Assembly.Location)
+			MetadataReference.CreateFromFile(typeof(CornerstoneAttribute).Assembly.Location), // Cornerstone
+			MetadataReference.CreateFromFile(typeof(CornerstoneApplication).Assembly.Location) // Cornerstone.Avalonia
 
 			//MetadataReference.CreateFromFile(typeof(global::Avalonia.Application).Assembly.Location),
 			//MetadataReference.CreateFromFile(typeof(global::Avalonia.AvaloniaObject).Assembly.Location)

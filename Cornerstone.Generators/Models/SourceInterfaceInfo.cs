@@ -1,12 +1,5 @@
-﻿namespace Cornerstone.Generators.Models;
+namespace Cornerstone.Generators.Models;
 
-public class SourceInterfaceInfo
+public class SourceInterfaceInfo : Reflection.SourceInterfaceInfo
 {
-	#region Fields
-
-	public string FullyGlobalQualifiedName;
-	public string FullyQualifiedName;
-	public string Name;
-
-	#endregion
 }

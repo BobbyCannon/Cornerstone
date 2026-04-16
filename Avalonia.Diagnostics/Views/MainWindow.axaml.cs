@@ -13,6 +13,7 @@ using Avalonia.Input.Raw;
 using Avalonia.Reactive;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
+using Cornerstone.Avalonia;
 
 #endregion
 
@@ -43,12 +44,12 @@ public partial class MainWindow : Window, IStyleHost
 			Theme = windowTheme;
 		}
 
-		_inputSubscription = InputManager.Instance?.Process
-			.Subscribe(x =>
+		_inputSubscription = Observable.Subscribe(InputManager.Instance?.Process, x =>
 			{
-				if (x is RawPointerEventArgs pointerEventArgs)
+				if (x is RawPointerEventArgs pointerEventArgs
+					&& x.Root.RootElement is {} rootElement)
 				{
-					_lastPointerPosition = ((Visual) x.Root).PointToScreen(pointerEventArgs.Position);
+					_lastPointerPosition = rootElement.PointToScreen(pointerEventArgs.Position);
 				}
 				else if (x is RawKeyEventArgs keyEventArgs && (keyEventArgs.Type == RawKeyEventType.KeyDown))
 				{
@@ -237,33 +238,34 @@ public partial class MainWindow : Window, IStyleHost
 
 	private void RawKeyDown(RawKeyEventArgs e)
 	{
+		var root = CornerstoneApplication.GetTopLevel();
 		if (_hotKeys is null ||
-			DataContext is not MainViewModel vm ||
-			vm.PointerOverRoot is not TopLevel root)
+			DataContext is not MainViewModel vm)
 		{
 			return;
 		}
 
-		if (root is PopupRoot pr && (pr.ParentTopLevel != null))
-		{
-			root = pr.ParentTopLevel;
-		}
+		//if (root is PopupRoot pr && (pr.ParentTopLevel != null))
+		//{
+		//	root = pr.ParentTopLevel;
+		//}
 
 		var modifiers = MergeModifiers(e.Key, e.Modifiers.ToKeyModifiers());
 
-		if (IsMatched(_hotKeys.ValueFramesFreeze, e.Key, modifiers))
-		{
-			FreezeValueFrames(vm);
-		}
-		else if (IsMatched(_hotKeys.ValueFramesUnfreeze, e.Key, modifiers))
-		{
-			UnfreezeValueFrames(vm);
-		}
-		else if (IsMatched(_hotKeys.TogglePopupFreeze, e.Key, modifiers))
-		{
-			ToggleFreezePopups(root, vm);
-		}
-		else if (IsMatched(_hotKeys.InspectHoveredControl, e.Key, modifiers))
+		//if (IsMatched(_hotKeys.ValueFramesFreeze, e.Key, modifiers))
+		//{
+		//	FreezeValueFrames(vm);
+		//}
+		//else if (IsMatched(_hotKeys.ValueFramesUnfreeze, e.Key, modifiers))
+		//{
+		//	UnfreezeValueFrames(vm);
+		//}
+		//else if (IsMatched(_hotKeys.TogglePopupFreeze, e.Key, modifiers))
+		//{
+		//	ToggleFreezePopups(root, vm);
+		//}
+		//else
+		if (IsMatched(_hotKeys.InspectHoveredControl, e.Key, modifiers))
 		{
 			InspectHoveredControl(root, vm);
 		}

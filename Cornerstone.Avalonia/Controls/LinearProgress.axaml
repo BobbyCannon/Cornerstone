@@ -134,7 +134,7 @@
 						Margin="10">
 					<StackPanel Orientation="Horizontal" Spacing="10">
 						<TextBlock Text="Height" />
-						<TextBlock Text="{Binding #Progress.Height, Converter={x:Static c:ConvertersForString.Format}, ConverterParameter=0}" />
+						<TextBlock Text="{Binding #Progress.Height, Converter={x:Static c:Converters.Format}, ConverterParameter=0}" />
 					</StackPanel>
 					<Slider ControlHelper.DisplayName="Height"
 							Value="{Binding #Progress.Height}"
@@ -143,7 +143,7 @@
 							Width="160" />
 					<StackPanel Orientation="Horizontal" Spacing="10">
 						<TextBlock Text="Value" />
-						<TextBlock Text="{Binding #Progress.Value, Converter={x:Static c:ConvertersForString.Format}, ConverterParameter=0}" />
+						<TextBlock Text="{Binding #Progress.Value, Converter={x:Static c:Converters.Format}, ConverterParameter=0}" />
 					</StackPanel>
 					<Slider ControlHelper.DisplayName="Value"
 							Value="{Binding #Progress.Value}"

@@ -77,7 +77,11 @@ public static class ThemeColorPalette
 			Green, Indigo, Orange, Pink, Purple, Red, Teal
 		];
 
-		BasicColors = details.Select(x => x.Color).Append(new ThemeColorDetails("Black", "#000000", "#FFFFFF")).Append(new ThemeColorDetails("White", "#FFFFFF", "#000000")).ToArray();
+		BasicColors = details
+			.Select(x => x.Color)
+			.Append(new ThemeColorDetails("Black", "#000000", "#FFFFFF"))
+			.Append(new ThemeColorDetails("White", "#FFFFFF", "#000000"))
+			.ToArray();
 
 		ThemeColors = details.OrderBy(x => x.Order).ToArray();
 		ThemeColorNames = ThemeColors.Select(x => x.Name).ToArray();

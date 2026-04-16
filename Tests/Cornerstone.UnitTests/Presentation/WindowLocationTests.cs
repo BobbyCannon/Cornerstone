@@ -1,17 +1,18 @@
 ﻿#region References
 
 using Cornerstone.Presentation;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.UnitTests.Presentation;
 
+[TestClass]
 public class WindowLocationTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	[Test]
+	[TestMethod]
 	public void IsDefaultLocation()
 	{
 		var location = new WindowLocation();

@@ -2,7 +2,6 @@
 
 using Avalonia;
 using Avalonia.Media;
-using Avalonia.Media.Immutable;
 using Cornerstone.Avalonia.Text.Models;
 
 #endregion
@@ -13,8 +12,6 @@ internal class CurrentLineRenderer : IRenderer
 {
 	#region Fields
 
-	public static readonly Color DefaultBackground = Color.FromArgb(0xFF, 0, 0, 0);
-
 	private readonly TextRenderer _renderer;
 
 	#endregion
@@ -23,16 +20,12 @@ internal class CurrentLineRenderer : IRenderer
 
 	public CurrentLineRenderer(TextRenderer textRenderer)
 	{
-		BackgroundBrush = new ImmutableSolidColorBrush(DefaultBackground);
-
 		_renderer = textRenderer;
 	}
 
 	#endregion
 
 	#region Properties
-
-	public IBrush BackgroundBrush { get; set; }
 
 	public Line CurrentLine { get; private set; }
 
@@ -42,13 +35,9 @@ internal class CurrentLineRenderer : IRenderer
 
 	public void Draw(TextRenderer renderer, DrawingContext drawingContext)
 	{
-		//if (!_renderer.Settings.HighlightCurrentLine)
-		//{
-		//	return;
-		//}
-
-		var line = _renderer.ViewModel.Caret.Line;
-		if (line == null)
+		var vm = _renderer.ViewModel;
+		var line = vm?.Caret.Line;
+		if ((line == null) || !vm.HighlightCurrentLine)
 		{
 			return;
 		}
@@ -62,7 +51,7 @@ internal class CurrentLineRenderer : IRenderer
 			line.VisualLayout.Height
 		);
 
-		drawingContext.FillRectangle(BackgroundBrush, bounds);
+		drawingContext.FillRectangle(_renderer.CurrentLineBackground, bounds);
 	}
 
 	#endregion

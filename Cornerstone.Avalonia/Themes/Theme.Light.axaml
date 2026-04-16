@@ -25,6 +25,7 @@
 	<!-- Generated Code - /Colors -->
 
 	<ResourceDictionary.MergedDictionaries>
+		<ResourceInclude Source="avares://Cornerstone.Avalonia/Themes/SyntaxColor.Light.axaml" />
 		<ResourceInclude Source="avares://Cornerstone.Avalonia/Themes/Theme.Shared.axaml" />
 	</ResourceDictionary.MergedDictionaries>
 

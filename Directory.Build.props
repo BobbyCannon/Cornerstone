@@ -8,8 +8,8 @@
 		<Version>3.0.0.0</Version>
 		<AssemblyVersion>$(Version)</AssemblyVersion>
 		<FileVersion>$(Version)</FileVersion>
-		<AvaloniaVersion>11.3.12.1</AvaloniaVersion>
-		<AvaloniaBaseVersion>11.3.12</AvaloniaBaseVersion>
+		<AvaloniaVersion>12.0.0</AvaloniaVersion>
+		<AvaloniaBaseVersion>12.0.0</AvaloniaBaseVersion>
 		<AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
 		<LangVersion>latest</LangVersion>
 		<GenerateDocumentationFile>false</GenerateDocumentationFile>
@@ -24,7 +24,7 @@
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>disable</Nullable>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<NoWarn>$(NoWarn);CS8002;IL2026;IL2037;IL2065;IL2067;IL2070;IL2075;IL2104;IL3000;IL3002;IL3050;IL3053;IL3058;IL3073;</NoWarn>
+		<NoWarn>$(NoWarn);CS8002;IL2026;IL2037;IL2045;IL2065;IL2067;IL2070;IL2072;IL2075;IL2080;IL2104;IL3000;IL3002;IL3050;IL3053;IL3058;IL3073;MSB3277;</NoWarn>
 		<!-- AOT -->
 		<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
 		<VerifyReferenceAotCompatibility>true</VerifyReferenceAotCompatibility>

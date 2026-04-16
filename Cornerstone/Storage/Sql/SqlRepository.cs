@@ -2,17 +2,15 @@
 
 using System;
 using System.Data;
-using System.Data.Common;
+using System.Linq.Expressions;
+using Cornerstone.Extensions;
 using Cornerstone.Reflection;
-using Microsoft.Data.SqlClient;
-using Microsoft.Data.Sqlite;
 
 #endregion
 
 namespace Cornerstone.Storage.Sql;
 
 public class SqlRepository<T>
-	: IRepository<T>
 	where T : Entity, new()
 {
 	#region Fields
@@ -23,21 +21,18 @@ public class SqlRepository<T>
 
 	#region Constructors
 
-	public SqlRepository(string connectionString, SqlProvider provider)
+	public SqlRepository(SqlDatabase database)
 	{
 		_sourceTypeInfo = SourceReflector.GetRequiredSourceType<T>();
 
-		ConnectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
-		Provider = provider;
+		Database = database;
 	}
 
 	#endregion
 
 	#region Properties
 
-	public string ConnectionString { get; }
-
-	public SqlProvider Provider { get; }
+	public SqlDatabase Database { get; }
 
 	#endregion
 
@@ -47,8 +42,8 @@ public class SqlRepository<T>
 	{
 		ArgumentNullException.ThrowIfNull(entity);
 
-		var (sql, values) = SqlGenerator.GetInsertQuery(entity, Provider);
-		using var connection = CreateConnection();
+		var (sql, values) = SqlGenerator.GetInsertQuery(entity, Database.Provider);
+		using var connection = Database.CreateConnection();
 		connection.Open();
 
 		using var command = connection.CreateCommand();
@@ -60,8 +55,8 @@ public class SqlRepository<T>
 			{
 				var param = command.CreateParameter();
 				param.ParameterName = kv.Key;
-				param.Value = kv.Value ?? DBNull.Value;
-				param.DbType = GetParameterType(param.Value);
+				param.Value = kv.Value.Item1 ?? DBNull.Value;
+				param.DbType = GetParameterType(kv.Value.Item2);
 
 				command.Parameters.Add(param);
 			}
@@ -75,12 +70,61 @@ public class SqlRepository<T>
 	}
 
 	/// <summary>
+	/// Deletes a single entity by its primary key.
+	/// </summary>
+	public int Delete(T entity)
+	{
+		ArgumentNullException.ThrowIfNull(entity);
+
+		var (sql, pkValue) = SqlGenerator.GetDeleteQuery(entity, Database.Provider);
+		using var connection = Database.CreateConnection();
+		connection.Open();
+
+		using var command = connection.CreateCommand();
+		command.CommandText = sql;
+
+		var param = command.CreateParameter();
+		param.ParameterName = "@p0";
+		param.Value = pkValue.Item1 ?? DBNull.Value;
+		param.DbType = GetParameterType(pkValue.Item2);
+		command.Parameters.Add(param);
+
+		return command.ExecuteNonQuery();
+	}
+
+	/// <summary>
+	/// Deletes all rows matching the predicate.
+	/// </summary>
+	/// <returns> The number of rows deleted. </returns>
+	public int DeleteWhere(Expression<Func<T, bool>> predicate)
+	{
+		ArgumentNullException.ThrowIfNull(predicate);
+
+		var (sql, parameters) = SqlGenerator.GetDeleteWhereQuery(predicate, Database.Provider);
+		using var connection = Database.CreateConnection();
+		connection.Open();
+
+		using var command = connection.CreateCommand();
+		command.CommandText = sql;
+
+		for (var i = 0; i < parameters.Length; i++)
+		{
+			var param = command.CreateParameter();
+			param.ParameterName = $"@p{i}";
+			param.Value = parameters[i] ?? DBNull.Value;
+			command.Parameters.Add(param);
+		}
+
+		return command.ExecuteNonQuery();
+	}
+
+	/// <summary>
 	/// Creates the table if it does not already exist
 	/// </summary>
 	public void EnsureTableCreated()
 	{
-		var sql = SqlGenerator.GetCreateTableScript(_sourceTypeInfo, Provider);
-		using var connection = CreateConnection();
+		var sql = SqlGenerator.GetCreateTableScript(_sourceTypeInfo, Database.Provider);
+		using var connection = Database.CreateConnection();
 		connection.Open();
 
 		using var command = connection.CreateCommand();
@@ -88,31 +132,78 @@ public class SqlRepository<T>
 		command.ExecuteNonQuery();
 	}
 
-	public SqlQuery<T> Where(Func<T, bool> predicate)
+	public SqlQuery<T> Where(Expression<Func<T, bool>> predicate)
 	{
-		return new SqlQuery<T>(ConnectionString, Provider);
+		return new SqlQuery<T>(Database.ConnectionString, Database.Provider).Where(predicate);
 	}
 
-	private DbConnection CreateConnection()
+	/// <summary>
+	/// Counts all rows matching the predicate.
+	/// </summary>
+	/// <returns> The number of rows matching the predicate. </returns>
+	public int Count()
 	{
-		return Provider == SqlProvider.SqlServer
-			? new SqlConnection(ConnectionString)
-			: new SqliteConnection(ConnectionString);
+		return Count(x => true);
 	}
 
-	private DbType GetParameterType(object value)
+	/// <summary>
+	/// Counts all rows matching the predicate.
+	/// </summary>
+	/// <returns> The number of rows matching the predicate. </returns>
+	public int Count(Expression<Func<T, bool>> predicate)
 	{
-		return value switch
+		ArgumentNullException.ThrowIfNull(predicate);
+
+		var (sql, parameters) = SqlGenerator.GetCountWhereQuery(predicate, Database.Provider);
+		using var connection = Database.CreateConnection();
+		connection.Open();
+
+		using var command = connection.CreateCommand();
+		command.CommandText = sql;
+
+		for (var i = 0; i < parameters.Length; i++)
 		{
-			string => DbType.String,
-			int => DbType.Int32,
-			uint => DbType.UInt32,
-			long => DbType.Int64,
-			ulong => DbType.UInt64,
-			DateTime => DbType.DateTime2,
-			Guid => DbType.Guid,
-			bool => DbType.Boolean,
-			_ => throw new NotSupportedException($"Parameter type {value.GetType().FullName} value not supported.")
+			var param = command.CreateParameter();
+			param.ParameterName = $"@p{i}";
+			param.Value = parameters[i] ?? DBNull.Value;
+			command.Parameters.Add(param);
+		}
+
+		return System.Convert.ToInt32(command.ExecuteScalar());
+	}
+
+	private DbType GetParameterType(Type type)
+	{
+		if (type.IsNullableType())
+		{
+			type = type.FromNullableType();
+		}
+
+		if (type.IsEnum)
+		{
+			// Handle enums by mapping to their underlying integral type
+			type = Enum.GetUnderlyingType(type);
+		}
+
+		return type switch
+		{
+			not null when ReferenceEquals(type, typeof(string)) => DbType.String,
+			not null when ReferenceEquals(type, typeof(byte)) => DbType.Byte,
+			not null when ReferenceEquals(type, typeof(sbyte)) => DbType.SByte,
+			not null when ReferenceEquals(type, typeof(short)) => DbType.Int16,
+			not null when ReferenceEquals(type, typeof(ushort)) => DbType.UInt16,
+			not null when ReferenceEquals(type, typeof(int)) => DbType.Int32,
+			not null when ReferenceEquals(type, typeof(uint)) => DbType.UInt32,
+			not null when ReferenceEquals(type, typeof(long)) => DbType.Int64,
+			not null when ReferenceEquals(type, typeof(ulong)) => DbType.UInt64,
+			not null when ReferenceEquals(type, typeof(DateTime)) => DbType.DateTime2,
+			not null when ReferenceEquals(type, typeof(Guid)) => DbType.Guid,
+			not null when ReferenceEquals(type, typeof(bool)) => DbType.Boolean,
+			not null when ReferenceEquals(type, typeof(decimal)) => DbType.Decimal,
+			not null when ReferenceEquals(type, typeof(double)) => DbType.Double,
+			not null when ReferenceEquals(type, typeof(float)) => DbType.Double,
+			_ => throw new NotSupportedException(
+				$"Parameter type {type.FullName} is not supported.")
 		};
 	}
 

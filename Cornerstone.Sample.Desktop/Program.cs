@@ -4,6 +4,7 @@ using System;
 using Avalonia;
 using Avalonia.Controls;
 using Cornerstone.Avalonia;
+using Cornerstone.Avalonia.Platforms.Windows;
 using Cornerstone.Runtime;
 
 #endregion
@@ -20,7 +21,10 @@ internal class Program
 	public static AppBuilder BuildAvaloniaApp()
 	{
 		var response = AppBuilder
-			.Configure<App>().UsePlatformDetect().LogToTrace();
+			.Configure<App>()
+			.UsePlatformDetect()
+			.UseCornerstone()
+			.LogToTrace();
 
 		#if DEBUG
 		response.AfterSetup(x => x.Instance.AttachDevTools());

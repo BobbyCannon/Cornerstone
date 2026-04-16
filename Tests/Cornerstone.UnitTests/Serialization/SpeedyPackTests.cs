@@ -7,17 +7,18 @@ using Cornerstone.Extensions;
 using Cornerstone.Sample.Models;
 using Cornerstone.Serialization;
 using Cornerstone.Testing;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.UnitTests.Serialization;
 
+[TestClass]
 public class SpeedyPackTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	[Test]
+	[TestMethod]
 	public void AllBasicTypes()
 	{
 		var scenarios = new (string Name, object[] Value, byte[] Expected)[]

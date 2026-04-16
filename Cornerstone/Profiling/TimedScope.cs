@@ -1,9 +1,7 @@
 ﻿#region References
 
 using System;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Cornerstone.Runtime;
 
 #endregion
 
@@ -13,21 +11,19 @@ public readonly ref struct TimedScope : IDisposable
 {
 	#region Fields
 
-	private readonly IDateTimeProvider _dateTimeProvider;
 	private readonly IProfiler _profiler;
-	private readonly long _startTimestamp;
+	private readonly long _startTicks;
 
 	#endregion
 
 	#region Constructors
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	public TimedScope(string name, IProfiler profiler, IDateTimeProvider dateTimeProvider)
+	public TimedScope(string name, IProfiler profiler)
 	{
 		Name = name;
 		_profiler = profiler;
-		_dateTimeProvider = dateTimeProvider;
-		_startTimestamp = dateTimeProvider?.Now.Ticks ?? Stopwatch.GetTimestamp();
+		_startTicks = profiler.GetTicks();
 	}
 
 	#endregion
@@ -42,14 +38,13 @@ public readonly ref struct TimedScope : IDisposable
 
 	public void Dispose()
 	{
-		if (_startTimestamp == 0)
+		if (_startTicks == 0)
 		{
 			return;
 		}
 
-		var endTimestamp = _dateTimeProvider?.Now.Ticks ?? Stopwatch.GetTimestamp();
-		var elapsedTicks = endTimestamp - _startTimestamp;
-		_profiler?.OnScopeEnded(this, elapsedTicks);
+		var endTicks = _profiler.GetTicks();
+		_profiler?.OnScopeEnded(this, endTicks - _startTicks);
 	}
 
 	#endregion

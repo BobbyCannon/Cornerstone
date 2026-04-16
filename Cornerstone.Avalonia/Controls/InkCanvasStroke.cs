@@ -12,9 +12,9 @@ public class InkCanvasStroke
 {
 	#region Properties
 
-	public string Id { get; set; }
-
 	public IBrush Brush { get; set; }
+
+	public string Id { get; set; }
 
 	public List<Point> Points { get; set; }
 

@@ -10,9 +10,10 @@
 		<Compile Remove="Platforms\**" />
 		<None Include="Platforms\**" />
 		<Compile Include="Platforms\*.cs" />
+		<EmbeddedResource Include="Resources\**" />
 	</ItemGroup>
 	<ItemGroup>
-		<EmbeddedResource Include="Resources\**" />
+		<Compile Include="..\Cornerstone.Generators\Reflection\*.cs" LinkBase="Reflection" />
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />

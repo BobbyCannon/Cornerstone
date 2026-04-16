@@ -18,6 +18,7 @@ using Avalonia.VisualTree;
 using Cornerstone.Avalonia.TreeDataGrid.Cells;
 using Cornerstone.Avalonia.TreeDataGrid.Models;
 using Cornerstone.Avalonia.TreeDataGrid.Selection;
+using Cornerstone.Extensions;
 
 #endregion
 
@@ -747,7 +748,7 @@ public class TreeDataGrid : TemplatedControl
 
 	private void OnHeaderScrollChanged(object sender, ScrollChangedEventArgs e)
 	{
-		if (ScrollViewer is not null && _headerScroll is not null && !MathUtilities.IsZero(e.OffsetDelta.X))
+		if (ScrollViewer is not null && _headerScroll is not null && !DoubleExtensions.IsZero(e.OffsetDelta.X))
 		{
 			ScrollViewer.Offset = ScrollViewer.Offset.WithX(_headerScroll.Offset.X);
 		}
@@ -770,7 +771,7 @@ public class TreeDataGrid : TemplatedControl
 
 	private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
 	{
-		if (ScrollViewer is not null && _headerScroll is not null && !MathUtilities.IsZero(e.OffsetDelta.X))
+		if (ScrollViewer is not null && _headerScroll is not null && !DoubleExtensions.IsZero(e.OffsetDelta.X))
 		{
 			_headerScroll.Offset = _headerScroll.Offset.WithX(ScrollViewer.Offset.X);
 		}

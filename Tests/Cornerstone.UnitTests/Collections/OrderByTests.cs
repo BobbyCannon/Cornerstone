@@ -32,13 +32,13 @@ public class OrderByTests : CornerstoneUnitTest
 	[TestMethod]
 	public void DefaultOrderByForComparableObject()
 	{
-		var list = new List<Account>
+		var list = new List<AccountEntity>
 		{
 			new() { Name = "John" },
 			new() { Name = "Jane" },
 			new() { Name = "Bob" }
 		};
-		var order = new OrderBy<Account>();
+		var order = new OrderBy<AccountEntity>();
 		var actual = list.Order([order]);
 
 		AreEqual([list[2], list[1], list[0]], actual.ToArray());

@@ -168,7 +168,7 @@ public abstract class TreeDataGridCell : TemplatedControl, ITreeDataGridCell
 		base.OnDetachedFromLogicalTree(e);
 	}
 
-	protected virtual void OnDoubleTapped(TappedEventArgs e)
+	protected override void OnDoubleTapped(TappedEventArgs e)
 	{
 		if (Model is not null &&
 			!e.Handled &&
@@ -179,6 +179,7 @@ public abstract class TreeDataGridCell : TemplatedControl, ITreeDataGridCell
 			BeginEdit();
 			e.Handled = true;
 		}
+		base.OnDoubleTapped(e);
 	}
 
 	protected override void OnKeyDown(KeyEventArgs e)
@@ -210,7 +211,7 @@ public abstract class TreeDataGridCell : TemplatedControl, ITreeDataGridCell
 		}
 	}
 
-	protected override void OnLostFocus(RoutedEventArgs e)
+	protected override void OnLostFocus(FocusChangedEventArgs e)
 	{
 		base.OnLostFocus(e);
 
@@ -255,7 +256,7 @@ public abstract class TreeDataGridCell : TemplatedControl, ITreeDataGridCell
 			IsEnabledEditGesture(BeginEditGestures.Tap, Model.EditGestures))
 		{
 			var point = e.GetCurrentPoint(this);
-			var settings = TopLevel.GetTopLevel(this)?.PlatformSettings;
+			var settings = TopLevel.GetTopLevel(this)?.GetPlatformSettings();
 			var tapSize = settings?.GetTapSize(point.Pointer.Type) ?? new Size(4, 4);
 			var tapRect = new Rect(_pressedPoint, new Size())
 				.Inflate(new Thickness(tapSize.Width, tapSize.Height));

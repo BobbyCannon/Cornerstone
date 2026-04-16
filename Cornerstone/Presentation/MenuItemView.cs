@@ -21,6 +21,10 @@ public partial class MenuItemView : SpeedyTree<MenuItemView>
 
 	[Notify]
 	[UpdateableAction(UpdateableAction.All)]
+	public partial string IconResourceName { get; set; }
+
+	[Notify]
+	[UpdateableAction(UpdateableAction.All)]
 	public partial string InputGesture { get; set; }
 
 	[Notify]

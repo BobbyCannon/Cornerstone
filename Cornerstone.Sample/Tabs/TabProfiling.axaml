@@ -19,7 +19,7 @@
 			<DockPanel>
 				<WrapPanel DockPanel.Dock="Top"
 						HorizontalAlignment="Center"
-						ItemSpacing="10"
+						ItemSpacing="20"
 						LineSpacing="10"
 						Margin="0,0,0,14">
 					<WrapPanel.Styles>
@@ -42,11 +42,12 @@
 							Maximum="100"
 							Value="{Binding RandomDelay, Mode=TwoWay,Converter={StaticResource TimeSpanConverter}, ConverterParameter=ms}"
 							Width="160" />
-					<TextBlock Text="{Binding RandomDelay, Converter={x:Static ConvertersForString.Humanize}}"
+					<TextBlock Text="{Binding RandomDelay, Converter={x:Static Converters.Humanize}}"
 							VerticalAlignment="Center"
-							Width="60"/>
+							Width="50"/>
 					
 					<CheckBox x:Name="Labels" IsChecked="True">Labels</CheckBox>
+					<CheckBox x:Name="OverlapLabels" IsChecked="False">Overlap Labels</CheckBox>
 					<CheckBox x:Name="Stepped" IsChecked="True">Stepped</CheckBox>
 				</WrapPanel>
 				<StackPanel Spacing="10">
@@ -57,18 +58,21 @@
 							Profiler="{Binding Profiler}"
 							FontSize="{Binding ElementName=FontSize2, Path=Value, Mode=TwoWay}"
 							ShowLabels="{Binding ElementName=Labels, Path=IsChecked}"
+							OverLabels="{Binding ElementName=OverlapLabels, Path=IsChecked}"
 							Stepped="{Binding ElementName=Stepped, Path=IsChecked}" />
 					<LineChart x:Name="RenderChart"
 							Title="Render Times"
 							Data="{Binding RenderData}"
 							Height="60"
 							ShowLabels="{Binding ElementName=Labels, Path=IsChecked}"
+							OverLabels="{Binding ElementName=OverlapLabels, Path=IsChecked}"
 							Stepped="{Binding ElementName=Stepped, Path=IsChecked}" />
 					<LineChart x:Name="PerSecondChart"
 							Title="Per Second"
 							Data="{Binding PerSecondData}"
 							Height="60"
 							ShowLabels="{Binding ElementName=Labels, Path=IsChecked}"
+							OverLabels="{Binding ElementName=OverlapLabels, Path=IsChecked}"
 							Stepped="{Binding ElementName=Stepped, Path=IsChecked}" />
 				</StackPanel>
 			</DockPanel>
@@ -87,6 +91,7 @@
 							Data="{Binding ElementName=This, Path=RandomData}"
 							Height="60"
 							ShowLabels="{Binding ElementName=Labels, Path=IsChecked}"
+							OverLabels="{Binding ElementName=OverlapLabels, Path=IsChecked}"
 							Stepped="{Binding ElementName=Stepped, Path=IsChecked}" />
 				</DataTemplate>
 			</PreviewCodeSnippet.ItemTemplate>

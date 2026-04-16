@@ -84,6 +84,7 @@
 		<PreviewCodeSnippet Width="630">
 			<WrapPanel LineSpacing="10" ItemSpacing="20">
 				<CheckBox x:Name="Labels" IsChecked="True">Labels</CheckBox>
+				<CheckBox x:Name="OverlapLabels" IsChecked="False">Overlap Labels</CheckBox>
 				<CheckBox x:Name="Stepped" IsChecked="True">Stepped</CheckBox>
 			</WrapPanel>
 			<PreviewCodeSnippet.ItemTemplate>
@@ -93,8 +94,9 @@
 							Height="80"
 							Width="300"
 							CornerRadius="8"
-							ShowLabels="{Binding ElementName=Labels, Path=IsChecked}"
-							Stepped="{Binding ElementName=Stepped, Path=IsChecked}">
+							ShowLabels="{Binding #Labels.IsChecked}"
+							OverLabels="{Binding #OverlapLabels.IsChecked}"
+							Stepped="{Binding #Stepped.IsChecked}">
 						<LineChart.Data>
 							<profiling:SeriesDataProvider>
 								<x:Double>6</x:Double>

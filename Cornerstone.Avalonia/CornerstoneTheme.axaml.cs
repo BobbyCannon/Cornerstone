@@ -128,7 +128,7 @@ public class CornerstoneTheme : Style
 		for (var i = 0; i < colors.Colors.Count; i++)
 		{
 			dictionary.Add($"ThemeColor{i:00}", Color.Parse(colors.Colors[i].Color));
-			dictionary.Add($"ThemeForeground{i:00}", Color.Parse(colors.Colors[i].Foreground));
+			dictionary.Add($"ThemeText{i:00}", Color.Parse(colors.Colors[i].Foreground));
 		}
 	}
 
@@ -137,7 +137,12 @@ public class CornerstoneTheme : Style
 		var application = Application.Current;
 		if (application == null)
 		{
-			Debugger.Break();
+			#if DEBUG
+			if (Debugger.IsAttached)
+			{
+				Debugger.Break();
+			}
+			#endif
 			return;
 		}
 
@@ -158,7 +163,12 @@ public class CornerstoneTheme : Style
 		var current = application?.RequestedThemeVariant;
 		if (current == null)
 		{
-			Debugger.Break();
+			#if DEBUG
+			if (Debugger.IsAttached)
+			{
+				Debugger.Break();
+			}
+			#endif
 			return;
 		}
 

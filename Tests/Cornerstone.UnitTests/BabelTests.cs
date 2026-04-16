@@ -1,18 +1,18 @@
 ﻿#region References
 
 using System;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.UnitTests;
 
-[TestFixture]
+[TestClass]
 public class BabelTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	[Test]
+	[TestMethod]
 	public void ChangeDictionary()
 	{
 		Babel.Tower.ChangeDictionary("Spanish");
@@ -20,7 +20,7 @@ public class BabelTests : CornerstoneUnitTest
 		IsFalse(Babel.Tower.ContainsKey(nameof(BabelKeys.ArgumentIsNull)));
 	}
 
-	[Test]
+	[TestMethod]
 	public void ContainsKey()
 	{
 		IsTrue(Babel.Tower.ContainsKey(BabelKeys.ArgumentIsNull));
@@ -29,7 +29,7 @@ public class BabelTests : CornerstoneUnitTest
 		IsFalse(Babel.Tower.ContainsKey("Foo"));
 	}
 
-	[Test]
+	[TestMethod]
 	public void CustomValue()
 	{
 		IsFalse(Babel.Tower.ContainsKey("Custom Error"));
@@ -54,7 +54,7 @@ public class BabelTests : CornerstoneUnitTest
 		AreEqual("Hello World4", Babel.Tower[(Enum) BabelKeys.DateTimeProviderLocked]);
 	}
 
-	[Test]
+	[TestMethod]
 	public void CustomValueForNonActiveLanguage()
 	{
 		AreEqual("English", Babel.Tower.Language);
@@ -70,7 +70,7 @@ public class BabelTests : CornerstoneUnitTest
 		AreEqual("FooBar", Babel.Tower["Custom Error"]);
 	}
 
-	[Test]
+	[TestMethod]
 	public void ThrowIndexOrLengthOutOfRange()
 	{
 		ExpectedException<ArgumentOutOfRangeException>(
@@ -84,7 +84,7 @@ public class BabelTests : CornerstoneUnitTest
 		);
 	}
 
-	[Test]
+	[TestMethod]
 	public void ThrowIndexOutOfRange()
 	{
 		ExpectedException<ArgumentOutOfRangeException>(
@@ -98,7 +98,7 @@ public class BabelTests : CornerstoneUnitTest
 		);
 	}
 
-	[Test]
+	[TestMethod]
 	public void UpdateDefaultValue()
 	{
 		AreEqual("There is a issue with the system. We will get someone to look into this.", Babel.Tower["GeneralError"]);

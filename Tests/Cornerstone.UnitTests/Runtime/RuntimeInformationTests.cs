@@ -3,17 +3,18 @@
 using System;
 using System.Runtime.CompilerServices;
 using Cornerstone.Runtime;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.UnitTests.Runtime;
 
+[TestClass]
 public class RuntimeInformationTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	[Test]
+	[TestMethod]
 	public void Information()
 	{
 		var runtimeInformation = new RuntimeInformation();
@@ -21,18 +22,21 @@ public class RuntimeInformationTests : CornerstoneUnitTest
 		runtimeInformation.Initialize(typeof(Babel).Assembly);
 		runtimeInformation.Refresh();
 
-		AreEqual(10, runtimeInformation.Count);
 		AreEqual("""
 				ApplicationDataLocation
+				ApplicationFileName
+				ApplicationFilePath
 				ApplicationIsDevelopmentBuild
 				ApplicationIsElevated
 				ApplicationIsNativeBuild
 				ApplicationLocation
 				ApplicationName
 				ApplicationVersion
+				AvaloniaRuntimeVersion
 				DeviceName
 				DevicePlatform
 				DeviceType
+				DotNetRuntimeVersion
 				""",
 			string.Join(Environment.NewLine, runtimeInformation.Keys));
 

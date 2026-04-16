@@ -1,0 +1,94 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:local="clr-namespace:Cornerstone.Avalonia.Controls">
+
+	<ControlTheme x:Key="{x:Type MarkdownView}" TargetType="local:MarkdownView">
+		<Setter Property="Theme.Color" Value="Current" />
+		<Setter Property="Background" Value="{DynamicResource Background03}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+		<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="Padding" Value="10" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border Background="{TemplateBinding Background}"
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}"
+						CornerRadius="{TemplateBinding CornerRadius}">
+					<ScrollViewer x:Name="PARTS_ScrollViewer"
+							HorizontalScrollBarVisibility="Auto"
+							VerticalScrollBarVisibility="Auto">
+						<ItemsControl ItemsSource="{TemplateBinding BlockGroups}"
+								Margin="{TemplateBinding Padding}">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<StackPanel />
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate DataType="MarkdownBlockGroup">
+									<Border BorderBrush="{DynamicResource BorderBrush}"
+											BorderThickness="0">
+										<TextRenderer x:Name="Renderer"
+												Foreground="{TemplateBinding Foreground}"
+												HorizontalAlignment="Stretch"
+												CanHorizontallyScroll="False">
+											<TextRenderer.ContextMenu>
+												<ContextMenu>
+													<MenuItem x:Name="TextRendererContextFlyoutCopyItem"
+															Header="Copy"
+															Command="{Binding #Renderer.ViewModel.Clipboard.CopyCommand}"
+															InputGesture="{x:Static TextBox.CopyGesture}">
+														<MenuItem.Icon>
+															<Path Data="{StaticResource Icons.Copy}" />
+														</MenuItem.Icon>
+													</MenuItem>
+												</ContextMenu>
+											</TextRenderer.ContextMenu>
+											<TextRenderer.Text>
+												<MultiBinding Converter="{StaticResource MarkdownBlockConverter}">
+													<Binding />
+													<Binding RelativeSource="{RelativeSource Self}" />
+													<Binding RelativeSource="{RelativeSource AncestorType=Border}" />
+													<Binding RelativeSource="{RelativeSource AncestorType=local:MarkdownView}" />
+												</MultiBinding>
+											</TextRenderer.Text>
+										</TextRenderer>
+									</Border>
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+					</ScrollViewer>
+				</Border>
+			</ControlTemplate>
+		</Setter>
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="680" MinHeight="400">
+			<MarkdownView xml:space="preserve">
+				<MarkdownView.Markdown>
+# Header 1
+## Header 2
+### Header 3
+*italic* **bold** ~~strikethrough~~
+
+> BlockQuote
+
+```json
+{
+	"Test": "blah"
+}
+```
+
+- One
+- Two
+- Three
+				</MarkdownView.Markdown>
+			</MarkdownView>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

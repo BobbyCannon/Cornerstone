@@ -44,16 +44,15 @@ public class AutoGrid : Grid
 		ChildHorizontalAlignmentProperty = AvaloniaProperty.Register<AutoGrid, HorizontalAlignment?>(nameof(ChildHorizontalAlignment));
 		ChildMarginProperty = AvaloniaProperty.Register<AutoGrid, Thickness?>(nameof(ChildMargin));
 		ChildVerticalAlignmentProperty = AvaloniaProperty.Register<AutoGrid, VerticalAlignment?>(nameof(ChildVerticalAlignment));
-		ColumnCountProperty = AvaloniaProperty.RegisterAttached<Control, int>(nameof(ColumnCount), typeof(AutoGrid), 1);
-		ColumnWidthProperty = AvaloniaProperty.RegisterAttached<Control, GridLength>(nameof(ColumnWidth), typeof(AutoGrid), GridLength.Auto);
+		ColumnCountProperty = AvaloniaProperty.RegisterAttached<AutoGrid, int>(nameof(ColumnCount), typeof(AutoGrid), 1);
+		ColumnWidthProperty = AvaloniaProperty.RegisterAttached<AutoGrid, GridLength>(nameof(ColumnWidth), typeof(AutoGrid), GridLength.Star);
 		IsAutoIndexingProperty = AvaloniaProperty.Register<AutoGrid, bool>(nameof(IsAutoIndexing), true);
 		OrientationProperty = AvaloniaProperty.Register<AutoGrid, Orientation>(nameof(Orientation));
-		RowCountProperty = AvaloniaProperty.RegisterAttached<Control, int>(nameof(RowCount), typeof(AutoGrid), 1);
-		RowHeightProperty = AvaloniaProperty.RegisterAttached<Control, GridLength>(nameof(RowHeight), typeof(AutoGrid), GridLength.Auto);
+		RowCountProperty = AvaloniaProperty.RegisterAttached<AutoGrid, int>(nameof(RowCount), typeof(AutoGrid), 1);
+		RowHeightProperty = AvaloniaProperty.RegisterAttached<AutoGrid, GridLength>(nameof(RowHeight), typeof(AutoGrid), GridLength.Star);
 
-		AffectsMeasure<AutoGrid>(ChildHorizontalAlignmentProperty, ChildMarginProperty,
-			ChildVerticalAlignmentProperty, ColumnCountProperty, ColumnWidthProperty, IsAutoIndexingProperty, OrientationProperty,
-			RowHeightProperty);
+		AffectsMeasure<AutoGrid>(ChildHorizontalAlignmentProperty, ChildMarginProperty, ChildVerticalAlignmentProperty,
+			ColumnCountProperty, ColumnWidthProperty, IsAutoIndexingProperty, OrientationProperty, RowCountProperty, RowHeightProperty);
 
 		ChildHorizontalAlignmentProperty.Changed.Subscribe(new AnonymousObserver<AvaloniaPropertyChangedEventArgs>(OnChildHorizontalAlignmentChanged));
 		ChildMarginProperty.Changed.Subscribe(new AnonymousObserver<AvaloniaPropertyChangedEventArgs>(OnChildMarginChanged));

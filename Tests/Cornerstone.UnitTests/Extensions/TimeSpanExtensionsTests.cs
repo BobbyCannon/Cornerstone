@@ -2,17 +2,18 @@
 
 using System;
 using Cornerstone.Extensions;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.UnitTests.Extensions;
 
+[TestClass]
 public class TimeSpanExtensionsTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	[Test]
+	[TestMethod]
 	public void ToTimeSpan()
 	{
 		var scenarios = new (double nanoseconds, TimeSpan expected)[]

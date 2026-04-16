@@ -21,6 +21,7 @@ using Cornerstone.Runtime;
 namespace Cornerstone.Avalonia.DockingManager;
 
 [PseudoClasses(":active")]
+[PseudoClasses(":toolbar")]
 public partial class DockingTabControl : TabControl
 {
 	#region Fields
@@ -31,33 +32,61 @@ public partial class DockingTabControl : TabControl
 	private (Rect bounds, int index)? _draggedTabGhost;
 	private readonly RearrangePreventFlicker _dragRearrangePreventFlicker;
 	private ItemsPresenter _itemsPresenterPart;
-	private readonly SpeedyList<DockableTabView> _selectedOrder;
+	private readonly PresentationList<DockableTabView> _selectedOrder;
+	private static readonly Type[] _toolbarOnly;
 
 	#endregion
 
 	#region Constructors
 
-	public DockingTabControl()
+	public DockingTabControl() : this([])
+	{
+	}
+
+	public DockingTabControl(params Type[] allowedDockTypes)
 	{
 		_dragRearrangePreventFlicker = new();
-		_selectedOrder = new SpeedyList<DockableTabView>(null, new OrderBy<DockableTabView>(x => x.LastSelectedOn, true));
+		_selectedOrder = new PresentationList<DockableTabView>(null, new OrderBy<DockableTabView>(x => x.LastSelectedOn, true));
 
+		AllowedDockTypes = allowedDockTypes;
 		IsHitTestVisible = true;
 		Margin = new Thickness(0);
 		Padding = new Thickness(0);
+		SelectionMode = SelectionMode.Single;
+		
+		if (Design.IsDesignMode)
+		{
+			AllowedDockTypes = [typeof(ToolbarTabModel)];
+		}
 
 		UpdatePseudoClasses();
+
+		AddHandler(PointerPressedEvent, OnPointerPressed, RoutingStrategies.Tunnel);
+	}
+
+	static DockingTabControl()
+	{
+		_toolbarOnly = [typeof(ToolbarTabModel)];
 	}
 
 	#endregion
 
 	#region Properties
 
+	[StyledProperty]
+	public partial Type[] AllowedDockTypes { get; set; }
+
 	/// <summary>
 	/// Gets or sets if this is the currently active dockable.
 	/// </summary>
 	[StyledProperty]
 	public partial bool IsActive { get; set; }
+
+	[StyledProperty]
+	public partial bool IsCollapsed { get; set; }
+
+	[StyledProperty]
+	public partial bool IsToolbar { get; set; }
 
 	/// <summary>
 	/// Gets or sets if the new NewTab command.
@@ -73,6 +102,13 @@ public partial class DockingTabControl : TabControl
 
 	public void Add(DockableTabModel tabModel)
 	{
+		if (!CanAcceptTabModel(tabModel))
+		{
+			throw new InvalidOperationException(
+				$"This {nameof(DockingTabControl)} only accepts specific tab models. " +
+				$"{tabModel?.GetType().Name} is not allowed here.");
+		}
+
 		if (!tabModel.IsInitialized)
 		{
 			tabModel.Initialize();
@@ -83,13 +119,45 @@ public partial class DockingTabControl : TabControl
 
 	public void Add(DockableTabView tabView)
 	{
+		if ((tabView?.TabModel != null) && !CanAcceptTabModel(tabView.TabModel))
+		{
+			throw new InvalidOperationException(
+				$"This {nameof(DockingTabControl)} only accepts specific tab models. " +
+				$"{tabView.TabModel.GetType().Name} is not allowed here."
+			);
+		}
+
 		Items.Add(tabView);
 		SelectedItem = tabView;
 
-		if (tabView.TabModel != null)
+		if (tabView?.TabModel != null)
 		{
 			_dockingManager?.OnTabModelAdded(tabView.TabModel);
 		}
+	}
+
+	/// <summary>
+	/// Returns true if this DockingManager (and all its child panes/windows)
+	/// is allowed to host the given tab model based on its concrete type.
+	/// </summary>
+	public bool CanAcceptTabModel(DockableTabModel model)
+	{
+		if (model == null)
+		{
+			return false;
+		}
+
+		// No filter = accept everything (backward compatible)
+		if ((AllowedDockTypes == null)
+			|| (AllowedDockTypes.Length == 0))
+		{
+			return true;
+		}
+
+		var modelType = model.GetType();
+
+		return AllowedDockTypes.Any(allowedType =>
+			allowedType.IsAssignableFrom(modelType));
 	}
 
 	public void CloseAllTabs()
@@ -106,12 +174,22 @@ public partial class DockingTabControl : TabControl
 
 	public void Initialize(DockingManager dockingManager)
 	{
-		_dockingManager = dockingManager;
-		Items.CollectionChanged += ItemsCollectionChanged;
+		if (_dockingManager == null)
+		{
+			_dockingManager = dockingManager;
+			Items.CollectionChanged += ItemsCollectionChanged;
+		}
 	}
 
 	public void Insert(int index, DockableTabModel tabModel)
 	{
+		if (!CanAcceptTabModel(tabModel))
+		{
+			throw new InvalidOperationException(
+				$"This {nameof(DockingTabControl)} only accepts specific tab models. " +
+				$"{tabModel?.GetType().Name} is not allowed here.");
+		}
+
 		if (!tabModel.IsInitialized)
 		{
 			tabModel.Initialize();
@@ -122,10 +200,17 @@ public partial class DockingTabControl : TabControl
 
 	public void Insert(int index, DockableTabView tabView)
 	{
+		if ((tabView?.TabModel != null) && !CanAcceptTabModel(tabView.TabModel))
+		{
+			throw new InvalidOperationException(
+				$"This {nameof(DockingTabControl)} only accepts specific tab models. " +
+				$"{tabView.TabModel.GetType().Name} is not allowed here.");
+		}
+
 		Items.Insert(index, tabView);
 		SelectedItem = tabView;
 
-		if (tabView.TabModel != null)
+		if (tabView?.TabModel != null)
 		{
 			_dockingManager?.OnTabModelAdded(tabView.TabModel);
 		}
@@ -145,6 +230,7 @@ public partial class DockingTabControl : TabControl
 
 	public void Uninitialize()
 	{
+		_dockingManager = null;
 		Items.CollectionChanged -= ItemsCollectionChanged;
 	}
 
@@ -160,7 +246,7 @@ public partial class DockingTabControl : TabControl
 		_itemsPresenterPart = e.NameScope.Find<ItemsPresenter>("PART_ItemsPresenter");
 	}
 
-	protected override void OnLostFocus(RoutedEventArgs e)
+	protected override void OnLostFocus(FocusChangedEventArgs e)
 	{
 		_draggedTab = null;
 		_draggedTabGhost = null;
@@ -191,7 +277,7 @@ public partial class DockingTabControl : TabControl
 			return;
 		}
 
-		if (_dockingManager.RuntimeInformation.DevicePlatform == DevicePlatform.Windows)
+		if (_dockingManager?.RuntimeInformation?.DevicePlatform == DevicePlatform.Windows)
 		{
 			var tabBarHovered = TryGetTabBarRect(out var rect) && rect.Contains(hitPoint);
 			if (!tabBarHovered)
@@ -204,10 +290,8 @@ public partial class DockingTabControl : TabControl
 		OnDragToRearrange(e);
 	}
 
-	protected override void OnPointerPressed(PointerPressedEventArgs e)
+	protected void OnPointerPressed(object sender, PointerPressedEventArgs e)
 	{
-		base.OnPointerPressed(e);
-
 		var currentPoint = e.GetCurrentPoint(this);
 		if (!currentPoint.Properties.IsLeftButtonPressed)
 		{
@@ -415,7 +499,11 @@ public partial class DockingTabControl : TabControl
 
 	private void UpdatePseudoClasses()
 	{
+		IsToolbar = AllowedDockTypes.SequenceEqual(_toolbarOnly);
 		PseudoClasses.Set(":active", IsActive);
+		PseudoClasses.Set(":toolbar", IsToolbar);
+		PseudoClasses.Set(":vertical", TabStripPlacement is Dock.Left or Dock.Right);
+		PseudoClasses.Set(":horizontal", TabStripPlacement is Dock.Top or Dock.Bottom);
 	}
 
 	#endregion

@@ -38,17 +38,22 @@ public static class ArrayExtensions
 	}
 
 	/// <summary>
-	/// Iterate the list.
+	/// Returns the enumerable as an IList with minimal copying when possible.
+	/// Supports List, Array, HashSet, LinkedList, Queue, Stack, and other common collections.
 	/// </summary>
-	/// <param name="enumerable"> The items to enumerate. </param>
-	/// <returns> The items in a list. </returns>
 	public static IList IterateList(this IEnumerable enumerable)
 	{
+		if (enumerable is null)
+		{
+			return Array.Empty<object>();
+		}
+
 		if (enumerable is IList list)
 		{
 			return list;
 		}
 
+		// Fallback for non-generic ICollection (older collections, some concurrent types)
 		if (enumerable is ICollection collection)
 		{
 			var arr = new object[collection.Count];
@@ -56,6 +61,7 @@ public static class ArrayExtensions
 			return arr;
 		}
 
+		// Slow path for pure IEnumerable (custom iterators, complex LINQ queries without Count)
 		var result = new List<object>();
 		foreach (var item in enumerable)
 		{

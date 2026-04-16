@@ -17,7 +17,7 @@ public class DebounceThrottleManager : WorkerManager, IDisposable
 	#region Fields
 
 	protected internal readonly IDateTimeProvider DateTimeProvider;
-	private readonly SpeedyList<DebounceThrottleProxy> _proxies;
+	private readonly PresentationList<DebounceThrottleProxy> _proxies;
 
 	#endregion
 
@@ -34,6 +34,13 @@ public class DebounceThrottleManager : WorkerManager, IDisposable
 	#endregion
 
 	#region Methods
+
+	public static DebounceThrottleManager Create(IDateTimeProvider timeProvider = null, int workerDelay = 10)
+	{
+		var response = new DebounceThrottleManager(timeProvider, workerDelay);
+		response.Initialize();
+		return response;
+	}
 
 	public DebounceProxy CreateDebounce(TimeSpan interval, Action<CancellationToken, object, bool> action)
 	{
@@ -99,7 +106,49 @@ public class DebounceThrottleManager : WorkerManager, IDisposable
 
 	protected internal void Trigger(DebounceThrottleProxy proxy)
 	{
-		// Unblock the wait?
+		WakeUp();
+	}
+
+	/// <summary>
+	/// Auto-calculates the optimal sleep time based on the earliest next trigger.
+	/// This is called every cycle by the base WorkerManager.
+	/// </summary>
+	protected override int? CalculateDynamicDelay()
+	{
+		var minDelay = TimeSpan.MaxValue;
+		var snapshot = _proxies.ToArray();
+
+		foreach (var proxy in snapshot)
+		{
+			if (proxy.IsProcessing && !proxy.AllowTriggerDuringProcessing)
+			{
+				continue;
+			}
+
+			if (!proxy.IsTriggered && !proxy.IsTriggeredForced)
+			{
+				continue;
+			}
+
+			if (proxy.IsTriggeredForced || (proxy.TimeToNextTrigger <= TimeSpan.Zero))
+			{
+				return 0;
+			}
+
+			var timeToWait = proxy.TimeToNextTrigger;
+			if (timeToWait < minDelay)
+			{
+				minDelay = timeToWait;
+			}
+		}
+
+		if (minDelay == TimeSpan.MaxValue)
+		{
+			return null;
+		}
+
+		var ms = (int) Math.Min(minDelay.TotalMilliseconds, WorkerDelay * 10);
+		return ms > 0 ? ms : 0;
 	}
 
 	#endregion
@@ -245,7 +294,7 @@ public abstract partial class DebounceThrottleProxy : Notifiable
 		_interval = interval;
 
 		Lock = new ReaderWriterLockTiny();
-		Queue = new SpeedyQueue<object> { Limit = 1 };
+		Queue = new SpeedyQueue<object> { MaxItems = 1 };
 		Queue.QueueChanged += QueueOnQueueChanged;
 	}
 
@@ -316,8 +365,8 @@ public abstract partial class DebounceThrottleProxy : Notifiable
 	/// </summary>
 	public bool QueueTriggers
 	{
-		get => Queue.Limit > 1;
-		set => Queue.Limit = value ? int.MaxValue : 1;
+		get => Queue.MaxItems > 1;
+		set => Queue.MaxItems = value ? int.MaxValue : 1;
 	}
 
 	/// <summary>
@@ -411,12 +460,13 @@ public abstract partial class DebounceThrottleProxy : Notifiable
 	}
 
 	/// <summary>
-	/// Trigger the service. Will be trigger after the timespan.
+	/// Trigger the service. Will be triggered after the timespan.
 	/// </summary>
 	/// <param name="value"> The value to trigger with. </param>
 	/// <param name="force"> An optional flag to immediately trigger if true. Defaults to false. </param>
 	public void Trigger(object value, bool force = false)
 	{
+		// Always allow queuing when QueueTriggers is enabled, regardless of processing state
 		if (IsProcessing && !AllowTriggerDuringProcessing && !QueueTriggers)
 		{
 			return;

@@ -1,10 +1,16 @@
 ﻿#region References
 
-using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Cornerstone.Avalonia.Extensions;
+using Cornerstone.Data;
+using Cornerstone.Presentation;
 using Cornerstone.Profiling;
+using Cornerstone.Reflection;
+using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 #endregion
 
@@ -24,9 +30,10 @@ public partial class CornerstoneContentControl<T>
 
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
 	{
-		if (change.Property == ViewModelProperty)
+		if ((change.Property == DataContextProperty)
+			&& DataContext is T viewModel)
 		{
-			DataContext = ViewModel;
+			ViewModel = viewModel;
 		}
 
 		base.OnPropertyChanged(change);
@@ -35,11 +42,13 @@ public partial class CornerstoneContentControl<T>
 	#endregion
 }
 
-public partial class CornerstoneContentControl : ContentControl
+[SourceReflection]
+public partial class CornerstoneContentControl : ContentControl, IDispatchable
 {
 	#region Fields
 
 	private Typeface? _cachedTypeface;
+	private PropertyChangedEventHandler _propertyChangedHandler;
 
 	#endregion
 
@@ -53,6 +62,11 @@ public partial class CornerstoneContentControl : ContentControl
 	#endregion
 
 	#region Methods
+
+	public IDispatcher GetDispatcher()
+	{
+		return CornerstoneApplication.CornerstoneDispatcher;
+	}
 
 	public static T GetInstance<T>()
 	{
@@ -76,6 +90,12 @@ public partial class CornerstoneContentControl : ContentControl
 			_cachedTypeface = null;
 			InvalidateVisual();
 		}
+	}
+
+	protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+	{
+		_propertyChangedHandler ??= AvaloniaExtensions.GetPropertyChangedHandler(this);
+		_propertyChangedHandler?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 	}
 
 	#endregion

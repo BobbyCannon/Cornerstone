@@ -1,10 +1,10 @@
 ﻿#region References
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Layout;
-using Cornerstone.Collections;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Reflection;
@@ -14,69 +14,29 @@ using Cornerstone.Reflection;
 namespace Cornerstone.Avalonia.DockingManager;
 
 [SourceReflection]
+[Notifiable(["*"])]
+[Updateable(UpdateableAction.All, ["*"])]
 public partial class DockLayoutItem : Notifiable
 {
 	#region Properties
 
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
-	public partial ISpeedyList<DockLayoutItem> Children { get; set; }
-
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
+	public partial string[] AllowedDockTypeNames { get; set; }
+	public partial List<DockLayoutItem> Children { get; set; }
 	public partial string ControlType { get; set; }
-
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial string Data { get; set; }
-
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial string DataModelType { get; set; }
-
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial Dock Dock { get; private set; }
-
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial SplitFractions Fractions { get; set; }
-
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial string Header { get; set; }
-
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial double Height { get; set; }
-
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
-	public partial string Id { get; set; }
-
-	public int Left { get; set; }
-
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
+	public partial bool IsRootTabControl { get; set; }
+	public partial int Left { get; set; }
 	public partial string Name { get; set; }
-
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial Orientation Orientation { get; set; }
-
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial Guid SelectedTab { get; set; }
-
-	public int Top { get; set; }
-
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
+	public partial int Top { get; set; }
 	public partial double Width { get; set; }
-
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
-	public partial ISpeedyList<DockLayoutItem> Windows { get; set; }
+	public partial DockLayoutItem[] Windows { get; set; }
 
 	#endregion
 
@@ -84,24 +44,26 @@ public partial class DockLayoutItem : Notifiable
 
 	public static DockLayoutItem From(DockingManager manager)
 	{
-		var response = From((DockSplitPanel) manager);
-		response.Windows = new SpeedyList<DockLayoutItem>(manager.Windows.Select(From).ToArray());
+		var response = From(manager, manager);
+		response.Windows = manager.Windows.Select(From).ToArray();
 		return response;
 	}
 
-	private static DockLayoutItem From(DockingTabControl tabControl)
+	private static DockLayoutItem From(DockingManager rootDockingManager, DockingTabControl tabControl)
 	{
 		var response = new DockLayoutItem
 		{
+			AllowedDockTypeNames = tabControl.AllowedDockTypes.Select(x => x.ToAssemblyName()).ToArray(),
+			ControlType = nameof(DockingTabControl),
+			IsRootTabControl = rootDockingManager.RootTabControl == tabControl,
 			Height = tabControl.Height,
-			Width = tabControl.Width,
-			ControlType = nameof(DockingTabControl)
+			Width = tabControl.Width
 		};
 
 		foreach (var child in tabControl.Items)
 		{
-			response.Children ??= new SpeedyList<DockLayoutItem>();
-			var childResponse = ProcessChild(child);
+			response.Children ??= [];
+			var childResponse = ProcessChild(rootDockingManager, child);
 			response.Children.Add(childResponse);
 
 			if ((child == tabControl.SelectedItem)
@@ -126,7 +88,7 @@ public partial class DockLayoutItem : Notifiable
 		{
 			case DockableTabModel model:
 			{
-				//response.Data = model.GetLayoutData();
+				response.Data = model.ReadLayoutData();
 				response.DataModelType = model.GetType().ToAssemblyName();
 				break;
 			}
@@ -140,7 +102,7 @@ public partial class DockLayoutItem : Notifiable
 		return response;
 	}
 
-	private static DockLayoutItem From(DockSplitPanel panel)
+	private static DockLayoutItem From(DockingManager rootDockingManager, DockSplitPanel panel)
 	{
 		var response = new DockLayoutItem
 		{
@@ -149,8 +111,8 @@ public partial class DockLayoutItem : Notifiable
 
 		foreach (var child in panel.Children)
 		{
-			response.Children ??= new SpeedyList<DockLayoutItem>();
-			var childResponse = ProcessChild(child);
+			response.Children ??= [];
+			var childResponse = ProcessChild(rootDockingManager, child);
 			childResponse.Dock = DockPanel.GetDock(child);
 			response.Children.Add(childResponse);
 		}
@@ -158,7 +120,7 @@ public partial class DockLayoutItem : Notifiable
 		return response;
 	}
 
-	private static DockLayoutItem From(SplitPanel panel)
+	private static DockLayoutItem From(DockingManager rootDockingManager, SplitPanel panel)
 	{
 		var response = new DockLayoutItem
 		{
@@ -169,8 +131,8 @@ public partial class DockLayoutItem : Notifiable
 
 		foreach (var child in panel.Children)
 		{
-			response.Children ??= new SpeedyList<DockLayoutItem>();
-			var childResponse = ProcessChild(child);
+			response.Children ??= [];
+			var childResponse = ProcessChild(rootDockingManager, child);
 			response.Children.Add(childResponse);
 		}
 
@@ -188,14 +150,14 @@ public partial class DockLayoutItem : Notifiable
 		return response;
 	}
 
-	private static DockLayoutItem ProcessChild(object child)
+	private static DockLayoutItem ProcessChild(DockingManager rootDockingManager, object child)
 	{
 		return child switch
 		{
 			DockableTabView sValue => From(sValue),
-			DockingTabControl sValue => From(sValue),
-			SplitPanel sValue => From(sValue),
-			DockSplitPanel sValue => From(sValue),
+			DockingTabControl sValue => From(rootDockingManager, sValue),
+			SplitPanel sValue => From(rootDockingManager, sValue),
+			DockSplitPanel sValue => From(rootDockingManager, sValue),
 			_ => new DockLayoutItem { ControlType = $"Unknown {child.GetType().FullName}" }
 		};
 	}

@@ -1,17 +1,18 @@
 ﻿#region References
 
 using Cornerstone.Text;
-using NUnit.Framework;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.UnitTests.Text;
 
+[TestClass]
 public class StringGapBufferTests : CornerstoneUnitTest
 {
 	#region Methods
 
-	[Test]
+	[TestMethod]
 	public void Constructors()
 	{
 		var actual = new StringGapBuffer();
@@ -29,12 +30,12 @@ public class StringGapBufferTests : CornerstoneUnitTest
 		AreEqual(256, actual.Capacity);
 	}
 
-	[Test]
+	[TestMethod]
 	public void SubString()
 	{
 		var actual = new StringGapBuffer("012345679");
-		AreEqual("123", actual.SubString(1, 3));
-		AreEqual("34", actual.SubString(3, 2));
+		AreEqual("123", actual.Substring(1, 3));
+		AreEqual("34", actual.Substring(3, 2));
 	}
 
 	#endregion

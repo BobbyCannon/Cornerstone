@@ -27,7 +27,8 @@
 									BorderBrush="{TemplateBinding BorderBrush}"
 									BorderThickness="{TemplateBinding BorderThickness}"
 									CornerRadius="{TemplateBinding CornerRadius}"
-									ContextMenu="{Binding ContextMenu}"
+									ContextMenu="{Binding HeaderMenu}"
+									ToolTip.Tip="{Binding HeaderToolTip}"
 									MinHeight="32">
 
 								<Grid ColumnDefinitions="28,*,28">
@@ -52,27 +53,28 @@
 											Padding="{TemplateBinding Padding}"
 											Margin="0,-2,0,0"
 											HorizontalAlignment="Center"
-											VerticalAlignment="Center"
-											ContextMenu="{Binding HeaderMenu}">
+											VerticalAlignment="Center">
 										<Grid>
 											<TextBlock
 													Text="{Binding Header}"
-													ToolTip.Tip="{Binding HeaderToolTip}"
+													TextAlignment="Center"
 													IsVisible="{TemplateBinding TabModel, Converter={x:Static ObjectConverters.IsNotNull}}" />
 											<ContentPresenter
 													Content="{TemplateBinding Header}"
-													ToolTip.Tip="{Binding HeaderToolTip}"
 													IsVisible="{TemplateBinding Header, Converter={x:Static ObjectConverters.IsNotNull}}" />
 										</Grid>
 									</Border>
 
 									<Button Name="PART_CloseButton"
-											Classes="TabClose"
+											Classes="TabClose Icon IconOnly Dim"
 											Grid.Column="2"
 											Command="{Binding CloseCommand}"
+											Foreground="{TemplateBinding Foreground}"
 											Margin="0,0,2,0"
 											IsVisible="False">
-										<PathIcon Data="{DynamicResource Icons.Close}"
+										<PathIcon 
+												Data="{DynamicResource Icons.Close}"
+												Foreground="{TemplateBinding Foreground}"
 												VerticalAlignment="Center" />
 									</Button>
 								</Grid>
@@ -168,12 +170,12 @@
 		<Setter Property="Background" Value="Transparent" />
 		<Setter Property="BorderBrush" Value="Transparent" />
 		<Setter Property="BorderThickness" Value="0" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground02}" />
 		<Setter Property="HorizontalAlignment" Value="Center" />
 		<Setter Property="VerticalAlignment" Value="Center" />
 		<Setter Property="Height" Value="26" />
 		<Setter Property="Width" Value="26" />
 		<Style Selector="^ PathIcon">
-			<Setter Property="Foreground" Value="{Binding $parent[Button].Foreground}" />
 			<Setter Property="Height" Value="11" />
 			<Setter Property="Width" Value="11" />
 			<Setter Property="HorizontalAlignment" Value="Center" />
@@ -182,64 +184,66 @@
 	</Style>
 
 	<Design.PreviewWith>
-		<DockPanel>
-			<DockingTabControl DockPanel.Dock="Top"
-					TabStripPlacement="Left"
-					Margin="0,0,0,20">
-				<DockableTabView>
-					<DockableTabView.TabModel>
-						<DockableTabModel Header="First"
-								HeaderToolTip="First item tooltip for header">
-							<DockableTabModel.Popup>
-								<p:PopupViewModel
-										ProgressDescription="I'm running stuff"
-										IsDestructive="True"
-										ShowButtons="True"
-										InProgress="False" />
-							</DockableTabModel.Popup>
-						</DockableTabModel>
-					</DockableTabView.TabModel>
-				</DockableTabView>
-				<DockableTabView Header="Second" />
-				<DockableTabView Header="Third" />
-				<DockableTabView Header="Fourth" />
-			</DockingTabControl>
-			<DockingTabControl DockPanel.Dock="Top"
-					TabStripPlacement="Right"
-					Margin="0,0,0,20">
-				<DockableTabView>
-					<DockableTabView.TabModel>
-						<DockableTabModel Header="First" />
-					</DockableTabView.TabModel>
-				</DockableTabView>
-				<DockableTabView Header="Second" />
-				<DockableTabView Header="Third" />
-				<DockableTabView Header="Fourth" />
-			</DockingTabControl>
-			<DockingTabControl DockPanel.Dock="Top"
-					Height="100"
-					Margin="0,0,0,20">
-				<DockableTabView>
-					<DockableTabView.TabModel>
-						<DockableTabModel Header="First" />
-					</DockableTabView.TabModel>
-				</DockableTabView>
-				<DockableTabView Header="Second" />
-				<DockableTabView Header="Third" />
-				<DockableTabView Header="Fourth" />
-			</DockingTabControl>
-			<DockingTabControl DockPanel.Dock="Bottom"
-					TabStripPlacement="Bottom"
-					Height="100">
-				<DockableTabView>
-					<DockableTabView.TabModel>
-						<DockableTabModel Header="1st" />
-					</DockableTabView.TabModel>
-				</DockableTabView>
-				<DockableTabView Header="2nd" />
-				<DockableTabView Header="3rd" />
-				<DockableTabView Header="4th" />
-			</DockingTabControl>
-		</DockPanel>
+		<PreviewCodeSnippet>
+			<DockPanel>
+				<DockingTabControl DockPanel.Dock="Top"
+						TabStripPlacement="Left"
+						Margin="0,0,0,20">
+					<DockableTabView>
+						<DockableTabView.TabModel>
+							<DocumentTabModel Header="First"
+									HeaderToolTip="First item tooltip for header">
+								<DockableTabModel.Popup>
+									<p:PopupViewModel
+											ProgressDescription="I'm running stuff"
+											IsDestructive="True"
+											ShowButtons="True"
+											InProgress="False" />
+								</DockableTabModel.Popup>
+							</DocumentTabModel>
+						</DockableTabView.TabModel>
+					</DockableTabView>
+					<DockableTabView Header="Second" />
+					<DockableTabView Header="Third" />
+					<DockableTabView Header="Fourth" />
+				</DockingTabControl>
+				<DockingTabControl DockPanel.Dock="Top"
+						TabStripPlacement="Right"
+						Margin="0,0,0,20">
+					<DockableTabView>
+						<DockableTabView.TabModel>
+							<DocumentTabModel Header="First" />
+						</DockableTabView.TabModel>
+					</DockableTabView>
+					<DockableTabView Header="Second" />
+					<DockableTabView Header="Third" />
+					<DockableTabView Header="Fourth" />
+				</DockingTabControl>
+				<DockingTabControl DockPanel.Dock="Top"
+						Height="100"
+						Margin="0,0,0,20">
+					<DockableTabView>
+						<DockableTabView.TabModel>
+							<DocumentTabModel Header="First" />
+						</DockableTabView.TabModel>
+					</DockableTabView>
+					<DockableTabView Header="Second" />
+					<DockableTabView Header="Third" />
+					<DockableTabView Header="Fourth" />
+				</DockingTabControl>
+				<DockingTabControl DockPanel.Dock="Bottom"
+						TabStripPlacement="Bottom"
+						Height="100">
+					<DockableTabView>
+						<DockableTabView.TabModel>
+							<DocumentTabModel Header="1st" />
+						</DockableTabView.TabModel>
+					</DockableTabView>
+					<DockableTabView Header="2nd" />
+					<DockableTabView Header="3rd" />
+					<DockableTabView Header="4th" />
+				</DockingTabControl>
+			</DockPanel>
+		</PreviewCodeSnippet>
 	</Design.PreviewWith>
 </Styles>

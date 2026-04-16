@@ -43,7 +43,6 @@ public class ExceptionExtensionsTests : CornerstoneUnitTest
 			scenario.Value.Dump(scenario.Prefix);
 			var actual = _stringWriter.ToString();
 			AreEqual(scenario.Expected, actual);
-
 			TestCleanup();
 			TestInitialize();
 		}

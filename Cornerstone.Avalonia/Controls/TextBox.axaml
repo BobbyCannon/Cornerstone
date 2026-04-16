@@ -121,7 +121,7 @@
 											<TextBlock Name="PART_FloatingWatermark"
 													FontSize="{TemplateBinding FontSize}"
 													IsVisible="False"
-													Text="{TemplateBinding Watermark}"
+													Text="{TemplateBinding PlaceholderText}"
 													DockPanel.Dock="Top" />
 											<ScrollViewer Name="PART_ScrollViewer"
 													HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
@@ -132,7 +132,7 @@
 												<Panel Name="PART_Panel" Margin="0,6">
 													<TextBlock Name="PART_Watermark"
 															Opacity="0.3"
-															Text="{TemplateBinding Watermark}"
+															Text="{TemplateBinding PlaceholderText}"
 															TextAlignment="{TemplateBinding TextAlignment}"
 															TextWrapping="{TemplateBinding TextWrapping}"
 															IsVisible="{TemplateBinding Text, Converter={x:Static StringConverters.IsNullOrEmpty}}"
@@ -217,7 +217,7 @@
 				<Style Selector="^[(Theme.Color)=Current]">
 					<Style Selector="^:focus">
 						<Setter Property="SelectionBrush" Value="{DynamicResource ThemeColor05}" />
-						<Setter Property="SelectionForegroundBrush" Value="{DynamicResource ThemeForeground05}" />
+						<Setter Property="SelectionForegroundBrush" Value="{DynamicResource ThemeText05}" />
 					</Style>
 					<Style Selector="^[UseFloatingWatermark=true]:not(:empty) /template/ TextBlock#PART_FloatingWatermark">
 						<Setter Property="Foreground" Value="{DynamicResource ThemeColor05}" />
@@ -388,7 +388,7 @@
 					</Setter>
 				</Style>
 				<Style Selector="^.Search">
-					<Setter Property="Watermark" Value="Search" />
+					<Setter Property="PlaceholderText" Value="Search" />
 					<Setter Property="InnerLeftContent">
 						<Template>
 							<Path Classes="TextBoxSearch" />
@@ -446,15 +446,15 @@
 						Text="P@ssword!" />
 				<TextBox IsEnabled="False" Text="Testing" TextAlignment="Center" />
 				<TextBox x:Name="Default" Classes="Search ClearButton" />
-				<TextBox Classes="Search ClearButton" Watermark="email" Text="Testing" />
+				<TextBox Classes="Search ClearButton" PlaceholderText="email" Text="Testing" />
 				<StackPanel Orientation="Horizontal"
 						Spacing="8">
 					<TextBlock Text="Height" />
 					<TextBlock Text="{Binding ElementName=Default, Path=Bounds.Height}" />
 				</StackPanel>
-				<TextBox Watermark="email" Text="email" />
-				<TextBox Watermark="password" />
-				<TextBox Classes="Password" Watermark="password" Text="Password!" />
+				<TextBox PlaceholderText="email" Text="email" />
+				<TextBox PlaceholderText="password" />
+				<TextBox Classes="Password" PlaceholderText="password" Text="Password!" />
 				<TextBox Text="With ComboBox">
 					<TextBox.InnerRightContent>
 						<ComboBox SelectedIndex="0"
@@ -472,7 +472,7 @@
 				<DataTemplate DataType="ThemeColor">
 					<StackPanel Spacing="6">
 						<TextBox Theme.Color="{Binding}"
-								Watermark="Watermark"
+								PlaceholderText="PlaceholderText"
 								UseFloatingWatermark="True"
 								Text="{Binding}"
 								Width="120"/>
