@@ -9,12 +9,10 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.VisualTree;
 using AvaloniaDispatcher = Avalonia.Threading.Dispatcher;
 using AvaloniaDispatcherPriority = Avalonia.Threading.DispatcherPriority;
-using Cornerstone.Avalonia.Converters;
 using Cornerstone.Avalonia.Extensions;
 using Cornerstone.Avalonia.Resources;
 using Cornerstone.Extensions;
@@ -29,14 +27,18 @@ using BrowserWebViewAdapter = Cornerstone.Avalonia.Platforms.Browser.WebViewAdap
 namespace Cornerstone.Avalonia.Controls;
 
 /// <summary>
-/// Cross-platform web view. When <see cref="IsPaused" /> is true, the native surface is hidden
-/// and replaced with a snapshot image so Avalonia content can paint over this region.
+/// Cross-platform web view. When paused, the native surface is hidden so Avalonia content can
+/// paint over this region (snapshot underlay on desktop/mobile; DOM overlay hide on Browser).
 /// <para>
-/// Desktop/mobile use <see cref="NativeControlHost" /> for the platform web engine.
+/// Desktop/mobile use <see cref="PausableNativeHost" /> for the platform web engine.
 /// Browser (WASM) uses a DOM overlay instead — Avalonia's NativeControlHost path has locked up the UI.
 /// </para>
 /// </summary>
-public class WebView : Grid, IWebView, IDisposable
+#if BROWSER
+public class WebView : Grid, IWebView, INativeHostPausable, IDisposable
+#else
+public class WebView : PausableNativeHost, IWebView, INativeHostPausable, IDisposable
+#endif
 {
 	#region Constants
 
@@ -46,31 +48,41 @@ public class WebView : Grid, IWebView, IDisposable
 
 	#region Fields
 
-	public static readonly StyledProperty<double> BlurRadiusProperty;
-	public static readonly StyledProperty<bool> BlurWhenPausedProperty;
-	public static readonly StyledProperty<string> ContentProperty;
-	public static readonly StyledProperty<bool> IsNavigatingProperty;
-	public static readonly StyledProperty<bool> IsPausedProperty;
-	public static readonly StyledProperty<bool> ResumeOnResizeProperty;
-	public static readonly StyledProperty<Uri> UriProperty;
+	public static readonly StyledProperty<string> ContentProperty =
+		AvaloniaProperty.Register<WebView, string>(nameof(Content));
+
+	public static readonly StyledProperty<bool> IsNavigatingProperty =
+		AvaloniaProperty.Register<WebView, bool>(nameof(IsNavigating));
+
+	public static readonly StyledProperty<Uri> UriProperty =
+		AvaloniaProperty.Register<WebView, Uri>(nameof(Uri));
+
+	#if BROWSER
+	public static readonly StyledProperty<double> BlurRadiusProperty =
+		AvaloniaProperty.Register<WebView, double>(nameof(BlurRadius), 30);
+
+	public static readonly StyledProperty<bool> BlurWhenPausedProperty =
+		AvaloniaProperty.Register<WebView, bool>(nameof(BlurWhenPaused));
+
+	public static readonly StyledProperty<bool> IsPausedProperty =
+		AvaloniaProperty.Register<WebView, bool>(nameof(IsPaused));
+
+	public static readonly StyledProperty<bool> ResumeOnResizeProperty =
+		AvaloniaProperty.Register<WebView, bool>(nameof(ResumeOnResize), true);
 
 	private Size _boundsWhenPaused;
 	private readonly Border _fallbackBackground;
-	#if !BROWSER
-	private readonly WebViewNativeHost _nativeHost;
-	private Bitmap _placeholderBitmap;
-	#endif
 	private readonly Image _placeholderImage;
 	private int _pauseOperationId;
-	private PropertyChangedEventHandler _propertyChangedHandler;
-	private bool _suppressNavigationPropertyHandler;
 	private bool _suppressResizeResume;
-	private IWebViewAdapter _webViewAdapter;
-	private TaskCompletionSource _webViewReadyCompletion;
-	#if BROWSER
+	private TaskCompletionSource _webViewReadyCompletion = new();
 	private Rect _lastOverlayBounds;
 	private bool _browserHostQueued;
 	#endif
+
+	private PropertyChangedEventHandler _propertyChangedHandler;
+	private bool _suppressNavigationPropertyHandler;
+	private IWebViewAdapter _webViewAdapter;
 
 	#endregion
 
@@ -78,11 +90,10 @@ public class WebView : Grid, IWebView, IDisposable
 
 	public WebView()
 	{
-		_webViewReadyCompletion = new();
-
 		Cookies = [];
 		Profile = DefaultProfileName;
 
+		#if BROWSER
 		_fallbackBackground = new Border
 		{
 			IsVisible = false,
@@ -100,38 +111,18 @@ public class WebView : Grid, IWebView, IDisposable
 			VerticalAlignment = VerticalAlignment.Stretch
 		};
 
-		// Image under the native host in Avalonia Z-order. Native surface paints above Avalonia
-		// until SetNativeSurfaceVisible(false) hides it; then the snapshot is visible.
 		Children.Add(_fallbackBackground);
 		Children.Add(_placeholderImage);
-
-		#if !BROWSER
-		_nativeHost = new WebViewNativeHost(this)
-		{
-			HorizontalAlignment = HorizontalAlignment.Stretch,
-			VerticalAlignment = VerticalAlignment.Stretch
-		};
-		Children.Add(_nativeHost);
 		#endif
-	}
-
-	static WebView()
-	{
-		BlurRadiusProperty = AvaloniaProperty.Register<WebView, double>(nameof(BlurRadius), 30);
-		BlurWhenPausedProperty = AvaloniaProperty.Register<WebView, bool>(nameof(BlurWhenPaused));
-		ContentProperty = AvaloniaProperty.Register<WebView, string>(nameof(Content));
-		IsNavigatingProperty = AvaloniaProperty.Register<WebView, bool>(nameof(IsNavigating));
-		IsPausedProperty = AvaloniaProperty.Register<WebView, bool>(nameof(IsPaused));
-		ResumeOnResizeProperty = AvaloniaProperty.Register<WebView, bool>(nameof(ResumeOnResize), true);
-		UriProperty = AvaloniaProperty.Register<WebView, Uri>(nameof(Uri));
 	}
 
 	#endregion
 
 	#region Properties
 
+	#if BROWSER
 	/// <summary>
-	/// Gaussian blur radius applied to the placeholder when <see cref="BlurWhenPaused" /> is true. Default 30.
+	/// Gaussian blur radius applied when <see cref="BlurWhenPaused" /> is true. Default 30.
 	/// </summary>
 	public double BlurRadius
 	{
@@ -140,13 +131,14 @@ public class WebView : Grid, IWebView, IDisposable
 	}
 
 	/// <summary>
-	/// When true and paused, applies <see cref="BlurEffect" /> to the full-resolution snapshot.
+	/// When true and paused, applies blur to the placeholder. Browser has no snapshot; property is retained for API parity.
 	/// </summary>
 	public bool BlurWhenPaused
 	{
 		get => GetValue(BlurWhenPausedProperty);
 		set => SetValue(BlurWhenPausedProperty, value);
 	}
+	#endif
 
 	public bool CanGoBack => _webViewAdapter?.CanGoBack ?? false;
 
@@ -162,10 +154,12 @@ public class WebView : Grid, IWebView, IDisposable
 
 	public byte[] Favicon => _webViewAdapter?.Favicon;
 
+	#if BROWSER
 	/// <summary>
 	/// Whether the native web surface is currently painting.
 	/// </summary>
 	public bool IsNativeSurfaceVisible => _webViewAdapter?.IsNativeSurfaceVisible ?? true;
+	#endif
 
 	public bool IsNavigating
 	{
@@ -173,27 +167,30 @@ public class WebView : Grid, IWebView, IDisposable
 		set => SetValue(IsNavigatingProperty, value);
 	}
 
+	#if BROWSER
 	/// <summary>
-	/// When true, freezes the page as a snapshot image and hides the native web surface so
-	/// Avalonia controls can appear over this region. When false, restores the live WebView.
-	/// On Browser, pause hides the DOM overlay (no snapshot).
+	/// When true, hides the DOM overlay so Avalonia content can appear over this region.
 	/// </summary>
 	public bool IsPaused
 	{
 		get => GetValue(IsPausedProperty);
 		set => SetValue(IsPausedProperty, value);
 	}
+	#endif
 
 	public string Profile { get; set; }
 
+	#if BROWSER
 	/// <summary>
-	/// When true (default), a significant size change while paused restores the live WebView.
+	/// When true (default), a significant size change while paused can restore the live surface.
+	/// Auto-resume is currently disabled; property is retained for API compatibility.
 	/// </summary>
 	public bool ResumeOnResize
 	{
 		get => GetValue(ResumeOnResizeProperty);
 		set => SetValue(ResumeOnResizeProperty, value);
 	}
+	#endif
 
 	public string Title => _webViewAdapter?.Title;
 
@@ -206,21 +203,6 @@ public class WebView : Grid, IWebView, IDisposable
 	#endregion
 
 	#region Methods
-
-	/// <summary>
-	/// Captures the currently visible web surface as a PNG.
-	/// </summary>
-	public async Task<WebViewSnapshot> CaptureSnapshotAsync(WebViewSnapshotOptions options = null)
-	{
-		await WaitForNativeHost().ConfigureAwait(true);
-
-		if (_webViewAdapter == null)
-		{
-			return WebViewSnapshot.Failed("WebView adapter is not available.");
-		}
-
-		return await _webViewAdapter.CaptureSnapshotAsync(options).ConfigureAwait(true);
-	}
 
 	public void ClearBrowsingData()
 	{
@@ -245,11 +227,13 @@ public class WebView : Grid, IWebView, IDisposable
 		_webViewAdapter?.DeleteProfile(profileName);
 	}
 
+	#if BROWSER
 	public void Dispose()
 	{
 		Dispose(true);
 		GC.SuppressFinalize(this);
 	}
+	#endif
 
 	public IEnumerable<string> GetAvailableProfiles()
 	{
@@ -364,11 +348,50 @@ public class WebView : Grid, IWebView, IDisposable
 		_webViewAdapter?.Stop();
 	}
 
+	#if BROWSER
 	public Task WaitForNativeHost()
 	{
 		return _webViewReadyCompletion.Task;
 	}
 
+	/// <summary>
+	/// Captures the currently visible web surface as a PNG.
+	/// </summary>
+	public async Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
+	{
+		await WaitForNativeHost().ConfigureAwait(true);
+
+		if (_webViewAdapter == null)
+		{
+			return NativeSurfaceSnapshot.Failed("WebView adapter is not available.");
+		}
+
+		return await _webViewAdapter.CaptureSnapshotAsync(options).ConfigureAwait(true);
+	}
+	#endif
+
+	#if !BROWSER
+	/// <inheritdoc />
+	protected override IPlatformHandle CreateNativeControlCore(IPlatformHandle parent)
+	{
+		return EnsureAdapterInitialized();
+	}
+
+	/// <inheritdoc />
+	protected override void DestroyNativeControlCore(IPlatformHandle control)
+	{
+		// Keep adapter alive across temporary host teardown; Dispose owns lifetime.
+		// NestedNativeHost still runs Avalonia's DestroyNativeControlCore for attachment cleanup.
+	}
+
+	/// <inheritdoc />
+	protected override IPausableNativeSurface GetSurface()
+	{
+		return _webViewAdapter;
+	}
+	#endif
+
+	#if BROWSER
 	protected virtual void Dispose(bool disposing)
 	{
 		if (!disposing)
@@ -376,25 +399,20 @@ public class WebView : Grid, IWebView, IDisposable
 			return;
 		}
 
-		ClearPlaceholderBitmap();
-		#if BROWSER
 		DetachBrowserOverlay();
-		#endif
-
-		if (_webViewAdapter is null)
+		ReleaseAdapter();
+	}
+	#else
+	protected override void Dispose(bool disposing)
+	{
+		if (disposing)
 		{
-			return;
+			ReleaseAdapter();
 		}
 
-		_webViewReadyCompletion = new TaskCompletionSource();
-		_webViewAdapter.NavigationStarted -= WebViewAdapterOnNavigationStarted;
-		_webViewAdapter.NavigationCompleted -= WebViewAdapterOnNavigationCompleted;
-		_webViewAdapter.NewWindowRequested -= WebViewAdapterOnNewWindowRequested;
-		_webViewAdapter.PropertyChanged -= WebViewAdapterOnPropertyChanged;
-
-		DisposableExtensions.TryDispose(_webViewAdapter);
-		_webViewAdapter = null;
+		base.Dispose(disposing);
 	}
+	#endif
 
 	protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
 	{
@@ -437,31 +455,24 @@ public class WebView : Grid, IWebView, IDisposable
 			}
 		}
 
+		#if BROWSER
 		if (change.Property == IsPausedProperty)
 		{
 			_ = ApplyPausedStateAsync(change.GetNewValue<bool>());
 		}
-		else if ((change.Property == BlurWhenPausedProperty) || (change.Property == BlurRadiusProperty))
-		{
-			if (IsPaused)
-			{
-				UpdatePlaceholderBlur();
-			}
-		}
 		else if (change.Property == IsVisibleProperty)
 		{
-			#if BROWSER
 			UpdateBrowserOverlayVisibility();
-			#endif
 		}
+		#endif
 
 		base.OnPropertyChanged(change);
 
+		#if BROWSER
 		if (change.Property == BoundsProperty)
 		{
 			var newValue = change.GetNewValue<Rect>();
 
-			// Do not resize/show the native HWND while paused — Avalonia + adapter would re-open airspace.
 			if (!IsPaused && (_webViewAdapter?.IsNativeSurfaceVisible != false))
 			{
 				const float scaling = 1.0f;
@@ -469,12 +480,12 @@ public class WebView : Grid, IWebView, IDisposable
 			}
 
 			HandleBoundsChanged(newValue.Size);
-			#if BROWSER
 			UpdateBrowserOverlayBounds();
-			#endif
 		}
+		#endif
 	}
 
+	#if BROWSER
 	private async Task ApplyPausedStateAsync(bool paused)
 	{
 		var operationId = ++_pauseOperationId;
@@ -489,23 +500,6 @@ public class WebView : Grid, IWebView, IDisposable
 		}
 	}
 
-	private void ClearPlaceholderBitmap()
-	{
-		_placeholderImage.Source = null;
-		#if !BROWSER
-		_placeholderBitmap?.Dispose();
-		_placeholderBitmap = null;
-		#endif
-	}
-
-	#if !BROWSER
-	private IPlatformHandle CreateNativeControlCore(IPlatformHandle parent)
-	{
-		return EnsureAdapterInitialized();
-	}
-	#endif
-
-	#if BROWSER
 	private void DetachBrowserOverlay()
 	{
 		if (_webViewAdapter is BrowserWebViewAdapter browserAdapter)
@@ -528,6 +522,44 @@ public class WebView : Grid, IWebView, IDisposable
 			browserAdapter.AttachOverlay();
 			UpdateBrowserOverlayBounds();
 			UpdateBrowserOverlayVisibility();
+		}
+	}
+
+	private void HandleBoundsChanged(Size newSize)
+	{
+		if (_suppressResizeResume || !IsPaused || !ResumeOnResize)
+		{
+			return;
+		}
+
+		const double epsilon = 1.0;
+		if ((Math.Abs(newSize.Width - _boundsWhenPaused.Width) > epsilon)
+			|| (Math.Abs(newSize.Height - _boundsWhenPaused.Height) > epsilon))
+		{
+			// Auto-resume on resize is currently disabled.
+			//IsPaused = false;
+		}
+	}
+
+	private async Task PauseCoreAsync(int operationId)
+	{
+		_suppressResizeResume = true;
+		try
+		{
+			// Browser: no snapshot support; hide the DOM overlay so Avalonia can paint over the slot.
+			_ = operationId;
+			_placeholderImage.Source = null;
+			_placeholderImage.IsVisible = false;
+			_fallbackBackground.Background = ResourceService.GetColorAsBrush("Background03");
+			_fallbackBackground.IsVisible = true;
+			_webViewAdapter?.SetNativeSurfaceVisible(false);
+			OnPropertyChanged(nameof(IsNativeSurfaceVisible));
+			_boundsWhenPaused = Bounds.Size;
+			await Task.CompletedTask.ConfigureAwait(true);
+		}
+		finally
+		{
+			_suppressResizeResume = false;
 		}
 	}
 
@@ -557,172 +589,26 @@ public class WebView : Grid, IWebView, IDisposable
 			}
 		}, AvaloniaDispatcherPriority.Background);
 	}
-	#endif
-
-	private IPlatformHandle EnsureAdapterInitialized()
-	{
-		if (_webViewAdapter != null)
-		{
-			return _webViewAdapter.PlatformHandle;
-		}
-
-		_webViewAdapter = AppBootstrap.GetInstance<IWebViewAdapter>();
-
-		_webViewAdapter.Initialize(Profile);
-		_webViewAdapter.NavigationStarted += WebViewAdapterOnNavigationStarted;
-		_webViewAdapter.NavigationCompleted += WebViewAdapterOnNavigationCompleted;
-		_webViewAdapter.NewWindowRequested += WebViewAdapterOnNewWindowRequested;
-		_webViewAdapter.PropertyChanged += WebViewAdapterOnPropertyChanged;
-		_webViewReadyCompletion.TrySetResult();
-
-		_suppressNavigationPropertyHandler = true;
-		try
-		{
-			if (!string.IsNullOrWhiteSpace(Uri?.OriginalString))
-			{
-				_webViewAdapter.Navigate(Uri);
-			}
-			else if (!string.IsNullOrWhiteSpace(Content))
-			{
-				_webViewAdapter.NavigateToString(Content);
-			}
-		}
-		finally
-		{
-			_suppressNavigationPropertyHandler = false;
-		}
-
-		// If IsPaused was set before the host was ready, apply once ready.
-		if (IsPaused)
-		{
-			_ = ApplyPausedStateAsync(true);
-		}
-
-		return _webViewAdapter.PlatformHandle;
-	}
-
-	private void HandleBoundsChanged(Size newSize)
-	{
-		if (_suppressResizeResume || !IsPaused || !ResumeOnResize)
-		{
-			return;
-		}
-
-		const double epsilon = 1.0;
-		if ((Math.Abs(newSize.Width - _boundsWhenPaused.Width) > epsilon)
-			|| (Math.Abs(newSize.Height - _boundsWhenPaused.Height) > epsilon))
-		{
-			// Note: tbd - should we unpause on resize? Not now, maybe later.
-			//IsPaused = false;
-		}
-	}
-
-	private async Task PauseCoreAsync(int operationId)
-	{
-		_suppressResizeResume = true;
-		try
-		{
-			#if BROWSER
-			// Browser: no snapshot support; hide the DOM overlay so Avalonia can paint over the slot.
-			_ = operationId;
-			ClearPlaceholderBitmap();
-			_placeholderImage.IsVisible = false;
-			_fallbackBackground.Background = ResourceService.GetColorAsBrush("Background03");
-			_fallbackBackground.IsVisible = true;
-			_webViewAdapter?.SetNativeSurfaceVisible(false);
-			OnPropertyChanged(nameof(IsNativeSurfaceVisible));
-			_boundsWhenPaused = Bounds.Size;
-			await Task.CompletedTask.ConfigureAwait(true);
-			#else
-			// Always capture full resolution; blur is applied via Effect on the image.
-			var snapshot = await CaptureSnapshotAsync(WebViewSnapshotOptions.Default()).ConfigureAwait(true);
-			if (operationId != _pauseOperationId)
-			{
-				return;
-			}
-
-			ClearPlaceholderBitmap();
-
-			if (snapshot is { Success: true, PngBytes: { Length: > 0 } })
-			{
-				_placeholderBitmap = ImageConverters.BytesToBitmap(snapshot.PngBytes);
-				_placeholderImage.Source = _placeholderBitmap;
-				_placeholderImage.Opacity = 1.0;
-				UpdatePlaceholderBlur();
-				_placeholderImage.IsVisible = true;
-				_fallbackBackground.IsVisible = false;
-			}
-			else
-			{
-				_placeholderImage.Effect = null;
-				_placeholderImage.IsVisible = false;
-				_fallbackBackground.Background = ResourceService.GetColorAsBrush("Background03");
-				_fallbackBackground.IsVisible = true;
-			}
-
-			// Avalonia NativeControlHost re-shows the HWND on layout via ShowInBounds unless the
-			// host is not effectively visible (then it calls HideWithSize). Hiding only the
-			// platform control is not enough on Windows.
-			_nativeHost.IsVisible = false;
-			_webViewAdapter?.SetNativeSurfaceVisible(false);
-			OnPropertyChanged(nameof(IsNativeSurfaceVisible));
-			_boundsWhenPaused = Bounds.Size;
-			#endif
-		}
-		finally
-		{
-			_suppressResizeResume = false;
-		}
-	}
-
-	private void RefreshCookies()
-	{
-		if (_webViewAdapter == null)
-		{
-			return;
-		}
-
-		_webViewAdapter
-			.GetCookiesAsync()
-			.ContinueWith(x =>
-			{
-				if (x.IsFaulted || x.IsCanceled)
-				{
-					return;
-				}
-
-				CornerstoneApplication
-					.CornerstoneDispatcher
-					.Dispatch(() => Cookies.Load(x.Result));
-			});
-	}
 
 	private void ResumeCore()
 	{
 		_pauseOperationId++;
-		#if !BROWSER
-		_nativeHost.IsVisible = true;
-		#endif
 		_webViewAdapter?.SetNativeSurfaceVisible(true);
 		OnPropertyChanged(nameof(IsNativeSurfaceVisible));
-		ClearPlaceholderBitmap();
+		_placeholderImage.Source = null;
 		_placeholderImage.Effect = null;
 		_placeholderImage.IsVisible = false;
 		_fallbackBackground.IsVisible = false;
 
-		// Re-apply size after the native host is shown again.
 		if (Bounds is { Width: > 0, Height: > 0 })
 		{
 			const float scaling = 1.0f;
 			_webViewAdapter?.HandleResize((int) (Bounds.Width * scaling), (int) (Bounds.Height * scaling), scaling);
 		}
 
-		#if BROWSER
 		UpdateBrowserOverlayBounds();
-		#endif
 	}
 
-	#if BROWSER
 	private void UpdateBrowserOverlayBounds()
 	{
 		if (_webViewAdapter is not BrowserWebViewAdapter browserAdapter)
@@ -784,16 +670,95 @@ public class WebView : Grid, IWebView, IDisposable
 	}
 	#endif
 
-	private void UpdatePlaceholderBlur()
+	private IPlatformHandle EnsureAdapterInitialized()
 	{
-		if (BlurWhenPaused && (BlurRadius > 0))
+		if (_webViewAdapter != null)
 		{
-			_placeholderImage.Effect = new BlurEffect { Radius = BlurRadius };
+			return _webViewAdapter.PlatformHandle;
 		}
-		else
+
+		_webViewAdapter = AppBootstrap.GetInstance<IWebViewAdapter>();
+
+		_webViewAdapter.Initialize(Profile);
+		_webViewAdapter.NavigationStarted += WebViewAdapterOnNavigationStarted;
+		_webViewAdapter.NavigationCompleted += WebViewAdapterOnNavigationCompleted;
+		_webViewAdapter.NewWindowRequested += WebViewAdapterOnNewWindowRequested;
+		_webViewAdapter.PropertyChanged += WebViewAdapterOnPropertyChanged;
+
+		#if BROWSER
+		_webViewReadyCompletion.TrySetResult();
+		#endif
+
+		_suppressNavigationPropertyHandler = true;
+		try
 		{
-			_placeholderImage.Effect = null;
+			if (!string.IsNullOrWhiteSpace(Uri?.OriginalString))
+			{
+				_webViewAdapter.Navigate(Uri);
+			}
+			else if (!string.IsNullOrWhiteSpace(Content))
+			{
+				_webViewAdapter.NavigateToString(Content);
+			}
 		}
+		finally
+		{
+			_suppressNavigationPropertyHandler = false;
+		}
+
+		#if BROWSER
+		// If IsPaused was set before the host was ready, apply once ready.
+		if (IsPaused)
+		{
+			_ = ApplyPausedStateAsync(true);
+		}
+		#endif
+
+		return _webViewAdapter.PlatformHandle;
+	}
+
+	private void RefreshCookies()
+	{
+		if (_webViewAdapter == null)
+		{
+			return;
+		}
+
+		_webViewAdapter
+			.GetCookiesAsync()
+			.ContinueWith(x =>
+			{
+				if (x.IsFaulted || x.IsCanceled)
+				{
+					return;
+				}
+
+				CornerstoneApplication
+					.CornerstoneDispatcher
+					.Dispatch(() => Cookies.Load(x.Result));
+			});
+	}
+
+	private void ReleaseAdapter()
+	{
+		if (_webViewAdapter is null)
+		{
+			return;
+		}
+
+		#if !BROWSER
+		ResetNativeHostReady();
+		#else
+		_webViewReadyCompletion = new TaskCompletionSource();
+		#endif
+
+		_webViewAdapter.NavigationStarted -= WebViewAdapterOnNavigationStarted;
+		_webViewAdapter.NavigationCompleted -= WebViewAdapterOnNavigationCompleted;
+		_webViewAdapter.NewWindowRequested -= WebViewAdapterOnNewWindowRequested;
+		_webViewAdapter.PropertyChanged -= WebViewAdapterOnPropertyChanged;
+
+		DisposableExtensions.TryDispose(_webViewAdapter);
+		_webViewAdapter = null;
 	}
 
 	private void WebViewAdapterOnNavigationCompleted(object sender, WebViewNavigationEventArgs e)
@@ -805,6 +770,13 @@ public class WebView : Grid, IWebView, IDisposable
 			{
 				IsNavigating = false;
 				OnPropertyChanged(nameof(Uri));
+				#if !BROWSER
+				// Page finished loading — refresh freeze-frame underlay for snappy pause later.
+				if (!IsPaused)
+				{
+					RequestWarmUnderlay();
+				}
+				#endif
 			});
 		NavigationCompleted?.Invoke(this, e);
 	}
@@ -890,46 +862,4 @@ public class WebView : Grid, IWebView, IDisposable
 	public event EventHandler<WebViewNewWindowEventArgs> NewWindowRequested;
 
 	#endregion
-
-	#if !BROWSER
-	#region Classes
-
-	/// <summary>
-	/// Thin native host so <see cref="WebView" /> can own both the snapshot image and the native surface.
-	/// </summary>
-	private sealed class WebViewNativeHost : NativeControlHost
-	{
-		#region Fields
-
-		private readonly WebView _owner;
-
-		#endregion
-
-		#region Constructors
-
-		public WebViewNativeHost(WebView owner)
-		{
-			_owner = owner;
-		}
-
-		#endregion
-
-		#region Methods
-
-		protected override IPlatformHandle CreateNativeControlCore(IPlatformHandle parent)
-		{
-			return _owner.CreateNativeControlCore(parent);
-		}
-
-		protected override void DestroyNativeControlCore(IPlatformHandle control)
-		{
-			// Keep adapter alive across temporary host teardown; WebView.Dispose owns lifetime.
-			base.DestroyNativeControlCore(control);
-		}
-
-		#endregion
-	}
-
-	#endregion
-	#endif
 }

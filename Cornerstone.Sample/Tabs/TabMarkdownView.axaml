@@ -28,6 +28,10 @@
 							Click="RunSampleStream">
 						Sample Stream
 					</Button>
+					<ComboBox Width="120"
+							ItemsSource="{x:Static tabs:TabMarkdownView.StreamSpeeds}"
+							SelectedItem="{Binding StreamSpeed, Mode=TwoWay}"
+							ToolTip.Tip="How fast tokens stream into the editor and MarkdownView" />
 					<ToggleSwitch IsChecked="{Binding LoopSample}"
 							OnContent="Loop Sample"
 							OffContent="Loop Sample" />

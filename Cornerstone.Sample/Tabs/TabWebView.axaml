@@ -46,7 +46,7 @@
 					MaxWidth="360">
 				<StackPanel Spacing="8">
 					<TextBlock Text="Avalonia on top while paused"
-							FontSize="16"
+							FontSize="{DynamicResource ControlFontSize}"
 							FontWeight="SemiBold"
 							HorizontalAlignment="Center" />
 					<TextBlock Text="WebView.IsPaused freezes a snapshot and hides the native surface. Your overlay is just normal Avalonia Z-order."

@@ -1,0 +1,21 @@
+<Solution>
+  <Folder Name="/Cornerstone.Extension/">
+    <Project Path="Cornerstone.VisualStudio.Core/Cornerstone.VisualStudio.Core.csproj">
+      <BuildDependency Project="templates/ProjectTemplatesDownloader/ProjectTemplatesDownloader.csproj" />
+    </Project>
+    <Project Path="Cornerstone.VisualStudio/Cornerstone.VisualStudio.csproj">
+      <Deploy Solution="Debug|*" />
+    </Project>
+    <Project Path="Documentation/Documentation.csproj" Id="3f3ea69b-d726-40de-8e5e-8a8e7c92f7bd" />
+    <Project Path="templates/ProjectTemplatesDownloader/ProjectTemplatesDownloader.csproj" />
+  </Folder>
+  <Folder Name="/Cornerstone.Extension/Build/">
+    <File Path="Directory.Build.props" />
+    <File Path="Scripts/Update-ExtensionVersion.ps1" />
+  </Folder>
+  <Folder Name="/Cornerstone.Extension/Tests/">
+    <Project Path="Cornerstone.VisualStudio.Tests/Cornerstone.VisualStudio.Tests.csproj" />
+    <Project Path="TestAssembly1/TestAssembly1.csproj" />
+    <Project Path="TestAssembly2/TestAssembly2.csproj" />
+  </Folder>
+</Solution>

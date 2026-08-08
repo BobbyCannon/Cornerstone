@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Library</OutputType>
+		<TargetFrameworks>net10.0</TargetFrameworks>
+		<IsPackable>false</IsPackable>
+		<SignAssembly>true</SignAssembly>
+		<AssemblyOriginatorKeyFile>..\Key.snk</AssemblyOriginatorKeyFile>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Remove="Parsing\Fragments\GetParentTagNameEmpty.xml" />
+		<None Remove="Parsing\Fragments\ShouldGetParentTagNameAtLevelOneLevel.xml" />
+		<None Remove="Parsing\Fragments\ShouldGetParentTagNameAtLevelOneLevelWithCDATA.xml" />
+		<None Remove="Parsing\Fragments\ShouldGetParentTagNameAtLevelOneLevelWithComment.xml" />
+		<None Remove="Parsing\Fragments\ShouldGetParentTagNameAtLevelTwoLevel.xml" />
+		<None Remove="Parsing\Fragments\ShouldGetParentTagNameAtLevelTwoLevelWithCDATA.xml" />
+		<None Remove="Parsing\Fragments\ShouldGetParentTagNameAtLevelTwoLevelWithComment.xml" />
+		<None Remove="Parsing\Test.xml" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
+		<PackageReference Include="xunit" Version="2.9.3" />
+		<PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="Parsing\Fragments\ShouldGetParentTagNameAtLevelTwoLevel.xml" />
+		<EmbeddedResource Include="Parsing\Fragments\ShouldGetParentTagNameAtLevelTwoLevelWithCDATA.xml" />
+		<EmbeddedResource Include="Parsing\Fragments\ShouldGetParentTagNameAtLevelOneLevelWithCDATA.xml" />
+		<EmbeddedResource Include="Parsing\Fragments\ShouldGetParentTagNameAtLevelTwoLevelWithComment.xml" />
+		<EmbeddedResource Include="Parsing\Fragments\ShouldGetParentTagNameAtLevelOneLevelWithComment.xml" />
+		<EmbeddedResource Include="Parsing\Fragments\ShouldGetParentTagNameAtLevelOneLevel.xml" />
+		<EmbeddedResource Include="Test.bmp" />
+		<AvaloniaResource Include="Test.bmp" />
+		<AvaloniaResource Include="Test.xaml" />
+		<AvaloniaResource Include="TestCompiledTheme.xaml" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Cornerstone.VisualStudio.Core\Cornerstone.VisualStudio.Core.csproj" />
+		<ProjectReference Include="..\TestAssembly1\TestAssembly1.csproj" Aliases="A1" />
+		<ProjectReference Include="..\TestAssembly2\TestAssembly2.csproj" Aliases="A2" />
+	</ItemGroup>
+</Project>

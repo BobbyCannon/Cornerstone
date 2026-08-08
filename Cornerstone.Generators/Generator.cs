@@ -437,6 +437,7 @@ public partial class Generator : IIncrementalGenerator
 				IsTypeParameter = x.Type.Kind == SymbolKind.TypeParameter,
 				HasNestedTypeParameter = x.Type.TypeKind == TypeKind.TypeParameter,
 				NullableAnnotation = x.NullableAnnotation,
+				ParameterSymbol = x.Type,
 				ParameterType = x.Type.ToDisplayString(SymbolDisplayFormats.GlobalFullyQualifiedName),
 				HasDefaultValue = x.HasExplicitDefaultValue,
 				DefaultValue = (x.HasExplicitDefaultValue ? x.ExplicitDefaultValue : null)!,

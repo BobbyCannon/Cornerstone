@@ -107,9 +107,9 @@ internal class WebViewAdapter : CornerstoneObject, IWebViewAdapter, IDisposable
 	{
 	}
 
-	public Task<WebViewSnapshot> CaptureSnapshotAsync(WebViewSnapshotOptions options = null)
+	public Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
 	{
-		return Task.FromResult(WebViewSnapshot.Failed("Browser WebView snapshot is not supported."));
+		return Task.FromResult(NativeSurfaceSnapshot.Failed("Browser WebView snapshot is not supported."));
 	}
 
 	public Task ClearBrowsingDataAsync()

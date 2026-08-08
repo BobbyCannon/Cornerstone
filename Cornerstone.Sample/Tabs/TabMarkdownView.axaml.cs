@@ -10,7 +10,6 @@ using Avalonia.Interactivity;
 using Cornerstone.Avalonia;
 using Cornerstone.Avalonia.Text;
 using Cornerstone.Data;
-using Cornerstone.Generators;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
 
@@ -103,6 +102,17 @@ public partial class TabMarkdownView : CornerstoneUserControl
 
 	#region Fields
 
+	/// <summary>
+	/// Combo options for stream speed (Slow → Extreme).
+	/// </summary>
+	public static readonly MarkdownStreamSpeed[] StreamSpeeds =
+	[
+		MarkdownStreamSpeed.Slow,
+		MarkdownStreamSpeed.Normal,
+		MarkdownStreamSpeed.Fast,
+		MarkdownStreamSpeed.Extreme
+	];
+
 	private CancellationTokenSource _sampleLoopToken;
 
 	#endregion
@@ -117,6 +127,7 @@ public partial class TabMarkdownView : CornerstoneUserControl
 	public TabMarkdownView(IRuntimeInformation runtimeInformation)
 	{
 		RuntimeInformation = runtimeInformation;
+		StreamSpeed = MarkdownStreamSpeed.Normal;
 		DataContext = this;
 		InitializeComponent();
 	}
@@ -129,6 +140,12 @@ public partial class TabMarkdownView : CornerstoneUserControl
 	public partial bool LoopSample { get; set; }
 
 	public IRuntimeInformation RuntimeInformation { get; }
+
+	/// <summary>
+	/// How quickly tokens are appended during Sample Stream.
+	/// </summary>
+	[Notify]
+	public partial MarkdownStreamSpeed StreamSpeed { get; set; }
 
 	#endregion
 
@@ -149,7 +166,8 @@ public partial class TabMarkdownView : CornerstoneUserControl
 	protected override void OnLoaded(RoutedEventArgs e)
 	{
 		TextEditor.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
-		TextEditor.Text = SampleMarkdown;
+		// Same normalization as stream so line count matches a finished Sample Stream.
+		TextEditor.Text = NormalizeNewlines(SampleMarkdown);
 		base.OnLoaded(e);
 	}
 
@@ -167,10 +185,14 @@ public partial class TabMarkdownView : CornerstoneUserControl
 			{
 				await RunSingleStreamPass(token);
 
-				// Only delay between full loops if we're looping
+				// Pause between full loops when looping (scaled by speed).
 				if (LoopSample && !token.IsCancellationRequested)
 				{
-					await Task.Delay(500, token);
+					var loopPause = GetStreamTiming(StreamSpeed).LoopPause;
+					if (loopPause > 0)
+					{
+						await Task.Delay(loopPause, token);
+					}
 				}
 			} while (LoopSample && !token.IsCancellationRequested);
 		}
@@ -180,8 +202,7 @@ public partial class TabMarkdownView : CornerstoneUserControl
 		}
 		catch (Exception)
 		{
-			// Log unexpected error
-			//Debug.WriteLine($"Streaming error: {ex}");
+			// Ignore unexpected stream errors in the demo tab
 		}
 		finally
 		{
@@ -194,7 +215,10 @@ public partial class TabMarkdownView : CornerstoneUserControl
 	{
 		TextEditor.Text = string.Empty;
 
-		var chunks = SplitIntoStreamingChunks(SampleMarkdown, 60, 15);
+		// Same text every run (LF-normalized) so line counts never drift.
+		var source = NormalizeNewlines(SampleMarkdown);
+		var timing = GetStreamTiming(StreamSpeed);
+		var chunks = SplitIntoStreamingChunks(source, timing.ChunkSize, timing.MinChunk);
 
 		foreach (var chunk in chunks)
 		{
@@ -202,47 +226,107 @@ public partial class TabMarkdownView : CornerstoneUserControl
 
 			TextEditor.ViewModel.Append(chunk);
 
-			await Task.Delay(RandomGenerator.NextInteger(10, 50), token);
+			// Fixed delay per speed (not random) so pacing is repeatable too.
+			if (timing.DelayMilliseconds > 0)
+			{
+				await Task.Delay(timing.DelayMilliseconds, token);
+			}
 
 			TextEditor.ScrollToEnd();
 			MarkdownView.ScrollToEnd();
 		}
 	}
 
-	private static List<string> SplitIntoStreamingChunks(string text, int chunkSize = 60, int minChunk = 15)
+	/// <summary>
+	/// Fixed delay + chunk size per speed. Extreme has no delay and large chunks.
+	/// </summary>
+	private static (int DelayMilliseconds, int ChunkSize, int MinChunk, int LoopPause) GetStreamTiming(
+		MarkdownStreamSpeed speed)
+	{
+		return speed switch
+		{
+			MarkdownStreamSpeed.Slow => (120, 28, 10, 800),
+			MarkdownStreamSpeed.Fast => (8, 100, 40, 200),
+			MarkdownStreamSpeed.Extreme => (0, 280, 120, 50),
+			_ => (30, 60, 15, 500)
+		};
+	}
+
+	/// <summary>
+	/// Deterministic chunks: same input + size always yields the same split.
+	/// Prefers breaks after newlines, then spaces; never splits a CRLF pair.
+	/// </summary>
+	private static List<string> SplitIntoStreamingChunks(string text, int chunkSize, int minChunk)
 	{
 		var chunks = new List<string>();
+		if (string.IsNullOrEmpty(text))
+		{
+			return chunks;
+		}
+
+		chunkSize = Math.Max(1, chunkSize);
+		minChunk = Math.Clamp(minChunk, 1, chunkSize);
 		var position = 0;
 
 		while (position < text.Length)
 		{
 			var remaining = text.Length - position;
-			var currentChunkSize = Math.Min(chunkSize, remaining);
-
-			// Occasionally make smaller or larger chunks (more natural)
-			if (Random.Shared.Next(0, 10) < 3)
+			if (remaining <= chunkSize)
 			{
-				currentChunkSize = Math.Max(minChunk, currentChunkSize / 2);
+				chunks.Add(text[position..]);
+				break;
 			}
 
-			var length = Math.Min(remaining, currentChunkSize);
-			var chunk = text.Substring(position, length);
-
-			// Try to avoid cutting words in half when possible (better visual flow)
-			if (((position + length) < text.Length) && !char.IsWhiteSpace(chunk[^1]))
-			{
-				var lastSpace = chunk.LastIndexOf(' ');
-				if (lastSpace > (length / 2))
-				{
-					length = lastSpace + 1;
-				}
-			}
-
+			var length = FindChunkLength(text, position, chunkSize, minChunk);
 			chunks.Add(text.Substring(position, length));
 			position += length;
 		}
 
 		return chunks;
+	}
+
+	/// <summary>
+	/// Choose a stable end offset within [minChunk, chunkSize], preferring \n then space.
+	/// </summary>
+	private static int FindChunkLength(string text, int position, int chunkSize, int minChunk)
+	{
+		var end = position + chunkSize;
+		// Prefer break after the last newline in the window (include the newline).
+		for (var i = end - 1; i >= (position + minChunk); i--)
+		{
+			if (text[i] == '\n')
+			{
+				return (i + 1) - position;
+			}
+		}
+
+		// Else last space / tab in the window.
+		for (var i = end - 1; i >= (position + minChunk); i--)
+		{
+			var c = text[i];
+			if ((c == ' ') || (c == '\t'))
+			{
+				return (i + 1) - position;
+			}
+		}
+
+		var length = chunkSize;
+		// Never leave a lone \r if the next char is \n (would invent an extra line).
+		if (((position + length) < text.Length)
+			&& (text[position + length - 1] == '\r')
+			&& (text[position + length] == '\n'))
+		{
+			length++;
+		}
+
+		return length;
+	}
+
+	private static string NormalizeNewlines(string text)
+	{
+		return string.IsNullOrEmpty(text)
+			? string.Empty
+			: text.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
 	}
 
 	private void ViewModelOnDocumentChanged(object sender, TextDocumentChangedArgs e)
@@ -272,3 +356,15 @@ public partial class TabMarkdownView : CornerstoneUserControl
 
 	#endregion
 }
+
+/// <summary>
+/// How quickly the Sample Stream demo feeds tokens into the editor / MarkdownView.
+/// </summary>
+public enum MarkdownStreamSpeed
+{
+	Slow = 0,
+	Normal = 1,
+	Fast = 2,
+	Extreme = 3
+}
+

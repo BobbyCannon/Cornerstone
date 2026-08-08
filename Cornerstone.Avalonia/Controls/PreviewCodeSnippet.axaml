@@ -25,6 +25,10 @@
 												ControlHelper.DisplayName="Theme Variant:"
 												ItemsSource="{x:Static Theme.ThemeVariants}"
 												SelectedItem="{TemplateBinding ThemeVariant, Mode=TwoWay}" />
+										<ComboBox x:Name="ThemeDensity"
+												ControlHelper.DisplayName="Density:"
+												ItemsSource="{x:Static Theme.ThemeDensities}"
+												SelectedItem="{TemplateBinding ThemeDensity, Mode=TwoWay}" />
 										<Button Theme.Color="None"
 												Content="Toggle"
 												Command="{TemplateBinding ToggleVariantCommand}"

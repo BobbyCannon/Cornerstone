@@ -1,0 +1,31 @@
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+  <Metadata>
+    <Identity Id="Cornerstone.Extension" Version="1.2.7" Language="en-US" Publisher="Bobby J Cannon" />
+    <DisplayName>Cornerstone</DisplayName>
+    <Description xml:space="preserve">A set of tools to help you become epic. Includes Avalonia Xaml Previewer.</Description>
+    <Icon>Cornerstone.ico</Icon>
+    <Tags>Cornerstone;Avalonia;Previewer;Automation;Testing;</Tags>
+  </Metadata>
+  <!-- Hybrid: classic VsPackage/MEF + VisualStudio.Extensibility (modern settings contributions). -->
+  <Installation ExtensionType="VSSDK+VisualStudio.Extensibility">
+    <!-- [17.14, 19.0) matches Extensibility hybrid samples; covers VS 2022 17.14+ and VS 2026 (18.x). -->
+    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.14, 19.0)">
+      <ProductArchitecture>amd64</ProductArchitecture>
+    </InstallationTarget>
+    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.14, 19.0)">
+      <ProductArchitecture>arm64</ProductArchitecture>
+    </InstallationTarget>
+  </Installation>
+  <Prerequisites>
+    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" DisplayName="Visual Studio core editor" Version="[15.0,)" />
+    <Prerequisite Id="Microsoft.NetCore.Component.DevelopmentTools" DisplayName=".NET Core development tools" Version="[15.8.27729.1,)" />
+    <Prerequisite Id="Microsoft.VisualStudio.Component.Roslyn.LanguageServices" DisplayName="C# and Visual Basic" Version="[15.0.26208.0,)" />
+  </Prerequisites>
+  <Assets>
+    <Asset Type="Microsoft.VisualStudio.VsPackage" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" d:Source="Project" d:ProjectName="%CurrentProject%" />
+    <Asset Type="Microsoft.VisualStudio.MefComponent" Path="|%CurrentProject%|" d:Source="Project" d:ProjectName="%CurrentProject%" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" Path="icons.pkgdef" d:Source="File" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" Path="Snippets\snippets.pkgdef" d:Source="File" />
+    <Asset Type="Microsoft.VisualStudio.VsPackage" Path="Templates.pkgdef" d:Source="File" />
+  </Assets>
+</PackageManifest>

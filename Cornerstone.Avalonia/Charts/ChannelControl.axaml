@@ -1,4 +1,4 @@
-﻿<Styles xmlns="https://github.com/avaloniaui"
+<Styles xmlns="https://github.com/avaloniaui"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 	<Styles.Resources>
 		<ResourceDictionary>
@@ -13,7 +13,7 @@
 				<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
 				<Setter Property="MinHeight" Value="48" />
 				<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
-				<Setter Property="FontSize" Value="{StaticResource ControlFontSize}" />
+				<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
 				<Setter Property="Padding" Value="10" />
 				<Setter Property="Stroke" Value="{DynamicResource Foreground05}" />
 				<Setter Property="HorizontalAlignment" Value="Stretch" />

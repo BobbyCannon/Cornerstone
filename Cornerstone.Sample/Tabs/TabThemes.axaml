@@ -1,0 +1,98 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		xmlns:themes="clr-namespace:Cornerstone.Avalonia.Themes;assembly=Cornerstone.Avalonia"
+		mc:Ignorable="d" d:DesignHeight="700" d:DesignWidth="640"
+		x:Class="Cornerstone.Sample.Tabs.TabThemes"
+		x:DataType="tabs:TabThemes"
+		x:Name="This">
+	<!-- Theme triad: Color · Mode · Density — persists via AppSettings. -->
+	<DockPanel>
+		<Grid DockPanel.Dock="Top" Margin="10,14,10,6">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="Themes" />
+		</Grid>
+		<ScrollViewer HorizontalScrollBarVisibility="Disabled">
+			<StackPanel Margin="16,8,16,20" Spacing="16" MaxWidth="560" HorizontalAlignment="Center">
+				<TextBlock Opacity="0.7"
+						TextWrapping="Wrap"
+						Text="Choose color, light/dark mode, and UI density. Values save with the sample app and apply through CornerstoneTheme (same pattern as real products)." />
+
+				<!-- Mode -->
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource BorderBrush}"
+						BorderThickness="1"
+						CornerRadius="8"
+						Padding="14">
+					<StackPanel Spacing="10">
+						<TextBlock Text="Mode" Opacity="0.9" />
+						<ComboBox Width="220"
+								HorizontalAlignment="Left"
+								ItemsSource="{x:Static themes:Theme.ThemeModes}"
+								SelectedItem="{Binding Settings.ThemeMode, Mode=TwoWay}" />
+					</StackPanel>
+				</Border>
+
+				<!-- Density -->
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource BorderBrush}"
+						BorderThickness="1"
+						CornerRadius="8"
+						Padding="14">
+					<StackPanel Spacing="10">
+						<TextBlock Text="Density" Opacity="0.9" />
+						<ComboBox Width="220"
+								HorizontalAlignment="Left"
+								ItemsSource="{x:Static themes:Theme.ThemeDensities}"
+								SelectedItem="{Binding Settings.ThemeDensity, Mode=TwoWay}" />
+						<TextBlock Opacity="0.65"
+								TextWrapping="Wrap"
+								Text="Compact / Normal / Large set ControlFontSize and ControlFontSizeSmall. Lists and chrome that use those tokens update live." />
+					</StackPanel>
+				</Border>
+
+				<!-- Color -->
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource BorderBrush}"
+						BorderThickness="1"
+						CornerRadius="8"
+						Padding="14">
+					<StackPanel Spacing="10">
+						<TextBlock Text="Color" Opacity="0.9" />
+						<ComboBox Width="220"
+								HorizontalAlignment="Left"
+								ItemsSource="{x:Static themes:Theme.Colors}"
+								SelectedItem="{Binding Settings.ThemeColor, Mode=TwoWay}" />
+						<StackPanel Orientation="Horizontal" Spacing="8">
+							<Button Theme.Color="None" Content="None" MinWidth="80" />
+							<Button Theme.Color="Current" Content="Current" MinWidth="80" />
+							<ToggleButton Content="Accent" IsChecked="True" MinWidth="80" />
+						</StackPanel>
+					</StackPanel>
+				</Border>
+
+				<!-- Live density sample -->
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource BorderBrush}"
+						BorderThickness="1"
+						CornerRadius="8"
+						Padding="14">
+					<StackPanel Spacing="8">
+						<TextBlock Text="Density sample" Opacity="0.9" />
+						<TextBlock Text="Primary (ControlFontSize) — The quick brown fox jumps over the lazy dog."
+								FontSize="{DynamicResource ControlFontSize}"
+								TextWrapping="Wrap" />
+						<TextBlock Text="Secondary (ControlFontSizeSmall) — muted captions and metadata use this token."
+								FontSize="{DynamicResource ControlFontSizeSmall}"
+								Opacity="0.7"
+								TextWrapping="Wrap" />
+					</StackPanel>
+				</Border>
+			</StackPanel>
+		</ScrollViewer>
+	</DockPanel>
+</UserControl>

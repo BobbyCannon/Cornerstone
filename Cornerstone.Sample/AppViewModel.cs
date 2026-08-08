@@ -7,6 +7,7 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Cornerstone.Avalonia.Controls;
+using Cornerstone.Avalonia.Themes;
 using Cornerstone.Data;
 using Cornerstone.Presentation;
 using Cornerstone.Reflection;
@@ -41,8 +42,11 @@ public partial class AppViewModel : ApplicationViewModel
 		NavigationMenuDisplayMode = SplitViewDisplayMode.Inline;
 
 		AddTabItemViewModel(TabWelcome.HeaderName, "Icons.Smile", typeof(TabWelcome));
+		AddTabItemViewModel(TabThemes.HeaderName, "Icons.Color.Palette", typeof(TabThemes));
 		AddTabItemViewModel(TabDocumentation.HeaderName, "Icons.Bookmark", typeof(TabDocumentation));
 		AddTabItemViewModel(TabButton.HeaderName, "Icons.TapButton", typeof(TabButton));
+		AddTabItemViewModel(TabCamera.HeaderName, "Icons.Camera", typeof(TabCamera),
+			DevicePlatform.Windows | DevicePlatform.Android | DevicePlatform.IOS);
 		AddTabItemViewModel(TabChannels.HeaderName, "Icons.Share.Fill", typeof(TabChannels));
 		AddTabItemViewModel(TabDebounceAndThrottle.HeaderName, "Icons.Signal", new Thickness(0, 3, 0, -3), typeof(TabDebounceAndThrottle));
 		AddTabItemViewModel(TabAppDispatcher.HeaderName, "Icons.DoubleArrow.Right", typeof(TabAppDispatcher));
@@ -50,6 +54,8 @@ public partial class AppViewModel : ApplicationViewModel
 		AddTabItemViewModel(TabGrids.HeaderName, "Icons.Grid", typeof(TabGrids));
 		AddTabItemViewModel(TabInkCanvas.HeaderName, "Icons.Pencil.Square", typeof(TabInkCanvas));
 		AddTabItemViewModel(TabMarkdownView.HeaderName, "Icons.Markdown", typeof(TabMarkdownView));
+		AddTabItemViewModel(TabMediaPlayer.HeaderName, "Icons.Play", typeof(TabMediaPlayer),
+			DevicePlatform.Windows | DevicePlatform.Android | DevicePlatform.IOS);
 		AddTabItemViewModel(TabProgress.HeaderName, "Icons.Progress", new Thickness(0, 6, 0, -6), typeof(TabProgress));
 		AddTabItemViewModel(TabProfiling.HeaderName, "Icons.Chart.Bar", new Thickness(0, 2, 0, -2), typeof(TabProfiling));
 		AddTabItemViewModel(TabRuntimeInformation.HeaderName, "Icons.Info.Circle", typeof(TabRuntimeInformation));
@@ -87,7 +93,20 @@ public partial class AppViewModel : ApplicationViewModel
 	public override void LoadLifecycle()
 	{
 		base.LoadLifecycle();
+		// Settings load via AppState.Track; re-apply theme once UI/theme is ready.
+		State.Settings.ApplyTheme();
 		SelectedTab = Tabs.FirstOrDefault(x => x.TabTypeName == State.Settings.SelectedTab) ?? Tabs.FirstOrDefault();
+	}
+
+	/// <summary>
+	/// Toggle Dark ↔ Light and persist (nav chrome; keeps AppSettings.ThemeMode in sync).
+	/// </summary>
+	[RelayCommand]
+	public void ToggleThemeMode()
+	{
+		State.Settings.ThemeMode = State.Settings.ThemeMode == ThemeMode.Dark
+			? ThemeMode.Light
+			: ThemeMode.Dark;
 	}
 
 	protected override void OnPropertyChanged<TValue>(string propertyName, TValue oldValue, TValue newValue)

@@ -1,0 +1,100 @@
+<CornerstoneUserControl xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		x:Class="Cornerstone.Avalonia.MediaPlayer.MediaPlayerControl"
+		Background="{DynamicResource Background00}"
+		mc:Ignorable="d" d:DesignHeight="450" d:DesignWidth="400">
+	<Grid RowDefinitions="*,Auto">
+		<!-- Black letterbox when aspect is preserved (default). -->
+		<Border Grid.Row="0" Background="Black">
+			<MediaPlayerNativeHost x:Name="NativeHost" />
+		</Border>
+
+		<Border x:Name="TransportBar"
+				Grid.Row="1"
+				Background="{DynamicResource Background02}"
+				Padding="8,4">
+			<Grid RowDefinitions="Auto,Auto" RowSpacing="2">
+
+				<!-- Seek row -->
+				<Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+					<TextBlock x:Name="PositionText"
+							Grid.Column="0"
+							VerticalAlignment="Center"
+							Foreground="{DynamicResource Foreground00}"
+							Text="0:00:00" />
+					<Slider x:Name="SeekSlider"
+							Grid.Column="1"
+							VerticalAlignment="Center"
+							Minimum="0"
+							Maximum="1"
+							Value="0" />
+					<TextBlock x:Name="DurationText"
+							Grid.Column="2"
+							VerticalAlignment="Center"
+							Foreground="{DynamicResource Foreground00}"
+							Text="0:00:00" />
+				</Grid>
+
+				<!-- Controls row -->
+				<Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto,Auto">
+					<Button x:Name="PlayPauseButton"
+							Grid.Column="0"
+							Classes="Icon"
+							Width="48"
+							Height="40"
+							HorizontalAlignment="Left"
+							ToolTip.Tip="Play/Pause">
+						<Panel>
+							<Path x:Name="PlayIcon"
+									Width="22"
+									Height="22"
+									Data="{DynamicResource Icons.Play}"
+									Margin="4,0,0,0" />
+							<Path x:Name="PauseIcon"
+									Width="22"
+									Height="22"
+									Data="{DynamicResource Icons.Pause}" />
+						</Panel>
+					</Button>
+
+					<Button x:Name="MuteButton"
+							Grid.Column="1"
+							Classes="Icon"
+							Margin="0,0,4,0"
+							ToolTip.Tip="Mute">
+						<Panel>
+							<Path x:Name="VolumeIcon"
+									Data="{DynamicResource Icons.Volume.Light}"
+									Height="20" Width="20"
+									Margin="0,4,0,0" />
+							<Path x:Name="MuteIcon"
+									Data="{DynamicResource Icons.Volume.Mute.Light}"
+									Height="20" Width="20"
+									Margin="0,4,0,0"
+									IsVisible="False" />
+						</Panel>
+					</Button>
+
+					<Slider x:Name="VolumeSlider"
+							Grid.Column="2"
+							Width="100"
+							VerticalAlignment="Center"
+							Minimum="0"
+							Maximum="1"
+							Value="1"
+							TickFrequency="0.05" />
+
+					<Button x:Name="AspectButton"
+							Grid.Column="3"
+							Classes="Icon"
+							ToolTip.Tip="Toggle fit"
+							IsVisible="False">
+						<Path Data="{DynamicResource Icons.Compress.Wide.Regular}" />
+					</Button>
+				</Grid>
+			</Grid>
+		</Border>
+	</Grid>
+</CornerstoneUserControl>

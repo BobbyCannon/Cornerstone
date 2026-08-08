@@ -44,15 +44,12 @@
 				Margin="10,0"
 				Padding="10">
 			<StackPanel Spacing="8">
-				<TextBlock Text="Filter"
-						Opacity="0.85" />
-				<TextBlock Text="Matches Name, Id, or Detail. Flat list = matching accounts only (no parents). Hierarchy = matches + path parents (so you can open the tree to a hit), never non-matching siblings."
-						TextWrapping="Wrap"
-						Opacity="0.65"
-						FontSize="12" />
 				<TextBox Classes="Search ClearButton"
 						PlaceholderText="Filter accounts…"
 						Text="{Binding FilterText, Mode=TwoWay}" />
+				<TextBlock Text="Matches Name, Id, or Detail. Flat list = matching accounts only (no parents). Hierarchy = matches + path parents (so you can open the tree to a hit), never non-matching siblings."
+						TextWrapping="Wrap"
+						Opacity="0.85" />
 			</StackPanel>
 		</Border>
 
@@ -68,8 +65,7 @@
 						Opacity="0.85" />
 				<TextBlock Text="{Binding ScrollLabHint}"
 						TextWrapping="Wrap"
-						Opacity="0.65"
-						FontSize="12" />
+						Opacity="0.65" />
 				<WrapPanel ItemSpacing="16" LineSpacing="8">
 					<CheckBox Content="Use fixed row height"
 							IsChecked="{Binding UseFixedRowHeight, Mode=TwoWay}"
@@ -92,7 +88,7 @@
 				</WrapPanel>
 				<TextBlock Text="{Binding StatusText}"
 						FontFamily="{x:Static CornerstoneTheme.DejaVuSansMono}"
-						FontSize="12"
+						FontSize="{DynamicResource ControlFontSizeSmall}"
 						Opacity="0.8" />
 			</StackPanel>
 		</Border>

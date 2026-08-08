@@ -1,0 +1,28 @@
+<CornerstoneUserControl xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+		x:Class="Cornerstone.Avalonia.Camera.CameraView"
+		x:DataType="CameraView">
+	<!--
+		Surface only — host apps own Start/Stop preview and record chrome (all platforms).
+		Keep the host laid out when not previewing (Android CameraX attach). When stopped,
+		an opaque cover hides any frozen native/frame residual so stop is obvious.
+	-->
+	<Grid Background="Black"
+			ClipToBounds="True">
+		<!-- Uniform: one axis wins; aspect preserved (letterbox/pillarbox on black). -->
+		<Image x:Name="CameraPreview"
+				Stretch="Uniform"
+				StretchDirection="Both"
+				HorizontalAlignment="Stretch"
+				VerticalAlignment="Stretch" />
+		<CameraNativeHost x:Name="NativeHost"
+				CameraAdapter="{Binding CameraAdapter}" />
+		<!-- Covers frozen last frame (Windows Image / Android TextureView) after Stop preview. -->
+		<Border Background="{DynamicResource Background02}"
+				IsVisible="{Binding !IsPreviewing}"
+				IsHitTestVisible="False" />
+	</Grid>
+</CornerstoneUserControl>

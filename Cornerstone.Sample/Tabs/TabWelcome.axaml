@@ -12,7 +12,7 @@
 	<UserControl.Styles>
 		<Style Selector="SelectableTextBlock">
 			<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.OpenSansLight}" />
-			<Setter Property="FontSize" Value="15" />
+			<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
 			<Setter Property="TextWrapping" Value="Wrap" />
 			<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
 		</Style>
@@ -40,7 +40,7 @@
 			<Setter Property="Fill" Value="White" />
 		</Style>
 		<Style Selector="TextBlock.FeatureTitle">
-			<Setter Property="FontSize" Value="18" />
+			<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
 			<Setter Property="FontWeight" Value="SemiBold" />
 			<Setter Property="Margin" Value="0,0,0,6" />
 		</Style>
@@ -74,6 +74,8 @@
 								Cornerstone is a high-performance .NET framework for building reliable,
 								observable, syncable, and testable applications — without sacrificing speed.
 								Use the sample tabs to explore UI controls and core patterns.
+								Open Themes for color, light/dark mode, and UI density (or use the density
+								combo next to the theme toggle in the navigation pane).
 							</SelectableTextBlock.Text>
 						</SelectableTextBlock>
 					</Grid>

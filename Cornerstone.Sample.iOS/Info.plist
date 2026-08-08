@@ -39,5 +39,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- Camera preview (AVCapture). Required for the system permission dialog. -->
+	<key>NSCameraUsageDescription</key>
+	<string>The Camera sample tab needs camera access to show a live preview and record video.</string>
+	<!-- Recording includes audio (AVCapture audio input). -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>The Camera sample tab needs microphone access when recording video with audio.</string>
 </dict>
 </plist>

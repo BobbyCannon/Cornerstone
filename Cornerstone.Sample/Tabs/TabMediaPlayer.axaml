@@ -1,0 +1,76 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+		x:Class="Cornerstone.Sample.Tabs.TabMediaPlayer"
+		x:DataType="tabs:TabMediaPlayer">
+	<DockPanel>
+		<Grid DockPanel.Dock="Top" Margin="10">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="{x:Static tabs:TabMediaPlayer.HeaderName}" />
+		</Grid>
+		<!-- Full-width URL/path row so toolbar wrapping does not shift the text box. -->
+		<TextBox DockPanel.Dock="Top"
+				Margin="10,0,10,8"
+				HorizontalAlignment="Stretch"
+				PlaceholderText="Media URL or local path"
+				Text="{Binding MediaUrl}" />
+		<WrapPanel DockPanel.Dock="Top"
+				ItemSpacing="12"
+				LineSpacing="8"
+				Margin="10,0,10,4">
+			<Button Content="Play sample"
+					Command="{Binding PlaySampleCommand}"
+					ToolTip.Tip="Embedded clip: rabbit hole + bunny emerging (~0.5 MB, ~9s)" />
+			<Button Content="Online sample"
+					Command="{Binding UseOnlineSampleCommand}"
+					ToolTip.Tip="Official Peach trailer via HTTPS (network required)" />
+			<Button Content="Open file…"
+					Command="{Binding OpenFileCommand}" />
+			<Button Content="Play"
+					Command="{Binding PlayCommand}" />
+			<Button Content="Stop"
+					Command="{Binding StopCommand}" />
+			<ToggleButton Content="Pause"
+					IsChecked="{Binding #Player.IsPaused, Mode=TwoWay}" />
+			<CheckBox Content="Show transport"
+					IsChecked="{Binding #Player.ShowTransportControls, Mode=TwoWay}" />
+		</WrapPanel>
+		<StackPanel DockPanel.Dock="Top" Margin="10,0,10,8" Spacing="4">
+			<TextBlock Opacity="0.65"
+					TextWrapping="Wrap"
+					Text="Embedded sample: Big Buck Bunny — rabbit hole and bunny coming out (~0.5 MB, ~9s H.264). Blender Foundation, Creative Commons. https://peach.blender.org/" />
+			<TextBlock Opacity="0.85"
+					TextWrapping="Wrap"
+					Text="{Binding StatusText}" />
+		</StackPanel>
+		<!-- Place Avalonia siblings after the player so they can paint over it while paused. -->
+		<Grid>
+			<MediaPlayerControl x:Name="Player"
+					ShowTransportControls="True" />
+			<Border Background="#CC1E1E1E"
+					IsVisible="{Binding #Player.IsPaused}"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Center"
+					Padding="24"
+					CornerRadius="8"
+					MaxWidth="360">
+				<StackPanel Spacing="8">
+					<TextBlock Text="Avalonia on top while paused"
+							FontSize="{DynamicResource ControlFontSize}"
+							HorizontalAlignment="Center" />
+					<TextBlock Text="MediaPlayerControl.IsPaused freezes a snapshot, hides the native surface, and pauses decoding/audio. Your overlay is normal Avalonia Z-order."
+							TextWrapping="Wrap"
+							Opacity="0.85" />
+					<Button Content="Resume"
+							HorizontalAlignment="Center"
+							Click="ResumeOnClick" />
+				</StackPanel>
+			</Border>
+		</Grid>
+	</DockPanel>
+</UserControl>

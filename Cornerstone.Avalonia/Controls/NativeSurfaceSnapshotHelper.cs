@@ -9,18 +9,18 @@ using Avalonia.Media.Imaging;
 
 namespace Cornerstone.Avalonia.Controls;
 
-internal static class WebViewSnapshotHelper
+internal static class NativeSurfaceSnapshotHelper
 {
 	#region Methods
 
-	public static WebViewSnapshot ProcessPng(byte[] pngBytes, int sourceWidth, int sourceHeight, WebViewSnapshotOptions options)
+	public static NativeSurfaceSnapshot ProcessPng(byte[] pngBytes, int sourceWidth, int sourceHeight, NativeSurfaceSnapshotOptions options)
 	{
 		if (pngBytes is not { Length: > 0 } || (sourceWidth <= 0) || (sourceHeight <= 0))
 		{
-			return WebViewSnapshot.Failed("Empty or invalid snapshot image.");
+			return NativeSurfaceSnapshot.Failed("Empty or invalid snapshot image.");
 		}
 
-		options ??= WebViewSnapshotOptions.Default();
+		options ??= NativeSurfaceSnapshotOptions.Default();
 		var scale = options.Scale <= 0 ? 1.0 : Math.Clamp(options.Scale, 0.05, 1.0);
 
 		var targetWidth = Math.Max(1, (int) Math.Round(sourceWidth * scale));
@@ -42,7 +42,7 @@ internal static class WebViewSnapshotHelper
 
 		if ((targetWidth == sourceWidth) && (targetHeight == sourceHeight))
 		{
-			return WebViewSnapshot.FromPng(pngBytes, sourceWidth, sourceHeight);
+			return NativeSurfaceSnapshot.FromPng(pngBytes, sourceWidth, sourceHeight);
 		}
 
 		try
@@ -54,13 +54,13 @@ internal static class WebViewSnapshotHelper
 			using (var output = new MemoryStream())
 			{
 				scaled.Save(output);
-				return WebViewSnapshot.FromPng(output.ToArray(), targetWidth, targetHeight);
+				return NativeSurfaceSnapshot.FromPng(output.ToArray(), targetWidth, targetHeight);
 			}
 		}
 		catch
 		{
 			// Fall back to original capture if scaling fails.
-			return WebViewSnapshot.FromPng(pngBytes, sourceWidth, sourceHeight);
+			return NativeSurfaceSnapshot.FromPng(pngBytes, sourceWidth, sourceHeight);
 		}
 	}
 

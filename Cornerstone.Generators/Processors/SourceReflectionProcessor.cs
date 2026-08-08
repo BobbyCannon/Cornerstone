@@ -8,10 +8,12 @@ using static Cornerstone.Generators.Generator;
 using SourceAttributeInfo = Cornerstone.Generators.Models.SourceAttributeInfo;
 using SourceConstructorInfo = Cornerstone.Generators.Models.SourceConstructorInfo;
 using SourceFieldInfo = Cornerstone.Generators.Models.SourceFieldInfo;
+using SourceInterfaceInfo = Cornerstone.Generators.Models.SourceInterfaceInfo;
 using SourceMethodInfo = Cornerstone.Generators.Models.SourceMethodInfo;
 using SourceParameterInfo = Cornerstone.Generators.Models.SourceParameterInfo;
 using SourcePropertyInfo = Cornerstone.Generators.Models.SourcePropertyInfo;
 using SourceTypeInfo = Cornerstone.Generators.Models.SourceTypeInfo;
+using SymbolDisplayFormats = Cornerstone.Generators.Models.SymbolDisplayFormats;
 
 #endregion
 
@@ -217,6 +219,96 @@ internal sealed class SourceReflectionProcessor : ITypeProcessor
 		return baseName;
 	}
 
+	/// <summary>
+	/// True when a nested type cannot appear in typeof(...) from a sibling type in the same assembly
+	/// (private / protected / private protected nested types).
+	/// </summary>
+	private static bool IsInaccessibleNestedType(INamedTypeSymbol type)
+	{
+		for (var current = type; current != null; current = current.ContainingType)
+		{
+			switch (current.DeclaredAccessibility)
+			{
+				case Accessibility.Private:
+				case Accessibility.Protected:
+				case Accessibility.ProtectedAndInternal:
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/// <summary>
+	/// Expression that evaluates to System.Type for the parameter type (not by-ref).
+	/// Private nested types cannot use typeof(Outer.Nested) outside Outer, so resolve them with
+	/// GetNestedType from an accessible root.
+	/// </summary>
+	private static string TypeOfExpression(SourceParameterInfo parameter)
+	{
+		return parameter.ParameterSymbol != null
+			? TypeOfExpression(parameter.ParameterSymbol)
+			: $"typeof({parameter.ParameterType})";
+	}
+
+	/// <summary>
+	/// Type expression for MethodInfo.GetMethod parameter arrays (includes MakeByRefType for ref/out).
+	/// </summary>
+	private static string TypeOfExpressionForMethodLookup(SourceParameterInfo parameter)
+	{
+		var expression = TypeOfExpression(parameter);
+		return parameter.IsRef || parameter.IsOut
+			? $"{expression}.MakeByRefType()"
+			: expression;
+	}
+
+	/// <summary>
+	/// Expression that evaluates to System.Type for the symbol from generated sibling code.
+	/// </summary>
+	private static string TypeOfExpression(ITypeSymbol typeSymbol)
+	{
+		if (typeSymbol is IArrayTypeSymbol arrayType)
+		{
+			var element = TypeOfExpression(arrayType.ElementType);
+			return arrayType.Rank == 1
+				? $"{element}.MakeArrayType()"
+				: $"{element}.MakeArrayType({arrayType.Rank})";
+		}
+
+		if (typeSymbol is not INamedTypeSymbol namedType)
+		{
+			return $"typeof({typeSymbol.ToDisplayString(SymbolDisplayFormats.GlobalFullyQualifiedName)})";
+		}
+
+		if (!IsInaccessibleNestedType(namedType))
+		{
+			return $"typeof({namedType.ToDisplayString(SymbolDisplayFormats.GlobalFullyQualifiedName)})";
+		}
+
+		// Walk Outer.Inner.Nested → typeof(Outer).GetNestedType("Inner", …).GetNestedType("Nested", …)
+		var chain = new List<INamedTypeSymbol>();
+		for (var current = namedType; current != null; current = current.ContainingType)
+		{
+			chain.Add(current);
+		}
+
+		chain.Reverse();
+
+		var expression = $"typeof({chain[0].ToDisplayString(SymbolDisplayFormats.GlobalFullyQualifiedName)})";
+		const string nestedFlags =
+			"global::System.Reflection.BindingFlags.Public | global::System.Reflection.BindingFlags.NonPublic";
+
+		for (var index = 1; index < chain.Count; index++)
+		{
+			// MetadataName includes arity suffix for open generics (e.g. Nested`1).
+			expression = $"{expression}.GetNestedType(\"{chain[index].MetadataName}\", {nestedFlags})";
+		}
+
+		return expression;
+	}
+
 	void ITypeProcessor.Initialize(Compilation compilation)
 	{
 		_generatedNamespace = GetCornerstoneGeneratedNamespace(compilation);
@@ -320,7 +412,7 @@ internal sealed class SourceReflectionProcessor : ITypeProcessor
 					builder.Write(", ");
 					builder.WriteArrayInitializer("global::System.Type",
 						member.Parameters
-							.Select(x => $"typeof({x.ParameterType})")
+							.Select(TypeOfExpressionForMethodLookup)
 							.ToArray()
 					);
 				}
@@ -425,7 +517,8 @@ internal sealed class SourceReflectionProcessor : ITypeProcessor
 
 						if (!member.HasNestedTypeParameter)
 						{
-							builder.IndentWriteLine($"ParameterType = typeof({member.ParameterType}),");
+							// Private nested parameter types cannot use typeof(Outer.Nested) from generated code.
+							builder.IndentWriteLine($"ParameterType = {TypeOfExpression(member)},");
 						}
 
 						builder.WriteAssignmentRaw(nameof(SourceFieldInfo.NullableAnnotation), $"{GlobalSourceNullableAnnotation}.{member.NullableAnnotation}", false, true);

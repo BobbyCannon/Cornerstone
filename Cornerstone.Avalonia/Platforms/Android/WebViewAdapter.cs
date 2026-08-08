@@ -87,7 +87,7 @@ internal class WebViewAdapter : CornerstoneObject, IWebViewAdapter
 	{
 	}
 
-	public Task<WebViewSnapshot> CaptureSnapshotAsync(WebViewSnapshotOptions options = null)
+	public Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
 	{
 		try
 		{
@@ -95,7 +95,7 @@ internal class WebViewAdapter : CornerstoneObject, IWebViewAdapter
 			var height = Math.Max(1, _webView.Height);
 			if ((width <= 1) || (height <= 1))
 			{
-				return Task.FromResult(WebViewSnapshot.Failed("WebView has no measurable size."));
+				return Task.FromResult(NativeSurfaceSnapshot.Failed("WebView has no measurable size."));
 			}
 
 			using var bitmap = global::Android.Graphics.Bitmap.CreateBitmap(width, height, global::Android.Graphics.Bitmap.Config.Argb8888!);
@@ -105,14 +105,14 @@ internal class WebViewAdapter : CornerstoneObject, IWebViewAdapter
 			using var stream = new System.IO.MemoryStream();
 			if (!bitmap.Compress(global::Android.Graphics.Bitmap.CompressFormat.Png!, 100, stream))
 			{
-				return Task.FromResult(WebViewSnapshot.Failed("Failed to encode WebView bitmap as PNG."));
+				return Task.FromResult(NativeSurfaceSnapshot.Failed("Failed to encode WebView bitmap as PNG."));
 			}
 
-			return Task.FromResult(WebViewSnapshotHelper.ProcessPng(stream.ToArray(), width, height, options));
+			return Task.FromResult(NativeSurfaceSnapshotHelper.ProcessPng(stream.ToArray(), width, height, options));
 		}
 		catch (Exception ex)
 		{
-			return Task.FromResult(WebViewSnapshot.Failed(ex.Message));
+			return Task.FromResult(NativeSurfaceSnapshot.Failed(ex.Message));
 		}
 	}
 

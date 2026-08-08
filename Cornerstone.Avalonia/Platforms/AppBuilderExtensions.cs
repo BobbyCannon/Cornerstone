@@ -1,6 +1,8 @@
 ﻿#region References
 
 using Avalonia;
+using Cornerstone.Avalonia.Camera;
+using Cornerstone.Avalonia.MediaPlayer;
 using Cornerstone.Runtime;
 
 #endregion
@@ -34,6 +36,13 @@ public static class AppBuilderExtensions
 		#elif WINDOWS
 		value = null;
 		Windows.AppBuilderExtensions.UseCornerstone(appBuilder, args);
+		#else
+		// net10.0 (design-time / headless): stubs so camera/media resolve when DI is required.
+		var dependencyProvider = AppBootstrap.DependencyProvider;
+		dependencyProvider.SetTransient<ICameraAdapter, CameraAdapterStub>(() =>
+			new CameraAdapterStub(CornerstoneApplication.CornerstoneDispatcher));
+		dependencyProvider.SetTransient<BaseMediaPlayerAdapter, MediaPlayerAdapterStub>(() =>
+			new MediaPlayerAdapterStub());
 		#endif
 
 		value = null;

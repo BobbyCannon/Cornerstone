@@ -14,6 +14,7 @@ Product behavior and host-facing overviews live under the parent folder: [../Rea
 | [TextEditor.md](TextEditor.md) | Building or updating the Avalonia text editor / terminal: document model, input, tokens, layout | `Cornerstone.Avalonia/Text/` |
 | [MarkdownView.md](MarkdownView.md) | Building or updating Markdown parse/view: fences, streaming, block groups, tables | `Cornerstone/Parsers/Markdown/`, `Cornerstone.Avalonia/Controls/Markdown*` |
 | [TreeDataGrid.md](TreeDataGrid.md) | Building or updating TreeDataGrid: MinRowHeight path, virtualization, row themes | `Cornerstone.Avalonia/TreeDataGrid/` |
+| [Themes.md](Themes.md) | Theme color / mode / density: apply path, tokens, host checklist, Static vs Dynamic pitfalls | `Cornerstone.Avalonia/CornerstoneTheme*`, `Themes/*` |
 
 ---
 

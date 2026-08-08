@@ -1,9 +1,9 @@
 namespace Cornerstone.Avalonia.Controls;
 
 /// <summary>
-/// Options for capturing a WebView placeholder snapshot used during overlay mode.
+/// Options for capturing a native surface placeholder snapshot used during pause/overlay mode.
 /// </summary>
-public class WebViewSnapshotOptions
+public class NativeSurfaceSnapshotOptions
 {
 	#region Properties
 
@@ -26,9 +26,9 @@ public class WebViewSnapshotOptions
 
 	#region Methods
 
-	public static WebViewSnapshotOptions Default()
+	public static NativeSurfaceSnapshotOptions Default()
 	{
-		return new WebViewSnapshotOptions();
+		return new NativeSurfaceSnapshotOptions();
 	}
 
 	#endregion

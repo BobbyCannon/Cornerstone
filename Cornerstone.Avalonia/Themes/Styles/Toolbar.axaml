@@ -25,17 +25,17 @@
 			</Style>
 			<Style Selector="^ > StackPanel">
 				<Style Selector="^ TextBlock.Label">
-					<Setter Property="FontSize" Value="14" />
+					<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
 					<Setter Property="Margin" Value="12,0,6,0" />
 					<Setter Property="VerticalAlignment" Value="Center" />
 				</Style>
 				<Style Selector="^ TextBlock.Value">
-					<Setter Property="FontSize" Value="14" />
+					<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
 					<Setter Property="Margin" Value="0" />
 					<Setter Property="VerticalAlignment" Value="Center" />
 				</Style>
 				<Style Selector="^ > SelectableTextBlock">
-					<Setter Property="FontSize" Value="14" />
+					<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
 					<Setter Property="Margin" Value="0" />
 					<Setter Property="VerticalAlignment" Value="Center" />
 				</Style>

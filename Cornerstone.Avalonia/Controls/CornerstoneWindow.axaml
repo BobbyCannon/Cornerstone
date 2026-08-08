@@ -9,7 +9,7 @@
 				<Setter Property="BorderBrush" Value="{DynamicResource Foreground09}" />
 				<Setter Property="TransparencyBackgroundFallback" Value="{DynamicResource Background02}" />
 				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
-				<Setter Property="FontSize" Value="{StaticResource ControlFontSize}" />
+				<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
 				<Setter Property="ExtendClientAreaToDecorationsHint" Value="True" />
 				<Setter Property="ExtendClientAreaTitleBarHeightHint" Value="32" />
 				<Setter Property="Template">

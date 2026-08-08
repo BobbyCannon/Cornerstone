@@ -83,9 +83,9 @@ internal class WebViewAdapter : CornerstoneObject, IWebViewAdapter, IDisposable
 
 	#region Methods
 
-	public Task<WebViewSnapshot> CaptureSnapshotAsync(WebViewSnapshotOptions options = null)
+	public Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
 	{
-		var tcs = new TaskCompletionSource<WebViewSnapshot>();
+		var tcs = new TaskCompletionSource<NativeSurfaceSnapshot>();
 
 		try
 		{
@@ -94,32 +94,32 @@ internal class WebViewAdapter : CornerstoneObject, IWebViewAdapter, IDisposable
 			{
 				if (error != null)
 				{
-					tcs.TrySetResult(WebViewSnapshot.Failed(error.LocalizedDescription));
+					tcs.TrySetResult(NativeSurfaceSnapshot.Failed(error.LocalizedDescription));
 					return;
 				}
 
 				if (image == null)
 				{
-					tcs.TrySetResult(WebViewSnapshot.Failed("WKWebView snapshot returned no image."));
+					tcs.TrySetResult(NativeSurfaceSnapshot.Failed("WKWebView snapshot returned no image."));
 					return;
 				}
 
 				using var pngData = image.AsPNG();
 				if (pngData == null)
 				{
-					tcs.TrySetResult(WebViewSnapshot.Failed("Failed to encode WKWebView snapshot as PNG."));
+					tcs.TrySetResult(NativeSurfaceSnapshot.Failed("Failed to encode WKWebView snapshot as PNG."));
 					return;
 				}
 
 				var bytes = pngData.ToArray();
 				var width = (int) Math.Max(1, Math.Round(image.Size.Width * image.CurrentScale));
 				var height = (int) Math.Max(1, Math.Round(image.Size.Height * image.CurrentScale));
-				tcs.TrySetResult(WebViewSnapshotHelper.ProcessPng(bytes, width, height, options));
+				tcs.TrySetResult(NativeSurfaceSnapshotHelper.ProcessPng(bytes, width, height, options));
 			});
 		}
 		catch (Exception ex)
 		{
-			tcs.TrySetResult(WebViewSnapshot.Failed(ex.Message));
+			tcs.TrySetResult(NativeSurfaceSnapshot.Failed(ex.Message));
 		}
 
 		return tcs.Task;

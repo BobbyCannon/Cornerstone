@@ -9,10 +9,12 @@ using Cornerstone.Reflection;
 [assembly: SourceReflectionType<AvaloniaObject>]
 
 [assembly: XmlnsDefinition("https://github.com/avaloniaui", "Cornerstone.Avalonia")]
+[assembly: XmlnsDefinition("https://github.com/avaloniaui", "Cornerstone.Avalonia.Camera")]
 [assembly: XmlnsDefinition("https://github.com/avaloniaui", "Cornerstone.Avalonia.Charts")]
 [assembly: XmlnsDefinition("https://github.com/avaloniaui", "Cornerstone.Avalonia.Controls")]
 [assembly: XmlnsDefinition("https://github.com/avaloniaui", "Cornerstone.Avalonia.Converters")]
 [assembly: XmlnsDefinition("https://github.com/avaloniaui", "Cornerstone.Avalonia.DockingManager")]
+[assembly: XmlnsDefinition("https://github.com/avaloniaui", "Cornerstone.Avalonia.MediaPlayer")]
 [assembly: XmlnsDefinition("https://github.com/avaloniaui", "Cornerstone.Avalonia.NumberBox")]
 [assembly: XmlnsDefinition("https://github.com/avaloniaui", "Cornerstone.Avalonia.ResponsiveGrid")]
 [assembly: XmlnsDefinition("https://github.com/avaloniaui", "Cornerstone.Avalonia.Text")]

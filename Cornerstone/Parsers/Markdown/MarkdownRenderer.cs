@@ -13,20 +13,24 @@ public class MarkdownRenderer : Renderer
 	/// <summary>
 	/// Extracts language/info string and the actual content start offset from a fenced/delimited block.
 	/// Works for ``` fenced code blocks, ~~~, and similar delimited raw blocks (HTML, XAML, etc.).
-	/// 
+	///
 	/// The returned content has **trailing newlines removed** (but keeps internal ones).
+	/// Safe when block offsets are stale or past the buffer (streaming): returns empty body instead of throwing.
 	/// </summary>
 	public static (string language, int contentStartOffset, int contentLength) ExtractCodeBlockInfo(ReadOnlySpan<char> buffer, Block block)
 	{
 		if ((block?.Offsets == null) || (block.Offsets.Length < 2))
 		{
-			return (string.Empty, block?.Offsets?[0] ?? 0, 0);
+			return (string.Empty, block?.Offsets is { Length: > 0 } ? Math.Clamp(block.Offsets[0], 0, buffer.Length) : 0, 0);
 		}
 
-		var blockStart = block.Offsets[0];
-		var blockEnd = block.Offsets[1];
-		var fullSpan = buffer.Slice(blockStart, blockEnd - blockStart);
+		// Streaming can leave Offsets past the current buffer (block not yet reparsed, or partial slice).
+		if (!TryClampRegion(buffer.Length, block.Offsets[0], block.Offsets[1], out var blockStart, out var blockEnd))
+		{
+			return (string.Empty, 0, 0);
+		}
 
+		var fullSpan = buffer.Slice(blockStart, blockEnd - blockStart);
 		if (fullSpan.IsEmpty)
 		{
 			return (string.Empty, blockStart, 0);
@@ -75,6 +79,10 @@ public class MarkdownRenderer : Renderer
 		}
 
 		var contentStartAbsolute = blockStart + firstEolRelative;
+		if (contentStartAbsolute > blockEnd)
+		{
+			return (language, blockEnd, 0);
+		}
 
 		// Skip the opening fence line's trailing newline(s) and any blank lines before the first body line.
 		// (Preserves spaces on the first non-empty body line for indentation.)
@@ -90,14 +98,17 @@ public class MarkdownRenderer : Renderer
 				{
 					skip++;
 				}
+
 				// blank line continues
 				continue;
 			}
+
 			if (c == '\n')
 			{
 				skip++;
 				continue;
 			}
+
 			// First non-EOL character (may be space — keep as code indent)
 			break;
 		}
@@ -108,8 +119,6 @@ public class MarkdownRenderer : Renderer
 			return (language, contentStartAbsolute, 0);
 		}
 
-		// If we only skipped EOLs and landed on whitespace that is the whole rest... already handled.
-		// Also skip additional blank lines only (sequences of EOL), not indentation spaces.
 		// After the first break above we're on first body char.
 		contentStartAbsolute += skip;
 
@@ -118,6 +127,14 @@ public class MarkdownRenderer : Renderer
 		if (rawContentLength <= 0)
 		{
 			return (language, contentStartAbsolute, 0);
+		}
+
+		// Guard against any clamp/skip drift past the span.
+		if ((contentStartAbsolute < 0)
+			|| (rawContentLength < 0)
+			|| ((contentStartAbsolute + rawContentLength) > buffer.Length))
+		{
+			return (language, Math.Clamp(contentStartAbsolute, 0, buffer.Length), 0);
 		}
 
 		var contentSpan = buffer.Slice(contentStartAbsolute, rawContentLength);
@@ -137,9 +154,33 @@ public class MarkdownRenderer : Renderer
 			}
 		}
 
-		var finalContentLength = trimEnd;
+		return (language, contentStartAbsolute, trimEnd);
+	}
 
-		return (language, contentStartAbsolute, finalContentLength);
+	/// <summary>
+	/// Clamp [start, end) into [0, bufferLength]. False when offsets are unusable (e.g. entirely past EOF).
+	/// </summary>
+	private static bool TryClampRegion(int bufferLength, int start, int end, out int clampedStart, out int clampedEnd)
+	{
+		clampedStart = 0;
+		clampedEnd = 0;
+
+		if (bufferLength < 0)
+		{
+			return false;
+		}
+
+		// Stale stream offsets past the current document — nothing to extract.
+		if (start > bufferLength)
+		{
+			clampedStart = bufferLength;
+			clampedEnd = bufferLength;
+			return false;
+		}
+
+		clampedStart = Math.Clamp(start, 0, bufferLength);
+		clampedEnd = Math.Clamp(end, clampedStart, bufferLength);
+		return true;
 	}
 
 	/// <summary>

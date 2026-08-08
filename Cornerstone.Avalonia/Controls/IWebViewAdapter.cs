@@ -1,4 +1,4 @@
-﻿#region References
+#region References
 
 using System;
 using System.Collections.Generic;
@@ -28,9 +28,9 @@ public class WebViewAdapterStub : IWebViewAdapter
 
 	#region Methods
 
-	public Task<WebViewSnapshot> CaptureSnapshotAsync(WebViewSnapshotOptions options = null)
+	public Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
 	{
-		return Task.FromResult(WebViewSnapshot.Failed("WebView adapter stub does not support snapshots."));
+		return Task.FromResult(NativeSurfaceSnapshot.Failed("WebView adapter stub does not support snapshots."));
 	}
 
 	public Task ClearBrowsingDataAsync()
@@ -147,26 +147,9 @@ public class WebViewAdapterStub : IWebViewAdapter
 	#endregion
 }
 
-public interface IWebViewAdapter : IWebView
+public interface IWebViewAdapter : IWebView, IPausableNativeSurface
 {
-	#region Properties
-
-	/// <summary>
-	/// Whether the native web surface is currently painting.
-	/// When false, Avalonia content in the same slot can appear on top.
-	/// </summary>
-	bool IsNativeSurfaceVisible { get; }
-
-	IPlatformHandle PlatformHandle { get; }
-
-	#endregion
-
 	#region Methods
-
-	/// <summary>
-	/// Captures the currently visible web surface as a PNG for placeholder overlay mode.
-	/// </summary>
-	Task<WebViewSnapshot> CaptureSnapshotAsync(WebViewSnapshotOptions options = null);
 
 	Task ClearBrowsingDataAsync();
 
@@ -180,15 +163,7 @@ public interface IWebViewAdapter : IWebView
 
 	bool HandleKeyDown(Key key, KeyModifiers keyModifiers);
 
-	void HandleResize(int width, int height, float zoom);
-
 	void Initialize(string profileName);
-
-	/// <summary>
-	/// Shows or hides the native web surface without destroying the browser engine.
-	/// Prefer this over setting IsVisible false on the NativeControlHost (which can tear it down).
-	/// </summary>
-	void SetNativeSurfaceVisible(bool visible);
 
 	#endregion
 }

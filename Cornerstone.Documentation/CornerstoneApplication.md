@@ -13,6 +13,12 @@ Avalonia application shell that wires **[AppBootstrap](AppBootstrap.md)**, infra
 
 ---
 
+## Appearance
+
+Hosts typically install `<CornerstoneTheme ThemeColor="…" ThemeMode="…" />` in application styles, then override from settings after load (color, mode, and UI density). See [Themes.md](Themes.md).
+
+---
+
 ## Keystone shape (reminder)
 
 ```

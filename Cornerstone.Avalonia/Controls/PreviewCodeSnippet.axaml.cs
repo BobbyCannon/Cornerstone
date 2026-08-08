@@ -23,6 +23,7 @@ public sealed class PreviewCodeSnippet : CornerstoneContentControl
 	public static readonly StyledProperty<ITemplate<Panel>> ItemsPanelProperty;
 	public static readonly StyledProperty<IDataTemplate> ItemTemplateProperty;
 	public static readonly StyledProperty<ThemeColor> ThemeColorProperty;
+	public static readonly StyledProperty<ThemeDensity> ThemeDensityProperty;
 	public static readonly StyledProperty<ThemeVariant> ThemeVariantProperty;
 	public static readonly StyledProperty<ICommand> ToggleVariantCommandProperty;
 
@@ -42,6 +43,7 @@ public sealed class PreviewCodeSnippet : CornerstoneContentControl
 		ColumnsProperty = AvaloniaProperty.Register<PreviewCodeSnippet, int>(nameof(Columns), 1);
 		ItemTemplateProperty = AvaloniaProperty.Register<PreviewCodeSnippet, IDataTemplate>(nameof(ItemTemplate));
 		ThemeColorProperty = AvaloniaProperty.Register<PreviewCodeSnippet, ThemeColor>(nameof(ThemeColor), Themes.ThemeColor.Blue);
+		ThemeDensityProperty = AvaloniaProperty.Register<PreviewCodeSnippet, ThemeDensity>(nameof(ThemeDensity), ThemeDensity.Normal);
 		ToggleVariantCommandProperty = AvaloniaProperty.Register<PreviewCodeSnippet, ICommand>(nameof(ToggleVariantCommand));
 		ItemsPanelProperty = AvaloniaProperty.Register<ItemsControl, ITemplate<Panel>>(nameof(ItemsPanel));
 		ThemeVariantProperty = AvaloniaProperty.Register<PreviewCodeSnippet, ThemeVariant>(nameof(ThemeVariant), ThemeVariant.Default);
@@ -73,6 +75,15 @@ public sealed class PreviewCodeSnippet : CornerstoneContentControl
 	{
 		get => GetValue(ThemeColorProperty);
 		set => SetValue(ThemeColorProperty, value);
+	}
+
+	/// <summary>
+	/// Compact / Normal / Large. Applied like ThemeColor (app/theme-wide, not subtree-scoped).
+	/// </summary>
+	public ThemeDensity ThemeDensity
+	{
+		get => GetValue(ThemeDensityProperty);
+		set => SetValue(ThemeDensityProperty, value);
 	}
 
 	public ThemeVariant ThemeVariant
@@ -134,7 +145,9 @@ public sealed class PreviewCodeSnippet : CornerstoneContentControl
 
 	protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
 	{
+		// Sync combos from the live theme (same as ThemeColor).
 		ThemeColor = Themes.Theme.GetThemeColor();
+		ThemeDensity = Themes.Theme.GetThemeDensity();
 		base.OnAttachedToVisualTree(e);
 	}
 
@@ -143,6 +156,11 @@ public sealed class PreviewCodeSnippet : CornerstoneContentControl
 		if (change.Property == ThemeColorProperty)
 		{
 			Themes.Theme.SetThemeColor(ThemeColor);
+		}
+		else if (change.Property == ThemeDensityProperty)
+		{
+			// Global apply — no ThemeVariantScope equivalent for density tokens.
+			Themes.Theme.SetThemeDensity(ThemeDensity);
 		}
 
 		base.OnPropertyChanged(change);

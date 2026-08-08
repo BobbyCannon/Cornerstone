@@ -94,11 +94,11 @@ internal partial class WebView2Adapter : CornerstoneObject, IWebViewAdapter, IDi
 
 	#region Methods
 
-	public async Task<WebViewSnapshot> CaptureSnapshotAsync(WebViewSnapshotOptions options = null)
+	public async Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
 	{
 		if (!_webViewInitialized || (_webView.CoreWebView2 == null))
 		{
-			return WebViewSnapshot.Failed("WebView2 is not initialized.");
+			return NativeSurfaceSnapshot.Failed("WebView2 is not initialized.");
 		}
 
 		try
@@ -108,11 +108,11 @@ internal partial class WebView2Adapter : CornerstoneObject, IWebViewAdapter, IDi
 			var pngBytes = stream.ToArray();
 			var width = Math.Max(1, _webView.ClientSize.Width);
 			var height = Math.Max(1, _webView.ClientSize.Height);
-			return WebViewSnapshotHelper.ProcessPng(pngBytes, width, height, options);
+			return NativeSurfaceSnapshotHelper.ProcessPng(pngBytes, width, height, options);
 		}
 		catch (Exception ex)
 		{
-			return WebViewSnapshot.Failed(ex.Message);
+			return NativeSurfaceSnapshot.Failed(ex.Message);
 		}
 	}
 

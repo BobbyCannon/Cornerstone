@@ -25,6 +25,12 @@ This index covers how the framework behaves and how hosts use it.
 | [Logging.md](Logging.md) | In-memory circular Logger vs structured Tracker |
 | [Serializer.md](Serializer.md) | JSON serialize/deserialize, CreateOptions forks, file streaming |
 
+## Appearance
+
+| Document | Summary |
+|----------|---------|
+| [Themes.md](Themes.md) | Color, light/dark mode, and UI density; DynamicResource tokens for chrome |
+
 ## Controls
 
 Avalonia controls under `Cornerstone.Avalonia`. Full index: [Controls/Readme.md](Controls/Readme.md).

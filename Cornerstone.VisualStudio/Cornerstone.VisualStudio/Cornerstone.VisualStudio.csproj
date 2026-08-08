@@ -1,0 +1,178 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Project>
+	<Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
+	<PropertyGroup>
+		<RootNamespace>Cornerstone.VisualStudio</RootNamespace>
+		<AssemblyName>Cornerstone.VisualStudio</AssemblyName>
+		<TargetFrameworks>net472</TargetFrameworks>
+		<!-- Required for Page/XAML g.cs generation to participate in CoreCompile (SDK-style). -->
+		<UseWPF>true</UseWPF>
+		<!-- Hybrid: classic VSSDK package + VisualStudio.Extensibility settings contributions. -->
+		<VssdkCompatibleExtension>true</VssdkCompatibleExtension>
+		<GeneratePkgDefFile>true</GeneratePkgDefFile>
+		<UseCodebase>true</UseCodebase>
+		<IncludeAssemblyInVSIXContainer>true</IncludeAssemblyInVSIXContainer>
+		<IncludeDebugSymbolsInVSIXContainer>true</IncludeDebugSymbolsInVSIXContainer>
+		<IncludeDebugSymbolsInLocalVSIXDeployment>true</IncludeDebugSymbolsInLocalVSIXDeployment>
+		<CopyBuildOutputToOutputDirectory>true</CopyBuildOutputToOutputDirectory>
+		<CopyOutputSymbolsToOutputDirectory>false</CopyOutputSymbolsToOutputDirectory>
+		<StartAction>Program</StartAction>
+		<StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
+		<StartArguments>/rootsuffix Exp</StartArguments>
+		<SignAssembly>true</SignAssembly>
+		<AssemblyOriginatorKeyFile>..\Key.snk</AssemblyOriginatorKeyFile>
+		<!-- Required for VSPackage.resx icon (non-string resources) under modern .NET SDK -->
+		<GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
+	</PropertyGroup>
+	<ItemGroup Label="Snippet">
+		<Content Include="Snippets\snippets.pkgdef">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<IncludeInVSIX>true</IncludeInVSIX>
+		</Content>
+		<Content Include="Snippets\Avalonia\Avalonia_AP00.snippet">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<IncludeInVSIX>true</IncludeInVSIX>
+		</Content>
+		<Content Include="Snippets\Avalonia\Avalonia_AP01.snippet">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<IncludeInVSIX>true</IncludeInVSIX>
+		</Content>
+		<Content Include="Snippets\Avalonia\Avalonia_DP00.snippet">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<IncludeInVSIX>true</IncludeInVSIX>
+		</Content>
+		<Content Include="Snippets\Avalonia\Avalonia_DP01.snippet">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<IncludeInVSIX>true</IncludeInVSIX>
+		</Content>
+		<Content Include="Snippets\Avalonia\Avalonia_RE00.snippet">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<IncludeInVSIX>true</IncludeInVSIX>
+		</Content>
+		<Content Include="Snippets\Avalonia\Avalonia_RE01.snippet">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<IncludeInVSIX>true</IncludeInVSIX>
+		</Content>
+		<Content Include="Snippets\Avalonia\Avalonia_RE02.snippet">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<IncludeInVSIX>true</IncludeInVSIX>
+		</Content>
+		<Content Include="Snippets\Avalonia\Avalonia_SP00.snippet">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<IncludeInVSIX>true</IncludeInVSIX>
+		</Content>
+		<Content Include="Snippets\Avalonia\Avalonia_SP01.snippet">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<IncludeInVSIX>true</IncludeInVSIX>
+		</Content>
+		<Content Include="Templates.pkgdef" />
+	</ItemGroup>
+	<ItemGroup>
+		<Content Include="Cornerstone.ico">
+			<IncludeInVSIX>true</IncludeInVSIX>
+		</Content>
+		<Content Include="icons.pkgdef">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<IncludeInVSIX>true</IncludeInVSIX>
+		</Content>
+		<Content Include="overview.md">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<IncludeInVSIX>true</IncludeInVSIX>
+		</Content>
+		<None Include="publishManifest.json">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Include="source.extension.vsixmanifest">
+			<SubType>Designer</SubType>
+		</None>
+	</ItemGroup>
+	<Target Name="PreCreateVsixContainer" BeforeTargets="GetVsixSourceItems">
+		<ItemGroup>
+			<_TemplatePackage Include="$(NuGetPackageRoot)\$(AvaloniaTemplatesPackageName.ToLowerInvariant())\$(AvaloniaTemplatesPackageVersion)\$(AvaloniaTemplatesPackageName.ToLowerInvariant()).$(AvaloniaTemplatesPackageVersion).nupkg" />
+		</ItemGroup>
+		<Error Text="No template files found." Condition="@(_TemplatePackage-&gt;Count()) == 0" />
+		<Message Text="Template nuget packages found: @(_TemplatePackage)" Importance="low" />
+		<!-- don't modify the following, the pkgdef file uses the path below -->
+		<ItemGroup>
+			<VSIXSourceItem Include="@(_TemplatePackage)">
+				<VSIXSubPath>ProjectTemplates\</VSIXSubPath>
+			</VSIXSourceItem>
+		</ItemGroup>
+	</Target>
+	<ItemGroup>
+		<PackageReference Include="Avalonia.Remote.Protocol" Version="$(AvaloniaVersion)" />
+		<PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.8.43" />
+		<PackageReference Include="Microsoft.CodeAnalysis" Version="4.14.0" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.14.0" />
+		<PackageReference Include="Microsoft.VisualStudio.LanguageServices" Version="4.14.0" />
+		<PackageReference Include="Microsoft.VisualStudio.ProjectSystem" Version="17.9.380" />
+		<PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.14.40265" ExcludeAssets="runtime">
+			<IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<!-- Extensibility.Build replaces Microsoft.VSSDK.BuildTools for hybrid VSSDK + Extensibility packages. -->
+		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Sdk" Version="17.14.40608">
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.14.40608">
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		<PackageReference Include="Serilog" Version="4.0.0" />
+		<PackageReference Include="Serilog.Sinks.Trace" Version="4.0.0" />
+		<PackageReference Include="SerilogAnalyzer" Version="0.15.0" />
+	</ItemGroup>
+	<ItemGroup>
+		<Reference Include="Microsoft.CSharp" />
+		<Reference Include="PresentationCore" />
+		<Reference Include="PresentationFramework" />
+		<Reference Include="System" />
+		<Reference Include="System.Data" />
+		<Reference Include="System.Design" />
+		<Reference Include="System.Drawing" />
+		<Reference Include="System.Windows.Forms" />
+		<Reference Include="System.Xaml" />
+		<Reference Include="System.Xml" />
+		<Reference Include="WindowsBase" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\templates\ProjectTemplatesDownloader\ProjectTemplatesDownloader.csproj"
+				ReferenceOutputAssembly="false" PrivateAssets="all" Name="ProjectTemplatesDownloader" />
+		<ProjectReference Include="..\Cornerstone.VisualStudio.Core\Cornerstone.VisualStudio.Core.csproj">
+			<Project>{e5819b46-75d5-de32-dd91-c24396cd4162}</Project>
+			<Name>Cornerstone.VisualStudio.Core</Name>
+		</ProjectReference>
+		<!-- https://github.com/dotnet/sdk/issues/433 -->
+		<ProjectReference Update="@(ProjectReference)" AdditionalProperties="TargetFramework=netstandard2.0" />
+		<!-- https://github.com/Microsoft/extendvs/issues/57 -->
+		<ProjectReference Update="@(ProjectReference)" Name="%(Filename)" />
+	</ItemGroup>
+	<ItemGroup>
+		<Content Include="Templates.pkgdef">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<IncludeInVSIX>true</IncludeInVSIX>
+		</Content>
+	</ItemGroup>
+	<ItemGroup>
+		<VSCTCompile Include="Commands\CornerstonePackage.vsct">
+			<ResourceName>Menus.ctmenu</ResourceName>
+		</VSCTCompile>
+	</ItemGroup>
+	<!--
+	  ProvideMenuResource("Menus.ctmenu") needs a top-level managed stream named Menus.ctmenu.
+	  Default VSSDK merge puts the CTO inside _EmptyResource.resources, which VS cannot load for this
+	  package (UI library load fails → package init / designer broken). Embed the CTO directly instead.
+	  Do not use MergeWithCTO with GenerateResourceUsePreserializedResources (VSSDK1012).
+	-->
+	<Target Name="EmbedMenusCtmenu" AfterTargets="VSCTCompile" BeforeTargets="CoreCompile;PrepareResources">
+		<ItemGroup Condition="Exists('$(IntermediateOutputPath)CornerstonePackage.cto')">
+			<EmbeddedResource Include="$(IntermediateOutputPath)CornerstonePackage.cto">
+				<LogicalName>Menus.ctmenu</LogicalName>
+				<Type>Non-Resx</Type>
+				<WithCulture>false</WithCulture>
+			</EmbeddedResource>
+		</ItemGroup>
+	</Target>
+	<!-- Extensibility.Build already imports Microsoft.VsSDK.targets; do not import it again. -->
+	<Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
+</Project>

@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0</TargetFrameworks>
+		<SignAssembly>true</SignAssembly>
+		<AssemblyOriginatorKeyFile>..\Key.snk</AssemblyOriginatorKeyFile>
+	</PropertyGroup>
+	<ItemGroup>
+		<!-- 
+		Must use oldest System.Text.Json version here as this can't be higher than what VS ships with
+		or intellisense will fail to load - see GH#298
+		-->
+		<PackageReference Include="System.Text.Json" Version="4.6.0" />
+		<PackageReference Include="System.Memory" Version="4.5.4" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="dnlib" Version="3.6.0" />
+	</ItemGroup>
+	<Import Project="../Props/NullableEnable.props" />
+	<Import Project="../Props/NetAnalyzers.props" />
+	<ItemGroup>
+		<InternalsVisibleTo Include="Cornerstone.VisualStudio.Tests" Key="0024000004800000940000000602000000240000525341310004000001000100b111cf707bc11956645caffc0d3749fde7a81ee7bdca74d0a3f3f7f599aab8d6c256db70757a96a4589c353e81c8d521d7b72e3fbc59f90715f362057c4d06cd35a5c3956b4d38f12251cbf1d53db778c94dd6fb652a3fb27a03256a9df604bf9bb4c435e5163b605e00f18200433e354459c8a812fa1dee5b6b90efa3100db2" />
+	</ItemGroup>
+</Project>

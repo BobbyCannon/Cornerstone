@@ -4,6 +4,7 @@
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:sample="clr-namespace:Cornerstone.Sample"
 		xmlns:converters="clr-namespace:Cornerstone.Avalonia.Converters;assembly=Cornerstone.Avalonia"
+		xmlns:themes="clr-namespace:Cornerstone.Avalonia.Themes;assembly=Cornerstone.Avalonia"
 		mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="600"
 		Background="{DynamicResource Background02}"
 		x:Class="Cornerstone.Sample.AppView"
@@ -19,21 +20,29 @@
 				SelectedItem="{Binding SelectedTab, Mode=TwoWay}">
 			<NavigationMenu.InnerTopContent>
 				<Grid>
-					<Button Theme.Color="None"
-							Width="36"
-							Height="36"
-							BorderThickness="0"
-							Command="{x:Static CornerstoneTheme.ToggleThemeCommand}"
+					<StackPanel Orientation="Horizontal"
+							Spacing="4"
 							IsVisible="{Binding ElementName=Menu, Path=IsOpen}"
 							Margin="0,-34,2,0"
 							HorizontalAlignment="Right"
-							VerticalAlignment="Top"
-							ToolTip.Tip="Toggle Theme">
-						<PathIcon Height="16" Width="16"
-								Data="{Binding ElementName=This, Path=ActualThemeVariant, Converter={x:Static converters:ThemeConverters.ToThemeIconInverted}}"
-								HorizontalAlignment="Center"
-								VerticalAlignment="Center" />
-					</Button>
+							VerticalAlignment="Top">
+						<ComboBox Width="100"
+								MinHeight="32"
+								ItemsSource="{x:Static themes:Theme.ThemeDensities}"
+								SelectedItem="{Binding State.Settings.ThemeDensity, Mode=TwoWay}"
+								ToolTip.Tip="UI density (chrome text size)" />
+						<Button Theme.Color="None"
+								Width="36"
+								Height="36"
+								BorderThickness="0"
+								Command="{Binding ToggleThemeModeCommand}"
+								ToolTip.Tip="Toggle light / dark">
+							<PathIcon Height="16" Width="16"
+									Data="{Binding ElementName=This, Path=ActualThemeVariant, Converter={x:Static converters:ThemeConverters.ToThemeIconInverted}}"
+									HorizontalAlignment="Center"
+									VerticalAlignment="Center" />
+						</Button>
+					</StackPanel>
 					<Border CornerRadius="80"
 							ClipToBounds="True"
 							Margin="10"

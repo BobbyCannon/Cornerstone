@@ -41,6 +41,18 @@ public abstract class Theme : Styles
 
 		Colors = [.. colors.Except([ThemeColor.None, ThemeColor.Current])];
 		ThemeColors = colors;
+		ThemeDensities =
+		[
+			ThemeDensity.Compact,
+			ThemeDensity.Normal,
+			ThemeDensity.Large
+		];
+		ThemeModes =
+		[
+			ThemeMode.Dark,
+			ThemeMode.Light,
+			ThemeMode.Default
+		];
 		ThemeVariants = [ThemeVariant.Dark, ThemeVariant.Light, ThemeVariant.Default];
 	}
 
@@ -51,6 +63,16 @@ public abstract class Theme : Styles
 	public static ThemeColor[] Colors { get; }
 
 	public static ThemeColor[] ThemeColors { get; }
+
+	/// <summary>
+	/// Compact / Normal / Large for preview pickers and settings UIs.
+	/// </summary>
+	public static ThemeDensity[] ThemeDensities { get; }
+
+	/// <summary>
+	/// Dark / Light / Default for app ThemeMode pickers.
+	/// </summary>
+	public static ThemeMode[] ThemeModes { get; }
 
 	public static ThemeVariant[] ThemeVariants { get; }
 
@@ -102,6 +124,12 @@ public abstract class Theme : Styles
 		return theme?.ThemeColor;
 	}
 
+	public static ThemeDensity GetThemeDensity()
+	{
+		var theme = GetCornerstoneTheme();
+		return theme?.ThemeDensity ?? ThemeDensity.Normal;
+	}
+
 	public static ThemeVariant GetThemeVariant()
 	{
 		var app = Application.Current;
@@ -122,6 +150,14 @@ public abstract class Theme : Styles
 		{
 			theme.ThemeColor = (ThemeColor) color;
 		}
+	}
+
+	/// <summary>
+	/// Apply density app-wide (same scope model as <see cref="SetThemeColor" />; not subtree-scoped).
+	/// </summary>
+	public static void SetThemeDensity(ThemeDensity density)
+	{
+		CornerstoneTheme.SelectThemeDensity(density);
 	}
 
 	public static void SetThemeVariant(ThemeVariant themeVariant)

@@ -9,7 +9,9 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Rendering;
 using Avalonia.Threading;
+using Cornerstone.Avalonia.Camera;
 using Cornerstone.Avalonia.Controls;
+using Cornerstone.Avalonia.MediaPlayer;
 using Cornerstone.Platforms.Browser;
 using Cornerstone.Runtime;
 
@@ -89,6 +91,10 @@ internal static class AppBuilderExtensions
 		dependencyProvider.SetTransient<BrowserInteropProxy, CornerstoneBrowserInteropProxy>();
 		// Factory avoids SourceReflector constructor discovery (can fail for internal types on WASM).
 		dependencyProvider.SetTransient<IWebViewAdapter, WebViewAdapter>(() => new WebViewAdapter());
+		dependencyProvider.SetTransient<ICameraAdapter, CameraAdapterStub>(() =>
+			new CameraAdapterStub(CornerstoneApplication.CornerstoneDispatcher));
+		dependencyProvider.SetTransient<BaseMediaPlayerAdapter, MediaPlayerAdapterStub>(() =>
+			new MediaPlayerAdapterStub());
 
 		return builder
 			.AfterSetup(_ =>

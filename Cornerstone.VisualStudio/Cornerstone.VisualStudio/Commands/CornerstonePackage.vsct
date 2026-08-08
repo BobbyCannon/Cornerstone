@@ -1,0 +1,77 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+	<Extern href="stdidcmd.h" />
+	<Extern href="vsshlids.h" />
+
+	<!--
+		TEMP: Code Cleanup UI disabled for release (CornerstoneConstants.CodeCleanupUiEnabled = false).
+		Restore the Groups / Buttons / CommandPlacements below when re-enabling, and uncomment
+		[ProvideMenuResource("Menus.ctmenu", 1)] on CornerstonePackage.
+	-->
+	<!--
+	<Commands package="guidCornerstonePackage">
+		<Groups>
+			<Group guid="guidCornerstoneCmdSet" id="CodeCleanupMenuGroup" priority="0x0600">
+				<Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS" />
+			</Group>
+			<Group guid="guidCornerstoneCmdSet" id="CodeCleanupSolExpGroup" priority="0x0600">
+				<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_ITEMNODE" />
+			</Group>
+		</Groups>
+
+		<Buttons>
+			<Button guid="guidCornerstoneCmdSet" id="cmdidCodeCleanupDocument" priority="0x0100" type="Button">
+				<Parent guid="guidCornerstoneCmdSet" id="CodeCleanupMenuGroup" />
+				<Strings>
+					<ButtonText>Cornerstone: Code Cleanup Document</ButtonText>
+					<MenuText>Cornerstone: Code Cleanup &amp;Document</MenuText>
+					<ToolTipText>Run Cornerstone Code Cleanup on the active document (or selection).</ToolTipText>
+					<LocCanonicalName>Cornerstone.CodeCleanupDocument</LocCanonicalName>
+					<CanonicalName>Cornerstone.CodeCleanupDocument</CanonicalName>
+				</Strings>
+			</Button>
+
+			<Button guid="guidCornerstoneCmdSet" id="cmdidCodeCleanupHierarchy" priority="0x0100" type="Button">
+				<Parent guid="guidCornerstoneCmdSet" id="CodeCleanupSolExpGroup" />
+				<CommandFlag>DynamicVisibility</CommandFlag>
+				<CommandFlag>DefaultInvisible</CommandFlag>
+				<Strings>
+					<ButtonText>Cornerstone: Code Cleanup</ButtonText>
+					<MenuText>Cornerstone: Code &amp;Cleanup</MenuText>
+					<ToolTipText>Run Cornerstone Code Cleanup on the selected file(s), folder, project, or solution.</ToolTipText>
+					<LocCanonicalName>Cornerstone.CodeCleanup</LocCanonicalName>
+					<CanonicalName>Cornerstone.CodeCleanup</CanonicalName>
+				</Strings>
+			</Button>
+		</Buttons>
+	</Commands>
+
+	<CommandPlacements>
+		<CommandPlacement guid="guidCornerstoneCmdSet" id="CodeCleanupSolExpGroup" priority="0x0600">
+			<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_FOLDERNODE" />
+		</CommandPlacement>
+		<CommandPlacement guid="guidCornerstoneCmdSet" id="CodeCleanupSolExpGroup" priority="0x0600">
+			<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_PROJNODE" />
+		</CommandPlacement>
+		<CommandPlacement guid="guidCornerstoneCmdSet" id="CodeCleanupSolExpGroup" priority="0x0600">
+			<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_SOLNNODE" />
+		</CommandPlacement>
+		<CommandPlacement guid="guidCornerstoneCmdSet" id="CodeCleanupSolExpGroup" priority="0x0600">
+			<Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_XPROJ_MULTIITEM" />
+		</CommandPlacement>
+	</CommandPlacements>
+	-->
+
+	<Symbols>
+		<GuidSymbol name="guidCornerstonePackage" value="{865ba8d5-1180-4bf8-8821-345f72a4cb79}" />
+
+		<GuidSymbol name="guidCornerstoneCmdSet" value="{B7E6A0F1-4C2D-4A8E-9F31-0D5C8A2E7B10}">
+			<IDSymbol name="CodeCleanupMenuGroup" value="0x1020" />
+			<IDSymbol name="CodeCleanupSolExpGroup" value="0x1021" />
+			<IDSymbol name="cmdidCodeCleanupDocument" value="0x0100" />
+			<IDSymbol name="cmdidCodeCleanupHierarchy" value="0x0101" />
+		</GuidSymbol>
+	</Symbols>
+</CommandTable>

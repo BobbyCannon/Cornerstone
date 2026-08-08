@@ -1,0 +1,67 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+		x:Class="Cornerstone.Sample.Tabs.TabCamera"
+		x:DataType="tabs:TabCamera">
+	<DockPanel>
+		<Grid DockPanel.Dock="Top" Margin="10">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="{x:Static tabs:TabCamera.HeaderName}" />
+		</Grid>
+		<WrapPanel DockPanel.Dock="Top"
+				ItemSpacing="12"
+				LineSpacing="8"
+				Margin="10,0,10,4">
+			<Button Content="Start preview"
+					Command="{Binding StartPreviewCommand}" />
+			<Button Content="Stop preview"
+					Command="{Binding StopPreviewCommand}" />
+			<Button Content="Start record"
+					Command="{Binding StartRecordCommand}" />
+			<Button Content="Stop record"
+					Command="{Binding StopRecordCommand}" />
+			<ComboBox MinWidth="120"
+					ItemsSource="{Binding #Camera.AvailableModes}"
+					SelectedItem="{Binding #Camera.Mode, Mode=TwoWay}" />
+			<ToggleButton Content="Pause"
+					IsChecked="{Binding #Camera.IsPaused, Mode=TwoWay}" />
+			<TextBlock VerticalAlignment="Center"
+					Opacity="0.75"
+					Text="{Binding StatusText}" />
+		</WrapPanel>
+		<TextBlock DockPanel.Dock="Top"
+				Margin="10,0,10,8"
+				Opacity="0.65"
+				TextWrapping="Wrap"
+				Text="Preview and record are separate. Start preview first, then start record (writes a temp MP4). Pause freezes a snapshot for Avalonia overlays and does not stop an in-progress recording." />
+		<!-- Place Avalonia siblings after CameraView so they can paint over it while paused. -->
+		<Grid>
+			<Border Background="{DynamicResource Background02}" />
+			<CameraView x:Name="Camera" />
+			<Border Background="#CC1E1E1E"
+					IsVisible="{Binding #Camera.IsPaused}"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Center"
+					Padding="24"
+					CornerRadius="8"
+					MaxWidth="360">
+				<StackPanel Spacing="8">
+					<TextBlock Text="Avalonia on top while paused"
+							FontSize="{DynamicResource ControlFontSize}"
+							HorizontalAlignment="Center" />
+					<TextBlock Text="CameraView.IsPaused freezes a snapshot and hides the native surface. Recording continues if it was already in progress."
+							TextWrapping="Wrap"
+							Opacity="0.85" />
+					<Button Content="Resume"
+							HorizontalAlignment="Center"
+							Click="ResumeOnClick" />
+				</StackPanel>
+			</Border>
+		</Grid>
+	</DockPanel>
+</UserControl>

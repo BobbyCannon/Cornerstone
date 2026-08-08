@@ -15,7 +15,7 @@
 		<Style Selector="^ TextBlock.InputName">
 			<Setter Property="Background" Value="Transparent" />
 			<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
-			<Setter Property="FontSize" Value="14" />
+			<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
 			<Setter Property="HorizontalAlignment" Value="Right" />
 			<Setter Property="Margin" Value="0,7,0,0" />
 			<Setter Property="VerticalAlignment" Value="Top" />
@@ -24,7 +24,7 @@
 		<Style Selector="^ SelectableTextBlock.InputValue">
 			<Setter Property="Background" Value="Transparent" />
 			<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
-			<Setter Property="FontSize" Value="14" />
+			<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
 			<Setter Property="HorizontalAlignment" Value="Left" />
 			<Setter Property="Margin" Value="0,7,0,0" />
 			<Setter Property="VerticalAlignment" Value="Top" />
@@ -33,7 +33,7 @@
 		<Style Selector="^ TextBlock.InputValue">
 			<Setter Property="Background" Value="Transparent" />
 			<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
-			<Setter Property="FontSize" Value="14" />
+			<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
 			<Setter Property="HorizontalAlignment" Value="Left" />
 			<Setter Property="Margin" Value="0,7,0,0" />
 			<Setter Property="VerticalAlignment" Value="Top" />
@@ -114,7 +114,7 @@
 
 		<Style Selector="^ TextBlock.InputName">
 			<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
-			<Setter Property="FontSize" Value="14" />
+			<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
 			<Setter Property="HorizontalAlignment" Value="Right" />
 			<Setter Property="Margin" Value="0,7,0,0" />
 			<Setter Property="VerticalAlignment" Value="Top" />
