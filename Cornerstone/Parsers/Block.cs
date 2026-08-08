@@ -29,6 +29,18 @@ public sealed partial class Block : TextRange, IComparable<Block>
 
 	#region Properties
 
+	/// <summary>
+	/// Emphasis applied by surrounding delimiters after interior expansion (parser-owned nesting).
+	/// </summary>
+	[Notify]
+	public partial bool EmBold { get; set; }
+
+	[Notify]
+	public partial bool EmItalic { get; set; }
+
+	[Notify]
+	public partial bool EmStrikethrough { get; set; }
+
 	[Notify]
 	public partial int[] Offsets { get; set; }
 
@@ -41,11 +53,9 @@ public sealed partial class Block : TextRange, IComparable<Block>
 
 	public override string ToString()
 	{
-		if (Type == MarkdownTokenizer.TokenTypeHeader)
-		{
-		}
-
-		return $"{Type} @ {StartOffset}..{EndOffset} ({Length}) [{string.Join(",", Offsets)}]";
+		var em = (EmBold ? "B" : "") + (EmItalic ? "I" : "") + (EmStrikethrough ? "S" : "");
+		var emPart = em.Length > 0 ? $" em={em}" : "";
+		return $"{Type} @ {StartOffset}..{EndOffset} ({Length}) [{string.Join(",", Offsets)}]{emPart}";
 	}
 
 	public void Update(int type, int startOffset, int endOffset, int[] offsets)
@@ -54,6 +64,9 @@ public sealed partial class Block : TextRange, IComparable<Block>
 		StartOffset = startOffset;
 		EndOffset = endOffset;
 		Offsets = offsets;
+		EmBold = false;
+		EmItalic = false;
+		EmStrikethrough = false;
 	}
 
 	#endregion

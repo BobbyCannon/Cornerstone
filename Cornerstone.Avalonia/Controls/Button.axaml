@@ -103,7 +103,7 @@
 		</Style>
 		<!-- Code Template - /Color -->
 
-		<!-- Generated Code - Colors -->
+		<!-- Generated Code - Color -->
 		<Style Selector="^[(Theme.Color)=Amber]">
 			<Setter Property="Background" Value="{DynamicResource Amber05}" />
 			<Setter Property="Foreground" Value="{DynamicResource AmberText05}" />
@@ -454,7 +454,7 @@
 				</Style>
 			</Style>
 		</Style>
-		<!-- Generated Code - /Colors -->
+		<!-- Generated Code - /Color -->
 	</Style>
 
 	<Style Selector="Button.Flat">
@@ -651,6 +651,72 @@
 		<Setter Property="Padding" Value="12,4,12,3" />
 	</Style>
 
+	<!-- Code Template - ColorHover -->
+	<Style Selector="Button.CurrentHover:pointerover">
+		<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
+		<Setter Property="Foreground" Value="{DynamicResource ThemeText06}" />
+	</Style>
+	<!-- Code Template - /ColorHover -->
+
+	<!-- Generated Code - ColorHover -->
+	<Style Selector="Button.AmberHover:pointerover">
+		<Setter Property="Background" Value="{DynamicResource Amber06}" />
+		<Setter Property="Foreground" Value="{DynamicResource AmberText06}" />
+	</Style>
+	<Style Selector="Button.BlueHover:pointerover">
+		<Setter Property="Background" Value="{DynamicResource Blue06}" />
+		<Setter Property="Foreground" Value="{DynamicResource BlueText06}" />
+	</Style>
+	<Style Selector="Button.BlueGrayHover:pointerover">
+		<Setter Property="Background" Value="{DynamicResource BlueGray06}" />
+		<Setter Property="Foreground" Value="{DynamicResource BlueGrayText06}" />
+	</Style>
+	<Style Selector="Button.BrownHover:pointerover">
+		<Setter Property="Background" Value="{DynamicResource Brown06}" />
+		<Setter Property="Foreground" Value="{DynamicResource BrownText06}" />
+	</Style>
+	<Style Selector="Button.DeepOrangeHover:pointerover">
+		<Setter Property="Background" Value="{DynamicResource DeepOrange06}" />
+		<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText06}" />
+	</Style>
+	<Style Selector="Button.DeepPurpleHover:pointerover">
+		<Setter Property="Background" Value="{DynamicResource DeepPurple06}" />
+		<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText06}" />
+	</Style>
+	<Style Selector="Button.GrayHover:pointerover">
+		<Setter Property="Background" Value="{DynamicResource Gray06}" />
+		<Setter Property="Foreground" Value="{DynamicResource GrayText06}" />
+	</Style>
+	<Style Selector="Button.GreenHover:pointerover">
+		<Setter Property="Background" Value="{DynamicResource Green06}" />
+		<Setter Property="Foreground" Value="{DynamicResource GreenText06}" />
+	</Style>
+	<Style Selector="Button.IndigoHover:pointerover">
+		<Setter Property="Background" Value="{DynamicResource Indigo06}" />
+		<Setter Property="Foreground" Value="{DynamicResource IndigoText06}" />
+	</Style>
+	<Style Selector="Button.OrangeHover:pointerover">
+		<Setter Property="Background" Value="{DynamicResource Orange06}" />
+		<Setter Property="Foreground" Value="{DynamicResource OrangeText06}" />
+	</Style>
+	<Style Selector="Button.PinkHover:pointerover">
+		<Setter Property="Background" Value="{DynamicResource Pink06}" />
+		<Setter Property="Foreground" Value="{DynamicResource PinkText06}" />
+	</Style>
+	<Style Selector="Button.PurpleHover:pointerover">
+		<Setter Property="Background" Value="{DynamicResource Purple06}" />
+		<Setter Property="Foreground" Value="{DynamicResource PurpleText06}" />
+	</Style>
+	<Style Selector="Button.RedHover:pointerover">
+		<Setter Property="Background" Value="{DynamicResource Red06}" />
+		<Setter Property="Foreground" Value="{DynamicResource RedText06}" />
+	</Style>
+	<Style Selector="Button.TealHover:pointerover">
+		<Setter Property="Background" Value="{DynamicResource Teal06}" />
+		<Setter Property="Foreground" Value="{DynamicResource TealText06}" />
+	</Style>
+	<!-- Generated Code - /ColorHover -->
+
 	<Design.PreviewWith>
 		<PreviewCodeSnippet MaxWidth="500">
 			<WrapPanel ItemSpacing="10"
@@ -665,7 +731,7 @@
 				<Button Classes="Icon" IsEnabled="False">
 					<PathIcon Data="{StaticResource Icons.Close}" />
 				</Button>
-				<Button Classes="Icon Dim">
+				<Button Classes="Icon Dim RedHover">
 					<PathIcon Data="{StaticResource Icons.Close}" />
 				</Button>
 				<ToggleButton Classes="Icon Dim">

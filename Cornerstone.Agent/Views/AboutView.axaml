@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:views="clr-namespace:Cornerstone.Agent.Views"
+		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+		x:Class="Cornerstone.Agent.Views.AboutView"
+		x:DataType="views:AboutViewModel">
+	<!-- ReSharper disable Xaml.MissingGridIndex -->
+	<AutoGrid
+			ColumnDefinitions="Auto,*,32"
+			RowDefinitions="Auto,Auto,*"
+			Margin="20">
+		<Image Source="/Assets/Cornerstone.Agent.png"
+				Width="128" Height="128"
+				Margin="10" />
+		<StackPanel>
+			<TextBlock Classes="HeaderFour"
+					Margin="20,0,0,0"
+					TextWrapping="Wrap"
+					VerticalAlignment="Center">
+				Cornerstone Agent is a coding agent for assisting in development.
+				It is written in C# using the Cornerstone Framework.
+			</TextBlock>
+			<AutoGrid Classes="Input Compact"
+					ColumnDefinitions="Auto,80,Auto,80,Auto,80"
+					HorizontalAlignment="Center"
+					RowCount="2"
+					Margin="0,10,0,0">
+				<Grid.Styles>
+					<Style Selector="TextBlock">
+						<Setter Property="FontSize" Value="16" />
+						<Setter Property="Foreground" Value="{DynamicResource Foreground06}" />
+					</Style>
+				</Grid.Styles>
+				<TextBlock Classes="InputName" Text="Agent" />
+				<TextBlock Classes="InputValue" Text="{Binding State.RuntimeInformation.ApplicationVersion}" />
+
+				<TextBlock Classes="InputName" Text="dotnet" />
+				<TextBlock Classes="InputValue" Text="{Binding State.RuntimeInformation.DotNetRuntimeVersion}" />
+
+				<TextBlock Classes="InputName" Text="Avalonia" />
+				<TextBlock Classes="InputValue" Text="{Binding State.RuntimeInformation.AvaloniaRuntimeVersion}" />
+			</AutoGrid>
+		</StackPanel>
+		<Button Classes="Icon IconOnly"
+				Command="{Binding Navigator.SelectViewCommand}"
+				CommandParameter="{x:Static views:AgentViewModel.AssemblyName}"
+				VerticalAlignment="Top">
+			<Path Data="{StaticResource Icons.Close}"
+					Height="20" Width="20" />
+		</Button>
+		<TextBlock Classes="HeaderSix"
+				Grid.ColumnSpan="3"
+				Margin="0,20,0,0"
+				TextWrapping="Wrap">
+			Please let me know if you find this interesting and / or useful. My
+			goal is to just continue to development Cornerstone Agent for myself
+			and use it as an example on what the Cornerstone Framework is all about.
+		</TextBlock>
+		<TextBlock Classes="HeaderSix"
+				Margin="0,20,0,0"
+				TextWrapping="Wrap">
+			Bobby Cannon
+		</TextBlock>
+	</AutoGrid>
+</UserControl>

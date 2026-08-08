@@ -49,8 +49,7 @@
 		<Setter Property="Template">
 			<ControlTemplate>
 				<DataValidationErrors>
-					<Grid
-							Name="LayoutRoot"
+					<Grid Name="LayoutRoot"
 							Margin="{TemplateBinding Padding}">
 						<Button
 								Name="PART_FlyoutButton"
@@ -74,6 +73,7 @@
 								<TextBlock
 										Name="PART_DayTextBlock"
 										Text="Day"
+										TextAlignment="Center"
 										HorizontalAlignment="Center"
 										Padding="8,0,8,1"
 										FontFamily="{TemplateBinding FontFamily}"
@@ -83,7 +83,7 @@
 								<TextBlock
 										Name="PART_MonthTextBlock"
 										Text="Month"
-										TextAlignment="Left"
+										TextAlignment="Center"
 										Padding="8,0,8,1"
 										FontFamily="{TemplateBinding FontFamily}"
 										FontWeight="{TemplateBinding FontWeight}"
@@ -92,6 +92,7 @@
 								<TextBlock
 										Name="PART_YearTextBlock"
 										Text="Year"
+										TextAlignment="Center"
 										HorizontalAlignment="Center"
 										Padding="8,0,8,1"
 										FontFamily="{TemplateBinding FontFamily}"
@@ -272,7 +273,6 @@
 							<Button Theme.Color="None"
 									Name="PART_AcceptButton"
 									Grid.Row="1" Grid.Column="0"
-									Height="{DynamicResource ControlAcceptDismissHostGridHeight}"
 									HorizontalAlignment="Stretch"
 									VerticalAlignment="Stretch"
 									Content="OK">
@@ -280,7 +280,6 @@
 							<Button Theme.Color="None"
 									Name="PART_DismissButton"
 									Grid.Row="1" Grid.Column="1"
-									Height="{DynamicResource ControlAcceptDismissHostGridHeight}"
 									HorizontalAlignment="Stretch"
 									VerticalAlignment="Stretch"
 									Content="Cancel">
@@ -298,12 +297,14 @@
 	</ControlTheme>
 
 	<Design.PreviewWith>
-		<Border Padding="20" Width="600" Height="600">
+		<Border Padding="20" Width="400" Height="800">
 			<StackPanel Spacing="20" HorizontalAlignment="Center">
 				<DatePicker MonthVisible="True"
 						DayVisible="False"
 						YearVisible="True" />
-				<DatePicker CornerRadius="8" />
+				<DatePicker CornerRadius="8"
+						SelectedDate="12/25/2026"
+						HorizontalAlignment="Stretch" />
 				<DatePicker IsEnabled="False" />
 				<DatePicker>
 					<DataValidationErrors.Error>
@@ -328,6 +329,7 @@
 						</sys:Exception>
 					</DataValidationErrors.Error>
 				</DatePicker>
+				<DatePickerPresenter />
 			</StackPanel>
 		</Border>
 	</Design.PreviewWith>

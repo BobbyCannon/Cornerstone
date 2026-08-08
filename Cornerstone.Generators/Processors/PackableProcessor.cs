@@ -27,26 +27,6 @@ internal sealed class PackableProcessor : ITypeProcessor
 
 	#region Methods
 
-	/// <summary>
-	/// Called once per generation pass with the current compilation so
-	/// the processor can resolve the collection type symbols it needs.
-	/// </summary>
-	internal void Initialize(Compilation compilation)
-	{
-		_typeSymbolsForCollectionDefinitions = new[]
-		{
-			compilation.GetTypeByMetadataName("Cornerstone.Collections.SpeedyList`1"),
-			compilation.GetTypeByMetadataName("Cornerstone.Collections.ISpeedyList`1"),
-			compilation.GetTypeByMetadataName("System.Array"),
-			compilation.GetTypeByMetadataName("System.Collections.Generic.IEnumerable`1"),
-			compilation.GetTypeByMetadataName("System.Collections.Generic.Collection`1"),
-			compilation.GetTypeByMetadataName("System.Collections.Generic.ICollection`1"),
-			compilation.GetTypeByMetadataName("System.Collections.Generic.IReadOnlyCollection`1"),
-			compilation.GetTypeByMetadataName("System.Collections.Generic.List`1"),
-			compilation.GetTypeByMetadataName("System.Collections.Generic.IList`1")
-		}.Where(s => s != null).ToArray();
-	}
-
 	public void Process(CSharpCodeBuilder builder, SourceTypeInfo typeInfo)
 	{
 		var properties = GetAllMembers(typeInfo.TypeSymbol)
@@ -150,7 +130,7 @@ internal sealed class PackableProcessor : ITypeProcessor
 
 		var currentVersion = distinctVersions.Max();
 		var method = ImplementsMethodRecursively(typeInfo.TypeSymbol, "ToSpeedyPacket");
-		var needsOverride = RequiresOverride(method);
+		var needsOverride = RequiresOverride(method, typeInfo.TypeSymbol.BaseType);
 
 		// ToSpeedyPacket
 		builder.IndentWrite("public ");
@@ -223,6 +203,79 @@ internal sealed class PackableProcessor : ITypeProcessor
 
 		builder.Indent--;
 		builder.IndentWriteLine("}");
+	}
+
+	internal static bool RequiresOverride(IMethodSymbol methodSymbol, INamedTypeSymbol baseType)
+	{
+		if (methodSymbol == null)
+		{
+			return false;
+		}
+
+		if (methodSymbol.IsVirtual)
+		{
+			return true;
+		}
+
+		if (methodSymbol.IsAbstract
+			&& (methodSymbol.ContainingType.TypeKind != TypeKind.Interface))
+		{
+			return true;
+		}
+
+		var containingType = baseType;
+		while ((containingType != null) && (containingType.SpecialType != SpecialType.System_Object))
+		{
+			foreach (var member in containingType.GetMembers(methodSymbol.Name))
+			{
+				if (member is IMethodSymbol baseMethod
+					&& (baseMethod.Parameters.Length == methodSymbol.Parameters.Length)
+					&& (baseMethod.IsAbstract || baseMethod.IsVirtual))
+				{
+					return true;
+				}
+			}
+
+			if (IsPackable(containingType))
+			{
+				return true;
+			}
+
+			containingType = containingType.BaseType;
+		}
+
+		return false;
+	}
+
+	/// <summary>
+	/// Called once per generation pass with the current compilation so
+	/// the processor can resolve the collection type symbols it needs.
+	/// </summary>
+	void ITypeProcessor.Initialize(Compilation compilation)
+	{
+		_typeSymbolsForCollectionDefinitions = new[]
+		{
+			compilation.GetTypeByMetadataName("Cornerstone.Collections.SpeedyList`1"),
+			compilation.GetTypeByMetadataName("Cornerstone.Collections.ISpeedyList`1"),
+			compilation.GetTypeByMetadataName("System.Array"),
+			compilation.GetTypeByMetadataName("System.Collections.Generic.IEnumerable`1"),
+			compilation.GetTypeByMetadataName("System.Collections.Generic.Collection`1"),
+			compilation.GetTypeByMetadataName("System.Collections.Generic.ICollection`1"),
+			compilation.GetTypeByMetadataName("System.Collections.Generic.IReadOnlyCollection`1"),
+			compilation.GetTypeByMetadataName("System.Collections.Generic.List`1"),
+			compilation.GetTypeByMetadataName("System.Collections.Generic.IList`1")
+		}.Where(s => s != null).ToArray();
+	}
+
+	private static bool IsPackable(INamedTypeSymbol symbol)
+	{
+		return symbol
+				.GetAttributes()
+				.Any(attr => attr.AttributeClass?.Name == NamePackableAttribute)
+			|| symbol
+				.GetMembers()
+				.SelectMany(x => x.GetAttributes())
+				.Any(attr => attr.AttributeClass?.Name == NamePackableAttribute);
 	}
 
 	/// <summary>

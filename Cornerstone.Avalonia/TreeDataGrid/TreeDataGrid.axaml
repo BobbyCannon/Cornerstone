@@ -8,6 +8,12 @@
 			<StreamGeometry x:Key="TreeDataGridSortIconAscendingPath">M1965 947l-941 -941l-941 941l90 90l787 -787v1798h128v-1798l787 787z</StreamGeometry>
 
 			<ControlTheme x:Key="{x:Type TreeDataGrid}" TargetType="TreeDataGrid">
+				<Setter Property="Theme.Color" Value="None" />
+				<Setter Property="Background" Value="{DynamicResource Background03}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+				<Setter Property="BorderThickness" Value="0" />
+				<Setter Property="CornerRadius" Value="0" />
 				<Setter Property="Template">
 					<ControlTemplate>
 						<Border x:Name="RootBorder"
@@ -40,19 +46,17 @@
 						</Border>
 					</ControlTemplate>
 				</Setter>
-
 				<Style Selector="^/template/ Border#ColumnHeadersPresenterBorder">
 					<Setter Property="BorderThickness" Value="0 0 0 1" />
 					<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
 				</Style>
-
 			</ControlTheme>
 
 			<ControlTheme x:Key="{x:Type TreeDataGridColumnHeader}"
 					TargetType="TreeDataGridColumnHeader">
-				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="Background" Value="{DynamicResource Background03}" />
 				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
-				<Setter Property="BorderThickness" Value="0" />
+				<Setter Property="BorderThickness" Value="0,0,0,1" />
 				<Setter Property="MinHeight" Value="25" />
 				<Setter Property="Padding" Value="4,2" />
 				<Setter Property="HorizontalContentAlignment" Value="Left" />
@@ -154,6 +158,7 @@
 			</ControlTheme>
 
 			<ControlTheme x:Key="{x:Type TreeDataGridRow}" TargetType="TreeDataGridRow">
+				<!-- Default only. Live value comes from TreeDataGrid.MinRowHeight (applied in code; ancestor binding fails during virtualize/recycle). -->
 				<Setter Property="MinHeight" Value="28" />
 				<Setter Property="Template">
 					<ControlTemplate>
@@ -248,15 +253,17 @@
 
 			<ControlTheme x:Key="TreeDataGridExpandCollapseChevron" TargetType="ToggleButton">
 				<Setter Property="Margin" Value="0" />
-				<Setter Property="Width" Value="12" />
-				<Setter Property="Height" Value="12" />
+				<Setter Property="Width" Value="22" />
+				<Setter Property="Height" Value="22" />
 				<Setter Property="Template">
 					<ControlTemplate>
 						<Border x:Name="ArrowBorder"
 								Background="Transparent"
 								HorizontalAlignment="Center"
 								VerticalAlignment="Center"
-								RenderTransform="rotate(0)">
+								RenderTransform="rotate(0)"
+								Height="{TemplateBinding Height}"
+								Width="{TemplateBinding Width}">
 							<Border.Transitions>
 								<Transitions>
 									<TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.25" />
@@ -267,7 +274,7 @@
 									Fill="{TemplateBinding Foreground}"
 									Width="12"
 									Height="12"
-									Margin="0,0,-5,0"
+									Margin="0,0,-6,0"
 									HorizontalAlignment="Center"
 									VerticalAlignment="Center" />
 						</Border>
@@ -288,14 +295,13 @@
 								CornerRadius="{TemplateBinding CornerRadius}"
 								Padding="{TemplateBinding Indent, Converter={x:Static converters:IndentConverter.Instance}}">
 							<DockPanel>
-								<Border DockPanel.Dock="Left"
-										Margin="4,0"
-										Width="12" Height="12">
-									<ToggleButton Theme="{StaticResource TreeDataGridExpandCollapseChevron}"
-											Focusable="False"
-											IsChecked="{TemplateBinding IsExpanded, Mode=TwoWay}"
-											IsVisible="{TemplateBinding ShowExpander}" />
-								</Border>
+								<ToggleButton DockPanel.Dock="Left"
+										Theme="{StaticResource TreeDataGridExpandCollapseChevron}"
+										Focusable="False"
+										IsChecked="{TemplateBinding IsExpanded, Mode=TwoWay}"
+										IsVisible="{TemplateBinding ShowExpander}"
+										Height="22"
+										Width="22" />
 								<Decorator Name="PART_Content" />
 							</DockPanel>
 						</Border>
@@ -348,6 +354,7 @@
 					TargetType="TreeDataGridTemplateCell">
 				<Setter Property="Template">
 					<ControlTemplate>
+						<!-- Center content in the fixed row slot (text cells already do this). -->
 						<ContentPresenter Name="PART_ContentPresenter"
 								Background="{TemplateBinding Background}"
 								BorderBrush="{TemplateBinding BorderBrush}"
@@ -355,7 +362,9 @@
 								ContentTemplate="{TemplateBinding ContentTemplate}"
 								CornerRadius="{TemplateBinding CornerRadius}"
 								Content="{TemplateBinding Content}"
-								Padding="{TemplateBinding Padding}" />
+								Padding="{TemplateBinding Padding}"
+								HorizontalContentAlignment="Left"
+								VerticalContentAlignment="Center" />
 					</ControlTemplate>
 				</Setter>
 
@@ -387,4 +396,17 @@
 		<Setter Property="Background" Value="{DynamicResource BorderBrush}" />
 	</Style>
 
+	<Design.PreviewWith>
+		<Grid RowDefinitions="*,*">
+			<TreeDataGrid Grid.Row="0"
+					Height="100"
+					Width="100"
+					BorderThickness="0" />
+			<ToggleButton Grid.Row="1"
+					Theme="{StaticResource TreeDataGridExpandCollapseChevron}"
+					Background="Red">
+
+			</ToggleButton>
+		</Grid>
+	</Design.PreviewWith>
 </Styles>

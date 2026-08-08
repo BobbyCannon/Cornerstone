@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Bobby Cannon",
+  "classifications": [ "Cornerstone", "Avalonia", "Keystone", "Desktop", "UI" ],
+  "identity": "Cornerstone.Templates.Avalonia.Keystone",
+  "groupIdentity": "Cornerstone.Templates.Avalonia",
+  "name": "Cornerstone Avalonia App (Keystone)",
+  "description": "Avalonia desktop application using Cornerstone AppBootstrap and Keystone (Bus : State : Engine).",
+  "shortName": "cornerstone-avalonia",
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "sourceName": "Company.AppName",
+  "preferNameDirectory": true,
+  "defaultName": "CornerstoneApp",
+  "symbols": {
+    "Framework": {
+      "type": "parameter",
+      "description": "The target framework for the project.",
+      "datatype": "choice",
+      "choices": [
+        {
+          "choice": "net10.0",
+          "description": ".NET 10"
+        }
+      ],
+      "defaultValue": "net10.0",
+      "replaces": "net10.0"
+    },
+    "CornerstoneVersion": {
+      "type": "parameter",
+      "datatype": "string",
+      "description": "Version of Cornerstone NuGet packages to reference.",
+      "defaultValue": "3.0.0",
+      "replaces": "CORNERSTONE_VERSION"
+    },
+    "AvaloniaVersion": {
+      "type": "parameter",
+      "datatype": "string",
+      "description": "Version of Avalonia packages to reference.",
+      "defaultValue": "12.1.1",
+      "replaces": "AVALONIA_VERSION"
+    }
+  }
+}

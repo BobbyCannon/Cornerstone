@@ -144,7 +144,7 @@
 		</Style>
 		<!-- Code Template - /Color -->
 
-		<!-- Generated Code - Colors -->
+		<!-- Generated Code - Color -->
 		<Style Selector="^[(Theme.Color)=Amber]">
 			<Style Selector="^ /template/ Thumb#Thumb:pointerover">
 				<Setter Property="Background" Value="{DynamicResource Amber05}" />
@@ -257,7 +257,7 @@
 				<Setter Property="Background" Value="{DynamicResource Teal05}" />
 			</Style>
 		</Style>
-		<!-- Generated Code - /Colors -->
+		<!-- Generated Code - /Color -->
 
 	</ControlTheme>
 

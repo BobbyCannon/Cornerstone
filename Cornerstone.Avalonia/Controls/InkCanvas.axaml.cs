@@ -7,6 +7,7 @@ using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using Cornerstone.Avalonia.Resources;
 using Cornerstone.Collections;
+using Cornerstone.Presentation;
 
 #endregion
 
@@ -39,7 +40,7 @@ public sealed partial class InkCanvas : CornerstoneControl
 	[StyledProperty]
 	public partial IBrush Background { get; set; }
 
-	public PresentationList<InkCanvasStroke> History { get; }
+	public Presentation.PresentationList<InkCanvasStroke> History { get; }
 
 	[StyledProperty]
 	public partial bool IsErasing { get; set; }

@@ -61,7 +61,7 @@ public class JsonConverterForPartialUpdate : JsonConverter<PartialUpdate>
 	{
 		using var doc = JsonDocument.ParseValue(ref reader);
 		var element = doc.RootElement;
-		return element.ValueKind == JsonValueKind.Null ? null : PartialUpdate.FromJsonElement(element);
+		return element.ValueKind == JsonValueKind.Null ? null : PartialUpdate.FromJsonElement(typeToConvert, element);
 	}
 
 	public override void Write(Utf8JsonWriter writer, PartialUpdate value, JsonSerializerOptions options)

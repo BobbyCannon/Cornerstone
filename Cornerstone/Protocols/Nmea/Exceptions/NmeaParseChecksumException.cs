@@ -1,0 +1,39 @@
+#region References
+
+using System;
+
+#endregion
+
+namespace Cornerstone.Protocols.Nmea.Exceptions;
+
+/// <summary>
+/// Represents a checksum error during parsing.
+/// </summary>
+[Serializable]
+public class NmeaParseChecksumException : Exception
+{
+	#region Constructors
+
+	/// <summary>
+	/// Instantiates an instance of the exception.
+	/// </summary>
+	public NmeaParseChecksumException()
+	{
+	}
+
+	/// <summary>
+	/// Instantiates an instance of the exception.
+	/// </summary>
+	public NmeaParseChecksumException(string message) : base(message)
+	{
+	}
+
+	/// <summary>
+	/// Instantiates an instance of the exception.
+	/// </summary>
+	public NmeaParseChecksumException(string message, Exception inner) : base(message, inner)
+	{
+	}
+
+	#endregion
+}

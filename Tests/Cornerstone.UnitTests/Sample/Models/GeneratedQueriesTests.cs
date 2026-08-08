@@ -27,15 +27,15 @@ public class GeneratedQueriesTests : CornerstoneUnitTest
 				(
 					"CreatedOn" DATE NOT NULL,
 					"EmailAddress" TEXT NOT NULL,
-					"Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+					"Id" INTEGER PRIMARY KEY AUTOINCREMENT,
 					"IsDeleted" INTEGER NOT NULL,
-					"LastLoginDate" DATE NOT NULL,
+					"LastLoginDate" DATE,
 					"ModifiedOn" DATE NOT NULL,
 					"Name" TEXT NOT NULL,
 					"Picture" TEXT,
 					"Roles" TEXT NOT NULL,
-					"Status" INTEGER NOT NULL,
-					"SyncId" TEXT NOT NULL,
+					"Status" INTEGER,
+					"SyncId" TEXT,
 					"TimeZoneId" TEXT
 				);
 				""", query);

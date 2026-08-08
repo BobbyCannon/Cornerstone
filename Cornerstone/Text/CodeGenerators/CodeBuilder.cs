@@ -12,11 +12,10 @@ using Cornerstone.Text.CodeGenerators.TypeGenerators;
 
 namespace Cornerstone.Text.CodeGenerators;
 
-public class CodeBuilder
+public class CodeBuilder : TextWriter
 {
 	#region Fields
 
-	private readonly StringGapBuffer _builder;
 	private static readonly IList<CodeGenerator> _builtInGenerators;
 	private readonly Stack<CodeBuilderMode> _consumerModes;
 	private static readonly List<Func<SourceTypeInfo, string, object, string>> _propertyValueProviders;
@@ -26,17 +25,28 @@ public class CodeBuilder
 
 	#region Constructors
 
-	public CodeBuilder() : this(16384)
+	public CodeBuilder()
+		: this(new StringBuffer(), new CodeBuilderSettings())
 	{
 	}
 
-	public CodeBuilder(uint capacity)
+	public CodeBuilder(int length)
+		: this(new StringBuffer(length), new CodeBuilderSettings())
 	{
-		_builder = new(capacity);
+	}
+
+	public CodeBuilder(IStringBuffer buffer)
+		: this(buffer, new CodeBuilderSettings())
+	{
+	}
+
+	public CodeBuilder(IStringBuffer buffer, CodeBuilderSettings settings)
+		: base(buffer, settings)
+	{
 		_consumerModes = new Stack<CodeBuilderMode>();
 
 		Mode = CodeBuilderMode.Unknown;
-		Settings = new CodeBuilderSettings();
+		Settings = settings;
 	}
 
 	static CodeBuilder()
@@ -82,11 +92,9 @@ public class CodeBuilder
 
 	#region Properties
 
-	public uint Indent { get; set; }
-
 	public CodeBuilderMode Mode { get; private set; }
 
-	public CodeBuilderSettings Settings { get; }
+	public override CodeBuilderSettings Settings { get; }
 
 	#endregion
 
@@ -107,18 +115,10 @@ public class CodeBuilder
 		};
 	}
 
-	public void Clear()
+	public override void Clear()
 	{
-		_builder.Clear();
-		Indent = 0;
-	}
-
-	public void DecreaseIndent()
-	{
-		if (Indent >= Settings.IndentLength)
-		{
-			Indent -= Settings.IndentLength;
-		}
+		Buffer.Clear();
+		base.Clear();
 	}
 
 	/// <summary>
@@ -157,31 +157,6 @@ public class CodeBuilder
 		return $"{typeName}<{string.Join(", ", genericArguments.Select(GetCodeTypeName))}>";
 	}
 
-	public void IncreaseIndent()
-	{
-		Indent += Settings.IndentLength;
-	}
-
-	public void IndentWrite(string value)
-	{
-		WriteIndent();
-		_builder.Append(value);
-	}
-
-	public void IndentWriteLine(char value)
-	{
-		WriteIndent();
-		_builder.Add(value);
-		_builder.Append(Settings.NewLineChars);
-	}
-
-	public void IndentWriteLine(string value)
-	{
-		WriteIndent();
-		_builder.Append(value);
-		_builder.Append(Settings.NewLineChars);
-	}
-
 	public static void RegisterPropertyValueProvider(Func<SourceTypeInfo, string, object, string> provider)
 	{
 		_propertyValueProviders.Add(provider);
@@ -197,34 +172,34 @@ public class CodeBuilder
 
 	public override string ToString()
 	{
-		return _builder.ToString();
+		return Buffer.ToString();
 	}
 
 	public bool TryAppendLiteral(object value)
 	{
 		if (value == null)
 		{
-			Write("null");
+			Append("null");
 			return true;
 		}
 		if (value is bool b)
 		{
-			Write(b ? "true" : "false");
+			Append(b ? "true" : "false");
 			return true;
 		}
 		if (value is string s)
 		{
-			Write($"\"{s}\"");
+			Append($"\"{s}\"");
 			return true;
 		}
 		if (value is float f)
 		{
-			Write(f.ToString("G9"));
+			Append(f.ToString("G9"));
 			return true;
 		}
 		if (value is double d)
 		{
-			Write(d.ToString("G17"));
+			Append(d.ToString("G17"));
 			return true;
 		}
 
@@ -252,22 +227,6 @@ public class CodeBuilder
 		Indent = (uint) (currentIndentCount / Settings.IndentLength);
 	}
 
-	public void Write(string value)
-	{
-		_builder.Append(value);
-	}
-
-	public void WriteLine()
-	{
-		_builder.Append(Settings.NewLineChars);
-	}
-
-	public void WriteLine(string value)
-	{
-		_builder.Append(value);
-		_builder.Append(Settings.NewLineChars);
-	}
-
 	public void WriteObject<T>(T actual)
 	{
 		var sourceInfoType = SourceReflector.GetSourceType(actual?.GetType() ?? typeof(T));
@@ -291,46 +250,46 @@ public class CodeBuilder
 			{
 				case CodeBuilderOutput.Declaration:
 				{
-					Write(AccessibilityToString(propertyInfo.Accessibility));
-					Write(" ");
-					Write(GetCodeTypeName(propertyInfo.PropertyInfo.PropertyType));
-					Write(" ");
-					Write(propertyInfo.Name);
-					Write(" {");
+					Append(AccessibilityToString(propertyInfo.Accessibility));
+					Append(" ");
+					Append(GetCodeTypeName(propertyInfo.PropertyInfo.PropertyType));
+					Append(" ");
+					Append(propertyInfo.Name);
+					Append(" {");
 					if (propertyInfo.CanRead)
 					{
 						if ((propertyInfo.AccessibilityForGet != SourceAccessibility.None)
 							&& (propertyInfo.AccessibilityForGet != propertyInfo.Accessibility))
 						{
-							Write(" ");
-							Write(AccessibilityToString(propertyInfo.AccessibilityForGet));
+							Append(" ");
+							Append(AccessibilityToString(propertyInfo.AccessibilityForGet));
 						}
-						Write(" get;");
+						Append(" get;");
 					}
 					if (propertyInfo.CanWrite)
 					{
 						if ((propertyInfo.AccessibilityForSet != SourceAccessibility.None)
 							&& (propertyInfo.AccessibilityForSet != propertyInfo.Accessibility))
 						{
-							Write(" ");
-							Write(AccessibilityToString(propertyInfo.AccessibilityForSet));
+							Append(" ");
+							Append(AccessibilityToString(propertyInfo.AccessibilityForSet));
 						}
-						Write(" set;");
+						Append(" set;");
 					}
-					Write(" }");
+					Append(" }");
 					break;
 				}
 				default:
 				{
-					Write(propertyInfo.Name);
-					Write(" = ");
+					Append(propertyInfo.Name);
+					Append(" = ");
 
 					var rawValue = propertyInfo.GetValue(value);
 					var customCode = TryGetCustomCodeValue(typeInfo, propertyInfo, rawValue);
 
 					if (customCode != null)
 					{
-						Write(customCode);
+						Append(customCode);
 					}
 					else
 					{
@@ -364,19 +323,6 @@ public class CodeBuilder
 		Mode = mode;
 
 		_consumerModes.Push(mode);
-	}
-
-	internal void WriteIndent()
-	{
-		if (Indent == 0)
-		{
-			return;
-		}
-
-		for (var i = 0; i < Indent; i++)
-		{
-			_builder.Add(Settings.IndentChar);
-		}
 	}
 
 	private static int CountWhile(string value, Func<char, bool> check)
@@ -524,7 +470,7 @@ public class CodeBuilder
 
 			if (!first)
 			{
-				WriteLine(Settings.DesiredOutput == CodeBuilderOutput.Instance ? "," : string.Empty);
+				AppendLine(Settings.DesiredOutput == CodeBuilderOutput.Instance ? "," : string.Empty);
 			}
 
 			WriteIndent();
@@ -533,7 +479,7 @@ public class CodeBuilder
 		}
 
 		DecreaseIndent();
-		WriteLine();
+		AppendLine();
 		EndObject();
 	}
 

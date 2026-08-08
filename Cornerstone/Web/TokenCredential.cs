@@ -5,7 +5,6 @@ using System.Net.Http.Headers;
 using System.Security;
 using System.Text;
 using Cornerstone.Extensions;
-using Cornerstone.Presentation;
 
 #endregion
 
@@ -36,17 +35,7 @@ public partial class TokenCredential : Credential
 	/// </summary>
 	/// <param name="password"> The token of the credential. </param>
 	public TokenCredential(string password)
-		: this(password, null)
-	{
-	}
-
-	/// <summary>
-	/// Creates an instance of the credential.
-	/// </summary>
-	/// <param name="password"> The token of the credential. </param>
-	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public TokenCredential(string password, IDispatcher dispatcher)
-		: base(string.Empty, password, dispatcher)
+		: base(string.Empty, password)
 	{
 	}
 

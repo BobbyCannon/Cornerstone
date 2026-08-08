@@ -37,6 +37,24 @@ public class TreeDataGridRowsPresenter : TreeDataGridPresenterBase<IRow>, IChild
 
 	protected override Orientation Orientation => Orientation.Vertical;
 
+	/// <summary>
+	/// When the host uses fixed row height, primary-axis size is MinRowHeight (stable scroll extent).
+	/// When UseFixedRowHeight is false, returns null so heights are estimated from realized rows.
+	/// </summary>
+	protected override double? FixedElementSizeU
+	{
+		get
+		{
+			if (TemplatedParent is not TreeDataGrid { UseFixedRowHeight: true } grid)
+			{
+				return null;
+			}
+
+			var height = grid.MinRowHeight;
+			return height > 0 ? height : null;
+		}
+	}
+
 	#endregion
 
 	#region Methods
@@ -69,7 +87,36 @@ public class TreeDataGridRowsPresenter : TreeDataGridPresenterBase<IRow>, IChild
 
 	protected override (int index, double position) GetElementAt(double position)
 	{
+		// Prefer exact fixed-height geometry (GetRowAt is still a stub for Auto-height rows).
+		if ((Items is { Count: > 0 }) && (FixedElementSizeU is { } rowHeight) && (rowHeight > 0))
+		{
+			if (position <= 0)
+			{
+				return (0, 0);
+			}
+
+			var index = Math.Min((int) (position / rowHeight), Items.Count - 1);
+			if (index < 0)
+			{
+				index = 0;
+			}
+
+			return (index, index * rowHeight);
+		}
+
 		return ((IRows) Items!).GetRowAt(position);
+	}
+
+	protected override Size MeasureElement(int index, Control element, Size availableSize)
+	{
+		var size = base.MeasureElement(index, element, availableSize);
+		// Force primary-axis size into SizeU used for extent/arrange (content may still clip).
+		if (FixedElementSizeU is { } rowHeight)
+		{
+			return new Size(size.Width, rowHeight);
+		}
+
+		return size;
 	}
 
 	protected override Size MeasureOverride(Size availableSize)
@@ -121,6 +168,11 @@ public class TreeDataGridRowsPresenter : TreeDataGridPresenterBase<IRow>, IChild
 	protected override void RealizeElement(Control element, IRow rowModel, int index)
 	{
 		var row = (TreeDataGridRow) element;
+		// Prefer owner MinRowHeight over fragile ancestor bindings on the row theme.
+		if (TemplatedParent is TreeDataGrid grid)
+		{
+			TreeDataGrid.ApplyRowHeight(row, grid.MinRowHeight, grid.UseFixedRowHeight);
+		}
 		row.Realize(ElementFactory, GetSelection(), Columns, (IRows) Items, index);
 		ChildIndexChanged?.Invoke(this, new ChildIndexChangedEventArgs(element, index));
 	}

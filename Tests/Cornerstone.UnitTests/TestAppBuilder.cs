@@ -27,16 +27,13 @@ public class TestAppBuilder
 
 	public class TestApplication : Application
 	{
-		#region Constructors
+		#region Methods
 
-		public TestApplication()
+		public override void OnFrameworkInitializationCompleted()
 		{
 			Styles.Add(new CornerstoneTheme());
+			base.OnFrameworkInitializationCompleted();
 		}
-
-		#endregion
-
-		#region Methods
 
 		public static AppBuilder BuildAvaloniaApp()
 		{

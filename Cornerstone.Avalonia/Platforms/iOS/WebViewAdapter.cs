@@ -7,7 +7,7 @@ using Avalonia.Input;
 using Avalonia.Platform;
 using CoreGraphics;
 using Cornerstone.Avalonia.Controls;
-using Cornerstone.Data;
+using Cornerstone.Runtime;
 using Foundation;
 using UIKit;
 using WebKit;
@@ -17,7 +17,7 @@ using Key = Avalonia.Input.Key;
 
 namespace Cornerstone.Avalonia.Platforms.iOS;
 
-internal class WebViewAdapter : Notifiable, IWebViewAdapter, IDisposable
+internal class WebViewAdapter : CornerstoneObject, IWebViewAdapter, IDisposable
 {
 	#region Fields
 
@@ -30,10 +30,12 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter, IDisposable
 
 	#region Constructors
 
+	[DependencyInjectionConstructor]
 	public WebViewAdapter()
 	{
 		// Initialize WKWebView with default configuration
 		var configuration = new WKWebViewConfiguration();
+
 		_webView = new WKWebView(UIScreen.MainScreen.Bounds, configuration)
 		{
 			AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight
@@ -45,7 +47,11 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter, IDisposable
 		// Initialize platform handle
 		_platformHandle = new WebViewPlatformHandle(_webView);
 
-		// Initialize properties
+		if (OperatingSystem.IsIOSVersionAtLeast(16, 4))
+		{
+			_webView.Inspectable = true;
+		}
+
 		_uri = new Uri("about:blank");
 	}
 
@@ -61,6 +67,8 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter, IDisposable
 
 	public byte[] Favicon => null;
 
+	public bool IsNativeSurfaceVisible { get; private set; } = true;
+
 	public IPlatformHandle PlatformHandle => _platformHandle;
 
 	public string Title => _webView.Title;
@@ -71,11 +79,51 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter, IDisposable
 		set => Navigate(value);
 	}
 
-	IPlatformHandle IWebViewAdapter.PlatformHandle { get; }
-
 	#endregion
 
 	#region Methods
+
+	public Task<WebViewSnapshot> CaptureSnapshotAsync(WebViewSnapshotOptions options = null)
+	{
+		var tcs = new TaskCompletionSource<WebViewSnapshot>();
+
+		try
+		{
+			var configuration = new WKSnapshotConfiguration();
+			_webView.TakeSnapshot(configuration, (image, error) =>
+			{
+				if (error != null)
+				{
+					tcs.TrySetResult(WebViewSnapshot.Failed(error.LocalizedDescription));
+					return;
+				}
+
+				if (image == null)
+				{
+					tcs.TrySetResult(WebViewSnapshot.Failed("WKWebView snapshot returned no image."));
+					return;
+				}
+
+				using var pngData = image.AsPNG();
+				if (pngData == null)
+				{
+					tcs.TrySetResult(WebViewSnapshot.Failed("Failed to encode WKWebView snapshot as PNG."));
+					return;
+				}
+
+				var bytes = pngData.ToArray();
+				var width = (int) Math.Max(1, Math.Round(image.Size.Width * image.CurrentScale));
+				var height = (int) Math.Max(1, Math.Round(image.Size.Height * image.CurrentScale));
+				tcs.TrySetResult(WebViewSnapshotHelper.ProcessPng(bytes, width, height, options));
+			});
+		}
+		catch (Exception ex)
+		{
+			tcs.TrySetResult(WebViewSnapshot.Failed(ex.Message));
+		}
+
+		return tcs.Task;
+	}
 
 	public Task ClearBrowsingDataAsync()
 	{
@@ -199,7 +247,7 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter, IDisposable
 			var request = new NSUrlRequest(new NSUrl(uri.AbsoluteUri));
 			_webView.LoadRequest(request);
 		}
-		OnPropertyChanged(nameof(Uri));
+		NotifyComputedPropertyChanged(nameof(Uri));
 	}
 
 	public string NavigateToString(string text)
@@ -211,13 +259,20 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter, IDisposable
 
 		_uri = new Uri("about:blank");
 		_webView.LoadHtmlString(text, new NSUrl("about:blank"));
-		OnPropertyChanged(nameof(Uri));
+		NotifyComputedPropertyChanged(nameof(Uri));
 		return text;
 	}
 
 	public void Reload()
 	{
 		_webView.Reload();
+	}
+
+	public void SetNativeSurfaceVisible(bool visible)
+	{
+		IsNativeSurfaceVisible = visible;
+		_webView.Hidden = !visible;
+		_webView.UserInteractionEnabled = visible;
 	}
 
 	public void Stop()
@@ -227,24 +282,23 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter, IDisposable
 
 	void IWebViewAdapter.Initialize(string profileName)
 	{
-		throw new NotImplementedException();
 	}
 
 	private void OnNavigationCompleted(NSUrl url)
 	{
 		_uri = new Uri(url.AbsoluteString);
 		NavigationCompleted?.Invoke(this, new WebViewNavigationEventArgs { Uri = _uri });
-		OnPropertyChanged(nameof(Title));
-		OnPropertyChanged(nameof(CanGoBack));
-		OnPropertyChanged(nameof(CanGoForward));
-		OnPropertyChanged(nameof(Uri));
+		NotifyComputedPropertyChanged(nameof(Title));
+		NotifyComputedPropertyChanged(nameof(CanGoBack));
+		NotifyComputedPropertyChanged(nameof(CanGoForward));
+		NotifyComputedPropertyChanged(nameof(Uri));
 	}
 
 	private void OnNavigationStarted(NSUrl url)
 	{
 		_uri = new Uri(url.AbsoluteString);
 		NavigationStarted?.Invoke(this, new WebViewNavigationEventArgs { Uri = _uri });
-		OnPropertyChanged(nameof(Uri));
+		NotifyComputedPropertyChanged(nameof(Uri));
 	}
 
 	private void OnNewWindowRequested(NSUrl url)

@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d"
+		x:Class="Cornerstone.Sample.Tabs.TabAppDispatcherTestView"
+		x:DataType="tabs:TabAppDispatcherTestViewModel">
+	<!-- ReSharper disable Xaml.MissingGridIndex -->
+	<AutoGrid DockPanel.Dock="Top"
+			Classes="Input"
+			ColumnDefinitions="*,*"
+			RowCount="3"
+			HorizontalAlignment="Stretch"
+			VerticalAlignment="Top">
+		<AutoGrid.Styles>
+			<Style Selector="TextBlock.InputName">
+				<Setter Property="Foreground" Value="{StaticResource Orange05}" />
+			</Style>
+		</AutoGrid.Styles>
+		<TextBlock Grid.ColumnSpan="2"
+				Classes="Header"
+				Text="Attached ViewModel"
+				TextAlignment="Center" />
+		<TextBlock Classes="InputName" Text="Number" />
+		<TextBlock Classes="InputValue" Text="{Binding Number}" />
+	</AutoGrid>
+</UserControl>

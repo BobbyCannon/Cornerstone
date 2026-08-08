@@ -160,6 +160,25 @@
 			<Setter Property="DockPanel.Dock" Value="Right" />
 			<Setter Property="Margin" Value="0,0,10,0" />
 		</Style>
+
+		<!-- Multi-line selection content (title + description). Keeps default 32px for single-line. -->
+		<Style Selector="^.MultiLine">
+			<!-- NaN = auto height so ItemTemplate stacks are not clipped. -->
+			<Setter Property="Height" Value="NaN" />
+			<Setter Property="MinHeight" Value="32" />
+			<Setter Property="Padding" Value="0,4" />
+			<Setter Property="VerticalContentAlignment" Value="Center" />
+			<Setter Property="VerticalAlignment" Value="Top" />
+		</Style>
+		<Style Selector="^.MultiLine /template/ ContentControl#ContentPresenter">
+			<Setter Property="Margin" Value="10,4" />
+			<Setter Property="VerticalContentAlignment" Value="Center" />
+		</Style>
+		<Style Selector="^.MultiLine /template/ PathIcon#DropDownGlyph">
+			<Setter Property="VerticalAlignment" Value="Center" />
+			<Setter Property="Margin" Value="0,0,0,0" />
+		</Style>
+
 		<Style Selector="^:pointerover /template/ Border#Background">
 			<Setter Property="Background" Value="{DynamicResource Background07}" />
 		</Style>
@@ -222,6 +241,28 @@
 							test
 						</Button>
 					</ControlHelper.InnerRightContent>
+				</ComboBox>
+				<ComboBox Classes="MultiLine"
+						Width="280"
+						SelectedIndex="0">
+					<ComboBoxItem>
+						<StackPanel>
+							<TextBlock Text="Merge" />
+							<TextBlock Text="Three-way merge local changes onto the target."
+									Opacity="0.75"
+									FontSize="11"
+									TextWrapping="Wrap" />
+						</StackPanel>
+					</ComboBoxItem>
+					<ComboBoxItem>
+						<StackPanel>
+							<TextBlock Text="Reset" />
+							<TextBlock Text="Discard local changes and force checkout."
+									Opacity="0.75"
+									FontSize="11"
+									TextWrapping="Wrap" />
+						</StackPanel>
+					</ComboBoxItem>
 				</ComboBox>
 			</WrapPanel>
 			<PreviewCodeSnippet.ItemTemplate>

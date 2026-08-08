@@ -5,7 +5,6 @@ using System.Collections;
 using System.Collections.Generic;
 using Avalonia;
 using Cornerstone.Collections;
-using Cornerstone.Data;
 using Cornerstone.Profiling;
 using Cornerstone.Reflection;
 
@@ -14,7 +13,7 @@ using Cornerstone.Reflection;
 namespace Cornerstone.Avalonia.Text.Models;
 
 [SourceReflection]
-public class LineManager : Notifiable, IEnumerable<Line>, IQueue<Line>
+public class LineManager : CornerstoneObject, IEnumerable<Line>, IQueue<Line>
 {
 	#region Fields
 
@@ -182,7 +181,11 @@ public class LineManager : Notifiable, IEnumerable<Line>, IQueue<Line>
 	{
 		var offsetY = 0.0;
 		var documentWidth = 0.0;
-		double? maxWidth = wordWrap ? availableSize.Width : null;
+		// Word-wrap only when width is finite; infinite available width means
+		// unconstrained measure — use natural (unwrapped) line widths.
+		double? maxWidth = wordWrap && double.IsFinite(availableSize.Width)
+			? availableSize.Width
+			: null;
 
 		foreach (var line in _lines)
 		{
@@ -193,6 +196,15 @@ public class LineManager : Notifiable, IEnumerable<Line>, IQueue<Line>
 				documentWidth = line.VisualLayout.Width;
 			}
 			offsetY += line.VisualLayout.Height;
+		}
+
+		if (!double.IsFinite(documentWidth) || (documentWidth < 0))
+		{
+			documentWidth = 0;
+		}
+		if (!double.IsFinite(offsetY) || (offsetY < 0))
+		{
+			offsetY = 0;
 		}
 
 		return new Size(documentWidth, offsetY);
@@ -207,6 +219,11 @@ public class LineManager : Notifiable, IEnumerable<Line>, IQueue<Line>
 		}
 
 		return _pool.TryDequeue(out value);
+	}
+
+	public bool TryPeek(out Line value)
+	{
+		return _pool.TryPeek(out value);
 	}
 
 	public bool TryGetLine(int lineNumber, out Line line)
@@ -342,7 +359,7 @@ public class LineManager : Notifiable, IEnumerable<Line>, IQueue<Line>
 
 		LineRebuildIndex = -1;
 
-		NotifyOfPropertyChanged(nameof(Count));
+		NotifyComputedPropertyChanged(nameof(Count));
 	}
 
 	IEnumerator IEnumerable.GetEnumerator()

@@ -1,4 +1,4 @@
-﻿#region References
+#region References
 
 using System;
 using Avalonia;
@@ -58,53 +58,40 @@ internal class SelectionRenderer : IRenderer
 		var startOffset = Math.Min(selection.StartOffset, selection.EndOffset);
 		var endOffset = Math.Max(selection.StartOffset, selection.EndOffset);
 		var firstLine = vm.Lines.GetLineFromOffset(startOffset);
-		var lastLine = vm.Lines.GetLineFromOffset(endOffset);
+		var lastLine = vm.Lines.GetLineFromOffset(Math.Max(endOffset - 1, startOffset));
 
+		if ((firstLine == null) || (lastLine == null))
+		{
+			return;
+		}
+
+		// Walk logical lines; each line emits one rect per soft-wrapped visual row using
+		// WrappedStartOffsets + ViewMetrics.GetAdvance (same authority as caret / hit-test).
 		for (var lineNumber = firstLine.LineNumber; lineNumber <= lastLine.LineNumber; lineNumber++)
 		{
-			var line = vm.Lines[lineNumber - 1];
+			if (!vm.Lines.TryGetLine(lineNumber, out var line))
+			{
+				continue;
+			}
+
 			if (line.VisualLayout.Bottom < topY)
 			{
 				continue;
 			}
+
 			if (line.VisualLayout.Top > bottomY)
 			{
 				break;
 			}
 
-			// get the selection of this line
-			var lineSelStart = Math.Max(startOffset, line.StartOffset);
-			var lineSelEnd = Math.Min(endOffset, line.StartOffset + line.Length);
-
-			if (lineSelStart >= lineSelEnd)
+			foreach (var documentRect in line.GetSelectionRects(startOffset, endOffset))
 			{
-				continue;
-			}
-
-			var localStart = lineSelStart - line.StartOffset;
-			var localLength = lineSelEnd - lineSelStart;
-			using var textLayout = _renderer.GetTextLayout(
-				line.ToString(),
-				_renderer.Bounds.Width,
-				_renderer.ViewModel.WordWrap,
-				_renderer.Foreground);
-
-			// Get bounding rectangles for the selected range in **this line**
-			var rects = textLayout.HitTestTextRange(localStart, localLength);
-
-			// Draw each rectangle (usually 1 per line, but can be >1 with tabs/wrap)
-			foreach (var rect in rects)
-			{
-				// rect is in local line coordinates → translate to screen
 				var screenRect = new Rect(
-					rect.X - offset.X,
-					(rect.Y + line.VisualLayout.Top) - offset.Y,
-					rect.Width,
-					rect.Height
+					documentRect.X - offset.X,
+					documentRect.Y - offset.Y,
+					documentRect.Width,
+					documentRect.Height
 				);
-
-				// Optional: inset a tiny bit so it doesn't touch line edges too harshly
-				// screenRect = screenRect.Deflate(new Thickness(0, 1, 0, 1));
 
 				drawingContext.FillRectangle(BackgroundBrush, screenRect);
 			}

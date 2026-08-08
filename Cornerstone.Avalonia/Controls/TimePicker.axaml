@@ -75,7 +75,6 @@
 								<Rectangle Name="PART_ThirdColumnDivider"
 										Fill="{DynamicResource BorderBrush}"
 										HorizontalAlignment="Center"
-										Width="{DynamicResource TimePickerSpacerThemeWidth}"
 										Grid.Column="5" />
 
 								<Border x:Name="PART_FourthPickerHost"
@@ -240,21 +239,18 @@
 									Name="PART_FirstSpacer"
 									Fill="{DynamicResource BorderBrush}"
 									HorizontalAlignment="Center"
-									Width="{DynamicResource DateTimePickerSpacerWidth}"
 									Grid.Column="1"
 									Margin="4,-4" />
 							<Rectangle
 									Name="PART_SecondSpacer"
 									Fill="{DynamicResource BorderBrush}"
 									HorizontalAlignment="Center"
-									Width="{DynamicResource DateTimePickerSpacerWidth}"
 									Grid.Column="3"
 									Margin="4,-4" />
 							<Rectangle
 									Name="PART_ThirdSpacer"
 									Fill="{DynamicResource BorderBrush}"
 									HorizontalAlignment="Center"
-									Width="{DynamicResource DateTimePickerSpacerWidth}"
 									Grid.Column="5"
 									Margin="4,-4" />
 
@@ -277,14 +273,12 @@
 							<Button
 									Name="PART_AcceptButton"
 									Grid.Row="1" Grid.Column="0"
-									Content="Select"
-									Height="{DynamicResource AcceptDismissHostGridHeight}">
+									Content="Select">
 							</Button>
 							<Button
 									Name="PART_DismissButton"
 									Grid.Row="1" Grid.Column="1"
-									Content="Cancel"
-									Height="{DynamicResource AcceptDismissHostGridHeight}">
+									Content="Cancel">
 							</Button>
 						</Grid>
 					</Grid>
@@ -307,6 +301,7 @@
 						ClockIdentifier="24HourClock"
 						UseSeconds="True"
 						SelectedTime="00:00:01" />
+				<!--
 				<TimePicker>
 					<DataValidationErrors.Error>
 						<sys:Exception>
@@ -330,7 +325,7 @@
 						</sys:Exception>
 					</DataValidationErrors.Error>
 				</TimePicker>
-				<TimePickerPresenter></TimePickerPresenter>
+				<TimePickerPresenter></TimePickerPresenter>-->
 			</StackPanel>
 		</Border>
 	</Design.PreviewWith>

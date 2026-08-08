@@ -1,0 +1,99 @@
+<Styles xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type Terminal}"
+					TargetType="Terminal">
+				<Setter Property="Background" Value="{StaticResource TerminalBackgroundBrush}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+				<Setter Property="BorderThickness" Value="1" />
+				<Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}" />
+				<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+				<Setter Property="FontSize" Value="{StaticResource ControlFontSize}" />
+				<Setter Property="Foreground" Value="{StaticResource TerminalForegroundBrush}" />
+				<Setter Property="Padding" Value="8" />
+				<Setter Property="AutoScroll" Value="True" />
+				<Setter Property="Focusable" Value="True" />
+				<Setter Property="(TextInputOptions.Multiline)" Value="True" />
+				<Setter Property="Template">
+					<ControlTemplate>
+						<Border Background="{TemplateBinding Background}"
+								BorderThickness="{TemplateBinding BorderThickness}"
+								BorderBrush="{TemplateBinding BorderBrush}"
+								CornerRadius="{TemplateBinding CornerRadius}">
+							<Grid ColumnDefinitions="Auto,*">
+								<Border Grid.Column="0"
+										BorderThickness="0"
+										CornerRadius="0"
+										IsVisible="{TemplateBinding ShowMargins}">
+									<ItemsControl
+											ItemsSource="{TemplateBinding LeftMargins}"
+											Padding="{TemplateBinding Padding}">
+										<ItemsControl.ItemsPanel>
+											<ItemsPanelTemplate>
+												<StackPanel Orientation="Horizontal" Spacing="8" />
+											</ItemsPanelTemplate>
+										</ItemsControl.ItemsPanel>
+									</ItemsControl>
+								</Border>
+								<ScrollViewer Grid.Column="1"
+										x:Name="PART_ScrollViewer"
+										Focusable="False"
+										AllowAutoHide="{TemplateBinding ScrollViewer.AllowAutoHide}"
+										HorizontalScrollBarVisibility="{TemplateBinding HorizontalScrollBarVisibility}"
+										VerticalScrollBarVisibility="Auto"
+										Padding="{TemplateBinding Padding}">
+									<TextRenderer Name="PART_TextRenderer"
+											Cursor="IBeam"
+											CurrentLineBackground="{DynamicResource Background02}"
+											Foreground="{TemplateBinding Foreground}"
+											FontFamily="{Binding FontFamily, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+											FontSize="{Binding FontSize, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+											FontWeight="{Binding FontWeight, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+											FontStyle="{Binding FontStyle, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+											Profiler="{Binding Profiler, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+											ViewModel="{Binding ViewModel, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" />
+								</ScrollViewer>
+							</Grid>
+						</Border>
+					</ControlTemplate>
+				</Setter>
+				<Setter Property="ContextMenu">
+					<Setter.Value>
+						<ContextMenu>
+							<MenuItem x:Name="TextEditorContextFlyoutCutItem"
+									Header="Cut"
+									Command="{Binding $parent[Terminal].ViewModel.Clipboard.CutCommand}"
+									InputGesture="{x:Static TextBox.CutGesture}">
+								<MenuItem.Icon>
+									<Path Data="{StaticResource Icons.Cut}" />
+								</MenuItem.Icon>
+							</MenuItem>
+							<MenuItem x:Name="TextEditorContextFlyoutCopyItem"
+									Header="Copy"
+									Command="{Binding $parent[Terminal].ViewModel.Clipboard.CopyCommand}"
+									InputGesture="{x:Static TextBox.CopyGesture}">
+								<MenuItem.Icon>
+									<Path Data="{StaticResource Icons.Copy}" />
+								</MenuItem.Icon>
+							</MenuItem>
+							<MenuItem x:Name="TextEditorContextFlyoutPasteItem"
+									Header="Paste"
+									Command="{Binding $parent[Terminal].ViewModel.Clipboard.PasteCommand}"
+									InputGesture="{x:Static TextBox.PasteGesture}">
+								<MenuItem.Icon>
+									<Path Data="{StaticResource Icons.Paste.Outline}" />
+								</MenuItem.Icon>
+							</MenuItem>
+						</ContextMenu>
+					</Setter.Value>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+	<Design.PreviewWith>
+		<PreviewCodeSnippet Height="430" Width="600">
+			<Terminal Text="Let's make it happen!&#x0a;PS C:\Workspaces> " />
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</Styles>

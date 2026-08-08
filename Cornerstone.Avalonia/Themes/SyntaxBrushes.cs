@@ -15,7 +15,7 @@ public class SyntaxBrushes
 
 	static SyntaxBrushes()
 	{
-		Brushes = new Dictionary<SyntaxColor, SolidColorBrush>();
+		Brushes = new Dictionary<SyntaxKind, SolidColorBrush>();
 		Refresh();
 	}
 
@@ -23,7 +23,7 @@ public class SyntaxBrushes
 
 	#region Properties
 
-	public static Dictionary<SyntaxColor, SolidColorBrush> Brushes { get; }
+	public static Dictionary<SyntaxKind, SolidColorBrush> Brushes { get; }
 
 	#endregion
 
@@ -36,21 +36,21 @@ public class SyntaxBrushes
 			return;
 		}
 
-		AddOrUpdate(SyntaxColor.Attribute, "SyntaxAttribute");
-		AddOrUpdate(SyntaxColor.Comment, "SyntaxComment");
-		AddOrUpdate(SyntaxColor.Error, "SyntaxError");
-		AddOrUpdate(SyntaxColor.Keyword, "SyntaxKeyword");
-		AddOrUpdate(SyntaxColor.Method, "SyntaxMethod");
-		AddOrUpdate(SyntaxColor.Number, "SyntaxNumber");
-		AddOrUpdate(SyntaxColor.Operator, "SyntaxOperator");
-		AddOrUpdate(SyntaxColor.Preprocessor, "SyntaxPreprocessor");
-		AddOrUpdate(SyntaxColor.Statement, "SyntaxStatement");
-		AddOrUpdate(SyntaxColor.String, "SyntaxString");
-		AddOrUpdate(SyntaxColor.Type, "SyntaxType");
-		AddOrUpdate(SyntaxColor.Variable, "SyntaxVariable");
+		AddOrUpdate(SyntaxKind.Attribute, "SyntaxAttribute");
+		AddOrUpdate(SyntaxKind.Comment, "SyntaxComment");
+		AddOrUpdate(SyntaxKind.Error, "SyntaxError");
+		AddOrUpdate(SyntaxKind.Keyword, "SyntaxKeyword");
+		AddOrUpdate(SyntaxKind.Method, "SyntaxMethod");
+		AddOrUpdate(SyntaxKind.Number, "SyntaxNumber");
+		AddOrUpdate(SyntaxKind.Operator, "SyntaxOperator");
+		AddOrUpdate(SyntaxKind.Preprocessor, "SyntaxPreprocessor");
+		AddOrUpdate(SyntaxKind.Statement, "SyntaxStatement");
+		AddOrUpdate(SyntaxKind.String, "SyntaxString");
+		AddOrUpdate(SyntaxKind.Type, "SyntaxType");
+		AddOrUpdate(SyntaxKind.Variable, "SyntaxVariable");
 	}
 
-	public static bool TryGetValue(SyntaxColor key, out SolidColorBrush brush)
+	public static bool TryGetValue(SyntaxKind key, out SolidColorBrush brush)
 	{
 		if (Brushes.Count <= 0)
 		{
@@ -60,7 +60,7 @@ public class SyntaxBrushes
 		return Brushes.TryGetValue(key, out brush);
 	}
 
-	private static void AddOrUpdate(SyntaxColor key, string name)
+	private static void AddOrUpdate(SyntaxKind key, string name)
 	{
 		if (ResourceService.GetBrush(name) is SolidColorBrush color)
 		{

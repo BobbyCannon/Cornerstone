@@ -19,7 +19,7 @@ public class FuncCodeGenerator : CodeGenerator
 
 	public override void WriteObject(CodeBuilder builder, SourceTypeInfo typeInfo, object value)
 	{
-		builder.Write("() =>");
+		builder.Append("() =>");
 		if (value is Delegate d
 			&& (d.Method.GetParameters().Length == 0))
 		{
@@ -27,7 +27,7 @@ public class FuncCodeGenerator : CodeGenerator
 		}
 		else
 		{
-			builder.Write(" {}");
+			builder.Append(" {}");
 		}
 	}
 

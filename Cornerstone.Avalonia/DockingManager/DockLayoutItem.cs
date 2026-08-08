@@ -16,7 +16,7 @@ namespace Cornerstone.Avalonia.DockingManager;
 [SourceReflection]
 [Notifiable(["*"])]
 [Updateable(UpdateableAction.All, ["*"])]
-public partial class DockLayoutItem : Notifiable
+public partial class DockLayoutItem : CornerstoneObject
 {
 	#region Properties
 
@@ -88,7 +88,7 @@ public partial class DockLayoutItem : Notifiable
 		{
 			case DockableTabModel model:
 			{
-				response.Data = model.ReadLayoutData();
+				response.Data = model.ReadLayoutDataJson();
 				response.DataModelType = model.GetType().ToAssemblyName();
 				break;
 			}

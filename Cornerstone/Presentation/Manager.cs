@@ -1,6 +1,6 @@
 ﻿#region References
 
-using Cornerstone.Data;
+using Cornerstone.Reflection;
 
 #endregion
 
@@ -9,27 +9,10 @@ namespace Cornerstone.Presentation;
 /// <summary>
 /// Represents a manager.
 /// </summary>
-public partial class Manager : Notifiable, IManager
+[SourceReflection]
+public partial class Manager : ViewModel, IManager
 {
-	#region Properties
-
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
-	public partial bool IsInitialized { get; protected set; }
-
-	#endregion
-
 	#region Methods
-
-	public virtual void Initialize()
-	{
-		IsInitialized = true;
-	}
-
-	public virtual void Uninitialize()
-	{
-		IsInitialized = false;
-	}
 
 	public virtual void Update()
 	{

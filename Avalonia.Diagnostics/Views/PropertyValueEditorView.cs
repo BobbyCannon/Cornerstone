@@ -97,18 +97,9 @@ public class PropertyValueEditorView : UserControl
 		if (propertyType == typeof(Color))
 		{
 			var el = new Ellipse { Width = 12, Height = 12, VerticalAlignment = VerticalAlignment.Center };
-
-			el.Bind(
-					Shape.FillProperty,
-					new Binding(nameof(Property.Value)) { Source = Property, Converter = Color2Brush })
-				.DisposeWith(_cleanup);
-
+			el.Bind(Shape.FillProperty, new Binding(nameof(Property.Value)) { Source = Property, Converter = Color2Brush }).DisposeWith(_cleanup);
 			var tbl = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
-
-			tbl.Bind(
-					TextBlock.TextProperty,
-					new Binding(nameof(Property.Value)) { Source = Property })
-				.DisposeWith(_cleanup);
+			tbl.Bind(TextBlock.TextProperty, new Binding(nameof(Property.Value)) { Source = Property }).DisposeWith(_cleanup);
 
 			var sp = new StackPanel
 			{
@@ -187,11 +178,7 @@ public class PropertyValueEditorView : UserControl
 			if (isImage)
 			{
 				var previewImage = new Image { Stretch = Stretch.Uniform, Width = 300, Height = 300 };
-
-				previewImage
-					.Bind(Image.SourceProperty, valueObservable)
-					.DisposeWith(_cleanup);
-
+				previewImage.Bind(Image.SourceProperty, valueObservable).DisposeWith(_cleanup);
 				ToolTip.SetTip(sp, previewImage);
 			}
 			else
@@ -226,6 +213,7 @@ public class PropertyValueEditorView : UserControl
 			t => { t.PlaceholderText = "(null)"; },
 			TextBox.IsReadOnlyProperty);
 
+		tb.CornerRadius = new CornerRadius(0);
 		tb.IsReadOnly |= (propertyType == typeof(object)) ||
 			!StringConversionHelper.CanConvertFromString(propertyType);
 
@@ -251,7 +239,8 @@ public class PropertyValueEditorView : UserControl
 
 		return tb;
 
-		TControl CreateControl<TControl>(AvaloniaProperty valueProperty,
+		TControl CreateControl<TControl>(
+			AvaloniaProperty valueProperty,
 			IValueConverter converter = null,
 			Action<TControl> init = null,
 			AvaloniaProperty readonlyProperty = null)

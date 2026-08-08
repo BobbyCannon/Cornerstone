@@ -9,7 +9,7 @@ using Cornerstone.Reflection;
 namespace Cornerstone.Avalonia.Text.Models;
 
 [SourceReflection]
-public partial class UndoManager : Notifiable
+public partial class UndoManager : CornerstoneObject
 {
 	#region Fields
 

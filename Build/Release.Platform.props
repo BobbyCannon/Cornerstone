@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Project>
+	<!-- Platform detection -->
+	<PropertyGroup>
+		<_IsAndroid>false</_IsAndroid>
+		<_IsAndroid Condition="$(TargetFramework.Contains('android')) or $(RuntimeIdentifier.Contains('android'))">true</_IsAndroid>
+
+		<_IsiOS>false</_IsiOS>
+		<_IsiOS Condition="$(TargetFramework.Contains('ios')) or $(RuntimeIdentifier.Contains('ios'))">true</_IsiOS>
+
+		<_IsBrowser>false</_IsBrowser>
+		<_IsBrowser Condition="$(TargetFramework.Contains('browser')) or $(RuntimeIdentifier.Contains('browser'))">true</_IsBrowser>
+
+		<!-- ASP.NET Core websites (Sdk="Microsoft.NET.Sdk.Web") must not use desktop single-file R2R publish -->
+		<_IsWeb>false</_IsWeb>
+		<_IsWeb Condition="'$(UsingMicrosoftNETSdkWeb)' == 'true'">true</_IsWeb>
+
+		<_IsMacCatalyst Condition="$(TargetFramework.Contains('maccatalyst'))">true</_IsMacCatalyst>
+
+		<_SupportsR2R>true</_SupportsR2R>
+		<_SupportsR2R Condition="'$(_IsAndroid)' == 'true' or '$(_IsiOS)' == 'true' or '$(_IsBrowser)' == 'true' or '$(_IsWeb)' == 'true'">false</_SupportsR2R>
+	</PropertyGroup>
+
+	<!-- Platform-specific Release settings -->
+	<Import Project="$(MSBuildThisFileDirectory)Release.Android.props"
+			Condition="'$(_IsAndroid)' == 'true'" />
+
+	<Import Project="$(MSBuildThisFileDirectory)Release.iOS.props"
+			Condition="'$(_IsiOS)' == 'true'" />
+
+	<Import Project="$(MSBuildThisFileDirectory)Release.Browser.props"
+			Condition="'$(_IsBrowser)' == 'true'" />
+
+	<!-- ASP.NET Core websites: R2R for startup, no single-file -->
+	<Import Project="$(MSBuildThisFileDirectory)Release.Web.props"
+			Condition="'$(_IsWeb)' == 'true'
+                     and '$(EnableAot)' != 'true'" />
+
+	<!-- AOT has highest priority -->
+	<Import Project="$(MSBuildThisFileDirectory)Release.Aot.props"
+			Condition="'$(EnableAot)' == 'true'" />
+
+	<!-- Desktop R2R (single-file) only on supported platforms + Release + AOT not requested -->
+	<Import Project="$(MSBuildThisFileDirectory)Release.R2R.props"
+			Condition="'$(Configuration)' == 'Release'
+                     and '$(EnableAot)' != 'true'
+                     and '$(_SupportsR2R)' == 'true'" />
+</Project>

@@ -1,0 +1,62 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignWidth="600"
+		x:Class="Cornerstone.Sample.Tabs.TabWebView"
+		x:DataType="tabs:TabWebView">
+	<DockPanel>
+		<Grid DockPanel.Dock="Top" Margin="10">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="{x:Static tabs:TabWebView.HeaderName}" />
+		</Grid>
+		<WrapPanel DockPanel.Dock="Top"
+				ItemSpacing="20"
+				LineSpacing="10"
+				Margin="10">
+			<TextBox MinWidth="240" Text="{Binding Uri}">
+				<TextBox.KeyBindings>
+					<KeyBinding Gesture="Enter" Command="{Binding RefreshCommand}"></KeyBinding>
+				</TextBox.KeyBindings>
+			</TextBox>
+			<ToggleButton x:Name="PauseButton"
+					Content="Pause"
+					IsChecked="{Binding #WebView.IsPaused, Mode=TwoWay}" />
+			<CheckBox Content="Blur when paused"
+					IsChecked="{Binding #WebView.BlurWhenPaused, Mode=TwoWay}" />
+			<NumberBox Value="{Binding #WebView.BlurRadius}" />
+			<CheckBox Content="Is Visible"
+					IsChecked="{Binding ElementName=WebView, Path=IsVisible}" />
+		</WrapPanel>
+		<!-- Place Avalonia siblings after WebView so they can paint over it while paused. -->
+		<Grid>
+			<WebView x:Name="WebView"
+					BlurWhenPaused="True"
+					BlurRadius="4" />
+			<Border x:Name="DemoOverlay"
+					Background="#CC1E1E1E"
+					IsVisible="{Binding #WebView.IsPaused}"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Center"
+					Padding="24"
+					CornerRadius="8"
+					MaxWidth="360">
+				<StackPanel Spacing="8">
+					<TextBlock Text="Avalonia on top while paused"
+							FontSize="16"
+							FontWeight="SemiBold"
+							HorizontalAlignment="Center" />
+					<TextBlock Text="WebView.IsPaused freezes a snapshot and hides the native surface. Your overlay is just normal Avalonia Z-order."
+							TextWrapping="Wrap"
+							Opacity="0.85" />
+					<Button Content="Resume"
+							HorizontalAlignment="Center"
+							Click="ResumeOnClick" />
+				</StackPanel>
+			</Border>
+		</Grid>
+	</DockPanel>
+</UserControl>

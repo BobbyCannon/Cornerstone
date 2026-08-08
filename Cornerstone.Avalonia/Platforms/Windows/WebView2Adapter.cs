@@ -15,6 +15,7 @@ using Cornerstone.Avalonia.Controls;
 using Cornerstone.Avalonia.Resources;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
+using Cornerstone.Reflection;
 using Cornerstone.Runtime;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
@@ -23,28 +24,36 @@ using Microsoft.Web.WebView2.WinForms;
 
 namespace Cornerstone.Avalonia.Platforms.Windows;
 
+[SourceReflection]
 [SupportedOSPlatform("Windows")]
-internal partial class WebView2Adapter : Notifiable, IWebViewAdapter, IDisposable
+internal partial class WebView2Adapter : CornerstoneObject, IWebViewAdapter, IDisposable
 {
 	#region Constants
 
 	public const string ProfilePrefix = "WV2Profile_";
+	private const int SwHide = 0;
+	private const int SwShow = 5;
+	private const uint SwpHideWindow = 0x0080;
+	private const uint SwpNoMove = 0x0002;
+	private const uint SwpNoSize = 0x0001;
 	private const uint SwpNoZOrder = 0x0004;
+	private const uint SwpShowWindow = 0x0040;
 
 	#endregion
 
 	#region Fields
 
 	private readonly Color _defaultBackground;
+	private Color _originalBackground;
 	private readonly IRuntimeInformation _runtimeInformation;
 	private readonly WebView2 _webView;
 	private bool _webViewInitialized;
-	private Color _originalBackground;
 
 	#endregion
 
 	#region Constructors
 
+	[DependencyInjectionConstructor]
 	public WebView2Adapter(IRuntimeInformation runtimeInformation)
 	{
 		_runtimeInformation = runtimeInformation;
@@ -68,6 +77,8 @@ internal partial class WebView2Adapter : Notifiable, IWebViewAdapter, IDisposabl
 	[Notify]
 	public partial byte[] Favicon { get; private set; }
 
+	public bool IsNativeSurfaceVisible { get; private set; } = true;
+
 	public IPlatformHandle PlatformHandle { get; }
 
 	[Notify]
@@ -76,16 +87,34 @@ internal partial class WebView2Adapter : Notifiable, IWebViewAdapter, IDisposabl
 	public Uri Uri
 	{
 		get => _webView.Source;
-		set
-		{
-			_webView.Source = value;
-			OnPropertyChanged();
-		}
+		set => _webView.Source = value;
 	}
 
 	#endregion
 
 	#region Methods
+
+	public async Task<WebViewSnapshot> CaptureSnapshotAsync(WebViewSnapshotOptions options = null)
+	{
+		if (!_webViewInitialized || (_webView.CoreWebView2 == null))
+		{
+			return WebViewSnapshot.Failed("WebView2 is not initialized.");
+		}
+
+		try
+		{
+			using var stream = new MemoryStream();
+			await _webView.CoreWebView2.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, stream);
+			var pngBytes = stream.ToArray();
+			var width = Math.Max(1, _webView.ClientSize.Width);
+			var height = Math.Max(1, _webView.ClientSize.Height);
+			return WebViewSnapshotHelper.ProcessPng(pngBytes, width, height, options);
+		}
+		catch (Exception ex)
+		{
+			return WebViewSnapshot.Failed(ex.Message);
+		}
+	}
 
 	public async Task ClearBrowsingDataAsync()
 	{
@@ -217,7 +246,12 @@ internal partial class WebView2Adapter : Notifiable, IWebViewAdapter, IDisposabl
 
 	public void HandleResize(int width, int height, float zoom)
 	{
-		SetWindowPos(_webView.Handle, IntPtr.Zero, 0, 0, width, height, SwpNoZOrder);
+		if (!IsNativeSurfaceVisible)
+		{
+			return;
+		}
+
+		SetWindowPos(_webView.Handle, IntPtr.Zero, 0, 0, Math.Max(0, width), Math.Max(0, height), SwpNoZOrder);
 	}
 
 	public void Initialize(string profileName)
@@ -256,11 +290,6 @@ internal partial class WebView2Adapter : Notifiable, IWebViewAdapter, IDisposabl
 
 	public void Navigate(Uri uri)
 	{
-		if (Uri?.OriginalString == uri?.OriginalString)
-		{
-			return;
-		}
-
 		Uri = uri;
 	}
 
@@ -282,6 +311,31 @@ internal partial class WebView2Adapter : Notifiable, IWebViewAdapter, IDisposabl
 	[DllImport("user32.dll")]
 	public static extern bool SetParent(IntPtr hWnd, IntPtr hWndNewParent);
 
+	public void SetNativeSurfaceVisible(bool visible)
+	{
+		IsNativeSurfaceVisible = visible;
+		_webView.Visible = visible;
+
+		// WebView2 / child HWNDs can keep airspace if only the WinForms Visible flag is toggled.
+		// Force-hide the top HWND and collapse size so nothing paints above Avalonia.
+		var hwnd = _webView.Handle;
+		if (hwnd == IntPtr.Zero)
+		{
+			return;
+		}
+
+		if (visible)
+		{
+			ShowWindow(hwnd, SwShow);
+			SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0, SwpNoMove | SwpNoSize | SwpNoZOrder | SwpShowWindow);
+		}
+		else
+		{
+			ShowWindow(hwnd, SwHide);
+			SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0, SwpNoMove | SwpNoZOrder | SwpHideWindow);
+		}
+	}
+
 	public void Stop()
 	{
 		_webView.Stop();
@@ -289,9 +343,9 @@ internal partial class WebView2Adapter : Notifiable, IWebViewAdapter, IDisposabl
 
 	protected virtual void OnNavigationCompleted()
 	{
-		OnPropertyChanged(nameof(CanGoBack));
-		OnPropertyChanged(nameof(CanGoForward));
-		OnPropertyChanged(nameof(Uri));
+		NotifyComputedPropertyChanged(nameof(CanGoBack));
+		NotifyComputedPropertyChanged(nameof(CanGoForward));
+		NotifyComputedPropertyChanged(nameof(Uri));
 
 		Title = _webView.CoreWebView2.DocumentTitle;
 		NavigationCompleted?.Invoke(this, new WebViewNavigationEventArgs { Uri = _webView.Source });
@@ -429,18 +483,21 @@ internal partial class WebView2Adapter : Notifiable, IWebViewAdapter, IDisposabl
 
 	private void OnWebViewOnSourceChanged(object sender, CoreWebView2SourceChangedEventArgs e)
 	{
-		OnPropertyChanged(nameof(Uri));
+		NotifyComputedPropertyChanged(nameof(Uri));
 	}
 
 	private async Task RefreshFaviconAsync()
 	{
 		await using var stream = await _webView.CoreWebView2.GetFaviconAsync(CoreWebView2FaviconImageFormat.Png);
 		Favicon = stream.ReadByteArray();
-		OnPropertyChanged(nameof(Favicon));
+		NotifyComputedPropertyChanged(nameof(Favicon));
 	}
 
 	[DllImport("user32.dll")]
 	private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, uint flags);
+
+	[DllImport("user32.dll")]
+	private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
 	#endregion
 

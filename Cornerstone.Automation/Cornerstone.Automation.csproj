@@ -14,7 +14,7 @@
 		<EmbeddedResource Include="Cornerstone.Automation.js" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="MSTest.TestFramework" Version="4.1.0" />
+		<PackageReference Include="MSTest.TestFramework" Version="4.3.3" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
 		<Compile Include="Platforms\Android\**\*.cs" />

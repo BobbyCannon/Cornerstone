@@ -11,7 +11,7 @@ public readonly ref struct TimedScope : IDisposable
 {
 	#region Fields
 
-	private readonly IProfiler _profiler;
+	private readonly Profiler _profiler;
 	private readonly long _startTicks;
 
 	#endregion
@@ -19,7 +19,7 @@ public readonly ref struct TimedScope : IDisposable
 	#region Constructors
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	public TimedScope(string name, IProfiler profiler)
+	public TimedScope(string name, Profiler profiler)
 	{
 		Name = name;
 		_profiler = profiler;

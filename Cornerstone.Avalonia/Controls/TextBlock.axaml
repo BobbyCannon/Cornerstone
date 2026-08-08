@@ -1,6 +1,10 @@
 <Styles xmlns="https://github.com/avaloniaui"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+	<Style Selector="TextBlock.Dim">
+		<Setter Property="Opacity" Value="0.5" />
+	</Style>
+
 	<Style Selector="TextBlock.Header">
 		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansLight}" />
 		<Setter Property="FontSize" Value="24" />
@@ -57,6 +61,8 @@
 	<Design.PreviewWith>
 		<PreviewCodeSnippet Width="600">
 			<StackPanel>
+				<TextBlock Classes="Header Dim" Text="Header (dim)" />
+
 				<TextBlock Classes="Disableable" Text="Disabled" IsEnabled="False" />
 
 				<TextBlock Classes="Header" Text="Header" />

@@ -4,7 +4,6 @@ using System;
 using System.Net.Http.Headers;
 using System.Text;
 using Cornerstone.Data;
-using Cornerstone.Presentation;
 
 #endregion
 
@@ -14,7 +13,7 @@ namespace Cornerstone.Web;
 /// Represents a credential for a client.
 /// </summary>
 public partial class Credential
-	: Bindable, IDisposable, ICredential,
+	: CornerstoneObject, IDisposable, ICredential,
 		IUpdateable<TokenCredential>,
 		IUpdateable<WebCredential>,
 		IUpdateable<Credential>,
@@ -25,17 +24,7 @@ public partial class Credential
 	/// <summary>
 	/// Creates an instance of the credential.
 	/// </summary>
-	public Credential()
-		: this(string.Empty, null, null)
-	{
-	}
-
-	/// <summary>
-	/// Creates an instance of the credential.
-	/// </summary>
-	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public Credential(IDispatcher dispatcher)
-		: this(null, null, dispatcher)
+	public Credential() : this(string.Empty, null)
 	{
 	}
 
@@ -44,9 +33,7 @@ public partial class Credential
 	/// </summary>
 	/// <param name="username"> The username of the credential. </param>
 	/// <param name="password"> The password of the credential. </param>
-	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public Credential(string username, string password, IDispatcher dispatcher)
-		: base(dispatcher)
+	public Credential(string username, string password)
 	{
 		UserName = username ?? string.Empty;
 		Password = password ?? string.Empty;
@@ -119,8 +106,6 @@ public partial class Credential
 	{
 		UserName = string.Empty;
 		Password = string.Empty;
-
-		NotifyOfPropertyChanged(nameof(Password));
 	}
 
 	public virtual string ToBase64String()

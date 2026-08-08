@@ -13,8 +13,8 @@
 		<NavigationMenu x:Name="Menu"
 				AutoExpandOnResize="False"
 				AutoCollapseOnSelectionChange="False"
-				DisplayMode="CompactInline"
-				IsOpen="true"
+				DisplayMode="{Binding NavigationMenuDisplayMode, Mode=TwoWay}"
+				IsOpen="{Binding NavigationMenuIsOpen, Mode=TwoWay}"
 				ItemsSource="{Binding Tabs}"
 				SelectedItem="{Binding SelectedTab, Mode=TwoWay}">
 			<NavigationMenu.InnerTopContent>

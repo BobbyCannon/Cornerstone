@@ -26,7 +26,7 @@
 							IsEnabled="{Binding !IsBenchmarking}"
 							OnContent="Graph During Benchmarking"
 							OffContent="Graph During Benchmarking"
-							ToolTip.Tip="This will reduce overall speed."/>
+							ToolTip.Tip="This will reduce overall speed." />
 				</WrapPanel>
 				<LineChart x:Name="RenderChart"
 						DockPanel.Dock="Top"
@@ -58,7 +58,7 @@
 						<StackPanel Orientation="Horizontal">
 							<Path Data="{StaticResource Icons.DoubleArrow.Down}"
 									Height="12" Width="12"
-									Margin="0,0,10,0"/>
+									Margin="0,0,10,0" />
 							<TextBlock Text="Write Client" />
 						</StackPanel>
 					</Button>
@@ -68,7 +68,7 @@
 						<StackPanel Orientation="Horizontal">
 							<Path Data="{StaticResource Icons.DoubleArrow.Up}"
 									Height="12" Width="12"
-									Margin="0,0,10,0"/>
+									Margin="0,0,10,0" />
 							<TextBlock Text="Write Server" />
 						</StackPanel>
 					</Button>

@@ -28,95 +28,63 @@
 					<Setter Property="MinHeight" Value="32" />
 				</Style>
 			</TabControl.Styles>
-			<TabItem Header="Grid Panel">
-				<Grid RowDefinitions="Auto,*">
-					<WrapPanel Grid.Row="0"
-							ItemSpacing="10"
-							LineSpacing="10"
-							Margin="10">
-						<NumberBox x:Name="ColumnCount"
-								ControlHelper.DisplayName="Columns"
-								SpinButtonPlacementMode="Inline"
-								Minimum="1"
-								Value="2"
-								Maximum="9" />
-						<NumberBox x:Name="RowCount"
-								ControlHelper.DisplayName="Rows"
-								SpinButtonPlacementMode="Inline"
-								Minimum="1"
-								Value="2"
-								Maximum="9" />
-					</WrapPanel>
-					<ItemsControl Grid.Row="1"
-							ItemsSource="{Binding Blocks}">
-						<ItemsControl.ItemsPanel>
-							<ItemsPanelTemplate>
-								<GridPanel ColumnCount="{Binding ElementName=ColumnCount, Path=Value}"
-										RowCount="{Binding ElementName=RowCount, Path=Value}" />
-							</ItemsPanelTemplate>
-						</ItemsControl.ItemsPanel>
-						<ItemsControl.Styles>
-							<Style Selector="ItemsControl > ContentPresenter"
-									x:DataType="tabs:Block">
-								<Setter Property="Grid.Row" Value="{Binding Row, Mode=OneWay}" />
-								<Setter Property="Grid.Column" Value="{Binding Column, Mode=OneWay}" />
-							</Style>
-						</ItemsControl.Styles>
-						<ItemsControl.ItemTemplate>
-							<DataTemplate DataType="tabs:Block">
-								<Grid Background="{Binding Color}">
-									<StackPanel Spacing="10"
-											VerticalAlignment="Center">
-										<TextBlock Classes="Header"
-												Foreground="White"
-												FontFamily="Arial"
-												HorizontalAlignment="Center"
-												VerticalAlignment="Center"
-												Text="{Binding Text}" />
-										<NumberBox x:Name="Columns"
-												ControlHelper.DisplayName="Columns"
-												SpinButtonPlacementMode="Inline"
-												HorizontalAlignment="Center"
-												Minimum="0"
-												Value="{Binding Column}"
-												Maximum="9"
-												Width="160" />
-										<NumberBox x:Name="Rows"
-												ControlHelper.DisplayName="Rows"
-												SpinButtonPlacementMode="Inline"
-												HorizontalAlignment="Center"
-												Minimum="0"
-												Value="{Binding Row}"
-												Maximum="9"
-												Width="160" />
-									</StackPanel>
-								</Grid>
-							</DataTemplate>
-						</ItemsControl.ItemTemplate>
-					</ItemsControl>
-				</Grid>
 
+			<TabItem Header="Grid Panel">
+				<Grid RowDefinitions="Auto,Auto,*">
+					<StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10" Spacing="15" HorizontalAlignment="Center">
+						<TextBlock x:Name="MovesText" Text="Moves: 0" VerticalAlignment="Center" FontSize="18" FontWeight="SemiBold" />
+						<Button Theme.Color="None" Content="Reset" Click="OnNewGameClick" />
+					</StackPanel>
+					<TextBlock Grid.Row="1" x:Name="StatusText" HorizontalAlignment="Center" />
+					<Viewbox Grid.Row="2"
+							Stretch="Uniform"
+							StretchDirection="Both"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center">
+						<ItemsControl ItemsSource="{Binding Tiles}" Margin="20">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<GridPanel ColumnCount="3" RowCount="3" />
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.Styles>
+								<Style Selector="ItemsControl > ContentPresenter"
+										x:DataType="tabs:TabGridsPuzzleTile">
+									<Setter Property="Grid.Row" Value="{Binding Row, Mode=TwoWay}" />
+									<Setter Property="Grid.Column" Value="{Binding Column, Mode=TwoWay}" />
+								</Style>
+							</ItemsControl.Styles>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate DataType="tabs:TabGridsPuzzleTile">
+									<Border CornerRadius="8"
+											Margin="6"
+											PointerPressed="OnTilePressed"
+											Cursor="Hand">
+										<Image Source="{Binding TileImage}"
+												Stretch="Fill"
+												RenderOptions.BitmapInterpolationMode="HighQuality"
+												IsVisible="{Binding IsVisible}" />
+									</Border>
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+					</Viewbox>
+				</Grid>
 			</TabItem>
+
 			<TabItem Header="Auto Grid">
 				<Grid RowDefinitions="Auto,*">
-					<WrapPanel Grid.Row="0"
-							ItemSpacing="10"
-							LineSpacing="10"
-							Margin="10">
+					<WrapPanel Grid.Row="0" ItemSpacing="10" LineSpacing="10" Margin="10">
 						<NumberBox x:Name="Columns"
 								ControlHelper.DisplayName="Columns"
 								SpinButtonPlacementMode="Inline"
-								Minimum="1"
-								Value="2"
-								Maximum="9" />
+								Minimum="1" Value="3" Maximum="9" />
 						<NumberBox x:Name="Rows"
 								ControlHelper.DisplayName="Rows"
 								SpinButtonPlacementMode="Inline"
-								Minimum="1"
-								Value="2"
-								Maximum="9" />
+								Minimum="1" Value="3" Maximum="9" />
 					</WrapPanel>
-					<ItemsControl Grid.Row="1" ItemsSource="{Binding Blocks}">
+					<ItemsControl Grid.Row="1" ItemsSource="{Binding Tiles}">
 						<ItemsControl.ItemsPanel>
 							<ItemsPanelTemplate>
 								<AutoGrid RowCount="{Binding ElementName=Rows, Path=Value}"
@@ -124,14 +92,11 @@
 							</ItemsPanelTemplate>
 						</ItemsControl.ItemsPanel>
 						<ItemsControl.ItemTemplate>
-							<DataTemplate DataType="tabs:Block">
-								<Border Background="{Binding Color}">
-									<TextBlock Classes="Header"
-											Foreground="White"
-											FontFamily="Arial"
-											HorizontalAlignment="Center"
-											VerticalAlignment="Center"
-											Text="{Binding Text}" />
+							<DataTemplate DataType="tabs:TabGridsPuzzleTile">
+								<Border>
+									<Image Source="{Binding TileImage}"
+											Stretch="Fill"
+											RenderOptions.BitmapInterpolationMode="HighQuality" />
 								</Border>
 							</DataTemplate>
 						</ItemsControl.ItemTemplate>

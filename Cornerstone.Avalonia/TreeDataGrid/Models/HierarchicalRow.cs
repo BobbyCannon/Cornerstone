@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using Avalonia.Controls;
-using Cornerstone.Data;
 
 #endregion
 
@@ -14,7 +13,7 @@ namespace Cornerstone.Avalonia.TreeDataGrid.Models;
 /// A row in a <see cref="HierarchicalTreeDataGridSource{TModel}" />.
 /// </summary>
 /// <typeparam name="TModel"> The model type. </typeparam>
-public class HierarchicalRow<TModel> : Notifiable,
+public class HierarchicalRow<TModel> : CornerstoneObject,
 	IExpanderRow<TModel>,
 	IIndentedRow,
 	IModelIndexableRow,
@@ -178,7 +177,7 @@ public class HierarchicalRow<TModel> : Notifiable,
 		_controller.OnBeginExpandCollapse(this);
 		_isExpanded = false;
 		_controller.OnChildCollectionChanged(this, CollectionExtensions.ResetEvent);
-		OnPropertyChanged(nameof(IsExpanded));
+		NotifyComputedPropertyChanged(nameof(IsExpanded));
 		_controller.OnEndExpandCollapse(this);
 		_expanderColumn.SetModelIsExpanded(this);
 	}
@@ -219,7 +218,7 @@ public class HierarchicalRow<TModel> : Notifiable,
 
 		if (_isExpanded != oldExpanded)
 		{
-			OnPropertyChanged(nameof(IsExpanded));
+			NotifyComputedPropertyChanged(nameof(IsExpanded));
 		}
 
 		_controller.OnEndExpandCollapse(this);

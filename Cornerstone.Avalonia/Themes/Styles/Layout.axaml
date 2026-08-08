@@ -59,7 +59,12 @@
 			<Setter Property="VerticalAlignment" Value="Top" />
 		</Style>
 		<Style Selector="^ StackPanel.InputValue">
-			<Setter Property="Margin" Value="0,0,0,0" />
+			<Style Selector="^[Orientation=Horizontal]">
+				<Setter Property="Spacing" Value="20" />
+			</Style>
+			<Style Selector="^ TextBlock">
+				<Setter Property="VerticalAlignment" Value="Center" />
+			</Style>
 		</Style>
 		<Style Selector="^ ToggleSwitch.InputValue">
 			<Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -93,7 +98,12 @@
 				<Setter Property="Margin" Value="0,4" />
 			</Style>
 			<Style Selector="^ StackPanel.InputValue">
-				<Setter Property="Margin" Value="0" />
+				<Style Selector="^[Orientation=Horizontal]">
+					<Setter Property="Spacing" Value="20" />
+				</Style>
+				<Style Selector="^ TextBlock">
+					<Setter Property="VerticalAlignment" Value="Center" />
+				</Style>
 			</Style>
 		</Style>
 	</Style>
@@ -149,9 +159,17 @@
 
 						<TextBlock Classes="InputName"
 								Text="StackPanel" />
-						<StackPanel>
-							<CheckBox Classes="InputValue" Content="Value 1" />
-							<CheckBox Classes="InputValue" Content="Value 2" />
+						<StackPanel Classes="InputValue">
+							<CheckBox Content="Value 1" />
+							<CheckBox Content="Value 2" />
+						</StackPanel>
+						
+						<TextBlock Classes="InputName"
+								Text="Horizontal" />
+						<StackPanel Classes="InputValue"
+								Orientation="Horizontal">
+							<CheckBox Content="Value 1" />
+							<CheckBox Content="Value 2" />
 						</StackPanel>
 
 						<TextBlock Classes="InputName"
@@ -178,9 +196,17 @@
 
 						<TextBlock Classes="InputName"
 								Text="StackPanel" />
-						<StackPanel>
-							<CheckBox Classes="InputValue" Content="Value 1" />
-							<CheckBox Classes="InputValue" Content="Value 2" />
+						<StackPanel Classes="InputValue">
+							<CheckBox Content="Value 1" />
+							<CheckBox Content="Value 2" />
+						</StackPanel>
+						
+						<TextBlock Classes="InputName"
+								Text="Horizontal" />
+						<StackPanel Classes="InputValue"
+								Orientation="Horizontal">
+							<CheckBox Content="Value 1" />
+							<CheckBox Content="Value 2" />
 						</StackPanel>
 
 						<TextBlock Classes="InputName"

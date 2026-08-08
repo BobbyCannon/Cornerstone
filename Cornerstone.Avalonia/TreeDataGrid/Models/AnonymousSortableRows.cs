@@ -86,10 +86,13 @@ public class AnonymousSortableRows<TModel> : ReadOnlyListBase<IRow<TModel>>, IRo
 		}
 	}
 
+	/// <summary>
+	/// Exact row lookup is performed by the rows presenter when a fixed MinRowHeight is in use.
+	/// Without fixed height, Auto-sized rows cannot map Y → index here.
+	/// </summary>
 	public (int index, double y) GetRowAt(double y)
 	{
-		// Rows in an AnonymousSortableRows collection have Auto height so we only
-		// know the start position of the first row.
+		// Legacy Auto-height path: only Y=0 is known. Presenter FixedElementSizeU handles the rest.
 		if (DoubleExtensions.IsZero(y))
 		{
 			return (0, 0);

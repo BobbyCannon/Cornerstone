@@ -1,7 +1,6 @@
 ﻿#region References
 
 using System;
-using Cornerstone.Text;
 
 #endregion
 
@@ -28,6 +27,11 @@ public class MarkdownRenderer : Renderer
 		var blockEnd = block.Offsets[1];
 		var fullSpan = buffer.Slice(blockStart, blockEnd - blockStart);
 
+		if (fullSpan.IsEmpty)
+		{
+			return (string.Empty, blockStart, 0);
+		}
+
 		// Find end of the opening fence line
 		var firstEolRelative = fullSpan.IndexOfAny('\r', '\n');
 		if (firstEolRelative == -1)
@@ -53,23 +57,61 @@ public class MarkdownRenderer : Renderer
 
 		// Extract info string (language + optional metadata)
 		var infoSpan = openingLineSpan[fenceEnd..].TrimStart();
-		var langEnd = infoSpan.IndexOfAny(TextService.Whitespace);
+		var langEnd = infoSpan.IndexOfAny(' ', '\t');
 		if (langEnd == -1)
 		{
 			langEnd = infoSpan.Length;
 		}
 
-		// Start of content: after opening fence line + any whitespace/newlines
 		var language = infoSpan[..langEnd].ToString().Trim();
+
+		// Offsets from MarkdownFence point at contentRegionStart (after the ```/~~~ markers).
+		// For an untagged fence that is often the newline of the opening line (firstEolRelative == 0).
+		// That is a valid body start — not an empty block.
+		if (firstEolRelative >= fullSpan.Length)
+		{
+			// No newline in the content region: info-only / empty body
+			return (language, blockStart + fullSpan.Length, 0);
+		}
+
 		var contentStartAbsolute = blockStart + firstEolRelative;
 
+		// Skip the opening fence line's trailing newline(s) and any blank lines before the first body line.
+		// (Preserves spaces on the first non-empty body line for indentation.)
 		var remainingAfterOpening = buffer.Slice(contentStartAbsolute, blockEnd - contentStartAbsolute);
-		var skipWhitespace = remainingAfterOpening.IndexOfAnyExcept(TextService.Whitespace);
-		if (skipWhitespace == -1)
+		var skip = 0;
+		while (skip < remainingAfterOpening.Length)
 		{
-			skipWhitespace = remainingAfterOpening.Length;
+			var c = remainingAfterOpening[skip];
+			if (c == '\r')
+			{
+				skip++;
+				if ((skip < remainingAfterOpening.Length) && (remainingAfterOpening[skip] == '\n'))
+				{
+					skip++;
+				}
+				// blank line continues
+				continue;
+			}
+			if (c == '\n')
+			{
+				skip++;
+				continue;
+			}
+			// First non-EOL character (may be space — keep as code indent)
+			break;
 		}
-		contentStartAbsolute += skipWhitespace;
+
+		// Only skip pure blank lines after the opening fence; if the body is all whitespace, treat as empty.
+		if (skip >= remainingAfterOpening.Length)
+		{
+			return (language, contentStartAbsolute, 0);
+		}
+
+		// If we only skipped EOLs and landed on whitespace that is the whole rest... already handled.
+		// Also skip additional blank lines only (sequences of EOL), not indentation spaces.
+		// After the first break above we're on first body char.
+		contentStartAbsolute += skip;
 
 		// Calculate raw content length (up to blockEnd)
 		var rawContentLength = blockEnd - contentStartAbsolute;
@@ -81,6 +123,7 @@ public class MarkdownRenderer : Renderer
 		var contentSpan = buffer.Slice(contentStartAbsolute, rawContentLength);
 		var trimEnd = contentSpan.Length;
 
+		// Trim trailing newlines/carriage returns from the end of the code block
 		while (trimEnd > 0)
 		{
 			var lastChar = contentSpan[trimEnd - 1];

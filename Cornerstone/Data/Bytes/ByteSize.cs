@@ -2,6 +2,7 @@
 
 using System;
 using System.Globalization;
+using Cornerstone.Text;
 using static System.Globalization.NumberStyles;
 
 #endregion
@@ -249,6 +250,66 @@ public readonly partial struct ByteSize : IComparable<ByteSize>, IEquatable<Byte
 		return ByteUnit.Bit;
 	}
 
+	public readonly string GetLargestWholeNumberFullWord()
+	{
+		if (Terabytes >= 1)
+		{
+			return ByteUnit.Terabyte.GetHumanizeStringFormat(Terabytes, WordFormat.Full);
+		}
+
+		if (Gigabytes >= 1)
+		{
+			return ByteUnit.Gigabyte.GetHumanizeStringFormat(Gigabytes, WordFormat.Full);
+		}
+
+		if (Megabytes >= 1)
+		{
+			return ByteUnit.Megabyte.GetHumanizeStringFormat(Megabytes, WordFormat.Full);
+		}
+
+		if (Kilobytes >= 1)
+		{
+			return ByteUnit.Kilobyte.GetHumanizeStringFormat(Kilobytes, WordFormat.Full);
+		}
+
+		if (Bytes >= 1)
+		{
+			return ByteUnit.Byte.GetHumanizeStringFormat(Bytes, WordFormat.Full);
+		}
+
+		return ByteUnit.Bit.GetHumanizeStringFormat(Bits, WordFormat.Full);
+	}
+
+	public string GetLargestWholeNumberSymbol()
+	{
+		if (Terabytes >= 1)
+		{
+			return ByteUnit.Terabyte.GetHumanizeStringFormat(Terabytes);
+		}
+
+		if (Gigabytes >= 1)
+		{
+			return ByteUnit.Gigabyte.GetHumanizeStringFormat(Gigabytes);
+		}
+
+		if (Megabytes >= 1)
+		{
+			return ByteUnit.Megabyte.GetHumanizeStringFormat(Megabytes);
+		}
+
+		if (Kilobytes >= 1)
+		{
+			return ByteUnit.Kilobyte.GetHumanizeStringFormat(Kilobytes);
+		}
+
+		if (Bytes >= 1)
+		{
+			return ByteUnit.Byte.GetHumanizeStringFormat(Bytes);
+		}
+
+		return ByteUnit.Bit.GetHumanizeStringFormat(Bits);
+	}
+
 	public decimal GetLargestWholeNumberValue()
 	{
 		if (Terabytes >= 1)
@@ -359,6 +420,44 @@ public readonly partial struct ByteSize : IComparable<ByteSize>, IEquatable<Byte
 		return new ByteSize(Bytes - bs.Bytes);
 	}
 
+	/// <summary>
+	/// Converts the value of the current ByteSize object to a string.
+	/// The metric prefix symbol (bit, byte, kilo, mega, giga, tera) used is
+	/// the largest metric prefix such that the corresponding value is greater
+	/// than or equal to one.
+	/// </summary>
+	public override string ToString()
+	{
+		return $"{LargestWholeNumberValue:0.##} {GetLargestWholeNumberSymbol()}";
+	}
+
+	public string ToString(string format)
+	{
+		return ToString(format, NumberFormatInfo.CurrentInfo);
+	}
+
+	public string ToString(string format, IFormatProvider provider)
+	{
+		return ToString(format, provider, WordFormat.Abbreviation);
+	}
+
+	public string ToUnitString(ByteUnit unit, WordFormat symbolFormat = WordFormat.Full)
+	{
+		return unit switch
+		{
+			ByteUnit.Byte => $"{Bytes:0.##} {ByteUnit.Byte.GetHumanizeStringFormat(Bytes, symbolFormat)}",
+			ByteUnit.Kilobit => $"{Kilobits:0.##} {ByteUnit.Kilobit.GetHumanizeStringFormat(Kilobits, symbolFormat)}",
+			ByteUnit.Kilobyte => $"{Kilobytes:0.##} {ByteUnit.Kilobyte.GetHumanizeStringFormat(Kilobytes, symbolFormat)}",
+			ByteUnit.Megabit => $"{Megabits:0.##} {ByteUnit.Megabit.GetHumanizeStringFormat(Megabits, symbolFormat)}",
+			ByteUnit.Megabyte => $"{Megabytes:0.##} {ByteUnit.Megabyte.GetHumanizeStringFormat(Megabytes, symbolFormat)}",
+			ByteUnit.Gigabit => $"{Gigabits:0.##} {ByteUnit.Gigabit.GetHumanizeStringFormat(Gigabits, symbolFormat)}",
+			ByteUnit.Gigabyte => $"{Gigabytes:0.##} {ByteUnit.Gigabyte.GetHumanizeStringFormat(Gigabytes, symbolFormat)}",
+			ByteUnit.Terabit => $"{Terabits:0.##} {ByteUnit.Terabit.GetHumanizeStringFormat(Terabits, symbolFormat)}",
+			ByteUnit.Terabyte => $"{Terabytes:0.##} {ByteUnit.Terabyte.GetHumanizeStringFormat(Terabytes, symbolFormat)}",
+			_ => $"{Bits:0.##} {ByteUnit.Bit.GetHumanizeStringFormat(Bits, symbolFormat)}"
+		};
+	}
+
 	public static bool TryParse(string s, out ByteSize result)
 	{
 		return TryParse(s, null, out result);
@@ -448,6 +547,102 @@ public readonly partial struct ByteSize : IComparable<ByteSize>, IEquatable<Byte
 		var culture = formatProvider as CultureInfo ?? CultureInfo.CurrentCulture;
 
 		return culture.NumberFormat;
+	}
+
+	private string ToString(string format, IFormatProvider provider, WordFormat symbolFormat)
+	{
+		format ??= "G";
+		provider ??= CultureInfo.CurrentCulture;
+
+		if (format == "G")
+		{
+			format = "0.##";
+		}
+
+		if (!format.Contains("#") && !format.Contains("0"))
+		{
+			format = "0.## " + format;
+		}
+
+		format = format.Replace("#.##", "0.##");
+
+		var culture = provider as CultureInfo ?? CultureInfo.CurrentCulture;
+
+		bool has(string s)
+		{
+			return culture.CompareInfo.IndexOf(format, s, CompareOptions.IgnoreCase) != -1;
+		}
+
+		string output(decimal n)
+		{
+			return n.ToString(format, provider);
+		}
+
+		if (has(TerabitSymbol))
+		{
+			format = format.Replace(TerabitSymbol, ByteUnit.Terabit.GetHumanizeStringFormat(Terabits, symbolFormat));
+			return output(Terabits);
+		}
+
+		if (has(TerabyteSymbol))
+		{
+			format = format.Replace(TerabyteSymbol, ByteUnit.Terabyte.GetHumanizeStringFormat(Terabytes, symbolFormat));
+			return output(Terabytes);
+		}
+
+		if (has(GigabitSymbol))
+		{
+			format = format.Replace(GigabitSymbol, ByteUnit.Gigabit.GetHumanizeStringFormat(Gigabits, symbolFormat));
+			return output(Gigabits);
+		}
+
+		if (has(GigabyteSymbol))
+		{
+			format = format.Replace(GigabyteSymbol, ByteUnit.Gigabyte.GetHumanizeStringFormat(Gigabytes, symbolFormat));
+			return output(Gigabytes);
+		}
+
+		if (has(MegabitSymbol))
+		{
+			format = format.Replace(MegabitSymbol, ByteUnit.Megabit.GetHumanizeStringFormat(Megabits, symbolFormat));
+			return output(Megabits);
+		}
+
+		if (has(MegabyteSymbol))
+		{
+			format = format.Replace(MegabyteSymbol, ByteUnit.Megabyte.GetHumanizeStringFormat(Megabytes, symbolFormat));
+			return output(Megabytes);
+		}
+
+		if (has(KilobitSymbol))
+		{
+			format = format.Replace(KilobitSymbol, ByteUnit.Kilobit.GetHumanizeStringFormat(Kilobits, symbolFormat));
+			return output(Kilobits);
+		}
+
+		if (has(KilobyteSymbol))
+		{
+			format = format.Replace(KilobyteSymbol, ByteUnit.Kilobyte.GetHumanizeStringFormat(Kilobytes, symbolFormat));
+			return output(Kilobytes);
+		}
+
+		// Byte and Bit symbol look must be case-sensitive
+		if (format.IndexOf(ByteSymbol, StringComparison.Ordinal) != -1)
+		{
+			format = format.Replace(ByteSymbol, ByteUnit.Byte.GetHumanizeStringFormat(Bytes, symbolFormat));
+			return output(Bytes);
+		}
+
+		if (format.IndexOf(BitSymbol, StringComparison.Ordinal) != -1)
+		{
+			format = format.Replace(BitSymbol, ByteUnit.Bit.GetHumanizeStringFormat(Bits, symbolFormat));
+			return output(Bits);
+		}
+
+		var formattedLargeWholeNumberValue = LargestWholeNumberValue.ToString(format, provider);
+		formattedLargeWholeNumberValue = formattedLargeWholeNumberValue.Equals(string.Empty) ? "0" : formattedLargeWholeNumberValue;
+
+		return $"{formattedLargeWholeNumberValue} {(symbolFormat == WordFormat.Abbreviation ? GetLargestWholeNumberSymbol() : GetLargestWholeNumberFullWord())}";
 	}
 
 	#endregion

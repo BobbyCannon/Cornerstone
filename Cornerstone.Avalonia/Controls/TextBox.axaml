@@ -97,7 +97,7 @@
 										MinHeight="{TemplateBinding MinHeight}" />
 								<Border Margin="{TemplateBinding BorderThickness}" 
 										Padding="{TemplateBinding Padding}">
-									<Grid ColumnDefinitions="Auto,Auto,*,Auto">
+									<Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto">
 										<ContentPresenter
 												Grid.Column="0"
 												Content="{TemplateBinding InnerLeftContent}"
@@ -161,6 +161,31 @@
 												Content="{TemplateBinding InnerRightContent}"
 												IsVisible="{TemplateBinding InnerRightContent, Mode=OneWay, Converter={x:Static ObjectConverters.IsNotNull}}"
 												VerticalAlignment="Center" />
+										<ToggleButton Grid.Column="4"
+												x:Name="RevealButton"
+												Theme="{DynamicResource TextBoxToggleButton}"
+												IsChecked="{Binding $parent[TextBox].RevealPassword, Mode=TwoWay}"
+												ClipToBounds="True"
+												IsVisible="False">
+											<Panel>
+												<PathIcon Data="{StaticResource PasswordBoxRevealButtonData}"
+														Height="14" Width="14"
+														Margin="0,4,0,0"
+														IsVisible="{Binding !$parent[ToggleButton].IsChecked}" />
+												<PathIcon Data="{StaticResource PasswordBoxHideButtonData}"
+														Height="14" Width="14"
+														IsVisible="{Binding $parent[ToggleButton].IsChecked}" />
+											</Panel>
+										</ToggleButton>
+										<Button Grid.Column="5"
+												x:Name="ClearButton"
+												Classes="TextBoxClear"
+												Theme="{DynamicResource TextBoxButton}"
+												Command="{Binding $parent[TextBox].Clear}"
+												ClipToBounds="True"
+												IsVisible="False">
+											<PathIcon />
+										</Button>
 									</Grid>
 								</Border>
 							</Panel>
@@ -225,7 +250,7 @@
 				</Style>
 				<!-- Code Template - /Color -->
 
-				<!-- Generated Code - Colors -->
+				<!-- Generated Code - Color -->
 				<Style Selector="^[(Theme.Color)=Amber]">
 					<Style Selector="^:focus">
 						<Setter Property="SelectionBrush" Value="{DynamicResource Amber05}" />
@@ -352,40 +377,16 @@
 						<Setter Property="Foreground" Value="{DynamicResource Teal05}" />
 					</Style>
 				</Style>
-				<!-- Generated Code - /Colors -->
+				<!-- Generated Code - /Color -->
 
 				<Style Selector="^.Password[AcceptsReturn=False][IsReadOnly=False]:not(TextBox:empty)">
 					<Setter Property="PasswordChar" Value="•" />
-					<Setter Property="InnerRightContent">
-						<Template>
-							<ToggleButton
-									Theme="{DynamicResource TextBoxToggleButton}"
-									IsChecked="{Binding $parent[TextBox].RevealPassword, Mode=TwoWay}"
-									ClipToBounds="True">
-								<Panel>
-									<PathIcon Data="{StaticResource PasswordBoxRevealButtonData}"
-											Height="14" Width="14"
-											Margin="0,4,0,0"
-											IsVisible="{Binding !$parent[ToggleButton].IsChecked}" />
-									<PathIcon Data="{StaticResource PasswordBoxHideButtonData}"
-											Height="14" Width="14"
-											IsVisible="{Binding $parent[ToggleButton].IsChecked}" />
-								</Panel>
-							</ToggleButton>
-						</Template>
-					</Setter>
+					<Style Selector="^ /template/ ToggleButton#RevealButton">
+						<Setter Property="IsVisible" Value="True" />
+					</Style>
 				</Style>
-				<Style Selector="^.ClearButton[AcceptsReturn=False][IsReadOnly=False]:not(TextBox:empty)">
-					<Setter Property="InnerRightContent">
-						<Template>
-							<Button Classes="TextBoxClear"
-									Theme="{DynamicResource TextBoxButton}"
-									Command="{Binding $parent[TextBox].Clear}"
-									ClipToBounds="True">
-								<PathIcon />
-							</Button>
-						</Template>
-					</Setter>
+				<Style Selector="^.ClearButton[AcceptsReturn=False][IsReadOnly=False]:not(TextBox:empty) /template/ Button#ClearButton">
+					<Setter Property="IsVisible" Value="True" />
 				</Style>
 				<Style Selector="^.Search">
 					<Setter Property="PlaceholderText" Value="Search" />
@@ -454,7 +455,7 @@
 				</StackPanel>
 				<TextBox PlaceholderText="email" Text="email" />
 				<TextBox PlaceholderText="password" />
-				<TextBox Classes="Password" PlaceholderText="password" Text="Password!" />
+				<TextBox Classes="Password ClearButton" PlaceholderText="password" Text="Password!" />
 				<TextBox Text="With ComboBox">
 					<TextBox.InnerRightContent>
 						<ComboBox SelectedIndex="0"
@@ -473,7 +474,7 @@
 					<StackPanel Spacing="6">
 						<TextBox Theme.Color="{Binding}"
 								PlaceholderText="PlaceholderText"
-								UseFloatingWatermark="True"
+								UseFloatingPlaceholder="True"
 								Text="{Binding}"
 								Width="120"/>
 

@@ -19,9 +19,9 @@
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Avalonia.Headless" Version="$(AvaloniaVersion)" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
-		<PackageReference Include="MSTest.TestAdapter" Version="4.1.0" />
-		<PackageReference Include="MSTest.TestFramework" Version="4.1.0" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+		<PackageReference Include="MSTest.TestAdapter" Version="4.3.3" />
+		<PackageReference Include="MSTest.TestFramework" Version="4.3.3" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\Cornerstone.Generators\Cornerstone.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />

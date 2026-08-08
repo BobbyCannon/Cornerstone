@@ -1,6 +1,7 @@
 #region References
 
 using Cornerstone.Generators.Models;
+using Microsoft.CodeAnalysis;
 
 #endregion
 
@@ -22,6 +23,8 @@ internal interface ITypeProcessor
 	#endregion
 
 	#region Methods
+
+	void Initialize(Compilation compilation);
 
 	/// <summary>
 	/// Process the type and emit generated code into the builder.

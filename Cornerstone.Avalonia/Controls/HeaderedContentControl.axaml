@@ -4,7 +4,7 @@
 	<ControlTheme x:Key="{x:Type HeaderedContentControl}"
 			TargetType="HeaderedContentControl">
 		<Setter Property="Theme.Color" Value="None" />
-		<Setter Property="Background" Value="{DynamicResource Background02}" />
+		<Setter Property="Background" Value="Transparent" />
 		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
 		<Setter Property="BorderThickness" Value="{DynamicResource ControlBorderThickness}" />
@@ -47,7 +47,7 @@
 		</Style>
 		<!-- Code Template - /Color -->
 
-		<!-- Generated Code - Colors -->
+		<!-- Generated Code - Color -->
 		<Style Selector="^[(Theme.Color)=Amber]">
 			<Setter Property="BorderBrush" Value="{DynamicResource Amber05}" />
 		</Style>
@@ -90,7 +90,7 @@
 		<Style Selector="^[(Theme.Color)=Teal]">
 			<Setter Property="BorderBrush" Value="{DynamicResource Teal05}" />
 		</Style>
-		<!-- Generated Code - /Colors -->
+		<!-- Generated Code - /Color -->
 
 	</ControlTheme>
 

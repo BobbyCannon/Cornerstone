@@ -1,6 +1,5 @@
 ﻿<Styles xmlns="https://github.com/avaloniaui"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-
 	<Styles.Resources>
 		<ResourceDictionary>
 			<ControlTheme x:Key="{x:Type TextEditor}"
@@ -23,7 +22,7 @@
 								CornerRadius="{TemplateBinding CornerRadius}">
 							<Grid ColumnDefinitions="Auto,*">
 								<Border Grid.Column="0"
-										BorderThickness="0,0,1,0"
+										BorderThickness="0"
 										CornerRadius="0"
 										IsVisible="{TemplateBinding ShowMargins}">
 									<ItemsControl
@@ -47,8 +46,12 @@
 											Cursor="IBeam"
 											CurrentLineBackground="{DynamicResource Background02}"
 											Foreground="{TemplateBinding Foreground}"
-											FontFamily="{TemplateBinding FontFamily}"
-											FontSize="{TemplateBinding FontSize, Mode=TwoWay}" />
+											FontFamily="{Binding FontFamily, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+											FontSize="{Binding FontSize, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+											FontWeight="{Binding FontWeight, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+											FontStyle="{Binding FontStyle, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+											Profiler="{Binding Profiler, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+											ViewModel="{Binding ViewModel, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" />
 								</ScrollViewer>
 							</Grid>
 						</Border>
@@ -87,7 +90,6 @@
 			</ControlTheme>
 		</ResourceDictionary>
 	</Styles.Resources>
-
 	<Design.PreviewWith>
 		<PreviewCodeSnippet Height="430" Width="600">
 			<Grid RowDefinitions="Auto,*">

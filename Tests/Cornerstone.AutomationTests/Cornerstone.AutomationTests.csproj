@@ -19,9 +19,9 @@
 		<Compile Include="..\Cornerstone.UnitTests\CornerstoneUnitTest.cs" Link="CornerstoneUnitTest.cs" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
-		<PackageReference Include="MSTest.TestAdapter" Version="4.1.0" />
-		<PackageReference Include="MSTest.TestFramework" Version="4.1.0" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+		<PackageReference Include="MSTest.TestAdapter" Version="4.3.3" />
+		<PackageReference Include="MSTest.TestFramework" Version="4.3.3" />
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\..\Cornerstone.Automation\Cornerstone.Automation.csproj" />

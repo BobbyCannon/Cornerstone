@@ -1,0 +1,75 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignWidth="660" d:DesignHeight="860"
+		x:Class="Cornerstone.Sample.Tabs.TabAppDispatcher"
+		x:DataType="tabs:TabAppDispatcher"
+		x:Name="This">
+	<!-- ReSharper disable Xaml.MissingGridIndex -->
+	<!-- AdaptiveFillLayout: fill remaining height on desktop; page-scroll + constrained body on phone. -->
+	<AdaptiveFillLayout>
+		<AdaptiveFillLayout.Header>
+			<StackPanel Margin="10">
+				<StackPanel.Styles>
+					<Style Selector="SelectableTextBlock">
+						<Setter Property="FontSize" Value="16" />
+						<Setter Property="TextWrapping" Value="Wrap" />
+					</Style>
+				</StackPanel.Styles>
+				<TextBlock Classes="Header"
+						HorizontalAlignment="Center"
+						Text="{x:Static tabs:TabAppDispatcher.HeaderName}" />
+				<SelectableTextBlock Margin="0,10"
+						FontFamily="{x:Static CornerstoneTheme.OpenSansLight}">
+					<SelectableTextBlock.Text>
+						Many MVVM apps forget to implement the M (Model) in MVVM. Many apps just work directly
+						with the ViewModel meaning it is really just a VVM. The goal of the IAppDispatcher
+						is to help assist with the Model to ViewModel updates.
+					</SelectableTextBlock.Text>
+				</SelectableTextBlock>
+				<SelectableTextBlock Margin="0,10"
+						FontFamily="{x:Static CornerstoneTheme.OpenSansLight}">
+					<SelectableTextBlock.Text>
+						The Model can be updated Off Dispatcher on any thread. The AppDispatcher monitors
+						the Model for updates. When there is an update, the AppDispatcher applies only
+						the Model updates to the ViewModel On Dispatcher. The AppDispatcher is processed
+						by the ApplicationViewModel on the provided worker delay.
+					</SelectableTextBlock.Text>
+				</SelectableTextBlock>
+				<WrapPanel ItemSpacing="10"
+						HorizontalAlignment="Center"
+						Margin="0,0,0,10">
+					<LineChart x:Name="ModelChart"
+							Title="Model Updates"
+							Data="{Binding GraphDataForModel}"
+							Height="60"
+							Width="360" />
+					<LineChart x:Name="ViewChart"
+							Title="AppDispatcher Updates"
+							Data="{Binding GraphDataForView}"
+							Height="60"
+							Width="360" />
+				</WrapPanel>
+				<SelectableTextBlock Margin="0,0,0,10"
+						FontFamily="{x:Static CornerstoneTheme.OpenSansLight}">
+					<SelectableTextBlock.Text>
+						When the View is detached the ViewModel is marked as not attached. This disables
+						any updates to the ViewModel even if the Model is updating Off Dispatcher. This
+						allows for many DispatchableViewModels to be configured without much overhead.
+						Each demo below is its own View and ViewModel so leaving a tab detaches that surface.
+					</SelectableTextBlock.Text>
+				</SelectableTextBlock>
+			</StackPanel>
+		</AdaptiveFillLayout.Header>
+		<TabControl Margin="10,0,10,10"
+				SelectedIndex="{Binding SelectedDemoIndex, Mode=TwoWay}">
+			<TabItem Header="Automatic" Content="{Binding AutomaticView}" />
+			<TabItem Header="Streaming" Content="{Binding StreamingView}" />
+			<TabItem Header="Collections" Content="{Binding CollectionsView}" />
+			<TabItem Header="Properties" Content="{Binding PropertiesView}" />
+		</TabControl>
+	</AdaptiveFillLayout>
+</UserControl>

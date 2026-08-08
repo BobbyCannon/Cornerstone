@@ -62,19 +62,19 @@ public class XmlTokenizer : Tokenizer
 		LexerStateInText = RegisterTokenState(nameof(XmlTokenizer), nameof(LexerStateInText), 407);
 		LexerStateInTagAfterName = RegisterTokenState(nameof(XmlTokenizer), nameof(LexerStateInTagAfterName), 408);
 
-		TokenTypeAttributeName = RegisterTokenType("Attribute Name", nameof(XmlTokenizer), nameof(TokenTypeAttributeName), 400, SyntaxColor.Variable);
-		TokenTypeAttributeValue = RegisterTokenType("Attribute Value", nameof(XmlTokenizer), nameof(TokenTypeAttributeValue), 401, SyntaxColor.String);
-		TokenTypeCData = RegisterTokenType("CData", nameof(XmlTokenizer), nameof(TokenTypeCData), 402, SyntaxColor.Comment);
-		TokenTypeComment = RegisterTokenType("Comment", nameof(XmlTokenizer), nameof(TokenTypeComment), 403, SyntaxColor.Comment);
-		TokenTypeDocType = RegisterTokenType("DocType", nameof(XmlTokenizer), nameof(TokenTypeDocType), 404, SyntaxColor.None);
-		TokenTypeEmptyElementClose = RegisterTokenType("Empty Element Close", nameof(XmlTokenizer), nameof(TokenTypeEmptyElementClose), 405, SyntaxColor.None);
-		TokenTypeEndTagOpen = RegisterTokenType("End Tag Open", nameof(XmlTokenizer), nameof(TokenTypeEndTagOpen), 406, SyntaxColor.Operator);
-		TokenTypeEntityReference = RegisterTokenType("Entity Reference", nameof(XmlTokenizer), nameof(TokenTypeEntityReference), 407, SyntaxColor.None);
-		TokenTypeEquals = RegisterTokenType("Equals", nameof(XmlTokenizer), nameof(TokenTypeEquals), 408, SyntaxColor.None);
-		TokenTypeProcessingInstruction = RegisterTokenType("Processing Instructions", nameof(XmlTokenizer), nameof(TokenTypeProcessingInstruction), 409, SyntaxColor.Keyword);
-		TokenTypeStartTagOpen = RegisterTokenType("Start Tag Open", nameof(XmlTokenizer), nameof(TokenTypeStartTagOpen), 410, SyntaxColor.Preprocessor);
-		TokenTypeTagClose = RegisterTokenType("Tag Close", nameof(XmlTokenizer), nameof(TokenTypeTagClose), 411, SyntaxColor.Operator);
-		TokenTypeTagName = RegisterTokenType("Tag Name", nameof(XmlTokenizer), nameof(TokenTypeTagName), 412, SyntaxColor.Keyword);
+		TokenTypeAttributeName = RegisterTokenType("Attribute Name", nameof(XmlTokenizer), nameof(TokenTypeAttributeName), 400, SyntaxKind.Variable);
+		TokenTypeAttributeValue = RegisterTokenType("Attribute Value", nameof(XmlTokenizer), nameof(TokenTypeAttributeValue), 401, SyntaxKind.String);
+		TokenTypeCData = RegisterTokenType("CData", nameof(XmlTokenizer), nameof(TokenTypeCData), 402, SyntaxKind.Comment);
+		TokenTypeComment = RegisterTokenType("Comment", nameof(XmlTokenizer), nameof(TokenTypeComment), 403, SyntaxKind.Comment);
+		TokenTypeDocType = RegisterTokenType("DocType", nameof(XmlTokenizer), nameof(TokenTypeDocType), 404, SyntaxKind.None);
+		TokenTypeEmptyElementClose = RegisterTokenType("Empty Element Close", nameof(XmlTokenizer), nameof(TokenTypeEmptyElementClose), 405, SyntaxKind.None);
+		TokenTypeEndTagOpen = RegisterTokenType("End Tag Open", nameof(XmlTokenizer), nameof(TokenTypeEndTagOpen), 406, SyntaxKind.Operator);
+		TokenTypeEntityReference = RegisterTokenType("Entity Reference", nameof(XmlTokenizer), nameof(TokenTypeEntityReference), 407, SyntaxKind.None);
+		TokenTypeEquals = RegisterTokenType("Equals", nameof(XmlTokenizer), nameof(TokenTypeEquals), 408, SyntaxKind.None);
+		TokenTypeProcessingInstruction = RegisterTokenType("Processing Instructions", nameof(XmlTokenizer), nameof(TokenTypeProcessingInstruction), 409, SyntaxKind.Keyword);
+		TokenTypeStartTagOpen = RegisterTokenType("Start Tag Open", nameof(XmlTokenizer), nameof(TokenTypeStartTagOpen), 410, SyntaxKind.Preprocessor);
+		TokenTypeTagClose = RegisterTokenType("Tag Close", nameof(XmlTokenizer), nameof(TokenTypeTagClose), 411, SyntaxKind.Operator);
+		TokenTypeTagName = RegisterTokenType("Tag Name", nameof(XmlTokenizer), nameof(TokenTypeTagName), 412, SyntaxKind.Keyword);
 	}
 
 	#endregion
@@ -92,7 +92,7 @@ public class XmlTokenizer : Tokenizer
 		return Buffer[Position] is '<' or '>' or '/' or '&' or '"' or '\'' or '-';
 	}
 
-	public override bool TryProcessContinuation(out Token token)
+	protected override bool TryProcessContinuation(out Token token)
 	{
 		var start = Position;
 
@@ -145,7 +145,7 @@ public class XmlTokenizer : Tokenizer
 		return false;
 	}
 
-	public override bool TryProcessPosition(out Token token)
+	protected override bool TryProcessPosition(out Token token)
 	{
 		var start = Position;
 		var c = Buffer[Position];

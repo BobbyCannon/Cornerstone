@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Browser;
 using Cornerstone.Avalonia;
-using Cornerstone.Avalonia.Platforms.Browser;
+using Cornerstone.Avalonia.Platforms;
 using Cornerstone.Extensions;
 using Cornerstone.Platforms.Browser;
 using Cornerstone.Runtime;
@@ -35,7 +35,7 @@ internal sealed class Program
 		{
 			case nameof(AppViewModel.SelectedTab):
 			{
-				var browser = CornerstoneApplication.DependencyProvider.GetInstance<BrowserInteropProxy>();
+				var browser = AppBootstrap.GetInstance<BrowserInteropProxy>();
 				var location = browser.WindowsLocation;
 				location = location.UpdateQueryParameter("Tab", _applicationViewModel.SelectedTab.TabName);
 				browser.WindowsLocation = location;
@@ -46,16 +46,14 @@ internal sealed class Program
 
 	private static Task Main(string[] args)
 	{
-		CornerstoneApplication.RuntimeInformation.Initialize(typeof(Program).Assembly);
-		CornerstoneApplication.RuntimeInformation.SetPlatformOverride(nameof(RuntimeInformation.ApplicationName), "Cornerstone.Sample");
-		CornerstoneApplication.ApplicationArguments.ParseFromBrowser(args);
+		AppBootstrap.Initialize("Cornerstone.Sample", typeof(Program).Assembly, args);
 
 		return BuildAvaloniaApp()
-			.UseCornerstone(args, out var options)
+			.UseCornerstone<BrowserPlatformOptions>(args, out var options)
 			.StartBrowserAppAsync("out", options)
 			.ContinueWith(_ =>
 			{
-				_applicationViewModel ??= CornerstoneApplication.DependencyProvider.GetInstance<AppViewModel>();
+				_applicationViewModel ??= AppBootstrap.GetInstance<AppViewModel>();
 				_applicationViewModel.PropertyChanged += AppViewModelOnPropertyChanged;
 			});
 	}

@@ -61,15 +61,15 @@ public class CSharpTokenizer : Tokenizer
 	{
 		LexerStateInCommentInline = RegisterTokenState(nameof(CSharpTokenizer), nameof(LexerStateInCommentInline), 100);
 
-		TokenTypeAttribute = RegisterTokenType("Attribute", nameof(CSharpTokenizer), nameof(TokenTypeAttribute), 100, SyntaxColor.Attribute);
-		TokenTypeCommentInline = RegisterTokenType("Comment (inline)", nameof(CSharpTokenizer), nameof(TokenTypeCommentInline), 101, SyntaxColor.Comment);
-		TokenTypeCommentMultiline = RegisterTokenType("Comment (multiline)", nameof(CSharpTokenizer), nameof(TokenTypeCommentMultiline), 102, SyntaxColor.Comment);
-		TokenTypeCommentXml = RegisterTokenType("Comment (xml)", nameof(CSharpTokenizer), nameof(TokenTypeCommentXml), 103, SyntaxColor.Comment);
-		TokenTypeKeyword = RegisterTokenType("Keyword", nameof(CSharpTokenizer), nameof(TokenTypeKeyword), 104, SyntaxColor.Keyword);
-		TokenTypeIdentifier = RegisterTokenType("Identifier", nameof(CSharpTokenizer), nameof(TokenTypeIdentifier), 105, SyntaxColor.None);
-		TokenTypeString = RegisterTokenType("String", nameof(CSharpTokenizer), nameof(TokenTypeString), 106, SyntaxColor.String);
-		TokenTypeCharLiteral = RegisterTokenType("Character", nameof(CSharpTokenizer), nameof(TokenTypeCharLiteral), 107, SyntaxColor.String);
-		TokenTypeNumber = RegisterTokenType("Number", nameof(CSharpTokenizer), nameof(TokenTypeNumber), 108, SyntaxColor.Number);
+		TokenTypeAttribute = RegisterTokenType("Attribute", nameof(CSharpTokenizer), nameof(TokenTypeAttribute), 100, SyntaxKind.Attribute);
+		TokenTypeCommentInline = RegisterTokenType("Comment (inline)", nameof(CSharpTokenizer), nameof(TokenTypeCommentInline), 101, SyntaxKind.Comment);
+		TokenTypeCommentMultiline = RegisterTokenType("Comment (multiline)", nameof(CSharpTokenizer), nameof(TokenTypeCommentMultiline), 102, SyntaxKind.Comment);
+		TokenTypeCommentXml = RegisterTokenType("Comment (xml)", nameof(CSharpTokenizer), nameof(TokenTypeCommentXml), 103, SyntaxKind.Comment);
+		TokenTypeKeyword = RegisterTokenType("Keyword", nameof(CSharpTokenizer), nameof(TokenTypeKeyword), 104, SyntaxKind.Keyword);
+		TokenTypeIdentifier = RegisterTokenType("Identifier", nameof(CSharpTokenizer), nameof(TokenTypeIdentifier), 105, SyntaxKind.None);
+		TokenTypeString = RegisterTokenType("String", nameof(CSharpTokenizer), nameof(TokenTypeString), 106, SyntaxKind.String);
+		TokenTypeCharLiteral = RegisterTokenType("Character", nameof(CSharpTokenizer), nameof(TokenTypeCharLiteral), 107, SyntaxKind.String);
+		TokenTypeNumber = RegisterTokenType("Number", nameof(CSharpTokenizer), nameof(TokenTypeNumber), 108, SyntaxKind.Number);
 	}
 
 	#endregion
@@ -101,7 +101,7 @@ public class CSharpTokenizer : Tokenizer
 			|| char.IsDigit(c);
 	}
 
-	public override bool TryProcessPosition(out Token token)
+	protected override bool TryProcessPosition(out Token token)
 	{
 		var c = Buffer[Position];
 
@@ -278,7 +278,7 @@ public class CSharpTokenizer : Tokenizer
 		// Handle raw string literals (""", """" etc.) - simplified
 		if ((c == '"') && TryMatch(Position, "\"\"\""))
 		{
-			return TryProcessDelimitedToken("\"\"\"", "\"\"\"", TokenTypeString, out token); // basic, doesn't handle variable quote count perfectly
+			return TryProcessDelimitedSection("\"\"\"", "\"\"\"", TokenTypeString, out token); // basic, doesn't handle variable quote count perfectly
 		}
 
 		// Interpolated or verbatim prefixes

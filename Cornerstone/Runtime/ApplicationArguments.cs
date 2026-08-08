@@ -40,6 +40,11 @@ public class ApplicationArguments
 
 	#region Methods
 
+	public bool Exists(string key)
+	{
+		return _parsed.ContainsKey(key);
+	}
+
 	public T GetValue<T>(string key)
 	{
 		return TryGetValue<T>(key, out var value) ? value : default;

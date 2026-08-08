@@ -1,0 +1,39 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:controls="clr-namespace:Cornerstone.Avalonia.Controls"
+		x:ClassModifier="internal">
+	<ControlTheme x:Key="{x:Type controls:AdaptiveFillLayout}"
+			TargetType="controls:AdaptiveFillLayout">
+		<Setter Property="HorizontalAlignment" Value="Stretch" />
+		<Setter Property="VerticalAlignment" Value="Stretch" />
+		<Setter Property="HorizontalContentAlignment" Value="Stretch" />
+		<Setter Property="VerticalContentAlignment" Value="Stretch" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<ScrollViewer x:Name="PART_ScrollViewer"
+						HorizontalScrollBarVisibility="Disabled"
+						VerticalScrollBarVisibility="Auto"
+						HorizontalAlignment="Stretch"
+						VerticalAlignment="Stretch">
+					<Grid x:Name="PART_LayoutRoot"
+							RowDefinitions="Auto,*">
+						<ContentPresenter x:Name="PART_HeaderPresenter"
+								Grid.Row="0"
+								Content="{TemplateBinding Header}"
+								ContentTemplate="{TemplateBinding HeaderTemplate}"
+								HorizontalAlignment="Stretch"
+								VerticalAlignment="Top" />
+						<ContentPresenter x:Name="PART_ContentPresenter"
+								Grid.Row="1"
+								Content="{TemplateBinding Content}"
+								ContentTemplate="{TemplateBinding ContentTemplate}"
+								HorizontalAlignment="Stretch"
+								HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+								VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+								Margin="{TemplateBinding Padding}" />
+					</Grid>
+				</ScrollViewer>
+			</ControlTemplate>
+		</Setter>
+	</ControlTheme>
+</ResourceDictionary>

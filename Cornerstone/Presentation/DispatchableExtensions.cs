@@ -83,6 +83,24 @@ public static class DispatchableExtensions
 	}
 
 	/// <summary>
+	/// Run an action on the dispatching thread if available and required.
+	/// </summary>
+	/// <param name="dispatchable"> The dispatchable to use. </param>
+	/// <param name="action"> The action to be executed. </param>
+	/// <param name="priority"> An optional priority for the action. </param>
+	public static void DispatchPost(this IDispatchable dispatchable, Action action, DispatcherPriority priority = DispatcherPriority.Normal)
+	{
+		var dispatcher = dispatchable.GetDispatcher();
+		if (dispatcher.ShouldDispatch())
+		{
+			dispatcher.DispatchPost(action, priority);
+			return;
+		}
+
+		action();
+	}
+
+	/// <summary>
 	/// Returns true if the current context is on the dispatchable thread.
 	/// </summary>
 	/// <param name="dispatchable"> The dispatchable to use. </param>

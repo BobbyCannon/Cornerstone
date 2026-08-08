@@ -12,7 +12,7 @@ using Cornerstone.Reflection;
 namespace Cornerstone.Avalonia.Text.Models;
 
 [SourceReflection]
-public partial class Selection : Notifiable
+public partial class Selection : CornerstoneObject
 {
 	#region Fields
 

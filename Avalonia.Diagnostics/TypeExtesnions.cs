@@ -20,6 +20,12 @@ public static class TypeExtensions
 
 	public static string GetTypeName(this Type type)
 	{
+		if (type == null)
+		{
+			// note: not sure if this is a good idea or not.
+			return "null";
+		}
+
 		if (!_getTypeNameCache.TryGetValue(type, out var name))
 		{
 			name = type.Name;

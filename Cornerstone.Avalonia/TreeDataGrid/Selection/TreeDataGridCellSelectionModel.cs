@@ -259,11 +259,11 @@ public class TreeDataGridCellSelectionModel<TModel>
 		Select(columnIndex, rowIndex, modelIndex);
 	}
 
-	private void Select(int columnIndex, int rowIndex, IndexPath modelndex)
+	private void Select(int columnIndex, int rowIndex, IndexPath modelIndex)
 	{
 		BeginBatchUpdate();
 		_selectedColumns.SelectedIndex = columnIndex;
-		_selectedRows.SelectedIndex = modelndex;
+		_selectedRows.SelectedIndex = modelIndex;
 		_rangeAnchor = (columnIndex, rowIndex);
 		EndBatchUpdate();
 	}

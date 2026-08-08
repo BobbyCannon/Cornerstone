@@ -4,20 +4,24 @@ using System;
 using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
+using Cornerstone.Presentation;
 
 #endregion
 
 namespace Cornerstone.Collections;
 
-public class SpeedyList<T> : SpeedyList, IList<T>, IReadOnlyList<T>, IDisposable
+public class SpeedyList<T> : SpeedyList, IList<T>, IReadOnlyList<T>, IDispatchPending, IDisposable
 {
 	#region Fields
 
 	private T[] _buffer;
 	private readonly bool _clearOnCleanup;
 	private bool _disposed;
+	private int _dispatchPending;
 	private readonly bool _isRented;
 
 	[ThreadStatic]
@@ -68,6 +72,13 @@ public class SpeedyList<T> : SpeedyList, IList<T>, IReadOnlyList<T>, IDisposable
 		get => WritePosition;
 	}
 
+	/// <inheritdoc />
+	public bool HasPending
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		get => Volatile.Read(ref _dispatchPending) != 0;
+	}
+
 	public bool IsReadOnly => false;
 
 	public T this[int index]
@@ -92,6 +103,7 @@ public class SpeedyList<T> : SpeedyList, IList<T>, IReadOnlyList<T>, IDisposable
 			}
 
 			_buffer[index] = value;
+			MarkPending();
 		}
 	}
 
@@ -132,23 +144,32 @@ public class SpeedyList<T> : SpeedyList, IList<T>, IReadOnlyList<T>, IDisposable
 		{
 			buf[pos] = value;
 			WritePosition = pos + 1;
+			MarkPending();
 			return;
 		}
 		AddWithResize(value);
+		MarkPending();
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public void Add(ReadOnlySpan<T> data)
 	{
+		if (data.IsEmpty)
+		{
+			return;
+		}
+
 		var newEnd = WritePosition + data.Length;
 		if (newEnd <= _buffer.Length)
 		{
 			// Fast-path: no resize needed
 			data.CopyTo(_buffer.AsSpan(WritePosition));
 			WritePosition = newEnd;
+			MarkPending();
 			return;
 		}
 		AddSpanWithResize(data);
+		MarkPending();
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -191,12 +212,24 @@ public class SpeedyList<T> : SpeedyList, IList<T>, IReadOnlyList<T>, IDisposable
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public void Clear()
 	{
+		var hadItems = WritePosition > 0;
 		if (_clearOnCleanup)
 		{
 			Array.Clear(_buffer, 0, WritePosition);
 		}
 		ReadPosition = 0;
 		WritePosition = 0;
+		if (hadItems)
+		{
+			MarkPending();
+		}
+	}
+
+	/// <inheritdoc />
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public void ClearHasPending()
+	{
+		Volatile.Write(ref _dispatchPending, 0);
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -286,6 +319,11 @@ public class SpeedyList<T> : SpeedyList, IList<T>, IReadOnlyList<T>, IDisposable
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public Span<T> GetWriteSpan(int count)
 	{
+		if (count <= 0)
+		{
+			return Span<T>.Empty;
+		}
+
 		var pos = WritePosition;
 		var newEnd = pos + count;
 
@@ -295,6 +333,7 @@ public class SpeedyList<T> : SpeedyList, IList<T>, IReadOnlyList<T>, IDisposable
 		}
 
 		WritePosition = newEnd;
+		MarkPending();
 		return _buffer.AsSpan(pos, count);
 	}
 
@@ -323,6 +362,7 @@ public class SpeedyList<T> : SpeedyList, IList<T>, IReadOnlyList<T>, IDisposable
 
 		_buffer[index] = item;
 		WritePosition++;
+		MarkPending();
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -348,6 +388,14 @@ public class SpeedyList<T> : SpeedyList, IList<T>, IReadOnlyList<T>, IDisposable
 
 		items.CopyTo(_buffer.AsSpan(index));
 		WritePosition += items.Length;
+		MarkPending();
+	}
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public void Load(ReadOnlySpan<T> items)
+	{
+		Clear();
+		Add(items);
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -427,6 +475,8 @@ public class SpeedyList<T> : SpeedyList, IList<T>, IReadOnlyList<T>, IDisposable
 		{
 			_buffer[WritePosition] = default!;
 		}
+
+		MarkPending();
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -456,6 +506,8 @@ public class SpeedyList<T> : SpeedyList, IList<T>, IReadOnlyList<T>, IDisposable
 		{
 			Array.Clear(_buffer, WritePosition, count); // optional but clean
 		}
+
+		MarkPending();
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -471,14 +523,41 @@ public class SpeedyList<T> : SpeedyList, IList<T>, IReadOnlyList<T>, IDisposable
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public T[] ToArray()
 	{
-		var count = Count;
-		if (count == 0)
+		// Retry when Count changes mid-copy (common with producer/consumer dispatch snapshots).
+		for (var attempt = 0; attempt < 16; attempt++)
+		{
+			var count = Count;
+			if (count == 0)
+			{
+				return [];
+			}
+
+			var result = new T[count];
+			var span = AsSpan();
+			if (span.Length != count)
+			{
+				continue;
+			}
+
+			span.CopyTo(result.AsSpan());
+			if (Count != count)
+			{
+				continue;
+			}
+
+			return result;
+		}
+
+		// Fallback: copy current span as-is (may still race, but avoids oversized buffer).
+		var final = AsSpan();
+		if (final.Length == 0)
 		{
 			return [];
 		}
-		var result = new T[count];
-		AsSpan().CopyTo(result.AsSpan());
-		return result;
+
+		var copy = new T[final.Length];
+		final.CopyTo(copy);
+		return copy;
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -555,6 +634,15 @@ public class SpeedyList<T> : SpeedyList, IList<T>, IReadOnlyList<T>, IDisposable
 		}
 
 		_buffer = newBuffer;
+	}
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	private void MarkPending()
+	{
+		if (Volatile.Read(ref _dispatchPending) == 0)
+		{
+			Volatile.Write(ref _dispatchPending, 1);
+		}
 	}
 
 	#endregion

@@ -75,7 +75,7 @@ public class BooleanConverter : BaseConverter
 				return true;
 			}
 
-			if ((toType == typeof(TextService))
+			if ((toType == typeof(TextReader))
 				|| (toType == typeof(StringBuilder))
 				|| (toType == typeof(GapBuffer<char>)))
 			{

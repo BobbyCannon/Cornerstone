@@ -5,17 +5,38 @@
 	<ItemGroup>
 		<AvaloniaResource Include="Assets\**" />
 		<EmbeddedResource Include="Data\**" />
+		<!-- Desktop: copy next to output for FromDirectory (live edit without re-embed). -->
+		<!-- Browser/WASM/mobile: Content is not on the app filesystem — use EmbeddedResource below. -->
+		<!-- Sample omits Agent/ and Todo/ (agent-oriented / WIP notes) — human docs only. -->
+		<Content Include="..\Cornerstone.Documentation\**\*.md"
+				Exclude="..\Cornerstone.Documentation\bin\**;..\Cornerstone.Documentation\obj\**;..\Cornerstone.Documentation\Agent\**;..\Cornerstone.Documentation\Todo\**"
+				Link="Documents\Cornerstone\%(RecursiveDir)%(Filename)%(Extension)"
+				CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
+	<!-- Stable LogicalNames with '/' so nested paths map correctly (e.g. Lifecycle.md). -->
+	<Target Name="EmbedDocumentationMarkdown" BeforeTargets="PrepareForBuild">
+		<ItemGroup>
+			<_DocumentationMarkdown Include="..\Cornerstone.Documentation\**\*.md"
+					Exclude="..\Cornerstone.Documentation\bin\**;..\Cornerstone.Documentation\obj\**;..\Cornerstone.Documentation\Agent\**;..\Cornerstone.Documentation\Todo\**" />
+			<_DocumentationMarkdown>
+				<RelativePathWithSlashes>$([System.String]::Copy('%(RecursiveDir)%(Filename)%(Extension)').Replace('\', '/'))</RelativePathWithSlashes>
+			</_DocumentationMarkdown>
+			<!-- Drop previous embeds from this target so incremental builds do not duplicate items -->
+			<EmbeddedResource Remove="@(EmbeddedResource)" Condition="'%(EmbeddedResource.DocumentationMarkdown)' == 'true'" />
+			<EmbeddedResource Include="@(_DocumentationMarkdown)">
+				<Link>Documents\Cornerstone\%(RecursiveDir)%(Filename)%(Extension)</Link>
+				<LogicalName>Documents/Cornerstone/%(RelativePathWithSlashes)</LogicalName>
+				<DocumentationMarkdown>true</DocumentationMarkdown>
+			</EmbeddedResource>
+		</ItemGroup>
+	</Target>
 	<ItemGroup>
 		<PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
 		<PackageReference Include="Avalonia.Controls.ColorPicker" Version="$(AvaloniaVersion)" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
-	</ItemGroup>
-	<ItemGroup>
-	  <Compile Update="Tabs\TabGuaoeueurids.axaml.cs">
-	    <DependentUpon>TabGrids.axaml</DependentUpon>
-	  </Compile>
+		<ProjectReference Include="..\Cornerstone.EntityFramework\Cornerstone.EntityFramework.csproj" />
+		<ProjectReference Include="..\Cornerstone\Cornerstone.csproj" />
 	</ItemGroup>
 </Project>

@@ -18,7 +18,7 @@ public class SourceTypeInfoTests : CornerstoneUnitTest
 	public void GetPropertyBit()
 	{
 		var account = new AccountEntity { Name = "Test" };
-		IsTrue(account.HasNotifiableChanges(), () => "Should have changes but doesn't.");
+		IsTrue(account.HasChanges(), () => "Should have changes but doesn't.");
 
 		var sourceTypeInfo = SourceReflector.GetSourceType<AccountEntity>();
 		var properties = sourceTypeInfo.GetProperties().Select(x => x.Name).ToArray();

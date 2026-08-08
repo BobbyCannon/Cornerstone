@@ -228,6 +228,46 @@ public abstract class TreeSelectionModelBase<T> : ITreeSelectionModel
 		Select(index, false);
 	}
 
+	public void Select(T[] items)
+	{
+		if (items == null)
+		{
+			return;
+		}
+
+		if (SingleSelect)
+		{
+			// In single select mode, selecting an array is ambiguous. 
+			// We select the first item and ignore the rest to maintain consistency.
+			if (items.Length > 0)
+			{
+				Select(items[0]);
+			}
+			return;
+		}
+
+		using var batch = BatchUpdate();
+
+		foreach (var item in items)
+		{
+			Select(item);
+		}
+	}
+
+	public void Select(T item)
+	{
+		if ((item == null) || (Root == null))
+		{
+			return;
+		}
+
+		var indexPath = GetIndexPath(item, Root, IndexPath.Unselected);
+		if (indexPath != default)
+		{
+			Select(indexPath);
+		}
+	}
+
 	protected internal abstract IEnumerable<T> GetChildren(T node);
 
 	protected internal virtual void OnNodeCollectionReset(IndexPath parentIndex, int removeCount)
@@ -613,6 +653,42 @@ public abstract class TreeSelectionModelBase<T> : ITreeSelectionModel
 						return i;
 					}
 				}
+			}
+		}
+
+		return default;
+	}
+
+	private IndexPath GetIndexPath(T item, TreeSelectionNode<T> node, IndexPath currentPath)
+	{
+		if (node == null)
+		{
+			return default;
+		}
+
+		var itemsView = node.ItemsView;
+		if (itemsView != null)
+		{
+			foreach (var itemInNode in itemsView)
+			{
+				if (ReferenceEquals(item, itemInNode))
+				{
+					return currentPath.Append(itemsView.IndexOf(itemInNode));
+				}
+			}
+		}
+
+		if (node.Children != null)
+		{
+			var childIndex = 0;
+			foreach (var child in node.Children)
+			{
+				var result = GetIndexPath(item, child, currentPath.Append(childIndex));
+				if (result != default)
+				{
+					return result;
+				}
+				childIndex++;
 			}
 		}
 

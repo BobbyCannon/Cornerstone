@@ -93,7 +93,7 @@
 		</Style>
 		<!-- Code Template - /Color -->
 
-		<!-- Generated Code - Colors -->
+		<!-- Generated Code - Color -->
 		<Style Selector="^[(Theme.Color)=Amber]">
 			<Setter Property="Background" Value="{DynamicResource Amber05}" />
 			<Setter Property="Foreground" Value="{DynamicResource AmberText05}" />
@@ -332,7 +332,7 @@
 				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
 			</Style>
 		</Style>
-		<!-- Generated Code - /Colors -->
+		<!-- Generated Code - /Color -->
 	</ControlTheme>
 
 	<ControlTheme x:Key="{x:Type Menu}" TargetType="Menu">

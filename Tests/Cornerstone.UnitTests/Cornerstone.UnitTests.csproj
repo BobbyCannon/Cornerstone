@@ -9,10 +9,6 @@
 	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
 		<OutputType>Library</OutputType>
 		<IsTestProject>true</IsTestProject>
-		<IsPackable>false</IsPackable>
-		<PublishAot>false</PublishAot>
-		<TrimMode>partial</TrimMode>
-		<InvariantGlobalization>false</InvariantGlobalization>
 	</PropertyGroup>
 	<ItemGroup>
 		<TrimmerRootAssembly Include="Cornerstone" />
@@ -21,9 +17,9 @@
 	<ItemGroup>
 		<PackageReference Include="Avalonia.Headless" Version="$(AvaloniaVersion)" />
 		<PackageReference Include="Avalonia.Skia" Version="$(AvaloniaVersion)" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
-		<PackageReference Include="MSTest.TestAdapter" Version="4.1.0" />
-		<PackageReference Include="MSTest.TestFramework" Version="4.1.0" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+		<PackageReference Include="MSTest.TestAdapter" Version="4.3.3" />
+		<PackageReference Include="MSTest.TestFramework" Version="4.3.3" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\Cornerstone.Sample\Cornerstone.Sample.csproj" />

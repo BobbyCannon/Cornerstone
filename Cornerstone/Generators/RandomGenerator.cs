@@ -247,6 +247,17 @@ public static class RandomGenerator
 	}
 
 	/// <summary>
+	/// Returns a random email address.
+	/// </summary>
+	/// <returns> A randomly generated email address. </returns>
+	public static string GetEmailAddress(string name = null, string domain = null)
+	{
+		name ??= GetFirstName();
+		domain ??= GetItem(Domains);
+		return $"{name.Replace(" ", ".")}@{domain}".ToLower();
+	}
+
+	/// <summary>
 	/// Returns a random first name.
 	/// </summary>
 	/// <returns> A randomly generated first name. </returns>

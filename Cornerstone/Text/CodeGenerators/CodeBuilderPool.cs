@@ -34,7 +34,7 @@ public static class CodeBuilderPool
 
 	#region Methods
 
-	public static Disposable<CodeBuilder> Rent(uint requestedCapacity = DefaultCapacity)
+	public static Disposable<CodeBuilder> Rent(int requestedCapacity = DefaultCapacity)
 	{
 		if (!_pool.TryTake(out var builder))
 		{

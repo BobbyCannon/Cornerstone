@@ -43,7 +43,7 @@
 		</Style>
 		<!-- Code Template - /Color -->
 
-		<!-- Generated Code - Colors -->
+		<!-- Generated Code - Color -->
 		<Style Selector="^[(Theme.Color)=Amber]">
 			<Setter Property="SelectionBrush" Value="{DynamicResource Amber05}" />
 			<Setter Property="SelectionForegroundBrush" Value="{DynamicResource AmberText05}" />
@@ -100,7 +100,7 @@
 			<Setter Property="SelectionBrush" Value="{DynamicResource Teal05}" />
 			<Setter Property="SelectionForegroundBrush" Value="{DynamicResource TealText05}" />
 		</Style>
-		<!-- Generated Code - /Colors -->
+		<!-- Generated Code - /Color -->
 	</ControlTheme>
 
 	<Design.PreviewWith>

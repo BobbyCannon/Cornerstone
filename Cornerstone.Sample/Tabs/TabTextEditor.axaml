@@ -16,6 +16,7 @@
 					HorizontalAlignment="Center"
 					Text="{x:Static tabs:TabTextEditor.HeaderName}" />
 		</Grid>
+
 		<WrapPanel DockPanel.Dock="Top"
 				ItemSpacing="10"
 				LineSpacing="10"
@@ -53,14 +54,19 @@
 			<ToggleSwitch x:Name="ShowTokens"
 					OnContent="Show Tokens"
 					OffContent="Show Tokens" />
+			<ToggleSwitch x:Name="ShowProfiling"
+					OnContent="Show Profiling"
+					OffContent="Show Profiling"
+					IsChecked="True" />
 		</WrapPanel>
+
 		<HeaderedContentControl DockPanel.Dock="Top"
 				Header="Sample Data"
 				Margin="0,0,0,10">
 			<HeaderedContentControl.Styles>
 				<Style Selector="Button">
 					<Setter Property="Theme.Color" Value="None" />
-					<Setter Property="Width" Value="70" />
+					<Setter Property="Width" Value="100" />
 				</Style>
 			</HeaderedContentControl.Styles>
 			<WrapPanel ItemSpacing="10"
@@ -69,6 +75,7 @@
 				<Button Command="{Binding LoadCommand}" CommandParameter="Clear">Clear</Button>
 				<Button Command="{Binding LoadCommand}" CommandParameter="CSharp">C#</Button>
 				<Button Command="{Binding LoadCommand}" CommandParameter="JSON">JSON</Button>
+				<Button Command="{Binding LoadCommand}" CommandParameter="MD">Markdown</Button>
 				<Button Command="{Binding LoadCommand}" CommandParameter="XML">XML</Button>
 				<Button Command="{Binding LoadCommand}" CommandParameter="Text">Text</Button>
 				<Button Command="{Binding LoadCommand}" CommandParameter="Ascii">Ascii</Button>
@@ -77,6 +84,7 @@
 				<Button Command="{Binding LoadCommand}" CommandParameter="Huge">Huge</Button>
 			</WrapPanel>
 		</HeaderedContentControl>
+
 		<ScrollViewer DockPanel.Dock="Bottom"
 				MaxHeight="70">
 			<WrapPanel ItemSpacing="10"
@@ -160,8 +168,41 @@
 				</StackPanel>
 			</WrapPanel>
 		</ScrollViewer>
+
+		<ListBox x:Name="TokenItems"
+				Theme.Color="None"
+				DockPanel.Dock="Right"
+				IsVisible="{Binding #ShowTokens.IsChecked}"
+				ItemsSource="{Binding #TextEditor.ViewModel.TokenManager}"
+				SelectedItem="{Binding SelectedToken, Mode=TwoWay}"
+				MinWidth="300">
+			<ListBox.ItemsPanel>
+				<ItemsPanelTemplate>
+					<VirtualizingStackPanel />
+				</ItemsPanelTemplate>
+			</ListBox.ItemsPanel>
+			<ListBox.ItemTemplate>
+				<DataTemplate DataType="parsers:Token">
+					<Border Classes="Flat"
+							TextBlock.Foreground="{Binding SyntaxKind, Converter={x:Static Converters.SyntaxKindBrush}}"
+							Padding="2">
+						<StackPanel Margin="8,4" Orientation="Horizontal">
+							<TextBlock Text="{Binding Type, Mode=OneWay, Converter={x:Static Converters.ToTokenDisplayName}}"
+									Margin="0,0,4,0" />
+							<TextBlock Text="{Binding StartOffset, Mode=OneWay}" />
+							<TextBlock Text=".." />
+							<TextBlock Text="{Binding EndOffset, Mode=OneWay}" />
+							<TextBlock Text=", " />
+							<TextBlock Text="{Binding Length, Mode=OneWay}" />
+						</StackPanel>
+					</Border>
+				</DataTemplate>
+			</ListBox.ItemTemplate>
+		</ListBox>
+
 		<ScrollViewer DockPanel.Dock="Right"
 				x:Name="Charts"
+				IsVisible="{Binding #ShowProfiling.IsChecked}"
 				MinWidth="400">
 			<StackPanel>
 				<LineChart x:Name="RenderChart"
@@ -196,36 +237,7 @@
 						Height="60" />
 			</StackPanel>
 		</ScrollViewer>
-		<ListBox x:Name="TokenItems"
-				Theme.Color="None"
-				DockPanel.Dock="Right"
-				IsVisible="{Binding #ShowTokens.IsChecked}"
-				ItemsSource="{Binding #TextEditor.ViewModel.TokenManager}"
-				SelectedItem="{Binding SelectedToken, Mode=TwoWay}"
-				MinWidth="300">
-			<ListBox.ItemsPanel>
-				<ItemsPanelTemplate>
-					<VirtualizingStackPanel />
-				</ItemsPanelTemplate>
-			</ListBox.ItemsPanel>
-			<ListBox.ItemTemplate>
-				<DataTemplate DataType="parsers:Token">
-					<Border Classes="Flat"
-							TextBlock.Foreground="{Binding Color, Converter={x:Static Converters.SyntaxColorBrush}}"
-							Padding="2">
-						<StackPanel Margin="8,4" Orientation="Horizontal">
-							<TextBlock Text="{Binding Type, Mode=OneWay, Converter={x:Static Converters.ToTokenDisplayName}}"
-									Margin="0,0,4,0" />
-							<TextBlock Text="{Binding StartOffset, Mode=OneWay}" />
-							<TextBlock Text=".." />
-							<TextBlock Text="{Binding EndOffset, Mode=OneWay}" />
-							<TextBlock Text=", " />
-							<TextBlock Text="{Binding Length, Mode=OneWay}" />
-						</StackPanel>
-					</Border>
-				</DataTemplate>
-			</ListBox.ItemTemplate>
-		</ListBox>
+
 		<TextEditor x:Name="TextEditor"
 				CornerRadius="{Binding ElementName=CornerRadius2, Path=Value, Mode=TwoWay, Converter={StaticResource CornerRadiusConverter}}"
 				FontSize="{Binding ElementName=FontSize2, Path=Value, Mode=TwoWay}"

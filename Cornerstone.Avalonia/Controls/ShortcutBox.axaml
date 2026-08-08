@@ -100,7 +100,7 @@
 		</Style>
 		<!-- Code Template - /Color -->
 
-		<!-- Generated Code - Colors -->
+		<!-- Generated Code - Color -->
 		<Style Selector="^[(Theme.Color)=Amber]">
 			<Style Selector="^ /template/ TextBlock#PART_Watermark">
 				<Setter Property="Foreground" Value="{DynamicResource Amber05}" />
@@ -297,7 +297,7 @@
 				</Style>
 			</Style>
 		</Style>
-		<!-- Generated Code - /Colors -->
+		<!-- Generated Code - /Color -->
 	</ControlTheme>
 
 	<Design.PreviewWith>

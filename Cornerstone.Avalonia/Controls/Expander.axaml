@@ -271,6 +271,10 @@
 		<Style Selector="^:expanded:down /template/ ToggleButton#ExpanderHeader">
 			<Setter Property="Theme" Value="{StaticResource ExpanderToggleButtonDownTheme}" />
 		</Style>
+
+		<Style Selector="^.Dim /template/ ToggleButton#ExpanderHeader">
+			<Setter Property="Opacity" Value="0.5" />
+		</Style>
 	</ControlTheme>
 
 	<Design.PreviewWith>
@@ -301,6 +305,12 @@
 						Header="Disabled"
 						Background="Red"
 						IsEnabled="False">
+					<StackPanel Background="Green">
+						<TextBlock Margin="6">Expanded content</TextBlock>
+					</StackPanel>
+				</Expander>
+				
+				<Expander Classes="Dim" Header="Dim Values">
 					<StackPanel Background="Green">
 						<TextBlock Margin="6">Expanded content</TextBlock>
 					</StackPanel>

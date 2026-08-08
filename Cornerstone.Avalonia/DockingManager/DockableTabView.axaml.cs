@@ -1,4 +1,4 @@
-﻿#region References
+#region References
 
 using System;
 using Avalonia;
@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
+using Cornerstone.Presentation;
 
 #endregion
 
@@ -24,7 +25,7 @@ public class DockableTabView : TabItem
 
 	#region Constructors
 
-	public DockableTabView() : this(new DocumentTabModel())
+	public DockableTabView() : this(null)
 	{
 	}
 
@@ -63,11 +64,30 @@ public class DockableTabView : TabItem
 		get => GetValue(TabModelProperty);
 		set
 		{
+			var oldModel = GetValue(TabModelProperty);
+			if (ReferenceEquals(oldModel, value))
+			{
+				return;
+			}
+
+			// Detach previous dispatchable while this header is on the visual tree.
+			if (VisualRoot != null)
+			{
+				(oldModel as DispatchableViewModel)?.Detach(this);
+			}
+
 			SetValue(TabModelProperty, value);
 
 			Content = value;
 			DataContext = value;
 			Header = null;
+
+			// AppDispatcher only applies while IsAttached — own the tab model from the strip,
+			// not only from content views (ViewLocator), so projections keep updating while docked.
+			if ((VisualRoot != null) && (value is DispatchableViewModel dispatchable))
+			{
+				dispatchable.Attach(this);
+			}
 		}
 	}
 
@@ -89,12 +109,31 @@ public class DockableTabView : TabItem
 		RaiseEvent(new RoutedEventArgs(ClosedEvent));
 	}
 
+	/// <inheritdoc />
 	protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
 	{
-		TabModel.CloseRequested += (_, force) => Close(force);
+		if (TabModel != null)
+		{
+			TabModel.CloseRequested += (_, force) => Close(force);
+		}
 		base.OnApplyTemplate(e);
 	}
 
+	/// <inheritdoc />
+	protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+	{
+		base.OnAttachedToVisualTree(e);
+		(TabModel as DispatchableViewModel)?.Attach(this);
+	}
+
+	/// <inheritdoc />
+	protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+	{
+		(TabModel as DispatchableViewModel)?.Detach(this);
+		base.OnDetachedFromVisualTree(e);
+	}
+
+	/// <inheritdoc />
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
 	{
 		switch (change.Property.Name)

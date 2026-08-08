@@ -7,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
 using Cornerstone.Collections;
+using Cornerstone.Presentation;
 using Cornerstone.Sample.Models;
 using Cornerstone.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -165,14 +166,6 @@ public partial class PresentationListTests : CornerstoneUnitTest
 		var array2 = (Array) new int[10];
 		((IList) list).CopyTo(array2, 4);
 		AreEqual(new[] { 0, 0, 0, 0, 1, 2, 3, 4, 0, 0 }, array2);
-	}
-
-	[TestMethod]
-	public void Dispatcher()
-	{
-		var dispatcher = new TestDispatcher();
-		var list = new PresentationList<int>(dispatcher);
-		AreEqual(dispatcher, list.GetDispatcher());
 	}
 
 	[TestMethod]
@@ -342,6 +335,33 @@ public partial class PresentationListTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void RefreshFilterRestoresSourceOrderWhenCleared()
+	{
+		// Unordered list: active must follow Load/_allItems order when filter widens again.
+		// Old bug: re-added items were appended to the filtered remnant → scrambled history.
+		var list = new PresentationList<string>();
+		list.Load("wd", "c0", "c1", "c2", "c3");
+		AreEqual(["wd", "c0", "c1", "c2", "c3"], list.ToArray());
+
+		list.FilterCheck = x => (x == "c1") || (x == "c3");
+		list.RefreshFilter();
+		AreEqual(["c1", "c3"], list.ToArray());
+
+		list.FilterCheck = null;
+		list.RefreshFilter();
+		AreEqual(["wd", "c0", "c1", "c2", "c3"], list.ToArray());
+
+		// Narrow then widen with a predicate (not null FilterCheck).
+		list.FilterCheck = x => x.StartsWith('c');
+		list.RefreshFilter();
+		AreEqual(["c0", "c1", "c2", "c3"], list.ToArray());
+
+		list.FilterCheck = _ => true;
+		list.RefreshFilter();
+		AreEqual(["wd", "c0", "c1", "c2", "c3"], list.ToArray());
+	}
+
+	[TestMethod]
 	public void First()
 	{
 		var list = new PresentationList<string>("a", "b", "c");
@@ -363,16 +383,24 @@ public partial class PresentationListTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
-	public void HasNotifiableChanges()
+	public void GetDispatcher()
+	{
+		var dispatcher = new TestDispatcher();
+		var list = new PresentationList<int>(dispatcher);
+		AreEqual(dispatcher, list.GetDispatcher());
+	}
+
+	[TestMethod]
+	public void HasChanges()
 	{
 		var list = new PresentationList<int>();
-		IsFalse(list.HasNotifiableChanges());
+		IsFalse(list.HasChanges());
 
 		list.Add(1);
-		IsTrue(list.HasNotifiableChanges());
+		IsTrue(list.HasChanges());
 
 		list.ResetHasChanges();
-		IsFalse(list.HasNotifiableChanges());
+		IsFalse(list.HasChanges());
 	}
 
 	[TestMethod]

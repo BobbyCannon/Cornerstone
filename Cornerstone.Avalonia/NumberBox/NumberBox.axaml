@@ -225,7 +225,7 @@
 				</Style>
 				<!-- Code Template - /Color -->
 
-				<!-- Generated Code - Colors -->
+				<!-- Generated Code - Color -->
 				<Style Selector="^[(Theme.Color)=Amber] /template/ TextBox#InputBox">
 					<Setter Property="SelectionBrush" Value="{DynamicResource Amber05}" />
 				</Style>
@@ -268,7 +268,7 @@
 				<Style Selector="^[(Theme.Color)=Teal] /template/ TextBox#InputBox">
 					<Setter Property="SelectionBrush" Value="{DynamicResource Teal05}" />
 				</Style>
-				<!-- Generated Code - /Colors -->
+				<!-- Generated Code - /Color -->
 			</ControlTheme>
 		</ResourceDictionary>
 	</Styles.Resources>

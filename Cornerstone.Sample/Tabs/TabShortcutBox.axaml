@@ -20,13 +20,13 @@
 				<HeaderedContentControl Header="Options"
 						DockPanel.Dock="Top"
 						Padding="20">
-					<WrapPanel 
+					<WrapPanel
 							ItemSpacing="20"
 							LineSpacing="20">
-						<TextBlock Text="Label" VerticalAlignment="Center"/>
+						<TextBlock Text="Label" VerticalAlignment="Center" />
 						<TextBox x:Name="LabelInput"
 								Text="{Binding ShortcutBinding.Name}"
-								Width="260"/>
+								Width="260" />
 					</WrapPanel>
 				</HeaderedContentControl>
 				<ShortcutBox

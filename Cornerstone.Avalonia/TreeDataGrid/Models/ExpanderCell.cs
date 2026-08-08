@@ -4,13 +4,12 @@ using System;
 using System.ComponentModel;
 using Cornerstone.Avalonia.TreeDataGrid.Experimental.Data;
 using Cornerstone.Avalonia.TreeDataGrid.Experimental.Data.Core;
-using Cornerstone.Data;
 
 #endregion
 
 namespace Cornerstone.Avalonia.TreeDataGrid.Models;
 
-public class ExpanderCell<TModel> : Notifiable,
+public class ExpanderCell<TModel> : CornerstoneObject,
 	IExpanderCell,
 	IDisposable
 	where TModel : class
@@ -86,7 +85,7 @@ public class ExpanderCell<TModel> : Notifiable,
 		if ((e.PropertyName == nameof(Row.IsExpanded))
 			|| (e.PropertyName == nameof(Row.ShowExpander)))
 		{
-			OnPropertyChanged(e.PropertyName);
+			NotifyComputedPropertyChanged(e.PropertyName);
 		}
 	}
 

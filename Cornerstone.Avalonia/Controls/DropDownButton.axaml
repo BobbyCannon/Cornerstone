@@ -98,7 +98,7 @@
 		</Style>
 		<!-- Code Template - /Color -->
 
-		<!-- Generated Code - Colors -->
+		<!-- Generated Code - Color -->
 		<Style Selector="^[(Theme.Color)=Amber]">
 			<Setter Property="Background" Value="{DynamicResource Amber07}" />
 			<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground00}" />
@@ -351,7 +351,7 @@
 				<Setter Property="Foreground" Value="{DynamicResource Teal01}" />
 			</Style>
 		</Style>
-		<!-- Generated Code - /Colors -->
+		<!-- Generated Code - /Color -->
 
 		<Style Selector="^.Icon">
 			<Setter Property="Background" Value="Transparent" />

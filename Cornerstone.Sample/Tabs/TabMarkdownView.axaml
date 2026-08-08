@@ -21,7 +21,7 @@
 				<WrapPanel Grid.Row="0"
 						Grid.Column="0"
 						Grid.ColumnSpan="3"
-						ItemSpacing="10"
+						ItemSpacing="20"
 						LineSpacing="10"
 						Margin="0,0,0,20">
 					<Button Theme.Color="None"
@@ -31,9 +31,6 @@
 					<ToggleSwitch IsChecked="{Binding LoopSample}"
 							OnContent="Loop Sample"
 							OffContent="Loop Sample" />
-					<ToggleSwitch IsChecked="{Binding IsBenchmarking}"
-							OnContent="Benchmark"
-							OffContent="Benchmark" />
 					<ToggleSwitch x:Name="WordWrap"
 							IsChecked="True"
 							OnContent="Word Wrap"

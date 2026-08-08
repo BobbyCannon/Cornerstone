@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Cornerstone.Collections;
 using Cornerstone.Data;
+using Cornerstone.Presentation;
 using Cornerstone.Runtime;
 using Cornerstone.Threading;
 
@@ -38,7 +39,7 @@ public class DebounceThrottleManager : WorkerManager, IDisposable
 	public static DebounceThrottleManager Create(IDateTimeProvider timeProvider = null, int workerDelay = 10)
 	{
 		var response = new DebounceThrottleManager(timeProvider, workerDelay);
-		response.Initialize();
+		response.InitializeLifecycle();
 		return response;
 	}
 
@@ -58,8 +59,8 @@ public class DebounceThrottleManager : WorkerManager, IDisposable
 
 	public void Dispose()
 	{
-		StopWorking();
-		Uninitialize();
+		StopLifecycle();
+		UninitializeLifecycle();
 	}
 
 	public void Release(DebounceThrottleProxy proxy)
@@ -69,18 +70,18 @@ public class DebounceThrottleManager : WorkerManager, IDisposable
 		proxy.Cancel();
 	}
 
-	public static DebounceThrottleManager Start(IDateTimeProvider timeProvider = null, int workerDelay = 10)
+	public static DebounceThrottleManager Start(IDateTimeProvider timeProvider, int workerDelay = 10)
 	{
 		var response = new DebounceThrottleManager(timeProvider, workerDelay);
-		response.Initialize();
-		response.StartWorking();
+		response.InitializeLifecycle();
+		response.StartLifecycle();
 		return response;
 	}
 
-	public override void Uninitialize()
+	public override void UninitializeLifecycle()
 	{
 		_proxies.Clear();
-		base.Uninitialize();
+		base.UninitializeLifecycle();
 	}
 
 	public override void Update()
@@ -275,7 +276,7 @@ public class ThrottleProxy : DebounceThrottleProxy
 	#endregion
 }
 
-public abstract partial class DebounceThrottleProxy : Notifiable
+public abstract partial class DebounceThrottleProxy : CornerstoneObject
 {
 	#region Fields
 
@@ -480,7 +481,7 @@ public abstract partial class DebounceThrottleProxy : Notifiable
 		IsTriggeredForced |= force;
 		Queue.Enqueue(value);
 		TriggeredOn = NextTriggerDate;
-		OnPropertyChanged(nameof(IsTriggered));
+		NotifyComputedPropertyChanged(nameof(IsTriggered));
 
 		_manager.Trigger(this);
 	}
@@ -536,8 +537,8 @@ public abstract partial class DebounceThrottleProxy : Notifiable
 
 	private void QueueOnQueueChanged(object sender, EventArgs e)
 	{
-		OnPropertyChanged(nameof(IsTriggered));
-		OnPropertyChanged(nameof(QueueCount));
+		NotifyComputedPropertyChanged(nameof(IsTriggered));
+		NotifyComputedPropertyChanged(nameof(QueueCount));
 	}
 
 	#endregion

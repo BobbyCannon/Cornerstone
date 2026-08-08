@@ -20,8 +20,6 @@ public partial class AppView : CornerstoneAppView<AppViewModel>
 	public AppView(AppViewModel viewModel) : base(viewModel)
 	{
 		InitializeComponent();
-
-		CornerstoneApplication.RuntimeInformation.CompleteStartup();
 	}
 
 	#endregion
@@ -30,14 +28,12 @@ public partial class AppView : CornerstoneAppView<AppViewModel>
 
 	protected override void OnLoaded(RoutedEventArgs e)
 	{
-		if (ViewModel.RuntimeInformation.DevicePlatform
+		if (ViewModel.State.RuntimeInformation.DevicePlatform
 			is DevicePlatform.Android
 			or DevicePlatform.IOS)
 		{
 			Menu.AutoExpandOnResize = false;
-			Menu.DisplayMode = ViewModel.RuntimeInformation.DeviceType == DeviceType.Tablet
-				? SplitViewDisplayMode.Inline
-				: SplitViewDisplayMode.Overlay;
+			Menu.DisplayMode = SplitViewDisplayMode.Overlay;
 		}
 
 		base.OnLoaded(e);

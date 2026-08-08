@@ -11,7 +11,8 @@
 	<StreamGeometry x:Key="MenuItemArrowPathData">M0,0L4,3.5 0,7z</StreamGeometry>
 
 	<ControlTheme x:Key="{x:Type MenuItem}" TargetType="MenuItem">
-		<Setter Property="Theme.Color" Value="{Binding $parent[Menu].(Theme.Color)}"/>
+		<!-- MenuBase covers Menu (bar) and ContextMenu; plain Menu fails for context menus. -->
+		<Setter Property="Theme.Color" Value="{Binding $parent[MenuBase].(Theme.Color), FallbackValue=None}" />
 		<Setter Property="Background" Value="Transparent" />
 		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 		<Setter Property="Height" Value="32" />
@@ -187,7 +188,7 @@
 		</Style>
 		<!-- Code Template - /Color -->
 
-		<!-- Generated Code - Colors -->
+		<!-- Generated Code - Color -->
 		<Style Selector="^[(Theme.Color)=Amber]">
 			<Setter Property="Background" Value="{DynamicResource Amber05}" />
 			<Setter Property="Foreground" Value="{DynamicResource AmberText05}" />
@@ -412,7 +413,7 @@
 				<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
 			</Style>
 		</Style>
-		<!-- Generated Code - /Colors -->
+		<!-- Generated Code - /Color -->
 	</ControlTheme>
 
 	<Design.PreviewWith>
@@ -430,7 +431,9 @@
 					<MenuItem Header="Git" />
 					<MenuItem Header="Project" />
 					<MenuItem Header="Build" />
-					<MenuItem Header="Help" />
+					<MenuItem Header="Help">
+						<MenuItem Header="The quick brown fox jumped over the lazy dog's back." />
+					</MenuItem>
 				</Menu>
 			</WrapPanel>
 			<PreviewCodeSnippet.ItemTemplate>

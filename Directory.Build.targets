@@ -1,0 +1,4 @@
+﻿<Project>
+	<Import Project="$(MSBuildThisFileDirectory)..\Cornerstone\Build\Release.Platform.props"
+			Condition="'$(Configuration)' == 'Release'" />
+</Project>

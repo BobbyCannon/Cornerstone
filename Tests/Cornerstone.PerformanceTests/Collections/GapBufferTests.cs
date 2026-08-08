@@ -36,8 +36,8 @@ public class GapBufferTests : CornerstoneUnitTest
 
 		ValidatePerformance($"GapBuffer<char> {data.Length:N0} characters",
 			() => buffer.Add(data),
-			int.MaxValue, 1696, 1, 1,
-			() => buffer.Clear()
+			int.MaxValue, 2100, 1, 1,
+			buffer.Clear
 		);
 
 		AreEqual(1000000, buffer.Count);

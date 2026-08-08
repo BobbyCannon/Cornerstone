@@ -4,6 +4,7 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Cornerstone.Data;
+using Cornerstone.Extensions;
 using Cornerstone.Reflection;
 
 #endregion
@@ -20,7 +21,8 @@ public class JsonConverterFactoryPartialUpdate : JsonConverterFactory
 
 	public override bool CanConvert(Type typeToConvert)
 	{
-		if (typeToConvert == typeof(PartialUpdate))
+		if ((typeToConvert == typeof(PartialUpdate))
+			|| typeToConvert.ImplementsType<PartialUpdate>())
 		{
 			return true;
 		}
@@ -37,7 +39,8 @@ public class JsonConverterFactoryPartialUpdate : JsonConverterFactory
 	public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
 	{
 		// Fast path for the non-generic case
-		if (typeToConvert == typeof(PartialUpdate))
+		if ((typeToConvert == typeof(PartialUpdate))
+			|| typeToConvert.ImplementsType<PartialUpdate>())
 		{
 			return JsonConverterForPartialUpdate.Instance;
 		}

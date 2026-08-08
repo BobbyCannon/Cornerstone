@@ -4,11 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
-#if (NET8_0_OR_GREATER)
+#if NET8_0_OR_GREATER
 using System.Runtime.CompilerServices;
 #endif
 
@@ -66,6 +65,8 @@ internal class TestRunner
 		var isAot = false; // or leave dynamic code path always on
 		#endif
 
+		var isReadyToRun = DetectReadyToRun();
+
 		Console.WriteLine(
 			"""
 			[92m
@@ -80,32 +81,58 @@ internal class TestRunner
 
 		Console.WriteLine(
 			$"""
-			[37m       Args: [0m{string.Join(", ", _args)}
-			[37m    Bitness: [0m{(Environment.Is64BitProcess ? "x64" : "x86")}
-			[37m    Machine: [0m{Environment.MachineName}
+			[37m          Args: [0m{string.Join(", ", _args)}
+			[37m       Bitness: [0m{(Environment.Is64BitProcess ? "x64" : "x86")}
+			[37m       Machine: [0m{Environment.MachineName}
 			""");
 
 		if (GetPhysicallyInstalledSystemMemory(out var memory))
 		{
-			Console.WriteLine($"\e[37m     Memory: \e[0m{memory / 1024 / 1024} GB");
+			Console.WriteLine($"\e[37m        Memory: \e[0m{memory / 1024 / 1024} GB");
 		}
 
 		Console.WriteLine(
 			$"""
-			[37m     Native: [0m{isAot}
-			[37m     Filter: [0m{Filter}
-			[37m    Verbose: [0m{Verbose}
+			[37m  AOT (native): [0m{isAot}
+			[37m    ReadyToRun: [0m{isReadyToRun}
+			[37m        Filter: [0m{Filter}
+			[37m       Verbose: [0m{Verbose}
 			""");
 
 		Console.WriteLine();
 
+		// Execute AssemblyInitialize from all classes that have it
+		foreach (var testClass in Classes)
+		{
+			if (testClass.AssemblyInitializeMethod?.MethodInfo != null)
+			{
+				try
+				{
+					testClass.AssemblyInitializeMethod.MethodInfo.Invoke(null, [null]);
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"\e[97;41m AssemblyInitialize Failed: {ex.InnerException?.Message ?? ex.Message} \e[0m");
+					return;
+				}
+			}
+		}
+
 		var totalPassed = 0;
 		var totalFailed = 0;
+		var totalSkipped = 0;
 		var originalOut = Console.Out;
 		var totalWatch = Stopwatch.StartNew();
 
 		foreach (var testClass in Classes)
 		{
+			if (isAot && testClass.SkipInAot)
+			{
+				Console.WriteLine($"{"",12} \e[93mSkipped (AOT)\e[0m: {testClass.ClassName}  – {testClass.SkipInAotReason}");
+				totalSkipped += testClass.TestMethods.Length;
+				continue;
+			}
+
 			if (Filter is { Length: >= 1 }
 				&& (testClass.ClassName != Filter[0]))
 			{
@@ -123,8 +150,15 @@ internal class TestRunner
 					continue;
 				}
 
+				if (isAot && method.SkipInAot)
+				{
+					Console.WriteLine($"{"",7} \e[93mAOT Skipped\e[0m: {testClass.ClassName}.{method.Name} – {method.SkipInAotReason}");
+					totalSkipped++;
+					continue;
+				}
+
 				builder.Clear();
-				
+
 				var testWatch = Stopwatch.StartNew();
 				Console.SetOut(stringWriter);
 
@@ -175,8 +209,54 @@ internal class TestRunner
 
 		Console.WriteLine();
 		Console.Write($"{$"{totalWatch.Elapsed.TotalMilliseconds:F4} ms",12} Elapsed, {totalPassed} Passed,");
-		Console.WriteLine(totalFailed == 0 ? $" {totalFailed} Failed" : $"\e[97;41m {totalFailed} Failed \e[0m");
+		Console.Write(totalFailed == 0 ? $" {totalFailed} Failed" : $"\e[97;41m {totalFailed} Failed \e[0m");
+		Console.WriteLine(isAot ? $", {totalSkipped} Skipped (AOT)" : "");
 		Console.WriteLine();
+	}
+
+	private static bool DetectReadyToRun()
+	{
+		try
+		{
+			var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
+			var location = assembly.Location;
+
+			if (string.IsNullOrEmpty(location) || !File.Exists(location))
+			{
+				return false; // Single-file or Native AOT usually has empty Location
+			}
+
+			// Look for the ReadyToRun signature in the PE
+			// R2R images contain the string "RTR" or the ReadyToRunHeader magic
+			using var fs = File.OpenRead(location);
+			using var reader = new BinaryReader(fs);
+
+			// Simple & fast heuristic that works well in practice:
+			// Search for the "ReadyToRun" magic or the common R2R section marker
+			const int bufferSize = 4096;
+			var buffer = new byte[bufferSize];
+			int bytesRead;
+
+			while ((bytesRead = fs.Read(buffer, 0, bufferSize)) > 0)
+			{
+				// Look for the ASCII sequence "RTR\0" or "ReadyToRun"
+				for (var i = 0; i < (bytesRead - 3); i++)
+				{
+					if ((buffer[i] == (byte) 'R') &&
+						(buffer[i + 1] == (byte) 'T') &&
+						(buffer[i + 2] == (byte) 'R'))
+					{
+						return true;
+					}
+				}
+			}
+		}
+		catch
+		{
+			// Ignore – if we can't read the file we just assume non-R2R
+		}
+
+		return false;
 	}
 
 	[DllImport("kernel32.dll")]
@@ -217,10 +297,13 @@ public class TestClassInfo
 {
 	#region Properties
 
+	public TestMethodInfo AssemblyInitializeMethod { get; init; }
 	public string ClassName { get; init; }
 	public TestMethodInfo CleanupMethod { get; init; }
 	public ConstructorInfo ConstructorInfo { get; init; }
 	public TestMethodInfo InitializeMethod { get; init; }
+	public bool SkipInAot { get; init; }
+	public string SkipInAotReason { get; init; }
 	public TestMethodInfo[] TestMethods { get; init; }
 
 	#endregion
@@ -232,6 +315,8 @@ public class TestMethodInfo
 
 	public MethodInfo MethodInfo { get; init; }
 	public string Name { get; init; }
+	public bool SkipInAot { get; init; }
+	public string SkipInAotReason { get; init; }
 
 	#endregion
 }

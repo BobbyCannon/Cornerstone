@@ -3,13 +3,12 @@
 using System;
 using Avalonia.Data;
 using Cornerstone.Avalonia.TreeDataGrid.Models;
-using Cornerstone.Data;
 
 #endregion
 
 namespace Cornerstone.Avalonia.TreeDataGrid.Columns;
 
-public class CheckBoxCell : Notifiable, ICell, IDisposable
+public class CheckBoxCell : CornerstoneObject, ICell, IDisposable
 {
 	#region Fields
 

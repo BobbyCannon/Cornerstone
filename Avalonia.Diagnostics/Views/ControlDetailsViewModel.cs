@@ -189,8 +189,9 @@ public class ControlDetailsViewModel : ViewModel, IDisposable, IClassesChangedLi
 		if (_selectedEntitiesStack.Count > 0)
 		{
 			var property = _selectedEntitiesStack.Pop();
+			var oldCanNavigateToParentProperty = CanNavigateToParentProperty;
 			NavigateToProperty(property.Entry, property.Name);
-			OnPropertyChanged(nameof(CanNavigateToParentProperty));
+			OnPropertyChanged(nameof(CanNavigateToParentProperty), oldCanNavigateToParentProperty, CanNavigateToParentProperty);
 		}
 	}
 
@@ -244,7 +245,7 @@ public class ControlDetailsViewModel : ViewModel, IDisposable, IClassesChangedLi
 
 		NavigateToProperty(property, selectedEntityName + "." + propertyName);
 
-		OnPropertyChanged(nameof(CanNavigateToParentProperty));
+		NotifyComputedPropertyChanged(nameof(CanNavigateToParentProperty));
 	}
 
 	public void SelectProperty(AvaloniaProperty property)
@@ -353,7 +354,7 @@ public class ControlDetailsViewModel : ViewModel, IDisposable, IClassesChangedLi
 		//view.SortDescriptions.AddRange(SortDescriptions);
 		//view.Filter = FilterProperty;
 		//PropertiesView = view;
-		Properties.Reconcile(properties);
+		Properties.ReconcileListAndItems(properties);
 
 		switch (o)
 		{
@@ -367,9 +368,9 @@ public class ControlDetailsViewModel : ViewModel, IDisposable, IClassesChangedLi
 		}
 	}
 
-	protected override void OnPropertyChanged(string propertyName = null)
+	protected override void OnPropertyChanged<TValue>(string propertyName, TValue oldValue, TValue newValue)
 	{
-		base.OnPropertyChanged(propertyName);
+		base.OnPropertyChanged(propertyName, oldValue, newValue);
 
 		if (propertyName == nameof(SnapshotFrames))
 		{

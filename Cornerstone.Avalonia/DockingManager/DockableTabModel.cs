@@ -126,21 +126,52 @@ public abstract partial class DockableTabModel : PopupManager
 		CloseRequested?.Invoke(this, parameter is true);
 	}
 
-	public string ReadLayoutData()
+	/// <summary>
+	/// Capture layout for favorites / recent / dock restore as a structured <see cref="PartialUpdate"/>.
+	/// </summary>
+	public PartialUpdate ReadLayoutData()
 	{
 		var response = new PartialUpdate();
-		response.AddOrUpdate(nameof(Id), Id.ToString());
-		response.AddOrUpdate(nameof(Header), Header);
-		ReadLayoutData(response);
-		return response.ToJson();
+		response.Set(nameof(Id), Id.ToString());
+		response.Set(nameof(Header), Header);
+		CollectLayoutData(response);
+		return response;
 	}
 
+	/// <summary>
+	/// JSON form of <see cref="ReadLayoutData"/> for dock layout files that still store a string.
+	/// </summary>
+	public string ReadLayoutDataJson()
+	{
+		return ReadLayoutData().ToJson();
+	}
+
+	/// <summary>
+	/// Restore from structured layout (preferred).
+	/// </summary>
+	public void RestoreLayoutData(PartialUpdate update)
+	{
+		if (update == null)
+		{
+			return;
+		}
+
+		update.TrySet<Guid>(nameof(Id), x => Id = x);
+		update.TrySet<string>(nameof(Header), x => Header = x);
+		ApplyLayoutData(update);
+	}
+
+	/// <summary>
+	/// Restore from JSON string (dock layout + legacy TabSummary).
+	/// </summary>
 	public void RestoreLayoutData(string data)
 	{
-		var update = data.FromJson<PartialUpdate>();
-		update.TryUpdate<Guid>(x => Id = x, nameof(Id));
-		update.TryUpdate<string>(x => Header = x, nameof(Header));
-		RestoreLayoutData(update);
+		if (string.IsNullOrWhiteSpace(data))
+		{
+			return;
+		}
+
+		RestoreLayoutData(data.FromJson<PartialUpdate>());
 	}
 
 	public override string ToString()
@@ -152,11 +183,17 @@ public abstract partial class DockableTabModel : PopupManager
 	{
 	}
 
-	protected virtual void ReadLayoutData(PartialUpdate update)
+	/// <summary>
+	/// Subclasses add layout keys to the update (path, UI flags, etc.).
+	/// </summary>
+	protected virtual void CollectLayoutData(PartialUpdate update)
 	{
 	}
 
-	protected virtual void RestoreLayoutData(PartialUpdate update)
+	/// <summary>
+	/// Subclasses apply layout keys from the update.
+	/// </summary>
+	protected virtual void ApplyLayoutData(PartialUpdate update)
 	{
 	}
 

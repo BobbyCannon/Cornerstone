@@ -1,0 +1,211 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		xmlns:parsers="clr-namespace:Cornerstone.Parsers;assembly=Cornerstone"
+		xmlns:history="clr-namespace:Cornerstone.Avalonia.Text.History;assembly=Cornerstone.Avalonia"
+		mc:Ignorable="d" d:DesignHeight="800" d:DesignWidth="800"
+		x:Class="Cornerstone.Sample.Tabs.TabTerminal"
+		x:DataType="tabs:TabTerminal"
+		x:Name="This">
+	<!-- ReSharper disable Xaml.MissingGridIndex -->
+	<DockPanel>
+		<DockPanel.Styles>
+			<Style Selector="Button.Command">
+				<Setter Property="MinWidth" Value="80" />
+			</Style>
+			<Style Selector="Button.Demo">
+				<Setter Property="MinWidth" Value="80" />
+				<Setter Property="IsEnabled" Value="{Binding !#Terminal.ViewModel.IsCommandProcessing}" />
+			</Style>
+		</DockPanel.Styles>
+
+		<Grid DockPanel.Dock="Top" Margin="10">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="{x:Static tabs:TabTerminal.HeaderName}" />
+		</Grid>
+
+		<!-- Chrome + diagnostics -->
+		<WrapPanel DockPanel.Dock="Top"
+				ItemSpacing="10"
+				LineSpacing="10"
+				Margin="10">
+			<NumericUpDown x:Name="CornerRadius2"
+					ControlHelper.DisplayName="Corner Radius"
+					FormatString="0"
+					HorizontalContentAlignment="Center"
+					Minimum="0"
+					Value="4"
+					Maximum="20" />
+			<NumericUpDown x:Name="FontSize2"
+					ControlHelper.DisplayName="FontSize"
+					FormatString="0"
+					HorizontalContentAlignment="Center"
+					Minimum="10"
+					Value="16"
+					Maximum="40" />
+			<NumericUpDown x:Name="Padding2"
+					ControlHelper.DisplayName="Padding"
+					FormatString="0"
+					HorizontalContentAlignment="Center"
+					Minimum="0"
+					Value="8"
+					Maximum="20" />
+			<CheckBox Content="Word Wrap"
+					IsChecked="{Binding ElementName=Terminal, Path=ViewModel.WordWrap, Mode=TwoWay}" />
+			<CheckBox Content="Auto Scroll"
+					IsChecked="{Binding ElementName=Terminal, Path=AutoScroll, Mode=TwoWay}" />
+			<ToggleSwitch x:Name="ShowCommandHistory"
+					OnContent="Show Command History"
+					OffContent="Show Command History" />
+			<ToggleSwitch x:Name="ShowTokens"
+					OnContent="Show Tokens"
+					OffContent="Show Tokens" />
+			<ToggleSwitch x:Name="ShowProfiling"
+					OnContent="Show Profiling"
+					OffContent="Show Profiling"
+					IsChecked="True" />
+		</WrapPanel>
+
+		<!-- Navigation (always available, including while busy) -->
+		<HeaderedContentControl DockPanel.Dock="Top" Header="Navigation" Margin="0,0,0,10">
+			<WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"
+					ItemSpacing="10" LineSpacing="10">
+				<Button Classes="Command" Content="Scroll To Top" Click="TerminalScrollTo" />
+				<Button Classes="Command" Content="Scroll To Bottom" Click="TerminalScrollTo" />
+				<Button Classes="Command" Content="Scroll To Random" Click="TerminalScrollTo" />
+			</WrapPanel>
+		</HeaderedContentControl>
+
+		<!-- Demo commands (disabled while IsCommandProcessing) -->
+		<HeaderedContentControl DockPanel.Dock="Top" Header="Demo commands" Margin="0,0,0,10">
+			<WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"
+					ItemSpacing="10" LineSpacing="10">
+				<Button Classes="Demo" Content="Console Colors" Click="TerminalCommand" />
+				<Button Classes="Demo" Content="Ansi Basic Colors" Click="TerminalCommand" />
+				<Button Classes="Demo" Content="Ansi 256 Colors" Click="TerminalCommand" />
+				<Button Classes="Demo" Content="Ansi Formats" Click="TerminalCommand" />
+				<Button Classes="Demo" Content="Flood" Click="TerminalCommand" />
+				<Button Classes="Demo" Content="Sleep" Click="TerminalCommand" />
+				<Button Classes="Demo" Content="Error" Click="TerminalCommand" />
+				<Button Classes="Demo" Content="Help" Click="TerminalCommand" />
+				<Button Classes="Demo" Content="Clear" Click="ClearTerminal" />
+			</WrapPanel>
+		</HeaderedContentControl>
+
+		<Border DockPanel.Dock="Bottom"
+				BorderThickness="1"
+				CornerRadius="0">
+			<StackPanel
+					Orientation="Horizontal"
+					Spacing="6"
+					Margin="12,0,0,0"
+					Height="24">
+				<TextBlock Text="Host:"
+						VerticalAlignment="Center"
+						Opacity="0.7" />
+				<TextBlock Text="Ready"
+						VerticalAlignment="Center"
+						IsVisible="{Binding !#Terminal.ViewModel.IsCommandProcessing}" />
+				<TextBlock Text="Busy: input locked"
+						VerticalAlignment="Center"
+						FontWeight="SemiBold"
+						Foreground="{DynamicResource ThemeColor06}"
+						IsVisible="{Binding #Terminal.ViewModel.IsCommandProcessing}" />
+			</StackPanel>
+		</Border>
+
+		<ScrollViewer x:Name="Charts"
+				DockPanel.Dock="Right"
+				IsVisible="{Binding #ShowProfiling.IsChecked}"
+				MinWidth="400">
+			<Border BorderThickness="1">
+				<StackPanel>
+					<LineChart x:Name="RenderChart"
+							DockPanel.Dock="Bottom"
+							Title="Render"
+							Data="{Binding TextEditorRenderData}"
+							Height="60" />
+					<LineChart x:Name="CommandChart"
+							DockPanel.Dock="Bottom"
+							Title="Command"
+							Data="{Binding TextEditorCommandData}"
+							Height="60" />
+				</StackPanel>
+			</Border>
+		</ScrollViewer>
+
+		<ListBox x:Name="TokenItems"
+				Theme.Color="None"
+				DockPanel.Dock="Right"
+				IsVisible="{Binding #ShowTokens.IsChecked}"
+				ItemsSource="{Binding #Terminal.ViewModel.TokenManager}"
+				SelectedItem="{Binding SelectedToken, Mode=TwoWay}"
+				MinWidth="300">
+			<ListBox.ItemsPanel>
+				<ItemsPanelTemplate>
+					<VirtualizingStackPanel />
+				</ItemsPanelTemplate>
+			</ListBox.ItemsPanel>
+			<ListBox.ItemTemplate>
+				<DataTemplate DataType="parsers:Token">
+					<Border Classes="Flat"
+							TextBlock.Foreground="{Binding Converter={x:Static Converters.TokenBrush}}"
+							Padding="2">
+						<StackPanel Margin="8,4" Orientation="Horizontal">
+							<TextBlock Text="{Binding Type, Mode=OneWay, Converter={x:Static Converters.ToTokenDisplayName}}"
+									Margin="0,0,4,0" />
+							<TextBlock Text="{Binding StartOffset, Mode=OneWay}" />
+							<TextBlock Text=".." />
+							<TextBlock Text="{Binding EndOffset, Mode=OneWay}" />
+							<TextBlock Text=", " />
+							<TextBlock Text="{Binding Length, Mode=OneWay}" />
+						</StackPanel>
+					</Border>
+				</DataTemplate>
+			</ListBox.ItemTemplate>
+		</ListBox>
+
+		<Grid x:Name="CommandHistoryGrid"
+				DockPanel.Dock="Right"
+				RowDefinitions="*,Auto"
+				IsVisible="{Binding #ShowCommandHistory.IsChecked}"
+				MinWidth="300">
+			<ItemsControl x:Name="CommandHistory"
+					Grid.Row="0"
+					Theme.Color="None"
+					ItemsSource="{Binding #Terminal.ViewModel.CommandHistoryProvider}">
+				<ItemsControl.ItemsPanel>
+					<ItemsPanelTemplate>
+						<VirtualizingStackPanel />
+					</ItemsPanelTemplate>
+				</ItemsControl.ItemsPanel>
+				<ItemsControl.ItemTemplate>
+					<DataTemplate DataType="history:CommandHistory">
+						<Border Padding="2">
+							<StackPanel Margin="8,4" Orientation="Horizontal">
+								<TextBlock Text="{Binding Count}" />
+								<TextBlock Text=" - " Foreground="{DynamicResource Foreground06}" />
+								<TextBlock Text="{Binding Command}" />
+							</StackPanel>
+						</Border>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+			<Button Grid.Row="1"
+					Theme.Color="None"
+					Click="ClearCommandHistory"
+					Content="clear history" />
+		</Grid>
+
+		<Terminal x:Name="Terminal"
+				CornerRadius="{Binding ElementName=CornerRadius2, Path=Value, Mode=TwoWay, Converter={StaticResource CornerRadiusConverter}}"
+				FontSize="{Binding ElementName=FontSize2, Path=Value, Mode=TwoWay}"
+				Padding="{Binding ElementName=Padding2, Path=Value, Mode=TwoWay, Converter={StaticResource ThicknessConverter}}"
+				Profiler="{Binding Profiler}"
+				Loaded="TerminalOnLoaded" />
+	</DockPanel>
+</UserControl>

@@ -603,5 +603,36 @@ internal class RealizedStackElements
 		_sizes?.Clear();
 	}
 
+	/// <summary>
+	/// After hierarchical expand/collapse inserts placeholders (NaN sizes) or marks StartU unstable,
+	/// recompute geometry from a fixed row height so the scrollbar extent stays coherent.
+	/// </summary>
+	/// <param name="fixedSizeU"> Primary-axis size of every row. </param>
+	public void ApplyFixedElementSize(double fixedSizeU)
+	{
+		if ((fixedSizeU <= 0) || (_elements is null) || (_elements.Count == 0))
+		{
+			return;
+		}
+
+		_sizes ??= [];
+		// Fill insert placeholders left by ItemsInserted (NaN) with the known fixed size.
+		for (var i = 0; i < _sizes.Count; i++)
+		{
+			if (double.IsNaN(_sizes[i]) || !DoubleExtensions.AreClose(_sizes[i], fixedSizeU))
+			{
+				_sizes[i] = fixedSizeU;
+			}
+		}
+
+		// StartU must match FirstIndex * height or anchors drift after expand inserts above the viewport.
+		if (FirstIndex >= 0)
+		{
+			StartU = FirstIndex * fixedSizeU;
+		}
+
+		_startUUnstable = false;
+	}
+
 	#endregion
 }

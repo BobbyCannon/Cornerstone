@@ -20,18 +20,42 @@ public class StringBuffer : SpeedyList<char>, IStringBuffer
 	{
 	}
 
-	public StringBuffer(string value)
+	public StringBuffer(string value) : this(DefaultCapacity)
 	{
 		Append(value);
+	}
+
+	public StringBuffer(int initialCapacity) : base(initialCapacity)
+	{
 	}
 
 	#endregion
 
 	#region Methods
 
+	public void Append(char value)
+	{
+		Add(value);
+	}
+
 	public void Append(string value)
 	{
 		Add(value.AsSpan());
+	}
+
+	public void Append(IStringBuffer value)
+	{
+		Add(value.AsSpan());
+	}
+
+	public void Append(ReadOnlySpan<char> value)
+	{
+		Add(value);
+	}
+
+	public void AppendLine()
+	{
+		Add(Environment.NewLine);
 	}
 
 	public void AppendLine(string value)
@@ -56,6 +80,16 @@ public class StringBuffer : SpeedyList<char>, IStringBuffer
 		}
 
 		return true;
+	}
+
+	public void Load(params string[] values)
+	{
+		Clear();
+
+		foreach (var value in values)
+		{
+			Add(value);
+		}
 	}
 
 	public string Substring(int index, int length)
@@ -87,13 +121,25 @@ public interface IStringBuffer
 
 	#region Methods
 
+	void Append(char value);
+
 	void Append(string value);
 
+	void Append(IStringBuffer value);
+
+	void Append(ReadOnlySpan<char> value);
+
+	void AppendLine();
+
 	void AppendLine(string value);
+
+	ReadOnlySpan<char> AsSpan();
 
 	void Clear();
 
 	bool Equals(int index, ReadOnlySpan<char> value);
+
+	void Load(params string[] values);
 
 	string Substring(int index, int length);
 

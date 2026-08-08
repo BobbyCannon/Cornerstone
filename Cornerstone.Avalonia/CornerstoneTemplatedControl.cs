@@ -1,13 +1,13 @@
-﻿#region References
+#region References
 
+using System;
 using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
-using Cornerstone.Data;
 using Cornerstone.Presentation;
 using Cornerstone.Profiling;
 using Cornerstone.Reflection;
-using System;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -25,12 +25,24 @@ public partial class CornerstoneTemplatedControl<T>
 
 	#region Methods
 
+	/// <inheritdoc />
+	protected override object GetViewModel()
+	{
+		return ViewModel;
+	}
+
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
 	{
 		if ((change.Property == DataContextProperty)
 			&& DataContext is T viewModel)
 		{
 			ViewModel = viewModel;
+		}
+
+		if (change.Property == ViewModelProperty)
+		{
+			DispatchableVisualTree.OnViewModelChanged(
+				this, change.OldValue, change.NewValue, DataContext, VisualRoot != null);
 		}
 
 		base.OnPropertyChanged(change);
@@ -66,16 +78,47 @@ public partial class CornerstoneTemplatedControl : TemplatedControl, IDispatchab
 
 	public static T GetInstance<T>()
 	{
-		return CornerstoneApplication.DependencyProvider.GetInstance<T>();
+		return AppBootstrap.GetInstance<T>();
 	}
 
 	public static object GetInstance(Type type)
 	{
-		return CornerstoneApplication.DependencyProvider.GetInstance(type);
+		return AppBootstrap.GetInstance(type);
+	}
+
+	/// <summary>
+	/// Returns the typed <c> ViewModel </c> property when this is a <see cref="CornerstoneTemplatedControl{T}" />;
+	/// otherwise null. Used with <see cref="StyledElement.DataContext" /> (independently) for IsAttached.
+	/// </summary>
+	protected virtual object GetViewModel()
+	{
+		return null;
+	}
+
+	protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+	{
+		base.OnAttachedToVisualTree(e);
+		DispatchableVisualTree.OnAttachedToVisualTree(this, GetViewModel(), DataContext);
+	}
+
+	protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+	{
+		DispatchableVisualTree.OnDetachedFromVisualTree(this, GetViewModel(), DataContext);
+		base.OnDetachedFromVisualTree(e);
 	}
 
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
 	{
+		if (change.Property == DataContextProperty)
+		{
+			DispatchableVisualTree.OnDataContextChanged(
+				this,
+				change.OldValue,
+				change.NewValue,
+				GetViewModel(),
+				VisualRoot != null);
+		}
+
 		base.OnPropertyChanged(change);
 
 		if ((change.Property == FontFamilyProperty)

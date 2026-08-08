@@ -9,9 +9,13 @@ using Cornerstone.Data;
 namespace Cornerstone.Storage.Sql.Data;
 
 [Notifiable(["*"])]
-public partial class SqlTable : Notifiable
+public partial class SqlTable : CornerstoneObject
 {
 	#region Constructors
+
+	public SqlTable() : this(string.Empty, string.Empty)
+	{
+	}
 
 	public SqlTable(IDataRecord reader)
 		: this(reader["TableName"].ToString(),

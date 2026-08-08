@@ -13,7 +13,7 @@ namespace Cornerstone.Threading;
 /// Represents a manager that also supports a working thread for processing / monitoring.
 /// Now supports dynamic delay calculation via override while remaining fully backwards-compatible.
 /// </summary>
-public abstract partial class WorkerManager : Manager
+public abstract partial class WorkerManager : Manager, IWorkerManager
 {
 	#region Fields
 
@@ -51,7 +51,7 @@ public abstract partial class WorkerManager : Manager
 	/// <summary>
 	/// True if the manager is working.
 	/// </summary>
-	public bool IsWorking => _worker.IsBusy || _workerStarting || _workerStopping;
+	public bool IsStarted => _worker.IsBusy || _workerStarting || _workerStopping;
 
 	[Notify]
 	protected partial int WorkerDelay { get; set; }
@@ -60,32 +60,33 @@ public abstract partial class WorkerManager : Manager
 
 	#region Methods
 
-	public override void Initialize()
+	public override void InitializeLifecycle()
 	{
 		_worker.DoWork += WorkerDoWork;
 		_worker.ProgressChanged += WorkerProgressChanged;
 		_worker.RunWorkerCompleted += WorkerRunWorkerCompleted;
-		base.Initialize();
+		base.InitializeLifecycle();
 	}
 
 	/// <summary>
 	/// Start working.
 	/// </summary>
-	public virtual void StartWorking()
+	public override void StartLifecycle()
 	{
-		if (IsWorking)
+		if (IsStarted)
 		{
 			return;
 		}
 
 		_workerStarting = true;
 		_worker.RunWorkerAsync();
+		base.StartLifecycle();
 	}
 
 	/// <summary>
 	/// Stop working.
 	/// </summary>
-	public void StopWorking()
+	public override void StopLifecycle()
 	{
 		if (!_worker.IsBusy)
 		{
@@ -95,14 +96,15 @@ public abstract partial class WorkerManager : Manager
 		_workerStopping = true;
 		_worker.CancelAsync();
 		_wakeEvent.Set();
+		base.StopLifecycle();
 	}
 
-	public override void Uninitialize()
+	public override void UninitializeLifecycle()
 	{
 		_worker.DoWork -= WorkerDoWork;
 		_worker.ProgressChanged -= WorkerProgressChanged;
 		_worker.RunWorkerCompleted -= WorkerRunWorkerCompleted;
-		base.Uninitialize();
+		base.UninitializeLifecycle();
 	}
 
 	/// <summary>
@@ -173,4 +175,8 @@ public abstract partial class WorkerManager : Manager
 	}
 
 	#endregion
+}
+
+public interface IWorkerManager : IManager
+{
 }

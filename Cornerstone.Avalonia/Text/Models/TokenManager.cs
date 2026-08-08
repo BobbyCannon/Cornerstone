@@ -14,7 +14,7 @@ using Cornerstone.Text;
 namespace Cornerstone.Avalonia.Text.Models;
 
 [SourceReflection]
-public class TokenManager : ViewManager<Token>, IQueue<Token>
+public class TokenManager : SpeedyListViewManager<Token>, IQueue<Token>
 {
 	#region Fields
 
@@ -51,7 +51,7 @@ public class TokenManager : ViewManager<Token>, IQueue<Token>
 
 	public override void Clear()
 	{
-		_pool.Enqueue(AsSpan());
+		_pool.Enqueue(List.ToArray());
 		base.Clear();
 	}
 
@@ -179,7 +179,7 @@ public class TokenManager : ViewManager<Token>, IQueue<Token>
 		Clear();
 		_tokenizer = tokenizer;
 		Rebuild(new TextDocumentChangedArgs());
-		OnPropertyChanged(nameof(HasTokenizer));
+		NotifyComputedPropertyChanged(nameof(HasTokenizer));
 	}
 
 	public void Rebuild(TextDocumentChangedArgs args)
@@ -217,7 +217,12 @@ public class TokenManager : ViewManager<Token>, IQueue<Token>
 
 		TokenRebuildIndex = -1;
 
-		NotifyOfPropertyChanged(nameof(Count));
+		NotifyComputedPropertyChanged(nameof(Count));
+	}
+
+	public bool TryPeek(out Token value)
+	{
+		return _pool.TryPeek(out value);
 	}
 
 	void IQueue<Token>.Enqueue(Token value)

@@ -14,7 +14,7 @@ namespace Cornerstone.Input;
 /// Represents the state of the gamepad during Gamepad.StartMonitoring.
 /// </summary>
 public partial class GamepadState
-	: Bindable<GamepadState>,
+	: CornerstoneObject<GamepadState>,
 		IComparable<GamepadState>,
 		IComparable,
 		IEquatable<GamepadState>

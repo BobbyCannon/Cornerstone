@@ -1,18 +1,19 @@
 ﻿#region References
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
+using Cornerstone.Runtime;
 
 #endregion
 
 namespace Cornerstone.Presentation;
 
-public partial class PopupViewModel : Bindable
+public partial class PopupViewModel : CornerstoneObject
 {
 	#region Constants
 
@@ -28,11 +29,7 @@ public partial class PopupViewModel : Bindable
 
 	#region Constructors
 
-	public PopupViewModel() : this(null)
-	{
-	}
-
-	public PopupViewModel(IDispatcher dispatcher) : base(dispatcher)
+	public PopupViewModel()
 	{
 		ProgressDescription = string.Empty;
 		ShowButtons = true;
@@ -121,21 +118,28 @@ public partial class PopupViewModel : Bindable
 		return result;
 	}
 
-	protected override void OnPropertyChanged([CallerMemberName] string propertyName = null)
+	protected override void OnPropertyChanged<TValue>(string propertyName, TValue oldValue, TValue newValue)
 	{
-		this.Dispatch(() =>
-		{
-			ExecuteYesCommand?.Refresh();
-			ExecuteNoCommand?.Refresh();
-			ExecuteCancelCommand?.Refresh();
-		});
-
-		base.OnPropertyChanged(propertyName);
+		ExecuteYesCommand?.Refresh();
+		ExecuteNoCommand?.Refresh();
+		ExecuteCancelCommand?.Refresh();
+		base.OnPropertyChanged(propertyName, oldValue, newValue);
 	}
 
+	/// <summary>
+	/// Update progress text. Safe to call from background threads (e.g. git process callbacks).
+	/// </summary>
 	protected void SetProgressDescription(string description)
 	{
-		this.Dispatch(() => ProgressDescription = description);
+		DispatchToUi(() => ProgressDescription = description);
+	}
+
+	/// <summary>
+	/// Update progress error text. Safe to call from background threads.
+	/// </summary>
+	protected void SetProgressError(string error)
+	{
+		DispatchToUi(() => ProgressError = error);
 	}
 
 	protected virtual bool ValidateAllProperties()
@@ -162,6 +166,26 @@ public partial class PopupViewModel : Bindable
 		}
 
 		return true;
+	}
+
+	/// <summary>
+	/// Run UI-bound popup property updates on the app dispatcher when needed.
+	/// Git popups call progress helpers from Task.Run / process output handlers.
+	/// </summary>
+	private static void DispatchToUi(Action action)
+	{
+		// todo: fix this when we move to KeyStone, leaving it for now.
+		// Do NOT use this pattern elsewhere. AppBootstrap should NOT be used directly.
+		var provider = AppBootstrap.DependencyProvider;
+		if ((provider != null)
+			&& provider.TryGetInstance<IDispatcher>(out var dispatcher)
+			&& dispatcher.ShouldDispatch())
+		{
+			dispatcher.Dispatch(action);
+			return;
+		}
+
+		action();
 	}
 
 	[RelayCommand(CanExecuteMethod = nameof(CanExecuteCancel))]

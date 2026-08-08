@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System;
 using Avalonia;
 using Cornerstone.Avalonia.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -12,6 +13,18 @@ namespace Cornerstone.UnitTests.Avalonia.Text;
 public class TextEditorViewModelTests : CornerstoneUnitTest
 {
 	#region Methods
+
+	[TestMethod]
+	public void AppendReadOnlySpanCoalescesIntoDocument()
+	{
+		var model = new TextEditorViewModel();
+		model.Append("Hello");
+		model.Append(" ".AsSpan());
+		model.Append("World".AsSpan());
+
+		AreEqual("Hello World", model.Buffer.ToString());
+		AreEqual(11, model.DocumentLength);
+	}
 
 	[TestMethod]
 	public void CaretMoveLeftOverNewline()

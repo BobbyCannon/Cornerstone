@@ -4,9 +4,9 @@
 
 	<ControlTheme x:Key="{x:Type TabControl}" TargetType="TabControl">
 		<Setter Property="Theme.Color" Value="None" />
-		<Setter Property="Background" Value="{DynamicResource Background02}" />
+		<Setter Property="Background" Value="Transparent" />
 		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
-		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="BorderThickness" Value="0" />
 		<Setter Property="CornerRadius" Value="0" />
 		<Setter Property="Margin" Value="0" />
 		<Setter Property="Padding" Value="0" />
@@ -23,11 +23,11 @@
 			<ControlTemplate>
 				<Grid RowDefinitions="Auto,*,Auto"
 						ColumnDefinitions="Auto,*,Auto"
+						Background="{TemplateBinding Background}"
 						Margin="{TemplateBinding Margin}"
 						HorizontalAlignment="{TemplateBinding HorizontalAlignment}">
 					<Border Grid.Row="1"
 							Grid.Column="1"
-							Background="{TemplateBinding Background}"
 							BorderBrush="{TemplateBinding BorderBrush}"
 							BorderThickness="{TemplateBinding BorderThickness}"
 							CornerRadius="{TemplateBinding CornerRadius}"
@@ -46,14 +46,13 @@
 							Grid.Column="0">
 						<ItemsPresenter
 								Name="PART_ItemsPresenter"
-								ItemsPanel="{TemplateBinding ItemsPanel}">
-						</ItemsPresenter>
+								ItemsPanel="{TemplateBinding ItemsPanel}" />
 					</ScrollViewer>
 				</Grid>
 			</ControlTemplate>
 		</Setter>
 
-		<Style Selector="^.HideHeader">
+		<Style Selector="^.Headless">
 			<Style Selector="^ /template/ ScrollViewer#PART_ScrollViewer">
 				<Setter Property="IsVisible" Value="false" />
 			</Style>
@@ -159,9 +158,14 @@
 					<TabItem Header="Tab 1">
 						<Grid Height="25" />
 					</TabItem>
-					<TabItem Header="Tab 2" />
-					<TabItem Header="Tab 3" />
+					<TabItem Header="Tab 2">
+						<Grid Height="25" />
+					</TabItem>
+					<TabItem Header="Tab 3">
+						<Grid Height="25" />
+					</TabItem>
 				</TabControl>
+
 			</StackPanel>
 		</Border>
 	</Design.PreviewWith>

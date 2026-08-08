@@ -33,10 +33,11 @@ public class TreeDataGridRow : TemplatedControl
 	private IColumns _columns;
 	private TreeDataGridElementFactory _elementFactory;
 	private bool _isSelected;
-	private Point _mouseDownPosition = s_InvalidPoint;
+	private Point _mouseDownPosition = _invalidPoint;
+	private PointerPressedEventArgs _pendingDragEvent;
 	private IRows _rows;
 	private TreeDataGrid _treeDataGrid;
-	private static readonly Point s_InvalidPoint;
+	private static readonly Point _invalidPoint;
 
 	#endregion
 
@@ -48,7 +49,7 @@ public class TreeDataGridRow : TemplatedControl
 		ElementFactoryProperty = AvaloniaProperty.RegisterDirect<TreeDataGridRow, TreeDataGridElementFactory>(nameof(ElementFactory), o => o.ElementFactory, (o, v) => o.ElementFactory = v);
 		IsSelectedProperty = AvaloniaProperty.RegisterDirect<TreeDataGridRow, bool>(nameof(IsSelected), o => o.IsSelected);
 		RowsProperty = AvaloniaProperty.RegisterDirect<TreeDataGridRow, IRows>(nameof(Rows), o => o.Rows);
-		s_InvalidPoint = new(double.NegativeInfinity, double.NegativeInfinity);
+		_invalidPoint = new(double.NegativeInfinity, double.NegativeInfinity);
 	}
 
 	#endregion
@@ -143,7 +144,7 @@ public class TreeDataGridRow : TemplatedControl
 	protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
 	{
 		base.OnApplyTemplate(e);
-		CellsPresenter = e.NameScope.Find<TreeDataGridCellsPresenter>("PART_CellsPresenter");
+		CellsPresenter = e.NameScope.Get<TreeDataGridCellsPresenter>("PART_CellsPresenter");
 
 		if (RowIndex >= 0)
 		{
@@ -161,7 +162,6 @@ public class TreeDataGridRow : TemplatedControl
 	{
 		base.OnAttachedToVisualTree(e);
 
-		// The row may be realized before being parented. In this case raise the RowPrepared event here.
 		if (_treeDataGrid is not null && (RowIndex >= 0))
 		{
 			_treeDataGrid.RaiseRowPrepared(this, RowIndex);
@@ -177,7 +177,8 @@ public class TreeDataGridRow : TemplatedControl
 	protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
 	{
 		base.OnPointerCaptureLost(e);
-		_mouseDownPosition = s_InvalidPoint;
+		_mouseDownPosition = _invalidPoint;
+		_pendingDragEvent = null;
 	}
 
 	protected override void OnPointerMoved(PointerEventArgs e)
@@ -194,31 +195,45 @@ public class TreeDataGridRow : TemplatedControl
 			_ => false
 		};
 
-		if (!pointerSupportsDrag ||
-			e.Handled ||
-			((Math.Abs(delta.X) < DragDistance) && (Math.Abs(delta.Y) < DragDistance)) ||
-			(_mouseDownPosition == s_InvalidPoint))
+		var pendingDragEvent = _pendingDragEvent;
+		if (!pointerSupportsDrag
+			|| e.Handled
+			|| ((Math.Abs(delta.X) < DragDistance) && (Math.Abs(delta.Y) < DragDistance))
+			|| (_mouseDownPosition == _invalidPoint)
+			|| pendingDragEvent is null)
 		{
 			return;
 		}
 
-		_mouseDownPosition = s_InvalidPoint;
+		_mouseDownPosition = _invalidPoint;
 
 		var presenter = Parent as TreeDataGridRowsPresenter;
 		var owner = presenter?.TemplatedParent as TreeDataGrid;
-		owner?.RaiseRowDragStarted(e);
+		owner?.OnDragStarted(pendingDragEvent);
+		_pendingDragEvent = null;
 	}
 
 	protected override void OnPointerPressed(PointerPressedEventArgs e)
 	{
 		base.OnPointerPressed(e);
-		_mouseDownPosition = !e.Handled ? e.GetPosition(this) : s_InvalidPoint;
+
+		if (!e.Handled)
+		{
+			_mouseDownPosition = e.GetPosition(this);
+			_pendingDragEvent = e;
+		}
+		else
+		{
+			_mouseDownPosition = _invalidPoint;
+			_pendingDragEvent = null;
+		}
 	}
 
 	protected override void OnPointerReleased(PointerReleasedEventArgs e)
 	{
 		base.OnPointerReleased(e);
-		_mouseDownPosition = s_InvalidPoint;
+		_mouseDownPosition = _invalidPoint;
+		_pendingDragEvent = null;
 	}
 
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

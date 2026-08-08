@@ -4,7 +4,7 @@
 /// Represents an option for selection.
 /// </summary>
 /// <typeparam name="T"> The type of the ID. </typeparam>
-public class SelectionOption<T> : Bindable
+public class SelectionOption<T> : CornerstoneObject
 {
 	#region Constructors
 

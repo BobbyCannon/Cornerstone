@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net10.0</TargetFramework>
+		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<RootNamespace>Cornerstone.Documentation</RootNamespace>
+		<AssemblyName>Cornerstone.Documentation</AssemblyName>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
+		<PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
+		<ProjectReference Include="..\Cornerstone\Cornerstone.csproj" />
+	</ItemGroup>
+	<!-- Ship all markdown next to the EXE for file-based catalog resolution -->
+	<ItemGroup>
+		<Content Include="**\*.md" Exclude="bin\**;obj\**" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+</Project>

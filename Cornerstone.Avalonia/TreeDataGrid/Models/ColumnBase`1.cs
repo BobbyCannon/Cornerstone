@@ -5,7 +5,6 @@ using System.ComponentModel;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Utilities;
-using Cornerstone.Data;
 using Cornerstone.Extensions;
 
 #endregion
@@ -16,7 +15,7 @@ namespace Cornerstone.Avalonia.TreeDataGrid.Models;
 /// Base class for columns which select cell values from a model.
 /// </summary>
 /// <typeparam name="TModel"> The model type. </typeparam>
-public abstract class ColumnBase<TModel> : Notifiable, IColumn<TModel>, IUpdateColumnLayout
+public abstract class ColumnBase<TModel> : CornerstoneObject, IColumn<TModel>, IUpdateColumnLayout
 {
 	#region Fields
 

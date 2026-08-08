@@ -35,7 +35,29 @@ body#cornerstone {
 }
 
 .hide {
-	display: none;
+	display: none !important;
+}
+
+/* Browser WebView DOM overlay — fixed to viewport, parented under body (never #out) */
+.cornerstone-webview-host {
+	position: fixed;
+	margin: 0;
+	padding: 0;
+	border: none;
+	overflow: hidden;
+	box-sizing: border-box;
+	z-index: 10;
+	pointer-events: auto;
+}
+
+.cornerstone-webview-host iframe,
+.cornerstone-webview-host > div {
+	width: 100%;
+	height: 100%;
+	border: none;
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
 }
 
 .avalonia-splash {

@@ -6,7 +6,6 @@
 		<ProvisioningType>manual</ProvisioningType>
 		<CodesignKey>iPhone Developer</CodesignKey>
 		<CodesignProvision />
-
 		<!-- Disable AOT -->
 		<UseInterpreter>true</UseInterpreter>
 		<MtouchLink>None</MtouchLink>
@@ -15,6 +14,9 @@
 		<PublishAot>false</PublishAot>
 		<EnableTrimAnalyzer>false</EnableTrimAnalyzer>
 	</PropertyGroup>
+	<ItemGroup>
+		<BundleResource Include="Cornerstone.png" />
+	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Avalonia.iOS" Version="$(AvaloniaVersion)" />
 	</ItemGroup>

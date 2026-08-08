@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System;
 using System.Text.Json.Serialization;
 using Cornerstone.Presentation;
 
@@ -7,6 +8,8 @@ using Cornerstone.Presentation;
 
 namespace Cornerstone.Serialization.Json;
 
+[JsonSerializable(typeof(Guid))]
+[JsonSerializable(typeof(int[]))]
 [JsonSerializable(typeof(WindowLocation))]
 public partial class CornerstoneJsonSerializerContext : JsonSerializerContext
 {

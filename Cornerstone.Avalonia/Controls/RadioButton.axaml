@@ -104,7 +104,7 @@
 		</Style>
 		<!-- Code Template - /Color -->
 
-		<!-- Generated Code - Colors -->
+		<!-- Generated Code - Color -->
 		<Style Selector="^[(Theme.Color)=Amber]">
 			<Style Selector="^ /template/ Ellipse#CheckOuterEllipse">
 				<Setter Property="Fill" Value="{DynamicResource Amber07}" />
@@ -301,7 +301,7 @@
 				<Setter Property="Fill" Value="{DynamicResource Teal09}" />
 			</Style>
 		</Style>
-		<!-- Generated Code - /Colors -->
+		<!-- Generated Code - /Color -->
 
 		<!-- Checked state. -->
 		<Style Selector="^:checked /template/ Ellipse#CheckInnerEllipse">

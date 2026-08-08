@@ -4,13 +4,12 @@ using System;
 using System.ComponentModel;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Runtime.CompilerServices;
 using System.Text;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Cornerstone.Data;
-using Cornerstone.Presentation;
+using Cornerstone.Keystone.Lifecycle;
+using Cornerstone.Serialization;
 #if !BROWSER
 using System.Linq;
 using System.Net;
@@ -23,7 +22,7 @@ namespace Cornerstone.Web;
 /// <summary>
 /// This class is used for making GET and POST calls to an HTTP endpoint.
 /// </summary>
-public partial class WebClient : Bindable, IWebClient
+public partial class WebClient : CornerstoneObject, IWebClient
 {
 	#region Fields
 
@@ -41,9 +40,8 @@ public partial class WebClient : Bindable, IWebClient
 	/// <param name="baseUri"> The base URI. </param>
 	/// <param name="timeout"> The timeout in milliseconds. </param>
 	/// <param name="credential"> The optional credential to authenticate with. </param>
-	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public WebClient(string baseUri, int timeout = 1000, Credential credential = null, IDispatcher dispatcher = null)
-		: this(new Uri(baseUri), TimeSpan.FromMilliseconds(timeout), credential, dispatcher)
+	public WebClient(string baseUri, int timeout = 1000, Credential credential = null)
+		: this(new Uri(baseUri), TimeSpan.FromMilliseconds(timeout))
 	{
 	}
 
@@ -53,8 +51,7 @@ public partial class WebClient : Bindable, IWebClient
 	/// <param name="baseUri"> The base URI. </param>
 	/// <param name="timeout"> The timeout in milliseconds. </param>
 	/// <param name="credential"> The optional credential to authenticate with. </param>
-	/// <param name="dispatcher"> The optional dispatcher to use. </param>
-	public WebClient(Uri baseUri, TimeSpan timeout, Credential credential = null, IDispatcher dispatcher = null) : base(dispatcher)
+	public WebClient(Uri baseUri, TimeSpan timeout, Credential credential = null)
 	{
 		_handler = new HttpClientHandler();
 		_httpClient = new HttpClient(_handler) { BaseAddress = baseUri };
@@ -83,6 +80,7 @@ public partial class WebClient : Bindable, IWebClient
 				return;
 			}
 
+			var oldValue = _httpClient.BaseAddress;
 			var timeout = _httpClient.Timeout;
 			var credential = Credential;
 
@@ -102,7 +100,7 @@ public partial class WebClient : Bindable, IWebClient
 			Timeout = timeout;
 			Credential = credential;
 
-			OnPropertyChanged();
+			OnPropertyChanged(nameof(BaseUri), oldValue, value);
 		}
 	}
 
@@ -119,6 +117,7 @@ public partial class WebClient : Bindable, IWebClient
 				_credential.PropertyChanged -= CredentialOnPropertyChanged;
 			}
 
+			var oldValue = _credential;
 			_credential = value;
 
 			if (_credential != null)
@@ -126,7 +125,7 @@ public partial class WebClient : Bindable, IWebClient
 				_credential.PropertyChanged += CredentialOnPropertyChanged;
 			}
 
-			OnPropertyChanged();
+			OnPropertyChanged(nameof(Credential), oldValue, value);
 		}
 	}
 
@@ -139,11 +138,6 @@ public partial class WebClient : Bindable, IWebClient
 	public partial string IpAddress { get; private set; }
 
 	/// <summary>
-	/// Options for serialization.
-	/// </summary>
-	public JsonSerializerOptions SerializerOptions { get; set; }
-
-	/// <summary>
 	/// Gets or sets the number of milliseconds to wait before the request times out. The default value is 100 seconds.
 	/// </summary>
 	public TimeSpan Timeout
@@ -151,8 +145,9 @@ public partial class WebClient : Bindable, IWebClient
 		get => _httpClient.Timeout;
 		set
 		{
+			var oldValue = _httpClient.Timeout;
 			_httpClient.Timeout = value;
-			OnPropertyChanged();
+			OnPropertyChanged(nameof(Timeout), oldValue, value);
 		}
 	}
 
@@ -212,9 +207,10 @@ public partial class WebClient : Bindable, IWebClient
 		return await DeserializeAsync<T>(result);
 	}
 
-	public virtual void Initialize()
+	public override void InitializeLifecycle()
 	{
-		OnPropertyChanged(nameof(BaseUri));
+		OnPropertyChanged(nameof(BaseUri), BaseUri, BaseUri);
+		base.InitializeLifecycle();
 	}
 
 	public HttpResponseMessage Patch(string uri, string content, TimeSpan? timeout = null)
@@ -359,11 +355,7 @@ public partial class WebClient : Bindable, IWebClient
 
 	public virtual WebClient ShallowClone(IncludeExcludeSettings settings = null)
 	{
-		return new WebClient(BaseUri, Timeout, Credential, GetDispatcher());
-	}
-
-	public virtual void Uninitialize()
-	{
+		return new WebClient(BaseUri, Timeout, Credential);
 	}
 
 	/// <summary>
@@ -375,7 +367,7 @@ public partial class WebClient : Bindable, IWebClient
 	protected virtual async Task<T> DeserializeAsync<T>(HttpResponseMessage result)
 	{
 		var content = await result.Content.ReadAsStringAsync();
-		var response = JsonSerializer.Deserialize<T>(content, SerializerOptions);
+		var response = Serializer.FromJson<T>(content);
 		return response;
 	}
 
@@ -400,7 +392,7 @@ public partial class WebClient : Bindable, IWebClient
 		_handler?.Dispose();
 	}
 
-	protected override void OnPropertyChanged([CallerMemberName] string propertyName = null)
+	protected override void OnPropertyChanged<TValue>(string propertyName, TValue oldValue, TValue newValue)
 	{
 		switch (propertyName)
 		{
@@ -434,7 +426,7 @@ public partial class WebClient : Bindable, IWebClient
 			}
 		}
 
-		base.OnPropertyChanged(propertyName);
+		base.OnPropertyChanged(propertyName, oldValue, newValue);
 	}
 
 	protected virtual HttpResponseMessage ProcessResponse(HttpResponseMessage response)
@@ -454,7 +446,7 @@ public partial class WebClient : Bindable, IWebClient
 	/// <returns> The serialized formatted content. </returns>
 	protected virtual string Serialize(object content)
 	{
-		return JsonSerializer.Serialize(content, SerializerOptions);
+		return Serializer.ToJson(content);
 	}
 
 	private void CredentialOnPropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -532,7 +524,7 @@ public partial class WebClient : Bindable, IWebClient
 /// <summary>
 /// Represents a web client contract.
 /// </summary>
-public interface IWebClient : IDisposable, INotifyPropertyChanged
+public interface IWebClient : IDisposable, INotifyPropertyChanged, IInitializableLifecycle
 {
 	#region Properties
 
@@ -555,11 +547,6 @@ public interface IWebClient : IDisposable, INotifyPropertyChanged
 	/// The IP address for the base URI.
 	/// </summary>
 	string IpAddress { get; }
-
-	/// <summary>
-	/// Options for serialization.
-	/// </summary>
-	JsonSerializerOptions SerializerOptions { get; set; }
 
 	/// <summary>
 	/// Gets or sets the number of milliseconds to wait before the request times out. The default value is 100 seconds.
@@ -619,11 +606,6 @@ public interface IWebClient : IDisposable, INotifyPropertyChanged
 	/// <param name="cancellationToken"> A cancellation token that can be used to cancel the request. </param>
 	/// <returns> The deserialized type. </returns>
 	Task<T> GetAsync<T>(string uri, CancellationToken cancellationToken = default);
-
-	/// <summary>
-	/// Initialize the web client.
-	/// </summary>
-	void Initialize();
 
 	/// <summary>
 	/// Patch an item on the server with the provide content.
@@ -812,11 +794,6 @@ public interface IWebClient : IDisposable, INotifyPropertyChanged
 	/// Reset the web client.
 	/// </summary>
 	void Reset();
-
-	/// <summary>
-	/// Uninitialize the web client.
-	/// </summary>
-	void Uninitialize();
 
 	#endregion
 }

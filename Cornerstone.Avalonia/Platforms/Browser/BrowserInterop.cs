@@ -1,4 +1,4 @@
-﻿#region References
+#region References
 
 using System.Runtime.InteropServices.JavaScript;
 
@@ -15,6 +15,15 @@ public partial class BrowserInterop
 
 	[JSImport("document.createElement", "Cornerstone.Browser.js")]
 	public static partial JSObject CreateElement(JSObject parent, string tagName);
+
+	[JSImport("document.attachOverlay", "Cornerstone.Browser.js")]
+	public static partial JSObject AttachOverlay(JSObject element);
+
+	[JSImport("document.setOverlayBounds", "Cornerstone.Browser.js")]
+	public static partial JSObject SetOverlayBounds(JSObject element, double x, double y, double width, double height);
+
+	[JSImport("document.detachOverlay", "Cornerstone.Browser.js")]
+	public static partial JSObject DetachOverlay(JSObject element);
 
 	[JSImport("localStorage.getValue", "Cornerstone.Browser.js")]
 	public static partial string GetLocalStorageValue(string key);

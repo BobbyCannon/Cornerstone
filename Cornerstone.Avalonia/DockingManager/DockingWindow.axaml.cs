@@ -2,6 +2,7 @@
 
 using System;
 using Avalonia.Controls;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -11,10 +12,17 @@ internal partial class DockingWindow : CornerstoneWindow
 {
 	#region Constructors
 
-	public DockingWindow()
+	public DockingWindow(DockingManager dockingManager)
 	{
+		DockingManager = dockingManager;
 		InitializeComponent();
 	}
+
+	#endregion
+
+	#region Properties
+
+	public DockingManager DockingManager { get; }
 
 	#endregion
 

@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<PackageType>Template</PackageType>
+		<PackageId>Cornerstone.Templates</PackageId>
+		<Title>Cornerstone Templates</Title>
+		<Authors>Bobby Cannon</Authors>
+		<Description>Project templates for Cornerstone: AppBootstrap, Keystone (Bus : State : Engine), and Avalonia hosts.</Description>
+		<PackageTags>dotnet-new;templates;cornerstone;keystone;avalonia</PackageTags>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<IncludeContentInPack>true</IncludeContentInPack>
+		<IncludeBuildOutput>false</IncludeBuildOutput>
+		<ContentTargetFolders>content</ContentTargetFolders>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<IsPackable>true</IsPackable>
+		<NoDefaultExcludes>true</NoDefaultExcludes>
+		<!-- Packaging project: no assembly output or signing -->
+		<SignAssembly>false</SignAssembly>
+		<GenerateDocumentationFile>false</GenerateDocumentationFile>
+		<NoWarn>$(NoWarn);NU5128;CS2008</NoWarn>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageLicenseFile>License.txt</PackageLicenseFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Remove="**\*" />
+		<None Remove="**\*" />
+		<Content Include="content\**\*" Exclude="content\**\bin\**;content\**\obj\**" />
+		<None Include="README.md" Pack="true" PackagePath="\" />
+		<None Include="..\License.txt" Pack="true" PackagePath="\" />
+	</ItemGroup>
+
+	<!-- Directory.Build.props always adds the generators analyzer; not needed for this pack project. -->
+	<ItemGroup>
+		<ProjectReference Remove="@(ProjectReference)" />
+	</ItemGroup>
+
+</Project>

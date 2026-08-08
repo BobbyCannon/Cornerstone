@@ -1,0 +1,24 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:local="clr-namespace:Cornerstone.Avalonia.Controls">
+
+	<ControlTheme x:Key="{x:Type local:MarkdownTablePresenter}"
+			TargetType="local:MarkdownTablePresenter">
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Border x:Name="PART_Border"
+						Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource BorderBrush}"
+						BorderThickness="1"
+						CornerRadius="4"
+						ClipToBounds="True">
+					<ScrollViewer HorizontalScrollBarVisibility="Auto"
+							VerticalScrollBarVisibility="Disabled">
+						<Grid x:Name="PART_Grid"
+								Margin="0" />
+					</ScrollViewer>
+				</Border>
+			</ControlTemplate>
+		</Setter>
+	</ControlTheme>
+</ResourceDictionary>

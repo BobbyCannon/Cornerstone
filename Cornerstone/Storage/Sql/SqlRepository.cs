@@ -3,7 +3,6 @@
 using System;
 using System.Data;
 using System.Linq.Expressions;
-using Cornerstone.Extensions;
 using Cornerstone.Reflection;
 
 #endregion

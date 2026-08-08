@@ -163,7 +163,7 @@ public static class FileModifier
 			{
 				continue;
 			}
-			
+
 			if (!isFirst)
 			{
 				sb.Append('\n');
@@ -180,7 +180,7 @@ public static class FileModifier
 			skip = Math.Min(skip, tabsInLine);
 
 			sb.Append(baseIndent);
-			sb.Append(line.Slice(skip));
+			sb.Append(line[skip..]);
 		}
 
 		var response = sb.ToString();

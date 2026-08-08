@@ -36,7 +36,7 @@ public partial class WebCredential : Credential
 	/// <param name="username"> The username of the credential. </param>
 	/// <param name="password"> The password of the credential. </param>
 	public WebCredential(string username, string password)
-		: base(username, password, null)
+		: base(username, password)
 	{
 	}
 

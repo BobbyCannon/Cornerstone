@@ -139,8 +139,7 @@ public class SpeedyPackTests : CornerstoneUnitTest
 			(
 				"DateTime",
 				[
-					DateTime.MinValue, DateTime.MaxValue, new DateTime(DateTimeExtensions.UnixEpochDateTimeTicks),
-					new DateTime(DateTimeExtensions.WindowsEpochDateTimeTicks), StartDateTime
+					DateTime.MinValue, DateTime.MaxValue, DateTimeExtensions.UnixEpochDateTime, DateTimeExtensions.WindowsEpochDateTime, StartDateTime
 				],
 				[0x7A, 0x7B, 0x7C, 0x7D, 0x79, 0xFF, 0x00, 0x50, 0xA8, 0x26, 0xE5, 0x22, 0xC1, 0x08]
 			),
@@ -186,6 +185,16 @@ public class SpeedyPackTests : CornerstoneUnitTest
 			var unpackaged = SpeedyPacket.Unpack(packed);
 			AreEqual(scenario.Value, unpackaged.ToArray());
 		}
+	}
+
+	[TestMethod]
+	public void DateTimeKindShouldBeCorrect()
+	{
+		var value = DateTimeExtensions.UnixEpochDateTime;
+		var packed = SpeedyPacket.Pack(value);
+		var actual = (DateTime) SpeedyPacket.Unpack(packed, typeof(DateTime));
+		AreEqual(value, actual);
+		AreEqual(DateTimeKind.Utc, actual.Kind);
 	}
 
 	#endregion

@@ -110,17 +110,17 @@ public static class SourceReflector
 				collectionType.GetInterfaces().Any(i => i.IsGenericType && (i.GetGenericTypeDefinition() == typeof(IList<>))))
 			{
 				var listType = typeof(List<>).MakeGenericType(elementType);
-				return SourceReflector.CreateInstance(listType, elementsCount);
+				return CreateInstance(listType, elementsCount);
 			}
 
 			// If the type itself is a concrete generic type (e.g., List<T>)
 			if (!collectionType.IsAbstract && !collectionType.IsInterface)
 			{
-				return SourceReflector.CreateInstance(collectionType, elementsCount);
+				return CreateInstance(collectionType, elementsCount);
 			}
 		}
 
-		var response = SourceReflector.CreateInstance(collectionType);
+		var response = CreateInstance(collectionType);
 		if (response != null)
 		{
 			return response;
@@ -133,6 +133,28 @@ public static class SourceReflector
 		}
 
 		throw new ArgumentException($"Cannot create instance of type {collectionType.Name}.");
+	}
+
+	public static SourceMethodInfo GetCachedMethod(this object value, string name, BindingFlags? flags = null)
+	{
+		return GetRequiredSourceType(value.GetType()).GetMethod(name);
+	}
+
+	public static SourceMethodInfo GetCachedMethod(this object value, string name, Type[] parameters, BindingFlags? flags = null)
+	{
+		return GetRequiredSourceType(value.GetType()).GetMethod(name, parameters);
+	}
+
+	public static SourceMethodInfo GetCachedMethod(this Type type, string name, Type[] parameters, BindingFlags? flags = null)
+	{
+		return GetRequiredSourceType(type).GetMethod(name, parameters);
+	}
+
+
+	public static T CreateInstance<T>(params object[] args)
+	{
+		var info = GetSourceType(typeof(T));
+		return info == null ? default : (T) CreateInstance(info, args);
 	}
 
 	public static object CreateInstance(Type type, params object[] args)
@@ -235,6 +257,46 @@ public static class SourceReflector
 		return response;
 	}
 
+	/// <summary>
+	/// Gets the display name for an enum.
+	/// </summary>
+	/// <param name="value"> The enum value to get the name for. </param>
+	/// <returns> The display name of the value. </returns>
+	public static string GetDisplayName(this Enum value)
+	{
+		var sourceType = GetRequiredSourceType(value.GetType());
+		var valueName = value.ToString();
+		var field = sourceType.GetField(valueName);
+		var details = GetEnumDetail(field);
+		return details.DisplayName ?? valueName;
+	}
+
+	/// <summary>
+	/// Gets the display short name for an enum.
+	/// </summary>
+	/// <param name="value"> The enum value to get the short name for. </param>
+	/// <returns> The display short name of the value. </returns>
+	public static string GetDisplayShortName(this Enum value)
+	{
+		var sourceType = GetRequiredSourceType(value.GetType());
+		var valueName = value.ToString();
+		var field = sourceType.GetField(valueName);
+		var details = GetEnumDetail(field);
+		return details.DisplayShortName ?? valueName;
+	}
+
+	public static EnumDetails GetEnumDetail<T>(string name) where T : Enum
+	{
+		var details = GetEnumDetailsDictionary<T>();
+		return details.Values.FirstOrDefault(d => string.Equals(d.Name, name, StringComparison.OrdinalIgnoreCase));
+	}
+
+	public static EnumDetails GetEnumDetail<T>(T value) where T : Enum
+	{
+		var details = GetEnumDetailsDictionary<T>();
+		return details.TryGetValue(value, out var detail) ? detail : null;
+	}
+
 	public static EnumDetails[] GetEnumDetails<T>() where T : Enum
 	{
 		return GetEnumDetails(typeof(T));
@@ -247,14 +309,7 @@ public static class SourceReflector
 				.DeclaredFields
 				.OrderBy(x => x.Name)
 				.Where(x => x.IsStatic)
-				.Select(x => new EnumDetails
-				{
-					Name = x.Name,
-					Value = x.GetValue(null),
-					DisplayName = x.GetAttributeNamedArgument(StringFormatter.DisplayAttributeTypeFullName, nameof(DisplayAttribute.Name)),
-					DisplayShortName = x.GetAttributeNamedArgument(StringFormatter.DisplayAttributeTypeFullName, nameof(DisplayAttribute.ShortName)),
-					DisplayOrder = x.GetAttributeNamedArgument<int>(StringFormatter.DisplayAttributeTypeFullName, nameof(DisplayAttribute.Order))
-				})
+				.Select(GetEnumDetail)
 				.ToArray()
 		);
 	}
@@ -571,7 +626,10 @@ public static class SourceReflector
 						: SourceAccessibility.Internal,
 					Attributes = GetAttributes(x.GetCustomAttributes()),
 					ConstructorInfo = x,
-					Invoke = x.Invoke,
+					Invoke = args => x.Invoke(args ?? []),
+					IsDependencyConstructor = x.GetCustomAttributes(true)
+						.Any(a => a.GetType().Name is "DependencyInjectionConstructorAttribute"
+							or "DependencyInjectionConstructor"),
 					IsStatic = x.IsStatic,
 					Name = x.Name,
 					Parameters = GetParameters(x.GetParameters())
@@ -580,6 +638,18 @@ public static class SourceReflector
 			.ToArray();
 
 		return response;
+	}
+
+	private static EnumDetails GetEnumDetail(SourceFieldInfo x)
+	{
+		return new EnumDetails
+		{
+			Name = x.Name,
+			Value = x.GetValue(null),
+			DisplayName = x.GetAttributeNamedArgument(StringFormatter.DisplayAttributeTypeFullName, nameof(DisplayAttribute.Name)),
+			DisplayShortName = x.GetAttributeNamedArgument(StringFormatter.DisplayAttributeTypeFullName, nameof(DisplayAttribute.ShortName)),
+			DisplayOrder = x.GetAttributeNamedArgument<int>(StringFormatter.DisplayAttributeTypeFullName, nameof(DisplayAttribute.Order))
+		};
 	}
 
 	private static SourceFieldInfo[] GetFields(Type type)
@@ -638,7 +708,8 @@ public static class SourceReflector
 			.Select(x =>
 				new SourceMethodInfo
 				{
-					Name = x.Name
+					Name = x.Name,
+					MethodInfo = x
 				}
 			)
 			.ToArray();

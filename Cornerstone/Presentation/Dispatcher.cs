@@ -79,6 +79,17 @@ public abstract class Dispatcher : IDispatcher
 			: Task.FromResult(action());
 	}
 
+	public void DispatchPost(Action action, DispatcherPriority priority = DispatcherPriority.Normal)
+	{
+		if (this.ShouldDispatch())
+		{
+			ExecuteOnDispatcherPost(action, priority);
+			return;
+		}
+
+		action();
+	}
+
 	/// <summary>
 	/// Execute the action on the dispatcher.
 	/// </summary>
@@ -110,6 +121,13 @@ public abstract class Dispatcher : IDispatcher
 	/// <param name="priority"> An optional priority for the action. </param>
 	/// <param name="cancellationToken"> A cancellation token that can be used to cancel the operation. </param>
 	protected abstract Task<T> ExecuteOnDispatcherAsync<T>(Func<T> action, DispatcherPriority priority, CancellationToken cancellationToken);
+
+	/// <summary>
+	/// Execute the action on the dispatcher.
+	/// </summary>
+	/// <param name="action"> The action to execute. </param>
+	/// <param name="priority"> An optional priority for the action. </param>
+	protected abstract void ExecuteOnDispatcherPost(Action action, DispatcherPriority priority);
 
 	#endregion
 }
@@ -166,6 +184,13 @@ public interface IDispatcher
 	/// <param name="priority"> An optional priority for the action. </param>
 	/// <param name="cancellationToken"> A cancellation token that can be used to cancel the operation. </param>
 	public Task<T2> DispatchAsync<T2>(Func<T2> action, DispatcherPriority priority = DispatcherPriority.Normal, CancellationToken? cancellationToken = null);
+
+	/// <summary>
+	/// Run an action on the dispatching thread if available and required.
+	/// </summary>
+	/// <param name="action"> The action to be executed. </param>
+	/// <param name="priority"> An optional priority for the action. </param>
+	public void DispatchPost(Action action, DispatcherPriority priority = DispatcherPriority.Normal);
 
 	#endregion
 }

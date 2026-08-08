@@ -100,7 +100,7 @@ public class NumberCodeGenerator : CodeGenerator
 			_ => throw new CornerstoneException($"Type ({typeInfo.Type.FullName}) not supported.")
 		};
 
-		builder.Write(code);
+		builder.Append(code);
 	}
 
 	#endregion

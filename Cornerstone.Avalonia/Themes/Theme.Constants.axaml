@@ -10,8 +10,12 @@
 	<ac:CornerRadiusToDoubleConverter x:Key="BottomRightCornerRadiusConverter" Corner="BottomRight" />
 	<ac:StringFormatConverter x:Key="StringFormatConverter" />
 
-	<MarkdownBlockConverter x:Key="MarkdownBlockConverter" />
+	<ActivityLevelConverter x:Key="ActivityLevelConverter" />
 	<CornerRadiusConverter x:Key="CornerRadiusConverter" />
+	<DateTimeConverter x:Key="DateTimeConverter" />
+	<DecimalToDoubleConverter x:Key="DecimalToDoubleConverter" />
+	<DoubleToDecimalConverter x:Key="DoubleToDecimalConverter" />
+	<MarkdownBlockConverter x:Key="MarkdownBlockConverter" />
 	<PercentWidthConverter x:Key="PercentWidthConverter" />
 	<ProgressWidthConverter x:Key="ProgressWidthConverter" />
 	<ThicknessConverter x:Key="ThicknessConverter" />
@@ -20,6 +24,13 @@
 	<Thickness x:Key="ControlBorderThickness">1</Thickness>
 	<CornerRadius x:Key="ControlCornerRadius">4</CornerRadius>
 
+	<!-- Theme density tokens (CornerstoneTheme.SelectThemeDensity overwrites at runtime). Normal = 14 / 12. -->
 	<x:Double x:Key="ControlFontSize">14</x:Double>
+	<x:Double x:Key="ControlFontSizeSmall">12</x:Double>
+
+	<Color x:Key="TerminalBackgroundColor">#FF012456</Color>
+	<SolidColorBrush x:Key="TerminalBackgroundBrush" Color="{StaticResource TerminalBackgroundColor}" />
+	<Color x:Key="TerminalForegroundColor">#FFEEEEEE</Color>
+	<SolidColorBrush x:Key="TerminalForegroundBrush" Color="{StaticResource TerminalForegroundColor}" />
 
 </ResourceDictionary>

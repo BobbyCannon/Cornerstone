@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+	<PropertyGroup>
+		<!-- Disable AOT -->
+		<PublishAot>false</PublishAot>
+		<!-- Enables single-file bundling -->
+		<PublishSingleFile>true</PublishSingleFile>
+		<SelfContained>true</SelfContained>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+		<!-- Ready to Run -->
+		<OptimizationPreference>Speed</OptimizationPreference>
+		<PublishReadyToRun>true</PublishReadyToRun>
+		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+		<IncludeAllContentForSelfContained>true</IncludeAllContentForSelfContained>
+		<WebView2LoaderPreference>Static</WebView2LoaderPreference>
+	</PropertyGroup>
+	<ItemGroup>
+		<!-- If you modify this update AOT -->
+		<TrimmerRootAssembly Include="Cornerstone" RootMode="all" />
+		<TrimmerRootAssembly Include="Cornerstone.EntityFramework" RootMode="all" />
+		<TrimmerRootAssembly Include="Microsoft.EntityFrameworkCore" RootMode="all" />
+		<TrimmerRootAssembly Include="Microsoft.EntityFrameworkCore.Sqlite" RootMode="library" />
+		<TrimmerRootAssembly Include="Microsoft.Web.WebView2.Core" RootMode="all" />
+		<TrimmerRootAssembly Include="Microsoft.Web.WebView2.WinForms" RootMode="all" />
+		<TrimmerRootAssembly Include="Microsoft.Web.WebView2.Wpf" RootMode="all" />
+		<TrimmerRootNamespace Include="Cornerstone" />
+		<TrimmerRootNamespace Include="Cornerstone.EntityFramework" />
+		<TrimmerRootNamespace Include="Microsoft.Web.WebView2" />
+	</ItemGroup>
+</Project>

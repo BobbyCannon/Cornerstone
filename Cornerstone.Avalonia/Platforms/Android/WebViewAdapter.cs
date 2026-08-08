@@ -10,8 +10,9 @@ using Avalonia.Input;
 using Avalonia.Platform;
 using Cornerstone.Avalonia.Controls;
 using Cornerstone.Avalonia.Platforms.Android.Clients;
-using Cornerstone.Data;
 using Cornerstone.Extensions;
+using Cornerstone.Reflection;
+using Cornerstone.Runtime;
 using Key = Avalonia.Input.Key;
 using Object = Java.Lang.Object;
 
@@ -19,7 +20,8 @@ using Object = Java.Lang.Object;
 
 namespace Cornerstone.Avalonia.Platforms.Android;
 
-internal class WebViewAdapter : Notifiable, IWebViewAdapter
+[SourceReflection]
+internal class WebViewAdapter : CornerstoneObject, IWebViewAdapter
 {
 	#region Fields
 
@@ -31,6 +33,7 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter
 
 	#region Constructors
 
+	[DependencyInjectionConstructor]
 	public WebViewAdapter()
 	{
 		var parentContext = AndroidApplication.Context;
@@ -64,6 +67,8 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter
 
 	public byte[] Favicon { get; internal set; }
 
+	public bool IsNativeSurfaceVisible { get; private set; } = true;
+
 	public IPlatformHandle PlatformHandle { get; }
 
 	public string Title { get; internal set; }
@@ -80,6 +85,35 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter
 
 	public void AttachTo(IntPtr handleHandle)
 	{
+	}
+
+	public Task<WebViewSnapshot> CaptureSnapshotAsync(WebViewSnapshotOptions options = null)
+	{
+		try
+		{
+			var width = Math.Max(1, _webView.Width);
+			var height = Math.Max(1, _webView.Height);
+			if ((width <= 1) || (height <= 1))
+			{
+				return Task.FromResult(WebViewSnapshot.Failed("WebView has no measurable size."));
+			}
+
+			using var bitmap = global::Android.Graphics.Bitmap.CreateBitmap(width, height, global::Android.Graphics.Bitmap.Config.Argb8888!);
+			using var canvas = new global::Android.Graphics.Canvas(bitmap);
+			_webView.Draw(canvas);
+
+			using var stream = new System.IO.MemoryStream();
+			if (!bitmap.Compress(global::Android.Graphics.Bitmap.CompressFormat.Png!, 100, stream))
+			{
+				return Task.FromResult(WebViewSnapshot.Failed("Failed to encode WebView bitmap as PNG."));
+			}
+
+			return Task.FromResult(WebViewSnapshotHelper.ProcessPng(stream.ToArray(), width, height, options));
+		}
+		catch (Exception ex)
+		{
+			return Task.FromResult(WebViewSnapshot.Failed(ex.Message));
+		}
 	}
 
 	public Task ClearBrowsingDataAsync()
@@ -169,6 +203,14 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter
 		_webView.Reload();
 	}
 
+	public void SetNativeSurfaceVisible(bool visible)
+	{
+		IsNativeSurfaceVisible = visible;
+		_webView.Visibility = visible
+			? global::Android.Views.ViewStates.Visible
+			: global::Android.Views.ViewStates.Invisible;
+	}
+
 	public void Stop()
 	{
 		_webView.StopLoading();
@@ -218,7 +260,7 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter
 
 	#region Classes
 
-	private class ValueCallback : Object, IValueCallback
+	internal class ValueCallback : Object, IValueCallback
 	{
 		#region Properties
 

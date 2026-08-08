@@ -1,7 +1,6 @@
 ﻿#region References
 
 using System;
-using Cornerstone.Data;
 using Cornerstone.Parsers;
 using Cornerstone.Reflection;
 
@@ -10,7 +9,7 @@ using Cornerstone.Reflection;
 namespace Cornerstone.Avalonia.Text.Models;
 
 [SourceReflection]
-public partial class CompletionManager : Notifiable
+public partial class CompletionManager : CornerstoneObject
 {
 	#region Fields
 
@@ -44,7 +43,7 @@ public partial class CompletionManager : Notifiable
 	public void Initialize(CompletionService completionService)
 	{
 		_completionService = completionService;
-		OnPropertyChanged(nameof(HasCompletionService));
+		NotifyComputedPropertyChanged(nameof(HasCompletionService));
 	}
 
 	public bool TryGetCompletion(ReadOnlySpan<char> input, out ReadOnlySpan<char> completion)

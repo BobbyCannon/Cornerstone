@@ -127,6 +127,17 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 		Debounce.Cancel();
 	}
 
+	private void DebounceOnClick(object sender, RoutedEventArgs e)
+	{
+		Debounce.Trigger(1);
+		_triggered = 60d;
+	}
+
+	private void DebounceResetOnClick(object sender, RoutedEventArgs e)
+	{
+		Debounce.Reset();
+	}
+
 	private void Debounced(CancellationToken token, object value, bool forced)
 	{
 		AppendText("+ Debounce\r\n");
@@ -147,20 +158,20 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 		AppendText("- Debounce\r\n");
 	}
 
-	private void DebounceOnClick(object sender, RoutedEventArgs e)
-	{
-		Debounce.Trigger(1);
-		_triggered = 60d;
-	}
-
-	private void DebounceResetOnClick(object sender, RoutedEventArgs e)
-	{
-		Debounce.Reset();
-	}
-
 	private void ThrottleCancelOnClick(object sender, RoutedEventArgs e)
 	{
 		Throttle.Cancel();
+	}
+
+	private void ThrottleOnClick(object sender, RoutedEventArgs e)
+	{
+		Throttle.Trigger(2);
+		_triggered = 60d;
+	}
+
+	private void ThrottleResetOnClick(object sender, RoutedEventArgs e)
+	{
+		Throttle.Reset();
 	}
 
 	private void Throttled(CancellationToken token, object value, bool forced)
@@ -181,17 +192,6 @@ public partial class TabDebounceAndThrottle : CornerstoneUserControl
 		}
 
 		AppendText("- Throttle\r\n");
-	}
-
-	private void ThrottleOnClick(object sender, RoutedEventArgs e)
-	{
-		Throttle.Trigger(2);
-		_triggered = 60d;
-	}
-
-	private void ThrottleResetOnClick(object sender, RoutedEventArgs e)
-	{
-		Throttle.Reset();
 	}
 
 	private void TimerTick(object sender, EventArgs e)

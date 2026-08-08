@@ -3,13 +3,12 @@
 using System;
 using System.Windows.Input;
 using Cornerstone.Avalonia.TreeDataGrid.Models;
-using Cornerstone.Data;
 
 #endregion
 
 namespace Cornerstone.Avalonia.TreeDataGrid.Columns;
 
-public class PressHoldButtonCell : Notifiable, ICell
+public class PressHoldButtonCell : CornerstoneObject, ICell
 {
 	#region Constructors
 

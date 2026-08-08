@@ -1,7 +1,6 @@
 ﻿#region References
 
 using System;
-using Cornerstone.Data;
 using Cornerstone.Parsers;
 using Cornerstone.Reflection;
 
@@ -10,7 +9,7 @@ using Cornerstone.Reflection;
 namespace Cornerstone.Avalonia.Text.Models;
 
 [SourceReflection]
-public class IndentionManager : Notifiable
+public class IndentionManager : CornerstoneObject
 {
 	#region Fields
 
@@ -51,7 +50,7 @@ public class IndentionManager : Notifiable
 	public void Initialize(IndentionService completionService)
 	{
 		_indentionService = completionService;
-		OnPropertyChanged(nameof(HasIndentionService));
+		NotifyComputedPropertyChanged(nameof(HasIndentionService));
 	}
 
 	public bool TryGetIndention(int offset, out ReadOnlySpan<char> indention)

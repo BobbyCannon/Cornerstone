@@ -13,7 +13,7 @@ using Cornerstone.Search;
 namespace Cornerstone.Avalonia.Text.Models;
 
 [SourceReflection]
-public partial class Caret : Notifiable
+public partial class Caret : CornerstoneObject
 {
 	#region Fields
 
@@ -71,8 +71,9 @@ public partial class Caret : Notifiable
 			}
 
 			// note: There must be a better way of doing this.
+			var oldValue = _line;
 			_line = _document.Lines.GetLineFromOffset(Offset);
-			OnPropertyChanged();
+			OnPropertyChanged(nameof(Line), oldValue, _line);
 			return _line;
 		}
 	}
@@ -285,6 +286,11 @@ public partial class Caret : Notifiable
 		}
 	}
 
+	public void MoveToEnd()
+	{
+		Move(_document.Buffer.Count);
+	}
+
 	public void MoveToLineEnd()
 	{
 		var line = Line;
@@ -304,6 +310,8 @@ public partial class Caret : Notifiable
 	/// Smart line start with per-visual-subline support.
 	/// - First press: first non-whitespace char on the current visual subline.
 	/// - Subsequent presses: toggle between that position and the visual subline start.
+	/// When a <see cref="TextEditorViewModel.ReadOnlySectionProvider" /> is set, the "line start"
+	/// is clamped to the first modifiable offset (e.g. after a terminal prompt).
 	/// </summary>
 	public void MoveToSmartLineStart(bool extendSelection = false)
 	{
@@ -315,8 +323,25 @@ public partial class Caret : Notifiable
 		var subLineStart = GetCurrentVisualSubLineStart(line);
 		var subLineEnd = GetCurrentVisualSubLineEnd(line);
 
-		// Find first non-whitespace on this visual subline
-		var firstNonWhite = subLineStart;
+		// Honor read-only sections (terminal prompt): never treat protected text as "home".
+		var editableStart = subLineStart;
+		var provider = _document.ReadOnlySectionProvider;
+		if (provider != null)
+		{
+			while ((editableStart < subLineEnd) && !provider.CanModify(editableStart))
+			{
+				editableStart++;
+			}
+
+			// Nothing editable on this subline — leave caret where it is.
+			if ((editableStart >= subLineEnd) && !provider.CanModify(editableStart))
+			{
+				return;
+			}
+		}
+
+		// Find first non-whitespace on the editable portion of this visual subline
+		var firstNonWhite = editableStart;
 		while (firstNonWhite < subLineEnd)
 		{
 			var ch = buffer[firstNonWhite];
@@ -327,22 +352,22 @@ public partial class Caret : Notifiable
 			firstNonWhite++;
 		}
 
-		// If the entire subline is whitespace, treat it as the subline start
+		// If the entire editable subline is whitespace, treat it as the editable start
 		if (firstNonWhite >= subLineEnd)
 		{
-			firstNonWhite = subLineStart;
+			firstNonWhite = editableStart;
 		}
 
 		int targetOffset;
 
 		if (currentOffset == firstNonWhite)
 		{
-			// Already at first non-whitespace, go to visual subline start
-			targetOffset = subLineStart;
+			// Already at first non-whitespace, go to editable visual start
+			targetOffset = editableStart;
 		}
-		else if (currentOffset == subLineStart)
+		else if (currentOffset == editableStart)
 		{
-			// Already at visual start, go to first non-whitespace
+			// Already at editable start, go to first non-whitespace
 			targetOffset = firstNonWhite;
 		}
 		else
@@ -386,7 +411,7 @@ public partial class Caret : Notifiable
 		_line = null;
 
 		var line = Line;
-		if (line != null)
+		if (line is { VisualLayout.Height: > 0 })
 		{
 			VisualLayout = line.UpdateCaretVisual(this);
 		}

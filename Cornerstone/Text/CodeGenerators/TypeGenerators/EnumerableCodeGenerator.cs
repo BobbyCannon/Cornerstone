@@ -35,27 +35,27 @@ public class EnumerableCodeGenerator : CodeGenerator
 		{
 			if (propertyMode)
 			{
-				builder.Write(" []");
+				builder.Append(" []");
 			}
 			else
 			{
-				builder.Write(" new ");
-				builder.Write(CodeBuilder.GetCodeTypeName(type.Type));
-				builder.Write("()");
+				builder.Append(" new ");
+				builder.Append(CodeBuilder.GetCodeTypeName(type.Type));
+				builder.Append("()");
 			}
 			return;
 		}
 
 		if (propertyMode)
 		{
-			builder.WriteLine();
+			builder.AppendLine();
 			builder.IndentWriteLine("[");
 		}
 		else
 		{
-			builder.Write("new ");
-			builder.WriteLine(CodeBuilder.GetCodeTypeName(type.Type));
-			builder.WriteLine("{");
+			builder.Append("new ");
+			builder.AppendLine(CodeBuilder.GetCodeTypeName(type.Type));
+			builder.AppendLine("{");
 		}
 
 		builder.IncreaseIndent();
@@ -66,7 +66,7 @@ public class EnumerableCodeGenerator : CodeGenerator
 		{
 			if (!first)
 			{
-				builder.WriteLine(",");
+				builder.AppendLine(",");
 			}
 
 			builder.WriteObject(item);
@@ -80,7 +80,7 @@ public class EnumerableCodeGenerator : CodeGenerator
 		//}
 
 		builder.DecreaseIndent();
-		builder.WriteLine();
+		builder.AppendLine();
 		builder.IndentWrite(propertyMode ? "]" : "}");
 	}
 

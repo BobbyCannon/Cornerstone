@@ -1,7 +1,6 @@
 #region References
 
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Cornerstone.Generators.Models;
@@ -40,15 +39,22 @@ internal sealed class UpdateableProcessor : ITypeProcessor
 		GenerateUpdateableIncludedProperties(builder, updateableProperties);
 
 		var processUpdateWith = false;
+		var isDirectOrParentUpdateable = ImplementsIUpdateableDirectly(sourceTypeInfo.TypeSymbol)
+			|| AnyParentIsUpdateable(sourceTypeInfo.TypeSymbol);
 
-		if (ImplementsIUpdateableDirectly(sourceTypeInfo.TypeSymbol)
-			|| AnyParentIsUpdateable(sourceTypeInfo.TypeSymbol))
+		// ---------------------------------------------------------------------
+		// 1. Typed UpdateWith (for the type itself)
+		// ---------------------------------------------------------------------
+		if (isDirectOrParentUpdateable)
 		{
-			var shouldOverride = ShouldOverrideBase(sourceTypeInfo.TypeSymbol, sourceTypeInfo.TypeSymbol);
+			var isSealed = sourceTypeInfo.TypeSymbol.IsSealed;
+			var shouldOverride = ShouldOverrideUpdateWith(sourceTypeInfo.TypeSymbol, sourceTypeInfo.TypeSymbol);
 			var invokeBase = ShouldInvokeBase(sourceTypeInfo.TypeSymbol);
+
 			var typeProperties = !invokeBase && (shouldOverride || (sourceTypeInfo.TypeSymbol.BaseType?.IsAbstract == true))
 				? GetAllProperties(sourceTypeInfo.TypeSymbol).ToList()
 				: GetProperties(sourceTypeInfo.TypeSymbol).ToList();
+
 			var properties = invokeBase
 				? updateableProperties.Where(p => typeProperties.Any(x => x.Name == p.Name)).ToArray()
 				: updateableProperties;
@@ -58,25 +64,52 @@ internal sealed class UpdateableProcessor : ITypeProcessor
 				ProcessUpdateWith(
 					builder,
 					sourceTypeInfo.TypeSymbol,
-					shouldOverride ? "override" : "virtual",
+					shouldOverride ? "override" : isSealed ? string.Empty : "virtual",
 					invokeBase,
-					properties
-				);
+					properties);
+
 				processUpdateWith = true;
 			}
 		}
 
+		// ---------------------------------------------------------------------
+		// 2. UpdatePropertyWith (single method for the type)
+		// ---------------------------------------------------------------------
+		if (isDirectOrParentUpdateable)
+		{
+			var isSealed = sourceTypeInfo.TypeSymbol.IsSealed;
+			var shouldOverride = ShouldOverrideUpdatePropertyWith(sourceTypeInfo.TypeSymbol);
+
+			// For UpdatePropertyWith we almost always want all accessible properties
+			// and we rarely want to call base (unless the base actually has a virtual one).
+			var properties = updateableProperties;
+
+			if (properties.Count > 0)
+			{
+				ProcessUpdatePropertyWith(
+					builder,
+					shouldOverride ? "override" : isSealed ? string.Empty : "virtual",
+					shouldOverride, // only call base if we are actually overriding
+					properties);
+			}
+		}
+
+		// ---------------------------------------------------------------------
+		// 3. Typed UpdateWith for other IUpdateable<T> interfaces
+		// ---------------------------------------------------------------------
 		var updateables = GetOtherUpdateables(sourceTypeInfo.TypeSymbol);
 
 		foreach (var updateable in updateables)
 		{
 			var type = updateable.Type;
-			var shouldOverride = ShouldOverrideBase(sourceTypeInfo.TypeSymbol, type);
+			var shouldOverride = ShouldOverrideUpdateWith(sourceTypeInfo.TypeSymbol, type);
 			var typeProperties = !shouldOverride || type.IsAbstract
 				? GetAllProperties(type)
 				: GetProperties(type);
 
-			var properties = updateableProperties.Where(u => typeProperties.Any(p => p.Name == u.Name)).ToList();
+			var properties = updateableProperties
+				.Where(u => typeProperties.Any(p => p.Name == u.Name))
+				.ToList();
 
 			if (properties.Count > 0)
 			{
@@ -85,18 +118,18 @@ internal sealed class UpdateableProcessor : ITypeProcessor
 					type,
 					shouldOverride ? "override" : "virtual",
 					shouldOverride,
-					properties
-				);
+					properties);
 			}
 		}
 
-		if (processUpdateWith
-			|| (updateables.Length > 0))
+		// ---------------------------------------------------------------------
+		// 4. object dispatcher
+		// ---------------------------------------------------------------------
+		if (processUpdateWith || (updateables.Length > 0))
 		{
 			ProcessUpdateWithForObject(builder,
 				sourceTypeInfo.TypeSymbol,
-				updateables.Select(x => x.Type).ToArray()
-			);
+				updateables.Select(x => x.Type).ToArray());
 		}
 	}
 
@@ -204,8 +237,7 @@ internal sealed class UpdateableProcessor : ITypeProcessor
 	private static IList<IPropertySymbol> GetAllProperties(INamedTypeSymbol type)
 	{
 		return GetAllMembers(type)
-			.Where(x => x is IPropertySymbol)
-			.Cast<IPropertySymbol>()
+			.OfType<IPropertySymbol>()
 			.ToList();
 	}
 
@@ -278,64 +310,91 @@ internal sealed class UpdateableProcessor : ITypeProcessor
 
 	private static IList<UpdateablePropertyOrder> GetUpdateableProperties(SourceTypeInfo typeInfo)
 	{
-		var properties = GetAllMembers(typeInfo.TypeSymbol)
-			.OfType<IPropertySymbol>()
-			.GroupBy(x => x.Name)
-			.Select(x => x.First())
-			.OrderBy(x => x.Name)
-			.ToArray();
-
 		var allUpdateableProperties = new List<UpdateablePropertyOrder>();
-		var typeAttributes = typeInfo.Attributes.Where(x => x.Name is UpdateableAttribute).ToArray();
 		var typeAssignments = new Dictionary<string, (int Action, int Order)>();
-
-		foreach (var typeAttribute in typeAttributes)
+		var hierarchy = new List<INamedTypeSymbol>();
+		var current = typeInfo.TypeSymbol;
+		while (current != null)
 		{
-			var action = (int) typeAttribute.ConstructorArguments[0];
-			var actionProperties = ((object[]) typeAttribute.ConstructorArguments[1]).Select(x => (string) x).ToArray();
+			hierarchy.Add(current);
+			current = current.BaseType;
+		}
+		hierarchy.Reverse();
 
-			if ((actionProperties.Length == 1) && Equals(actionProperties[0], "*"))
+		foreach (var type in hierarchy)
+		{
+			var attributes = type.GetAttributes()
+				.Where(a => a.AttributeClass?.ToDisplayString() == FullNameUpdateableAttribute)
+				.ToArray();
+
+			foreach (var attribute in attributes)
 			{
-				for (var index = 0; index < properties.Length; index++)
+				var action = (int) attribute.ConstructorArguments[0].Value!;
+				var actionPropertiesArg = attribute.ConstructorArguments[1];
+				var inheritProperties = (attribute.ConstructorArguments.Length > 2)
+					&& (bool) attribute.ConstructorArguments[2].Value!;
+
+				var actionProperties = actionPropertiesArg.Kind == TypedConstantKind.Array
+					? actionPropertiesArg.Values.Select(x => (string) x.Value!).ToArray()
+					: ["*"];
+
+				if ((actionProperties.Length == 1)
+					&& Equals(actionProperties[0], "*"))
 				{
-					var p = properties[index];
-					typeAssignments[p.Name] = (action, index);
-				}
-				continue;
-			}
+					var candidates = inheritProperties
+						? GetAllMembers(type).OfType<IPropertySymbol>()
+						: type.GetMembers().OfType<IPropertySymbol>();
 
-			for (var index = 0; index < actionProperties.Length; index++)
-			{
-				var p = actionProperties[index];
-				typeAssignments[p] = (action, index);
+					foreach (var p in candidates)
+					{
+						if (p.IsIndexer || !p.CanBeReferencedByName)
+						{
+							continue;
+						}
+
+						if (!typeAssignments.ContainsKey(p.Name))
+						{
+							typeAssignments[p.Name] = (action, 0);
+						}
+					}
+				}
+				else
+				{
+					for (var index = 0; index < actionProperties.Length; index++)
+					{
+						var p = actionProperties[index];
+						typeAssignments[p] = (action, index);
+					}
+				}
 			}
 		}
 
-		foreach (var property in properties)
+		// Now collect final properties that exist on the target type
+		var allProperties = GetAllMembers(typeInfo.TypeSymbol)
+			.OfType<IPropertySymbol>()
+			.GroupBy(x => x.Name)
+			.Select(x => x.First())
+			.ToArray();
+
+		foreach (var property in allProperties)
 		{
-			var attribute = property
-				.GetAttributes()
+			var canAccess = !property.IsIndexer && property.CanBeReferencedByName;
+			var canWrite = property.SetMethod?.DeclaredAccessibility == Accessibility.Public;
+
+			// Property-level attribute takes precedence
+			var propAttribute = property.GetAttributes()
 				.FirstOrDefault(a => a.AttributeClass?.MetadataName == UpdateableActionAttribute);
 
-			if (attribute != null)
+			if (propAttribute != null)
 			{
-				if (attribute.ConstructorArguments.Length <= 0)
-				{
-					#if DEBUG
-					if (Debugger.IsAttached)
-					{
-						Debugger.Break();
-					}
-					#endif
-				}
-
 				allUpdateableProperties.Add(new UpdateablePropertyOrder
 				{
-					Action = (int) attribute.ConstructorArguments[0].Value!,
-					CanAccess = !property.IsIndexer && property.CanBeReferencedByName,
-					CanWrite = property.SetMethod?.DeclaredAccessibility == Accessibility.Public,
+					Action = (int) propAttribute.ConstructorArguments[0].Value!,
+					CanAccess = canAccess,
+					CanWrite = canWrite,
 					Name = property.Name,
-					Order = (int) attribute.ConstructorArguments[1].Value!
+					Order = (int) propAttribute.ConstructorArguments[1].Value!,
+					PropertySymbol = property
 				});
 			}
 			else if (typeAssignments.TryGetValue(property.Name, out var values))
@@ -343,10 +402,11 @@ internal sealed class UpdateableProcessor : ITypeProcessor
 				allUpdateableProperties.Add(new UpdateablePropertyOrder
 				{
 					Action = values.Action,
-					CanAccess = !property.IsIndexer && property.CanBeReferencedByName,
-					CanWrite = property.SetMethod?.DeclaredAccessibility == Accessibility.Public,
+					CanAccess = canAccess,
+					CanWrite = canWrite,
 					Name = property.Name,
 					Order = values.Order,
+					PropertySymbol = property
 				});
 			}
 		}
@@ -363,10 +423,11 @@ internal sealed class UpdateableProcessor : ITypeProcessor
 		while (currentType != null)
 		{
 			if (currentType.GetMembers("UpdateWith")
-				.OfType<IMethodSymbol>().Any(m => (m.Parameters.Length == 2) &&
-					SymbolEqualityComparer.Default.Equals(m.Parameters[0].Type, typeArg) &&
-					(m.Parameters[1].Type.Name == "IncludeExcludeSettings") &&
-					(m.ReturnType.SpecialType == SpecialType.System_Boolean)))
+				.OfType<IMethodSymbol>().Any(m => (m.Parameters.Length == 2)
+					&& SymbolEqualityComparer.Default.Equals(m.Parameters[0].Type, typeArg)
+					&& (m.Parameters[1].Type.Name == "IncludeExcludeSettings")
+					&& (m.ReturnType.SpecialType == SpecialType.System_Boolean)
+					&& !m.IsAbstract))
 			{
 				return true;
 			}
@@ -394,6 +455,10 @@ internal sealed class UpdateableProcessor : ITypeProcessor
 		return false;
 	}
 
+	void ITypeProcessor.Initialize(Compilation compilation)
+	{
+	}
+
 	private static bool InterfaceImplementsIUpdateable(INamedTypeSymbol interfaceSymbol, INamedTypeSymbol typeSymbol)
 	{
 		if (interfaceSymbol.MetadataName is UpdateableName)
@@ -413,12 +478,80 @@ internal sealed class UpdateableProcessor : ITypeProcessor
 		return false;
 	}
 
+	private static void ProcessUpdatePropertyWith(CSharpCodeBuilder builder, string methodModifier, bool invokeBase, IList<UpdateablePropertyOrder> members)
+	{
+		builder.IndentWriteLine("");
+		builder.IndentWrite("public ");
+		if (!string.IsNullOrWhiteSpace(methodModifier))
+		{
+			builder.Write($"{methodModifier} ");
+		}
+		builder.WriteLine("bool UpdatePropertyWith(string propertyName, object value)");
+		builder.IndentWriteLine("{");
+		builder.IncreaseIndent();
+
+		builder.IndentWriteLine("return propertyName switch");
+		builder.IndentWriteLine("{");
+		builder.IncreaseIndent();
+
+		foreach (var member in members)
+		{
+			if (!member.CanAccess)
+			{
+				continue;
+			}
+
+			var propertyType = member.PropertySymbol.Type;
+			var fullyQualifiedType = propertyType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
+			// Collection case
+			if (propertyType is INamedTypeSymbol
+				{
+					IsGenericType: true,
+					OriginalDefinition.Name: "List"
+					or "IList"
+					or "PresentationList"
+					or "IPresentationList"
+					or "SpeedyList"
+				} namedType)
+			{
+				var elementType = namedType.TypeArguments[0];
+				var globalPropertyType = propertyType.ToDisplayString(SymbolDisplayFormats.GlobalFullyQualifiedName);
+				var globalElementType = elementType.ToDisplayString(SymbolDisplayFormats.GlobalFullyQualifiedName);
+
+				builder.IndentWriteLine($"nameof({member.Name}) => TryUpdateProperty<{globalPropertyType}, {globalElementType}>({member.Name}, ({globalPropertyType})value, true),");
+				continue;
+			}
+
+			// Normal writable property
+			if (member.CanWrite)
+			{
+				builder.IndentWriteLine($"nameof({member.Name}) => TryUpdateProperty({member.Name}, ({fullyQualifiedType})value, true, x => {member.Name} = x),");
+			}
+		}
+
+		// Fallback
+		builder.IndentWriteLine(invokeBase
+			? "_ => base.UpdatePropertyWith(propertyName, value)"
+			: "_ => false");
+
+		builder.DecreaseIndent();
+		builder.IndentWriteLine("};");
+		builder.DecreaseIndent();
+		builder.IndentWriteLine("}");
+	}
+
 	private static void ProcessUpdateWith(CSharpCodeBuilder builder, INamedTypeSymbol classType, string methodModifier, bool invokeBase, IList<UpdateablePropertyOrder> members)
 	{
 		var fullyQualifiedTypeName = classType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
 		builder.IndentWriteLine("");
-		builder.IndentWriteLine($"public {methodModifier} bool UpdateWith({fullyQualifiedTypeName} update, {GlobalIncludeExcludeSettings} settings)");
+		builder.IndentWrite("public ");
+		if (!string.IsNullOrWhiteSpace(methodModifier))
+		{
+			builder.Write($"{methodModifier} ");
+		}
+		builder.WriteLine($"bool UpdateWith({fullyQualifiedTypeName} update, {GlobalIncludeExcludeSettings} settings)");
 		builder.IndentWriteLine("{");
 		builder.IncreaseIndent();
 
@@ -436,9 +569,31 @@ internal sealed class UpdateableProcessor : ITypeProcessor
 				continue;
 			}
 
-			builder.IndentWriteLine(member.CanWrite
-				? $"UpdateProperty({member.Name}, update.{member.Name}, settings.ShouldProcessProperty(nameof({member.Name} )), x => {member.Name} = x);"
-				: $"UpdateProperty({member.Name}, update.{member.Name}, settings.ShouldProcessProperty(nameof({member.Name})), x => {{}});");
+			// Check if the property type is a generic collection
+			var propertyType = member.PropertySymbol.Type;
+			if (propertyType is INamedTypeSymbol
+				{
+					IsGenericType: true,
+					OriginalDefinition.Name: "List"
+					or "IList"
+					or "PresentationList"
+					or "IPresentationList"
+					or "SpeedyList"
+				} namedType)
+			{
+				var elementType = namedType.TypeArguments[0];
+				var globalPropertyType = propertyType.ToDisplayString(SymbolDisplayFormats.GlobalFullyQualifiedName);
+				var globalElementType = elementType.ToDisplayString(SymbolDisplayFormats.GlobalFullyQualifiedName);
+				builder.IndentWriteLine($"TryUpdateProperty<{globalPropertyType}, {globalElementType}>({member.Name}, update.{member.Name}, settings.ShouldProcessProperty(nameof({member.Name})));");
+				continue;
+			}
+
+			if (member.CanWrite)
+			{
+				builder.IndentWriteLine($"TryUpdateProperty({member.Name}, update.{member.Name}, settings.ShouldProcessProperty(nameof({member.Name})), x => {member.Name} = x);");
+
+				//$"TryUpdateProperty({member.Name}, update.{member.Name}, settings.ShouldProcessProperty(nameof({member.Name})));"
+			}
 		}
 
 		builder.IndentWriteLine(invokeBase ? "return base.UpdateWith(update, settings);" : "return true;");
@@ -506,7 +661,35 @@ internal sealed class UpdateableProcessor : ITypeProcessor
 		return false;
 	}
 
-	private static bool ShouldOverrideBase(INamedTypeSymbol typeSymbol, INamedTypeSymbol parameterType)
+	private static bool ShouldOverrideUpdatePropertyWith(INamedTypeSymbol typeSymbol)
+	{
+		foreach (var current in GetBaseTypes(typeSymbol))
+		{
+			var methods = current
+				.GetMembers("UpdatePropertyWith")
+				.OfType<IMethodSymbol>()
+				.Where(m =>
+					(m.MethodKind == MethodKind.Ordinary) &&
+					m is
+					{
+						DeclaredAccessibility: Accessibility.Public,
+						IsStatic: false,
+						ReturnType.SpecialType: SpecialType.System_Boolean,
+						Parameters.Length: 2
+					} &&
+					(m.Parameters[0].Type.SpecialType == SpecialType.System_String) &&
+					(m.Parameters[1].Type.SpecialType == SpecialType.System_Object));
+
+			if (methods.Any(x => x.IsAbstract || x.IsVirtual || x.IsOverride))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static bool ShouldOverrideUpdateWith(INamedTypeSymbol typeSymbol, INamedTypeSymbol parameterType)
 	{
 		foreach (var current in GetBaseTypes(typeSymbol))
 		{
@@ -525,7 +708,7 @@ internal sealed class UpdateableProcessor : ITypeProcessor
 					&& SymbolEqualityComparer.Default.Equals(m.Parameters[0].Type, parameterType)
 				).ToList();
 
-			if (methods.Any(x => x.IsAbstract || x.IsVirtual))
+			if (methods.Any(x => x.IsAbstract || x.IsVirtual || x.IsOverride))
 			{
 				return true;
 			}

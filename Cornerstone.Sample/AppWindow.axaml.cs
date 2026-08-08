@@ -1,9 +1,11 @@
 ﻿#region References
 
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Rendering;
 using Cornerstone.Avalonia;
-using Cornerstone.Presentation;
+using Cornerstone.Runtime;
 using Cornerstone.Text;
 
 #endregion
@@ -14,7 +16,7 @@ public partial class AppWindow : CornerstoneWindow<AppViewModel>
 {
 	#region Constructors
 
-	public AppWindow() : this(CornerstoneApplication.GetInstance<AppViewModel>())
+	public AppWindow() : this(AppBootstrap.GetInstance<AppViewModel>())
 	{
 	}
 
@@ -22,7 +24,7 @@ public partial class AppWindow : CornerstoneWindow<AppViewModel>
 	{
 		if (!Design.IsDesignMode)
 		{
-			RestoreWindowLocation(ViewModel.ApplicationSettings.MainWindowLocation);
+			RestoreWindowLocation(ViewModel.State.Settings.WindowLocation);
 		}
 
 		InitializeComponent();
@@ -34,22 +36,15 @@ public partial class AppWindow : CornerstoneWindow<AppViewModel>
 
 	protected override void OnClosing(WindowClosingEventArgs e)
 	{
-		(ViewModel.SelectedTab.Control?.DataContext as ViewModel)?.Uninitialize();
-
-		CornerstoneApplication.RuntimeInformation.StartShutdown();
-		CornerstoneDispatcher.Instance.IsEnabled = false;
-
-		ViewModel.ApplicationSettings.MainWindowLocation ??= new WindowLocation();
-		ViewModel.ApplicationSettings.MainWindowLocation.UpdateWith(GetWindowLocation());
-		ViewModel.Uninitialize();
-
+		ViewModel.State.Settings.WindowLocation.UpdateWith(GetWindowLocation());
 		base.OnClosing(e);
 	}
 
 	protected override void OnLoaded(RoutedEventArgs e)
 	{
-		Title += $" ({(ViewModel.RuntimeInformation.ApplicationIsElevated ? "administrator, " : "")}";
-		Title += $"{ViewModel.RuntimeInformation.ApplicationStartup.Humanize()})";
+		Title += $" ({(ViewModel.State.RuntimeInformation.ApplicationIsElevated ? "administrator, " : "")}";
+		Title += $"{ViewModel.State.RuntimeInformation.ApplicationStartup.Humanize()})";
+		//RendererDiagnostics.DebugOverlays = RendererDebugOverlays.Fps;
 		base.OnLoaded(e);
 	}
 

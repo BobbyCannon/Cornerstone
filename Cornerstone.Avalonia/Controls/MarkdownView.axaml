@@ -25,39 +25,19 @@
 								Margin="{TemplateBinding Padding}">
 							<ItemsControl.ItemsPanel>
 								<ItemsPanelTemplate>
-									<StackPanel />
+									<StackPanel Spacing="10" />
 								</ItemsPanelTemplate>
 							</ItemsControl.ItemsPanel>
 							<ItemsControl.ItemTemplate>
-								<DataTemplate DataType="MarkdownBlockGroup">
-									<Border BorderBrush="{DynamicResource BorderBrush}"
-											BorderThickness="0">
-										<TextRenderer x:Name="Renderer"
-												Foreground="{TemplateBinding Foreground}"
-												HorizontalAlignment="Stretch"
-												CanHorizontallyScroll="False">
-											<TextRenderer.ContextMenu>
-												<ContextMenu>
-													<MenuItem x:Name="TextRendererContextFlyoutCopyItem"
-															Header="Copy"
-															Command="{Binding #Renderer.ViewModel.Clipboard.CopyCommand}"
-															InputGesture="{x:Static TextBox.CopyGesture}">
-														<MenuItem.Icon>
-															<Path Data="{StaticResource Icons.Copy}" />
-														</MenuItem.Icon>
-													</MenuItem>
-												</ContextMenu>
-											</TextRenderer.ContextMenu>
-											<TextRenderer.Text>
-												<MultiBinding Converter="{StaticResource MarkdownBlockConverter}">
-													<Binding />
-													<Binding RelativeSource="{RelativeSource Self}" />
-													<Binding RelativeSource="{RelativeSource AncestorType=Border}" />
-													<Binding RelativeSource="{RelativeSource AncestorType=local:MarkdownView}" />
-												</MultiBinding>
-											</TextRenderer.Text>
-										</TextRenderer>
-									</Border>
+								<DataTemplate DataType="local:MarkdownBlockGroup">
+									<Panel>
+										<!-- Structured table: links + inlines per cell -->
+										<local:MarkdownTablePresenter DataContext="{Binding}"
+												IsVisible="{Binding IsTable}" />
+										<!-- Headers, code, paragraphs, lists, quotes -->
+										<local:MarkdownBlockPresenter DataContext="{Binding}"
+												IsVisible="{Binding !IsTable}" />
+									</Panel>
 								</DataTemplate>
 							</ItemsControl.ItemTemplate>
 						</ItemsControl>
@@ -68,27 +48,9 @@
 	</ControlTheme>
 
 	<Design.PreviewWith>
+		<!-- Content is loaded via Document.Load / Append in samples; control has no string Markdown API. -->
 		<PreviewCodeSnippet MaxWidth="680" MinHeight="400">
-			<MarkdownView xml:space="preserve">
-				<MarkdownView.Markdown>
-# Header 1
-## Header 2
-### Header 3
-*italic* **bold** ~~strikethrough~~
-
-> BlockQuote
-
-```json
-{
-	"Test": "blah"
-}
-```
-
-- One
-- Two
-- Three
-				</MarkdownView.Markdown>
-			</MarkdownView>
+			<MarkdownView MinHeight="200" />
 		</PreviewCodeSnippet>
 	</Design.PreviewWith>
 </ResourceDictionary>

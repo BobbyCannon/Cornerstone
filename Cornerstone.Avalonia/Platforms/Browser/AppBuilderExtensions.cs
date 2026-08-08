@@ -11,20 +11,21 @@ using Avalonia.Rendering;
 using Avalonia.Threading;
 using Cornerstone.Avalonia.Controls;
 using Cornerstone.Platforms.Browser;
+using Cornerstone.Runtime;
 
 #endregion
 
 namespace Cornerstone.Avalonia.Platforms.Browser;
 
-public static class AppBuilderExtensions
+internal static class AppBuilderExtensions
 {
 	#region Methods
 
 	/// <summary>
 	/// Ex.
-	///		?DebugOverlays=Fps, DirtyRects, LayoutTimeGraph, RenderTimeGraph
+	/// ?DebugOverlays=Fps, DirtyRects, LayoutTimeGraph, RenderTimeGraph
 	/// </summary>
-	public static RendererDebugOverlays ParseArgs(string[] args, out BrowserPlatformOptions options)
+	public static RendererDebugOverlays ParseBrowserPlatformOptions(string[] args, out BrowserPlatformOptions options)
 	{
 		options = new BrowserPlatformOptions();
 		var overlays = RendererDebugOverlays.None;
@@ -74,11 +75,20 @@ public static class AppBuilderExtensions
 		}
 	}
 
-	public static AppBuilder UseCornerstone(this AppBuilder builder, string[] args, out BrowserPlatformOptions options)
+	public static AppBuilder UseCornerstone<T>(AppBuilder builder, string[] args, out T options) where T : class
 	{
-		GlobalAppBuilder.UseCornerstone(builder);
-		
-		var overlays = ParseArgs(args, out options);
+		var overlays = ParseBrowserPlatformOptions(args, out var platformOptions);
+		options = platformOptions as T;
+
+		// Avalonia (11.x) has issues with responsiveness with WASM MT
+		// This will probably be fixed eventually
+		// An alternative is to run a small infinite animation
+		//options.PreferManagedThreadDispatcher = false;
+
+		var dependencyProvider = AppBootstrap.DependencyProvider;
+		dependencyProvider.SetTransient<BrowserInteropProxy, CornerstoneBrowserInteropProxy>();
+		// Factory avoids SourceReflector constructor discovery (can fail for internal types on WASM).
+		dependencyProvider.SetTransient<IWebViewAdapter, WebViewAdapter>(() => new WebViewAdapter());
 
 		return builder
 			.AfterSetup(_ =>
@@ -94,12 +104,6 @@ public static class AppBuilderExtensions
 					},
 					DispatcherPriority.Background
 				);
-			})
-			.AfterPlatformServicesSetup(_ =>
-			{
-				var dependencyProvider = CornerstoneApplication.DependencyProvider;
-				dependencyProvider.SetTransient<BrowserInteropProxy, CornerstoneBrowserInteropProxy>();
-				dependencyProvider.SetTransient<IWebViewAdapter, WebViewAdapter>();
 			});
 	}
 

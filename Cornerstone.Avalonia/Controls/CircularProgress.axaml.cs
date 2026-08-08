@@ -33,7 +33,7 @@ public sealed partial class CircularProgress : CornerstoneContentControl
 	/// Gets the overall percentage complete of the progress
 	/// </summary>
 	[DirectProperty]
-	public double Percentage { get; private set; }
+	public partial double Percentage { get; private set; }
 
 	[StyledProperty(DefaultValue = "{1:0}%")]
 	public partial string ProgressTextFormat { get; set; }

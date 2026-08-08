@@ -2,18 +2,15 @@
 		xmlns="https://github.com/avaloniaui"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-	<x:Double x:Key="TabItemMinHeight">24</x:Double>
-
+	<!-- Tab Header (actual tab) -->
 	<ControlTheme x:Key="{x:Type TabItem}" TargetType="TabItem">
 		<Setter Property="Theme.Color" Value="None" />
 		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
 		<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
-		<Setter Property="Background" Value="{DynamicResource Background02}" />
-		<Setter Property="Foreground" Value="{DynamicResource Foreground02}" />
-		<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
-		<Setter Property="BorderThickness" Value="1" />
-		<Setter Property="Padding" Value="12,2" />
-		<Setter Property="MinHeight" Value="{DynamicResource TabItemMinHeight}" />
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="BorderBrush" Value="Transparent" />
+		<Setter Property="BorderThickness" Value="0" />
 		<Setter Property="HorizontalContentAlignment" Value="Center" />
 		<Setter Property="VerticalContentAlignment" Value="Center" />
 		<Setter Property="Template">
@@ -27,238 +24,300 @@
 							CornerRadius="{TemplateBinding CornerRadius}"
 							Margin="{TemplateBinding Margin}"
 							MinHeight="{TemplateBinding MinHeight}">
-
-						<ContentPresenter
-								Name="PART_ContentPresenter"
-								HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-								VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-								Content="{TemplateBinding Header}"
-								ContentTemplate="{TemplateBinding HeaderTemplate}"
-								FontFamily="{TemplateBinding FontFamily}"
-								FontSize="{TemplateBinding FontSize}"
-								FontWeight="{TemplateBinding FontWeight}"
-								Margin="{TemplateBinding Padding}" />
+						<Panel>
+							<ContentPresenter
+									Name="PART_ContentPresenter"
+									HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+									VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+									Content="{TemplateBinding Header}"
+									ContentTemplate="{TemplateBinding HeaderTemplate}"
+									FontFamily="{TemplateBinding FontFamily}"
+									FontSize="{TemplateBinding FontSize}"
+									FontWeight="{TemplateBinding FontWeight}"
+									Margin="{TemplateBinding Padding}" />
+							<Border Name="PART_SelectedPipe"
+									Background="{DynamicResource ThemeColor05}"
+									CornerRadius="{DynamicResource ControlCornerRadius}"
+									IsVisible="False" />
+						</Panel>
 					</Border>
 				</Panel>
 			</ControlTemplate>
 		</Setter>
 
 		<Style Selector="^:pointerover">
-			<Setter Property="Background" Value="{DynamicResource Background07}" />
 			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 		</Style>
 		<Style Selector="^:disabled">
-			<Setter Property="Background" Value="{DynamicResource Background04}" />
 			<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+		</Style>
+
+		<Style Selector="^:selected /template/ Border#PART_SelectedPipe">
+			<Setter Property="IsVisible" Value="True" />
 		</Style>
 
 		<!-- Top placement. -->
 		<Style Selector="^[TabStripPlacement=Top]">
-			<Style Selector="^:selected">
+			<Setter Property="Padding" Value="12,8,12,12" />
+
+			<Style Selector="^ /template/ Border#PART_LayoutRoot">
+				<Setter Property="BorderThickness" Value="1" />
+			</Style>
+			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
 				<Setter Property="HorizontalAlignment" Value="Stretch" />
+			</Style>
+			<Style Selector="^ /template/ Border#PART_LayoutRoot">
+				<Setter Property="Margin" Value="2,0" />
+			</Style>
+
+			<Style Selector="^ /template/ Border#PART_SelectedPipe">
+				<Setter Property="Height" Value="4" />
+				<Setter Property="Margin" Value="0,0,0,2" />
+				<Setter Property="HorizontalAlignment" Value="Stretch" />
+				<Setter Property="VerticalAlignment" Value="Bottom" />
 			</Style>
 		</Style>
 
 		<!-- Bottom placement. -->
 		<Style Selector="^[TabStripPlacement=Bottom]">
+			<Setter Property="Padding" Value="12,12,12,8" />
+
+			<Style Selector="^ /template/ Border#PART_LayoutRoot">
+				<Setter Property="BorderThickness" Value="1" />
+			</Style>
 			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
-				<Setter Property="BorderThickness" Value="1,0,1,1" />
 				<Setter Property="HorizontalAlignment" Value="Stretch" />
+			</Style>
+			<Style Selector="^ /template/ Border#PART_LayoutRoot">
+				<Setter Property="Margin" Value="2,0" />
+			</Style>
+
+			<Style Selector="^ /template/ Border#PART_SelectedPipe">
+				<Setter Property="Height" Value="4" />
+				<Setter Property="Margin" Value="0,2,0,0" />
+				<Setter Property="HorizontalAlignment" Value="Stretch" />
+				<Setter Property="VerticalAlignment" Value="Top" />
 			</Style>
 		</Style>
 
 		<!-- Left placement. -->
 		<Style Selector="^[TabStripPlacement=Left]">
-			<Setter Property="HorizontalContentAlignment" Value="Left" />
-			<Setter Property="BorderThickness" Value="1" />
+			<Setter Property="Padding" Value="12,6" />
+			<Setter Property="HorizontalContentAlignment" Value="Right" />
+
+			<Style Selector="^ /template/ Border#PART_LayoutRoot">
+				<Setter Property="BorderThickness" Value="1" />
+			</Style>
 			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
-				<Setter Property="BorderThickness" Value="1,1,0,1" />
 				<Setter Property="HorizontalAlignment" Value="Stretch" />
+			</Style>
+			<Style Selector="^ /template/ Border#PART_LayoutRoot">
+				<Setter Property="Margin" Value="0,2" />
+			</Style>
+
+			<Style Selector="^ /template/ Border#PART_SelectedPipe">
+				<Setter Property="Width" Value="4" />
+				<Setter Property="Margin" Value="2,0,0,0" />
+				<Setter Property="HorizontalAlignment" Value="Right" />
+				<Setter Property="VerticalAlignment" Value="Stretch" />
 			</Style>
 		</Style>
 
 		<!-- Right placement. -->
 		<Style Selector="^[TabStripPlacement=Right]">
-			<Setter Property="HorizontalContentAlignment" Value="Right" />
+			<Setter Property="Padding" Value="12,6" />
+			<Setter Property="HorizontalContentAlignment" Value="Left" />
+
+			<Style Selector="^ /template/ Border#PART_LayoutRoot">
+				<Setter Property="BorderThickness" Value="1" />
+			</Style>
 			<Style Selector="^:selected /template/ Border#PART_LayoutRoot">
-				<Setter Property="BorderThickness" Value="0,1,1,1" />
 				<Setter Property="HorizontalAlignment" Value="Stretch" />
+			</Style>
+			<Style Selector="^ /template/ Border#PART_LayoutRoot">
+				<Setter Property="Margin" Value="0,2" />
+			</Style>
+
+			<Style Selector="^ /template/ Border#PART_SelectedPipe">
+				<Setter Property="Width" Value="4" />
+				<Setter Property="Margin" Value="0,0,2,0" />
+				<Setter Property="HorizontalAlignment" Value="Left" />
+				<Setter Property="VerticalAlignment" Value="Stretch" />
 			</Style>
 		</Style>
 
 		<!-- Set highlight color if selected. -->
-		<Style Selector="^[(Theme.Color)=None]">
-			<Style Selector="^:selected">
-				<Setter Property="Background" Value="{DynamicResource Background04}" />
-				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
-				<Style Selector="^:pointerover">
-					<Setter Property="Background" Value="{DynamicResource Background07}" />
-					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
-				</Style>
-			</Style>
+		<Style Selector="^:selected">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="TextBlock.Foreground" Value="{DynamicResource Foreground00}" />
 		</Style>
 
 		<!-- Code Template - Color -->
 		<Style Selector="^[(Theme.Color)=Current]">
 			<Style Selector="^:selected">
-				<Setter Property="Background" Value="{DynamicResource ThemeColor07}" />
-				<Setter Property="Foreground" Value="{DynamicResource ThemeText07}" />
-				<Style Selector="^:pointerover">
+				<Style Selector="^ /template/ Border#PART_SelectedPipe">
 					<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
-					<Setter Property="Foreground" Value="{DynamicResource ThemeText05}" />
+				</Style>
+				<Style Selector="^:pointerover /template/ Border#PART_SelectedPipe">
+					<Setter Property="Background" Value="{DynamicResource ThemeColor05}" />
 				</Style>
 			</Style>
 		</Style>
 		<!-- Code Template - /Color -->
 
-		<!-- Generated Code - Colors -->
+		<!-- Generated Code - Color -->
 		<Style Selector="^[(Theme.Color)=Amber]">
 			<Style Selector="^:selected">
-				<Setter Property="Background" Value="{DynamicResource Amber07}" />
-				<Setter Property="Foreground" Value="{DynamicResource AmberText07}" />
-				<Style Selector="^:pointerover">
+				<Style Selector="^ /template/ Border#PART_SelectedPipe">
 					<Setter Property="Background" Value="{DynamicResource Amber05}" />
-					<Setter Property="Foreground" Value="{DynamicResource AmberText05}" />
+				</Style>
+				<Style Selector="^:pointerover /template/ Border#PART_SelectedPipe">
+					<Setter Property="Background" Value="{DynamicResource Amber05}" />
 				</Style>
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Blue]">
 			<Style Selector="^:selected">
-				<Setter Property="Background" Value="{DynamicResource Blue07}" />
-				<Setter Property="Foreground" Value="{DynamicResource BlueText07}" />
-				<Style Selector="^:pointerover">
+				<Style Selector="^ /template/ Border#PART_SelectedPipe">
 					<Setter Property="Background" Value="{DynamicResource Blue05}" />
-					<Setter Property="Foreground" Value="{DynamicResource BlueText05}" />
+				</Style>
+				<Style Selector="^:pointerover /template/ Border#PART_SelectedPipe">
+					<Setter Property="Background" Value="{DynamicResource Blue05}" />
 				</Style>
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=BlueGray]">
 			<Style Selector="^:selected">
-				<Setter Property="Background" Value="{DynamicResource BlueGray07}" />
-				<Setter Property="Foreground" Value="{DynamicResource BlueGrayText07}" />
-				<Style Selector="^:pointerover">
+				<Style Selector="^ /template/ Border#PART_SelectedPipe">
 					<Setter Property="Background" Value="{DynamicResource BlueGray05}" />
-					<Setter Property="Foreground" Value="{DynamicResource BlueGrayText05}" />
+				</Style>
+				<Style Selector="^:pointerover /template/ Border#PART_SelectedPipe">
+					<Setter Property="Background" Value="{DynamicResource BlueGray05}" />
 				</Style>
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Brown]">
 			<Style Selector="^:selected">
-				<Setter Property="Background" Value="{DynamicResource Brown07}" />
-				<Setter Property="Foreground" Value="{DynamicResource BrownText07}" />
-				<Style Selector="^:pointerover">
+				<Style Selector="^ /template/ Border#PART_SelectedPipe">
 					<Setter Property="Background" Value="{DynamicResource Brown05}" />
-					<Setter Property="Foreground" Value="{DynamicResource BrownText05}" />
+				</Style>
+				<Style Selector="^:pointerover /template/ Border#PART_SelectedPipe">
+					<Setter Property="Background" Value="{DynamicResource Brown05}" />
 				</Style>
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=DeepOrange]">
 			<Style Selector="^:selected">
-				<Setter Property="Background" Value="{DynamicResource DeepOrange07}" />
-				<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText07}" />
-				<Style Selector="^:pointerover">
+				<Style Selector="^ /template/ Border#PART_SelectedPipe">
 					<Setter Property="Background" Value="{DynamicResource DeepOrange05}" />
-					<Setter Property="Foreground" Value="{DynamicResource DeepOrangeText05}" />
+				</Style>
+				<Style Selector="^:pointerover /template/ Border#PART_SelectedPipe">
+					<Setter Property="Background" Value="{DynamicResource DeepOrange05}" />
 				</Style>
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=DeepPurple]">
 			<Style Selector="^:selected">
-				<Setter Property="Background" Value="{DynamicResource DeepPurple07}" />
-				<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText07}" />
-				<Style Selector="^:pointerover">
+				<Style Selector="^ /template/ Border#PART_SelectedPipe">
 					<Setter Property="Background" Value="{DynamicResource DeepPurple05}" />
-					<Setter Property="Foreground" Value="{DynamicResource DeepPurpleText05}" />
+				</Style>
+				<Style Selector="^:pointerover /template/ Border#PART_SelectedPipe">
+					<Setter Property="Background" Value="{DynamicResource DeepPurple05}" />
 				</Style>
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Gray]">
 			<Style Selector="^:selected">
-				<Setter Property="Background" Value="{DynamicResource Gray07}" />
-				<Setter Property="Foreground" Value="{DynamicResource GrayText07}" />
-				<Style Selector="^:pointerover">
+				<Style Selector="^ /template/ Border#PART_SelectedPipe">
 					<Setter Property="Background" Value="{DynamicResource Gray05}" />
-					<Setter Property="Foreground" Value="{DynamicResource GrayText05}" />
+				</Style>
+				<Style Selector="^:pointerover /template/ Border#PART_SelectedPipe">
+					<Setter Property="Background" Value="{DynamicResource Gray05}" />
 				</Style>
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Green]">
 			<Style Selector="^:selected">
-				<Setter Property="Background" Value="{DynamicResource Green07}" />
-				<Setter Property="Foreground" Value="{DynamicResource GreenText07}" />
-				<Style Selector="^:pointerover">
+				<Style Selector="^ /template/ Border#PART_SelectedPipe">
 					<Setter Property="Background" Value="{DynamicResource Green05}" />
-					<Setter Property="Foreground" Value="{DynamicResource GreenText05}" />
+				</Style>
+				<Style Selector="^:pointerover /template/ Border#PART_SelectedPipe">
+					<Setter Property="Background" Value="{DynamicResource Green05}" />
 				</Style>
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Indigo]">
 			<Style Selector="^:selected">
-				<Setter Property="Background" Value="{DynamicResource Indigo07}" />
-				<Setter Property="Foreground" Value="{DynamicResource IndigoText07}" />
-				<Style Selector="^:pointerover">
+				<Style Selector="^ /template/ Border#PART_SelectedPipe">
 					<Setter Property="Background" Value="{DynamicResource Indigo05}" />
-					<Setter Property="Foreground" Value="{DynamicResource IndigoText05}" />
+				</Style>
+				<Style Selector="^:pointerover /template/ Border#PART_SelectedPipe">
+					<Setter Property="Background" Value="{DynamicResource Indigo05}" />
 				</Style>
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Orange]">
 			<Style Selector="^:selected">
-				<Setter Property="Background" Value="{DynamicResource Orange07}" />
-				<Setter Property="Foreground" Value="{DynamicResource OrangeText07}" />
-				<Style Selector="^:pointerover">
+				<Style Selector="^ /template/ Border#PART_SelectedPipe">
 					<Setter Property="Background" Value="{DynamicResource Orange05}" />
-					<Setter Property="Foreground" Value="{DynamicResource OrangeText05}" />
+				</Style>
+				<Style Selector="^:pointerover /template/ Border#PART_SelectedPipe">
+					<Setter Property="Background" Value="{DynamicResource Orange05}" />
 				</Style>
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Pink]">
 			<Style Selector="^:selected">
-				<Setter Property="Background" Value="{DynamicResource Pink07}" />
-				<Setter Property="Foreground" Value="{DynamicResource PinkText07}" />
-				<Style Selector="^:pointerover">
+				<Style Selector="^ /template/ Border#PART_SelectedPipe">
 					<Setter Property="Background" Value="{DynamicResource Pink05}" />
-					<Setter Property="Foreground" Value="{DynamicResource PinkText05}" />
+				</Style>
+				<Style Selector="^:pointerover /template/ Border#PART_SelectedPipe">
+					<Setter Property="Background" Value="{DynamicResource Pink05}" />
 				</Style>
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Purple]">
 			<Style Selector="^:selected">
-				<Setter Property="Background" Value="{DynamicResource Purple07}" />
-				<Setter Property="Foreground" Value="{DynamicResource PurpleText07}" />
-				<Style Selector="^:pointerover">
+				<Style Selector="^ /template/ Border#PART_SelectedPipe">
 					<Setter Property="Background" Value="{DynamicResource Purple05}" />
-					<Setter Property="Foreground" Value="{DynamicResource PurpleText05}" />
+				</Style>
+				<Style Selector="^:pointerover /template/ Border#PART_SelectedPipe">
+					<Setter Property="Background" Value="{DynamicResource Purple05}" />
 				</Style>
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Red]">
 			<Style Selector="^:selected">
-				<Setter Property="Background" Value="{DynamicResource Red07}" />
-				<Setter Property="Foreground" Value="{DynamicResource RedText07}" />
-				<Style Selector="^:pointerover">
+				<Style Selector="^ /template/ Border#PART_SelectedPipe">
 					<Setter Property="Background" Value="{DynamicResource Red05}" />
-					<Setter Property="Foreground" Value="{DynamicResource RedText05}" />
+				</Style>
+				<Style Selector="^:pointerover /template/ Border#PART_SelectedPipe">
+					<Setter Property="Background" Value="{DynamicResource Red05}" />
 				</Style>
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Teal]">
 			<Style Selector="^:selected">
-				<Setter Property="Background" Value="{DynamicResource Teal07}" />
-				<Setter Property="Foreground" Value="{DynamicResource TealText07}" />
-				<Style Selector="^:pointerover">
+				<Style Selector="^ /template/ Border#PART_SelectedPipe">
 					<Setter Property="Background" Value="{DynamicResource Teal05}" />
-					<Setter Property="Foreground" Value="{DynamicResource TealText05}" />
+				</Style>
+				<Style Selector="^:pointerover /template/ Border#PART_SelectedPipe">
+					<Setter Property="Background" Value="{DynamicResource Teal05}" />
 				</Style>
 			</Style>
 		</Style>
-		<!-- Generated Code - /Colors -->
+		<!-- Generated Code - /Color -->
 	</ControlTheme>
 
 	<Design.PreviewWith>
 		<StackPanel Width="600">
 			<TabControl TabStripPlacement="Top">
-				<TabItem Header="Theme">
+				<TabItem>
+					<TabItem.HeaderTemplate>
+						<DataTemplate>
+							<TextBlock Text="Current" />
+						</DataTemplate>
+					</TabItem.HeaderTemplate>
 					<TextBlock Text="Tab with theme highlight." />
 				</TabItem>
 				<TabItem Header="Red" Theme.Color="Red">

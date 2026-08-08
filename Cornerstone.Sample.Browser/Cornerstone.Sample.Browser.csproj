@@ -7,12 +7,6 @@
 		<PublishTrimmed>false</PublishTrimmed>
 		<TrimMode>none</TrimMode>
 	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)'=='Release'">
-		<Optimize>true</Optimize>
-		<OptimizationPreference>Speed</OptimizationPreference>
-		<PublishTrimmed>true</PublishTrimmed>
-		<TrimMode>full</TrimMode>
-	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Avalonia.Browser" Version="$(AvaloniaVersion)" />
 	</ItemGroup>

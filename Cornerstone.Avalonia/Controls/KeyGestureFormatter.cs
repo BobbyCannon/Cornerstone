@@ -6,7 +6,7 @@ using Avalonia.Input;
 
 #endregion
 
-namespace Cornerstone.Avalonia.Input;
+namespace Cornerstone.Avalonia.Controls;
 
 /// <summary>
 /// Provides platform specific formatting information for the KeyGesture class

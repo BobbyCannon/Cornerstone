@@ -125,15 +125,17 @@ public class AvaloniaPropertyViewModel : PropertyViewModel
 				SetProperty(ref _group, "Unset", nameof(Group));
 			}
 		}
-		OnPropertyChanged(nameof(Type));
+		var type = Type;
+		OnPropertyChanged(nameof(Type), type, type);
 	}
 
-	protected override void OnPropertyChanged(string propertyName = null)
+	protected override void OnPropertyChanged<TValue>(string propertyName, TValue oldValue, TValue newValue)
 	{
-		base.OnPropertyChanged(propertyName);
+		base.OnPropertyChanged(propertyName, oldValue, newValue);
 		if (propertyName == nameof(IsPinned))
 		{
-			OnPropertyChanged(nameof(Group));
+			var group = Group;
+			OnPropertyChanged(nameof(Group), group, group);
 		}
 	}
 

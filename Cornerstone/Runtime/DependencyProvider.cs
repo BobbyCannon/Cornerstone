@@ -7,8 +7,13 @@ using System.Data;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using Cornerstone.Input;
+using Cornerstone.Location;
 using Cornerstone.Presentation;
 using Cornerstone.Reflection;
+using Cornerstone.Security;
+using Cornerstone.Sync;
+using Cornerstone.Web;
 
 #endregion
 
@@ -47,13 +52,24 @@ public class DependencyProvider : IDependencyProvider
 
 	public string Name { get; }
 
-	protected ConcurrentDictionary<Type, bool> SingletonInstances { get; }
+	protected ConcurrentDictionary<Type, TypeActivator> Factories { get; }
 
-	private ConcurrentDictionary<Type, TypeActivator> Factories { get; }
+	protected ConcurrentDictionary<Type, bool> SingletonInstances { get; }
 
 	#endregion
 
 	#region Methods
+
+	public void AddDesignStubs()
+	{
+		AddSingleton<Gamepad, GamepadStub>();
+		AddSingleton<ILocationProvider, LocationProviderStub>();
+		AddSingleton<PlatformCredentialVault, PlatformCredentialVaultStub>();
+		AddSingleton<IRuntimeInformation>(RuntimeInformationData.GetSample());
+		AddSingleton<SyncClient, SyncClientStub>();
+		AddSingleton<IWebClient, WebClientStub>();
+		AddSingleton<IWindowsHelloService, WindowsHelloServiceStub>();
+	}
 
 	/// <summary>
 	/// Add a singleton of the provided type.
@@ -183,6 +199,11 @@ public class DependencyProvider : IDependencyProvider
 		return CreateInstanceForDependencyInjection(type);
 	}
 
+	public object CreateNewInstance(SourceTypeInfo typeInfo)
+	{
+		return CreateInstanceForDependencyInjection(typeInfo);
+	}
+
 	/// <summary>
 	/// Just a check to ensure that an object is only instantiated once.
 	/// </summary>
@@ -262,6 +283,21 @@ public class DependencyProvider : IDependencyProvider
 	public void Lock()
 	{
 		_locked = true;
+	}
+
+	/// <summary>
+	/// Try to get a configured instance. Returns false when the type is not registered.
+	/// </summary>
+	public bool TryGetInstance<T>(out T instance)
+	{
+		if (!Factories.ContainsKey(typeof(T)))
+		{
+			instance = default;
+			return false;
+		}
+
+		instance = GetInstance<T>();
+		return true;
 	}
 
 	public void Reset()
@@ -357,11 +393,25 @@ public class DependencyProvider : IDependencyProvider
 		runtimeInformation ??= new RuntimeInformation();
 
 		AddSingleton(dateTimeProvider);
-		AddSingleton(dispatcher);
-		AddSingleton(runtimeInformation);
-		AddSingleton<IRuntimeInformation, RuntimeInformation>();
+		if (dispatcher != null)
+		{
+			AddSingleton(dispatcher);
+		}
+
+		// Register the same instance for both the concrete type and IRuntimeInformation.
+		if (runtimeInformation is RuntimeInformation concrete)
+		{
+			AddSingleton(concrete);
+			AddSingleton<IRuntimeInformation>(concrete);
+		}
+		else
+		{
+			AddSingleton(runtimeInformation);
+			AddSingleton<IRuntimeInformation, RuntimeInformation>();
+		}
+
 		AddSingleton(this);
-		AddSingleton<IDependencyProvider, DependencyProvider>();
+		AddSingleton<IDependencyProvider>(this);
 
 		return this;
 	}
@@ -380,6 +430,11 @@ public class DependencyProvider : IDependencyProvider
 			throw new CornerstoneException(string.Format(Babel.Tower[BabelKeys.SourceReflectionTypeNotDefined], type.FullName));
 		}
 
+		return CreateInstanceForDependencyInjection(typeInfo, initialize);
+	}
+
+	private object CreateInstanceForDependencyInjection(SourceTypeInfo typeInfo, Action<object> initialize = null)
+	{
 		var constructors = typeInfo.DeclaredConstructors;
 		var primaryConstructor = constructors.FirstOrDefault(x => x.IsDependencyConstructor);
 		if (primaryConstructor != null)
@@ -433,9 +488,9 @@ public class DependencyProvider : IDependencyProvider
 			#endif
 			throw new DependencyInjectorConstructorException(
 				availableConstructor.Count == 0
-					? $"An injectable constructor could not be found for {type.FullName}."
+					? $"An injectable constructor could not be found for {typeInfo.Type.FullName}."
 					: "Too many injectable constructor was found.",
-				type.FullName
+				typeInfo.Type.FullName
 			);
 		}
 
@@ -545,6 +600,11 @@ public interface IDependencyProvider
 	/// <param name="type"> The type to check. </param>
 	/// <returns> True if the type is configured as a singleton otherwise false. </returns>
 	bool IsSingleton(Type type);
+
+	/// <summary>
+	/// Try to get a configured instance. Returns false when the type is not registered.
+	/// </summary>
+	bool TryGetInstance<T>(out T instance);
 
 	#endregion
 }

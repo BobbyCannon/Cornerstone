@@ -10,6 +10,7 @@ using Cornerstone.Avalonia;
 using Cornerstone.Avalonia.DockingManager;
 using Cornerstone.Presentation;
 using Cornerstone.Reflection;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -32,12 +33,25 @@ public partial class TabDockingManager : CornerstoneUserControl
 
 	#region Constructors
 
-	public TabDockingManager()
+	public TabDockingManager() : this(GetInstance<DockingManager>())
+	{
+	}
+
+	[DependencyInjectionConstructor]
+	public TabDockingManager(DockingManager dockingManager)
 	{
 		_tabIndex = 0;
+
+		DockingManager = dockingManager;
 		DataContext = this;
 		InitializeComponent();
 	}
+
+	#endregion
+
+	#region Properties
+
+	public DockingManager DockingManager { get; }
 
 	#endregion
 
@@ -53,8 +67,6 @@ public partial class TabDockingManager : CornerstoneUserControl
 	protected override void OnLoaded(RoutedEventArgs e)
 	{
 		DockingManager.Add(GetNewTabModel());
-		DockingManager.Add(GetNewTabModel());
-		DockingManager.Add(GetNewTabModel());
 		base.OnLoaded(e);
 	}
 
@@ -68,11 +80,15 @@ public partial class TabDockingManager : CornerstoneUserControl
 	private DockableTabModel GetNewTabModel()
 	{
 		_tabIndex++;
-		return new TextTabViewModel
+		var response = new TextTabViewModel
 		{
 			Header = $"Tab: {_tabIndex}",
 			Text = $"Content: {_tabIndex}"
 		};
+		response.InitializeLifecycle();
+		response.LoadLifecycle();
+		response.StartLifecycle();
+		return response;
 	}
 
 	[RelayCommand]

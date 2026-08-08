@@ -1,8 +1,5 @@
 ﻿#region References
 
-using System;
-using System.ComponentModel;
-using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -10,12 +7,17 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.TextFormatting;
 using Avalonia.Threading;
+using Cornerstone.Avalonia.Extensions;
 using Cornerstone.Avalonia.Text.Models;
 using Cornerstone.Avalonia.Text.Rendering;
 using Cornerstone.Avalonia.Themes;
-using Cornerstone.Collections;
+using Cornerstone.Parsers.Markdown;
 using Cornerstone.Profiling;
 using Cornerstone.Reflection;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
 using DispatcherPriority = Avalonia.Threading.DispatcherPriority;
 using IRenderer = Cornerstone.Avalonia.Text.Rendering.IRenderer;
 
@@ -28,7 +30,7 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 {
 	#region Fields
 
-	private readonly PresentationList<IRenderer> _backgroundRenderers;
+	public readonly Presentation.PresentationList<IRenderer> BackgroundRenderers;
 	private readonly CurrentLineRenderer _currentLineRenderer;
 	private readonly DispatcherTimer _dispatchTimer;
 	private bool _eventsAttached;
@@ -46,9 +48,9 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 	{
 		_currentLineRenderer = new CurrentLineRenderer(this);
 		_selectionRenderer = new SelectionRenderer(this);
-		_backgroundRenderers = [_currentLineRenderer, _selectionRenderer];
 		_dispatchTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(500), DispatcherPriority.Background, DispatchTimerCallback);
 
+		BackgroundRenderers = [_currentLineRenderer, _selectionRenderer];
 		CaretVisual = new CaretVisual(this);
 		CanVerticallyScroll = true;
 		Focusable = true;
@@ -116,7 +118,7 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 
 	public Size PageScrollSize => new(ViewModel.ViewMetrics.CharacterWidth * 10, ViewModel.ViewMetrics.CharacterWidth * 10);
 
-	public Size ScrollSize => new(ViewModel.ViewMetrics.CharacterWidth, ViewModel.ViewMetrics.CharacterHeight);
+	public Size ScrollSize => new(ViewModel.ViewMetrics.CharacterWidth * 3, ViewModel.ViewMetrics.CharacterHeight * 3);
 
 	[DirectProperty]
 	public string Text
@@ -158,20 +160,65 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 	{
 		var typeface = GetTypeface(bold, italic);
 
+		// TextLayout requires a finite maxWidth; unconstrained measure can pass Infinity.
+		var layoutMaxWidth = wrap && double.IsFinite(maxWidth) && (maxWidth > 0)
+			? maxWidth
+			: 999999;
+
 		return new TextLayout(
 			lineText,
 			typeface,
 			FontSize,
 			foreground ?? Foreground ?? Brushes.White,
-			textWrapping: wrap
+			textWrapping: wrap && double.IsFinite(maxWidth) && (maxWidth > 0)
 				? TextWrapping.Wrap
 				: TextWrapping.NoWrap,
-			maxWidth: wrap
-				? maxWidth
-				: 999999,
+			maxWidth: layoutMaxWidth,
 			flowDirection: FlowDirection.LeftToRight,
 			textDecorations: textDecorations
 		);
+	}
+
+	public Typeface GetTypeface(bool bold, bool italic)
+	{
+		// Lazy initialization + caching based on exact combination
+		if (bold)
+		{
+			if (italic)
+			{
+				return _typefaceBoldItalic ??= this.CreateTypeface(FontWeight.SemiBold, FontStyle.Italic);
+			}
+
+			return _typefaceBold ??= this.CreateTypeface(FontWeight.SemiBold, FontStyle.Normal);
+		}
+
+		if (italic)
+		{
+			return _typefaceItalic ??= this.CreateTypeface(FontWeight.Normal, FontStyle.Italic);
+		}
+
+		return _typefaceNormal ??= this.CreateTypeface(FontWeight.Normal, FontStyle.Normal);
+	}
+
+	public IEnumerable<Line> GetVisualLines()
+	{
+		var topY = Offset.Y;
+		var bottomY = Offset.Y + Bounds.Bottom;
+
+		foreach (var line in ViewModel.Lines)
+		{
+			if (line.VisualLayout.Bottom <= topY)
+			{
+				continue;
+			}
+
+			if (line.VisualLayout.Top >= bottomY)
+			{
+				break;
+			}
+
+			yield return line;
+		}
 	}
 
 	public void RaiseScrollInvalidated(EventArgs e)
@@ -187,27 +234,16 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 		// Uncomment to see the calculated extent area
 		//drawingContext.DrawRectangle(new Pen(Brushes.Red), new Rect(0, 0, Extent.Width, Extent.Height));
 
-		foreach (var renderer in _backgroundRenderers)
+		foreach (var renderer in BackgroundRenderers)
 		{
 			renderer.Draw(this, drawingContext);
 		}
 
 		var leftX = Offset.X;
 		var topY = Offset.Y;
-		var bottomY = Offset.Y + Bounds.Bottom;
 
-		foreach (var line in ViewModel.Lines)
+		foreach (var line in GetVisualLines())
 		{
-			if (line.VisualLayout.Bottom <= topY)
-			{
-				continue;
-			}
-
-			if (line.VisualLayout.Bottom >= bottomY)
-			{
-				break;
-			}
-
 			if (line.WrappedStartOffsets.Count == 0)
 			{
 				Process(line.VisualLayout.Top, line.StartOffset, line.Length);
@@ -242,7 +278,8 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 			}
 
 			var lineEnd = start + length;
-			var tokens = ViewModel.TokenManager
+			var tokens = ViewModel
+				.TokenManager
 				.GetTokens(start, lineEnd)
 				.ToArray();
 
@@ -279,10 +316,28 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 
 				if (runStart < runEnd)
 				{
-					var brush = SyntaxBrushes.TryGetValue(token.Color, out var b) ? b : Foreground;
+					var brush = token.Foreground?.GetBrush() ?? Foreground;
+					if (SyntaxBrushes.TryGetValue(token.SyntaxKind, out var b))
+					{
+						brush = b;
+					}
 					var runText = ViewModel.Buffer.Substring(runStart, runEnd - runStart);
-					using var tl = GetTextLayout(runText, Width, false, brush, token.Bold, token.Italic,
-						token.Strikethrough ? TextDecorations.Strikethrough : null);
+					var decorations = token.Strikethrough
+						? TextDecorations.Strikethrough
+						: token.Type == MarkdownTokenizer.TokenTypeLink
+							? TextDecorations.Underline
+							: null;
+					using var tl = GetTextLayout(runText, Width, false, brush, token.Bold, token.Italic, decorations);
+
+					var backgroundBrush = token.Background?.GetBrush();
+					if (backgroundBrush != null)
+					{
+						var width = runText.Length * ViewModel.ViewMetrics.CharacterWidth;
+						var backgroundBounds = new Rect(currentX, visualY - topY, width, tl.Height);
+						var geometry = new RectangleGeometry(backgroundBounds);
+						drawingContext.DrawGeometry(backgroundBrush, null, geometry);
+					}
+
 					tl.Draw(drawingContext, new Point(currentX, visualY - topY));
 					currentX += tl.WidthIncludingTrailingWhitespace;
 				}
@@ -301,8 +356,19 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 		}
 	}
 
+	protected internal virtual void OnScrollInvalidated()
+	{
+		OnPropertyChanged(nameof(Extent));
+		OnPropertyChanged(nameof(Offset));
+		OnPropertyChanged(nameof(Viewport));
+		ScrollInvalidated?.Invoke(this, EventArgs.Empty);
+	}
+
 	protected override Size ArrangeOverride(Size finalSize)
 	{
+		// ScrollViewer measures with infinite constraints in scroll directions;
+		// the arranged size is the true viewport.
+		ViewModel.ViewMetrics.Viewport = finalSize;
 		OnScrollInvalidated();
 		return base.ArrangeOverride(finalSize);
 	}
@@ -310,10 +376,21 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 	protected override Size MeasureOverride(Size availableSize)
 	{
 		using var _ = ProfilerExtensions.Start(Profiler, nameof(MeasureOverride));
-		using var line = GetTextLayout("X", availableSize.Width);
+
+		// TextLayout maxWidth must be finite; unconstrained measure uses a large
+		// stand-in so glyph metrics still resolve.
+		var layoutWidth = double.IsFinite(availableSize.Width) ? availableSize.Width : 999999;
+		using var line = GetTextLayout("X", layoutWidth);
 		ViewModel.Measure(line, availableSize);
 		OnScrollInvalidated();
-		return ViewModel.ViewMetrics.DocumentSize;
+
+		// Avalonia throws InvalidOperationException if Measure returns NaN/Infinity
+		// (e.g. TextEditor in a parent with unconstrained height/width).
+		var size = ViewModel.ViewMetrics.DocumentSize;
+		return new Size(
+			double.IsFinite(size.Width) && (size.Width >= 0) ? size.Width : 0,
+			double.IsFinite(size.Height) && (size.Height >= 0) ? size.Height : 0
+		);
 	}
 
 	protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
@@ -340,8 +417,17 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 
 	protected override void OnGotFocus(FocusChangedEventArgs e)
 	{
-		_dispatchTimer.IsEnabled = true;
-		ViewModel.Caret.IsVisible = true;
+		// Selection still works without a caret; skip blink timer when caret is hidden.
+		if ((ViewModel != null) && ViewModel.ShowCaret)
+		{
+			_dispatchTimer.IsEnabled = true;
+			ViewModel.Caret.IsVisible = true;
+		}
+		else if (ViewModel != null)
+		{
+			ViewModel.Caret.IsVisible = false;
+		}
+
 		base.OnGotFocus(e);
 	}
 
@@ -510,14 +596,6 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 		}
 	}
 
-	protected virtual void OnScrollInvalidated()
-	{
-		OnPropertyChanged(nameof(Extent));
-		OnPropertyChanged(nameof(Offset));
-		OnPropertyChanged(nameof(Viewport));
-		ScrollInvalidated?.Invoke(this, EventArgs.Empty);
-	}
-
 	private void AttachEvents(TextEditorViewModel viewModel)
 	{
 		if ((viewModel == null) || _eventsAttached)
@@ -596,27 +674,6 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 		RaiseScrollInvalidated(EventArgs.Empty);
 	}
 
-	private Typeface GetTypeface(bool bold, bool italic)
-	{
-		// Lazy initialization + caching based on exact combination
-		if (bold)
-		{
-			if (italic)
-			{
-				return _typefaceBoldItalic ??= this.CreateTypeface(FontWeight.SemiBold, FontStyle.Italic);
-			}
-
-			return _typefaceBold ??= this.CreateTypeface(FontWeight.SemiBold, FontStyle.Normal);
-		}
-
-		if (italic)
-		{
-			return _typefaceItalic ??= this.CreateTypeface(FontWeight.Normal, FontStyle.Italic);
-		}
-
-		return _typefaceNormal ??= this.CreateTypeface(FontWeight.Normal, FontStyle.Normal);
-	}
-
 	private void OnCaretMoved(object sender, EventArgs e)
 	{
 		var caret = (Caret) sender;
@@ -649,7 +706,8 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 	{
 		CaretVisual.InvalidateVisual();
 
-		if (ViewModel.Caret.Line != _currentLineRenderer.CurrentLine)
+		if (ViewModel.HighlightCurrentLine
+			&& (ViewModel.Caret.Line != _currentLineRenderer.CurrentLine))
 		{
 			InvalidateVisual();
 		}

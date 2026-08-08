@@ -2,9 +2,7 @@
 
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
-using Avalonia.Interactivity;
 using Cornerstone.Avalonia.Controls;
-using Cornerstone.Avalonia.DockingManager;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
 using Cornerstone.Reflection;
@@ -23,9 +21,9 @@ public class ViewLocator : IDataTemplate
 	{
 		return data switch
 		{
-			DockableTabModel dockableTabModel => Build(dockableTabModel),
 			PopupViewModel popup => Build(popup),
 			TabItemReferenceViewModel tabItem => Build(tabItem),
+			ViewModel viewModel => Build(viewModel),
 			_ => new TextBlock { Text = $"Failed to find control for [{data}]." }
 		};
 	}
@@ -33,28 +31,45 @@ public class ViewLocator : IDataTemplate
 	public bool Match(object data)
 	{
 		return data
-			is DockableTabModel
+			is ViewModel
 			or PopupViewModel
 			or TabItemReferenceViewModel;
 	}
 
 	private Control Build(TabItemReferenceViewModel tabItem)
 	{
+		// Reuse the existing control when switching back to a tab. Nulling on Unloaded forced a
+		// brand-new instance every visit; DocumentationReader could keep catalog/Current while
+		// MarkdownView had not re-presented document text until Home reloaded it.
+		if (tabItem.Control is not null)
+		{
+			return tabItem.Control;
+		}
+
 		tabItem.Control = SourceReflector.CreateInstance(tabItem.TabTypeName) as Control
 			?? new TextBlock { Text = $"Failed to find control for [{tabItem.TabName}]." };
 
 		tabItem.Control.Tag = tabItem;
-		tabItem.Control.Unloaded += ControlOnUnloaded;
-
 		return tabItem.Control;
 	}
 
-	private Control Build(PopupViewModel popupViewModel)
+	private Control Build(PopupViewModel viewModel)
 	{
-		return new TextBlock { Text = popupViewModel.ProgressDescription };
+		var modelType = viewModel.GetType();
+		var modelName = modelType.Name;
+		var modelAssemblyName = modelType.ToAssemblyName();
+
+		var viewAssemblyName = modelAssemblyName?.Replace(modelName, modelName.Replace("Popup", "Control"));
+		if (SourceReflector.CreateInstance(viewAssemblyName) is Control view)
+		{
+			view.DataContext = viewModel;
+			return view;
+		}
+
+		return new TextBlock { Text = $"Failed to find control for [{viewModel.GetType().Name}]." };
 	}
 
-	private Control Build(DockableTabModel data)
+	private Control Build(ViewModel data)
 	{
 		var modelType = data.GetType();
 		var modelName = modelType.Name;
@@ -79,18 +94,6 @@ public class ViewLocator : IDataTemplate
 		}
 
 		return new TextBlock { Text = $"Failed to find control for [{viewAssemblyName}]..." };
-	}
-
-	private void ControlOnUnloaded(object sender, RoutedEventArgs e)
-	{
-		if (sender is not Control { Tag: TabItemReferenceViewModel tabItem } control)
-		{
-			return;
-		}
-
-		tabItem.Control.Unloaded -= ControlOnUnloaded;
-		tabItem.Control = null;
-		control.Tag = null;
 	}
 
 	#endregion

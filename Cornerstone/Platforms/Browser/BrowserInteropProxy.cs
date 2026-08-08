@@ -1,10 +1,4 @@
-﻿#region References
-
-using Cornerstone.Data;
-
-#endregion
-
-namespace Cornerstone.Platforms.Browser;
+﻿namespace Cornerstone.Platforms.Browser;
 
 public class BrowserInteropProxyStub : BrowserInteropProxy
 {
@@ -32,7 +26,7 @@ public class BrowserInteropProxyStub : BrowserInteropProxy
 	#endregion
 }
 
-public abstract class BrowserInteropProxy : Notifiable
+public abstract class BrowserInteropProxy : CornerstoneObject
 {
 	#region Properties
 

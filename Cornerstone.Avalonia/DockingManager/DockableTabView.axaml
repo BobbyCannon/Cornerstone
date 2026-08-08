@@ -72,7 +72,7 @@
 											Foreground="{TemplateBinding Foreground}"
 											Margin="0,0,2,0"
 											IsVisible="False">
-										<PathIcon 
+										<PathIcon
 												Data="{DynamicResource Icons.Close}"
 												Foreground="{TemplateBinding Foreground}"
 												VerticalAlignment="Center" />

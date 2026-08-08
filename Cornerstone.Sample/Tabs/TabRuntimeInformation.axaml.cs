@@ -20,7 +20,7 @@ public partial class TabRuntimeInformation : CornerstoneUserControl
 
 	#region Constructors
 
-	public TabRuntimeInformation() : this(CornerstoneApplication.GetInstance<IRuntimeInformation>())
+	public TabRuntimeInformation() : this(AppBootstrap.GetInstance<IRuntimeInformation>())
 	{
 	}
 

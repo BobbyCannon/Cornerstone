@@ -28,13 +28,14 @@ public partial class CaretVisual : CornerstoneControl
 
 	public override void Render(DrawingContext context)
 	{
-		if (_renderer.ViewModel == null)
+		var viewModel = _renderer.ViewModel;
+		if ((viewModel == null) || !viewModel.ShowCaret)
 		{
 			base.Render(context);
 			return;
 		}
 
-		var caret = _renderer.ViewModel.Caret;
+		var caret = viewModel.Caret;
 		var line = caret?.Line;
 
 		if ((caret?.ToggleBlink() != true)

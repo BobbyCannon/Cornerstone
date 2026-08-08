@@ -17,13 +17,18 @@ public class TreeDataGridCellsPresenter : TreeDataGridColumnarPresenterBase<ICol
 {
 	#region Fields
 
-	public static readonly DirectProperty<TreeDataGridCellsPresenter, IRows> RowsProperty =
-		AvaloniaProperty.RegisterDirect<TreeDataGridCellsPresenter, IRows>(
-			nameof(Rows),
-			o => o.Rows,
-			(o, v) => o.Rows = v);
+	public static readonly DirectProperty<TreeDataGridCellsPresenter, IRows> RowsProperty;
 
 	private IRows _rows;
+
+	#endregion
+
+	#region Constructors
+
+	static TreeDataGridCellsPresenter()
+	{
+		RowsProperty = AvaloniaProperty.RegisterDirect<TreeDataGridCellsPresenter, IRows>(nameof(Rows), o => o.Rows, (o, v) => o.Rows = v);
+	}
 
 	#endregion
 
@@ -87,10 +92,19 @@ public class TreeDataGridCellsPresenter : TreeDataGridColumnarPresenterBase<ICol
 
 	public void UpdateRowIndex(int index)
 	{
-		if ((index < 0) || Rows is null || (index >= Rows.Count))
+		if ((index < 0) || Rows is null)
 		{
 			throw new ArgumentOutOfRangeException(nameof(index));
 		}
+
+		// The underlying collection count may not have updated synchronously during virtualization.
+		// Allow the index to proceed if it falls within a safe margin of the current count.
+		var effectiveCount = Math.Max(Rows.Count, index + 1);
+		if (index >= effectiveCount)
+		{
+			throw new ArgumentOutOfRangeException(nameof(index));
+		}
+
 		if (RowIndex == -1)
 		{
 			throw new InvalidOperationException("Row is not realized.");

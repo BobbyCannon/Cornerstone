@@ -16,6 +16,53 @@ public class SpeedyListTests : CornerstoneUnitTest
 	#region Methods
 
 	[TestMethod]
+	public void DispatchPendingIsSetByStructuralMutationsAndCleared()
+	{
+		using var list = new SpeedyList<int>(16);
+		IsFalse(list.HasPending);
+
+		list.Add(1);
+		IsTrue(list.HasPending);
+		list.ClearHasPending();
+		IsFalse(list.HasPending);
+
+		list.Add([2, 3]);
+		IsTrue(list.HasPending);
+		list.ClearHasPending();
+
+		list.Insert(0, 0);
+		IsTrue(list.HasPending);
+		list.ClearHasPending();
+
+		list[0] = 9;
+		IsTrue(list.HasPending);
+		list.ClearHasPending();
+
+		list.RemoveAt(0);
+		IsTrue(list.HasPending);
+		list.ClearHasPending();
+
+		list.Remove(2);
+		IsTrue(list.HasPending);
+		list.ClearHasPending();
+
+		list.RemoveRange(0, list.Count);
+		IsTrue(list.HasPending);
+		list.ClearHasPending();
+
+		// Clear on empty does not mark pending
+		list.Clear();
+		IsFalse(list.HasPending);
+
+		list.Add(1);
+		list.ClearHasPending();
+		list.Clear();
+		IsTrue(list.HasPending);
+		list.ClearHasPending();
+		IsFalse(list.HasPending);
+	}
+
+	[TestMethod]
 	public void AddArgumentExceptions()
 	{
 		using var buffer = new SpeedyList<char>(16);

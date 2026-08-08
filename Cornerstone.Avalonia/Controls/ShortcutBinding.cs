@@ -3,7 +3,6 @@
 using System;
 using System.Text;
 using Avalonia.Input;
-using Cornerstone.Avalonia.Input;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Input;
@@ -17,7 +16,7 @@ namespace Cornerstone.Avalonia.Controls;
 [SourceReflection]
 [Notifiable(["*"])]
 [Updateable(UpdateableAction.All, ["*"])]
-public partial class ShortcutBinding : Notifiable<ShortcutBinding>
+public partial class ShortcutBinding : CornerstoneObject<ShortcutBinding>
 {
 	#region Constructors
 

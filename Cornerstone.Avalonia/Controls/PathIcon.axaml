@@ -23,18 +23,18 @@
 		</ResourceDictionary>
 	</Styles.Resources>
 
+	<Style Selector="PathIcon.Dim">
+		<Setter Property="Opacity" Value="0.5" />
+	</Style>
 	<Style Selector="PathIcon.Invert">
 		<Setter Property="RenderTransform" Value="rotate(180deg)" />
 	</Style>
-
 	<Style Selector="PathIcon.FlipV">
 		<Setter Property="RenderTransform" Value="scaley(-1)" />
 	</Style>
-
 	<Style Selector="PathIcon.FlipH">
 		<Setter Property="RenderTransform" Value="scalex(-1)" />
 	</Style>
-
 	<Style Selector="PathIcon.Turn">
 		<Setter Property="RenderTransform" Value="scale(-1)" />
 	</Style>
@@ -53,6 +53,7 @@
 			<PathIcon Data="{StaticResource Icons.Lock}" Classes="FlipV" />
 			<PathIcon Data="{StaticResource Icons.Lock}" Classes="FlipH" />
 			<PathIcon Data="{StaticResource Icons.Lock}" Classes="Turn" />
+			<PathIcon Data="{StaticResource Icons.Lock}" Classes="Dim" />
 		</WrapPanel>
 	</Design.PreviewWith>
 </Styles>

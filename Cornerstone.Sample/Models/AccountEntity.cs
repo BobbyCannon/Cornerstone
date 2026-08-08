@@ -26,18 +26,22 @@ public partial class AccountEntity
 	[SqlTableColumn(IsNullable = false)]
 	public partial string EmailAddress { get; set; }
 
+	[SqlTableColumn]
 	public partial DateTime LastLoginDate { get; set; }
 
 	[SqlTableColumn(IsNullable = false)]
 	public partial string Name { get; set; }
 
+	[SqlTableColumn]
 	public partial string Picture { get; set; }
 
 	[SqlTableColumn(IsNullable = false)]
 	public partial string Roles { get; set; }
 
+	[SqlTableColumn]
 	public partial AccountStatus Status { get; set; }
 
+	[SqlTableColumn]
 	public partial string TimeZoneId { get; set; }
 
 	#endregion

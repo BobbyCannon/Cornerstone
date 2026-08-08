@@ -1,6 +1,5 @@
 ﻿#region References
 
-using Cornerstone.Avalonia;
 using Cornerstone.Runtime;
 using UIKit;
 
@@ -17,8 +16,7 @@ public class Application
 	/// </summary>
 	private static void Main(string[] args)
 	{
-		CornerstoneApplication.RuntimeInformation.Initialize(typeof(Application).Assembly);
-		CornerstoneApplication.RuntimeInformation.SetPlatformOverride(nameof(IRuntimeInformation.ApplicationName), "Cornerstone.Sample");
+		AppBootstrap.Initialize("Cornerstone.Sample", typeof(Application).Assembly, args);
 
 		// if you want to use a different Application Delegate class from "AppDelegate"
 		// you can specify it here.

@@ -21,6 +21,7 @@
   <Project Path="Avalonia.Diagnostics/Avalonia.Diagnostics.csproj" />
   <Project Path="Cornerstone.Automation/Cornerstone.Automation.csproj" />
   <Project Path="Cornerstone.Avalonia/Cornerstone.Avalonia.csproj" />
+  <Project Path="Cornerstone.Documentation/Cornerstone.Documentation.csproj" />
   <Project Path="Cornerstone.Generators/Cornerstone.Generators.csproj" />
   <Project Path="Cornerstone.Sample.Android/Cornerstone.Sample.Android.csproj">
     <Deploy />
@@ -31,5 +32,6 @@
     <Deploy />
   </Project>
   <Project Path="Cornerstone.Sample/Cornerstone.Sample.csproj" />
+  <Project Path="Cornerstone.Templates/Cornerstone.Templates.csproj" />
   <Project Path="Cornerstone/Cornerstone.csproj" />
 </Solution>

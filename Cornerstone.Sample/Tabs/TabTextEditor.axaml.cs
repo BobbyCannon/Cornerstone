@@ -2,7 +2,6 @@
 
 using System;
 using System.ComponentModel;
-using System.Linq;
 using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
@@ -38,14 +37,13 @@ public partial class TabTextEditor : CornerstoneUserControl
 
 	private readonly BackgroundWorker _benchmark;
 	private bool _selectingDueToCaretMove;
-	private readonly Profiler _textEditorRendererProfiler;
 	private readonly DispatcherTimer _timer;
 
 	#endregion
 
 	#region Constructors
 
-	public TabTextEditor() : this(CornerstoneApplication.GetInstance<IRuntimeInformation>())
+	public TabTextEditor() : this(AppBootstrap.GetInstance<IRuntimeInformation>())
 	{
 	}
 
@@ -55,16 +53,16 @@ public partial class TabTextEditor : CornerstoneUserControl
 		_benchmark = new BackgroundWorker();
 		_benchmark.WorkerSupportsCancellation = true;
 		_timer = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Normal, ProviderUpdate) { IsEnabled = false };
-		_textEditorRendererProfiler = new Profiler();
 
-		(RandomGeneratedData, _) = _textEditorRendererProfiler.SetupScopeHistory("RandomGenerated", 30);
-		(LineManagerRebuildData, _) = _textEditorRendererProfiler.SetupScopeHistory("LineManager.Rebuild", 30);
-		(TokenManagerRebuildData, _) = _textEditorRendererProfiler.SetupScopeHistory("TokenManager.Rebuild", 30);
-		(TextEditorMeasureData, _) = _textEditorRendererProfiler.SetupScopeHistory(nameof(MeasureOverride), 30);
-		(TextEditorRenderData, _) = _textEditorRendererProfiler.SetupScopeHistory(nameof(Render), 30);
-		(TextEditorDocumentChangedData, _) = _textEditorRendererProfiler.SetupScopeHistory(nameof(TextEditorViewModel.DocumentChanged), 30);
-
+		Profiler = new Profiler();
 		RuntimeInformation = runtimeInformation;
+
+		(RandomGeneratedData, _) = Profiler.SetupScopeHistory("RandomGenerated", 30);
+		(LineManagerRebuildData, _) = Profiler.SetupScopeHistory("LineManager.Rebuild", 30);
+		(TokenManagerRebuildData, _) = Profiler.SetupScopeHistory("TokenManager.Rebuild", 30);
+		(TextEditorMeasureData, _) = Profiler.SetupScopeHistory(nameof(MeasureOverride), 30);
+		(TextEditorRenderData, _) = Profiler.SetupScopeHistory(nameof(Render), 30);
+		(TextEditorDocumentChangedData, _) = Profiler.SetupScopeHistory(nameof(TextEditorViewModel.DocumentChanged), 30);
 
 		DataContext = this;
 		InitializeComponent();
@@ -262,10 +260,37 @@ public partial class TabTextEditor : CornerstoneUserControl
 				);
 				break;
 			}
+			case "md":
+			{
+				TextEditor.ViewModel.ConfigureForFileType("md");
+				TextEditor.ViewModel.Load(
+					"""
+					# This is a header
+					---
+
+					1. C# should not trigger header
+					1. And that
+
+					*italic*
+
+					> Block quote
+
+						```CSharp
+						public void Test()
+						{
+						}
+						```
+
+					More text so I can test an inline code block `Method(1, "true")`.
+
+					"""
+				);
+				break;
+			}
 			case "large":
 			{
 				using var rented = StringBuilderPool.Rent();
-				using (var _ = ProfilerExtensions.Start(_textEditorRendererProfiler, "RandomGenerated"))
+				using (var _ = ProfilerExtensions.Start(Profiler, "RandomGenerated"))
 				{
 					for (var i = 0; i < 25_000; i++)
 					{
@@ -279,7 +304,7 @@ public partial class TabTextEditor : CornerstoneUserControl
 			case "huge":
 			{
 				using var rented = StringBuilderPool.Rent();
-				using (var _ = ProfilerExtensions.Start(_textEditorRendererProfiler, "RandomGenerated"))
+				using (var _ = ProfilerExtensions.Start(Profiler, "RandomGenerated"))
 				{
 					for (var i = 0; i < 50_000; i++)
 					{
@@ -398,12 +423,8 @@ public partial class TabTextEditor : CornerstoneUserControl
 
 	protected override void OnLoaded(RoutedEventArgs e)
 	{
-		TextEditor.Renderer.Profiler = _textEditorRendererProfiler;
-		TextEditor.ViewModel.Profiler = _textEditorRendererProfiler;
-
 		IsBenchmarking = false;
 		_benchmark.CancelAsync();
-
 		base.OnLoaded(e);
 	}
 
@@ -578,7 +599,7 @@ public partial class TabTextEditor : CornerstoneUserControl
 
 	private void ProviderUpdate(object sender, EventArgs e)
 	{
-		_textEditorRendererProfiler.Refresh();
+		Profiler.Refresh();
 	}
 
 	#endregion

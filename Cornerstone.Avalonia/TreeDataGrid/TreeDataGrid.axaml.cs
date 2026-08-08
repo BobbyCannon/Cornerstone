@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -13,7 +14,6 @@ using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
-using Avalonia.Utilities;
 using Avalonia.VisualTree;
 using Cornerstone.Avalonia.TreeDataGrid.Cells;
 using Cornerstone.Avalonia.TreeDataGrid.Models;
@@ -22,11 +22,9 @@ using Cornerstone.Extensions;
 
 #endregion
 
-#pragma warning disable CS0618 // Type or member is obsolete
-
 namespace Cornerstone.Avalonia.TreeDataGrid;
 
-public class TreeDataGrid : TemplatedControl
+public partial class TreeDataGrid : TemplatedControl
 {
 	#region Constants
 
@@ -37,10 +35,8 @@ public class TreeDataGrid : TemplatedControl
 
 	#region Fields
 
-	public static readonly StyledProperty<bool> AutoDragDropRowsProperty;
-	public static readonly StyledProperty<bool> CanUserResizeColumnsProperty;
-	public static readonly StyledProperty<bool> CanUserSortColumnsProperty;
 	public static readonly DirectProperty<TreeDataGrid, IColumns> ColumnsProperty;
+	public static readonly DataFormat<TreeDataGridDragInfo> DragDropDataFormat;
 	public static readonly DirectProperty<TreeDataGrid, TreeDataGridElementFactory> ElementFactoryProperty;
 	public static readonly DirectProperty<TreeDataGrid, ITreeDataGridSource> ItemsSourceProperty;
 	public static readonly RoutedEvent<TreeDataGridRowDragEventArgs> RowDragOverEvent;
@@ -79,9 +75,6 @@ public class TreeDataGrid : TemplatedControl
 
 	static TreeDataGrid()
 	{
-		AutoDragDropRowsProperty = AvaloniaProperty.Register<TreeDataGrid, bool>(nameof(AutoDragDropRows));
-		CanUserResizeColumnsProperty = AvaloniaProperty.Register<TreeDataGrid, bool>(nameof(CanUserResizeColumns), true);
-		CanUserSortColumnsProperty = AvaloniaProperty.Register<TreeDataGrid, bool>(nameof(CanUserSortColumns), true);
 		ColumnsProperty = AvaloniaProperty.RegisterDirect<TreeDataGrid, IColumns>(nameof(Columns), o => o.Columns);
 		ElementFactoryProperty = AvaloniaProperty.RegisterDirect<TreeDataGrid, TreeDataGridElementFactory>(nameof(ElementFactory), o => o.ElementFactory, (o, v) => o.ElementFactory = v);
 		ItemsSourceProperty = AvaloniaProperty.RegisterDirect<TreeDataGrid, ITreeDataGridSource>(nameof(ItemsSource), o => o.ItemsSource, (o, v) => o.ItemsSource = v);
@@ -95,29 +88,21 @@ public class TreeDataGrid : TemplatedControl
 		DragDrop.DragOverEvent.AddClassHandler<TreeDataGrid>((x, e) => x.OnDragOver(e));
 		DragDrop.DragLeaveEvent.AddClassHandler<TreeDataGrid>((x, e) => x.OnDragLeave(e));
 		DragDrop.DropEvent.AddClassHandler<TreeDataGrid>((x, e) => x.OnDrop(e));
+		DragDropDataFormat = DataFormat.CreateInProcessFormat<TreeDataGridDragInfo>("cornerstone-treedatagrid");
 	}
 
 	#endregion
 
 	#region Properties
 
-	public bool AutoDragDropRows
-	{
-		get => GetValue(AutoDragDropRowsProperty);
-		set => SetValue(AutoDragDropRowsProperty, value);
-	}
+	[StyledProperty]
+	public partial bool AutoDragDropRows { get; set; }
 
-	public bool CanUserResizeColumns
-	{
-		get => GetValue(CanUserResizeColumnsProperty);
-		set => SetValue(CanUserResizeColumnsProperty, value);
-	}
+	[StyledProperty(DefaultValue = true)]
+	public partial bool CanUserResizeColumns { get; set; }
 
-	public bool CanUserSortColumns
-	{
-		get => GetValue(CanUserSortColumnsProperty);
-		set => SetValue(CanUserSortColumnsProperty, value);
-	}
+	[StyledProperty(DefaultValue = true)]
+	public partial bool CanUserSortColumns { get; set; }
 
 	public TreeDataGridColumnHeadersPresenter ColumnHeadersPresenter { get; private set; }
 
@@ -171,6 +156,16 @@ public class TreeDataGrid : TemplatedControl
 			RaisePropertyChanged(ItemsSourceProperty, oldSource, _itemsSource);
 		}
 	}
+
+	[StyledProperty(DefaultValue = 28)]
+	public partial int MinRowHeight { get; set; }
+
+	/// <summary>
+	/// When true (default), every row is laid out at MinRowHeight so scroll extent is exact.
+	/// When false, rows size to content (MinHeight only); scroll uses height estimates and can thrash.
+	/// </summary>
+	[StyledProperty(DefaultValue = true)]
+	public partial bool UseFixedRowHeight { get; set; }
 
 	public IRows Rows
 	{
@@ -382,6 +377,60 @@ public class TreeDataGrid : TemplatedControl
 		{
 			DragDrop.SetAllowDrop(this, change.GetNewValue<bool>());
 		}
+		else if (change.Property == MinRowHeightProperty)
+		{
+			ApplyRowHeightToRealizedRows();
+		}
+		else if (change.Property == UseFixedRowHeightProperty)
+		{
+			ApplyRowHeightToRealizedRows();
+		}
+	}
+
+	private void ApplyRowHeightToRealizedRows()
+	{
+		if (RowsPresenter is null)
+		{
+			return;
+		}
+
+		var minHeight = (double) MinRowHeight;
+		var fixedHeight = UseFixedRowHeight;
+		foreach (var element in RowsPresenter.GetRealizedElements())
+		{
+			if (element is not TreeDataGridRow row)
+			{
+				continue;
+			}
+
+			ApplyRowHeight(row, minHeight, fixedHeight);
+		}
+
+		RowsPresenter.InvalidateMeasure();
+	}
+
+	/// <summary>
+	/// Apply host row-height policy to a realized row (fixed slot vs content-sized).
+	/// </summary>
+	internal static void ApplyRowHeight(TreeDataGridRow row, double minHeight, bool useFixedHeight)
+	{
+		if (row is null)
+		{
+			return;
+		}
+
+		row.MinHeight = minHeight;
+		if (useFixedHeight)
+		{
+			row.Height = minHeight;
+			row.MaxHeight = minHeight;
+		}
+		else
+		{
+			// Clear forced slot so content can measure naturally (non-uniform rows).
+			row.ClearValue(HeightProperty);
+			row.ClearValue(MaxHeightProperty);
+		}
 	}
 
 	protected override void OnTextInput(TextInputEventArgs e)
@@ -394,6 +443,43 @@ public class TreeDataGrid : TemplatedControl
 		}
 
 		_selection?.OnTextInput(this, e);
+	}
+
+	/// <summary>
+	/// Avalonia 12 drag start – accepts PointerEventArgs (the correct type)
+	/// </summary>
+	internal void OnDragStarted(PointerPressedEventArgs trigger)
+	{
+		if (_itemsSource is null || RowSelection is null)
+		{
+			return;
+		}
+
+		var allowedEffects = AutoDragDropRows //&& !_itemsSource.IsSorted
+			? DragDropEffects.Move
+			: DragDropEffects.None;
+
+		var route = BuildEventRoute(RowDragStartedEvent);
+		if (route.HasHandlers)
+		{
+			var e = new TreeDataGridRowDragStartedEventArgs(RowSelection.SelectedItems!)
+			{
+				AllowedEffects = allowedEffects
+			};
+			RaiseEvent(e);
+			allowedEffects = e.AllowedEffects;
+		}
+
+		if (allowedEffects == DragDropEffects.None)
+		{
+			return;
+		}
+
+		var data = new DataTransfer();
+		var dragInfo = new TreeDataGridDragInfo(this, _itemsSource, RowSelection.SelectedIndexes.ToList());
+		data.Add(DataTransferItem.Create(DragDropDataFormat, dragInfo));
+
+		_ = DragDrop.DoDragDropAsync(trigger, data, allowedEffects);
 	}
 
 	internal void RaiseCellClearing(TreeDataGridCell cell, int columnIndex, int rowIndex)
@@ -440,36 +526,6 @@ public class TreeDataGrid : TemplatedControl
 		}
 	}
 
-	internal void RaiseRowDragStarted(PointerEventArgs trigger)
-	{
-		if (_itemsSource is null || RowSelection is null)
-		{
-			return;
-		}
-
-		var allowedEffects = AutoDragDropRows && !_itemsSource.IsSorted ? DragDropEffects.Move : DragDropEffects.None;
-		var route = BuildEventRoute(RowDragStartedEvent);
-
-		if (route.HasHandlers)
-		{
-			var e = new TreeDataGridRowDragStartedEventArgs(RowSelection.SelectedItems!)
-			{
-				AllowedEffects = allowedEffects
-			};
-			RaiseEvent(e);
-			allowedEffects = e.AllowedEffects;
-		}
-
-		if (allowedEffects == DragDropEffects.None)
-			return;
-
-		//var data = new DataTransfer();
-		//var info = new DragInfo(_itemsSource, RowSelection.SelectedIndexes.ToList());
-		////data.SetData(DragInfo.DataFormat, info);  // does not exist
-		//data.Add(DataTransferItem.Create(new DataFormat<>()));
-		//DragDrop.DoDragDropAsync(trigger, data, allowedEffects);
-	}
-
 	internal void RaiseRowPrepared(TreeDataGridRow row, int rowIndex)
 	{
 		if (RowPrepared is not null)
@@ -506,43 +562,51 @@ public class TreeDataGrid : TemplatedControl
 	private bool CalculateAutoDragDrop(
 		TreeDataGridRow targetRow,
 		DragEventArgs e,
-		[NotNullWhen(true)] out DragInfo data,
+		[NotNullWhen(true)] out TreeDataGridDragInfo data,
 		out TreeDataGridRowDropPosition position)
 	{
-		//if (!AutoDragDropRows
-		//	|| e.Data.Get(DragInfo.DataFormat) is not DragInfo di
-		//	|| _itemsSource is null
-		//	|| _itemsSource.IsSorted
-		//	|| targetRow is null
-		//	|| (di.Source != _itemsSource))
-		//{
-		//	data = null;
-		//	position = TreeDataGridRowDropPosition.None;
-		//	return false;
-		//}
-
-		//var targetIndex = _itemsSource.Rows.RowIndexToModelIndex(targetRow.RowIndex);
-		//position = GetDropPosition(_itemsSource, e, targetRow);
-
-		//// We can't drop rows into themselves or their descendants.
-		//foreach (var sourceIndex in di.Indexes)
-		//{
-		//	if (sourceIndex.IsAncestorOf(targetIndex)
-		//		|| ((sourceIndex == targetIndex)
-		//			&& (position == TreeDataGridRowDropPosition.Inside)))
-		//	{
-		//		data = null;
-		//		position = TreeDataGridRowDropPosition.None;
-		//		return false;
-		//	}
-		//}
-
-		//data = di;
-		//return true;
-
 		data = null;
 		position = TreeDataGridRowDropPosition.None;
-		return false;
+
+		if (!AutoDragDropRows
+			|| _itemsSource is null
+			|| _itemsSource.IsSorted
+			|| targetRow is null)
+		{
+			return false;
+		}
+
+		try
+		{
+			var info = e.DataTransfer.TryGetValue(DragDropDataFormat);
+			if (info is null || (info.Source != _itemsSource))
+			{
+				return false;
+			}
+
+			position = GetDropPosition(_itemsSource, e, targetRow);
+
+			var targetIndex = _itemsSource.Rows.RowIndexToModelIndex(targetRow.RowIndex);
+
+			// We can't drop rows into themselves or their descendants.
+			foreach (var sourceIndex in info.Indexes)
+			{
+				if (sourceIndex.IsAncestorOf(targetIndex)
+					|| ((sourceIndex == targetIndex)
+						&& (position == TreeDataGridRowDropPosition.Inside)))
+				{
+					position = TreeDataGridRowDropPosition.None;
+					return false;
+				}
+			}
+
+			data = info;
+			return true;
+		}
+		catch
+		{
+			return false;
+		}
 	}
 
 	private static TreeDataGridRowDropPosition GetDropPosition(
@@ -564,11 +628,10 @@ public class TreeDataGrid : TemplatedControl
 			}
 			return TreeDataGridRowDropPosition.Inside;
 		}
-		if (rowY < 0.5)
-		{
-			return TreeDataGridRowDropPosition.Before;
-		}
-		return TreeDataGridRowDropPosition.After;
+
+		return rowY < 0.5
+			? TreeDataGridRowDropPosition.Before
+			: TreeDataGridRowDropPosition.After;
 	}
 
 	private Canvas GetOrCreateDragAdorner()
@@ -668,31 +731,28 @@ public class TreeDataGrid : TemplatedControl
 
 	private void OnDragOver(DragEventArgs e)
 	{
-		if (!TryGetRow(e.Source as Control, out var row))
-		{
-			e.DragEffects = DragDropEffects.None;
-		}
+		// Attempt to find a row. Do not return early if none is found.
+		// This allows handling drops on empty areas or headers.
+		TryGetRow(e.Source as Control, out var row);
 
-		if (!CalculateAutoDragDrop(row, e, out _, out var adorner))
-		{
-			e.DragEffects = DragDropEffects.None;
-		}
+		// If we have a row, try to calculate the drop position.
+		// This will return false if row is null or AutoDragDropRows is disabled.
+		CalculateAutoDragDrop(row, e, out _, out var position);
 
+		// If auto drag/drop logic fails (e.g., no row found), we still want to raise the event
+		// so external handlers can process the drag over.
 		var route = BuildEventRoute(RowDragOverEvent);
 
 		if (route.HasHandlers)
 		{
-			var ev = new TreeDataGridRowDragEventArgs(RowDragOverEvent, row, e)
-			{
-				Position = adorner
-			};
+			var ev = new TreeDataGridRowDragEventArgs(RowDragOverEvent, row, e) { Position = position };
 			RaiseEvent(ev);
-			adorner = ev.Position;
 		}
 
+		// Only show adorner if we have a valid row and position.
 		if (row != null)
 		{
-			ShowDragAdorner(row, adorner);
+			ShowDragAdorner(row, position);
 		}
 
 		if (ScrollViewer is { } scroller)
@@ -856,6 +916,12 @@ public class TreeDataGrid : TemplatedControl
 	public event EventHandler<TreeDataGridRowEventArgs> RowPrepared;
 
 	public event CancelEventHandler SelectionChanging;
+
+	#endregion
+
+	#region Records
+
+	public sealed record TreeDataGridDragInfo(TreeDataGrid TreeDataGrid, ITreeDataGridSource Source, List<IndexPath> Indexes);
 
 	#endregion
 }

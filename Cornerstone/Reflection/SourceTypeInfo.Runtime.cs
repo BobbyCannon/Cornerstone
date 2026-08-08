@@ -68,6 +68,17 @@ public partial class SourceTypeInfo
 		return GetMethods().FirstOrDefault(x => x.Name == name);
 	}
 
+	public SourceMethodInfo GetMethod(string name, Type[] types)
+	{
+		return GetMethods()
+			.FirstOrDefault(x =>
+				(x.Name == name)
+				&& x.Parameters
+					.Select(p => p.ParameterType)
+					.SequenceEqual(types)
+			);
+	}
+
 	public SourceMethodInfo[] GetMethods()
 	{
 		return _methods ??= GetThisAndAncestors()

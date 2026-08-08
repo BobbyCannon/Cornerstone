@@ -21,10 +21,10 @@ public class CSharpTokenizerTests : CornerstoneUnitTest
 	public void Attributes()
 	{
 		Process("[JsonIgnore]",
-			new Token { Color = SyntaxColor.Attribute, EndOffset = 12, StartOffset = 0, Type = CSharpTokenizer.TokenTypeAttribute }
+			new Token { SyntaxKind = SyntaxKind.Attribute, EndOffset = 12, StartOffset = 0, Type = CSharpTokenizer.TokenTypeAttribute }
 		);
 		Process("[Pack(1,2)]",
-			new Token { Color = SyntaxColor.Attribute, EndOffset = 11, StartOffset = 0, Type = CSharpTokenizer.TokenTypeAttribute }
+			new Token { SyntaxKind = SyntaxKind.Attribute, EndOffset = 11, StartOffset = 0, Type = CSharpTokenizer.TokenTypeAttribute }
 		);
 	}
 	
@@ -32,17 +32,17 @@ public class CSharpTokenizerTests : CornerstoneUnitTest
 	public void Comments()
 	{
 		Process("// Hello World",
-			new Token { Color = SyntaxColor.Comment, EndOffset = 14, StartOffset = 0, Type = CSharpTokenizer.TokenTypeCommentInline }
+			new Token { SyntaxKind = SyntaxKind.Comment, EndOffset = 14, StartOffset = 0, Type = CSharpTokenizer.TokenTypeCommentInline }
 		);
 		Process("/* Hello\nWorld */",
-			new Token { Color = SyntaxColor.Comment, EndOffset = 17, StartOffset = 0, Type = CSharpTokenizer.TokenTypeCommentMultiline }
+			new Token { SyntaxKind = SyntaxKind.Comment, EndOffset = 17, StartOffset = 0, Type = CSharpTokenizer.TokenTypeCommentMultiline }
 		);
 		Process("""
 				/// <summary>
 				/// This is a test.
 				/// </summary>
 				""",
-			new Token { Color = SyntaxColor.Comment, EndOffset = 50, StartOffset = 0, Type = CSharpTokenizer.TokenTypeCommentXml }
+			new Token { SyntaxKind = SyntaxKind.Comment, EndOffset = 50, StartOffset = 0, Type = CSharpTokenizer.TokenTypeCommentXml }
 		);
 	}
 

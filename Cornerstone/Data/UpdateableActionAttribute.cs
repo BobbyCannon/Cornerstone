@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using Cornerstone.Reflection;
 
 #endregion
 
@@ -10,10 +11,6 @@ namespace Cornerstone.Data;
 public class UpdateableActionAttribute : CornerstoneAttribute
 {
 	#region Constructors
-
-	public UpdateableActionAttribute() : this(UpdateableAction.None)
-	{
-	}
 
 	public UpdateableActionAttribute(UpdateableAction actions, int order = int.MaxValue)
 	{

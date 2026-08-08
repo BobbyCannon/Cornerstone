@@ -13,27 +13,32 @@ namespace Cornerstone.Presentation;
 public enum DispatcherPriority
 {
 	/// <summary>
+	/// Operations at this priority are processed at render priority.
+	/// </summary>
+	Render,
+
+	/// <summary>
 	/// Operations at this priority are processed at normal priority.
 	/// </summary>
-	Normal = 0,
+	Normal,
 
 	/// <summary>
 	/// Operations at this priority are processed when the system is idle.
 	/// </summary>
-	SystemIdle = 1,
+	SystemIdle,
 
 	/// <summary>
 	/// Operations at this priority are processed when the application is idle.
 	/// </summary>
-	ApplicationIdle = 2,
+	ApplicationIdle,
 
 	/// <summary>
 	/// Operations at this priority are processed when the context is idle.
 	/// </summary>
-	ContextIdle = 3,
+	ContextIdle,
 
 	/// <summary>
 	/// Operations at this priority are processed after all other non-idle operations are done.
 	/// </summary>
-	Background = 4
+	Background
 }

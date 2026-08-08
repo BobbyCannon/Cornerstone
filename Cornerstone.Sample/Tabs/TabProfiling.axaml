@@ -44,8 +44,8 @@
 							Width="160" />
 					<TextBlock Text="{Binding RandomDelay, Converter={x:Static Converters.Humanize}}"
 							VerticalAlignment="Center"
-							Width="50"/>
-					
+							Width="50" />
+
 					<CheckBox x:Name="Labels" IsChecked="True">Labels</CheckBox>
 					<CheckBox x:Name="OverlapLabels" IsChecked="False">Overlap Labels</CheckBox>
 					<CheckBox x:Name="Stepped" IsChecked="True">Stepped</CheckBox>
@@ -78,15 +78,15 @@
 			</DockPanel>
 			<PreviewCodeSnippet.ItemsPanel>
 				<ItemsPanelTemplate>
-					<UniformGrid 
+					<UniformGrid
 							Columns="2"
 							ColumnSpacing="10"
-							RowSpacing="10"/>
+							RowSpacing="10" />
 				</ItemsPanelTemplate>
 			</PreviewCodeSnippet.ItemsPanel>
 			<PreviewCodeSnippet.ItemTemplate>
 				<DataTemplate DataType="ThemeColor">
-					<LineChart Theme.Color="{Binding}" 
+					<LineChart Theme.Color="{Binding}"
 							Title="{Binding}"
 							Data="{Binding ElementName=This, Path=RandomData}"
 							Height="60"

@@ -29,8 +29,8 @@ public partial class TabShortcutBox : CornerstoneUserControl
 	#region Constructors
 
 	public TabShortcutBox() : this(
-		CornerstoneApplication.GetInstance<IDateTimeProvider>(),
-		CornerstoneApplication.GetInstance<IRuntimeInformation>())
+		AppBootstrap.GetInstance<IDateTimeProvider>(),
+		AppBootstrap.GetInstance<IRuntimeInformation>())
 	{
 	}
 

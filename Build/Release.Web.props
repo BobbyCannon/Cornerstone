@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+	<PropertyGroup>
+		<!-- Disable AOT / trimming — unsafe for typical ASP.NET Core (reflection, EF, MVC) -->
+		<PublishAot>false</PublishAot>
+		<PublishTrimmed>false</PublishTrimmed>
+		<TrimMode>none</TrimMode>
+
+		<!-- Web apps need a normal layout (wwwroot, deps.json, runtimeconfig) -->
+		<PublishSingleFile>false</PublishSingleFile>
+		<SelfContained>false</SelfContained>
+		<EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
+
+		<!--
+			ReadyToRun: precompile IL to native code for the publish RID.
+			Helps cold start / first-request JIT cost; little effect on steady-state throughput.
+			Requires a RuntimeIdentifier (set in the website csproj or at publish).
+		-->
+		<PublishReadyToRun>true</PublishReadyToRun>
+		<OptimizationPreference>Speed</OptimizationPreference>
+	</PropertyGroup>
+</Project>

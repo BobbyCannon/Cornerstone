@@ -14,7 +14,7 @@ namespace Cornerstone.Data;
 [Notifiable(["*"])]
 [Updateable(UpdateableAction.All, ["*"])]
 [SourceReflection]
-public partial class PartialUpdateValue : Notifiable, IUpdateable<PartialUpdateValue>
+public partial class PartialUpdateValue : CornerstoneObject, IUpdateable<PartialUpdateValue>
 {
 	#region Constructors
 
@@ -78,11 +78,11 @@ public partial class PartialUpdateValue : Notifiable, IUpdateable<PartialUpdateV
 			: SourceReflector.CreateInstance(Type);
 	}
 
-	public override bool HasNotifiableChanges(IncludeExcludeSettings settings)
+	public override bool HasChanges(IncludeExcludeSettings settings)
 	{
-		return base.HasNotifiableChanges(settings)
+		return base.HasChanges(settings)
 			|| (Value is ITrackPropertyChanges pValue 
-				&& pValue.HasNotifiableChanges());
+				&& pValue.HasChanges());
 	}
 
 	public override void ResetHasChanges()

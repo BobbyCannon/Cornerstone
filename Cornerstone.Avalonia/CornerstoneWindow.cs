@@ -9,14 +9,14 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Shapes;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Cornerstone.Avalonia.Extensions;
-using Cornerstone.Collections;
-using Cornerstone.Data;
 using Cornerstone.Presentation;
 using Cornerstone.Profiling;
+using Cornerstone.Runtime;
 using Dispatcher = Avalonia.Threading.Dispatcher;
 
 #endregion
@@ -28,7 +28,24 @@ public partial class CornerstoneWindow<T>
 {
 	#region Constructors
 
-	public CornerstoneWindow(T viewModel)
+	public CornerstoneWindow()
+	{
+		if (!Design.IsDesignMode)
+		{
+			return;
+		}
+
+		DataContext ??= CreateDesignData();
+		if (DataContext is ViewModel viewModel
+			&& !viewModel.IsLifecycleInitialized())
+		{
+			viewModel.InitializeLifecycle();
+			viewModel.LoadLifecycle();
+			viewModel.StartLifecycle();
+		}
+	}
+
+	public CornerstoneWindow(T viewModel) : this()
 	{
 		DataContext = viewModel;
 	}
@@ -44,12 +61,33 @@ public partial class CornerstoneWindow<T>
 
 	#region Methods
 
+	/// <summary>
+	/// Design-time sample for this window. Default resolves <typeparamref name="T"/> from DI.
+	/// Override when the real type is session-scoped or not DI-constructible.
+	/// </summary>
+	protected virtual T CreateDesignData()
+	{
+		return GetInstance<T>();
+	}
+
+	/// <inheritdoc />
+	protected override object GetViewModel()
+	{
+		return ViewModel;
+	}
+
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
 	{
 		if ((change.Property == DataContextProperty)
 			&& DataContext is T viewModel)
 		{
 			ViewModel = viewModel;
+		}
+
+		if (change.Property == ViewModelProperty)
+		{
+			DispatchableVisualTree.OnViewModelChanged(
+				this, change.OldValue, change.NewValue, DataContext, VisualRoot != null);
 		}
 
 		base.OnPropertyChanged(change);
@@ -70,6 +108,7 @@ public partial class CornerstoneWindow : Window
 	private Path _maximizeIcon;
 	private Button _minimizeButton;
 	private PropertyChangedEventHandler _propertyChangedHandler;
+	private Border _titleBar;
 	private Grid _windowGrid;
 	private Image _windowIcon;
 
@@ -118,12 +157,12 @@ public partial class CornerstoneWindow : Window
 
 	public static T GetInstance<T>()
 	{
-		return CornerstoneApplication.DependencyProvider.GetInstance<T>();
+		return AppBootstrap.GetInstance<T>();
 	}
 
 	public static object GetInstance(Type type)
 	{
-		return CornerstoneApplication.DependencyProvider.GetInstance(type);
+		return AppBootstrap.GetInstance(type);
 	}
 
 	public bool IsOnScreen()
@@ -204,6 +243,15 @@ public partial class CornerstoneWindow : Window
 		}
 	}
 
+	/// <summary>
+	/// Returns the typed <c> ViewModel </c> property when this is a <see cref="CornerstoneWindow{T}" />;
+	/// otherwise null. Used with <see cref="StyledElement.DataContext" /> (independently) for IsAttached.
+	/// </summary>
+	protected virtual object GetViewModel()
+	{
+		return null;
+	}
+
 	protected WindowLocation GetWindowLocation()
 	{
 		var maximized = WindowState == WindowState.Maximized;
@@ -229,19 +277,33 @@ public partial class CornerstoneWindow : Window
 		_closeButton = e.NameScope.Find<Button>("CloseButton")!;
 		_windowIcon = e.NameScope.Find<Image>("WindowIcon")!;
 		_windowGrid = e.NameScope.Find<Grid>("WindowGrid")!;
+		_titleBar = e.NameScope.Find<Border>("TitleBar")!;
 
 		_minimizeButton.Click += MinimizeWindow;
 		_maximizeButton.Click += MaximizeWindow;
 		_closeButton.Click += CloseWindow;
 		_windowIcon.DoubleTapped += CloseWindow;
+		_titleBar.DoubleTapped += OnDoubleTapped;
 
 		SubscribeToWindowState();
+	}
+
+	protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+	{
+		base.OnAttachedToVisualTree(e);
+		DispatchableVisualTree.OnAttachedToVisualTree(this, GetViewModel(), DataContext);
 	}
 
 	protected override void OnClosing(WindowClosingEventArgs e)
 	{
 		PositionChanged -= OnPositionChanged;
 		base.OnClosing(e);
+	}
+
+	protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+	{
+		DispatchableVisualTree.OnDetachedFromVisualTree(this, GetViewModel(), DataContext);
+		base.OnDetachedFromVisualTree(e);
 	}
 
 	protected override void OnLoaded(RoutedEventArgs e)
@@ -255,6 +317,16 @@ public partial class CornerstoneWindow : Window
 
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
 	{
+		if (change.Property == DataContextProperty)
+		{
+			DispatchableVisualTree.OnDataContextChanged(
+				this,
+				change.OldValue,
+				change.NewValue,
+				GetViewModel(),
+				VisualRoot != null);
+		}
+
 		base.OnPropertyChanged(change);
 
 		if ((change.Property == FontFamilyProperty)
@@ -288,6 +360,11 @@ public partial class CornerstoneWindow : Window
 	private void MinimizeWindow(object sender, RoutedEventArgs e)
 	{
 		WindowState = WindowState.Minimized;
+	}
+
+	private void OnDoubleTapped(object sender, TappedEventArgs e)
+	{
+		MaximizeWindow(this, e);
 	}
 
 	private void OnPositionChanged(object sender, PixelPointEventArgs e)

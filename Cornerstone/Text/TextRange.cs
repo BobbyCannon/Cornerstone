@@ -1,15 +1,15 @@
 ﻿#region References
 
 using System;
-using Cornerstone.Data;
 using Cornerstone.Reflection;
+using Range = Cornerstone.Collections.Range;
 
 #endregion
 
 namespace Cornerstone.Text;
 
 [SourceReflection]
-public partial class TextRange : Notifiable, IComparable<TextRange>
+public partial class TextRange : Range, IComparable<TextRange>
 {
 	#region Constructors
 
@@ -22,29 +22,6 @@ public partial class TextRange : Notifiable, IComparable<TextRange>
 		StartOffset = startOffset;
 		EndOffset = endOffset;
 	}
-
-	#endregion
-
-	#region Properties
-
-	/// <summary>
-	/// The exclusive offset (end) of the range.
-	/// </summary>
-	[Notify]
-	[AlsoNotify(nameof(Length))]
-	public partial int EndOffset { get; set; }
-
-	/// <summary>
-	/// The length of the selection.
-	/// </summary>
-	public int Length => EndOffset - StartOffset;
-
-	/// <summary>
-	/// The inclusive offset (start) of the range.
-	/// </summary>
-	[Notify]
-	[AlsoNotify(nameof(Length))]
-	public partial int StartOffset { get; set; }
 
 	#endregion
 
@@ -63,9 +40,15 @@ public partial class TextRange : Notifiable, IComparable<TextRange>
 			return false;
 		}
 
-		return (StartOffset == range.StartOffset) 
+		return (StartOffset == range.StartOffset)
 			|| ((StartOffset < range.EndOffset)
 				&& (range.StartOffset < EndOffset));
+	}
+
+	public void Update(int startOffset, int length)
+	{
+		StartOffset = startOffset;
+		EndOffset = startOffset + length;
 	}
 
 	#endregion

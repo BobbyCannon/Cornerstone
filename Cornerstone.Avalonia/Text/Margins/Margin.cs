@@ -1,10 +1,11 @@
 ﻿#region References
 
 using System;
+using System.IO;
 using Avalonia;
 using Avalonia.Input;
 using Avalonia.Media.Imaging;
-using Avalonia.Platform;
+using Cornerstone.Avalonia.Resources;
 
 #endregion
 
@@ -27,10 +28,26 @@ public class Margin : CornerstoneControl
 			return _rightArrowCursor;
 		}
 
-		using var stream = AssetLoader.Open(new Uri("avares://Cornerstone.Avalonia/Resources/RightArrow.cur"));
-		using var bitmap = new Bitmap(stream);
+		try
+		{
+			using var stream = ResourceService.GetEmbeddedResource("Cornerstone.Avalonia.Resources.RightArrow.cur");
 
-		return _rightArrowCursor = new Cursor(bitmap, new PixelPoint(12, 0));
+			if (stream != null)
+			{
+				using var bitmap = new Bitmap(stream);
+				_rightArrowCursor = new Cursor(bitmap, new PixelPoint(12, 0));
+			}
+			else
+			{
+				_rightArrowCursor = new Cursor(StandardCursorType.Arrow);
+			}
+		}
+		catch (InvalidOperationException)
+		{
+			return null;
+		}
+
+		return _rightArrowCursor;
 	}
 
 	#endregion

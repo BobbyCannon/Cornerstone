@@ -6,13 +6,12 @@ using System.Globalization;
 using Avalonia.Data;
 using Avalonia.Media;
 using Cornerstone.Avalonia.TreeDataGrid.Models;
-using Cornerstone.Data;
 
 #endregion
 
 namespace Cornerstone.Avalonia.TreeDataGrid.Columns;
 
-public class TextCell<T> : Notifiable, ITextCell, IDisposable, IEditableObject
+public class TextCell<T> : CornerstoneObject, ITextCell, IDisposable, IEditableObject
 {
 	#region Fields
 

@@ -4,7 +4,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
-using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Runtime;
 using Cornerstone.Serialization;
@@ -17,13 +16,14 @@ namespace Cornerstone.Settings;
 /// Represents a set of settings to load and save to a file in the binary or json format.
 /// </summary>
 public abstract class SettingsFile<T>
-	: Notifiable, IPackable
+	: CornerstoneObject, IPackable
 	where T : IPackable, new()
 {
 	#region Fields
 
 	private readonly string _directory;
 	private readonly string _fileName;
+	private bool _needsSaving;
 
 	#endregion
 
@@ -63,41 +63,12 @@ public abstract class SettingsFile<T>
 
 	public virtual void FromSpeedyPacket(SpeedyPacket values)
 	{
+		// note: this will be code generated base an attribute values
 	}
 
 	public virtual JsonSerializerOptions GetSerializationSettings()
 	{
 		return new JsonSerializerOptions();
-	}
-
-	/// <summary>
-	/// Loads the settings from a json file in the application data location.
-	/// </summary>
-	public void Load()
-	{
-		var filePath = Path.Combine(_directory, _fileName);
-		var extension = Path.GetExtension(filePath);
-
-		if (File.Exists(filePath))
-		{
-			switch (extension)
-			{
-				case ".bson":
-				{
-					var data = File.ReadAllBytes(filePath);
-					Load(data);
-					return;
-				}
-				case ".json":
-				{
-					var data = File.ReadAllText(filePath);
-					Load(data);
-					return;
-				}
-			}
-		}
-		FinalizeLoad();
-		ResetHasChanges();
 	}
 
 	/// <summary>
@@ -122,6 +93,7 @@ public abstract class SettingsFile<T>
 		}
 		FinalizeLoad();
 		ResetHasChanges();
+		base.LoadLifecycle();
 	}
 
 	/// <summary>
@@ -134,8 +106,10 @@ public abstract class SettingsFile<T>
 			var instance = JsonSerializer.Deserialize<T>(data, GetSerializationSettings());
 			UpdateWith(instance);
 		}
-		catch
+		catch (Exception ex)
 		{
+			HandleException(ex);
+
 			// todo: what should we do? Json failed?
 			#if DEBUG
 			if (Debugger.IsAttached)
@@ -146,6 +120,38 @@ public abstract class SettingsFile<T>
 		}
 		FinalizeLoad();
 		ResetHasChanges();
+		base.LoadLifecycle();
+	}
+
+	/// <summary>
+	/// Loads the settings from a json file in the application data location.
+	/// </summary>
+	public override void LoadLifecycle()
+	{
+		var filePath = Path.Combine(_directory, _fileName);
+		var extension = Path.GetExtension(filePath);
+
+		if (File.Exists(filePath))
+		{
+			switch (extension)
+			{
+				case ".bson":
+				{
+					var data = File.ReadAllBytes(filePath);
+					Load(data);
+					return;
+				}
+				case ".json":
+				{
+					var data = File.ReadAllText(filePath);
+					Load(data);
+					return;
+				}
+			}
+		}
+		FinalizeLoad();
+		ResetHasChanges();
+		base.LoadLifecycle();
 	}
 
 	/// <summary>
@@ -153,41 +159,47 @@ public abstract class SettingsFile<T>
 	/// </summary>
 	public void Save(bool force = false)
 	{
-		if (!force && !HasNotifiableChanges())
+		if (!force && !_needsSaving)
 		{
 			return;
 		}
 
-		var filePath = Path.Combine(_directory, _fileName);
-		var extension = Path.GetExtension(filePath);
-
-		switch (extension)
+		try
 		{
-			case ".bson":
+			var filePath = Path.Combine(_directory, _fileName);
+			var extension = Path.GetExtension(filePath);
+
+			switch (extension)
 			{
-				var bson = SpeedyPack.Pack(this);
-				new DirectoryInfo(_directory).SafeCreate();
-				File.WriteAllBytes(filePath, bson);
-				break;
-			}
-			case ".json":
-			{
-				var json = JsonSerializer.Serialize(this, typeof(T), GetSerializationSettings());
-				new DirectoryInfo(_directory).SafeCreate();
-				File.WriteAllText(filePath, json);
-				break;
-			}
-			default:
-			{
-				throw new NotSupportedException();
+				case ".bson":
+				{
+					var bson = SpeedyPack.Pack(this);
+					new DirectoryInfo(_directory).SafeCreate();
+					File.WriteAllBytes(filePath, bson);
+					break;
+				}
+				case ".json":
+				{
+					var json = JsonSerializer.Serialize(this, typeof(T), GetSerializationSettings());
+					new DirectoryInfo(_directory).SafeCreate();
+					File.WriteAllText(filePath, json);
+					break;
+				}
+				default:
+				{
+					throw new NotSupportedException();
+				}
 			}
 		}
-
-		ResetHasChanges();
+		finally
+		{
+			_needsSaving = false;
+		}
 	}
 
 	public virtual SpeedyPacket ToSpeedyPacket()
 	{
+		// note: this will be code generated base an attribute values
 		return new SpeedyPacket();
 	}
 
@@ -196,6 +208,17 @@ public abstract class SettingsFile<T>
 	/// </summary>
 	protected virtual void FinalizeLoad()
 	{
+		_needsSaving = false;
+	}
+
+	protected virtual void HandleException(Exception ex)
+	{
+	}
+
+	protected override void OnPropertyChanged<TValue>(string propertyName, TValue oldValue, TValue newValue)
+	{
+		_needsSaving = true;
+		base.OnPropertyChanged(propertyName, oldValue, newValue);
 	}
 
 	#endregion

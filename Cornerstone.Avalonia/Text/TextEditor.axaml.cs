@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using Avalonia;
@@ -7,6 +8,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using Cornerstone.Avalonia.Text.Margins;
 
 #endregion
@@ -16,13 +18,22 @@ namespace Cornerstone.Avalonia.Text;
 /// <summary>
 /// The text editor control.
 /// </summary>
-public partial class TextEditor : CornerstoneTemplatedControl<TextEditorViewModel>
+public partial class TextEditor : TextEditor<TextEditorViewModel>
+{
+}
+
+public partial class TextEditor<T> : CornerstoneTemplatedControl<T>
+	where T : TextEditorViewModel, new()
 {
 	#region Fields
 
-	private readonly TextEditorTextInputMethodClient _imClient;
-	private readonly LineNumberMargin _lineNumbers;
-	private ScrollViewer _scrollViewer;
+	private readonly TextEditorTextInputMethodClient<T> _imClient;
+
+	/// <summary>
+	/// True while we are programmatically pinning to the bottom. ScrollChanged in that
+	/// window must not clear <see cref="AutoScroll"/>.
+	/// </summary>
+	private bool _isProgrammaticScroll;
 
 	#endregion
 
@@ -30,12 +41,11 @@ public partial class TextEditor : CornerstoneTemplatedControl<TextEditorViewMode
 
 	public TextEditor()
 	{
-		ViewModel = new TextEditorViewModel();
+		ViewModel = new T();
 
 		_imClient = new(this);
-		_lineNumbers = new LineNumberMargin(this) { IsVisible = ViewModel.ShowLineNumbers };
 
-		LeftMargins = [_lineNumbers];
+		LeftMargins = [];
 		TextInputMethodClientRequestedEvent.AddClassHandler<TextEditor>((tb, e) => e.Client = tb._imClient);
 	}
 
@@ -61,19 +71,29 @@ public partial class TextEditor : CornerstoneTemplatedControl<TextEditorViewMode
 
 	#region Properties
 
+	/// <summary>
+	/// When true, document growth keeps the viewport pinned to the bottom.
+	/// Cleared only when the user scrolls away from the bottom (not on programmatic ScrollToEnd).
+	/// </summary>
+	[StyledProperty(DefaultValue = true)]
+	public partial bool AutoScroll { get; set; }
+
 	[DirectProperty]
 	public bool HighlightCurrentLine
 	{
-		get => ViewModel.HighlightCurrentLine;
-		set => ViewModel.HighlightCurrentLine = value;
+		get => GetViewModel().HighlightCurrentLine;
+		set => GetViewModel().HighlightCurrentLine = value;
 	}
 
 	[DirectProperty]
 	public ScrollBarVisibility HorizontalScrollBarVisibility
 	{
-		get => ViewModel.WordWrap ? ScrollBarVisibility.Disabled : ScrollBarVisibility.Auto;
-		set => ViewModel.WordWrap = value is ScrollBarVisibility.Disabled or ScrollBarVisibility.Hidden;
+		get => GetViewModel().WordWrap ? ScrollBarVisibility.Disabled : ScrollBarVisibility.Auto;
+		set => GetViewModel().WordWrap = value is ScrollBarVisibility.Disabled or ScrollBarVisibility.Hidden;
 	}
+
+	[StyledProperty]
+	public partial bool IsReadOnly { get; set; }
 
 	[DirectProperty]
 	public ObservableCollection<Control> LeftMargins { get; }
@@ -84,51 +104,145 @@ public partial class TextEditor : CornerstoneTemplatedControl<TextEditorViewMode
 	[DirectProperty]
 	public bool ShowLineNumbers
 	{
-		get => ViewModel.ShowLineNumbers;
-		set => ViewModel.ShowLineNumbers = value;
+		get => GetViewModel().ShowLineNumbers;
+		set => GetViewModel().ShowLineNumbers = value;
 	}
 
-	[StyledProperty]
+	[StyledProperty(DefaultValue = true)]
 	public partial bool ShowMargins { get; set; }
 
 	[DirectProperty]
 	public string Text
 	{
-		get => ViewModel.ToString();
-		set => ViewModel.Load(value);
+		get => GetViewModel().ToString();
+		set => GetViewModel().Load(value);
 	}
 
 	[DirectProperty]
 	public bool WordWrap
 	{
-		get => ViewModel.WordWrap;
-		set => ViewModel.WordWrap = value;
+		get => GetViewModel().WordWrap;
+		set => GetViewModel().WordWrap = value;
 	}
+
+	protected ScrollViewer ScrollViewer { get; private set; }
 
 	#endregion
 
 	#region Methods
 
+	public virtual void Clear()
+	{
+		ViewModel.Clear();
+	}
+
 	public void ScrollToEnd()
 	{
-		_scrollViewer?.ScrollToEnd();
+		if (ScrollViewer is null)
+		{
+			return;
+		}
+
+		_isProgrammaticScroll = true;
+		try
+		{
+			// Force layout so Extent includes the latest document/lines before pinning.
+			ScrollViewer.InvalidateMeasure();
+			ScrollViewer.InvalidateArrange();
+			UpdateLayout();
+
+			var maxY = Math.Max(0, ScrollViewer.Extent.Height - ScrollViewer.Viewport.Height);
+			ScrollViewer.Offset = new Vector(ScrollViewer.Offset.X, maxY);
+			ScrollViewer.ScrollToEnd();
+		}
+		finally
+		{
+			// Keep suppress until after layout ScrollChanged has been processed.
+			Dispatcher.UIThread.Post(
+				() => _isProgrammaticScroll = false,
+				DispatcherPriority.Loaded);
+		}
+	}
+
+	public void ScrollToHome()
+	{
+		ScrollViewer?.ScrollToHome();
+	}
+
+	public void ScrollToLine(int lineNumber)
+	{
+		if (ViewModel.Lines.TryGetLine(lineNumber, out var line))
+		{
+			ScrollViewer?.Offset = new(ScrollViewer.Offset.X, line.VisualLayout.Y);
+		}
+	}
+
+	public void ScrollToOffset(int offset)
+	{
+		if (ViewModel.Lines.TryGetLineForOffset(offset, out var line))
+		{
+			ScrollViewer?.Offset = new(ScrollViewer.Offset.X, line.VisualLayout.Y);
+		}
+	}
+
+	/// <summary>
+	/// Ensures the ViewModel exists and returns it.
+	/// Use this in property getters/setters.
+	/// </summary>
+	protected override T GetViewModel()
+	{
+		EnsureViewModel();
+		return ViewModel;
 	}
 
 	protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
 	{
 		base.OnApplyTemplate(e);
 
+		EnsureViewModel();
+
 		if (e.NameScope.Find("PART_ScrollViewer") is ScrollViewer scrollViewer)
 		{
-			_scrollViewer = scrollViewer;
-			_scrollViewer.ScrollChanged += ScrollViewerOnScrollChanged;
+			ScrollViewer = scrollViewer;
+			ScrollViewer?.HorizontalScrollBarVisibility = ViewModel.WordWrap ? ScrollBarVisibility.Disabled : ScrollBarVisibility.Auto;
+			AttachScrollViewer();
 		}
 		if (e.NameScope.Find("PART_TextRenderer") is TextRenderer textRenderer)
 		{
-			// Override text renderers default viewmodel
-			textRenderer.ViewModel = ViewModel;
 			Renderer = textRenderer;
 		}
+
+		// Create margins here (after we know we have a ViewModel)
+		if (LeftMargins.Count == 0)
+		{
+			LeftMargins.Add(new LineNumberMargin<T>(this)
+			{
+				IsVisible = ViewModel.ShowLineNumbers
+			});
+		}
+
+		UpdateShowMargins();
+	}
+
+	protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+	{
+		base.OnAttachedToVisualTree(e);
+		EnsureViewModel();
+		AttachViewModel(ViewModel);
+		AttachScrollViewer();
+
+		// TabControl often defers visual tree for inactive tabs; re-pin when shown again.
+		if (AutoScroll)
+		{
+			ScheduleScrollToEnd();
+		}
+	}
+
+	protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+	{
+		DetachViewModel(ViewModel);
+		DetachScrollViewer();
+		base.OnDetachedFromVisualTree(e);
 	}
 
 	protected override void OnGotFocus(FocusChangedEventArgs e)
@@ -142,36 +256,97 @@ public partial class TextEditor : CornerstoneTemplatedControl<TextEditorViewMode
 	{
 		base.OnLoaded(e);
 		UpdateShowMargins();
+		ScrollViewer?.ScrollChanged += OnScrollChanged;
 	}
 
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
 	{
-		if (change.Property == DataContextProperty)
+		if (change.Property == AutoScrollProperty)
 		{
-			if (change.OldValue is TextEditorViewModel oldValue)
+			if (AutoScroll)
 			{
-				oldValue.DocumentChanged -= DocumentOnDocumentChanged;
-				oldValue.PropertyChanged -= ViewModelOnPropertyChanged;
+				ScrollToEnd();
 			}
-			if (change.NewValue is TextEditorViewModel newValue)
-			{
-				newValue.DocumentChanged += DocumentOnDocumentChanged;
-				newValue.PropertyChanged += ViewModelOnPropertyChanged;
-				InvalidateMeasure();
-			}
+		}
+		else if (change.Property == ProfilerProperty)
+		{
+			ViewModel?.Profiler = Profiler;
+		}
+		else if (change.Property == ViewModelProperty)
+		{
+			var oldValue = change.OldValue as TextEditorViewModel;
+			var newValue = change.NewValue as TextEditorViewModel;
+
+			DetachViewModel(oldValue);
+			AttachViewModel(newValue);
+			InvalidateMeasure();
+
+			ViewModel?.Profiler = Profiler;
 		}
 
 		base.OnPropertyChanged(change);
 	}
 
+	protected virtual void OnScrollChanged(object sender, ScrollChangedEventArgs e)
+	{
+	}
+
 	protected override void OnTextInput(TextInputEventArgs e)
 	{
-		if (!e.Handled)
+		if (IsReadOnly || e.Handled)
 		{
-			ViewModel.ProcessTextInput(e);
 			e.Handled = true;
+			base.OnTextInput(e);
+			return;
 		}
+
+		ViewModel.ProcessTextInput(e.Text);
+		e.Handled = true;
 		base.OnTextInput(e);
+	}
+
+	protected override void OnUnloaded(RoutedEventArgs e)
+	{
+		base.OnUnloaded(e);
+		ScrollViewer?.ScrollChanged -= OnScrollChanged;
+	}
+
+	private void AttachScrollViewer()
+	{
+		// Attempt remove then ensure attached.
+		ScrollViewer?.ScrollChanged -= ScrollViewerOnScrollChanged;
+		ScrollViewer?.ScrollChanged += ScrollViewerOnScrollChanged;
+	}
+
+	private void AttachViewModel(TextEditorViewModel vm)
+	{
+		if (vm == null)
+		{
+			return;
+		}
+
+		vm.DocumentChanged -= DocumentOnDocumentChanged;
+		vm.DocumentChanged += DocumentOnDocumentChanged;
+
+		vm.PropertyChanged -= ViewModelOnPropertyChanged;
+		vm.PropertyChanged += ViewModelOnPropertyChanged;
+	}
+
+	private void DetachScrollViewer()
+	{
+		// Attempt remove then ensure attached.
+		ScrollViewer?.ScrollChanged -= ScrollViewerOnScrollChanged;
+	}
+
+	private void DetachViewModel(TextEditorViewModel vm)
+	{
+		if (vm == null)
+		{
+			return;
+		}
+
+		vm.DocumentChanged -= DocumentOnDocumentChanged;
+		vm.PropertyChanged -= ViewModelOnPropertyChanged;
 	}
 
 	private void DocumentOnDocumentChanged(object sender, TextDocumentChangedArgs e)
@@ -183,13 +358,75 @@ public partial class TextEditor : CornerstoneTemplatedControl<TextEditorViewMode
 		}
 		else
 		{
-			_lineNumbers.InvalidateMeasure();
+			foreach (var leftMargin in LeftMargins)
+			{
+				leftMargin.InvalidateMeasure();
+			}
 		}
+
+		// Pin after layout: Render is too early — Extent still has the old height.
+		if (AutoScroll)
+		{
+			ScheduleScrollToEnd();
+		}
+	}
+
+	private void EnsureViewModel()
+	{
+		ViewModel ??= new T();
+	}
+
+	private bool IsNearBottom(double thresholdPixels = 32)
+	{
+		var scrollViewer = ScrollViewer;
+		if (scrollViewer is null)
+		{
+			return true;
+		}
+
+		var maxOffset = Math.Max(0, scrollViewer.Extent.Height - scrollViewer.Viewport.Height);
+		return (maxOffset - scrollViewer.Offset.Y) <= thresholdPixels;
+	}
+
+	/// <summary>
+	/// Queue ScrollToEnd after the next layout pass so new lines are in Extent.
+	/// </summary>
+	private void ScheduleScrollToEnd()
+	{
+		Dispatcher.UIThread.Post(
+			() =>
+			{
+				if (AutoScroll)
+				{
+					ScrollToEnd();
+				}
+			},
+			DispatcherPriority.Loaded);
 	}
 
 	private void ScrollViewerOnScrollChanged(object sender, ScrollChangedEventArgs e)
 	{
-		_lineNumbers.InvalidateMeasure();
+		if (_isProgrammaticScroll)
+		{
+			// still allow margin invalidation below
+		}
+		// Content grew while stick-to-bottom: re-pin (Extent change, not user scroll).
+		else if (AutoScroll && (e.ExtentDelta.Y > 0))
+		{
+			ScheduleScrollToEnd();
+		}
+		// Real user scroll-away from bottom (no extent growth this event).
+		else if ((e.OffsetDelta.Y < 0)
+			&& (Math.Abs(e.ExtentDelta.Y) < 0.5)
+			&& !IsNearBottom())
+		{
+			AutoScroll = false;
+		}
+
+		foreach (var leftMargin in LeftMargins)
+		{
+			leftMargin.InvalidateMeasure();
+		}
 	}
 
 	private void UpdateShowMargins()
@@ -203,8 +440,20 @@ public partial class TextEditor : CornerstoneTemplatedControl<TextEditorViewMode
 		{
 			case nameof(ViewModel.ShowLineNumbers):
 			{
-				_lineNumbers.IsVisible = ViewModel.ShowLineNumbers;
+				foreach (var leftMargin in LeftMargins)
+				{
+					if (leftMargin is LineNumberMargin<T> lineNumberMargin)
+					{
+						lineNumberMargin.IsVisible = ViewModel.ShowLineNumbers;
+					}
+				}
+
 				UpdateShowMargins();
+				break;
+			}
+			case nameof(ViewModel.WordWrap):
+			{
+				ScrollViewer?.HorizontalScrollBarVisibility = ViewModel.WordWrap ? ScrollBarVisibility.Disabled : ScrollBarVisibility.Auto;
 				break;
 			}
 		}

@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+	<PropertyGroup>
+		<MtouchDebug>false</MtouchDebug>
+		<MtouchNoSymbolStrip>false</MtouchNoSymbolStrip>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	</PropertyGroup>
+</Project>

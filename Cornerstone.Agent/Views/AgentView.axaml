@@ -1,0 +1,173 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:state="clr-namespace:Cornerstone.Agent.Keystone.State"
+		xmlns:views="clr-namespace:Cornerstone.Agent.Views"
+		mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"
+		x:Class="Cornerstone.Agent.Views.AgentView"
+		x:DataType="views:AgentViewModel"
+		x:Name="This"
+		Background="{DynamicResource Background02}">
+	<!-- ReSharper disable Xaml.MissingGridIndex -->
+	<DockPanel>
+		<Border DockPanel.Dock="Right"
+				BorderThickness="1,0,0,0"
+				Width="320">
+			<StackPanel>
+				<LineChart
+						Theme.Color="Green"
+						CornerRadius="0"
+						BorderThickness="0"
+						Title="Tokens Per Second (t/s)"
+						Height="60" />
+				<LineChart
+						Theme.Color="Amber"
+						CornerRadius="0"
+						BorderThickness="0"
+						Title="System CPU Usage"
+						Height="60" />
+				<LineChart
+						Theme.Color="Blue"
+						CornerRadius="0"
+						BorderThickness="0"
+						Title="System Memory Usage"
+						Height="60" />
+				<LineChart
+						Theme.Color="Teal"
+						CornerRadius="0"
+						BorderThickness="0"
+						Title="GPU Memory Usage"
+						Height="60" />
+			</StackPanel>
+		</Border>
+		<Grid RowDefinitions="Auto,3*,*">
+			<!-- Model select: desired path only; weights load on next request -->
+			<Grid ColumnDefinitions="*,Auto"
+					Margin="4,4,4,0">
+				<ComboBox ItemsSource="{Binding Models}"
+						SelectedItem="{Binding SelectedModel, Mode=TwoWay}"
+						IsEnabled="{Binding CanSelectModel}"
+						CornerRadius="0"
+						PlaceholderText="Select a model...">
+					<ComboBox.ItemTemplate>
+						<DataTemplate x:DataType="state:ModelInfo">
+							<Grid ColumnDefinitions="*,Auto">
+								<TextBlock Text="{Binding FileName}"
+										VerticalAlignment="Center" />
+								<TextBlock Grid.Column="1"
+										Text="●"
+										Foreground="{DynamicResource ThemeColor05}"
+										Margin="8,0,0,0"
+										IsVisible="{Binding IsActive}"
+										VerticalAlignment="Center"
+										ToolTip.Tip="Currently loaded" />
+							</Grid>
+						</DataTemplate>
+					</ComboBox.ItemTemplate>
+				</ComboBox>
+				<Button Grid.Column="1"
+						Theme.Color="None"
+						Command="{Binding Bus.Models.RefreshModelsCommand}"
+						CornerRadius="0"
+						Width="80"
+						Margin="4,0,0,0"
+						Content="Refresh" />
+			</Grid>
+			<TabControl Grid.Row="1">
+				<TabItem Header="Output">
+					<Grid>
+						<MarkdownView x:Name="OutputMarkdownView"
+								Document="{Binding LogForOutput}"
+								AutoScroll="True"
+								BorderThickness="0"
+								CornerRadius="0"
+								WordWrap="True" />
+						<ToggleButton Classes="Icon IconOnly Dim ScrollToggle"
+								IsChecked="{Binding #OutputMarkdownView.AutoScroll, Mode=TwoWay}"
+								IsVisible="{Binding !#OutputMarkdownView.AutoScroll}" />
+					</Grid>
+				</TabItem>
+				<TabItem Header="Reasoning">
+					<Grid>
+						<TextEditor x:Name="ReasoningEditor"
+								AutoScroll="True"
+								BorderThickness="0"
+								CornerRadius="0"
+								IsReadOnly="True"
+								ShowLineNumbers="False"
+								ViewModel="{Binding LogForReasoning}"
+								WordWrap="True" />
+						<ToggleButton Classes="Icon IconOnly Dim ScrollToggle"
+								IsChecked="{Binding #ReasoningEditor.AutoScroll, Mode=TwoWay}"
+								IsVisible="{Binding !#ReasoningEditor.AutoScroll}" />
+					</Grid>
+				</TabItem>
+				<TabItem Header="Raw">
+					<Grid>
+						<TextEditor x:Name="RawEditor"
+								AutoScroll="True"
+								BorderThickness="0"
+								CornerRadius="0"
+								IsReadOnly="True"
+								ShowLineNumbers="False"
+								ViewModel="{Binding LogForRaw}"
+								WordWrap="True" />
+						<ToggleButton Classes="Icon IconOnly Dim ScrollToggle"
+								IsChecked="{Binding #RawEditor.AutoScroll, Mode=TwoWay}"
+								IsVisible="{Binding !#RawEditor.AutoScroll}" />
+					</Grid>
+				</TabItem>
+				<TabItem Header="Model">
+					<Grid>
+						<TextEditor x:Name="ModelEditor"
+								AutoScroll="True"
+								BorderThickness="0"
+								CornerRadius="0"
+								IsReadOnly="True"
+								ShowLineNumbers="False"
+								ViewModel="{Binding LogForModel}"
+								WordWrap="True" />
+						<ToggleButton Classes="Icon IconOnly Dim ScrollToggle"
+								IsChecked="{Binding #ModelEditor.AutoScroll, Mode=TwoWay}"
+								IsVisible="{Binding !#ModelEditor.AutoScroll}" />
+					</Grid>
+				</TabItem>
+				<TabItem Header="System">
+					<Grid>
+						<TextEditor x:Name="SystemEditor"
+								AutoScroll="True"
+								BorderThickness="0"
+								CornerRadius="0"
+								IsReadOnly="True"
+								ShowLineNumbers="False"
+								ViewModel="{Binding LogForSystem}"
+								WordWrap="True" />
+						<ToggleButton Classes="Icon IconOnly Dim ScrollToggle"
+								IsChecked="{Binding #SystemEditor.AutoScroll, Mode=TwoWay}"
+								IsVisible="{Binding !#SystemEditor.AutoScroll}" />
+					</Grid>
+				</TabItem>
+			</TabControl>
+			<TextBox Grid.Row="2"
+					x:Name="UserPrompt"
+					AcceptsReturn="True"
+					AcceptsTab="True"
+					BorderThickness="0"
+					HorizontalContentAlignment="Left"
+					VerticalContentAlignment="Top"
+					VerticalAlignment="Stretch"
+					TextWrapping="Wrap"
+					Text="{Binding PromptInput, Mode=TwoWay}"
+					IsEnabled="{Binding CanEditPrompt}"
+					PlaceholderText="{Binding PromptPlaceholder}"
+					Padding="0,4,0,0"
+					DragDrop.AllowDrop="True">
+				<TextBox.KeyBindings>
+					<KeyBinding Gesture="Enter"
+							Command="{Binding ExecutePromptAsyncCommand}" />
+				</TextBox.KeyBindings>
+			</TextBox>
+		</Grid>
+	</DockPanel>
+</UserControl>

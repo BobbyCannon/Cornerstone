@@ -32,7 +32,7 @@ public partial class DockingTabControl : TabControl
 	private (Rect bounds, int index)? _draggedTabGhost;
 	private readonly RearrangePreventFlicker _dragRearrangePreventFlicker;
 	private ItemsPresenter _itemsPresenterPart;
-	private readonly PresentationList<DockableTabView> _selectedOrder;
+	private readonly Presentation.PresentationList<DockableTabView> _selectedOrder;
 	private static readonly Type[] _toolbarOnly;
 
 	#endregion
@@ -46,22 +46,21 @@ public partial class DockingTabControl : TabControl
 	public DockingTabControl(params Type[] allowedDockTypes)
 	{
 		_dragRearrangePreventFlicker = new();
-		_selectedOrder = new PresentationList<DockableTabView>(null, new OrderBy<DockableTabView>(x => x.LastSelectedOn, true));
+		_selectedOrder = new Presentation.PresentationList<DockableTabView>(null, new OrderBy<DockableTabView>(x => x.LastSelectedOn, true));
 
-		AllowedDockTypes = allowedDockTypes;
+		SetValue(AllowedDockTypesProperty, allowedDockTypes ?? []);
+
 		IsHitTestVisible = true;
 		Margin = new Thickness(0);
 		Padding = new Thickness(0);
-		SelectionMode = SelectionMode.Single;
-		
+
 		if (Design.IsDesignMode)
 		{
 			AllowedDockTypes = [typeof(ToolbarTabModel)];
 		}
 
 		UpdatePseudoClasses();
-
-		AddHandler(PointerPressedEvent, OnPointerPressed, RoutingStrategies.Tunnel);
+		AddHandler(PointerPressedEvent, OnPointerPressed, RoutingStrategies.Bubble, true);
 	}
 
 	static DockingTabControl()
@@ -109,10 +108,7 @@ public partial class DockingTabControl : TabControl
 				$"{tabModel?.GetType().Name} is not allowed here.");
 		}
 
-		if (!tabModel.IsInitialized)
-		{
-			tabModel.Initialize();
-		}
+		_dockingManager?.ActivateTab(tabModel);
 		var tabView = new DockableTabView(tabModel);
 		Add(tabView);
 	}
@@ -128,7 +124,7 @@ public partial class DockingTabControl : TabControl
 		}
 
 		Items.Add(tabView);
-		SelectedItem = tabView;
+		Dispatcher.Post(() => SelectedItem = tabView);
 
 		if (tabView?.TabModel != null)
 		{
@@ -190,10 +186,8 @@ public partial class DockingTabControl : TabControl
 				$"{tabModel?.GetType().Name} is not allowed here.");
 		}
 
-		if (!tabModel.IsInitialized)
-		{
-			tabModel.Initialize();
-		}
+		// Lifecycle owned by root DockingManager (Activate is idempotent).
+		_dockingManager?.ActivateTab(tabModel);
 		var tabView = new DockableTabView(tabModel);
 		Insert(index, tabView);
 	}
@@ -208,7 +202,7 @@ public partial class DockingTabControl : TabControl
 		}
 
 		Items.Insert(index, tabView);
-		SelectedItem = tabView;
+		Dispatcher.Post(() => SelectedItem = tabView);
 
 		if (tabView?.TabModel != null)
 		{
@@ -248,9 +242,13 @@ public partial class DockingTabControl : TabControl
 
 	protected override void OnLostFocus(FocusChangedEventArgs e)
 	{
-		_draggedTab = null;
-		_draggedTabGhost = null;
-		_dragRearrangePreventFlicker.Reset();
+		if (e.NewFocusedElement is Control { DataContext: DockableTabModel tabModel }
+			&& _draggedTab is { } draggedTab
+			&& !ReferenceEquals(tabModel, draggedTab.tabItem.TabModel))
+		{
+			ReleaseDraggedTab();
+		}
+
 		base.OnLostFocus(e);
 	}
 
@@ -317,9 +315,7 @@ public partial class DockingTabControl : TabControl
 	protected override void OnPointerReleased(PointerReleasedEventArgs e)
 	{
 		base.OnPointerReleased(e);
-		_draggedTab = null;
-		_draggedTabGhost = null;
-		_dragRearrangePreventFlicker.Reset();
+		ReleaseDraggedTab();
 	}
 
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -328,7 +324,7 @@ public partial class DockingTabControl : TabControl
 		{
 			UpdatePseudoClasses();
 		}
-		if (change.Property == SelectedValueProperty)
+		if (change.Property == SelectedItemProperty)
 		{
 			if (change.NewValue is DockableTabView tab)
 			{
@@ -347,9 +343,15 @@ public partial class DockingTabControl : TabControl
 		var closeableTabItem = (DockableTabView) sender!;
 		SelectedItem = _selectedOrder.FirstOrDefault(x => x != closeableTabItem);
 		Items.Remove(closeableTabItem);
-		var tabModel = closeableTabItem.Content as DockableTabModel;
-		tabModel?.Uninitialize();
+		var tabModel = closeableTabItem.TabModel;
+		// Stop → Unload → Uninitialize + AppDispatcher.Release via root manager.
+		_dockingManager?.DeactivateTab(tabModel);
 		_dockingManager?.OnTabModelRemoved(tabModel);
+
+		if (_draggedTab is { } d && (closeableTabItem == d.tabItem))
+		{
+			ReleaseDraggedTab();
+		}
 	}
 
 	private void ItemsCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -385,7 +387,7 @@ public partial class DockingTabControl : TabControl
 	{
 		var (draggedTab, _) = _draggedTab!.Value;
 
-		if (Items.Contains(_draggedTab))
+		if (!Items.Contains(_draggedTab?.tabItem))
 		{
 			Debug.Fail("Dragged tab is not an Item of this TabControl");
 			return;
@@ -423,21 +425,18 @@ public partial class DockingTabControl : TabControl
 
 		var draggedTabIndex = Items.IndexOf(draggedTab);
 		var isAfter = hoveredIndex > draggedTabIndex;
-
 		_draggedTabGhost = (this.GetBoundsOf(draggedTab), draggedTabIndex);
 
+		// Calculate target index accounting for the shift caused by removal
+		var targetIndex = hoveredIndex + (isAfter ? 1 : 0);
+		if (draggedTabIndex < hoveredIndex)
+		{
+			// Shift correction
+			targetIndex--;
+		}
+
 		Items.RemoveAt(draggedTabIndex);
-
-		// insert before or after hovered depending on which "direction" you are dragging
-		if (isAfter)
-		{
-			Items.Insert(Items.IndexOf(hovered) + 1, draggedTab);
-		}
-		else
-		{
-			Items.Insert(Items.IndexOf(hovered), draggedTab);
-		}
-
+		Items.Insert(targetIndex, draggedTab);
 		_dragRearrangePreventFlicker.SetRearranged();
 	}
 
@@ -456,10 +455,16 @@ public partial class DockingTabControl : TabControl
 		var handler = _draggedOutTabHandler;
 		Items.Remove(tabItem);
 
+		ReleaseDraggedTab();
+
+		handler?.Invoke(this, e, tabItem, offset);
+	}
+
+	private void ReleaseDraggedTab()
+	{
 		_draggedTab = null;
 		_draggedTabGhost = null;
-
-		handler.Invoke(this, e, tabItem, offset);
+		_dragRearrangePreventFlicker.Reset();
 	}
 
 	private bool TryGetHoveredTabItem(PointerEventArgs e, out int index, [NotNullWhen(true)] out TabItem hovered)

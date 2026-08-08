@@ -8,7 +8,6 @@ using System.Linq.Expressions;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Cornerstone.Avalonia.TreeDataGrid.Experimental.Data;
-using Cornerstone.Data;
 
 #endregion
 
@@ -19,7 +18,7 @@ namespace Cornerstone.Avalonia.TreeDataGrid.Models;
 /// expander to reveal nested data.
 /// </summary>
 /// <typeparam name="TModel"> The model type. </typeparam>
-public class HierarchicalExpanderColumn<TModel> : Notifiable,
+public class HierarchicalExpanderColumn<TModel> : CornerstoneObject,
 	IColumn<TModel>,
 	IExpanderColumn<TModel>,
 	IUpdateColumnLayout
@@ -169,7 +168,7 @@ public class HierarchicalExpanderColumn<TModel> : Notifiable,
 			or nameof(SortDirection)
 			or nameof(Width))
 		{
-			OnPropertyChanged(e.PropertyName);
+			NotifyComputedPropertyChanged(e.PropertyName);
 		}
 	}
 

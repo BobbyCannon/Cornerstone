@@ -9,6 +9,7 @@ using Cornerstone.Avalonia.Extensions;
 using Cornerstone.Presentation;
 using Cornerstone.Profiling;
 using Cornerstone.Reflection;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -26,12 +27,24 @@ public partial class CornerstoneControl<T>
 
 	#region Methods
 
+	/// <inheritdoc />
+	protected override object GetViewModel()
+	{
+		return ViewModel;
+	}
+
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
 	{
 		if ((change.Property == DataContextProperty)
 			&& DataContext is T viewModel)
 		{
 			ViewModel = viewModel;
+		}
+
+		if (change.Property == ViewModelProperty)
+		{
+			DispatchableVisualTree.OnViewModelChanged(
+				this, change.OldValue, change.NewValue, DataContext, VisualRoot != null);
 		}
 
 		base.OnPropertyChanged(change);
@@ -65,12 +78,48 @@ public partial class CornerstoneControl : Control, IDispatchable
 
 	public static T GetInstance<T>()
 	{
-		return CornerstoneApplication.DependencyProvider.GetInstance<T>();
+		return AppBootstrap.GetInstance<T>();
 	}
 
 	public static object GetInstance(Type type)
 	{
-		return CornerstoneApplication.DependencyProvider.GetInstance(type);
+		return AppBootstrap.GetInstance(type);
+	}
+
+	/// <summary>
+	/// Returns the typed <c> ViewModel </c> property when this is a <see cref="CornerstoneControl{T}" />;
+	/// otherwise null. Used with <see cref="StyledElement.DataContext" /> (independently) for IsAttached.
+	/// </summary>
+	protected virtual object GetViewModel()
+	{
+		return null;
+	}
+
+	protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+	{
+		base.OnAttachedToVisualTree(e);
+		DispatchableVisualTree.OnAttachedToVisualTree(this, GetViewModel(), DataContext);
+	}
+
+	protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+	{
+		DispatchableVisualTree.OnDetachedFromVisualTree(this, GetViewModel(), DataContext);
+		base.OnDetachedFromVisualTree(e);
+	}
+
+	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+	{
+		if (change.Property == DataContextProperty)
+		{
+			DispatchableVisualTree.OnDataContextChanged(
+				this,
+				change.OldValue,
+				change.NewValue,
+				GetViewModel(),
+				VisualRoot != null);
+		}
+
+		base.OnPropertyChanged(change);
 	}
 
 	protected void OnPropertyChanged([CallerMemberName] string propertyName = null)

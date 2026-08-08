@@ -125,6 +125,7 @@
 		<Setter Property="BorderThickness" Value="{DynamicResource ControlBorderThickness}" />
 		<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
 		<Setter Property="ContentBackground" Value="Transparent" />
+		<Setter Property="DisplayMode" Value="Inline" />
 		<Setter Property="ItemContainerTheme" Value="{StaticResource HamburgerMenuTabItem}" />
 		<Setter Property="PaneCollapsedWidth" Value="{StaticResource PaneCollapsedWidth}" />
 		<Setter Property="PaneExpandedWidth" Value="{StaticResource PaneExpandedWidth}" />
@@ -140,10 +141,12 @@
 							DisplayMode="{TemplateBinding DisplayMode}"
 							IsPaneOpen="{TemplateBinding IsOpen, Mode=TwoWay}"
 							OpenPaneLength="{TemplateBinding PaneExpandedWidth}"
-							PaneBackground="{TemplateBinding PaneBackground}">
+							PaneBackground="Transparent">
 						<SplitView.Pane>
 							<Grid RowDefinitions="Auto,Auto,*,Auto"
-									Background="{TemplateBinding PaneBackground}">
+									Background="Transparent">
+								<Panel Background="{TemplateBinding PaneBackground}" 
+										Grid.RowSpan="4" />
 								<Panel Grid.Row="0"
 										Height="{StaticResource HeaderHeight}" />
 								<ContentPresenter Grid.Row="1"
@@ -214,10 +217,9 @@
 		</Setter>
 
 		<Style Selector="^ /template/ SplitView[DisplayMode=Overlay]">
-			<Setter Property="PaneBackground" Value="{TemplateBinding PaneBackground}" />
 		</Style>
 		<Style Selector="^ /template/ SplitView[DisplayMode=Overlay]">
-			<Setter Property="Background" Value="{Binding $parent[NavigationMenu].ContentBackground}" />
+			
 		</Style>
 	</ControlTheme>
 
@@ -283,9 +285,10 @@
 			<NavigationMenu x:Name="Menu"
 					Grid.Row="1"
 					BorderThickness="1"
+					PaneBackground="#99323232"
 					AutoCollapseOnSelectionChange="False"
-					IsOpen="true"
-					DisplayMode="Inline">
+					IsOpen="True"
+					DisplayMode="Overlay">
 				<NavigationMenu.InnerBottomContent>
 					<Border Padding="10,0,10,10">
 						<TextBlock Text="Bottom Content"
@@ -343,7 +346,7 @@
 				<TabItemViewModel TabName="Search" TabIcon="Icons.Search">
 					<TabItemViewModel.TabContent>
 						<Grid>
-							<TextBlock Text="Searching for content...."
+							<TextBlock Text="The quick brown fox jumped over the lazy dog's back."
 									Margin="36,0,0,0" />
 						</Grid>
 					</TabItemViewModel.TabContent>

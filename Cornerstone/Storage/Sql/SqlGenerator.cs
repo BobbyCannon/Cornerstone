@@ -3,8 +3,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Linq.Expressions;
 using Cornerstone.Reflection;
+using Cornerstone.Storage.Sql.Data;
 using Cornerstone.Text;
 using Cornerstone.Text.CodeGenerators;
 
@@ -141,6 +143,72 @@ public static class SqlGenerator
 		builder.Append(whereSql);
 
 		return (builder.ToString(), parameters);
+	}
+
+	/// <summary>
+	/// Builds the expected SqlTable schema for a given entity type.
+	/// </summary>
+	public static SqlTable GetExpectedTableInfo<T>(SqlProvider provider) where T : Entity
+	{
+		return GetExpectedTableInfo(provider, typeof(T));
+	}
+
+	/// <summary>
+	/// Builds the expected SqlTable schema for a given entity type.
+	/// </summary>
+	public static SqlTable GetExpectedTableInfo(SqlProvider provider, Type type)
+	{
+		var sourceType = SourceReflector.GetRequiredSourceType(type);
+		var tableName = GetTableName(sourceType);
+		var table = new SqlTable(tableName, string.Empty);
+
+		var properties = sourceType.GetProperties();
+		for (var i = 0; i < properties.Length; i++)
+		{
+			var prop = properties[i];
+			var attr = prop.Attributes.FirstOrDefault(a => a.Name == nameof(SqlTableColumnAttribute));
+			if (attr == null)
+			{
+				continue;
+			}
+
+			var columnName = attr.NamedArguments.TryGetValue("Name", out var value) ? value?.ToString() : prop.Name;
+			var order = attr.NamedArguments.TryGetValue("Order", out value) && value is int namedOrder ? namedOrder : i;
+			var isNullable = attr.NamedArguments.TryGetValue("IsNullable", out value) && value is true;
+			var isPrimaryKey = attr.NamedArguments.TryGetValue("IsPrimaryKey", out value) && value is true;
+			var isAutoIncrement = attr.NamedArguments.TryGetValue("IsAutoIncrement", out value) && value is true;
+			var isUnique = attr.NamedArguments.TryGetValue("IsUnique", out value) && value is true;
+			var maxLength = attr.NamedArguments.TryGetValue("MaxLength", out value) && value is int namedMax ? namedMax : (int?) null;
+
+			var propertyType = prop.PropertyInfo.PropertyType;
+			if (propertyType.IsEnum)
+			{
+				propertyType = Enum.GetUnderlyingType(propertyType);
+			}
+
+			if (propertyType.IsNullableType())
+			{
+				propertyType = propertyType.FromNullableType();
+			}
+
+			var columnType = GetSqlColumnType(propertyType, provider);
+
+			var column = new SqlTableColumn
+			{
+				Name = columnName,
+				Order = order,
+				ColumnType = columnType,
+				IsNullable = isNullable,
+				IsPrimaryKey = isPrimaryKey,
+				IsAutoIncrement = isAutoIncrement,
+				IsUnique = isUnique,
+				MaxLength = maxLength ?? -1
+			};
+
+			table.Columns.Add(column);
+		}
+
+		return table;
 	}
 
 	/// <summary>
@@ -293,15 +361,65 @@ public static class SqlGenerator
 
 	private static string GetCreateDatabaseForSqlServer(CodeBuilder builder, string databaseName)
 	{
-		builder.Write("IF NOT EXISTS (SELECT * FROM [sys].[databases] WHERE [name] = N'");
-		builder.Write(databaseName);
-		builder.WriteLine("')");
-		builder.WriteLine("BEGIN");
-		builder.Write("\tCREATE DATABASE [");
-		builder.Write(databaseName);
-		builder.WriteLine("]");
-		builder.WriteLine("END");
+		builder.Append("IF NOT EXISTS (SELECT * FROM [sys].[databases] WHERE [name] = N'");
+		builder.Append(databaseName);
+		builder.AppendLine("')");
+		builder.AppendLine("BEGIN");
+		builder.Append("\tCREATE DATABASE [");
+		builder.Append(databaseName);
+		builder.AppendLine("]");
+		builder.AppendLine("END");
 		return builder.ToString();
+	}
+
+	private static string GetSqlColumnType(Type type, SqlProvider provider)
+	{
+		if (type.IsEnum)
+		{
+			type = Enum.GetUnderlyingType(type);
+		}
+
+		if (type.IsNullableType())
+		{
+			type = type.FromNullableType();
+		}
+
+		return provider switch
+		{
+			SqlProvider.SqlServer => type switch
+			{
+				not null when type == typeof(int) => "INT",
+				not null when type == typeof(long) => "BIGINT",
+				not null when type == typeof(short) => "SMALLINT",
+				not null when type == typeof(byte) => "TINYINT",
+				not null when type == typeof(string) => "NVARCHAR",
+				not null when type == typeof(bool) => "BIT",
+				not null when type == typeof(DateTime) => "DATETIME2",
+				not null when type == typeof(Guid) => "UNIQUEIDENTIFIER",
+				not null when type == typeof(byte[]) => "VARBINARY",
+				not null when type == typeof(decimal) => "DECIMAL",
+				not null when type == typeof(double) => "FLOAT",
+				not null when type == typeof(float) => "REAL",
+				_ => "NVARCHAR"
+			},
+			SqlProvider.Sqlite => type switch
+			{
+				not null when type == typeof(int) => "INTEGER",
+				not null when type == typeof(long) => "INTEGER",
+				not null when type == typeof(short) => "INTEGER",
+				not null when type == typeof(byte) => "INTEGER",
+				not null when type == typeof(string) => "TEXT",
+				not null when type == typeof(bool) => "INTEGER",
+				not null when type == typeof(DateTime) => "TEXT",
+				not null when type == typeof(Guid) => "BLOB",
+				not null when type == typeof(byte[]) => "BLOB",
+				not null when type == typeof(decimal) => "REAL",
+				not null when type == typeof(double) => "REAL",
+				not null when type == typeof(float) => "REAL",
+				_ => "TEXT"
+			},
+			_ => "TEXT"
+		};
 	}
 
 	#endregion

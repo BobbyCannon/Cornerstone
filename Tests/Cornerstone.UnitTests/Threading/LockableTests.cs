@@ -73,38 +73,44 @@ public class LockableTests : BaseLockableTests
 	{
 		RunTestOnLock((_, lockable) =>
 		{
-			var sb = new StringBuilder();
-			var writerReady = new ManualResetEventSlim(false);
-
-			sb.Append("+R");
 			lockable.EnterReadLock();
+			IsTrue(lockable.IsReadLockHeld);
+			IsFalse(lockable.IsWriteLockHeld);
 
-			var writeAcquired = false;
+			var writeAcquired = 0;
 			var writeTask = Task.Run(() =>
 			{
-				writerReady.Set();
-				sb.Append("+W?");
 				lockable.EnterWriteLock();
-				writeAcquired = true;
-
-				sb.Append("+W");
-				lockable.ExitWriteLock();
-				sb.Append("-W");
+				Interlocked.Exchange(ref writeAcquired, 1);
+				try
+				{
+					IsTrue(lockable.IsWriteLockHeld);
+				}
+				finally
+				{
+					lockable.ExitWriteLock();
+				}
 			});
 
-			// Wait until writer is blocked at EnterWriteLock (very fast, usually < 1 ms)
-			var signaled = writerReady.Wait(TimeSpan.FromSeconds(2));
-			IsTrue(signaled, () => "Writer thread didn't reach the lock call in time");
+			// Wait until the writer is actually blocked on EnterWriteLock — not merely started.
+			// Signaling before EnterWriteLock races with ExitReadLock and can allow the writer
+			// to acquire immediately, which made the old sequence assertion flaky.
+			var awaiting = lockable.WaitUntil(x => x.IsAwaitingWriteLock, 2000);
+			IsTrue(awaiting, () => "Writer never started awaiting the write lock");
 
-			// Now that writer is queued/blocked, release the read lock
-			sb.Append("-R");
+			// Read still held: write must not have been granted yet
+			IsTrue(lockable.IsReadLockHeld);
+			IsFalse(lockable.IsWriteLockHeld);
+			AreEqual(0, Volatile.Read(ref writeAcquired),
+				() => "Write lock should not be acquired while a read lock is held");
+
 			lockable.ExitReadLock();
 
-			writeTask.Wait(TimeSpan.FromSeconds(2));
-			IsTrue(writeAcquired);
-
-			var log = sb.ToString();
-			IsTrue(log.Contains("+R+W?-R+W-W"), () => $"Unexpected sequence {log}");
+			IsTrue(writeTask.Wait(TimeSpan.FromSeconds(2)), () => "Writer did not complete after read lock release");
+			IsFalse(writeTask.IsFaulted, () => writeTask.Exception?.ToDetailedString());
+			AreEqual(1, Volatile.Read(ref writeAcquired));
+			IsFalse(lockable.IsReadLockHeld);
+			IsFalse(lockable.IsWriteLockHeld);
 		}, true);
 	}
 

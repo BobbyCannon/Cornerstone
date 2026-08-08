@@ -2,12 +2,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Cornerstone.Avalonia;
@@ -16,7 +13,6 @@ using Cornerstone.Data;
 using Cornerstone.Generators;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
-using Cornerstone.Text;
 
 #endregion
 
@@ -39,7 +35,7 @@ public partial class TabMarkdownView : CornerstoneUserControl
 		**Bold text** · *Italic text* · ***Bold + italic*** · ~~Strikethrough~~ · `inline code` · [Hyperlink to Avalonia](https://avaloniaui.net)
 
 		Normal paragraph with mixed styles. This long one tests word-wrapping and live reflow: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-		
+
 		> # Block Quotes
 		> Should be able to go cross 
 		> many lines for the quote.
@@ -59,10 +55,8 @@ public partial class TabMarkdownView : CornerstoneUserControl
 		## Code Blocks
 		```csharp
 
-		var view = new MarkdownView
-		{
-			Markdown = "Streaming...";
-		};
+		var view = new MarkdownView();
+		view.Document.Load("Streaming...");
 		```
 
 		```json
@@ -109,28 +103,19 @@ public partial class TabMarkdownView : CornerstoneUserControl
 
 	#region Fields
 
-	private readonly BackgroundWorker _benchmark;
-	private readonly IStringBuffer _markdownBuffer;
-	private readonly MarkdownGenerator _markdownGenerator;
 	private CancellationTokenSource _sampleLoopToken;
 
 	#endregion
 
 	#region Constructors
 
-	public TabMarkdownView() : this(CornerstoneApplication.GetInstance<IRuntimeInformation>())
+	public TabMarkdownView() : this(AppBootstrap.GetInstance<IRuntimeInformation>())
 	{
 	}
 
 	[DependencyInjectionConstructor]
 	public TabMarkdownView(IRuntimeInformation runtimeInformation)
 	{
-		_benchmark = new BackgroundWorker();
-		_benchmark.WorkerReportsProgress = true;
-		_benchmark.WorkerSupportsCancellation = true;
-		_markdownBuffer = new StringBuffer();
-		_markdownGenerator = new MarkdownGenerator();
-
 		RuntimeInformation = runtimeInformation;
 		DataContext = this;
 		InitializeComponent();
@@ -139,9 +124,6 @@ public partial class TabMarkdownView : CornerstoneUserControl
 	#endregion
 
 	#region Properties
-
-	[Notify]
-	public partial bool IsBenchmarking { get; set; }
 
 	[Notify]
 	public partial bool LoopSample { get; set; }
@@ -154,22 +136,12 @@ public partial class TabMarkdownView : CornerstoneUserControl
 
 	protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
 	{
-		if (!Design.IsDesignMode)
-		{
-			_benchmark.DoWork += BenchmarkOnDoWork;
-			_benchmark.ProgressChanged += BenchmarkOnProgressChanged;
-		}
 		base.OnAttachedToVisualTree(e);
 		TextEditor.ViewModel.DocumentChanged += ViewModelOnDocumentChanged;
 	}
 
 	protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
 	{
-		if (!Design.IsDesignMode)
-		{
-			_benchmark.DoWork -= BenchmarkOnDoWork;
-			_benchmark.ProgressChanged -= BenchmarkOnProgressChanged;
-		}
 		TextEditor.ViewModel.DocumentChanged -= ViewModelOnDocumentChanged;
 		base.OnDetachedFromVisualTree(e);
 	}
@@ -181,68 +153,16 @@ public partial class TabMarkdownView : CornerstoneUserControl
 		base.OnLoaded(e);
 	}
 
-	protected override void OnPropertyChanged(string propertyName)
-	{
-		if (propertyName == nameof(IsBenchmarking))
-		{
-			if (IsBenchmarking && !_benchmark.IsBusy)
-			{
-				TextEditor.ViewModel.Clear();
-				_markdownGenerator.Reset();
-				_benchmark.RunWorkerAsync();
-			}
-			if (!IsBenchmarking && _benchmark.IsBusy)
-			{
-				_benchmark.CancelAsync();
-
-				// Force garbage collection (for testing / benchmarking only!)
-				GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, true);
-				GC.WaitForPendingFinalizers();
-				GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, true);
-			}
-		}
-		base.OnPropertyChanged(propertyName);
-	}
-
-	private void BenchmarkOnDoWork(object sender, DoWorkEventArgs e)
-	{
-		while (!_benchmark.CancellationPending)
-		{
-			if (!IsBenchmarking)
-			{
-				Thread.Sleep(10);
-				continue;
-			}
-
-			lock (_markdownBuffer)
-			{
-				_markdownGenerator.GetNext(_markdownBuffer);
-				_benchmark.ReportProgress(0);
-			}
-		}
-	}
-
-	private void BenchmarkOnProgressChanged(object sender, ProgressChangedEventArgs e)
-	{
-		lock (_markdownBuffer)
-		{
-			TextEditor.ViewModel.Append(_markdownBuffer.ToString());
-			TextEditor.ScrollToEnd();
-			MarkdownView.ScrollToEnd();
-		}
-	}
-
 	private async void RunSampleStream(object sender, RoutedEventArgs e)
 	{
-		// Cancel any previous run first
-		_sampleLoopToken?.Cancel();
-		_sampleLoopToken?.Dispose();
-		_sampleLoopToken = new CancellationTokenSource();
-
-		var token = _sampleLoopToken.Token;
-
 		try
 		{
+			// Cancel any previous run first
+			_sampleLoopToken?.Cancel();
+			_sampleLoopToken?.Dispose();
+			_sampleLoopToken = new CancellationTokenSource();
+
+			var token = _sampleLoopToken.Token;
 			do
 			{
 				await RunSingleStreamPass(token);
@@ -258,10 +178,10 @@ public partial class TabMarkdownView : CornerstoneUserControl
 		{
 			// Expected when stopping
 		}
-		catch (Exception ex)
+		catch (Exception)
 		{
 			// Log unexpected error
-			Debug.WriteLine($"Streaming error: {ex}");
+			//Debug.WriteLine($"Streaming error: {ex}");
 		}
 		finally
 		{
@@ -327,7 +247,27 @@ public partial class TabMarkdownView : CornerstoneUserControl
 
 	private void ViewModelOnDocumentChanged(object sender, TextDocumentChangedArgs e)
 	{
-		MarkdownView.Markdown = TextEditor.Text;
+		// Mirror the editor document into the markdown view document (owned separately).
+		// Streaming demos use Append; full resets use Load.
+		if (e.Type == TextDocumentChangeType.Reset)
+		{
+			MarkdownView.Document.Load(TextEditor.ViewModel.ToString());
+		}
+		else if (e.Type == TextDocumentChangeType.Add)
+		{
+			if (e.Offset >= MarkdownView.Document.DocumentLength)
+			{
+				MarkdownView.Document.Append(e.Text ?? string.Empty);
+			}
+			else
+			{
+				MarkdownView.Document.Load(TextEditor.ViewModel.ToString());
+			}
+		}
+		else
+		{
+			MarkdownView.Document.Load(TextEditor.ViewModel.ToString());
+		}
 	}
 
 	#endregion

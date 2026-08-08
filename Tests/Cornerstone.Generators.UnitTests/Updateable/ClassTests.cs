@@ -12,18 +12,26 @@ public class ClassTests : GeneratorUnitTest
 	#region Methods
 
 	[TestMethod]
-	public void UpdateableActionOnProperties()
+	public void ShouldInheritAllInterfaceValues()
 	{
 		var source = """
 					namespace Cornerstone.Test.Models;
 
-					public partial class Account : Notifiable
+					[Updateable(UpdateableAction.All, ["*"])]
+					public partial class BrowserBookmark
+						: SyncModel, IBrowserBookmark,
+							IUpdateable<BrowserBookmark>,
+							IUpdateable<IBrowserBookmark>
 					{
-						[UpdateableAction(UpdateableAction.All)]
+						public bool IsParent { get; set; }
 						public string Name { get; set; }
+						public int Order { get; set; }
+						public Guid? ParentSyncId { get; set; }
+					}
 
-						[UpdateableAction(UpdateableAction.All)]
-						public int Age { get; set; }
+					public interface IBrowserBookmark : IHierarchySyncItem, ISyncEntity
+					{
+						string Name { get; set; }
 					}
 					""";
 
@@ -38,7 +46,7 @@ public class ClassTests : GeneratorUnitTest
 			// </auto-generated>
 			namespace Cornerstone.Test.Models
 			{
-				partial class Account
+				partial class BrowserBookmark
 				{
 					public override global::System.Collections.Generic.HashSet<string> GetDefaultIncludedProperties(global::Cornerstone.Data.UpdateableAction action)
 					{
@@ -53,22 +61,67 @@ public class ClassTests : GeneratorUnitTest
 							case global::Cornerstone.Data.UpdateableAction.PropertyChangeTracking:
 							case global::Cornerstone.Data.UpdateableAction.PartialUpdate:
 							{
-								response.Add("Age");
+								response.Add("CreatedOn");
+								response.Add("IsDeleted");
+								response.Add("IsParent");
+								response.Add("ModifiedOn");
 								response.Add("Name");
+								response.Add("Order");
+								response.Add("ParentSyncId");
+								response.Add("SyncId");
 								break;
 							}
 						}
 						return response;
 					}
 					
-					public virtual bool UpdateWith(global::Cornerstone.Test.Models.Account update, global::Cornerstone.Data.IncludeExcludeSettings settings)
+					public virtual bool UpdateWith(global::Cornerstone.Test.Models.BrowserBookmark update, global::Cornerstone.Data.IncludeExcludeSettings settings)
 					{
 						if (update == null)
 						{
 							return false;
 						}
-						UpdateProperty(Age, update.Age, settings.ShouldProcessProperty(nameof(Age )), x => Age = x);
-						UpdateProperty(Name, update.Name, settings.ShouldProcessProperty(nameof(Name )), x => Name = x);
+						TryUpdateProperty(CreatedOn, update.CreatedOn, settings.ShouldProcessProperty(nameof(CreatedOn)), x => CreatedOn = x);
+						TryUpdateProperty(IsDeleted, update.IsDeleted, settings.ShouldProcessProperty(nameof(IsDeleted)), x => IsDeleted = x);
+						TryUpdateProperty(IsParent, update.IsParent, settings.ShouldProcessProperty(nameof(IsParent)), x => IsParent = x);
+						TryUpdateProperty(ModifiedOn, update.ModifiedOn, settings.ShouldProcessProperty(nameof(ModifiedOn)), x => ModifiedOn = x);
+						TryUpdateProperty(Name, update.Name, settings.ShouldProcessProperty(nameof(Name)), x => Name = x);
+						TryUpdateProperty(Order, update.Order, settings.ShouldProcessProperty(nameof(Order)), x => Order = x);
+						TryUpdateProperty(ParentSyncId, update.ParentSyncId, settings.ShouldProcessProperty(nameof(ParentSyncId)), x => ParentSyncId = x);
+						TryUpdateProperty(SyncId, update.SyncId, settings.ShouldProcessProperty(nameof(SyncId)), x => SyncId = x);
+						return true;
+					}
+					
+					public override bool UpdatePropertyWith(string propertyName, object value)
+					{
+						return propertyName switch
+						{
+							nameof(CreatedOn) => TryUpdateProperty(CreatedOn, (global::System.DateTime)value, true, x => CreatedOn = x),
+							nameof(IsDeleted) => TryUpdateProperty(IsDeleted, (bool)value, true, x => IsDeleted = x),
+							nameof(IsParent) => TryUpdateProperty(IsParent, (bool)value, true, x => IsParent = x),
+							nameof(ModifiedOn) => TryUpdateProperty(ModifiedOn, (global::System.DateTime)value, true, x => ModifiedOn = x),
+							nameof(Name) => TryUpdateProperty(Name, (string)value, true, x => Name = x),
+							nameof(Order) => TryUpdateProperty(Order, (int)value, true, x => Order = x),
+							nameof(ParentSyncId) => TryUpdateProperty(ParentSyncId, (global::System.Guid?)value, true, x => ParentSyncId = x),
+							nameof(SyncId) => TryUpdateProperty(SyncId, (global::System.Guid)value, true, x => SyncId = x),
+							_ => base.UpdatePropertyWith(propertyName, value)
+						};
+					}
+					
+					public virtual bool UpdateWith(global::Cornerstone.Test.Models.IBrowserBookmark update, global::Cornerstone.Data.IncludeExcludeSettings settings)
+					{
+						if (update == null)
+						{
+							return false;
+						}
+						TryUpdateProperty(CreatedOn, update.CreatedOn, settings.ShouldProcessProperty(nameof(CreatedOn)), x => CreatedOn = x);
+						TryUpdateProperty(IsDeleted, update.IsDeleted, settings.ShouldProcessProperty(nameof(IsDeleted)), x => IsDeleted = x);
+						TryUpdateProperty(IsParent, update.IsParent, settings.ShouldProcessProperty(nameof(IsParent)), x => IsParent = x);
+						TryUpdateProperty(ModifiedOn, update.ModifiedOn, settings.ShouldProcessProperty(nameof(ModifiedOn)), x => ModifiedOn = x);
+						TryUpdateProperty(Name, update.Name, settings.ShouldProcessProperty(nameof(Name)), x => Name = x);
+						TryUpdateProperty(Order, update.Order, settings.ShouldProcessProperty(nameof(Order)), x => Order = x);
+						TryUpdateProperty(ParentSyncId, update.ParentSyncId, settings.ShouldProcessProperty(nameof(ParentSyncId)), x => ParentSyncId = x);
+						TryUpdateProperty(SyncId, update.SyncId, settings.ShouldProcessProperty(nameof(SyncId)), x => SyncId = x);
 						return true;
 					}
 					
@@ -76,7 +129,8 @@ public class ClassTests : GeneratorUnitTest
 					{
 						return update switch
 						{
-							global::Cornerstone.Test.Models.Account value => UpdateWith(value, settings),
+							global::Cornerstone.Test.Models.BrowserBookmark value => UpdateWith(value, settings),
+							global::Cornerstone.Test.Models.IBrowserBookmark value => UpdateWith(value, settings),
 							_ => base.UpdateWith(update, settings)
 						};
 					}
@@ -87,11 +141,14 @@ public class ClassTests : GeneratorUnitTest
 			// <auto-generated>
 			// Auto-generated by Cornerstone.Generators
 			// </auto-generated>
-			internal static partial class __CornerstoneGeneratedInitializer
+			namespace TestCompilation
 			{
-				[global::System.Runtime.CompilerServices.ModuleInitializer]
-				public static void Initialize()
+				public static partial class CornerstoneGenerated
 				{
+					[global::System.Runtime.CompilerServices.ModuleInitializer]
+					public static void Initialize()
+					{
+					}
 				}
 			}
 			"""
@@ -100,7 +157,7 @@ public class ClassTests : GeneratorUnitTest
 
 		ValidateSource(source, expected);
 	}
-	
+
 	[TestMethod]
 	public void UpdateableActionOnClass()
 	{
@@ -109,7 +166,7 @@ public class ClassTests : GeneratorUnitTest
 
 					[Updateable(UpdateableAction.All, [nameof(Name)])]
 					[Updateable(UpdateableAction.EverythingExceptSyncAddAndUpdate, [nameof(Age)])]
-					public partial class Account : Notifiable
+					public partial class Account : CornerstoneObject
 					{
 						public string Name { get; set; }
 						public int Age { get; set; }
@@ -160,9 +217,19 @@ public class ClassTests : GeneratorUnitTest
 						{
 							return false;
 						}
-						UpdateProperty(Age, update.Age, settings.ShouldProcessProperty(nameof(Age )), x => Age = x);
-						UpdateProperty(Name, update.Name, settings.ShouldProcessProperty(nameof(Name )), x => Name = x);
+						TryUpdateProperty(Age, update.Age, settings.ShouldProcessProperty(nameof(Age)), x => Age = x);
+						TryUpdateProperty(Name, update.Name, settings.ShouldProcessProperty(nameof(Name)), x => Name = x);
 						return true;
+					}
+					
+					public override bool UpdatePropertyWith(string propertyName, object value)
+					{
+						return propertyName switch
+						{
+							nameof(Age) => TryUpdateProperty(Age, (int)value, true, x => Age = x),
+							nameof(Name) => TryUpdateProperty(Name, (string)value, true, x => Name = x),
+							_ => base.UpdatePropertyWith(propertyName, value)
+						};
 					}
 					
 					public override bool UpdateWith(object update, global::Cornerstone.Data.IncludeExcludeSettings settings)
@@ -180,11 +247,117 @@ public class ClassTests : GeneratorUnitTest
 			// <auto-generated>
 			// Auto-generated by Cornerstone.Generators
 			// </auto-generated>
-			internal static partial class __CornerstoneGeneratedInitializer
+			namespace TestCompilation
 			{
-				[global::System.Runtime.CompilerServices.ModuleInitializer]
-				public static void Initialize()
+				public static partial class CornerstoneGenerated
 				{
+					[global::System.Runtime.CompilerServices.ModuleInitializer]
+					public static void Initialize()
+					{
+					}
+				}
+			}
+			"""
+		};
+		// Generated Code - /Expected
+
+		ValidateSource(source, expected);
+	}
+
+	[TestMethod]
+	public void UpdateableActionOnProperties()
+	{
+		var source = """
+					namespace Cornerstone.Test.Models;
+
+					public partial class Account : CornerstoneObject
+					{
+						[UpdateableAction(UpdateableAction.All)]
+						public string Name { get; set; }
+
+						[UpdateableAction(UpdateableAction.All)]
+						public int Age { get; set; }
+					}
+					""";
+
+		// Generated Code - Expected
+		var expected = new[]
+		{
+			"""
+			using System;
+			using System.Collections.Generic;
+			// <auto-generated>
+			// Auto-generated by Cornerstone.Generators
+			// </auto-generated>
+			namespace Cornerstone.Test.Models
+			{
+				partial class Account
+				{
+					public override global::System.Collections.Generic.HashSet<string> GetDefaultIncludedProperties(global::Cornerstone.Data.UpdateableAction action)
+					{
+						var response = base.GetDefaultIncludedProperties(action);
+						switch (action)
+						{
+							case global::Cornerstone.Data.UpdateableAction.SyncIncomingAdd:
+							case global::Cornerstone.Data.UpdateableAction.SyncIncomingUpdate:
+							case global::Cornerstone.Data.UpdateableAction.SyncOutgoing:
+							case global::Cornerstone.Data.UpdateableAction.UnwrapProxyEntity:
+							case global::Cornerstone.Data.UpdateableAction.Updateable:
+							case global::Cornerstone.Data.UpdateableAction.PropertyChangeTracking:
+							case global::Cornerstone.Data.UpdateableAction.PartialUpdate:
+							{
+								response.Add("Age");
+								response.Add("Name");
+								break;
+							}
+						}
+						return response;
+					}
+					
+					public virtual bool UpdateWith(global::Cornerstone.Test.Models.Account update, global::Cornerstone.Data.IncludeExcludeSettings settings)
+					{
+						if (update == null)
+						{
+							return false;
+						}
+						TryUpdateProperty(Age, update.Age, settings.ShouldProcessProperty(nameof(Age)), x => Age = x);
+						TryUpdateProperty(Name, update.Name, settings.ShouldProcessProperty(nameof(Name)), x => Name = x);
+						return true;
+					}
+					
+					public override bool UpdatePropertyWith(string propertyName, object value)
+					{
+						return propertyName switch
+						{
+							nameof(Age) => TryUpdateProperty(Age, (int)value, true, x => Age = x),
+							nameof(Name) => TryUpdateProperty(Name, (string)value, true, x => Name = x),
+							_ => base.UpdatePropertyWith(propertyName, value)
+						};
+					}
+					
+					public override bool UpdateWith(object update, global::Cornerstone.Data.IncludeExcludeSettings settings)
+					{
+						return update switch
+						{
+							global::Cornerstone.Test.Models.Account value => UpdateWith(value, settings),
+							_ => base.UpdateWith(update, settings)
+						};
+					}
+				}
+			}
+			""",
+			"""
+			// <auto-generated>
+			// Auto-generated by Cornerstone.Generators
+			// </auto-generated>
+			namespace TestCompilation
+			{
+				public static partial class CornerstoneGenerated
+				{
+					[global::System.Runtime.CompilerServices.ModuleInitializer]
+					public static void Initialize()
+					{
+					}
 				}
 			}
 			"""

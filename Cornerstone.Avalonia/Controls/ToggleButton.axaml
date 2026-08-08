@@ -173,7 +173,7 @@
 				</Style>
 				<!-- Code Template - /Color -->
 
-				<!-- Generated Code - Colors -->
+				<!-- Generated Code - Color -->
 				<Style Selector="^[(Theme.Color)=Amber]">
 					<Setter Property="Background" Value="{DynamicResource Background05}" />
 					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
@@ -1112,7 +1112,7 @@
 						</Style>
 					</Style>
 				</Style>
-				<!-- Generated Code - /Colors -->
+				<!-- Generated Code - /Color -->
 
 			</ControlTheme>
 		</ResourceDictionary>
@@ -1222,7 +1222,7 @@
 		</Style>
 		<Style Selector="^[IsChecked=True]">
 			<Setter Property="Opacity" Value="1" />
-			<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
+			<Setter Property="Background" Value="{DynamicResource Background06}" />
 			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 		</Style>
 		<Style Selector="^[IsChecked=True].Round">
@@ -1233,15 +1233,13 @@
 			<Setter Property="Background" Value="Transparent" />
 			<Setter Property="BorderBrush" Value="Transparent" />
 			<Setter Property="BorderThickness" Value="1" />
-			<Setter Property="Foreground" Value="{DynamicResource ThemeColor06}" />
-			
+			<Setter Property="Foreground" Value="{DynamicResource Foreground06}" />
 			<Style Selector="^ Path">
-				<Setter Property="Fill" Value="{DynamicResource ThemeColor05}" />
+				<Setter Property="Fill" Value="{DynamicResource Foreground05}" />
 			</Style>
 			<Style Selector="^ PathIcon">
-				<Setter Property="Foreground" Value="{DynamicResource ThemeColor05}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground05}" />
 			</Style>
-
 			<Style Selector="^[(Theme.Color)=None]">
 				<Style Selector="^ Path">
 					<Setter Property="Fill" Value="{DynamicResource Foreground00}" />
@@ -1250,13 +1248,65 @@
 					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 				</Style>
 			</Style>
-
 		</Style>
+
 		<Style Selector="^:pointerover">
 			<Setter Property="Background" Value="{DynamicResource Background05}" />
 			<Setter Property="Opacity" Value="1.0" />
 		</Style>
 
+		<Style Selector="^.LayoutSplit">
+			<Setter Property="Template">
+				<ControlTemplate>
+					<Border x:Name="ContentBorder"
+							Background="{TemplateBinding Background}"
+							BorderBrush="{TemplateBinding BorderBrush}"
+							BorderThickness="{TemplateBinding BorderThickness}"
+							CornerRadius="{TemplateBinding CornerRadius}">
+						<Path x:Name="PART_IndicatorIcon"
+								Margin="{TemplateBinding Padding}"
+								Stretch="Fill"
+								Data="{StaticResource Icons.Layout}"
+								Fill="{DynamicResource Foreground00}"
+								HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+								Opacity="1"
+								RenderTransformOrigin="50%,50%"
+								RenderTransform="rotate(0deg)">
+							<Path.Transitions>
+								<Transitions>
+									<TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" />
+								</Transitions>
+							</Path.Transitions>
+						</Path>
+					</Border>
+				</ControlTemplate>
+			</Setter>
+			<Style Selector="^ Path">
+				<Setter Property="Height" Value="15" />
+				<Setter Property="Width" Value="15" />
+			</Style>
+			<Style Selector="^ PathIcon">
+				<Setter Property="Height" Value="15" />
+				<Setter Property="Width" Value="15" />
+			</Style>
+			<Style Selector="^:pointerover /template/ Border#ContentBorder">
+				<Setter Property="Background" Value="{DynamicResource ThemeColor06}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+				<Setter Property="BorderThickness" Value="1" />
+				<Setter Property="Opacity" Value="1" />
+			</Style>
+			<Style Selector="^:checked /template/ Path#PART_IndicatorIcon">
+				<Setter Property="Data" Value="{StaticResource Icons.Layout.Split}" />
+			</Style>
+			<Style Selector="^:pointerover /template/ Path#PART_IndicatorIcon">
+				<Setter Property="Fill" Value="{DynamicResource Foreground00}" />
+				<Setter Property="Opacity" Value="1" />
+			</Style>
+			<Style Selector="^.Rotate /template/ Path#PART_IndicatorIcon">
+				<Setter Property="RenderTransform" Value="rotate(90deg)" />
+			</Style>
+		</Style>
+		
 		<Style Selector="^.LayoutDirection">
 			<Setter Property="Template">
 				<ControlTemplate>
@@ -1271,7 +1321,7 @@
 								Data="{StaticResource Icons.Orientation}"
 								Fill="{DynamicResource Foreground00}"
 								HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-								Opacity=".8"
+								Opacity="1"
 								RenderTransformOrigin="50%,50%"
 								RenderTransform="rotate(180deg)">
 							<Path.Transitions>
@@ -1307,7 +1357,43 @@
 				<Setter Property="Fill" Value="{DynamicResource Foreground00}" />
 				<Setter Property="Opacity" Value="1" />
 			</Style>
+			<Style Selector="^[IsChecked=True].IconOnly">
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="BorderBrush" Value="Transparent" />
+				<Setter Property="BorderThickness" Value="1" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground06}" />
+				<Style Selector="^ Path">
+					<Setter Property="Fill" Value="{DynamicResource Foreground00}" />
+				</Style>
+				<Style Selector="^ PathIcon">
+					<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+				</Style>
+				<Style Selector="^[(Theme.Color)=None]">
+					<Style Selector="^ Path">
+						<Setter Property="Fill" Value="{DynamicResource Foreground00}" />
+					</Style>
+					<Style Selector="^ PathIcon">
+						<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+					</Style>
+				</Style>
+			</Style>
 		</Style>
+	</Style>
+
+	<Style Selector="ToggleButton.ScrollToggle">
+		<Setter Property="HorizontalAlignment" Value="Right" />
+		<Setter Property="VerticalAlignment" Value="Bottom" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Panel Background="Transparent">
+					<Path Data="{StaticResource Icons.SolidChevronDownCircle}"
+							Height="20" Width="20"
+							Margin="0,4,0,0"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center" />
+				</Panel>
+			</ControlTemplate>
+		</Setter>
 	</Style>
 
 	<Design.PreviewWith>
@@ -1338,6 +1424,29 @@
 					</Grid>
 				</ToggleButton>
 
+				<ToggleButton Classes="Icon LayoutSplit"
+						ToolTip.Tip="Layout" />
+				<ToggleButton Classes="Icon LayoutSplit Rotate"
+						ToolTip.Tip="Layout" />
+				<ToggleButton Classes="Icon LayoutSplit"
+						IsChecked="True"
+						ToolTip.Tip="Layout" />
+				<ToggleButton Classes="Icon LayoutSplit Rotate"
+						IsChecked="True"
+						ToolTip.Tip="Layout" />
+
+				<ToggleButton Classes="Icon LayoutDirection"
+						ToolTip.Tip="Layout" />
+				<ToggleButton Classes="Icon LayoutDirection"
+						IsChecked="True"
+						ToolTip.Tip="Layout" />
+				
+				<ToggleButton Classes="Icon IconOnly LayoutDirection"
+						ToolTip.Tip="Layout" />
+				<ToggleButton Classes="Icon IconOnly LayoutDirection"
+						IsChecked="True"
+						ToolTip.Tip="Layout" />
+				
 				<ToggleButton Theme.Color="None"
 						Content="Default"
 						IsThreeState="True"
@@ -1362,6 +1471,9 @@
 				<ToggleButton Classes="Flat"
 						Content="Flat"
 						Width="120" />
+
+				<ToggleButton Classes="Icon IconOnly Dim ScrollToggle" />
+
 			</WrapPanel>
 			<PreviewCodeSnippet.ItemTemplate>
 				<DataTemplate DataType="ThemeColor">

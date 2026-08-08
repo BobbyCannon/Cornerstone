@@ -184,6 +184,12 @@ public class NumberConverter : BaseConverter
 			return DateConverter.TryFromTicks(toType, number, out value);
 		}
 
+		if ((typeof(string) == toType))
+		{
+			value = System.Convert.ToString(fromValue);
+			return true;
+		}
+
 		if (SourceTypes.StringTypes.Contains(toType))
 		{
 			value = SourceReflector.CreateInstance(toType, fromValue.ToString());

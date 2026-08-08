@@ -2,7 +2,6 @@
 
 using System;
 using System.Globalization;
-using System.Linq;
 using Avalonia;
 using Avalonia.Data.Converters;
 
@@ -18,7 +17,7 @@ public class ThicknessConverter : IValueConverter
 	{
 		return value switch
 		{
-			decimal number => new Thickness((double) number),
+			decimal number => new Thickness((double)number),
 			double number => new Thickness(number),
 			string text => Thickness.Parse(text),
 			_ => null
@@ -33,20 +32,14 @@ public class ThicknessConverter : IValueConverter
 		}
 
 		var response = CornerstoneExtensions.GetBestSingle(thickness);
-		if (targetType == typeof(decimal))
-		{
-			return System.Convert.ToDecimal(response);
-		}
-		if (targetType == typeof(double))
-		{
-			return System.Convert.ToDouble(response);
-		}
-		if (targetType == typeof(string))
-		{
-			return thickness.ToString();
-		}
 
-		return response;
+		return targetType switch
+		{
+			Type t when t == typeof(decimal) => System.Convert.ToDecimal(response),
+			Type t when t == typeof(double) => System.Convert.ToDouble(response),
+			Type t when t == typeof(string) => thickness.ToString(),
+			_ => response
+		};
 	}
 
 	#endregion

@@ -39,11 +39,6 @@ public class MarkdownViewTokenizer : Tokenizer
 			|| (type == MarkdownTokenizer.TokenTypeBoldAndItalic);
 	}
 
-	public override SyntaxColor GetColor(int type)
-	{
-		return SyntaxColor.None;
-	}
-
 	public override bool GetItalic(int type)
 	{
 		return (type == MarkdownTokenizer.TokenTypeItalic)
@@ -53,6 +48,23 @@ public class MarkdownViewTokenizer : Tokenizer
 	public override bool GetStrikethrough(int type)
 	{
 		return type == MarkdownTokenizer.TokenTypeStrikethrough;
+	}
+
+	public override SyntaxKind GetSyntaxKind(int type)
+	{
+		// Links use Method (typically blue) so they stand out without a dedicated SyntaxKind.
+		// Inline code uses String so it is visually distinct from surrounding prose.
+		if (type == MarkdownTokenizer.TokenTypeLink)
+		{
+			return SyntaxKind.Method;
+		}
+
+		if (type == MarkdownTokenizer.TokenTypeInlineCode)
+		{
+			return SyntaxKind.String;
+		}
+
+		return SyntaxKind.None;
 	}
 
 	public override bool IsStartCharacter()

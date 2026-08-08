@@ -1,40 +1,46 @@
-﻿#region References
+#region References
 
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices.JavaScript;
 using System.Threading.Tasks;
-using Avalonia.Browser;
 using Avalonia.Input;
 using Avalonia.Platform;
 using Cornerstone.Avalonia.Controls;
-using Cornerstone.Data;
-using Cornerstone.Extensions;
+using Cornerstone.Runtime;
 
 #endregion
 
 namespace Cornerstone.Avalonia.Platforms.Browser;
 
-internal class WebViewAdapter : Notifiable, IWebViewAdapter
+/// <summary>
+/// Browser WebView as a <c>position:fixed</c> DOM overlay on <c>document.body</c>.
+/// Avoids Avalonia <c>NativeControlHost</c> and never parents under <c>#out</c> (that caused WASM layout lockups).
+/// </summary>
+internal class WebViewAdapter : CornerstoneObject, IWebViewAdapter, IDisposable
 {
 	#region Fields
 
-	private readonly JSObject _content;
-	private readonly JSObject _iframe;
-	private readonly JSObjectControlHandle _jsObjectControl;
-	private readonly JSObject _root;
+	private JSObject _content;
+	private JSObject _iframe;
+	private bool _overlayAttached;
+	private JSObject _root;
 	private Uri _uri;
+	private readonly IPlatformHandle _platformHandle = new PlatformHandle(IntPtr.Zero, "DOM-OVERLAY");
 
 	#endregion
 
 	#region Constructors
 
+	/// <summary>
+	/// Parameterless ctor for DI. Marked so <see cref="DependencyProvider"/> can activate this type
+	/// (same pattern as Android/Windows WebView adapters).
+	/// </summary>
+	[DependencyInjectionConstructor]
 	public WebViewAdapter()
 	{
-		_root = BrowserInterop.CreateElement("div");
-		_iframe = BrowserInterop.CreateElement(_root, "iframe");
-		_content = BrowserInterop.CreateElement(_root, "div");
-		_jsObjectControl = new JSObjectControlHandle(_root);
+		// Lazy DOM creation — constructor must not call JS (keeps DI/resolve off the critical path).
+		IsNativeSurfaceVisible = true;
 	}
 
 	#endregion
@@ -47,13 +53,15 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter
 
 	public string Content
 	{
-		get => GetContent();
-		set => NavigateToString(Content);
+		get => string.Empty;
+		set => NavigateToString(value);
 	}
 
 	public byte[] Favicon { get; internal set; }
 
-	public IPlatformHandle PlatformHandle => _jsObjectControl;
+	public bool IsNativeSurfaceVisible { get; private set; }
+
+	public IPlatformHandle PlatformHandle => _platformHandle;
 
 	public string Title { get; internal set; }
 
@@ -63,7 +71,10 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter
 		set
 		{
 			_uri = value;
-			Navigate(value);
+			if (value != null)
+			{
+				Navigate(value);
+			}
 		}
 	}
 
@@ -71,8 +82,34 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter
 
 	#region Methods
 
+	public void AttachOverlay()
+	{
+		EnsureDom();
+
+		if (_overlayAttached)
+		{
+			return;
+		}
+
+		try
+		{
+			BrowserInterop.AttachOverlay(_root);
+			_overlayAttached = true;
+			ApplyRootVisibility();
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine("WebViewAdapter.AttachOverlay failed: " + ex);
+		}
+	}
+
 	public void AttachTo(IntPtr handleHandle)
 	{
+	}
+
+	public Task<WebViewSnapshot> CaptureSnapshotAsync(WebViewSnapshotOptions options = null)
+	{
+		return Task.FromResult(WebViewSnapshot.Failed("Browser WebView snapshot is not supported."));
 	}
 
 	public Task ClearBrowsingDataAsync()
@@ -92,6 +129,34 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter
 	{
 	}
 
+	public void DetachOverlay()
+	{
+		if (!_overlayAttached || (_root == null))
+		{
+			_overlayAttached = false;
+			return;
+		}
+
+		try
+		{
+			BrowserInterop.DetachOverlay(_root);
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine("WebViewAdapter.DetachOverlay failed: " + ex);
+		}
+
+		_overlayAttached = false;
+	}
+
+	public void Dispose()
+	{
+		DetachOverlay();
+		_iframe = null;
+		_content = null;
+		_root = null;
+	}
+
 	public IEnumerable<string> GetAvailableProfiles()
 	{
 		return [];
@@ -99,7 +164,7 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter
 
 	public string GetContent()
 	{
-		return InvokeScriptAsync("document.documentElement.outerHTML;").GetAwaiter().GetResult();
+		return string.Empty;
 	}
 
 	public Task<IEnumerable<WebViewCookie>> GetCookiesAsync()
@@ -137,31 +202,108 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter
 
 	public void Navigate(Uri uri)
 	{
-		BrowserInterop.HideElement(_content);
-		_content.SetProperty("innerHTML", string.Empty);
+		if (uri == null)
+		{
+			return;
+		}
 
-		_iframe.SetProperty("src", uri.ToString());
-		BrowserInterop.ShowElement(_iframe);
+		_uri = uri;
+		EnsureDom();
+
+		try
+		{
+			BrowserInterop.HideElement(_content);
+			_content.SetProperty("innerHTML", string.Empty);
+			_iframe.SetProperty("src", uri.AbsoluteUri);
+			BrowserInterop.ShowElement(_iframe);
+			ApplyRootVisibility();
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine("WebViewAdapter.Navigate failed: " + ex);
+		}
 	}
 
 	public string NavigateToString(string text)
 	{
-		BrowserInterop.HideElement(_iframe);
-		_iframe.SetProperty("src", string.Empty);
+		_uri = null;
+		EnsureDom();
+		text ??= string.Empty;
 
-		_content.SetProperty("innerHTML", text);
-		BrowserInterop.ShowElement(_content);
+		try
+		{
+			BrowserInterop.HideElement(_iframe);
+			_iframe.SetProperty("src", "about:blank");
+			_content.SetProperty("innerHTML", text);
+			BrowserInterop.ShowElement(_content);
+			ApplyRootVisibility();
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine("WebViewAdapter.NavigateToString failed: " + ex);
+		}
+
 		return text;
 	}
 
 	public void Reload()
 	{
-		//_webView.Reload();
+		if (_uri == null)
+		{
+			return;
+		}
+
+		var current = _uri;
+		try
+		{
+			EnsureDom();
+			_iframe.SetProperty("src", "about:blank");
+			_iframe.SetProperty("src", current.AbsoluteUri);
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine("WebViewAdapter.Reload failed: " + ex);
+		}
+	}
+
+	public void SetNativeSurfaceVisible(bool visible)
+	{
+		IsNativeSurfaceVisible = visible;
+		ApplyRootVisibility();
+	}
+
+	public void SetOverlayBounds(double x, double y, double width, double height)
+	{
+		if (!_overlayAttached || (_root == null))
+		{
+			return;
+		}
+
+		try
+		{
+			BrowserInterop.SetOverlayBounds(_root, x, y, width, height);
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine("WebViewAdapter.SetOverlayBounds failed: " + ex);
+		}
 	}
 
 	public void Stop()
 	{
-		//_webView.StopLoading();
+		if (_iframe == null)
+		{
+			return;
+		}
+
+		try
+		{
+			_iframe.SetProperty("src", "about:blank");
+		}
+		catch
+		{
+			// ignore
+		}
 	}
 
 	protected internal virtual void OnNavigationCompleted(WebViewNavigationEventArgs e)
@@ -177,6 +319,50 @@ internal class WebViewAdapter : Notifiable, IWebViewAdapter
 	protected virtual void OnNewWindowRequested(WebViewNewWindowEventArgs e)
 	{
 		NewWindowRequested?.Invoke(this, e);
+	}
+
+	private void ApplyRootVisibility()
+	{
+		if (!_overlayAttached || (_root == null))
+		{
+			return;
+		}
+
+		try
+		{
+			if (IsNativeSurfaceVisible)
+			{
+				BrowserInterop.ShowElement(_root);
+			}
+			else
+			{
+				BrowserInterop.HideElement(_root);
+			}
+		}
+		catch
+		{
+			// ignore
+		}
+	}
+
+	private void EnsureDom()
+	{
+		if (_root != null)
+		{
+			return;
+		}
+
+		// Prefer module helpers; fall back to global createElement if needed.
+		_root = BrowserInterop.CreateElement("div");
+		_iframe = BrowserInterop.CreateElement(_root, "iframe");
+		_content = BrowserInterop.CreateElement(_root, "div");
+
+		// Safer defaults for embedding third-party pages.
+		_iframe.SetProperty("loading", "lazy");
+		_iframe.SetProperty("referrerPolicy", "no-referrer");
+
+		BrowserInterop.HideElement(_iframe);
+		BrowserInterop.HideElement(_content);
 	}
 
 	#endregion

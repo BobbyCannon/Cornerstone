@@ -154,6 +154,7 @@ public class MainViewModel : ViewModel, IDisposable
 		// [MemberNotNull(nameof(_content))]
 		set
 		{
+			var oldValue = _selectedTab;
 			_selectedTab = value;
 
 			switch (value)
@@ -172,7 +173,7 @@ public class MainViewModel : ViewModel, IDisposable
 					break;
 			}
 
-			OnPropertyChanged();
+			OnPropertyChanged(nameof(SelectedTab), oldValue, value);
 		}
 	}
 
@@ -368,7 +369,7 @@ public class MainViewModel : ViewModel, IDisposable
 		}
 
 		renderer.Diagnostics.DebugOverlays = newValue;
-		OnPropertyChanged(propertyName);
+		OnPropertyChanged(propertyName, oldValue, newValue);
 	}
 
 	private IDisposable SubscribeToPointerOver(AvaloniaObject root)

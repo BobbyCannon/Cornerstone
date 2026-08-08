@@ -3,6 +3,7 @@
 using Cornerstone.Avalonia;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
+using Cornerstone.Sample.Keystone.State;
 
 #endregion
 
@@ -19,14 +20,14 @@ public partial class TabProgress : CornerstoneUserControl
 
 	#region Constructors
 
-	public TabProgress() : this(GetInstance<ApplicationSettings>())
+	public TabProgress() : this(GetInstance<AppSettings>())
 	{
 	}
 
 	[DependencyInjectionConstructor]
-	public TabProgress(ApplicationSettings applicationSettings)
+	public TabProgress(AppSettings appSettings)
 	{
-		ApplicationSettings = applicationSettings;
+		AppSettings = appSettings;
 		DataContext = this;
 		InitializeComponent();
 	}
@@ -35,7 +36,7 @@ public partial class TabProgress : CornerstoneUserControl
 
 	#region Properties
 
-	public ApplicationSettings ApplicationSettings { get; }
+	public AppSettings AppSettings { get; }
 
 	#endregion
 }

@@ -43,17 +43,17 @@ public class JsonTokenizer : Tokenizer
 	{
 		LexerStateInStringEscape = RegisterTokenState(nameof(JsonTokenizer), nameof(LexerStateInStringEscape), 200);
 
-		TokenTypeColon = RegisterTokenType("Colon", nameof(JsonTokenizer), nameof(TokenTypeColon), 200, SyntaxColor.None);
-		TokenTypeComma = RegisterTokenType("Comma", nameof(JsonTokenizer), nameof(TokenTypeComma), 201, SyntaxColor.None);
-		TokenTypeFalse = RegisterTokenType("False", nameof(JsonTokenizer), nameof(TokenTypeFalse), 202, SyntaxColor.Keyword);
-		TokenTypeLeftBrace = RegisterTokenType("Left Brace", nameof(JsonTokenizer), nameof(TokenTypeLeftBrace), 203, SyntaxColor.None);
-		TokenTypeLeftBracket = RegisterTokenType("Left Bracket", nameof(JsonTokenizer), nameof(TokenTypeLeftBracket), 204, SyntaxColor.None);
-		TokenTypeNull = RegisterTokenType("Null", nameof(JsonTokenizer), nameof(TokenTypeNull), 205, SyntaxColor.Keyword);
-		TokenTypeNumber = RegisterTokenType("Number", nameof(JsonTokenizer), nameof(TokenTypeNumber), 206, SyntaxColor.Number);
-		TokenTypeRightBrace = RegisterTokenType("Right Brace", nameof(JsonTokenizer), nameof(TokenTypeRightBrace), 207, SyntaxColor.None);
-		TokenTypeRightBracket = RegisterTokenType("Right Bracket", nameof(JsonTokenizer), nameof(TokenTypeRightBracket), 208, SyntaxColor.None);
-		TokenTypeString = RegisterTokenType("String", nameof(JsonTokenizer), nameof(TokenTypeString), 209, SyntaxColor.String);
-		TokenTypeTrue = RegisterTokenType("True", nameof(JsonTokenizer), nameof(TokenTypeTrue), 210, SyntaxColor.Keyword);
+		TokenTypeColon = RegisterTokenType("Colon", nameof(JsonTokenizer), nameof(TokenTypeColon), 200, SyntaxKind.None);
+		TokenTypeComma = RegisterTokenType("Comma", nameof(JsonTokenizer), nameof(TokenTypeComma), 201, SyntaxKind.None);
+		TokenTypeFalse = RegisterTokenType("False", nameof(JsonTokenizer), nameof(TokenTypeFalse), 202, SyntaxKind.Keyword);
+		TokenTypeLeftBrace = RegisterTokenType("Left Brace", nameof(JsonTokenizer), nameof(TokenTypeLeftBrace), 203, SyntaxKind.None);
+		TokenTypeLeftBracket = RegisterTokenType("Left Bracket", nameof(JsonTokenizer), nameof(TokenTypeLeftBracket), 204, SyntaxKind.None);
+		TokenTypeNull = RegisterTokenType("Null", nameof(JsonTokenizer), nameof(TokenTypeNull), 205, SyntaxKind.Keyword);
+		TokenTypeNumber = RegisterTokenType("Number", nameof(JsonTokenizer), nameof(TokenTypeNumber), 206, SyntaxKind.Number);
+		TokenTypeRightBrace = RegisterTokenType("Right Brace", nameof(JsonTokenizer), nameof(TokenTypeRightBrace), 207, SyntaxKind.None);
+		TokenTypeRightBracket = RegisterTokenType("Right Bracket", nameof(JsonTokenizer), nameof(TokenTypeRightBracket), 208, SyntaxKind.None);
+		TokenTypeString = RegisterTokenType("String", nameof(JsonTokenizer), nameof(TokenTypeString), 209, SyntaxKind.String);
+		TokenTypeTrue = RegisterTokenType("True", nameof(JsonTokenizer), nameof(TokenTypeTrue), 210, SyntaxKind.Keyword);
 	}
 
 	#endregion
@@ -73,7 +73,7 @@ public class JsonTokenizer : Tokenizer
 			or '{' or '}' or '[' or ']' or ':';
 	}
 
-	public override bool TryProcessContinuation(out Token token)
+	protected override bool TryProcessContinuation(out Token token)
 	{
 		if (CurrentState == LexerStateInString)
 		{
@@ -97,7 +97,7 @@ public class JsonTokenizer : Tokenizer
 		return false;
 	}
 
-	public override bool TryProcessPosition(out Token token)
+	protected override bool TryProcessPosition(out Token token)
 	{
 		var start = Position;
 		var c = Buffer[Position];

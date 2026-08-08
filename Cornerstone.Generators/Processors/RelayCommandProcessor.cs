@@ -61,5 +61,9 @@ internal sealed class RelayCommandProcessor : ITypeProcessor
 		}
 	}
 
+	void ITypeProcessor.Initialize(Compilation compilation)
+	{
+	}
+
 	#endregion
 }

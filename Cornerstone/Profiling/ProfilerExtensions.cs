@@ -12,7 +12,7 @@ public static class ProfilerExtensions
 	#region Methods
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	public static TimedScope Start(this IProfiler profiler, string name)
+	public static TimedScope Start(this Profiler profiler, string name)
 	{
 		return profiler != null
 			? new TimedScope(name, profiler)

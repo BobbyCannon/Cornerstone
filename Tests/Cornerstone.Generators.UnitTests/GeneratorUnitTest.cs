@@ -52,6 +52,7 @@ public abstract class GeneratorUnitTest : CornerstoneUnitTest
 			"using Cornerstone.Presentation;",
 			"using Cornerstone.Profiling;",
 			"using Cornerstone.Reflection;",
+			"using Cornerstone.Runtime;",
 			"using Cornerstone.Serialization;",
 			"using Cornerstone.Storage.Sql;",
 			"using Cornerstone.Sync;",
@@ -153,7 +154,7 @@ public abstract class GeneratorUnitTest : CornerstoneUnitTest
 			UpdateFile(callingMethodName, sourceFileInfo,
 				builder =>
 				{
-					builder.WriteLine();
+					builder.AppendLine();
 					builder.IndentWriteLine("var expected = new[]");
 					builder.IndentWriteLine("{");
 					builder.IncreaseIndent();
@@ -163,16 +164,16 @@ public abstract class GeneratorUnitTest : CornerstoneUnitTest
 					{
 						if (!first)
 						{
-							builder.WriteLine(",");
+							builder.AppendLine(",");
 						}
 
 						builder.IndentWrite("\"");
-						builder.Write(error.Escape());
-						builder.Write("\"");
+						builder.Append(error.Escape());
+						builder.Append("\"");
 						first = false;
 					}
 
-					builder.WriteLine();
+					builder.AppendLine();
 					builder.DecreaseIndent();
 					builder.IndentWriteLine("};");
 				});
@@ -276,7 +277,7 @@ public abstract class GeneratorUnitTest : CornerstoneUnitTest
 			UpdateFile(callingMethodName, sourceFileInfo,
 				builder =>
 				{
-					builder.WriteLine();
+					builder.AppendLine();
 					builder.IndentWriteLine("var expected = new[]");
 					builder.IndentWriteLine("{");
 					builder.IncreaseIndent();
@@ -297,11 +298,11 @@ public abstract class GeneratorUnitTest : CornerstoneUnitTest
 
 						if (index < endIndex)
 						{
-							builder.WriteLine(",");
+							builder.AppendLine(",");
 						}
 					}
 
-					builder.WriteLine();
+					builder.AppendLine();
 					builder.DecreaseIndent();
 					builder.IndentWriteLine("};");
 				});

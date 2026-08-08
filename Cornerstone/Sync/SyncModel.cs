@@ -23,11 +23,8 @@ public abstract partial class SyncModel
 	#region Properties
 
 	public partial DateTime CreatedOn { get; set; }
-
 	public partial bool IsDeleted { get; set; }
-
 	public partial DateTime ModifiedOn { get; set; }
-
 	public partial Guid SyncId { get; set; }
 
 	#endregion

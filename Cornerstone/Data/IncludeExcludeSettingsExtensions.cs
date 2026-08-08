@@ -1,6 +1,8 @@
 ﻿#region References
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using Cornerstone.Internal;
 
 #endregion
@@ -30,7 +32,7 @@ public static class IncludeExcludeSettingsExtensions
 	/// </summary>
 	/// <param name="exclusions"> The exclusions. </param>
 	/// <returns> The settings with only exclusions. </returns>
-	public static IncludeExcludeSettings ToOnlyExcludingSettings(this string[] exclusions)
+	public static IncludeExcludeSettings ToOnlyExcludingSettings(this IEnumerable<string> exclusions)
 	{
 		return new IncludeExcludeSettings(null, exclusions);
 	}
@@ -40,7 +42,7 @@ public static class IncludeExcludeSettingsExtensions
 	/// </summary>
 	/// <param name="including"> The including. </param>
 	/// <returns> The settings with only inclusions. </returns>
-	public static IncludeExcludeSettings ToOnlyIncludingSettings(this string[] including)
+	public static IncludeExcludeSettings ToOnlyIncludingSettings(this IEnumerable<string> including)
 	{
 		return new IncludeExcludeSettings(including, null);
 	}

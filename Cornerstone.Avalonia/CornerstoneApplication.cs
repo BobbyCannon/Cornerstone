@@ -1,30 +1,111 @@
-﻿#region References
+#region References
 
 using System;
 using System.ComponentModel;
-using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Cornerstone.Avalonia.Extensions;
-using Cornerstone.Extensions;
+using Cornerstone.Avalonia.Serialization;
+using Cornerstone.Keystone.Lifecycle;
 using Cornerstone.Presentation;
+using Cornerstone.Profiling;
 using Cornerstone.Runtime;
+using Dispatcher = Avalonia.Threading.Dispatcher;
 using IDispatcher = Cornerstone.Presentation.IDispatcher;
 
 #endregion
 
 namespace Cornerstone.Avalonia;
 
+public abstract class CornerstoneApplication<T> : CornerstoneApplication
+	where T : ILifecycle
+{
+	#region Properties
+
+	public T Keystone { get; protected set; }
+
+	#endregion
+
+	#region Methods
+
+	public override void Initialize()
+	{
+		// Serializer + infrastructure (base)
+		base.Initialize();
+
+		// Keystone after infrastructure (Init/Load timed by LifecycleTracker when StartupProfiler is set)
+		using (AppBootstrap.StartupProfiler.Start("Keystone.Resolve"))
+		{
+			Keystone = AppBootstrap.GetInstance<T>();
+		}
+
+		Keystone.InitializeLifecycle();
+		Keystone.LoadLifecycle();
+	}
+
+	public override void OnFrameworkInitializationCompleted()
+	{
+		if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+		{
+			desktop.ShutdownRequested += OnShutdownRequested;
+		}
+
+		// Works on any platform that implements IControlledApplicationLifetime
+		// Note: pretty sure this is desktops only (Windows, Linux, MacOS, etc.)
+		//	meaning not mobile, browser, single view, etc
+		if (ApplicationLifetime is IControlledApplicationLifetime controlled)
+		{
+			controlled.Exit += OnExit;
+		}
+
+		// Dispatcher hook + Avalonia base + StartOwnedLifecycles (Keystone then infrastructure)
+		base.OnFrameworkInitializationCompleted();
+	}
+
+	protected override void OnShutdown()
+	{
+		if (Keystone is not null)
+		{
+			AppBootstrap.TeardownLifecycle(Keystone);
+			Keystone = default;
+		}
+
+		base.OnShutdown();
+	}
+
+	/// <inheritdoc />
+	protected override void StartOwnedLifecycles()
+	{
+		Keystone.StartLifecycle();
+		base.StartOwnedLifecycles();
+	}
+
+	protected virtual void OnShutdownRequested(object sender, ShutdownRequestedEventArgs e)
+	{
+		// This is just the request, we will do the real process in OnExit.
+		//OnShutdown();
+	}
+
+	private void OnExit(object sender, ControlledApplicationLifetimeExitEventArgs e)
+	{
+		// Best-effort on platforms that support controlled exit
+		OnShutdown();
+	}
+
+	#endregion
+}
+
 public abstract class CornerstoneApplication : Application, IDispatchable
 {
 	#region Fields
 
+	private static readonly Version _avaloniaRuntimeVersion;
 	private static CornerstoneDispatcher _dispatcher;
 	private PropertyChangedEventHandler _propertyChangedHandler;
 
@@ -34,33 +115,22 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 
 	protected CornerstoneApplication()
 	{
+		DataTemplates.Add(new ViewLocator());
 		AppDomain.CurrentDomain.UnhandledException += CurrentDomainOnUnhandledException;
 		TaskScheduler.UnobservedTaskException += TaskSchedulerUnobservedTaskException;
-		RuntimeInformation.Refresh();
 	}
 
 	static CornerstoneApplication()
 	{
-		ApplicationArguments = new ApplicationArguments();
-		DependencyProvider = new DependencyProvider("Cornerstone");
-		RuntimeInformation = new();
-		RuntimeInformation.SetPlatformOverride(
-			nameof(IRuntimeInformation.AvaloniaRuntimeVersion),
-			typeof(AppBuilder).Assembly.GetName().Version
-		);
+		// Avalonia version is known here; applied once AppBootstrap is ready.
+		_avaloniaRuntimeVersion = typeof(AppBuilder).Assembly.GetName().Version;
 	}
 
 	#endregion
 
 	#region Properties
 
-	public static ApplicationArguments ApplicationArguments { get; }
-
-	public static DependencyProvider DependencyProvider { get; }
-
 	public static CornerstoneDispatcher CornerstoneDispatcher => _dispatcher ??= new CornerstoneDispatcher();
-
-	public static RuntimeInformation RuntimeInformation { get; }
 
 	#endregion
 
@@ -71,59 +141,73 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 		return CornerstoneDispatcher;
 	}
 
-	public static T GetInstance<T>()
-	{
-		return DependencyProvider.GetInstance<T>();
-	}
-
-	public static object GetInstance(Type type)
-	{
-		return DependencyProvider.GetInstance(type);
-	}
-
 	public static TopLevel GetTopLevel()
 	{
 		var response = Current.GetTopLevel();
 		return response;
 	}
 
-	public static void LogException(Exception ex)
+	public override void Initialize()
 	{
-		var runtimeInformation = DependencyProvider.GetInstance<IRuntimeInformation>();
-		var builder = new StringBuilder();
+		using (AppBootstrap.StartupProfiler.Start("App.Initialize"))
+		{
+			CornerstoneAvaloniaSerializerConfigurator.Configure();
+			base.Initialize();
 
-		builder.Append("Crash: ");
-		builder.AppendLine(ex.Message);
-		builder.AppendLine(ex.StackTrace);
-
-		builder.AppendLine("----------------------------");
-		builder.AppendLine(runtimeInformation.ToString());
-		builder.AppendLine("----------------------------");
-
-		var directory = Path.Combine(runtimeInformation.ApplicationDataLocation, "CrashLogs");
-		new DirectoryInfo(directory).SafeCreate();
-
-		var file = Path.Combine(directory, $"Crash-{DateTime.Now.Ticks:D20}.log");
-		File.WriteAllText(file, builder.ToString());
+			EnsureAppBootstrapForAvalonia();
+			ApplyAvaloniaRuntimeVersionOverride();
+			AppBootstrap.InitializeInfrastructure();
+		}
 	}
 
 	public override void OnFrameworkInitializationCompleted()
 	{
 		// Subscribe to dispatcher unhandled exceptions
-		global::Avalonia.Threading.Dispatcher.UIThread.UnhandledException += OnDispatcherOnUnhandledException;
+		Dispatcher.UIThread.UnhandledException += OnDispatcherOnUnhandledException;
 		base.OnFrameworkInitializationCompleted();
+		StartOwnedLifecycles();
+		CompleteStartupProfiling();
 	}
 
 	public override void RegisterServices()
 	{
-		DependencyProvider.AddSingleton(ApplicationArguments);
-		DependencyProvider.AddSingleton<ClipboardService>();
-		DependencyProvider.SetupCornerstoneDependencies(
-			dispatcher: CornerstoneDispatcher,
-			runtimeInformation: RuntimeInformation
-		);
+		using (AppBootstrap.StartupProfiler.Start("App.RegisterServices"))
+		{
+			EnsureAppBootstrapForAvalonia();
+			ApplyAvaloniaRuntimeVersionOverride();
 
-		base.RegisterServices();
+			// UI dispatcher may not have existed at host Main; replace null/placeholder registration.
+			AppBootstrap.DependencyProvider.SetSingleton<IDispatcher>(CornerstoneDispatcher);
+			AppBootstrap.DependencyProvider.AddSingleton(CornerstoneDispatcher);
+			AppBootstrap.DependencyProvider.AddSingleton<ClipboardService>();
+
+			base.RegisterServices();
+		}
+	}
+
+	/// <summary>
+	/// Start app-owned lifecycles after the framework is ready.
+	/// Keystone apps start Keystone first, then infrastructure.
+	/// </summary>
+	protected virtual void StartOwnedLifecycles()
+	{
+		AppBootstrap.StartInfrastructure();
+	}
+
+	/// <summary>
+	/// Freeze <see cref="AppBootstrap.StartupProfiler" /> after owned lifecycles have started.
+	/// </summary>
+	protected virtual void CompleteStartupProfiling()
+	{
+		AppBootstrap.StartupProfiler?.Complete();
+	}
+
+	/// <summary>
+	/// Stop Keystone (subclass) then infrastructure.
+	/// </summary>
+	protected virtual void OnShutdown()
+	{
+		AppBootstrap.ShutdownInfrastructure();
 	}
 
 	public static async Task<string> TryOpenFileAsync(
@@ -138,7 +222,7 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 
 		if (string.IsNullOrWhiteSpace(startingDirectory))
 		{
-			startingDirectory = RuntimeInformation.ApplicationDataLocation;
+			startingDirectory = AppBootstrap.RuntimeInformation.ApplicationDataLocation;
 		}
 
 		var defaultDirectory = await topLevel.StorageProvider.TryGetFolderFromPathAsync(startingDirectory);
@@ -164,7 +248,7 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 			return null;
 		}
 
-		startingDirectory ??= RuntimeInformation.ApplicationDataLocation;
+		startingDirectory ??= AppBootstrap.RuntimeInformation.ApplicationDataLocation;
 
 		var defaultDirectory = await topLevel.StorageProvider.TryGetFolderFromPathAsync(startingDirectory);
 		var options = new FilePickerSaveOptions
@@ -172,7 +256,7 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 			SuggestedStartLocation = defaultDirectory,
 			SuggestedFileType = defaultExtension == null ? null : fileTypeChoices.FirstOrDefault(x => x.Patterns.Any(p => p.EndsWith($".{defaultExtension}"))),
 			FileTypeChoices = fileTypeChoices,
-			DefaultExtension = defaultExtension,
+			DefaultExtension = defaultExtension
 		};
 
 		var selected = await topLevel.StorageProvider.SaveFilePickerAsync(options);
@@ -190,7 +274,7 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 		var options = new FolderPickerOpenOptions { AllowMultiple = false, Title = "Select Folder" };
 		var selected = await topLevel.StorageProvider.OpenFolderPickerAsync(options);
 		var path = selected!.FirstOrDefault();
-		var response = path.TryGetLocalPath() ?? path.Path.ToString();
+		var response = path?.TryGetLocalPath() ?? path?.Path.ToString();
 		return response;
 	}
 
@@ -200,14 +284,39 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 		_propertyChangedHandler?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 	}
 
+	/// <summary>
+	/// Design-time / tests may construct Avalonia without host Main.
+	/// </summary>
+	private static void EnsureAppBootstrapForAvalonia()
+	{
+		AppBootstrap.EnsureInitialized(
+			applicationName: "Cornerstone",
+			applicationAssembly: typeof(CornerstoneApplication).Assembly,
+			dispatcher: CornerstoneDispatcher
+		);
+	}
+
+	private static void ApplyAvaloniaRuntimeVersionOverride()
+	{
+		if (!AppBootstrap.IsInitialized || _avaloniaRuntimeVersion == null)
+		{
+			return;
+		}
+
+		AppBootstrap.RuntimeInformation.SetPlatformOverride(
+			nameof(IRuntimeInformation.AvaloniaRuntimeVersion),
+			_avaloniaRuntimeVersion
+		);
+	}
+
 	private void CurrentDomainOnUnhandledException(object sender, UnhandledExceptionEventArgs e)
 	{
-		LogException(e.ExceptionObject as Exception);
+		AppBootstrap.LogException(e.ExceptionObject as Exception);
 	}
 
 	private void OnDispatcherOnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
 	{
-		LogException(e.Exception);
+		AppBootstrap.LogException(e.Exception);
 	}
 
 	private void TaskSchedulerUnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
@@ -218,7 +327,7 @@ public abstract class CornerstoneApplication : Application, IDispatchable
 			return;
 		}
 
-		LogException(e.Exception);
+		AppBootstrap.LogException(e.Exception);
 	}
 
 	#endregion

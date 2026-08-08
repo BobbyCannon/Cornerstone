@@ -1,8 +1,11 @@
 ﻿#region References
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
+using System.Security.Cryptography;
 using System.Text;
 using Cornerstone.Text;
 
@@ -15,6 +18,24 @@ namespace Cornerstone.Extensions;
 /// </summary>
 public static class StringExtensions
 {
+	#region Fields
+
+	/// <summary>
+	/// Covers the common newlines: CR, LF, plus Unicode NEL / LS / PS
+	/// </summary>
+	public static readonly SearchValues<char> NewLineChars;
+
+	#endregion
+
+	#region Constructors
+
+	static StringExtensions()
+	{
+		NewLineChars = SearchValues.Create("\r\n\u0085\u2028\u2029");
+	}
+
+	#endregion
+
 	#region Methods
 
 	/// <summary>
@@ -107,6 +128,106 @@ public static class StringExtensions
 	}
 
 	/// <summary>
+	/// Convert the hex string back to byte array.
+	/// </summary>
+	/// <param name="value"> The hex string to be converter. </param>
+	/// <returns> The byte array. </returns>
+	public static ReadOnlySpan<byte> FromHexStringToByteArray(this string value)
+	{
+		Span<byte> buffer = stackalloc byte[value.Length / 2];
+		var status = System.Convert.FromHexString(value, buffer, out var charsConsumed, out var bytesWritten);
+
+		if ((status == OperationStatus.Done) && (bytesWritten == buffer.Length))
+		{
+			return buffer.ToArray();
+		}
+
+		// Handle invalid SHA (e.g., log error, throw, or set to empty)
+		return ReadOnlySpan<byte>.Empty;
+	}
+
+	/// <summary>
+	/// Gets a stable hash code for a string value.
+	/// </summary>
+	/// <param name="value"> The string value. </param>
+	/// <returns> The hash code for the value. </returns>
+	public static int GetStableHashCode(this string value)
+	{
+		if (value is null)
+		{
+			throw new ArgumentNullException(nameof(value));
+		}
+
+		unchecked
+		{
+			var hash1 = 5381;
+			var hash2 = hash1;
+
+			for (var i = 0; i < value.Length; i += 2)
+			{
+				hash1 = ((hash1 << 5) + hash1) ^ value[i];
+				if (i == (value.Length - 1))
+				{
+					break;
+				}
+				hash2 = ((hash2 << 5) + hash2) ^ value[i + 1];
+			}
+
+			return hash1 + (hash2 * 1566083941);
+		}
+	}
+
+	/// <summary>
+	/// Check to see if the value is only new line characters.
+	/// </summary>
+	/// <param name="value"> The value to check. </param>
+	/// <returns> True if the value is only newlines otherwise false. </returns>
+	public static bool IsNewLines(this string value)
+	{
+		if (string.IsNullOrEmpty(value))
+		{
+			return false;
+		}
+
+		// Returns true only when every character is one of the newline chars
+		return value.AsSpan().IndexOfAnyExcept(NewLineChars) < 0;
+	}
+
+	/// <summary>
+	/// Trims string to a maximum length.
+	/// </summary>
+	/// <param name="value"> The value to process. </param>
+	/// <param name="max"> The maximum length of the string. </param>
+	/// <param name="addEllipses"> The option to add ellipses to shorted strings. Defaults to false. </param>
+	/// <returns> The value limited to the maximum length. </returns>
+	public static string MaxLength(this string value, int max, bool addEllipses = false)
+	{
+		if (string.IsNullOrWhiteSpace(value) || (max <= 0))
+		{
+			return string.Empty;
+		}
+
+		if (value.Length <= max)
+		{
+			return value;
+		}
+
+		var copyLength = addEllipses && (max >= 4) ? max - 3 : max;
+
+		return string.Create(max, (value, copyLength), (span, state) =>
+		{
+			state.value.AsSpan().Slice(0, state.copyLength).CopyTo(span);
+			if (state.copyLength >= max)
+			{
+				return;
+			}
+			span[state.copyLength] = '.';
+			span[state.copyLength + 1] = '.';
+			span[state.copyLength + 2] = '.';
+		});
+	}
+
+	/// <summary>
 	/// Splits the values into an array using the delimiter
 	/// </summary>
 	/// <param name="value"> The roles for the account. </param>
@@ -124,51 +245,86 @@ public static class StringExtensions
 	/// <returns> The string in the desired format. </returns>
 	public static string ToCamelCase(this string value)
 	{
-		if (string.IsNullOrEmpty(value))
+		using var rented = StringBuilderPool.Rent();
+		var builder = rented.Value;
+		var nextCharUpper = false;
+
+		for (var i = 0; i < value.Length; i++)
 		{
-			return value ?? "";
-		}
+			var c = value[i];
 
-		ReadOnlySpan<char> s = value;
-		var buf = value.Length <= 72
-			? stackalloc char[value.Length]
-			: new char[value.Length];
-
-		int i = 0, j = 0;
-		var upperNext = false;
-
-		// Skip leading non-letters
-		while ((i < s.Length) && !char.IsLetter(s[i]))
-		{
-			i++;
-		}
-
-		if (i == s.Length)
-		{
-			return "";
-		}
-
-		// First real letter → lowercase
-		buf[j++] = char.ToLowerInvariant(s[i++]);
-
-		for (; i < s.Length; i++)
-		{
-			var c = s[i];
-
-			if (char.IsLetterOrDigit(c))
+			if (i == 0)
 			{
-				buf[j++] = upperNext ? char.ToUpperInvariant(c) : char.ToLowerInvariant(c);
-				upperNext = false;
+				builder.Append(char.IsUpper(c) ? char.ToLower(c) : c);
+				continue;
 			}
-			else
+
+			if ((c == ' ') || !char.IsLetterOrDigit(c))
 			{
-				upperNext = true;
+				nextCharUpper = true;
+				continue;
 			}
+
+			if (nextCharUpper)
+			{
+				builder.Append(char.ToUpper(c));
+				nextCharUpper = false;
+				continue;
+			}
+
+			builder.Append(c);
+		}
+		return builder.ToString();
+	}
+
+	/// <summary>
+	/// Calculate an MD5 hash for the string.
+	/// </summary>
+	/// <param name="input"> The string to hash. </param>
+	/// <returns> The MD5 formatted hash for the input. </returns>
+	public static string ToMd5HashHexString(this string input)
+	{
+		// Calculate MD5 hash from input.
+		var inputBytes = Encoding.ASCII.GetBytes(input);
+
+		// Calculate MD5 hash from input.
+		var md5 = MD5.Create();
+		var hash = md5.ComputeHash(inputBytes);
+
+		// Convert byte array to hex string.
+		var sb = new StringBuilder();
+		foreach (var item in hash)
+		{
+			sb.Append(item.ToString("X2"));
 		}
 
-		return (j == value.Length) && !upperNext
-			? value
-			: buf[..j].ToString();
+		// Return the MD5 string.
+		return sb.ToString().ToLower();
+	}
+
+	/// <summary>
+	/// Convert a string into a secure string.
+	/// </summary>
+	/// <param name="input"> The string. </param>
+	/// <param name="makeReadOnly"> Option to make the SecureString read only. </param>
+	/// <returns> The secure string. </returns>
+	public static SecureString ToSecureString(this string input, bool makeReadOnly = false)
+	{
+		if (input == null)
+		{
+			return null;
+		}
+
+		var secure = new SecureString();
+		foreach (var c in input)
+		{
+			secure.AppendChar(c);
+		}
+		if (makeReadOnly)
+		{
+			secure.MakeReadOnly();
+		}
+		return secure;
 	}
 
 	public static bool TryProcessCharacter(char c, StringBuilder builder)

@@ -5,13 +5,16 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
+using Cornerstone.Reflection;
 using Cornerstone.Runtime;
 
 #endregion
 
 namespace Cornerstone.Profiling;
 
-public class Profiler : IEnumerable<TimedScopeStats>, IProfiler
+[SourceReflection]
+[DependencyInjected]
+public class Profiler : IEnumerable<TimedScopeStats>
 {
 	#region Fields
 
@@ -23,11 +26,24 @@ public class Profiler : IEnumerable<TimedScopeStats>, IProfiler
 
 	#region Constructors
 
-	public Profiler(IDateTimeProvider dateTimeProvider = null)
+	[DependencyInjectionConstructor]
+	public Profiler(IRuntimeInformation runtimeInformation, IDateTimeProvider dateTimeProvider = null)
+		: this(runtimeInformation.ApplicationName, dateTimeProvider)
 	{
+	}
+
+	public Profiler(string name = null, IDateTimeProvider dateTimeProvider = null)
+	{
+		Name = name ?? string.Empty;
 		_dateTimeProvider = dateTimeProvider ?? DateTimeProvider.RealTime;
 		_stats = new();
 	}
+
+	#endregion
+
+	#region Properties
+
+	public string Name { get; }
 
 	#endregion
 
@@ -41,6 +57,28 @@ public class Profiler : IEnumerable<TimedScopeStats>, IProfiler
 	public long GetTicks()
 	{
 		return _dateTimeProvider.UtcNow.Ticks;
+	}
+
+	/// <summary>
+	/// Count-only sample (no clock). Prefer for rate charts when duration is irrelevant.
+	/// </summary>
+	public void Increment(string name, long delta = 1)
+	{
+		if ((name is null) || (delta == 0))
+		{
+			return;
+		}
+
+		// Hot path: GetOrAdd is amortized O(1), rare alloc only on first-seen name
+		var stats = _stats.GetOrAdd(name, static _ => new TimedScopeStats());
+		if (delta == 1)
+		{
+			Interlocked.Increment(ref stats.Count);
+		}
+		else
+		{
+			Interlocked.Add(ref stats.Count, delta);
+		}
 	}
 
 	public void OnScopeEnded(TimedScope timedScope, long elapsedTicks)
@@ -105,21 +143,26 @@ public class Profiler : IEnumerable<TimedScopeStats>, IProfiler
 		return (stats.AverageHistory, stats.PerSecondHistory);
 	}
 
+	public void Time(string name, Action action)
+	{
+		using (ProfilerExtensions.Start(this, name))
+		{
+			action.Invoke();
+		}
+	}
+
+	public T Time<T>(string name, Func<T> action)
+	{
+		using (ProfilerExtensions.Start(this, name))
+		{
+			return action.Invoke();
+		}
+	}
+
 	IEnumerator IEnumerable.GetEnumerator()
 	{
 		return GetEnumerator();
 	}
-
-	#endregion
-}
-
-public interface IProfiler
-{
-	#region Methods
-
-	long GetTicks();
-
-	void OnScopeEnded(TimedScope timedScope, long elapsedTicks);
 
 	#endregion
 }

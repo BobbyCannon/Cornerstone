@@ -74,6 +74,11 @@ public class CSharpCodeBuilder
 
 	public static string GetConstantLiteral(TypedConstant constant)
 	{
+		if (constant is { Kind: TypedConstantKind.Type, Value: ITypeSymbol typeFromConstant })
+		{
+			return ToTypeofLiteral(typeFromConstant);
+		}
+
 		if (constant is { Kind: TypedConstantKind.Enum, Type: INamedTypeSymbol { EnumUnderlyingType: not null } enumType })
 		{
 			var enumTypeName = enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
@@ -109,7 +114,7 @@ public class CSharpCodeBuilder
 			}
 			case string s:
 			{
-				return $"\"{s}\"";
+				return $"\"{EscapeForCSharpLiteral(s)}\"";
 			}
 			case float f:
 			{
@@ -119,7 +124,13 @@ public class CSharpCodeBuilder
 			{
 				return d.ToString("G17");
 			}
-			case IEnumerable a:
+			case ITypeSymbol typeSymbol:
+			{
+				// Attribute ctor args like typeof(IRuntimeInformation) are stored as ITypeSymbol.
+				// Emitting the type name alone is invalid C# (CS0119); use typeof(...).
+				return ToTypeofLiteral(typeSymbol);
+			}
+			case IEnumerable a when value is not string:
 			{
 				var b = new StringBuilder();
 				var first = true;
@@ -138,6 +149,11 @@ public class CSharpCodeBuilder
 			}
 		}
 		return value.ToString();
+	}
+
+	private static string ToTypeofLiteral(ITypeSymbol typeSymbol)
+	{
+		return $"typeof({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})";
 	}
 
 	public void IncreaseIndent()
@@ -368,6 +384,20 @@ public class CSharpCodeBuilder
 		{
 			_builder.Append(IndentChar, Indent);
 		}
+	}
+
+	private static string EscapeForCSharpLiteral(string value)
+	{
+		if (value == null)
+		{
+			return "null";
+		}
+
+		return value.Replace("\\", "\\\\")
+			.Replace("\"", "\\\"")
+			.Replace("\n", "\\n")
+			.Replace("\r", "\\r")
+			.Replace("\t", "\\t");
 	}
 
 	#endregion

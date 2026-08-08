@@ -7,7 +7,7 @@ using System.Linq;
 using Avalonia.Input;
 using Cornerstone.Avalonia.TreeDataGrid.Models;
 using Cornerstone.Avalonia.TreeDataGrid.Selection;
-using Cornerstone.Data;
+using Cornerstone.Presentation;
 
 #endregion
 
@@ -17,7 +17,7 @@ namespace Cornerstone.Avalonia.TreeDataGrid;
 /// A data source for a <see cref="TreeDataGrid" /> which displays a flat grid.
 /// </summary>
 /// <typeparam name="TModel"> The model type. </typeparam>
-public class FlatTreeDataGridSource<TModel> : Notifiable,
+public class FlatTreeDataGridSource<TModel> : CornerstoneObject,
 	ITreeDataGridSource<TModel>,
 	IDisposable
 	where TModel : class
@@ -57,7 +57,9 @@ public class FlatTreeDataGridSource<TModel> : Notifiable,
 
 	public bool IsHierarchical => false;
 
-	public bool IsSorted => _comparer is not null;
+	public bool IsSorted =>
+		_comparer is not null
+		|| (Items is IPresentationList pList && pList.ShouldOrder());
 
 	public IEnumerable<TModel> Items
 	{
@@ -66,6 +68,7 @@ public class FlatTreeDataGridSource<TModel> : Notifiable,
 		{
 			if (_items != value)
 			{
+				var oldItems = _items;
 				_items = value;
 				_itemsView = TreeDataGridItemsSourceView<TModel>.GetOrCreate(value);
 				_rows?.SetItems(_itemsView);
@@ -73,7 +76,7 @@ public class FlatTreeDataGridSource<TModel> : Notifiable,
 				{
 					_selection.Source = value;
 				}
-				OnPropertyChanged();
+				OnPropertyChanged(nameof(Items), oldItems, _items);
 			}
 		}
 	}
@@ -94,15 +97,16 @@ public class FlatTreeDataGridSource<TModel> : Notifiable,
 		}
 		set
 		{
-			if (_selection != value)
+			if ((_selection != value) || !_isSelectionSet)
 			{
-				if (value?.Source != _items)
+				if ((value != null) && (value.Source != _items))
 				{
 					throw new InvalidOperationException("Selection source must be set to Items.");
 				}
+				var oldValue = value;
 				_selection = value;
 				_isSelectionSet = true;
-				OnPropertyChanged();
+				OnPropertyChanged(nameof(Selection), oldValue, value);
 			}
 		}
 	}
@@ -119,6 +123,11 @@ public class FlatTreeDataGridSource<TModel> : Notifiable,
 	{
 		_rows?.Dispose();
 		GC.SuppressFinalize(this);
+	}
+
+	public TModel GetAt(int index)
+	{
+		return _itemsView.GetAt(index);
 	}
 
 	private AnonymousSortableRows<TModel> CreateRows()
@@ -188,6 +197,11 @@ public class FlatTreeDataGridSource<TModel> : Notifiable,
 		{
 			items.Insert(ti++, sourceItems[si]);
 		}
+	}
+
+	object ITreeDataGridSource.GetAt(int index)
+	{
+		return GetAt(index);
 	}
 
 	IEnumerable<object> ITreeDataGridSource.GetModelChildren(object model)

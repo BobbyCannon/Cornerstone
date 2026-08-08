@@ -2,12 +2,12 @@
 
 using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -46,6 +46,7 @@ public static class AvaloniaExtensions
 			{
 				target.BringIntoView();
 				var ok = target.Focus(NavigationMethod.Tab);
+
 				//Debug.WriteLine($"Delayed focus → {target.Name}  success:{ok}  focused:{target.IsFocused}");
 			},
 			TimeSpan.FromMilliseconds(delayMs)

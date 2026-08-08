@@ -4,35 +4,171 @@
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
-		mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="400"
+		mc:Ignorable="d" d:DesignHeight="700" d:DesignWidth="520"
 		x:Class="Cornerstone.Sample.Tabs.TabWelcome"
 		x:DataType="tabs:TabWelcome"
 		x:Name="This">
 	<!-- ReSharper disable Xaml.MissingGridIndex -->
+	<UserControl.Styles>
+		<Style Selector="SelectableTextBlock">
+			<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.OpenSansLight}" />
+			<Setter Property="FontSize" Value="15" />
+			<Setter Property="TextWrapping" Value="Wrap" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+		</Style>
+		<Style Selector="Border.FeatureCard">
+			<Setter Property="Background" Value="{DynamicResource Background03}" />
+			<Setter Property="BorderBrush" Value="{DynamicResource Background06}" />
+			<Setter Property="BorderThickness" Value="1" />
+			<Setter Property="CornerRadius" Value="12" />
+			<Setter Property="Padding" Value="16" />
+			<Setter Property="HorizontalAlignment" Value="Stretch" />
+		</Style>
+		<Style Selector="Border.IconBadge">
+			<Setter Property="Width" Value="44" />
+			<Setter Property="Height" Value="44" />
+			<Setter Property="CornerRadius" Value="12" />
+			<Setter Property="Margin" Value="0,0,14,0" />
+			<Setter Property="VerticalAlignment" Value="Top" />
+		</Style>
+		<Style Selector="Border.IconBadge > Path">
+			<Setter Property="Width" Value="22" />
+			<Setter Property="Height" Value="22" />
+			<Setter Property="Stretch" Value="Uniform" />
+			<Setter Property="HorizontalAlignment" Value="Center" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+			<Setter Property="Fill" Value="White" />
+		</Style>
+		<Style Selector="TextBlock.FeatureTitle">
+			<Setter Property="FontSize" Value="18" />
+			<Setter Property="FontWeight" Value="SemiBold" />
+			<Setter Property="Margin" Value="0,0,0,6" />
+		</Style>
+	</UserControl.Styles>
 	<DockPanel>
-		<DockPanel.Styles>
-			<Style Selector="SelectableTextBlock">
-				<Setter Property="FontSize" Value="16" />
-				<Setter Property="TextWrapping" Value="Wrap" />
-			</Style>
-		</DockPanel.Styles>
-		<Grid DockPanel.Dock="Top" Margin="10">
-			<TextBlock Classes="Header"
+		<Grid DockPanel.Dock="Top" Margin="10,14,10,6"
+				ColumnDefinitions="Auto,*"
+				HorizontalAlignment="Center">
+			<Image Grid.Column="0"
+					Source="/Assets/Cornerstone.png"
+					Height="40" Width="40"
+					Margin="0,0,10,0" />
+			<TextBlock Grid.Column="1"
+					Classes="Header"
 					HorizontalAlignment="Center"
-					Margin="0,0,0,20"
+					VerticalAlignment="Center"
 					Text="Welcome to Cornerstone" />
 		</Grid>
 		<ScrollViewer HorizontalScrollBarVisibility="Disabled">
-			<SelectableTextBlock>
-				<SelectableTextBlock.Text>
-					Hi, I’m Bobby, a software architect who loves designing and
-					building software. I created Cornerstone to document my personal
-					journey of growth and learning through code. Driven by my passion
-					for crafting code and embracing challenges, Cornerstone is a
-					flexible, robust platform for developers to build their
-					applications.
-				</SelectableTextBlock.Text>
-			</SelectableTextBlock>
+			<StackPanel Margin="16,8,16,20"
+					HorizontalAlignment="Stretch"
+					Spacing="14">
+				<!-- Intro -->
+				<Border BorderThickness="0"
+						CornerRadius="12"
+						Padding="16,14">
+					<Grid ColumnDefinitions="Auto,*">
+						<SelectableTextBlock Grid.Column="1"
+								VerticalAlignment="Center">
+							<SelectableTextBlock.Text>
+								Cornerstone is a high-performance .NET framework for building reliable,
+								observable, syncable, and testable applications — without sacrificing speed.
+								Use the sample tabs to explore UI controls and core patterns.
+							</SelectableTextBlock.Text>
+						</SelectableTextBlock>
+					</Grid>
+				</Border>
+
+				<!-- Feature highlights -->
+				<!-- Keystone -->
+				<Border Classes="FeatureCard">
+					<Grid ColumnDefinitions="Auto,*">
+						<Border Classes="IconBadge"
+								Background="{StaticResource Purple05}">
+							<Path Data="{StaticResource Icons.BoxLayered}" />
+						</Border>
+						<StackPanel Grid.Column="1">
+							<TextBlock Classes="FeatureTitle"
+									Foreground="{StaticResource Purple05}"
+									Text="Keystone" />
+							<SelectableTextBlock>
+								<SelectableTextBlock.Text>
+									The architectural core: Bus : State : Engine. State is the single
+									source of truth, Engine processors apply changes, and the Bus
+									decouples producers from consumers.
+								</SelectableTextBlock.Text>
+							</SelectableTextBlock>
+						</StackPanel>
+					</Grid>
+				</Border>
+
+				<!-- AppDispatcher -->
+				<Border Classes="FeatureCard">
+					<Grid ColumnDefinitions="Auto,*">
+						<Border Classes="IconBadge"
+								Background="{StaticResource Blue05}">
+							<Path Data="{StaticResource Icons.DoubleArrow.Right}"
+									Margin="2,4,0,0"/>
+						</Border>
+						<StackPanel Grid.Column="1">
+							<TextBlock Classes="FeatureTitle"
+									Foreground="{StaticResource Blue05}"
+									Text="AppDispatcher" />
+							<SelectableTextBlock>
+								<SelectableTextBlock.Text>
+									An optional hard tick loop that projects model updates into attached
+									ViewModels on the UI thread. Detached views pay no update cost.
+								</SelectableTextBlock.Text>
+							</SelectableTextBlock>
+						</StackPanel>
+					</Grid>
+				</Border>
+
+				<!-- Sync -->
+				<Border Classes="FeatureCard">
+					<Grid ColumnDefinitions="Auto,*">
+						<Border Classes="IconBadge"
+								Background="{StaticResource Teal05}">
+							<Path Data="{StaticResource Icons.Share.Fill}" />
+						</Border>
+						<StackPanel Grid.Column="1">
+							<TextBlock Classes="FeatureTitle"
+									Foreground="{StaticResource Teal05}"
+									Text="Sync" />
+							<SelectableTextBlock>
+								<SelectableTextBlock.Text>
+									Built-in entity synchronization across clients, services, and
+									databases — stable SyncIds, pull-then-push, compact SpeedyPack
+									payloads.
+								</SelectableTextBlock.Text>
+							</SelectableTextBlock>
+						</StackPanel>
+					</Grid>
+				</Border>
+
+				<!-- Explore -->
+				<Border Classes="FeatureCard">
+					<Grid ColumnDefinitions="Auto,*">
+						<Border Classes="IconBadge"
+								Background="{StaticResource Amber05}">
+							<Path Data="{StaticResource Icons.List.Bulleted}"
+									Height="24" Width="24"
+									Margin="0,5,0,0" />
+						</Border>
+						<StackPanel Grid.Column="1">
+							<TextBlock Classes="FeatureTitle"
+									Foreground="{StaticResource Amber05}"
+									Text="Explore" />
+							<SelectableTextBlock>
+								<SelectableTextBlock.Text>
+									Browse the tabs for live demos — AppDispatcher, Markdown, docking,
+									grids, and more. Open the Documentation tab for the full framework reader.
+								</SelectableTextBlock.Text>
+							</SelectableTextBlock>
+						</StackPanel>
+					</Grid>
+				</Border>
+			</StackPanel>
 		</ScrollViewer>
 	</DockPanel>
 </UserControl>

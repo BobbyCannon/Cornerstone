@@ -4,45 +4,117 @@
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
-		mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="600"
+		mc:Ignorable="d" d:DesignHeight="700" d:DesignWidth="900"
 		x:Class="Cornerstone.Sample.Tabs.TabTreeDataGrid"
 		x:DataType="tabs:TabTreeDataGrid"
 		x:Name="This">
 	<!-- ReSharper disable Xaml.MissingGridIndex -->
-	<DockPanel>
+	<DockPanel VerticalSpacing="10"
+			Margin="0,0,0,10">
 		<Grid DockPanel.Dock="Top" Margin="10">
 			<TextBlock Classes="Header"
 					HorizontalAlignment="Center"
 					Text="{x:Static tabs:TabTreeDataGrid.HeaderName}" />
 		</Grid>
-		<Grid ColumnDefinitions="*,*"
-				DockPanel.Dock="Top">
-			<WrapPanel Grid.Column="0"
-					ItemSpacing="10"
-					LineSpacing="10"
-					Margin="10">
-				<Button Theme.Color="None" Content="10k accounts" Command="{Binding Load}" CommandParameter="sample" />
-				<Button Theme.Color="None" Content="500k Accounts" Command="{Binding Load}" CommandParameter="large" />
-				<Button Theme.Color="None" Content="1m Accounts (Huge)" Command="{Binding Load}" CommandParameter="huge" />
-			</WrapPanel>
-			<WrapPanel Grid.Column="1"
-					ItemSpacing="10"
-					LineSpacing="10"
-					Margin="10"
-					HorizontalAlignment="Right">
-				<Button Theme.Color="None" Click="ExpandAllSamples">Expand All</Button>
-				<Button Theme.Color="None" Click="CollapseAllSample">Collapse All</Button>
-			</WrapPanel>
-		</Grid>
-		<TabControl>
-			<TabItem Header="Hierarchy List">
-				<TreeDataGrid x:Name="TreeDataGridHierarchy"
-						ItemsSource="{Binding TreeDataGridHierarchicalSource}" />
-			</TabItem>
-			<TabItem Header="Flat List">
-				<TreeDataGrid x:Name="TreeDataGridFlat"
-						ItemsSource="{Binding TreeDataGridFlatSource}" />
-			</TabItem>
-		</TabControl>
+
+		<!-- Load sizes -->
+		<WrapPanel DockPanel.Dock="Top"
+				ItemSpacing="10"
+				LineSpacing="10"
+				Margin="10,0">
+			<Button Theme.Color="None" Content="50 accounts" Command="{Binding Load}" CommandParameter="tiny" />
+			<Button Theme.Color="None" Content="200 accounts" Command="{Binding Load}" CommandParameter="small" />
+			<Button Theme.Color="None" Content="10k accounts" Command="{Binding Load}" CommandParameter="sample" />
+			<Button Theme.Color="None" Content="500k" Command="{Binding Load}" CommandParameter="large" />
+			<Button Theme.Color="None" Content="1m" Command="{Binding Load}" CommandParameter="huge" />
+		</WrapPanel>
+		<WrapPanel DockPanel.Dock="Top"
+				ItemSpacing="10"
+				LineSpacing="10"
+				Margin="10,0">
+			<Button Theme.Color="None" Click="ExpandAllSamples">Expand All</Button>
+			<Button Theme.Color="None" Click="CollapseAllSample">Collapse All</Button>
+		</WrapPanel>
+		
+		<!-- Filter (PresentationList.FilterCheck on both hierarchy + flat) -->
+		<Border DockPanel.Dock="Top"
+				Background="{DynamicResource Background02}"
+				BorderBrush="{DynamicResource BorderBrush}"
+				BorderThickness="1"
+				Margin="10,0"
+				Padding="10">
+			<StackPanel Spacing="8">
+				<TextBlock Text="Filter"
+						Opacity="0.85" />
+				<TextBlock Text="Matches Name, Id, or Detail. Flat list = matching accounts only (no parents). Hierarchy = matches + path parents (so you can open the tree to a hit), never non-matching siblings."
+						TextWrapping="Wrap"
+						Opacity="0.65"
+						FontSize="12" />
+				<TextBox Classes="Search ClearButton"
+						PlaceholderText="Filter accounts…"
+						Text="{Binding FilterText, Mode=TwoWay}" />
+			</StackPanel>
+		</Border>
+
+		<!-- Scroll / row height lab -->
+		<Border DockPanel.Dock="Top"
+				Background="{DynamicResource Background02}"
+				BorderBrush="{DynamicResource BorderBrush}"
+				BorderThickness="1"
+				Margin="10,0"
+				Padding="10">
+			<StackPanel Spacing="8">
+				<TextBlock Text="Scroll lab"
+						Opacity="0.85" />
+				<TextBlock Text="{Binding ScrollLabHint}"
+						TextWrapping="Wrap"
+						Opacity="0.65"
+						FontSize="12" />
+				<WrapPanel ItemSpacing="16" LineSpacing="8">
+					<CheckBox Content="Use fixed row height"
+							IsChecked="{Binding UseFixedRowHeight, Mode=TwoWay}"
+							VerticalAlignment="Center" />
+					<StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+						<TextBlock Text="MinRowHeight"
+								VerticalAlignment="Center"
+								Opacity="0.85" />
+						<NumericUpDown
+								Width="100"
+								Minimum="16"
+								Maximum="96"
+								Increment="2"
+								Value="{Binding RowHeight, Mode=TwoWay}" />
+					</StackPanel>
+					<CheckBox Content="Variable multi-line details"
+							IsChecked="{Binding UseVariableDetailLines, Mode=TwoWay}"
+							VerticalAlignment="Center"
+							ToolTip.Tip="Adds 0–4 detail lines so non-fixed mode measures uneven row heights" />
+				</WrapPanel>
+				<TextBlock Text="{Binding StatusText}"
+						FontFamily="{x:Static CornerstoneTheme.DejaVuSansMono}"
+						FontSize="12"
+						Opacity="0.8" />
+			</StackPanel>
+		</Border>
+
+		<Border Margin="10,0"
+				Background="{DynamicResource Background02}"
+				BorderBrush="{DynamicResource BorderBrush}"
+				BorderThickness="1">
+			<TabControl>
+				<TabItem Header="Hierarchy List">
+					<TreeDataGrid x:Name="TreeDataGridHierarchy"
+							ItemsSource="{Binding TreeDataGridHierarchicalSource}"
+							MinRowHeight="{Binding RowHeight}"
+							UseFixedRowHeight="{Binding UseFixedRowHeight}" />
+				</TabItem>
+				<TabItem Header="Flat List">
+					<TreeDataGrid x:Name="TreeDataGridFlat"
+							ItemsSource="{Binding TreeDataGridFlatSource}"
+							MinRowHeight="{Binding RowHeight}"
+							UseFixedRowHeight="{Binding UseFixedRowHeight}" />
+				</TabItem>
+			</TabControl>
+		</Border>
 	</DockPanel>
 </UserControl>

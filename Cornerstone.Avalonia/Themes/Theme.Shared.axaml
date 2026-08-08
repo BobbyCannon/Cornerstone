@@ -6,7 +6,7 @@
 	<SolidColorBrush x:Key="BorderBrushFocused" Color="{DynamicResource Background08}" />
 
 	<Color x:Key="SelectionColor">#660055FF</Color>
-	<SolidColorBrush x:Key="SelectionBrush" Color="{DynamicResource SelectionColor}" />
+	<SolidColorBrush x:Key="SelectionBrush" Color="{StaticResource SelectionColor}" />
 
 	<Design.PreviewWith>
 		<PreviewCodeSnippet Width="600">

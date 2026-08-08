@@ -21,6 +21,8 @@ public static class Comparer
 		// Do not reorder these comparers, very important.
 		Comparers =
 		[
+			new DateComparer(),
+			new TimeComparer(),
 			new DictionaryComparer(),
 			new ListComparer(),
 			new StringComparer(),
@@ -50,6 +52,20 @@ public static class Comparer
 	#endregion
 
 	#region Methods
+
+	/// <summary>
+	/// Compare the expected to the actual value.
+	/// </summary>
+	/// <param name="expected"> The expected value. </param>
+	/// <param name="actual"> The actual value to compare to expected. </param>
+	/// <param name="settings"> The settings for the compare session. </param>
+	/// <returns> True if the values are equal otherwise false. </returns>
+	public static bool AreEqual<T, T2>(T expected, T2 actual, ComparerSettings? settings = null)
+	{
+		var session = StartSession(expected, actual, settings);
+		session.Compare();
+		return session.Result == CompareResult.AreEqual;
+	}
 
 	public static CompareSession<T, T2> StartSession<T, T2>(T expected, T2 actual, ComparerSettings? settings)
 	{

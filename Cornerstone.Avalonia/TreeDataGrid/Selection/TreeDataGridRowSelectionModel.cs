@@ -17,15 +17,18 @@ namespace Cornerstone.Avalonia.TreeDataGrid.Selection;
 
 public class TreeDataGridRowSelectionModel<TModel> : TreeSelectionModelBase<TModel>,
 	ITreeDataGridRowSelectionModel<TModel>,
-	ITreeDataGridSelectionInteraction
+	ITreeDataGridSelectionInteraction,
+	IDisposable
 	where TModel : class
 {
 	#region Fields
 
 	private static readonly Point _invalidPoint;
+	private bool _isCacheValid;
 	private int _lastCharPressedTime;
 	private Point _pressedPoint;
 	private bool _raiseViewSelectionChanged;
+	private List<TModel> _selectedItemsCache;
 	private readonly List<int> _selectionOrder;
 	private readonly ITreeDataGridSource<TModel> _source;
 	private string _typedWord;
@@ -42,6 +45,8 @@ public class TreeDataGridRowSelectionModel<TModel> : TreeSelectionModelBase<TMod
 		_selectionOrder = [];
 		_typedWord = "";
 		_source = source;
+		_selectedItemsCache = [];
+		_isCacheValid = false;
 
 		SelectionChanged += OnSelectionChanged;
 	}
@@ -59,6 +64,11 @@ public class TreeDataGridRowSelectionModel<TModel> : TreeSelectionModelBase<TMod
 	{
 		get
 		{
+			if (_isCacheValid && (_selectedItemsCache.Count > 0))
+			{
+				return _selectedItemsCache;
+			}
+
 			var list = new List<TModel>();
 			foreach (var rowIndex in _selectionOrder)
 			{
@@ -69,6 +79,15 @@ public class TreeDataGridRowSelectionModel<TModel> : TreeSelectionModelBase<TMod
 					list.Add(m);
 				}
 			}
+
+			if (list.Count > 0)
+			{
+				_selectedItemsCache = list;
+				_isCacheValid = true;
+				return _selectedItemsCache;
+			}
+
+			_isCacheValid = false;
 			return list;
 		}
 	}
@@ -88,6 +107,7 @@ public class TreeDataGridRowSelectionModel<TModel> : TreeSelectionModelBase<TMod
 	public override void Clear()
 	{
 		_selectionOrder.Clear();
+		_isCacheValid = false;
 		base.Clear();
 	}
 
@@ -100,6 +120,15 @@ public class TreeDataGridRowSelectionModel<TModel> : TreeSelectionModelBase<TMod
 		}
 
 		base.Deselect(index);
+	}
+
+	public void Dispose()
+	{
+		SelectionChanged -= OnSelectionChanged;
+		_viewSelectionChanged = null;
+		_selectionOrder.Clear();
+		_selectedItemsCache?.Clear();
+		_isCacheValid = false;
 	}
 
 	protected internal override IEnumerable<TModel> GetChildren(TModel node)
@@ -134,6 +163,8 @@ public class TreeDataGridRowSelectionModel<TModel> : TreeSelectionModelBase<TMod
 				}
 				else
 				{
+					// Avoid string concatenation allocation by using a buffer or accepting the cost for short patterns.
+					// Given net10.0 and AOT constraints, string interning or pooling could be added if profiling dictates.
 					candidatePattern = _typedWord + typedChar;
 				}
 			}
@@ -310,19 +341,27 @@ public class TreeDataGridRowSelectionModel<TModel> : TreeSelectionModelBase<TMod
 			e.Handled = TryKeyExpandCollapse(sender, direction.Value, anchor);
 		}
 
-		if (!e.Handled && (!ctrl || shift))
+		if (ctrl && ((direction == NavigationDirection.First) || (direction == NavigationDirection.Last)))
+		{
+			var newIndex = direction == NavigationDirection.First ? 0 : _source.Rows.Count - 1;
+			UpdateSelection(sender, newIndex);
+			sender.RowsPresenter?.BringIntoView(newIndex);
+			FocusRow(sender, sender.TryGetRow(newIndex));
+			e.Handled = true;
+		}
+		else if (!e.Handled && (!ctrl || shift))
 		{
 			e.Handled = MoveSelection(sender, direction.Value, shift, anchor);
 		}
 
-		if (!e.Handled 
+		if (!e.Handled
 			&& (direction == NavigationDirection.Left)
 			&& anchor?.Rows is HierarchicalRows<TModel> hierarchicalRows
 			&& (anchorRowIndex > 0))
 		{
 			var newIndex = hierarchicalRows.GetParentRowIndex(AnchorIndex);
 			UpdateSelection(sender, newIndex);
-			FocusRow(sender, sender.RowsPresenter.BringIntoView(newIndex));
+			FocusRow(sender, sender.RowsPresenter?.BringIntoView(newIndex));
 		}
 
 		if (!e.Handled
@@ -332,7 +371,7 @@ public class TreeDataGridRowSelectionModel<TModel> : TreeSelectionModelBase<TMod
 		{
 			var newIndex = anchorRowIndex + 1;
 			UpdateSelection(sender, newIndex);
-			sender.RowsPresenter.BringIntoView(newIndex);
+			sender.RowsPresenter?.BringIntoView(newIndex);
 		}
 	}
 
@@ -541,6 +580,7 @@ public class TreeDataGridRowSelectionModel<TModel> : TreeSelectionModelBase<TMod
 	{
 		if (!IsSourceCollectionChanging)
 		{
+			_isCacheValid = false;
 			_viewSelectionChanged?.Invoke(this, e);
 		}
 		else

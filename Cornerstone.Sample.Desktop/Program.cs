@@ -4,7 +4,7 @@ using System;
 using Avalonia;
 using Avalonia.Controls;
 using Cornerstone.Avalonia;
-using Cornerstone.Avalonia.Platforms.Windows;
+using Cornerstone.Avalonia.Platforms;
 using Cornerstone.Runtime;
 
 #endregion
@@ -23,7 +23,6 @@ internal class Program
 		var response = AppBuilder
 			.Configure<App>()
 			.UsePlatformDetect()
-			.UseCornerstone()
 			.LogToTrace();
 
 		#if DEBUG
@@ -41,9 +40,8 @@ internal class Program
 	[STAThread]
 	public static void Main(string[] args)
 	{
-		CornerstoneApplication.RuntimeInformation.Initialize(typeof(Program).Assembly);
-		CornerstoneApplication.RuntimeInformation.SetPlatformOverride(nameof(IRuntimeInformation.ApplicationName), "Cornerstone.Sample");
-		BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+		AppBootstrap.Initialize("Cornerstone.Sample", typeof(Program).Assembly, args);
+		BuildAvaloniaApp().UseCornerstone(args).StartWithClassicDesktopLifetime(args);
 	}
 
 	#endregion

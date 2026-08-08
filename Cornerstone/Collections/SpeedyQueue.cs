@@ -3,13 +3,12 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Cornerstone.Data;
 
 #endregion
 
 namespace Cornerstone.Collections;
 
-public class SpeedyQueue<T> : Notifiable, IQueue<T>
+public class SpeedyQueue<T> : CornerstoneObject, IQueue<T>
 {
 	#region Fields
 
@@ -148,10 +147,26 @@ public class SpeedyQueue<T> : Notifiable, IQueue<T>
 		return true;
 	}
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public bool TryPeek(out T value)
+	{
+		if (_count == 0)
+		{
+			value = default;
+			return false;
+		}
+
+		value = Mode == QueueMode.FIFO
+			? _buffer[_head]
+			: _buffer[(_tail - 1) & _mask];
+
+		return true;
+	}
+
 	protected virtual void OnQueueChanged()
 	{
-		OnPropertyChanged(nameof(Count));
-		OnPropertyChanged(nameof(IsEmpty));
+		NotifyComputedPropertyChanged(nameof(Count));
+		NotifyComputedPropertyChanged(nameof(IsEmpty));
 		QueueChanged?.Invoke(this, EventArgs.Empty);
 	}
 
@@ -236,6 +251,8 @@ public interface IQueue<T>
 	void Enqueue(ReadOnlySpan<T> values);
 
 	bool TryDequeue(out T value);
+
+	bool TryPeek(out T value);
 
 	#endregion
 }

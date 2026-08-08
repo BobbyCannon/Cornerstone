@@ -2,22 +2,21 @@
 
 using Avalonia;
 using Cornerstone.Avalonia.Controls;
+using Cornerstone.Runtime;
 
 #endregion
 
 namespace Cornerstone.Avalonia.Platforms.Windows;
 
-public static class AppBuilderExtensions
+internal static class AppBuilderExtensions
 {
 	#region Methods
 
-	public static AppBuilder UseCornerstone(this AppBuilder builder)
+	public static AppBuilder UseCornerstone(AppBuilder builder, string[] args)
 	{
-		GlobalAppBuilder.UseCornerstone(builder);
-
 		return builder.AfterPlatformServicesSetup(_ =>
 		{
-			var dependencyProvider = CornerstoneApplication.DependencyProvider;
+			var dependencyProvider = AppBootstrap.DependencyProvider;
 			dependencyProvider.SetTransient<IWebViewAdapter, WebView2Adapter>();
 		});
 	}

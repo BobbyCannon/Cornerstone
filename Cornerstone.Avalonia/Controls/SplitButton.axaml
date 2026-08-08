@@ -185,7 +185,7 @@
 		</Style>
 		<!-- Code Template - /Color -->
 
-		<!-- Generated Code - Colors -->
+		<!-- Generated Code - Color -->
 		<Style Selector="^[(Theme.Color)=Amber]">
 		</Style>
 		<Style Selector="^[(Theme.Color)=Blue]">
@@ -214,7 +214,7 @@
 		</Style>
 		<Style Selector="^[(Theme.Color)=Teal]">
 		</Style>
-		<!-- Generated Code - /Colors -->
+		<!-- Generated Code - /Color -->
 	</ControlTheme>
 
 	<Design.PreviewWith>

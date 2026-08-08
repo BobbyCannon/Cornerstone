@@ -27,7 +27,8 @@
 							Background="{TemplateBinding Background}"
 							BorderBrush="{TemplateBinding BorderBrush}"
 							BorderThickness="{TemplateBinding BorderThickness}"
-							ClipToBounds="True">
+							ClipToBounds="True"
+							CornerRadius="{TemplateBinding CornerRadius}">
 						<Grid>
 							<Ellipse x:Name="TodayHighlight"
 									IsVisible="False"
@@ -171,7 +172,7 @@
 		</Style>
 		<!-- Code Template - /Color -->
 
-		<!-- Generated Code - Colors -->
+		<!-- Generated Code - Color -->
 		<Style Selector="^[(Theme.Color)=Amber]">
 			<Style Selector="^:pointerover /template/ Border#Root">
 				<Setter Property="Background" Value="{DynamicResource Amber05}" />
@@ -956,7 +957,7 @@
 				</Style>
 			</Style>
 		</Style>
-		<!-- Generated Code - /Colors -->
+		<!-- Generated Code - /Color -->
 	</ControlTheme>
 
 	<Design.PreviewWith>

@@ -1,7 +1,7 @@
 ﻿<ResourceDictionary xmlns="https://github.com/avaloniaui"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-	<!-- Generated Code - Colors -->
+	<!-- Generated Code - Color -->
 	<Color x:Key="Background00">#000000</Color>
 	<Color x:Key="Background01">#090909</Color>
 	<Color x:Key="Background02">#131313</Color>
@@ -22,7 +22,7 @@
 	<Color x:Key="Foreground07">#B0B0B0</Color>
 	<Color x:Key="Foreground08">#A4A4A4</Color>
 	<Color x:Key="Foreground09">#999999</Color>
-	<!-- Generated Code - /Colors -->
+	<!-- Generated Code - /Color -->
 
 	<ResourceDictionary.MergedDictionaries>
 		<ResourceInclude Source="avares://Cornerstone.Avalonia/Themes/SyntaxColor.Dark.axaml" />

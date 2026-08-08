@@ -1,19 +1,27 @@
 ﻿#region References
 
+#if ANDROID || IOS || BROWSER
+using Microsoft.Maui.Devices;
+#endif
+#if IOS
+using Foundation;
+#endif
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Cornerstone.Data;
+using Cornerstone.Data.Bytes;
 using Cornerstone.Reflection;
-#if ANDROID || IOS || BROWSER
-using Microsoft.Maui.Devices;
+using Cornerstone.Sync;
+#if WINDOWS
+using Cornerstone.Platforms.Windows.Internal;
 #endif
 
 #endregion
@@ -24,7 +32,9 @@ namespace Cornerstone.Runtime;
 /// Gets information about the current runtime.
 /// </summary>
 [SourceReflection]
-public class RuntimeInformation : Notifiable, IRuntimeInformation
+[DependencyInjected]
+[DependencyInjected(typeof(IRuntimeInformation))]
+public class RuntimeInformation : CornerstoneObject, IRuntimeInformation
 {
 	#region Fields
 
@@ -42,7 +52,7 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 	/// </summary>
 	public RuntimeInformation()
 	{
-		_cache = new SortedDictionary<string, object>();
+		_cache = new SortedDictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 		_runtimeTimer = Stopwatch.StartNew();
 	}
 
@@ -55,6 +65,8 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 
 	#region Properties
 
+	public Bitness ApplicationBitness => GetOrCache(nameof(ApplicationBitness), GetApplicationBitness);
+
 	public string ApplicationDataLocation => GetOrCache(nameof(ApplicationDataLocation), GetApplicationDataLocation);
 
 	public string ApplicationFileName => GetOrCache(nameof(ApplicationFileName), GetApplicationFileName);
@@ -65,7 +77,7 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 
 	public bool ApplicationIsElevated => GetOrCache(nameof(ApplicationIsElevated), GetApplicationIsElevated);
 
-	public bool ApplicationIsLoaded { get; private set; }
+	public bool ApplicationIsLoaded => GetOrCache(nameof(ApplicationIsLoaded), () => false);
 
 	public bool ApplicationIsNativeBuild => GetOrCache(nameof(ApplicationIsNativeBuild), GetApplicationIsNativeBuild);
 
@@ -86,9 +98,25 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 	[Browsable(false)]
 	public int Count => _cache.Count;
 
+	public int DeviceDisplayRefreshRate => GetOrCache(nameof(DeviceDisplayRefreshRate), GetDeviceDisplayRefreshRate);
+
+	public Size DeviceDisplaySize => GetOrCache(nameof(DeviceDisplaySize), GetDeviceDisplaySize);
+
+	public string DeviceId => GetOrCache(nameof(DeviceId), GetDeviceId);
+
+	public string DeviceManufacturer => GetOrCache(nameof(DeviceManufacturer), GetDeviceManufacturer);
+
+	public ByteSize DeviceMemory => GetOrCache(nameof(DeviceMemory), GetDeviceMemory);
+
+	public string DeviceModel => GetOrCache(nameof(DeviceModel), GetDeviceModel);
+
 	public string DeviceName => GetOrCache(nameof(DeviceName), GetDeviceName);
 
 	public DevicePlatform DevicePlatform => GetOrCache(nameof(DevicePlatform), GetDevicePlatform);
+
+	public Bitness DevicePlatformBitness => GetOrCache(nameof(DevicePlatformBitness), GetDevicePlatformBitness);
+
+	public Version DevicePlatformVersion => GetOrCache(nameof(DevicePlatformVersion), GetDevicePlatformVersion);
 
 	public DeviceType DeviceType => GetOrCache(nameof(DeviceType), GetDeviceType);
 
@@ -109,12 +137,12 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 
 	#region Methods
 
+	/// <summary>
+	/// Freeze <see cref="ApplicationStartup" />. Prefer <see cref="StartLifecycle" />; this remains for callers.
+	/// </summary>
 	public void CompleteStartup()
 	{
-		if (ApplicationStartup == TimeSpan.Zero)
-		{
-			SetPlatformOverride(nameof(ApplicationStartup), _runtimeTimer.Elapsed);
-		}
+		StartLifecycle();
 	}
 
 	public bool ContainsKey(string key)
@@ -128,20 +156,81 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 	}
 
 	/// <summary>
-	/// Initialize the runtime information state. Ex. Ensure the paths exists.
+	/// Bind the application assembly and run Initialize + Load (host bootstrap convenience).
 	/// </summary>
 	public void Initialize(Assembly assembly)
 	{
-		if (_applicationAssembly != null)
+		SetApplicationAssembly(assembly);
+
+		if (!IsLifecycleInitialized())
 		{
-			return;
+			InitializeLifecycle();
 		}
 
-		_applicationAssembly = assembly;
-		ApplicationIsLoaded = true;
+		if (!IsLifecycleLoaded())
+		{
+			LoadLifecycle();
+		}
+	}
 
+	/// <inheritdoc />
+	public override void LoadLifecycle()
+	{
+		// Reset first so ApplicationIsLoaded is not wiped from the cache after we set it.
 		ResetCache();
+		SetOverride(nameof(ApplicationIsLoaded), true);
 		Refresh();
+		base.LoadLifecycle();
+	}
+
+	/// <summary>
+	/// Bind the entry assembly used for application name, version, and related paths.
+	/// </summary>
+	public void SetApplicationAssembly(Assembly assembly)
+	{
+		_applicationAssembly ??= assembly;
+	}
+
+	/// <inheritdoc />
+	public override void StartLifecycle()
+	{
+		if (ApplicationStartup == TimeSpan.Zero)
+		{
+			// Instance cache only — not a process-wide platform override.
+			SetOverride(nameof(ApplicationStartup), _runtimeTimer.Elapsed);
+		}
+
+		base.StartLifecycle();
+	}
+
+	/// <summary>
+	/// Mark the application as shutting down. Prefer <see cref="StopLifecycle" />; this remains for callers.
+	/// </summary>
+	public void StartShutdown()
+	{
+		StopLifecycle();
+	}
+
+	/// <inheritdoc />
+	public override void StopLifecycle()
+	{
+		// Instance cache only — not a process-wide platform override.
+		SetOverride(nameof(ApplicationIsShuttingDown), true);
+		base.StopLifecycle();
+	}
+
+	/// <inheritdoc />
+	public override void UninitializeLifecycle()
+	{
+		_applicationAssembly = null;
+		base.UninitializeLifecycle();
+	}
+
+	/// <inheritdoc />
+	public override void UnloadLifecycle()
+	{
+		SetOverride(nameof(ApplicationIsLoaded), false);
+		base.UnloadLifecycle();
 	}
 
 	/// <summary>
@@ -149,33 +238,29 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 	/// </summary>
 	public virtual void Refresh()
 	{
-		//_ = ApplicationBitness;
+		_ = ApplicationBitness;
 		_ = ApplicationDataLocation;
 		_ = ApplicationFileName;
 		_ = ApplicationFilePath;
 		_ = ApplicationIsDevelopmentBuild;
 		_ = ApplicationIsElevated;
-
-		//_ = ApplicationIsLoaded;
+		_ = ApplicationIsLoaded;
 		_ = ApplicationIsNativeBuild;
-
-		//_ = ApplicationIsShuttingDown;
+		_ = ApplicationIsShuttingDown;
 		_ = ApplicationLocation;
 		_ = ApplicationName;
 		_ = ApplicationVersion;
-
 		_ = AvaloniaRuntimeVersion;
-
-		//_ = DeviceDisplaySize;
-		//_ = DeviceId;
-		//_ = DeviceManufacturer;
-		//_ = DeviceMemory;
-		//_ = DeviceModel;
+		_ = DeviceDisplayRefreshRate;
+		_ = DeviceDisplaySize;
+		_ = DeviceId;
+		_ = DeviceManufacturer;
+		_ = DeviceMemory;
+		_ = DeviceModel;
 		_ = DeviceName;
 		_ = DevicePlatform;
-
-		//_ = DevicePlatformBitness;
-		//_ = DevicePlatformVersion;
+		_ = DevicePlatformBitness;
+		_ = DevicePlatformVersion;
 		_ = DeviceType;
 		_ = DotNetRuntimeVersion;
 	}
@@ -227,11 +312,6 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 		SetOverride(name, value);
 	}
 
-	public void StartShutdown()
-	{
-		SetPlatformOverride(nameof(ApplicationIsShuttingDown), true);
-	}
-
 	public override string ToString()
 	{
 		var response = new StringBuilder();
@@ -249,6 +329,14 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 	public bool TryGetValue(string key, out object value)
 	{
 		return _cache.TryGetValue(key, out value);
+	}
+
+	/// <summary>
+	/// The bitness of the application.
+	/// </summary>
+	protected Bitness GetApplicationBitness()
+	{
+		return Environment.Is64BitProcess ? Bitness.X64 : Bitness.X86;
 	}
 
 	/// <summary>
@@ -348,7 +436,7 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 	/// </summary>
 	protected Version GetApplicationVersion()
 	{
-		return _applicationAssembly?.GetName().Version ?? new Version();
+		return _applicationAssembly?.GetName().Version ?? new Version(1,2,3,4);
 	}
 
 	/// <summary>
@@ -356,7 +444,31 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 	/// </summary>
 	protected virtual Version GetAvaloniaRuntimeVersion()
 	{
-		return new Version();
+		return new Version(1,2,3,4);
+	}
+
+	/// <summary>
+	/// The ID of the device.
+	/// </summary>
+	protected virtual string GetDeviceId()
+	{
+		#if WINDOWS
+		return new DeviceId()
+			.AddMachineName()
+			.AddUserName()
+			.AddMachineGuid()
+			.AddSystemUuid()
+			.AddMotherboardSerialNumber()
+			.AddSystemDriveSerialNumber()
+			.ToString();
+		#else
+		return Runtime.DeviceId.VendorId
+			?? new DeviceId()
+				.AddMachineName()
+				.AddUserName()
+				.AddVendorId()
+				.ToString();
+		#endif
 	}
 
 	/// <summary>
@@ -376,17 +488,33 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 	/// </summary>
 	protected DevicePlatform GetDevicePlatform()
 	{
-		#if (ANDROID)
+		#if ANDROID
 		return DevicePlatform.Android;
-		#elif (BROWSER)
+		#elif BROWSER
 		return DevicePlatform.Browser;
-		#elif (IOS)
+		#elif IOS
 		return DevicePlatform.IOS;
-		#elif (WINDOWS)
+		#elif WINDOWS
 		return DevicePlatform.Windows;
 		#else
 		return DevicePlatform.Unknown;
 		#endif
+	}
+
+	/// <summary>
+	/// The bitness of the platform.
+	/// </summary>
+	protected Bitness GetDevicePlatformBitness()
+	{
+		return Environment.Is64BitOperatingSystem ? Bitness.X64 : Bitness.X86;
+	}
+
+	/// <summary>
+	/// The version of the device platform version.
+	/// </summary>
+	protected Version GetDevicePlatformVersion()
+	{
+		return Environment.OSVersion.Version;
 	}
 
 	/// <summary>
@@ -457,6 +585,49 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 		return newValue;
 	}
 
+	private int GetDeviceDisplayRefreshRate()
+	{
+		return 0;
+	}
+
+	private Size GetDeviceDisplaySize()
+	{
+		return Size.Empty;
+	}
+
+	private string GetDeviceManufacturer()
+	{
+		#if ANDROID || IOS
+		return DeviceInfo.Manufacturer;
+		#elif WINDOWS
+		return new DeviceManufacturerRegistryComponent().GetValue()
+			?? new DeviceManufacturerWmiComponent().GetValue();
+		#else
+		return string.Empty;
+		#endif
+	}
+
+	private ByteSize GetDeviceMemory()
+	{
+		#if IOS
+		return ByteSize.FromBytes((long) NSProcessInfo.ProcessInfo.PhysicalMemory);
+		#else
+		return ByteSize.FromBytes(0);
+		#endif
+	}
+
+	private string GetDeviceModel()
+	{
+		#if ANDROID || IOS
+		return DeviceInfo.Model;
+		#elif WINDOWS
+		return new DeviceModelRegistryComponent().GetValue()
+			?? new DeviceModelWmiComponent().GetValue();
+		#else
+		return string.Empty;
+		#endif
+	}
+
 	IEnumerator IEnumerable.GetEnumerator()
 	{
 		return GetEnumerator();
@@ -468,9 +639,14 @@ public class RuntimeInformation : Notifiable, IRuntimeInformation
 /// <summary>
 /// Gets information about the current runtime.
 /// </summary>
-public interface IRuntimeInformation : IReadOnlyDictionary<string, object>
+public interface IRuntimeInformation : IReadOnlyDictionary<string, object>, ISyncClientDetails
 {
 	#region Properties
+
+	/// <summary>
+	/// The bitness of the application.
+	/// </summary>
+	Bitness ApplicationBitness { get; }
 
 	/// <summary>
 	/// The location of the application.
@@ -518,19 +694,9 @@ public interface IRuntimeInformation : IReadOnlyDictionary<string, object>
 	string ApplicationLocation { get; }
 
 	/// <summary>
-	/// The name of the application.
-	/// </summary>
-	string ApplicationName { get; }
-
-	/// <summary>
 	/// The time it took for the application to startup.
 	/// </summary>
 	TimeSpan ApplicationStartup { get; }
-
-	/// <summary>
-	/// The version of the application.
-	/// </summary>
-	Version ApplicationVersion { get; }
 
 	/// <summary>
 	/// The Avalonia runtime version.
@@ -538,14 +704,34 @@ public interface IRuntimeInformation : IReadOnlyDictionary<string, object>
 	Version AvaloniaRuntimeVersion { get; }
 
 	/// <summary>
-	/// The platform of the device.
+	/// The primary display refresh rate in hertz. Zero when unknown.
 	/// </summary>
-	DevicePlatform DevicePlatform { get; }
+	int DeviceDisplayRefreshRate { get; }
 
 	/// <summary>
-	/// The type of the device.
+	/// The display size of the device.
 	/// </summary>
-	DeviceType DeviceType { get; }
+	Size DeviceDisplaySize { get; }
+
+	/// <summary>
+	/// The name of the device manufacturer.
+	/// </summary>
+	string DeviceManufacturer { get; }
+
+	/// <summary>
+	/// The size of the device's memory.
+	/// </summary>
+	ByteSize DeviceMemory { get; }
+
+	/// <summary>
+	/// The model of the device.
+	/// </summary>
+	string DeviceModel { get; }
+
+	/// <summary>
+	/// The bitness of the platform.
+	/// </summary>
+	Bitness DevicePlatformBitness { get; }
 
 	/// <summary>
 	/// The DotNet runtime version.

@@ -1,0 +1,13 @@
+<Window xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:controls="clr-namespace:Cornerstone.Avalonia.Controls;assembly=Cornerstone.Avalonia"
+		x:Class="Cornerstone.Documentation.MainWindow"
+		Title="Cornerstone Documentation"
+		Width="1040"
+		Height="780"
+		MinWidth="640"
+		MinHeight="480"
+		Background="{DynamicResource Background02}"
+		WindowStartupLocation="CenterScreen">
+	<controls:DocumentationReader x:Name="Reader" />
+</Window>

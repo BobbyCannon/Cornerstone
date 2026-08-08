@@ -31,19 +31,17 @@ public class MarkdownTableFormatterTests : CornerstoneUnitTest
 
 		var expected =
 			"""
-			| Feature                   | Description                          | Status  | Versio | Performance |
-			|                           |                                      |         |   n    |             |
-			|---------------------------|--------------------------------------|---------|:------:|------------:|
-			| Zero-Allocation Parsing   | Computes widths without storing      | Stable  | 1.2.3  |   Excellent |
-			|                           | strings                              |         |        |             |
-			| Alignment Support         | Left, center, and right alignment    | Complet |  2.0   |   Very Fast |
-			|                           |                                      | e       |        |             |
-			| Large Table Handling      | Handles thousands of rows            | Beta    |  1.5   | Outstanding |
-			|                           | efficiently                          |         |        |             |
-			| StringBuilder             | Minimal resizes and fast appends     | Stable  |  1.0   |        High |
-			| Optimization              |                                      |         |        |             |
-			| .NET 10 Span Usage        | Modern low-allocation APIs           | Release |  3.1   |        Best |
-			|                           |                                      | d       |        |             |
+			| Feature                  | Description                         | Status   | Version  | Performanc |
+			|                          |                                     |          |          |          e |
+			|--------------------------|-------------------------------------|----------|:--------:|-----------:|
+			| Zero-Allocation Parsing  | Computes widths without storing     | Stable   |  1.2.3   |  Excellent |
+			|                          | strings                             |          |          |            |
+			| Alignment Support        | Left, center, and right alignment   | Complete |   2.0    |  Very Fast |
+			| Large Table Handling     | Handles thousands of rows           | Beta     |   1.5    | Outstandin |
+			|                          | efficiently                         |          |          |          g |
+			| StringBuilder            | Minimal resizes and fast appends    | Stable   |   1.0    |       High |
+			| Optimization             |                                     |          |          |            |
+			| .NET 10 Span Usage       | Modern low-allocation APIs          | Released |   3.1    |       Best |
 			""";
 
 		AreEqual(expected, MarkdownTableFormatter.Format(table, 101));
@@ -62,10 +60,10 @@ public class MarkdownTableFormatterTests : CornerstoneUnitTest
 
 		var expected =
 			"""
-			| Name  | Age   | Email            |
-			|-------|-------|------------------|
-			| Alice | 30    | alice@domain.com |
-			| Bob   | 25    | bob@foo.com      |
+			| Name     | Age     | Email            |
+			|----------|---------|------------------|
+			| Alice    | 30      | alice@domain.com |
+			| Bob      | 25      | bob@foo.com      |
 			""";
 
 		AreEqual(expected, MarkdownTableFormatter.Format(table));
@@ -100,11 +98,11 @@ public class MarkdownTableFormatterTests : CornerstoneUnitTest
 
 		var expected =
 			"""
-			| Name    | Age   | City     |
-			|---------|-------|----------|
-			| Alice   |       |          |
-			| Bob     |       | New York |
-			| Charlie | 35    |          |
+			| Name     | Age     | City     |
+			|----------|---------|----------|
+			| Alice    |         |          |
+			| Bob      |         | New York |
+			| Charlie  | 35      |          |
 			""";
 
 		var result = MarkdownTableFormatter.Format(table, 60);
@@ -151,17 +149,18 @@ public class MarkdownTableFormatterTests : CornerstoneUnitTest
 			""";
 		var expected =
 			"""
-			| Col1 Content     | Col2 Content (Also Very    | Col3     |
-			| (Very Long)      | Long)                      | Content  |
-			|                  |                            | (Medium  |
-			|                  |                            | Length)  |
-			|:-----------------|:---------------------------|:---------|
-			| This is a very   | Another extremely verbose  | A simple |
-			| long string of   | block of content requiring | column.  |
-			| text that must   | proportional scaling and   |          |
-			| be scaled down   | wrapping across multiple   |          |
-			| drastically.     | lines due to width limits. |          |
-			| Short data       | Medium data                | Simple.  |
+			| Col1 Content     | Col2 Content (Also Very  | Col3       |
+			| (Very Long)      | Long)                    | Content    |
+			|                  |                          | (Medium    |
+			|                  |                          | Length)    |
+			|:-----------------|:-------------------------|:-----------|
+			| This is a very   | Another extremely        | A simple   |
+			| long string of   | verbose block of content | column.    |
+			| text that must   | requiring proportional   |            |
+			| be scaled down   | scaling and wrapping     |            |
+			| drastically.     | across multiple lines    |            |
+			|                  | due to width limits.     |            |
+			| Short data       | Medium data              | Simple.    |
 			""";
 
 		// Set max width much smaller than natural width (e.g., 60)
@@ -183,10 +182,10 @@ public class MarkdownTableFormatterTests : CornerstoneUnitTest
 
 		var expected =
 			"""
-			| Product | Description             |
-			|---------|-------------------------|
-			| Laptop  | High performance laptop |
-			| Phone   | Compact device          |
+			| Product  | Description             |
+			|----------|-------------------------|
+			| Laptop   | High performance laptop |
+			| Phone    | Compact device          |
 			""";
 
 		AreEqual(expected, MarkdownTableFormatter.Format(table, 120));
@@ -207,9 +206,9 @@ public class MarkdownTableFormatterTests : CornerstoneUnitTest
 		result.Dump();
 
 		// Verify alignment markers are preserved correctly after shrinking
-		IsTrue(result.Contains("|:------|") || result.Contains("----:"), () => "Left alignment colon missing or misplaced");
-		IsTrue(result.Contains("|:-----:|"), () => "Center alignment should be preserved");
-		IsTrue(result.Contains("-------:|"), () => "Right alignment colon should be preserved");
+		IsTrue(result.Contains("|:--------|") || result.Contains("----:"), () => "Left alignment colon missing or misplaced");
+		IsTrue(result.Contains("|:-------:|"), () => "Center alignment should be preserved");
+		IsTrue(result.Contains("---------:|"), () => "Right alignment colon should be preserved");
 
 		// Verify total width constraint
 		var lines = result.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
@@ -247,10 +246,10 @@ public class MarkdownTableFormatterTests : CornerstoneUnitTest
 
 		var expected =
 			"""
-			| Name  | Age   |
-			|-------|-------|
-			| Alice | 30    |
-			| Bob   | 25    |
+			| Name     | Age     |
+			|----------|---------|
+			| Alice    | 30      |
+			| Bob      | 25      |
 			""";
 
 		var result = MarkdownTableFormatter.Format(table);
@@ -268,8 +267,8 @@ public class MarkdownTableFormatterTests : CornerstoneUnitTest
 
 		var expected =
 			"""
-			| Name  | Age   | City  |
-			|-------|-------|-------|
+			| Name     | Age     | City     |
+			|----------|---------|----------|
 			""";
 
 		AreEqual(expected, MarkdownTableFormatter.Format(table));
@@ -382,10 +381,10 @@ public class MarkdownTableFormatterTests : CornerstoneUnitTest
 
 		var expected =
 			"""
-			| Name  |  Age  |            Email |
-			|:------|:-----:|-----------------:|
-			| Alice |   6   | alice@domain.com |
-			| Bob   |   9   |      bob@foo.com |
+			| Name     |   Age   |            Email |
+			|:---------|:-------:|-----------------:|
+			| Alice    |    6    | alice@domain.com |
+			| Bob      |    9    |      bob@foo.com |
 			""";
 
 		AreEqual(expected, MarkdownTableFormatter.Format(table));

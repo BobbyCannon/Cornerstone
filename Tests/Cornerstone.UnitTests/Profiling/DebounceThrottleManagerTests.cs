@@ -17,6 +17,19 @@ public class DebounceThrottleManagerTests : CornerstoneUnitTest
 	#region Methods
 
 	[TestMethod]
+	public void DebounceCanCancel()
+	{
+		var triggered = false;
+		using var manager = DebounceThrottleManager.Start(this, 1);
+		var service = manager.CreateDebounce(TimeSpan.FromSeconds(5), (_, _, _) => triggered = true);
+		service.Trigger(null);
+		IncrementTime(seconds: 4);
+		service.Cancel();
+		IncrementTime(seconds: 1);
+		IsFalse(triggered);
+	}
+
+	[TestMethod]
 	public void DebounceShouldOnlyFireOnLastTriggeredData()
 	{
 		var actual = new List<int>();
@@ -44,19 +57,6 @@ public class DebounceThrottleManagerTests : CornerstoneUnitTest
 			Console.WriteLine(data);
 			actual.Add((int) data);
 		}
-	}
-
-	[TestMethod]
-	public void DebounceCanCancel()
-	{
-		var triggered = false;
-		using var manager = DebounceThrottleManager.Start(this, 1);
-		var service = manager.CreateDebounce(TimeSpan.FromSeconds(5), (_, _, _) => triggered = true);
-		service.Trigger(null);
-		IncrementTime(seconds: 4);
-		service.Cancel();
-		IncrementTime(seconds: 1);
-		IsFalse(triggered);
 	}
 
 	#endregion

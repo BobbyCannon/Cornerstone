@@ -14,7 +14,8 @@
 					HorizontalAlignment="Center"
 					Text="Docking Manager" />
 		</Grid>
-		<DockingManager x:Name="DockingManager"
-				Margin="0,20,0,0" />
+		<ContentControl
+				Content="{Binding DockingManager}"
+				Margin="-1,0,-1,-1" />
 	</DockPanel>
 </UserControl>

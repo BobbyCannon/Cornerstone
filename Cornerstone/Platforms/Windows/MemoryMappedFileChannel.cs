@@ -1,10 +1,9 @@
 ﻿#region References
 
-using Cornerstone.Communications;
 using System;
 using System.IO.MemoryMappedFiles;
 using System.Threading;
-using System.Threading.Tasks;
+using Cornerstone.Communications;
 
 #endregion
 

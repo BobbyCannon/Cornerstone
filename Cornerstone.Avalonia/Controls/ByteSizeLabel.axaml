@@ -31,7 +31,7 @@
 		</Style>
 		<!-- Code Template - /Color -->
 
-		<!-- Generated Code - Colors -->
+		<!-- Generated Code - Color -->
 		<Style Selector="^[(Theme.Color)=Amber]">
 			<Setter Property="Foreground" Value="{DynamicResource Amber05}" />
 		</Style>
@@ -74,7 +74,7 @@
 		<Style Selector="^[(Theme.Color)=Teal]">
 			<Setter Property="Foreground" Value="{DynamicResource Teal05}" />
 		</Style>
-		<!-- Generated Code - /Colors -->
+		<!-- Generated Code - /Color -->
 	</Style>
 
 	<Design.PreviewWith>

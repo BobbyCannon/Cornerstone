@@ -4,7 +4,8 @@
 		x:ClassModifier="internal">
 
 	<ControlTheme x:Key="{x:Type Separator}" TargetType="Separator">
-		<Setter Property="Theme.Color" Value="{Binding $parent[Menu].(Theme.Color)}"/>
+		<!-- MenuBase covers Menu (bar) and ContextMenu; plain Menu fails for context menus. -->
+		<Setter Property="Theme.Color" Value="{Binding $parent[MenuBase].(Theme.Color), FallbackValue=None}" />
 		<Setter Property="Background" Value="{DynamicResource Background09}" />
 		<Setter Property="Focusable" Value="False" />
 		<Setter Property="Height" Value="1" />
@@ -30,7 +31,7 @@
 		</Style>
 		<!-- Code Template - /Color -->
 
-		<!-- Generated Code - Colors -->
+		<!-- Generated Code - Color -->
 		<Style Selector="^[(Theme.Color)=Amber]">
 			<Setter Property="Background" Value="{DynamicResource Amber05}" />
 		</Style>
@@ -73,7 +74,7 @@
 		<Style Selector="^[(Theme.Color)=Teal]">
 			<Setter Property="Background" Value="{DynamicResource Teal05}" />
 		</Style>
-		<!-- Generated Code - /Colors -->
+		<!-- Generated Code - /Color -->
 	</ControlTheme>
 
 	<Design.PreviewWith>

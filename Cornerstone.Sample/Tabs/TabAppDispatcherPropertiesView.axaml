@@ -1,0 +1,126 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignWidth="640" d:DesignHeight="400"
+		x:Class="Cornerstone.Sample.Tabs.TabAppDispatcherPropertiesView"
+		x:DataType="tabs:TabAppDispatcherPropertiesViewModel"
+		x:Name="This"
+		HorizontalAlignment="Stretch"
+		VerticalAlignment="Stretch">
+	<!-- ReSharper disable Xaml.MissingGridIndex -->
+	<Grid RowDefinitions="*,Auto">
+		<Grid.Styles>
+			<Style Selector="Button">
+				<Setter Property="MinWidth" Value="70" />
+			</Style>
+			<Style Selector="SelectableTextBlock">
+				<Setter Property="FontSize" Value="16" />
+				<Setter Property="TextWrapping" Value="Wrap" />
+			</Style>
+		</Grid.Styles>
+		<Border Grid.Row="0"
+				BorderThickness="1"
+				Padding="4">
+			<Grid RowDefinitions="Auto,*">
+				<SelectableTextBlock Margin="10"
+						FontFamily="{x:Static CornerstoneTheme.OpenSansLight}"
+						TextWrapping="Wrap">
+					<SelectableTextBlock.Text>
+						TrackProperties maps selected model fields (Off Dispatcher) onto the ViewModel On
+						Dispatcher each AppDispatcher tick. Two-way maps write user edits back first; one-way
+						maps only flow model → view. The first tick seeds current model values even when
+						nothing has changed.
+					</SelectableTextBlock.Text>
+				</SelectableTextBlock>
+				<AutoGrid Grid.Row="1"
+						ColumnDefinitions="*,*"
+						ColumnSpacing="20"
+						RowDefinitions="Auto"
+						Margin="10,0,10,10"
+						HorizontalAlignment="Stretch"
+						VerticalAlignment="Top">
+					<AutoGrid Classes="Input"
+							ColumnDefinitions="*,*"
+							RowCount="5"
+							HorizontalAlignment="Stretch"
+							VerticalAlignment="Top">
+						<AutoGrid.Styles>
+							<Style Selector="TextBlock.InputName">
+								<Setter Property="Foreground" Value="{StaticResource Orange05}" />
+							</Style>
+						</AutoGrid.Styles>
+						<TextBlock Grid.ColumnSpan="2"
+								Classes="Header"
+								Text="Model (Off Dispatcher)"
+								TextAlignment="Center" />
+						<TextBlock Grid.ColumnSpan="2"
+								Foreground="{DynamicResource Foreground09}"
+								Text="Polled for reference — updated Off Dispatcher"
+								TextAlignment="Center"
+								TextWrapping="Wrap" />
+						<TextBlock Classes="InputName" Text="Title" />
+						<TextBlock Classes="InputValue" x:Name="ModelTitle" Text="" />
+						<TextBlock Classes="InputName" Text="Count" />
+						<TextBlock Classes="InputValue" x:Name="ModelCount" Text="" />
+						<TextBlock Classes="InputName" Text="Ratio" />
+						<TextBlock Classes="InputValue" x:Name="ModelRatio" Text="" />
+					</AutoGrid>
+					<AutoGrid Classes="Input"
+							ColumnDefinitions="*,*"
+							RowCount="5"
+							HorizontalAlignment="Stretch"
+							VerticalAlignment="Top">
+						<AutoGrid.Styles>
+							<Style Selector="TextBlock.InputName">
+								<Setter Property="Foreground" Value="{StaticResource Orange05}" />
+							</Style>
+						</AutoGrid.Styles>
+						<TextBlock Grid.ColumnSpan="2"
+								Classes="Header"
+								Text="ViewModel (On Dispatcher)"
+								TextAlignment="Center" />
+						<TextBlock Grid.ColumnSpan="2"
+								Foreground="{DynamicResource Foreground09}"
+								Text="two-way Title + Count→ItemCount; one-way Ratio→RatioText"
+								TextAlignment="Center"
+								TextWrapping="Wrap" />
+						<TextBlock Classes="InputName" Text="Title" />
+						<TextBox Classes="InputValue"
+								Text="{Binding Title, Mode=TwoWay}"
+								MinWidth="120" />
+						<TextBlock Classes="InputName" Text="ItemCount" />
+						<TextBox Classes="InputValue"
+								Text="{Binding ItemCount, Mode=TwoWay}"
+								MinWidth="120" />
+						<TextBlock Classes="InputName" Text="RatioText" />
+						<TextBlock Classes="InputValue"
+								Text="{Binding RatioText}" />
+					</AutoGrid>
+				</AutoGrid>
+			</Grid>
+		</Border>
+		<Border Grid.Row="1"
+				BorderThickness="1"
+				Padding="10">
+			<DockPanel>
+				<WrapPanel DockPanel.Dock="Left" ItemSpacing="10">
+					<Button Click="UpdateOnceOnClick">Update Once</Button>
+					<Button Click="UpdateManyOnClick">Update Many</Button>
+					<Button Click="BumpItemCountOnClick">Bump ItemCount</Button>
+				</WrapPanel>
+				<StackPanel Orientation="Horizontal"
+						Spacing="16"
+						HorizontalAlignment="Right"
+						VerticalAlignment="Center">
+					<TextBlock Foreground="{DynamicResource Foreground09}">
+						<Run Text="Attached: " />
+						<Run Text="{Binding IsAttached}" />
+					</TextBlock>
+				</StackPanel>
+			</DockPanel>
+		</Border>
+	</Grid>
+</UserControl>

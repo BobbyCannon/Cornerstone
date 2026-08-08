@@ -11,6 +11,7 @@ public class SourceAttributeInfo : Reflection.SourceAttributeInfo
 	#region Properties
 
 	public AttributeData Data { get; set; }
+	public ITypeSymbol[] GenericTypes { get; set; }
 	public INamedTypeSymbol TypeSymbol { get; set; }
 
 	#endregion

@@ -29,7 +29,7 @@ public class VersionCodeGenerator : CodeGenerator
 			Version sValue => $"new Version({sValue.Major}, {sValue.Minor}, {sValue.Build}, {sValue.Revision})",
 			_ => throw new CornerstoneException($"Type ({typeInfo.Type.FullName}) not supported.")
 		};
-		builder.Write(code);
+		builder.Append(code);
 	}
 
 	#endregion

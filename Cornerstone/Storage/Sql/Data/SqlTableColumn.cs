@@ -8,8 +8,17 @@ using Cornerstone.Data;
 namespace Cornerstone.Storage.Sql.Data;
 
 [Notifiable(["*"])]
-public partial class SqlTableColumn : Notifiable
+public partial class SqlTableColumn : CornerstoneObject
 {
+	#region Constructors
+
+	public SqlTableColumn()
+	{
+		Order = -1;
+	}
+
+	#endregion
+
 	#region Properties
 
 	public partial string ColumnType { get; set; }

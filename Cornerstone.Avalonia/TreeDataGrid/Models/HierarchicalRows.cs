@@ -142,6 +142,10 @@ public class HierarchicalRows<TModel> : ReadOnlyListBase<HierarchicalRow<TModel>
 		return ModelIndexToRowIndex(modelIndex[..^1]);
 	}
 
+	/// <summary>
+	/// Exact row lookup is performed by the rows presenter when a fixed MinRowHeight is in use.
+	/// Without fixed height, Auto-sized rows cannot map Y → index here.
+	/// </summary>
 	public (int index, double y) GetRowAt(double y)
 	{
 		if (DoubleExtensions.IsZero(y))

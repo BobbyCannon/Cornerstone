@@ -59,10 +59,11 @@ public class FiredEvent : ViewModel
 		{
 			if (_handledBy != value)
 			{
+				var oldValue = _handledBy;
 				_handledBy = value;
-				OnPropertyChanged();
-				OnPropertyChanged(nameof(IsHandled));
-				OnPropertyChanged(nameof(DisplayText));
+				OnPropertyChanged(nameof(HandledBy), oldValue, value);
+				NotifyComputedPropertyChanged(nameof(IsHandled));
+				NotifyComputedPropertyChanged(nameof(DisplayText));
 			}
 		}
 	}

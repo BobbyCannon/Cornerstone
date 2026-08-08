@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+	<PropertyGroup>
+		<Optimize>false</Optimize>
+		<PublishTrimmed>false</PublishTrimmed>
+		<TrimMode>none</TrimMode>
+		<PublishAot>false</PublishAot>
+		<RunAOTCompilation>false</RunAOTCompilation>
+		<DebugSymbols>true</DebugSymbols>
+		<DebugType>full</DebugType>
+		<AndroidIncludeDebugSymbols>true</AndroidIncludeDebugSymbols>
+		<AndroidEnableFastDeployment>false</AndroidEnableFastDeployment>
+		<AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+	</PropertyGroup>
+</Project>

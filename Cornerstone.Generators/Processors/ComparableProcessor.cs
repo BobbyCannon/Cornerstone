@@ -172,7 +172,8 @@ internal sealed class ComparableProcessor : ITypeProcessor
 
 	private static List<SourcePropertyInfo> GetComparableProperties(SourceTypeInfo typeInfo)
 	{
-		return typeInfo.Properties
+		return typeInfo
+			.Properties
 			.Where(p =>
 				(p.CanRead
 					&& !p.IsStatic
@@ -216,6 +217,10 @@ internal sealed class ComparableProcessor : ITypeProcessor
 			.Any(x => x is { IsGenericType: true }
 				&& (x.OriginalDefinition.ToDisplayString() == ComparableT)
 				&& SymbolEqualityComparer.Default.Equals(x.TypeArguments[0], type));
+	}
+
+	void ITypeProcessor.Initialize(Compilation compilation)
+	{
 	}
 
 	#endregion

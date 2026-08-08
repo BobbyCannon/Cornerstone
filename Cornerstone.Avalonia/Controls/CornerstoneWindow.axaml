@@ -11,6 +11,7 @@
 				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 				<Setter Property="FontSize" Value="{StaticResource ControlFontSize}" />
 				<Setter Property="ExtendClientAreaToDecorationsHint" Value="True" />
+				<Setter Property="ExtendClientAreaTitleBarHeightHint" Value="32" />
 				<Setter Property="Template">
 					<ControlTemplate>
 						<Grid x:Name="WindowGrid"
@@ -129,9 +130,7 @@
 		</ResourceDictionary>
 	</Styles.Resources>
 	<Design.PreviewWith>
-		<CornerstoneWindow x:TypeArguments="x:String"
-				Height="200"
-				Width="400">
+		<CornerstoneWindow Height="200" Width="400">
 			<CornerstoneWindow.InnerRightContent>
 				<StackPanel Orientation="Horizontal">
 					<Button BorderThickness="0"

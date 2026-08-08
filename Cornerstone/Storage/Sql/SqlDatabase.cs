@@ -4,7 +4,12 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Linq;
+using System.Threading.Tasks;
+using Cornerstone.Reflection;
 using Cornerstone.Storage.Sql.Data;
+using Cornerstone.Storage.Sql.Migrations;
+using Cornerstone.Text;
 using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
 
@@ -53,6 +58,55 @@ public class SqlDatabase : IDisposable
 
 	#region Methods
 
+	public static List<TableDiff> Compare(
+		IEnumerable<SqlTable> existing,
+		IEnumerable<Type> targetTypes,
+		SqlProvider provider)
+	{
+		var response = new List<TableDiff>();
+		var identifierBrackets = SqlGenerator.GetIdentifierBrackets(provider);
+		var existingDict = existing.ToDictionary(t => t.Name, StringComparer.OrdinalIgnoreCase);
+
+		foreach (var targetType in targetTypes)
+		{
+			var targetSourceType = SourceReflector.GetRequiredSourceType(targetType);
+			var tableName = SqlGenerator.GetTableName(targetSourceType);
+			var existingTable = existingDict.GetValueOrDefault(tableName);
+			var targetColumnNames = targetSourceType
+				.GetProperties()
+				.Select(p => p.Attributes
+					.Where(a => a.Name == nameof(SqlTableColumnAttribute))
+					.Select(a => a.NamedArguments[nameof(SqlTableColumnAttribute.Name)])
+					.FirstOrDefault()
+					?? p.Name
+				)
+				.Where(x => x != null)
+				.ToHashSet();
+
+			var columns = new List<ColumnChange>();
+			if (existingTable == null)
+			{
+				response.Add(new TableDiff(tableName, columns, identifierBrackets));
+				continue;
+			}
+
+			foreach (var col in existingTable.Columns)
+			{
+				if (!targetColumnNames.Contains(col.Name))
+				{
+					columns.Add(new ColumnChange(col.Name, ColumnAction.Drop));
+				}
+			}
+
+			if (columns.Count > 0)
+			{
+				response.Add(new TableDiff(tableName, columns, identifierBrackets));
+			}
+		}
+
+		return response;
+	}
+
 	public DbConnection CreateConnection()
 	{
 		return CreateConnection(ConnectionString);
@@ -94,6 +148,44 @@ public class SqlDatabase : IDisposable
 		using var command = connection.CreateCommand();
 		command.CommandText = sql;
 		command.ExecuteNonQuery();
+	}
+
+	public async Task ExecutePendingMigrationsAsync()
+	{
+		EnsureDatabaseCreated();
+
+		var existingTables = QueryTables().ToList();
+		var pendingDiff = Compare(existingTables, _repositories.Keys, Provider);
+
+		foreach (var diff in pendingDiff)
+		{
+			var script = GenerateAlterScript(diff, Provider);
+			await ExecuteMigrationScriptAsync(script);
+		}
+	}
+
+	public static string GenerateAlterScript(TableDiff diff, SqlProvider provider)
+	{
+		using var rented = StringBuilderPool.Rent();
+		var builder = rented.Value;
+		var (open, close) = diff.IdentifierBrackets;
+
+		builder.Append($"ALTER TABLE {open}{diff.TableName}{close} ");
+
+		var operations = new List<string>();
+
+		foreach (var col in diff.Columns)
+		{
+			operations.Add(col.Action switch
+			{
+				ColumnAction.Drop => $"DROP COLUMN {open}{col.Name}{close}",
+				ColumnAction.Add => $"ADD COLUMN {open}{col.Name}{close} TEXT",
+				_ => string.Empty
+			});
+		}
+
+		builder.AppendLine(string.Join(";", operations));
+		return builder.ToString();
 	}
 
 	/// <summary>
@@ -151,6 +243,16 @@ public class SqlDatabase : IDisposable
 	{
 		_connection?.Close();
 		_connection?.Dispose();
+	}
+
+	private async Task ExecuteMigrationScriptAsync(string script)
+	{
+		await using var connection = CreateConnection();
+		await connection.OpenAsync();
+
+		await using var command = connection.CreateCommand();
+		command.CommandText = script;
+		await command.ExecuteNonQueryAsync();
 	}
 
 	#endregion

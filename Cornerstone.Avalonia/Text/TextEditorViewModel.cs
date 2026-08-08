@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Input;
@@ -14,6 +15,7 @@ using Cornerstone.Data;
 using Cornerstone.Profiling;
 using Cornerstone.Reflection;
 using Cornerstone.Text;
+using Range = Cornerstone.Collections.Range;
 
 #endregion
 
@@ -28,7 +30,8 @@ namespace Cornerstone.Avalonia.Text;
 /// - Smart options
 /// </summary>
 [SourceReflection]
-public partial class TextEditorViewModel : Notifiable<TextEditorViewModel>
+[Updateable(UpdateableAction.All, ["*"])]
+public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel>
 {
 	#region Constructors
 
@@ -46,6 +49,7 @@ public partial class TextEditorViewModel : Notifiable<TextEditorViewModel>
 		ViewMetrics = new ViewMetrics();
 
 		HighlightCurrentLine = true;
+		ShowCaret = true;
 		ShowLineNumbers = true;
 
 		Load(string.Empty);
@@ -90,6 +94,18 @@ public partial class TextEditorViewModel : Notifiable<TextEditorViewModel>
 	public Profiler Profiler { get; set; }
 
 	/// <summary>
+	/// Gets/Sets an object that provides read-only sections for the text area.
+	/// </summary>
+	public IReadOnlySectionProvider ReadOnlySectionProvider { get; set; }
+
+	/// <summary>
+	/// When false, the caret is never drawn (selection and keyboard navigation still work).
+	/// Use for read-only surfaces such as <c>MarkdownView</c>.
+	/// </summary>
+	[Notify]
+	public partial bool ShowCaret { get; set; }
+
+	/// <summary>
 	/// The option to show line numbers.
 	/// </summary>
 	[Notify]
@@ -98,6 +114,11 @@ public partial class TextEditorViewModel : Notifiable<TextEditorViewModel>
 	public TokenManager TokenManager { get; set; }
 
 	public UndoManager UndoManager { get; }
+
+	/// <summary>
+	/// Represents the visual details.
+	/// </summary>
+	public ViewMetrics ViewMetrics { get; }
 
 	/// <summary>
 	/// The option to wrap text.
@@ -110,20 +131,30 @@ public partial class TextEditorViewModel : Notifiable<TextEditorViewModel>
 	/// </summary>
 	internal StringGapBuffer Buffer { get; }
 
-	/// <summary>
-	/// Represents the visual details.
-	/// </summary>
-	internal ViewMetrics ViewMetrics { get; }
-
 	#endregion
 
 	#region Methods
 
 	public void Append(string message)
 	{
+		if (string.IsNullOrEmpty(message))
+		{
+			return;
+		}
+
+		Append(message.AsSpan());
+	}
+
+	public void Append(ReadOnlySpan<char> text)
+	{
+		if (text.IsEmpty)
+		{
+			return;
+		}
+
 		var offset = Buffer.Count;
-		Buffer.Append(message);
-		OnDocumentChanged(offset, message, TextDocumentChangeType.Add);
+		Buffer.Append(text);
+		OnDocumentChanged(offset, text, TextDocumentChangeType.Add);
 	}
 
 	public void Clear()
@@ -184,6 +215,15 @@ public partial class TextEditorViewModel : Notifiable<TextEditorViewModel>
 
 	public void Insert(int offset, string value)
 	{
+		if (offset < 0)
+		{
+			return;
+		}
+		if (ReadOnlySectionProvider?.CanModify(offset) == false)
+		{
+			return;
+		}
+
 		Buffer.Insert(offset, value);
 		OnDocumentChanged(offset, value, TextDocumentChangeType.Add);
 	}
@@ -199,7 +239,21 @@ public partial class TextEditorViewModel : Notifiable<TextEditorViewModel>
 		ViewMetrics.CharacterHeight = line.Height;
 		ViewMetrics.CharacterWidth = Math.Max(1, line.WidthIncludingTrailingWhitespace);
 		ViewMetrics.DocumentSize = Lines.Measure(availableSize, WordWrap);
-		ViewMetrics.Viewport = availableSize;
+
+		// Viewport is the visible area. During unconstrained measure (e.g. inside
+		// ScrollViewer or unknown parent height) availableSize may be infinite;
+		// fall back to document size until ArrangeOverride supplies the real size.
+		var viewportWidth = double.IsFinite(availableSize.Width)
+			? availableSize.Width
+			: ViewMetrics.DocumentSize.Width;
+		var viewportHeight = double.IsFinite(availableSize.Height)
+			? availableSize.Height
+			: ViewMetrics.DocumentSize.Height;
+		ViewMetrics.Viewport = new Size(
+			double.IsFinite(viewportWidth) && (viewportWidth >= 0) ? viewportWidth : 0,
+			double.IsFinite(viewportHeight) && (viewportHeight >= 0) ? viewportHeight : 0
+		);
+
 		Caret.UpdateVisualLayout();
 	}
 
@@ -214,17 +268,17 @@ public partial class TextEditorViewModel : Notifiable<TextEditorViewModel>
 		Caret.Selection.ProcessKeyUp(args);
 	}
 
-	public void ProcessTextInput(TextInputEventArgs args)
+	public void ProcessTextInput(string text)
 	{
-		if (string.IsNullOrEmpty(args.Text))
+		if (string.IsNullOrEmpty(text))
 		{
 			return;
 		}
 
 		TryRemoveSelection(out _);
 		var offset = Caret.Offset;
-		Insert(offset, args.Text);
-		Caret.Move(offset + args.Text.Length);
+		Insert(offset, text);
+		Caret.Move(offset + text.Length);
 	}
 
 	public void RemoveAt(int offset, int length)
@@ -303,8 +357,8 @@ public partial class TextEditorViewModel : Notifiable<TextEditorViewModel>
 		}
 		Lines.Rebuild(args);
 		TokenManager.Rebuild(args);
-		OnPropertyChanged(nameof(DocumentLength));
-		OnPropertyChanged(nameof(UndoManager));
+		NotifyComputedPropertyChanged(nameof(DocumentLength));
+		NotifyComputedPropertyChanged(nameof(UndoManager));
 		DocumentChanged?.Invoke(this, args);
 	}
 
@@ -326,6 +380,64 @@ public partial class TextEditorViewModel : Notifiable<TextEditorViewModel>
 			Insert(newLineOffset, indent.ToString());
 			Caret.Move(newLineOffset + indent.Length);
 		}
+	}
+
+	internal bool TryRemoveSelection(out int removed)
+	{
+		if ((Caret.Selection.Length <= 0)
+			|| UndoManager.IsProcessing)
+		{
+			removed = 0;
+			return false;
+		}
+
+		var start = Math.Min(Caret.Selection.StartOffset, Caret.Selection.EndOffset);
+		var end = Math.Max(Caret.Selection.StartOffset, Caret.Selection.EndOffset);
+		var request = new Range
+		{
+			StartOffset = start,
+			EndOffset = end
+		};
+
+		if (ReadOnlySectionProvider != null)
+		{
+			var segments = ReadOnlySectionProvider
+				.GetDeletableSegments(request)
+				.Where(static s => s.Length > 0)
+				.OrderBy(static s => s.StartOffset)
+				.ToList();
+
+			if (segments.Count == 0)
+			{
+				removed = 0;
+				return false;
+			}
+
+			removed = 0;
+			// Delete from the end so earlier offsets stay valid.
+			for (var i = segments.Count - 1; i >= 0; i--)
+			{
+				var segment = segments[i];
+				var text = Buffer.Substring(segment.StartOffset, segment.Length);
+				Buffer.RemoveAt(segment.StartOffset, segment.Length);
+				OnDocumentChanged(segment.StartOffset, text, TextDocumentChangeType.Remove);
+				removed += segment.Length;
+			}
+
+			var caretTarget = segments[0].StartOffset;
+			Caret.Move(caretTarget);
+			Caret.Selection.Reset(caretTarget);
+			return true;
+		}
+
+		// No provider: delete the entire selection.
+		removed = end - start;
+		var selection = Buffer.Substring(start, removed);
+		Buffer.RemoveAt(start, removed);
+		Caret.Move(start);
+		Caret.Selection.Reset(start);
+		OnDocumentChanged(start, selection, TextDocumentChangeType.Remove);
+		return true;
 	}
 
 	private int CalculateUnindentAmount(string leadingWhitespace, string indentStr)
@@ -360,6 +472,11 @@ public partial class TextEditorViewModel : Notifiable<TextEditorViewModel>
 			return 0;
 		}
 
+		if (ReadOnlySectionProvider?.CanModify(caretOffset - 1) == false)
+		{
+			return caretOffset;
+		}
+
 		var offset = caretOffset - 1;
 
 		if ((Buffer[offset] == '\n')
@@ -384,7 +501,12 @@ public partial class TextEditorViewModel : Notifiable<TextEditorViewModel>
 	{
 		if (caretOffset >= Buffer.Count)
 		{
-			return 0;
+			return Buffer.Count;
+		}
+
+		if (ReadOnlySectionProvider?.CanModify(caretOffset) == false)
+		{
+			return caretOffset;
 		}
 
 		if ((Buffer[caretOffset] == '\r')
@@ -519,27 +641,6 @@ public partial class TextEditorViewModel : Notifiable<TextEditorViewModel>
 	{
 		// todo: customize this based on the type of document
 		return char.IsLetterOrDigit(c) || (c == '_') || (c == '-');
-	}
-
-	internal bool TryRemoveSelection(out int removed)
-	{
-		if ((Caret.Selection.Length <= 0)
-			|| UndoManager.IsProcessing)
-		{
-			removed = 0;
-			return false;
-		}
-
-		// Delete the selection
-		var offset = Math.Min(Caret.Selection.StartOffset, Caret.Selection.EndOffset);
-		removed = Caret.Selection.Length;
-
-		var selection = Buffer.Substring(offset, removed);
-		Buffer.RemoveAt(offset, removed);
-		Caret.Move(offset);
-		Caret.Selection.Reset(offset);
-		OnDocumentChanged(offset, selection, TextDocumentChangeType.Remove);
-		return true;
 	}
 
 	private void UnindentCurrentLine()

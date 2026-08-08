@@ -8,17 +8,18 @@ using Avalonia.Input.TextInput;
 
 namespace Cornerstone.Avalonia.Text;
 
-internal class TextEditorTextInputMethodClient : TextInputMethodClient
+internal class TextEditorTextInputMethodClient<T> : TextInputMethodClient
+	where T : TextEditorViewModel, new()
 {
 	#region Fields
 
-	private TextEditor _editor;
+	private TextEditor<T> _editor;
 
 	#endregion
 
 	#region Constructors
 
-	public TextEditorTextInputMethodClient(TextEditor editor)
+	public TextEditorTextInputMethodClient(TextEditor<T> editor)
 	{
 		SetPresenter(editor);
 	}
@@ -69,7 +70,7 @@ internal class TextEditorTextInputMethodClient : TextInputMethodClient
 		RaiseInputPaneActivationRequested();
 	}
 
-	private void SetPresenter(TextEditor editor)
+	private void SetPresenter(TextEditor<T> editor)
 	{
 		if (_editor != null)
 		{

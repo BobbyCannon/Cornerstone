@@ -1,0 +1,43 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignWidth="640" d:DesignHeight="400"
+		x:Class="Cornerstone.Sample.Tabs.TabAppDispatcherStreamingView"
+		x:DataType="tabs:TabAppDispatcherStreamingViewModel"
+		x:Name="This"
+		HorizontalAlignment="Stretch"
+		VerticalAlignment="Stretch">
+	<Grid RowDefinitions="*,Auto">
+		<Grid.Styles>
+			<Style Selector="Button">
+				<Setter Property="MinWidth" Value="70" />
+			</Style>
+		</Grid.Styles>
+		<!-- Clip + stretch so the editor scrolls inside the * row instead of growing the page. -->
+		<Border Grid.Row="0"
+				ClipToBounds="True">
+			<Panel>
+				<TextEditor x:Name="StreamView"
+						AutoScroll="True"
+						IsReadOnly="True"
+						HorizontalAlignment="Stretch"
+						VerticalAlignment="Stretch"
+						ViewModel="{Binding Editor, Mode=OneTime}" />
+				<ToggleButton Classes="Icon IconOnly Dim ScrollToggle"
+						IsChecked="{Binding #StreamView.AutoScroll, Mode=TwoWay}"
+						IsVisible="{Binding !#StreamView.AutoScroll}" />
+			</Panel>
+		</Border>
+		<Border Grid.Row="1"
+				BorderThickness="1"
+				Padding="10">
+			<WrapPanel ItemSpacing="10">
+				<Button Click="StreamOnClick">Stream</Button>
+				<Button Click="ClearOnClick">Clear</Button>
+			</WrapPanel>
+		</Border>
+	</Grid>
+</UserControl>

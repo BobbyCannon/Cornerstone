@@ -21,8 +21,8 @@ public class PartialUpdateTests : CornerstoneUnitTest
 	public void AddOrUpdateSupportsTypeConversion()
 	{
 		var partial = new PartialUpdate();
-		partial.AddOrUpdate("Age", "42");
-		IsTrue(partial.TryGet(out int age, "Age"));
+		partial.Set("Age", "42");
+		IsTrue(partial.TryGet( "Age", out int age));
 		AreEqual(42, age);
 	}
 
@@ -36,7 +36,7 @@ public class PartialUpdateTests : CornerstoneUnitTest
 
 		var partial = PartialUpdate.FromDictionary(dict);
 
-		IsTrue(partial.TryGet(out string value, "Name"));
+		IsTrue(partial.TryGet("Name", out string value));
 		AreEqual("CaseInsensitive", value);
 	}
 
@@ -52,13 +52,13 @@ public class PartialUpdateTests : CornerstoneUnitTest
 
 		var partial = PartialUpdate.FromDictionary(dict);
 
-		IsTrue(partial.TryGet(out string name, "Name"));
+		IsTrue(partial.TryGet( "Name", out string name));
 		AreEqual("John", name);
 
-		IsTrue(partial.TryGet(out int age, "Age"));
+		IsTrue(partial.TryGet("Age", out int age));
 		AreEqual(42, age);
 
-		IsTrue(partial.TryGet(out bool active, "IsActive"));
+		IsTrue(partial.TryGet("IsActive", out bool active));
 		IsTrue(active);
 	}
 
@@ -74,13 +74,13 @@ public class PartialUpdateTests : CornerstoneUnitTest
 
 		var partial = PartialUpdate<TestModel>.FromDictionary(dict);
 
-		IsTrue(partial.TryGet(out string name, "Name"));
+		IsTrue(partial.TryGet("Name", out string name));
 		AreEqual("Alice", name);
 
-		IsTrue(partial.TryGet(out int age, "Age"));
+		IsTrue(partial.TryGet("Age",out int age));
 		AreEqual(30, age);
 
-		IsTrue(partial.TryGet(out string extra, "UnknownProp"));
+		IsTrue(partial.TryGet("UnknownProp", out string extra));
 		AreEqual("extra", extra);
 	}
 
@@ -90,15 +90,15 @@ public class PartialUpdateTests : CornerstoneUnitTest
 		var json = """{"Name": "John", "Age": 42, "IsActive": true}""";
 		var element = Serializer.FromJson<JsonElement>(json);
 
-		var partial = PartialUpdate.FromJsonElement(element);
+		var partial = PartialUpdate.FromJsonElement(typeof(PartialUpdate), element);
 
-		IsTrue(partial.TryGet(out string name, "Name"));
+		IsTrue(partial.TryGet( "Name",out string name));
 		AreEqual("John", name);
 
-		IsTrue(partial.TryGet(out int age, "Age"));
+		IsTrue(partial.TryGet( "Age",out int age));
 		AreEqual(42, age);
 
-		IsTrue(partial.TryGet(out bool active, "IsActive"));
+		IsTrue(partial.TryGet("IsActive",out bool active));
 		IsTrue(active);
 	}
 
@@ -109,10 +109,10 @@ public class PartialUpdateTests : CornerstoneUnitTest
 		var element = Serializer.FromJson<JsonElement>(json);
 		var partial = PartialUpdate<TestModel>.FromJsonElement(element);
 
-		IsTrue(partial.TryGet(out string name, "Name"));
+		IsTrue(partial.TryGet("Name",out string name));
 		AreEqual("Bob", name);
 
-		IsTrue(partial.TryGet(out int age, "Age"));
+		IsTrue(partial.TryGet("Age",out int age));
 		AreEqual(25, age);
 	}
 
@@ -146,16 +146,16 @@ public class PartialUpdateTests : CornerstoneUnitTest
 	public void JsonRoundtripPreservesValues()
 	{
 		var original = new PartialUpdate<TestModel>();
-		original.AddOrUpdate("Name", "Charlie");
-		original.AddOrUpdate("Age", 35);
+		original.Set("Name", "Charlie");
+		original.Set("Age",35);
 
 		var json = original.ToJson();
 		var deserialized = json.FromJson<PartialUpdate<TestModel>>();
 
 		IsNotNull(deserialized);
-		IsTrue(deserialized.TryGet(out string name, "Name"));
+		IsTrue(deserialized.TryGet("Name",out string name));
 		AreEqual("Charlie", name);
-		IsTrue(deserialized.TryGet(out int age, "Age"));
+		IsTrue(deserialized.TryGet("Age", out int age));
 		AreEqual(35, age);
 	}
 
@@ -163,8 +163,8 @@ public class PartialUpdateTests : CornerstoneUnitTest
 	public void ToDictionaryReturnsCorrectValues()
 	{
 		var partial = new PartialUpdate();
-		partial.AddOrUpdate("Name", "Test");
-		partial.AddOrUpdate("Age", 99);
+		partial.Set( "Name", "Test");
+		partial.Set("Age",99);
 
 		var dict = partial.ToDictionary();
 
@@ -177,20 +177,20 @@ public class PartialUpdateTests : CornerstoneUnitTest
 	public void TryGetReturnsFalseForMissingKey()
 	{
 		var partial = new PartialUpdate();
-		IsFalse(partial.TryGet<string>(out _, "Missing"));
+		IsFalse(partial.TryGet<string>( "Missing", out _));
 	}
 
 	[TestMethod]
 	public void TryUpdateInvokesOnlyWhenKeyExists()
 	{
 		var partial = new PartialUpdate();
-		partial.AddOrUpdate("Name", "Original");
+		partial.Set("Name", "Original");
 
 		var called = false;
-		partial.TryUpdate<string>(_ => { called = true; }, "Name");
+		partial.TrySet<string>( "Name", _ => { called = true; });
 
 		IsTrue(called);
-		IsTrue(partial.TryGet(out string name, "Name"));
+		IsTrue(partial.TryGet( "Name", out string name));
 		AreEqual("Original", name);
 	}
 

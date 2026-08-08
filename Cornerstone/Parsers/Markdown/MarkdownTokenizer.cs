@@ -15,15 +15,18 @@ public class MarkdownTokenizer : Tokenizer
 	#region Fields
 
 	public static readonly IReadOnlyList<string> Extensions = ["markdown", "md"];
-
+	public static readonly int TokenTypeBlockQuote;
 	public static readonly int TokenTypeBold;
 	public static readonly int TokenTypeBoldAndItalic;
 	public static readonly int TokenTypeCodeBlock;
 	public static readonly int TokenTypeHeader;
 	public static readonly int TokenTypeHorizontalRule;
+	public static readonly int TokenTypeInlineCode;
 	public static readonly int TokenTypeItalic;
+	public static readonly int TokenTypeLink;
 	public static readonly int TokenTypeStrikethrough;
 	public static readonly int TokenTypeTable;
+	public static readonly int TokenTypeUnorderedList;
 
 	#endregion
 
@@ -38,15 +41,18 @@ public class MarkdownTokenizer : Tokenizer
 	static MarkdownTokenizer()
 	{
 		// If you add types be sure to add them to MarkdownView.axaml.cs
-		TokenTypeCodeBlock = RegisterTokenType("Code Block", nameof(MarkdownTokenizer), nameof(TokenTypeCodeBlock), 300, SyntaxColor.None);
-		TokenTypeHeader = RegisterTokenType("Header", nameof(MarkdownTokenizer), nameof(TokenTypeHeader), 301, SyntaxColor.Keyword);
-		TokenTypeHorizontalRule = RegisterTokenType("Horizontal Rule", nameof(MarkdownTokenizer), nameof(TokenTypeHorizontalRule), 302, SyntaxColor.Operator);
-		TokenTypeBoldAndItalic = RegisterTokenType("Bold / Italic", nameof(MarkdownTokenizer), nameof(TokenTypeBoldAndItalic), 303, SyntaxColor.Keyword);
-		TokenTypeBold = RegisterTokenType("Bold", nameof(MarkdownTokenizer), nameof(TokenTypeBold), 304, SyntaxColor.Keyword);
-		TokenTypeItalic = RegisterTokenType("Italic", nameof(MarkdownTokenizer), nameof(TokenTypeItalic), 305, SyntaxColor.Keyword);
-		TokenTypeStrikethrough = RegisterTokenType("Strikethrough", nameof(MarkdownTokenizer), nameof(TokenTypeStrikethrough), 306, SyntaxColor.Keyword);
-		TokenTypeTable = RegisterTokenType("Table", nameof(MarkdownTokenizer), nameof(TokenTypeTable), 307, SyntaxColor.None);
-		TokenTypeBlockQuote = RegisterTokenType("Block Quote", nameof(MarkdownTokenizer), nameof(TokenTypeBlockQuote), 308, SyntaxColor.None);
+		TokenTypeCodeBlock = RegisterTokenType("Code Block", nameof(MarkdownTokenizer), nameof(TokenTypeCodeBlock), 300, SyntaxKind.None);
+		TokenTypeHeader = RegisterTokenType("Header", nameof(MarkdownTokenizer), nameof(TokenTypeHeader), 301, SyntaxKind.Keyword);
+		TokenTypeHorizontalRule = RegisterTokenType("Horizontal Rule", nameof(MarkdownTokenizer), nameof(TokenTypeHorizontalRule), 302, SyntaxKind.Operator);
+		TokenTypeBoldAndItalic = RegisterTokenType("Bold / Italic", nameof(MarkdownTokenizer), nameof(TokenTypeBoldAndItalic), 303, SyntaxKind.Keyword);
+		TokenTypeBold = RegisterTokenType("Bold", nameof(MarkdownTokenizer), nameof(TokenTypeBold), 304, SyntaxKind.Keyword);
+		TokenTypeItalic = RegisterTokenType("Italic", nameof(MarkdownTokenizer), nameof(TokenTypeItalic), 305, SyntaxKind.Keyword);
+		TokenTypeStrikethrough = RegisterTokenType("Strikethrough", nameof(MarkdownTokenizer), nameof(TokenTypeStrikethrough), 306, SyntaxKind.Keyword);
+		TokenTypeTable = RegisterTokenType("Table", nameof(MarkdownTokenizer), nameof(TokenTypeTable), 307, SyntaxKind.None);
+		TokenTypeBlockQuote = RegisterTokenType("Block Quote", nameof(MarkdownTokenizer), nameof(TokenTypeBlockQuote), 308, SyntaxKind.None);
+		TokenTypeUnorderedList = RegisterTokenType("Unordered List", nameof(MarkdownTokenizer), nameof(TokenTypeUnorderedList), 309, SyntaxKind.None);
+		TokenTypeInlineCode = RegisterTokenType("Inline Code", nameof(MarkdownTokenizer), nameof(TokenTypeInlineCode), 310, SyntaxKind.None);
+		TokenTypeLink = RegisterTokenType("Link", nameof(MarkdownTokenizer), nameof(TokenTypeLink), 311, SyntaxKind.Method);
 	}
 
 	#endregion
@@ -54,8 +60,6 @@ public class MarkdownTokenizer : Tokenizer
 	#region Properties
 
 	public override bool SupportsRebuilding => true;
-
-	public static int TokenTypeBlockQuote { get; }
 
 	#endregion
 
@@ -68,36 +72,44 @@ public class MarkdownTokenizer : Tokenizer
 
 	public static bool IsStartCharacter(char value, bool wasEndOfLine, bool wasIndentation, bool wasWhitespace)
 	{
-		return (wasEndOfLine && value is '#' or '`' or '|' or '>')
-			|| (wasIndentation && value is '>')
-			|| (wasWhitespace && value is '*' or '_' or '~');
+		return (wasEndOfLine && value is '#' or '~' or '`' or '|' or '>' or '*' or '-' or '+')
+			|| (wasIndentation && value is '`' or '>' or '*' or '-' or '+')
+			|| (wasWhitespace && value is '~' or '`' or '*' or '_' or '[')
+			|| (value == '[');
 	}
 
-	public override bool TryProcessContinuation(out Token token)
+	protected override bool TryProcessContinuation(out Token token)
 	{
 		token = null;
 		return false;
 	}
 
-	public override bool TryProcessPosition(out Token token)
+	protected override bool TryProcessPosition(out Token token)
 	{
 		var c = Buffer[Position];
 
 		switch (c)
 		{
-			case '>' when AtEndOfLine && TryReadBlockQuote(out token):
 			case '#' when AtEndOfLine && TryReadHeader(out token):
 			case '*' when AtEndOfLine && TryReadHorizontalRule(out token):
 			case '-' when AtEndOfLine && TryReadHorizontalRule(out token):
 			case '_' when AtEndOfLine && TryReadHorizontalRule(out token):
-			case '*' when AtWhitespace && TryProcessDelimitedToken("***", "***", TokenTypeBoldAndItalic, out token):
-			case '_' when AtWhitespace && TryProcessDelimitedToken("___", "___", TokenTypeBoldAndItalic, out token):
-			case '*' when AtWhitespace && TryProcessDelimitedToken("**", "**", TokenTypeBold, out token):
-			case '_' when AtWhitespace && TryProcessDelimitedToken("__", "__", TokenTypeBold, out token):
-			case '*' when AtWhitespace && TryProcessDelimitedToken("*", "*", TokenTypeItalic, out token):
-			case '_' when AtWhitespace && TryProcessDelimitedToken("_", "_", TokenTypeItalic, out token):
-			case '~' when AtWhitespace && TryProcessDelimitedToken("~~", "~~", TokenTypeStrikethrough, out token):
-			case '`' when AtWhitespace && TryProcessDelimitedToken("```", "```", TokenTypeCodeBlock, out token):
+			case '-' when AtIndentation && TryReadUnorderedList(out token):
+			case '*' when AtIndentation && TryReadUnorderedList(out token):
+			case '+' when AtIndentation && TryReadUnorderedList(out token):
+			case '>' when AtEndOfLine && TryReadBlockQuote(out token):
+			case '*' when AtWhitespace && TryProcessDelimitedSection("***", "***", TokenTypeBoldAndItalic, out token):
+			case '_' when AtWhitespace && TryProcessDelimitedSection("___", "___", TokenTypeBoldAndItalic, out token):
+			case '*' when AtWhitespace && TryProcessDelimitedSection("**", "**", TokenTypeBold, out token, '\r', '\n', ' '):
+			case '_' when AtWhitespace && TryProcessDelimitedSection("__", "__", TokenTypeBold, out token, '\r', '\n', ' '):
+			case '*' when AtWhitespace && TryProcessDelimitedSection("*", "*", TokenTypeItalic, out token, '\r', '\n', ' '):
+			case '_' when AtWhitespace && TryProcessDelimitedSection("_", "_", TokenTypeItalic, out token, '\r', '\n', ' '):
+			case '~' when AtIndentation && TryReadFencedCodeBlock(out token):
+			case '`' when AtIndentation && TryReadFencedCodeBlock(out token):
+			case '`' when AtWhitespace && TryProcessDelimitedInlineSelection('`', TokenTypeInlineCode, out token):
+			case '`' when AtWhitespace && TryProcessDelimitedSection("`", "`", TokenTypeInlineCode, out token):
+			case '~' when AtWhitespace && TryProcessDelimitedSection("~~", "~~", TokenTypeStrikethrough, out token):
+			case '[' when TryReadLink(out token):
 			case '|' when AtEndOfLine && TryReadTable(out token):
 			{
 				return true;
@@ -109,6 +121,43 @@ public class MarkdownTokenizer : Tokenizer
 				return true;
 			}
 		}
+	}
+
+	/// <summary>
+	/// Reads <c>[text](destination)</c>. Token spans the full construct (for editor highlighting).
+	/// </summary>
+	private bool TryReadLink(out Token token)
+	{
+		if (!MarkdownLink.TryRead(Buffer, Position,
+			    out var start, out var end,
+			    out _, out _, out _, out _))
+		{
+			token = null;
+			return false;
+		}
+
+		token = CreateOrUpdateSection(TokenTypeLink, start, end);
+		CurrentState = LexerStateDefault;
+		Position = end;
+		return true;
+	}
+
+	/// <summary>
+	/// Reads a fenced code block (``` or ~~~). Supports incomplete fences for streaming:
+	/// if no closer is present yet, the token spans to EOF and remains TokenTypeCodeBlock.
+	/// </summary>
+	private bool TryReadFencedCodeBlock(out Token token)
+	{
+		if (!MarkdownFence.TryRead(Buffer, Position, out var fence))
+		{
+			token = null;
+			return false;
+		}
+
+		token = CreateOrUpdateSection(TokenTypeCodeBlock, fence.StartOffset, fence.EndOffset);
+		CurrentState = LexerStateDefault;
+		Position = fence.EndOffset;
+		return true;
 	}
 
 	private bool TryReadBlockQuote(out Token token)
@@ -285,6 +334,67 @@ public class MarkdownTokenizer : Tokenizer
 		}
 
 		token = CreateOrUpdateSection(TokenTypeTable, tableStart, Position);
+		return true;
+	}
+
+	/// <summary>
+	/// Parses unordered list items (-, *, +) followed by whitespace.
+	/// Consumes consecutive lines that start with a valid list marker (respecting indentation).
+	/// </summary>
+	private bool TryReadUnorderedList(out Token token)
+	{
+		token = null;
+		var blockStart = Position;
+		var start = CalculatePastIndentation(blockStart);
+
+		// Only process if it's a valid list marker
+		var c = Buffer[start];
+		if ((c != '-') && (c != '*') && (c != '+'))
+		{
+			return false;
+		}
+
+		// Must be followed by at least one whitespace character
+		if ((++start >= Buffer.Count)
+			|| !char.IsWhiteSpace(Buffer[start]))
+		{
+			return false;
+		}
+
+		// Consume marker and following whitespace
+		start = CalculatePastWhitespace(start);
+		var blockEnd = CalculateUntilEndOfLine(start);
+
+		// Continue consuming subsequent lines that start with a list marker
+		start = CalculatePastEndOfLine(blockEnd);
+		while (start < Buffer.Count)
+		{
+			start = CalculatePastIndentation(start);
+
+			// Only process if it's a valid list marker
+			c = Buffer[start];
+			if ((c != '-') && (c != '*') && (c != '+'))
+			{
+				return false;
+			}
+
+			// Must be followed by at least one whitespace character
+			if ((++start >= Buffer.Count)
+				|| !char.IsWhiteSpace(Buffer[start]))
+			{
+				return false;
+			}
+
+			// Consume marker and following whitespace
+			start = CalculatePastWhitespace(start);
+			blockEnd = CalculateUntilEndOfLine(start);
+
+			// Move to the next line
+			start = CalculatePastEndOfLine(blockEnd);
+		}
+
+		token = CreateOrUpdateSection(TokenTypeUnorderedList, blockStart, blockEnd);
+		Position = blockEnd;
 		return true;
 	}
 

@@ -3,8 +3,8 @@
 	<Styles.Resources>
 		<ResourceDictionary>
 			<ControlTheme x:Key="{x:Type ListBox}" TargetType="ListBox">
-				<Setter Property="Theme.Color" Value="Current" />
-				<Setter Property="Background" Value="{DynamicResource Background02}" />
+				<Setter Property="Theme.Color" Value="None" />
+				<Setter Property="Background" Value="Transparent" />
 				<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
 				<Setter Property="BorderThickness" Value="0" />
@@ -66,7 +66,7 @@
 	</Style>
 	<!-- Code Template - /Color -->
 
-	<!-- Generated Code - Colors -->
+	<!-- Generated Code - Color -->
 	<Style Selector="ListBox[(Theme.Color)=Amber]">
 		<Style Selector="^ ListBoxItem:selected">
 			<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
@@ -347,7 +347,7 @@
 			</Style>
 		</Style>
 	</Style>
-	<!-- Generated Code - /Colors -->
+	<!-- Generated Code - /Color -->
 
 	<Design.PreviewWith>
 		<PreviewCodeSnippet MaxWidth="600">

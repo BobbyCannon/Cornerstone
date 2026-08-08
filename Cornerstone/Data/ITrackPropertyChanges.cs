@@ -29,19 +29,25 @@ public interface ITrackPropertyChanges
 	/// Determines if the object has changes.
 	/// </summary>
 	/// <returns> True if the object has changes otherwise false. </returns>
-	public bool HasNotifiableChanges();
+	public bool HasChanges();
 
 	/// <summary>
 	/// Determines if the object has changes.
 	/// </summary>
 	/// <param name="settings"> An optional set of options. </param>
 	/// <returns> True if the object has changes otherwise false. </returns>
-	public bool HasNotifiableChanges(IncludeExcludeSettings settings);
+	public bool HasChanges(IncludeExcludeSettings settings);
 
 	/// <summary>
 	/// Reset the "has changes" state.
 	/// </summary>
 	public void ResetHasChanges();
+
+	/// <summary>
+	/// Reset the "has changes" state for a single property.
+	/// </summary>
+	/// <param name="propertyName"> The property whose change bit should be cleared. </param>
+	public void ResetHasChanged(string propertyName);
 
 	#endregion
 }

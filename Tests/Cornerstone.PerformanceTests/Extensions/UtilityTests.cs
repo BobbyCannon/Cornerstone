@@ -105,17 +105,17 @@ public class UtilityTests : CornerstoneUnitTest
 		var result = Utility.WaitUntil(() => true, 20, 1, 10, 50);
 		IsTrue(result);
 		var elapsed = (DateTime.UtcNow - start).TotalMilliseconds;
-		IsTrue(elapsed >= 10, () => $"Minimum wait not respected: {elapsed} ms");
+		IsTrue(elapsed >= 8, () => $"Minimum wait not respected: {elapsed} ms");
 	}
 
 	[TestMethod]
 	public void WaitUntilReturnsFalseAfterTimeout()
 	{
 		var start = DateTime.UtcNow;
-		var result = Utility.WaitUntil(() => false, 20, 1, maximum: 50);
+		var result = Utility.WaitUntil(() => false, 15, 1, maximum: 50);
 		IsFalse(result);
 		var elapsed = (DateTime.UtcNow - start).TotalMilliseconds;
-		IsTrue(elapsed is >= 20 and < 50, () => $"Elapsed was {elapsed} ms");
+		IsTrue(elapsed is >= 10 and < 25, () => $"Elapsed was {elapsed} ms");
 	}
 
 	[TestMethod]

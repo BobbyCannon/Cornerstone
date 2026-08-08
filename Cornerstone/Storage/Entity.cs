@@ -1,8 +1,14 @@
 ﻿#region References
 
+using System;
 using System.ComponentModel;
+using System.Linq;
 using Cornerstone.Data;
+using Cornerstone.Extensions;
 using Cornerstone.Internal;
+using Cornerstone.Reflection;
+using Cornerstone.Serialization;
+using Cornerstone.Sync;
 
 #endregion
 
@@ -24,6 +30,11 @@ public abstract class Entity<T> : Entity
 	#endregion
 
 	#region Methods
+
+	public override bool IdIsSet()
+	{
+		return !Equals(Id, default(T));
+	}
 
 	/// <summary>
 	/// Allows the entity to calculate the next key.
@@ -48,14 +59,33 @@ public abstract class Entity<T> : Entity
 		return currentKey;
 	}
 
+	public override bool TrySetId(string id)
+	{
+		try
+		{
+			Id = id.FromJson<T>();
+			return true;
+		}
+		catch
+		{
+			return false;
+		}
+	}
+
 	#endregion
 }
 
 /// <summary>
 /// Represents a Cornerstone entity.
 /// </summary>
-public abstract class Entity : Notifiable, IEntity
+public abstract class Entity : CornerstoneObject, IEntity
 {
+	#region Fields
+
+	private Type _realType;
+
+	#endregion
+
 	#region Constructors
 
 	/// <summary>
@@ -67,6 +97,93 @@ public abstract class Entity : Notifiable, IEntity
 	}
 
 	#endregion
+
+	#region Methods
+
+	public virtual bool CanBeModified()
+	{
+		return true;
+	}
+
+	public virtual void EntityAdded(DateTime utcNow)
+	{
+	}
+
+	public virtual void EntityAddedDeletedOrModified(DateTime utcNow)
+	{
+		if (this is IClientEntity clientEntity)
+		{
+			clientEntity.LastClientUpdate = utcNow;
+		}
+	}
+
+	public virtual void EntityDeleted(DateTime utcNow)
+	{
+	}
+
+	public virtual void EntityModified(DateTime utcNow)
+	{
+	}
+
+	public object GetEntityId()
+	{
+		return null;
+	}
+
+	public Type GetRealType()
+	{
+		return _realType ??= GetType().GetRealType();
+	}
+
+	public virtual bool IdIsSet()
+	{
+		return false;
+	}
+
+	public bool ShouldProcessProperty(UpdateableAction action, string propertyName)
+	{
+		return Cache.ShouldProcessProperty(GetRealType(), action, propertyName);
+	}
+
+	public virtual bool TrySetId(string id)
+	{
+		return false;
+	}
+
+	/// <summary>
+	/// Update all local sync IDs.
+	/// </summary>
+	public void UpdateLocalSyncIds()
+	{
+		var syncEntityInterface = typeof(ISyncEntity);
+		var properties = SourceReflector
+			.GetRequiredSourceType(GetRealType())
+			.GetProperties();
+		var entityRelationships = properties
+			.Where(x => x.IsVirtual)
+			.Where(x => syncEntityInterface.IsAssignableFrom(x.PropertyInfo.PropertyType))
+			.ToList();
+
+		foreach (var entityRelationship in entityRelationships)
+		{
+			var entityRelationshipSyncIdProperty = properties.FirstOrDefault(x => x.Name == $"{entityRelationship.Name}SyncId");
+
+			if (entityRelationship.GetValue(this) is ISyncEntity syncEntity && (entityRelationshipSyncIdProperty != null))
+			{
+				var otherEntitySyncId = (Guid?) entityRelationshipSyncIdProperty.GetValue(this);
+				var syncEntitySyncId = syncEntity.SyncId;
+				if (otherEntitySyncId != syncEntitySyncId)
+				{
+					// resets entitySyncId to entity.SyncId if it does not match
+					entityRelationshipSyncIdProperty.SetValue(this, syncEntitySyncId);
+				}
+			}
+
+			// todo: maybe?, support the setting Entity.Id would then query the entity sync id and set it?
+		}
+	}
+
+	#endregion
 }
 
 /// <summary>
@@ -74,4 +191,63 @@ public abstract class Entity : Notifiable, IEntity
 /// </summary>
 public interface IEntity : INotifyPropertyChanged, IUpdateable, ITrackPropertyChanges
 {
+	#region Methods
+
+	/// <summary>
+	/// Checks to see if an entity can be modified.
+	/// </summary>
+	public bool CanBeModified();
+
+	/// <summary>
+	/// Update an entity that has been added.
+	/// </summary>
+	public void EntityAdded(DateTime utcNow);
+
+	/// <summary>
+	/// Update an entity that has been added, deleted, or modified.
+	/// </summary>
+	public void EntityAddedDeletedOrModified(DateTime utcNow);
+
+	/// <summary>
+	/// Update an entity that has been deleted.
+	/// </summary>
+	public void EntityDeleted(DateTime utcNow);
+
+	/// <summary>
+	/// Update an entity that has been modified.
+	/// </summary>
+	public void EntityModified(DateTime utcNow);
+
+	/// <summary>
+	/// Gets the primary key (ID) of the entity.
+	/// </summary>
+	/// <returns> The primary key value for the entity. </returns>
+	public object GetEntityId();
+
+	/// <summary>
+	/// Cached version of the "real" type, meaning not EF proxy but rather root type
+	/// </summary>
+	Type GetRealType();
+
+	/// <summary>
+	/// Determine if the ID is set on the entity.
+	/// </summary>
+	/// <returns> True if the ID is set or false if otherwise. </returns>
+	public bool IdIsSet();
+
+	/// <summary>
+	/// Checks a property to see if it should be processed for the provided action.
+	/// </summary>
+	/// <param name="action"> The action to validate. </param>
+	/// <param name="propertyName"> The name of the property to validate. </param>
+	/// <returns> True if the property should be processed otherwise false. </returns>
+	public bool ShouldProcessProperty(UpdateableAction action, string propertyName);
+
+	/// <summary>
+	/// Try to set the ID from a serialized version.
+	/// </summary>
+	/// <returns> True if the ID is successfully set or false if otherwise. </returns>
+	public bool TrySetId(string id);
+
+	#endregion
 }

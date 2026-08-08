@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Diagnostics;
 using System.Globalization;
 using System.Linq.Expressions;
 using Cornerstone.Reflection;
@@ -251,7 +250,7 @@ public class SqlQuery<T> : SqlQuery
 				// SQLite usually returns TEXT or REAL (Unix time)
 				if (dbValue is string str)
 				{
-					if (DateTime.TryParse(str, out var dt))
+					if (DateTime.TryParse(str, null, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var dt))
 					{
 						return dt;
 					}

@@ -4,16 +4,14 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Cornerstone.Data;
 
 #endregion
 
 namespace Cornerstone.Web;
 
-public class WebClientStub : Notifiable, IWebClient
+public class WebClientStub : CornerstoneObject, IWebClient
 {
 	#region Properties
 
@@ -24,8 +22,6 @@ public class WebClientStub : Notifiable, IWebClient
 	public HttpHeaders Headers { get; set; }
 
 	public string IpAddress { get; set; }
-
-	public JsonSerializerOptions SerializerOptions { get; set; }
 
 	public TimeSpan Timeout { get; set; }
 
@@ -65,10 +61,6 @@ public class WebClientStub : Notifiable, IWebClient
 	public Task<T> GetAsync<T>(string uri, CancellationToken cancellationToken = default)
 	{
 		return Task.FromResult(default(T));
-	}
-
-	public void Initialize()
-	{
 	}
 
 	public HttpResponseMessage Patch(string uri, string content, TimeSpan? timeout = null)
@@ -166,10 +158,6 @@ public class WebClientStub : Notifiable, IWebClient
 	}
 
 	public void Reset()
-	{
-	}
-
-	public void Uninitialize()
 	{
 	}
 

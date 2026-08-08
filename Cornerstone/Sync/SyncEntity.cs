@@ -1,10 +1,10 @@
 ﻿#region References
 
+using System;
+using System.Collections.Generic;
 using Cornerstone.Data;
 using Cornerstone.Storage;
 using Cornerstone.Storage.Sql;
-using System;
-using System.Collections.Generic;
 
 #endregion
 
@@ -32,8 +32,9 @@ public abstract partial class SyncEntity<TKey> : Entity<TKey>, ISyncEntity
 		{
 			if (!EqualityComparer<TKey>.Default.Equals(field, value))
 			{
+				var oldValue = field;
 				field = value;
-				OnPropertyChanged();
+				OnPropertyChanged(nameof(Id), oldValue, value);
 			}
 		}
 	}

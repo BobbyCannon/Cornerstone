@@ -12,7 +12,7 @@ namespace Cornerstone.Presentation;
 /// Represents a window location.
 /// </summary>
 [SourceReflection]
-public partial class WindowLocation : Notifiable, IPackable
+public partial class WindowLocation : CornerstoneObject, IPackable
 {
 	#region Constructors
 

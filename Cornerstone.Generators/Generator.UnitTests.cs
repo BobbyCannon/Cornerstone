@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
@@ -18,23 +19,28 @@ public partial class Generator
 {
 	#region Constants
 
+	public const string MsTestTestAssemblyInitializeAttributeFullName = "Microsoft.VisualStudio.TestTools.UnitTesting.AssemblyInitializeAttribute";
 	public const string MsTestTestClassAttributeFullName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute";
 	public const string MsTestTestCleanupAttributeFullName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestCleanupAttribute";
 	public const string MsTestTestInitializeAttributeFullName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestInitializeAttribute";
 	public const string MsTestTestMethodAttributeFullName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute";
+	public const string SkipInAotAttributeAttributeFullName = "Cornerstone.Testing.SkipInAotAttribute";
 
 	#endregion
 
 	#region Methods
 
-	private SourceMethodInfo FindTestInitializeMethod(SourceTypeInfo type)
+	private static SourceMethodInfo FindTestMethodUsingAttribute(
+		SourceTypeInfo type,
+		string attributeFullName,
+		Dictionary<string, SourceTypeInfo> typesLookup)
 	{
 		var current = type;
 
 		while (current != null)
 		{
 			var candidate = current.Methods.FirstOrDefault(x =>
-				x.Attributes.Any(a => a.FullyQualifiedName is MsTestTestInitializeAttributeFullName)
+				x.Attributes.Any(a => a.FullyQualifiedName == attributeFullName)
 			);
 
 			if (candidate != null)
@@ -42,7 +48,7 @@ public partial class Generator
 				return candidate;
 			}
 
-			current = _typesLookup.TryGetValue(current.BaseFullyGlobalQualifiedTypeName, out var value) ? value : null;
+			current = typesLookup.TryGetValue(current.BaseFullyGlobalQualifiedTypeName, out var value) ? value : null;
 		}
 
 		return null;
@@ -51,7 +57,8 @@ public partial class Generator
 	private void GenerateUnitTestMain(
 		SourceProductionContext spc,
 		Compilation compilation,
-		ImmutableArray<SourceTypeInfo> typesToProcess)
+		ImmutableArray<SourceTypeInfo> typesToProcess,
+		Dictionary<string, SourceTypeInfo> typesLookup)
 	{
 		var hasValidReferences = compilation
 			.ReferencedAssemblyNames.Any(a =>
@@ -106,14 +113,18 @@ public partial class Generator
 
 		foreach (var testClass in testClasses)
 		{
+			var aotSkipClassAttribute = testClass.Attributes.FirstOrDefault(a => a.FullyQualifiedName == SkipInAotAttributeAttributeFullName);
+
 			builder.IndentWriteLine("runner.AddTest(");
 			builder.IncreaseIndent();
 			builder.IndentWriteLine($"new {nameof(TestClassInfo)} {{");
 			builder.IncreaseIndent();
 			builder.WriteAssignment(nameof(TestClassInfo.ClassName), testClass.Name);
 			builder.IndentWriteLine($"{nameof(TestClassInfo.ConstructorInfo)} = typeof({testClass.FullyGlobalQualifiedName}).GetConstructor([]),");
+			builder.WriteAssignment(nameof(TestClassInfo.SkipInAot), aotSkipClassAttribute != null);
+			builder.WriteAssignment(nameof(TestClassInfo.SkipInAotReason), aotSkipClassAttribute?.ConstructorArguments.FirstOrDefault()?.ToString() ?? "Not compatible with AOT");
 
-			var initializeMethod = FindTestInitializeMethod(testClass);
+			var initializeMethod = FindTestMethodUsingAttribute(testClass, MsTestTestInitializeAttributeFullName, typesLookup);
 
 			// todo: support base implementations?
 			builder.IndentWrite($"{nameof(TestClassInfo.InitializeMethod)} = ");
@@ -161,6 +172,8 @@ public partial class Generator
 						continue;
 					}
 
+					var aotSkipMethodAttribute = method.Attributes.FirstOrDefault(a => a.FullyQualifiedName == SkipInAotAttributeAttributeFullName);
+
 					if (!first)
 					{
 						builder.WriteLine(",");
@@ -170,6 +183,8 @@ public partial class Generator
 					builder.IncreaseIndent();
 					builder.WriteAssignment(nameof(TestMethodInfo.Name), method.Name);
 					builder.IndentWriteLine($"{nameof(TestMethodInfo.MethodInfo)} = typeof({testClass.FullyGlobalQualifiedName}).GetMethod(\"{method.Name}\"),");
+					builder.WriteAssignment(nameof(TestMethodInfo.SkipInAot), aotSkipMethodAttribute != null);
+					builder.WriteAssignment(nameof(TestMethodInfo.SkipInAotReason), aotSkipMethodAttribute?.ConstructorArguments.FirstOrDefault()?.ToString() ?? "Not compatible with AOT");
 					builder.DecreaseIndent();
 					builder.IndentWrite("}");
 					first = false;

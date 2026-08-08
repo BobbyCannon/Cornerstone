@@ -58,8 +58,22 @@ public class MarkdownRendererForHtml : MarkdownRenderer
 				Buffer.Append(block.Offsets[0].ToString());
 				Buffer.Append(">");
 			}
+			else if ((block.Type == MarkdownTokenizer.TokenTypeLink) && (block.Offsets is { Length: >= 4 }))
+			{
+				var text = buffer.Substring(block.Offsets[0], block.Offsets[1] - block.Offsets[0]);
+				var href = buffer.Substring(block.Offsets[2], block.Offsets[3] - block.Offsets[2]);
+				AppendWithEmphasis(block, () =>
+				{
+					Buffer.Append("<a href=\"");
+					Buffer.Append(href);
+					Buffer.Append("\">");
+					Buffer.Append(text);
+					Buffer.Append("</a>");
+				});
+			}
 			else if (block.Type == MarkdownTokenizer.TokenTypeBold)
 			{
+				// Legacy container type (if present)
 				Buffer.Append("<strong>");
 				Buffer.Append(buffer.Substring(block.Offsets[0], block.Offsets[1] - block.Offsets[0]));
 				Buffer.Append("</strong>");
@@ -78,10 +92,42 @@ public class MarkdownRendererForHtml : MarkdownRenderer
 			}
 			else
 			{
-				Buffer.Append(buffer.Substring(block.StartOffset, block.Length));
+				// Expanded emphasis leaves: text + EmBold / EmItalic
+				AppendWithEmphasis(block, () => Buffer.Append(buffer.Substring(block.StartOffset, block.Length)));
 			}
 		}
 		return Buffer.ToString();
+	}
+
+	private void AppendWithEmphasis(Block block, System.Action writeInner)
+	{
+		var openStrong = block.EmBold || (block.Type == MarkdownTokenizer.TokenTypeBold);
+		var openEm = block.EmItalic || (block.Type == MarkdownTokenizer.TokenTypeItalic);
+		if (block.Type == MarkdownTokenizer.TokenTypeBoldAndItalic)
+		{
+			openStrong = true;
+			openEm = true;
+		}
+
+		if (openEm)
+		{
+			Buffer.Append("<em>");
+		}
+		if (openStrong)
+		{
+			Buffer.Append("<strong>");
+		}
+
+		writeInner();
+
+		if (openStrong)
+		{
+			Buffer.Append("</strong>");
+		}
+		if (openEm)
+		{
+			Buffer.Append("</em>");
+		}
 	}
 
 	#endregion

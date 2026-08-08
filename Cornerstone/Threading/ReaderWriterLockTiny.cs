@@ -64,8 +64,12 @@ public class ReaderWriterLockTiny : IReaderWriterLock
 
 	public void EnterUpgradeableReadLock()
 	{
-		// Get ownership of the lock
-		SpinUntil(() => 0 == Interlocked.CompareExchange(ref _ownerId, Environment.CurrentManagedThreadId, 0));
+		var currentThreadId = Environment.CurrentManagedThreadId;
+
+		if (_ownerId != currentThreadId)
+		{
+			SpinUntil(() => 0 == Interlocked.CompareExchange(ref _ownerId, currentThreadId, 0));
+		}
 
 		SpinUntil(() =>
 		{
@@ -78,35 +82,35 @@ public class ReaderWriterLockTiny : IReaderWriterLock
 
 	public void EnterWriteLock()
 	{
-		// Are we in an upgradeable read lock?
-		if (_ownerId == Environment.CurrentManagedThreadId)
+		var currentThreadId = Environment.CurrentManagedThreadId;
+
+		if (_ownerId == currentThreadId)
 		{
 			try
 			{
-				// Try to get an awaiting write lock
 				SpinUntil(() => 1 == Interlocked.CompareExchange(ref _awaitingWriteLock, 1, 0));
 
-				// Wait for us to be the last reader before getting the writer lock
 				SpinUntil(() => UpgradeableReadLockFlag == Interlocked.CompareExchange(ref _lock, UpgradedWriteLockFlag, UpgradeableReadLockFlag));
 			}
 			finally
 			{
 				Interlocked.Exchange(ref _awaitingWriteLock, 0);
 			}
+
 			return;
 		}
 
-		// Get ownership of the lock
-		SpinUntil(() => 0 == Interlocked.CompareExchange(ref _ownerId, Environment.CurrentManagedThreadId, 0));
+		if (_ownerId != currentThreadId)
+		{
+			SpinUntil(() => 0 == Interlocked.CompareExchange(ref _ownerId, currentThreadId, 0));
+		}
 
 		try
 		{
-			// Try to get an awaiting write lock
 			SpinUntil(() => 1 == Interlocked.CompareExchange(ref _awaitingWriteLock, 1, 0));
 
 			try
 			{
-				// Now try and grab the lock, we have to wait for readers to complete
 				SpinUntil(() => 0 == Interlocked.CompareExchange(ref _lock, WriteLockFlag, 0));
 			}
 			finally
@@ -116,7 +120,6 @@ public class ReaderWriterLockTiny : IReaderWriterLock
 		}
 		finally
 		{
-			// Release ownership only if we didn't succeed
 			if ((_lock != WriteLockFlag) && (_lock != UpgradedWriteLockFlag))
 			{
 				Interlocked.Exchange(ref _ownerId, 0);
@@ -128,19 +131,19 @@ public class ReaderWriterLockTiny : IReaderWriterLock
 	{
 		SpinUntil(() =>
 		{
-			var tempLock = _lock;
+			var currentLock = _lock;
 
-			if (tempLock >= WriteLockFlag)
+			if (currentLock >= WriteLockFlag)
 			{
 				throw new InvalidOperationException("Incorrect read lock exit while in a write lock.");
 			}
 
-			if (GetReaderLockCount(tempLock) <= GetMinimumNumberOfReaders(tempLock))
+			if (GetReaderLockCount(currentLock) <= GetMinimumNumberOfReaders(currentLock))
 			{
 				throw new InvalidOperationException("Incorrect read lock exit...");
 			}
 
-			return tempLock == Interlocked.CompareExchange(ref _lock, tempLock - 1, tempLock);
+			return currentLock == Interlocked.CompareExchange(ref _lock, currentLock - 1, currentLock);
 		});
 	}
 
@@ -179,15 +182,12 @@ public class ReaderWriterLockTiny : IReaderWriterLock
 			throw new InvalidOperationException("Incorrect thread trying to release lock.");
 		}
 
-		// See if the lock is an upgrade one
 		if (_lock == UpgradedWriteLockFlag)
 		{
-			// if so just downgrade the lock back to a single reader and keep ownership
 			Interlocked.Exchange(ref _lock, UpgradeableReadLockFlag);
 		}
 		else if (_lock == WriteLockFlag)
 		{
-			// release the lock and the ownership
 			Interlocked.Exchange(ref _lock, 0);
 			Interlocked.Exchange(ref _ownerId, 0);
 		}
@@ -210,19 +210,17 @@ public class ReaderWriterLockTiny : IReaderWriterLock
 
 	public bool TryEnterWriteLock()
 	{
-		// Fast path: check if we are already the owner (e.g., upgrading from upgradeable read)
-		if (_ownerId == Environment.CurrentManagedThreadId)
+		var currentThreadId = Environment.CurrentManagedThreadId;
+
+		if (_ownerId == currentThreadId)
 		{
-			// We own the lock, so we can try to upgrade directly.
-			// First, ensure no other thread is awaiting a write lock
 			if (Interlocked.CompareExchange(ref _awaitingWriteLock, 1, 0) != 0)
 			{
-				return false; // someone else is already awaiting
+				return false;
 			}
 
 			try
 			{
-				// Current state must be exactly one upgradeable reader (no other readers)
 				if (Interlocked.CompareExchange(ref _lock, UpgradedWriteLockFlag, UpgradeableReadLockFlag) == UpgradeableReadLockFlag)
 				{
 					return true;
@@ -230,30 +228,29 @@ public class ReaderWriterLockTiny : IReaderWriterLock
 			}
 			finally
 			{
-				// Always clear the awaiting flag if we set it
 				Interlocked.Exchange(ref _awaitingWriteLock, 0);
 			}
 
 			return false;
 		}
 
-		// Normal path: try to become the owner first
-		if (Interlocked.CompareExchange(ref _ownerId, Environment.CurrentManagedThreadId, 0) != 0)
+		if (_ownerId != currentThreadId)
 		{
-			return false; // someone else already owns the lock structure
+			if (Interlocked.CompareExchange(ref _ownerId, currentThreadId, 0) != 0)
+			{
+				return false;
+			}
 		}
 
 		try
 		{
-			// Try to mark ourselves as awaiting a write lock
 			if (Interlocked.CompareExchange(ref _awaitingWriteLock, 1, 0) != 0)
 			{
-				return false; // another writer is already awaiting
+				return false;
 			}
 
 			try
 			{
-				// Now try to grab the full write lock if there are no readers
 				if (Interlocked.CompareExchange(ref _lock, WriteLockFlag, 0) == 0)
 				{
 					return true;
@@ -266,14 +263,10 @@ public class ReaderWriterLockTiny : IReaderWriterLock
 		}
 		finally
 		{
-			// If we failed to get the write lock, release ownership
-			// (we succeeded in getting ownership earlier, but didn't get the write lock)
 			if ((_lock != WriteLockFlag) && (_lock != UpgradedWriteLockFlag))
 			{
 				Interlocked.Exchange(ref _ownerId, 0);
 			}
-
-			// Note: if we did succeed, ownership remains held — correct behavior
 		}
 
 		return false;
@@ -297,14 +290,14 @@ public class ReaderWriterLockTiny : IReaderWriterLock
 
 	private static void SpinUntil(Func<bool> condition)
 	{
-		const int MaxSpinAttempts = 40;
+		const int maxSpinAttempts = 40;
 
 		var w = new SpinWait();
 		var spinCount = 0;
 
 		while (!condition())
 		{
-			if (spinCount < MaxSpinAttempts)
+			if (spinCount < maxSpinAttempts)
 			{
 				w.SpinOnce();
 				spinCount++;
@@ -312,9 +305,6 @@ public class ReaderWriterLockTiny : IReaderWriterLock
 			else
 			{
 				Thread.Yield();
-
-				// Optional: spinCount = 0;  // to give another burst after yield
-				// Currently we keep yielding until condition is met (safer default)
 			}
 		}
 	}

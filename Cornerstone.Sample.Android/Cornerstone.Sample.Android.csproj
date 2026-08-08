@@ -1,4 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
 		<TargetFrameworks>net10.0-android</TargetFrameworks>
@@ -6,18 +7,8 @@
 		<ApplicationId>com.bobbycannon.cornerstone.sample</ApplicationId>
 		<AndroidPackageFormat>apk</AndroidPackageFormat>
 		<AndroidEnableProfiledAot>False</AndroidEnableProfiledAot>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)'=='Release'">
-		<Optimize>true</Optimize>
-		<PublishTrimmed>false</PublishTrimmed>
-		<TrimMode>none</TrimMode>
-		<OptimizationPreference>Speed</OptimizationPreference>
-		<PublishAot>false</PublishAot>
-		<DebugSymbols>false</DebugSymbols>
-		<DebugType>none</DebugType>
-		<RunAOTCompilation>false</RunAOTCompilation>
-		<EnableAssemblyILStripping>false</EnableAssemblyILStripping>
-		<NoWarn>$(NoWarn);IL2026;IL2111</NoWarn>
+		<ApplicationVersion>1</ApplicationVersion>
+		<ApplicationDisplayVersion>3.0.0</ApplicationDisplayVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<AndroidResource Include="Icon.png">

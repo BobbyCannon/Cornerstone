@@ -35,6 +35,19 @@ public static class TypeExtensions
 	#region Methods
 
 	/// <summary>
+	/// Gets the real type of the entity. For use with proxy entities.
+	/// </summary>
+	/// <param name="type"> The type to process. </param>
+	/// <returns> The real base type for the proxy or just the initial type if it is not a proxy. </returns>
+	public static Type GetRealType(this Type type)
+	{
+		var isProxy = (type.FullName?.Contains("System.Data.Entity.DynamicProxies") == true)
+			|| (type.FullName?.Contains("Castle.Proxies") == true);
+
+		return isProxy ? type.BaseType : type;
+	}
+
+	/// <summary>
 	/// Returns true if the object is a descendant of the provided generic type
 	/// </summary>
 	/// <typeparam name="T"> The parent type. </typeparam>
@@ -94,39 +107,9 @@ public static class TypeExtensions
 				}
 
 				var sb = new StringBuilder();
-				appendMinimal(type, sb);
+				AppendMinimal(type, sb);
 				return sb.ToString();
 			});
-
-		void appendMinimal(Type t, StringBuilder sb)
-		{
-			if (t.IsGenericParameter)
-			{
-				sb.Append(t.Name);
-				return;
-			}
-
-			sb.Append(t.Namespace).Append('.').Append(t.Name.Split('`')[0]);
-
-			if (t.IsGenericType)
-			{
-				sb.Append('`').Append(t.GetGenericArguments().Length);
-				sb.Append("[[");
-				var first = true;
-				foreach (var arg in t.GetGenericArguments())
-				{
-					if (!first)
-					{
-						sb.Append("],[");
-					}
-					appendMinimal(arg, sb);
-					first = false;
-				}
-				sb.Append("]]");
-			}
-
-			sb.Append($",{t.Assembly.GetName().Name}");
-		}
 	}
 
 	/// <summary>
@@ -147,7 +130,7 @@ public static class TypeExtensions
 		{
 			var sourceType = SourceReflector.GetSourceType(value)
 				?? SourceReflector.GetSourceType(RemoveAssemblyVersionMetadata(value));
-			type = sourceType?.Type;
+			type = sourceType?.Type ?? Type.GetType(value);
 			return type != null;
 		}
 		catch
@@ -172,6 +155,36 @@ public static class TypeExtensions
 		cleaned = cleaned.Trim(',', ' ').Trim();
 
 		return cleaned;
+	}
+
+	private static void AppendMinimal(Type t, StringBuilder sb)
+	{
+		if (t.IsGenericParameter)
+		{
+			sb.Append(t.Name);
+			return;
+		}
+
+		sb.Append(t.Namespace).Append('.').Append(t.Name.Split('`')[0]);
+
+		if (t.IsGenericType)
+		{
+			sb.Append('`').Append(t.GetGenericArguments().Length);
+			sb.Append("[[");
+			var first = true;
+			foreach (var arg in t.GetGenericArguments())
+			{
+				if (!first)
+				{
+					sb.Append("],[");
+				}
+				AppendMinimal(arg, sb);
+				first = false;
+			}
+			sb.Append("]]");
+		}
+
+		sb.Append($",{t.Assembly.GetName().Name}");
 	}
 
 	private static bool IsSubclassOfRawGeneric(Type valueType, Type parentGeneric)

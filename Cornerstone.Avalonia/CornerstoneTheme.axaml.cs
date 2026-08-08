@@ -18,9 +18,24 @@ namespace Cornerstone.Avalonia;
 
 public class CornerstoneTheme : Style
 {
+	#region Constants
+
+	/// <summary>
+	/// Primary body / list font size resource key (matches Theme.Constants.axaml).
+	/// </summary>
+	public const string ControlFontSizeKey = "ControlFontSize";
+
+	/// <summary>
+	/// Secondary / muted font size resource key.
+	/// </summary>
+	public const string ControlFontSizeSmallKey = "ControlFontSizeSmall";
+
+	#endregion
+
 	#region Fields
 
 	public static readonly StyledProperty<ThemeColor> ThemeColorProperty;
+	public static readonly StyledProperty<ThemeDensity> ThemeDensityProperty;
 	public static readonly StyledProperty<ThemeMode> ThemeModeProperty;
 	private ResourceDictionary _colorTheme;
 
@@ -37,11 +52,13 @@ public class CornerstoneTheme : Style
 		AvaloniaXamlLoader.Load(sp, this);
 		SelectThemeColor(ThemeColor.Blue);
 		SelectThemeMode(ThemeMode.Dark);
+		SelectThemeDensity(ThemeDensity.Normal);
 	}
 
 	static CornerstoneTheme()
 	{
 		ThemeColorProperty = AvaloniaProperty.Register<CornerstoneTheme, ThemeColor>(nameof(ThemeColor), ThemeColor.Gray);
+		ThemeDensityProperty = AvaloniaProperty.Register<CornerstoneTheme, ThemeDensity>(nameof(ThemeDensity), ThemeDensity.Normal);
 		ThemeModeProperty = AvaloniaProperty.Register<CornerstoneTheme, ThemeMode>(nameof(ThemeMode), ThemeMode.Dark);
 
 		DejaVuSansLight = new("avares://Cornerstone.Avalonia/Assets/Fonts/DejaVuSansLight.ttf#DejaVu Sans Light");
@@ -74,6 +91,19 @@ public class CornerstoneTheme : Style
 		}
 	}
 
+	/// <summary>
+	/// Compact / Normal / Large chrome and list text density.
+	/// </summary>
+	public ThemeDensity ThemeDensity
+	{
+		get => GetValue(ThemeDensityProperty);
+		set
+		{
+			SetValue(ThemeDensityProperty, value);
+			SelectThemeDensity(value);
+		}
+	}
+
 	public ThemeMode ThemeMode
 	{
 		get => GetValue(ThemeModeProperty);
@@ -89,6 +119,42 @@ public class CornerstoneTheme : Style
 	#endregion
 
 	#region Methods
+
+	/// <summary>
+	/// Primary UI font size for the density preset.
+	/// </summary>
+	public static double GetControlFontSize(ThemeDensity density)
+	{
+		return density switch
+		{
+			ThemeDensity.Compact => 12,
+			ThemeDensity.Large => 16,
+			_ => 14
+		};
+	}
+
+	/// <summary>
+	/// Secondary UI font size for the density preset.
+	/// </summary>
+	public static double GetControlFontSizeSmall(ThemeDensity density)
+	{
+		return density switch
+		{
+			ThemeDensity.Compact => 11,
+			ThemeDensity.Large => 14,
+			_ => 12
+		};
+	}
+
+	/// <summary>
+	/// Normalize unknown values to <see cref="ThemeDensity.Normal" />.
+	/// </summary>
+	public static ThemeDensity NormalizeThemeDensity(ThemeDensity density)
+	{
+		return density is ThemeDensity.Compact or ThemeDensity.Normal or ThemeDensity.Large
+			? density
+			: ThemeDensity.Normal;
+	}
 
 	public void SelectThemeColor(ThemeColor themeColor)
 	{
@@ -121,6 +187,43 @@ public class CornerstoneTheme : Style
 		);
 
 		Resources.MergedDictionaries.Insert(0, _colorTheme);
+	}
+
+	/// <summary>
+	/// Apply Compact / Normal / Large font tokens (ControlFontSize / ControlFontSizeSmall).
+	/// Safe to call from app settings when Application.Current is available.
+	/// </summary>
+	public static void SelectThemeDensity(ThemeDensity density)
+	{
+		density = NormalizeThemeDensity(density);
+
+		var primary = GetControlFontSize(density);
+		var small = GetControlFontSizeSmall(density);
+
+		// Prefer the live theme instance so resources sit with the rest of CornerstoneTheme.
+		var theme = Theme.GetCornerstoneTheme();
+		if (theme != null)
+		{
+			theme.SetValue(ThemeDensityProperty, density);
+			theme.Resources[ControlFontSizeKey] = primary;
+			theme.Resources[ControlFontSizeSmallKey] = small;
+		}
+
+		var application = Application.Current;
+		if (application == null)
+		{
+			#if DEBUG
+			if (Debugger.IsAttached && (theme == null))
+			{
+				Debugger.Break();
+			}
+			#endif
+			return;
+		}
+
+		// Application-level override so DynamicResource resolves even when theme lookup order varies.
+		application.Resources[ControlFontSizeKey] = primary;
+		application.Resources[ControlFontSizeSmallKey] = small;
 	}
 
 	private void Populate(ResourceDictionary dictionary, ThemeColorPaletteDetails colors)

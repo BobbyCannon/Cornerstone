@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Cornerstone.Compare;
 using Cornerstone.Data;
 using Cornerstone.Presentation;
 
@@ -19,7 +20,7 @@ namespace Cornerstone.Collections;
 /// <typeparam name="T2"> The type of value. </typeparam>
 [DebuggerDisplay("Count = {Count}")]
 [DebuggerTypeProxy(typeof(SpeedyDictionary<,>))]
-public class SpeedyDictionary<T, T2> : ReaderWriterLockBindable, ISpeedyDictionary<T, T2>
+public class SpeedyDictionary<T, T2> : ReaderWriterLockProxy, ISpeedyDictionary<T, T2>
 {
 	#region Fields
 
@@ -29,14 +30,14 @@ public class SpeedyDictionary<T, T2> : ReaderWriterLockBindable, ISpeedyDictiona
 
 	#region Constructors
 
-	public SpeedyDictionary() : this(null, null)
+	public SpeedyDictionary() : this(null)
 	{
 	}
 
-	public SpeedyDictionary(IDispatcher dispatcher, Func<T, T, bool> compare) : base(null, dispatcher)
+	public SpeedyDictionary(Func<T, T, bool> compare) : base(null)
 	{
 		_dictionary = compare != null
-			? new OrderedDictionary<T, T2>(EqualityComparer<T>.Create(compare))
+			? new OrderedDictionary<T, T2>(new GenericEqualityComparer<T>(compare))
 			: new OrderedDictionary<T, T2>();
 	}
 

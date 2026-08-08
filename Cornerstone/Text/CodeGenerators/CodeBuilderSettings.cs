@@ -6,7 +6,7 @@ using System;
 
 namespace Cornerstone.Text.CodeGenerators;
 
-public class CodeBuilderSettings
+public class CodeBuilderSettings : ITextSettings
 {
 	#region Constructors
 

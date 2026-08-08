@@ -6,20 +6,28 @@
 				TargetType="CornerstoneUserControl">
 			<Setter Property="Template">
 				<ControlTemplate>
-					<ContentPresenter
-							Name="PART_ContentPresenter"
-							Background="{TemplateBinding Background}"
+					<Border Background="{TemplateBinding Background}"
 							BorderBrush="{TemplateBinding BorderBrush}"
 							BorderThickness="{TemplateBinding BorderThickness}"
 							CornerRadius="{TemplateBinding CornerRadius}"
-							ContentTemplate="{TemplateBinding ContentTemplate}"
-							Content="{TemplateBinding Content}"
-							Padding="{TemplateBinding Padding}"
-							VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-							HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" />
+							Padding="{TemplateBinding Padding}">
+						<ContentPresenter
+								Name="PART_ContentPresenter"
+								ContentTemplate="{TemplateBinding ContentTemplate}"
+								Content="{TemplateBinding Content}"
+								VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+								HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" />
+					</Border>
 				</ControlTemplate>
 			</Setter>
 		</ControlTheme>
 	</Style.Resources>
 	<Setter Property="Theme" Value="{StaticResource CornerstoneUserControl}" />
+	<Design.PreviewWith>
+		<CornerstoneUserControl Padding="20">
+			<TextBlock FontSize="26"
+					Text="This is a test" />
+		</CornerstoneUserControl>
+	</Design.PreviewWith>
+	
 </Style>

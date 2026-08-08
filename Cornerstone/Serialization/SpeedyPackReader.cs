@@ -212,7 +212,7 @@ public ref struct SpeedyPackReader
 					value = DateTime.MinValue;
 					return false;
 				}
-				value = new DateTime(BinaryPrimitives.ReadInt64LittleEndian(Data[_dataOffset..]));
+				value = new DateTime(BinaryPrimitives.ReadInt64LittleEndian(Data[_dataOffset..]), DateTimeKind.Utc);
 				_dataOffset += 8;
 				return true;
 			default:

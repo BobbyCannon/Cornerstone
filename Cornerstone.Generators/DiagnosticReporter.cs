@@ -1,17 +1,25 @@
-﻿#region References
+#region References
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 
 #endregion
 
 namespace Cornerstone.Generators;
 
+/// <summary>
+/// Reports generator diagnostics. Context is scoped per source-output execution via
+/// <see cref="AsyncLocal{T}"/> so parallel project builds in the same compiler process
+/// do not clobber each other's <see cref="SourceProductionContext"/>.
+/// </summary>
 public static class DiagnosticReporter
 {
 	#region Fields
+
+	private static readonly AsyncLocal<SourceProductionContext?> _context = new();
 
 	private static readonly DiagnosticDescriptor _typeIsNotPartial = CreateDescriptor(
 		"CSG001",
@@ -36,17 +44,25 @@ public static class DiagnosticReporter
 
 	#endregion
 
-	#region Properties
-
-	public static SourceProductionContext Context { get; private set; }
-
-	#endregion
-
 	#region Methods
 
+	/// <summary>
+	/// Binds diagnostics to <paramref name="spc"/> for the current async/execution flow.
+	/// Dispose at the end of the source-output callback.
+	/// </summary>
+	public static IDisposable BeginScope(SourceProductionContext spc)
+	{
+		var previous = _context.Value;
+		_context.Value = spc;
+		return new Scope(previous);
+	}
+
+	/// <summary>
+	/// Prefer <see cref="BeginScope"/> so concurrent generator runs stay isolated.
+	/// </summary>
 	public static void Initialize(SourceProductionContext spc)
 	{
-		Context = spc;
+		_context.Value = spc;
 	}
 
 	public static void ReportMissingTestClassAttribute(INamedTypeSymbol typeSymbol)
@@ -66,7 +82,13 @@ public static class DiagnosticReporter
 
 	public static void WriteLine(string message)
 	{
-		Context.ReportDiagnostic(
+		var context = _context.Value;
+		if (context == null)
+		{
+			return;
+		}
+
+		context.Value.ReportDiagnostic(
 			Diagnostic.Create(
 				new DiagnosticDescriptor(
 					"CSG000",
@@ -87,6 +109,12 @@ public static class DiagnosticReporter
 
 	private static void CreateDiagnostic(DiagnosticDescriptor descriptor, IEnumerable<Location> locations, params object[] args)
 	{
+		var context = _context.Value;
+		if (context == null)
+		{
+			return;
+		}
+
 		var locationsList = locations as IReadOnlyList<Location> ?? locations.ToList();
 		var diagnostic = locationsList.Count switch
 		{
@@ -94,7 +122,33 @@ public static class DiagnosticReporter
 			1 => Diagnostic.Create(descriptor, locationsList[0], args),
 			_ => Diagnostic.Create(descriptor, locationsList[0], locationsList.Skip(1), args)
 		};
-		Context.ReportDiagnostic(diagnostic);
+		context.Value.ReportDiagnostic(diagnostic);
+	}
+
+	#endregion
+
+	#region Classes
+
+	private sealed class Scope : IDisposable
+	{
+		private readonly SourceProductionContext? _previous;
+		private bool _disposed;
+
+		public Scope(SourceProductionContext? previous)
+		{
+			_previous = previous;
+		}
+
+		public void Dispose()
+		{
+			if (_disposed)
+			{
+				return;
+			}
+
+			_disposed = true;
+			_context.Value = _previous;
+		}
 	}
 
 	#endregion

@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System.Linq;
 using Avalonia;
 using Avalonia.Input;
 using Avalonia.Media;
@@ -12,17 +13,18 @@ namespace Cornerstone.Avalonia.Text.Margins;
 /// <summary>
 /// Margin showing line numbers.
 /// </summary>
-public class LineNumberMargin : Margin
+public class LineNumberMargin<T> : Margin
+	where T : TextEditorViewModel, new()
 {
 	#region Fields
 
-	private readonly TextEditor _editor;
+	private readonly TextEditor<T> _editor;
 
 	#endregion
 
 	#region Constructors
 
-	public LineNumberMargin(TextEditor editor)
+	public LineNumberMargin(TextEditor<T> editor)
 	{
 		_editor = editor;
 
@@ -32,6 +34,44 @@ public class LineNumberMargin : Margin
 	#endregion
 
 	#region Methods
+
+	public static Size Measure(TextEditor<T> editor, int maxLineNumber, Size availableSize)
+	{
+		// Add an extra character for padding
+		var maxLineNumberLength = maxLineNumber.ToString().Length + 1;
+		var columnWidth = 0.0;
+
+		if (editor.Renderer != null)
+		{
+			using var singleCharLayout = editor.Renderer.GetTextLayout("9");
+			columnWidth = singleCharLayout.Width * maxLineNumberLength;
+		}
+
+		// Avalonia rejects NaN/Infinity from MeasureOverride. When the parent
+		// height is unconstrained (StackPanel, Auto row, etc.), report content
+		// height instead of availableSize.Height (PositiveInfinity).
+		var height = availableSize.Height;
+		if (!double.IsFinite(height))
+		{
+			var metrics = editor.ViewModel?.ViewMetrics;
+			height = metrics?.DocumentSize.Height ?? 0;
+			if ((height <= 0) && (metrics != null) && double.IsFinite(metrics.CharacterHeight))
+			{
+				height = metrics.CharacterHeight;
+			}
+		}
+
+		if (!double.IsFinite(columnWidth) || (columnWidth < 0))
+		{
+			columnWidth = 0;
+		}
+		if (!double.IsFinite(height) || (height < 0))
+		{
+			height = 0;
+		}
+
+		return new Size(columnWidth, height);
+	}
 
 	public override void Render(DrawingContext drawingContext)
 	{
@@ -46,20 +86,9 @@ public class LineNumberMargin : Margin
 
 		var renderer = _editor.Renderer;
 		var topY = renderer.Offset.Y;
-		var bottomY = renderer.Offset.Y + renderer.Bounds.Bottom;
 
-		foreach (var line in vm.Lines)
+		foreach (var line in _editor.Renderer.GetVisualLines())
 		{
-			if (line.VisualLayout.Bottom <= topY)
-			{
-				continue;
-			}
-
-			if (line.VisualLayout.Bottom >= bottomY)
-			{
-				break;
-			}
-
 			var lineText = line.LineNumber.ToString();
 			using var textLayout = renderer.GetTextLayout(lineText);
 			var textLeft = Bounds.Width - textLayout.Width - (vm.ViewMetrics.CharacterWidth / 2);
@@ -69,16 +98,8 @@ public class LineNumberMargin : Margin
 
 	protected override Size MeasureOverride(Size availableSize)
 	{
-		var vm = _editor.ViewModel;
-		if (vm == null)
-		{
-			return default;
-		}
-
-		var maxLineNumberLength = vm.Lines.LastOrDefault().LineNumber.ToString().Length;
-		using var text = _editor.Renderer.GetTextLayout(new string('9', maxLineNumberLength));
-		var width = text.Width + vm.ViewMetrics.CharacterWidth;
-		return new Size(width, availableSize.Height);
+		var maxLineNumber = _editor.ViewModel.Lines.Any() ? _editor.ViewModel.Lines.LastOrDefault().LineNumber : 1;
+		return Measure(_editor, maxLineNumber, availableSize);
 	}
 
 	protected override void OnPointerMoved(PointerEventArgs e)

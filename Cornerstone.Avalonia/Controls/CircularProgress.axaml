@@ -28,13 +28,15 @@
 									Content="{TemplateBinding ContentControl.Content}"
 									HorizontalAlignment="Center" />
 							<TextBlock x:Name="Percent"
+									FontFamily="{TemplateBinding FontFamily}"
 									Foreground="{TemplateBinding Foreground}"
 									HorizontalAlignment="Center"
+									VerticalAlignment="Center"
 									IsVisible="{TemplateBinding ShowProgressText}">
 								<TextBlock.Text>
 									<MultiBinding Converter="{StaticResource StringFormatConverter}">
 										<TemplateBinding Property="ProgressTextFormat" />
-										<Binding Path="Value" RelativeSource="{RelativeSource TemplatedParent}" />
+										<TemplateBinding Property="Value" Mode="OneWay" />
 										<TemplateBinding Property="Percentage" />
 										<TemplateBinding Property="Minimum" />
 										<TemplateBinding Property="Maximum" />
@@ -80,7 +82,7 @@
 		</Style>
 		<!-- Code Template - /Color -->
 
-		<!-- Generated Code - Colors -->
+		<!-- Generated Code - Color -->
 		<Style Selector="^[(Theme.Color)=Amber]">
 			<Setter Property="Stroke" Value="{DynamicResource Amber05}" />
 		</Style>
@@ -123,7 +125,7 @@
 		<Style Selector="^[(Theme.Color)=Teal]">
 			<Setter Property="Stroke" Value="{DynamicResource Teal05}" />
 		</Style>
-		<!-- Generated Code - /Colors -->
+		<!-- Generated Code - /Color -->
 	</ControlTheme>
 
 	<Design.PreviewWith>

@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFrameworks>net10.0-windows10.0.26100.0</TargetFrameworks>
+		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<ApplicationIcon>$(MSBuildThisFileDirectory)Assets/Cornerstone.Agent.ico</ApplicationIcon>
+	</PropertyGroup>
+	<ItemGroup>
+		<AvaloniaResource Include="Assets\**" />
+		<EmbeddedResource Include="Data\**" />
+		<None Remove="C:\Workspaces\EpicSolution\Cornerstone\..\Cornerstone\Cornerstone.png" />
+	</ItemGroup>
+	<ItemGroup>
+		<TrimmerRootAssembly Include="Cornerstone" RootMode="all" />
+		<TrimmerRootAssembly Include="Cornerstone.Avalonia" RootMode="all" />
+		<TrimmerRootAssembly Include="Cornerstone.Agent" RootMode="all" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
+		<PackageReference Include="LLamaSharp" Version="0.27.0" />
+		<PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.27.0" />
+		<PackageReference Include="LLamaSharp.Backend.Cuda12.Windows" Version="0.27.0" />
+		<PackageReference Include="LLamaSharp.Backend.Vulkan.Windows" Version="0.27.0" />
+		<PackageReference Include="WmiLight" Version="7.2.0" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Avalonia.Diagnostics\Avalonia.Diagnostics.csproj" />
+		<ProjectReference Include="..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
+	</ItemGroup>
+</Project>

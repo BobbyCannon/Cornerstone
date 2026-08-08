@@ -5,24 +5,27 @@
 	<x:Double x:Key="TabStripItemMinHeight">16</x:Double>
 
 	<ControlTheme x:Key="{x:Type TabStripItem}" TargetType="TabStripItem">
+		<Setter Property="Theme.Color" Value="None" />
+		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
 		<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
-		<Setter Property="Background" Value="{DynamicResource Background02}" />
-		<Setter Property="Foreground" Value="{DynamicResource Foreground02}" />
-		<Setter Property="Padding" Value="12,4" />
-		<Setter Property="Margin" Value="0" />
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="BorderBrush" Value="Transparent" />
+		<Setter Property="BorderThickness" Value="0" />
+		<Setter Property="Padding" Value="12,8,12,12" />
 		<Setter Property="HorizontalContentAlignment" Value="Center" />
 		<Setter Property="VerticalContentAlignment" Value="Center" />
 		<Setter Property="Template">
 			<ControlTemplate>
-				<Panel>
-					<Border
-							Name="PART_LayoutRoot"
-							Background="{TemplateBinding Background}"
-							BorderBrush="{DynamicResource BorderBrush}"
-							BorderThickness="1"
-							CornerRadius="{DynamicResource ControlCornerRadius}"
-							Margin="2,0,2,1"
-							Padding="{TemplateBinding Padding}">
+				<Border
+						Name="PART_LayoutRoot"
+						Background="{TemplateBinding Background}"
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}"
+						CornerRadius="{TemplateBinding CornerRadius}"
+						Margin="{TemplateBinding Margin}"
+						MinHeight="{TemplateBinding MinHeight}">
+					<Panel>
 						<ContentPresenter
 								Name="PART_ContentPresenter"
 								HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
@@ -31,132 +34,129 @@
 								ContentTemplate="{TemplateBinding ContentTemplate}"
 								FontFamily="{TemplateBinding FontFamily}"
 								FontSize="{TemplateBinding FontSize}"
-								FontWeight="{TemplateBinding FontWeight}" />
-					</Border>
-	</Panel>
+								FontWeight="{TemplateBinding FontWeight}"
+								Margin="{TemplateBinding Padding}" />
+						<Border Name="PART_SelectedPipe"
+								Background="{DynamicResource ThemeColor05}"
+								CornerRadius="{DynamicResource ControlCornerRadius}"
+								Height="4"
+								HorizontalAlignment="Stretch"
+								VerticalAlignment="Bottom"
+								IsVisible="False" />
+					</Panel>
+				</Border>
 			</ControlTemplate>
 		</Setter>
 
 		<!-- Selected state. -->
-		<Style Selector="^:selected">
-			<Setter Property="Background" Value="{DynamicResource Background02}" />
-			<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Style Selector="^:selected /template/ Border#PART_SelectedPipe">
+			<Setter Property="IsVisible" Value="True" />
 		</Style>
 
 		<!-- Disabled state. -->
 		<Style Selector="^:disabled">
 			<Style Selector="^ /template/ Border#PART_LayoutRoot">
-				<Setter Property="Background" Value="{DynamicResource Background04}" />
-				<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground04}" />
+				<Setter Property="TextElement.Foreground" Value="{DynamicResource Foreground09}" />
 			</Style>
 			<Style Selector="^">
 				<Setter Property="Background" Value="Transparent" />
 			</Style>
 		</Style>
 
-		<!-- Set highlight color if selected. -->
-		<Style Selector="^:selected">
-			<Setter Property="Background" Value="{DynamicResource Background05}" />
-		</Style>
-
 		<!-- Code Template - Color -->
 		<Style Selector="^[(Theme.Color)=Current]">
-			<Style Selector="^:selected">
+			<Style Selector="^:selected /template/ Border#PART_SelectedPipe">
 				<Setter Property="Background" Value="{DynamicResource ThemeColor07}" />
 			</Style>
 		</Style>
 		<!-- Code Template - /Color -->
 
-		<!-- Generated Code - Colors -->
+		<!-- Generated Code - Color -->
 		<Style Selector="^[(Theme.Color)=Amber]">
-			<Style Selector="^:selected">
+			<Style Selector="^:selected /template/ Border#PART_SelectedPipe">
 				<Setter Property="Background" Value="{DynamicResource Amber07}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Blue]">
-			<Style Selector="^:selected">
+			<Style Selector="^:selected /template/ Border#PART_SelectedPipe">
 				<Setter Property="Background" Value="{DynamicResource Blue07}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=BlueGray]">
-			<Style Selector="^:selected">
+			<Style Selector="^:selected /template/ Border#PART_SelectedPipe">
 				<Setter Property="Background" Value="{DynamicResource BlueGray07}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Brown]">
-			<Style Selector="^:selected">
+			<Style Selector="^:selected /template/ Border#PART_SelectedPipe">
 				<Setter Property="Background" Value="{DynamicResource Brown07}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=DeepOrange]">
-			<Style Selector="^:selected">
+			<Style Selector="^:selected /template/ Border#PART_SelectedPipe">
 				<Setter Property="Background" Value="{DynamicResource DeepOrange07}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=DeepPurple]">
-			<Style Selector="^:selected">
+			<Style Selector="^:selected /template/ Border#PART_SelectedPipe">
 				<Setter Property="Background" Value="{DynamicResource DeepPurple07}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Gray]">
-			<Style Selector="^:selected">
+			<Style Selector="^:selected /template/ Border#PART_SelectedPipe">
 				<Setter Property="Background" Value="{DynamicResource Gray07}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Green]">
-			<Style Selector="^:selected">
+			<Style Selector="^:selected /template/ Border#PART_SelectedPipe">
 				<Setter Property="Background" Value="{DynamicResource Green07}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Indigo]">
-			<Style Selector="^:selected">
+			<Style Selector="^:selected /template/ Border#PART_SelectedPipe">
 				<Setter Property="Background" Value="{DynamicResource Indigo07}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Orange]">
-			<Style Selector="^:selected">
+			<Style Selector="^:selected /template/ Border#PART_SelectedPipe">
 				<Setter Property="Background" Value="{DynamicResource Orange07}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Pink]">
-			<Style Selector="^:selected">
+			<Style Selector="^:selected /template/ Border#PART_SelectedPipe">
 				<Setter Property="Background" Value="{DynamicResource Pink07}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Purple]">
-			<Style Selector="^:selected">
+			<Style Selector="^:selected /template/ Border#PART_SelectedPipe">
 				<Setter Property="Background" Value="{DynamicResource Purple07}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Red]">
-			<Style Selector="^:selected">
+			<Style Selector="^:selected /template/ Border#PART_SelectedPipe">
 				<Setter Property="Background" Value="{DynamicResource Red07}" />
 			</Style>
 		</Style>
 		<Style Selector="^[(Theme.Color)=Teal]">
-			<Style Selector="^:selected">
+			<Style Selector="^:selected /template/ Border#PART_SelectedPipe">
 				<Setter Property="Background" Value="{DynamicResource Teal07}" />
 			</Style>
 		</Style>
-		<!-- Generated Code - /Colors -->
+		<!-- Generated Code - /Color -->
 	</ControlTheme>
 
 	<Design.PreviewWith>
-		<PreviewCodeSnippet MaxWidth="800">
+		<PreviewCodeSnippet MaxWidth="450">
 			<PreviewCodeSnippet.ItemTemplate>
 				<DataTemplate DataType="ThemeColor">
-					<TabStrip
-							AutoScrollToSelectedItem="True"
-							Width="160">
+					<TabStrip AutoScrollToSelectedItem="True">
 						<TabStripItem Theme.Color="{Binding}"
-								Content="{Binding}" />
-						<TabStripItem Theme.Color="{Binding}"
-								IsEnabled="False">
-							Item 1
-						</TabStripItem>
-						<TabStripItem Theme.Color="{Binding}">
-							Item 2
-						</TabStripItem>
+								Content="{Binding}"
+								Width="140" />
+						<TabStripItem Theme.Color="{Binding}">Item 1</TabStripItem>
+						<TabStripItem Theme.Color="{Binding}">Item 2</TabStripItem>
+						<TabStripItem Theme.Color="{Binding}">Item 3</TabStripItem>
+						<TabStripItem Theme.Color="{Binding}" IsEnabled="False">Item 4</TabStripItem>
 					</TabStrip>
 				</DataTemplate>
 			</PreviewCodeSnippet.ItemTemplate>

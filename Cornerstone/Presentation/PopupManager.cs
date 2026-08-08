@@ -7,10 +7,15 @@ using Cornerstone.Reflection;
 
 #endregion
 
+
 namespace Cornerstone.Presentation;
 
+/// <summary>
+/// Host for modal popups. Extends <see cref="DispatchableViewModel" /> so dockable tabs
+/// can use AppDispatcher (TrackCollection / TrackProperties) without a parallel hierarchy.
+/// </summary>
 [SourceReflection]
-public partial class PopupManager : ViewModel, IPopupManager
+public partial class PopupManager : DispatchableViewModel, IPopupManager
 {
 	#region Properties
 
@@ -20,6 +25,11 @@ public partial class PopupManager : ViewModel, IPopupManager
 	#endregion
 
 	#region Methods
+
+	public bool CanCreatePopup()
+	{
+		return this is { Popup: not { InProgress: true } };
+	}
 
 	public void CancelPopup()
 	{
@@ -35,11 +45,6 @@ public partial class PopupManager : ViewModel, IPopupManager
 		Popup = null;
 	}
 
-	public bool CanCreatePopup()
-	{
-		return this is { Popup: not { InProgress: true } };
-	}
-
 	public async Task ProcessPopupAsync(bool accept)
 	{
 		if (Popup == null)
@@ -48,33 +53,56 @@ public partial class PopupManager : ViewModel, IPopupManager
 		}
 
 		Popup.InProgress = true;
+		Popup.ProgressError = string.Empty;
 
-		var result = Popup.Process(accept);
-		if (result == null)
+		try
 		{
-			OnPopupClosed(Popup);
-			Popup = null;
-			return;
+			var result = Popup.Process(accept);
+			if (result == null)
+			{
+				OnPopupClosed(Popup);
+				Popup = null;
+				return;
+			}
+
+			var processCompleted = await result;
+
+			// Popup may have been cleared while awaiting (e.g. tab closed).
+			if (Popup == null)
+			{
+				return;
+			}
+
+			PopupProcessed(Popup, processCompleted);
+
+			if (processCompleted)
+			{
+				OnPopupClosed(Popup);
+				Popup = null;
+			}
+			else
+			{
+				Popup.InProgress = false;
+			}
 		}
-
-		var processCompleted = await result;
-
-		PopupProcessed(Popup, processCompleted);
-
-		if (processCompleted)
+		catch (Exception ex)
 		{
-			OnPopupClosed(Popup);
-			Popup = null;
-		}
-		else
-		{
-			Popup.InProgress = false;
+			// Without this, a faulted Process task left InProgress=true forever and Cancel was blocked.
+			if (Popup != null)
+			{
+				Popup.ProgressError = ex.Message;
+				Popup.InProgress = false;
+			}
 		}
 	}
 
 	public void ShowAndStartPopup(PopupViewModel popup, bool process)
 	{
-		TryShowPopup(popup);
+		if (!TryShowPopup(popup))
+		{
+			return;
+		}
+
 		_ = ProcessPopupAsync(process);
 	}
 
@@ -118,9 +146,9 @@ public interface IPopupManager
 
 	#region Methods
 
-	void CancelPopup();
-
 	bool CanCreatePopup();
+
+	void CancelPopup();
 
 	/// <summary>
 	/// Process the popup.

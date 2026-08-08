@@ -2,7 +2,9 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data.Converters;
@@ -179,8 +181,33 @@ public static class ResourceService
 
 	public static IBrush GetColorAsBrush(string key, double opacity = 1.0, StyledElement control = null)
 	{
-		TryGet(key, out var value, Colors.Black, control);
-		return new SolidColorBrush(value, opacity);
+		// Theme entries may be Color or an existing brush (e.g. SolidColorBrush).
+		if (TryGet<object>(key, out var found, null, control) && (found != null))
+		{
+			switch (found)
+			{
+				case Color color:
+					return new SolidColorBrush(color, opacity);
+				case SolidColorBrush solid when opacity >= 1.0:
+					return solid;
+				case SolidColorBrush solid:
+					return new SolidColorBrush(solid.Color, opacity);
+				case ISolidColorBrush solidBrush when opacity >= 1.0:
+					return solidBrush;
+				case ISolidColorBrush solidBrush:
+					return new SolidColorBrush(solidBrush.Color, opacity);
+				case IBrush brush when opacity >= 1.0:
+					return brush;
+			}
+		}
+
+		return new SolidColorBrush(Colors.Black, opacity);
+	}
+
+	public static Stream GetEmbeddedResource(string resourceName)
+	{
+		var assembly = typeof(ResourceService).GetTypeInfo().Assembly;
+		return assembly.GetManifestResourceStream(resourceName);
 	}
 
 	public static FontFamily GetFontFamily(string key)

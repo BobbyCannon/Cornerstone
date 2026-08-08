@@ -55,7 +55,7 @@ public partial class TabProfiling : CornerstoneUserControl
 
 	public ISeriesDataProvider PerSecondData { get; }
 
-	public SeriesDataProvider RandomData { get; }
+	public ISeriesDataProvider RandomData { get; }
 
 	[StyledProperty]
 	public partial TimeSpan RandomDelay { get; set; }

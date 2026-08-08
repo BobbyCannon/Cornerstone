@@ -68,6 +68,11 @@ public interface ITreeDataGridSource : INotifyPropertyChanged
 		DragDropEffects effects);
 
 	/// <summary>
+	/// Get item at index
+	/// </summary>
+	object GetAt(int index);
+
+	/// <summary>
 	/// Gets the children of a model, if any.
 	/// </summary>
 	/// <param name="model"> The model from which to get the children. </param>
@@ -101,10 +106,13 @@ public interface ITreeDataGridSource<TModel> : ITreeDataGridSource
 {
 	#region Properties
 
-	/// <summary>
-	/// Gets or sets the items in the data source.
-	/// </summary>
 	new IEnumerable<TModel> Items { get; set; }
+
+	#endregion
+
+	#region Methods
+
+	new TModel GetAt(int index);
 
 	#endregion
 }

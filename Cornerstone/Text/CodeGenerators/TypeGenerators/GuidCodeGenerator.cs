@@ -29,7 +29,7 @@ public class GuidCodeGenerator : CodeGenerator
 			Guid sValue => $"Guid.Parse(\"{sValue:D}\")",
 			_ => throw new CornerstoneException($"Type ({typeInfo.Type.FullName}) not supported.")
 		};
-		builder.Write(code);
+		builder.Append(code);
 	}
 
 	#endregion

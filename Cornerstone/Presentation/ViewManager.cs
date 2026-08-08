@@ -1,215 +1,412 @@
 ﻿#region References
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Linq;
 using Cornerstone.Collections;
+using Cornerstone.Compare;
 using Cornerstone.Data;
+using Cornerstone.Extensions;
+using Cornerstone.Runtime;
+using Cornerstone.Sync;
 
 #endregion
 
 namespace Cornerstone.Presentation;
 
-public class ViewManager<T> : Notifiable, IList<T>, IList, INotifyCollectionChanged, IDisposable
+/// <summary>
+/// Represents a manager of a set of views.
+/// </summary>
+public abstract class ViewManager<TView, TEntity, TEntityKey>
+	: ViewManager<TView>
+	where TView : class, IUpdateable, new()
+	where TEntity : SyncEntity<TEntityKey>
 {
-	#region Fields
-
-	private readonly SpeedyList<T> _list;
-
-	#endregion
-
 	#region Constructors
 
-	public ViewManager(int initialCapacity = SpeedyList.DefaultCapacity, bool isLongLivedBuffer = false, bool clearOnCleanup = false)
+	protected ViewManager(
+		IDateTimeProvider dateTimeProvider,
+		IDependencyProvider dependencyProvider,
+		IDispatcher dispatcher,
+		Func<TView, TView, bool> distinctCheck,
+		params OrderBy<TView>[] orderBy
+	) : base(dateTimeProvider, dependencyProvider, dispatcher, distinctCheck, orderBy)
 	{
-		_list = new SpeedyList<T>(initialCapacity, isLongLivedBuffer, clearOnCleanup);
 	}
 
 	#endregion
 
 	#region Properties
 
-	public int Count => _list.Count;
+	protected abstract Func<TView, TEntity, bool> LookupPredicate { get; }
 
-	public bool IsFixedSize => false;
+	protected virtual Func<TEntity, bool> RemovePredicateByEntity => x => x.IsDeleted;
 
-	public bool IsReadOnly => false;
-
-	public bool IsSynchronized => false;
-
-	public T this[int index]
-	{
-		get => _list[index];
-		set => _list[index] = value;
-	}
-
-	object IList.this[int index]
-	{
-		get => this[index];
-		set => this[index] = (T) value!;
-	}
-
-	object ICollection.SyncRoot => this;
+	protected virtual Func<TEntity, bool> UpdatePredicate => x => !x.IsDeleted;
 
 	#endregion
 
 	#region Methods
 
-	public void Add(T item)
+	/// <summary>
+	/// Add or update the view by using the entity.
+	/// </summary>
+	/// <param name="value"> The entity update. </param>
+	/// <returns> The view that was added or updated. </returns>
+	public virtual TView AddOrUpdate(TEntity value)
 	{
-		_list.Add(item);
-		OnCollectionChanged(NotifyCollectionChangedAction.Add, item, Count - 1);
-		OnPropertyChanged(nameof(Count));
-	}
+		// Locate account view to update, or see if our account is a view,
+		// or build a new account view from the account
+		var foundView = FirstOrDefault(x => LookupPredicate.Invoke(x, value));
 
-	public int Add(object value)
-	{
-		if (value is T item)
+		if (foundView == null)
 		{
-			Add(item);
-			return Count - 1;
-		}
-		throw new ArgumentException($"Value must be of type {typeof(T).Name}", nameof(value));
-	}
-
-	public ReadOnlySpan<T> AsSpan()
-	{
-		return _list.AsSpan();
-	}
-
-	public virtual void Clear()
-	{
-		_list.Clear();
-		OnCollectionReset();
-		OnPropertyChanged(nameof(Count));
-	}
-
-	public bool Contains(T item)
-	{
-		return _list.Contains(item);
-	}
-
-	public bool Contains(object value)
-	{
-		return value is T item && Contains(item);
-	}
-
-	public void CopyTo(T[] array, int arrayIndex)
-	{
-		_list.CopyTo(array, arrayIndex);
-	}
-
-	public void CopyTo(Array array, int index)
-	{
-		if (array is T[] typedArray)
-		{
-			CopyTo(typedArray, index);
-		}
-		else
-		{
-			throw new ArgumentException("Invalid array type", nameof(array));
-		}
-	}
-
-	public void Dispose()
-	{
-	}
-
-	public IEnumerator<T> GetEnumerator()
-	{
-		return ((IEnumerable<T>) _list).GetEnumerator();
-	}
-
-	public int IndexOf(T item)
-	{
-		return _list.IndexOf(item);
-	}
-
-	public int IndexOf(object value)
-	{
-		return value is T item ? IndexOf(item) : -1;
-	}
-
-	public void Insert(int index, T item)
-	{
-		_list.Insert(index, item);
-		OnCollectionChanged(NotifyCollectionChangedAction.Add, item, index);
-		OnPropertyChanged(nameof(Count));
-	}
-
-	public void Insert(int index, object value)
-	{
-		if (value is T item)
-		{
-			Insert(index, item);
-		}
-		else
-		{
-			throw new ArgumentException($"Value must be of type {typeof(T).Name}", nameof(value));
-		}
-	}
-
-	public bool Remove(T item)
-	{
-		var index = IndexOf(item);
-		if (index < 0)
-		{
-			return false;
+			foundView = CreateView();
+			UpdateView(foundView, value);
+			List.Add(foundView);
+			OnViewUpdated(foundView);
+			return foundView;
 		}
 
-		RemoveAt(index);
+		if (UpdateView(foundView, value))
+		{
+			OnViewUpdated(foundView);
+		}
+		return foundView;
+	}
+
+	public virtual IEnumerable<TView> AddOrUpdate(params TEntity[] updates)
+	{
+		return List.ProcessThenOrder(() =>
+		{
+			// Remove view that should be removed
+			RemoveViews();
+
+			// Remove entities that should be removed
+			updates
+				.Where(RemovePredicateByEntity)
+				.ForEach(x => List.Remove(v => LookupPredicate(v, x)));
+
+			// Add or update new items
+			var updatedViews = updates
+				.Where(UpdatePredicate)
+				.Select(AddOrUpdate)
+				.ToList();
+
+			return updatedViews;
+		});
+	}
+
+	public override bool Remove(TView item)
+	{
+		return List.Remove(item);
+	}
+
+	protected virtual TView Convert(TEntity entity)
+	{
+		var view = CreateView();
+		UpdateView(view, entity);
+		return view;
+	}
+
+	protected virtual bool UpdateView(TView view, TEntity update)
+	{
+		return base.UpdateView(view, update);
+	}
+
+	/// <summary>
+	/// Sealed to Hide / limit overriding of the generic "object" update.
+	/// If you need a customer override then use the TEntity update override.
+	/// </summary>
+	protected sealed override bool UpdateView(TView view, object update)
+	{
+		if (update is TEntity entity)
+		{
+			return UpdateView(view, entity);
+		}
+
+		return base.UpdateView(view, update);
+	}
+
+	#endregion
+}
+
+/// <summary>
+/// Represents a manager of a set of views.
+/// </summary>
+public abstract partial class ViewManager<T>
+	: ReadOnlyPresentationList<T>, IManager
+	where T : class, IUpdateable, new()
+{
+	#region Constructors
+
+	protected ViewManager(
+		IDateTimeProvider dateTimeProvider,
+		IDependencyProvider dependencyProvider,
+		IDispatcher dispatcher,
+		Func<T, T, bool> distinctCheck,
+		params OrderBy<T>[] orderBy
+	) : base(new PresentationList<T>(dispatcher, orderBy) { DistinctCheck = new GenericEqualityComparer<T>(distinctCheck) })
+	{
+		DateTimeProvider = dateTimeProvider;
+		DependencyProvider = dependencyProvider;
+		ItemBeingEdited = new T();
+	}
+
+	#endregion
+
+	#region Properties
+
+	public IDateTimeProvider DateTimeProvider { get; }
+
+	public IDependencyProvider DependencyProvider { get; }
+
+	public T ItemBeingEdited { get; }
+
+	/// <summary>
+	/// The last time this view was updated.
+	/// </summary>
+	[Notify]
+	public partial DateTime LastUpdated { get; protected set; }
+
+	/// <summary>
+	/// Gets the selected view.
+	/// </summary>
+	[Notify]
+	public partial T SelectedView { get; set; }
+
+	[Notify]
+	public partial string ViewFilterInput { get; set; }
+
+	/// <summary>
+	/// Predicate for removing views from collection
+	/// </summary>
+	protected virtual Func<T, bool> RemovePredicateByView => _ => false;
+
+	#endregion
+
+	#region Methods
+
+	/// <summary>
+	/// NOTE: Be careful when using this because it does not perform as well as "AddOrUpdateViews"
+	/// </summary>
+	/// <param name="update"> The update. </param>
+	/// <returns> </returns>
+	public T AddOrUpdate(T update)
+	{
+		var foundView = FirstOrDefault(x => List.DistinctCheck.Equals(x, update));
+		if (foundView == null)
+		{
+			foundView = update;
+			UpdateView(foundView, update);
+			List.Add(update);
+			OnViewUpdated(update);
+			return update;
+		}
+
+		if (UpdateView(foundView, update))
+		{
+			OnViewUpdated(foundView);
+		}
+		return foundView;
+	}
+
+	[RelayCommand]
+	public void BeginEditItem(object value)
+	{
+		if (value is not T itemToEdit)
+		{
+			return;
+		}
+
+		ItemBeingEdited.UpdateWith(itemToEdit, UpdateableAction.Updateable);
+		OnBeginEditItem();
+		SaveEditItemCommand?.Refresh();
+	}
+
+	[RelayCommand]
+	public void BeginNewItem()
+	{
+		if (ItemBeingEdited is ISyncEntity syncEntity
+			&& (syncEntity.SyncId == Guid.Empty))
+		{
+			syncEntity.SyncId = Guid.NewGuid();
+		}
+		OnBeginEditItem();
+		SaveEditItemCommand?.Refresh();
+	}
+
+	public virtual bool CanSaveEditItem()
+	{
 		return true;
 	}
 
-	public void Remove(object value)
+	[RelayCommand]
+	public void CancelEditItem()
 	{
-		if (value is T item)
+		var emptyState = new T();
+		ItemBeingEdited.UpdateWith(emptyState);
+		(ItemBeingEdited as ITrackPropertyChanges)?.ResetHasChanges();
+		DisposableExtensions.TryDispose(emptyState);
+		OnCancelEditItem();
+	}
+
+	public override void Clear()
+	{
+		CancelEditItem();
+
+		List.Clear();
+		LastUpdated = DateTime.MinValue;
+	}
+
+	public virtual T FirstOrDefault(Func<T, bool> check)
+	{
+		return List.FirstOrDefault(check);
+	}
+
+	public override bool HasChanges(IncludeExcludeSettings settings)
+	{
+		return List.HasChanges(settings)
+			|| base.HasChanges(settings);
+	}
+
+	public override void InitializeLifecycle()
+	{
+		List.FilterCheck = ViewFilterCheck;
+		if (ItemBeingEdited is INotifyPropertyChanged npc)
 		{
-			Remove(item);
+			npc.PropertyChanged += ItemBeingEditedOnPropertyChanged;
 		}
+		base.InitializeLifecycle();
 	}
 
-	public void RemoveAt(int index)
+	public override bool Remove(T item)
 	{
-		if ((index < 0) || (index >= Count))
+		return List.Remove(item);
+	}
+
+	public virtual void Reset()
+	{
+		Clear();
+
+		this.Dispatch(() =>
 		{
-			throw new ArgumentOutOfRangeException(nameof(index));
+			SelectedView = null;
+			LastUpdated = DateTime.MinValue;
+		});
+	}
+
+	public override void ResetHasChanges()
+	{
+		List.ResetHasChanges();
+		base.ResetHasChanges();
+	}
+
+	[RelayCommand(CanExecuteMethod = nameof(CanSaveEditItem))]
+	public virtual void SaveEditItem()
+	{
+		CancelEditItem();
+	}
+
+	public override void UninitializeLifecycle()
+	{
+		List.FilterCheck = null;
+		if (ItemBeingEdited is INotifyPropertyChanged npc)
+		{
+			npc.PropertyChanged -= ItemBeingEditedOnPropertyChanged;
+		}
+		base.UninitializeLifecycle();
+	}
+
+	public virtual void Update()
+	{
+	}
+
+	protected bool CheckIfManagerShouldRefresh(out DateTime until)
+	{
+		until = DateTimeProvider.UtcNow;
+		return until > LastUpdated;
+	}
+
+	protected bool Contains(Func<T, bool> filter)
+	{
+		var foundView = List.FirstOrDefault(filter);
+		return foundView != null;
+	}
+
+	protected virtual T CreateView()
+	{
+		return DependencyProvider.GetInstance<T>();
+	}
+
+	protected virtual void OnBeginEditItem()
+	{
+	}
+
+	protected virtual void OnCancelEditItem()
+	{
+	}
+
+	protected virtual void OnListUpdated(PresentationListUpdatedEventArg<T> e)
+	{
+	}
+
+	protected override void OnPropertyChanged<TValue>(string propertyName, TValue oldValue, TValue newValue)
+	{
+		if (propertyName == nameof(ViewFilterInput))
+		{
+			List.RefreshFilter();
 		}
 
-		var removedItem = this[index];
-
-		_list.RemoveAt(index);
-
-		OnCollectionChanged(NotifyCollectionChangedAction.Remove, removedItem, index);
-		OnPropertyChanged(nameof(Count));
+		base.OnPropertyChanged(propertyName, oldValue, newValue);
 	}
 
-	protected virtual void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
+	protected virtual void OnViewUpdated(T view)
 	{
-		CollectionChanged?.Invoke(this, e);
+		List.RefreshFilter();
+		List.RefreshOrder();
+		ViewUpdated?.Invoke(this, view);
 	}
 
-	protected void OnCollectionChanged(NotifyCollectionChangedAction action, object item, int index)
+	protected void RemoveViews()
 	{
-		OnCollectionChanged(new NotifyCollectionChangedEventArgs(action, item, index));
+		var itemsToRemove = List.Where(RemovePredicateByView).ToList();
+		if (itemsToRemove.Count <= 0)
+		{
+			return;
+		}
+
+		itemsToRemove.ForEach(x => List.Remove(x));
 	}
 
-	protected void OnCollectionReset()
+	protected virtual bool UpdateView(T view, object update)
 	{
-		OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+		if ((view == null) || (update == null))
+		{
+			return false;
+		}
+		view.UpdateWith(update);
+		return true;
 	}
 
-	IEnumerator IEnumerable.GetEnumerator()
+	protected virtual bool ViewFilterCheck(T account)
 	{
-		return GetEnumerator();
+		return true;
+	}
+
+	private void ItemBeingEditedOnPropertyChanged(object sender, PropertyChangedEventArgs e)
+	{
+		BeginNewItemCommand?.Refresh();
+		SaveEditItemCommand?.Refresh();
+		CancelEditItemCommand?.Refresh();
 	}
 
 	#endregion
 
 	#region Events
 
-	public event NotifyCollectionChangedEventHandler CollectionChanged;
+	public event EventHandler<T> ViewUpdated;
 
 	#endregion
 }

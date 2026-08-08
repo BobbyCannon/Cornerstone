@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System.Drawing;
 using System.Linq;
 using Cornerstone.Collections;
 using Cornerstone.Parsers.CSharp;
@@ -57,22 +58,25 @@ public class Tokenizer : TextProcessor<Token>
 
 	#region Methods
 
-	public override Token CreateOrUpdateSection(int type, int startOffset, int endOffset, params int[] offsets)
+	public override Token CreateOrUpdateSection(int type, int startOffset, int endOffset, uint? foreground = null, uint? background = null,
+		bool? bold = null, bool? italic = null, bool? strikethrough = null, params int[] offsets)
 	{
-		if (Pool?.TryDequeue(out var token) == true)
+		if (Pool?.TryDequeue(out var token) != true)
 		{
-			token.Update(type, startOffset, endOffset, GetColor(type), GetBold(type), GetItalic(type), GetStrikethrough(type));
-			return token;
+			token= new Token();
 		}
 
-		return new Token(type, startOffset, endOffset, GetColor(type), GetBold(type), GetItalic(type), GetStrikethrough(type));
+		token.Update(type, startOffset, endOffset, GetSyntaxKind(type), bold ?? GetBold(type),
+			italic ?? GetItalic(type), strikethrough ?? GetStrikethrough(type), foreground, background);
+
+		return token;
 	}
 
-	public virtual SyntaxColor Get(int type)
+	public virtual SyntaxKind Get(int type)
 	{
 		return RegisteredTokenTypeColors.TryGetValue(type, out var color)
 			? color
-			: SyntaxColor.None;
+			: SyntaxKind.None;
 	}
 
 	public virtual bool GetBold(int type)
@@ -106,13 +110,6 @@ public class Tokenizer : TextProcessor<Token>
 		return null;
 	}
 
-	public virtual SyntaxColor GetColor(int type)
-	{
-		return RegisteredTokenTypeColors.TryGetValue(type, out var color)
-			? color
-			: SyntaxColor.None;
-	}
-
 	public virtual bool GetItalic(int type)
 	{
 		return false;
@@ -121,6 +118,13 @@ public class Tokenizer : TextProcessor<Token>
 	public virtual bool GetStrikethrough(int type)
 	{
 		return false;
+	}
+
+	public virtual SyntaxKind GetSyntaxKind(int type)
+	{
+		return RegisteredTokenTypeColors.TryGetValue(type, out var color)
+			? color
+			: SyntaxKind.None;
 	}
 
 	public override bool IsStartCharacter()
@@ -144,104 +148,6 @@ public class Tokenizer : TextProcessor<Token>
 		}
 
 		token = null!;
-		return false;
-	}
-
-	/// <summary>
-	/// Helper method to detect and consume a **nested** delimited token using single characters.
-	/// Fully supports nesting (e.g. [outer [inner] more] ).
-	/// Returns the entire section from the opening startChar to the matching closing endChar.
-	/// </summary>
-	/// <param name="startChar"> The starting delimiter (e.g. '[') </param>
-	/// <param name="endChar"> The ending delimiter (e.g. ']') </param>
-	/// <param name="tokenType"> The token type for the entire nested section </param>
-	/// <param name="token"> The resulting token (null if not matched or unclosed) </param>
-	/// <returns> True if a complete nested delimited token was processed. </returns>
-	protected bool TryProcessDelimitedToken(char startChar, char endChar, int tokenType, out Token token)
-	{
-		if ((Position >= Buffer.Count) || (Buffer[Position] != startChar))
-		{
-			token = null;
-			return false;
-		}
-
-		var start = Position;
-		var position = start + 1; // skip the opening startChar
-		var nestingLevel = 1; // we already saw one opening
-
-		while (position < Buffer.Count)
-		{
-			var c = Buffer[position];
-
-			if (c == startChar)
-			{
-				nestingLevel++;
-			}
-			else if (c == endChar)
-			{
-				nestingLevel--;
-				if (nestingLevel == 0)
-				{
-					// Found the matching closing delimiter
-					position++; // include the closing char
-					Position = position;
-					CurrentState = LexerStateDefault;
-					token = CreateOrUpdateSection(tokenType, start, position);
-					return true;
-				}
-			}
-
-			position++;
-		}
-
-		// Unclosed - we reached EOF without finding matching end
-		// You can decide the policy: either treat as error, or as text.
-		// Here we fail (return false) so the caller can fall back to plain text.
-		CurrentState = LexerStateDefault;
-		token = null;
-		return false;
-	}
-
-	/// <summary>
-	/// Helper method to detect and consume a delimited token: startPattern + content + endPattern.
-	/// Supports multi-character start/end patterns and optional state management.
-	/// </summary>
-	/// <param name="startPattern"> The starting delimiter (e.g. \", *, ```) </param>
-	/// <param name="endPattern"> The ending delimiter. </param>
-	/// <param name="tokenType"> The token type to assign to the entire delimited section </param>
-	/// <param name="token"> The token if it matched and was processed. </param>
-	/// <returns> True if a delimited token was successfully processed. </returns>
-	protected bool TryProcessDelimitedToken(string startPattern, string endPattern, int tokenType, out Token token)
-	{
-		if (!TryMatch(Position, startPattern))
-		{
-			token = null;
-			return false;
-		}
-
-		var start = Position;
-		var position = start + startPattern.Length;
-
-		while (position < Buffer.Count)
-		{
-			// Check for end pattern
-			if (TryMatch(position, endPattern))
-			{
-				position += endPattern.Length;
-				CurrentState = LexerStateDefault;
-				Position = position;
-
-				// Create token for the entire delimited section (including start + content + end)
-				token = CreateOrUpdateSection(tokenType, start, position);
-				return true;
-			}
-
-			position++;
-		}
-
-		// If we reach here, we hit EOF or newline without finding the end pattern
-		CurrentState = LexerStateDefault;
-		token = null;
 		return false;
 	}
 

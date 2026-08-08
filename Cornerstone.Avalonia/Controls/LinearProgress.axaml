@@ -76,7 +76,7 @@
 		</Style>
 		<!-- Code Template - Color -->
 
-		<!-- Generated Code - Colors -->
+		<!-- Generated Code - Color -->
 		<Style Selector="^[(Theme.Color)=Red]">
 			<Setter Property="Stroke" Value="{DynamicResource Red06}" />
 		</Style>
@@ -119,7 +119,7 @@
 		<Style Selector="^[(Theme.Color)=Gray]">
 			<Setter Property="Stroke" Value="{DynamicResource Gray06}" />
 		</Style>
-		<!-- Generated Code - /Colors -->
+		<!-- Generated Code - /Color -->
 	</ControlTheme>
 
 	<!-- ReSharper disable Xaml.MissingGridIndex -->

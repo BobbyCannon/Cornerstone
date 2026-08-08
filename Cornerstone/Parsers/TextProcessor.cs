@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using Cornerstone.Collections;
 using Cornerstone.Reflection;
 using Cornerstone.Text;
@@ -18,6 +19,12 @@ public abstract class TextProcessor<T>
 
 	public readonly IQueue<T> Pool;
 
+	/// <summary>
+	/// Extra sections produced by a single match (e.g. expanded emphasis interiors).
+	/// Drained by <see cref="NextSection" /> before reading the buffer again.
+	/// </summary>
+	private Queue<T> _pendingSections;
+
 	#endregion
 
 	#region Constructors
@@ -31,10 +38,30 @@ public abstract class TextProcessor<T>
 
 	#region Methods
 
-	public abstract T CreateOrUpdateSection(int type, int startOffset, int endOffset, params int[] offsets);
+	public abstract T CreateOrUpdateSection(int type, int startOffset, int endOffset, uint? foreground = null, uint? background = null,
+		bool? bold = null, bool? italic = null, bool? strikethrough = null, params int[] offsets);
+
+	/// <summary>
+	/// Queues additional sections to be returned by subsequent <see cref="NextSection" /> calls.
+	/// </summary>
+	protected void EnqueuePending(T section)
+	{
+		if (section is null)
+		{
+			return;
+		}
+
+		_pendingSections ??= new Queue<T>(8);
+		_pendingSections.Enqueue(section);
+	}
 
 	public T NextSection()
 	{
+		if ((_pendingSections is { Count: > 0 }))
+		{
+			return _pendingSections.Dequeue();
+		}
+
 		if (Position >= Buffer.Count)
 		{
 			return null!;
@@ -77,16 +104,10 @@ public abstract class TextProcessor<T>
 		}
 	}
 
-	public virtual bool TryProcessContinuation(out T token)
+	public override void StartProcessing()
 	{
-		token = null!;
-		return false;
-	}
-
-	public virtual bool TryProcessPosition(out T token)
-	{
-		token = null!;
-		return false;
+		base.StartProcessing();
+		_pendingSections?.Clear();
 	}
 
 	protected T ReadLineEndings()
@@ -101,23 +122,19 @@ public abstract class TextProcessor<T>
 	/// <summary>
 	/// This will already read some amount of text. Minimal length will be 1 character.
 	/// </summary>
-	/// <returns> The token representing the text. </returns>
+	/// <returns> The section representing the text. </returns>
 	protected virtual T ReadText()
 	{
 		// Track start and always move at least 1 position.
-		var start = Position++;
+		// The first character must update EOL/indent state — skipping it left
+		// wasEndOfLine true so a following space kept AtIndentation, and mid-line
+		// '+' / '-' / '*' were misread as list markers (e.g. **2 + 2 = 4**).
+		var start = Position;
 		var wasEndOfLine = AtEndOfLine || AtIndentation;
 		var isOnlyEndOfLines = true;
 
-		while (Position < Buffer.Count)
+		void ConsumeOne(char current)
 		{
-			if (IsStartCharacter())
-			{
-				break;
-			}
-
-			var current = Buffer[Position];
-
 			AtEndOfLine = Newlines.Contains(current);
 			AtWhitespace = Whitespace.Contains(current);
 
@@ -143,8 +160,19 @@ public abstract class TextProcessor<T>
 			}
 
 			isOnlyEndOfLines &= AtEndOfLine;
-
 			Position++;
+		}
+
+		ConsumeOne(Buffer[Position]);
+
+		while (Position < Buffer.Count)
+		{
+			if (IsStartCharacter())
+			{
+				break;
+			}
+
+			ConsumeOne(Buffer[Position]);
 		}
 
 		return CreateOrUpdateSection(
@@ -155,23 +183,357 @@ public abstract class TextProcessor<T>
 		);
 	}
 
+	protected virtual bool TryProcessContinuation(out T section)
+	{
+		section = null!;
+		return false;
+	}
+
+	/// <summary>
+	/// Helper method to detect and consume a delimited section: startPattern + content + endPattern.
+	/// Supports multi-character start/end patterns and optional state management.
+	/// </summary>
+	/// <param name="delimiter"> The start/end delimiter (e.g. \", *, `) </param>
+	/// <param name="sectionType"> The section type to assign to the entire delimited section </param>
+	/// <param name="selection"> The section if it matched and was processed. </param>
+	/// <returns> True if a delimited section was successfully processed. </returns>
+	protected bool TryProcessDelimitedInlineSelection(char delimiter, int sectionType, out T selection)
+	{
+		selection = null!;
+		var start = Position;
+
+		// Count consecutive opening delimiters
+		var n = 0;
+		while (((Position + n) < Buffer.Count) && (Buffer[Position + n] == delimiter))
+		{
+			n++;
+		}
+
+		if (n == 0)
+		{
+			return false;
+		}
+
+		var contentStart = Position + n;
+		var position = contentStart;
+
+		// Inline spans cannot contain newlines
+		while (position < Buffer.Count)
+		{
+			if (char.IsControl(Buffer[position]))
+			{
+				return false;
+			}
+
+			if (Buffer[position] == delimiter)
+			{
+				// Check if we have n consecutive delimiters here
+				var endCount = 0;
+				var tempPos = position;
+				while ((tempPos < Buffer.Count) && (Buffer[tempPos] == delimiter) && (endCount < n))
+				{
+					endCount++;
+					tempPos++;
+				}
+
+				if (endCount == n)
+				{
+					// Found potential closing delimiter
+					// Check if content contains n or more consecutive delimiters
+					var maxDelimiterInContent = 0;
+					var currentRun = 0;
+					for (var i = contentStart; i < position; i++)
+					{
+						if (Buffer[i] == delimiter)
+						{
+							currentRun++;
+							if (currentRun > maxDelimiterInContent)
+							{
+								maxDelimiterInContent = currentRun;
+							}
+						}
+						else
+						{
+							currentRun = 0;
+						}
+					}
+
+					if (maxDelimiterInContent >= n)
+					{
+						// Invalid delimiter length for this content according to CommonMark
+						return false;
+					}
+
+					// Valid delimited selection. Offsets = content region (excludes delimiters)
+					// so MarkdownInlineProjector can strip markers for TokenTypeInlineCode, etc.
+					var end = position + n;
+					Position = end;
+					selection = CreateOrUpdateSection(sectionType, start, end, offsets: [contentStart, position]);
+					return true;
+				}
+			}
+			position++;
+		}
+
+		return false;
+	}
+
+	/// <summary>
+	/// Helper method to detect and consume a delimited section: startPattern + content + endPattern.
+	/// Supports multi-character start/end patterns and optional state management.
+	/// </summary>
+	/// <param name="startPattern"> The starting delimiter (e.g. \", *, ```) </param>
+	/// <param name="endPattern"> The ending delimiter. </param>
+	/// <param name="sectionType"> The section type to assign to the entire delimited section </param>
+	/// <param name="block"> The section if it matched and was processed. </param>
+	/// <returns> True if a delimited section was successfully processed. </returns>
+	protected virtual bool TryProcessDelimitedSection(
+		string startPattern,
+		string endPattern,
+		int sectionType,
+		out T block,
+		bool requiresLeadingNewLine = false,
+		bool allowLeadingIndentation = false)
+	{
+		if (!TryMatch(Position, startPattern))
+		{
+			block = null;
+			return false;
+		}
+
+		var start = Position;
+		var position = start + startPattern.Length;
+		var offset1 = position;
+
+		while (position < Buffer.Count)
+		{
+			// Check for end pattern
+			if (TryMatch(position, endPattern))
+			{
+				var offest2 = position;
+				position += endPattern.Length;
+				Position = position;
+
+				// Create section for the entire delimited section (including start + content + end)
+				block = CreateOrUpdateSection(sectionType, start, position, offsets: [offset1, offest2]);
+				return true;
+			}
+
+			position++;
+		}
+
+		// If we reach here, we hit EOF or newline without finding the end pattern
+		block = null;
+		return false;
+	}
+
+	/// <summary>
+	/// Helper method to detect and consume a delimited section: startPattern + content + endPattern.
+	/// Supports multi-character start/end patterns and optional state management.
+	/// </summary>
+	/// <param name="startPattern"> The starting delimiter (e.g. \", *, ```) </param>
+	/// <param name="endPattern"> The ending delimiter. </param>
+	/// <param name="sectionType"> The type to assign to the entire delimited section </param>
+	/// <param name="section"> The section if it matched and was processed. </param>
+	/// <param name="except"> An optional set of characters that are not accepted. </param>
+	/// <returns> True if a delimited section was successfully processed. </returns>
+	protected bool TryProcessDelimitedSection(string startPattern, string endPattern, int sectionType, out T section, params char[] except)
+	{
+		return TryProcessDelimitedSection(startPattern, endPattern, sectionType, out section, null, except);
+	}
+
+	/// <summary>
+	/// Helper method to detect and consume a **nested** delimited section using single characters.
+	/// Fully supports nesting (e.g. [outer [inner] more] ).
+	/// Returns the entire section from the opening startChar to the matching closing endChar.
+	/// </summary>
+	/// <param name="startChar"> The starting delimiter (e.g. '[') </param>
+	/// <param name="endChar"> The ending delimiter (e.g. ']') </param>
+	/// <param name="sectionType"> The section type for the entire nested section </param>
+	/// <param name="section"> The resulting section (null if not matched or unclosed) </param>
+	/// <returns> True if a complete nested delimited section was processed. </returns>
+	protected bool TryProcessDelimitedSection(char startChar, char endChar, int sectionType, out T section)
+	{
+		if ((Position >= Buffer.Count) || (Buffer[Position] != startChar))
+		{
+			section = null!;
+			return false;
+		}
+
+		var start = Position;
+		var position = start + 1; // skip the opening startChar
+		var nestingLevel = 1; // we already saw one opening
+
+		while (position < Buffer.Count)
+		{
+			var c = Buffer[position];
+
+			if (c == startChar)
+			{
+				nestingLevel++;
+			}
+			else if (c == endChar)
+			{
+				nestingLevel--;
+				if (nestingLevel == 0)
+				{
+					// Found the matching closing delimiter
+					position++; // include the closing char
+					Position = position;
+					CurrentState = LexerStateDefault;
+					section = CreateOrUpdateSection(sectionType, start, position);
+					return true;
+				}
+			}
+
+			position++;
+		}
+
+		// Unclosed - we reached EOF without finding matching end
+		// You can decide the policy: either treat as error, or as text.
+		// Here we fail (return false) so the caller can fall back to plain text.
+		CurrentState = LexerStateDefault;
+		section = null!;
+		return false;
+	}
+
+	/// <summary>
+	/// Helper method to detect and consume a delimited section: startPattern + content + endPattern.
+	/// Supports multi-character start/end patterns, optional state management, and extra offsets.
+	/// </summary>
+	/// <param name="startPattern"> The starting delimiter (e.g. \", *, ```) </param>
+	/// <param name="endPattern"> The ending delimiter. </param>
+	/// <param name="sectionType"> The section type to assign to the entire delimited section </param>
+	/// <param name="section"> The section if it matched and was processed. </param>
+	/// <param name="extraOffsets"> Additional offsets to pass to CreateOrUpdateSection. </param>
+	/// <param name="except"> An optional set of characters that are not accepted. </param>
+	/// <returns> True if a delimited section was successfully processed. </returns>
+	protected bool TryProcessDelimitedSection(string startPattern, string endPattern, int sectionType, out T section, int[] extraOffsets, params char[] except)
+	{
+		if (!TryMatch(Position, startPattern))
+		{
+			section = null!;
+			return false;
+		}
+
+		var start = Position;
+		var position = start + startPattern.Length;
+
+		while (position < Buffer.Count)
+		{
+			if (except.Length > 0)
+			{
+				foreach (var c in except)
+				{
+					if (Buffer[position] != c)
+					{
+						continue;
+					}
+
+					section = null!;
+					return false;
+				}
+			}
+
+			// Check for end pattern
+			if (TryMatch(position, endPattern))
+			{
+				position += endPattern.Length;
+				CurrentState = LexerStateDefault;
+				Position = position;
+
+				section = CreateOrUpdateSection(sectionType, start, position, offsets: extraOffsets ?? []);
+				return true;
+			}
+
+			position++;
+		}
+
+		// If we reach here, we hit EOF or newline without finding the end pattern
+		CurrentState = LexerStateDefault;
+		section = null!;
+		return false;
+	}
+
+	/// <summary>
+	/// Helper method to detect and consume a **nested** delimited token using single characters.
+	/// Fully supports nesting (e.g. [outer [inner] more] ).
+	/// Returns the entire section from the opening startChar to the matching closing endChar.
+	/// </summary>
+	/// <param name="startChar"> The starting delimiter (e.g. '[') </param>
+	/// <param name="endChar"> The ending delimiter (e.g. ']') </param>
+	/// <param name="tokenType"> The token type for the entire nested section </param>
+	/// <param name="token"> The resulting token (null if not matched or unclosed) </param>
+	/// <returns> True if a complete nested delimited token was processed. </returns>
+	protected bool TryProcessDelimitedToken(char startChar, char endChar, int tokenType, out T token)
+	{
+		if ((Position >= Buffer.Count) || (Buffer[Position] != startChar))
+		{
+			token = null;
+			return false;
+		}
+
+		var start = Position;
+		var position = start + 1; // skip the opening startChar
+		var nestingLevel = 1; // we already saw one opening
+
+		while (position < Buffer.Count)
+		{
+			var c = Buffer[position];
+
+			if (c == startChar)
+			{
+				nestingLevel++;
+			}
+			else if (c == endChar)
+			{
+				nestingLevel--;
+				if (nestingLevel == 0)
+				{
+					// Found the matching closing delimiter
+					position++; // include the closing char
+					Position = position;
+					CurrentState = LexerStateDefault;
+					token = CreateOrUpdateSection(tokenType, start, position);
+					return true;
+				}
+			}
+
+			position++;
+		}
+
+		// Unclosed - we reached EOF without finding matching end
+		// You can decide the policy: either treat as error, or as text.
+		// Here we fail (return false) so the caller can fall back to plain text.
+		CurrentState = LexerStateDefault;
+		token = null;
+		return false;
+	}
+
+	protected virtual bool TryProcessPosition(out T section)
+	{
+		section = null!;
+		return false;
+	}
+
 	#endregion
 }
 
-public abstract class TextProcessor : TextService
+public abstract class TextProcessor : TextReader
 {
 	#region Fields
 
 	public static readonly int LexerStateDefault;
 
 	public static readonly Dictionary<int, string> RegisteredTokenStatesCodeNames;
-	public static readonly Dictionary<int, SyntaxColor> RegisteredTokenTypeColors;
+	public static readonly Dictionary<int, SyntaxKind> RegisteredTokenTypeColors;
 	public static readonly Dictionary<int, string> RegisteredTokenTypesCodeNames;
 	public static readonly Dictionary<int, string> RegisteredTokenTypesDisplayName;
 
 	public static readonly int TokenTypeError;
 	public static readonly int TokenTypeNewLine;
 	public static readonly int TokenTypeText;
+	public static readonly int TokenTypeUnknown;
 	public static readonly int TokenTypeWhitespace;
 
 	#endregion
@@ -191,10 +553,11 @@ public abstract class TextProcessor : TextService
 
 		LexerStateDefault = RegisterTokenState(nameof(TextProcessor), nameof(LexerStateDefault), 0);
 
-		TokenTypeText = RegisterTokenType("Text", nameof(TextProcessor), nameof(TokenTypeText), 0, SyntaxColor.None);
-		TokenTypeError = RegisterTokenType("Error", nameof(TextProcessor), nameof(TokenTypeError), 1, SyntaxColor.Error);
-		TokenTypeNewLine = RegisterTokenType("NewLine", nameof(TextProcessor), nameof(TokenTypeNewLine), 2, SyntaxColor.None);
-		TokenTypeWhitespace = RegisterTokenType("Whitespace", nameof(TextProcessor), nameof(TokenTypeWhitespace), 3, SyntaxColor.None);
+		TokenTypeUnknown = RegisterTokenType("Unknown", nameof(TextProcessor), nameof(TokenTypeUnknown), 0, SyntaxKind.None);
+		TokenTypeText = RegisterTokenType("Text", nameof(TextProcessor), nameof(TokenTypeText), 1, SyntaxKind.None);
+		TokenTypeError = RegisterTokenType("Error", nameof(TextProcessor), nameof(TokenTypeError), 2, SyntaxKind.Error);
+		TokenTypeNewLine = RegisterTokenType("NewLine", nameof(TextProcessor), nameof(TokenTypeNewLine), 3, SyntaxKind.None);
+		TokenTypeWhitespace = RegisterTokenType("Whitespace", nameof(TextProcessor), nameof(TokenTypeWhitespace), 4, SyntaxKind.None);
 
 		CodeBuilder.RegisterPropertyValueProvider(TryGetTokenizerStateOrTypeCode);
 	}
@@ -286,7 +649,7 @@ public abstract class TextProcessor : TextService
 		return value;
 	}
 
-	protected static int RegisterTokenType(string displayName, string tokenizerName, string memberName, int value, SyntaxColor syntaxColor)
+	protected static int RegisterTokenType(string displayName, string tokenizerName, string memberName, int value, SyntaxKind syntaxColor)
 	{
 		var qualifiedName = $"{tokenizerName}.{memberName}";
 
@@ -303,6 +666,41 @@ public abstract class TextProcessor : TextService
 		RegisteredTokenTypeColors[value] = syntaxColor;
 
 		return value;
+	}
+
+	/// <summary>
+	/// Helper method to detect a delimited token (startPattern + content + endPattern).
+	/// Does NOT consume the token — only calculates the end offset.
+	/// </summary>
+	protected bool TryProcessDelimitedToken(
+		string startPattern,
+		string endPattern,
+		int tokenType,
+		out int endOffset)
+	{
+		endOffset = Position;
+
+		if (!TryMatch(Position, startPattern))
+		{
+			return false;
+		}
+
+		var position = Position + startPattern.Length;
+		var count = Buffer.Count;
+
+		while (position < count)
+		{
+			if (TryMatch(position, endPattern))
+			{
+				position += endPattern.Length;
+				endOffset = position;
+				return true;
+			}
+
+			position++;
+		}
+
+		return false;
 	}
 
 	internal static bool GetTokenTypeCodeName(string propertyName, int intValue, out string code)

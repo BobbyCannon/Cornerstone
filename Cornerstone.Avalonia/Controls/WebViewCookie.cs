@@ -9,7 +9,7 @@ using Cornerstone.Reflection;
 namespace Cornerstone.Avalonia.Controls;
 
 [SourceReflection]
-public partial class WebViewCookie : Notifiable
+public partial class WebViewCookie : CornerstoneObject
 {
 	#region Properties
 

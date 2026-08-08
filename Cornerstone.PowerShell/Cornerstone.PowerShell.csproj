@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net10.0</TargetFrameworks>
+		<AssemblyName>Cornerstone.PowerShell</AssemblyName>
+		<PackageId>Cornerstone.PowerShell</PackageId>
+	</PropertyGroup>
+	<Import Project="..\Package.props" />
+	<ItemGroup>
+		<None Remove="Cornerstone.PowerShell-Help.xml" />
+		<None Remove="Cornerstone.PowerShell.ps1xml" />
+		<None Remove="Cornerstone.PowerShell.psd1" />
+	</ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Cornerstone.PowerShell-Help.xml" />
+		<EmbeddedResource Include="Cornerstone.PowerShell.ps1xml" />
+		<EmbeddedResource Include="Cornerstone.PowerShell.psd1" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Web.Administration" Version="11.1.0" />
+		<PackageReference Include="NuGet.Packaging" Version="7.6.0" />
+		<PackageReference Include="NuGet.Protocol" Version="7.6.0" />
+		<PackageReference Include="PowerShellStandard.Library" Version="5.1.1">
+			<PrivateAssets>All</PrivateAssets>
+		</PackageReference>
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
+		<ProjectReference Include="..\Cornerstone\Cornerstone.csproj" />
+	</ItemGroup>
+</Project>

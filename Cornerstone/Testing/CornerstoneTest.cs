@@ -9,7 +9,6 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading;
 using Cornerstone.Compare;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
@@ -19,6 +18,7 @@ using Cornerstone.Runtime;
 using Cornerstone.Text.CodeGenerators;
 #if WINDOWS
 using Cornerstone.Platforms.Windows;
+using System.Threading;
 #endif
 
 #endregion
@@ -37,7 +37,6 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 	#region Fields
 
 	private static Action<string> _clipboardProvider;
-
 	private DateTime? _currentDateTime;
 	private readonly IDateTimeProvider _defaultDateTimeProvider;
 	private IDateTimeProvider _overriddenDateTimeProvider;
@@ -60,13 +59,16 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 
 	static CornerstoneTest()
 	{
-		// Default start date
+		Dispatcher = new TestDispatcher();
 		StartDateTime = new DateTime(2000, 01, 02, 03, 04, 00, DateTimeKind.Utc);
+		RuntimeInformation = RuntimeInformationData.GetSample();
 	}
 
 	#endregion
 
 	#region Properties
+
+	public static TestDispatcher Dispatcher { get; }
 
 	public bool EnableFileUpdates { get; protected set; }
 
@@ -76,6 +78,8 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 	public static bool IsDebugging => Debugger.IsAttached;
 
 	public DateTime Now => _defaultDateTimeProvider.Now;
+
+	public static RuntimeInformationData RuntimeInformation { get; }
 
 	public string SourceFileName => GetTestSourceFileName();
 
@@ -408,10 +412,11 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 	/// </summary>
 	public virtual void TestInitialize()
 	{
-		#if (WINDOWS)
+		#if WINDOWS
 		SetClipboardProvider(Clipboard.SetText);
 		#endif
 		ResetCurrentTime(StartDateTime);
+		ResetDependencyInjection();
 		Babel.Tower.Reset();
 	}
 
@@ -493,6 +498,61 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 
 		// Fallback if no suitable frame is found
 		return null;
+	}
+
+	protected virtual void ResetDependencyInjection()
+	{
+		SingletonInstances.Clear();
+		Factories.Clear();
+		SetupCornerstoneDependencies(this, RuntimeInformation, Dispatcher);
+	}
+
+	protected void UpdateFile(string methodName, FileInfo fileInfo, Action<CodeBuilder> build)
+	{
+		UpdateFile(fileInfo, methodName, "// Generated Code - {0}", "Expected", build);
+	}
+
+	protected void UpdateFile(FileInfo fileInfo, string method, string sectionFormat, string sectionName, Action<CodeBuilder> build)
+	{
+		if (fileInfo is not { Exists: true })
+		{
+			Fail("File not found?");
+		}
+
+		var content = File.ReadAllText(fileInfo.FullName);
+		var methodTemplate = $" {method}(";
+		var methodIndex = content.IndexOf(methodTemplate);
+		if (methodIndex < 0)
+		{
+			Fail("File method not found.");
+		}
+
+		var startTemplate = string.Format(sectionFormat, sectionName);
+		var startIndex = content.IndexOf(startTemplate, methodIndex);
+		if (startIndex < 0)
+		{
+			Fail("File section start not found.");
+		}
+
+		var endTemplate = string.Format(sectionFormat, $"/{sectionName}");
+		var endIndex = content.IndexOf(endTemplate, startIndex);
+		if ((endIndex <= 0) || (endIndex <= startIndex))
+		{
+			Fail("File section end not found.");
+		}
+
+		var currentSection = content.Substring(startIndex + startTemplate.Length, endIndex - startIndex - startTemplate.Length).TrimStart('\r', '\n');
+		var builder = new CodeBuilder();
+		builder.TryDetectIndent(currentSection);
+		build(builder);
+		builder.IndentWrite(string.Empty);
+
+		var newSection = builder.ToString();
+		content = content
+			.Remove(startIndex + startTemplate.Length, endIndex - startIndex - startTemplate.Length)
+			.Insert(startIndex + startTemplate.Length, newSection);
+
+		File.WriteAllText(fileInfo.FullName, content, Encoding.UTF8);
 	}
 
 	protected void UpdateableShouldUpdateAll(ComparerSettings settings, Type sourceType, Type destinationType, IncludeExcludeSettings includeExcludeSettings)
@@ -616,54 +676,6 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 		}
 	}
 
-	protected void UpdateFile(string methodName, FileInfo fileInfo, Action<CodeBuilder> build)
-	{
-		UpdateFile(fileInfo, methodName, "// Generated Code - {0}", "Expected", build);
-	}
-
-	protected void UpdateFile(FileInfo fileInfo, string method, string sectionFormat, string sectionName, Action<CodeBuilder> build)
-	{
-		if (fileInfo is not { Exists: true })
-		{
-			Fail("File not found?");
-		}
-
-		var content = File.ReadAllText(fileInfo.FullName);
-		var methodTemplate = $" {method}(";
-		var methodIndex = content.IndexOf(methodTemplate);
-		if (methodIndex < 0)
-		{
-			Fail("File method not found.");
-		}
-
-		var startTemplate = string.Format(sectionFormat, sectionName);
-		var startIndex = content.IndexOf(startTemplate, methodIndex);
-		if (startIndex < 0)
-		{
-			Fail("File section start not found.");
-		}
-
-		var endTemplate = string.Format(sectionFormat, $"/{sectionName}");
-		var endIndex = content.IndexOf(endTemplate, startIndex);
-		if ((endIndex <= 0) || (endIndex <= startIndex))
-		{
-			Fail("File section end not found.");
-		}
-
-		var currentSection = content.Substring(startIndex + startTemplate.Length, endIndex - startIndex - startTemplate.Length).TrimStart('\r', '\n');
-		var builder = new CodeBuilder();
-		builder.TryDetectIndent(currentSection);
-		build(builder);
-		builder.IndentWrite(string.Empty);
-
-		var newSection = builder.ToString();
-		content = content
-			.Remove(startIndex + startTemplate.Length, endIndex - startIndex - startTemplate.Length)
-			.Insert(startIndex + startTemplate.Length, newSection);
-
-		File.WriteAllText(fileInfo.FullName, content, Encoding.UTF8);
-	}
-
 	protected void ValidateExpected(string expected, string actual,
 		[CallerMemberName] string callingMethodName = "")
 	{
@@ -674,7 +686,7 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 			UpdateFile(callingMethodName, sourceFileInfo,
 				builder =>
 				{
-					builder.WriteLine();
+					builder.AppendLine();
 					builder.IndentWriteLine("var expected =");
 					builder.IncreaseIndent();
 					builder.IndentWriteLine("\"\"\"");
@@ -770,7 +782,7 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 
 		foreach (var action in actions)
 		{
-			var destinationInstance = SourceReflector.CreateInstance(destinationType);
+			var destinationInstance = CreateNewInstance(destinationType);
 
 			IsNotNull(destinationInstance);
 
@@ -812,13 +824,15 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 
 	private object GetModelWithDefaultValues(SourceTypeInfo sourceTypeInfo, IncludeExcludeSettings settings)
 	{
-		var response = SourceReflector.CreateInstance(sourceTypeInfo);
+		var response = GetInstance(sourceTypeInfo.Type)
+			?? SourceReflector.CreateInstance(sourceTypeInfo);
 		return response;
 	}
 
 	private object GetModelWithNonDefaultValues(SourceTypeInfo sourceTypeInfo, IncludeExcludeSettings settings)
 	{
-		var response = SourceReflector.CreateInstance(sourceTypeInfo);
+		var response = GetInstance(sourceTypeInfo.Type)
+			?? SourceReflector.CreateInstance(sourceTypeInfo);
 		return response;
 	}
 

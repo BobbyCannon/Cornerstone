@@ -10,7 +10,6 @@ using System.Linq;
 using Avalonia.Input;
 using Cornerstone.Avalonia.TreeDataGrid.Models;
 using Cornerstone.Avalonia.TreeDataGrid.Selection;
-using Cornerstone.Data;
 
 #endregion
 
@@ -21,7 +20,7 @@ namespace Cornerstone.Avalonia.TreeDataGrid;
 /// row may have multiple columns.
 /// </summary>
 /// <typeparam name="TModel"> The model type. </typeparam>
-public class HierarchicalTreeDataGridSource<TModel> : Notifiable,
+public class HierarchicalTreeDataGridSource<TModel> : CornerstoneObject,
 	ITreeDataGridSource<TModel>,
 	IDisposable,
 	IExpanderRowController<TModel>
@@ -102,9 +101,10 @@ public class HierarchicalTreeDataGridSource<TModel> : Notifiable,
 				{
 					throw new InvalidOperationException("Selection source must be set to Items.");
 				}
+				var oldValue = _selection;
 				_selection = value;
 				_isSelectionSet = true;
-				OnPropertyChanged();
+				OnPropertyChanged(nameof(Selection), oldValue, _selection);
 			}
 		}
 	}
@@ -182,6 +182,11 @@ public class HierarchicalTreeDataGridSource<TModel> : Notifiable,
 	public void ExpandCollapseRecursive(HierarchicalRow<TModel> row, Func<TModel, bool> predicate)
 	{
 		GetOrCreateRows().ExpandCollapseRecursive(predicate, row);
+	}
+
+	public TModel GetAt(int index)
+	{
+		return _itemsView.GetAt(index);
 	}
 
 	public void Sort(Comparison<TModel> comparison)
@@ -343,6 +348,11 @@ public class HierarchicalTreeDataGridSource<TModel> : Notifiable,
 		{
 			targetItems.Insert(ti++, sourceItems[si]);
 		}
+	}
+
+	object ITreeDataGridSource.GetAt(int index)
+	{
+		return GetAt(index);
 	}
 
 	IEnumerable<object> ITreeDataGridSource.GetModelChildren(object model)

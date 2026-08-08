@@ -59,20 +59,19 @@
 										ControlHelper.DisplayName="Duration (MS)"
 										FormatString="000"
 										Increment="100"
-										Value="{Binding ElementName=HoldButton, Path=HoldDuration, Converter={StaticResource TimeSpanConverter}, ConverterParameter=ms}">
-								</NumericUpDown>
+										Value="{Binding ElementName=HoldButton, Path=HoldDuration, Converter={StaticResource TimeSpanConverter}, ConverterParameter=ms}" />
+								<!-- Height/Width are double (NaN when unset). NumericUpDown.Value is decimal.
+								     Without a safe converter, Avalonia's ToDecimal(NaN) throws OverflowException. -->
 								<NumericUpDown
 										ControlHelper.DisplayName="Height (px)"
 										FormatString="00"
 										Increment="1"
-										Value="{Binding ElementName=HoldButton, Path=Height}">
-								</NumericUpDown>
+										Value="{Binding ElementName=HoldButton, Path=Height, Converter={StaticResource DoubleToDecimalConverter}}" />
 								<NumericUpDown
 										ControlHelper.DisplayName="Width (px)"
 										FormatString="00"
 										Increment="10"
-										Value="{Binding ElementName=HoldButton, Path=Width}">
-								</NumericUpDown>
+										Value="{Binding ElementName=HoldButton, Path=Width, Converter={StaticResource DoubleToDecimalConverter}}" />
 								<ComboBox SelectedValue="{Binding ElementName=HoldButton, Path=Orientation, Mode=TwoWay}"
 										SelectedValueBinding="{Binding Content, DataType=ComboBoxItem}"
 										ControlHelper.DisplayName="Orientation:">
@@ -141,8 +140,7 @@
 								<TextBlock Text="{Binding ElementName=ButtonWidth, Path=Value}"
 										VerticalAlignment="Center" />
 							</WrapPanel>
-							<WrapPanel>
-							</WrapPanel>
+							<WrapPanel />
 						</DockPanel>
 						<PreviewCodeSnippet.ItemTemplate>
 							<DataTemplate DataType="ThemeColor">

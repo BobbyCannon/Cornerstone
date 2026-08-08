@@ -2,7 +2,7 @@
   "profiles": {
     "Debug": {
       "commandName": "DebugRoslynComponent",
-      "targetProject": "..\\Cornerstone.Avalonia\\Cornerstone.Avalonia.csproj"
+      "targetProject": "..\\Cornerstone\\Cornerstone.csproj"
     }
   }
 }

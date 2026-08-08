@@ -1,0 +1,59 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:local="clr-namespace:Cornerstone.Avalonia.Controls"
+		xmlns:text="clr-namespace:Cornerstone.Avalonia.Text">
+
+	<ControlTheme x:Key="{x:Type local:MarkdownBlockPresenter}"
+			TargetType="local:MarkdownBlockPresenter">
+		<Setter Property="Template">
+			<ControlTemplate>
+				<Grid x:Name="PART_Root" RowDefinitions="Auto,*"
+						x:CompileBindings="False">
+					<Border x:Name="PART_Header"
+							BorderThickness="1,1,1,0"
+							CornerRadius="4,4,0,0"
+							Grid.Row="0"
+							Height="36"
+							IsVisible="False">
+						<Grid>
+							<TextBlock x:Name="PART_HeaderTitle"
+									Margin="10,0,0,0"
+									VerticalAlignment="Center" />
+							<!-- Command wired in code-behind: $parent[local:MarkdownView] fails when this theme is merged via Controls.axaml -->
+							<Button x:Name="PART_CopyButton"
+									Classes="Icon IconOnly"
+									HorizontalAlignment="Right"
+									MinWidth="80">
+								<StackPanel Orientation="Horizontal">
+									<Path Data="{StaticResource Icons.Copy}" Margin="0,0,6,0" />
+									<TextBlock Text="Copy" />
+								</StackPanel>
+							</Button>
+						</Grid>
+					</Border>
+					<Border x:Name="PART_Border"
+							Grid.Row="1"
+							BorderBrush="{DynamicResource BorderBrush}"
+							BorderThickness="0">
+						<text:TextRenderer x:Name="PART_Renderer"
+								Foreground="{TemplateBinding Foreground}"
+								HorizontalAlignment="Stretch"
+								CanHorizontallyScroll="False">
+							<text:TextRenderer.ContextMenu>
+								<ContextMenu>
+									<MenuItem Header="Copy"
+											Command="{Binding #PART_Renderer.ViewModel.Clipboard.CopyCommand}"
+											InputGesture="{x:Static TextBox.CopyGesture}">
+										<MenuItem.Icon>
+											<Path Data="{StaticResource Icons.Copy}" />
+										</MenuItem.Icon>
+									</MenuItem>
+								</ContextMenu>
+							</text:TextRenderer.ContextMenu>
+						</text:TextRenderer>
+					</Border>
+				</Grid>
+			</ControlTemplate>
+		</Setter>
+	</ControlTheme>
+</ResourceDictionary>

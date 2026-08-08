@@ -1,40 +1,51 @@
 ﻿#region References
 
+using System;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Linq;
 using Avalonia;
+using Avalonia.Controls;
 using Cornerstone.Avalonia.Controls;
 using Cornerstone.Data;
 using Cornerstone.Presentation;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
+using Cornerstone.Sample.Keystone;
 using Cornerstone.Sample.Tabs;
-using System;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using Cornerstone.Extensions;
 
 #endregion
 
 namespace Cornerstone.Sample;
 
 [SourceReflection]
-public partial class AppViewModel : ViewModel
+[DependencyInjected]
+[DependencyInjected(typeof(IAppDispatcher))]
+[DependencyInjected(typeof(IAppNavigator))]
+public partial class AppViewModel : ApplicationViewModel
 {
 	#region Constructors
 
+	[DependencyInjectionConstructor]
 	public AppViewModel(
-		ApplicationSettings applicationSettings,
-		IRuntimeInformation runtimeInformation)
+		AppState state, AppBus bus,
+		IDependencyProvider dependencyProvider,
+		IDispatcher dispatcher
+	) : base(dependencyProvider, dispatcher, 120)
 	{
-		ApplicationSettings = applicationSettings;
-		RuntimeInformation = runtimeInformation;
+		State = state;
+		Bus = bus;
 		Tabs = [];
 
+		NavigationMenuIsOpen = true;
+		NavigationMenuDisplayMode = SplitViewDisplayMode.Inline;
+
 		AddTabItemViewModel(TabWelcome.HeaderName, "Icons.Smile", typeof(TabWelcome));
+		AddTabItemViewModel(TabDocumentation.HeaderName, "Icons.Bookmark", typeof(TabDocumentation));
 		AddTabItemViewModel(TabButton.HeaderName, "Icons.TapButton", typeof(TabButton));
 		AddTabItemViewModel(TabChannels.HeaderName, "Icons.Share.Fill", typeof(TabChannels));
 		AddTabItemViewModel(TabDebounceAndThrottle.HeaderName, "Icons.Signal", new Thickness(0, 3, 0, -3), typeof(TabDebounceAndThrottle));
+		AddTabItemViewModel(TabAppDispatcher.HeaderName, "Icons.DoubleArrow.Right", typeof(TabAppDispatcher));
 		AddTabItemViewModel(TabDockingManager.HeaderName, "Icons.Folder", typeof(TabDockingManager), DevicePlatform.Windows);
 		AddTabItemViewModel(TabGrids.HeaderName, "Icons.Grid", typeof(TabGrids));
 		AddTabItemViewModel(TabInkCanvas.HeaderName, "Icons.Pencil.Square", typeof(TabInkCanvas));
@@ -44,20 +55,28 @@ public partial class AppViewModel : ViewModel
 		AddTabItemViewModel(TabRuntimeInformation.HeaderName, "Icons.Info.Circle", typeof(TabRuntimeInformation));
 		AddTabItemViewModel(TabShortcutBox.HeaderName, "Icons.Keyboard", typeof(TabShortcutBox));
 		AddTabItemViewModel(TabSpeedyPack.HeaderName, "Icons.BoxLayered", typeof(TabSpeedyPack));
+		AddTabItemViewModel(TabTerminal.HeaderName, "Icons.Terminal", typeof(TabTerminal));
 		AddTabItemViewModel(TabTextEditor.HeaderName, "Icons.File.Binary", typeof(TabTextEditor));
 		AddTabItemViewModel(TabTreeDataGrid.HeaderName, "Icons.File.Tree", typeof(TabTreeDataGrid));
+		AddTabItemViewModel(TabWebView.HeaderName, "Icons.Web", typeof(TabWebView));
 	}
 
 	#endregion
 
 	#region Properties
 
-	public ApplicationSettings ApplicationSettings { get; }
+	public AppBus Bus { get; }
 
-	public IRuntimeInformation RuntimeInformation { get; }
+	[Notify]
+	public partial SplitViewDisplayMode NavigationMenuDisplayMode { get; set; }
+
+	[Notify]
+	public partial bool NavigationMenuIsOpen { get; set; }
 
 	[Notify]
 	public partial TabItemReferenceViewModel SelectedTab { get; set; }
+
+	public AppState State { get; }
 
 	public ObservableCollection<TabItemReferenceViewModel> Tabs { get; }
 
@@ -65,27 +84,20 @@ public partial class AppViewModel : ViewModel
 
 	#region Methods
 
-	public override void Initialize()
+	public override void LoadLifecycle()
 	{
-		ApplicationSettings.Load();
-		SelectedTab = Tabs.FirstOrDefault(x => x.TabTypeName == ApplicationSettings.SelectedTab) ?? Tabs.FirstOrDefault();
-		base.Initialize();
+		base.LoadLifecycle();
+		SelectedTab = Tabs.FirstOrDefault(x => x.TabTypeName == State.Settings.SelectedTab) ?? Tabs.FirstOrDefault();
 	}
 
-	public override void Uninitialize()
-	{
-		base.Uninitialize();
-		ApplicationSettings.Save();
-	}
-
-	protected override void OnPropertyChanged([CallerMemberName] string propertyName = null)
+	protected override void OnPropertyChanged<TValue>(string propertyName, TValue oldValue, TValue newValue)
 	{
 		if (propertyName == nameof(SelectedTab))
 		{
-			ApplicationSettings.SelectedTab = SelectedTab.TabTypeName;
+			State.Settings.SelectedTab = SelectedTab.TabTypeName;
 		}
 
-		base.OnPropertyChanged(propertyName);
+		base.OnPropertyChanged(propertyName, oldValue, newValue);
 	}
 
 	private void AddTabItemViewModel(string name, string icon, Type type, DevicePlatform platforms = DevicePlatform.All, bool onlyDebug = false)
@@ -95,7 +107,7 @@ public partial class AppViewModel : ViewModel
 
 	private void AddTabItemViewModel(string name, string icon, Thickness iconMargin, Type type, DevicePlatform platforms = DevicePlatform.All, bool onlyDebug = false)
 	{
-		if (!platforms.HasFlag(RuntimeInformation.DevicePlatform)
+		if (!platforms.HasFlag(State.RuntimeInformation.DevicePlatform)
 			|| (onlyDebug && !Debugger.IsAttached))
 		{
 			return;

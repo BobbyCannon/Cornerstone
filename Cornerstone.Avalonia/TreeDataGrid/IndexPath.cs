@@ -4,11 +4,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
+
 
 #endregion
 
 namespace Cornerstone.Avalonia.TreeDataGrid;
 
+[JsonConverter(typeof(IndexPathJsonConverter))]
 public readonly struct IndexPath : IReadOnlyList<int>,
 	IComparable<IndexPath>,
 	IEquatable<IndexPath>

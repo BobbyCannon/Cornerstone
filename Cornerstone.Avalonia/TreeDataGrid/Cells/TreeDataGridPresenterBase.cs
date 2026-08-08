@@ -88,6 +88,13 @@ public abstract class TreeDataGridPresenterBase<TItem> : Border
 	protected abstract Orientation Orientation { get; }
 	protected Rect Viewport { get; private set; } = s_invalidViewport;
 
+	/// <summary>
+	/// When non-null and positive, every element uses this size on the primary axis (U).
+	/// Extent and scroll anchors become exact (count × size) instead of averaging realized rows.
+	/// Rows presenter returns <see cref="TreeDataGrid.MinRowHeight"/>.
+	/// </summary>
+	protected virtual double? FixedElementSizeU => null;
+
 	internal IReadOnlyList<Control> RealizedElements => _realizedElements?.Elements ?? [];
 
 	#endregion
@@ -316,6 +323,23 @@ public abstract class TreeDataGridPresenterBase<TItem> : Border
 	{
 		Debug.Assert(_realizedElements is not null);
 
+		// Fixed-height lists: exact index from scroll offset (same idea as columns via GetColumnAt).
+		if ((itemCount > 0) && (FixedElementSizeU is { } fixedU) && (fixedU > 0))
+		{
+			if (DoubleExtensions.IsZero(viewportStart) || (viewportStart < 0))
+			{
+				return (0, 0);
+			}
+
+			var index = Math.Min((int) (viewportStart / fixedU), itemCount - 1);
+			if (index < 0)
+			{
+				index = 0;
+			}
+
+			return (index, index * fixedU);
+		}
+
 		return _realizedElements.GetOrEstimateAnchorElementForViewport(
 			viewportStart,
 			viewportEnd,
@@ -507,7 +531,12 @@ public abstract class TreeDataGridPresenterBase<TItem> : Border
 		var sizeU = 0.0;
 		var sizeV = viewport.measuredV;
 
-		if (viewport.lastIndex >= 0)
+		// Fixed height: total extent is exact. Variable height: estimate remaining from average realized size.
+		if ((itemCount > 0) && (FixedElementSizeU is { } fixedU) && (fixedU > 0))
+		{
+			sizeU = itemCount * fixedU;
+		}
+		else if (viewport.lastIndex >= 0)
 		{
 			var remaining = itemCount - viewport.lastIndex - 1;
 			sizeU = viewport.realizedEndU + (remaining * EstimateElementSizeU());
@@ -548,6 +577,12 @@ public abstract class TreeDataGridPresenterBase<TItem> : Border
 
 	private double EstimateElementSizeU()
 	{
+		if ((FixedElementSizeU is { } fixedU) && (fixedU > 0))
+		{
+			_lastEstimatedElementSizeU = fixedU;
+			return fixedU;
+		}
+
 		if (_realizedElements is null)
 		{
 			return _lastEstimatedElementSizeU;
@@ -675,19 +710,25 @@ public abstract class TreeDataGridPresenterBase<TItem> : Border
 		{
 			case NotifyCollectionChangedAction.Add:
 				_realizedElements.ItemsInserted(e.NewStartingIndex, e.NewItems!.Count, _updateElementIndex);
+				// Expand inserts children into the flatten list; stabilize fixed-height geometry immediately.
+				StabilizeFixedRealizedGeometry();
 				break;
 			case NotifyCollectionChangedAction.Remove:
 				_realizedElements.ItemsRemoved(e.OldStartingIndex, e.OldItems!.Count, _updateElementIndex, _recycleElementOnItemRemoved);
 				ClearFocusedElement(e.OldStartingIndex, e.OldItems!.Count);
+				StabilizeFixedRealizedGeometry();
+				ClampScrollOffsetToContent();
 				break;
 			case NotifyCollectionChangedAction.Replace:
 				_realizedElements.ItemsReplaced(e.OldStartingIndex, e.OldItems!.Count, _recycleElementOnItemRemoved);
 				ClearFocusedElement(e.OldStartingIndex, e.OldItems!.Count);
+				StabilizeFixedRealizedGeometry();
 				break;
 			case NotifyCollectionChangedAction.Move:
 				_realizedElements.ItemsRemoved(e.OldStartingIndex, e.OldItems!.Count, _updateElementIndex, _recycleElementOnItemRemoved);
 				_realizedElements.ItemsInserted(e.NewStartingIndex, e.NewItems!.Count, _updateElementIndex);
 				ClearFocusedElement(e.OldStartingIndex, e.OldItems!.Count);
+				StabilizeFixedRealizedGeometry();
 				break;
 			case NotifyCollectionChangedAction.Reset:
 				_realizedElements.ItemsReset(_recycleElementOnItemRemoved);
@@ -695,7 +736,74 @@ public abstract class TreeDataGridPresenterBase<TItem> : Border
 				{
 					RecycleElementOnItemRemoved(_focusedElement);
 				}
+				// Keep offset inside the new extent so rebuilds (e.g. ExpandAll) do not overscroll.
+				ClampScrollOffsetToContent();
 				break;
+		}
+	}
+
+	/// <summary>
+	/// Hierarchical expand/collapse inserts null/NaN slots into the realized window. With fixed
+	/// row height, replace those with exact sizes and re-align StartU to FirstIndex × height.
+	/// </summary>
+	private void StabilizeFixedRealizedGeometry()
+	{
+		if ((_realizedElements is null) || (FixedElementSizeU is not { } fixedU) || (fixedU <= 0))
+		{
+			return;
+		}
+
+		_realizedElements.ApplyFixedElementSize(fixedU);
+	}
+
+	/// <summary>
+	/// After item count or heights change, keep ScrollViewer offset within [0, max] for the primary axis.
+	/// </summary>
+	private void ClampScrollOffsetToContent()
+	{
+		if (_scrollViewer is null)
+		{
+			return;
+		}
+
+		var itemCount = Items?.Count ?? 0;
+		double contentU;
+		if ((itemCount > 0) && (FixedElementSizeU is { } fixedU) && (fixedU > 0))
+		{
+			contentU = itemCount * fixedU;
+		}
+		else
+		{
+			// Best-effort for variable height: use last estimate (may still thrash without fixed height).
+			contentU = itemCount * EstimateElementSizeU();
+		}
+
+		var offset = _scrollViewer.Offset;
+		if (Orientation == Orientation.Vertical)
+		{
+			var viewportU = _scrollViewer.Viewport.Height;
+			var max = Math.Max(0, contentU - viewportU);
+			if (offset.Y > max)
+			{
+				_scrollViewer.Offset = offset.WithY(max);
+			}
+			else if (offset.Y < 0)
+			{
+				_scrollViewer.Offset = offset.WithY(0);
+			}
+		}
+		else
+		{
+			var viewportU = _scrollViewer.Viewport.Width;
+			var max = Math.Max(0, contentU - viewportU);
+			if (offset.X > max)
+			{
+				_scrollViewer.Offset = offset.WithX(max);
+			}
+			else if (offset.X < 0)
+			{
+				_scrollViewer.Offset = offset.WithX(0);
+			}
 		}
 	}
 

@@ -14,9 +14,33 @@ public class ProfilerTests : CornerstoneUnitTest
 	#region Methods
 
 	[TestMethod]
+	public void IncrementCountsWithoutDuration()
+	{
+		var profiler = new Profiler("Profiler", this);
+		profiler.Refresh();
+
+		for (var i = 0; i < 50; i++)
+		{
+			profiler.Increment("Rate");
+		}
+
+		profiler.Increment("Rate", 10);
+
+		IncrementTime(milliseconds: 1000);
+		profiler.Refresh();
+
+		var actual = profiler.ToArray();
+		AreEqual(1, actual.Length, () => "Length should be 1.");
+		AreEqual(0, actual[0].Count, () => "Accumulators reset after Refresh.");
+		AreEqual(0, actual[0].TotalTicks, () => "Increment adds no ticks.");
+		AreEqual("60", actual[0].CallsPerSecond.ToString("F0"), () => "50 + 10 over 1s => 60/s.");
+		AreEqual(0, actual[0].AverageTicks, () => "Average duration stays 0 for count-only.");
+	}
+
+	[TestMethod]
 	public void SimpleTest()
 	{
-		var profiler = new Profiler(this);
+		var profiler = new Profiler("Profiler", this);
 		profiler.Refresh();
 		for (var i = 0; i < 12000; i++)
 		{

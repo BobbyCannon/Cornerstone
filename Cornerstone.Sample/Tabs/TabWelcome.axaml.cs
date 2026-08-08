@@ -26,8 +26,8 @@ public partial class TabWelcome : CornerstoneUserControl
 	#region Constructors
 
 	public TabWelcome() : this(
-		CornerstoneApplication.GetInstance<IDateTimeProvider>(),
-		CornerstoneApplication.GetInstance<IRuntimeInformation>())
+		AppBootstrap.GetInstance<IDateTimeProvider>(),
+		AppBootstrap.GetInstance<IRuntimeInformation>())
 	{
 	}
 

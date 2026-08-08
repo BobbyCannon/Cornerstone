@@ -1,4 +1,4 @@
-﻿var CornerstoneBrowser = CornerstoneBrowser ||
+var CornerstoneBrowser = CornerstoneBrowser ||
 {
 	localStorage: {
 		getValue: (key) => globalThis.localStorage.getItem(key),
@@ -11,16 +11,78 @@
 			}
 			const element = globalThis.document.createElement(tagName);
 			if (parent) {
-				parent.appendChild(element)
+				parent.appendChild(element);
 			}
 			return element;
 		},
 		hideElement: (element) => {
-			element.classList.add('hide');
+			if (element) {
+				element.classList.add('hide');
+			}
 			return element;
 		},
 		showElement: (element) => {
-			element.classList.remove('hide');
+			if (element) {
+				element.classList.remove('hide');
+			}
+			return element;
+		},
+		/**
+		 * WebView overlay: MUST attach to document.body (not #out).
+		 * Putting nodes inside Avalonia's #out resizes the host and can infinite-loop layout on WASM.
+		 * Use position:fixed so bounds match PointToScreen / viewport CSS pixels.
+		 */
+		attachOverlay: (element) => {
+			if (!element) {
+				return element;
+			}
+
+			element.classList.add('cornerstone-webview-host');
+			element.style.position = 'fixed';
+			element.style.left = '0';
+			element.style.top = '0';
+			element.style.width = '0';
+			element.style.height = '0';
+			element.style.margin = '0';
+			element.style.padding = '0';
+			element.style.border = 'none';
+			element.style.overflow = 'hidden';
+			element.style.boxSizing = 'border-box';
+			// Above Avalonia canvas; pause/hide removes hit-testing when needed.
+			element.style.zIndex = '10';
+			element.style.pointerEvents = 'auto';
+
+			for (const child of element.children) {
+				child.style.width = '100%';
+				child.style.height = '100%';
+				child.style.border = 'none';
+				child.style.margin = '0';
+				child.style.padding = '0';
+				child.style.boxSizing = 'border-box';
+			}
+
+			// Never parent under #out — that is Avalonia's layout root.
+			if (element.parentNode !== globalThis.document.body) {
+				globalThis.document.body.appendChild(element);
+			}
+			return element;
+		},
+		setOverlayBounds: (element, x, y, width, height) => {
+			if (!element) {
+				return element;
+			}
+			const w = Math.max(0, width || 0);
+			const h = Math.max(0, height || 0);
+			element.style.left = (x || 0) + 'px';
+			element.style.top = (y || 0) + 'px';
+			element.style.width = w + 'px';
+			element.style.height = h + 'px';
+			return element;
+		},
+		detachOverlay: (element) => {
+			if (element && element.parentNode) {
+				element.parentNode.removeChild(element);
+			}
 			return element;
 		}
 	},

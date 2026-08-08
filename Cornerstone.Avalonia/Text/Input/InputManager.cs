@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System.Linq;
 using Avalonia.Input;
 using Cornerstone.Avalonia.Text.Models;
 using Cornerstone.Collections;
@@ -37,6 +38,11 @@ public class InputManager
 
 	#region Methods
 
+	public void AddBinding(KeyGesture keyGesture, KeyCommand relayCommand)
+	{
+		CommandBindings.Add(new KeyBinding { Gesture = keyGesture, Command = relayCommand });
+	}
+
 	public void ProcessKeyArgs(KeyEventArgs args)
 	{
 		if (args.Handled)
@@ -61,9 +67,22 @@ public class InputManager
 		}
 	}
 
-	private void AddBinding(KeyGesture keyGesture, KeyCommand relayCommand)
+	public void RemoveBinding(Key key, KeyModifiers modifiers)
 	{
-		CommandBindings.Add(new KeyBinding { Gesture = keyGesture, Command = relayCommand });
+		var foundBinding = CommandBindings.FirstOrDefault(x => (x.Gesture.Key == key) && (x.Gesture.KeyModifiers == modifiers));
+		if (foundBinding != null)
+		{
+			CommandBindings.Remove(foundBinding);
+		}
+	}
+	
+	public void RemoveBinding(KeyGesture keyGesture)
+	{
+		var foundBinding = CommandBindings.FirstOrDefault(x => x.Gesture == keyGesture);
+		if (foundBinding != null)
+		{
+			CommandBindings.Remove(foundBinding);
+		}
 	}
 
 	private void InitializeBindings()

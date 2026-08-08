@@ -9,7 +9,7 @@ using Cornerstone.Reflection;
 namespace Cornerstone.Avalonia.Controls;
 
 [SourceReflection]
-public partial class TabItemViewModel : Notifiable
+public partial class TabItemViewModel : CornerstoneObject
 {
 	#region Constructors
 

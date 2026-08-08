@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System.IO;
+using System.Linq;
 using Cornerstone.Automation;
 using Cornerstone.UnitTests;
 
@@ -14,14 +15,18 @@ public class AutomationTest : CornerstoneUnitTest
 
 	static AutomationTest()
 	{
-		FilePath = Path.Join(@"C:\Users\Bobby\Desktop\Cornerstone.Sample.Desktop\Cornerstone.Sample.Desktop.exe");
+		FilePaths =
+		[
+			@"C:\Users\Bobby\Desktop\Cornerstone.Sample.Desktop\Cornerstone.Sample.Desktop.exe",
+			@"C:\Workspaces\EpicSolution\Cornerstone\Cornerstone.Sample.Desktop\bin\Debug\net10.0-windows10.0.26100.0\Cornerstone.Sample.Desktop.exe"
+		];
 	}
 
 	#endregion
 
 	#region Properties
 
-	public static string FilePath { get; }
+	public static string[] FilePaths { get; }
 
 	#endregion
 
@@ -29,7 +34,8 @@ public class AutomationTest : CornerstoneUnitTest
 
 	protected Application StartTestApplication()
 	{
-		var app = Application.Create(FilePath);
+		var filePath = FilePaths.FirstOrDefault(File.Exists);
+		var app = Application.Create(filePath);
 		app.AutoClose = true;
 		return app;
 	}

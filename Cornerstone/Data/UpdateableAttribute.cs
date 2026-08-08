@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using Cornerstone.Reflection;
 
 #endregion
 
@@ -11,10 +12,11 @@ public class UpdateableAttribute : CornerstoneAttribute
 {
 	#region Constructors
 
-	public UpdateableAttribute(UpdateableAction action, string[] properties)
+	public UpdateableAttribute(UpdateableAction action, string[] properties, bool inherit = true)
 	{
 		Action = action;
 		Properties = properties;
+		Inherit = inherit;
 	}
 
 	#endregion
@@ -23,7 +25,12 @@ public class UpdateableAttribute : CornerstoneAttribute
 
 	public UpdateableAction Action { get; set; }
 
-	public string[] Properties { get; set;  }
+	/// <summary>
+	/// Only relevant for the "*" property.
+	/// </summary>
+	public bool Inherit { get; set; }
+
+	public string[] Properties { get; set; }
 
 	#endregion
 }

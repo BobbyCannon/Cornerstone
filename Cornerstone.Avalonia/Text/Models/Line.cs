@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using Avalonia;
+using Cornerstone.Avalonia.Text.Rendering;
 using Cornerstone.Collections;
 using Cornerstone.Data;
 using Cornerstone.Reflection;
@@ -242,26 +243,120 @@ public partial class Line : TextRange
 		return new Rect(x, y, metrics.CharacterWidth, metrics.CharacterHeight);
 	}
 
+	/// <summary>
+	/// Number of visual rows this logical line occupies (1 when not wrapped).
+	/// </summary>
+	public int VisualSubLineCount => WrappedStartOffsets.Count + 1;
+
+	/// <summary>
+	/// Document offsets for a visual subline. <paramref name="endExclusive"/> is exclusive.
+	/// </summary>
+	public void GetVisualSubLineRange(int subIndex, out int start, out int endExclusive)
+	{
+		var count = VisualSubLineCount;
+		if ((subIndex < 0) || (subIndex >= count))
+		{
+			start = StartOffset;
+			endExclusive = StartOffset;
+			return;
+		}
+
+		start = subIndex == 0 ? StartOffset : WrappedStartOffsets[subIndex - 1];
+		endExclusive = subIndex < WrappedStartOffsets.Count
+			? WrappedStartOffsets[subIndex]
+			: EndOffset;
+	}
+
+	/// <summary>
+	/// Horizontal advance in document pixels from a visual subline start to <paramref name="documentOffset"/>,
+	/// using the same <see cref="ViewMetrics.GetAdvance"/> rules as caret and wrap layout.
+	/// </summary>
+	public double GetVisualX(int subLineStartOffset, int documentOffset)
+	{
+		var metrics = _lineManager.ViewModel.ViewMetrics;
+		var end = Math.Clamp(documentOffset, subLineStartOffset, EndOffset);
+		var charsToMeasure = end - subLineStartOffset;
+		if (charsToMeasure <= 0)
+		{
+			return 0;
+		}
+
+		var x = 0.0;
+		var spans = _lineManager.ViewModel.Buffer.GetReadOnlySpans(subLineStartOffset, charsToMeasure);
+		foreach (var c in spans.BeforeGap)
+		{
+			x += metrics.GetAdvance(c);
+		}
+
+		foreach (var c in spans.AfterGap)
+		{
+			x += metrics.GetAdvance(c);
+		}
+
+		return x;
+	}
+
+	/// <summary>
+	/// Selection rectangles in document space (not screen space) for the intersection of
+	/// [selectionStart, selectionEnd) with this logical line, one rect per visual subline.
+	/// Uses <see cref="WrappedStartOffsets"/> + <see cref="ViewMetrics.GetAdvance"/> so
+	/// highlights track soft wrap the same way as caret and text paint.
+	/// </summary>
+	public IEnumerable<Rect> GetSelectionRects(int selectionStart, int selectionEnd)
+	{
+		if (selectionEnd <= selectionStart)
+		{
+			yield break;
+		}
+
+		var metrics = _lineManager.ViewModel.ViewMetrics;
+		var height = metrics.CharacterHeight;
+		if (height <= 0)
+		{
+			yield break;
+		}
+
+		var lineSelStart = Math.Max(selectionStart, StartOffset);
+		var lineSelEnd = Math.Min(selectionEnd, EndOffset);
+		if (lineSelStart >= lineSelEnd)
+		{
+			yield break;
+		}
+
+		var subLineCount = VisualSubLineCount;
+		for (var sub = 0; sub < subLineCount; sub++)
+		{
+			GetVisualSubLineRange(sub, out var subStart, out var subEnd);
+			var selStart = Math.Max(lineSelStart, subStart);
+			var selEnd = Math.Min(lineSelEnd, subEnd);
+			if (selStart >= selEnd)
+			{
+				continue;
+			}
+
+			var x0 = GetVisualX(subStart, selStart);
+			var x1 = GetVisualX(subStart, selEnd);
+			var width = Math.Max(0, x1 - x0);
+			if (width <= 0)
+			{
+				// Newlines and other zero-advance spans produce no visible fill.
+				continue;
+			}
+
+			var y = VisualLayout.Y + (sub * height);
+			yield return new Rect(x0, y, width, height);
+		}
+	}
+
 	internal IEnumerable<string> GetLines()
 	{
 		var buffer = _lineManager.ViewModel.Buffer;
-		if (WrappedStartOffsets.Count == 0)
-		{
-			yield return buffer.Substring(StartOffset, Length);
-		}
-		else
-		{
-			var subLineCount = WrappedStartOffsets.Count + 1;
+		var subLineCount = VisualSubLineCount;
 
-			for (var sub = 0; sub < subLineCount; sub++)
-			{
-				var start = sub == 0 ? StartOffset : WrappedStartOffsets[sub - 1];
-				var endExclusive = sub < WrappedStartOffsets.Count
-					? WrappedStartOffsets[sub]
-					: EndOffset;
-
-				yield return buffer.Substring(start, endExclusive - start);
-			}
+		for (var sub = 0; sub < subLineCount; sub++)
+		{
+			GetVisualSubLineRange(sub, out var start, out var endExclusive);
+			yield return buffer.Substring(start, endExclusive - start);
 		}
 	}
 

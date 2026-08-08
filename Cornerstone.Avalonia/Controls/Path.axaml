@@ -48,20 +48,21 @@
 				</Animation>
 			</Style.Animations>
 		</Style>
+
+		<Style Selector="^.Dim">
+			<Setter Property="Opacity" Value="0.5" />
+		</Style>
 	</Style>
 
 	<Style Selector="Path.Invert">
 		<Setter Property="RenderTransform" Value="rotate(180deg)" />
 	</Style>
-
 	<Style Selector="Path.FlipV">
 		<Setter Property="RenderTransform" Value="scaley(-1)" />
 	</Style>
-
 	<Style Selector="Path.FlipH">
 		<Setter Property="RenderTransform" Value="scalex(-1)" />
 	</Style>
-
 	<Style Selector="Path.Flip">
 		<Setter Property="RenderTransform" Value="scale(1,-1)" />
 	</Style>
@@ -86,8 +87,8 @@
 				<Path Data="{StaticResource Icons.Lock}" Classes="Invert" />
 				<Path Data="{StaticResource Icons.Lock}" Classes="FlipV" />
 				<Path Data="{StaticResource Icons.Lock}" Classes="FlipH" />
-				<Path Data="{StaticResource Icons.Lock}" Classes="Flip" />
-				<Path Data="{StaticResource Unlock}" />
+				<Path Data="{StaticResource Icons.Lock}" Classes="Flip Dim" />
+				<Path Data="{StaticResource Icons.Unlock}" Classes="Dim" />
 			</WrapPanel>
 		</Border>
 	</Design.PreviewWith>

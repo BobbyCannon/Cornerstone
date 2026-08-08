@@ -13,7 +13,7 @@ public class EnumCodeGenerator : CodeGenerator
 
 	public override void WriteObject(CodeBuilder builder, SourceTypeInfo typeInfo, object value)
 	{
-		builder.Write($"{typeInfo.Type.Name}.{value}");
+		builder.Append($"{typeInfo.Type.Name}.{value}");
 	}
 
 	public override bool SupportsType(Type type)

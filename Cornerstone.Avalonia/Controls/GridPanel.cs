@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using Avalonia;
@@ -52,6 +53,7 @@ public partial class GridPanel : Panel
 	{
 		var rows = Math.Max(1, RowCount);
 		var cols = Math.Max(1, ColumnCount);
+
 		var cellWidth = finalSize.Width / cols;
 		var cellHeight = finalSize.Height / rows;
 
@@ -62,13 +64,8 @@ public partial class GridPanel : Panel
 				continue;
 			}
 
-			// Respect explicit Grid.Row / Grid.Column if set and valid
-			var row = Grid.GetRow(child);
-			var col = Grid.GetColumn(child);
-
-			// Safe clamp without modifying the property
-			row = Math.Clamp(row, 0, rows - 1);
-			col = Math.Clamp(col, 0, cols - 1);
+			var row = Math.Clamp(Grid.GetRow(child), 0, rows - 1);
+			var col = Math.Clamp(Grid.GetColumn(child), 0, cols - 1);
 
 			var rect = new Rect(
 				col * cellWidth,
@@ -83,23 +80,81 @@ public partial class GridPanel : Panel
 		return finalSize;
 	}
 
+	protected override void ChildrenChanged(object sender, NotifyCollectionChangedEventArgs e)
+	{
+		if (e.OldItems != null)
+		{
+			foreach (Control item in e.OldItems)
+			{
+				item.PropertyChanged -= ChildOnPropertyChanged;
+			}
+		}
+
+		if (e.NewItems != null)
+		{
+			foreach (Control item in e.NewItems)
+			{
+				item.PropertyChanged += ChildOnPropertyChanged;
+			}
+		}
+
+		base.ChildrenChanged(sender, e);
+		InvalidateMeasure();
+	}
+
 	protected override Size MeasureOverride(Size availableSize)
 	{
 		var rows = Math.Max(1, RowCount);
 		var cols = Math.Max(1, ColumnCount);
 
-		// Measure all children with infinite size first (or constraint if you want tight measurement)
-		var childConstraint = new Size(availableSize.Width / cols, availableSize.Height / rows);
+		// Measure children with a reasonable constraint per cell
+		// Use availableSize if finite, otherwise give them a large but finite size
+		var cellConstraint = new Size(
+			double.IsFinite(availableSize.Width) ? availableSize.Width / cols : 1000,
+			double.IsFinite(availableSize.Height) ? availableSize.Height / rows : 1000
+		);
+
 		foreach (var child in Children.OfType<Control>())
 		{
-			child.Measure(childConstraint); // or Size.Infinity if you prefer
+			if (child.IsVisible)
+			{
+				child.Measure(cellConstraint);
+			}
 		}
 
-		// For Star-like behavior: return the size needed for the grid
-		var cellWidth = availableSize.Width / cols;
-		var cellHeight = availableSize.Height / rows;
+		// Return desired size:
+		// If parent gave us finite size → respect it (fill the space)
+		// If infinite → return size based on largest child (or a default)
+		if (double.IsFinite(availableSize.Width) && double.IsFinite(availableSize.Height))
+		{
+			return availableSize; // Fill the available space
+		}
 
-		return new Size(cellWidth * cols, cellHeight * rows);
+		// Fallback when availableSize is infinite (e.g. inside ScrollViewer or initial measure)
+		double maxChildWidth = 0;
+		double maxChildHeight = 0;
+
+		foreach (var child in Children.OfType<Control>())
+		{
+			if (child.IsVisible)
+			{
+				maxChildWidth = Math.Max(maxChildWidth, child.DesiredSize.Width);
+				maxChildHeight = Math.Max(maxChildHeight, child.DesiredSize.Height);
+			}
+		}
+
+		return new Size(
+			double.IsFinite(availableSize.Width) ? availableSize.Width : maxChildWidth * cols,
+			double.IsFinite(availableSize.Height) ? availableSize.Height : maxChildHeight * rows
+		);
+	}
+
+	private void ChildOnPropertyChanged(object sender, AvaloniaPropertyChangedEventArgs e)
+	{
+		if ((e.Property == Grid.RowProperty) || (e.Property == Grid.ColumnProperty))
+		{
+			InvalidateMeasure();
+		}
 	}
 
 	private static void OnCountChanged(AvaloniaPropertyChangedEventArgs e)

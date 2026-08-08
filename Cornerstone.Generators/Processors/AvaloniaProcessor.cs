@@ -58,6 +58,10 @@ internal sealed class AvaloniaProcessor : ITypeProcessor
 		return response;
 	}
 
+	void ITypeProcessor.Initialize(Compilation compilation)
+	{
+	}
+
 	private static void ProcessAttachedProperties(CSharpCodeBuilder builder, SourceTypeInfo typeInfo)
 	{
 		var attachedProperties = GetAttachedProperties(typeInfo);
@@ -109,17 +113,52 @@ internal sealed class AvaloniaProcessor : ITypeProcessor
 			var member = property.Key;
 			var memberTypeFullName = member.GlobalFullyQualifiedName;
 
-			builder.IndentWrite($"public static readonly global::Avalonia.DirectProperty<{typeInfo.FullyGlobalQualifiedName}, {memberTypeFullName}> {member.Name}Property");
-			builder.Write($" = global::Avalonia.AvaloniaProperty.RegisterDirect<{classFqtn}, {memberTypeFullName}>(nameof({member.Name})");
-
-			if (property.Key.CanRead)
+			// Partial auto-properties: field + SetAndRaise accessors (notifies bindings).
+			// Non-partial: custom get/set body already on the type — register only (TextEditor, MarkdownView).
+			if (member.IsPartial)
 			{
-				builder.Write($", getter: x => x.{property.Key.Name}");
+				var fieldName = CalculateFieldName(member.PropertySymbol);
+				var (propertyAccess, getterAccessibility, setterAccessibility) = CalculateAccessibilities(member.PropertySymbol);
+
+				builder.IndentWriteLine($"private {memberTypeFullName} {fieldName};");
+
+				builder.IndentWrite($"public static readonly global::Avalonia.DirectProperty<{classFqtn}, {memberTypeFullName}> {member.Name}Property");
+				builder.Write($" = global::Avalonia.AvaloniaProperty.RegisterDirect<{classFqtn}, {memberTypeFullName}>(nameof({member.Name})");
+				builder.Write($", getter: x => x.{fieldName}");
+				if (member.CanWrite)
+				{
+					builder.Write($", setter: (x, v) => x.{member.Name} = v");
+				}
+				builder.WriteLine(");");
+
+				builder.IndentWrite($"{propertyAccess} {(member.IsVirtual ? "virtual " : "")}");
+				builder.Write("partial ");
+				builder.WriteLine($"{memberTypeFullName} {member.Name}");
+				builder.IndentWriteLine("{");
+				builder.Indent++;
+				builder.IndentWrite(string.IsNullOrWhiteSpace(getterAccessibility) ? "get => " : $"{getterAccessibility} get => ");
+				builder.WriteLine($"{fieldName};");
+				if (member.CanWrite)
+				{
+					builder.IndentWrite(string.IsNullOrWhiteSpace(setterAccessibility) ? "set => " : $"{setterAccessibility} set => ");
+					builder.WriteLine($"SetAndRaise({member.Name}Property, ref {fieldName}, value);");
+				}
+				builder.Indent--;
+				builder.IndentWriteLine("}");
+				continue;
 			}
 
-			if (property.Key.CanWrite)
+			builder.IndentWrite($"public static readonly global::Avalonia.DirectProperty<{classFqtn}, {memberTypeFullName}> {member.Name}Property");
+			builder.Write($" = global::Avalonia.AvaloniaProperty.RegisterDirect<{classFqtn}, {memberTypeFullName}>(nameof({member.Name})");
+
+			if (member.CanRead)
 			{
-				builder.Write($", setter: (x, v) => x.{property.Key.Name} = v");
+				builder.Write($", getter: x => x.{member.Name}");
+			}
+
+			if (member.CanWrite)
+			{
+				builder.Write($", setter: (x, v) => x.{member.Name} = v");
 			}
 
 			builder.WriteLine(");");

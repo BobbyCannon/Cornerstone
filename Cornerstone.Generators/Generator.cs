@@ -1,4 +1,4 @@
-﻿#region References
+#region References
 
 using System;
 using System.Collections.Generic;
@@ -26,6 +26,8 @@ public partial class Generator : IIncrementalGenerator
 
 	public const string FullNameAlsoNotifyAttribute = "Cornerstone.Data.AlsoNotifyAttribute";
 	public const string FullNameAttachedPropertyAttribute = "Cornerstone.Avalonia.AttachedPropertyAttribute";
+	public const string FullNameChannelSubscriptionAttribute = "Cornerstone.Communications.ChannelSubscriptionAttribute`2";
+	public const string FullNameDependencyInjectedAttribute = "Cornerstone.Runtime.DependencyInjectedAttribute";
 	public const string FullNameDependencyInjectedPropertyAttribute = "Cornerstone.Runtime.DependencyInjectedPropertyAttribute";
 	public const string FullNameDependencyInjectionConstructorAttribute = "Cornerstone.Runtime.DependencyInjectionConstructorAttribute";
 	public const string FullNameDirectPropertyAttribute = "Cornerstone.Avalonia.DirectPropertyAttribute";
@@ -68,6 +70,8 @@ public partial class Generator : IIncrementalGenerator
 	public const string GlobalUpdateableActionAttribute = "global::Cornerstone.Data.UpdateableActionAttribute";
 
 	public const string NameAttachedPropertyAttribute = "AttachedPropertyAttribute";
+	public const string NameChannelSubscriptionAttribute = "ChannelSubscriptionAttribute";
+	public const string NameDependencyInjectedAttribute = "DependencyInjectedAttribute";
 	public const string NameDependencyInjectedPropertyAttribute = "DependencyInjectedPropertyAttribute";
 	public const string NameDependencyInjectionConstructorAttribute = "DependencyInjectionConstructorAttribute";
 	public const string NameDirectPropertyAttribute = "DirectPropertyAttribute";
@@ -91,9 +95,6 @@ public partial class Generator : IIncrementalGenerator
 	#region Fields
 
 	private static readonly SymbolDisplayFormat _noGenericParameterTypeQualifiedNameFormat;
-	private static readonly ITypeProcessor[] _reflectionProcessors;
-	private static readonly ITypeProcessor[] _typeProcessors;
-	private Dictionary<string, SourceTypeInfo> _typesLookup;
 
 	#endregion
 
@@ -101,20 +102,10 @@ public partial class Generator : IIncrementalGenerator
 
 	static Generator()
 	{
-		_reflectionProcessors =
-		[
-			new SourceReflectionProcessor(),
-			new SqlReflectionsProcessor()
-		];
-		_typeProcessors =
-		[
-			new AvaloniaProcessor(),
-			new ComparableProcessor(),
-			new NotifiableProcessor(),
-			new PackableProcessor(),
-			new RelayCommandProcessor(),
-			new UpdateableProcessor()
-		];
+		// Processors are created per source-output execution (not static).
+		// They hold compilation-specific state (e.g. generated namespace, type symbols).
+		// Sharing static instances races when MSBuild compiles multiple projects in parallel
+		// in the same compiler process, producing CS0103 from mismatched CornerstoneGenerated partials.
 		_noGenericParameterTypeQualifiedNameFormat = new(
 			genericsOptions: SymbolDisplayGenericsOptions.None,
 			typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces
@@ -130,7 +121,9 @@ public partial class Generator : IIncrementalGenerator
 		var watch = Stopwatch.StartNew();
 		var providers = Combine(
 			GetSourceTypeInfoForAvalonia(context),
+			GetSourceTypeInfoForChannelSubscription(context),
 			GetSourceTypeInfoForComparable(context),
+			GetSourceTypeInfoForDependencyInjected(context),
 			GetSourceTypeInfoForPackable(context),
 			GetSourceTypeInfoForPropertyChange(context),
 			GetSourceTypeInfoForRelayCommand(context),
@@ -150,15 +143,30 @@ public partial class Generator : IIncrementalGenerator
 
 		context.RegisterSourceOutput(compilationAndClasses, (spc, combined) =>
 		{
-			DiagnosticReporter.Initialize(spc);
+			using var diagnostics = DiagnosticReporter.BeginScope(spc);
 
 			var (typesToProcess, compilation) = combined;
 
-			_typesLookup = typesToProcess.ToDictionary(x => x.FullyGlobalQualifiedName, x => x);
+			// Fresh processor instances per compilation — never share across parallel projects.
+			var typeProcessors = CreateTypeProcessors();
+			var reflectionProcessors = CreateReflectionProcessors();
+
+			foreach (var processor in typeProcessors)
+			{
+				processor.Initialize(compilation);
+			}
+
+			foreach (var processor in reflectionProcessors)
+			{
+				processor.Initialize(compilation);
+			}
+
+			// Local lookup only — instance fields race when multiple compilations run concurrently.
+			var typesLookup = typesToProcess.ToDictionary(x => x.FullyGlobalQualifiedName, x => x);
 
 			foreach (var typeInfo in typesToProcess)
 			{
-				var generatedSource = GenerateClassSource(typeInfo);
+				var generatedSource = GenerateClassSource(typeInfo, typeProcessors, reflectionProcessors);
 				if (string.IsNullOrWhiteSpace(generatedSource))
 				{
 					continue;
@@ -167,11 +175,41 @@ public partial class Generator : IIncrementalGenerator
 				spc.AddSource($"{typeInfo.FullyQualifiedSourceReflectorName}.g.cs", generatedSource);
 			}
 
-			GenerateModuleInitializer(spc, typesToProcess);
-			GenerateUnitTestMain(spc, compilation, typesToProcess);
+			GenerateModuleInitializer(spc, compilation, typesToProcess);
+			DependencyInjectedProcessor.Generate(spc, compilation, typesToProcess);
+			GenerateUnitTestMain(spc, compilation, typesToProcess, typesLookup);
 
 			DiagnosticReporter.WriteLine($"Cornerstone: {watch.Elapsed}");
 		});
+	}
+
+	/// <summary>
+	/// Creates processors that emit into <c>CornerstoneGenerated</c> (source reflection, SQL).
+	/// </summary>
+	private static ITypeProcessor[] CreateReflectionProcessors()
+	{
+		return
+		[
+			new SourceReflectionProcessor(),
+			new SqlReflectionsProcessor()
+		];
+	}
+
+	/// <summary>
+	/// Creates per-type processors (Avalonia, notifiable, packable, etc.).
+	/// </summary>
+	private static ITypeProcessor[] CreateTypeProcessors()
+	{
+		return
+		[
+			new AvaloniaProcessor(),
+			new ChannelSubscriptionProcessor(),
+			new ComparableProcessor(),
+			new NotifiableProcessor(),
+			new PackableProcessor(),
+			new RelayCommandProcessor(),
+			new UpdateableProcessor()
+		];
 	}
 
 	public static string ToReflectionDisplayString(ITypeSymbol typeSymbol)
@@ -188,7 +226,7 @@ public partial class Generator : IIncrementalGenerator
 
 		if (typeSymbol is INamedTypeSymbol { IsGenericType: true } namedType)
 		{
-			StringBuilder builder = new();
+			var builder = new StringBuilder();
 
 			builder.Append($"{namedType.ToDisplayString(_noGenericParameterTypeQualifiedNameFormat)}`{namedType.TypeParameters.Length}[");
 			for (var i = 0; i < namedType.TypeArguments.Length; i++)
@@ -299,7 +337,8 @@ public partial class Generator : IIncrementalGenerator
 				new SourceParameterInfo
 				{
 					Name = x.Name,
-					ParameterType = x.Type.ToDisplayString(SymbolDisplayFormats.FullyQualifiedName),
+					// global:: required so generated code is safe inside namespaces like Cornerstone.Avalonia
+					ParameterType = x.Type.ToDisplayString(SymbolDisplayFormats.GlobalFullyQualifiedName),
 					ParameterSymbol = x.Type,
 					NullableAnnotation = x.NullableAnnotation,
 					HasDefaultValue = x.HasExplicitDefaultValue,
@@ -406,7 +445,10 @@ public partial class Generator : IIncrementalGenerator
 			.ToArray();
 	}
 
-	private string GenerateClassSource(SourceTypeInfo typeInfo)
+	private static string GenerateClassSource(
+		SourceTypeInfo typeInfo,
+		ITypeProcessor[] typeProcessors,
+		ITypeProcessor[] reflectionProcessors)
 	{
 		var builder = new CSharpCodeBuilder();
 		builder.WriteAutoGeneratedComment();
@@ -432,7 +474,7 @@ public partial class Generator : IIncrementalGenerator
 		builder.StartType(typeInfo.TypeSymbol);
 		var length = builder.Length;
 
-		foreach (var processor in _typeProcessors)
+		foreach (var processor in typeProcessors)
 		{
 			processor.Process(builder, typeInfo);
 		}
@@ -458,7 +500,7 @@ public partial class Generator : IIncrementalGenerator
 			}
 		}
 
-		foreach (var processor in _reflectionProcessors)
+		foreach (var processor in reflectionProcessors)
 		{
 			processor.Process(builder, typeInfo);
 		}
@@ -479,46 +521,85 @@ public partial class Generator : IIncrementalGenerator
 	/// <summary>
 	/// Files should have already been source generated. This is just a module initialize to call the previously generated files.
 	/// </summary>
-	private void GenerateModuleInitializer(SourceProductionContext spc, ImmutableArray<SourceTypeInfo> typesToProcess)
+	private void GenerateModuleInitializer(SourceProductionContext spc, Compilation compilation, ImmutableArray<SourceTypeInfo> typesToProcess)
 	{
 		var builder = new CSharpCodeBuilder();
 		builder.WriteAutoGeneratedComment();
-		builder.IndentWriteLine("internal static partial class __CornerstoneGeneratedInitializer");
-		builder.IndentWriteLine("{");
-		builder.Indent++;
-		builder.IndentWriteLine("[global::System.Runtime.CompilerServices.ModuleInitializer]");
-		builder.IndentWriteLine("public static void Initialize()");
-		builder.IndentWriteLine("{");
-		builder.Indent++;
-		foreach (var typeInfo in typesToProcess)
+		WriteCornerstoneGeneratedClass(builder, compilation, () =>
 		{
-			// if (ShouldGenerateSourceReflector(typeInfo))
-			if (SourceReflectionProcessor.ShouldProcess(typeInfo))
+			builder.IndentWriteLine("[global::System.Runtime.CompilerServices.ModuleInitializer]");
+			builder.IndentWriteLine("public static void Initialize()");
+			builder.IndentWriteLine("{");
+			builder.Indent++;
+			foreach (var typeInfo in typesToProcess)
 			{
-				builder.IndentWrite($"{GlobalSourceReflector}.Add(");
-				builder.Write(typeInfo.FullyQualifiedSourceReflectorName);
-				builder.WriteLine(");");
-			}
+				// if (ShouldGenerateSourceReflector(typeInfo))
+				if (SourceReflectionProcessor.ShouldProcess(typeInfo))
+				{
+					builder.IndentWrite($"{GlobalSourceReflector}.Add(");
+					builder.Write(typeInfo.FullyQualifiedSourceReflectorName);
+					builder.WriteLine(");");
+				}
 
-			// if (ShouldGenerateSqlQueries(typeInfo))
-			if (SqlReflectionsProcessor.ShouldProcess(typeInfo))
-			{
-				builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterCreateTableScript(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.Sqlite, {typeInfo.FullyQualifiedSourceReflectorName}CreateTableSqlite);");
-				builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterCreateTableScript(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.SqlServer, {typeInfo.FullyQualifiedSourceReflectorName}CreateTableSqlServer);");
-				builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterDeleteQuery(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.Sqlite, {typeInfo.FullyQualifiedSourceReflectorName}DeleteSqlite, {typeInfo.FullyQualifiedSourceReflectorName}GetPrimaryKey);");
-				builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterDeleteQuery(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.SqlServer, {typeInfo.FullyQualifiedSourceReflectorName}DeleteSqlServer, {typeInfo.FullyQualifiedSourceReflectorName}GetPrimaryKey);");
-				builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterInsertQuery(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.Sqlite, {typeInfo.FullyQualifiedSourceReflectorName}UpsertSqlite, {typeInfo.FullyQualifiedSourceReflectorName}GetUpsertParamsSqlite);");
-				builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterInsertQuery(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.SqlServer, {typeInfo.FullyQualifiedSourceReflectorName}UpsertSqlServer, {typeInfo.FullyQualifiedSourceReflectorName}GetUpsertParamsSqlServer);");
+				// if (ShouldGenerateSqlQueries(typeInfo))
+				if (SqlReflectionsProcessor.ShouldProcess(typeInfo))
+				{
+					builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterCreateTableScript(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.Sqlite, {typeInfo.FullyQualifiedSourceReflectorName}CreateTableSqlite);");
+					builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterCreateTableScript(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.SqlServer, {typeInfo.FullyQualifiedSourceReflectorName}CreateTableSqlServer);");
+					builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterDeleteQuery(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.Sqlite, {typeInfo.FullyQualifiedSourceReflectorName}DeleteSqlite, {typeInfo.FullyQualifiedSourceReflectorName}GetPrimaryKey);");
+					builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterDeleteQuery(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.SqlServer, {typeInfo.FullyQualifiedSourceReflectorName}DeleteSqlServer, {typeInfo.FullyQualifiedSourceReflectorName}GetPrimaryKey);");
+					builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterInsertQuery(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.Sqlite, {typeInfo.FullyQualifiedSourceReflectorName}UpsertSqlite, {typeInfo.FullyQualifiedSourceReflectorName}GetUpsertParamsSqlite);");
+					builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterInsertQuery(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.SqlServer, {typeInfo.FullyQualifiedSourceReflectorName}UpsertSqlServer, {typeInfo.FullyQualifiedSourceReflectorName}GetUpsertParamsSqlServer);");
+				}
 			}
-		}
-		builder.Indent--;
-		builder.IndentWriteLine("}");
-		builder.Indent--;
-		builder.IndentWriteLine("}");
+			builder.Indent--;
+			builder.IndentWriteLine("}");
+		});
 
 		var source = builder.ToString();
 		Trace.WriteLine(source);
 		spc.AddSource("__Cornerstone.Generated.g.cs", source);
+	}
+
+	/// <summary>
+	/// Namespace for the public generated bootstrap type. Matches the compilation assembly name
+	/// (e.g. Cornerstone, Cornerstone.Avalonia) so hosts can call
+	/// <c>Cornerstone.CornerstoneGenerated.RegisterDependencies</c> across assemblies.
+	/// Explicit closed generic registration is AOT / ReadyToRun friendly (no runtime type scan).
+	/// </summary>
+	internal static string GetCornerstoneGeneratedNamespace(Compilation compilation)
+	{
+		var name = compilation?.AssemblyName;
+		return string.IsNullOrWhiteSpace(name) ? null : name;
+	}
+
+	/// <summary>
+	/// Emits <c>public static partial class CornerstoneGenerated</c> under the assembly namespace.
+	/// </summary>
+	internal static void WriteCornerstoneGeneratedClass(CSharpCodeBuilder builder, Compilation compilation, Action body)
+	{
+		WriteCornerstoneGeneratedClass(builder, GetCornerstoneGeneratedNamespace(compilation), body);
+	}
+
+	/// <summary>
+	/// Emits <c>public static partial class CornerstoneGenerated</c> under the given namespace.
+	/// </summary>
+	internal static void WriteCornerstoneGeneratedClass(CSharpCodeBuilder builder, string generatedNamespace, Action body)
+	{
+		if (!string.IsNullOrEmpty(generatedNamespace))
+		{
+			builder.IndentWriteLine($"namespace {generatedNamespace}");
+			builder.IndentWriteLine("{");
+			builder.IncreaseIndent();
+		}
+
+		builder.WriteBlock("public static partial class CornerstoneGenerated", body);
+
+		if (!string.IsNullOrEmpty(generatedNamespace))
+		{
+			builder.DecreaseIndent();
+			builder.IndentWriteLine("}");
+		}
 	}
 
 	private static IEnumerable<ISymbol> GetAllMembersRecursive(
@@ -611,6 +692,20 @@ public partial class Generator : IIncrementalGenerator
 		return combined;
 	}
 
+	private IncrementalValueProvider<ImmutableArray<SourceTypeInfo>> GetSourceTypeInfoForChannelSubscription(IncrementalGeneratorInitializationContext context)
+	{
+		var channelSubscription = context.SyntaxProvider
+			.ForAttributeWithMetadataName(
+				FullNameChannelSubscriptionAttribute,
+				static (node, _) => node is MethodDeclarationSyntax,
+				TransformType)
+			.Where(static cls => cls is not null)
+			.Collect();
+
+		var combined = Combine(channelSubscription);
+		return combined;
+	}
+
 	private IncrementalValueProvider<ImmutableArray<SourceTypeInfo>> GetSourceTypeInfoForComparable(IncrementalGeneratorInitializationContext context)
 	{
 		var comparableProvider = context.SyntaxProvider
@@ -641,6 +736,20 @@ public partial class Generator : IIncrementalGenerator
 			.Collect();
 
 		var combined = Combine(comparableProvider);
+		return combined;
+	}
+
+	private IncrementalValueProvider<ImmutableArray<SourceTypeInfo>> GetSourceTypeInfoForDependencyInjected(IncrementalGeneratorInitializationContext context)
+	{
+		var dependencyInjected = context.SyntaxProvider
+			.ForAttributeWithMetadataName(
+				FullNameDependencyInjectedAttribute,
+				static (node, _) => node is ClassDeclarationSyntax,
+				TransformType)
+			.Where(static cls => cls is not null)
+			.Collect();
+
+		var combined = Combine(dependencyInjected);
 		return combined;
 	}
 
@@ -702,7 +811,9 @@ public partial class Generator : IIncrementalGenerator
 			.ForAttributeWithMetadataName(
 				FullNameRelayCommandAttribute,
 				static (node, _) => node is MethodDeclarationSyntax,
-				TransformType).Where(static cls => cls is not null).Collect();
+				TransformType)
+			.Where(static cls => cls is not null)
+			.Collect();
 
 		var combined = Combine(relayCommandProvider);
 		return combined;
@@ -978,17 +1089,29 @@ public partial class Generator : IIncrementalGenerator
 			var attributeInfo = new SourceAttributeInfo
 			{
 				ConstructorArguments = attribute.ConstructorArguments
-					.Select(x => x.Kind == TypedConstantKind.Array ? x.Values.Select(y => y.Value).ToArray() : x.Value)
+					.Select(x => x.IsNull
+						? null
+						: x.Kind == TypedConstantKind.Array
+							? x.Values.Select(y => y.Value).ToArray()
+							: x.Value
+					)
 					.ToArray(),
 				Data = attribute,
 				FullyGlobalQualifiedName = attribute.AttributeClass?.ToDisplayString(SymbolDisplayFormats.GlobalFullyQualifiedName),
 				FullyQualifiedName = attribute.AttributeClass?.ToDisplayString(SymbolDisplayFormats.FullyQualifiedName),
+				GenericTypes = attribute.AttributeClass is { } namedType && namedType.TypeArguments.Any()
+					? namedType.TypeArguments.ToArray()
+					: null,
 				Name = attribute.AttributeClass?.Name,
 				NamedArguments = attribute.NamedArguments.ToDictionary(
 					x => x.Key,
-					x => x.Value.Kind == TypedConstantKind.Array
-						? x.Value.Values.Select(y => y.Value).ToArray()
-						: x.Value.Value),
+					x => x.Value.IsNull
+						? null
+						: x.Value.Kind == TypedConstantKind.Array
+							? x.Value.Values.Select(y => y.Value).ToArray()
+							: x.Value.Value
+				),
+				Type = attribute.GetType(),
 				TypeSymbol = attribute.AttributeClass
 			};
 

@@ -62,6 +62,14 @@ public interface IUpdateable
 	public bool TryUpdateWith(object update, IncludeExcludeSettings settings);
 
 	/// <summary>
+	/// Updates a single property with a new value.
+	/// </summary>
+	/// <param name="propertyName"> The name of the property. </param>
+	/// <param name="value"> The new value. </param>
+	/// <returns> True if the property was updated otherwise false. </returns>
+	public bool UpdatePropertyWith(string propertyName, object value);
+
+	/// <summary>
 	/// Allows updating of one type to another based on member Name and Type.
 	/// </summary>
 	/// <param name="update"> The source of the update. </param>

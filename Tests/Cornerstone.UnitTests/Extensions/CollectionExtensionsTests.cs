@@ -8,6 +8,7 @@ using System.Linq;
 using Cornerstone.Collections;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
+using Cornerstone.Presentation;
 using Cornerstone.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -26,7 +27,7 @@ public partial class CollectionExtensionsTests : CornerstoneUnitTest
 	{
 		var collection = new PresentationList<int>();
 		var expected = new List<int>();
-		collection.Reconcile(expected);
+		collection.ReconcileListAndItems(expected);
 		AreEqual(0, collection.Count);
 	}
 
@@ -45,7 +46,7 @@ public partial class CollectionExtensionsTests : CornerstoneUnitTest
 			new() { Id = 1, Name = "NewName", Age = 40 }
 		};
 
-		collection.Reconcile(expected);
+		collection.ReconcileListAndItems(expected);
 
 		AreEqual(1, collection.Count);
 		AreEqual("NewName", collection[0].Name);
@@ -58,7 +59,7 @@ public partial class CollectionExtensionsTests : CornerstoneUnitTest
 	{
 		var collection = new PresentationList<string>();
 		var expected = new List<string> { "Alpha", "Beta", "Gamma" };
-		collection.Reconcile(expected);
+		collection.ReconcileListAndItems(expected);
 		AreEqual(3, collection.Count);
 		AreEqual("Alpha", collection[0]);
 		AreEqual("Beta", collection[1]);
@@ -82,7 +83,7 @@ public partial class CollectionExtensionsTests : CornerstoneUnitTest
 			new() { Id = 4, Name = "Diana", Age = 28 } // add
 		};
 
-		collection.Reconcile(expected);
+		collection.ReconcileListAndItems(expected);
 		AreEqual(3, collection.Count);
 
 		var alice = collection.First(x => x.Id == 1);
@@ -108,7 +109,7 @@ public partial class CollectionExtensionsTests : CornerstoneUnitTest
 	{
 		IPresentationList<string> collection = null;
 		var expected = new List<string> { "item" };
-		ExpectedException<ArgumentNullException>(() => collection.Reconcile(expected));
+		ExpectedException<ArgumentNullException>(() => collection.ReconcileListAndItems(expected));
 	}
 
 	[TestMethod]
@@ -117,7 +118,7 @@ public partial class CollectionExtensionsTests : CornerstoneUnitTest
 	{
 		var collection = new PresentationList<string>();
 		IEnumerable expected = null;
-		ExpectedException<ArgumentNullException>(() => collection.Reconcile(expected));
+		ExpectedException<ArgumentNullException>(() => collection.ReconcileListAndItems(expected));
 	}
 
 	[TestMethod]
@@ -136,7 +137,7 @@ public partial class CollectionExtensionsTests : CornerstoneUnitTest
 			new() { Id = 1, Name = "Alicia" } // different name but same Id
 		};
 
-		collection.Reconcile(expected);
+		collection.ReconcileListAndItems(expected);
 
 		AreEqual(1, collection.Count);
 		AreEqual("Alicia", collection[0].Name); // name was updated
@@ -152,7 +153,7 @@ public partial class CollectionExtensionsTests : CornerstoneUnitTest
 			new() { Name = "Bob", Age = 25 }
 		};
 		var orderByName = new OrderBy<Person>(x => x.Name);
-		var result = source.ToSpeedyList(null, orderByName);
+		var result = source.ToPresentationList(null, orderByName);
 		AreEqual(3, result.Count);
 		AreEqual("Alice", result[0].Name);
 		AreEqual("Bob", result[1].Name);
@@ -163,7 +164,7 @@ public partial class CollectionExtensionsTests : CornerstoneUnitTest
 	public void ToSpeedyListCreatesPresentationListWithItems()
 	{
 		var source = new List<string> { "One", "Two", "Three" };
-		var result = source.ToSpeedyList();
+		var result = source.ToPresentationList();
 		IsNotNull(result);
 		AreEqual(3, result.Count);
 		AreEqual("One", result[0]);
@@ -176,7 +177,7 @@ public partial class CollectionExtensionsTests : CornerstoneUnitTest
 	{
 		var dispatcher = new TestDispatcher(); // assume you have a test double or use a real one if available
 		var source = new List<int> { 10, 20 };
-		var result = source.ToSpeedyList(dispatcher);
+		var result = source.ToPresentationList(dispatcher);
 		IsNotNull(result);
 		AreEqual(2, result.Count);
 	}
@@ -187,7 +188,7 @@ public partial class CollectionExtensionsTests : CornerstoneUnitTest
 
 	[Notifiable(["*"])]
 	[Updateable(UpdateableAction.All, ["*"])]
-	private partial class Person : Notifiable
+	private partial class Person : CornerstoneObject
 	{
 		#region Properties
 

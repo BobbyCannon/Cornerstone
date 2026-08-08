@@ -320,5 +320,66 @@ public static class StringFormatter
 		return minAllowed;
 	}
 
+	/// <summary>
+	/// Convert the text to a sentence case string.
+	/// </summary>
+	/// <param name="value"> The value to convert. </param>
+	/// <returns> The string in the desired format. </returns>
+	public static string ToSentenceCase(this string value)
+	{
+		var builder = new StringBuffer();
+		var nextCharUpper = false;
+		var previousCharLower = false;
+		var previousCharIsSpace = false;
+
+		for (var i = 0; i < value.Length; i++)
+		{
+			var c = value[i];
+
+			if ((builder.Count <= 0) && (c == ' '))
+			{
+				continue;
+			}
+
+			if (builder.Count == 0)
+			{
+				builder.Append(char.IsLower(c) ? char.ToUpper(c) : c);
+				continue;
+			}
+
+			if ((c == ' ') || !char.IsLetterOrDigit(c))
+			{
+				if (!previousCharIsSpace)
+				{
+					builder.Append(' ');
+					previousCharIsSpace = true;
+				}
+				nextCharUpper = true;
+				continue;
+			}
+
+			if (char.IsUpper(c)
+				&& previousCharLower
+				&& !previousCharIsSpace)
+			{
+				builder.Append(' ');
+			}
+
+			if (nextCharUpper)
+			{
+				builder.Append(char.ToUpper(c));
+				nextCharUpper = false;
+				continue;
+			}
+
+			builder.Append(c);
+			previousCharLower = char.IsLower(c);
+			previousCharIsSpace = c == ' ';
+		}
+
+		//builder.Trim();
+		return builder.ToString();
+	}
+
 	#endregion
 }

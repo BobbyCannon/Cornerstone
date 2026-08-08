@@ -51,5 +51,10 @@ public class TestDispatcher : Dispatcher
 		return Task.Run(action);
 	}
 
+	protected override void ExecuteOnDispatcherPost(Action action, DispatcherPriority priority)
+	{
+		action();
+	}
+
 	#endregion
 }

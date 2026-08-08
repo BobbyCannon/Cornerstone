@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System.Collections.Generic;
 using System.Linq;
 using Cornerstone.Extensions;
 using Cornerstone.Reflection;
@@ -81,7 +82,7 @@ public static class UpdateableExtensions
 	{
 		if (value is IUpdateable updateable)
 		{
-			updateable.UpdateWith(update, settings);
+			return updateable.UpdateWith(update, settings);
 		}
 
 		return false;
@@ -98,7 +99,7 @@ public static class UpdateableExtensions
 	{
 		if (value is IUpdateable updateable)
 		{
-			updateable.UpdateWith(update, exclusions.ToOnlyExcludingSettings());
+			return updateable.UpdateWith(update, exclusions.ToOnlyExcludingSettings());
 		}
 
 		return false;
@@ -111,11 +112,11 @@ public static class UpdateableExtensions
 	/// <param name="update"> The source of the updates. </param>
 	/// <param name="including"> A list of properties to include. </param>
 	/// <returns> True if the update was applied otherwise false. </returns>
-	public static bool UpdateWithOnly(this object value, object update, params string[] including)
+	public static bool UpdateWithOnly(this object value, object update, params IEnumerable<string> including)
 	{
 		if (value is IUpdateable updateable)
 		{
-			updateable.UpdateWith(update, including.ToOnlyIncludingSettings());
+			return updateable.UpdateWith(update, including.ToOnlyIncludingSettings());
 		}
 
 		return false;

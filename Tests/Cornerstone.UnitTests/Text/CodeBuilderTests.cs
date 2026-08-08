@@ -3,6 +3,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using Cornerstone.Collections;
+using Cornerstone.Presentation;
 using Cornerstone.Reflection;
 using Cornerstone.Sample.Models;
 using Cornerstone.Text.CodeGenerators;
@@ -62,7 +63,7 @@ public class CodeBuilderTests : CornerstoneUnitTest
 		{
 			if (!first)
 			{
-				builder.WriteLine();
+				builder.AppendLine();
 			}
 
 			IsTrue(builder.TryAppendLiteral(item));

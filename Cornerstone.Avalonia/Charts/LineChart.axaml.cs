@@ -64,6 +64,9 @@ public partial class LineChart : CornerstoneTemplatedControl
 	[StyledProperty(DefaultValue = true)]
 	public partial bool ShowLabels { get; set; }
 
+	[StyledProperty(DefaultValue = false)]
+	public partial bool ShowLabelForMaximum { get; set; }
+
 	[StyledProperty(DefaultValue = true)]
 	public partial bool Stepped { get; set; }
 
@@ -200,11 +203,13 @@ public partial class LineChart : CornerstoneTemplatedControl
 			var visualX = 10d;
 			var visualY = 8d;
 			_contextHelper.Draw(context, Title, ref visualX, ref visualY);
-			_contextHelper.Draw(context, ":", ref visualX, ref visualY);
-			_contextHelper.Draw(context, " MAX: ", ref visualX, ref visualY);
-			_contextHelper.Draw(context, maxValue, ref visualX, ref visualY);
-			_contextHelper.Draw(context, " VAL: ", ref visualX, ref visualY);
-
+			_contextHelper.Draw(context, ": ", ref visualX, ref visualY);
+			if (ShowLabelForMaximum)
+			{
+				_contextHelper.Draw(context, "MAX: ", ref visualX, ref visualY);
+				_contextHelper.Draw(context, maxValue, ref visualX, ref visualY);
+				_contextHelper.Draw(context, " VAL: ", ref visualX, ref visualY);
+			}
 			if (ValueFormatter != null)
 			{
 				_contextHelper.Draw(context, ValueFormatter.Invoke(lastValue), ref visualX, ref visualY);
@@ -242,6 +247,8 @@ public partial class LineChart : CornerstoneTemplatedControl
 
 	private void OnDataChanged(object sender, EventArgs e)
 	{
+		// Prefer SeriesDataProvider.CopyFrom / AddRange so bulk model→view updates
+		// raise DataChanged once (single invalidate) instead of per-sample Add spam.
 		// v12: invalidate visual stops working when flooded
 		//	switching to measure until it is fixed
 		//InvalidateVisual();

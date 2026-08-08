@@ -12,6 +12,7 @@
 		<Setter Property="Background" Value="{DynamicResource Background04}" />
 		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 		<Setter Property="BorderThickness" Value="0" />
+		<Setter Property="CornerRadius" Value="0" />
 		<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
 		<Setter Property="ClipToBounds" Value="False" />
 		<Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -19,10 +20,11 @@
 		<Setter Property="Template">
 			<ControlTemplate>
 				<Panel>
-					<Border
-							Name="Root" Background="{TemplateBinding Background}"
+					<Border x:Name="Root"
+							Background="{TemplateBinding Background}"
 							BorderThickness="0"
-							ClipToBounds="True">
+							ClipToBounds="True"
+							CornerRadius="{TemplateBinding CornerRadius}">
 						<ContentControl
 								x:Name="Content"
 								ContentTemplate="{TemplateBinding ContentTemplate}"

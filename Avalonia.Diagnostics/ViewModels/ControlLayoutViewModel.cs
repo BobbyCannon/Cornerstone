@@ -1,7 +1,6 @@
 #region References
 
 using System;
-using System.ComponentModel;
 using System.Text;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -184,9 +183,9 @@ public class ControlLayoutViewModel : ViewModel
 		}
 	}
 
-	protected override void OnPropertyChanged(string propertyName = null)
+	protected override void OnPropertyChanged<TValue>(string propertyName, TValue oldValue, TValue newValue)
 	{
-		base.OnPropertyChanged(propertyName);
+		base.OnPropertyChanged(propertyName, oldValue, newValue);
 	
 		if (_updatingFromControl)
 		{

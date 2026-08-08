@@ -137,8 +137,10 @@ public class SpeedyPacket : IReadOnlyList<object>
 		if (!cache.TryGetValue(type, out var metadata))
 		{
 			metadata = new TypeMetadata(type);
+
 			// Copy-on-write: create a new dictionary with the added entry and swap it in
 			var updated = new Dictionary<Type, TypeMetadata>(cache) { [type] = metadata };
+
 			// If another thread won the race, that's fine — we still use our local metadata
 			Interlocked.CompareExchange(ref _typeMetadataCache, updated, cache);
 		}
@@ -241,11 +243,11 @@ public class SpeedyPacket : IReadOnlyList<object>
 				case SpeedyPacketDataTypes.StringOfEmpty: response.Add(string.Empty); break;
 				case SpeedyPacketDataTypes.String:
 				{
-					if (!reader.TryReadString(out var utf8Bytes))
+					if (!reader.TryReadString(out var bytes))
 					{
 						throw new InvalidDataContractException("Failed to read string.");
 					}
-					var encoded = Encoding.UTF8.GetString(utf8Bytes);
+					var encoded = Encoding.UTF8.GetString(bytes);
 					response.Add(StringDecode(encoded));
 					continue;
 				}

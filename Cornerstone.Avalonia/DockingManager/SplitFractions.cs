@@ -5,12 +5,14 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Layout;
 using Cornerstone.Collections;
+using Cornerstone.Reflection;
 
 #endregion
 
 namespace Cornerstone.Avalonia.DockingManager;
 
-public class SplitFractions : PresentationList<int>
+[SourceReflection]
+public class SplitFractions : Presentation.PresentationList<int>
 {
 	#region Constructors
 

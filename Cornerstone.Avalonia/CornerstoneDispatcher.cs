@@ -64,6 +64,11 @@ public class CornerstoneDispatcher : Dispatcher
 		return _dispatcher.InvokeAsync(action, ToPriority(priority), cancellationToken).GetTask();
 	}
 
+	protected override void ExecuteOnDispatcherPost(Action action, DispatcherPriority priority)
+	{
+		_dispatcher.Post(action, ToPriority(priority));
+	}
+
 	private AvaloniaDispatcherPriority ToPriority(DispatcherPriority priority)
 	{
 		return priority switch
@@ -72,6 +77,7 @@ public class CornerstoneDispatcher : Dispatcher
 			DispatcherPriority.Background => AvaloniaDispatcherPriority.Background,
 			DispatcherPriority.ContextIdle => AvaloniaDispatcherPriority.ContextIdle,
 			DispatcherPriority.Normal => AvaloniaDispatcherPriority.Normal,
+			DispatcherPriority.Render => AvaloniaDispatcherPriority.Render,
 			DispatcherPriority.SystemIdle => AvaloniaDispatcherPriority.SystemIdle,
 			_ => AvaloniaDispatcherPriority.Normal
 		};

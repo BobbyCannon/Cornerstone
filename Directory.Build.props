@@ -8,8 +8,8 @@
 		<Version>3.0.0.0</Version>
 		<AssemblyVersion>$(Version)</AssemblyVersion>
 		<FileVersion>$(Version)</FileVersion>
-		<AvaloniaVersion>12.0.0</AvaloniaVersion>
-		<AvaloniaBaseVersion>12.0.0</AvaloniaBaseVersion>
+		<AvaloniaVersion>12.1.1</AvaloniaVersion>
+		<AvaloniaBaseVersion>12.1.1</AvaloniaBaseVersion>
 		<AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
 		<LangVersion>latest</LangVersion>
 		<GenerateDocumentationFile>false</GenerateDocumentationFile>
@@ -24,14 +24,8 @@
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>disable</Nullable>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<NoWarn>$(NoWarn);CS8002;IL2026;IL2037;IL2045;IL2065;IL2067;IL2070;IL2072;IL2075;IL2080;IL2104;IL3000;IL3002;IL3050;IL3053;IL3058;IL3073;MSB3277;</NoWarn>
-		<!-- AOT -->
-		<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
-		<VerifyReferenceAotCompatibility>true</VerifyReferenceAotCompatibility>
-		<PublishAot>true</PublishAot>
-		<PublishTrimmed>true</PublishTrimmed>
-		<TrimMode>full</TrimMode>
-		<IsAotCompatible>true</IsAotCompatible>
+		<NoWarn>$(NoWarn);AVA2001;CA1416;CS0419;CS0618;CS8002;IL2026;IL2037;IL2045;IL2055;IL2057;IL2060;IL2065;IL2067;IL2070;IL2072;IL2075;IL2080;IL2091;IL2098;IL2104;IL3000;IL3002;IL3050;IL3053;IL3058;IL3073;MSB3277;NETSDK1144;</NoWarn>
+		<WarningsNotAsErrors>$(WarningsNotAsErrors);AVA2001</WarningsNotAsErrors>
 		<!-- Nuget -->
 		<Description>Cornerstone in as development framework to help speed up and make building applications and systems much easier.</Description>
 		<PackageIcon>Cornerstone.png</PackageIcon>
@@ -42,8 +36,8 @@
 		<RepositoryType>git</RepositoryType>
 		<RepositoryUrl>https://github.com/BobbyCannon/Cornerstone</RepositoryUrl>
 	</PropertyGroup>
-	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-		<PublishAot>false</PublishAot>
+	<PropertyGroup Condition="$(TargetFramework.Contains('-windows'))">
+		<RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
 	</PropertyGroup>
 	<ItemGroup>
 		<None Include="$(MSBuildThisFileDirectory)..\Cornerstone\Cornerstone.png">

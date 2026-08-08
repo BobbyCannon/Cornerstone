@@ -34,15 +34,41 @@ public class StringGapBuffer : GapBuffer<char>, IStringBuffer
 
 	#region Methods
 
+	public void Append(char value)
+	{
+		base.Add(value);
+	}
+
 	public virtual void Append(string value)
 	{
 		base.Add(value.AsSpan());
+	}
+
+	public void Append(IStringBuffer value)
+	{
+		base.Add(value.AsSpan());
+	}
+
+	public void Append(ReadOnlySpan<char> value)
+	{
+		base.Add(value);
+	}
+
+	public virtual void AppendLine()
+	{
+		base.Add(Environment.NewLine);
 	}
 
 	public virtual void AppendLine(string value)
 	{
 		base.Add(value.AsSpan());
 		base.Add(Environment.NewLine);
+	}
+
+	public ReadOnlySpan<char> AsSpan()
+	{
+		// this is the best we can do to get to a single span.
+		return ToString().AsSpan();
 	}
 
 	public bool Equals(int index, ReadOnlySpan<char> value)
@@ -63,11 +89,21 @@ public class StringGapBuffer : GapBuffer<char>, IStringBuffer
 		return true;
 	}
 
+	public void Load(params string[] values)
+	{
+		Clear();
+
+		foreach (var value in values)
+		{
+			Add(value);
+		}
+	}
+
 	public void Insert(int index, ReadOnlySpan<char> value)
 	{
 		InternalInsert(index, value, 0, value.Length);
 	}
-	
+
 	public void Insert(int index, string value)
 	{
 		var array = value.AsSpan();

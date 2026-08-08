@@ -1,0 +1,86 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:views="clr-namespace:Cornerstone.Agent.Views"
+		mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"
+		x:Class="Cornerstone.Agent.Views.SettingsView"
+		x:DataType="views:SettingsViewModel">
+	<!-- ReSharper disable Xaml.MissingGridIndex -->
+	<AutoGrid Classes="Input"
+			ColumnDefinitions="160,*,32"
+			RowDefinitions="Auto,*"
+			Margin="20"
+			VerticalAlignment="Top">
+		<Image Source="/Assets/Cornerstone.Agent.png"
+				Width="64" Height="64"
+				HorizontalAlignment="Right"
+				Margin="10" />
+		<StackPanel Margin="0,10,0,0">
+			<TextBlock Classes="HeaderFour"
+					Text="Cornerstone Agent" />
+			<TextBlock Classes="HeaderSix"
+					Foreground="{DynamicResource ThemeColor05}"
+					Text="Configuration" />
+		</StackPanel>
+		<Button Classes="Icon IconOnly"
+				Command="{Binding Navigator.SelectViewCommand}"
+				CommandParameter="{x:Static views:AgentViewModel.AssemblyName}"
+				VerticalAlignment="Top">
+			<Path Data="{StaticResource Icons.Close}"
+					Height="20" Width="20" />
+		</Button>
+		<AutoGrid Classes="Input"
+				Grid.ColumnSpan="3"
+				ColumnDefinitions="160,*"
+				RowCount="6"
+				Margin="0,10,0,0">
+			<TextBlock Classes="InputName" Text="Models" />
+			<Grid ColumnDefinitions="*,Auto">
+				<TextBox Classes="InputValue"
+						CornerRadius="4,0,0,4"
+						IsReadOnly="True"
+						Text="{Binding ModelDirectory}" />
+				<Button Grid.Column="1"
+						Theme.Color="None"
+						Command="{Binding SelectModelDirectoryCommand}"
+						CornerRadius="0,4,4,0"
+						Width="80">
+					Select
+				</Button>
+			</Grid>
+
+			<TextBlock />
+			<CheckBox Content="Recurse models directory"
+					IsChecked="{Binding State.Settings.RecurseModelDirectory}" />
+
+			<TextBlock Classes="InputName" Text="Favorite Model" />
+			<Grid ColumnDefinitions="*,Auto">
+				<ComboBox Classes="InputValue"
+						CornerRadius="4,0,0,4" />
+				<Button Theme.Color="None"
+						Grid.Column="1"
+						CornerRadius="0,4,4,0"
+						Command="{Binding Bus.Models.RefreshModelsCommand}"
+						Width="80">
+					Refresh
+				</Button>
+			</Grid>
+
+			<Grid>
+				<CircularProgress
+						HorizontalAlignment="Right"
+						IsIndeterminate="{Binding State.ModelState.IsRefreshingModels}"
+						IsVisible="{Binding State.ModelState.IsRefreshingModels}"
+						StrokeThickness="3"
+						Value="10"
+						Height="20" Width="20"
+						Margin="0,0,10,0" />
+			</Grid>
+			<StackPanel Orientation="Horizontal">
+				<TextBlock Text="{Binding State.ModelState.RefreshStatusMessage}"
+						Foreground="{DynamicResource Foreground09}" />
+			</StackPanel>
+		</AutoGrid>
+	</AutoGrid>
+</UserControl>
