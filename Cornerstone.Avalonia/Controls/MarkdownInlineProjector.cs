@@ -401,14 +401,14 @@ public static class MarkdownInlineProjector
 				|| (block.Type == MarkdownTokenizer.TokenTypeItalic)
 				|| (block.Type == MarkdownTokenizer.TokenTypeBoldAndItalic)
 				|| (block.Type == MarkdownTokenizer.TokenTypeStrikethrough))
-			&& block.Offsets is { Length: >= 2 }
-			&& (block.Offsets[0] >= 0)
-			&& (block.Offsets[1] <= source.Length)
-			&& (block.Offsets[1] >= block.Offsets[0]))
+			&& block.Offsets is { Length: >= 2 })
 		{
-			var start = block.Offsets[0];
-			var end = block.Offsets[1];
-			AppendStyled(content, tokens, source.Slice(start, end - start), bold, italic, strike);
+			var emphasis = MarkdownRenderer.SafeSlice(source, block.Offsets[0], block.Offsets[1] - block.Offsets[0]);
+			if (!emphasis.IsEmpty)
+			{
+				AppendStyled(content, tokens, emphasis, bold, italic, strike);
+			}
+
 			return;
 		}
 
@@ -418,19 +418,14 @@ public static class MarkdownInlineProjector
 			var textEnd = block.Offsets[1];
 			var destStart = block.Offsets[2];
 			var destEnd = block.Offsets[3];
-			var textLength = textEnd - textStart;
-			if ((textLength >= 0)
-				&& (textStart >= 0)
-				&& (textEnd <= source.Length)
-				&& (destStart >= 0)
-				&& (destEnd <= source.Length)
-				&& (destEnd >= destStart))
+			var linkText = MarkdownRenderer.SafeSlice(source, textStart, textEnd - textStart);
+			var hrefSpan = MarkdownRenderer.SafeSlice(source, destStart, destEnd - destStart);
+			if (!linkText.IsEmpty)
 			{
 				var bufferStart = content.WritePosition;
-				var linkText = source.Slice(textStart, textLength);
-				var href = source.Slice(destStart, destEnd - destStart).ToString();
+				var href = hrefSpan.IsEmpty ? string.Empty : hrefSpan.ToString();
 				content.Add(linkText);
-				var bufferEnd = bufferStart + textLength;
+				var bufferEnd = bufferStart + linkText.Length;
 				var token = Tokenizer.CreateOrUpdateSection(
 					MarkdownTokenizer.TokenTypeLink,
 					bufferStart,
@@ -446,35 +441,41 @@ public static class MarkdownInlineProjector
 
 		if (MarkdownView.IsBlockLevel(block))
 		{
-			AppendStyled(content, tokens, source.Slice(block.StartOffset, block.Length), bold, italic, strike);
+			var blockBody = MarkdownRenderer.SafeSlice(source, block);
+			if (!blockBody.IsEmpty)
+			{
+				AppendStyled(content, tokens, blockBody, bold, italic, strike);
+			}
+
 			return;
 		}
 
 		if ((block.Type == MarkdownTokenizer.TokenTypeInlineCode)
-			&& block.Offsets is { Length: >= 2 }
-			&& (block.Offsets[0] >= 0)
-			&& (block.Offsets[1] <= source.Length)
-			&& (block.Offsets[1] > block.Offsets[0]))
+			&& block.Offsets is { Length: >= 2 })
 		{
-			var bufferStart = content.WritePosition;
-			content.Add(source.Slice(block.Offsets[0], block.Offsets[1] - block.Offsets[0]));
-			var token = Tokenizer.CreateOrUpdateSection(
-				MarkdownTokenizer.TokenTypeInlineCode,
-				bufferStart,
-				content.WritePosition,
-				bold: bold,
-				italic: italic,
-				strikethrough: strike);
-			tokens.Add(token);
+			var code = MarkdownRenderer.SafeSlice(source, block.Offsets[0], block.Offsets[1] - block.Offsets[0]);
+			if (!code.IsEmpty)
+			{
+				var bufferStart = content.WritePosition;
+				content.Add(code);
+				var token = Tokenizer.CreateOrUpdateSection(
+					MarkdownTokenizer.TokenTypeInlineCode,
+					bufferStart,
+					content.WritePosition,
+					bold: bold,
+					italic: italic,
+					strikethrough: strike);
+				tokens.Add(token);
+			}
+
 			return;
 		}
 
 		// Text / whitespace / newlines / expanded emphasis leaves
-		if ((block.StartOffset >= 0)
-			&& (block.EndOffset <= source.Length)
-			&& (block.Length > 0))
+		var leaf = MarkdownRenderer.SafeSlice(source, block);
+		if (!leaf.IsEmpty)
 		{
-			AppendStyled(content, tokens, source.Slice(block.StartOffset, block.Length), bold, italic, strike);
+			AppendStyled(content, tokens, leaf, bold, italic, strike);
 		}
 	}
 

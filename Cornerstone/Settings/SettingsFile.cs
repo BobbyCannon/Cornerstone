@@ -157,9 +157,14 @@ public abstract class SettingsFile<T>
 	/// <summary>
 	/// Save the settings to a json file in the application data location.
 	/// </summary>
+	/// <remarks>
+	/// Nested objects (for example WindowLocation) mark HasChanges without raising
+	/// this type's PropertyChanged. Match SettingsManager: persist when either the
+	/// local dirty flag or HasChanges() is true.
+	/// </remarks>
 	public void Save(bool force = false)
 	{
-		if (!force && !_needsSaving)
+		if (!force && !_needsSaving && !HasChanges())
 		{
 			return;
 		}
@@ -194,6 +199,7 @@ public abstract class SettingsFile<T>
 		finally
 		{
 			_needsSaving = false;
+			ResetHasChanges();
 		}
 	}
 

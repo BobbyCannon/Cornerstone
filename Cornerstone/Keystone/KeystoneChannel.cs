@@ -4,6 +4,7 @@ using System;
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Cornerstone.Keystone.Messages;
 using Cornerstone.Reflection;
 
@@ -54,6 +55,7 @@ public abstract class KeystoneChannel : CornerstoneObject
 	#region Fields
 
 	private readonly ConcurrentDictionary<int, object> _handlers;
+	private readonly string _channelName;
 
 	#endregion
 
@@ -62,6 +64,7 @@ public abstract class KeystoneChannel : CornerstoneObject
 	protected KeystoneChannel()
 	{
 		_handlers = new ConcurrentDictionary<int, object>();
+		_channelName = GetType().Name;
 	}
 
 	#endregion
@@ -73,6 +76,11 @@ public abstract class KeystoneChannel : CornerstoneObject
 		ErrorOccurred?.Invoke(obj);
 	}
 
+	protected virtual void OnMessageCompleted(ChannelMessagePublishResult result)
+	{
+		MessageCompleted?.Invoke(result);
+	}
+
 	protected virtual void OnMessagePublished(int arg1, IChannelMessage arg2)
 	{
 		MessagePublished?.Invoke(arg1, arg2);
@@ -80,22 +88,75 @@ public abstract class KeystoneChannel : CornerstoneObject
 
 	protected void Publish(int type)
 	{
-		MessagePublished?.Invoke(type, null);
-
-		if (_handlers.TryGetValue(type, out var obj) && obj is IHandlerInvoker invoker)
-		{
-			invoker.Invoke(ErrorOccurred);
-		}
+		PublishCore(type, null);
 	}
 
 	protected void Publish(int type, IChannelMessage value)
 	{
+		PublishCore(type, value);
+	}
+
+	private void PublishCore(int type, IChannelMessage value)
+	{
+		// Existing observers: raised before handlers.
 		MessagePublished?.Invoke(type, value);
 
-		if (_handlers.TryGetValue(type, out var obj) && obj is IHandlerInvokerWithMessage invoker)
+		var completed = MessageCompleted;
+		if (completed is null)
 		{
-			invoker.Invoke(value, ErrorOccurred);
+			// Hot path when diagnostics are off: no clocks, no result allocation.
+			if (value is null)
+			{
+				if (_handlers.TryGetValue(type, out var bare) && bare is IHandlerInvoker bareInvoker)
+				{
+					bareInvoker.Invoke(ErrorOccurred);
+				}
+			}
+			else if (_handlers.TryGetValue(type, out var withMsg) && withMsg is IHandlerInvokerWithMessage withInvoker)
+			{
+				withInvoker.Invoke(value, ErrorOccurred);
+			}
+
+			return;
 		}
+
+		var hadError = false;
+		var errorMessage = string.Empty;
+		Action<Exception> onError = ex =>
+		{
+			hadError = true;
+			if ((errorMessage.Length == 0) && (ex is not null))
+			{
+				errorMessage = ex.Message ?? string.Empty;
+			}
+
+			ErrorOccurred?.Invoke(ex);
+		};
+
+		var handlerCount = 0;
+		var start = Stopwatch.GetTimestamp();
+
+		if (value is null)
+		{
+			if (_handlers.TryGetValue(type, out var bare) && bare is IHandlerInvoker bareInvoker)
+			{
+				handlerCount = bareInvoker.Invoke(onError);
+			}
+		}
+		else if (_handlers.TryGetValue(type, out var withMsg) && withMsg is IHandlerInvokerWithMessage withInvoker)
+		{
+			handlerCount = withInvoker.Invoke(value, onError);
+		}
+
+		var elapsed = Stopwatch.GetElapsedTime(start);
+		OnMessageCompleted(new ChannelMessagePublishResult(
+			_channelName,
+			type,
+			value,
+			elapsed.Ticks,
+			handlerCount,
+			hadError,
+			errorMessage));
 	}
 
 	protected void Subscribe(int type, Action handler)
@@ -227,7 +288,14 @@ public abstract class KeystoneChannel : CornerstoneObject
 	public event Action<Exception> ErrorOccurred;
 
 	/// <summary>
-	/// Optional: raised when a message is published (for history, logging, etc.)
+	/// Raised after handlers complete when at least one subscriber is attached.
+	/// Used for diagnostics history (duration, handler count, errors).
+	/// Prefer not to subscribe in production unless recording is intentional.
+	/// </summary>
+	public event Action<ChannelMessagePublishResult> MessageCompleted;
+
+	/// <summary>
+	/// Raised when a message is published, before handlers run (logging / observers).
 	/// </summary>
 	public event Action<int, IChannelMessage> MessagePublished;
 
@@ -239,7 +307,10 @@ public abstract class KeystoneChannel : CornerstoneObject
 	{
 		#region Methods
 
-		void Invoke(Action<Exception> onError);
+		/// <summary>
+		/// Invokes all handlers. Returns the handler count.
+		/// </summary>
+		int Invoke(Action<Exception> onError);
 
 		#endregion
 	}
@@ -248,7 +319,10 @@ public abstract class KeystoneChannel : CornerstoneObject
 	{
 		#region Methods
 
-		void Invoke(IChannelMessage message, Action<Exception> onError);
+		/// <summary>
+		/// Invokes all handlers. Returns the handler count.
+		/// </summary>
+		int Invoke(IChannelMessage message, Action<Exception> onError);
 
 		#endregion
 	}
@@ -301,7 +375,7 @@ public abstract class KeystoneChannel : CornerstoneObject
 			}
 		}
 
-		public void InvokeAll(Action<Exception> onError)
+		public int InvokeAll(Action<Exception> onError)
 		{
 			Action[] snapshot;
 			int count;
@@ -311,7 +385,7 @@ public abstract class KeystoneChannel : CornerstoneObject
 				count = _handlers.Count;
 				if (count == 0)
 				{
-					return;
+					return 0;
 				}
 
 				snapshot = ArrayPool<Action>.Shared.Rent(count);
@@ -336,6 +410,8 @@ public abstract class KeystoneChannel : CornerstoneObject
 			{
 				ArrayPool<Action>.Shared.Return(snapshot);
 			}
+
+			return count;
 		}
 
 		public void Remove(Action handler)
@@ -346,15 +422,16 @@ public abstract class KeystoneChannel : CornerstoneObject
 			}
 		}
 
-		void IHandlerInvoker.Invoke(Action<Exception> onError)
+		int IHandlerInvoker.Invoke(Action<Exception> onError)
 		{
 			try
 			{
-				InvokeAll(onError);
+				return InvokeAll(onError);
 			}
 			catch (Exception ex)
 			{
 				onError?.Invoke(ex);
+				return 0;
 			}
 		}
 
@@ -405,7 +482,7 @@ public abstract class KeystoneChannel : CornerstoneObject
 			}
 		}
 
-		public void InvokeAll(IChannelMessage message, Action<Exception> onError)
+		public int InvokeAll(IChannelMessage message, Action<Exception> onError)
 		{
 			Action<T>[] snapshot;
 			int count;
@@ -415,7 +492,7 @@ public abstract class KeystoneChannel : CornerstoneObject
 				count = _handlers.Count;
 				if (count == 0)
 				{
-					return;
+					return 0;
 				}
 
 				snapshot = ArrayPool<Action<T>>.Shared.Rent(count);
@@ -440,6 +517,8 @@ public abstract class KeystoneChannel : CornerstoneObject
 			{
 				ArrayPool<Action<T>>.Shared.Return(snapshot);
 			}
+
+			return count;
 		}
 
 		public void Remove(Action<T> handler)
@@ -450,16 +529,17 @@ public abstract class KeystoneChannel : CornerstoneObject
 			}
 		}
 
-		void IHandlerInvokerWithMessage.Invoke(IChannelMessage message, Action<Exception> onError)
+		int IHandlerInvokerWithMessage.Invoke(IChannelMessage message, Action<Exception> onError)
 		{
 			try
 			{
-				InvokeAll(message, onError);
+				return InvokeAll(message, onError);
 			}
 			catch
 			{
 				onError?.Invoke(new InvalidCastException(
 					$"Message type mismatch. Expected {typeof(T).Name} but received {message.GetType().Name}."));
+				return 0;
 			}
 		}
 

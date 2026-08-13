@@ -107,17 +107,31 @@ public class MarkdownBlockConverter : IMultiValueConverter
 				|| (block.Type == MarkdownTokenizer.TokenTypeBoldAndItalic)
 				|| (block.Type == MarkdownTokenizer.TokenTypeStrikethrough))
 			{
+				if ((block.Offsets is not { Length: >= 2 }))
+				{
+					continue;
+				}
+
 				var start = block.Offsets[0];
 				var end = block.Offsets[1];
-				var length = end - start;
+				var emphasis = MarkdownRenderer.SafeSlice(buffer, start, end - start);
+				if (emphasis.IsEmpty)
+				{
+					continue;
+				}
+
 				var bufferStart = group.ContentBuffer.WritePosition;
-				var bufferEnd = bufferStart + length;
-				group.ContentBuffer.Add(buffer.Slice(start, length));
+				var bufferEnd = bufferStart + emphasis.Length;
+				group.ContentBuffer.Add(emphasis);
 				renderer.ViewModel.TokenManager.Add(block.Type, bufferStart, bufferEnd);
 			}
 			else
 			{
-				group.ContentBuffer.Add(buffer.Slice(block.StartOffset, block.Length));
+				var body = MarkdownRenderer.SafeSlice(buffer, block);
+				if (!body.IsEmpty)
+				{
+					group.ContentBuffer.Add(body);
+				}
 			}
 		}
 
@@ -135,7 +149,8 @@ public class MarkdownBlockConverter : IMultiValueConverter
 			border.BorderThickness = BlockQuoteBorderThickness;
 			border.CornerRadius = BlockQuoteCornerRadius;
 			border.Padding = CodeBlockBorderPadding;
-			return buffer.Slice(block.StartOffset, block.Length).ToString();
+			var quote = MarkdownRenderer.SafeSlice(buffer, block);
+			return quote.IsEmpty ? string.Empty : quote.ToString();
 		}
 
 		if (block.Type == MarkdownTokenizer.TokenTypeCodeBlock)
@@ -153,7 +168,8 @@ public class MarkdownBlockConverter : IMultiValueConverter
 			border.CornerRadius = CodeBlockCornerRadius;
 			border.Padding = CodeBlockBorderPadding;
 			group.CopyRange.Update(contentStart, contentLength);
-			return buffer.Slice(contentStart, contentLength).ToString();
+			var codeBody = MarkdownRenderer.SafeSlice(buffer, contentStart, contentLength);
+			return codeBody.IsEmpty ? string.Empty : codeBody.ToString();
 		}
 
 		if (block.Type == MarkdownTokenizer.TokenTypeHeader)
@@ -170,7 +186,8 @@ public class MarkdownBlockConverter : IMultiValueConverter
 				_ => (int) (view.FontSize * 1.2)
 			};
 			renderer.Foreground = view.Foreground;
-			return buffer.Slice(contentStart, contentLength).ToString();
+			var headerBody = MarkdownRenderer.SafeSlice(buffer, contentStart, contentLength);
+			return headerBody.IsEmpty ? string.Empty : headerBody.ToString();
 		}
 
 		if (block.Type == MarkdownTokenizer.TokenTypeTable)
@@ -180,7 +197,13 @@ public class MarkdownBlockConverter : IMultiValueConverter
 			renderer.Foreground = view.Foreground;
 			border.BorderThickness = CodeBlockBorderThickness;
 			border.Padding = CodeBlockBorderPadding;
-			var tableContent = buffer.Slice(block.StartOffset, block.Length).ToString();
+			var tableSpan = MarkdownRenderer.SafeSlice(buffer, block);
+			if (tableSpan.IsEmpty)
+			{
+				return string.Empty;
+			}
+
+			var tableContent = tableSpan.ToString();
 			var boundsWidth = renderer.ViewModel.WordWrap
 				? view.Bounds.Width - view.Padding.Left - view.Padding.Right
 				- border.Margin.Left - border.Padding.Left - border.Margin.Right - border.Padding.Right
@@ -206,12 +229,13 @@ public class MarkdownBlockConverter : IMultiValueConverter
 		{
 			renderer.FontSize = view.FontSize;
 			renderer.Foreground = view.Foreground;
-			MarkdownInlineProjector.ProjectUnorderedList(buffer.Slice(block.StartOffset, block.Length), renderer, view);
+			MarkdownInlineProjector.ProjectUnorderedList(MarkdownRenderer.SafeSlice(buffer, block), renderer, view);
 			return renderer.Text ?? string.Empty;
 		}
 
 		renderer.ViewModel.TokenManager.Initialize(_markdownViewTokenizer);
-		return buffer.Slice(block.StartOffset, block.Length).ToString();
+		var fallback = MarkdownRenderer.SafeSlice(buffer, block);
+		return fallback.IsEmpty ? string.Empty : fallback.ToString();
 	}
 
 	#endregion

@@ -287,7 +287,7 @@ public class MarkdownBlockPresenter : TemplatedControl
 			_border.BorderThickness = BlockQuoteBorderThickness;
 			_border.CornerRadius = BlockQuoteCornerRadius;
 			_border.Padding = CodeBlockBorderPadding;
-			return TrimDisplayEnd(buffer.Slice(block.StartOffset, block.Length));
+			return TrimDisplayEnd(MarkdownRenderer.SafeSlice(buffer, block));
 		}
 
 		if (block.Type == MarkdownTokenizer.TokenTypeCodeBlock)
@@ -318,12 +318,8 @@ public class MarkdownBlockPresenter : TemplatedControl
 			_border.CornerRadius = hasLanguage ? CodeBlockCornerRadius : new CornerRadius(4);
 			_border.Padding = CodeBlockBorderPadding;
 			_group.CopyRange.Update(contentStart, contentLength);
-			if ((contentLength <= 0) || ((contentStart + contentLength) > buffer.Length))
-			{
-				return string.Empty;
-			}
-
-			return buffer.Slice(contentStart, contentLength).ToString();
+			var codeBody = MarkdownRenderer.SafeSlice(buffer, contentStart, contentLength);
+			return codeBody.IsEmpty ? string.Empty : codeBody.ToString();
 		}
 
 		if (block.Type == MarkdownTokenizer.TokenTypeHeader)
@@ -340,7 +336,7 @@ public class MarkdownBlockPresenter : TemplatedControl
 				_ => (int) (_view.FontSize * 1.2)
 			};
 			_renderer.Foreground = _view.Foreground;
-			return TrimDisplayEnd(buffer.Slice(contentStart, contentLength));
+			return TrimDisplayEnd(MarkdownRenderer.SafeSlice(buffer, contentStart, contentLength));
 		}
 
 		if (block.Type == MarkdownTokenizer.TokenTypeHorizontalRule)
@@ -362,12 +358,12 @@ public class MarkdownBlockPresenter : TemplatedControl
 			// Bullets + per-item inline projection (bold, code, links).
 			_renderer.FontSize = _view.FontSize;
 			_renderer.Foreground = _view.Foreground;
-			MarkdownInlineProjector.ProjectUnorderedList(buffer.Slice(block.StartOffset, block.Length), _renderer, _view);
+			MarkdownInlineProjector.ProjectUnorderedList(MarkdownRenderer.SafeSlice(buffer, block), _renderer, _view);
 			return _renderer.Text ?? string.Empty;
 		}
 
 		_renderer.ViewModel.TokenManager.Initialize(_markdownViewTokenizer);
-		return TrimDisplayEnd(buffer.Slice(block.StartOffset, block.Length));
+		return TrimDisplayEnd(MarkdownRenderer.SafeSlice(buffer, block));
 	}
 
 	private void RendererOnPointerMoved(object sender, PointerEventArgs e)

@@ -1,0 +1,176 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:settings="clr-namespace:Cornerstone.GrokMonitor.Settings"
+		xmlns:themes="clr-namespace:Cornerstone.Avalonia.Themes;assembly=Cornerstone.Avalonia"
+		mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="700"
+		x:Class="Cornerstone.GrokMonitor.Settings.SettingsTabView"
+		x:DataType="settings:SettingsTabViewModel">
+	<DockPanel>
+		<Grid DockPanel.Dock="Top" Margin="10,14,10,6">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="Settings" />
+		</Grid>
+		<ScrollViewer HorizontalScrollBarVisibility="Disabled">
+			<StackPanel Margin="16,8,16,20" Spacing="16" MaxWidth="560" HorizontalAlignment="Center">
+				<TextBlock Opacity="0.7"
+						TextWrapping="Wrap"
+						Text="Appearance preferences for Grok Monitor. Theme mode Default follows the system light/dark setting." />
+
+				<!-- Mode (Dark / Light / System) -->
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource BorderBrush}"
+						BorderThickness="1"
+						CornerRadius="8"
+						Padding="14">
+					<StackPanel Spacing="10">
+						<TextBlock Text="Theme variant" Opacity="0.9" />
+						<ComboBox Width="220"
+								HorizontalAlignment="Left"
+								ItemsSource="{x:Static themes:Theme.ThemeModes}"
+								SelectedItem="{Binding Settings.ThemeMode, Mode=TwoWay}" />
+						<TextBlock Opacity="0.65"
+								TextWrapping="Wrap"
+								Text="Dark, Light, or Default (system)." />
+					</StackPanel>
+				</Border>
+
+				<!-- Color + live preview -->
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource BorderBrush}"
+						BorderThickness="1"
+						CornerRadius="8"
+						Padding="14">
+					<StackPanel Spacing="12">
+						<TextBlock Text="Theme color" Opacity="0.9" />
+						<ComboBox Width="220"
+								HorizontalAlignment="Left"
+								ItemsSource="{x:Static themes:Theme.Colors}"
+								SelectedItem="{Binding Settings.ThemeColor, Mode=TwoWay}" />
+						<TextBlock Opacity="0.65"
+								TextWrapping="Wrap"
+								Text="Sample chart and progress use the current accent so color changes show immediately." />
+
+						<!-- Sample graph / progress: Theme.Color tracks the picker so accent updates live -->
+						<StackPanel Spacing="4">
+							<TextBlock Text="Sample graph"
+									FontSize="{DynamicResource ControlFontSizeSmall}"
+									Opacity="0.7" />
+							<LineChart Title=""
+									Theme.Color="{Binding Settings.ThemeColor}"
+									Data="{Binding ColorSampleChartData}"
+									Stepped="True"
+									Height="100"
+									ShowLabels="False"
+									RelativeScale="False" />
+						</StackPanel>
+
+						<!-- Progress samples -->
+						<StackPanel Spacing="8">
+							<TextBlock Text="Sample progress"
+									FontSize="{DynamicResource ControlFontSizeSmall}"
+									Opacity="0.7" />
+							<LinearProgress Theme.Color="{Binding Settings.ThemeColor}"
+									Value="{Binding SampleProgressValue}"
+									Minimum="0"
+									Maximum="100"
+									Height="14"
+									ShowProgressText="True" />
+							<StackPanel Orientation="Horizontal" Spacing="16">
+								<CircularProgress Theme.Color="{Binding Settings.ThemeColor}"
+										Value="{Binding SampleProgressValue}"
+										ShowProgressText="True"
+										Width="64"
+										Height="64" />
+								<StackPanel Orientation="Horizontal"
+										Spacing="8"
+										VerticalAlignment="Center">
+									<Button Theme.Color="{Binding Settings.ThemeColor}" Content="Accent" MinWidth="80" />
+									<Button Theme.Color="None" Content="None" MinWidth="80" />
+									<ToggleButton Content="Toggle" IsChecked="True" MinWidth="80" />
+								</StackPanel>
+							</StackPanel>
+						</StackPanel>
+					</StackPanel>
+				</Border>
+
+				<!-- Density -->
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource BorderBrush}"
+						BorderThickness="1"
+						CornerRadius="8"
+						Padding="14">
+					<StackPanel Spacing="10">
+						<TextBlock Text="Theme density" Opacity="0.9" />
+						<ComboBox Width="220"
+								HorizontalAlignment="Left"
+								ItemsSource="{x:Static themes:Theme.ThemeDensities}"
+								SelectedItem="{Binding Settings.ThemeDensity, Mode=TwoWay}" />
+						<TextBlock Opacity="0.65"
+								TextWrapping="Wrap"
+								Text="Compact, Normal, or Large. Lists and chrome that use ControlFontSize update live." />
+						<TextBlock Text="Primary (ControlFontSize) — The quick brown fox jumps over the lazy dog."
+								FontSize="{DynamicResource ControlFontSize}"
+								TextWrapping="Wrap" />
+						<TextBlock Text="Secondary (ControlFontSizeSmall) — muted captions and metadata use this token."
+								FontSize="{DynamicResource ControlFontSizeSmall}"
+								Opacity="0.7"
+								TextWrapping="Wrap" />
+					</StackPanel>
+				</Border>
+
+				<!-- Session row heat -->
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource BorderBrush}"
+						BorderThickness="1"
+						CornerRadius="8"
+						Padding="14">
+					<StackPanel Spacing="10">
+						<TextBlock Text="Sessions heat" Opacity="0.9" />
+						<CheckBox Content="Tint session rows by total tokens"
+								IsChecked="{Binding Settings.SessionTokenHeatEnabled, Mode=TwoWay}" />
+						<TextBlock Opacity="0.65"
+								TextWrapping="Wrap"
+								Text="Row tint goes from yellow at the soft total to red at the hot total. Sessions below soft stay untinted. Defaults: 1,000,000 soft · 10,000,000 hot." />
+						<Grid ColumnDefinitions="*,*"
+								RowDefinitions="Auto,Auto"
+								IsEnabled="{Binding Settings.SessionTokenHeatEnabled}"
+								ColumnSpacing="12"
+								RowSpacing="8">
+							<StackPanel Grid.Column="0" Grid.Row="0" Spacing="4">
+								<TextBlock Text="Soft total (tokens)"
+										FontSize="{DynamicResource ControlFontSizeSmall}"
+										Opacity="0.7" />
+								<NumericUpDown Minimum="0"
+										Maximum="100000000000"
+										Increment="100000"
+										FormatString="N0"
+										Width="220"
+										HorizontalAlignment="Left"
+										Value="{Binding Settings.SessionTokenHeatSoftTokens, Mode=TwoWay}" />
+							</StackPanel>
+							<StackPanel Grid.Column="1" Grid.Row="0" Spacing="4">
+								<TextBlock Text="Hot total (tokens)"
+										FontSize="{DynamicResource ControlFontSizeSmall}"
+										Opacity="0.7" />
+								<NumericUpDown Minimum="1"
+										Maximum="100000000000"
+										Increment="100000"
+										FormatString="N0"
+										Width="220"
+										HorizontalAlignment="Left"
+										Value="{Binding Settings.SessionTokenHeatHotTokens, Mode=TwoWay}" />
+							</StackPanel>
+							<TextBlock Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="1"
+									Opacity="0.65"
+									TextWrapping="Wrap"
+									Text="Hot must be greater than soft. Invalid pairs are corrected automatically." />
+						</Grid>
+					</StackPanel>
+				</Border>
+			</StackPanel>
+		</ScrollViewer>
+	</DockPanel>
+</UserControl>

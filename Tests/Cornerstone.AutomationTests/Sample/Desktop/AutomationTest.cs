@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System;
 using System.IO;
 using System.Linq;
 using Cornerstone.Automation;
@@ -15,10 +16,18 @@ public class AutomationTest : CornerstoneUnitTest
 
 	static AutomationTest()
 	{
+		// Prefer a freshly built sample under this repo; fall back to common local publish layouts.
+		var repoSample = Path.GetFullPath(Path.Combine(
+			AppContext.BaseDirectory,
+			"..", "..", "..", "..", "..",
+			"Cornerstone.Sample.Desktop", "bin", "Debug", "net10.0-windows10.0.26100.0",
+			"Cornerstone.Sample.Desktop.exe"));
+
 		FilePaths =
 		[
-			@"C:\Users\Bobby\Desktop\Cornerstone.Sample.Desktop\Cornerstone.Sample.Desktop.exe",
-			@"C:\Workspaces\EpicSolution\Cornerstone\Cornerstone.Sample.Desktop\bin\Debug\net10.0-windows10.0.26100.0\Cornerstone.Sample.Desktop.exe"
+			repoSample,
+			Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+				"Cornerstone.Sample.Desktop", "Cornerstone.Sample.Desktop.exe")
 		];
 	}
 

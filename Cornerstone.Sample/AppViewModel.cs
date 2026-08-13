@@ -45,17 +45,16 @@ public partial class AppViewModel : ApplicationViewModel
 		AddTabItemViewModel(TabThemes.HeaderName, "Icons.Color.Palette", typeof(TabThemes));
 		AddTabItemViewModel(TabDocumentation.HeaderName, "Icons.Bookmark", typeof(TabDocumentation));
 		AddTabItemViewModel(TabButton.HeaderName, "Icons.TapButton", typeof(TabButton));
-		AddTabItemViewModel(TabCamera.HeaderName, "Icons.Camera", typeof(TabCamera),
-			DevicePlatform.Windows | DevicePlatform.Android | DevicePlatform.IOS);
+		AddTabItemViewModel(TabCamera.HeaderName, "Icons.Camera", typeof(TabCamera), DevicePlatform.Windows | DevicePlatform.Android | DevicePlatform.IOS);
 		AddTabItemViewModel(TabChannels.HeaderName, "Icons.Share.Fill", typeof(TabChannels));
 		AddTabItemViewModel(TabDebounceAndThrottle.HeaderName, "Icons.Signal", new Thickness(0, 3, 0, -3), typeof(TabDebounceAndThrottle));
 		AddTabItemViewModel(TabAppDispatcher.HeaderName, "Icons.DoubleArrow.Right", typeof(TabAppDispatcher));
+		AddTabItemViewModel(TabDiagnostics.HeaderName, "Icons.Chart.Bar", typeof(TabDiagnostics));
 		AddTabItemViewModel(TabDockingManager.HeaderName, "Icons.Folder", typeof(TabDockingManager), DevicePlatform.Windows);
 		AddTabItemViewModel(TabGrids.HeaderName, "Icons.Grid", typeof(TabGrids));
 		AddTabItemViewModel(TabInkCanvas.HeaderName, "Icons.Pencil.Square", typeof(TabInkCanvas));
 		AddTabItemViewModel(TabMarkdownView.HeaderName, "Icons.Markdown", typeof(TabMarkdownView));
-		AddTabItemViewModel(TabMediaPlayer.HeaderName, "Icons.Play", typeof(TabMediaPlayer),
-			DevicePlatform.Windows | DevicePlatform.Android | DevicePlatform.IOS);
+		AddTabItemViewModel(TabMediaPlayer.HeaderName, "Icons.Play", typeof(TabMediaPlayer), DevicePlatform.Windows | DevicePlatform.Android | DevicePlatform.IOS);
 		AddTabItemViewModel(TabProgress.HeaderName, "Icons.Progress", new Thickness(0, 6, 0, -6), typeof(TabProgress));
 		AddTabItemViewModel(TabProfiling.HeaderName, "Icons.Chart.Bar", new Thickness(0, 2, 0, -2), typeof(TabProfiling));
 		AddTabItemViewModel(TabRuntimeInformation.HeaderName, "Icons.Info.Circle", typeof(TabRuntimeInformation));

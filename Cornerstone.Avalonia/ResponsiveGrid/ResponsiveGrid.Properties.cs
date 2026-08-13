@@ -60,6 +60,7 @@ public partial class ResponsiveGrid
 		XSProperty = AvaloniaProperty.RegisterAttached<ResponsiveGrid, Control, int>("XS");
 
 		AffectsMeasure<ResponsiveGrid>(MaxDivisionProperty, ThresholdsProperty,
+			ColumnSpacingProperty, RowSpacingProperty,
 			XSProperty, SMProperty, MDProperty, LGProperty,
 			XS_OffsetProperty, XS_PullProperty, XS_PushProperty,
 			SM_OffsetProperty, SM_PullProperty, SM_PushProperty,

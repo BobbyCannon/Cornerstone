@@ -1,0 +1,92 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignWidth="640" d:DesignHeight="520"
+		x:Class="Cornerstone.Sample.Tabs.TabAppDispatcherSeriesView"
+		x:DataType="tabs:TabAppDispatcherSeriesViewModel"
+		x:Name="This"
+		HorizontalAlignment="Stretch"
+		VerticalAlignment="Stretch">
+	<ScrollViewer HorizontalScrollBarVisibility="Disabled"
+			VerticalScrollBarVisibility="Auto">
+		<StackPanel Margin="10" Spacing="12">
+			<StackPanel.Styles>
+				<Style Selector="Button">
+					<Setter Property="MinWidth" Value="70" />
+				</Style>
+				<Style Selector="SelectableTextBlock">
+					<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+					<Setter Property="TextWrapping" Value="Wrap" />
+				</Style>
+			</StackPanel.Styles>
+
+			<SelectableTextBlock FontFamily="{x:Static CornerstoneTheme.OpenSansLight}">
+				<SelectableTextBlock.Text>
+					TrackSeries mirrors chart data the way TrackCollection mirrors lists. Model series
+					update Off Dispatcher; view series update On Dispatcher while this demo is attached.
+					No IDispatcher.Dispatch in the ViewModel — AppDispatcher applies once per tick.
+				</SelectableTextBlock.Text>
+			</SelectableTextBlock>
+
+			<!-- Fixed ring -->
+			<Border BorderThickness="1" Padding="8">
+				<StackPanel Spacing="8">
+					<TextBlock Classes="Header" Text="Fixed ring (CopyFrom)" FontSize="14" />
+					<SelectableTextBlock FontFamily="{x:Static CornerstoneTheme.OpenSansLight}">
+						Model and view are SeriesDataProvider of equal length. TrackSeries copies when
+						Version drifts (single DataChanged via CopyFrom). Prefer this for profiling rings.
+					</SelectableTextBlock>
+					<WrapPanel ItemSpacing="12">
+						<LineChart Title="Model"
+								Data="{Binding ModelSeries}"
+								Height="80"
+								Width="280"
+								RelativeScale="True" />
+						<LineChart Title="View (AppDispatcher)"
+								Data="{Binding ViewSeries}"
+								Height="80"
+								Width="280"
+								RelativeScale="True" />
+					</WrapPanel>
+					<DockPanel>
+						<WrapPanel DockPanel.Dock="Left" ItemSpacing="10">
+							<Button Click="FixedOnceOnClick">Update Once</Button>
+							<Button Click="FixedManyOnClick">Update Many</Button>
+						</WrapPanel>
+						<TextBlock DockPanel.Dock="Right"
+								HorizontalAlignment="Right"
+								VerticalAlignment="Center"
+								Foreground="{DynamicResource Foreground09}">
+							<Run Text="Attached: " />
+							<Run Text="{Binding IsAttached}" />
+						</TextBlock>
+					</DockPanel>
+				</StackPanel>
+			</Border>
+
+			<!-- Variable derived -->
+			<Border BorderThickness="1" Padding="8">
+				<StackPanel Spacing="8">
+					<TextBlock Classes="Header" Text="Variable window (derived)" FontSize="14" />
+					<SelectableTextBlock FontFamily="{x:Static CornerstoneTheme.OpenSansLight}">
+						Model is a SpeedyList of samples; TrackSeries builds a double[] and publishes into
+						VariableViewSeries (ReplaceAll when length matches, new provider when it grows/shrinks).
+					</SelectableTextBlock>
+					<LineChart Title="{Binding VariableCaption}"
+							Data="{Binding VariableViewSeries}"
+							Height="80"
+							HorizontalAlignment="Stretch"
+							RelativeScale="True" />
+					<WrapPanel ItemSpacing="10">
+						<Button Click="GrowOnClick">Grow</Button>
+						<Button Click="ShrinkOnClick">Shrink</Button>
+						<Button Click="VariableValuesOnClick">Replace Values</Button>
+					</WrapPanel>
+				</StackPanel>
+			</Border>
+		</StackPanel>
+	</ScrollViewer>
+</UserControl>

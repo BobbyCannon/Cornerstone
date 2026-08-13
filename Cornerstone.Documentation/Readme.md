@@ -12,10 +12,12 @@ This index covers how the framework behaves and how hosts use it.
 |----------|---------|
 | [AppBootstrap.md](AppBootstrap.md) | Process bootstrap — DI root, runtime info, platform, infrastructure lifecycle |
 | [Keystone.md](Keystone.md) | Bus : State : Engine architecture and feature-slice layout |
+| [KeystoneFeatureTab.md](KeystoneFeatureTab.md) | How-to: new dockable feature tab with Keystone + AppDispatcher (sample: `Cornerstone.GrokMonitor`) |
 | [Lifecycle.md](Lifecycle.md) | Lifecycle phases and LifecycleTracker (parent/child order, track/release) |
 | [CornerstoneApplication.md](CornerstoneApplication.md) | How an Avalonia app hosts Keystone and wires startup lifecycle |
 | [ViewIntegration.md](ViewIntegration.md) | Manual Keystone State → MVVM integration without AppDispatcher |
-| [AppDispatcher.md](AppDispatcher.md) | Optional hard loop, pending work, TrackIngress / TrackCollection, IsAttached gating |
+| [AppDispatcher.md](AppDispatcher.md) | Adaptive idle park + active IntervalTimer, RequestDispatch, TrackIngress / TrackCollection, IsAttached gating |
+| [Diagnostics.md](Diagnostics.md) | Opt-in developer monitoring: bus history, AppDispatcher snapshots, Profiler (Sample-first) |
 
 ## Runtime utilities
 

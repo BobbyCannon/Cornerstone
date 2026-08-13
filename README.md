@@ -70,7 +70,7 @@ Host entry (console / Avalonia / mobile / browser / service)
             ├─ Lifecycle — Initialize → Load → Start → Process → Stop → …
             └─ Presentation (optional)
                  ├─ ViewModels + ViewIntegration
-                 └─ AppDispatcher (optional hard tick loop)
+                 └─ AppDispatcher (optional adaptive poll loop)
 ```
 
 ### Keystone (domain core)
@@ -108,5 +108,5 @@ Full documentation index: [Cornerstone.Documentation/Readme.md](Cornerstone.Docu
 - [Lifecycle](Cornerstone.Documentation/Lifecycle.md) — Object lifecycle phases and trackers
 - [CornerstoneApplication](Cornerstone.Documentation/CornerstoneApplication.md) — Avalonia application shell
 - [View Integration](Cornerstone.Documentation/ViewIntegration.md) — Keystone State → MVVM
-- [AppDispatcher](Cornerstone.Documentation/AppDispatcher.md) — Optional hard dispatch loop
+- [AppDispatcher](Cornerstone.Documentation/AppDispatcher.md) — Optional adaptive dispatch loop (idle/active)
 - [Build](Cornerstone.Documentation/Build.md) — Build process notes

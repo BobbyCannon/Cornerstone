@@ -100,6 +100,8 @@ The Bus provides named channels for asynchronous or synchronous communication.
 
 Components publish messages onto channels and subscribe to the channels they care about. This decouples the Engine from external actors (UI, other services, timers, etc.) and allows multiple processors or external systems to react to the same event without tight coupling.
 
+**Diagnostics:** set `KeystoneBus.IsHistoryEnabled = true` to record completed publishes into `History` (duration, handler count, errors; bounded by `History.Limit`). Optional `HistoryFilter` text (`channel:… type:0,2 error:true`) restricts what is written to the ring. Off by default. See [Diagnostics.md](Diagnostics.md).
+
 ### Lifecycle
 
 Every `AppKeystone` exposes a clear, ordered lifecycle:
@@ -190,3 +192,16 @@ while (!quit.IsSet)
 AppBootstrap.TeardownLifecycle(keystone);
 AppBootstrap.ShutdownInfrastructure();
 ```
+
+---
+
+## Related documentation
+
+| Document | Relationship |
+|----------|----------------|
+| [KeystoneFeatureTab.md](KeystoneFeatureTab.md) | How-to: dockable feature tab with Keystone + AppDispatcher |
+| [AppDispatcher.md](AppDispatcher.md) | Optional UI projection loop over State |
+| [Lifecycle.md](Lifecycle.md) | Track / Release and phase order |
+| [CornerstoneApplication.md](CornerstoneApplication.md) | Avalonia host lifecycle |
+| [AppBootstrap.md](AppBootstrap.md) | Process DI and infrastructure |
+| [Controls/DockingLifecycle.md](Controls/DockingLifecycle.md) | Tab Activate/Deactivate and dispatcher Track/Release |

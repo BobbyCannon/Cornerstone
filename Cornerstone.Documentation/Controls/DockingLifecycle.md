@@ -27,7 +27,10 @@ Tabs (`DockableTabModel`) are lifecycle objects. **`DockingManager` (root) owns 
 
 **Track vs lifecycle:** `IAppDispatcher.Track` is membership for the apply loop only (not a second lifecycle parent). Tab Init/Load/Start remains solely under `DockingManager`’s `LifecycleTracker`.
 
+**Rates:** the host’s AppDispatcher parks idle (~10 Hz) and uses `IntervalTimer` while active (default ~120 Hz). See [AppDispatcher.md](../AppDispatcher.md).
+
 ## Related
 
 - [Lifecycle.md](../Lifecycle.md)
-- Editor SC: `Documentation/EpicCoders/Cornerstone.Editor/SourceControl.Keystone.md`
+- [KeystoneFeatureTab.md](../KeystoneFeatureTab.md) — full recipe for a Keystone + AppDispatcher document tab
+- [AppDispatcher.md](../AppDispatcher.md)

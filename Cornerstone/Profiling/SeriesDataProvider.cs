@@ -116,6 +116,31 @@ public class SeriesDataProvider : ISeriesDataProvider
 	}
 
 	/// <summary>
+	/// Overwrites the entire buffer with chronological samples (index 0 = oldest),
+	/// sets a linear layout (<see cref="NextIndex" /> = 0), and raises
+	/// <see cref="DataChanged" /> once. Length must match.
+	/// Prefer this for static chart snapshots (daily totals) over ring <see cref="AddRange" />.
+	/// </summary>
+	public void ReplaceAll(ReadOnlySpan<double> values)
+	{
+		if (values.Length != _buffer.Length)
+		{
+			throw new ArgumentException(
+				$"Value count ({values.Length}) must match series length ({_buffer.Length}).",
+				nameof(values));
+		}
+
+		for (var i = 0; i < values.Length; i++)
+		{
+			_buffer[i] = values[i];
+		}
+
+		NextIndex = 0;
+		Version++;
+		OnDataChanged();
+	}
+
+	/// <summary>
 	/// Replaces this series with a chronological snapshot of <paramref name="source" />
 	/// and sets <see cref="Version" /> to <paramref name="source" />'s version (single notify).
 	/// Lengths must match.
@@ -223,6 +248,12 @@ public interface ISeriesDataProvider : IEnumerable<double>
 	/// Appends many samples; implementations should raise <see cref="DataChanged" /> once.
 	/// </summary>
 	void AddRange(ReadOnlySpan<double> values);
+
+	/// <summary>
+	/// Overwrites all samples (chronological, linear layout) and raises <see cref="DataChanged" /> once.
+	/// Length must match.
+	/// </summary>
+	void ReplaceAll(ReadOnlySpan<double> values);
 
 	/// <summary>
 	/// Snapshot <paramref name="source" /> into this instance and align <see cref="Version" />.

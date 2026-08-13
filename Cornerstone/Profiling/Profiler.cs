@@ -70,7 +70,7 @@ public class Profiler : IEnumerable<TimedScopeStats>
 		}
 
 		// Hot path: GetOrAdd is amortized O(1), rare alloc only on first-seen name
-		var stats = _stats.GetOrAdd(name, static _ => new TimedScopeStats());
+		var stats = _stats.GetOrAdd(name, static n => new TimedScopeStats { Name = n });
 		if (delta == 1)
 		{
 			Interlocked.Increment(ref stats.Count);
@@ -84,7 +84,7 @@ public class Profiler : IEnumerable<TimedScopeStats>
 	public void OnScopeEnded(TimedScope timedScope, long elapsedTicks)
 	{
 		// Hot path: GetOrAdd is amortized O(1), rare alloc only on first-seen method
-		var stats = _stats.GetOrAdd(timedScope.Name, static _ => new TimedScopeStats());
+		var stats = _stats.GetOrAdd(timedScope.Name, static n => new TimedScopeStats { Name = n });
 
 		// Atomic adds: ~5-10 ns total, zero alloc/GC
 		Interlocked.Add(ref stats.TotalTicks, elapsedTicks);
@@ -137,7 +137,7 @@ public class Profiler : IEnumerable<TimedScopeStats>
 
 	public (ISeriesDataProvider Average, ISeriesDataProvider PerSecond) SetupScopeHistory(string name, int size = 60)
 	{
-		var stats = _stats.GetOrAdd(name, static _ => new TimedScopeStats());
+		var stats = _stats.GetOrAdd(name, static n => new TimedScopeStats { Name = n });
 		stats.AverageHistory ??= new SeriesDataProvider(size);
 		stats.PerSecondHistory ??= new SeriesDataProvider(size);
 		return (stats.AverageHistory, stats.PerSecondHistory);

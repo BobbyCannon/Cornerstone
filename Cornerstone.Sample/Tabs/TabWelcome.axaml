@@ -11,7 +11,7 @@
 	<!-- ReSharper disable Xaml.MissingGridIndex -->
 	<UserControl.Styles>
 		<Style Selector="SelectableTextBlock">
-			<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.OpenSansLight}" />
+			<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.OpenSansRegular}" />
 			<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
 			<Setter Property="TextWrapping" Value="Wrap" />
 			<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
@@ -40,8 +40,8 @@
 			<Setter Property="Fill" Value="White" />
 		</Style>
 		<Style Selector="TextBlock.FeatureTitle">
+			<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.OpenSansRegular}" />
 			<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
-			<Setter Property="FontWeight" Value="SemiBold" />
 			<Setter Property="Margin" Value="0,0,0,6" />
 		</Style>
 	</UserControl.Styles>
@@ -118,8 +118,10 @@
 									Text="AppDispatcher" />
 							<SelectableTextBlock>
 								<SelectableTextBlock.Text>
-									An optional hard tick loop that projects model updates into attached
-									ViewModels on the UI thread. Detached views pay no update cost.
+									AppDispatcher is an optional auto layer that keeps ViewModels in sync with models
+									(typically Keystone State) on an adaptive poll loop: slow when quiet, faster while
+									work is flowing. It only processes ViewModels that are attached to a View, so
+									detached UI pays no cost.
 								</SelectableTextBlock.Text>
 							</SelectableTextBlock>
 						</StackPanel>

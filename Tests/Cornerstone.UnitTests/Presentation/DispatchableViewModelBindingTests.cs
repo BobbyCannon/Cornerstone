@@ -2,10 +2,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Cornerstone.Collections;
 using Cornerstone.Presentation;
+using Cornerstone.Profiling;
 using Cornerstone.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -161,6 +163,81 @@ public class DispatchableViewModelBindingTests : CornerstoneUnitTest
 		AreEqual("AB", builder.ToString());
 	}
 
+	[TestMethod]
+	public void TrackSeriesFixedCopiesWhenVersionsDiffer()
+	{
+		var model = new SeriesDataProvider(4);
+		var view = new SeriesDataProvider(4);
+		var vm = new BindingHostViewModel();
+		vm.RegisterSeries(model, view);
+
+		IsFalse(vm.HasModelChanges());
+
+		model.AddRange([1, 2, 3, 4]);
+		IsTrue(vm.HasModelChanges());
+		IsTrue(model.Version != view.Version);
+
+		vm.ApplyModelChanges();
+		AreEqual(model.Version, view.Version);
+		AreEqual(model.ToArray(), view.ToArray());
+		IsFalse(vm.HasModelChanges());
+
+		model.Add(5);
+		vm.ApplyModelChanges();
+		AreEqual(new[] { 2d, 3d, 4d, 5d }, view.ToArray());
+		AreEqual(model.Version, view.Version);
+	}
+
+	[TestMethod]
+	public void TrackSeriesFixedMismatchedLengthThrows()
+	{
+		var model = new SeriesDataProvider(4);
+		var view = new SeriesDataProvider(8);
+		var vm = new BindingHostViewModel();
+		ExpectedException<ArgumentException>(() => vm.RegisterSeries(model, view));
+	}
+
+	[TestMethod]
+	public void TrackSeriesDerivedPublishesAndClearsPending()
+	{
+		var source = new SpeedyList<double>(8);
+		var view = new SeriesDataProvider(2);
+		var vm = new BindingHostViewModel();
+		vm.RegisterDerivedSeries(
+			source,
+			() => view,
+			s => view = s,
+			() =>
+			{
+				var values = new double[source.Count];
+				for (var i = 0; i < source.Count; i++)
+				{
+					values[i] = source[i];
+				}
+
+				return values;
+			});
+
+		source.Add(10);
+		source.Add(20);
+		source.Add(30);
+		IsTrue(vm.HasModelChanges());
+
+		vm.ApplyModelChanges();
+		AreEqual(3, view.Length);
+		AreEqual(new[] { 10d, 20d, 30d }, view.ToArray());
+		IsFalse(source.HasPending);
+		IsFalse(vm.HasModelChanges());
+
+		// Same length: in-place ReplaceAll
+		source[0] = 11;
+		source[1] = 21;
+		source[2] = 31;
+		vm.ApplyModelChanges();
+		AreEqual(3, view.Length);
+		AreEqual(new[] { 11d, 21d, 31d }, view.ToArray());
+	}
+
 	#endregion
 
 	#region Classes
@@ -182,9 +259,23 @@ public class DispatchableViewModelBindingTests : CornerstoneUnitTest
 			TrackCollection(source, destination, mode: mode);
 		}
 
+		public void RegisterDerivedSeries(
+			IDispatchPending pending,
+			Func<SeriesDataProvider> getView,
+			Action<SeriesDataProvider> setView,
+			Func<double[]> buildSamples)
+		{
+			TrackSeries(pending, getView, setView, buildSamples);
+		}
+
 		public void RegisterIngress(TextIngress source, System.Action<System.ReadOnlySpan<char>> consumer)
 		{
 			TrackIngress(source, consumer);
+		}
+
+		public void RegisterSeries(ISeriesDataProvider model, SeriesDataProvider view)
+		{
+			TrackSeries(model, view);
 		}
 
 		#endregion

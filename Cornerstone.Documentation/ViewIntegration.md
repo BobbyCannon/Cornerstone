@@ -1,4 +1,4 @@
-﻿## View Integration
+## View Integration
 
 Keystone is designed to serve as the **Model** layer in a classic MVVM architecture.
 
@@ -7,37 +7,61 @@ ViewModels then become thin, reactive adapters that expose the State (or project
 
 This keeps the domain logic, mutation rules, and communication completely isolated from the presentation layer while still allowing the UI to stay perfectly in sync with the underlying State.
 
-### Cornerstone Dispatcher
+### Two valid approaches
 
-The **Cornerstone Dispatcher** is the bridge that connects Keystone’s State to the MVVM world.
+| Approach | When |
+|----------|------|
+| **Manual** | Custom events, property change handlers, one-off screens — no AppDispatcher required |
+| **AppDispatcher** | Optional auto poll: attached `DispatchableViewModel`s project pending model work on an adaptive tick |
 
-It runs on a **hard, deterministic loop** (similar to a game engine’s update loop).  
-Every tick the Dispatcher walks the registered ViewModels and updates only those that are currently marked **Active**. Inactive ViewModels are completely skipped, keeping the loop extremely fast and predictable.
+Full AppDispatcher behavior (idle/active rates, `RequestDispatch`, bindings): [AppDispatcher.md](AppDispatcher.md).
 
-#### Core Responsibilities
+### Cornerstone AppDispatcher (optional)
 
-- **Hard Update Loop** – A fixed, deterministic cycle that drives all ViewModel updates
-- **Active Filtering** – Only ViewModels marked as `Active` are processed each frame/tick
-- **Projection & Sync** – Transform Keystone State into ViewModel properties
-- **Lifecycle Management** – Handle activation, deactivation, and cleanup of ViewModels
+The **AppDispatcher** (`IAppDispatcher` / `ApplicationViewModel`) is the optional bridge that connects Keystone State to MVVM projection.
 
-#### Typical Flow (per tick)
+It runs an **adaptive poll loop** (not a fixed always-on high-Hz hard tick):
 
-1. The Cornerstone Dispatcher begins its hard update loop.
-2. It iterates only over ViewModels that are currently marked **Active**.
-3. For each active ViewModel it pulls the latest relevant data from the Keystone State.
-4. It applies any required projections/transformations.
-5. It writes the results into the ViewModel (which is then bound to the View).
-6. Inactive ViewModels are skipped entirely, ensuring maximum performance.
+| Mode | Default | Wait | Role |
+|------|---------|------|------|
+| **Idle** | ~10 updates/s | Parked wait | Cheap safety poll when nothing is dirty |
+| **Active** | ~120 updates/s | `IntervalTimer` | Precise high-rate projection while work is flowing or after `RequestDispatch` |
 
-### Wiring Model to the ViewModel
+After several consecutive ticks with no apply, the loop returns to idle. Producers may call `RequestDispatch()` to wake early for lower latency; they are not required for correctness.
 
-Most Model-to-ViewModel connections can be established automatically through the `IUpdateable<T>` interface.
+Every tick the dispatcher walks **tracked** ViewModels and applies only those that are **`IsAttached`** and report `HasModelChanges()`. Detached ViewModels are skipped for apply work.
 
-Any ViewModel that implements `IUpdateable<T>` (where `T` is a type present in the Keystone State) can be auto-wired by the Cornerstone Dispatcher. The Dispatcher will:
+#### Core responsibilities
 
-- Detect the matching State slice of type `T`
-- Keep the ViewModel in sync with that slice every tick (when the ViewModel is Active)
-- Require almost zero manual configuration for simple one-to-one mappings
+- **Adaptive update loop** – Idle/active periods with a parking wait (low idle CPU)
+- **Attach filtering** – Only `IsAttached` roots (and their dispatch children on apply) are projected
+- **Projection & sync** – Transform Keystone State / pending sources into ViewModel state
+- **Membership** – `Track` / `Release` for poll set only (lifecycle is usually DockingManager)
 
-More complex projections or multi-source ViewModels can still be registered manually when needed.
+#### Typical flow (per tick)
+
+1. Worker waits for the current period **or** a `RequestDispatch` wake.
+2. It iterates tracked roots that are **attached** and have model changes.
+3. For each, it runs `ApplyModelChanges` on the UI dispatcher (bindings, property maps, model apply).
+4. Mode advances to active if work ran or a request woke the wait; otherwise empty-tick streak may return to idle.
+5. Detached or clean ViewModels are skipped for apply.
+
+### Wiring model to the ViewModel
+
+Common automatic paths (see AppDispatcher docs for APIs):
+
+| Need | Prefer |
+|------|--------|
+| Full model page, same names/types | `DispatchableViewModel<T>` + `AutoUpdateModel` |
+| Partial / rename / convert | `TrackProperties(model).Map…` |
+| Lists | `TrackCollection` + `IDispatchPending` source |
+| High-rate text | `TrackIngress` + `TextIngress` |
+| Custom | `TrackBinding` or override `HasModelChanges` / `ApplyModelChanges` |
+
+More complex multi-source ViewModels can still be registered and updated **manually** without AppDispatcher when that is simpler.
+
+### Related
+
+- [AppDispatcher.md](AppDispatcher.md) — adaptive rates, pending, bindings, diagnostics
+- [KeystoneFeatureTab.md](KeystoneFeatureTab.md) — dockable tab recipe
+- [Keystone.md](Keystone.md) — Bus · State · Engine

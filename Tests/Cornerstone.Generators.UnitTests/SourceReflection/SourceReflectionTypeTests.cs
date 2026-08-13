@@ -506,7 +506,7 @@ public class SourceReflectionTypeTests : GeneratorUnitTest
 								Accessibility = global::Cornerstone.Reflection.SourceAccessibility.Public,
 								FullyQualifiedTypeName = "TryFormat",
 								IsStatic = false,
-								MethodInfo = typeof(global::System.Version).GetMethod("TryFormat", global::System.Reflection.BindingFlags.DeclaredOnly | global::System.Reflection.BindingFlags.Instance | global::System.Reflection.BindingFlags.Public, new global::System.Type[] { typeof(global::System.Span<global::System.Char>), typeof(global::System.Int32) }),
+								MethodInfo = typeof(global::System.Version).GetMethod("TryFormat", global::System.Reflection.BindingFlags.DeclaredOnly | global::System.Reflection.BindingFlags.Instance | global::System.Reflection.BindingFlags.Public, new global::System.Type[] { typeof(global::System.Span<global::System.Char>), typeof(global::System.Int32).MakeByRefType() }),
 								Attributes = [],
 							},
 							new global::Cornerstone.Reflection.SourceMethodInfo()
@@ -515,7 +515,7 @@ public class SourceReflectionTypeTests : GeneratorUnitTest
 								Accessibility = global::Cornerstone.Reflection.SourceAccessibility.Public,
 								FullyQualifiedTypeName = "TryFormat",
 								IsStatic = false,
-								MethodInfo = typeof(global::System.Version).GetMethod("TryFormat", global::System.Reflection.BindingFlags.DeclaredOnly | global::System.Reflection.BindingFlags.Instance | global::System.Reflection.BindingFlags.Public, new global::System.Type[] { typeof(global::System.Span<global::System.Char>), typeof(global::System.Int32), typeof(global::System.Int32) }),
+								MethodInfo = typeof(global::System.Version).GetMethod("TryFormat", global::System.Reflection.BindingFlags.DeclaredOnly | global::System.Reflection.BindingFlags.Instance | global::System.Reflection.BindingFlags.Public, new global::System.Type[] { typeof(global::System.Span<global::System.Char>), typeof(global::System.Int32), typeof(global::System.Int32).MakeByRefType() }),
 								Attributes = [],
 							},
 							new global::Cornerstone.Reflection.SourceMethodInfo()
@@ -524,7 +524,7 @@ public class SourceReflectionTypeTests : GeneratorUnitTest
 								Accessibility = global::Cornerstone.Reflection.SourceAccessibility.Public,
 								FullyQualifiedTypeName = "TryFormat",
 								IsStatic = false,
-								MethodInfo = typeof(global::System.Version).GetMethod("TryFormat", global::System.Reflection.BindingFlags.DeclaredOnly | global::System.Reflection.BindingFlags.Instance | global::System.Reflection.BindingFlags.Public, new global::System.Type[] { typeof(global::System.Span<global::System.Byte>), typeof(global::System.Int32) }),
+								MethodInfo = typeof(global::System.Version).GetMethod("TryFormat", global::System.Reflection.BindingFlags.DeclaredOnly | global::System.Reflection.BindingFlags.Instance | global::System.Reflection.BindingFlags.Public, new global::System.Type[] { typeof(global::System.Span<global::System.Byte>), typeof(global::System.Int32).MakeByRefType() }),
 								Attributes = [],
 							},
 							new global::Cornerstone.Reflection.SourceMethodInfo()
@@ -533,7 +533,7 @@ public class SourceReflectionTypeTests : GeneratorUnitTest
 								Accessibility = global::Cornerstone.Reflection.SourceAccessibility.Public,
 								FullyQualifiedTypeName = "TryFormat",
 								IsStatic = false,
-								MethodInfo = typeof(global::System.Version).GetMethod("TryFormat", global::System.Reflection.BindingFlags.DeclaredOnly | global::System.Reflection.BindingFlags.Instance | global::System.Reflection.BindingFlags.Public, new global::System.Type[] { typeof(global::System.Span<global::System.Byte>), typeof(global::System.Int32), typeof(global::System.Int32) }),
+								MethodInfo = typeof(global::System.Version).GetMethod("TryFormat", global::System.Reflection.BindingFlags.DeclaredOnly | global::System.Reflection.BindingFlags.Instance | global::System.Reflection.BindingFlags.Public, new global::System.Type[] { typeof(global::System.Span<global::System.Byte>), typeof(global::System.Int32), typeof(global::System.Int32).MakeByRefType() }),
 								Attributes = [],
 							},
 							new global::Cornerstone.Reflection.SourceMethodInfo()
@@ -583,7 +583,7 @@ public class SourceReflectionTypeTests : GeneratorUnitTest
 								Accessibility = global::Cornerstone.Reflection.SourceAccessibility.Public,
 								FullyQualifiedTypeName = "TryParse",
 								IsStatic = true,
-								MethodInfo = typeof(global::System.Version).GetMethod("TryParse", global::System.Reflection.BindingFlags.DeclaredOnly | global::System.Reflection.BindingFlags.Static | global::System.Reflection.BindingFlags.Public, new global::System.Type[] { typeof(global::System.String), typeof(global::System.Version) }),
+								MethodInfo = typeof(global::System.Version).GetMethod("TryParse", global::System.Reflection.BindingFlags.DeclaredOnly | global::System.Reflection.BindingFlags.Static | global::System.Reflection.BindingFlags.Public, new global::System.Type[] { typeof(global::System.String), typeof(global::System.Version).MakeByRefType() }),
 								Attributes = new[]
 								{
 									new global::Cornerstone.Reflection.SourceAttributeInfo
@@ -605,7 +605,7 @@ public class SourceReflectionTypeTests : GeneratorUnitTest
 								Accessibility = global::Cornerstone.Reflection.SourceAccessibility.Public,
 								FullyQualifiedTypeName = "TryParse",
 								IsStatic = true,
-								MethodInfo = typeof(global::System.Version).GetMethod("TryParse", global::System.Reflection.BindingFlags.DeclaredOnly | global::System.Reflection.BindingFlags.Static | global::System.Reflection.BindingFlags.Public, new global::System.Type[] { typeof(global::System.ReadOnlySpan<global::System.Char>), typeof(global::System.Version) }),
+								MethodInfo = typeof(global::System.Version).GetMethod("TryParse", global::System.Reflection.BindingFlags.DeclaredOnly | global::System.Reflection.BindingFlags.Static | global::System.Reflection.BindingFlags.Public, new global::System.Type[] { typeof(global::System.ReadOnlySpan<global::System.Char>), typeof(global::System.Version).MakeByRefType() }),
 								Attributes = [],
 							},
 							new global::Cornerstone.Reflection.SourceMethodInfo()
@@ -614,7 +614,7 @@ public class SourceReflectionTypeTests : GeneratorUnitTest
 								Accessibility = global::Cornerstone.Reflection.SourceAccessibility.Public,
 								FullyQualifiedTypeName = "TryParse",
 								IsStatic = true,
-								MethodInfo = typeof(global::System.Version).GetMethod("TryParse", global::System.Reflection.BindingFlags.DeclaredOnly | global::System.Reflection.BindingFlags.Static | global::System.Reflection.BindingFlags.Public, new global::System.Type[] { typeof(global::System.ReadOnlySpan<global::System.Byte>), typeof(global::System.Version) }),
+								MethodInfo = typeof(global::System.Version).GetMethod("TryParse", global::System.Reflection.BindingFlags.DeclaredOnly | global::System.Reflection.BindingFlags.Static | global::System.Reflection.BindingFlags.Public, new global::System.Type[] { typeof(global::System.ReadOnlySpan<global::System.Byte>), typeof(global::System.Version).MakeByRefType() }),
 								Attributes = [],
 							},
 						},

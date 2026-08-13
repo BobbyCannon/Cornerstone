@@ -4,9 +4,11 @@
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
 		x:Class="Cornerstone.Avalonia.DockingManager.DockingWindow"
-		x:DataType="DockingWindow"
 		x:Name="This">
-	<ContentControl
-			Content="{Binding DockingManager}"
+	<!-- Bind to the window property, not DataContext. Float windows set DataContext
+	     to the host AppViewModel for shared context; DataContext.DockingManager would
+	     be the root manager (or fail with x:DataType=DockingWindow). -->
+	<ContentPresenter
+			Content="{Binding ElementName=This, Path=DockingManager}"
 			Margin="-1,0,-1,-1" />
 </Window>

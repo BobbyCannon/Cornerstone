@@ -151,5 +151,30 @@ public class SeriesDataProviderTests : CornerstoneUnitTest
 		AreEqual(99d, series[0]);
 	}
 
+	[TestMethod]
+	public void ReplaceAllWritesLinearAndRaisesOnce()
+	{
+		var series = new SeriesDataProvider(2);
+		var raises = 0;
+		series.DataChanged += (_, _) => raises++;
+
+		series.ReplaceAll([27, 3]);
+
+		AreEqual(1ul, series.Version);
+		AreEqual(1, raises);
+		AreEqual(0, series.NextIndex);
+		AreEqual(new[] { 27d, 3d }, series.ToArray());
+		AreEqual(27d, series[0]);
+		AreEqual(3d, series[1]);
+		AreEqual(3d, series.GetCurrentValue());
+	}
+
+	[TestMethod]
+	public void ReplaceAllWrongLengthThrows()
+	{
+		var series = new SeriesDataProvider(3);
+		ExpectedException<ArgumentException>(() => series.ReplaceAll([1, 2]));
+	}
+
 	#endregion
 }

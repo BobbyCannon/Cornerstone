@@ -61,6 +61,7 @@ public partial class TabAppDispatcher : CornerstoneUserControl
 		AutomaticViewModel = new TabAppDispatcherAutomaticViewModel(Profiler);
 		StreamingViewModel = new TabAppDispatcherStreamingViewModel(new TextIngress());
 		CollectionsViewModel = new TabAppDispatcherCollectionsViewModel();
+		SeriesViewModel = new TabAppDispatcherSeriesViewModel();
 
 		var propertyMapModel = new TabAppDispatcherPropertyMapModel
 		{
@@ -74,6 +75,7 @@ public partial class TabAppDispatcher : CornerstoneUserControl
 		appDispatcher.Track(AutomaticViewModel.Projection);
 		appDispatcher.Track(StreamingViewModel);
 		appDispatcher.Track(CollectionsViewModel);
+		appDispatcher.Track(SeriesViewModel);
 		appDispatcher.Track(PropertiesViewModel);
 
 		AutomaticView = new TabAppDispatcherAutomaticView
@@ -91,6 +93,12 @@ public partial class TabAppDispatcher : CornerstoneUserControl
 		{
 			ViewModel = CollectionsViewModel,
 			DataContext = CollectionsViewModel,
+			Profiler = Profiler
+		};
+		SeriesView = new TabAppDispatcherSeriesView
+		{
+			ViewModel = SeriesViewModel,
+			DataContext = SeriesViewModel,
 			Profiler = Profiler
 		};
 		PropertiesView = new TabAppDispatcherPropertiesView
@@ -126,6 +134,10 @@ public partial class TabAppDispatcher : CornerstoneUserControl
 
 	[Notify]
 	public partial int SelectedDemoIndex { get; set; }
+
+	public TabAppDispatcherSeriesView SeriesView { get; }
+
+	public TabAppDispatcherSeriesViewModel SeriesViewModel { get; }
 
 	public TabAppDispatcherStreamingView StreamingView { get; }
 

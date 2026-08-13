@@ -347,12 +347,15 @@ if (-not $SkipBuild) {
 		Write-Host "WhatIf: would run dotnet build `"$projectPath`" -c $Configuration" -ForegroundColor Yellow
 	}
 	else {
-		#dotnet build $projectPath -c $Configuration --nologo
+		# VSIX projects still need MSBuild (not plain `dotnet build`).
 		$msbuild = "C:\Program Files\Microsoft Visual Studio\18\Professional\MSBuild\Current\Bin\MSBuild.exe"
-		& $msbuild "C:\Workspaces\EpicSolution\Cornerstone.VisualStudio\Cornerstone.VisualStudio\Cornerstone.VisualStudio.csproj" /p:Configuration=Release
+		if (-not (Test-Path -LiteralPath $msbuild)) {
+			throw "MSBuild not found at $msbuild. Install Visual Studio with the VSSDK workload, or pass -SkipBuild and -Payload."
+		}
+		& $msbuild $projectPath /p:Configuration=$Configuration
 
 		if ($LASTEXITCODE -ne 0) {
-			throw "dotnet build failed with exit code $LASTEXITCODE."
+			throw "MSBuild failed with exit code $LASTEXITCODE."
 		}
 	}
 }

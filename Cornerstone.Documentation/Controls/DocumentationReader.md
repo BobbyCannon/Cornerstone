@@ -21,8 +21,8 @@ A small Avalonia stack that turns a set of **known** `.md` files into a clickabl
 ┌──────────────────────────────────────────────────────────────────┐
 │  Hosts                                                            │
 │  ┌─────────────────┐ ┌──────────────────┐ ┌────────────────────┐ │
-│  │ Cornerstone.    │ │ Documentation    │ │ Sample             │ │
-│  │ Documentation   │ │ (Epic) WinExe    │ │ TabDocumentation   │ │
+│  │ Cornerstone.    │ │ Host app         │ │ Sample             │ │
+│  │ Documentation   │ │ WinExe           │ │ TabDocumentation   │ │
 │  │ WinExe          │ │                  │ │                    │ │
 │  └────────┬────────┘ └────────┬─────────┘ └─────────┬──────────┘ │
 │           │                   │                     │            │

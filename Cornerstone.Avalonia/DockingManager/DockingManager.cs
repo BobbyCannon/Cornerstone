@@ -1098,7 +1098,9 @@ public partial class DockingManager : DockSplitPanel
 
 	private DockingOverlayWindow.Result GetDroppedResult()
 	{
-		var response = _overlayWindow.GetDroppedResult();
+		var response = _overlayWindow?.GetDroppedResult()
+			?? new DockingOverlayWindow.Result(null, DropTarget.None);
+
 		if (response.IsTarget())
 		{
 			return response;
@@ -1106,7 +1108,13 @@ public partial class DockingManager : DockSplitPanel
 
 		foreach (var w in Windows)
 		{
-			var childResult = w.DockingManager._overlayWindow.GetDroppedResult();
+			var childOverlay = w.DockingManager._overlayWindow;
+			if (childOverlay == null)
+			{
+				continue;
+			}
+
+			var childResult = childOverlay.GetDroppedResult();
 			if (childResult.IsTarget())
 			{
 				return childResult;
@@ -1120,7 +1128,9 @@ public partial class DockingManager : DockSplitPanel
 
 	private Window GetHostWindow()
 	{
-		if (VisualRoot?.Parent is Window window)
+		// Avalonia 12: Window is no longer guaranteed to be VisualRoot (presentation source
+		// model). Always resolve the host via TopLevel.GetTopLevel — no separate registration.
+		if (TopLevel.GetTopLevel(this) is Window window)
 		{
 			return window;
 		}
@@ -1206,8 +1216,12 @@ public partial class DockingManager : DockSplitPanel
 
 	private void HideOverlay()
 	{
-		_overlayWindow.Close();
-		_overlayWindow = null;
+		if (_overlayWindow != null)
+		{
+			_overlayWindow.Close();
+			_overlayWindow = null;
+		}
+
 		_draggedWindow = null;
 
 		foreach (var w in Windows)

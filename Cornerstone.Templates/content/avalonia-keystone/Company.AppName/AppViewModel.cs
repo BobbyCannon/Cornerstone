@@ -17,7 +17,7 @@ public class AppViewModel : ApplicationViewModel
 	public AppViewModel(
 		IDependencyProvider dependencyProvider,
 		IDispatcher dispatcher)
-		: base(dependencyProvider, dispatcher, 60)
+		: base(dependencyProvider, dispatcher)
 	{
 	}
 

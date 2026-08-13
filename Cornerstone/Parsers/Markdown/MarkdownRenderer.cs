@@ -158,6 +158,47 @@ public class MarkdownRenderer : Renderer
 	}
 
 	/// <summary>
+	/// Slice that never throws for stale/streaming offsets. Empty when the region is unusable or past EOF.
+	/// </summary>
+	public static ReadOnlySpan<char> SafeSlice(ReadOnlySpan<char> buffer, int start, int length)
+	{
+		if ((length <= 0) || (buffer.Length == 0) || (start >= buffer.Length))
+		{
+			return default;
+		}
+
+		if (start < 0)
+		{
+			length += start;
+			start = 0;
+			if (length <= 0)
+			{
+				return default;
+			}
+		}
+
+		if ((start + length) > buffer.Length)
+		{
+			length = buffer.Length - start;
+		}
+
+		return buffer.Slice(start, length);
+	}
+
+	/// <summary>
+	/// Slice a block's [StartOffset, Length) into the current buffer without throwing on stale offsets.
+	/// </summary>
+	public static ReadOnlySpan<char> SafeSlice(ReadOnlySpan<char> buffer, Block block)
+	{
+		if (block is null)
+		{
+			return default;
+		}
+
+		return SafeSlice(buffer, block.StartOffset, block.Length);
+	}
+
+	/// <summary>
 	/// Clamp [start, end) into [0, bufferLength]. False when offsets are unusable (e.g. entirely past EOF).
 	/// </summary>
 	private static bool TryClampRegion(int bufferLength, int start, int end, out int clampedStart, out int clampedEnd)
@@ -184,15 +225,27 @@ public class MarkdownRenderer : Renderer
 	}
 
 	/// <summary>
-	/// Extracts header information
+	/// Extracts header level and content range from a header block.
+	/// Offsets[0] is past the last #; Offsets[1] is the start of title text; EndOffset is past the title.
+	/// Safe when block offsets are stale or past the buffer (streaming): returns empty content instead of throwing.
 	/// </summary>
 	public static (int size, int contentStartOffset, int contentLength) ExtractHeaderInfo(ReadOnlySpan<char> buffer, Block block)
 	{
-		return (
-			block.Offsets[0] - block.StartOffset,
-			block.Offsets[1],
-			block.EndOffset - block.Offsets[1]
-		);
+		if ((block?.Offsets == null) || (block.Offsets.Length < 2))
+		{
+			return (1, 0, 0);
+		}
+
+		// Level is derived from marker span, not buffer contents (still valid if text shrank).
+		var size = Math.Max(1, block.Offsets[0] - block.StartOffset);
+
+		// Content is [Offsets[1], EndOffset). Clamp into the current buffer.
+		if (!TryClampRegion(buffer.Length, block.Offsets[1], block.EndOffset, out var contentStart, out var contentEnd))
+		{
+			return (size, Math.Clamp(block.Offsets[1], 0, buffer.Length), 0);
+		}
+
+		return (size, contentStart, contentEnd - contentStart);
 	}
 
 	#endregion

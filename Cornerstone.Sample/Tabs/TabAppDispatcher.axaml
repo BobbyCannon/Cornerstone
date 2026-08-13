@@ -69,6 +69,7 @@
 			<TabItem Header="Automatic" Content="{Binding AutomaticView}" />
 			<TabItem Header="Streaming" Content="{Binding StreamingView}" />
 			<TabItem Header="Collections" Content="{Binding CollectionsView}" />
+			<TabItem Header="Series" Content="{Binding SeriesView}" />
 			<TabItem Header="Properties" Content="{Binding PropertiesView}" />
 		</TabControl>
 	</AdaptiveFillLayout>

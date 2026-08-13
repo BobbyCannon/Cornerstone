@@ -24,7 +24,7 @@ public partial class AppViewModel : ApplicationViewModel
 		AppState state, AppBus bus,
 		IDependencyProvider dependencyProvider,
 		IDispatcher dispatcher
-	) : base(dependencyProvider, dispatcher, 120)
+	) : base(dependencyProvider, dispatcher)
 	{
 		State = state;
 		Bus = bus;

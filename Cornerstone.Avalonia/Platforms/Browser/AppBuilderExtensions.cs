@@ -91,10 +91,8 @@ internal static class AppBuilderExtensions
 		dependencyProvider.SetTransient<BrowserInteropProxy, CornerstoneBrowserInteropProxy>();
 		// Factory avoids SourceReflector constructor discovery (can fail for internal types on WASM).
 		dependencyProvider.SetTransient<IWebViewAdapter, WebViewAdapter>(() => new WebViewAdapter());
-		dependencyProvider.SetTransient<ICameraAdapter, CameraAdapterStub>(() =>
-			new CameraAdapterStub(CornerstoneApplication.CornerstoneDispatcher));
-		dependencyProvider.SetTransient<BaseMediaPlayerAdapter, MediaPlayerAdapterStub>(() =>
-			new MediaPlayerAdapterStub());
+		dependencyProvider.SetTransient<ICameraAdapter, CameraAdapterStub>(() => new CameraAdapterStub(CornerstoneApplication.CornerstoneDispatcher));
+		dependencyProvider.SetTransient<BaseMediaPlayerAdapter, MediaPlayerAdapterStub>(() => new MediaPlayerAdapterStub());
 
 		return builder
 			.AfterSetup(_ =>

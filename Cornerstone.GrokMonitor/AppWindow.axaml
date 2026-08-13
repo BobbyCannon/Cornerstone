@@ -1,0 +1,50 @@
+<CornerstoneWindow xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:local="clr-namespace:Cornerstone.GrokMonitor"
+		xmlns:grokUsage="clr-namespace:Cornerstone.GrokMonitor.GrokUsage"
+		xmlns:settings="clr-namespace:Cornerstone.GrokMonitor.Settings"
+		mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
+		x:Class="Cornerstone.GrokMonitor.AppWindow"
+		x:DataType="local:AppViewModel"
+		x:Name="This"
+		Icon="/Assets/Cornerstone.GrokMonitor.ico"
+		Title="Grok Monitor"
+		MainMenu="{Binding ElementName=This, Path=MainMenu}">
+	<CornerstoneWindow.InnerRightContent>
+		<StackPanel Orientation="Horizontal">
+			<Button Classes="Dim"
+					Theme.Color="None"
+					BorderThickness="0"
+					Command="{Binding ToggleThemeModeCommand}"
+					ToolTip.Tip="Toggle Theme">
+				<PathIcon Height="16" Width="16"
+						Data="{Binding ElementName=This, Path=ActualThemeVariant, Converter={x:Static ThemeConverters.ToThemeIconInverted}}"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center" />
+			</Button>
+		</StackPanel>
+	</CornerstoneWindow.InnerRightContent>
+	<Panel>
+		<TabControl
+				Classes.Headless="{Binding !ShowShellTabHeaders}"
+				ItemsSource="{Binding ShellTabs}"
+				SelectedItem="{Binding SelectedShellTab}">
+			<TabControl.ItemTemplate>
+				<DataTemplate x:DataType="local:IShellTab">
+					<TextBlock Text="{Binding DisplayName}"
+							ToolTip.Tip="{Binding Path}" />
+				</DataTemplate>
+			</TabControl.ItemTemplate>
+			<TabControl.DataTemplates>
+				<DataTemplate DataType="grokUsage:GrokUsageTabViewModel">
+					<grokUsage:GrokUsageTabView />
+				</DataTemplate>
+				<DataTemplate DataType="settings:SettingsTabViewModel">
+					<settings:SettingsTabView />
+				</DataTemplate>
+			</TabControl.DataTemplates>
+		</TabControl>
+	</Panel>
+</CornerstoneWindow>

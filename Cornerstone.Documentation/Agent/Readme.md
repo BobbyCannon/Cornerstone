@@ -15,6 +15,7 @@ Product behavior and host-facing overviews live under the parent folder: [../Rea
 | [MarkdownView.md](MarkdownView.md) | Building or updating Markdown parse/view: fences, streaming, block groups, tables | `Cornerstone/Parsers/Markdown/`, `Cornerstone.Avalonia/Controls/Markdown*` |
 | [TreeDataGrid.md](TreeDataGrid.md) | Building or updating TreeDataGrid: MinRowHeight path, virtualization, row themes | `Cornerstone.Avalonia/TreeDataGrid/` |
 | [Themes.md](Themes.md) | Theme color / mode / density: apply path, tokens, host checklist, Static vs Dynamic pitfalls | `Cornerstone.Avalonia/CornerstoneTheme*`, `Themes/*` |
+| [DependencyInjection.md](DependencyInjection.md) | `[DependencyInjected]`, `RegisterDependencies`, first-wins `Add*`, which assemblies a host should call | `Cornerstone/Runtime/DependencyProvider.cs`, `Cornerstone.Generators` |
 
 ---
 

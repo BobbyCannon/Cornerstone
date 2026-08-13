@@ -231,7 +231,8 @@ public partial class TreeDataGrid : TemplatedControl
 		var index = itemsList.IndexOf(item);
 		if (index >= 0)
 		{
-			RowsPresenter.BringIntoView(index);
+			// todo: why would this be null, am I just masking another issue? timing?
+			RowsPresenter?.BringIntoView(index);
 		}
 	}
 

@@ -80,7 +80,7 @@
 				<Path Data="{StaticResource Icons.Cog}" 
 						Classes="Rotating"
 						Height="60" Width="58" />
-				<Path Data="{StaticResource Icons.Sync}" 
+				<Path Data="{StaticResource Icons.Refresh}" 
 						Classes="Rotating2"
 						Height="60" Width="42"
 						Margin="10" />

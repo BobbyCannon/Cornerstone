@@ -14,7 +14,6 @@ using Avalonia.Interactivity;
 using Cornerstone.Avalonia;
 using Cornerstone.Compare;
 using Cornerstone.Extensions;
-using Cornerstone.Reflection;
 using Cornerstone.Testing;
 using Cornerstone.UnitTests;
 using Microsoft.CodeAnalysis;

@@ -1,0 +1,500 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:grokUsage="clr-namespace:Cornerstone.GrokMonitor.GrokUsage"
+		xmlns:state="clr-namespace:Cornerstone.GrokMonitor.GrokUsage.State"
+		mc:Ignorable="d" d:DesignWidth="1280"
+		x:Class="Cornerstone.GrokMonitor.GrokUsage.GrokUsageTabView"
+		x:DataType="grokUsage:GrokUsageTabViewModel">
+	<!-- ReSharper disable  Xaml.MissingGridIndex -->
+	<DockPanel>
+		<!-- Toolbar -->
+		<Border Classes="ToolBar" DockPanel.Dock="Top">
+			<Grid ColumnDefinitions="*,Auto">
+				<StackPanel Orientation="Horizontal"
+						Spacing="8"
+						VerticalAlignment="Center">
+					<ComboBox MinWidth="200"
+							ItemsSource="{Binding AvailablePeriods}"
+							SelectedItem="{Binding SelectedPeriod}"
+							ToolTip.Tip="Billing period for token totals and charts"
+							IsEnabled="{Binding !IsBusy}">
+						<ComboBox.ItemTemplate>
+							<DataTemplate x:DataType="state:GrokUsagePeriodState">
+								<TextBlock Text="{Binding DisplayName}" />
+							</DataTemplate>
+						</ComboBox.ItemTemplate>
+					</ComboBox>
+					<Button Classes="Icon"
+							Command="{Binding RefreshCommand}"
+							ToolTip.Tip="Refresh"
+							IsEnabled="{Binding !IsBusy}">
+						<Path Data="{StaticResource Icons.Refresh}"
+								Classes.Rotating="{Binding IsBusy}"
+								Width="16" Height="16" />
+					</Button>
+					<Button Classes="Icon"
+							Command="{Binding RefreshAllCommand}"
+							ToolTip.Tip="Refresh All"
+							IsEnabled="{Binding !IsBusy}"
+							IsVisible="False">
+						<Path Data="{StaticResource Icons.Refresh}"
+								Width="16" Height="16" />
+					</Button>
+				</StackPanel>
+				<TextBlock Grid.Column="1"
+						Text="{Binding StatusText}"
+						VerticalAlignment="Center"
+						Margin="16,0"
+						TextTrimming="CharacterEllipsis"
+						Opacity="0.85" />
+			</Grid>
+		</Border>
+		<Border DockPanel.Dock="Top"
+				BorderThickness="0,0,0,1"
+				Padding="6,8">
+			<Grid ColumnDefinitions="Auto,*">
+				<StackPanel Grid.Column="0"
+						Orientation="Horizontal"
+						Spacing="10"
+						IsVisible="{Binding HasViewClock}">
+					<Button Classes="Icon"
+							Command="{Binding ToggleReplayCommand}"
+							ToolTip.Tip="Play or pause period replay at 1000×"
+							IsEnabled="{Binding !IsBusy}">
+						<Panel>
+							<Path Data="{StaticResource Icons.Play}"
+									Width="14" Height="14"
+									IsVisible="{Binding !IsReplayPlaying}" />
+							<Path Data="{StaticResource Icons.Pause}"
+									Width="14" Height="14"
+									IsVisible="{Binding IsReplayPlaying}" />
+						</Panel>
+					</Button>
+				</StackPanel>
+				<Slider Grid.Column="1"
+						Theme.Color="None"
+						Minimum="0"
+						Maximum="1"
+						Margin="10,0"
+						TickFrequency="0.001"
+						IsSnapToTickEnabled="False"
+						Value="{Binding ViewClockProgress}"
+						ToolTip.Tip="Scrub the period timeline. End is live current time. Dragging pauses replay."
+						IsEnabled="{Binding !IsBusy}" />
+			</Grid>
+		</Border>
+		<Border DockPanel.Dock="Top">
+			<Grid RowDefinitions="*,Auto">
+				<WrapPanel Grid.Row="0"
+						HorizontalAlignment="Center"
+						Margin="10,20"
+						ItemSpacing="10"
+						LineSpacing="10">
+					<TextBlock Classes="Header Dim"
+							Text="Usage"
+							ToolTip.Tip="{Binding UsageToolTip}" />
+					<TextBlock Classes="Header"
+							Text="{Binding UsagePercent, StringFormat={}{0:0.#}%}"
+							ToolTip.Tip="{Binding UsageToolTip}" />
+					<TextBlock Classes="Header" Text="-" />
+					<TextBlock Classes="Header Dim"
+							Text="{Binding PeriodRemainingText}"
+							ToolTip.Tip="Time left until the selected usage period ends (plan reset)." />
+					<TextBlock Classes="Header" Text="-" />
+					<TextBlock Classes="Header Dim"
+							Text="{Binding PaceLabel}"
+							ToolTip.Tip="{Binding PaceLabelToolTip}" />
+					<TextBlock Classes="Header" Text="-" />
+					<TextBlock Classes="Header Dim"
+							Text="{Binding LinearPacePercent, StringFormat=Linear pace {0:0.#}%}"
+							ToolTip.Tip="{Binding LinearPaceToolTip}" />
+				</WrapPanel>
+				<LinearProgress
+						Grid.Row="1"
+						Minimum="0"
+						Maximum="100"
+						Value="{Binding UsagePercent}"
+						Height="8"
+						Margin="10,0"
+						ToolTip.Tip="{Binding UsageToolTip}" />
+			</Grid>
+		</Border>
+
+		<WrapPanel DockPanel.Dock="Top"
+				ItemSpacing="10"
+				LineSpacing="10"
+				Orientation="Horizontal"
+				HorizontalAlignment="Center"
+				Margin="20">
+			<StackPanel MinWidth="120">
+				<TextBlock Text="Tier" FontSize="{DynamicResource ControlFontSizeSmall}" Opacity="0.7" />
+				<TextBlock Text="{Binding SubscriptionTier}" FontSize="{DynamicResource ControlFontSize}" />
+			</StackPanel>
+			<StackPanel MinWidth="120"
+					IsVisible="{Binding HasCreditUsage}">
+				<TextBlock Text="Usage" FontSize="{DynamicResource ControlFontSizeSmall}" Opacity="0.7" />
+				<TextBlock Text="{Binding UsagePercent, StringFormat={}{0:0.##}%}" FontSize="{DynamicResource ControlFontSize}" />
+			</StackPanel>
+			<StackPanel MinWidth="120">
+				<TextBlock Text="Period" FontSize="{DynamicResource ControlFontSizeSmall}" Opacity="0.7" />
+				<TextBlock Text="{Binding PeriodType}" FontSize="{DynamicResource ControlFontSize}" />
+			</StackPanel>
+			<StackPanel MinWidth="120">
+				<TextBlock Text="On-demand used" FontSize="{DynamicResource ControlFontSizeSmall}" Opacity="0.7" />
+				<TextBlock Text="{Binding OnDemandUsed, StringFormat={}{0:0.##}}" FontSize="{DynamicResource ControlFontSize}" />
+			</StackPanel>
+			<StackPanel MinWidth="120">
+				<TextBlock Text="On-demand cap" FontSize="{DynamicResource ControlFontSizeSmall}" Opacity="0.7" />
+				<TextBlock Text="{Binding OnDemandCap, StringFormat={}{0:0.##}}" FontSize="{DynamicResource ControlFontSize}" />
+			</StackPanel>
+			<StackPanel MinWidth="120">
+				<TextBlock Text="Prepaid" FontSize="{DynamicResource ControlFontSizeSmall}" Opacity="0.7" />
+				<TextBlock Text="{Binding PrepaidBalance, StringFormat={}{0:0.##}}" FontSize="{DynamicResource ControlFontSize}" />
+			</StackPanel>
+
+			<StackPanel MinWidth="120">
+				<TextBlock Text="Prompt" FontSize="{DynamicResource ControlFontSizeSmall}" Opacity="0.7" />
+				<TextBlock Text="{Binding GrandTotalPromptTokens, Converter={x:Static grokUsage:GrokUsageConverters.CompactTokens}}"
+						ToolTip.Tip="{Binding GrandTotalPromptTokens, StringFormat={}{0:N0}}"
+						FontSize="{DynamicResource ControlFontSize}" />
+			</StackPanel>
+			<StackPanel MinWidth="120">
+				<TextBlock Text="Cached" FontSize="{DynamicResource ControlFontSizeSmall}" Opacity="0.7" />
+				<TextBlock Text="{Binding GrandTotalCachedPromptTokens, Converter={x:Static grokUsage:GrokUsageConverters.CompactTokens}}"
+						ToolTip.Tip="{Binding GrandTotalCachedPromptTokens, StringFormat={}{0:N0}}"
+						FontSize="{DynamicResource ControlFontSize}" />
+			</StackPanel>
+			<StackPanel MinWidth="120">
+				<TextBlock Text="Completion" FontSize="{DynamicResource ControlFontSizeSmall}" Opacity="0.7" />
+				<TextBlock Text="{Binding GrandTotalCompletionTokens, Converter={x:Static grokUsage:GrokUsageConverters.CompactTokens}}"
+						ToolTip.Tip="{Binding GrandTotalCompletionTokens, StringFormat={}{0:N0}}"
+						FontSize="{DynamicResource ControlFontSize}" />
+			</StackPanel>
+			<StackPanel MinWidth="120">
+				<TextBlock Text="Reasoning" FontSize="{DynamicResource ControlFontSizeSmall}" Opacity="0.7" />
+				<TextBlock Text="{Binding GrandTotalReasoningTokens, Converter={x:Static grokUsage:GrokUsageConverters.CompactTokens}}"
+						ToolTip.Tip="{Binding GrandTotalReasoningTokens, StringFormat={}{0:N0}}"
+						FontSize="{DynamicResource ControlFontSize}" />
+			</StackPanel>
+			<StackPanel MinWidth="120">
+				<TextBlock Text="Total" FontSize="{DynamicResource ControlFontSizeSmall}" Opacity="0.7" />
+				<TextBlock Text="{Binding GrandTotalTokens, Converter={x:Static grokUsage:GrokUsageConverters.CompactTokens}}"
+						ToolTip.Tip="{Binding GrandTotalTokens, StringFormat={}{0:N0}}"
+						FontSize="{DynamicResource ControlFontSize}" />
+			</StackPanel>
+		</WrapPanel>
+
+		<!-- Burn + ETA (TextBlock.Text is OneWay; Run.Text is TwoWay and breaks CompactTokens) -->
+		<WrapPanel DockPanel.Dock="Top"
+				ItemSpacing="12"
+				HorizontalAlignment="Center"
+				IsVisible="{Binding HasAnalytics}">
+			<TextBlock Classes="SubHeader Dim"
+					Text="Burn Rate:"
+					ToolTip.Tip="How fast tokens are being consumed (subscription grok models only)." />
+			<TextBlock Classes="SubHeader Dim"
+					Text="{Binding TokenBurnPerHourLast24h, Converter={x:Static grokUsage:GrokUsageConverters.CompactTokens}, StringFormat=Tokens/h (24h) {0}}"
+					ToolTip.Tip="{Binding TokenBurn24hToolTip}" />
+			<TextBlock Classes="SubHeader" Text="-" />
+			<TextBlock Classes="SubHeader Dim"
+					Text="{Binding TokenBurnPerHourPeriod, Converter={x:Static grokUsage:GrokUsageConverters.CompactTokens}, StringFormat=Tokens/h (period) {0}}"
+					ToolTip.Tip="{Binding TokenBurnPeriodToolTip}" />
+			<TextBlock Classes="SubHeader" Text="-" />
+			<TextBlock Classes="SubHeader Dim"
+					Text="{Binding UsagePercentPerHour, StringFormat=Usage %/h {0:0.###}}"
+					IsVisible="{Binding HasCreditUsage}"
+					ToolTip.Tip="{Binding UsagePercentPerHourToolTip}" />
+			<TextBlock Classes="SubHeader" Text="-" />
+			<TextBlock Classes="SubHeader Dim"
+					Text="Usage ETA"
+					IsVisible="{Binding HasCreditUsage}"
+					ToolTip.Tip="{Binding UsageEtaToolTip}" />
+			<TextBlock Classes="SubHeader" Text="-" />
+			<TextBlock Classes="SubHeader Dim"
+					Text="{Binding UsageExhaustionText}"
+					TextWrapping="Wrap"
+					IsVisible="{Binding HasCreditUsage}"
+					ToolTip.Tip="{Binding UsageEtaToolTip}" />
+		</WrapPanel>
+
+		<!-- Body: ResponsiveGrid MaxDivision=24. Tune XS/SM/MD/LG on children.
+		     Default thresholds: XS under 800, SM under 1000, MD under 1200, else LG.
+		     Summary tiles: XS=24 → 1x4 (or 1x5 with on-demand); SM+ =12 → 2x2 (or 2x2+1).
+		     Charts stay in their own grid (2x2 / 1x4). -->
+		<ScrollViewer DockPanel.Dock="Top">
+			<StackPanel Margin="16">
+				<TextBlock Text="{Binding ErrorText}"
+						IsVisible="{Binding ErrorText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+						Foreground="{DynamicResource SystemErrorTextColor}"
+						FontSize="{DynamicResource ControlFontSize}"
+						TextWrapping="Wrap" />
+
+				<!-- Summary: Billing, Token totals, Usage, Burn, optional On-demand -->
+				<Border CornerRadius="{DynamicResource CornerRadius}"
+						Padding="12"
+						HorizontalAlignment="Stretch">
+					<ResponsiveGrid
+							ColumnSpacing="12"
+							RowSpacing="12"
+							HorizontalAlignment="Stretch">
+						
+						<!-- On-demand (rare; 5th tile → 1x5 or 2x2+1) -->
+						<StackPanel Spacing="6"
+								HorizontalAlignment="Stretch"
+								IsVisible="{Binding HasOnDemandCap}"
+								ResponsiveGrid.XS="24"
+								ResponsiveGrid.SM="12"
+								ResponsiveGrid.MD="12"
+								ResponsiveGrid.LG="12">
+							<TextBlock Text="On-demand"
+									FontSize="{DynamicResource ControlFontSizeSmall}"
+									Opacity="0.7"
+									ToolTip.Tip="{Binding OnDemandToolTip}" />
+							<TextBlock FontSize="{DynamicResource ControlFontSize}"
+									ToolTip.Tip="{Binding OnDemandToolTip}">
+								<TextBlock.Text>
+									<MultiBinding StringFormat="{}{0:0.##} / {1:0.##}">
+										<Binding Path="OnDemandUsed" />
+										<Binding Path="OnDemandCap" />
+									</MultiBinding>
+								</TextBlock.Text>
+							</TextBlock>
+							<LinearProgress
+									Minimum="0"
+									Maximum="100"
+									Value="{Binding OnDemandUsagePercent}"
+									Height="8"
+									ToolTip.Tip="{Binding OnDemandToolTip}" />
+							<TextBlock Text="{Binding OnDemandUsagePercent, StringFormat={}{0:0.#}% of cap}"
+									FontSize="{DynamicResource ControlFontSizeSmall}"
+									Opacity="0.75"
+									ToolTip.Tip="{Binding OnDemandToolTip}" />
+						</StackPanel>
+					</ResponsiveGrid>
+				</Border>
+
+				<!-- Charts: own grid — XS stacked, SM/MD 2x2, LG 1x4 -->
+				<Border CornerRadius="{DynamicResource CornerRadius}"
+						Padding="12"
+						HorizontalAlignment="Stretch"
+						IsVisible="{Binding HasAnalytics}">
+					<StackPanel Spacing="12">
+						<TextBlock Text="Analytics"
+								FontSize="{DynamicResource ControlFontSize}"
+								Opacity="0.8" />
+						<ResponsiveGrid RowSpacing="12"
+								ColumnSpacing="12"
+								HorizontalAlignment="Stretch">
+							<StackPanel Spacing="4"
+									HorizontalAlignment="Stretch"
+									ResponsiveGrid.XS="24"
+									ResponsiveGrid.SM="12"
+									ResponsiveGrid.MD="12"
+									ResponsiveGrid.LG="6">
+								<TextBlock Text="Tokens per day"
+										FontSize="{DynamicResource ControlFontSizeSmall}"
+										Opacity="0.7" />
+								<LineChart Title=""
+										Data="{Binding DailyTokensChartData}"
+										Stepped="True"
+										Height="100"
+										ShowLabels="False"
+										RelativeScale="False" />
+								<TextBlock Text="{Binding DailyTokensChartCaption}"
+										FontSize="{DynamicResource ControlFontSizeSmall}"
+										Opacity="0.75"
+										TextWrapping="Wrap" />
+							</StackPanel>
+							<StackPanel Spacing="4"
+									HorizontalAlignment="Stretch"
+									ResponsiveGrid.XS="24"
+									ResponsiveGrid.SM="12"
+									ResponsiveGrid.MD="12"
+									ResponsiveGrid.LG="6">
+								<TextBlock Text="Tokens total"
+										FontSize="{DynamicResource ControlFontSizeSmall}"
+										Opacity="0.7" />
+								<LineChart Title=""
+										Data="{Binding DailyTokenTotalChartData}"
+										Stepped="False"
+										Height="100"
+										ShowLabels="False"
+										RelativeScale="False" />
+								<TextBlock Text="{Binding DailyTokenTotalChartCaption}"
+										FontSize="{DynamicResource ControlFontSizeSmall}"
+										Opacity="0.75"
+										TextWrapping="Wrap" />
+							</StackPanel>
+							<StackPanel Spacing="4"
+									HorizontalAlignment="Stretch"
+									IsVisible="{Binding HasCreditUsage}"
+									ResponsiveGrid.XS="24"
+									ResponsiveGrid.SM="12"
+									ResponsiveGrid.MD="12"
+									ResponsiveGrid.LG="6">
+								<TextBlock Text="Usage per day"
+										FontSize="{DynamicResource ControlFontSizeSmall}"
+										Opacity="0.7" />
+								<LineChart Title=""
+										Data="{Binding DailyUsageChartData}"
+										Stepped="True"
+										Height="100"
+										ShowLabels="False"
+										RelativeScale="False" />
+								<TextBlock Text="{Binding DailyUsageChartCaption}"
+										FontSize="{DynamicResource ControlFontSizeSmall}"
+										Opacity="0.75"
+										TextWrapping="Wrap" />
+							</StackPanel>
+							<StackPanel Spacing="4"
+									HorizontalAlignment="Stretch"
+									IsVisible="{Binding HasCreditUsage}"
+									ResponsiveGrid.XS="24"
+									ResponsiveGrid.SM="12"
+									ResponsiveGrid.MD="12"
+									ResponsiveGrid.LG="6">
+								<TextBlock Text="Usage total"
+										FontSize="{DynamicResource ControlFontSizeSmall}"
+										Opacity="0.7" />
+								<LineChart Title=""
+										Data="{Binding DailyUsageTotalChartData}"
+										Stepped="False"
+										Height="100"
+										ShowLabels="False"
+										RelativeScale="False"
+										ScaleMaximum="100" />
+								<TextBlock Text="{Binding DailyUsageTotalChartCaption}"
+										FontSize="{DynamicResource ControlFontSizeSmall}"
+										Opacity="0.75"
+										TextWrapping="Wrap" />
+							</StackPanel>
+						</ResponsiveGrid>
+					</StackPanel>
+				</Border>
+			</StackPanel>
+		</ScrollViewer>
+
+		<TabControl>
+			<TabItem Header="Tokens">
+				<!-- Auto,* so TreeDataGrid fills remaining height and scrolls internally (not Auto-sized to content). -->
+				<AutoGrid RowDefinitions="Auto,*">
+					<TextBlock
+							Text="Sessions token totals come from unified.jsonl inference_done events. Sessions with only summary.json (no inferences in the log) show 0 — that is expected. Reasoning is often 0 when the model does not report it."
+							Opacity="0.65"
+							Margin="10,4,10,10"
+							TextWrapping="Wrap" />
+					<Border Background="{DynamicResource Background02}"
+							CornerRadius="{DynamicResource CornerRadius}"
+							Padding="0"
+							MinHeight="120">
+						<TreeDataGrid ItemsSource="{Binding SessionsSource}"
+								ShowColumnHeaders="True">
+							<TreeDataGrid.Styles>
+								<Style Selector="TreeDataGridRow" x:DataType="state:GrokSessionUsageState">
+									<Setter Property="Background">
+										<MultiBinding Converter="{x:Static grokUsage:GrokUsageConverters.TokenHeatBackground}">
+											<Binding Path="TotalTokens" />
+											<ReflectionBinding Path="DataContext.Settings.SessionTokenHeatEnabled"
+													RelativeSource="{RelativeSource AncestorType=UserControl}" />
+											<ReflectionBinding Path="DataContext.Settings.SessionTokenHeatSoftTokens"
+													RelativeSource="{RelativeSource AncestorType=UserControl}" />
+											<ReflectionBinding Path="DataContext.Settings.SessionTokenHeatHotTokens"
+													RelativeSource="{RelativeSource AncestorType=UserControl}" />
+										</MultiBinding>
+									</Setter>
+								</Style>
+							</TreeDataGrid.Styles>
+							<TreeDataGrid.ContextMenu>
+								<ContextMenu>
+									<MenuItem Header="Open summary.json"
+											Command="{Binding OpenSummaryCommand}"
+											CommandParameter="{Binding SelectedSession}" />
+									<MenuItem Header="Open events.jsonl"
+											Command="{Binding OpenEventsCommand}"
+											CommandParameter="{Binding SelectedSession}" />
+									<Separator />
+									<MenuItem Header="Open session folder"
+											Command="{Binding OpenSessionFolderCommand}"
+											CommandParameter="{Binding SelectedSession}" />
+									<MenuItem Header="Open working directory"
+											Command="{Binding OpenWorkingDirectoryCommand}"
+											CommandParameter="{Binding SelectedSession}" />
+								</ContextMenu>
+							</TreeDataGrid.ContextMenu>
+						</TreeDataGrid>
+					</Border>
+				</AutoGrid>
+			</TabItem>
+			<TabItem Header="Tokens per/day">
+				<ItemsControl ItemsSource="{Binding DailyTokensChartData}">
+					<ItemsControl.ItemsPanel>
+						<ItemsPanelTemplate>
+							<WrapPanel
+									ItemSpacing="10"
+									LineSpacing="10"
+									Margin="10" />
+						</ItemsPanelTemplate>
+					</ItemsControl.ItemsPanel>
+					<ItemsControl.ItemTemplate>
+						<DataTemplate>
+							<TextBlock Text="{Binding Converter={x:Static grokUsage:GrokUsageConverters.CompactTokens}}" />
+						</DataTemplate>
+					</ItemsControl.ItemTemplate>
+				</ItemsControl>
+			</TabItem>
+			<TabItem Header="Tokens total">
+				<ItemsControl ItemsSource="{Binding DailyTokenTotalChartData}">
+					<ItemsControl.ItemsPanel>
+						<ItemsPanelTemplate>
+							<WrapPanel
+									ItemSpacing="10"
+									LineSpacing="10"
+									Margin="10" />
+						</ItemsPanelTemplate>
+					</ItemsControl.ItemsPanel>
+					<ItemsControl.ItemTemplate>
+						<DataTemplate>
+							<TextBlock Text="{Binding Converter={x:Static grokUsage:GrokUsageConverters.CompactTokens}}" />
+						</DataTemplate>
+					</ItemsControl.ItemTemplate>
+				</ItemsControl>
+			</TabItem>
+			<TabItem Header="Usage per day">
+				<ItemsControl ItemsSource="{Binding DailyUsageChartData}">
+					<ItemsControl.ItemsPanel>
+						<ItemsPanelTemplate>
+							<WrapPanel
+									ItemSpacing="10"
+									LineSpacing="10"
+									Margin="10" />
+						</ItemsPanelTemplate>
+					</ItemsControl.ItemsPanel>
+					<ItemsControl.ItemTemplate>
+						<DataTemplate>
+							<TextBlock Text="{Binding StringFormat={}{0:0.##}}" />
+						</DataTemplate>
+					</ItemsControl.ItemTemplate>
+				</ItemsControl>
+			</TabItem>
+			<TabItem Header="Usage total">
+				<ItemsControl ItemsSource="{Binding DailyUsageTotalChartData}">
+					<ItemsControl.ItemsPanel>
+						<ItemsPanelTemplate>
+							<WrapPanel
+									ItemSpacing="10"
+									LineSpacing="10"
+									Margin="10" />
+						</ItemsPanelTemplate>
+					</ItemsControl.ItemsPanel>
+					<ItemsControl.ItemTemplate>
+						<DataTemplate>
+							<TextBlock Text="{Binding StringFormat={}{0:0.##}}" />
+						</DataTemplate>
+					</ItemsControl.ItemTemplate>
+				</ItemsControl>
+			</TabItem>
+		</TabControl>
+	</DockPanel>
+</UserControl>

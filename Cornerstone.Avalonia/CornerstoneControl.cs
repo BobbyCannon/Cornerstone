@@ -27,7 +27,6 @@ public partial class CornerstoneControl<T>
 
 	#region Methods
 
-	/// <inheritdoc />
 	protected override object GetViewModel()
 	{
 		return ViewModel;
@@ -87,7 +86,7 @@ public partial class CornerstoneControl : Control, IDispatchable
 	}
 
 	/// <summary>
-	/// Returns the typed <c> ViewModel </c> property when this is a <see cref="CornerstoneControl{T}" />;
+	/// Returns the typed ViewModel property when this is a <see cref="CornerstoneControl{T}" />;
 	/// otherwise null. Used with <see cref="StyledElement.DataContext" /> (independently) for IsAttached.
 	/// </summary>
 	protected virtual object GetViewModel()

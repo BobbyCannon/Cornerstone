@@ -6,6 +6,7 @@ using System.Threading;
 using Cornerstone.Collections;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
+using Cornerstone.Profiling;
 using Cornerstone.Reflection;
 using Cornerstone.Text;
 
@@ -121,7 +122,7 @@ public abstract partial class DispatchableViewModel : ViewModel
 	}
 
 	/// <summary>
-	/// Registers an attach owner (typically a View or parent ViewModel). Idempotent per owner.
+	/// Registers an "attach" owner (typically a View or parent ViewModel). Idempotent per owner.
 	/// When the first owner attaches, nested dispatch children are also attached with this instance as owner.
 	/// </summary>
 	/// <param name="owner"> Owning view or parent ViewModel. Required — not null. </param>
@@ -170,7 +171,7 @@ public abstract partial class DispatchableViewModel : ViewModel
 	}
 
 	/// <summary>
-	/// Removes an attach owner. Idempotent per owner.
+	/// Removes an "attach" owner. Idempotent per owner.
 	/// When the last owner detaches, nested dispatch children are detached for this instance as owner.
 	/// </summary>
 	/// <param name="owner"> Owning view or parent ViewModel. Required — not null. </param>
@@ -337,6 +338,60 @@ public abstract partial class DispatchableViewModel : ViewModel
 		}
 
 		return child;
+	}
+
+	/// <summary>
+	/// Copies a fixed-length model series into a view series when <see cref="ISeriesDataProvider.Version" /> drifts.
+	/// Lengths must match (same contract as <see cref="SeriesDataProvider.CopyFrom" />).
+	/// </summary>
+	protected void TrackSeries(ISeriesDataProvider model, SeriesDataProvider view)
+	{
+		if (model is null)
+		{
+			throw new ArgumentNullException(nameof(model));
+		}
+		if (view is null)
+		{
+			throw new ArgumentNullException(nameof(view));
+		}
+		if (model.Length != view.Length)
+		{
+			throw new ArgumentException(
+				$"Model length ({model.Length}) must match view length ({view.Length}).",
+				nameof(view));
+		}
+
+		AddBinding(new FixedSeriesDispatchBinding(model, view));
+	}
+
+	/// <summary>
+	/// Builds chart samples from a pending model source and publishes into a view series
+	/// (same-length <see cref="SeriesDataProvider.ReplaceAll" />, or new provider + assign when length changes).
+	/// </summary>
+	protected void TrackSeries(
+		IDispatchPending pending,
+		Func<SeriesDataProvider> getView,
+		Action<SeriesDataProvider> setView,
+		Func<double[]> buildSamples)
+	{
+		if (pending is null)
+		{
+			throw new ArgumentNullException(nameof(pending));
+		}
+		if (getView is null)
+		{
+			throw new ArgumentNullException(nameof(getView));
+		}
+		if (setView is null)
+		{
+			throw new ArgumentNullException(nameof(setView));
+		}
+		if (buildSamples is null)
+		{
+			throw new ArgumentNullException(nameof(buildSamples));
+		}
+
+		AddBinding(new DerivedSeriesDispatchBinding(pending, getView, setView, buildSamples));
 	}
 
 	/// <summary>
@@ -693,6 +748,99 @@ public abstract partial class DispatchableViewModel : ViewModel
 			}
 
 			_apply();
+			_pending.ClearHasPending();
+		}
+
+		public bool HasPendingChanges()
+		{
+			return _pending.HasPending;
+		}
+
+		#endregion
+	}
+
+	/// <summary>
+	/// Fixed-length model series → view via <see cref="SeriesDataProvider.CopyFrom" /> when versions differ.
+	/// </summary>
+	private sealed class FixedSeriesDispatchBinding : IDispatchBinding
+	{
+		#region Fields
+
+		private readonly ISeriesDataProvider _model;
+		private readonly SeriesDataProvider _view;
+
+		#endregion
+
+		#region Constructors
+
+		public FixedSeriesDispatchBinding(ISeriesDataProvider model, SeriesDataProvider view)
+		{
+			_model = model;
+			_view = view;
+		}
+
+		#endregion
+
+		#region Methods
+
+		public void ApplyPendingChanges()
+		{
+			if (_model.Version == _view.Version)
+			{
+				return;
+			}
+
+			_view.CopyFrom(_model);
+		}
+
+		public bool HasPendingChanges()
+		{
+			return _model.Version != _view.Version;
+		}
+
+		#endregion
+	}
+
+	/// <summary>
+	/// Pending source → build samples → <see cref="SeriesPresentation.Publish" /> into a view property.
+	/// </summary>
+	private sealed class DerivedSeriesDispatchBinding : IDispatchBinding
+	{
+		#region Fields
+
+		private readonly Func<double[]> _buildSamples;
+		private readonly Func<SeriesDataProvider> _getView;
+		private readonly IDispatchPending _pending;
+		private readonly Action<SeriesDataProvider> _setView;
+
+		#endregion
+
+		#region Constructors
+
+		public DerivedSeriesDispatchBinding(
+			IDispatchPending pending,
+			Func<SeriesDataProvider> getView,
+			Action<SeriesDataProvider> setView,
+			Func<double[]> buildSamples)
+		{
+			_pending = pending;
+			_getView = getView;
+			_setView = setView;
+			_buildSamples = buildSamples;
+		}
+
+		#endregion
+
+		#region Methods
+
+		public void ApplyPendingChanges()
+		{
+			if (!_pending.HasPending)
+			{
+				return;
+			}
+
+			SeriesPresentation.Publish(_buildSamples(), _getView(), _setView);
 			_pending.ClearHasPending();
 		}
 

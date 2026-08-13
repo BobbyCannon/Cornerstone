@@ -256,7 +256,8 @@ public partial class TextEditor<T> : CornerstoneTemplatedControl<T>
 	{
 		base.OnLoaded(e);
 		UpdateShowMargins();
-		ScrollViewer?.ScrollChanged += OnScrollChanged;
+		// ScrollChanged for subclasses is wired in AttachScrollViewer (with PART_ScrollViewer),
+		// not here — OnLoaded often runs before the template, so ScrollViewer is still null.
 	}
 
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -308,12 +309,13 @@ public partial class TextEditor<T> : CornerstoneTemplatedControl<T>
 	protected override void OnUnloaded(RoutedEventArgs e)
 	{
 		base.OnUnloaded(e);
-		ScrollViewer?.ScrollChanged -= OnScrollChanged;
 	}
 
 	private void AttachScrollViewer()
 	{
-		// Attempt remove then ensure attached.
+		// Attempt remove then ensure attached (template apply + visual-tree attach).
+		// Subclass sync hooks OnScrollChanged via ScrollViewerOnScrollChanged — do not
+		// subscribe OnScrollChanged only from OnLoaded (ScrollViewer is often still null).
 		ScrollViewer?.ScrollChanged -= ScrollViewerOnScrollChanged;
 		ScrollViewer?.ScrollChanged += ScrollViewerOnScrollChanged;
 	}
@@ -427,6 +429,10 @@ public partial class TextEditor<T> : CornerstoneTemplatedControl<T>
 		{
 			leftMargin.InvalidateMeasure();
 		}
+
+		// Diff sync and other overrides — always invoked when the ScrollViewer is attached,
+		// not only when OnLoaded happened to see a non-null ScrollViewer.
+		OnScrollChanged(sender, e);
 	}
 
 	private void UpdateShowMargins()

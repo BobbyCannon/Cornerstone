@@ -26,30 +26,81 @@ public partial class ResponsiveGrid : Grid
 
 	protected override Size ArrangeOverride(Size finalSize)
 	{
-		var columnWidth = finalSize.Width / MaxDivision;
+		var trackWidth = GetColumnTrackWidth(finalSize.Width);
 		var group = Children.GroupBy(GetActualRow).ToList();
 
-		double temp = 0;
+		double y = 0;
 		for (var i = 0; i < group.Count; i++)
 		{
 			var rows = group[i];
-			double max = 0;
+			var rowHeight = rows.Max(o => o.DesiredSize.Height);
 
-			var columnHeight = rows.Max(o => o.DesiredSize.Height) + RowSpacing;
 			foreach (var element in rows)
 			{
 				var column = GetActualColumn(element);
-				//var row = GetActualRow(element);
 				var columnSpan = GetSpan(element, finalSize.Width);
-				var rect = new Rect(columnWidth * column, temp, columnWidth * columnSpan, columnHeight);
+				var rect = new Rect(
+					GetCellX(column, trackWidth),
+					y,
+					GetCellWidth(columnSpan, trackWidth),
+					rowHeight);
 				element.Arrange(rect);
-				max = Math.Max(element.DesiredSize.Height + RowSpacing, max);
 			}
 
-			temp += max;
+			y += rowHeight;
+			if (i < (group.Count - 1))
+			{
+				y += RowSpacing;
+			}
 		}
 
 		return finalSize;
+	}
+
+	/// <summary>
+	/// Width of a cell spanning the given number of tracks, including gutters between those tracks.
+	/// </summary>
+	protected double GetCellWidth(int span, double trackWidth)
+	{
+		if (span <= 0)
+		{
+			return 0;
+		}
+
+		return (span * trackWidth) + ((span - 1) * ColumnSpacing);
+	}
+
+	/// <summary>
+	/// X origin of a cell starting at the given column track index.
+	/// </summary>
+	protected double GetCellX(int column, double trackWidth)
+	{
+		if (column <= 0)
+		{
+			return 0;
+		}
+
+		return column * (trackWidth + ColumnSpacing);
+	}
+
+	/// <summary>
+	/// Content width of one division track after reserving ColumnSpacing gutters between tracks.
+	/// </summary>
+	protected double GetColumnTrackWidth(double totalWidth)
+	{
+		if (MaxDivision <= 0)
+		{
+			return 0;
+		}
+
+		if (double.IsPositiveInfinity(totalWidth))
+		{
+			return double.PositiveInfinity;
+		}
+
+		var gutterCount = Math.Max(0, MaxDivision - 1);
+		var contentWidth = Math.Max(0, totalWidth - (gutterCount * ColumnSpacing));
+		return contentWidth / MaxDivision;
 	}
 
 	protected int GetOffset(Control element, double width)
@@ -236,9 +287,7 @@ public partial class ResponsiveGrid : Grid
 	{
 		var count = 0;
 		var currentRow = 0;
-		var availableWidth = double.IsPositiveInfinity(availableSize.Width)
-			? double.PositiveInfinity
-			: availableSize.Width / MaxDivision;
+		var trackWidth = GetColumnTrackWidth(availableSize.Width);
 		var remainingHeight = availableSize.Height;
 		var rowHeights = new List<double>();
 
@@ -265,6 +314,12 @@ public partial class ResponsiveGrid : Grid
 		// Determine number of rows
 		var rowCount = Children.Where(c => c.IsVisible).Select(GetActualRow).DefaultIfEmpty(-1).Max() + 1;
 
+		// Reserve vertical gutters between rows when height is constrained
+		if (!double.IsPositiveInfinity(remainingHeight) && (rowCount > 1))
+		{
+			remainingHeight = Math.Max(0, remainingHeight - ((rowCount - 1) * RowSpacing));
+		}
+
 		// Calculate initial height per row (for all but the last row)
 		var heightPerRow = rowCount > 0 ? remainingHeight / rowCount : remainingHeight;
 
@@ -274,28 +329,55 @@ public partial class ResponsiveGrid : Grid
 		{
 			var row = group[i];
 			double maxRowHeight = 0;
-			
+
 			// Use remainingHeight for last row
 			var rowHeight = i == (group.Count - 1)
 				? remainingHeight
-				: heightPerRow + RowSpacing;
+				: heightPerRow;
 
 			foreach (var child in row)
 			{
 				var span = GetSpan(child, availableSize.Width);
-				// Measure with constrained height for the row
-				var size = new Size(availableWidth * span, rowHeight);
+				var size = new Size(GetCellWidth(span, trackWidth), rowHeight);
 				child.Measure(size);
-				maxRowHeight = Math.Max(maxRowHeight, child.DesiredSize.Height + RowSpacing);
+				maxRowHeight = Math.Max(maxRowHeight, child.DesiredSize.Height);
 			}
 
 			rowHeights.Add(maxRowHeight);
-			remainingHeight -= maxRowHeight; // Reduce remaining height
-			remainingHeight = Math.Max(0, remainingHeight); // Prevent negative height
+			remainingHeight -= maxRowHeight;
+			remainingHeight = Math.Max(0, remainingHeight);
 		}
 
-		var totalWidth = group.Any() ? group.Max(rows => rows.Sum(o => o.DesiredSize.Width)) : 0;
+		double totalWidth;
+		if (double.IsPositiveInfinity(availableSize.Width))
+		{
+			totalWidth = group.Any()
+				? group.Max(rows =>
+				{
+					var ordered = rows.OrderBy(GetActualColumn).ToList();
+					double width = 0;
+					for (var i = 0; i < ordered.Count; i++)
+					{
+						width += ordered[i].DesiredSize.Width;
+						if (i < (ordered.Count - 1))
+						{
+							width += ColumnSpacing;
+						}
+					}
+					return width;
+				})
+				: 0;
+		}
+		else
+		{
+			totalWidth = availableSize.Width;
+		}
+
 		var totalHeight = rowHeights.Sum();
+		if (rowHeights.Count > 1)
+		{
+			totalHeight += (rowHeights.Count - 1) * RowSpacing;
+		}
 
 		return new Size(totalWidth, totalHeight);
 	}

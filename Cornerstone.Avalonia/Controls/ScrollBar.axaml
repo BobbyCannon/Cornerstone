@@ -23,6 +23,8 @@
 		<Setter Property="Theme.Color" Value="Current" />
 		<Setter Property="Background" Value="Transparent" />
 		<Setter Property="AllowAutoHide" Value="True" />
+		<Setter Property="ShowDelay" Value="0:0:0" />
+		<Setter Property="HideDelay" Value="0:0:0.4" />
 		<Setter Property="Cursor" Value="Arrow" />
 		<Style Selector="^:horizontal">
 			<Setter Property="Background" Value="{DynamicResource Background05}" />

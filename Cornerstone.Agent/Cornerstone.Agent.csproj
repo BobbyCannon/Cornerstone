@@ -9,7 +9,6 @@
 	<ItemGroup>
 		<AvaloniaResource Include="Assets\**" />
 		<EmbeddedResource Include="Data\**" />
-		<None Remove="C:\Workspaces\EpicSolution\Cornerstone\..\Cornerstone\Cornerstone.png" />
 	</ItemGroup>
 	<ItemGroup>
 		<TrimmerRootAssembly Include="Cornerstone" RootMode="all" />

@@ -232,4 +232,4 @@ AppBootstrap.RegisterAsTests(cornerstoneTest);
 | [Lifecycle.md](Lifecycle.md) | Lifecycle phases and `LifecycleTracker` |
 | [CornerstoneApplication.md](CornerstoneApplication.md) | Avalonia application shell |
 | [ViewIntegration.md](ViewIntegration.md) | State → ViewModel projection |
-| [AppDispatcher.md](AppDispatcher.md) | Optional hard dispatch loop |
+| [AppDispatcher.md](AppDispatcher.md) | Optional adaptive UI projection loop (idle/active) |

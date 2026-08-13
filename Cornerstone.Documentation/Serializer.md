@@ -111,9 +111,9 @@ When casing must be exact:
 - Declare a context with `[JsonSourceGenerationOptions(PropertyNamingPolicy = ...)]`, or
 - Use `[JsonPropertyName]` on the model.
 
-## Example: BecomeEpic.Icons project cache
+## Example: human-edited project cache
 
-Caches under `Caches/{Project}.json` are human-edited in git. Save uses a **static** fork: indented + PascalCase, written with `ToJsonFile`.
+Caches under `Caches/{Project}.json` that are committed and edited in git should use a **static** fork: indented + PascalCase, written with `ToJsonFile`.
 
 ## Summary
 

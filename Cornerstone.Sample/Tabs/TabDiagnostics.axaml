@@ -1,0 +1,160 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		xmlns:messages="clr-namespace:Cornerstone.Keystone.Messages;assembly=Cornerstone"
+		xmlns:diag="clr-namespace:Cornerstone.Diagnostics;assembly=Cornerstone"
+		mc:Ignorable="d" d:DesignHeight="900" d:DesignWidth="900"
+		x:Class="Cornerstone.Sample.Tabs.TabDiagnostics"
+		x:DataType="tabs:DiagnosticsTabViewModel"
+		x:Name="This">
+	<DockPanel>
+		<Grid DockPanel.Dock="Top" Margin="10">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="{x:Static tabs:TabDiagnostics.HeaderName}" />
+		</Grid>
+		<ScrollViewer>
+			<StackPanel Margin="12" Spacing="16">
+				<!-- AppDispatcher -->
+				<Border Classes="Card" Padding="12">
+					<StackPanel Spacing="10">
+						<TextBlock Classes="SubHeader" Text="AppDispatcher" />
+						<WrapPanel ItemSpacing="16" LineSpacing="8">
+							<TextBlock Text="{Binding DispatchModeText, StringFormat='Mode: {0}'}" Width="90" />
+							<TextBlock Text="{Binding IdleIntervalText, StringFormat='Idle: {0}'}" Width="80" />
+							<TextBlock Text="{Binding ActiveIntervalText, StringFormat='Active: {0}'}" Width="80" />
+							<TextBlock Text="{Binding LastApplyBatchSize, StringFormat='Last batch: {0}'}" />
+							<TextBlock Text="{Binding TrackedCount, StringFormat='Tracked: {0}'}" />
+						</WrapPanel>
+						<WrapPanel ItemSpacing="12" LineSpacing="8">
+							<CheckBox Content="Simulate ViewModel load"
+									IsChecked="{Binding IsSimulatingLoad, Mode=TwoWay}"
+									Command="{Binding #This.SimulateLoadChangedCommand}" />
+							<Button Content="Pulse load"
+									Command="{Binding #This.PulseLoadCommand}" />
+							<Button Content="RequestDispatch"
+									Command="{Binding #This.RequestDispatchCommand}" />
+							<TextBlock VerticalAlignment="Center"
+									Text="{Binding LoadStatus, StringFormat='Load: {0}'}" />
+							<TextBlock VerticalAlignment="Center"
+									Text="{Binding LoadApplyCount, StringFormat='Feature applies: {0}'}" />
+						</WrapPanel>
+						<LineChart x:Name="ApplyRateChart"
+								Height="120"
+								Title="AppDispatcher.Apply / s"
+								Data="{Binding ApplyRateView}" />
+						<TextBlock Text="Tracked dispatchables" Opacity="0.8" />
+						<ListBox ItemsSource="{Binding TrackedDispatchables}"
+								MaxHeight="160">
+							<ListBox.ItemTemplate>
+								<DataTemplate x:DataType="diag:TrackedDispatchableModel">
+									<Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+										<TextBlock Text="{Binding Name}" />
+										<TextBlock Grid.Column="1"
+												Text="{Binding IsAttached, StringFormat='Attached={0}'}" />
+										<TextBlock Grid.Column="2"
+												Text="{Binding HasModelChanges, StringFormat='Dirty={0}'}" />
+									</Grid>
+								</DataTemplate>
+							</ListBox.ItemTemplate>
+						</ListBox>
+					</StackPanel>
+				</Border>
+
+				<!-- Bus -->
+				<Border Classes="Card" Padding="12">
+					<StackPanel Spacing="10">
+						<TextBlock Classes="SubHeader" Text="Keystone Bus" />
+						<WrapPanel ItemSpacing="12" LineSpacing="8">
+							<CheckBox Content="Record history"
+									IsChecked="{Binding IsHistoryEnabled}" />
+							<TextBlock VerticalAlignment="Center" Text="Limit" Opacity="0.8" />
+							<NumericUpDown Width="120"
+										Minimum="1"
+										Maximum="10000"
+										Increment="10"
+										Value="{Binding HistoryLimit}" />
+							<Button Content="Publish sample"
+									Command="{Binding #This.PublishSampleNotificationCommand}" />
+							<Button Content="Publish burst (10)"
+									Command="{Binding #This.PublishSampleBurstCommand}" />
+							<Button Content="Clear history"
+									Command="{Binding #This.ClearBusHistoryCommand}" />
+						</WrapPanel>
+						<Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+							<TextBlock VerticalAlignment="Center"
+									Text="Record filter"
+									Opacity="0.8"
+									MinWidth="96" />
+							<TextBox Grid.Column="1"
+									PlaceholderText="channel:Notification type:0 error:true"
+									Text="{Binding HistoryRecordFilter}" />
+						</Grid>
+						<Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+							<TextBlock VerticalAlignment="Center"
+									Text="View filter"
+									Opacity="0.8"
+									MinWidth="96" />
+							<TextBox Grid.Column="1"
+									PlaceholderText="channel:… type:0,2 ShowMessage"
+									Text="{Binding ViewHistoryFilter}" />
+						</Grid>
+						<TextBlock Opacity="0.65" FontSize="12"
+								Text="Filter: channel:name (contains)  type:0,2  error:true|false  + free text. Empty = all." />
+						<ListBox ItemsSource="{Binding BusHistory}"
+								MaxHeight="280">
+							<ListBox.ItemTemplate>
+								<DataTemplate x:DataType="messages:ChannelMessageHistory">
+									<Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto" ColumnSpacing="10">
+										<TextBlock Text="{Binding Sequence, StringFormat='#{0}'}"
+												Opacity="0.7" MinWidth="40" />
+										<StackPanel Grid.Column="1">
+											<TextBlock Text="{Binding ChannelName}" />
+											<TextBlock Text="{Binding Name}" Opacity="0.75" FontSize="12" />
+										</StackPanel>
+										<TextBlock Grid.Column="2"
+												Text="{Binding Type, StringFormat='Type {0}'}"
+												Opacity="0.8"
+												MinWidth="56" />
+										<TextBlock Grid.Column="3"
+												Text="{Binding HandlerCount, StringFormat='Handlers {0}'}" />
+										<TextBlock Grid.Column="4"
+												Text="{Binding ElapsedTicks}"
+												ToolTip.Tip="Elapsed ticks" />
+										<TextBlock Grid.Column="5"
+												Text="{Binding HadError, StringFormat='Err={0}'}" />
+									</Grid>
+								</DataTemplate>
+							</ListBox.ItemTemplate>
+						</ListBox>
+					</StackPanel>
+				</Border>
+
+				<!-- Profiler -->
+				<Border Classes="Card" Padding="12">
+					<StackPanel Spacing="10">
+						<TextBlock Classes="SubHeader" Text="Profiler scopes (session)" />
+						<ListBox ItemsSource="{Binding Scopes}" MaxHeight="200">
+							<ListBox.ItemTemplate>
+								<DataTemplate x:DataType="diag:ProfilerScopeModel">
+									<Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
+										<TextBlock Text="{Binding Name}" />
+										<TextBlock Grid.Column="1"
+												Text="{Binding CallsPerSecond, StringFormat='{}{0:N1}/s'}" />
+										<TextBlock Grid.Column="2"
+												Text="{Binding AverageTicks, StringFormat='avg ticks {0:N0}'}" />
+										<TextBlock Grid.Column="3"
+												Text="{Binding Count, StringFormat='n={0}'}" />
+									</Grid>
+								</DataTemplate>
+							</ListBox.ItemTemplate>
+						</ListBox>
+					</StackPanel>
+				</Border>
+			</StackPanel>
+		</ScrollViewer>
+	</DockPanel>
+</UserControl>

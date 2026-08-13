@@ -1,9 +1,19 @@
 <Solution>
   <Folder Name="/Build/">
     <File Path="Cornerstone.slnx.DotSettings" />
-    <File Path="development.md" />
     <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+    <File Path="license.txt" />
     <File Path="readme.md" />
+  </Folder>
+  <Folder Name="/Build/Release/">
+    <File Path="Build/Release.Android.props" />
+    <File Path="Build/Release.AOT.props" />
+    <File Path="Build/Release.Browser.props" />
+    <File Path="Build/Release.iOS.props" />
+    <File Path="Build/Release.Platform.props" />
+    <File Path="Build/Release.R2R.props" />
+    <File Path="Build/Release.Web.props" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path="../.gitattributes" />
@@ -13,16 +23,18 @@
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="Tests/Cornerstone.AutomationTests/Cornerstone.AutomationTests.csproj" />
-    <Project Path="Tests/Cornerstone.Generators.UnitTests.Sample/Cornerstone.Generators.UnitTests.Sample.csproj" />
     <Project Path="Tests/Cornerstone.Generators.UnitTests/Cornerstone.Generators.UnitTests.csproj" />
     <Project Path="Tests/Cornerstone.PerformanceTests/Cornerstone.PerformanceTests.csproj" />
     <Project Path="Tests/Cornerstone.UnitTests/Cornerstone.UnitTests.csproj" />
   </Folder>
   <Project Path="Avalonia.Diagnostics/Avalonia.Diagnostics.csproj" />
+  <Project Path="Cornerstone.Agent/Cornerstone.Agent.csproj" />
   <Project Path="Cornerstone.Automation/Cornerstone.Automation.csproj" />
   <Project Path="Cornerstone.Avalonia/Cornerstone.Avalonia.csproj" />
   <Project Path="Cornerstone.Documentation/Cornerstone.Documentation.csproj" />
+  <Project Path="Cornerstone.EntityFramework/Cornerstone.EntityFramework.csproj" />
   <Project Path="Cornerstone.Generators/Cornerstone.Generators.csproj" />
+  <Project Path="Cornerstone.PowerShell/Cornerstone.PowerShell.csproj" />
   <Project Path="Cornerstone.Sample.Android/Cornerstone.Sample.Android.csproj">
     <Deploy />
   </Project>
@@ -32,6 +44,7 @@
     <Deploy />
   </Project>
   <Project Path="Cornerstone.Sample/Cornerstone.Sample.csproj" />
+  <Project Path="Cornerstone.GrokMonitor/Cornerstone.GrokMonitor.csproj" />
   <Project Path="Cornerstone.Templates/Cornerstone.Templates.csproj" />
   <Project Path="Cornerstone/Cornerstone.csproj" />
 </Solution>
