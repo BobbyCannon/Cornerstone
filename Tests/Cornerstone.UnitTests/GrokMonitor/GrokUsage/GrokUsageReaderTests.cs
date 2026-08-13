@@ -37,7 +37,7 @@ public class GrokUsageReaderTests : GrokMonitorUnitTest
 								}
 								""", null);
 
-		var session = new GrokUsageReader(fixture.Root).GetSession(sid);
+		var session = Import(fixture.Root).GetSession(sid);
 		IsNotNull(session);
 		AreEqual("grok-4.5", session.Inferences.Single().ModelId);
 	}
@@ -54,7 +54,7 @@ public class GrokUsageReaderTests : GrokMonitorUnitTest
 		);
 
 		var since = DateTimeOffset.Parse("2026-08-09T11:00:00Z");
-		var inferences = new GrokUsageReader(fixture.Root).GetAllInferences(since);
+		var inferences = Import(fixture.Root).GetAllInferences(since);
 		AreEqual(1, inferences.Count);
 		AreEqual(2, inferences[0].PromptTokens);
 	}
@@ -77,7 +77,7 @@ public class GrokUsageReaderTests : GrokMonitorUnitTest
 								{ "info": { "id": "b", "cwd": "C:\\b" }, "generated_title": "B", "current_model_id": "grok-4.5", "num_messages": 1 }
 								""");
 
-		var summary = new GrokUsageReader(fixture.Root).GetSummary();
+		var summary = Import(fixture.Root).GetSummary();
 		AreEqual(2, summary.Sessions.Count);
 		AreEqual(150, summary.GrandTotalPromptTokens);
 		AreEqual(15, summary.GrandTotalCachedPromptTokens);
@@ -101,7 +101,7 @@ public class GrokUsageReaderTests : GrokMonitorUnitTest
 			"""
 		);
 
-		var history = new GrokUsageReader(fixture.Root).GetAllBillingSnapshots();
+		var history = Import(fixture.Root).GetAllBillingSnapshots();
 		AreEqual(2, history.Count);
 		AreEqual(5.0, history[0].UsagePercent);
 		AreEqual(20.0, history[1].UsagePercent);
@@ -131,7 +131,7 @@ public class GrokUsageReaderTests : GrokMonitorUnitTest
 								}
 								""");
 
-		var session = new GrokUsageReader(fixture.Root).GetSession(sid);
+		var session = Import(fixture.Root).GetSession(sid);
 		IsNotNull(session);
 		AreEqual("Plan usage reader", session.Info.Title);
 		AreEqual(@"C:\Workspaces\MyApp", session.Info.WorkingDirectory);
@@ -155,7 +155,7 @@ public class GrokUsageReaderTests : GrokMonitorUnitTest
 			"""
 		);
 
-		var billing = new GrokUsageReader(fixture.Root).GetLatestBillingSnapshot();
+		var billing = Import(fixture.Root).GetLatestBillingSnapshot();
 		IsNotNull(billing);
 		AreEqual(95.0, billing.UsagePercent);
 		AreEqual("SuperGrok Plus", billing.SubscriptionTier);
@@ -174,7 +174,7 @@ public class GrokUsageReaderTests : GrokMonitorUnitTest
 			"""
 		);
 
-		var inferences = new GrokUsageReader(fixture.Root).GetAllInferences();
+		var inferences = Import(fixture.Root).GetAllInferences();
 		AreEqual(1, inferences.Count);
 		var item = inferences[0];
 		AreEqual("019fe866-a0bd-7050-a8a2-424befdaa7bb", item.SessionId);
@@ -220,7 +220,7 @@ public class GrokUsageReaderTests : GrokMonitorUnitTest
 			{"ts":"2026-08-09T12:01:00.000Z","type":"turn_started","model_id":"local"}
 			""");
 
-		var session = new GrokUsageReader(fixture.Root).GetSession(sid);
+		var session = Import(fixture.Root).GetSession(sid);
 		IsNotNull(session);
 		AreEqual(2, session.Inferences.Count);
 		AreEqual("grok-4.5", session.Inferences[0].ModelId);
@@ -231,7 +231,7 @@ public class GrokUsageReaderTests : GrokMonitorUnitTest
 	public void ReturnsEmptyWhenLogMissing()
 	{
 		using var fixture = new GrokHomeFixture(false);
-		var reader = new GrokUsageReader(fixture.Root);
+		var reader = Import(fixture.Root);
 		AreEqual(0, reader.GetAllInferences().Count);
 		AreEqual(0, reader.GetSessions().Count);
 		IsFalse(reader.GetLatestBillingSnapshot().HasValue);
@@ -252,9 +252,132 @@ public class GrokUsageReaderTests : GrokMonitorUnitTest
 			"""
 		);
 
-		var inferences = new GrokUsageReader(fixture.Root).GetAllInferences();
+		var inferences = Import(fixture.Root).GetAllInferences();
 		AreEqual(1, inferences.Count);
 		AreEqual(9, inferences[0].PromptTokens);
+	}
+
+	[TestMethod]
+	public void KeepsArchivedInferencesAfterUnifiedLogIsRewritten()
+	{
+		using var fixture = new GrokHomeFixture();
+		fixture.WriteUnifiedLog(
+			"""
+			{"ts":"2026-08-05T12:00:00.000Z","sid":"old","msg":"shell.turn.inference_done","ctx":{"prompt_tokens":100,"completion_tokens":10,"reasoning_tokens":1,"cached_prompt_tokens":0}}
+			{"ts":"2026-08-05T12:01:00.000Z","msg":"billing: fetched credits config","ctx":{"config":{"creditUsagePercent":8.0,"currentPeriod":{"type":"USAGE_PERIOD_TYPE_WEEKLY","start":"2026-08-04T00:00:00Z","end":"2026-08-11T00:00:00Z"}}}}
+			"""
+		);
+
+		var first = Import(fixture.Root);
+		AreEqual(1, first.GetAllInferences().Count);
+		AreEqual(1, first.GetAllBillingSnapshots().Count);
+
+		fixture.WriteUnifiedLog(
+			"""
+			{"ts":"2026-08-12T12:00:00.000Z","sid":"new","msg":"shell.turn.inference_done","ctx":{"prompt_tokens":20,"completion_tokens":2,"reasoning_tokens":0,"cached_prompt_tokens":0}}
+			{"ts":"2026-08-12T12:01:00.000Z","msg":"billing: fetched credits config","ctx":{"config":{"creditUsagePercent":15.0,"currentPeriod":{"type":"USAGE_PERIOD_TYPE_WEEKLY","start":"2026-08-11T00:00:00Z","end":"2026-08-18T00:00:00Z"}}}}
+			"""
+		);
+
+		var second = Import(fixture.Root);
+		var inferences = second.GetAllInferences();
+		AreEqual(2, inferences.Count);
+		IsTrue(inferences.Any(x => x.SessionId == "old" && x.PromptTokens == 100));
+		IsTrue(inferences.Any(x => x.SessionId == "new" && x.PromptTokens == 20));
+
+		var billing = second.GetAllBillingSnapshots();
+		AreEqual(2, billing.Count);
+		AreEqual(8.0, billing[0].UsagePercent);
+		AreEqual(15.0, billing[1].UsagePercent);
+
+		var homeFile = Path.Combine(first.ArchiveDirectory, GrokPaths.UsageArchiveHomeFileName);
+		IsTrue(File.Exists(homeFile));
+		AreEqual(
+			Path.GetFullPath(fixture.Root).ToLowerInvariant(),
+			GrokPaths.TryReadUsageArchiveHomePath(first.ArchiveDirectory).ToLowerInvariant());
+
+		var periods = Directory.GetDirectories(Path.Combine(first.ArchiveDirectory, "periods"));
+		IsTrue(periods.Length >= 1);
+		IsTrue(File.Exists(Path.Combine(periods[0], "period.json")));
+	}
+
+	[TestMethod]
+	public void UpdatesSessionTitleOnLaterImport()
+	{
+		using var fixture = new GrokHomeFixture();
+		var sid = "session-title-upsert";
+		fixture.WriteUnifiedLog(
+			"""
+			{"ts":"2026-08-13T23:10:15.000Z","sid":"session-title-upsert","msg":"shell.turn.inference_done","ctx":{"prompt_tokens":10,"completion_tokens":5,"reasoning_tokens":0,"cached_prompt_tokens":0}}
+			"""
+		);
+		fixture.WriteSession(sid, """
+								{
+								  "info": { "id": "session-title-upsert", "cwd": "C:\\Workspaces\\EpicSolution" },
+								  "session_summary": "",
+								  "generated_title": "",
+								  "created_at": "2026-08-13T23:10:15.000Z",
+								  "updated_at": "2026-08-13T23:10:15.000Z",
+								  "num_messages": 0,
+								  "current_model_id": "grok-4.6"
+								}
+								""");
+
+		var reader = Import(fixture.Root);
+		var first = reader.GetSession(sid);
+		IsNotNull(first);
+		AreEqual(string.Empty, first.Info.Title);
+		AreEqual(0, first.Info.MessageCount);
+
+		fixture.WriteSession(sid, """
+								{
+								  "info": { "id": "session-title-upsert", "cwd": "C:\\Workspaces\\EpicSolution" },
+								  "session_summary": "GrokUsage Overhaul Missing Session Titles",
+								  "generated_title": "GrokUsage Overhaul Missing Session Titles",
+								  "created_at": "2026-08-13T23:10:15.000Z",
+								  "updated_at": "2026-08-13T23:11:25.000Z",
+								  "num_messages": 70,
+								  "current_model_id": "grok-4.6"
+								}
+								""");
+
+		reader.ImportFromGrokHome();
+		var second = reader.GetSession(sid);
+		IsNotNull(second);
+		AreEqual("GrokUsage Overhaul Missing Session Titles", second.Info.Title);
+		AreEqual(70, second.Info.MessageCount);
+	}
+
+	[TestMethod]
+	public void ImportSplitsTwoWeeksIntoPeriodFolders()
+	{
+		using var fixture = new GrokHomeFixture();
+		fixture.WriteUnifiedLog(
+			"""
+			{"ts":"2026-08-05T12:00:00.000Z","sid":"s1","msg":"shell.turn.inference_done","ctx":{"prompt_tokens":10,"completion_tokens":1,"reasoning_tokens":0,"cached_prompt_tokens":0}}
+			{"ts":"2026-08-05T12:01:00.000Z","msg":"billing: fetched credits config","ctx":{"config":{"creditUsagePercent":8.0,"currentPeriod":{"type":"USAGE_PERIOD_TYPE_WEEKLY","start":"2026-08-04T00:00:00Z","end":"2026-08-11T00:00:00Z"}}}}
+			{"ts":"2026-08-12T12:00:00.000Z","sid":"s1","msg":"shell.turn.inference_done","ctx":{"prompt_tokens":20,"completion_tokens":2,"reasoning_tokens":0,"cached_prompt_tokens":0}}
+			{"ts":"2026-08-12T12:01:00.000Z","msg":"billing: fetched credits config","ctx":{"config":{"creditUsagePercent":15.0,"currentPeriod":{"type":"USAGE_PERIOD_TYPE_WEEKLY","start":"2026-08-11T00:00:00Z","end":"2026-08-18T00:00:00Z"}}}}
+			"""
+		);
+
+		var reader = new GrokUsageReader(fixture.Root);
+		reader.ImportFromGrokHome();
+		var summary = reader.GetSummary();
+		IsTrue(summary.Periods.Count >= 2);
+		AreEqual(2, reader.GetAllInferences().Count);
+
+		fixture.WriteUnifiedLog("");
+		var afterWipe = new GrokUsageReader(fixture.Root);
+		AreEqual(2, afterWipe.GetAllInferences().Count);
+		IsTrue(afterWipe.GetSummary().Periods.Count >= 2);
+	}
+
+	private static GrokUsageReader Import(string grokHome)
+	{
+		var reader = new GrokUsageReader(grokHome);
+		reader.ImportFromGrokHome();
+		return reader;
 	}
 
 	#endregion
@@ -294,6 +417,12 @@ public class GrokUsageReaderTests : GrokMonitorUnitTest
 				if (Directory.Exists(Root))
 				{
 					Directory.Delete(Root, true);
+				}
+
+				var archive = GrokPaths.GetUsageArchiveDirectory(Root);
+				if (Directory.Exists(archive))
+				{
+					Directory.Delete(archive, true);
 				}
 			}
 			catch

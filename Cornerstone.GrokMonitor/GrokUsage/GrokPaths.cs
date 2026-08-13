@@ -4,6 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using Cornerstone.Runtime;
 
 #endregion
 
@@ -31,6 +35,16 @@ public static class GrokPaths
 	/// Canonical primary home folder label (from ~/.grok after leading-dot strip).
 	/// </summary>
 	public const string PrimaryHomeDisplayName = "grok";
+
+	/// <summary>
+	/// Sidecar in each archive folder: full CLI home path + display name.
+	/// </summary>
+	public const string UsageArchiveHomeFileName = "home.json";
+
+	/// <summary>
+	/// Folder under ApplicationDataLocation that holds one archive directory per Grok home.
+	/// </summary>
+	public const string UsageArchiveRootName = "usage-archive";
 
 	#endregion
 
@@ -170,6 +184,140 @@ public static class GrokPaths
 	}
 
 	/// <summary>
+	/// Monitor-owned archive for one Grok home (survives CLI log rotation).
+	/// Under ApplicationDataLocation / usage-archive / {.grok | .grok-work | name-hash8}.
+	/// </summary>
+	/// <param name="grokHome"> Absolute Grok home directory. </param>
+	public static string GetUsageArchiveDirectory(string grokHome)
+	{
+		return GetUsageArchiveDirectory(grokHome, new RuntimeInformation());
+	}
+
+	/// <summary>
+	/// Monitor-owned archive for one Grok home (survives CLI log rotation).
+	/// Folder name is the CLI home last segment (.grok, .grok-work). When that folder
+	/// already belongs to a different path, a dash plus an 8-character path hash is appended.
+	/// </summary>
+	/// <param name="grokHome"> Absolute Grok home directory. </param>
+	/// <param name="runtimeInformation"> Runtime used to resolve ApplicationDataLocation. </param>
+	public static string GetUsageArchiveDirectory(string grokHome, IRuntimeInformation runtimeInformation)
+	{
+		var root = GetUsageArchiveRoot(runtimeInformation);
+		var fullHome = string.IsNullOrWhiteSpace(grokHome) ? "default" : Path.GetFullPath(grokHome);
+		var name = Path.GetFileName(fullHome.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+		if (string.IsNullOrEmpty(name))
+		{
+			name = "default";
+		}
+
+		var preferred = Path.GetFullPath(Path.Combine(root, name));
+		var stored = TryReadUsageArchiveHomePath(preferred);
+		if (!System.IO.Directory.Exists(preferred)
+			|| string.IsNullOrWhiteSpace(stored)
+			|| PathsEqual(stored, fullHome))
+		{
+			return preferred;
+		}
+
+		return Path.GetFullPath(Path.Combine(root, name + "-" + HomePathHash8(fullHome)));
+	}
+
+	/// <summary>
+	/// Root folder that contains per-home archive directories.
+	/// </summary>
+	public static string GetUsageArchiveRoot(IRuntimeInformation runtimeInformation)
+	{
+		var local = string.Empty;
+		if (runtimeInformation != null)
+		{
+			local = runtimeInformation.ApplicationDataLocation ?? string.Empty;
+		}
+
+		if (string.IsNullOrWhiteSpace(local))
+		{
+			local = new RuntimeInformation().ApplicationDataLocation;
+		}
+
+		if (string.IsNullOrWhiteSpace(local))
+		{
+			local = Path.GetTempPath();
+		}
+
+		return Path.GetFullPath(Path.Combine(local, UsageArchiveRootName));
+	}
+
+	/// <summary>
+	/// Reads the CLI home path from an archive home.json; empty when missing or invalid.
+	/// </summary>
+	public static string TryReadUsageArchiveHomePath(string archiveDirectory)
+	{
+		if (string.IsNullOrWhiteSpace(archiveDirectory))
+		{
+			return string.Empty;
+		}
+
+		var path = Path.Combine(archiveDirectory, UsageArchiveHomeFileName);
+		if (!File.Exists(path))
+		{
+			return string.Empty;
+		}
+
+		try
+		{
+			using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+			using var document = JsonDocument.Parse(stream);
+			if (document.RootElement.TryGetProperty("path", out var prop) && (prop.ValueKind == JsonValueKind.String))
+			{
+				return prop.GetString() ?? string.Empty;
+			}
+		}
+		catch (JsonException)
+		{
+			return string.Empty;
+		}
+		catch (IOException)
+		{
+			return string.Empty;
+		}
+
+		return string.Empty;
+	}
+
+	/// <summary>
+	/// Writes home.json so the archive folder can be matched back to a CLI home.
+	/// </summary>
+	public static void WriteUsageArchiveHomeFile(string archiveDirectory, string grokHome)
+	{
+		if (string.IsNullOrWhiteSpace(archiveDirectory) || string.IsNullOrWhiteSpace(grokHome))
+		{
+			return;
+		}
+
+		System.IO.Directory.CreateDirectory(archiveDirectory);
+		var fullHome = Path.GetFullPath(grokHome);
+		var displayName = GetDisplayNameFromPath(fullHome);
+		var json = JsonSerializer.Serialize(
+			new Dictionary<string, string>
+			{
+				["path"] = fullHome,
+				["displayName"] = displayName
+			});
+		var path = Path.Combine(archiveDirectory, UsageArchiveHomeFileName);
+		try
+		{
+			File.WriteAllText(path, json);
+		}
+		catch (IOException)
+		{
+			// next persist retries
+		}
+		catch (UnauthorizedAccessException)
+		{
+			// next persist retries
+		}
+	}
+
+	/// <summary>
 	/// True when this home is the primary ~/.grok-style home (display name grok).
 	/// </summary>
 	public static bool IsPrimaryHomeDisplayName(string displayName)
@@ -197,6 +345,20 @@ public static class GrokPaths
 
 		var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 		return Path.GetFullPath(Path.Combine(userProfile, ".grok"));
+	}
+
+	private static string HomePathHash8(string fullHome)
+	{
+		var hash = SHA256.HashData(Encoding.UTF8.GetBytes(fullHome.ToUpperInvariant()));
+		return System.Convert.ToHexString(hash).ToLowerInvariant()[..8];
+	}
+
+	private static bool PathsEqual(string left, string right)
+	{
+		return string.Equals(
+			Path.GetFullPath(left).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+			Path.GetFullPath(right).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+			StringComparison.OrdinalIgnoreCase);
 	}
 
 	private static void TryAddExistingHome(Dictionary<string, string> byPath, string path)

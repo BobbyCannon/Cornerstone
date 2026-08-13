@@ -512,7 +512,7 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 
 	public bool CanToggleReplay()
 	{
-		return !_isDesignSample && HasViewClock && !IsBusy;
+		return !_isDesignSample && HasViewClock;
 	}
 
 	/// <summary>
@@ -720,8 +720,8 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 			OnViewClockProgressChanged();
 		}
 
-		// CanToggleReplay depends on HasViewClock / IsBusy; Avalonia only re-queries after CanExecuteChanged.
-		if ((propertyName == nameof(HasViewClock)) || (propertyName == nameof(IsBusy)))
+		// CanToggleReplay depends on HasViewClock; Avalonia only re-queries after CanExecuteChanged.
+		if (propertyName == nameof(HasViewClock))
 		{
 			(ToggleReplayCommand as RelayCommand)?.Refresh();
 		}
@@ -1395,29 +1395,28 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 		ProjectAnalytics(home);
 		ProjectViewClock(home);
 
-		if (home.IsBusy)
+		if (!home.IsBusy)
 		{
-			StatusText = string.IsNullOrEmpty(home.ProgressText) ? "Refreshing…" : home.ProgressText;
-		}
-		else if (!string.IsNullOrEmpty(home.ErrorText))
-		{
-			StatusText = home.ErrorText;
-		}
-		else if (home.LastRefreshedAt != default)
-		{
-			var clockNote = _state.GrokUsage.IsViewLive
-				? "Live"
-				: $"As of {_state.GrokUsage.ViewAsOf.ToLocalTime():g}";
-			if (IsReplayPlaying)
+			if (!string.IsNullOrEmpty(home.ErrorText))
 			{
-				clockNote += $" · replay {FormatSpeed(ReplaySpeed)}";
+				StatusText = home.ErrorText;
 			}
+			else if (home.LastRefreshedAt != default)
+			{
+				var clockNote = _state.GrokUsage.IsViewLive
+					? "Live"
+					: $"As of {_state.GrokUsage.ViewAsOf.ToLocalTime():g}";
+				if (IsReplayPlaying)
+				{
+					clockNote += $" · replay {FormatSpeed(ReplaySpeed)}";
+				}
 
-			StatusText = $"Updated {home.LastRefreshedAt:u} · {home.Sessions.Count} session(s) · {clockNote}";
-		}
-		else
-		{
-			StatusText = "Ready";
+				StatusText = $"Updated {home.LastRefreshedAt:u} · {home.Sessions.Count} session(s) · {clockNote}";
+			}
+			else
+			{
+				StatusText = "Ready";
+			}
 		}
 
 		if (home is ITrackPropertyChanges trackable)

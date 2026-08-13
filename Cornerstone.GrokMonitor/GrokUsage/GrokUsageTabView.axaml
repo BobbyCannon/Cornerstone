@@ -13,20 +13,8 @@
 		<Border Classes="ToolBar" DockPanel.Dock="Top">
 			<Grid ColumnDefinitions="*,Auto">
 				<StackPanel Orientation="Horizontal"
-						Spacing="8"
 						VerticalAlignment="Center">
-					<ComboBox MinWidth="200"
-							ItemsSource="{Binding AvailablePeriods}"
-							SelectedItem="{Binding SelectedPeriod}"
-							ToolTip.Tip="Billing period for token totals and charts"
-							IsEnabled="{Binding !IsBusy}">
-						<ComboBox.ItemTemplate>
-							<DataTemplate x:DataType="state:GrokUsagePeriodState">
-								<TextBlock Text="{Binding DisplayName}" />
-							</DataTemplate>
-						</ComboBox.ItemTemplate>
-					</ComboBox>
-					<Button Classes="Icon"
+					<Button Theme.Color="None"
 							Command="{Binding RefreshCommand}"
 							ToolTip.Tip="Refresh"
 							IsEnabled="{Binding !IsBusy}">
@@ -42,6 +30,17 @@
 						<Path Data="{StaticResource Icons.Refresh}"
 								Width="16" Height="16" />
 					</Button>
+					<ComboBox MinWidth="320"
+							ItemsSource="{Binding AvailablePeriods}"
+							SelectedItem="{Binding SelectedPeriod}"
+							ToolTip.Tip="Billing period for token totals and charts"
+							IsEnabled="{Binding !IsBusy}">
+						<ComboBox.ItemTemplate>
+							<DataTemplate x:DataType="state:GrokUsagePeriodState">
+								<TextBlock Text="{Binding DisplayName}" />
+							</DataTemplate>
+						</ComboBox.ItemTemplate>
+					</ComboBox>
 				</StackPanel>
 				<TextBlock Grid.Column="1"
 						Text="{Binding StatusText}"
@@ -61,8 +60,7 @@
 						IsVisible="{Binding HasViewClock}">
 					<Button Classes="Icon"
 							Command="{Binding ToggleReplayCommand}"
-							ToolTip.Tip="Play or pause period replay at 1000×"
-							IsEnabled="{Binding !IsBusy}">
+							ToolTip.Tip="Play or pause period replay at 1000×">
 						<Panel>
 							<Path Data="{StaticResource Icons.Play}"
 									Width="14" Height="14"
@@ -81,8 +79,7 @@
 						TickFrequency="0.001"
 						IsSnapToTickEnabled="False"
 						Value="{Binding ViewClockProgress}"
-						ToolTip.Tip="Scrub the period timeline. End is live current time. Dragging pauses replay."
-						IsEnabled="{Binding !IsBusy}" />
+						ToolTip.Tip="Scrub the period timeline. End is live current time. Dragging pauses replay." />
 			</Grid>
 		</Border>
 		<Border DockPanel.Dock="Top">

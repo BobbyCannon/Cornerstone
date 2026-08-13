@@ -9,7 +9,7 @@ namespace Cornerstone.Profiling;
 /// <summary>
 /// Publishes sample arrays into a view <see cref="SeriesDataProvider" /> for charts.
 /// Prefer calling from AppDispatcher apply (same thread as the UI binding) — no extra
-/// <c>IDispatcher.Dispatch</c>. Same length mutates in place; new length assigns a new provider.
+/// <c> IDispatcher.Dispatch </c>. Same length mutates in place; new length assigns a new provider.
 /// </summary>
 public static class SeriesPresentation
 {

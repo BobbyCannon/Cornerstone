@@ -12,7 +12,7 @@ namespace Cornerstone.Profiling;
 /// Fixed-size ring buffer of doubles for series charts and profiling history.
 /// Use <see cref="CopyFrom" /> to snapshot a model series into a view series once per
 /// dispatch tick; <see cref="Version" /> aligns so the view can detect drift without an
-/// external applied-version field (<c>model.Version != view.Version</c>).
+/// external applied-version field (<c> model.Version != view.Version </c>).
 /// </summary>
 public class SeriesDataProvider : ISeriesDataProvider
 {
@@ -79,7 +79,7 @@ public class SeriesDataProvider : ISeriesDataProvider
 	/// <summary>
 	/// Monotonic revision for observable mutations (<see cref="Add" />, <see cref="AddRange" />).
 	/// <see cref="CopyFrom" /> sets this to the source's version so a view series can mirror
-	/// a model series with <c>HasModelChanges =&gt; model.Version != view.Version</c>.
+	/// a model series with <c> HasModelChanges =&gt; model.Version != view.Version </c>.
 	/// </summary>
 	public ulong Version { get; private set; }
 
@@ -111,31 +111,6 @@ public class SeriesDataProvider : ISeriesDataProvider
 			NextIndex = (NextIndex + 1) % _buffer.Length;
 		}
 
-		Version++;
-		OnDataChanged();
-	}
-
-	/// <summary>
-	/// Overwrites the entire buffer with chronological samples (index 0 = oldest),
-	/// sets a linear layout (<see cref="NextIndex" /> = 0), and raises
-	/// <see cref="DataChanged" /> once. Length must match.
-	/// Prefer this for static chart snapshots (daily totals) over ring <see cref="AddRange" />.
-	/// </summary>
-	public void ReplaceAll(ReadOnlySpan<double> values)
-	{
-		if (values.Length != _buffer.Length)
-		{
-			throw new ArgumentException(
-				$"Value count ({values.Length}) must match series length ({_buffer.Length}).",
-				nameof(values));
-		}
-
-		for (var i = 0; i < values.Length; i++)
-		{
-			_buffer[i] = values[i];
-		}
-
-		NextIndex = 0;
 		Version++;
 		OnDataChanged();
 	}
@@ -201,6 +176,31 @@ public class SeriesDataProvider : ISeriesDataProvider
 		}
 	}
 
+	/// <summary>
+	/// Overwrites the entire buffer with chronological samples (index 0 = oldest),
+	/// sets a linear layout (<see cref="NextIndex" /> = 0), and raises
+	/// <see cref="DataChanged" /> once. Length must match.
+	/// Prefer this for static chart snapshots (daily totals) over ring <see cref="AddRange" />.
+	/// </summary>
+	public void ReplaceAll(ReadOnlySpan<double> values)
+	{
+		if (values.Length != _buffer.Length)
+		{
+			throw new ArgumentException(
+				$"Value count ({values.Length}) must match series length ({_buffer.Length}).",
+				nameof(values));
+		}
+
+		for (var i = 0; i < values.Length; i++)
+		{
+			_buffer[i] = values[i];
+		}
+
+		NextIndex = 0;
+		Version++;
+		OnDataChanged();
+	}
+
 	public override string ToString()
 	{
 		return $"Next write at index {NextIndex}, Capacity = {Length}, Version = {Version}";
@@ -250,17 +250,17 @@ public interface ISeriesDataProvider : IEnumerable<double>
 	void AddRange(ReadOnlySpan<double> values);
 
 	/// <summary>
-	/// Overwrites all samples (chronological, linear layout) and raises <see cref="DataChanged" /> once.
-	/// Length must match.
-	/// </summary>
-	void ReplaceAll(ReadOnlySpan<double> values);
-
-	/// <summary>
 	/// Snapshot <paramref name="source" /> into this instance and align <see cref="Version" />.
 	/// </summary>
 	void CopyFrom(ISeriesDataProvider source);
 
 	double GetCurrentValue();
+
+	/// <summary>
+	/// Overwrites all samples (chronological, linear layout) and raises <see cref="DataChanged" /> once.
+	/// Length must match.
+	/// </summary>
+	void ReplaceAll(ReadOnlySpan<double> values);
 
 	#endregion
 

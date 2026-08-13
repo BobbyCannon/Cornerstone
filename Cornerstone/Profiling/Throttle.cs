@@ -19,10 +19,10 @@ public sealed class Throttle : IDisposable
 	#region Fields
 
 	private readonly Action _action;
+	private bool _disposed;
 	private readonly TimeSpan _interval;
 	private DateTime _lastExecuted;
 	private readonly object _lock;
-	private bool _disposed;
 	private bool _trailingPending;
 	private System.Threading.Timer _trailingTimer;
 
@@ -47,6 +47,20 @@ public sealed class Throttle : IDisposable
 	#endregion
 
 	#region Methods
+
+	public void Dispose()
+	{
+		lock (_lock)
+		{
+			if (_disposed)
+			{
+				return;
+			}
+
+			_disposed = true;
+			CancelTrailingUnsafe();
+		}
+	}
 
 	/// <summary>
 	/// Attempts to run the action.
@@ -89,20 +103,6 @@ public sealed class Throttle : IDisposable
 
 		// Invoke outside the lock so re-entrant Trigger does not deadlock.
 		toRun?.Invoke();
-	}
-
-	public void Dispose()
-	{
-		lock (_lock)
-		{
-			if (_disposed)
-			{
-				return;
-			}
-
-			_disposed = true;
-			CancelTrailingUnsafe();
-		}
 	}
 
 	private void CancelTrailingUnsafe()

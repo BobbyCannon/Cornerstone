@@ -8,13 +8,15 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using Cornerstone.GrokMonitor.GrokUsage.Models;
+using Cornerstone.Runtime;
 
 #endregion
 
 namespace Cornerstone.GrokMonitor.GrokUsage;
 
 /// <summary>
-/// Reads local Grok Build CLI usage data (unified log + session summaries).
+/// Reads usage from the monitor archive. CLI homes are an import source only
+/// (<see cref="ImportFromGrokHome" />); getters never open ~/.grok*.
 /// </summary>
 public sealed class GrokUsageReader
 {
@@ -27,20 +29,43 @@ public sealed class GrokUsageReader
 
 	#endregion
 
+	#region Fields
+
+	private readonly GrokUsageArchive _archive;
+
+	#endregion
+
 	#region Constructors
 
 	/// <summary>
 	/// Creates a reader for the given Grok home (or the default resolved home).
 	/// </summary>
-	/// <param name="grokHome"> Optional Grok home path. When null, uses GROK_HOME or ~/.grok. </param>
-	public GrokUsageReader(string grokHome = null)
+	/// <param name="grokHome"> Optional Grok home path. When empty, uses GROK_HOME or ~/.grok. </param>
+	/// <param name="archiveDirectory">
+	/// Optional monitor archive directory. When empty, uses
+	/// <see cref="GrokPaths.GetUsageArchiveDirectory" /> for the resolved home.
+	/// </param>
+	/// <param name="runtimeInformation">
+	/// Optional runtime for ApplicationDataLocation when archiveDirectory is empty.
+	/// </param>
+	public GrokUsageReader(string grokHome = null, string archiveDirectory = null, IRuntimeInformation runtimeInformation = null)
 	{
 		GrokHome = GrokPaths.ResolveHome(grokHome);
+		var archivePath = string.IsNullOrWhiteSpace(archiveDirectory)
+			? GrokPaths.GetUsageArchiveDirectory(GrokHome, runtimeInformation ?? new RuntimeInformation())
+			: Path.GetFullPath(archiveDirectory);
+		ArchiveDirectory = archivePath;
+		_archive = new GrokUsageArchive(archivePath, GrokHome);
 	}
 
 	#endregion
 
 	#region Properties
+
+	/// <summary>
+	/// Monitor-owned archive directory (inferences + billing that survive log rotation).
+	/// </summary>
+	public string ArchiveDirectory { get; }
 
 	/// <summary>
 	/// Resolved Grok home directory used by this reader.
@@ -52,47 +77,30 @@ public sealed class GrokUsageReader
 	#region Methods
 
 	/// <summary>
-	/// Returns every billing snapshot from the unified log in chronological order.
+	/// Returns every billing snapshot stored in the archive, chronological.
 	/// </summary>
 	public IReadOnlyList<BillingSnapshot> GetAllBillingSnapshots()
 	{
-		var results = new List<BillingSnapshot>();
-		foreach (var line in ReadLogLines())
-		{
-			if (TryParseBilling(line, out var snapshot))
-			{
-				results.Add(snapshot);
-			}
-		}
-
-		return results
+		return _archive.LoadBilling()
 			.OrderBy(x => x.Timestamp)
 			.ToList();
 	}
 
 	/// <summary>
-	/// Streams all inference_done events from the unified log.
+	/// Returns inference rows stored in the archive.
 	/// </summary>
 	/// <param name="since"> When set, only inferences at or after this time are returned. </param>
 	public IReadOnlyList<InferenceUsage> GetAllInferences(DateTimeOffset? since = null)
 	{
-		var results = new List<InferenceUsage>();
-		foreach (var line in ReadLogLines())
+		var merged = _archive.LoadInferences();
+		if (since is not null)
 		{
-			if (!TryParseInference(line, out var inference))
-			{
-				continue;
-			}
-
-			if (since is not null && (inference.Timestamp < since.Value))
-			{
-				continue;
-			}
-
-			results.Add(inference);
+			return merged
+				.Where(x => x.Timestamp >= since.Value)
+				.ToList();
 		}
 
-		return results;
+		return merged;
 	}
 
 	/// <summary>
@@ -133,20 +141,70 @@ public sealed class GrokUsageReader
 	}
 
 	/// <summary>
-	/// Builds a summary of sessions and billing history from the unified log.
+	/// Builds a summary from the archive (import first when the CLI home may have new data).
 	/// </summary>
 	/// <param name="since"> Optional lower bound for inference timestamps / session inclusion. </param>
 	public GrokUsageSummary GetSummary(DateTimeOffset? since = null)
 	{
-		var billingHistory = GetAllBillingSnapshots();
+		var billingHistory = _archive.LoadBilling()
+			.OrderBy(x => x.Timestamp)
+			.ToList();
 		return new GrokUsageSummary
 		{
 			Sessions = GetSessions(since),
 			BillingHistory = billingHistory,
 			LatestBilling = billingHistory.Count == 0
 				? new BillingSnapshot()
-				: billingHistory[billingHistory.Count - 1]
+				: billingHistory[billingHistory.Count - 1],
+			Periods = _archive.LoadPeriods(DateTimeOffset.UtcNow)
 		};
+	}
+
+	/// <summary>
+	/// Reads the CLI unified log and session summaries into the usage archive.
+	/// Safe to call repeatedly (deduped append).
+	/// </summary>
+	public void ImportFromGrokHome()
+	{
+		var billing = new List<BillingSnapshot>();
+		var inferences = new List<InferenceUsage>();
+		foreach (var line in ReadLogLines())
+		{
+			if (TryParseBilling(line, out var snapshot))
+			{
+				billing.Add(snapshot);
+			}
+			else if (TryParseInference(line, out var inference))
+			{
+				inferences.Add(inference);
+			}
+		}
+
+		var infos = DiscoverSessionInfos();
+		var bySession = inferences
+			.GroupBy(x => x.SessionId, StringComparer.Ordinal)
+			.ToDictionary(g => g.Key, g => g.OrderBy(x => x.Timestamp).ToList(), StringComparer.Ordinal);
+		var attributedBySession = new HashSet<string>(StringComparer.Ordinal);
+		var toStore = new List<InferenceUsage>();
+		foreach (var info in infos)
+		{
+			bySession.TryGetValue(info.SessionId, out var list);
+			list ??= [];
+			toStore.AddRange(AttributeModels(info, list));
+			attributedBySession.Add(info.SessionId);
+		}
+
+		foreach (var pair in bySession)
+		{
+			if (!attributedBySession.Contains(pair.Key))
+			{
+				toStore.AddRange(pair.Value);
+			}
+		}
+
+		_archive.MergeBilling(billing);
+		_archive.MergeInferences(toStore);
+		_archive.MergeSessions(infos, toStore);
 	}
 
 	private IReadOnlyList<InferenceUsage> AttributeModels(SessionInfo info, IReadOnlyList<InferenceUsage> inferences)
@@ -272,7 +330,7 @@ public sealed class GrokUsageReader
 			.GroupBy(x => x.SessionId, StringComparer.Ordinal)
 			.ToDictionary(g => g.Key, g => g.OrderBy(x => x.Timestamp).ToList(), StringComparer.Ordinal);
 
-		var discovered = DiscoverSessionInfos();
+		var discovered = _archive.LoadSessionInfos();
 		var results = new List<SessionUsage>();
 		var seen = new HashSet<string>(StringComparer.Ordinal);
 
@@ -301,15 +359,14 @@ public sealed class GrokUsageReader
 				}
 			}
 
-			var attributed = AttributeModels(info, filtered);
 			results.Add(new SessionUsage
 			{
 				Info = info,
-				Inferences = attributed
+				Inferences = filtered
 			});
 		}
 
-		// Orphan sids: present in log but no summary directory.
+		// Orphan sids: present in the archive but no session stub.
 		foreach (var pair in bySession)
 		{
 			if (string.IsNullOrEmpty(pair.Key) || seen.Contains(pair.Key))
@@ -336,7 +393,7 @@ public sealed class GrokUsageReader
 			results.Add(new SessionUsage
 			{
 				Info = info,
-				Inferences = AttributeModels(info, filtered)
+				Inferences = filtered
 			});
 		}
 
@@ -705,8 +762,8 @@ public sealed class GrokUsageReader
 
 			workingDirectory ??= cwdFallback;
 
-			var title = GetString(root, "generated_title") ?? GetString(root, "session_summary");
-			var currentModelId = GetString(root, "current_model_id");
+			var title = GetString(root, "generated_title") ?? GetString(root, "session_summary") ?? string.Empty;
+			var currentModelId = GetString(root, "current_model_id") ?? string.Empty;
 
 			DateTimeOffset? createdAt = null;
 			DateTimeOffset? updatedAt = null;

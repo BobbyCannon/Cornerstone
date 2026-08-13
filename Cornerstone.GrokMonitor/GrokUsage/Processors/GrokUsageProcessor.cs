@@ -46,6 +46,11 @@ public partial class GrokUsageProcessor : AppProcessor
 	private readonly Dictionary<Guid, GrokUsageSummary> _summaryByHomeId = new();
 
 	/// <summary>
+	/// Resolves ApplicationDataLocation for the usage archive.
+	/// </summary>
+	private readonly IRuntimeInformation _runtimeInformation;
+
+	/// <summary>
 	/// Real (or test) wall clock; used when live and for LastRefreshedAt / period discovery.
 	/// </summary>
 	private readonly IDateTimeProvider _wallClock;
@@ -55,9 +60,14 @@ public partial class GrokUsageProcessor : AppProcessor
 	#region Constructors
 
 	[DependencyInjectionConstructor]
-	public GrokUsageProcessor(AppBus bus, AppState state, IDateTimeProvider dateTimeProvider = null)
+	public GrokUsageProcessor(
+		AppBus bus,
+		AppState state,
+		IRuntimeInformation runtimeInformation,
+		IDateTimeProvider dateTimeProvider = null)
 		: base(bus, state)
 	{
+		_runtimeInformation = runtimeInformation ?? new RuntimeInformation();
 		_wallClock = dateTimeProvider ?? DateTimeProvider.RealTime;
 		_dateTimeProvider = GrokUsageDateTimeProvider.Create(state.GrokUsage, _wallClock);
 	}
@@ -209,13 +219,37 @@ public partial class GrokUsageProcessor : AppProcessor
 		}
 
 		// Period list is real-world (wall); scrubbing must not rewrite available weeks.
-		var periodOptions = GrokUsageAnalytics.DiscoverBillingPeriods(
-			summary.BillingHistory,
-			summary.LatestBilling,
-			earliest,
-			wallNow,
-			planStart,
-			planEnd);
+		// Archive period folders are the dropdown when import has created any.
+		IReadOnlyList<UsagePeriodOption> periodOptions;
+		if ((summary.Periods != null) && (summary.Periods.Count > 0))
+		{
+			periodOptions = summary.Periods
+				.Select(x =>
+				{
+					var isCurrent = (wallNow >= x.PeriodStart) && (wallNow < x.PeriodEnd);
+					return x with
+					{
+						IsCurrent = isCurrent,
+						DisplayName = GrokUsageAnalytics.FormatPeriodDisplayName(
+							x.PeriodStart,
+							x.PeriodEnd,
+							isCurrent,
+							x.PeriodType)
+					};
+				})
+				.OrderByDescending(x => x.PeriodStart)
+				.ToList();
+		}
+		else
+		{
+			periodOptions = GrokUsageAnalytics.DiscoverBillingPeriods(
+				summary.BillingHistory,
+				summary.LatestBilling,
+				earliest,
+				wallNow,
+				planStart,
+				planEnd);
+		}
 
 		var selected = ResolveSelectedPeriod(home, periodOptions, summary.LatestBilling, wallNow);
 
@@ -678,6 +712,11 @@ public partial class GrokUsageProcessor : AppProcessor
 			{
 				_pendingDiskRefresh.Add(homeId);
 			}
+			else if (_summaryByHomeId.TryGetValue(homeId, out var busyCached) && (busyCached != null))
+			{
+				// Clock scrub must still reproject a home that is mid disk load.
+				ApplySummary(home, busyCached, default);
+			}
 
 			return;
 		}
@@ -719,7 +758,8 @@ public partial class GrokUsageProcessor : AppProcessor
 				? null
 				: State.GrokUsage.SinceUtc;
 
-			var reader = new GrokUsageReader(path);
+			var reader = new GrokUsageReader(path, null, _runtimeInformation);
+			reader.ImportFromGrokHome();
 			var summary = reader.GetSummary(since);
 			_summaryByHomeId[homeId] = summary;
 			ApplySummary(home, summary, WallUtcNowOffset());

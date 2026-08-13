@@ -64,7 +64,7 @@ public class Profiler : IEnumerable<TimedScopeStats>
 	/// </summary>
 	public void Increment(string name, long delta = 1)
 	{
-		if ((name is null) || (delta == 0))
+		if (name is null || (delta == 0))
 		{
 			return;
 		}

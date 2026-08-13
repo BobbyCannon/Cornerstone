@@ -1,9 +1,9 @@
 ﻿#region References
 
+using System;
 using Cornerstone.Data;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
-using System;
 
 #endregion
 
@@ -183,14 +183,6 @@ public partial class Timer : CornerstoneObject<Timer>, IRequiresDateTimeProvider
 	}
 
 	/// <summary>
-	/// Start the timer.
-	/// </summary>
-	public override void StartLifecycle()
-	{
-		Start(GetCurrentTime());
-	}
-
-	/// <summary>
 	/// Starts the timer with a specific time.
 	/// </summary>
 	/// <param name="dateTime"> The time the timer was started. </param>
@@ -211,6 +203,14 @@ public partial class Timer : CornerstoneObject<Timer>, IRequiresDateTimeProvider
 	}
 
 	/// <summary>
+	/// Start the timer.
+	/// </summary>
+	public override void StartLifecycle()
+	{
+		Start(GetCurrentTime());
+	}
+
+	/// <summary>
 	/// Creates a timer and starts it running.
 	/// </summary>
 	/// <returns> The new timer that is currently running. </returns>
@@ -219,15 +219,6 @@ public partial class Timer : CornerstoneObject<Timer>, IRequiresDateTimeProvider
 		var timer = new Timer(timeProvider);
 		timer.StartLifecycle();
 		return timer;
-	}
-
-	/// <summary>
-	/// Stops the timer.
-	/// </summary>
-	public override void StopLifecycle()
-	{
-		Stop(GetCurrentTime());
-		base.StopLifecycle();
 	}
 
 	/// <summary>
@@ -251,6 +242,15 @@ public partial class Timer : CornerstoneObject<Timer>, IRequiresDateTimeProvider
 
 		StartedOn = DateTime.MinValue;
 		return elapsed;
+	}
+
+	/// <summary>
+	/// Stops the timer.
+	/// </summary>
+	public override void StopLifecycle()
+	{
+		Stop(GetCurrentTime());
+		base.StopLifecycle();
 	}
 
 	/// <summary>

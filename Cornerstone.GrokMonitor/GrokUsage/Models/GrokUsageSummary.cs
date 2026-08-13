@@ -51,6 +51,11 @@ public record GrokUsageSummary
 	public BillingSnapshot LatestBilling { get; init; } = new();
 
 	/// <summary>
+	/// Usage periods stored in the archive (dropdown source). Empty before first import.
+	/// </summary>
+	public IReadOnlyList<UsagePeriodOption> Periods { get; init; } = [];
+
+	/// <summary>
 	/// Per-session usage rows included in this summary.
 	/// </summary>
 	public IReadOnlyList<SessionUsage> Sessions { get; init; } = [];

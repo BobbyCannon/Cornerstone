@@ -11,6 +11,7 @@ using Cornerstone.GrokMonitor.GrokUsage.Processors;
 using Cornerstone.GrokMonitor.GrokUsage.State;
 using Cornerstone.GrokMonitor.Keystone;
 using Cornerstone.GrokMonitor.Keystone.State;
+using Cornerstone.Runtime;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
@@ -660,7 +661,7 @@ public class GrokUsageProcessorTests : GrokMonitorUnitTest
 		var bus = new AppBus(channel);
 		var usage = new GrokUsageState();
 		var state = new AppState(new AppSettings(), usage);
-		var processor = new GrokUsageProcessor(bus, state, this);
+		var processor = new GrokUsageProcessor(bus, state, new RuntimeInformation(), this);
 		return (bus, state, processor);
 	}
 
@@ -697,6 +698,12 @@ public class GrokUsageProcessorTests : GrokMonitorUnitTest
 				if (Directory.Exists(Root))
 				{
 					Directory.Delete(Root, true);
+				}
+
+				var archive = GrokPaths.GetUsageArchiveDirectory(Root);
+				if (Directory.Exists(archive))
+				{
+					Directory.Delete(archive, true);
 				}
 			}
 			catch
