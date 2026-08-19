@@ -6,10 +6,13 @@ using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Primitives.PopupPositioning;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Threading;
 using Cornerstone.Avalonia.Text.Margins;
+using Cornerstone.Avalonia.Text.Models;
 
 #endregion
 
@@ -31,7 +34,7 @@ public partial class TextEditor<T> : CornerstoneTemplatedControl<T>
 
 	/// <summary>
 	/// True while we are programmatically pinning to the bottom. ScrollChanged in that
-	/// window must not clear <see cref="AutoScroll"/>.
+	/// window must not clear <see cref="AutoScroll" />.
 	/// </summary>
 	private bool _isProgrammaticScroll;
 
@@ -47,6 +50,13 @@ public partial class TextEditor<T> : CornerstoneTemplatedControl<T>
 
 		LeftMargins = [];
 		TextInputMethodClientRequestedEvent.AddClassHandler<TextEditor>((tb, e) => e.Client = tb._imClient);
+
+		TextOptions.SetTextOptions(this, new TextOptions
+		{
+			TextRenderingMode = TextRenderingMode.SubpixelAntialias,
+			TextHintingMode = TextHintingMode.Strong,
+			BaselinePixelAlignment = BaselinePixelAlignment.Aligned
+		});
 	}
 
 	static TextEditor()
@@ -92,8 +102,12 @@ public partial class TextEditor<T> : CornerstoneTemplatedControl<T>
 		set => GetViewModel().WordWrap = value is ScrollBarVisibility.Disabled or ScrollBarVisibility.Hidden;
 	}
 
-	[StyledProperty]
-	public partial bool IsReadOnly { get; set; }
+	[DirectProperty]
+	public bool IsReadOnly
+	{
+		get => GetViewModel().IsReadOnly;
+		set => GetViewModel().IsReadOnly = value;
+	}
 
 	[DirectProperty]
 	public ObservableCollection<Control> LeftMargins { get; }
@@ -124,6 +138,8 @@ public partial class TextEditor<T> : CornerstoneTemplatedControl<T>
 		get => GetViewModel().WordWrap;
 		set => GetViewModel().WordWrap = value;
 	}
+
+	protected Popup CompletionPopup { get; private set; }
 
 	protected ScrollViewer ScrollViewer { get; private set; }
 
@@ -212,6 +228,24 @@ public partial class TextEditor<T> : CornerstoneTemplatedControl<T>
 			Renderer = textRenderer;
 		}
 
+		if (CompletionPopup != null)
+		{
+			CompletionPopup.Closed -= CompletionPopupOnClosed;
+		}
+
+		CompletionPopup = e.NameScope.Find("PART_CompletionPopup") as Popup;
+		if (CompletionPopup != null)
+		{
+			CompletionPopup.PlacementTarget = Renderer;
+			CompletionPopup.Closed += CompletionPopupOnClosed;
+		}
+
+		if (e.NameScope.Find("PART_CompletionList") is ListBox completionList)
+		{
+			completionList.DoubleTapped -= CompletionListOnDoubleTapped;
+			completionList.DoubleTapped += CompletionListOnDoubleTapped;
+		}
+
 		// Create margins here (after we know we have a ViewModel)
 		if (LeftMargins.Count == 0)
 		{
@@ -256,6 +290,7 @@ public partial class TextEditor<T> : CornerstoneTemplatedControl<T>
 	{
 		base.OnLoaded(e);
 		UpdateShowMargins();
+
 		// ScrollChanged for subclasses is wired in AttachScrollViewer (with PART_ScrollViewer),
 		// not here — OnLoaded often runs before the template, so ScrollViewer is still null.
 	}
@@ -332,6 +367,8 @@ public partial class TextEditor<T> : CornerstoneTemplatedControl<T>
 
 		vm.PropertyChanged -= ViewModelOnPropertyChanged;
 		vm.PropertyChanged += ViewModelOnPropertyChanged;
+		vm.CompletionManager.Dispatcher = GetDispatcher();
+		AttachCompletionManager(vm.CompletionManager);
 	}
 
 	private void DetachScrollViewer()
@@ -349,6 +386,7 @@ public partial class TextEditor<T> : CornerstoneTemplatedControl<T>
 
 		vm.DocumentChanged -= DocumentOnDocumentChanged;
 		vm.PropertyChanged -= ViewModelOnPropertyChanged;
+		DetachCompletionManager(vm.CompletionManager);
 	}
 
 	private void DocumentOnDocumentChanged(object sender, TextDocumentChangedArgs e)
@@ -358,7 +396,7 @@ public partial class TextEditor<T> : CornerstoneTemplatedControl<T>
 			ViewModel.Caret.Reset();
 			InvalidateMeasure();
 		}
-		else
+		else if (!ViewModel.Lines.LastEditNeedsPaintOnly)
 		{
 			foreach (var leftMargin in LeftMargins)
 			{
@@ -366,8 +404,15 @@ public partial class TextEditor<T> : CornerstoneTemplatedControl<T>
 			}
 		}
 
-		// Pin after layout: Render is too early — Extent still has the old height.
-		if (AutoScroll)
+		// Host output inserted before a live prompt: keep the prompt line on screen.
+		if (e.PinViewport)
+		{
+			SchedulePinViewport(e.Text);
+			return;
+		}
+
+		// In-place last-line edits do not grow height; skip ScrollToEnd/UpdateLayout.
+		if (AutoScroll && !ViewModel.Lines.LastEditNeedsPaintOnly)
 		{
 			ScheduleScrollToEnd();
 		}
@@ -388,6 +433,63 @@ public partial class TextEditor<T> : CornerstoneTemplatedControl<T>
 
 		var maxOffset = Math.Max(0, scrollViewer.Extent.Height - scrollViewer.Viewport.Height);
 		return (maxOffset - scrollViewer.Offset.Y) <= thresholdPixels;
+	}
+
+	/// <summary>
+	/// After a before-prompt insert, add the inserted height to the scroll offset
+	/// so the prompt / input line does not jump.
+	/// </summary>
+	private void SchedulePinViewport(string insertedText)
+	{
+		var lineHeight = ViewModel?.ViewMetrics.CharacterHeight ?? 0;
+		var lineBreaks = CountNewlines(insertedText);
+		var addedHeight = lineHeight * lineBreaks;
+
+		Dispatcher.UIThread.Post(
+			() =>
+			{
+				if (ScrollViewer is null)
+				{
+					return;
+				}
+
+				_isProgrammaticScroll = true;
+				try
+				{
+					if (addedHeight > 0)
+					{
+						ScrollViewer.Offset = new Vector(
+							ScrollViewer.Offset.X,
+							ScrollViewer.Offset.Y + addedHeight);
+					}
+				}
+				finally
+				{
+					Dispatcher.UIThread.Post(
+						() => _isProgrammaticScroll = false,
+						DispatcherPriority.Loaded);
+				}
+			},
+			DispatcherPriority.Loaded);
+	}
+
+	private static int CountNewlines(string text)
+	{
+		if (string.IsNullOrEmpty(text))
+		{
+			return 0;
+		}
+
+		var count = 0;
+		for (var i = 0; i < text.Length; i++)
+		{
+			if (text[i] == '\n')
+			{
+				count++;
+			}
+		}
+
+		return count;
 	}
 
 	/// <summary>
@@ -412,15 +514,17 @@ public partial class TextEditor<T> : CornerstoneTemplatedControl<T>
 		{
 			// still allow margin invalidation below
 		}
+
 		// Content grew while stick-to-bottom: re-pin (Extent change, not user scroll).
 		else if (AutoScroll && (e.ExtentDelta.Y > 0))
 		{
 			ScheduleScrollToEnd();
 		}
+
 		// Real user scroll-away from bottom (no extent growth this event).
 		else if ((e.OffsetDelta.Y < 0)
-			&& (Math.Abs(e.ExtentDelta.Y) < 0.5)
-			&& !IsNearBottom())
+				&& (Math.Abs(e.ExtentDelta.Y) < 0.5)
+				&& !IsNearBottom())
 		{
 			AutoScroll = false;
 		}
@@ -433,6 +537,77 @@ public partial class TextEditor<T> : CornerstoneTemplatedControl<T>
 		// Diff sync and other overrides — always invoked when the ScrollViewer is attached,
 		// not only when OnLoaded happened to see a non-null ScrollViewer.
 		OnScrollChanged(sender, e);
+	}
+
+	private void AttachCompletionManager(CompletionManager manager)
+	{
+		if (manager == null)
+		{
+			return;
+		}
+
+		manager.PropertyChanged -= CompletionManagerOnPropertyChanged;
+		manager.PropertyChanged += CompletionManagerOnPropertyChanged;
+		UpdateCompletionPopup();
+	}
+
+	private void CompletionListOnDoubleTapped(object sender, TappedEventArgs e)
+	{
+		ViewModel?.CompletionManager.ApplySelected();
+	}
+
+	private void CompletionManagerOnPropertyChanged(object sender, PropertyChangedEventArgs e)
+	{
+		if ((e.PropertyName == nameof(CompletionManager.IsOpen))
+			|| (e.PropertyName == nameof(CompletionManager.VisibleItems)))
+		{
+			UpdateCompletionPopup();
+		}
+	}
+
+	private void CompletionPopupOnClosed(object sender, EventArgs e)
+	{
+		if (ViewModel?.CompletionManager.IsOpen == true)
+		{
+			ViewModel.CompletionManager.Close();
+		}
+	}
+
+	private void DetachCompletionManager(CompletionManager manager)
+	{
+		if (manager == null)
+		{
+			return;
+		}
+
+		manager.PropertyChanged -= CompletionManagerOnPropertyChanged;
+	}
+
+	private void UpdateCompletionPopup()
+	{
+		var popup = CompletionPopup;
+		var manager = ViewModel?.CompletionManager;
+		if ((popup == null) || (manager == null))
+		{
+			return;
+		}
+
+		if (!manager.IsOpen || (manager.VisibleItems.Count == 0))
+		{
+			popup.IsOpen = false;
+			return;
+		}
+
+		popup.PlacementTarget = Renderer;
+		popup.Placement = PlacementMode.AnchorAndGravity;
+		popup.PlacementAnchor = PopupAnchor.TopLeft;
+		popup.PlacementGravity = PopupGravity.BottomRight;
+
+		var caret = ViewModel.Caret.VisualLayout;
+		var scroll = ScrollViewer?.Offset ?? default;
+		popup.HorizontalOffset = caret.X - scroll.X;
+		popup.VerticalOffset = caret.Bottom - scroll.Y;
+		popup.IsOpen = true;
 	}
 
 	private void UpdateShowMargins()

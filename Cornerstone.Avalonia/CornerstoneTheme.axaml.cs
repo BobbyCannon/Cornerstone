@@ -62,9 +62,11 @@ public class CornerstoneTheme : Style
 		ThemeModeProperty = AvaloniaProperty.Register<CornerstoneTheme, ThemeMode>(nameof(ThemeMode), ThemeMode.Dark);
 
 		DejaVuSansLight = new("avares://Cornerstone.Avalonia/Assets/Fonts/DejaVuSansLight.ttf#DejaVu Sans Light");
-		DejaVuSansMono = new("avares://Cornerstone.Avalonia/Assets/Fonts/DejaVuSansMono.ttf#DejaVu Sans Mono");
-		OpenSansLight = new("avares://Cornerstone.Avalonia/Assets/Fonts/OpenSansLight.ttf#Open Sans");
-		OpenSansRegular = new("avares://Cornerstone.Avalonia/Assets/Fonts/OpenSansRegular.ttf#Open Sans");
+		// Directory of Regular/Bold/Oblique cuts. Pointing at one .ttf makes Bold synthetic and fuzzy.
+		DejaVuSansMono = new("avares://Cornerstone.Avalonia/Assets/Fonts/DejaVuSansMono#DejaVu Sans Mono");
+		OpenSansLight = new("avares://Cornerstone.Avalonia/Assets/Fonts/OpenSans/OpenSans-Light.ttf#Open Sans");
+		// Directory of Regular/Bold/Italic cuts. A single Regular.ttf makes FontWeight.Bold synthetic.
+		OpenSansRegular = new("avares://Cornerstone.Avalonia/Assets/Fonts/OpenSans#Open Sans");
 
 		ToggleThemeCommand = new RelayCommand(ToggleTheme);
 	}
@@ -187,6 +189,7 @@ public class CornerstoneTheme : Style
 		);
 
 		Resources.MergedDictionaries.Insert(0, _colorTheme);
+		Theme.RaiseAccentChanged();
 	}
 
 	/// <summary>

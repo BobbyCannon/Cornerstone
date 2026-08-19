@@ -1,4 +1,4 @@
-﻿# Keystone
+# Keystone
 
 A lightweight architectural framework built around the **Bus : State : Engine** pattern.
 
@@ -22,6 +22,20 @@ Keystone organizes systems around three clear responsibilities:
 | **Bus** | A message/channel layer that decouples producers and consumers of change |
 
 This separation keeps mutation logic isolated, communication explicit, and the overall system easier to reason about, test, and extend.
+
+### Scope and thread
+
+Keystone is **application business logic only** (domain rules, IO, persistence, process work). It is not a UI layer.
+
+| Expect | Do not |
+|--------|--------|
+| Bus, State, and processors run **off the UI dispatcher** (bus handlers, `ProcessLifecycle`, background IO) | Call `IDispatcher.Dispatch`, touch Avalonia, or assume a visual tree |
+| State is a UI-free snapshot | Put selection, scroll, or control instances on State |
+| UI **publishes** messages; processors write State | Run domain rules on the UI thread “so the view updates” |
+
+If a processor “needs the dispatcher,” the work belongs in a ViewModel / AppDispatcher apply, or the result should be written to State and **projected** later. Nothing called from Keystone should require dispatching.
+
+ViewModels stay in sync for **display and user input** via [AppDispatcher](AppDispatcher.md) (or manual [ViewIntegration](ViewIntegration.md)). That projection runs **on** the UI dispatcher; Keystone producers stay off it.
 
 ---
 
@@ -68,7 +82,7 @@ FeatureName/                  # e.g. SourceControl, Sync, Browser
 
 | Prefer under the feature | Prefer under host `Keystone/` |
 |--------------------------|--------------------------------|
-| Feature channel, messages, message types | `AppBus` / `AppState` / `AppEngine` |
+| Feature channel (messages nested on the channel type) | `AppBus` / `AppState` / `AppEngine` |
 | Feature state types composed into root state | Channels/state used by many features equally |
 | Feature processor(s) | Processors that are app-wide infrastructure |
 | Feature services used only by that processor | — |
@@ -90,15 +104,17 @@ Each processor:
 
 - Receives a message (command or event) from the Bus  
 - Reads the current State  
-- Produces a new State (or a partial update)  
+- Mutates State in place (change bits / SpeedyList pending)  
 - May emit new messages back onto the Bus  
 
-Processors are deliberately kept **mostly stateless**. Any internal state they hold is limited to short-lived working data required for a single operation (caches, temporary buffers, etc.). Persistent or domain state always lives in the State component.
+Processors may hold working memory (caches, disk watchers, replay clocks). Persistent or domain state always lives in the State component. Mark a processor `[ChannelHandlers]` so `OnRefreshHome(Message)` is subscribed in generated `InitializeLifecycle` (call `base`).
 
 ### Bus (`AppBus`)
 The Bus provides named channels for asynchronous or synchronous communication.  
 
 Components publish messages onto channels and subscribe to the channels they care about. This decouples the Engine from external actors (UI, other services, timers, etc.) and allows multiple processors or external systems to react to the same event without tight coupling.
+
+**Preferred message layout:** declare each `[ChannelMessage<TChannel>]` `record struct` **inside** the `TChannel` type (a `#region Records` on the partial class). Do not put payloads in a sibling `*Messages.cs` file. Name nested types `RefreshHomeMessage`. The generator strips a trailing `Message` to emit `RefreshHome` / `SubscribeToRefreshHome`. Optional `[ChannelMessage<T>("ShowMessage")]` overrides the method when the type name cannot match (e.g. `NotificationMessage`). Do not name the nested type the same as the publish method (`RefreshHome` on `GrokUsageChannel` is a CS0102 collision). Call sites outside the channel qualify as `GrokUsageChannel.RefreshHomeMessage`. Example: `NotificationChannel` nesting `NotificationMessage`.
 
 **Diagnostics:** set `KeystoneBus.IsHistoryEnabled = true` to record completed publishes into `History` (duration, handler count, errors; bounded by `History.Limit`). Optional `HistoryFilter` text (`channel:… type:0,2 error:true`) restricts what is written to the ring. Off by default. See [Diagnostics.md](Diagnostics.md).
 
@@ -106,9 +122,9 @@ Components publish messages onto channels and subscribe to the channels they car
 
 Every `AppKeystone` exposes a clear, ordered lifecycle:
 
-1. `InitializeLifecycle()`
-1. `LoadLifecycle()`
-1. `StartLifecycle()`
+1. `InitializeLifecycle()` — subscribe, construct children; do not load persisted data
+1. `LoadLifecycle()` — first fill from disk, settings, or local DB
+1. `StartLifecycle()` — begin work (timers, connect, sync)
 1. **`ProcessLifecycle()`** – the continuous main loop
    - Repeatedly calls `CanProcess()` → `Process()` on all registered processable components
    - Continues until a stop is requested

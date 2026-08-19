@@ -38,5 +38,25 @@ public class TokenManagerTests : CornerstoneUnitTest
 		//AreEqual(0, ((IQueue<Token>) viewModel.TokenManager.GetMemberValue("_pool")).Count);
 	}
 
+	[TestMethod]
+	public void GetTokensStopsAtRangeEnd()
+	{
+		var viewModel = new TextEditorViewModel();
+		viewModel.TokenManager.Initialize("json");
+		viewModel.Load("[1,2,3,4,5,6,7,8,9,10]");
+
+		IsTrue(viewModel.TokenManager.Count > 4);
+
+		var first = viewModel.TokenManager[0];
+		var hits = 0;
+		foreach (var token in viewModel.TokenManager.GetTokens(first.StartOffset, first.EndOffset))
+		{
+			hits++;
+			IsTrue(token.StartOffset < first.EndOffset);
+		}
+
+		AreEqual(1, hits);
+	}
+
 	#endregion
 }

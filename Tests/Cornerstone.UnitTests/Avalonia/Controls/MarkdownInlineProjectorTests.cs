@@ -79,6 +79,38 @@ public class MarkdownInlineProjectorTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void ProjectFragmentCapturesRelativeMarkdownLinks()
+	{
+		var (text, _, links) = ProjectWithLinks("See [Other](Other.md) and [up](../Keystone.md#phases).");
+		AreEqual("See Other and up.", text);
+		AreEqual(2, links.Count);
+		AreEqual("Other.md", links[0].Href);
+		AreEqual("Other", links[0].Text);
+		AreEqual("../Keystone.md#phases", links[1].Href);
+		AreEqual("up", links[1].Text);
+		IsTrue(links[0].Contains(links[0].StartOffset));
+		IsFalse(links[0].Contains(links[0].EndOffset));
+	}
+
+	[TestMethod]
+	public void ProjectUnorderedListCapturesItemLinks()
+	{
+		var list = """
+			*   Open [Keystone](Keystone.md)
+			*   Then [Lifecycle](Lifecycle.md#phases)
+			""";
+		var renderer = new TextRenderer();
+		renderer.ViewModel.ViewMetrics.CharacterHeight = 20;
+		renderer.ViewModel.ViewMetrics.CharacterWidth = 10;
+		var links = MarkdownInlineProjector.ProjectUnorderedList(list.AsSpan(), renderer, view: null);
+
+		AreEqual(2, links.Count);
+		AreEqual("Keystone.md", links[0].Href);
+		AreEqual("Lifecycle.md#phases", links[1].Href);
+		IsFalse((renderer.Text ?? string.Empty).Contains('['));
+	}
+
+	[TestMethod]
 	public void TrySplitListItemParsesMarkerAndBody()
 	{
 		IsTrue(MarkdownInlineProjector.TrySplitListItem("* item", out var indent, out var body));
@@ -123,6 +155,12 @@ public class MarkdownInlineProjectorTests : CornerstoneUnitTest
 
 	private static (string text, List<Token> tokens) Project(string markdown)
 	{
+		var (text, tokens, _) = ProjectWithLinks(markdown);
+		return (text, tokens);
+	}
+
+	private static (string text, List<Token> tokens, List<MarkdownProjectedLink> links) ProjectWithLinks(string markdown)
+	{
 		var viewModel = new TextEditorViewModel { ViewMetrics = { CharacterHeight = 20, CharacterWidth = 10 } };
 		// Initialize with MarkdownViewTokenizer so projected tokens are retained (SupportsRebuilding = false).
 		viewModel.TokenManager.Initialize(new MarkdownViewTokenizer());
@@ -130,7 +168,7 @@ public class MarkdownInlineProjectorTests : CornerstoneUnitTest
 		var links = new List<MarkdownProjectedLink>();
 		MarkdownInlineProjector.ProjectFragment(markdown, content, viewModel.TokenManager, links);
 		MarkdownInlineProjector.TrimTrailingDisplayWhitespace(content, viewModel.TokenManager, links);
-		return (content.ToString(), viewModel.TokenManager.ToList());
+		return (content.ToString(), viewModel.TokenManager.ToList(), links);
 	}
 
 	#endregion

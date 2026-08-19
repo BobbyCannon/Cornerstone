@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Cornerstone.GrokMonitor.GrokUsage;
 using Cornerstone.GrokMonitor.GrokUsage.Models;
+using Cornerstone.GrokMonitor.GrokUsage.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
@@ -117,8 +118,8 @@ public class GrokUsageAnalyticsTests : GrokMonitorUnitTest
 	public void FormatCompactTokensUsesSuffixes()
 	{
 		AreEqual("500", GrokUsageAnalytics.FormatCompactTokens(500));
-		AreEqual("1.5K", GrokUsageAnalytics.FormatCompactTokens(1_500));
-		AreEqual("65.2M", GrokUsageAnalytics.FormatCompactTokens(65_200_000));
+		AreEqual("1.50K", GrokUsageAnalytics.FormatCompactTokens(1_500));
+		AreEqual("65.20M", GrokUsageAnalytics.FormatCompactTokens(65_200_000));
 	}
 
 	[TestMethod]
@@ -130,37 +131,31 @@ public class GrokUsageAnalyticsTests : GrokMonitorUnitTest
 	}
 
 	[TestMethod]
-	public void GetTokenHeatYellowAtOneMillionRedAtTenMillion()
+	public void GetTokenHeatSoftIsThemeZeroHotIsThemeNine()
 	{
 		var soft = GrokUsageAnalytics.GetTokenHeat(GrokUsageAnalytics.TokenHeatSoftThreshold);
 		IsFalse(soft.IsNone);
-		// Soft end: yellow-dominant (high G, low relative R dominance vs hot).
-		IsTrue(soft.G > soft.B);
-		IsTrue(soft.R >= soft.G);
+		AreEqual(0, soft.ThemeIndex);
 
 		var hot = GrokUsageAnalytics.GetTokenHeat(GrokUsageAnalytics.TokenHeatHotThreshold);
 		IsFalse(hot.IsNone);
+		AreEqual(9, hot.ThemeIndex);
 		IsTrue(soft.A < hot.A);
-		// Hot end: redder / less green than soft.
-		IsTrue(hot.G < soft.G);
-		IsTrue(hot.R > hot.G);
 
 		var over = GrokUsageAnalytics.GetTokenHeat(50_000_000);
 		AreEqual(hot.A, over.A);
-		AreEqual(hot.R, over.R);
-		AreEqual(hot.G, over.G);
-		AreEqual(hot.B, over.B);
+		AreEqual(hot.ThemeIndex, over.ThemeIndex);
 	}
 
 	[TestMethod]
-	public void GetTokenHeatMidpointIsBetweenYellowAndRed()
+	public void GetTokenHeatMidpointIsBetweenSoftAndHot()
 	{
 		var soft = GrokUsageAnalytics.GetTokenHeat(1_000_000);
 		var mid = GrokUsageAnalytics.GetTokenHeat(5_500_000);
 		var hot = GrokUsageAnalytics.GetTokenHeat(10_000_000);
 
 		IsTrue(mid.A > soft.A && mid.A < hot.A);
-		IsTrue(mid.G < soft.G && mid.G > hot.G);
+		IsTrue(mid.ThemeIndex > soft.ThemeIndex && mid.ThemeIndex < hot.ThemeIndex);
 	}
 
 	[TestMethod]
@@ -172,12 +167,13 @@ public class GrokUsageAnalyticsTests : GrokMonitorUnitTest
 	[TestMethod]
 	public void GetTokenHeatUsesCustomThresholds()
 	{
-		// Soft 100K, hot 200K — 100K is yellow end, 200K is red end.
+		// Soft 100K, hot 200K — 100K is ThemeColor00, 200K is ThemeColor09.
 		var soft = GrokUsageAnalytics.GetTokenHeat(100_000, true, 100_000, 200_000);
 		var hot = GrokUsageAnalytics.GetTokenHeat(200_000, true, 100_000, 200_000);
 		IsFalse(soft.IsNone);
 		IsFalse(hot.IsNone);
-		IsTrue(soft.G > hot.G);
+		AreEqual(0, soft.ThemeIndex);
+		AreEqual(9, hot.ThemeIndex);
 		IsTrue(GrokUsageAnalytics.GetTokenHeat(99_999, true, 100_000, 200_000).IsNone);
 	}
 
@@ -308,6 +304,32 @@ public class GrokUsageAnalyticsTests : GrokMonitorUnitTest
 		IsFalse(GrokUsageAnalytics.IsSubscriptionGrokModel("local"));
 		IsFalse(GrokUsageAnalytics.IsSubscriptionGrokModel(string.Empty));
 		IsFalse(GrokUsageAnalytics.IsSubscriptionGrokModel(null));
+	}
+
+	[TestMethod]
+	public void FilterPeriodsWithTokenUsageDropsWeeksWithoutInferences()
+	{
+		var currentStart = new DateTimeOffset(2026, 8, 4, 0, 0, 0, TimeSpan.Zero);
+		var currentEnd = new DateTimeOffset(2026, 8, 11, 0, 0, 0, TimeSpan.Zero);
+		var prevStart = currentStart.AddDays(-7);
+		var options = new[]
+		{
+			new UsagePeriodOption { PeriodStart = currentStart, PeriodEnd = currentEnd, IsCurrent = true },
+			new UsagePeriodOption { PeriodStart = prevStart, PeriodEnd = currentStart }
+		};
+		var inferences = new[]
+		{
+			new InferenceUsage
+			{
+				Timestamp = currentStart.AddDays(1),
+				ModelId = "grok-4.5",
+				PromptTokens = 10
+			}
+		};
+
+		var kept = GrokUsageAnalytics.FilterPeriodsWithTokenUsage(options, inferences);
+		AreEqual(1, kept.Count);
+		AreEqual(currentStart, kept[0].PeriodStart);
 	}
 
 	[TestMethod]
@@ -725,8 +747,8 @@ public class GrokUsageAnalyticsTests : GrokMonitorUnitTest
 	[TestMethod]
 	public void FormatAllocatedUsagePercentIsEmptyWithoutCredit()
 	{
-		AreEqual("30%", GrokUsageAnalytics.FormatAllocatedUsagePercent(30, true));
-		AreEqual("12.5%", GrokUsageAnalytics.FormatAllocatedUsagePercent(12.5, true));
+		AreEqual("30.00%", GrokUsageAnalytics.FormatAllocatedUsagePercent(30, true));
+		AreEqual("12.50%", GrokUsageAnalytics.FormatAllocatedUsagePercent(12.5, true));
 		AreEqual(string.Empty, GrokUsageAnalytics.FormatAllocatedUsagePercent(12.5, false));
 	}
 

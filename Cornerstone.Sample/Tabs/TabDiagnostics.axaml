@@ -73,10 +73,10 @@
 									IsChecked="{Binding IsHistoryEnabled}" />
 							<TextBlock VerticalAlignment="Center" Text="Limit" Opacity="0.8" />
 							<NumericUpDown Width="120"
-										Minimum="1"
-										Maximum="10000"
-										Increment="10"
-										Value="{Binding HistoryLimit}" />
+									Minimum="1"
+									Maximum="10000"
+									Increment="10"
+									Value="{Binding HistoryLimit}" />
 							<Button Content="Publish sample"
 									Command="{Binding #This.PublishSampleNotificationCommand}" />
 							<Button Content="Publish burst (10)"
@@ -99,11 +99,11 @@
 									Opacity="0.8"
 									MinWidth="96" />
 							<TextBox Grid.Column="1"
-									PlaceholderText="channel:… type:0,2 ShowMessage"
+									PlaceholderText="channel:… type:RefreshHome ShowMessage"
 									Text="{Binding ViewHistoryFilter}" />
 						</Grid>
 						<TextBlock Opacity="0.65" FontSize="12"
-								Text="Filter: channel:name (contains)  type:0,2  error:true|false  + free text. Empty = all." />
+								Text="Filter: channel:name (contains)  type:TypeName  error:true|false  + free text. Empty = all." />
 						<ListBox ItemsSource="{Binding BusHistory}"
 								MaxHeight="280">
 							<ListBox.ItemTemplate>

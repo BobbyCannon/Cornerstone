@@ -35,7 +35,7 @@ AppState.*FeatureState   SpeedyList / CornerstoneObject (UI-free)
         │
         ▼
 AppDispatcher            only while tab IsAttached
-  TrackCollection / TrackProperties / TrackIngress / TrackBinding
+  TrackProperties / TrackCollection / TrackBinding / TrackDerived
         │
         ▼
 *TabViewModel            presentation lists + display properties
@@ -47,14 +47,16 @@ AppDispatcher            only while tab IsAttached
 | **Processor** | IO, parsing, process lifecycle; writes State | Direct UI updates |
 | **Bus** | Typed, scoped messages | Business rules |
 | **Tab ViewModel** | Which id is focused, layout flags, projection bindings | Domain mutations |
-| **DockingManager** | Tab Init/Load/Start/Stop and `IAppDispatcher.Track` / `Release` | Feature logic |
+| **DockingManager** | Tab Init/Load/Start/Stop | Feature logic |
 
 **Rules of thumb**
 
 - UI **publishes** messages; it does not call “god services” for domain work.
+- Keystone (channel, State, processor) is **business logic only** and runs **off** the UI dispatcher — no `IDispatcher.Dispatch`, no Avalonia.
+- AppDispatcher / the tab ViewModel only **project** State for what the user sees and types; they do not implement domain rules. Copy with `TrackProperties` / `TrackCollection` / `TrackBinding`; format status and other computed labels with `TrackDerived`. User gestures that must run processor work use `TrackIntent` (publish on the bus). How each `Track*` chooses dirtiness: [AppDispatcher.md — Track\* methods](AppDispatcher.md#track-methods).
 - Operations are **scoped by id** (repository, session, home, …). Processors never assume “the active tab.”
 - Pass dependencies through **constructors**. Do not use `AppBootstrap.GetInstance` from feature code.
-- Docking owns lifecycle and dispatcher membership — tabs do **not** call `InitializeLifecycle` / `IAppDispatcher.Track` when opening themselves.
+- Docking owns lifecycle — tabs do **not** call `InitializeLifecycle` when opening themselves. The view `Attach`es for apply.
 
 ---
 
@@ -64,7 +66,7 @@ Prefer co-locating the feature under one folder (see [Keystone.md](Keystone.md) 
 
 ```
 FeatureName/
-  Channels/           # *Channel, *Messages, *MessageType
+  Channels/           # *Channel with nested [ChannelMessage] records (no sibling *Messages.cs)
   State/              # root *State + row models
   Processors/         # *Processor
   Services/           # optional infrastructure used only by the processor
@@ -88,17 +90,18 @@ Namespaces should match folders.
 - Collections the UI reconciles should be **`SpeedyList<T>`** (implements `IDispatchPending` for membership).
 - Row types should be **`CornerstoneObject`** with `[Notifiable]` / `[Updateable]` so `TrackProperties` and `ListAndItems` can see property change bits.
 - Keep high-rate text out of full state strings: use **`TextIngress`** and `TrackIngress` (see [AppDispatcher.md](AppDispatcher.md)).
-- Prefer empty string / `default` / flags over nullable annotations in new APIs.
+- Prefer empty string / `default` / flags for missing data. Do not use `string?` (reference types are already nullable). `DateTime?` and other nullable value types are fine.
 
 ---
 
 ## Bus and processor
 
-1. Define `*MessageType` enum and small `record struct` payloads implementing `IChannelMessage`.
-2. `*Channel : KeystoneChannel<*MessageType>` with publish helpers marked `[ChannelSubscription<…>]`.
+1. Nest small `record struct` payloads that implement `IChannelMessage` **on the channel type**, marked `[ChannelMessage<*Channel>]`. The CLR type is the operation id (no enum). This is the preferred pattern (see [Keystone.md](Keystone.md) Bus). Do not add a sibling `*Messages.cs`.
+2. `*Channel : KeystoneChannel` is a partial with a `#region Records` (plus helpers that are not 1:1 with a message). The generator emits publish and `SubscribeTo*` methods. Nested type `ReloadMessage` → `Reload` / `SubscribeToReload`. Handlers qualify as `FeatureChannel.ReloadMessage`.
 3. `*Processor : KeystoneProcessor<AppBus, AppState>` (or host base):
-   - Subscribe in `InitializeLifecycle`
-   - Unsubscribe in `UninitializeLifecycle`
+   - Mark `[ChannelHandlers]`; `OnReload` → generated `SubscribeToReload` (call `base` if you override Initialize / Uninitialize)
+   - Load persisted / local data in `LoadLifecycle` (not Initialize)
+   - Extra teardown in `UninitializeLifecycle` after `base` (generated unsubscribe already ran)
    - Resolve the state slice by id, do work, update properties/lists
 4. Register channel on `AppBus`, processor on `AppEngine`, state on `AppState`.
 
@@ -137,6 +140,7 @@ Without `[SourceReflection]` and a DI constructor, docking / ViewLocator often c
 ### ViewModel
 
 - `[SourceReflection]` + `[DependencyInjected]` (use `TypeLifetime.Transient` when multiple instances are allowed; omit for singleton tools tabs).
+- Dashboard 1:1 scalars: `[ProjectFrom<IFeatureState>]` so the destination bag is generated. Keep lists, `TrackDerived`, and commands in the author file.
 - Singleton-style tools often use `base(Guid.Parse(TypeId), "Header", TypeIcon)` so re-open selects the same kind.
 - Multi-instance documents (repos, shells) use `Guid.NewGuid()` for the dock instance id and a separate kind `TypeId`.
 
@@ -162,7 +166,7 @@ For singleton DI types, `DockingManager.Add(Type)` already focuses an existing t
 | Do | Do not |
 |----|--------|
 | Publish open/ensure messages from `InitializeLifecycle` if needed | Call `InitializeLifecycle` / `StartLifecycle` yourself when docking |
-| Wire `TrackCollection` / `TrackProperties` once when the state target exists | Call `IAppDispatcher.Track` / `Release` yourself |
+| Wire `TrackCollection` / `TrackProperties` once when the state target exists | Call `Track` / `Release` for apply-loop membership |
 | Close side effects via bus (e.g. close session) in `UninitializeLifecycle` | Assume the tab is always attached |
 
 Details: [Controls/DockingLifecycle.md](Controls/DockingLifecycle.md).
@@ -175,10 +179,14 @@ Wire bindings on the tab ViewModel (constructor or after the state slice exists)
 
 | Need | API |
 |------|-----|
-| List membership / item updates | `TrackCollection(sourceSpeedyList, presentationList, comparer, ListAndItems)` |
-| Scalar fields (rename/convert) | `TrackProperties(model).MapOneWay` / `MapTwoWay` |
+| Same-type list | `TrackCollection(sourceSpeedyList, presentationList, comparer, ListAndItems)` |
+| State row → row ViewModel | `TrackCollection(source, dest, same, create, update, remove)` |
+| Shared scalars (get-only = one-way) | `TrackProperties<TContract>(model, this)` |
+| Scalar rename / convert leftovers | extra `.MapOneWay` / `.MapTwoWay` on that map |
 | High-rate text | `TrackIngress(textIngress, appendOrBuffer)` |
-| Custom (charts, selected-child projection) | `TrackBinding(pending, action)` or override `HasModelChanges` / `ApplyModelChanges` |
+| Charts / multi-sink | `TrackBinding(pending, action)` |
+| Status sentences / combo match | `TrackDerived` **last** |
+| Combo / slider that publishes (not write-through) | `TrackIntent(propertyName, publish)` |
 
 Presentation lists should be constructed with the UI `IDispatcher` so collection notifications stay UI-safe.
 
@@ -221,7 +229,7 @@ Standalone **desktop-only** sample app: local CLI usage dashboard for discovered
 
 | Piece | Location |
 |-------|----------|
-| Paths / reader | `GrokUsage/GrokPaths.cs`, `GrokUsageReader.cs` |
+| Paths / reader | `GrokUsage/Services/` (`GrokPaths`, `GrokUsageReader`, archive, analytics) |
 | Channel | `GrokUsage/Channels/` |
 | State | `GrokUsage/State/` (`GrokUsageState`, `GrokHomeUsageState`, `GrokSessionUsageState`) |
 | Processor | `GrokUsage/Processors/GrokUsageProcessor.cs` |
@@ -232,9 +240,9 @@ Standalone **desktop-only** sample app: local CLI usage dashboard for discovered
 
 Flow:
 
-1. Host `StartLifecycle` → `EnsureHomes` → `RefreshAll` → sync shell tabs.
-2. Processor discovers existing `~/.grok*` folders (folder-name labels), runs `GrokUsageReader` per home, fills session lists and billing scalars.
-3. Each home tab projects via AppDispatcher; shell `TrackBinding(Homes)` keeps tabs in sync when discovery adds homes.
+1. Processor `LoadLifecycle` discovers `~/.grok*` homes; host `StartLifecycle` publishes `RefreshAll` and syncs shell tabs. Disk watchers start in processor `StartLifecycle`.
+2. Processor runs `GrokUsageReader` per home, fills session lists and billing scalars. Period replay is processor-owned (`StartReplay(homeId)` / `StopReplay(homeId)`); each home has its own view clock.
+3. Each home tab is constructed with that home’s `GrokHomeUsageState` (plus the usage slice and settings) and projects via AppDispatcher (`TrackProperties` / `TrackCollection` for rows / `TrackBinding` for charts). The processor writes `ViewClockStart` / `ViewClockMax` on the home. The host projects `Homes` → home tabs with `TrackCollection` (`create` the tab, `remove` lifecycle `Release`) plus `TrackDerived` to keep Settings last on the shell strip. Visual-tree attach only.
 4. Toolbar **Refresh** re-runs discovery, then reloads the focused home and any newly found homes (`RefreshAll` reloads every home).
 
 The same architecture is used in larger DockingManager hosts (multi-instance document tabs scoped by id).
@@ -251,3 +259,4 @@ The same architecture is used in larger DockingManager hosts (multi-instance doc
 | [Lifecycle.md](Lifecycle.md) | Track / Release order |
 | [ViewIntegration.md](ViewIntegration.md) | Manual projection without AppDispatcher |
 | [CornerstoneApplication.md](CornerstoneApplication.md) | Avalonia host lifecycle |
+

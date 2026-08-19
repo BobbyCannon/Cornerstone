@@ -2,8 +2,7 @@
 
 using System;
 using Avalonia;
-using Cornerstone.Avalonia.Platforms;
-using Cornerstone.Runtime;
+using Cornerstone.Avalonia.Documentation;
 
 #endregion
 
@@ -22,10 +21,14 @@ internal static class Program
 	}
 
 	[STAThread]
-	public static void Main(string[] args)
+	public static int Main(string[] args)
 	{
-		AppBootstrap.Initialize("Cornerstone.Documentation", typeof(Program).Assembly, args);
-		BuildAvaloniaApp().UseCornerstone(args).StartWithClassicDesktopLifetime(args);
+		return DocumentationReaderHost.Run(args, new DocumentationReaderHostOptions
+		{
+			ApplicationName = "Cornerstone.Documentation",
+			ApplicationAssembly = typeof(Program).Assembly,
+			WindowTitle = "Cornerstone Documentation"
+		}, BuildAvaloniaApp());
 	}
 
 	#endregion

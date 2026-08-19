@@ -8,6 +8,7 @@ using Cornerstone.GrokMonitor.GrokUsage;
 using Cornerstone.GrokMonitor.GrokUsage.Channels;
 using Cornerstone.GrokMonitor.GrokUsage.Models;
 using Cornerstone.GrokMonitor.GrokUsage.Processors;
+using Cornerstone.GrokMonitor.GrokUsage.Services;
 using Cornerstone.GrokMonitor.GrokUsage.State;
 using Cornerstone.GrokMonitor.Keystone;
 using Cornerstone.GrokMonitor.Keystone.State;
@@ -49,6 +50,52 @@ public class GrokUsageProcessorTests : GrokMonitorUnitTest
 		// Idempotent
 		bus.GrokUsage.EnsureHomes();
 		AreEqual(firstCount, state.GrokUsage.Homes.Count);
+
+		processor.UninitializeLifecycle();
+	}
+
+	[TestMethod]
+	public void LoadLifecycleDiscoversHomes()
+	{
+		var (bus, state, processor) = CreateProcessor();
+		processor.InitializeLifecycle();
+		processor.LoadLifecycle();
+
+		AreEqual(GrokPaths.DiscoverHomes().Count, state.GrokUsage.Homes.Count);
+
+		processor.UninitializeLifecycle();
+	}
+
+	[TestMethod]
+	public void StartReplaySetsPlayingWhenPeriodExists()
+	{
+		SetTime(new DateTime(2026, 8, 10, 12, 0, 0, DateTimeKind.Utc));
+
+		var (bus, state, processor) = CreateProcessor();
+		processor.InitializeLifecycle();
+
+		var start = new DateTimeOffset(2026, 8, 4, 0, 0, 0, TimeSpan.Zero);
+		var end = new DateTimeOffset(2026, 8, 11, 0, 0, 0, TimeSpan.Zero);
+		var home = new GrokHomeUsageState
+		{
+			DisplayName = "fixture",
+			Path = @"C:\tmp\.grok",
+			HomeExists = true,
+			PeriodStart = start,
+			PeriodEnd = end,
+			SelectedPeriodStart = start,
+			SelectedPeriodEnd = end
+		};
+		state.GrokUsage.Homes.Add(home);
+		state.GrokUsage.SelectedHomeId = Guid.Empty;
+		home.IsViewLive = true;
+
+		bus.GrokUsage.StartReplay(home.Id);
+		IsTrue(home.IsReplayPlaying);
+		IsFalse(home.IsViewLive);
+
+		bus.GrokUsage.StopReplay(home.Id);
+		IsFalse(home.IsReplayPlaying);
 
 		processor.UninitializeLifecycle();
 	}
@@ -467,6 +514,47 @@ public class GrokUsageProcessorTests : GrokMonitorUnitTest
 	}
 
 	[TestMethod]
+	public void AvailablePeriodsOmitsWeeksWithoutTokenLog()
+	{
+		SetTime(new DateTime(2026, 8, 10, 12, 0, 0, DateTimeKind.Utc));
+
+		using var fixture = new GrokHomeFixture();
+		fixture.WriteUnifiedLog(
+			"""
+			{"ts":"2026-08-05T12:00:00.000Z","sid":"cur","msg":"shell.turn.inference_done","ctx":{"prompt_tokens":100,"cached_prompt_tokens":0,"completion_tokens":20,"reasoning_tokens":0}}
+			{"ts":"2026-08-09T12:02:00.000Z","msg":"billing: fetched credits config","ctx":{"config":{"creditUsagePercent":12.5,"currentPeriod":{"type":"USAGE_PERIOD_TYPE_WEEKLY","start":"2026-08-04T00:00:00Z","end":"2026-08-11T00:00:00Z"}},"subscriptionTier":"SuperGrok Plus"}}
+			"""
+		);
+		fixture.WriteSession("old", """
+								{ "info": { "id": "old", "cwd": "C:\\proj" }, "generated_title": "Rotated week", "current_model_id": "grok-4.5", "num_messages": 12, "created_at": "2026-07-29T15:00:00.000Z", "updated_at": "2026-07-29T16:00:00.000Z" }
+								""");
+		fixture.WriteSession("cur", """
+								{ "info": { "id": "cur", "cwd": "C:\\proj" }, "generated_title": "Current week", "current_model_id": "grok-4.5", "num_messages": 1 }
+								""");
+
+		var (bus, state, processor) = CreateProcessor();
+		processor.InitializeLifecycle();
+
+		var home = new GrokHomeUsageState
+		{
+			DisplayName = "Fixture",
+			Path = fixture.Root,
+			HomeExists = true
+		};
+		state.GrokUsage.Homes.Add(home);
+		bus.GrokUsage.RefreshHome(home.Id);
+
+		IsTrue(home.AvailablePeriods.Count >= 1);
+		IsFalse(home.AvailablePeriods.Any(x =>
+			(x.PeriodStart == new DateTimeOffset(2026, 7, 28, 0, 0, 0, TimeSpan.Zero))
+			&& (x.PeriodEnd == new DateTimeOffset(2026, 8, 4, 0, 0, 0, TimeSpan.Zero))));
+		AreEqual(1, home.Sessions.Count);
+		AreEqual("Current week", home.Sessions[0].Title);
+
+		processor.UninitializeLifecycle();
+	}
+
+	[TestMethod]
 	public void RefreshMissingHomeSetsError()
 	{
 		var (bus, state, processor) = CreateProcessor();
@@ -508,10 +596,9 @@ public class GrokUsageProcessorTests : GrokMonitorUnitTest
 	}
 
 	[TestMethod]
-	public void SetViewAsOfReprojectsNonSelectedHomeWhenCached()
+	public void SetViewAsOfOnlyReprojectsThatHome()
 	{
-		// Regression: scrub used to refresh only SelectedHomeId, so a second tab's slider
-		// looked dead until Refresh (tab switch never called SelectHome either).
+		// Per-home view clock: scrubbing B must not rewrite A's totals.
 		SetTime(new DateTime(2026, 8, 10, 12, 0, 0, DateTimeKind.Utc));
 
 		using var fixtureA = new GrokHomeFixture();
@@ -542,14 +629,16 @@ public class GrokUsageProcessorTests : GrokMonitorUnitTest
 
 		bus.GrokUsage.RefreshHome(homeA.Id);
 		bus.GrokUsage.RefreshHome(homeB.Id);
+		var liveA = homeA.GrandTotalTokens;
 		var liveB = homeB.GrandTotalTokens;
 		IsTrue(liveB >= 500);
 
-		bus.GrokUsage.SetViewAsOf(new DateTimeOffset(2026, 8, 6, 0, 0, 0, TimeSpan.Zero));
-		// Both cached homes reproject — not only the selected one.
-		AreEqual(120, homeA.GrandTotalTokens);
+		bus.GrokUsage.SetViewAsOf(homeB.Id, new DateTimeOffset(2026, 8, 6, 0, 0, 0, TimeSpan.Zero));
+		AreEqual(liveA, homeA.GrandTotalTokens);
 		AreEqual(120, homeB.GrandTotalTokens);
 		IsTrue(homeB.GrandTotalTokens < liveB);
+		IsTrue(homeA.IsViewLive);
+		IsFalse(homeB.IsViewLive);
 
 		processor.UninitializeLifecycle();
 	}
@@ -591,14 +680,14 @@ public class GrokUsageProcessorTests : GrokMonitorUnitTest
 		IsTrue(liveTokens >= 500);
 
 		// Mid-period, after first inference only.
-		bus.GrokUsage.SetViewAsOf(new DateTimeOffset(2026, 8, 6, 0, 0, 0, TimeSpan.Zero));
-		IsFalse(state.GrokUsage.IsViewLive);
+		bus.GrokUsage.SetViewAsOf(home.Id, new DateTimeOffset(2026, 8, 6, 0, 0, 0, TimeSpan.Zero));
+		IsFalse(home.IsViewLive);
 		IsTrue(home.GrandTotalTokens < liveTokens);
 		AreEqual(120, home.GrandTotalTokens);
 		AreEqual(10, home.UsagePercent);
 
-		bus.GrokUsage.SetViewLive();
-		IsTrue(state.GrokUsage.IsViewLive);
+		bus.GrokUsage.SetViewLive(home.Id);
+		IsTrue(home.IsViewLive);
 		AreEqual(liveTokens, home.GrandTotalTokens);
 
 		processor.UninitializeLifecycle();

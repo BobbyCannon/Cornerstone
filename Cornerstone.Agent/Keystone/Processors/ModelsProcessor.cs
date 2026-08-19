@@ -38,9 +38,8 @@ public partial class ModelsProcessor : AppProcessor
 
 	private readonly HardwareInformationService _hardware;
 	private double _isRefreshing;
-	private MtmdWeights _loadedLlavaWeights;
-	private LLamaWeights _loadedWeights;
 	private static readonly GenericEqualityComparer<ModelInfo> _modelInfoComparer;
+	private readonly ModelWeightsRuntime _weights;
 	private static bool _nativeLibConfigured;
 
 	/// <summary>
@@ -59,9 +58,11 @@ public partial class ModelsProcessor : AppProcessor
 	#region Constructors
 
 	[DependencyInjectionConstructor]
-	public ModelsProcessor(AppBus bus, AppState state) : base(bus, state)
+	public ModelsProcessor(AppBus bus, AppState state, ModelWeightsRuntime weights) : base(bus, state)
 	{
 		_hardware = new HardwareInformationService(state.RuntimeInformation);
+		_weights = weights;
+		_weights.SetEnsureLoaded(EnsureLoadedAsync);
 	}
 
 	static ModelsProcessor()
@@ -78,7 +79,7 @@ public partial class ModelsProcessor : AppProcessor
 
 	public HardwareInformationService Hardware => _hardware;
 
-	public bool IsVisionModelLoaded => _loadedLlavaWeights is not null;
+	public bool IsVisionModelLoaded => _weights.LlavaWeights is not null;
 
 	#endregion
 
@@ -103,7 +104,7 @@ public partial class ModelsProcessor : AppProcessor
 		}
 
 		if (string.Equals(State.ModelState.LoadedModelPath, desiredPath, StringComparison.OrdinalIgnoreCase)
-			&& (_loadedWeights != null))
+			&& (_weights.Weights != null))
 		{
 			return true;
 		}
@@ -117,14 +118,14 @@ public partial class ModelsProcessor : AppProcessor
 		{
 			// Re-check under the gate (another waiter may have loaded us).
 			if (string.Equals(State.ModelState.LoadedModelPath, desiredPath, StringComparison.OrdinalIgnoreCase)
-				&& (_loadedWeights != null))
+				&& (_weights.Weights != null))
 			{
 				return true;
 			}
 
 			cancellationToken.ThrowIfCancellationRequested();
 
-			if (_loadedWeights != null)
+			if (_weights.Weights != null)
 			{
 				hadPrevious = true;
 				Log($"Unloading previous model: {State.ModelState.LoadedModelPath}", LogLevel.Information);
@@ -174,12 +175,12 @@ public partial class ModelsProcessor : AppProcessor
 
 	public MtmdWeights GetLoadedLlavaWeights()
 	{
-		return _loadedLlavaWeights;
+		return _weights.LlavaWeights;
 	}
 
 	public LLamaWeights GetLoadedWeights()
 	{
-		return _loadedWeights;
+		return _weights.Weights;
 	}
 
 	/// <summary>
@@ -187,14 +188,14 @@ public partial class ModelsProcessor : AppProcessor
 	/// </summary>
 	public uint GetModelNativeContextSize()
 	{
-		if (_loadedWeights == null)
+		if (_weights.Weights == null)
 		{
 			return 4096;
 		}
 
 		try
 		{
-			var metadata = _loadedWeights.Metadata;
+			var metadata = _weights.Weights.Metadata;
 			var key = metadata.Keys.FirstOrDefault(k => k.Contains("context_length", StringComparison.OrdinalIgnoreCase));
 			if ((key != null) && metadata.TryGetValue(key, out var value)
 				&& uint.TryParse(value, out var nativeSize) && (nativeSize > 0))
@@ -236,12 +237,6 @@ public partial class ModelsProcessor : AppProcessor
 		_weightsGate.Dispose();
 		base.UninitializeLifecycle();
 	}
-
-	/// <summary>
-	/// Session owners (e.g. <see cref="AgentProcessor"/>) must release LLama context/executor
-	/// that reference the current weights. Invoked immediately before native dispose.
-	/// </summary>
-	public Action BeforeWeightsUnload { get; set; }
 
 	public async Task UnloadModelAsync()
 	{
@@ -299,8 +294,8 @@ public partial class ModelsProcessor : AppProcessor
 			}
 		}
 
-		_loadedWeights = weights;
-		_loadedLlavaWeights = llavaWeights;
+		_weights.Weights = weights;
+		_weights.LlavaWeights = llavaWeights;
 		State.ModelState.LoadedModelPath = model.FilePath;
 		SetActiveModel(model.FilePath);
 
@@ -334,24 +329,24 @@ public partial class ModelsProcessor : AppProcessor
 		// Always drop session first (even if weights already null) so we never keep a live context.
 		try
 		{
-			BeforeWeightsUnload?.Invoke();
+			_weights.NotifyUnloading();
 		}
 		catch (Exception ex)
 		{
 			Log($"BeforeWeightsUnload failed: {ex.Message}", LogLevel.Warning);
 		}
 
-		if (_loadedWeights == null)
+		if (_weights.Weights == null)
 		{
 			ClearLoadedState();
 			return;
 		}
 
 		var previous = State.ModelState.LoadedModelPath;
-		var llava = _loadedLlavaWeights;
-		var weights = _loadedWeights;
-		_loadedLlavaWeights = null;
-		_loadedWeights = null;
+		var llava = _weights.LlavaWeights;
+		var weights = _weights.Weights;
+		_weights.LlavaWeights = null;
+		_weights.Weights = null;
 
 		await Task.Run(
 			() =>
@@ -524,6 +519,11 @@ public partial class ModelsProcessor : AppProcessor
 
 	private void OnRefreshModels()
 	{
+		OnRefreshModels(default);
+	}
+
+	private void OnRefreshModels(ModelsChannel.RefreshModelsMessage message)
+	{
 		Task.Run(RefreshModels);
 	}
 
@@ -532,7 +532,7 @@ public partial class ModelsProcessor : AppProcessor
 		SelectModel(message.FilePath);
 	}
 
-	private void OnUnloadModel()
+	private void OnUnloadModel(ModelsChannel.UnloadModelMessage message)
 	{
 		// Awaited fire-and-forget is fine for UI; gate serializes against EnsureLoaded.
 		_ = UnloadModelAsync();

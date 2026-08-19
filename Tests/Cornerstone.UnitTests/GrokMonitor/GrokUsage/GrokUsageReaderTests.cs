@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Cornerstone.GrokMonitor.GrokUsage;
+using Cornerstone.GrokMonitor.GrokUsage.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion

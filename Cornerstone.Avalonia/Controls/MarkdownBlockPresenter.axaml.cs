@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.VisualTree;
 using Cornerstone.Avalonia.Resources;
 using Cornerstone.Avalonia.Text;
@@ -33,6 +34,11 @@ public class MarkdownBlockPresenter : TemplatedControl
 	public static readonly CornerRadius ZeroCornerRadius = new(0);
 	public static readonly Thickness ZeroThickness = new(0);
 
+	/// <summary>
+	/// Pixel movement after press that cancels a pending link click (selection drag).
+	/// </summary>
+	private const double LinkDragThreshold = 4;
+
 	private Border _border;
 	private Button _copyButton;
 	private MarkdownBlockGroup _group;
@@ -45,6 +51,9 @@ public class MarkdownBlockPresenter : TemplatedControl
 	private int _lastTableMaxChars = -1;
 
 	private static readonly MarkdownViewTokenizer _markdownViewTokenizer = new();
+	private bool _pendingLinkArmed;
+	private MarkdownProjectedLink _pendingLink;
+	private Point _pendingLinkOrigin;
 	private TextRenderer _renderer;
 	private MarkdownView _view;
 
@@ -193,6 +202,12 @@ public class MarkdownBlockPresenter : TemplatedControl
 		_view = null;
 	}
 
+	private void ClearPendingLink()
+	{
+		_pendingLinkArmed = false;
+		_pendingLink = default;
+	}
+
 	private void DetachRendererHandlers()
 	{
 		if (_renderer is null)
@@ -201,7 +216,9 @@ public class MarkdownBlockPresenter : TemplatedControl
 		}
 
 		_renderer.PointerMoved -= RendererOnPointerMoved;
-		_renderer.PointerPressed -= RendererOnPointerPressed;
+		_renderer.RemoveHandler(InputElement.PointerPressedEvent, RendererOnPointerPressed);
+		_renderer.RemoveHandler(InputElement.PointerReleasedEvent, RendererOnPointerReleased);
+		ClearPendingLink();
 	}
 
 	/// <summary>
@@ -358,7 +375,13 @@ public class MarkdownBlockPresenter : TemplatedControl
 			// Bullets + per-item inline projection (bold, code, links).
 			_renderer.FontSize = _view.FontSize;
 			_renderer.Foreground = _view.Foreground;
-			MarkdownInlineProjector.ProjectUnorderedList(MarkdownRenderer.SafeSlice(buffer, block), _renderer, _view);
+			var links = MarkdownInlineProjector.ProjectUnorderedList(
+				MarkdownRenderer.SafeSlice(buffer, block), _renderer, _view);
+			foreach (var link in links)
+			{
+				_group.Links.Add(link);
+			}
+
 			return _renderer.Text ?? string.Empty;
 		}
 
@@ -371,28 +394,70 @@ public class MarkdownBlockPresenter : TemplatedControl
 		if (_group is null || _renderer is null || (_group.Links.Count == 0))
 		{
 			_renderer?.Cursor = Cursor.Default;
+			ClearPendingLink();
 			return;
 		}
 
-		_renderer.Cursor = TryGetLinkAtPoint(e.GetPosition(_renderer), out _)
+		var point = e.GetPosition(_renderer);
+		_renderer.Cursor = TryGetLinkAtPoint(point, out _)
 			? new Cursor(StandardCursorType.Hand)
 			: Cursor.Default;
+
+		if (!_pendingLinkArmed)
+		{
+			return;
+		}
+
+		var dx = point.X - _pendingLinkOrigin.X;
+		var dy = point.Y - _pendingLinkOrigin.Y;
+		if (((dx * dx) + (dy * dy)) > (LinkDragThreshold * LinkDragThreshold))
+		{
+			ClearPendingLink();
+		}
 	}
 
 	private void RendererOnPointerPressed(object sender, PointerPressedEventArgs e)
 	{
-		if (_group is null || _renderer is null || _view is null
-			|| !e.GetCurrentPoint(_renderer).Properties.IsLeftButtonPressed
-			|| (_group.Links.Count == 0))
+		ClearPendingLink();
+		if (_group is null || _renderer is null || _view is null || (_group.Links.Count == 0))
 		{
 			return;
 		}
 
-		if (!TryGetLinkAtPoint(e.GetPosition(_renderer), out var link))
+		var point = e.GetCurrentPoint(_renderer);
+		if (point.Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonPressed)
 		{
 			return;
 		}
 
+		if (!TryGetLinkAtPoint(point.Position, out var link))
+		{
+			return;
+		}
+
+		_pendingLinkArmed = true;
+		_pendingLink = link;
+		_pendingLinkOrigin = point.Position;
+		e.Handled = true;
+	}
+
+	private void RendererOnPointerReleased(object sender, PointerReleasedEventArgs e)
+	{
+		if (!_pendingLinkArmed || _view is null || _renderer is null)
+		{
+			ClearPendingLink();
+			return;
+		}
+
+		var point = e.GetCurrentPoint(_renderer);
+		if (point.Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonReleased)
+		{
+			ClearPendingLink();
+			return;
+		}
+
+		var link = _pendingLink;
+		ClearPendingLink();
 		e.Handled = true;
 		_view.RaiseLinkClicked(link.Href, link.Text);
 	}
@@ -420,21 +485,17 @@ public class MarkdownBlockPresenter : TemplatedControl
 	private bool TryGetLinkAtPoint(Point point, out MarkdownProjectedLink link)
 	{
 		link = default;
-		if (_renderer?.ViewModel is null || _group is null)
+		if (_renderer?.ViewModel is null || _group is null || (_group.Links.Count == 0))
 		{
 			return false;
 		}
 
-		var viewModel = _renderer.ViewModel;
-		var visualX = point.X + _renderer.Offset.X;
-		var visualY = point.Y + _renderer.Offset.Y;
-
-		if (!viewModel.Lines.TryGetLineForOffset(visualY, visualY, out var line))
+		// Use paint-matched TextLayout widths (proportional + bold), not monospace GetAdvance.
+		if (!_renderer.TryGetDocumentOffsetAtPoint(point, out var offset))
 		{
 			return false;
 		}
 
-		var offset = line.GetNearestOffsetAtVisual(visualX, visualY, false);
 		foreach (var candidate in _group.Links)
 		{
 			if (candidate.Contains(offset))
@@ -477,6 +538,15 @@ public class MarkdownBlockPresenter : TemplatedControl
 
 	private void ViewOnPropertyChanged(object sender, AvaloniaPropertyChangedEventArgs e)
 	{
+		// Foreground / theme / font are snapshotted onto TextRenderer in Apply().
+		// Theme toggles do not change document text, so groups stay stable and never re-Apply otherwise.
+		if ((e.Property == MarkdownView.ForegroundProperty)
+			|| (e.Property == MarkdownView.FontSizeProperty)
+			|| (e.Property == MarkdownView.FontFamilyProperty))
+		{
+			Apply();
+		}
+
 		if (!IsTableGroup())
 		{
 			return;
@@ -513,7 +583,9 @@ public class MarkdownBlockPresenter : TemplatedControl
 		}
 
 		_renderer.PointerMoved += RendererOnPointerMoved;
-		_renderer.PointerPressed += RendererOnPointerPressed;
+		// handledEventsToo: TextRenderer selection / gestures may mark the press handled first.
+		_renderer.AddHandler(InputElement.PointerPressedEvent, RendererOnPointerPressed, handledEventsToo: true);
+		_renderer.AddHandler(InputElement.PointerReleasedEvent, RendererOnPointerReleased, handledEventsToo: true);
 	}
 
 	#endregion

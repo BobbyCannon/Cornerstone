@@ -19,6 +19,7 @@ using Cornerstone.Generators;
 using Cornerstone.Presentation;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
+using Cornerstone.Search;
 
 #endregion
 
@@ -45,9 +46,9 @@ public partial class TabTreeDataGrid : CornerstoneUserControl
 	private List<Account> _allAccountNodes = [];
 
 	private string _filterText = string.Empty;
+	private int _rowHeight = 28;
 	private bool _useFixedRowHeight = true;
 	private bool _useVariableDetailLines;
-	private int _rowHeight = 28;
 
 	#endregion
 
@@ -61,6 +62,7 @@ public partial class TabTreeDataGrid : CornerstoneUserControl
 	public TabTreeDataGrid(IRuntimeInformation runtimeInformation)
 	{
 		RuntimeInformation = runtimeInformation;
+
 		// Hierarchy: root trees only. Flat: every node once (same instances, depth-first).
 		Accounts = new PresentationList<Account>();
 		FlatAccounts = new PresentationList<Account>();
@@ -87,13 +89,6 @@ public partial class TabTreeDataGrid : CornerstoneUserControl
 	public PresentationList<Account> Accounts { get; }
 
 	/// <summary>
-	/// All accounts in depth-first order for the Flat List tab (one row per node).
-	/// </summary>
-	public PresentationList<Account> FlatAccounts { get; }
-
-	public IRuntimeInformation RuntimeInformation { get; }
-
-	/// <summary>
 	/// Free-text filter applied to both hierarchy and flat lists (Name, Id, Detail).
 	/// Hierarchy keeps ancestor chains of matches so hits stay reachable.
 	/// </summary>
@@ -115,6 +110,11 @@ public partial class TabTreeDataGrid : CornerstoneUserControl
 	}
 
 	/// <summary>
+	/// All accounts in depth-first order for the Flat List tab (one row per node).
+	/// </summary>
+	public PresentationList<Account> FlatAccounts { get; }
+
+	/// <summary>
 	/// Bound to both grids' MinRowHeight (fixed slot size when UseFixedRowHeight is true).
 	/// </summary>
 	public int RowHeight
@@ -132,6 +132,19 @@ public partial class TabTreeDataGrid : CornerstoneUserControl
 			UpdateStatusText();
 		}
 	}
+
+	public IRuntimeInformation RuntimeInformation { get; }
+
+	public string ScrollLabHint =>
+		UseFixedRowHeight
+			? "Fixed mode: every row is exactly MinRowHeight. Extent = count × height — scrollbar should stay stable. Turn off fixed height (and enable multi-line details) to reproduce estimate thrash."
+			: "Variable mode: rows size to content. Extent averages realized heights — thumb can grow/shrink and bottom may jump. Best demo with multi-line details + 50–200 accounts.";
+
+	public string StatusText { get; private set; } = "Load a sample to begin.";
+
+	public FlatTreeDataGridSource<Account> TreeDataGridFlatSource { get; private set; }
+
+	public HierarchicalTreeDataGridSource<Account> TreeDataGridHierarchicalSource { get; private set; }
 
 	/// <summary>
 	/// Bound to both grids' UseFixedRowHeight. On = stable scroll; off = content-sized (can thrash).
@@ -168,24 +181,15 @@ public partial class TabTreeDataGrid : CornerstoneUserControl
 
 			_useVariableDetailLines = value;
 			OnPropertyChanged(nameof(UseVariableDetailLines));
+
 			// Rebuild columns so templates show/hide detail rows; re-apply details on existing data.
 			RebuildSources();
 			ApplyDetailLinesToAccounts();
+
 			// FilterCheck lives on the lists (not the sources); re-apply after detail changes.
 			ApplyAccountFilter();
 		}
 	}
-
-	public string ScrollLabHint =>
-		UseFixedRowHeight
-			? "Fixed mode: every row is exactly MinRowHeight. Extent = count × height — scrollbar should stay stable. Turn off fixed height (and enable multi-line details) to reproduce estimate thrash."
-			: "Variable mode: rows size to content. Extent averages realized heights — thumb can grow/shrink and bottom may jump. Best demo with multi-line details + 50–200 accounts.";
-
-	public string StatusText { get; private set; } = "Load a sample to begin.";
-
-	public FlatTreeDataGridSource<Account> TreeDataGridFlatSource { get; private set; }
-
-	public HierarchicalTreeDataGridSource<Account> TreeDataGridHierarchicalSource { get; private set; }
 
 	#endregion
 
@@ -243,7 +247,7 @@ public partial class TabTreeDataGrid : CornerstoneUserControl
 		var filter = (_filterText ?? string.Empty).Trim();
 		if (filter.Length == 0)
 		{
-			RefreshGridSources(expandMatching: null);
+			RefreshGridSources(null);
 			UpdateStatusText();
 			return;
 		}
@@ -269,8 +273,15 @@ public partial class TabTreeDataGrid : CornerstoneUserControl
 			}
 		}
 
-		bool KeepInHierarchy(Account a) => hierarchyVisible.Contains(a);
-		bool KeepInFlat(Account a) => matches.Contains(a);
+		bool KeepInHierarchy(Account a)
+		{
+			return hierarchyVisible.Contains(a);
+		}
+
+		bool KeepInFlat(Account a)
+		{
+			return matches.Contains(a);
+		}
 
 		Accounts.FilterCheck = KeepInHierarchy;
 		FlatAccounts.FilterCheck = KeepInFlat;
@@ -287,7 +298,7 @@ public partial class TabTreeDataGrid : CornerstoneUserControl
 			account.Children.RefreshFilter();
 		}
 
-		RefreshGridSources(expandMatching: hierarchyVisible);
+		RefreshGridSources(hierarchyVisible);
 		UpdateStatusText();
 	}
 
@@ -297,195 +308,6 @@ public partial class TabTreeDataGrid : CornerstoneUserControl
 		{
 			a.Detail = UseVariableDetailLines ? BuildDetailLines(a.Id) : string.Empty;
 		}
-	}
-
-	/// <summary>
-	/// Remove every FilterCheck using <see cref="_allAccountNodes"/> — do not walk Children
-	/// while filtered (that skips nodes and leaves FilterCheck stuck after backspace-clear).
-	/// </summary>
-	private void ClearAccountFilters()
-	{
-		foreach (var account in _allAccountNodes)
-		{
-			account.Children.FilterCheck = null;
-		}
-
-		Accounts.FilterCheck = null;
-		FlatAccounts.FilterCheck = null;
-
-		Accounts.RefreshFilter();
-		FlatAccounts.RefreshFilter();
-		foreach (var account in _allAccountNodes)
-		{
-			account.Children.RefreshFilter();
-		}
-	}
-
-	private void RefreshGridSources(HashSet<Account> expandMatching)
-	{
-		TreeDataGridHierarchicalSource = CreateHierarchicalSource();
-		OnPropertyChanged(nameof(TreeDataGridHierarchicalSource));
-
-		TreeDataGridFlatSource = CreateFlatSource();
-		OnPropertyChanged(nameof(TreeDataGridFlatSource));
-
-		if ((expandMatching is { Count: > 0 }) && (TreeDataGridHierarchicalSource is not null))
-		{
-			TreeDataGridHierarchicalSource.ExpandCollapseRecursive(a =>
-				expandMatching.Contains(a) && a.Children.Any(c => expandMatching.Contains(c)));
-		}
-	}
-
-	/// <summary>
-	/// Parent map for hierarchy path padding. Caller must clear Children.FilterCheck first.
-	/// </summary>
-	private static Dictionary<Account, Account> BuildParentMap(List<Account> allNodes)
-	{
-		var parentOf = new Dictionary<Account, Account>();
-		foreach (var account in allNodes)
-		{
-			foreach (var child in account.Children)
-			{
-				parentOf[child] = account;
-			}
-		}
-
-		return parentOf;
-	}
-
-	/// <summary>
-	/// Snapshot every node while Children are unfiltered (at load time).
-	/// </summary>
-	private void RebuildAllAccountSnapshot()
-	{
-		_allAccountNodes = [];
-		foreach (var root in Accounts)
-		{
-			CollectTreeUnfiltered(root, parent: null, _allAccountNodes, parents: null);
-		}
-	}
-
-	/// <summary>
-	/// Depth-first collect. Requires Children to be unfiltered (call after ClearAccountFilters
-	/// or during load before any filter is applied).
-	/// </summary>
-	private static void CollectTreeUnfiltered(
-		Account account,
-		Account parent,
-		List<Account> all,
-		Dictionary<Account, Account> parents)
-	{
-		if (account is null)
-		{
-			return;
-		}
-
-		all.Add(account);
-		if ((parents is not null) && (parent is not null))
-		{
-			parents[account] = parent;
-		}
-
-		// Intentionally iterates Children; only safe when FilterCheck is null.
-		foreach (var child in account.Children)
-		{
-			CollectTreeUnfiltered(child, account, all, parents);
-		}
-	}
-
-	private static bool MatchesFilter(Account account, string filter)
-	{
-		if (account is null)
-		{
-			return false;
-		}
-
-		if (account.Name?.Contains(filter, StringComparison.OrdinalIgnoreCase) == true)
-		{
-			return true;
-		}
-
-		if (account.Detail?.Contains(filter, StringComparison.OrdinalIgnoreCase) == true)
-		{
-			return true;
-		}
-
-		return account.Id.ToString().Contains(filter, StringComparison.OrdinalIgnoreCase);
-	}
-
-	private static string BuildDetailLines(int id)
-	{
-		// Deterministic 0–4 lines so heights vary predictably while scrolling.
-		var lineCount = id % 5;
-		if (lineCount == 0)
-		{
-			return string.Empty;
-		}
-
-		var builder = new StringBuilder();
-		for (var i = 0; i < lineCount; i++)
-		{
-			if (i > 0)
-			{
-				builder.AppendLine();
-			}
-
-			// Fixed seed material from id so the same row keeps a stable height while scrolling.
-			builder.Append("Line ").Append(i + 1).Append(" · id ").Append(id)
-				.Append(" · ").Append(RandomGenerator.NextString(12 + ((id + i) % 18)));
-		}
-
-		return builder.ToString();
-	}
-
-	private void CollapseAllSample(object sender, RoutedEventArgs e)
-	{
-		// Collapse via the hierarchical source so the flattened row list rebuilds in one Reset
-		// (setting model.IsExpanded alone only updates realized expander cells).
-		TreeDataGridHierarchicalSource.CollapseAll();
-	}
-
-	private FlatTreeDataGridSource<Account> CreateFlatSource()
-	{
-		// Must use FlatAccounts — Accounts is only the root set (often much smaller than target count).
-		return new FlatTreeDataGridSource<Account>(FlatAccounts)
-		{
-			Columns =
-			{
-				CreateAccountColumn(),
-				new TextColumn<Account, int>("Children", x => x.Children.Count),
-				new TextColumn<Account, int>("Id", x => x.Id)
-			}
-		};
-	}
-
-	private HierarchicalTreeDataGridSource<Account> CreateHierarchicalSource()
-	{
-		return new HierarchicalTreeDataGridSource<Account>(Accounts)
-		{
-			Columns =
-			{
-				new HierarchicalExpanderColumn<Account>(
-					CreateAccountColumn(),
-					x => x.Children,
-					x => x.Children.Count > 0,
-					x => x.IsExpanded),
-				new TextColumn<Account, int>("Children", x => x.Children.Count),
-				new TextColumn<Account, int>("Id", x => x.Id)
-			}
-		};
-	}
-
-	/// <summary>
-	/// Name (+ optional multi-line Detail) so variable-height mode produces uneven DesiredSize.
-	/// </summary>
-	private TemplateColumn<Account> CreateAccountColumn()
-	{
-		return new TemplateColumn<Account>(
-			"Account",
-			new FuncDataTemplate<Account>((account, _) => BuildAccountCell(account), true),
-			null,
-			new GridLength(1, GridUnitType.Star));
 	}
 
 	private static Control BuildAccountCell(Account account)
@@ -527,7 +349,7 @@ public partial class TabTreeDataGrid : CornerstoneUserControl
 
 			account.PropertyChanged += (_, e) =>
 			{
-				if ((e.PropertyName is null) || (e.PropertyName == nameof(Account.Detail)))
+				if (e.PropertyName is null || (e.PropertyName == nameof(Account.Detail)))
 				{
 					SyncDetail();
 				}
@@ -536,6 +358,148 @@ public partial class TabTreeDataGrid : CornerstoneUserControl
 
 		panel.Children.Add(detail);
 		return panel;
+	}
+
+	private static string BuildDetailLines(int id)
+	{
+		// Deterministic 0–4 lines so heights vary predictably while scrolling.
+		var lineCount = id % 5;
+		if (lineCount == 0)
+		{
+			return string.Empty;
+		}
+
+		var builder = new StringBuilder();
+		for (var i = 0; i < lineCount; i++)
+		{
+			if (i > 0)
+			{
+				builder.AppendLine();
+			}
+
+			// Fixed seed material from id so the same row keeps a stable height while scrolling.
+			builder.Append("Line ").Append(i + 1).Append(" · id ").Append(id)
+				.Append(" · ").Append(RandomGenerator.NextString(12 + ((id + i) % 18)));
+		}
+
+		return builder.ToString();
+	}
+
+	/// <summary>
+	/// Parent map for hierarchy path padding. Caller must clear Children.FilterCheck first.
+	/// </summary>
+	private static Dictionary<Account, Account> BuildParentMap(List<Account> allNodes)
+	{
+		var parentOf = new Dictionary<Account, Account>();
+		foreach (var account in allNodes)
+		{
+			foreach (var child in account.Children)
+			{
+				parentOf[child] = account;
+			}
+		}
+
+		return parentOf;
+	}
+
+	/// <summary>
+	/// Remove every FilterCheck using <see cref="_allAccountNodes" /> — do not walk Children
+	/// while filtered (that skips nodes and leaves FilterCheck stuck after backspace-clear).
+	/// </summary>
+	private void ClearAccountFilters()
+	{
+		foreach (var account in _allAccountNodes)
+		{
+			account.Children.FilterCheck = null;
+		}
+
+		Accounts.FilterCheck = null;
+		FlatAccounts.FilterCheck = null;
+
+		Accounts.RefreshFilter();
+		FlatAccounts.RefreshFilter();
+		foreach (var account in _allAccountNodes)
+		{
+			account.Children.RefreshFilter();
+		}
+	}
+
+	private void CollapseAllSample(object sender, RoutedEventArgs e)
+	{
+		// Collapse via the hierarchical source so the flattened row list rebuilds in one Reset
+		// (setting model.IsExpanded alone only updates realized expander cells).
+		TreeDataGridHierarchicalSource.CollapseAll();
+	}
+
+	/// <summary>
+	/// Depth-first collect. Requires Children to be unfiltered (call after ClearAccountFilters
+	/// or during load before any filter is applied).
+	/// </summary>
+	private static void CollectTreeUnfiltered(
+		Account account,
+		Account parent,
+		List<Account> all,
+		Dictionary<Account, Account> parents)
+	{
+		if (account is null)
+		{
+			return;
+		}
+
+		all.Add(account);
+		if (parents is not null && parent is not null)
+		{
+			parents[account] = parent;
+		}
+
+		// Intentionally iterates Children; only safe when FilterCheck is null.
+		foreach (var child in account.Children)
+		{
+			CollectTreeUnfiltered(child, account, all, parents);
+		}
+	}
+
+	/// <summary>
+	/// Name (+ optional multi-line Detail) so variable-height mode produces uneven DesiredSize.
+	/// </summary>
+	private TemplateColumn<Account> CreateAccountColumn()
+	{
+		return new TemplateColumn<Account>(
+			"Account",
+			new FuncDataTemplate<Account>((account, _) => BuildAccountCell(account), true),
+			null,
+			new GridLength(1, GridUnitType.Star));
+	}
+
+	private FlatTreeDataGridSource<Account> CreateFlatSource()
+	{
+		// Must use FlatAccounts — Accounts is only the root set (often much smaller than target count).
+		return new FlatTreeDataGridSource<Account>(FlatAccounts)
+		{
+			Columns =
+			{
+				CreateAccountColumn(),
+				new TextColumn<Account, int>("Children", x => x.Children.Count),
+				new TextColumn<Account, int>("Id", x => x.Id)
+			}
+		};
+	}
+
+	private HierarchicalTreeDataGridSource<Account> CreateHierarchicalSource()
+	{
+		return new HierarchicalTreeDataGridSource<Account>(Accounts)
+		{
+			Columns =
+			{
+				new HierarchicalExpanderColumn<Account>(
+					CreateAccountColumn(),
+					x => x.Children,
+					x => x.Children.Count > 0,
+					x => x.IsExpanded),
+				new TextColumn<Account, int>("Children", x => x.Children.Count),
+				new TextColumn<Account, int>("Id", x => x.Id)
+			}
+		};
 	}
 
 	/// <summary>
@@ -631,6 +595,28 @@ public partial class TabTreeDataGrid : CornerstoneUserControl
 		RebuildFlatAccountsFromSnapshot();
 	}
 
+	private static bool MatchesFilter(Account account, string filter)
+	{
+		if (account is null)
+		{
+			return false;
+		}
+
+		return TokenTextFilter.Matches(filter, account.Name, account.Detail, account.Id.ToString());
+	}
+
+	/// <summary>
+	/// Snapshot every node while Children are unfiltered (at load time).
+	/// </summary>
+	private void RebuildAllAccountSnapshot()
+	{
+		_allAccountNodes = [];
+		foreach (var root in Accounts)
+		{
+			CollectTreeUnfiltered(root, null, _allAccountNodes, null);
+		}
+	}
+
 	/// <summary>
 	/// Flat list = every node once, from the unfiltered snapshot (never from filtered Children walks).
 	/// </summary>
@@ -648,6 +634,21 @@ public partial class TabTreeDataGrid : CornerstoneUserControl
 		OnPropertyChanged(nameof(TreeDataGridHierarchicalSource));
 	}
 
+	private void RefreshGridSources(HashSet<Account> expandMatching)
+	{
+		TreeDataGridHierarchicalSource = CreateHierarchicalSource();
+		OnPropertyChanged(nameof(TreeDataGridHierarchicalSource));
+
+		TreeDataGridFlatSource = CreateFlatSource();
+		OnPropertyChanged(nameof(TreeDataGridFlatSource));
+
+		if (expandMatching is { Count: > 0 } && TreeDataGridHierarchicalSource is not null)
+		{
+			TreeDataGridHierarchicalSource.ExpandCollapseRecursive(a =>
+				expandMatching.Contains(a) && a.Children.Any(c => expandMatching.Contains(c)));
+		}
+	}
+
 	private void UpdateStatusText()
 	{
 		var mode = UseFixedRowHeight ? "fixed" : "variable";
@@ -655,6 +656,7 @@ public partial class TabTreeDataGrid : CornerstoneUserControl
 		var filter = string.IsNullOrWhiteSpace(FilterText)
 			? "filter off"
 			: $"filter=\"{FilterText.Trim()}\"";
+
 		// Flat count = direct matches; hierarchy roots may include path-only parents.
 		StatusText =
 			$"Mode: {mode} · MinRowHeight={RowHeight} · {details} · {filter} · " +

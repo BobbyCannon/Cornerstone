@@ -24,7 +24,7 @@ public class LifecycleTracker<T> : LifecycleTracker where T : class, ILifecycle
 	#region Methods
 
 	/// <summary>
-	/// Releases a child of the exact type T.
+	/// Releases a child typed as T.
 	/// </summary>
 	public T Release(T child)
 	{
@@ -32,9 +32,27 @@ public class LifecycleTracker<T> : LifecycleTracker where T : class, ILifecycle
 	}
 
 	/// <summary>
-	/// Tracks a child of the exact type T.
+	/// Releases any lifecycle child and returns it as T2. T2 need not be T
+	/// (e.g. a nested LifecycleTracker on a LifecycleTracker of ViewModel).
+	/// </summary>
+	public new T2 Release<T2>(T2 child) where T2 : class, ILifecycle
+	{
+		return base.Release(child);
+	}
+
+	/// <summary>
+	/// Tracks a child typed as T.
 	/// </summary>
 	public T Track(T child)
+	{
+		return base.Track(child);
+	}
+
+	/// <summary>
+	/// Tracks any lifecycle child and returns it as T2. T2 need not be T
+	/// (e.g. a nested LifecycleTracker on a LifecycleTracker of ViewModel).
+	/// </summary>
+	public new T2 Track<T2>(T2 child) where T2 : class, ILifecycle
 	{
 		return base.Track(child);
 	}

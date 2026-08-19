@@ -43,9 +43,9 @@ public partial class ResponsiveGrid
 		LG_OffsetProperty = AvaloniaProperty.RegisterAttached<ResponsiveGrid, Control, int>("LG_Offset");
 		LG_PullProperty = AvaloniaProperty.RegisterAttached<ResponsiveGrid, Control, int>("LG_Pull");
 		LG_PushProperty = AvaloniaProperty.RegisterAttached<ResponsiveGrid, Control, int>("LG_Push");
-		LGProperty = AvaloniaProperty.RegisterAttached<ResponsiveGrid, Control, int>("Large");
-		MaxDivisionProperty = AvaloniaProperty.Register<ResponsiveGrid, int>(nameof(MaxDivision), 12);
-		MD_OffsetProperty = AvaloniaProperty.RegisterAttached<ResponsiveGrid, Control, int>("SM_Offset");
+		LGProperty = AvaloniaProperty.RegisterAttached<ResponsiveGrid, Control, int>("LG");
+		MaxDivisionProperty = AvaloniaProperty.Register<ResponsiveGrid, int>(nameof(MaxDivision), 24);
+		MD_OffsetProperty = AvaloniaProperty.RegisterAttached<ResponsiveGrid, Control, int>("MD_Offset");
 		MD_PullProperty = AvaloniaProperty.RegisterAttached<ResponsiveGrid, Control, int>("MD_Pull");
 		MD_PushProperty = AvaloniaProperty.RegisterAttached<ResponsiveGrid, Control, int>("MD_Push");
 		MDProperty = AvaloniaProperty.RegisterAttached<ResponsiveGrid, Control, int>("MD");
@@ -59,14 +59,24 @@ public partial class ResponsiveGrid
 		XS_PushProperty = AvaloniaProperty.RegisterAttached<ResponsiveGrid, Control, int>("XS_Push");
 		XSProperty = AvaloniaProperty.RegisterAttached<ResponsiveGrid, Control, int>("XS");
 
-		AffectsMeasure<ResponsiveGrid>(MaxDivisionProperty, ThresholdsProperty,
-			ColumnSpacingProperty, RowSpacingProperty,
-			XSProperty, SMProperty, MDProperty, LGProperty,
-			XS_OffsetProperty, XS_PullProperty, XS_PushProperty,
-			SM_OffsetProperty, SM_PullProperty, SM_PushProperty,
-			MD_OffsetProperty, MD_PushProperty, MD_PullProperty,
-			LG_OffsetProperty, LG_PullProperty, LG_PushProperty
-		);
+		AffectsMeasure<ResponsiveGrid>(MaxDivisionProperty, ThresholdsProperty, ColumnSpacingProperty, RowSpacingProperty);
+
+		XSProperty.Changed.AddClassHandler<Control>(OnChildLayoutPropertyChanged);
+		SMProperty.Changed.AddClassHandler<Control>(OnChildLayoutPropertyChanged);
+		MDProperty.Changed.AddClassHandler<Control>(OnChildLayoutPropertyChanged);
+		LGProperty.Changed.AddClassHandler<Control>(OnChildLayoutPropertyChanged);
+		XS_OffsetProperty.Changed.AddClassHandler<Control>(OnChildLayoutPropertyChanged);
+		SM_OffsetProperty.Changed.AddClassHandler<Control>(OnChildLayoutPropertyChanged);
+		MD_OffsetProperty.Changed.AddClassHandler<Control>(OnChildLayoutPropertyChanged);
+		LG_OffsetProperty.Changed.AddClassHandler<Control>(OnChildLayoutPropertyChanged);
+		XS_PullProperty.Changed.AddClassHandler<Control>(OnChildLayoutPropertyChanged);
+		SM_PullProperty.Changed.AddClassHandler<Control>(OnChildLayoutPropertyChanged);
+		MD_PullProperty.Changed.AddClassHandler<Control>(OnChildLayoutPropertyChanged);
+		LG_PullProperty.Changed.AddClassHandler<Control>(OnChildLayoutPropertyChanged);
+		XS_PushProperty.Changed.AddClassHandler<Control>(OnChildLayoutPropertyChanged);
+		SM_PushProperty.Changed.AddClassHandler<Control>(OnChildLayoutPropertyChanged);
+		MD_PushProperty.Changed.AddClassHandler<Control>(OnChildLayoutPropertyChanged);
+		LG_PushProperty.Changed.AddClassHandler<Control>(OnChildLayoutPropertyChanged);
 	}
 
 	#endregion
@@ -81,8 +91,18 @@ public partial class ResponsiveGrid
 
 	public SizeThresholds Thresholds
 	{
-		get => GetValue(ThresholdsProperty);
-		set => SetValue(ThresholdsProperty, value);
+		get
+		{
+			var value = GetValue(ThresholdsProperty);
+			if (value == null)
+			{
+				value = new SizeThresholds();
+				SetValue(ThresholdsProperty, value);
+			}
+
+			return value;
+		}
+		set => SetValue(ThresholdsProperty, value ?? new SizeThresholds());
 	}
 
 	#endregion
@@ -257,6 +277,14 @@ public partial class ResponsiveGrid
 	public static void SetXS_Push(AvaloniaObject obj, int value)
 	{
 		obj.SetValue(XS_PushProperty, value);
+	}
+
+	private static void OnChildLayoutPropertyChanged(Control control, AvaloniaPropertyChangedEventArgs args)
+	{
+		if (control.Parent is ResponsiveGrid grid)
+		{
+			grid.InvalidateMeasure();
+		}
 	}
 
 	protected static void SetActualColumn(AvaloniaObject obj, int value)

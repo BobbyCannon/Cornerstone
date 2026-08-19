@@ -1,4 +1,4 @@
-﻿#region References
+#region References
 
 using Cornerstone.Keystone;
 using Cornerstone.Keystone.Messages;
@@ -12,30 +12,12 @@ namespace Cornerstone.Agent.Keystone.Channels;
 
 [SourceReflection]
 [DependencyInjected]
-public partial class LoggingChannel : KeystoneChannel<LoggingChannel.LoggingMessageType>
+public partial class LoggingChannel : KeystoneChannel
 {
-	#region Methods
-
-	[ChannelSubscription<LoggingMessageType, LoggingMessage>(LoggingMessageType.Log)]
-	public void Log(string message, LogLevel level)
-	{
-		Publish(LoggingMessageType.Log, new LoggingMessage(message, level));
-	}
-
-	#endregion
-
 	#region Records
 
+	[ChannelMessage<LoggingChannel>("Log")]
 	public record struct LoggingMessage(string Message, LogLevel Level) : IChannelMessage;
-
-	#endregion
-
-	#region Enumerations
-
-	public enum LoggingMessageType
-	{
-		Log
-	}
 
 	#endregion
 }

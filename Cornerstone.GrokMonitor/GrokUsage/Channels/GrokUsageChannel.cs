@@ -12,57 +12,39 @@ namespace Cornerstone.GrokMonitor.GrokUsage.Channels;
 
 [SourceReflection]
 [DependencyInjected]
-public partial class GrokUsageChannel : KeystoneChannel<GrokUsageMessageType>
+public partial class GrokUsageChannel : KeystoneChannel
 {
-	#region Methods
+	#region Records
 
-	[ChannelSubscription<GrokUsageMessageType, GrokUsageMessageForEnsureHomes>(GrokUsageMessageType.EnsureHomes)]
-	public void EnsureHomes()
-	{
-		Publish(GrokUsageMessageType.EnsureHomes, new GrokUsageMessageForEnsureHomes());
-	}
+	[ChannelMessage<GrokUsageChannel>]
+	public record struct EnsureHomesMessage : IChannelMessage;
 
-	[ChannelSubscription<GrokUsageMessageType, GrokUsageMessageForRefreshAll>(GrokUsageMessageType.RefreshAll)]
-	public void RefreshAll()
-	{
-		Publish(GrokUsageMessageType.RefreshAll, new GrokUsageMessageForRefreshAll());
-	}
+	[ChannelMessage<GrokUsageChannel>]
+	public record struct RefreshHomeMessage(Guid HomeId) : IChannelMessage;
 
-	[ChannelSubscription<GrokUsageMessageType, GrokUsageMessageForRefreshHome>(GrokUsageMessageType.RefreshHome)]
-	public void RefreshHome(Guid homeId)
-	{
-		Publish(GrokUsageMessageType.RefreshHome, new GrokUsageMessageForRefreshHome(homeId));
-	}
+	[ChannelMessage<GrokUsageChannel>]
+	public record struct RefreshAllMessage : IChannelMessage;
 
-	[ChannelSubscription<GrokUsageMessageType, GrokUsageMessageForSelectHome>(GrokUsageMessageType.SelectHome)]
-	public void SelectHome(Guid homeId)
-	{
-		Publish(GrokUsageMessageType.SelectHome, new GrokUsageMessageForSelectHome(homeId));
-	}
+	[ChannelMessage<GrokUsageChannel>]
+	public record struct SelectHomeMessage(Guid HomeId) : IChannelMessage;
 
-	[ChannelSubscription<GrokUsageMessageType, GrokUsageMessageForSelectPeriod>(GrokUsageMessageType.SelectPeriod)]
-	public void SelectPeriod(Guid homeId, DateTimeOffset periodStart, DateTimeOffset periodEnd)
-	{
-		Publish(GrokUsageMessageType.SelectPeriod, new GrokUsageMessageForSelectPeriod(homeId, periodStart, periodEnd));
-	}
+	[ChannelMessage<GrokUsageChannel>]
+	public record struct SetSinceMessage(DateTimeOffset SinceUtc) : IChannelMessage;
 
-	[ChannelSubscription<GrokUsageMessageType, GrokUsageMessageForSetSince>(GrokUsageMessageType.SetSince)]
-	public void SetSince(DateTimeOffset sinceUtc)
-	{
-		Publish(GrokUsageMessageType.SetSince, new GrokUsageMessageForSetSince(sinceUtc));
-	}
+	[ChannelMessage<GrokUsageChannel>]
+	public record struct SelectPeriodMessage(Guid HomeId, DateTimeOffset PeriodStart, DateTimeOffset PeriodEnd) : IChannelMessage;
 
-	[ChannelSubscription<GrokUsageMessageType, GrokUsageMessageForSetViewAsOf>(GrokUsageMessageType.SetViewAsOf)]
-	public void SetViewAsOf(DateTimeOffset viewAsOf)
-	{
-		Publish(GrokUsageMessageType.SetViewAsOf, new GrokUsageMessageForSetViewAsOf(viewAsOf));
-	}
+	[ChannelMessage<GrokUsageChannel>]
+	public record struct SetViewAsOfMessage(Guid HomeId, DateTimeOffset ViewAsOf) : IChannelMessage;
 
-	[ChannelSubscription<GrokUsageMessageType, GrokUsageMessageForSetViewLive>(GrokUsageMessageType.SetViewLive)]
-	public void SetViewLive()
-	{
-		Publish(GrokUsageMessageType.SetViewLive, new GrokUsageMessageForSetViewLive());
-	}
+	[ChannelMessage<GrokUsageChannel>]
+	public record struct SetViewLiveMessage(Guid HomeId) : IChannelMessage;
+
+	[ChannelMessage<GrokUsageChannel>]
+	public record struct StartReplayMessage(Guid HomeId) : IChannelMessage;
+
+	[ChannelMessage<GrokUsageChannel>]
+	public record struct StopReplayMessage(Guid HomeId) : IChannelMessage;
 
 	#endregion
 }

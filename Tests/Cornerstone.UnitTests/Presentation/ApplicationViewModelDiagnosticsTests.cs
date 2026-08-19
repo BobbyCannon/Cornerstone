@@ -23,8 +23,8 @@ public class ApplicationViewModelDiagnosticsTests : CornerstoneUnitTest
 		var a = new SampleDispatchable();
 		var b = new SampleDispatchable();
 
-		app.Track(a);
-		app.Track(b);
+		a.Attach(app);
+		b.Attach(app);
 
 		var list = new List<DispatchableViewModel>();
 		app.CopyTrackedDispatchables(list);
@@ -33,7 +33,7 @@ public class ApplicationViewModelDiagnosticsTests : CornerstoneUnitTest
 		IsTrue(list.Contains(a));
 		IsTrue(list.Contains(b));
 
-		app.Release(a);
+		a.Detach(app);
 		app.CopyTrackedDispatchables(list);
 		AreEqual(1, list.Count);
 		AreEqual(b, list[0]);
@@ -46,7 +46,7 @@ public class ApplicationViewModelDiagnosticsTests : CornerstoneUnitTest
 		var feature = new SampleDispatchable();
 		var diagnostics = new SampleDispatchable();
 
-		app.Track(feature);
+		feature.Attach(app);
 		app.DiagnosticsDispatchable = diagnostics;
 
 		var list = new List<DispatchableViewModel>();

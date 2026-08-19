@@ -20,7 +20,7 @@ using Task = System.Threading.Tasks.Task;
 namespace Cornerstone.VisualStudio;
 
 [Guid(CornerstoneConstants.PackageGuidString)]
-[InstalledProductRegistration("#110", "#112", "1.2.7", IconResourceID = 400)]
+[InstalledProductRegistration("#110", "#112", "1.2.8", IconResourceID = 400)]
 [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
 [ProvideEditorExtension(typeof(EditorFactory), $".{CornerstoneConstants.Axaml}", 100, NameResourceID = 113, EditorFactoryNotify = true, ProjectGuid = VSConstants.UICONTEXT.CSharpProject_string, DefaultName = CornerstoneConstants.PackageName)]
 [ProvideEditorExtension(typeof(EditorFactory), $".{CornerstoneConstants.Xaml}", 0x40, NameResourceID = 113, EditorFactoryNotify = true, ProjectGuid = VSConstants.UICONTEXT.CSharpProject_string, DefaultName = CornerstoneConstants.PackageName)]

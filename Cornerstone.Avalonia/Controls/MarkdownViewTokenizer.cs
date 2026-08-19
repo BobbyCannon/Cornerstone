@@ -52,11 +52,11 @@ public class MarkdownViewTokenizer : Tokenizer
 
 	public override SyntaxKind GetSyntaxKind(int type)
 	{
-		// Links use Method (typically blue) so they stand out without a dedicated SyntaxKind.
+		// Links are painted with Theme.GetAccentBrush() in TextRenderer, not syntax colors.
 		// Inline code uses String so it is visually distinct from surrounding prose.
 		if (type == MarkdownTokenizer.TokenTypeLink)
 		{
-			return SyntaxKind.Method;
+			return SyntaxKind.None;
 		}
 
 		if (type == MarkdownTokenizer.TokenTypeInlineCode)

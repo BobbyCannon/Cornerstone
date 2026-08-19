@@ -1,11 +1,13 @@
 ﻿<Styles xmlns="https://github.com/avaloniaui"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-		xmlns:converters="clr-namespace:Cornerstone.Avalonia.TreeDataGrid.Converters">
+		xmlns:converters="clr-namespace:Cornerstone.Avalonia.TreeDataGrid.Converters"
+		xmlns:tree="clr-namespace:Cornerstone.Avalonia.TreeDataGrid">
 
 	<Styles.Resources>
 		<ResourceDictionary>
 			<StreamGeometry x:Key="TreeDataGridSortIconDescendingPath">M1875 1011l-787 787v-1798h-128v1798l-787 -787l-90 90l941 941l941 -941z</StreamGeometry>
 			<StreamGeometry x:Key="TreeDataGridSortIconAscendingPath">M1965 947l-941 -941l-941 941l90 90l787 -787v1798h128v-1798l787 787z</StreamGeometry>
+			<Thickness x:Key="CellPadding">10,0</Thickness>
 
 			<ControlTheme x:Key="{x:Type TreeDataGrid}" TargetType="TreeDataGrid">
 				<Setter Property="Theme.Color" Value="None" />
@@ -57,8 +59,9 @@
 				<Setter Property="Background" Value="{DynamicResource Background03}" />
 				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
 				<Setter Property="BorderThickness" Value="0,0,0,1" />
-				<Setter Property="MinHeight" Value="25" />
-				<Setter Property="Padding" Value="4,2" />
+				<!-- Default only. Live value comes from TreeDataGrid.MinRowHeight (applied in code). -->
+				<Setter Property="MinHeight" Value="32" />
+				<Setter Property="Padding" Value="{StaticResource CellPadding}" />
 				<Setter Property="HorizontalContentAlignment" Value="Left" />
 				<Setter Property="VerticalContentAlignment" Value="Center" />
 				<Setter Property="Template">
@@ -93,8 +96,9 @@
 										Fill="{TemplateBinding Foreground}"
 										HorizontalAlignment="Center"
 										VerticalAlignment="Center"
-										IsVisible="{TemplateBinding CanUserSort}"
+										Data="{DynamicResource TreeDataGridSortIconDescendingPath}"
 										Stretch="Uniform"
+										Width="12"
 										Height="12"
 										TabIndex="1" />
 								<ContentPresenter Name="PART_ContentPresenter"
@@ -125,6 +129,10 @@
 					<Setter Property="Background" Value="{DynamicResource Background05}" />
 					<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
 					<Setter Property="TextBlock.Foreground" Value="{DynamicResource Foreground00}" />
+				</Style>
+
+				<Style Selector="^ /template/ Path#SortIcon">
+					<Setter Property="IsVisible" Value="False" />
 				</Style>
 
 				<Style Selector="^[SortDirection=Ascending] /template/ Path#SortIcon">
@@ -184,7 +192,7 @@
 
 			<ControlTheme x:Key="{x:Type TreeDataGridCheckBoxCell}"
 					TargetType="TreeDataGridCheckBoxCell">
-				<Setter Property="Padding" Value="8,0" />
+				<Setter Property="Padding" Value="{StaticResource CellPadding}" />
 				<Setter Property="Template">
 					<ControlTemplate>
 						<Border x:Name="CellBorder"
@@ -205,6 +213,7 @@
 
 			<ControlTheme x:Key="{x:Type TreeDataGridHyperlinkButtonCell}"
 					TargetType="TreeDataGridHyperlinkButtonCell">
+				<Setter Property="Padding" Value="{StaticResource CellPadding}" />
 				<Setter Property="Template">
 					<ControlTemplate>
 						<Border x:Name="CellBorder"
@@ -230,6 +239,7 @@
 					x:DataType="TreeDataGridPressHoldButtonCell"
 					TargetType="TreeDataGridPressHoldButtonCell">
 				<Setter Property="Height" Value="{Binding Height}" />
+				<Setter Property="Padding" Value="{StaticResource CellPadding}" />
 				<Setter Property="Template">
 					<ControlTemplate>
 						<Border x:Name="CellBorder"
@@ -311,7 +321,7 @@
 
 			<ControlTheme x:Key="{x:Type TreeDataGridTextCell}"
 					TargetType="TreeDataGridTextCell">
-				<Setter Property="Padding" Value="8,2" />
+				<Setter Property="Padding" Value="{StaticResource CellPadding}" />
 				<Setter Property="Template">
 					<ControlTemplate>
 						<Border x:Name="CellBorder"
@@ -352,6 +362,7 @@
 
 			<ControlTheme x:Key="{x:Type TreeDataGridTemplateCell}"
 					TargetType="TreeDataGridTemplateCell">
+				<Setter Property="Padding" Value="{StaticResource CellPadding}" />
 				<Setter Property="Template">
 					<ControlTemplate>
 						<!-- Center content in the fixed row slot (text cells already do this). -->
@@ -369,7 +380,7 @@
 				</Setter>
 
 				<Style Selector="^:editing">
-					<Setter Property="Padding" Value="4,2" />
+					<Setter Property="Padding" Value="{StaticResource CellPadding}" />
 					<Setter Property="Template">
 						<ControlTemplate>
 							<ContentPresenter Name="PART_EditingContentPresenter"
@@ -397,16 +408,25 @@
 	</Style>
 
 	<Design.PreviewWith>
-		<Grid RowDefinitions="*,*">
-			<TreeDataGrid Grid.Row="0"
-					Height="100"
-					Width="100"
-					BorderThickness="0" />
-			<ToggleButton Grid.Row="1"
-					Theme="{StaticResource TreeDataGridExpandCollapseChevron}"
-					Background="Red">
-
-			</ToggleButton>
-		</Grid>
+		<PreviewCodeSnippet Width="500">
+			<StackPanel Spacing="12">
+				<TreeDataGrid Height="140"
+						ItemsSource="{x:Static tree:TreeDataGridDesignData.HierarchicalSource}" />
+				<TreeDataGrid Height="120"
+						ItemsSource="{x:Static tree:TreeDataGridDesignData.FlatSource}" />
+				<TreeDataGrid Height="140"
+						MinRowHeight="24"
+						ItemsSource="{x:Static tree:TreeDataGridDesignData.HierarchicalSource}" />
+				<TreeDataGrid Height="120"
+						MinRowHeight="24"
+						ItemsSource="{x:Static tree:TreeDataGridDesignData.FlatSource}" />
+				<StackPanel Orientation="Horizontal"
+						Spacing="8">
+					<ToggleButton Theme="{StaticResource TreeDataGridExpandCollapseChevron}" />
+					<ToggleButton Theme="{StaticResource TreeDataGridExpandCollapseChevron}"
+							IsChecked="True" />
+				</StackPanel>
+			</StackPanel>
+		</PreviewCodeSnippet>
 	</Design.PreviewWith>
 </Styles>

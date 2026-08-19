@@ -5,7 +5,9 @@ using System.Linq;
 using Cornerstone.Avalonia.Themes;
 using Cornerstone.Data;
 using Cornerstone.GrokMonitor.GrokUsage;
+using Cornerstone.GrokMonitor.GrokUsage.State;
 using Cornerstone.GrokMonitor.Keystone;
+using Cornerstone.GrokMonitor.Keystone.State;
 using Cornerstone.GrokMonitor.Settings;
 using Cornerstone.Presentation;
 using Cornerstone.Reflection;
@@ -27,7 +29,10 @@ public partial class AppViewModel : ApplicationViewModel
 {
 	#region Fields
 
+	private readonly IDateTimeProvider _dateTimeProvider;
 	private readonly IDispatcher _dispatcher;
+	private readonly HomeTabProjection _homeTabProjection;
+	private readonly AppState _state;
 
 	#endregion
 
@@ -39,16 +44,19 @@ public partial class AppViewModel : ApplicationViewModel
 		AppState state,
 		IDependencyProvider dependencyProvider,
 		IDispatcher dispatcher,
+		IDateTimeProvider dateTimeProvider,
 		IRuntimeInformation runtimeInformation
 	) : base(dependencyProvider, dispatcher, 120)
 	{
 		Bus = bus;
-		State = state;
+		_state = state;
+		_dateTimeProvider = dateTimeProvider ?? DateTimeProvider.RealTime;
 		_dispatcher = dispatcher;
 		RuntimeInformation = runtimeInformation;
 		HomeTabs = new PresentationList<GrokUsageTabViewModel>(dispatcher);
 		ShellTabs = new PresentationList<IShellTab>(dispatcher);
-		SettingsTab = new SettingsTabViewModel(state, dispatcher);
+		SettingsTab = Track(new SettingsTabViewModel(state.Settings));
+		_homeTabProjection = Track(new HomeTabProjection(this));
 		dependencyProvider.ExpectSingleton(this);
 	}
 
@@ -83,6 +91,11 @@ public partial class AppViewModel : ApplicationViewModel
 	public partial IShellTab SelectedShellTab { get; set; }
 
 	/// <summary>
+	/// Persisted settings (window location, theme). Host chrome may read this; Views bind SettingsTab.
+	/// </summary>
+	public AppSettings Settings => _state.Settings;
+
+	/// <summary>
 	/// Always-present settings page (theme color, mode, density).
 	/// </summary>
 	public SettingsTabViewModel SettingsTab { get; }
@@ -98,50 +111,22 @@ public partial class AppViewModel : ApplicationViewModel
 	[Notify]
 	public partial bool ShowShellTabHeaders { get; set; }
 
-	public AppState State { get; }
-
 	#endregion
 
 	#region Methods
 
-	public override void LoadLifecycle()
+	public override void InitializeLifecycle()
 	{
-		base.LoadLifecycle();
-		// Settings load via AppState.Track; re-apply theme once UI/theme is ready.
-		State.Settings.ApplyTheme();
+		base.InitializeLifecycle();
+		_homeTabProjection.Attach(this);
 	}
 
 	public override void StartLifecycle()
 	{
-		// Dispatcher worker first so Track + Attach can project after homes load.
 		base.StartLifecycle();
-
-		// Theme already applied in LoadLifecycle / FinalizeLoad; re-apply after UI is live.
-		State.Settings.ApplyTheme();
-
-		SettingsTab.InitializeLifecycle();
-		SettingsTab.LoadLifecycle();
-		SettingsTab.StartLifecycle();
-		Track(SettingsTab);
-		SettingsTab.Attach(this);
-
-		Bus.GrokUsage.EnsureHomes();
+		_state.Settings.ApplyTheme();
 		Bus.GrokUsage.RefreshAll();
-		SyncHomeTabs();
-
-		// Clear list pending so the first Update() does not re-sync unnecessarily.
-		State.GrokUsage.Homes.ClearHasPending();
-	}
-
-	public override void StopLifecycle()
-	{
-		foreach (var tab in HomeTabs.ToArray())
-		{
-			tab.StopLifecycle();
-		}
-
-		SettingsTab.StopLifecycle();
-		base.StopLifecycle();
+		ApplyHomeTabProjection();
 	}
 
 	/// <summary>
@@ -150,42 +135,20 @@ public partial class AppViewModel : ApplicationViewModel
 	[RelayCommand]
 	public void ToggleThemeMode()
 	{
-		State.Settings.ThemeMode = State.Settings.ThemeMode == ThemeMode.Dark
+		SettingsTab.ThemeMode = SettingsTab.ThemeMode == ThemeMode.Dark
 			? ThemeMode.Light
 			: ThemeMode.Dark;
 	}
 
 	public override void UninitializeLifecycle()
 	{
-		foreach (var tab in HomeTabs.ToArray())
-		{
-			tab.Detach(this);
-			Release(tab);
-			tab.UninitializeLifecycle();
-		}
-
+		_homeTabProjection.Detach(this);
 		HomeTabs.Clear();
-
-		SettingsTab.Detach(this);
-		Release(SettingsTab);
-		SettingsTab.UninitializeLifecycle();
-
 		ShellTabs.Clear();
 		SelectedShellTab = null;
 		HasHomeTabs = false;
 		ShowShellTabHeaders = false;
 		base.UninitializeLifecycle();
-	}
-
-	public override void UnloadLifecycle()
-	{
-		foreach (var tab in HomeTabs.ToArray())
-		{
-			tab.UnloadLifecycle();
-		}
-
-		SettingsTab.UnloadLifecycle();
-		base.UnloadLifecycle();
 	}
 
 	/// <summary>
@@ -197,7 +160,7 @@ public partial class AppViewModel : ApplicationViewModel
 	{
 		if ((propertyName == nameof(SelectedShellTab)) && newValue is GrokUsageTabViewModel tab && (tab.HomeId != Guid.Empty))
 		{
-			if (State.GrokUsage.SelectedHomeId != tab.HomeId)
+			if (_state.GrokUsage.SelectedHomeId != tab.HomeId)
 			{
 				Bus.GrokUsage.SelectHome(tab.HomeId);
 			}
@@ -207,26 +170,41 @@ public partial class AppViewModel : ApplicationViewModel
 	}
 
 	/// <summary>
-	/// When refresh re-discovers homes, <see cref="State.GrokUsage.Homes" /> membership changes
-	/// outside any tab projection — sync shell tabs on the dispatch tick.
+	/// Seeds or refreshes home tabs from State. Called after RefreshAll on start;
+	/// later membership changes apply through AppDispatcher on this projection.
 	/// </summary>
-	protected override bool Update()
+	internal void ApplyHomeTabProjection()
 	{
-		var homesPending = State.GrokUsage.Homes.HasPending;
-		if (homesPending)
-		{
-			State.GrokUsage.Homes.ClearHasPending();
-			_dispatcher.Dispatch(SyncHomeTabs, DispatcherPriority.Render);
-		}
+		_homeTabProjection.ApplyModelChanges();
+	}
 
-		return base.Update() || homesPending;
+	private GrokUsageTabViewModel CreateHomeTab(GrokHomeUsageState home)
+	{
+		var tab = new GrokUsageTabViewModel(
+			Bus,
+			home,
+			_state.GrokUsage,
+			_state.Settings,
+			_dispatcher,
+			_dateTimeProvider);
+		Track(tab);
+		return tab;
 	}
 
 	/// <summary>
 	/// Shell strip = home dashboards in discovery order, then Settings last.
+	/// Preserves selection when the selected home still exists.
 	/// </summary>
-	private void RebuildShellTabs()
+	private void ProjectShellTabs()
 	{
+		var selectedHomeId = SelectedHomeTab?.HomeId ?? _state.GrokUsage.SelectedHomeId;
+		var settingsWasSelected = ReferenceEquals(SelectedShellTab, SettingsTab);
+
+		if ((SelectedHomeTab != null) && !HomeTabs.Contains(SelectedHomeTab))
+		{
+			SelectedShellTab = null;
+		}
+
 		ShellTabs.Clear();
 		foreach (var tab in HomeTabs)
 		{
@@ -234,79 +212,6 @@ public partial class AppViewModel : ApplicationViewModel
 		}
 
 		ShellTabs.Add(SettingsTab);
-	}
-
-	/// <summary>
-	/// Adds tabs for new homes and tears down tabs whose homes left state.
-	/// Preserves selection when the selected home still exists. Settings stays last.
-	/// </summary>
-	private void SyncHomeTabs()
-	{
-		var homes = State.GrokUsage.Homes;
-		var selectedHomeId = SelectedHomeTab?.HomeId ?? State.GrokUsage.SelectedHomeId;
-		var settingsWasSelected = ReferenceEquals(SelectedShellTab, SettingsTab);
-
-		// Remove tabs for homes no longer in state.
-		foreach (var tab in HomeTabs.ToArray())
-		{
-			if (homes.Any(h => h.Id == tab.HomeId))
-			{
-				continue;
-			}
-
-			if (ReferenceEquals(SelectedShellTab, tab))
-			{
-				SelectedShellTab = null;
-			}
-
-			tab.Detach(this);
-			Release(tab);
-			tab.UninitializeLifecycle();
-			HomeTabs.Remove(tab);
-		}
-
-		// Add tabs for newly discovered homes (stable order: state list order).
-		foreach (var home in homes)
-		{
-			if (HomeTabs.Any(t => t.HomeId == home.Id))
-			{
-				continue;
-			}
-
-			var tab = new GrokUsageTabViewModel(Bus, State, _dispatcher, home.Id);
-			tab.InitializeLifecycle();
-			tab.LoadLifecycle();
-			tab.StartLifecycle();
-			Track(tab);
-
-			// Keep every home dashboard attached so inactive tabs stay projected.
-			tab.Attach(this);
-			HomeTabs.Add(tab);
-		}
-
-		// Keep tab order aligned with Homes (primary grok first after discovery sort).
-		for (var i = 0; i < homes.Count; i++)
-		{
-			var homeId = homes[i].Id;
-			var tabIndex = -1;
-			for (var t = 0; t < HomeTabs.Count; t++)
-			{
-				if (HomeTabs[t].HomeId == homeId)
-				{
-					tabIndex = t;
-					break;
-				}
-			}
-
-			if ((tabIndex >= 0) && (tabIndex != i) && (i < HomeTabs.Count))
-			{
-				var tab = HomeTabs[tabIndex];
-				HomeTabs.RemoveAt(tabIndex);
-				HomeTabs.Insert(Math.Min(i, HomeTabs.Count), tab);
-			}
-		}
-
-		RebuildShellTabs();
 
 		HasHomeTabs = HomeTabs.Count > 0;
 		ShowShellTabHeaders = ShellTabs.Count > 1;
@@ -314,16 +219,53 @@ public partial class AppViewModel : ApplicationViewModel
 		if (settingsWasSelected)
 		{
 			SelectedShellTab = SettingsTab;
+			return;
 		}
-		else
+
+		var preferred = HomeTabs.FirstOrDefault(t => t.HomeId == selectedHomeId) ?? HomeTabs.FirstOrDefault();
+		SelectedShellTab = preferred ?? (IShellTab) SettingsTab;
+		if (SelectedHomeTab != null)
 		{
-			var preferred = HomeTabs.FirstOrDefault(t => t.HomeId == selectedHomeId) ?? HomeTabs.FirstOrDefault();
-			SelectedShellTab = preferred ?? (IShellTab) SettingsTab;
-			if (SelectedHomeTab != null)
-			{
-				Bus.GrokUsage.SelectHome(SelectedHomeTab.HomeId);
-			}
+			Bus.GrokUsage.SelectHome(SelectedHomeTab.HomeId);
 		}
+	}
+
+	private void ReleaseHomeTab(GrokUsageTabViewModel tab)
+	{
+		if (ReferenceEquals(SelectedShellTab, tab))
+		{
+			SelectedShellTab = null;
+		}
+
+		Release(tab);
+	}
+
+	#endregion
+
+	#region Classes
+
+	/// <summary>
+	/// AppViewModel is the dispatcher, not a DispatchableViewModel.
+	/// This child is Attach'd to the host (IAppDispatcher) so TrackCollection
+	/// can project Homes → HomeTabs on the apply loop.
+	/// </summary>
+	private sealed class HomeTabProjection : DispatchableViewModel
+	{
+		#region Constructors
+
+		public HomeTabProjection(AppViewModel host)
+		{
+			TrackCollection(
+				host._state.GrokUsage.Homes,
+				host.HomeTabs,
+				(home, tab) => home.Id == tab.HomeId,
+				host.CreateHomeTab,
+				(_, _) => { },
+				host.ReleaseHomeTab);
+			TrackDerived(host.ProjectShellTabs);
+		}
+
+		#endregion
 	}
 
 	#endregion

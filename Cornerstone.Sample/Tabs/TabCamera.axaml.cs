@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Cornerstone;
 using Cornerstone.Avalonia;
 using Cornerstone.Avalonia.Camera;
 using Cornerstone.Data;

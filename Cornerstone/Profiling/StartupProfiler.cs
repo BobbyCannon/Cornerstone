@@ -18,6 +18,8 @@ public sealed class StartupProfiler
 	#region Constants
 
 	public const string RootName = "ApplicationStartup";
+	public const double SlowestThresholdMilliseconds = 100;
+	public const double SlowThresholdMilliseconds = 25;
 	public const string UnknownName = "Unknown";
 
 	#endregion
@@ -152,9 +154,31 @@ public sealed class StartupProfiler
 	}
 
 	/// <summary>
+	/// Inclusive elapsed cutoff for a detail level. <see cref="StartupProfileDetail.All" /> is zero (keep everything).
+	/// </summary>
+	public static TimeSpan ThresholdFor(StartupProfileDetail detail)
+	{
+		return detail switch
+		{
+			StartupProfileDetail.Slowest => TimeSpan.FromMilliseconds(SlowestThresholdMilliseconds),
+			StartupProfileDetail.Slow => TimeSpan.FromMilliseconds(SlowThresholdMilliseconds),
+			_ => TimeSpan.Zero
+		};
+	}
+
+	/// <summary>
 	/// Human-readable hierarchical report (milliseconds).
 	/// </summary>
 	public string ToReport()
+	{
+		return ToReport(TimeSpan.Zero);
+	}
+
+	/// <summary>
+	/// Human-readable hierarchical report. Nodes below <paramref name="minimumElapsed" /> are omitted unless they
+	/// sit on the path to a node that meets the cutoff.
+	/// </summary>
+	public string ToReport(TimeSpan minimumElapsed)
 	{
 		if (!IsCompleted)
 		{
@@ -162,8 +186,13 @@ public sealed class StartupProfiler
 		}
 
 		var builder = new StringBuilder(512);
-		AppendSample(builder, Root, Root.Elapsed);
+		AppendSample(builder, Root, Root.Elapsed, minimumElapsed);
 		return builder.ToString();
+	}
+
+	public string ToReport(StartupProfileDetail detail)
+	{
+		return ToReport(ThresholdFor(detail));
 	}
 
 	public override string ToString()
@@ -196,9 +225,37 @@ public sealed class StartupProfiler
 		EndScope(scope.Name, startTicks);
 	}
 
-	private static void AppendSample(StringBuilder builder, StartupSample sample, TimeSpan parentElapsed)
+	public static bool KeepSample(StartupSample sample, TimeSpan minimumElapsed)
 	{
 		if (sample == null)
+		{
+			return false;
+		}
+
+		if (minimumElapsed.Ticks <= 0)
+		{
+			return true;
+		}
+
+		if (sample.Elapsed >= minimumElapsed)
+		{
+			return true;
+		}
+
+		for (var i = 0; i < sample.Children.Count; i++)
+		{
+			if (KeepSample(sample.Children[i], minimumElapsed))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static void AppendSample(StringBuilder builder, StartupSample sample, TimeSpan parentElapsed, TimeSpan minimumElapsed)
+	{
+		if (!KeepSample(sample, minimumElapsed))
 		{
 			return;
 		}
@@ -237,7 +294,7 @@ public sealed class StartupProfiler
 		var childParent = sample.Elapsed;
 		for (var i = 0; i < sample.Children.Count; i++)
 		{
-			AppendSample(builder, sample.Children[i], childParent);
+			AppendSample(builder, sample.Children[i], childParent, minimumElapsed);
 		}
 	}
 

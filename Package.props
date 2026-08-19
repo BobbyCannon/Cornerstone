@@ -3,6 +3,7 @@
 <Project>
 	<PropertyGroup>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<IsPackable>true</IsPackable>
 		<SignAssembly>true</SignAssembly>
 	</PropertyGroup>
 	<ItemGroup>

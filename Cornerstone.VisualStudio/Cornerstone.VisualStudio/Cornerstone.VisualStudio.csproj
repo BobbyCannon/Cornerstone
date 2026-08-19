@@ -66,13 +66,22 @@
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 			<IncludeInVSIX>true</IncludeInVSIX>
 		</Content>
-		<Content Include="Templates.pkgdef" />
 	</ItemGroup>
 	<ItemGroup>
+		<!-- Manifest Icon (PNG for Marketplace) + classic ICO for VSPackage.resx #400. -->
+		<Content Include="Cornerstone.png">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<IncludeInVSIX>true</IncludeInVSIX>
+		</Content>
 		<Content Include="Cornerstone.ico">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 			<IncludeInVSIX>true</IncludeInVSIX>
 		</Content>
 		<Content Include="icons.pkgdef">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<IncludeInVSIX>true</IncludeInVSIX>
+		</Content>
+		<Content Include="Templates.pkgdef">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 			<IncludeInVSIX>true</IncludeInVSIX>
 		</Content>
@@ -92,6 +101,7 @@
 			<_TemplatePackage Include="$(NuGetPackageRoot)\$(AvaloniaTemplatesPackageName.ToLowerInvariant())\$(AvaloniaTemplatesPackageVersion)\$(AvaloniaTemplatesPackageName.ToLowerInvariant()).$(AvaloniaTemplatesPackageVersion).nupkg" />
 		</ItemGroup>
 		<Error Text="No template files found." Condition="@(_TemplatePackage-&gt;Count()) == 0" />
+		<Error Text="Templates.pkgdef registry key must use AvaloniaTemplatesPackageVersion $(AvaloniaTemplatesPackageVersion)." Condition="!$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\Templates.pkgdef').Contains('$(AvaloniaTemplatesPackageVersion)'))" />
 		<Message Text="Template nuget packages found: @(_TemplatePackage)" Importance="low" />
 		<!-- don't modify the following, the pkgdef file uses the path below -->
 		<ItemGroup>
@@ -146,12 +156,6 @@
 		<ProjectReference Update="@(ProjectReference)" AdditionalProperties="TargetFramework=netstandard2.0" />
 		<!-- https://github.com/Microsoft/extendvs/issues/57 -->
 		<ProjectReference Update="@(ProjectReference)" Name="%(Filename)" />
-	</ItemGroup>
-	<ItemGroup>
-		<Content Include="Templates.pkgdef">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-			<IncludeInVSIX>true</IncludeInVSIX>
-		</Content>
 	</ItemGroup>
 	<ItemGroup>
 		<VSCTCompile Include="Commands\CornerstonePackage.vsct">

@@ -89,6 +89,8 @@
 				<Button Classes="Demo" Content="Ansi 256 Colors" Click="TerminalCommand" />
 				<Button Classes="Demo" Content="Ansi Formats" Click="TerminalCommand" />
 				<Button Classes="Demo" Content="Flood" Click="TerminalCommand" />
+				<Button Classes="Command" Content="Late Output" Click="SimulateLateOutput"
+						ToolTip.Tip="Writes a burst, paints the prompt, then keeps streaming so leftover lines insert above the input." />
 				<Button Classes="Demo" Content="Sleep" Click="TerminalCommand" />
 				<Button Classes="Demo" Content="Error" Click="TerminalCommand" />
 				<Button Classes="Demo" Content="Help" Click="TerminalCommand" />

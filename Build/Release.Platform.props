@@ -18,8 +18,12 @@
 
 		<_IsMacCatalyst Condition="$(TargetFramework.Contains('maccatalyst'))">true</_IsMacCatalyst>
 
+		<!-- Desktop single-file R2R is for apps only. Libraries must stay RID-less or restore has no netX/win-x64 graph. -->
+		<_IsApp>false</_IsApp>
+		<_IsApp Condition="'$(OutputType)' == 'Exe' or '$(OutputType)' == 'WinExe'">true</_IsApp>
+
 		<_SupportsR2R>true</_SupportsR2R>
-		<_SupportsR2R Condition="'$(_IsAndroid)' == 'true' or '$(_IsiOS)' == 'true' or '$(_IsBrowser)' == 'true' or '$(_IsWeb)' == 'true'">false</_SupportsR2R>
+		<_SupportsR2R Condition="'$(_IsAndroid)' == 'true' or '$(_IsiOS)' == 'true' or '$(_IsBrowser)' == 'true' or '$(_IsWeb)' == 'true' or '$(_IsApp)' != 'true'">false</_SupportsR2R>
 	</PropertyGroup>
 
 	<!-- Platform-specific Release settings -->

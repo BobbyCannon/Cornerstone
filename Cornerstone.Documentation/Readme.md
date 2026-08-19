@@ -11,12 +11,12 @@ This index covers how the framework behaves and how hosts use it.
 | Document | Summary |
 |----------|---------|
 | [AppBootstrap.md](AppBootstrap.md) | Process bootstrap — DI root, runtime info, platform, infrastructure lifecycle |
-| [Keystone.md](Keystone.md) | Bus : State : Engine architecture and feature-slice layout |
+| [Keystone.md](Keystone.md) | Bus : State : Engine — application business logic, off the UI dispatcher |
 | [KeystoneFeatureTab.md](KeystoneFeatureTab.md) | How-to: new dockable feature tab with Keystone + AppDispatcher (sample: `Cornerstone.GrokMonitor`) |
 | [Lifecycle.md](Lifecycle.md) | Lifecycle phases and LifecycleTracker (parent/child order, track/release) |
 | [CornerstoneApplication.md](CornerstoneApplication.md) | How an Avalonia app hosts Keystone and wires startup lifecycle |
-| [ViewIntegration.md](ViewIntegration.md) | Manual Keystone State → MVVM integration without AppDispatcher |
-| [AppDispatcher.md](AppDispatcher.md) | Adaptive idle park + active IntervalTimer, RequestDispatch, TrackIngress / TrackCollection, IsAttached gating |
+| [ViewIntegration.md](ViewIntegration.md) | Keystone State → MVVM; automatic `CornerstoneUserControl` Attach/Detach |
+| [AppDispatcher.md](AppDispatcher.md) | State → ViewModel for display and input; `Track*` bindings including `TrackDerived` |
 | [Diagnostics.md](Diagnostics.md) | Opt-in developer monitoring: bus history, AppDispatcher snapshots, Profiler (Sample-first) |
 
 ## Runtime utilities
@@ -26,6 +26,7 @@ This index covers how the framework behaves and how hosts use it.
 | [DebounceAndThrottle.md](DebounceAndThrottle.md) | Simple Debounce/Throttle vs DebounceThrottleManager |
 | [Logging.md](Logging.md) | In-memory circular Logger vs structured Tracker |
 | [Serializer.md](Serializer.md) | JSON serialize/deserialize, CreateOptions forks, file streaming |
+| [TokenTextFilter.md](TokenTextFilter.md) | Whitespace-token AND filter across any text fields (Sample tab) |
 
 ## Appearance
 
@@ -51,4 +52,5 @@ Avalonia controls under `Cornerstone.Avalonia`. Full index: [Controls/Readme.md]
 | [Build.md](Build.md) | MSBuild configuration order (Directory.Build.props → project → platform) |
 | [KnownIssues.md](KnownIssues.md) | Tracked platform and framework issues |
 | [Todo/AppBootstrapFence.md](Todo/AppBootstrapFence.md) | Planned fence so feature code cannot service-locate via AppBootstrap |
+| [Todo/GrokUsagePattern.md](Todo/GrokUsagePattern.md) | Remaining polish so GrokMonitor usage stays the Keystone + AppDispatcher example |
 | [Todo/Sync.md](Todo/Sync.md) | Engineering review notes for the sync stack |

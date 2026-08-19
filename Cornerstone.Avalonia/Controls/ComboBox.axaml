@@ -45,7 +45,6 @@
 									Margin="{TemplateBinding Padding}">
 								<TextBlock x:Name="Label"
 										Grid.Column="0"
-										DockPanel.Dock="Left"
 										FontFamily="{TemplateBinding FontFamily}"
 										FontSize="{TemplateBinding FontSize}"
 										Margin="10,0,0,0"
@@ -157,8 +156,12 @@
 			</ControlTemplate>
 		</Setter>
 		<Style Selector="^[HorizontalContentAlignment=Right] /template/ TextBlock#Label">
-			<Setter Property="DockPanel.Dock" Value="Right" />
-			<Setter Property="Margin" Value="0,0,10,0" />
+			<Setter Property="Margin" Value="10,0,10,0" />
+			<Setter Property="TextAlignment" Value="Right" />
+		</Style>
+		<Style Selector="^[HorizontalContentAlignment=Center] /template/ TextBlock#Label">
+			<Setter Property="Margin" Value="10,0,10,0" />
+			<Setter Property="TextAlignment" Value="Center" />
 		</Style>
 
 		<!-- Multi-line selection content (title + description). Keeps default 32px for single-line. -->
@@ -224,9 +227,26 @@
 				</StackPanel>
 				<ComboBox Name="Default"
 						ControlHelper.DisplayName="Count"
+						ControlHelper.DisplayNameWidth="80"
 						SelectedIndex="0">
 					<ComboBoxItem>1</ComboBoxItem>
 					<ComboBoxItem>2</ComboBoxItem>
+				</ComboBox>
+				<ComboBox ControlHelper.DisplayName="Align"
+						ControlHelper.DisplayNameWidth="80"
+						HorizontalContentAlignment="Right"
+						Width="220"
+						SelectedIndex="0">
+					<ComboBoxItem>Right</ComboBoxItem>
+					<ComboBoxItem>Value</ComboBoxItem>
+				</ComboBox>
+				<ComboBox ControlHelper.DisplayName="Align"
+						ControlHelper.DisplayNameWidth="80"
+						HorizontalContentAlignment="Center"
+						Width="220"
+						SelectedIndex="0">
+					<ComboBoxItem>Center</ComboBoxItem>
+					<ComboBoxItem>Value</ComboBoxItem>
 				</ComboBox>
 				<ComboBox IsEditable="True"
 						Text="Hello World">

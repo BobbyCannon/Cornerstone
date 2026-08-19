@@ -28,7 +28,7 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 	#region Fields
 
 	private readonly CollectionChangeTracker _collectionChangeTracker;
-	private static bool? _isMigrated;
+	private bool? _isMigrated;
 	private int _saveChangeCount;
 
 	#endregion

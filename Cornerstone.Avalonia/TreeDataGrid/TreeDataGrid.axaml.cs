@@ -157,7 +157,7 @@ public partial class TreeDataGrid : TemplatedControl
 		}
 	}
 
-	[StyledProperty(DefaultValue = 28)]
+	[StyledProperty(DefaultValue = 32)]
 	public partial int MinRowHeight { get; set; }
 
 	/// <summary>
@@ -380,57 +380,71 @@ public partial class TreeDataGrid : TemplatedControl
 		}
 		else if (change.Property == MinRowHeightProperty)
 		{
-			ApplyRowHeightToRealizedRows();
+			ApplyRowHeightToRealizedElements();
 		}
 		else if (change.Property == UseFixedRowHeightProperty)
 		{
-			ApplyRowHeightToRealizedRows();
+			ApplyRowHeightToRealizedElements();
 		}
 	}
 
-	private void ApplyRowHeightToRealizedRows()
+	private void ApplyRowHeightToRealizedElements()
 	{
-		if (RowsPresenter is null)
-		{
-			return;
-		}
-
 		var minHeight = (double) MinRowHeight;
 		var fixedHeight = UseFixedRowHeight;
-		foreach (var element in RowsPresenter.GetRealizedElements())
+
+		if (RowsPresenter is not null)
 		{
-			if (element is not TreeDataGridRow row)
+			foreach (var element in RowsPresenter.GetRealizedElements())
 			{
-				continue;
+				if (element is not TreeDataGridRow row)
+				{
+					continue;
+				}
+
+				ApplyRowHeight(row, minHeight, fixedHeight);
 			}
 
-			ApplyRowHeight(row, minHeight, fixedHeight);
+			RowsPresenter.InvalidateMeasure();
 		}
 
-		RowsPresenter.InvalidateMeasure();
+		if (ColumnHeadersPresenter is not null)
+		{
+			foreach (var element in ColumnHeadersPresenter.GetRealizedElements())
+			{
+				if (element is not TreeDataGridColumnHeader header)
+				{
+					continue;
+				}
+
+				ApplyRowHeight(header, minHeight, fixedHeight);
+			}
+
+			ColumnHeadersPresenter.InvalidateMeasure();
+		}
 	}
 
 	/// <summary>
-	/// Apply host row-height policy to a realized row (fixed slot vs content-sized).
+	/// Apply host row-height policy to a realized row or column header (fixed slot vs content-sized).
 	/// </summary>
-	internal static void ApplyRowHeight(TreeDataGridRow row, double minHeight, bool useFixedHeight)
+	internal static void ApplyRowHeight(Control element, double minHeight, bool useFixedHeight)
 	{
-		if (row is null)
+		if (element is null)
 		{
 			return;
 		}
 
-		row.MinHeight = minHeight;
+		element.MinHeight = minHeight;
 		if (useFixedHeight)
 		{
-			row.Height = minHeight;
-			row.MaxHeight = minHeight;
+			element.Height = minHeight;
+			element.MaxHeight = minHeight;
 		}
 		else
 		{
 			// Clear forced slot so content can measure naturally (non-uniform rows).
-			row.ClearValue(HeightProperty);
-			row.ClearValue(MaxHeightProperty);
+			element.ClearValue(HeightProperty);
+			element.ClearValue(MaxHeightProperty);
 		}
 	}
 

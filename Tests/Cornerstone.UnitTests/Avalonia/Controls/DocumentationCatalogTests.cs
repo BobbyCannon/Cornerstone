@@ -1,7 +1,7 @@
 #region References
 
 using System.Linq;
-using Cornerstone.Avalonia.Controls;
+using Cornerstone.Avalonia.Documentation;
 using Cornerstone.Sample.Tabs;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

@@ -106,6 +106,8 @@ Text/
 
 Central API for **all** document edits. Marked `[Updateable(UpdateableAction.All, ["*"])]` for Keystone/dispatcher integration.
 
+**Design limitation:** unlike a Keystone feature tab, this ViewModel **is** the live document store (buffer, caret, undo, tokens). The editor cannot be a thin AppDispatcher projection of `*State`. Hosts may still persist or project slices through Keystone, but they must not treat `TextEditorView` / `TextEditorViewModel` as the model for GrokMonitor-style dashboards. See [Keystone.md](../Keystone.md#scope-and-thread) and [AppDispatcher.md](../AppDispatcher.md).
+
 Managers constructed in the ctor:
 
 | Manager | Role |

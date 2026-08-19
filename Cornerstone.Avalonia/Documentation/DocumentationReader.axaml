@@ -1,0 +1,226 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:av="clr-namespace:Cornerstone.Avalonia"
+		xmlns:controls="clr-namespace:Cornerstone.Avalonia.Controls"
+		xmlns:converters="clr-namespace:Cornerstone.Avalonia.Converters"
+		xmlns:tdg="clr-namespace:Cornerstone.Avalonia.TreeDataGrid;assembly=Cornerstone.Avalonia"
+		xmlns:themes="clr-namespace:Cornerstone.Avalonia.Themes"
+		x:Class="Cornerstone.Avalonia.Documentation.DocumentationReader"
+		x:Name="This"
+		Background="{DynamicResource Background02}">
+	<DockPanel>
+		<!-- Toolbar -->
+		<Border DockPanel.Dock="Top"
+				Background="{DynamicResource Background00}"
+				BorderBrush="{DynamicResource BorderBrush}"
+				BorderThickness="0,0,0,1"
+				CornerRadius="0"
+				Padding="10,8"
+				ZIndex="10">
+			<Grid ColumnDefinitions="Auto,*,Auto"
+					MinHeight="36">
+				<StackPanel Grid.Column="0"
+						Orientation="Horizontal"
+						Spacing="2"
+						VerticalAlignment="Center">
+					<Button x:Name="DocumentsPaneButton"
+							Theme.Color="None"
+							ToolTip.Tip="Documents"
+							Click="DocumentsPaneButtonOnClick"
+							Width="36"
+							Height="36"
+							Padding="0">
+						<Path Width="16" Height="16"
+								Stretch="Uniform"
+								Fill="{DynamicResource Foreground00}"
+								Data="{StaticResource Icons.Bars}"
+								Margin="0,2,0,0"
+								HorizontalAlignment="Center"
+								VerticalAlignment="Center"
+								Opacity="0.9" />
+					</Button>
+					<Button x:Name="BackButton"
+							Theme.Color="None"
+							ToolTip.Tip="Back"
+							Click="BackButtonOnClick"
+							Width="36"
+							Height="36"
+							Padding="0">
+						<Path Width="14" Height="14"
+								Stretch="Uniform"
+								Fill="{DynamicResource Foreground00}"
+								Data="{StaticResource Icons.Arrow.Left}"
+								HorizontalAlignment="Center"
+								VerticalAlignment="Center"
+								Opacity="0.9" />
+					</Button>
+					<Button x:Name="HomeButton"
+							Theme.Color="None"
+							ToolTip.Tip="Home"
+							Click="HomeButtonOnClick"
+							Width="36"
+							Height="36"
+							Padding="0">
+						<Path Width="18" Height="18"
+								Stretch="Uniform"
+								Fill="{DynamicResource Foreground00}"
+								Data="{StaticResource Icons.Home}"
+								Margin="0,2,0,0"
+								HorizontalAlignment="Center"
+								VerticalAlignment="Center" />
+					</Button>
+				</StackPanel>
+
+				<StackPanel Grid.Column="1"
+						Margin="12,0,12,0"
+						VerticalAlignment="Center"
+						Spacing="2">
+					<TextBlock x:Name="TitleText"
+							FontSize="{DynamicResource ControlFontSize}"
+							TextTrimming="CharacterEllipsis"
+							Foreground="{DynamicResource Foreground00}" />
+					<TextBlock x:Name="PathText"
+							FontSize="{DynamicResource ControlFontSizeSmall}"
+							Opacity="0.55"
+							TextTrimming="CharacterEllipsis"
+							Foreground="{DynamicResource Foreground00}" />
+				</StackPanel>
+
+				<StackPanel Grid.Column="2"
+						Orientation="Horizontal"
+						Spacing="8"
+						VerticalAlignment="Center">
+					<ComboBox x:Name="ColorBox"
+							Width="128"
+							MinHeight="32"
+							ItemsSource="{x:Static themes:Theme.Colors}"
+							SelectionChanged="ColorBoxOnSelectionChanged"
+							ToolTip.Tip="Theme color" />
+					<ComboBox x:Name="DensityBox"
+							Width="108"
+							MinHeight="32"
+							ItemsSource="{x:Static themes:Theme.ThemeDensities}"
+							SelectionChanged="DensityBoxOnSelectionChanged"
+							ToolTip.Tip="UI density" />
+					<Button x:Name="ThemeButton"
+							Theme.Color="None"
+							ToolTip.Tip="Toggle light / dark"
+							Command="{x:Static av:CornerstoneTheme.ToggleThemeCommand}"
+							Width="36"
+							Height="36"
+							Padding="0">
+						<PathIcon Width="16" Height="16"
+								Data="{Binding ElementName=This, Path=ActualThemeVariant, Converter={x:Static converters:ThemeConverters.ToThemeIconInverted}}"
+								HorizontalAlignment="Center"
+								VerticalAlignment="Center" />
+					</Button>
+					<Button x:Name="ExportButton"
+							Theme.Color="None"
+							ToolTip.Tip="Export static HTML site"
+							Click="ExportButtonOnClick"
+							Width="36"
+							Height="36"
+							Padding="0">
+						<Path Width="16" Height="16"
+								Stretch="Uniform"
+								Fill="{DynamicResource Foreground00}"
+								Data="{StaticResource Icons.Save}"
+								HorizontalAlignment="Center"
+								VerticalAlignment="Center"
+								Opacity="0.9" />
+					</Button>
+				</StackPanel>
+			</Grid>
+		</Border>
+
+		<Border x:Name="StatusHost"
+				DockPanel.Dock="Bottom"
+				IsVisible="False"
+				Background="{DynamicResource Background04}"
+				BorderBrush="{DynamicResource BorderBrush}"
+				BorderThickness="0,1,0,0"
+				Padding="12,8">
+			<Grid ColumnDefinitions="*,Auto">
+				<TextBlock x:Name="StatusText"
+						Grid.Column="0"
+						FontSize="{DynamicResource ControlFontSizeSmall}"
+						TextWrapping="Wrap"
+						VerticalAlignment="Center"
+						Foreground="{DynamicResource Foreground00}" />
+				<Button x:Name="StatusCloseButton"
+						Grid.Column="1"
+						Theme.Color="None"
+						ToolTip.Tip="Dismiss"
+						Click="StatusCloseButtonOnClick"
+						Width="28"
+						Height="28"
+						Padding="0"
+						Margin="8,0,0,0"
+						VerticalAlignment="Center">
+					<Path Width="10"
+							Height="10"
+							Stretch="Uniform"
+							Fill="{DynamicResource Foreground00}"
+							Data="{StaticResource Icons.Close}"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center"
+							Opacity="0.9" />
+				</Button>
+			</Grid>
+		</Border>
+
+		<!-- Body: optional docs pane + reading surface -->
+		<SplitView x:Name="DocumentsSplit"
+				DisplayMode="Overlay"
+				OpenPaneLength="300"
+				CompactPaneLength="0"
+				IsPaneOpen="False"
+				PaneBackground="{DynamicResource Background04}">
+			<SplitView.Pane>
+				<Border BorderBrush="{DynamicResource BorderBrush}"
+						BorderThickness="0,0,1,0"
+						Background="{DynamicResource Background04}">
+					<DockPanel Margin="10,10,10,8">
+						<TextBox x:Name="SearchBox"
+								DockPanel.Dock="Top"
+								PlaceholderText="Filter documents�"
+								Margin="0,0,0,8"
+								TextChanged="SearchBoxOnTextChanged" />
+						<TextBlock x:Name="EmptyFilterText"
+								DockPanel.Dock="Bottom"
+								Text="No matching documents"
+								Opacity="0.55"
+								Margin="4,8,0,0"
+								IsVisible="False" />
+						<tdg:TreeDataGrid x:Name="DocTree"
+								ShowColumnHeaders="False" />
+					</DockPanel>
+				</Border>
+			</SplitView.Pane>
+
+			<SplitView.Content>
+				<Border Background="{DynamicResource Background02}">
+					<Border MaxWidth="920"
+							HorizontalAlignment="Stretch"
+							Margin="16,12,16,16"
+							Background="{DynamicResource Background03}"
+							BorderBrush="{DynamicResource BorderBrush}"
+							BorderThickness="1"
+							CornerRadius="8"
+							ClipToBounds="True">
+						<controls:MarkdownView
+								x:Name="MarkdownView"
+								AutoScroll="False"
+								WordWrap="True"
+								BorderThickness="0"
+								CornerRadius="8"
+								Background="Transparent"
+								FontFamily="{x:Static CornerstoneTheme.OpenSansRegular}"
+								FontSize="{DynamicResource ControlFontSize}"
+								Padding="28,24,28,32" />
+					</Border>
+				</Border>
+			</SplitView.Content>
+		</SplitView>
+	</DockPanel>
+</UserControl>

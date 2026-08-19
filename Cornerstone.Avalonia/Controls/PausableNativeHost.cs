@@ -1,6 +1,7 @@
 #region References
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -8,6 +9,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using Avalonia.Threading;
 using Cornerstone.Avalonia.Converters;
 using Cornerstone.Avalonia.Resources;
 
@@ -44,6 +46,7 @@ public abstract class PausableNativeHost : Grid, INativeHostPausable, IDisposabl
 		AvaloniaProperty.Register<PausableNativeHost, bool>(nameof(ResumeOnResize), true);
 
 	private Size _boundsWhenPaused;
+	private readonly SemaphoreSlim _captureGate = new(1, 1);
 	private readonly Border _fallbackBackground;
 	private readonly NestedNativeHost _nativeHost;
 	private TaskCompletionSource _nativeHostReadyCompletion = new();
@@ -152,15 +155,23 @@ public abstract class PausableNativeHost : Grid, INativeHostPausable, IDisposabl
 	/// </summary>
 	public async Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
 	{
-		await WaitForNativeHost().ConfigureAwait(true);
-
-		var surface = GetSurface();
-		if (surface == null)
+		await _captureGate.WaitAsync().ConfigureAwait(true);
+		try
 		{
-			return NativeSurfaceSnapshot.Failed("Native surface is not available.");
-		}
+			await WaitForNativeHost().ConfigureAwait(true);
 
-		return await surface.CaptureSnapshotAsync(options).ConfigureAwait(true);
+			var surface = GetSurface();
+			if (surface == null)
+			{
+				return NativeSurfaceSnapshot.Failed("Native surface is not available.");
+			}
+
+			return await surface.CaptureSnapshotAsync(options).ConfigureAwait(true);
+		}
+		finally
+		{
+			_captureGate.Release();
+		}
 	}
 
 	public void Dispose()
@@ -213,6 +224,7 @@ public abstract class PausableNativeHost : Grid, INativeHostPausable, IDisposabl
 		}
 
 		ClearPlaceholderBitmap();
+		_captureGate.Dispose();
 	}
 
 	/// <summary>
@@ -240,7 +252,16 @@ public abstract class PausableNativeHost : Grid, INativeHostPausable, IDisposabl
 	{
 		if (change.Property == IsPausedProperty)
 		{
-			_ = ApplyPausedStateAsync(change.GetNewValue<bool>());
+			var paused = change.GetNewValue<bool>();
+			if (Dispatcher.UIThread.CheckAccess())
+			{
+				_ = ApplyPausedStateAsync(paused);
+			}
+			else
+			{
+				// Overlay code may set IsPaused off the UI thread; host hide/blur must run on it.
+				Dispatcher.UIThread.Post(() => _ = ApplyPausedStateAsync(paused));
+			}
 		}
 		else if ((change.Property == BlurWhenPausedProperty) || (change.Property == BlurRadiusProperty))
 		{
@@ -417,9 +438,20 @@ public abstract class PausableNativeHost : Grid, INativeHostPausable, IDisposabl
 		_suppressResizeResume = true;
 		try
 		{
-			// Capture while native is still visible. Warm underlay (if any) is already under the
-			// HWND so Avalonia has texture data; we still refresh for a current freeze frame.
-			var snapshot = await CaptureSnapshotAsync(NativeSurfaceSnapshotOptions.Default()).ConfigureAwait(true);
+			// Drop in-flight warm captures so they cannot start a second WebView2
+			// CapturePreview while we need the HWND gone.
+			_underlayRefreshId++;
+
+			// Warm underlay is already under the HWND. Hide on this turn — do not wait
+			// on CapturePreview (WebView2 can hang or serialize behind a warm capture).
+			if (_placeholderBitmap != null)
+			{
+				UpdatePlaceholderBlur();
+				HideNativeSurface();
+				return;
+			}
+
+			var snapshot = await TryCaptureSnapshotForPauseAsync().ConfigureAwait(true);
 			if (operationId != _pauseOperationId)
 			{
 				return;
@@ -430,16 +462,10 @@ public abstract class PausableNativeHost : Grid, INativeHostPausable, IDisposabl
 				var next = ImageConverters.BytesToBitmap(snapshot.PngBytes);
 				ApplyUnderlayBitmap(next);
 			}
-			else if (_placeholderBitmap == null)
+			else
 			{
-				Effect = null;
-				_placeholderImage.Effect = null;
-				_placeholderImage.IsVisible = false;
-				_fallbackBackground.Background = ResourceService.GetColorAsBrush("Background03");
-				_fallbackBackground.IsVisible = true;
-				Background = ResourceService.GetColorAsBrush("Background03");
+				ApplySolidFallbackUnderlay();
 			}
-			// else keep last good underlay
 
 			// Critical: no await between underlay apply and HWND hide (same UI turn).
 			UpdatePlaceholderBlur();
@@ -448,6 +474,39 @@ public abstract class PausableNativeHost : Grid, INativeHostPausable, IDisposabl
 		finally
 		{
 			_suppressResizeResume = false;
+		}
+	}
+
+	private void ApplySolidFallbackUnderlay()
+	{
+		Effect = null;
+		_placeholderImage.Effect = null;
+		_placeholderImage.IsVisible = false;
+		_fallbackBackground.Background = ResourceService.GetColorAsBrush("Background03");
+		_fallbackBackground.IsVisible = true;
+		Background = ResourceService.GetColorAsBrush("Background03");
+	}
+
+	/// <summary>
+	/// Best-effort freeze frame before the first hide. Times out so a stuck CapturePreview
+	/// cannot leave the native host covering Avalonia forever.
+	/// </summary>
+	private async Task<NativeSurfaceSnapshot> TryCaptureSnapshotForPauseAsync()
+	{
+		try
+		{
+			var capture = CaptureSnapshotAsync(NativeSurfaceSnapshotOptions.Default());
+			var completed = await Task.WhenAny(capture, Task.Delay(250)).ConfigureAwait(true);
+			if (completed != capture)
+			{
+				return NativeSurfaceSnapshot.Failed("Snapshot timed out.");
+			}
+
+			return await capture.ConfigureAwait(true);
+		}
+		catch (Exception)
+		{
+			return NativeSurfaceSnapshot.Failed("Snapshot failed.");
 		}
 	}
 

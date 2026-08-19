@@ -113,7 +113,7 @@ public partial class ApplicationViewModel : LifecycleTracker<ViewModel>, IAppNav
 	public IDiagnosticsCapture DiagnosticsCapture { get; set; }
 
 	/// <summary>
-	/// Optional diagnostics ViewModel. Not part of <see cref="Track" /> membership.
+	/// Optional diagnostics ViewModel. Not part of Track membership.
 	/// Applied once after the feature apply loop when attached and dirty.
 	/// </summary>
 	public DispatchableViewModel DiagnosticsDispatchable { get; set; }
@@ -187,20 +187,6 @@ public partial class ApplicationViewModel : LifecycleTracker<ViewModel>, IAppNav
 		});
 	}
 
-	public void Release(DispatchableViewModel dispatchableViewModel)
-	{
-		if (dispatchableViewModel == null)
-		{
-			return;
-		}
-
-		// Dispatcher membership only — lifecycle is owned by DockingManager (or other hosts).
-		lock (_dispatchables)
-		{
-			_dispatchables.Remove(dispatchableViewModel);
-		}
-	}
-
 	/// <inheritdoc />
 	public void RequestDispatch()
 	{
@@ -238,21 +224,6 @@ public partial class ApplicationViewModel : LifecycleTracker<ViewModel>, IAppNav
 		base.StopLifecycle();
 	}
 
-	public void Track(DispatchableViewModel dispatchableViewModel)
-	{
-		if (dispatchableViewModel == null)
-		{
-			return;
-		}
-
-		// Membership for the apply loop only. Do not LifecycleTracker.Track here —
-		// docked tabs are already lifecycle children of DockingManager.
-		lock (_dispatchables)
-		{
-			_dispatchables.Add(dispatchableViewModel);
-		}
-	}
-
 	public bool TryToSelectViewByModel(string assemblyName)
 	{
 		if (!_viewModelFactories.TryGetValue(assemblyName, out var factory))
@@ -260,7 +231,13 @@ public partial class ApplicationViewModel : LifecycleTracker<ViewModel>, IAppNav
 			return false;
 		}
 
-		CurrentViewModel = factory.Invoke();
+		var viewModel = factory.Invoke();
+		if ((CurrentViewModel != null) && !ReferenceEquals(CurrentViewModel, viewModel))
+		{
+			Release(CurrentViewModel);
+		}
+
+		CurrentViewModel = viewModel;
 		return true;
 	}
 
@@ -288,10 +265,10 @@ public partial class ApplicationViewModel : LifecycleTracker<ViewModel>, IAppNav
 	/// Diagnostics-only apply does not count — otherwise capture of IsDispatchActive
 	/// feeds back into Active↔Idle oscillation (dirty → apply → Active → quiet → Idle → dirty).
 	/// </returns>
-	protected virtual bool Update()
+	protected virtual async Task<bool> UpdateAsync(CancellationToken cancellationToken)
 	{
-		// Feature roots only (IAppDispatcher.Track). Nested TrackDispatchChild trees
-		// apply when a parent ApplyModelChanges flows to its children.
+		// Feature roots join the apply loop when a View (or other non-dispatchable owner)
+		// Attaches them. Nested TrackDispatchChild trees apply from the parent.
 		var pending = CollectPendingDispatchables();
 		var featureCount = pending?.Count ?? 0;
 
@@ -315,7 +292,7 @@ public partial class ApplicationViewModel : LifecycleTracker<ViewModel>, IAppNav
 		// Feature work only — diagnostics is monitoring overhead, not app projection batch size.
 		LastApplyBatchSize = featureCount;
 		var profiler = SystemProfiler;
-		this.Dispatch(() =>
+		await GetDispatcher().DispatchAsync(() =>
 			{
 				if (pending is not null)
 				{
@@ -334,11 +311,38 @@ public partial class ApplicationViewModel : LifecycleTracker<ViewModel>, IAppNav
 					diagnostics?.ApplyModelChanges();
 				}
 			},
-			DispatcherPriority.Render
-		);
+			DispatcherPriority.Render,
+			cancellationToken
+		).ConfigureAwait(false);
 
 		// Adaptive idle/active follows feature work (and RequestDispatch), not diagnostics.
 		return pending is not null;
+	}
+
+	void IAppDispatcher.Release(DispatchableViewModel dispatchableViewModel)
+	{
+		if (dispatchableViewModel == null)
+		{
+			return;
+		}
+
+		lock (_dispatchables)
+		{
+			_dispatchables.Remove(dispatchableViewModel);
+		}
+	}
+
+	void IAppDispatcher.Track(DispatchableViewModel dispatchableViewModel)
+	{
+		if (dispatchableViewModel == null)
+		{
+			return;
+		}
+
+		lock (_dispatchables)
+		{
+			_dispatchables.Add(dispatchableViewModel);
+		}
 	}
 
 	private List<DispatchableViewModel> CollectPendingDispatchables()
@@ -440,7 +444,11 @@ public partial class ApplicationViewModel : LifecycleTracker<ViewModel>, IAppNav
 				var applied = false;
 				try
 				{
-					applied = Update();
+					applied = await UpdateAsync(cancellationToken);
+				}
+				catch (OperationCanceledException)
+				{
+					break;
 				}
 				catch (Exception)
 				{

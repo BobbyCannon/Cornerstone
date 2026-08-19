@@ -7,6 +7,8 @@ ViewModels then become thin, reactive adapters that expose the State (or project
 
 This keeps the domain logic, mutation rules, and communication completely isolated from the presentation layer while still allowing the UI to stay perfectly in sync with the underlying State.
 
+Attaching a View does **not** move Keystone onto the UI dispatcher. Processors, channels, and State stay **off** that thread and must not call `IDispatcher.Dispatch`. Manual wiring and AppDispatcher both **pull** State on the UI thread for **display and user input** only. See [Keystone.md](Keystone.md#scope-and-thread).
+
 ### Two valid approaches
 
 | Approach | When |
@@ -29,7 +31,25 @@ It runs an **adaptive poll loop** (not a fixed always-on high-Hz hard tick):
 
 After several consecutive ticks with no apply, the loop returns to idle. Producers may call `RequestDispatch()` to wake early for lower latency; they are not required for correctness.
 
-Every tick the dispatcher walks **tracked** ViewModels and applies only those that are **`IsAttached`** and report `HasModelChanges()`. Detached ViewModels are skipped for apply work.
+Every tick the dispatcher applies ViewModels that are **`IsAttached`** and report `HasModelChanges()`. Detached ViewModels are skipped.
+
+### Automatic Attach / Detach (Avalonia)
+
+You do **not** call `Attach` / `Detach` from feature tab code. Cornerstone views do it from the visual tree.
+
+`CornerstoneUserControl` (and `CornerstoneUserControl<T>`) on **enter / leave visual tree** and on **DataContext / ViewModel** changes:
+
+1. Treat **`ViewModel`** (typed property on `CornerstoneUserControl<T>`) and **`DataContext`** as two independent owners.
+2. If either is a `DispatchableViewModel`, call `Attach(this)` or `Detach(this)` with the **control** as owner (`DispatchableVisualTree`).
+3. The same control never sets or clears `ViewModel` / `DataContext` for this purpose.
+
+So when a `TabControl` shows a demo `CornerstoneUserControl`, that control attaching also attaches its ViewModel and DataContext. Hiding or unloading the tab detaches them. Nested VMs registered with `TrackDispatchChild` attach/detach with the parent (parent is the owner, not the control).
+
+`IsAttached` is true while **any** owner remains (header + content view can both own the same tab VM).
+
+Docked tabs also get `Attach`/`Detach` from **`DockableTabView`** (the strip), not only from the content `CornerstoneUserControl`. See [Controls/DockingLifecycle.md](Controls/DockingLifecycle.md).
+
+Full rules (multi-owner, apply-loop `IAppDispatcher.Track`): [AppDispatcher.md](AppDispatcher.md#attach--detach--isattached).
 
 #### Core responsibilities
 

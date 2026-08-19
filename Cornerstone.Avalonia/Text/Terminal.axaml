@@ -1,5 +1,6 @@
 <Styles xmlns="https://github.com/avaloniaui"
-		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:completion="clr-namespace:Cornerstone.Avalonia.Text.Completion">
 	<Styles.Resources>
 		<ResourceDictionary>
 			<ControlTheme x:Key="{x:Type Terminal}"
@@ -22,6 +23,32 @@
 								BorderBrush="{TemplateBinding BorderBrush}"
 								CornerRadius="{TemplateBinding CornerRadius}">
 							<Grid ColumnDefinitions="Auto,*">
+								<Popup x:Name="PART_CompletionPopup"
+										Grid.Column="1"
+										IsLightDismissEnabled="True"
+										Placement="AnchorAndGravity"
+										PlacementAnchor="TopLeft"
+										PlacementGravity="BottomRight">
+									<Border Background="{DynamicResource Background02}"
+											BorderBrush="{DynamicResource BorderBrush}"
+											BorderThickness="1"
+											CornerRadius="{StaticResource ControlCornerRadius}"
+											MaxHeight="280"
+											MinWidth="180"
+											Padding="0">
+										<ListBox x:Name="PART_CompletionList"
+												Focusable="False"
+												MaxHeight="280"
+												ItemsSource="{Binding ViewModel.CompletionManager.VisibleItems, RelativeSource={RelativeSource TemplatedParent}}"
+												SelectedItem="{Binding ViewModel.CompletionManager.SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+											<ListBox.ItemTemplate>
+												<DataTemplate x:DataType="completion:CompletionItem">
+													<TextBlock Text="{Binding DisplayText}" />
+												</DataTemplate>
+											</ListBox.ItemTemplate>
+										</ListBox>
+									</Border>
+								</Popup>
 								<Border Grid.Column="0"
 										BorderThickness="0"
 										CornerRadius="0"

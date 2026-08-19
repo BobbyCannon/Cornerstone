@@ -26,6 +26,7 @@ public partial class Generator : IIncrementalGenerator
 
 	public const string FullNameAlsoNotifyAttribute = "Cornerstone.Data.AlsoNotifyAttribute";
 	public const string FullNameAttachedPropertyAttribute = "Cornerstone.Avalonia.AttachedPropertyAttribute";
+	public const string FullNameChannelMessageAttribute = "Cornerstone.Keystone.Messages.ChannelMessageAttribute`1";
 	public const string FullNameChannelSubscriptionAttribute = "Cornerstone.Communications.ChannelSubscriptionAttribute`2";
 	public const string FullNameDependencyInjectedAttribute = "Cornerstone.Runtime.DependencyInjectedAttribute";
 	public const string FullNameDependencyInjectedPropertyAttribute = "Cornerstone.Runtime.DependencyInjectedPropertyAttribute";
@@ -34,6 +35,7 @@ public partial class Generator : IIncrementalGenerator
 	public const string FullNameIComparable = "System.IComparable";
 	public const string FullNameNotifiableAttribute = "Cornerstone.Data.NotifiableAttribute";
 	public const string FullNameNotifyAttribute = "Cornerstone.Data.NotifyAttribute";
+	public const string FullNameProjectFromAttribute = "Cornerstone.Presentation.ProjectFromAttribute`1";
 	public const string FullNamePackableAttribute = "Cornerstone.Serialization.PackableAttribute";
 	public const string FullNamePackAttribute = "Cornerstone.Serialization.PackAttribute";
 	public const string FullNameRelayCommand = "Cornerstone.Presentation.RelayCommand";
@@ -79,6 +81,7 @@ public partial class Generator : IIncrementalGenerator
 	public const string NameIComparableOfT = "IComparable`1";
 	public const string NameNotifiableAttribute = "NotifiableAttribute";
 	public const string NameNotifyAttribute = "NotifyAttribute";
+	public const string NameProjectFromAttribute = "ProjectFromAttribute";
 	public const string NamePackableAttribute = "PackableAttribute";
 	public const string NamePackAttribute = "PackAttribute";
 	public const string NameRelayCommandAttribute = "RelayCommandAttribute";
@@ -119,12 +122,32 @@ public partial class Generator : IIncrementalGenerator
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
 		var watch = Stopwatch.StartNew();
+
+		var channelMessages = context.SyntaxProvider
+			.ForAttributeWithMetadataName(
+				FullNameChannelMessageAttribute,
+				static (node, _) => node is TypeDeclarationSyntax,
+				static (ctx, _) => ChannelMessageEmitter.Transform(ctx))
+			.Where(static x => !x.IsDefault)
+			.Collect();
+
+		context.RegisterSourceOutput(channelMessages, static (spc, messages) => ChannelMessageEmitter.Emit(spc, messages));
+
+		var processorSubscriptions = context.SyntaxProvider
+			.CreateSyntaxProvider(
+				static (node, _) => node is ClassDeclarationSyntax,
+				static (ctx, _) => ProcessorSubscriptionEmitter.Transform(ctx))
+			.Where(static x => !x.IsDefault)
+			.Collect();
+
+		context.RegisterSourceOutput(processorSubscriptions, static (spc, models) => ProcessorSubscriptionEmitter.Emit(spc, models));
+
 		var providers = Combine(
 			GetSourceTypeInfoForAvalonia(context),
-			GetSourceTypeInfoForChannelSubscription(context),
 			GetSourceTypeInfoForComparable(context),
 			GetSourceTypeInfoForDependencyInjected(context),
 			GetSourceTypeInfoForPackable(context),
+			GetSourceTypeInfoForProjectFrom(context),
 			GetSourceTypeInfoForPropertyChange(context),
 			GetSourceTypeInfoForRelayCommand(context),
 			GetSourceTypeInfoForSourceReflection(context),
@@ -203,9 +226,9 @@ public partial class Generator : IIncrementalGenerator
 		return
 		[
 			new AvaloniaProcessor(),
-			new ChannelSubscriptionProcessor(),
 			new ComparableProcessor(),
 			new NotifiableProcessor(),
+			new ProjectFromProcessor(),
 			new PackableProcessor(),
 			new RelayCommandProcessor(),
 			new UpdateableProcessor()
@@ -774,6 +797,19 @@ public partial class Generator : IIncrementalGenerator
 
 		var combined = Combine(packable, pack);
 		return combined;
+	}
+
+	private IncrementalValueProvider<ImmutableArray<SourceTypeInfo>> GetSourceTypeInfoForProjectFrom(IncrementalGeneratorInitializationContext context)
+	{
+		var projectFrom = context.SyntaxProvider
+			.ForAttributeWithMetadataName(
+				FullNameProjectFromAttribute,
+				static (node, _) => node is ClassDeclarationSyntax,
+				TransformType)
+			.Where(static cls => cls is not null)
+			.Collect();
+
+		return Combine(projectFrom);
 	}
 
 	private IncrementalValueProvider<ImmutableArray<SourceTypeInfo>> GetSourceTypeInfoForPropertyChange(IncrementalGeneratorInitializationContext context)

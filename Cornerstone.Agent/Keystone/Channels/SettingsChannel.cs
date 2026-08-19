@@ -1,10 +1,9 @@
-﻿#region References
+#region References
 
 using Cornerstone.Keystone;
 using Cornerstone.Keystone.Messages;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
-
 
 #endregion
 
@@ -12,24 +11,12 @@ namespace Cornerstone.Agent.Keystone.Channels;
 
 [SourceReflection]
 [DependencyInjected]
-public partial class SettingsChannel : KeystoneChannel<SettingsChannel.SettingsMessageType>
+public partial class SettingsChannel : KeystoneChannel
 {
-	#region Methods
+	#region Records
 
-	[ChannelSubscription<SettingsMessageType>(SettingsMessageType.SettingsLoaded)]
-	public void SettingsLoaded()
-	{
-		Publish(SettingsMessageType.SettingsLoaded);
-	}
-
-	#endregion
-
-	#region Enumerations
-
-	public enum SettingsMessageType
-	{
-		SettingsLoaded
-	}
+	[ChannelMessage<SettingsChannel>]
+	public record struct SettingsLoadedMessage : IChannelMessage;
 
 	#endregion
 }

@@ -110,7 +110,7 @@
 						<Border Classes="IconBadge"
 								Background="{StaticResource Blue05}">
 							<Path Data="{StaticResource Icons.DoubleArrow.Right}"
-									Margin="2,4,0,0"/>
+									Margin="2,4,0,0" />
 						</Border>
 						<StackPanel Grid.Column="1">
 							<TextBlock Classes="FeatureTitle"

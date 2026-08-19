@@ -16,6 +16,11 @@ public interface IPropertyMap
 	#region Methods
 
 	/// <summary>
+	/// One-way: model → view when names and types match (identity conversion).
+	/// </summary>
+	IPropertyMap MapOneWay(string propertyName);
+
+	/// <summary>
 	/// One-way: model → view. View changes are not written back.
 	/// </summary>
 	IPropertyMap MapOneWay<TModelValue, TViewValue>(

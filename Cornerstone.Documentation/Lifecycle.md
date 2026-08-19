@@ -26,6 +26,22 @@ Initialize
 Uninitialize
 ```
 
+## What belongs in each phase
+
+**No processing until `StartLifecycle`.** Initialize wires. Load fills memory. Start is the first phase that may act (use data, publish bus messages, start services).
+
+| Phase | Method | Allowed | Forbidden |
+|-------|--------|---------|-----------|
+| Initialize | `InitializeLifecycle` | Wire event handlers, bus **subscriptions**, construct or `Track` children, hook `PropertyChanged`, setup | Load persisted data. Process. Publish bus messages. Start services. |
+| Load | `LoadLifecycle` | Read data into memory only: disk, settings, local DB (`LoadFromDatabase`) | Process that data. Publish bus messages. Start timers/services/sync. Restore selection. Decide from loaded values. |
+| Start | `StartLifecycle` | First time work may run: use loaded data, publish on the bus, start services, restore selection, connect, `StartSyncAll` | First fill of persisted data (belongs in Load) |
+| Process | `ProcessLifecycle` | Ongoing ticks after Start | One-shot loads (Load) or first-time start of work (Start) |
+| Stop / Unload / Uninitialize | matching teardown | Reverse of Start / Load / Initialize | |
+
+`ViewManagerForDatabase` and `HierarchyViewManagerForDatabase` call `LoadFromDatabase()` from **`LoadLifecycle`**. That is a fill, not processing. After the first load, use `RefreshFromDatabase` (for example after a successful sync).
+
+Tests that assert stored rows/settings: `InitializeLifecycle()` then **`LoadLifecycle()`**. Initialize alone leaves lists empty. Tests that assert processing (selection, services, bus traffic) must also call **`StartLifecycle()`**.
+
 ---
 
 ## Core Principles

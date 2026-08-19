@@ -6,8 +6,8 @@ Tabs (`DockableTabModel`) are lifecycle objects. **`DockingManager` (root) owns 
 
 1. **Do not** call `InitializeLifecycle` / `LoadLifecycle` / `StartLifecycle` / `UninitializeLifecycle` on tab models from feature code when docking them.
 2. Use **`DockingManager.Add`**, **`ReplaceTab`**, or tab-control **`Add`/`Insert`** — these call **`ActivateTab`**.
-3. Close paths call **`DeactivateTab`** (Stop → Unload → Uninitialize + AppDispatcher.Release).
-4. Host cascades docking host phases: `AppViewModel` calls `DockingManager.InitializeLifecycle` / `Load` / `Start` / … in parallel with its own phases.
+3. Close paths call **`DeactivateTab`** (Stop → Unload → Uninitialize).
+4. Host `Track`s `DockingManager.TabLifecycle` so parent Initialize → Load → Start cascade.
 5. Floating windows share the **root** manager’s tab lifecycle (Activate/Deactivate always use `RootDockingManager`).
 
 ## API
@@ -15,17 +15,16 @@ Tabs (`DockableTabModel`) are lifecycle objects. **`DockingManager` (root) owns 
 | Method | Role |
 |--------|------|
 | `ActivateTab(model)` | `Track` on tab lifecycle + `IAppDispatcher.Track` if dispatchable |
-| `DeactivateTab(model)` | `IAppDispatcher.Release` + `Release` (full reverse lifecycle) |
+| `DeactivateTab(model)` | `IAppDispatcher.Release` + lifecycle `Release` |
 | `DeactivateAllTabs()` | Tear down every owned tab (app shutdown) |
-| `AppDispatcher` | Set by host before opening tabs |
 
 ## AppDispatcher
 
-`PopupManager` → `DispatchableViewModel`, so dockable tabs can use `TrackCollection` / `TrackProperties`. Coupling happens in Activate/Deactivate — tabs should **not** call `IAppDispatcher.Track` themselves.
+`PopupManager` → `DispatchableViewModel`, so dockable tabs can use `TrackCollection` / `TrackProperties`. The tab view `Attach`es the VM into the apply loop.
 
 **IsAttached:** AppDispatcher only applies while `IsAttached`. `DockableTabView` attaches the tab model when the header is on the visual tree (and detaches on leave). Content views may also attach via `DispatchableVisualTree` (multi-owner).
 
-**Track vs lifecycle:** `IAppDispatcher.Track` is membership for the apply loop only (not a second lifecycle parent). Tab Init/Load/Start remains solely under `DockingManager`’s `LifecycleTracker`.
+**Track vs Attach:** `Track` is lifecycle (DockingManager’s `LifecycleTracker`). `Attach` is apply-loop membership.
 
 **Rates:** the host’s AppDispatcher parks idle (~10 Hz) and uses `IntervalTimer` while active (default ~120 Hz). See [AppDispatcher.md](../AppDispatcher.md).
 

@@ -59,7 +59,7 @@ public partial class TabAppDispatcherPropertiesView : CornerstoneUserControl<Tab
 	{
 		var viewModel = ViewModel;
 		var profiler = Profiler;
-		if ((viewModel is null) || (profiler is null))
+		if (viewModel is null || profiler is null)
 		{
 			return;
 		}
@@ -70,7 +70,7 @@ public partial class TabAppDispatcherPropertiesView : CornerstoneUserControl<Tab
 
 	private void RefreshModelDisplay()
 	{
-		if ((ModelTitle is null) || (ViewModel is null))
+		if (ModelTitle is null || ViewModel is null)
 		{
 			return;
 		}
@@ -85,7 +85,7 @@ public partial class TabAppDispatcherPropertiesView : CornerstoneUserControl<Tab
 	{
 		var viewModel = ViewModel;
 		var profiler = Profiler;
-		if ((viewModel is null) || (profiler is null))
+		if (viewModel is null || profiler is null)
 		{
 			return;
 		}
@@ -136,7 +136,7 @@ public partial class TabAppDispatcherPropertiesView : CornerstoneUserControl<Tab
 	{
 		var viewModel = ViewModel;
 		var profiler = Profiler;
-		if ((viewModel is null) || (profiler is null))
+		if (viewModel is null || profiler is null)
 		{
 			return;
 		}

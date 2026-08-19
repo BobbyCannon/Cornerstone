@@ -49,6 +49,32 @@ public class TokenManager : SpeedyListViewManager<Token>, IQueue<Token>
 		Add(_tokenizer.CreateOrUpdateSection(type, startOffset, endOffset));
 	}
 
+	/// <summary>
+	/// Shift token ranges at or after <paramref name="fromOffset" /> by <paramref name="delta" />.
+	/// Used when host output is inserted before a live prompt (no tokenizer rebuild).
+	/// </summary>
+	public void ShiftOffsets(int fromOffset, int delta)
+	{
+		if (delta == 0)
+		{
+			return;
+		}
+
+		for (var i = 0; i < Count; i++)
+		{
+			var token = this[i];
+			if (token.StartOffset >= fromOffset)
+			{
+				token.StartOffset += delta;
+				token.EndOffset += delta;
+			}
+			else if (token.EndOffset > fromOffset)
+			{
+				token.EndOffset += delta;
+			}
+		}
+	}
+
 	public override void Clear()
 	{
 		_pool.Enqueue(List.ToArray());
@@ -162,6 +188,14 @@ public class TokenManager : SpeedyListViewManager<Token>, IQueue<Token>
 		while (tokenIndex < Count)
 		{
 			var token = this[tokenIndex++];
+
+			// Tokens are ordered by StartOffset. Once they start at or after the
+			// requested end, nothing later can overlap this range.
+			if (token.StartOffset >= endOffset)
+			{
+				yield break;
+			}
+
 			if (range.Overlaps(token))
 			{
 				yield return token;

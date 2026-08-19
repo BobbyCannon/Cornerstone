@@ -12,59 +12,31 @@ namespace Cornerstone.Agent.Keystone.Channels;
 
 [SourceReflection]
 [DependencyInjected]
-public partial class ModelsChannel : KeystoneChannel<ModelsChannel.ModelsMessageType>
+public partial class ModelsChannel : KeystoneChannel
 {
 	#region Methods
 
-	[ChannelSubscription<ModelsMessageType>(ModelsMessageType.ModelsUpdated)]
-	public void ModelsUpdated()
-	{
-		Publish(ModelsMessageType.ModelsUpdated);
-	}
-
 	[RelayCommand]
-	[ChannelSubscription<ModelsMessageType>(ModelsMessageType.RefreshModels)]
 	public void RefreshModels()
 	{
-		Publish(ModelsMessageType.RefreshModels);
-	}
-
-	/// <summary>
-	/// User intent: desire this model path. Does not load weights.
-	/// </summary>
-	[ChannelSubscription<ModelsMessageType, SelectModelMessage>(ModelsMessageType.SelectModel)]
-	public void SelectModel(string filePath)
-	{
-		Publish(ModelsMessageType.SelectModel, new SelectModelMessage(filePath));
-	}
-
-	/// <summary>
-	/// Explicit unload (shutdown / tests). Not required for normal model switch
-	/// (EnsureLoaded unloads the previous model first).
-	/// </summary>
-	[ChannelSubscription<ModelsMessageType>(ModelsMessageType.UnloadModel)]
-	public void UnloadModel()
-	{
-		Publish(ModelsMessageType.UnloadModel);
+		Publish(new RefreshModelsMessage());
 	}
 
 	#endregion
 
 	#region Records
 
+	[ChannelMessage<ModelsChannel>]
+	public record struct ModelsUpdatedMessage : IChannelMessage;
+
+	[ChannelMessage<ModelsChannel>(RelayCommand = true)]
+	public record struct RefreshModelsMessage : IChannelMessage;
+
+	[ChannelMessage<ModelsChannel>]
 	public record struct SelectModelMessage(string FilePath) : IChannelMessage;
 
-	#endregion
-
-	#region Enumerations
-
-	public enum ModelsMessageType
-	{
-		RefreshModels,
-		ModelsUpdated,
-		SelectModel,
-		UnloadModel
-	}
+	[ChannelMessage<ModelsChannel>]
+	public record struct UnloadModelMessage : IChannelMessage;
 
 	#endregion
 }

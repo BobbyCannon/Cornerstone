@@ -78,6 +78,10 @@ public class TreeDataGridColumnHeadersPresenter : TreeDataGridColumnarPresenterB
 
 	protected override void RealizeElement(Control element, IColumn column, int index)
 	{
+		if (TemplatedParent is TreeDataGrid grid)
+		{
+			TreeDataGrid.ApplyRowHeight(element, grid.MinRowHeight, grid.UseFixedRowHeight);
+		}
 		((TreeDataGridColumnHeader) element).Realize((IColumns) Items!, index);
 		ChildIndexChanged?.Invoke(this, new ChildIndexChangedEventArgs(element, index));
 	}

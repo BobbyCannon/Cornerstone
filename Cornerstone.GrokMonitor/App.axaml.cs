@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Cornerstone.Avalonia;
+using Cornerstone.GrokMonitor.Keystone;
 using Cornerstone.Runtime;
 
 #endregion

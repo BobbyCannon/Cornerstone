@@ -1,7 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk" TreatAsLocalProperty="TargetFramework;TargetFrameworks">
 	<PropertyGroup>
-		<TargetFrameworks>netstandard2.0</TargetFrameworks>
+		<!-- Referencing multi-TFM projects can pass TargetFrameworks (or an empty TargetFramework).
+		     Keep this analyzer on a single netstandard2.0 TFM regardless of the caller. -->
+		<TargetFrameworks></TargetFrameworks>
+		<TargetFramework>netstandard2.0</TargetFramework>
 		<RootNamespace>Cornerstone.Generators</RootNamespace>
+		<PackageId>Cornerstone.Generators</PackageId>
 		<IncludeBuildOutput>false</IncludeBuildOutput>
 		<SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
 		<IsRoslynComponent>true</IsRoslynComponent>
@@ -13,36 +17,37 @@
 		<EnableTrimAnalyzer>false</EnableTrimAnalyzer>
 		<NoWarn>$(NoWarn);CS0649;RS1041;</NoWarn>
 	</PropertyGroup>
+	<Import Project="..\Package.props" />
 	<ItemGroup>
-	  <Compile Remove="Reflection\**" />
-	  <EmbeddedResource Remove="Reflection\**" />
-	  <None Remove="Reflection\**" />
+		<Compile Remove="Reflection\**" />
+		<EmbeddedResource Remove="Reflection\**" />
+		<None Remove="Reflection\**" />
 	</ItemGroup>
 	<ItemGroup>
-	  <Compile Include="Reflection\SourceAccessibility.cs" />
-	  <Compile Include="Reflection\SourceAttributeExtensions.cs" />
-	  <Compile Include="Reflection\SourceAttributeInfo.cs" />
-	  <Compile Include="Reflection\SourceConstructorInfo.cs" />
-	  <Compile Include="Reflection\SourceFieldInfo.cs" />
-	  <Compile Include="Reflection\SourceInterfaceInfo.cs" />
-	  <Compile Include="Reflection\SourceMethodInfo.cs" />
-	  <Compile Include="Reflection\SourceNullableAnnotation.cs" />
-	  <Compile Include="Reflection\SourceParameterInfo.cs" />
-	  <Compile Include="Reflection\SourcePropertyInfo.cs" />
-	  <Compile Include="Reflection\SourceReflectionAttribute.cs" />
-	  <Compile Include="Reflection\SourceReflectionTypeAttribute.cs" />
-	  <Compile Include="Reflection\SourceTypeInfo.cs" />
+		<Compile Include="Reflection\SourceAccessibility.cs" />
+		<Compile Include="Reflection\SourceAttributeExtensions.cs" />
+		<Compile Include="Reflection\SourceAttributeInfo.cs" />
+		<Compile Include="Reflection\SourceConstructorInfo.cs" />
+		<Compile Include="Reflection\SourceFieldInfo.cs" />
+		<Compile Include="Reflection\SourceInterfaceInfo.cs" />
+		<Compile Include="Reflection\SourceMethodInfo.cs" />
+		<Compile Include="Reflection\SourceNullableAnnotation.cs" />
+		<Compile Include="Reflection\SourceParameterInfo.cs" />
+		<Compile Include="Reflection\SourcePropertyInfo.cs" />
+		<Compile Include="Reflection\SourceReflectionAttribute.cs" />
+		<Compile Include="Reflection\SourceReflectionTypeAttribute.cs" />
+		<Compile Include="Reflection\SourceTypeInfo.cs" />
 	</ItemGroup>
 	<ItemGroup>
 		<EmbeddedResource Include="TestRunner.cs" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.6.0">
+		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.CodeAnalysis" Version="5.6.0" PrivateAssets="All" />
-		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.6.0" PrivateAssets="All" />
+		<PackageReference Include="Microsoft.CodeAnalysis" Version="5.9.0" PrivateAssets="All" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" PrivateAssets="All" />
 	</ItemGroup>
 	<ItemGroup>
 		<None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />

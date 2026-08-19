@@ -17,6 +17,12 @@ public class LineManager : CornerstoneObject, IEnumerable<Line>, IQueue<Line>
 {
 	#region Fields
 
+	private double _cachedDocumentWidth;
+	private bool _hasMeasureCache;
+	private double _lastMeasureMaxWidth;
+	private bool _lastWordWrap;
+	private int _layoutFromIndex;
+	private bool _layoutIncremental;
 	private readonly IList<Line> _lines;
 	private readonly IQueue<Line> _pool;
 
@@ -30,6 +36,7 @@ public class LineManager : CornerstoneObject, IEnumerable<Line>, IQueue<Line>
 
 		_pool = new SpeedyQueue<Line>(65536);
 		_lines = new SpeedyList<Line>(isLongLivedBuffer: true, clearOnCleanup: false);
+		_layoutFromIndex = 0;
 	}
 
 	#endregion
@@ -41,6 +48,12 @@ public class LineManager : CornerstoneObject, IEnumerable<Line>, IQueue<Line>
 	public Line this[int index] => _lines[index];
 
 	public int LineRebuildIndex { get; private set; }
+
+	/// <summary>
+	/// True when the last edit stayed on the last line and that line's height did not change.
+	/// Consumers should repaint only — skip measure, margin layout, and scroll-to-end.
+	/// </summary>
+	internal bool LastEditNeedsPaintOnly { get; private set; }
 
 	internal TextEditorViewModel ViewModel { get; }
 
@@ -172,6 +185,30 @@ public class LineManager : CornerstoneObject, IEnumerable<Line>, IQueue<Line>
 		return right;
 	}
 
+	/// <summary>
+	/// Lines whose visual rect intersects [topY, bottomY). Binary-searches the first
+	/// candidate so paint does not walk the whole document.
+	/// </summary>
+	public IEnumerable<Line> GetVisibleLines(double topY, double bottomY)
+	{
+		var index = GetFirstVisibleLineIndex(topY);
+		while (index < _lines.Count)
+		{
+			var line = _lines[index++];
+			if (line.VisualLayout.Top >= bottomY)
+			{
+				yield break;
+			}
+
+			if (line.VisualLayout.Bottom <= topY)
+			{
+				continue;
+			}
+
+			yield return line;
+		}
+	}
+
 	public Line LastOrDefault()
 	{
 		return _lines.Count == 0 ? null : _lines[_lines.Count - 1];
@@ -181,14 +218,29 @@ public class LineManager : CornerstoneObject, IEnumerable<Line>, IQueue<Line>
 	{
 		var offsetY = 0.0;
 		var documentWidth = 0.0;
+
 		// Word-wrap only when width is finite; infinite available width means
 		// unconstrained measure — use natural (unwrapped) line widths.
 		double? maxWidth = wordWrap && double.IsFinite(availableSize.Width)
 			? availableSize.Width
 			: null;
 
-		foreach (var line in _lines)
+		var start = 0;
+		var wrapWidth = maxWidth ?? double.NaN;
+		var wrapChanged = !_hasMeasureCache
+			|| (wordWrap != _lastWordWrap)
+			|| !AreSameWidth(wrapWidth, _lastMeasureMaxWidth);
+		if (_layoutIncremental && !wrapChanged && (_layoutFromIndex > 0) && (_layoutFromIndex < _lines.Count)
+			&& (_lines[_layoutFromIndex - 1].VisualLayout.Height > 0))
 		{
+			start = _layoutFromIndex;
+			offsetY = _lines[start - 1].VisualLayout.Bottom;
+			documentWidth = _cachedDocumentWidth;
+		}
+
+		for (var i = start; i < _lines.Count; i++)
+		{
+			var line = _lines[i];
 			line.UpdateLineMetrics(offsetY, maxWidth);
 
 			if (line.VisualLayout.Width > documentWidth)
@@ -197,6 +249,13 @@ public class LineManager : CornerstoneObject, IEnumerable<Line>, IQueue<Line>
 			}
 			offsetY += line.VisualLayout.Height;
 		}
+
+		_lastWordWrap = wordWrap;
+		_lastMeasureMaxWidth = wrapWidth;
+		_hasMeasureCache = true;
+		_cachedDocumentWidth = documentWidth;
+		_layoutIncremental = false;
+		_layoutFromIndex = 0;
 
 		if (!double.IsFinite(documentWidth) || (documentWidth < 0))
 		{
@@ -219,11 +278,6 @@ public class LineManager : CornerstoneObject, IEnumerable<Line>, IQueue<Line>
 		}
 
 		return _pool.TryDequeue(out value);
-	}
-
-	public bool TryPeek(out Line value)
-	{
-		return _pool.TryPeek(out value);
 	}
 
 	public bool TryGetLine(int lineNumber, out Line line)
@@ -327,11 +381,34 @@ public class LineManager : CornerstoneObject, IEnumerable<Line>, IQueue<Line>
 		return true;
 	}
 
+	public bool TryPeek(out Line value)
+	{
+		return _pool.TryPeek(out value);
+	}
+
 	internal void Rebuild(TextDocumentChangedArgs args)
 	{
 		using var _ = ProfilerExtensions.Start(ViewModel.Profiler, "LineManager.Rebuild");
 
+		LastEditNeedsPaintOnly = false;
 		LineRebuildIndex = GetLineOffsetForDocumentOffset(args.Offset);
+
+		// Measure is coalesced (many Rebuilds per layout pass). Keep the earliest
+		// dirty line so later appends cannot skip unmeasured rows (blank terminal).
+		if (args.Type != TextDocumentChangeType.Add)
+		{
+			_layoutIncremental = false;
+			_layoutFromIndex = 0;
+		}
+		else if (!_layoutIncremental)
+		{
+			_layoutIncremental = true;
+			_layoutFromIndex = LineRebuildIndex;
+		}
+		else if (LineRebuildIndex < _layoutFromIndex)
+		{
+			_layoutFromIndex = LineRebuildIndex;
+		}
 
 		var lineNumber = Count > 0 ? _lines[LineRebuildIndex]?.LineNumber ?? 1 : 1;
 		var index = Count > 0 ? _lines[LineRebuildIndex]?.StartOffset ?? 0 : 0;
@@ -362,9 +439,138 @@ public class LineManager : CornerstoneObject, IEnumerable<Line>, IQueue<Line>
 		NotifyComputedPropertyChanged(nameof(Count));
 	}
 
+	/// <summary>
+	/// Apply an insert or delete that stays on the last line (no line breaks).
+	/// Skips a full line scan and keeps the existing visual Y.
+	/// </summary>
+	internal bool TryApplyLastLineEdit(TextDocumentChangedArgs args)
+	{
+		LastEditNeedsPaintOnly = false;
+		if (string.IsNullOrEmpty(args.Text)
+			|| (_lines.Count == 0)
+			|| !_hasMeasureCache)
+		{
+			return false;
+		}
+
+		if (args.Text.AsSpan().IndexOfAny('\r', '\n') >= 0)
+		{
+			return false;
+		}
+
+		var last = _lines[_lines.Count - 1];
+		if (last.VisualLayout.Height <= 0)
+		{
+			return false;
+		}
+
+		var length = args.Text.Length;
+		if (args.Type == TextDocumentChangeType.Add)
+		{
+			if ((args.Offset < last.StartOffset) || (args.Offset > last.EndOffset))
+			{
+				return false;
+			}
+
+			last.EndOffset += length;
+		}
+		else if (args.Type == TextDocumentChangeType.Remove)
+		{
+			if ((args.Offset < last.StartOffset)
+				|| ((args.Offset + length) > last.EndOffset))
+			{
+				return false;
+			}
+
+			last.EndOffset -= length;
+		}
+		else
+		{
+			return false;
+		}
+
+		var oldHeight = last.VisualLayout.Height;
+		double? wrapWidth = null;
+		if (!double.IsNaN(_lastMeasureMaxWidth))
+		{
+			wrapWidth = _lastMeasureMaxWidth;
+		}
+
+		last.UpdateLineMetrics(last.VisualLayout.Y, wrapWidth);
+
+		if (last.VisualLayout.Width > _cachedDocumentWidth)
+		{
+			_cachedDocumentWidth = last.VisualLayout.Width;
+		}
+
+		ViewModel.ViewMetrics.DocumentSize = new Size(_cachedDocumentWidth, last.VisualLayout.Bottom);
+
+		if (Math.Abs(last.VisualLayout.Height - oldHeight) > 0.01)
+		{
+			_layoutIncremental = true;
+			_layoutFromIndex = _lines.Count - 1;
+			return true;
+		}
+
+		LastEditNeedsPaintOnly = true;
+		return true;
+	}
+
+	private static bool AreSameWidth(double left, double right)
+	{
+		if (double.IsNaN(left) && double.IsNaN(right))
+		{
+			return true;
+		}
+
+		return left.Equals(right);
+	}
+
 	IEnumerator IEnumerable.GetEnumerator()
 	{
 		return GetEnumerator();
+	}
+
+	private int GetFirstVisibleLineIndex(double topY)
+	{
+		if (_lines.Count == 0)
+		{
+			return 0;
+		}
+
+		var left = 0;
+		var right = _lines.Count - 1;
+
+		while (left <= right)
+		{
+			var mid = left + ((right - left) >> 1);
+			var rect = _lines[mid].VisualLayout;
+
+			if (topY < rect.Y)
+			{
+				right = mid - 1;
+			}
+			else if (topY >= rect.Bottom)
+			{
+				left = mid + 1;
+			}
+			else
+			{
+				return mid;
+			}
+		}
+
+		if (topY < _lines[0].VisualLayout.Y)
+		{
+			return 0;
+		}
+
+		if (topY >= _lines[^1].VisualLayout.Bottom)
+		{
+			return _lines.Count;
+		}
+
+		return left;
 	}
 
 	private Line NextLine(int lineNumber, ref int index)

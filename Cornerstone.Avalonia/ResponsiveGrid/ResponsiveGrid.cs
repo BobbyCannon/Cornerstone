@@ -26,8 +26,12 @@ public partial class ResponsiveGrid : Grid
 
 	protected override Size ArrangeOverride(Size finalSize)
 	{
-		var trackWidth = GetColumnTrackWidth(finalSize.Width);
-		var group = Children.GroupBy(GetActualRow).ToList();
+		var visible = AssignCells(finalSize.Width);
+		GetTrackMetrics(finalSize.Width, out var trackWidth, out var columnSpacing);
+		var group = visible
+			.GroupBy(GetActualRow)
+			.OrderBy(o => o.Key)
+			.ToList();
 
 		double y = 0;
 		for (var i = 0; i < group.Count; i++)
@@ -40,9 +44,9 @@ public partial class ResponsiveGrid : Grid
 				var column = GetActualColumn(element);
 				var columnSpan = GetSpan(element, finalSize.Width);
 				var rect = new Rect(
-					GetCellX(column, trackWidth),
+					GetCellX(column, trackWidth, columnSpacing),
 					y,
-					GetCellWidth(columnSpan, trackWidth),
+					GetCellWidth(columnSpan, trackWidth, columnSpacing),
 					rowHeight);
 				element.Arrange(rect);
 			}
@@ -60,47 +64,60 @@ public partial class ResponsiveGrid : Grid
 	/// <summary>
 	/// Width of a cell spanning the given number of tracks, including gutters between those tracks.
 	/// </summary>
-	protected double GetCellWidth(int span, double trackWidth)
+	protected double GetCellWidth(int span, double trackWidth, double columnSpacing)
 	{
 		if (span <= 0)
 		{
 			return 0;
 		}
 
-		return (span * trackWidth) + ((span - 1) * ColumnSpacing);
+		return (span * trackWidth) + ((span - 1) * columnSpacing);
 	}
 
 	/// <summary>
 	/// X origin of a cell starting at the given column track index.
 	/// </summary>
-	protected double GetCellX(int column, double trackWidth)
+	protected double GetCellX(int column, double trackWidth, double columnSpacing)
 	{
 		if (column <= 0)
 		{
 			return 0;
 		}
 
-		return column * (trackWidth + ColumnSpacing);
+		return column * (trackWidth + columnSpacing);
 	}
 
 	/// <summary>
-	/// Content width of one division track after reserving ColumnSpacing gutters between tracks.
+	/// Content width of one division track after reserving gutters between tracks.
+	/// Gutters shrink when (MaxDivision - 1) times ColumnSpacing exceeds totalWidth
+	/// so stretch children cannot overflow the grid.
 	/// </summary>
-	protected double GetColumnTrackWidth(double totalWidth)
+	protected void GetTrackMetrics(double totalWidth, out double trackWidth, out double columnSpacing)
 	{
+		columnSpacing = ColumnSpacing;
+
 		if (MaxDivision <= 0)
 		{
-			return 0;
+			trackWidth = 0;
+			return;
 		}
 
 		if (double.IsPositiveInfinity(totalWidth))
 		{
-			return double.PositiveInfinity;
+			trackWidth = double.PositiveInfinity;
+			return;
 		}
 
 		var gutterCount = Math.Max(0, MaxDivision - 1);
-		var contentWidth = Math.Max(0, totalWidth - (gutterCount * ColumnSpacing));
-		return contentWidth / MaxDivision;
+		var gutterTotal = gutterCount * columnSpacing;
+		if (gutterTotal > totalWidth)
+		{
+			columnSpacing = gutterCount > 0 ? totalWidth / gutterCount : 0;
+			trackWidth = 0;
+			return;
+		}
+
+		trackWidth = (totalWidth - gutterTotal) / MaxDivision;
 	}
 
 	protected int GetOffset(Control element, double width)
@@ -285,34 +302,13 @@ public partial class ResponsiveGrid : Grid
 
 	protected override Size MeasureOverride(Size availableSize)
 	{
-		var count = 0;
-		var currentRow = 0;
-		var trackWidth = GetColumnTrackWidth(availableSize.Width);
+		GetTrackMetrics(availableSize.Width, out var trackWidth, out var columnSpacing);
 		var remainingHeight = availableSize.Height;
 		var rowHeights = new List<double>();
-
-		// First pass: Assign rows and columns
-		foreach (var child in Children.Where(c => c.IsVisible))
-		{
-			var span = GetSpan(child, availableSize.Width);
-			var offset = GetOffset(child, availableSize.Width);
-			var push = GetPush(child, availableSize.Width);
-			var pull = GetPull(child, availableSize.Width);
-
-			if ((count + span + offset) > MaxDivision)
-			{
-				currentRow++;
-				count = 0;
-			}
-
-			SetActualColumn(child, (count + offset + push) - pull);
-			SetActualRow(child, currentRow);
-
-			count += span + offset;
-		}
+		var visible = AssignCells(availableSize.Width);
 
 		// Determine number of rows
-		var rowCount = Children.Where(c => c.IsVisible).Select(GetActualRow).DefaultIfEmpty(-1).Max() + 1;
+		var rowCount = visible.Select(GetActualRow).DefaultIfEmpty(-1).Max() + 1;
 
 		// Reserve vertical gutters between rows when height is constrained
 		if (!double.IsPositiveInfinity(remainingHeight) && (rowCount > 1))
@@ -324,7 +320,10 @@ public partial class ResponsiveGrid : Grid
 		var heightPerRow = rowCount > 0 ? remainingHeight / rowCount : remainingHeight;
 
 		// Second pass: Measure children with constrained height
-		var group = Children.GroupBy(GetActualRow).ToList();
+		var group = visible
+			.GroupBy(GetActualRow)
+			.OrderBy(o => o.Key)
+			.ToList();
 		for (var i = 0; i < group.Count; i++)
 		{
 			var row = group[i];
@@ -338,7 +337,7 @@ public partial class ResponsiveGrid : Grid
 			foreach (var child in row)
 			{
 				var span = GetSpan(child, availableSize.Width);
-				var size = new Size(GetCellWidth(span, trackWidth), rowHeight);
+				var size = new Size(GetCellWidth(span, trackWidth, columnSpacing), rowHeight);
 				child.Measure(size);
 				maxRowHeight = Math.Max(maxRowHeight, child.DesiredSize.Height);
 			}
@@ -380,6 +379,42 @@ public partial class ResponsiveGrid : Grid
 		}
 
 		return new Size(totalWidth, totalHeight);
+	}
+
+	private List<Control> AssignCells(double width)
+	{
+		var visible = GetVisibleChildren();
+		var count = 0;
+		var currentRow = 0;
+
+		foreach (var child in visible)
+		{
+			var span = GetSpan(child, width);
+			var offset = GetOffset(child, width);
+			var push = GetPush(child, width);
+			var pull = GetPull(child, width);
+
+			if ((count + span + offset) > MaxDivision)
+			{
+				currentRow++;
+				count = 0;
+			}
+
+			var column = (count + offset + push) - pull;
+			var maxColumn = Math.Max(0, MaxDivision - span);
+			column = Math.Min(Math.Max(0, column), maxColumn);
+			SetActualColumn(child, column);
+			SetActualRow(child, currentRow);
+
+			count += span + offset;
+		}
+
+		return visible;
+	}
+
+	private List<Control> GetVisibleChildren()
+	{
+		return Children.Where(c => c.IsVisible).ToList();
 	}
 
 	#endregion

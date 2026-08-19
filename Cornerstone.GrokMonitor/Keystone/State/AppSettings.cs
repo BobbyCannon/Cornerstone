@@ -5,7 +5,7 @@ using System.Text.Json;
 using Cornerstone.Avalonia;
 using Cornerstone.Avalonia.Themes;
 using Cornerstone.Data;
-using Cornerstone.GrokMonitor.GrokUsage;
+using Cornerstone.GrokMonitor.GrokUsage.Services;
 using Cornerstone.Presentation;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
@@ -23,7 +23,7 @@ namespace Cornerstone.GrokMonitor.Keystone.State;
 [Notifiable(["*"])]
 [Updateable(UpdateableAction.All, ["*"], false)]
 [DependencyInjected]
-public partial class AppSettings : SettingsFile<AppSettings>
+public partial class AppSettings : SettingsFile<AppSettings>, IAppSettings, IUpdateable<IAppSettings>
 {
 	#region Constructors
 
@@ -183,24 +183,50 @@ public partial class AppSettings : SettingsFile<AppSettings>
 	{
 		base.OnPropertyChanged(propertyName, oldValue, newValue);
 
-		if ((propertyName == nameof(ThemeColor))
-			|| (propertyName == nameof(ThemeMode))
-			|| (propertyName == nameof(ThemeDensity)))
+		switch (propertyName)
 		{
-			ApplyTheme();
-		}
-
-		if ((propertyName == nameof(SessionTokenHeatSoftTokens))
-			|| (propertyName == nameof(SessionTokenHeatHotTokens)))
-		{
-			// Avoid re-entrancy loops: only fix invalid pairs.
-			if ((SessionTokenHeatSoftTokens < 0)
-				|| (SessionTokenHeatHotTokens <= SessionTokenHeatSoftTokens))
+			case nameof(ThemeColor)
+				or nameof(ThemeMode)
+				or nameof(ThemeDensity):
 			{
-				SanitizeSessionTokenHeat();
+				ApplyTheme();
+				break;
+			}
+			case nameof(SessionTokenHeatSoftTokens)
+				or nameof(SessionTokenHeatHotTokens):
+			{
+				// Avoid re-entrancy loops: only fix invalid pairs.
+				if ((SessionTokenHeatSoftTokens < 0)
+					|| (SessionTokenHeatHotTokens <= SessionTokenHeatSoftTokens))
+				{
+					SanitizeSessionTokenHeat();
+				}
+				break;
 			}
 		}
 	}
+
+	#endregion
+}
+
+/// <summary>
+/// Shared appearance and session-heat settings for persistence and the Settings tab.
+/// </summary>
+public interface IAppSettings
+{
+	#region Properties
+
+	bool SessionTokenHeatEnabled { get; set; }
+
+	long SessionTokenHeatHotTokens { get; set; }
+
+	long SessionTokenHeatSoftTokens { get; set; }
+
+	ThemeColor ThemeColor { get; set; }
+
+	ThemeDensity ThemeDensity { get; set; }
+
+	ThemeMode ThemeMode { get; set; }
 
 	#endregion
 }

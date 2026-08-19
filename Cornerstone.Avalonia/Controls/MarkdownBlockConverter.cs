@@ -9,7 +9,6 @@ using Avalonia.Data.Converters;
 using Avalonia.VisualTree;
 using Cornerstone.Avalonia.Resources;
 using Cornerstone.Avalonia.Text;
-using Cornerstone.Parsers;
 using Cornerstone.Parsers.Markdown;
 
 #endregion
@@ -107,7 +106,7 @@ public class MarkdownBlockConverter : IMultiValueConverter
 				|| (block.Type == MarkdownTokenizer.TokenTypeBoldAndItalic)
 				|| (block.Type == MarkdownTokenizer.TokenTypeStrikethrough))
 			{
-				if ((block.Offsets is not { Length: >= 2 }))
+				if (block.Offsets is not { Length: >= 2 })
 				{
 					continue;
 				}

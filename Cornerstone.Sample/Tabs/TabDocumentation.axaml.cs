@@ -6,7 +6,7 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Threading;
 using Cornerstone.Avalonia;
-using Cornerstone.Avalonia.Controls;
+using Cornerstone.Avalonia.Documentation;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
 
@@ -85,20 +85,30 @@ public partial class TabDocumentation : CornerstoneUserControl
 	/// Sample docs tree excludes Agent/ and Todo/
 	/// (still present in the full Cornerstone.Documentation host).
 	/// </summary>
-	private static DocumentationCatalog ForSample(DocumentationCatalog catalog)
+	private DocumentationCatalog ForSample(DocumentationCatalog catalog)
 	{
 		if (catalog is null || (catalog.Documents.Count == 0))
 		{
-			return catalog;
+			return ApplyCatalogName(catalog);
 		}
 
 		var docs = catalog.Documents.Where(d => !IsSampleExcluded(d.Id)).ToList();
 		if (docs.Count == catalog.Documents.Count)
 		{
-			return catalog;
+			return ApplyCatalogName(catalog);
 		}
 
-		return new DocumentationCatalog(docs, catalog.Entry?.Id);
+		return ApplyCatalogName(new DocumentationCatalog(docs, catalog.Entry?.Id));
+	}
+
+	private DocumentationCatalog ApplyCatalogName(DocumentationCatalog catalog)
+	{
+		if (catalog is not null)
+		{
+			catalog.Name = RuntimeInformation.ApplicationName;
+		}
+
+		return catalog;
 	}
 
 	private static bool IsSampleExcluded(string documentId)
@@ -115,7 +125,7 @@ public partial class TabDocumentation : CornerstoneUserControl
 	/// Fall back to embedded resources (required for Browser WASM / mobile packages).
 	/// Last resort: monorepo source tree when running from a build output folder.
 	/// </summary>
-	private static DocumentationCatalog TryBuildCatalog()
+	private DocumentationCatalog TryBuildCatalog()
 	{
 		var baseDir = AppContext.BaseDirectory;
 

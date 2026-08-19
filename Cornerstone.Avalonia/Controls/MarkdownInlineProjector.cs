@@ -141,8 +141,8 @@ public static class MarkdownInlineProjector
 		// Skip trailing whitespace/newline blocks (belt-and-suspenders with BuildGroups trim).
 		var last = group.Blocks.Count - 1;
 		while ((last >= 0)
-			&& ((group.Blocks[last].Type == TextProcessor.TokenTypeNewLine)
-				|| (group.Blocks[last].Type == TextProcessor.TokenTypeWhitespace)))
+				&& ((group.Blocks[last].Type == TextProcessor.TokenTypeNewLine)
+					|| (group.Blocks[last].Type == TextProcessor.TokenTypeWhitespace)))
 		{
 			last--;
 		}
@@ -234,7 +234,7 @@ public static class MarkdownInlineProjector
 		TokenManager tokens,
 		List<MarkdownProjectedLink> links)
 	{
-		if ((content is null) || (content.Count == 0))
+		if (content is null || (content.Count == 0))
 		{
 			return;
 		}

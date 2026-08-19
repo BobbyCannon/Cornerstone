@@ -15,7 +15,7 @@
 		<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
 		<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
 		<Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
-		<Setter Property="HorizontalContentAlignment" Value="Stretch" />
+		<Setter Property="HorizontalContentAlignment" Value="{Binding $parent[ComboBox].HorizontalContentAlignment, FallbackValue=Stretch}" />
 		<Setter Property="VerticalContentAlignment" Value="Center" />
 		<Setter Property="Template">
 			<ControlTemplate>

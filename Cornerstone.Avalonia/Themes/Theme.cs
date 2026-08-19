@@ -5,6 +5,7 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data.Converters;
+using Avalonia.Media;
 using Avalonia.Styling;
 using Cornerstone.Reflection;
 
@@ -122,6 +123,36 @@ public abstract class Theme : Styles
 	{
 		var theme = GetCornerstoneTheme();
 		return theme?.ThemeColor;
+	}
+
+	/// <summary>
+	/// Mid accent for the current ThemeColor (Blue when unset / None / Current).
+	/// Used for markdown links and other “current theme” chrome.
+	/// </summary>
+	public static IBrush GetAccentBrush()
+	{
+		var selected = GetThemeColor() ?? ThemeColor.Blue;
+		if ((selected == ThemeColor.None) || (selected == ThemeColor.Current))
+		{
+			selected = ThemeColor.Blue;
+		}
+
+		foreach (var details in ThemeColorPalette.ThemeColors)
+		{
+			if (details.ThemeColor == selected)
+			{
+				return details.Color.Brush;
+			}
+		}
+
+		return ThemeColorPalette.Blue.Color.Brush;
+	}
+
+	public static event EventHandler AccentChanged;
+
+	internal static void RaiseAccentChanged()
+	{
+		AccentChanged?.Invoke(null, EventArgs.Empty);
 	}
 
 	public static ThemeDensity GetThemeDensity()

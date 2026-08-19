@@ -16,7 +16,7 @@ namespace Cornerstone.GrokMonitor.GrokUsage.State;
 [SourceReflection]
 [Notifiable(["*"])]
 [Updateable(UpdateableAction.All, ["*"])]
-public partial class GrokHomeUsageState : CornerstoneObject
+public partial class GrokHomeUsageState : CornerstoneObject, IGrokHomeUsage
 {
 	#region Constructors
 
@@ -35,6 +35,7 @@ public partial class GrokHomeUsageState : CornerstoneObject
 		DailyTokenTotals = [];
 		DailyUsageTotals = [];
 		AvailablePeriods = [];
+		IsViewLive = true;
 	}
 
 	public GrokHomeUsageState(Guid id) : this()
@@ -138,6 +139,17 @@ public partial class GrokHomeUsageState : CornerstoneObject
 	public partial bool IsBusy { get; set; }
 
 	/// <summary>
+	/// True while this home's view clock is advancing (period replay).
+	/// </summary>
+	public partial bool IsReplayPlaying { get; set; }
+
+	/// <summary>
+	/// When true, this home's view clock follows wall time (slider at live end).
+	/// When false, <see cref="ViewAsOf" /> is used as "now" for projection.
+	/// </summary>
+	public partial bool IsViewLive { get; set; }
+
+	/// <summary>
 	/// When usage data was last successfully applied; default when never.
 	/// </summary>
 	public partial DateTimeOffset LastRefreshedAt { get; set; }
@@ -223,6 +235,22 @@ public partial class GrokHomeUsageState : CornerstoneObject
 	public partial double UsagePercent { get; set; }
 
 	/// <summary>
+	/// Simulated "now" for this home when <see cref="IsViewLive" /> is false.
+	/// Default is ignored while live.
+	/// </summary>
+	public partial DateTimeOffset ViewAsOf { get; set; }
+
+	/// <summary>
+	/// Exclusive live-scrub upper bound (period end or wall now). Default when no scrub range.
+	/// </summary>
+	public partial DateTimeOffset ViewClockMax { get; set; }
+
+	/// <summary>
+	/// Inclusive live-scrub lower bound (period start). Default when no scrub range.
+	/// </summary>
+	public partial DateTimeOffset ViewClockStart { get; set; }
+
+	/// <summary>
 	/// Credit percent consumed per hour for linear ETA; 0 when unknown.
 	/// </summary>
 	public partial double UsagePercentPerHour { get; set; }
@@ -231,6 +259,90 @@ public partial class GrokHomeUsageState : CornerstoneObject
 	/// How <see cref="UsagePercentPerHour" /> was derived; empty when unknown.
 	/// </summary>
 	public partial string UsageRateSource { get; set; }
+
+	#endregion
+}
+
+/// <summary>
+/// Shared home-usage scalars for State and the dashboard ViewModel.
+/// Get-only so TrackProperties maps one-way (model → view). Lists and
+/// display-only fields stay off the contract.
+/// </summary>
+public interface IGrokHomeUsage
+{
+	#region Properties
+
+	string AnalyticsNote { get; }
+
+	string DisplayName { get; }
+
+	string ErrorText { get; }
+
+	DateTimeOffset EstimatedUsageExhaustionAt { get; }
+
+	long GrandTotalCachedPromptTokens { get; }
+
+	long GrandTotalCompletionTokens { get; }
+
+	long GrandTotalPromptTokens { get; }
+
+	long GrandTotalReasoningTokens { get; }
+
+	long GrandTotalTokens { get; }
+
+	bool HasBilling { get; }
+
+	bool HasCreditUsage { get; }
+
+	bool HasUsageEstimate { get; }
+
+	bool HomeExists { get; }
+
+	bool IsBusy { get; }
+
+	bool IsReplayPlaying { get; }
+
+	bool IsViewLive { get; }
+
+	DateTimeOffset LastRefreshedAt { get; }
+
+	double LinearPacePercent { get; }
+
+	double OnDemandCap { get; }
+
+	double OnDemandUsed { get; }
+
+	string Path { get; }
+
+	DateTimeOffset PeriodEnd { get; }
+
+	DateTimeOffset PeriodStart { get; }
+
+	double PrepaidBalance { get; }
+
+	string ProgressText { get; }
+
+	DateTimeOffset SelectedPeriodEnd { get; }
+
+	DateTimeOffset SelectedPeriodStart { get; }
+
+	string SubscriptionTier { get; }
+
+	double TokenBurnPerHourLast24h { get; }
+
+	double TokenBurnPerHourPeriod { get; }
+
+	double UsagePercent { get; }
+
+	double UsagePercentPerHour { get; }
+
+	string UsageRateSource { get; }
+
+	DateTimeOffset ViewAsOf { get; }
+
+	DateTimeOffset ViewClockMax { get; }
+
+	DateTimeOffset ViewClockStart { get; }
 
 	#endregion
 }

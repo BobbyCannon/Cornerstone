@@ -4,6 +4,7 @@ using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -26,6 +27,12 @@ namespace Cornerstone.Avalonia;
 public abstract class CornerstoneApplication<T> : CornerstoneApplication
 	where T : ILifecycle
 {
+	#region Fields
+
+	private System.Threading.Timer _processLifecycleTimer;
+
+	#endregion
+
 	#region Properties
 
 	public T Keystone { get; protected set; }
@@ -70,6 +77,9 @@ public abstract class CornerstoneApplication<T> : CornerstoneApplication
 
 	protected override void OnShutdown()
 	{
+		_processLifecycleTimer?.Dispose();
+		_processLifecycleTimer = null;
+
 		if (Keystone is not null)
 		{
 			AppBootstrap.TeardownLifecycle(Keystone);
@@ -83,6 +93,17 @@ public abstract class CornerstoneApplication<T> : CornerstoneApplication
 	protected override void StartOwnedLifecycles()
 	{
 		Keystone.StartLifecycle();
+		_processLifecycleTimer = new System.Threading.Timer(_ =>
+		{
+			try
+			{
+				Keystone?.ProcessLifecycle();
+			}
+			catch (Exception ex)
+			{
+				AppBootstrap.LogException(ex);
+			}
+		}, null, 50, 50);
 		base.StartOwnedLifecycles();
 	}
 

@@ -8,6 +8,7 @@ using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Profiling;
 using Cornerstone.Reflection;
+using Cornerstone.Runtime;
 using Cornerstone.Text;
 
 #endregion
@@ -38,12 +39,15 @@ public class DispatchableViewModel<T> : DispatchableViewModel
 
 	public override void ApplyModelChanges()
 	{
-		base.ApplyModelChanges();
-
-		if (Model.HasChanges())
+		using (BeginProjecting())
 		{
-			Model.ApplyChangesTo(this);
-			Model.ResetHasChanges();
+			base.ApplyModelChanges();
+
+			if (Model.HasChanges())
+			{
+				Model.ApplyChangesTo(this);
+				Model.ResetHasChanges();
+			}
 		}
 	}
 
@@ -82,7 +86,9 @@ public abstract partial class DispatchableViewModel : ViewModel
 	private readonly object _attachSync;
 	private List<IDispatchBinding> _bindings;
 	private List<DispatchableViewModel> _dispatchChildren;
+	private Dictionary<string, Action> _intents;
 	private int _isAttachedFlag;
+	private int _projectingDepth;
 
 	#endregion
 
@@ -101,10 +107,17 @@ public abstract partial class DispatchableViewModel : ViewModel
 	/// <summary>
 	/// True when at least one owner has <see cref="Attach" />'d this ViewModel
 	/// (typically a View or a parent <see cref="DispatchableViewModel" />).
-	/// AppDispatcher only applies changes while this is true. See <seealso cref="IAppDispatcher" />.
+	/// AppDispatcher only applies changes while this is true.
 	/// </summary>
 	[Notify]
 	public partial bool IsAttached { get; private set; }
+
+	/// <summary>
+	/// True while <see cref="ApplyModelChanges" /> is running or an explicit
+	/// <see cref="BeginProjecting" /> scope is open. <see cref="TrackIntent" />
+	/// does not publish while this is true so apply copies do not echo as user intent.
+	/// </summary>
+	protected bool IsProjecting => _projectingDepth > 0;
 
 	#endregion
 
@@ -117,8 +130,43 @@ public abstract partial class DispatchableViewModel : ViewModel
 	/// </summary>
 	public virtual void ApplyModelChanges()
 	{
-		ApplyPendingBindings();
-		ApplyDispatchChildren();
+		using (BeginProjecting())
+		{
+			ApplyPendingBindings();
+			ApplyDispatchChildren();
+		}
+	}
+
+	/// <summary>
+	/// Drops every Track* / TrackIntent registration (this VM's apply recipe, not
+	/// external event unsubscribe). UninitializeLifecycle already calls this.
+	/// Call again only when re-binding to a new session/repo while still alive.
+	/// </summary>
+	protected void ReleaseTracks()
+	{
+		_bindings?.Clear();
+		_intents?.Clear();
+	}
+
+	public override void UninitializeLifecycle()
+	{
+		ReleaseTracks();
+		base.UninitializeLifecycle();
+	}
+
+	/// <summary>
+	/// True when at least one Track* binding is registered.
+	/// </summary>
+	protected bool HasTracks => _bindings is { Count: > 0 };
+
+	/// <summary>
+	/// Suppresses <see cref="TrackIntent" /> publishes while view properties are written
+	/// from State (apply, or a manual projection). Nested scopes are counted.
+	/// </summary>
+	protected ProjectingScope BeginProjecting()
+	{
+		_projectingDepth++;
+		return new ProjectingScope(this);
 	}
 
 	/// <summary>
@@ -158,6 +206,7 @@ public abstract partial class DispatchableViewModel : ViewModel
 
 		// Notify and cascade outside the lock (children lock themselves).
 		IsAttached = true;
+		SyncApplyLoop(this, owner, true);
 
 		if (childrenToAttach is null)
 		{
@@ -206,6 +255,7 @@ public abstract partial class DispatchableViewModel : ViewModel
 		}
 
 		IsAttached = false;
+		SyncApplyLoop(this, owner, false);
 
 		if (childrenToDetach is null)
 		{
@@ -215,6 +265,35 @@ public abstract partial class DispatchableViewModel : ViewModel
 		foreach (var child in childrenToDetach)
 		{
 			child.Detach(this);
+		}
+	}
+
+	private static void SyncApplyLoop(DispatchableViewModel viewModel, object owner, bool include)
+	{
+		if (owner is DispatchableViewModel)
+		{
+			return;
+		}
+
+		IAppDispatcher dispatcher = owner as IAppDispatcher;
+		if ((dispatcher == null)
+			&& (AppBootstrap.DependencyProvider?.TryGetInstance<IAppDispatcher>(out var resolved) == true))
+		{
+			dispatcher = resolved;
+		}
+
+		if (dispatcher == null)
+		{
+			return;
+		}
+
+		if (include)
+		{
+			dispatcher.Track(viewModel);
+		}
+		else
+		{
+			dispatcher.Release(viewModel);
 		}
 	}
 
@@ -279,6 +358,43 @@ public abstract partial class DispatchableViewModel : ViewModel
 	}
 
 	/// <summary>
+	/// Runs presentation work derived from already-tracked models (status text,
+	/// selected-row match, tooltips). Applies on the first tick, then whenever
+	/// another binding applies in the same tick. Does not consume pending flags.
+	/// Register after the <c> Track* </c> calls this work depends on.
+	/// </summary>
+	protected void TrackDerived(Action apply)
+	{
+		if (apply is null)
+		{
+			throw new ArgumentNullException(nameof(apply));
+		}
+
+		AddBinding(new DerivedPresentationBinding(apply));
+	}
+
+	/// <summary>
+	/// When the user changes the named ViewModel property, run publish (bus message).
+	/// Assignments made during <see cref="ApplyModelChanges" /> or
+	/// <see cref="BeginProjecting" /> do not publish.
+	/// </summary>
+	protected void TrackIntent(string propertyName, Action publish)
+	{
+		if (string.IsNullOrEmpty(propertyName))
+		{
+			throw new ArgumentException("Property name is required.", nameof(propertyName));
+		}
+
+		if (publish is null)
+		{
+			throw new ArgumentNullException(nameof(publish));
+		}
+
+		_intents ??= [];
+		_intents[propertyName] = publish;
+	}
+
+	/// <summary>
 	/// Reconciles a destination list from a pending source list each dispatch tick.
 	/// Source must implement <see cref="IDispatchPending" /> (e.g. <c> SpeedyList{T} </c>).
 	/// </summary>
@@ -304,6 +420,54 @@ public abstract partial class DispatchableViewModel : ViewModel
 		}
 
 		AddBinding(new CollectionDispatchBinding<TItem>(source, pending, destination, comparer, mode));
+	}
+
+	/// <summary>
+	/// Reconciles a presentation list from a pending source of a different item type
+	/// (model row → row ViewModel). Source must implement IDispatchPending.
+	/// create receives the source row. remove runs after a destination row is dropped.
+	/// </summary>
+	protected void TrackCollection<TSource, TDest>(
+		IList<TSource> source,
+		IList<TDest> destination,
+		Func<TSource, TDest, bool> same,
+		Func<TSource, TDest> create,
+		Action<TDest, TSource> update,
+		Action<TDest> remove)
+	{
+		if (source is null)
+		{
+			throw new ArgumentNullException(nameof(source));
+		}
+		if (destination is null)
+		{
+			throw new ArgumentNullException(nameof(destination));
+		}
+		if (same is null)
+		{
+			throw new ArgumentNullException(nameof(same));
+		}
+		if (create is null)
+		{
+			throw new ArgumentNullException(nameof(create));
+		}
+		if (update is null)
+		{
+			throw new ArgumentNullException(nameof(update));
+		}
+		if (remove is null)
+		{
+			throw new ArgumentNullException(nameof(remove));
+		}
+		if (source is not IDispatchPending pending)
+		{
+			throw new ArgumentException(
+				$"Source must implement {nameof(IDispatchPending)} (e.g. SpeedyList).",
+				nameof(source));
+		}
+
+		AddBinding(new ProjectedCollectionDispatchBinding<TSource, TDest>(
+			source, pending, destination, same, create, update, remove));
 	}
 
 	/// <summary>
@@ -445,10 +609,110 @@ public abstract partial class DispatchableViewModel : ViewModel
 		return binding;
 	}
 
+	/// <summary>
+	/// Map every public property on <typeparamref name="TContract" /> that exists on both
+	/// <paramref name="model" /> and <paramref name="view" />. Get-only members are one-way
+	/// (model → view). Members with a setter are two-way. <paramref name="view" /> must be this instance.
+	/// </summary>
+	protected IPropertyMap TrackProperties<TContract>(TContract model, TContract view)
+		where TContract : class
+	{
+		if (model is null)
+		{
+			throw new ArgumentNullException(nameof(model));
+		}
+		if (view is null)
+		{
+			throw new ArgumentNullException(nameof(view));
+		}
+		if (!ReferenceEquals(view, this))
+		{
+			throw new ArgumentException("View must be this ViewModel.", nameof(view));
+		}
+		if (model is not ITrackPropertyChanges changes)
+		{
+			throw new ArgumentException(
+				$"Model must implement {nameof(ITrackPropertyChanges)}.",
+				nameof(model));
+		}
+
+		var binding = new PropertyMapBinding(model, changes, this);
+		AddBinding(binding);
+
+		var contract = SourceReflector.GetSourceType(typeof(TContract));
+		foreach (var property in contract.GetProperties())
+		{
+			if (property.IsIndexer
+				|| property.IsStatic
+				|| !property.CanRead
+				|| !IsMappableContractPropertyType(property.PropertyInfo.PropertyType))
+			{
+				continue;
+			}
+
+			if (property.CanWrite)
+			{
+				binding.MapTwoWay(property.Name);
+			}
+			else
+			{
+				binding.MapOneWay(property.Name);
+			}
+		}
+
+		return binding;
+	}
+
+	private static bool IsMappableContractPropertyType(Type type)
+	{
+		if (type == typeof(string))
+		{
+			return true;
+		}
+
+		if (type.IsEnum || type.IsPrimitive)
+		{
+			return true;
+		}
+
+		return (type == typeof(decimal))
+			|| (type == typeof(DateTime))
+			|| (type == typeof(DateTimeOffset))
+			|| (type == typeof(Guid))
+			|| (type == typeof(TimeSpan));
+	}
+
+	protected override void OnPropertyChanged<TValue>(string propertyName, TValue oldValue, TValue newValue)
+	{
+		base.OnPropertyChanged(propertyName, oldValue, newValue);
+		TryPublishIntent(propertyName);
+	}
+
 	private void AddBinding(IDispatchBinding binding)
 	{
 		_bindings ??= [];
 		_bindings.Add(binding);
+	}
+
+	private void EndProjecting()
+	{
+		if (_projectingDepth > 0)
+		{
+			_projectingDepth--;
+		}
+	}
+
+	private void TryPublishIntent(string propertyName)
+	{
+		if (IsProjecting || (_intents is null) || string.IsNullOrEmpty(propertyName))
+		{
+			return;
+		}
+
+		if (_intents.TryGetValue(propertyName, out var publish))
+		{
+			publish();
+		}
 	}
 
 	/// <summary>
@@ -472,9 +736,33 @@ public abstract partial class DispatchableViewModel : ViewModel
 			return;
 		}
 
+		var applied = false;
+		List<DerivedPresentationBinding> derived = null;
+
 		foreach (var binding in _bindings)
 		{
+			if (binding is DerivedPresentationBinding derivedBinding)
+			{
+				derived ??= [];
+				derived.Add(derivedBinding);
+				continue;
+			}
+
 			if (binding.HasPendingChanges())
+			{
+				binding.ApplyPendingChanges();
+				applied = true;
+			}
+		}
+
+		if (derived is null)
+		{
+			return;
+		}
+
+		foreach (var binding in derived)
+		{
+			if (applied || binding.NeedsSeed)
 			{
 				binding.ApplyPendingChanges();
 			}
@@ -503,6 +791,16 @@ public abstract partial class DispatchableViewModel : ViewModel
 
 		foreach (var binding in _bindings)
 		{
+			if (binding is DerivedPresentationBinding derived)
+			{
+				if (derived.NeedsSeed)
+				{
+					return true;
+				}
+
+				continue;
+			}
+
 			if (binding.HasPendingChanges())
 			{
 				return true;
@@ -521,13 +819,156 @@ public abstract partial class DispatchableViewModel : ViewModel
 				return [];
 			}
 
-			return _dispatchChildren.ToArray();
+			return [.. _dispatchChildren];
 		}
 	}
 
 	#endregion
 
 	#region Classes
+
+	/// <summary>
+	/// Ends a <see cref="BeginProjecting" /> scope. Nested scopes are counted.
+	/// </summary>
+	public readonly struct ProjectingScope : IDisposable
+	{
+		#region Fields
+
+		private readonly DispatchableViewModel _owner;
+
+		#endregion
+
+		#region Constructors
+
+		internal ProjectingScope(DispatchableViewModel owner)
+		{
+			_owner = owner;
+		}
+
+		#endregion
+
+		#region Methods
+
+		public void Dispose()
+		{
+			_owner?.EndProjecting();
+		}
+
+		#endregion
+	}
+
+	private sealed class ProjectedCollectionDispatchBinding<TSource, TDest> : IDispatchBinding
+	{
+		#region Fields
+
+		private readonly Func<TSource, TDest> _create;
+		private readonly IList<TDest> _destination;
+		private readonly IDispatchPending _pending;
+		private readonly Action<TDest> _remove;
+		private readonly Func<TSource, TDest, bool> _same;
+		private readonly IList<TSource> _source;
+		private readonly Action<TDest, TSource> _update;
+
+		#endregion
+
+		#region Constructors
+
+		public ProjectedCollectionDispatchBinding(
+			IList<TSource> source,
+			IDispatchPending pending,
+			IList<TDest> destination,
+			Func<TSource, TDest, bool> same,
+			Func<TSource, TDest> create,
+			Action<TDest, TSource> update,
+			Action<TDest> remove)
+		{
+			_source = source;
+			_pending = pending;
+			_destination = destination;
+			_same = same;
+			_create = create;
+			_update = update;
+			_remove = remove;
+		}
+
+		#endregion
+
+		#region Methods
+
+		public void ApplyPendingChanges()
+		{
+			if (!_pending.HasPending)
+			{
+				return;
+			}
+
+			ReconcileProjected(_source, _destination, _same, _create, _update, _remove);
+			_pending.ClearHasPending();
+		}
+
+		public bool HasPendingChanges()
+		{
+			return _pending.HasPending;
+		}
+
+		private static void ReconcileProjected(
+			IList<TSource> source,
+			IList<TDest> destination,
+			Func<TSource, TDest, bool> same,
+			Func<TSource, TDest> create,
+			Action<TDest, TSource> update,
+			Action<TDest> remove)
+		{
+			for (var i = 0; i < source.Count; i++)
+			{
+				var item = source[i];
+				var destIndex = -1;
+				for (var d = 0; d < destination.Count; d++)
+				{
+					if (same(item, destination[d]))
+					{
+						destIndex = d;
+						break;
+					}
+				}
+
+				if (destIndex < 0)
+				{
+					var row = create(item);
+					update(row, item);
+					if (i < destination.Count)
+					{
+						destination.Insert(i, row);
+					}
+					else
+					{
+						destination.Add(row);
+					}
+
+					continue;
+				}
+
+				if (destIndex != i)
+				{
+					var existing = destination[destIndex];
+					destination.RemoveAt(destIndex);
+					destination.Insert(Math.Min(i, destination.Count), existing);
+					destIndex = i;
+				}
+
+				update(destination[destIndex], item);
+			}
+
+			while (destination.Count > source.Count)
+			{
+				var removed = destination[destination.Count - 1];
+				destination.RemoveAt(destination.Count - 1);
+				remove(removed);
+			}
+		}
+
+		#endregion
+	}
 
 	private sealed class CollectionDispatchBinding<TItem> : IDispatchBinding
 	{
@@ -796,6 +1237,49 @@ public abstract partial class DispatchableViewModel : ViewModel
 		public bool HasPendingChanges()
 		{
 			return _model.Version != _view.Version;
+		}
+
+		#endregion
+	}
+
+	/// <summary>
+	/// Presentation derived from other Track* bindings. Applied after those bindings.
+	/// </summary>
+	private sealed class DerivedPresentationBinding : IDispatchBinding
+	{
+		#region Fields
+
+		private readonly Action _apply;
+		private bool _seeded;
+
+		#endregion
+
+		#region Constructors
+
+		public DerivedPresentationBinding(Action apply)
+		{
+			_apply = apply;
+		}
+
+		#endregion
+
+		#region Properties
+
+		public bool NeedsSeed => !_seeded;
+
+		#endregion
+
+		#region Methods
+
+		public void ApplyPendingChanges()
+		{
+			_apply();
+			_seeded = true;
+		}
+
+		public bool HasPendingChanges()
+		{
+			return !_seeded;
 		}
 
 		#endregion

@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFrameworks>net10.0;net10.0-android;net10.0-browser;net10.0-ios;net10.0-windows10.0.26100.0;</TargetFrameworks>
+		<TargetFrameworks>net10.0;net10.0-android;net10.0-browser;net10.0-ios;net10.0-windows10.0.26100.0</TargetFrameworks>
 		<UseWindowsForms Condition="'$(TargetFramework)' == 'net10.0-windows10.0.26100.0'">true</UseWindowsForms>
 		<SupportedOSPlatformVersion Condition="'$(TargetFramework)' == 'net10.0-android'">35</SupportedOSPlatformVersion>
 		<AssemblyTitle>Cornerstone.Avalonia</AssemblyTitle>
@@ -9,6 +9,7 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<NoWarn>$(NoWarn);IL2046;IL2092;MSB3277;</NoWarn>
 	</PropertyGroup>
+	<Import Project="..\Package.props" />
 	<ItemGroup>
 		<Compile Remove="Platforms\**" />
 		<None Include="Platforms\**" />
@@ -32,13 +33,13 @@
 	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
 		<Compile Include="Platforms\Android\**\*.cs" />
 		<PackageReference Include="Avalonia.Android" Version="$(AvaloniaVersion)" />
-		<PackageReference Include="Xamarin.AndroidX.Camera.Core" Version="1.5.1" />
-		<PackageReference Include="Xamarin.AndroidX.Camera.Lifecycle" Version="1.5.1" />
-		<PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.5.1" />
-		<PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.5.1" />
+		<PackageReference Include="Xamarin.AndroidX.Camera.Core" Version="1.6.1.1" />
+		<PackageReference Include="Xamarin.AndroidX.Camera.Lifecycle" Version="1.6.1.1" />
+		<PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.6.1.1" />
+		<PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.6.1.1" />
 		<!-- Align with Avalonia.Android's AndroidX Lifecycle 2.10 constraint -->
-		<PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData.Core" Version="2.10.0.2" />
-		<PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData" Version="2.10.0.2" />
+		<PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData.Core" Version="2.11.0.1" />
+		<PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData" Version="2.11.0.1" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0-browser'">
 		<Compile Include="Platforms\Browser\**\*.cs" />

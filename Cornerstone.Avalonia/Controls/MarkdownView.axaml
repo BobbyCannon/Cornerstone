@@ -12,6 +12,7 @@
 		<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
 		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
 		<Setter Property="Padding" Value="10" />
+		<Setter Property="UseLayoutRounding" Value="True" />
 		<Setter Property="Template">
 			<ControlTemplate>
 				<Border Background="{TemplateBinding Background}"

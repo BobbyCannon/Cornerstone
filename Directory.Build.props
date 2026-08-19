@@ -5,7 +5,7 @@
 		<Company>Bobby Cannon</Company>
 		<Authors>Bobby Cannon</Authors>
 		<Copyright>© Copyright 2014</Copyright>
-		<Version>3.0.0.0</Version>
+		<Version>3.0.230.26326</Version>
 		<AssemblyVersion>$(Version)</AssemblyVersion>
 		<FileVersion>$(Version)</FileVersion>
 		<AvaloniaVersion>12.1.1</AvaloniaVersion>
@@ -24,9 +24,10 @@
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>disable</Nullable>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<NoWarn>$(NoWarn);AVA2001;CA1416;CS0419;CS0618;CS8002;IL2026;IL2037;IL2045;IL2055;IL2057;IL2060;IL2065;IL2067;IL2070;IL2072;IL2075;IL2080;IL2091;IL2098;IL2104;IL3000;IL3002;IL3050;IL3053;IL3058;IL3073;MSB3277;NETSDK1144;</NoWarn>
+		<NoWarn>$(NoWarn);AVA2001;CA1416;CS0419;CS0618;CS1574;CS8002;IL2026;IL2037;IL2045;IL2055;IL2057;IL2060;IL2065;IL2067;IL2070;IL2072;IL2075;IL2080;IL2091;IL2098;IL2104;IL3000;IL3002;IL3050;IL3053;IL3058;IL3073;MSB3277;NETSDK1144;</NoWarn>
 		<WarningsNotAsErrors>$(WarningsNotAsErrors);AVA2001</WarningsNotAsErrors>
-		<!-- Nuget -->
+		<!-- Nuget: opt in via Package.props. Samples, tests, and apps must not pack. -->
+		<IsPackable>false</IsPackable>
 		<Description>Cornerstone in as development framework to help speed up and make building applications and systems much easier.</Description>
 		<PackageIcon>Cornerstone.png</PackageIcon>
 		<PackageIconUrl>https://raw.githubusercontent.com/BobbyCannon/Cornerstone/master/Cornerstone.png</PackageIconUrl>
@@ -46,6 +47,6 @@
 		</None>
 	</ItemGroup>
 	<ItemGroup Condition="$(MSBuildProjectName)!='Cornerstone.Generators' AND $(MSBuildProjectName)!='Cornerstone.Generators.Vsix' AND $(MSBuildProjectName)!='Cornerstone.Generators.UnitTests'">
-		<ProjectReference Include="$(MSBuildThisFileDirectory)..\Cornerstone\Cornerstone.Generators\Cornerstone.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+		<ProjectReference Include="$(MSBuildThisFileDirectory)..\Cornerstone\Cornerstone.Generators\Cornerstone.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" SetTargetFramework="TargetFramework=netstandard2.0" GlobalPropertiesToRemove="TargetFrameworks" />
 	</ItemGroup>
 </Project>

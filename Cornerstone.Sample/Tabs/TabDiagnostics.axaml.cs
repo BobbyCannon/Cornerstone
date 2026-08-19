@@ -90,8 +90,6 @@ public partial class TabDiagnostics : CornerstoneUserControl
 
 			// Feature load root: participates in CollectPending / Apply / apply chart.
 			Session.LoadSimulation.Attach(this);
-			_appDispatcher.Track(Session.LoadSimulation);
-
 			ViewModel.Attach(this);
 
 			// One wake so capture + apply run soon after open.
@@ -113,7 +111,6 @@ public partial class TabDiagnostics : CornerstoneUserControl
 			ViewModel.IsSimulatingLoad = false;
 			ViewModel.Detach(this);
 
-			_appDispatcher.Release(Session.LoadSimulation);
 			Session.LoadSimulation.Detach(this);
 
 			if (ReferenceEquals(_appDispatcher.DiagnosticsCapture, Session))

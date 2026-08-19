@@ -1,7 +1,7 @@
 namespace Cornerstone.GrokMonitor.GrokUsage.Models;
 
 /// <summary>
-/// ARGB channels for session-row heat tint (UI-free).
+/// Session-row heat: theme step plus alpha (UI-free).
 /// </summary>
 public readonly struct TokenHeatColor
 {
@@ -10,7 +10,7 @@ public readonly struct TokenHeatColor
 	/// <summary>
 	/// Transparent / no heat.
 	/// </summary>
-	public static readonly TokenHeatColor None = new(0, 0, 0, 0);
+	public static readonly TokenHeatColor None = new(0, 0);
 
 	#endregion
 
@@ -19,12 +19,10 @@ public readonly struct TokenHeatColor
 	/// <summary>
 	/// Creates heat channels.
 	/// </summary>
-	public TokenHeatColor(byte a, byte r, byte g, byte b)
+	public TokenHeatColor(byte a, int themeIndex)
 	{
 		A = a;
-		R = r;
-		G = g;
-		B = b;
+		ThemeIndex = themeIndex;
 	}
 
 	#endregion
@@ -37,24 +35,14 @@ public readonly struct TokenHeatColor
 	public byte A { get; }
 
 	/// <summary>
-	/// Blue 0–255.
-	/// </summary>
-	public byte B { get; }
-
-	/// <summary>
-	/// Green 0–255.
-	/// </summary>
-	public byte G { get; }
-
-	/// <summary>
 	/// True when the tint is fully transparent.
 	/// </summary>
 	public bool IsNone => A == 0;
 
 	/// <summary>
-	/// Red 0–255.
+	/// Theme shade index 0–9 for ThemeColor00–ThemeColor09.
 	/// </summary>
-	public byte R { get; }
+	public int ThemeIndex { get; }
 
 	#endregion
 }

@@ -1,0 +1,40 @@
+<UserControl
+		xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignHeight="800" d:DesignWidth="600"
+		x:Class="Cornerstone.Sample.Tabs.TabTokenTextFilter"
+		x:DataType="tabs:TabTokenTextFilter"
+		x:Name="Root">
+	<DockPanel Margin="10">
+		<TextBlock DockPanel.Dock="Top"
+				Classes="Header"
+				HorizontalAlignment="Center"
+				Text="{x:Static tabs:TabTokenTextFilter.HeaderName}" />
+		<TextBlock DockPanel.Dock="Top"
+				Margin="0,10,0,4"
+				TextWrapping="Wrap"
+				Text="Whitespace tokens are AND. Each token may match name, aisle, or note as a substring. Try honey pie or wheat bakery." />
+		<TextBox DockPanel.Dock="Top"
+				Classes="Search"
+				PlaceholderText="filter"
+				Text="{Binding FilterText, Mode=TwoWay}" />
+		<ItemsControl ItemsSource="{Binding Items}">
+			<ItemsControl.ItemTemplate>
+				<DataTemplate DataType="tabs:TokenTextFilterSampleItem">
+					<Border BorderBrush="{DynamicResource BorderBrush}"
+							BorderThickness="0,0,0,1"
+							Padding="8,10">
+						<StackPanel>
+							<TextBlock Classes="HeaderThree" Text="{Binding Name}" />
+							<TextBlock Classes="Dim" Text="{Binding Aisle}" />
+							<TextBlock Classes="Dim" Text="{Binding Note}" />
+						</StackPanel>
+					</Border>
+				</DataTemplate>
+			</ItemsControl.ItemTemplate>
+		</ItemsControl>
+	</DockPanel>
+</UserControl>

@@ -24,7 +24,7 @@ public partial class AppWindow : CornerstoneWindow<AppViewModel>
 	{
 		if (!Design.IsDesignMode)
 		{
-			RestoreWindowLocation(ViewModel.State.Settings.WindowLocation);
+			RestoreWindowLocation(ViewModel.Settings.WindowLocation);
 		}
 
 		InitializeComponent();
@@ -49,8 +49,8 @@ public partial class AppWindow : CornerstoneWindow<AppViewModel>
 
 	protected override void OnClosing(WindowClosingEventArgs e)
 	{
-		ViewModel.State.Settings.WindowLocation ??= new WindowLocation();
-		ViewModel.State.Settings.WindowLocation.UpdateWith(GetWindowLocation());
+		ViewModel.Settings.WindowLocation ??= new WindowLocation();
+		ViewModel.Settings.WindowLocation.UpdateWith(GetWindowLocation());
 		base.OnClosing(e);
 	}
 

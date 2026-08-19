@@ -3,6 +3,7 @@
 using System;
 using System.IO;
 using Cornerstone.GrokMonitor.GrokUsage;
+using Cornerstone.GrokMonitor.GrokUsage.Services;
 using Cornerstone.Runtime;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

@@ -55,11 +55,21 @@ public class ClipboardManager
 
 	public bool CanCut()
 	{
+		if (_viewModel.IsReadOnly)
+		{
+			return false;
+		}
+
 		return GetDeletableRangeText(GetCutRequestRange()) != null;
 	}
 
 	public bool CanPaste()
 	{
+		if (_viewModel.IsReadOnly)
+		{
+			return false;
+		}
+
 		return _viewModel.ReadOnlySectionProvider?.CanModify(_viewModel.Caret.Offset) ?? true;
 	}
 

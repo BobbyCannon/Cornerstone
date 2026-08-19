@@ -56,6 +56,16 @@ public abstract class ViewManagerForDatabase<TModel, TEntity, TEntityKey, TDatab
 
 	#region Methods
 
+	public override void LoadLifecycle()
+	{
+		if (!IsLifecycleLoaded())
+		{
+			LoadFromDatabase();
+		}
+
+		base.LoadLifecycle();
+	}
+
 	/// <summary>
 	/// Called to loads the views from the database.
 	/// This should be call only once and the first call.

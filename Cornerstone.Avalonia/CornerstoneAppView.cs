@@ -25,7 +25,11 @@ public partial class CornerstoneAppView<T>
 			return;
 		}
 
-		DataContext ??= CreateDesignData();
+		var designData = CreateDesignData();
+		if (designData != null)
+		{
+			DataContext ??= designData;
+		}
 		if (DataContext is ViewModel viewModel
 			&& !viewModel.IsLifecycleInitialized())
 		{

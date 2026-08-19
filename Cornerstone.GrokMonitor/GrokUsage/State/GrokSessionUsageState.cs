@@ -14,7 +14,7 @@ namespace Cornerstone.GrokMonitor.GrokUsage.State;
 [SourceReflection]
 [Notifiable(["*"])]
 [Updateable(UpdateableAction.All, ["*"])]
-public partial class GrokSessionUsageState : CornerstoneObject
+public partial class GrokSessionUsageState : CornerstoneObject, IGrokSessionUsage, IUpdateable<IGrokSessionUsage>
 {
 	#region Properties
 
@@ -44,6 +44,11 @@ public partial class GrokSessionUsageState : CornerstoneObject
 	public partial DateTimeOffset FirstInferenceAt { get; set; }
 
 	/// <summary>
+	/// True when <see cref="UsagePercent" /> is an allocated credit share (not just zero / unknown).
+	/// </summary>
+	public partial bool HasAllocatedUsage { get; set; }
+
+	/// <summary>
 	/// Number of inference_done events attributed to this session.
 	/// Zero is normal when only summary.json exists (no log rows yet / different home log).
 	/// </summary>
@@ -53,12 +58,6 @@ public partial class GrokSessionUsageState : CornerstoneObject
 	/// Latest inference timestamp; default when none.
 	/// </summary>
 	public partial DateTimeOffset LastInferenceAt { get; set; }
-
-	/// <summary>
-	/// Formatted last inference timestamp for display in the Sessions grid.
-	/// Returns empty string when no inference time is known.
-	/// </summary>
-	public string LastInferenceAtStr => LastInferenceAt == default ? string.Empty : LastInferenceAt.ToString("u");
 
 	/// <summary>
 	/// Message count from session summary when known.
@@ -107,14 +106,56 @@ public partial class GrokSessionUsageState : CornerstoneObject
 	public partial double UsagePercent { get; set; }
 
 	/// <summary>
-	/// True when <see cref="UsagePercent" /> is an allocated credit share (not just zero / unknown).
-	/// </summary>
-	public partial bool HasAllocatedUsage { get; set; }
-
-	/// <summary>
 	/// Working directory when known; empty otherwise.
 	/// </summary>
 	public partial string WorkingDirectory { get; set; }
+
+	#endregion
+}
+
+/// <summary>
+/// Shared session usage contract for State and the usage-grid row ViewModel.
+/// Setters exist so UpdateWith can copy; the grid does not write these back to State.
+/// </summary>
+public interface IGrokSessionUsage
+{
+	#region Properties
+
+	long CachedPromptTokens { get; set; }
+
+	long CompletionTokens { get; set; }
+
+	string CurrentModelId { get; set; }
+
+	string EventsPath { get; set; }
+
+	DateTimeOffset FirstInferenceAt { get; set; }
+
+	bool HasAllocatedUsage { get; set; }
+
+	int InferenceCount { get; set; }
+
+	DateTimeOffset LastInferenceAt { get; set; }
+
+	int MessageCount { get; set; }
+
+	long PromptTokens { get; set; }
+
+	long ReasoningTokens { get; set; }
+
+	string SessionDirectory { get; set; }
+
+	string SessionId { get; set; }
+
+	string SummaryPath { get; set; }
+
+	string Title { get; set; }
+
+	long TotalTokens { get; set; }
+
+	double UsagePercent { get; set; }
+
+	string WorkingDirectory { get; set; }
 
 	#endregion
 }

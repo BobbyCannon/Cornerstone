@@ -150,5 +150,33 @@ public class StartupProfilerTests : CornerstoneUnitTest
 		IsTrue(profiler.IsCompleted);
 	}
 
+	[TestMethod]
+	public void ToReportOmitsFastLeavesAndKeepsAncestors()
+	{
+		var profiler = new StartupProfiler(this);
+
+		using (profiler.Start("Outer"))
+		{
+			profiler.Time("Tiny", () => IncrementTime(milliseconds: 5));
+			profiler.Time("Warm", () => IncrementTime(milliseconds: 40));
+			profiler.Time("Hot", () => IncrementTime(milliseconds: 150));
+		}
+
+		profiler.Complete();
+
+		var slow = profiler.ToReport(StartupProfileDetail.Slow);
+		IsTrue(slow.Contains("Outer"));
+		IsTrue(slow.Contains("Warm"));
+		IsTrue(slow.Contains("Hot"));
+		IsFalse(slow.Contains("Tiny"));
+
+		var slowest = profiler.ToReport(StartupProfileDetail.Slowest);
+		IsTrue(slowest.Contains(StartupProfiler.RootName));
+		IsTrue(slowest.Contains("Outer"));
+		IsTrue(slowest.Contains("Hot"));
+		IsFalse(slowest.Contains("Warm"));
+		IsFalse(slowest.Contains("Tiny"));
+	}
+
 	#endregion
 }

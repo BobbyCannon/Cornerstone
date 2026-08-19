@@ -56,26 +56,50 @@
 						<DockPanel Margin="5">
 							<WrapPanel DockPanel.Dock="Top">
 								<Button Click="DebounceOnClick">Debounce</Button>
-								<Button Click="DebounceCancelOnClick">Cancel</Button>
-								<Button Click="DebounceResetOnClick">Reset</Button>
-								<NumericUpDown
-										ControlHelper.DisplayName="Debounce Interval"
-										Minimum="1"
-										Maximum="10"
-										Increment="1"
-										MinWidth="260"
-										HorizontalContentAlignment="Right"
-										Value="{Binding Debounce.Interval, Mode=TwoWay, Converter={StaticResource TimeSpanConverter}}">
-									<NumericUpDown.InnerRightContent>
-										<TextBlock Text="secs" />
-									</NumericUpDown.InnerRightContent>
-								</NumericUpDown>
+								<Button Click="DebounceCancelOnClick"
+										IsEnabled="{Binding UseManager}">
+									Cancel
+								</Button>
+								<Button Click="DebounceResetOnClick"
+										IsEnabled="{Binding UseManager}">
+									Reset
+								</Button>
+								<Grid MinWidth="260">
+									<NumericUpDown
+											ControlHelper.DisplayName="Debounce Interval"
+											Minimum="1"
+											Maximum="10"
+											Increment="1"
+											MinWidth="260"
+											HorizontalContentAlignment="Right"
+											IsVisible="{Binding UseManager}"
+											Value="{Binding Debounce.Interval, Mode=TwoWay, Converter={StaticResource TimeSpanConverter}}">
+										<NumericUpDown.InnerRightContent>
+											<TextBlock Text="secs" />
+										</NumericUpDown.InnerRightContent>
+									</NumericUpDown>
+									<NumericUpDown
+											ControlHelper.DisplayName="Debounce Interval"
+											Minimum="1"
+											Maximum="10"
+											Increment="1"
+											MinWidth="260"
+											HorizontalContentAlignment="Right"
+											IsVisible="{Binding UseSimple}"
+											Value="{Binding SimpleDebounceInterval, Mode=TwoWay, Converter={StaticResource TimeSpanConverter}}">
+										<NumericUpDown.InnerRightContent>
+											<TextBlock Text="secs" />
+										</NumericUpDown.InnerRightContent>
+									</NumericUpDown>
+								</Grid>
 								<ToggleSwitch
+										IsEnabled="{Binding UseManager}"
 										IsChecked="{Binding Debounce.AllowTriggerDuringProcessing, Mode=TwoWay}"
 										OnContent="Allow Trigger During Processing"
 										OffContent="Allow Trigger During Processing" />
 							</WrapPanel>
-							<WrapPanel DockPanel.Dock="Top">
+							<WrapPanel DockPanel.Dock="Top"
+									IsEnabled="{Binding UseManager}">
 								<CheckBox IsChecked="{Binding Debounce.IsTriggered, Mode=OneWay}"
 										IsEnabled="False">
 									Is Triggered
@@ -103,30 +127,55 @@
 						<DockPanel Margin="5">
 							<WrapPanel DockPanel.Dock="Top">
 								<Button Click="ThrottleOnClick">Throttle</Button>
-								<Button Click="ThrottleCancelOnClick">Cancel</Button>
-								<Button Click="ThrottleResetOnClick">Reset</Button>
-								<NumericUpDown
-										ControlHelper.DisplayName="Throttle Interval"
-										Minimum="1"
-										Maximum="10"
-										Increment="1"
-										MinWidth="260"
-										HorizontalContentAlignment="Right"
-										Value="{Binding Throttle.Interval, Mode=TwoWay, Converter={StaticResource TimeSpanConverter}}">
-									<NumericUpDown.InnerRightContent>
-										<TextBlock Text="secs" />
-									</NumericUpDown.InnerRightContent>
-								</NumericUpDown>
+								<Button Click="ThrottleCancelOnClick"
+										IsEnabled="{Binding UseManager}">
+									Cancel
+								</Button>
+								<Button Click="ThrottleResetOnClick"
+										IsEnabled="{Binding UseManager}">
+									Reset
+								</Button>
+								<Grid MinWidth="260">
+									<NumericUpDown
+											ControlHelper.DisplayName="Throttle Interval"
+											Minimum="1"
+											Maximum="10"
+											Increment="1"
+											MinWidth="260"
+											HorizontalContentAlignment="Right"
+											IsVisible="{Binding UseManager}"
+											Value="{Binding Throttle.Interval, Mode=TwoWay, Converter={StaticResource TimeSpanConverter}}">
+										<NumericUpDown.InnerRightContent>
+											<TextBlock Text="secs" />
+										</NumericUpDown.InnerRightContent>
+									</NumericUpDown>
+									<NumericUpDown
+											ControlHelper.DisplayName="Throttle Interval"
+											Minimum="1"
+											Maximum="10"
+											Increment="1"
+											MinWidth="260"
+											HorizontalContentAlignment="Right"
+											IsVisible="{Binding UseSimple}"
+											Value="{Binding SimpleThrottleInterval, Mode=TwoWay, Converter={StaticResource TimeSpanConverter}}">
+										<NumericUpDown.InnerRightContent>
+											<TextBlock Text="secs" />
+										</NumericUpDown.InnerRightContent>
+									</NumericUpDown>
+								</Grid>
 								<ToggleSwitch
+										IsEnabled="{Binding UseManager}"
 										IsChecked="{Binding Throttle.AllowTriggerDuringProcessing, Mode=TwoWay}"
 										OnContent="Allow Trigger During Processing"
 										OffContent="Allow Trigger During Processing" />
 								<ToggleSwitch
+										IsEnabled="{Binding UseManager}"
 										IsChecked="{Binding Throttle.QueueTriggers, Mode=TwoWay}"
 										OnContent="Queue Triggers"
 										OffContent="Queue Triggers" />
 							</WrapPanel>
-							<WrapPanel DockPanel.Dock="Top">
+							<WrapPanel DockPanel.Dock="Top"
+									IsEnabled="{Binding UseManager}">
 								<CheckBox IsChecked="{Binding Throttle.IsTriggered, Mode=OneWay}"
 										IsEnabled="False">
 									Is Triggered
@@ -159,11 +208,22 @@
 						Padding="0,0,0,20"
 						Margin="0,10,0,0">
 					<WrapPanel HorizontalAlignment="Center">
+						<RadioButton
+								GroupName="DebounceThrottleImplementation"
+								Width="90"
+								Content="Simple"
+								IsChecked="{Binding UseSimple, Mode=TwoWay}" />
+						<RadioButton
+								GroupName="DebounceThrottleImplementation"
+								Width="90"
+								Content="Manager"
+								IsChecked="{Binding UseManager, Mode=TwoWay}" />
 						<NumericUpDown
 								ControlHelper.DisplayName="Work Time"
 								Minimum="1"
 								Maximum="10"
 								Increment="1"
+								Margin="20,0,0,0"
 								Width="220"
 								Value="{Binding WorkDelay, Mode=TwoWay}">
 							<NumericUpDown.InnerRightContent>
@@ -171,6 +231,7 @@
 							</NumericUpDown.InnerRightContent>
 						</NumericUpDown>
 						<ToggleSwitch
+								IsEnabled="{Binding UseManager}"
 								IsChecked="{Binding WorkCanCancel, Mode=TwoWay}"
 								OnContent="Allow Work To Cancel"
 								OffContent="Allow Work To Cancel" />
@@ -190,13 +251,13 @@
 					<WrapPanel HorizontalAlignment="Center">
 						<Button Click="DebounceOnClick">Debounce</Button>
 						<Button Click="DebounceCancelOnClick"
-								IsVisible="{Binding WorkCanCancel}">
+								IsEnabled="{Binding UseManager}">
 							Cancel
 						</Button>
 						<TextBlock Text="-" />
 						<Button Click="ThrottleOnClick">Throttle</Button>
 						<Button Click="ThrottleCancelOnClick"
-								IsVisible="{Binding WorkCanCancel}">
+								IsEnabled="{Binding UseManager}">
 							Cancel
 						</Button>
 					</WrapPanel>

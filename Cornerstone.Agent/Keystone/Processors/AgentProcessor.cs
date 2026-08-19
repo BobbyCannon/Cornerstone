@@ -20,8 +20,8 @@ using LLama.Transformers;
 namespace Cornerstone.Agent.Keystone.Processors;
 
 /// <summary>
-/// Owns chat session / inference. Collaborates with <see cref="ModelsProcessor"/>
-/// for deferred load: EnsureLoaded → rebuild session if model changed → infer.
+/// Owns chat session / inference. Loads weights via <see cref="ModelWeightsRuntime"/>
+/// (EnsureLoaded → rebuild session if model changed → infer).
 /// </summary>
 [SourceReflection]
 [DependencyInjected]
@@ -47,7 +47,7 @@ public partial class AgentProcessor : AppProcessor
 	private readonly SemaphoreSlim _inferenceLock;
 	private bool _isThinking;
 	private ChatHistory _messageHistory;
-	private readonly ModelsProcessor _models;
+	private readonly ModelWeightsRuntime _weights;
 	private string _sessionModelPath;
 	private bool _supportsNativeTemplate;
 
@@ -56,10 +56,10 @@ public partial class AgentProcessor : AppProcessor
 	#region Constructors
 
 	[DependencyInjectionConstructor]
-	public AgentProcessor(AppBus bus, AppState state, ModelsProcessor modelsProcessor)
+	public AgentProcessor(AppBus bus, AppState state, ModelWeightsRuntime weights)
 		: base(bus, state)
 	{
-		_models = modelsProcessor;
+		_weights = weights;
 		_inferenceLock = new SemaphoreSlim(1, 1);
 		_messageHistory = new ChatHistory();
 	}
@@ -129,7 +129,7 @@ public partial class AgentProcessor : AppProcessor
 						: $"[Load] Switch requested: {Label(loadedBefore)} → {Label(desiredPath)}",
 				LogLevel.Information);
 
-			var loaded = await _models.EnsureLoadedAsync(desiredPath, cancellationToken).ConfigureAwait(false);
+			var loaded = await _weights.EnsureLoadedAsync(desiredPath, cancellationToken).ConfigureAwait(false);
 			if (!loaded)
 			{
 				Log("[Load] Failed.", LogLevel.Error);
@@ -212,14 +212,13 @@ public partial class AgentProcessor : AppProcessor
 
 	public override void InitializeLifecycle()
 	{
-		// ModelsProcessor unloads weights on switch; free session first (Editor: Unloaded → DisposeContext).
-		_models.BeforeWeightsUnload = OnBeforeWeightsUnload;
+		_weights.Unloading += OnBeforeWeightsUnload;
 		base.InitializeLifecycle();
 	}
 
 	public override void UninitializeLifecycle()
 	{
-		_models.BeforeWeightsUnload = null;
+		_weights.Unloading -= OnBeforeWeightsUnload;
 
 		DisposeContext();
 		_inferenceLock.Dispose();
@@ -234,7 +233,7 @@ public partial class AgentProcessor : AppProcessor
 	internal bool EnsureSessionForLoadedModel(out bool rebound)
 	{
 		rebound = false;
-		var weights = _models.GetLoadedWeights();
+		var weights = _weights.Weights;
 		var loadedPath = State.ModelState.LoadedModelPath;
 
 		if ((weights == null) || string.IsNullOrEmpty(loadedPath))
@@ -259,8 +258,8 @@ public partial class AgentProcessor : AppProcessor
 			FlashAttention = true
 		});
 
-		_executor = _models.GetLoadedLlavaWeights() != null
-			? new InteractiveExecutor(_context, _models.GetLoadedLlavaWeights())
+		_executor = _weights.LlavaWeights != null
+			? new InteractiveExecutor(_context, _weights.LlavaWeights)
 			: new InteractiveExecutor(_context);
 
 		// Keep existing message history (including prior turns). Seed system only if empty.
@@ -562,7 +561,7 @@ public partial class AgentProcessor : AppProcessor
 	}
 
 	/// <summary>
-	/// Called by <see cref="ModelsProcessor"/> immediately before disposing LLama weights.
+	/// Called immediately before native weights dispose.
 	/// </summary>
 	private void OnBeforeWeightsUnload()
 	{

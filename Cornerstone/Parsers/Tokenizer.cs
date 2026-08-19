@@ -86,11 +86,12 @@ public class Tokenizer : TextProcessor<Token>
 
 	public static Tokenizer GetByExtension(string extension, StringGapBuffer buffer, IQueue<Token> pool)
 	{
-		var value = extension?.ToLower();
-		if (value == null)
+		if (string.IsNullOrEmpty(extension))
 		{
 			return null;
 		}
+
+		var value = extension.TrimStart('.').ToLowerInvariant();
 		if (CSharpTokenizer.Extensions.Contains(value))
 		{
 			return new CSharpTokenizer(buffer, pool);

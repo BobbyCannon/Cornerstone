@@ -107,13 +107,13 @@ public abstract class HierarchyViewManagerForDatabase<TModel, TEntity, TEntityKe
 		return updatedViews;
 	}
 
-	public override void InitializeLifecycle()
+	public override void LoadLifecycle()
 	{
-		if (!IsLifecycleInitialized())
+		if (!IsLifecycleLoaded())
 		{
 			LoadFromDatabase();
 		}
-		base.InitializeLifecycle();
+		base.LoadLifecycle();
 	}
 
 	/// <summary>

@@ -37,7 +37,7 @@ public partial class SettingsTabView : CornerstoneUserControl<SettingsTabViewMod
 				return null;
 			}
 
-			return new SettingsTabViewModel(state, GetDispatcher());
+			return new SettingsTabViewModel(state.Settings);
 		}
 		catch
 		{

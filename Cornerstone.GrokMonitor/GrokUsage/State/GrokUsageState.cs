@@ -20,6 +20,15 @@ namespace Cornerstone.GrokMonitor.GrokUsage.State;
 [DependencyInjected]
 public partial class GrokUsageState : CornerstoneObject
 {
+	#region Constants
+
+	/// <summary>
+	/// Simulated-time multiplier while period replay is advancing the view clock.
+	/// </summary>
+	public const double ReplaySpeed = 1000;
+
+	#endregion
+
 	#region Constructors
 
 	[DependencyInjectionConstructor]
@@ -27,7 +36,6 @@ public partial class GrokUsageState : CornerstoneObject
 	{
 		Homes = [];
 		LastError = string.Empty;
-		IsViewLive = true;
 	}
 
 	#endregion
@@ -46,12 +54,6 @@ public partial class GrokUsageState : CornerstoneObject
 	/// Discovered Grok homes (~/.grok, ~/.grok-work, …). Re-scanned on EnsureHomes / refresh.
 	/// </summary>
 	public SpeedyList<GrokHomeUsageState> Homes { get; }
-
-	/// <summary>
-	/// When true, the GrokUsage view clock follows wall time (slider at live end).
-	/// When false, <see cref="ViewAsOf" /> is used as "now" for refresh/projection.
-	/// </summary>
-	public partial bool IsViewLive { get; set; }
 
 	/// <summary>
 	/// Last global error not tied to a single home refresh.
@@ -86,12 +88,6 @@ public partial class GrokUsageState : CornerstoneObject
 	/// Lower bound for inference timestamps; default means no filter.
 	/// </summary>
 	public partial DateTimeOffset SinceUtc { get; set; }
-
-	/// <summary>
-	/// Simulated "now" for the usage dashboard when <see cref="IsViewLive" /> is false.
-	/// Default is ignored while live.
-	/// </summary>
-	public partial DateTimeOffset ViewAsOf { get; set; }
 
 	#endregion
 

@@ -1,7 +1,6 @@
 ﻿#region References
 
 using System;
-using System.Linq;
 using Cornerstone.Collections;
 
 #endregion
@@ -89,16 +88,6 @@ public class StringGapBuffer : GapBuffer<char>, IStringBuffer
 		return true;
 	}
 
-	public void Load(params string[] values)
-	{
-		Clear();
-
-		foreach (var value in values)
-		{
-			Add(value);
-		}
-	}
-
 	public void Insert(int index, ReadOnlySpan<char> value)
 	{
 		InternalInsert(index, value, 0, value.Length);
@@ -117,11 +106,35 @@ public class StringGapBuffer : GapBuffer<char>, IStringBuffer
 		InternalInsert(index, spans.AfterGap, 0, spans.AfterGap.Length);
 	}
 
+	public void Load(params string[] values)
+	{
+		Clear();
+
+		foreach (var value in values)
+		{
+			Add(value);
+		}
+	}
+
 	public string Substring(int index, int length)
 	{
-		return length == 0
-			? string.Empty
-			: new string(Read(index, length).ToArray());
+		if (length == 0)
+		{
+			return string.Empty;
+		}
+
+		var spans = GetReadOnlySpans(index, length);
+		if (spans.AfterGap.IsEmpty)
+		{
+			return new string(spans.BeforeGap);
+		}
+
+		if (spans.BeforeGap.IsEmpty)
+		{
+			return new string(spans.AfterGap);
+		}
+
+		return string.Concat(spans.BeforeGap, spans.AfterGap);
 	}
 
 	public override string ToString()

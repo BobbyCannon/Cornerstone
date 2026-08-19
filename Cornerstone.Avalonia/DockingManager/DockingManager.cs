@@ -92,8 +92,8 @@ public partial class DockingManager : DockSplitPanel
 	#region Properties
 
 	/// <summary>
-	/// Optional AppDispatcher. When set, Activate/Deactivate also Track/Release dispatchable tabs.
-	/// Always stored on the root manager so float windows share one dispatcher host.
+	/// Host AppDispatcher. ActivateTab Track / DeactivateTab Release dispatchable tabs here.
+	/// Stored on the root so float windows share one host.
 	/// </summary>
 	public IAppDispatcher AppDispatcher
 	{
@@ -155,6 +155,11 @@ public partial class DockingManager : DockSplitPanel
 
 	public IRuntimeInformation RuntimeInformation { get; }
 
+	/// <summary>
+	/// Root tab lifecycle. Hosts should Track this and let parent phases run.
+	/// </summary>
+	public LifecycleTracker TabLifecycle => _tabLifecycle;
+
 	[StyledProperty]
 	public partial string WindowTitle { get; set; }
 
@@ -213,9 +218,9 @@ public partial class DockingManager : DockSplitPanel
 	}
 
 	/// <summary>
-	/// Own a tab's lifecycle (Init→Load→Start as far as the root host has gone) and
-	/// AppDispatcher Track when applicable. Idempotent. Always uses the root manager
-	/// so float windows share one lifecycle host.
+	/// Own a tab's lifecycle (Init→Load→Start as far as the root host has gone).
+	/// Also Track on AppDispatcher so apply runs once the view Attaches.
+	/// Always uses the root manager so float windows share one lifecycle host.
 	/// </summary>
 	public void ActivateTab(DockableTabModel tabModel)
 	{
@@ -240,7 +245,7 @@ public partial class DockingManager : DockSplitPanel
 	}
 
 	/// <summary>
-	/// Release a tab: AppDispatcher Release then Stop→Unload→Uninitialize. Idempotent.
+	/// Release a tab: AppDispatcher then Stop→Unload→Uninitialize. Idempotent.
 	/// </summary>
 	public void DeactivateTab(DockableTabModel tabModel)
 	{
@@ -252,7 +257,6 @@ public partial class DockingManager : DockSplitPanel
 		var root = RootDockingManager;
 		if (!root._activeTabs.Remove(tabModel))
 		{
-			// Still try Release in case lists drifted.
 			root._tabLifecycle.Release(tabModel);
 			return;
 		}
@@ -261,6 +265,7 @@ public partial class DockingManager : DockSplitPanel
 		{
 			root.AppDispatcher?.Release(dispatchable);
 		}
+
 		root._tabLifecycle.Release(tabModel);
 	}
 
@@ -471,7 +476,7 @@ public partial class DockingManager : DockSplitPanel
 	}
 
 	/// <summary>
-	/// Advance the root tab lifecycle host. Host (AppViewModel) should call these in cascade.
+	/// Advance the root tab lifecycle host. Prefer <see cref="TabLifecycle" /> via Track.
 	/// </summary>
 	public void InitializeLifecycle()
 	{

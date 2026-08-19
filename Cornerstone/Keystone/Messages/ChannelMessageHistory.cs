@@ -54,9 +54,9 @@ public class ChannelMessageHistory
 	public long Sequence { get; set; }
 
 	/// <summary>
-	/// Message type id (channel enum int).
+	/// Message CLR type name (the operation id).
 	/// </summary>
-	public int Type { get; set; }
+	public string Type { get; set; } = string.Empty;
 
 	#endregion
 

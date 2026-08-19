@@ -166,9 +166,71 @@ public partial class TabMarkdownView : CornerstoneUserControl
 	protected override void OnLoaded(RoutedEventArgs e)
 	{
 		TextEditor.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
+
 		// Same normalization as stream so line count matches a finished Sample Stream.
 		TextEditor.Text = NormalizeNewlines(SampleMarkdown);
 		base.OnLoaded(e);
+	}
+
+	/// <summary>
+	/// Choose a stable end offset within [minChunk, chunkSize], preferring \n then space.
+	/// </summary>
+	private static int FindChunkLength(string text, int position, int chunkSize, int minChunk)
+	{
+		var end = position + chunkSize;
+
+		// Prefer break after the last newline in the window (include the newline).
+		for (var i = end - 1; i >= (position + minChunk); i--)
+		{
+			if (text[i] == '\n')
+			{
+				return (i + 1) - position;
+			}
+		}
+
+		// Else last space / tab in the window.
+		for (var i = end - 1; i >= (position + minChunk); i--)
+		{
+			var c = text[i];
+			if ((c == ' ') || (c == '\t'))
+			{
+				return (i + 1) - position;
+			}
+		}
+
+		var length = chunkSize;
+
+		// Never leave a lone \r if the next char is \n (would invent an extra line).
+		if (((position + length) < text.Length)
+			&& (text[(position + length) - 1] == '\r')
+			&& (text[position + length] == '\n'))
+		{
+			length++;
+		}
+
+		return length;
+	}
+
+	/// <summary>
+	/// Fixed delay + chunk size per speed. Extreme has no delay and large chunks.
+	/// </summary>
+	private static (int DelayMilliseconds, int ChunkSize, int MinChunk, int LoopPause) GetStreamTiming(
+		MarkdownStreamSpeed speed)
+	{
+		return speed switch
+		{
+			MarkdownStreamSpeed.Slow => (120, 28, 10, 800),
+			MarkdownStreamSpeed.Fast => (8, 100, 40, 200),
+			MarkdownStreamSpeed.Extreme => (0, 280, 120, 50),
+			_ => (30, 60, 15, 500)
+		};
+	}
+
+	private static string NormalizeNewlines(string text)
+	{
+		return string.IsNullOrEmpty(text)
+			? string.Empty
+			: text.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
 	}
 
 	private async void RunSampleStream(object sender, RoutedEventArgs e)
@@ -238,21 +300,6 @@ public partial class TabMarkdownView : CornerstoneUserControl
 	}
 
 	/// <summary>
-	/// Fixed delay + chunk size per speed. Extreme has no delay and large chunks.
-	/// </summary>
-	private static (int DelayMilliseconds, int ChunkSize, int MinChunk, int LoopPause) GetStreamTiming(
-		MarkdownStreamSpeed speed)
-	{
-		return speed switch
-		{
-			MarkdownStreamSpeed.Slow => (120, 28, 10, 800),
-			MarkdownStreamSpeed.Fast => (8, 100, 40, 200),
-			MarkdownStreamSpeed.Extreme => (0, 280, 120, 50),
-			_ => (30, 60, 15, 500)
-		};
-	}
-
-	/// <summary>
 	/// Deterministic chunks: same input + size always yields the same split.
 	/// Prefers breaks after newlines, then spaces; never splits a CRLF pair.
 	/// </summary>
@@ -283,50 +330,6 @@ public partial class TabMarkdownView : CornerstoneUserControl
 		}
 
 		return chunks;
-	}
-
-	/// <summary>
-	/// Choose a stable end offset within [minChunk, chunkSize], preferring \n then space.
-	/// </summary>
-	private static int FindChunkLength(string text, int position, int chunkSize, int minChunk)
-	{
-		var end = position + chunkSize;
-		// Prefer break after the last newline in the window (include the newline).
-		for (var i = end - 1; i >= (position + minChunk); i--)
-		{
-			if (text[i] == '\n')
-			{
-				return (i + 1) - position;
-			}
-		}
-
-		// Else last space / tab in the window.
-		for (var i = end - 1; i >= (position + minChunk); i--)
-		{
-			var c = text[i];
-			if ((c == ' ') || (c == '\t'))
-			{
-				return (i + 1) - position;
-			}
-		}
-
-		var length = chunkSize;
-		// Never leave a lone \r if the next char is \n (would invent an extra line).
-		if (((position + length) < text.Length)
-			&& (text[position + length - 1] == '\r')
-			&& (text[position + length] == '\n'))
-		{
-			length++;
-		}
-
-		return length;
-	}
-
-	private static string NormalizeNewlines(string text)
-	{
-		return string.IsNullOrEmpty(text)
-			? string.Empty
-			: text.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
 	}
 
 	private void ViewModelOnDocumentChanged(object sender, TextDocumentChangedArgs e)
@@ -367,4 +370,3 @@ public enum MarkdownStreamSpeed
 	Fast = 2,
 	Extreme = 3
 }
-

@@ -12,32 +12,29 @@ A small Avalonia stack that turns a set of **known** `.md` files into a clickabl
 
 | Piece | Role |
 |-------|------|
-| **`MarkdownView`** | Renders markdown; raises `LinkClicked` for `[text](href)` (including **links inside tables**); `ScrollToHome` on new file open; `ScrollToFragment` for heading links |
-| **`DocumentationCatalog`** | Registry of documents the reader is allowed to open |
-| **`DocumentationReader`** | Thin chrome (Back / Home / path) + load + link resolution; mouse **X1 (back)** goes through history like the Back button |
-| **Host** | Documentation WinExe, Sample tab, or any Avalonia app that supplies a catalog |
+| **`MarkdownView`** | Renders markdown; raises `LinkClicked` for `[text](href)` (including **links inside tables**); `ScrollToHome` on new file open; `ScrollToFragment` for heading links (`Controls`) |
+| **`DocumentationCatalog` / `DocumentationReader`** | Catalog + chrome (Back / Home / path / **Export**); namespace `Cornerstone.Avalonia.Documentation` |
+| **`DocumentationReaderHost`** | Shared WinExe entry: bootstrap, `--export` → `Catalog.Name` folder, open-`.md`, stock window |
+| **Thin host** | Application name, window title, Content packaging, optional open-arg resolver (Epic `EpicCoders/`) |
+| **Embedded** | Sample `TabDocumentation` sets `Reader.Catalog` only (no `Host.Run`) |
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  Hosts                                                            │
-│  ┌─────────────────┐ ┌──────────────────┐ ┌────────────────────┐ │
-│  │ Cornerstone.    │ │ Host app         │ │ Sample             │ │
-│  │ Documentation   │ │ WinExe           │ │ TabDocumentation   │ │
-│  │ WinExe          │ │                  │ │                    │ │
-│  └────────┬────────┘ └────────┬─────────┘ └─────────┬──────────┘ │
-│           │                   │                     │            │
-│           │    builds catalog │         multi-root  │            │
-│           │    from own .md   │         catalog     │            │
-│           └───────────────────┴─────────────────────┘            │
+│  WinExe hosts (Documentation / Cornerstone.* Documentation)      │
+│  options + AppBuilder → DocumentationReaderHost.Run              │
+│                               │                                  │
+│                               ▼                                  │
+│                  DocumentationReaderApplication                  │
+│                  DocumentationReaderMainWindow                   │
+│                               │                                  │
+│  Sample TabDocumentation ─────┼── sets Catalog on control only   │
 │                               ▼                                  │
 │                  DocumentationReader (UserControl)               │
 │                  - DocumentationCatalog                          │
-│                  - NavigateTo(docId | relative), fragment        │
-│                  - Handles MarkdownView.LinkClicked              │
+│                  - NavigateTo / LinkClicked / Export             │
 │                               │                                  │
 │                               ▼                                  │
-│                  MarkdownView (+ link tokens + LinkClicked)      │
-│                  + heading id map for fragment scroll            │
+│                  MarkdownView (Controls)                         │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -107,6 +104,9 @@ Markdown still appears in Solution Explorer for editing; F5 launches the reader.
 - Prefer **relative links** that stay inside the packaged tree (`[Keystone](Keystone.md)`).
 - Cross-tree links only work when the host catalog includes both trees and logical paths still resolve after `..` normalization.
 - Sidebar tree / search are **not** required for v1 — click navigation is the product bar.
+- **Export** (toolbar, top right) writes the current catalog as static HTML + generated theme CSS. Pick a parent folder; files go into a subfolder named from `DocumentationCatalog.Name` (typically `IRuntimeInformation.ApplicationName`). The site opens in the system file browser when the write succeeds.
+- **CLI:** `dotnet run --project <host> -- --export <parent-dir>` (shared `DocumentationReaderHost`; writes `<parent>/<Catalog.Name>/`, exit `0` / `1`). Root `Documentation` also allows bare `--export` → `./site/<Catalog.Name>/`.
+- Toolbar **color** (default Blue), **density** (Compact / Normal / Large), and **light/dark** apply the same `CornerstoneTheme` tokens the rest of the host uses. The exported site repeats those controls in the page header (`data-theme-color` / `data-theme` / `data-density`, remembered in `localStorage`). Links use `--Theme-Accent`.
 
 ---
 
@@ -117,6 +117,6 @@ Markdown still appears in Solution Explorer for editing; F5 launches the reader.
 | Link parse + heading ids | `Cornerstone/Parsers/Markdown/MarkdownLink.cs` |
 | `TokenTypeLink` | `MarkdownTokenizer` / `MarkdownParser` |
 | View + fragment scroll | `Cornerstone.Avalonia/Controls/MarkdownView*` |
-| Catalog / reader | `DocumentationCatalog` (`FromDirectory`, `FromAssemblyResources`), `DocumentationDocument`, `DocumentationReader` |
-| This host | `Cornerstone.Documentation` (`Program`, `App`, `MainWindow`) |
+| Catalog / reader / export / host | `Cornerstone.Avalonia/Documentation/*` (`DocumentationCatalog`, `DocumentationReader`, `DocumentationExportCommand`, `DocumentationReaderHost`, …) |
+| Thin WinExes | `Documentation`, `Cornerstone.Documentation`, `Cornerstone.VisualStudio/Documentation` (`Program` + `App` stub) |
 | Sample tab | `Cornerstone.Sample/Tabs/TabDocumentation` (directory + embedded resources) |

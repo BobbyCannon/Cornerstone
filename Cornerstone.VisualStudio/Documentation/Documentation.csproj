@@ -17,8 +17,8 @@
 		<PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\..\Cornerstone\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
-		<ProjectReference Include="..\..\Cornerstone\Cornerstone\Cornerstone.csproj" />
+		<ProjectReference Include="..\..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
+		<ProjectReference Include="..\..\Cornerstone\Cornerstone.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 		<Content Include="**\*.md" Exclude="bin\**;obj\**" CopyToOutputDirectory="PreserveNewest" />

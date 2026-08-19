@@ -26,7 +26,6 @@ public class RestartWebsiteAppPoolCmdlet : PSCmdlet
 
 	protected override void ProcessRecord()
 	{
-
 		using var server = new ServerManager();
 		var sitePool = server.ApplicationPools.FirstOrDefault(pool => pool.Name == Name);
 		sitePool?.Recycle();

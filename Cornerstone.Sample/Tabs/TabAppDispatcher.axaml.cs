@@ -72,12 +72,6 @@ public partial class TabAppDispatcher : CornerstoneUserControl
 		propertyMapModel.ResetHasChanges();
 		PropertiesViewModel = new TabAppDispatcherPropertiesViewModel(propertyMapModel);
 
-		appDispatcher.Track(AutomaticViewModel.Projection);
-		appDispatcher.Track(StreamingViewModel);
-		appDispatcher.Track(CollectionsViewModel);
-		appDispatcher.Track(SeriesViewModel);
-		appDispatcher.Track(PropertiesViewModel);
-
 		AutomaticView = new TabAppDispatcherAutomaticView
 		{
 			DataContext = AutomaticViewModel,

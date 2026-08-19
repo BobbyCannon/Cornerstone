@@ -2,6 +2,10 @@
 
 using Cornerstone.Collections;
 using Cornerstone.Parsers;
+using Cornerstone.Parsers.CSharp;
+using Cornerstone.Parsers.Json;
+using Cornerstone.Parsers.Markdown;
+using Cornerstone.Parsers.Xml;
 using Cornerstone.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -26,6 +30,22 @@ public class TokenizerTests : CornerstoneUnitTest
 		AreEqual(13, tokenizer.ConsumeWhitespace());
 		tokenizer.ConsumeRestOfLine();
 		AreEqual(16, tokenizer.Position);
+	}
+
+	[TestMethod]
+	public void GetByExtensionAcceptsDottedAndBareNames()
+	{
+		var buffer = new StringGapBuffer("class Foo { }");
+		var pool = new SpeedyQueue<Token>();
+
+		IsTrue(Tokenizer.GetByExtension("cs", buffer, pool) is CSharpTokenizer);
+		IsTrue(Tokenizer.GetByExtension(".cs", buffer, pool) is CSharpTokenizer);
+		IsTrue(Tokenizer.GetByExtension("CS", buffer, pool) is CSharpTokenizer);
+		IsTrue(Tokenizer.GetByExtension(".json", buffer, pool) is JsonTokenizer);
+		IsTrue(Tokenizer.GetByExtension("md", buffer, pool) is MarkdownTokenizer);
+		IsTrue(Tokenizer.GetByExtension(".axaml", buffer, pool) is XmlTokenizer);
+		IsNull(Tokenizer.GetByExtension(string.Empty, buffer, pool));
+		IsNull(Tokenizer.GetByExtension("js", buffer, pool));
 	}
 
 	[TestMethod]

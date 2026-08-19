@@ -35,7 +35,7 @@
 			<Button Theme.Color="None" Click="ExpandAllSamples">Expand All</Button>
 			<Button Theme.Color="None" Click="CollapseAllSample">Collapse All</Button>
 		</WrapPanel>
-		
+
 		<!-- Filter (PresentationList.FilterCheck on both hierarchy + flat) -->
 		<Border DockPanel.Dock="Top"
 				Background="{DynamicResource Background02}"

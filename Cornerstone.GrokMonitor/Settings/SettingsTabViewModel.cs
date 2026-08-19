@@ -1,31 +1,30 @@
 #region References
 
+using Cornerstone.Avalonia.Themes;
 using Cornerstone.Data;
-using Cornerstone.GrokMonitor.Keystone;
 using Cornerstone.GrokMonitor.Keystone.State;
 using Cornerstone.Presentation;
 using Cornerstone.Profiling;
 using Cornerstone.Reflection;
-using IDispatcher = Cornerstone.Presentation.IDispatcher;
 
 #endregion
 
 namespace Cornerstone.GrokMonitor.Settings;
 
 /// <summary>
-/// Shell settings page (theme, session heat). Bound to <see cref="AppSettings" />.
+/// Shell settings page (theme, session heat). Projects <see cref="AppSettings" /> via AppDispatcher.
 /// </summary>
 [SourceReflection]
 [Notifiable(["*"])]
-public partial class SettingsTabViewModel : DispatchableViewModel, IShellTab
+public partial class SettingsTabViewModel : DispatchableViewModel<AppSettings>, IShellTab, IAppSettings, IUpdateable<IAppSettings>
 {
 	#region Constructors
 
-	public SettingsTabViewModel(AppState state, IDispatcher dispatcher)
+	public SettingsTabViewModel(AppSettings settings)
+		: base(settings)
 	{
-		State = state;
 		DisplayName = "settings";
-		_ = dispatcher;
+		AutoUpdateModel = true;
 
 		// Fixed sample series for the theme-color preview chart (not live usage data).
 		ColorSampleChartData = new SeriesDataProvider(12);
@@ -60,9 +59,29 @@ public partial class SettingsTabViewModel : DispatchableViewModel, IShellTab
 	/// </summary>
 	public double SampleProgressValue => 68;
 
-	public AppSettings Settings => State.Settings;
+	[Notify]
+	[UpdateableAction(UpdateableAction.All)]
+	public partial bool SessionTokenHeatEnabled { get; set; }
 
-	public AppState State { get; }
+	[Notify]
+	[UpdateableAction(UpdateableAction.All)]
+	public partial long SessionTokenHeatHotTokens { get; set; }
+
+	[Notify]
+	[UpdateableAction(UpdateableAction.All)]
+	public partial long SessionTokenHeatSoftTokens { get; set; }
+
+	[Notify]
+	[UpdateableAction(UpdateableAction.All)]
+	public partial ThemeColor ThemeColor { get; set; }
+
+	[Notify]
+	[UpdateableAction(UpdateableAction.All)]
+	public partial ThemeDensity ThemeDensity { get; set; }
+
+	[Notify]
+	[UpdateableAction(UpdateableAction.All)]
+	public partial ThemeMode ThemeMode { get; set; }
 
 	#endregion
 }

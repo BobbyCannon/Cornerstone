@@ -102,6 +102,22 @@ internal sealed class PropertyMapBinding : IDispatchBinding, IPropertyMap
 		return false;
 	}
 
+	public IPropertyMap MapOneWay(string propertyName)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
+
+		_entries.Add(new MapEntry
+		{
+			ModelPropertyName = propertyName,
+			ViewPropertyName = propertyName,
+			TwoWay = false,
+			ApplyInbound = () => ApplyInboundIdentity(propertyName, propertyName),
+			ApplyOutbound = null
+		});
+
+		return this;
+	}
+
 	public IPropertyMap MapOneWay<TModelValue, TViewValue>(
 		string modelPropertyName,
 		string viewPropertyName,

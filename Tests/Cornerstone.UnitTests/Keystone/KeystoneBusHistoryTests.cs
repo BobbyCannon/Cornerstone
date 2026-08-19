@@ -24,7 +24,7 @@ public class KeystoneBusHistoryTests : CornerstoneUnitTest
 		bus.InitializeLifecycle();
 
 		IsFalse(bus.IsHistoryEnabled);
-		channel.PublishTest(1);
+		channel.Publish(new MessageA());
 		AreEqual(0, bus.History.Count);
 
 		bus.UninitializeLifecycle();
@@ -36,7 +36,7 @@ public class KeystoneBusHistoryTests : CornerstoneUnitTest
 		var bus = new KeystoneBus();
 		var channel = new TestChannel();
 		var ran = 0;
-		channel.SubscribeTest(7, () =>
+		channel.Subscribe<MessageB>(_ =>
 		{
 			ran++;
 			Thread.Sleep(1);
@@ -46,14 +46,14 @@ public class KeystoneBusHistoryTests : CornerstoneUnitTest
 		bus.InitializeLifecycle();
 		bus.IsHistoryEnabled = true;
 
-		channel.PublishTest(7);
+		channel.Publish(new MessageB());
 
 		AreEqual(1, ran);
 		AreEqual(1, bus.History.Count);
 		var entry = bus.History[0];
 		AreEqual(1, entry.Sequence);
 		AreEqual(nameof(TestChannel), entry.ChannelName);
-		AreEqual(7, entry.Type);
+		AreEqual(nameof(MessageB), entry.Type);
 		AreEqual(1, entry.HandlerCount);
 		IsTrue(entry.ElapsedTicks >= 0);
 		IsFalse(entry.HadError);
@@ -72,14 +72,13 @@ public class KeystoneBusHistoryTests : CornerstoneUnitTest
 		bus.History.Limit = 2;
 		bus.IsHistoryEnabled = true;
 
-		channel.PublishTest(1);
-		channel.PublishTest(2);
-		channel.PublishTest(3);
+		channel.Publish(new MessageA());
+		channel.Publish(new MessageB());
+		channel.Publish(new MessageC());
 
 		AreEqual(2, bus.History.Count);
-		// Unordered list drops oldest from the start when over limit.
-		AreEqual(2, bus.History[0].Type);
-		AreEqual(3, bus.History[1].Type);
+		AreEqual(nameof(MessageB), bus.History[0].Type);
+		AreEqual(nameof(MessageC), bus.History[1].Type);
 
 		bus.UninitializeLifecycle();
 	}
@@ -89,12 +88,12 @@ public class KeystoneBusHistoryTests : CornerstoneUnitTest
 	{
 		var bus = new KeystoneBus();
 		var channel = new TestChannel();
-		channel.SubscribeTest(3, () => throw new InvalidOperationException("boom"));
+		channel.Subscribe<MessageA>(_ => throw new InvalidOperationException("boom"));
 		bus.Track(channel);
 		bus.InitializeLifecycle();
 		bus.IsHistoryEnabled = true;
 
-		channel.PublishTest(3);
+		channel.Publish(new MessageA());
 
 		AreEqual(1, bus.History.Count);
 		IsTrue(bus.History[0].HadError);
@@ -111,11 +110,11 @@ public class KeystoneBusHistoryTests : CornerstoneUnitTest
 		bus.Track(channel);
 		bus.InitializeLifecycle();
 		bus.IsHistoryEnabled = true;
-		channel.PublishTest(1);
+		channel.Publish(new MessageA());
 		AreEqual(1, bus.History.Count);
 
 		bus.IsHistoryEnabled = false;
-		channel.PublishTest(2);
+		channel.Publish(new MessageB());
 		AreEqual(1, bus.History.Count);
 
 		bus.UninitializeLifecycle();
@@ -130,7 +129,7 @@ public class KeystoneBusHistoryTests : CornerstoneUnitTest
 		bus.InitializeLifecycle();
 		bus.IsHistoryEnabled = true;
 
-		channel.PublishTest(9, new NamedPayload());
+		channel.Publish(new NamedPayload());
 
 		AreEqual(1, bus.History.Count);
 		AreEqual(nameof(NamedPayload), bus.History[0].Name);
@@ -146,14 +145,14 @@ public class KeystoneBusHistoryTests : CornerstoneUnitTest
 		bus.Track(channel);
 		bus.InitializeLifecycle();
 		bus.IsHistoryEnabled = true;
-		bus.HistoryFilter = "type:2";
+		bus.HistoryFilter = "type:MessageB";
 
-		channel.PublishTest(1);
-		channel.PublishTest(2);
-		channel.PublishTest(3);
+		channel.Publish(new MessageA());
+		channel.Publish(new MessageB());
+		channel.Publish(new MessageC());
 
 		AreEqual(1, bus.History.Count);
-		AreEqual(2, bus.History[0].Type);
+		AreEqual(nameof(MessageB), bus.History[0].Type);
 
 		bus.UninitializeLifecycle();
 	}
@@ -168,11 +167,11 @@ public class KeystoneBusHistoryTests : CornerstoneUnitTest
 		bus.IsHistoryEnabled = true;
 		bus.HistoryFilter = "channel:Test";
 
-		channel.PublishTest(1);
+		channel.Publish(new MessageA());
 		AreEqual(1, bus.History.Count);
 
 		bus.HistoryFilter = "channel:Settings";
-		channel.PublishTest(2);
+		channel.Publish(new MessageB());
 		AreEqual(1, bus.History.Count);
 
 		bus.UninitializeLifecycle();
@@ -188,8 +187,8 @@ public class KeystoneBusHistoryTests : CornerstoneUnitTest
 		bus.IsHistoryEnabled = true;
 		bus.HistoryFilter = string.Empty;
 
-		channel.PublishTest(1);
-		channel.PublishTest(2);
+		channel.Publish(new MessageA());
+		channel.Publish(new MessageB());
 		AreEqual(2, bus.History.Count);
 
 		bus.UninitializeLifecycle();
@@ -199,26 +198,18 @@ public class KeystoneBusHistoryTests : CornerstoneUnitTest
 
 	#region Classes
 
+	private readonly record struct MessageA : IChannelMessage;
+
+	private readonly record struct MessageB : IChannelMessage;
+
+	private readonly record struct MessageC : IChannelMessage;
+
 	private sealed class NamedPayload : IChannelMessage
 	{
 	}
 
 	private sealed class TestChannel : KeystoneChannel
 	{
-		public void PublishTest(int type)
-		{
-			Publish(type);
-		}
-
-		public void PublishTest(int type, IChannelMessage message)
-		{
-			Publish(type, message);
-		}
-
-		public void SubscribeTest(int type, Action handler)
-		{
-			Subscribe(type, handler);
-		}
 	}
 
 	#endregion

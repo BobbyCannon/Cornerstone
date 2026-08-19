@@ -154,6 +154,8 @@ A **blank line** closes a paragraph for display (spacing comes from layout, not 
 
 `MarkdownView` throttles document changes (~100 ms) so high-rate appends coalesce into one parse/apply. See [DebounceAndThrottle.md](../DebounceAndThrottle.md).
 
+Presenters **copy** `Foreground`, font, and theme chrome onto `TextRenderer` (and quote/code brushes) at apply time. Theme or density changes do not rewrite the document, so the stable-group prefix would never re-apply. Presenters listen for `Foreground`, `FontSize`, `FontFamily`, and `ActualThemeVariant` and re-apply without a reparse.
+
 ---
 
 ## Quick “how do I…?”

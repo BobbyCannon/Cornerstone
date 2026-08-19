@@ -2,13 +2,16 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Cornerstone.GrokMonitor.GrokUsage.Channels;
 using Cornerstone.GrokMonitor.GrokUsage.Models;
+using Cornerstone.GrokMonitor.GrokUsage.Services;
 using Cornerstone.GrokMonitor.GrokUsage.State;
 using Cornerstone.GrokMonitor.Keystone;
 using Cornerstone.GrokMonitor.Keystone.Processors;
+using Cornerstone.Keystone;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
 
@@ -21,14 +24,10 @@ namespace Cornerstone.GrokMonitor.GrokUsage.Processors;
 /// </summary>
 [SourceReflection]
 [DependencyInjected]
+[ChannelHandlers]
 public partial class GrokUsageProcessor : AppProcessor
 {
 	#region Fields
-
-	/// <summary>
-	/// View clock (live wall time or scrubbed ViewAsOf). Analytics and filters use this as "now".
-	/// </summary>
-	private readonly IDateTimeProvider _dateTimeProvider;
 
 	/// <summary>
 	/// Watches each home's logs/sessions and throttles RefreshHome when files change.
@@ -41,14 +40,19 @@ public partial class GrokUsageProcessor : AppProcessor
 	private readonly HashSet<Guid> _pendingDiskRefresh = new();
 
 	/// <summary>
-	/// Last successful disk summary per home for clock-only reproject (slider / replay).
+	/// Wall elapsed between replay ticks (view clock advances by elapsed × ReplaySpeed).
 	/// </summary>
-	private readonly Dictionary<Guid, GrokUsageSummary> _summaryByHomeId = new();
+	private readonly Stopwatch _replayWallClock = new();
 
 	/// <summary>
 	/// Resolves ApplicationDataLocation for the usage archive.
 	/// </summary>
 	private readonly IRuntimeInformation _runtimeInformation;
+
+	/// <summary>
+	/// Last successful disk summary per home for clock-only reproject (slider / replay).
+	/// </summary>
+	private readonly Dictionary<Guid, GrokUsageSummary> _summaryByHomeId = new();
 
 	/// <summary>
 	/// Real (or test) wall clock; used when live and for LastRefreshedAt / period discovery.
@@ -69,30 +73,49 @@ public partial class GrokUsageProcessor : AppProcessor
 	{
 		_runtimeInformation = runtimeInformation ?? new RuntimeInformation();
 		_wallClock = dateTimeProvider ?? DateTimeProvider.RealTime;
-		_dateTimeProvider = GrokUsageDateTimeProvider.Create(state.GrokUsage, _wallClock);
 	}
 
 	#endregion
 
 	#region Methods
 
+	public override bool CanProcessLifecycle()
+	{
+		return AnyReplayPlaying() || base.CanProcessLifecycle();
+	}
+
 	public override void InitializeLifecycle()
 	{
-		Bus.GrokUsage.SubscribeToEnsureHomes(OnEnsureHomes);
-		Bus.GrokUsage.SubscribeToRefreshHome(OnRefreshHome);
-		Bus.GrokUsage.SubscribeToRefreshAll(OnRefreshAll);
-		Bus.GrokUsage.SubscribeToSelectHome(OnSelectHome);
-		Bus.GrokUsage.SubscribeToSetSince(OnSetSince);
-		Bus.GrokUsage.SubscribeToSelectPeriod(OnSelectPeriod);
-		Bus.GrokUsage.SubscribeToSetViewAsOf(OnSetViewAsOf);
-		Bus.GrokUsage.SubscribeToSetViewLive(OnSetViewLive);
-
 		_diskMonitor = new GrokUsageDiskMonitor(OnDiskHomeChanged);
 		base.InitializeLifecycle();
 	}
 
+	public override void LoadLifecycle()
+	{
+		EnsureHomesCore(false);
+		base.LoadLifecycle();
+	}
+
+	public override void ProcessLifecycle()
+	{
+		if (AnyReplayPlaying())
+		{
+			AdvanceReplay();
+		}
+
+		base.ProcessLifecycle();
+	}
+
+	public override void StartLifecycle()
+	{
+		SyncDiskMonitor();
+		base.StartLifecycle();
+	}
+
 	public override void UninitializeLifecycle()
 	{
+		StopAllReplay();
+
 		if (_diskMonitor != null)
 		{
 			_diskMonitor.Dispose();
@@ -100,15 +123,6 @@ public partial class GrokUsageProcessor : AppProcessor
 		}
 
 		_pendingDiskRefresh.Clear();
-
-		Bus.GrokUsage.UnsubscribeToEnsureHomes(OnEnsureHomes);
-		Bus.GrokUsage.UnsubscribeToRefreshHome(OnRefreshHome);
-		Bus.GrokUsage.UnsubscribeToRefreshAll(OnRefreshAll);
-		Bus.GrokUsage.UnsubscribeToSelectHome(OnSelectHome);
-		Bus.GrokUsage.UnsubscribeToSetSince(OnSetSince);
-		Bus.GrokUsage.UnsubscribeToSelectPeriod(OnSelectPeriod);
-		Bus.GrokUsage.UnsubscribeToSetViewAsOf(OnSetViewAsOf);
-		Bus.GrokUsage.UnsubscribeToSetViewLive(OnSetViewLive);
 		base.UninitializeLifecycle();
 	}
 
@@ -194,7 +208,7 @@ public partial class GrokUsageProcessor : AppProcessor
 	/// </summary>
 	private void ApplySummary(GrokHomeUsageState home, GrokUsageSummary summary, DateTimeOffset diskRefreshedAt)
 	{
-		var viewNow = ViewUtcNowOffset();
+		var viewNow = ViewUtcNowOffset(home);
 		var wallNow = WallUtcNowOffset();
 		var allInferences = FlattenInferences(summary.Sessions);
 		var earliest = allInferences.Count > 0
@@ -230,11 +244,7 @@ public partial class GrokUsageProcessor : AppProcessor
 					return x with
 					{
 						IsCurrent = isCurrent,
-						DisplayName = GrokUsageAnalytics.FormatPeriodDisplayName(
-							x.PeriodStart,
-							x.PeriodEnd,
-							isCurrent,
-							x.PeriodType)
+						DisplayName = string.Empty
 					};
 				})
 				.OrderByDescending(x => x.PeriodStart)
@@ -251,6 +261,8 @@ public partial class GrokUsageProcessor : AppProcessor
 				planEnd);
 		}
 
+		periodOptions = GrokUsageAnalytics.FilterPeriodsWithTokenUsage(periodOptions, allInferences);
+
 		var selected = ResolveSelectedPeriod(home, periodOptions, summary.LatestBilling, wallNow);
 
 		home.AvailablePeriods.Clear();
@@ -261,7 +273,7 @@ public partial class GrokUsageProcessor : AppProcessor
 				PeriodStart = option.PeriodStart,
 				PeriodEnd = option.PeriodEnd,
 				PeriodType = option.PeriodType ?? string.Empty,
-				DisplayName = option.DisplayName ?? string.Empty,
+				DisplayName = string.Empty,
 				IsCurrent = option.IsCurrent
 			});
 		}
@@ -361,6 +373,36 @@ public partial class GrokUsageProcessor : AppProcessor
 		}
 
 		home.ErrorText = string.Empty;
+		ApplyViewClockRange(home);
+	}
+
+	private void ApplyViewAsOf(GrokHomeUsageState home, DateTimeOffset asOf)
+	{
+		if (home == null)
+		{
+			return;
+		}
+
+		home.IsViewLive = false;
+		home.ViewAsOf = asOf.ToUniversalTime();
+		ReprojectHomeForViewClock(home.Id);
+	}
+
+	private void ApplyViewLive(GrokHomeUsageState home)
+	{
+		if (home == null)
+		{
+			return;
+		}
+
+		home.IsViewLive = true;
+		home.ViewAsOf = default;
+		ReprojectHomeForViewClock(home.Id);
+	}
+
+	private bool AnyReplayPlaying()
+	{
+		return State.GrokUsage.Homes.Any(x => (x != null) && x.IsReplayPlaying);
 	}
 
 	private static void ClearAnalytics(GrokHomeUsageState home)
@@ -385,7 +427,7 @@ public partial class GrokUsageProcessor : AppProcessor
 	/// Re-scans the profile for ~/.grok* folders (and env homes) and adds any new ones.
 	/// Safe to call on every refresh.
 	/// </summary>
-	private void EnsureHomesCore()
+	private void EnsureHomesCore(bool syncMonitor = true)
 	{
 		var usage = State.GrokUsage;
 		usage.LastError = string.Empty;
@@ -434,33 +476,10 @@ public partial class GrokUsageProcessor : AppProcessor
 			usage.SelectedHomeId = usage.Homes[0].Id;
 		}
 
-		SyncDiskMonitor();
-	}
-
-	/// <summary>
-	/// File-system callback (thread pool). Publishes the same RefreshHome intent as the toolbar.
-	/// </summary>
-	private void OnDiskHomeChanged(Guid homeId)
-	{
-		if (homeId == Guid.Empty)
+		if (syncMonitor)
 		{
-			return;
+			SyncDiskMonitor();
 		}
-
-		Bus.GrokUsage.RefreshHome(homeId);
-	}
-
-	private void SyncDiskMonitor()
-	{
-		if (_diskMonitor == null)
-		{
-			return;
-		}
-
-		var homes = State.GrokUsage.Homes
-			.Where(x => (x != null) && (x.Id != Guid.Empty) && !string.IsNullOrWhiteSpace(x.Path))
-			.Select(x => (x.Id, x.Path));
-		_diskMonitor.SyncHomes(homes);
 	}
 
 	private static DateTimeOffset ExclusiveEndThrough(DateTimeOffset inclusiveInstant)
@@ -485,7 +504,6 @@ public partial class GrokUsageProcessor : AppProcessor
 		{
 			if ((session.Inferences == null) || (session.Inferences.Count == 0))
 			{
-				// Summary-only sessions have no period activity; omit from period-scoped view.
 				continue;
 			}
 
@@ -535,6 +553,29 @@ public partial class GrokUsageProcessor : AppProcessor
 		}
 
 		return !string.Equals(periodType, GrokUsageAnalytics.SyntheticWeeklyPeriodType, StringComparison.Ordinal);
+	}
+
+	private bool IsViewClockAtLiveEnd(GrokHomeUsageState home)
+	{
+		if ((home == null) || !TryGetViewClockRange(home, out var start, out var max))
+		{
+			return true;
+		}
+
+		if (home.IsViewLive || (home.ViewAsOf == default))
+		{
+			return true;
+		}
+
+		var asOf = home.ViewAsOf;
+		var span = max.UtcTicks - start.UtcTicks;
+		if (span <= 0)
+		{
+			return true;
+		}
+
+		var progress = (double) (asOf.UtcTicks - start.UtcTicks) / span;
+		return progress >= 0.999;
 	}
 
 	private static GrokSessionUsageState MapSession(string grokHome, SessionUsage session)
@@ -590,12 +631,25 @@ public partial class GrokUsageProcessor : AppProcessor
 		};
 	}
 
-	private void OnEnsureHomes(GrokUsageMessageForEnsureHomes _)
+	/// <summary>
+	/// File-system callback (thread pool). Publishes the same RefreshHome intent as the toolbar.
+	/// </summary>
+	private void OnDiskHomeChanged(Guid homeId)
+	{
+		if (homeId == Guid.Empty)
+		{
+			return;
+		}
+
+		Bus.GrokUsage.RefreshHome(homeId);
+	}
+
+	private void OnEnsureHomes(GrokUsageChannel.EnsureHomesMessage _)
 	{
 		EnsureHomesCore();
 	}
 
-	private void OnRefreshAll(GrokUsageMessageForRefreshAll _)
+	private void OnRefreshAll(GrokUsageChannel.RefreshAllMessage _)
 	{
 		// Pick up newly created ~/.grok* folders before loading usage.
 		EnsureHomesCore();
@@ -608,7 +662,7 @@ public partial class GrokUsageProcessor : AppProcessor
 		}
 	}
 
-	private void OnRefreshHome(GrokUsageMessageForRefreshHome message)
+	private void OnRefreshHome(GrokUsageChannel.RefreshHomeMessage message)
 	{
 		// Toolbar "Refresh" is per-tab; still re-discover so new homes appear without a second action.
 		var knownBefore = new HashSet<Guid>(State.GrokUsage.Homes.Select(x => x.Id));
@@ -627,7 +681,58 @@ public partial class GrokUsageProcessor : AppProcessor
 		}
 	}
 
-	private void OnSelectHome(GrokUsageMessageForSelectHome message)
+	private void AdvanceReplay()
+	{
+		if (!AnyReplayPlaying())
+		{
+			return;
+		}
+
+		var wallSeconds = _replayWallClock.Elapsed.TotalSeconds;
+		_replayWallClock.Restart();
+		if (wallSeconds <= 0)
+		{
+			return;
+		}
+
+		var playing = State.GrokUsage.Homes.Where(x => (x != null) && x.IsReplayPlaying).ToList();
+		foreach (var home in playing)
+		{
+			AdvanceReplay(home, wallSeconds);
+		}
+
+		if (!AnyReplayPlaying())
+		{
+			_replayWallClock.Reset();
+		}
+	}
+
+	private void AdvanceReplay(GrokHomeUsageState home, double wallSeconds)
+	{
+		if ((home == null) || !TryGetViewClockRange(home, out var start, out var max))
+		{
+			StopReplay(home);
+			return;
+		}
+
+		var next = ResolveCurrentViewAsOf(home, start, max)
+			+ TimeSpan.FromSeconds(wallSeconds * GrokUsageState.ReplaySpeed);
+		if (next >= max)
+		{
+			StopReplay(home);
+			ApplyViewLive(home);
+			return;
+		}
+
+		if (next < start)
+		{
+			next = start;
+		}
+
+		ApplyViewAsOf(home, next);
+	}
+
+	private void OnSelectHome(GrokUsageChannel.SelectHomeMessage message)
 	{
 		if (message.HomeId == Guid.Empty)
 		{
@@ -639,17 +744,10 @@ public partial class GrokUsageProcessor : AppProcessor
 			return;
 		}
 
-		var changed = State.GrokUsage.SelectedHomeId != message.HomeId;
 		State.GrokUsage.SelectedHomeId = message.HomeId;
-
-		// Global view clock may already be scrubbed; reproject this home so totals match the slider.
-		if (changed && _summaryByHomeId.ContainsKey(message.HomeId))
-		{
-			RefreshHomeCore(message.HomeId, false);
-		}
 	}
 
-	private void OnSelectPeriod(GrokUsageMessageForSelectPeriod message)
+	private void OnSelectPeriod(GrokUsageChannel.SelectPeriodMessage message)
 	{
 		var home = State.GrokUsage.FindById(message.HomeId);
 		if (home == null)
@@ -665,35 +763,75 @@ public partial class GrokUsageProcessor : AppProcessor
 		home.SelectedPeriodStart = message.PeriodStart;
 		home.SelectedPeriodEnd = message.PeriodEnd;
 
-		// New period → pin to live end of that view, then reproject (cache if present).
-		State.GrokUsage.IsViewLive = true;
-		State.GrokUsage.ViewAsOf = default;
+		StopReplay(home);
+
+		// New period → pin this home to live end of that view, then reproject (cache if present).
+		home.IsViewLive = true;
+		home.ViewAsOf = default;
 		RefreshHomeCore(message.HomeId, false);
 	}
 
-	private void OnSetSince(GrokUsageMessageForSetSince message)
+	private void OnSetSince(GrokUsageChannel.SetSinceMessage message)
 	{
 		State.GrokUsage.SinceUtc = message.SinceUtc;
 	}
 
-	private void OnSetViewAsOf(GrokUsageMessageForSetViewAsOf message)
+	private void OnSetViewAsOf(GrokUsageChannel.SetViewAsOfMessage message)
 	{
+		var home = State.GrokUsage.FindById(message.HomeId);
 		var asOf = message.ViewAsOf;
-		if (asOf == default)
+		if ((home == null) || (asOf == default))
 		{
 			return;
 		}
 
-		State.GrokUsage.IsViewLive = false;
-		State.GrokUsage.ViewAsOf = asOf.ToUniversalTime();
-		ReprojectCachedHomesForViewClock();
+		StopReplay(home);
+		home.IsViewLive = false;
+		home.ViewAsOf = asOf.ToUniversalTime();
+		ReprojectHomeForViewClock(home.Id);
 	}
 
-	private void OnSetViewLive(GrokUsageMessageForSetViewLive _)
+	private void OnSetViewLive(GrokUsageChannel.SetViewLiveMessage message)
 	{
-		State.GrokUsage.IsViewLive = true;
-		State.GrokUsage.ViewAsOf = default;
-		ReprojectCachedHomesForViewClock();
+		var home = State.GrokUsage.FindById(message.HomeId);
+		if (home == null)
+		{
+			return;
+		}
+
+		StopReplay(home);
+		ApplyViewLive(home);
+	}
+
+	private void OnStartReplay(GrokUsageChannel.StartReplayMessage message)
+	{
+		var home = State.GrokUsage.FindById(message.HomeId);
+		if ((home == null) || home.IsReplayPlaying)
+		{
+			return;
+		}
+
+		if (!TryGetViewClockRange(home, out var start, out _))
+		{
+			return;
+		}
+
+		if (home.IsViewLive || IsViewClockAtLiveEnd(home))
+		{
+			ApplyViewAsOf(home, start);
+		}
+
+		var alreadyPlaying = AnyReplayPlaying();
+		home.IsReplayPlaying = true;
+		if (!alreadyPlaying)
+		{
+			_replayWallClock.Restart();
+		}
+	}
+
+	private void OnStopReplay(GrokUsageChannel.StopReplayMessage message)
+	{
+		StopReplay(State.GrokUsage.FindById(message.HomeId));
 	}
 
 	private void RefreshHomeCore(Guid homeId, bool forceDisk = true)
@@ -786,21 +924,14 @@ public partial class GrokUsageProcessor : AppProcessor
 		}
 	}
 
-	/// <summary>
-	/// View clock is global; re-apply cached summaries for every home that has been loaded
-	/// so inactive tabs stay consistent when the user switches without scrubbing again.
-	/// </summary>
-	private void ReprojectCachedHomesForViewClock()
+	private void ReprojectHomeForViewClock(Guid homeId)
 	{
-		foreach (var home in State.GrokUsage.Homes)
+		if (!_summaryByHomeId.ContainsKey(homeId))
 		{
-			if ((home == null) || !_summaryByHomeId.ContainsKey(home.Id))
-			{
-				continue;
-			}
-
-			RefreshHomeCore(home.Id, false);
+			return;
 		}
+
+		RefreshHomeCore(homeId, false);
 	}
 
 	/// <summary>
@@ -926,6 +1057,30 @@ public partial class GrokUsageProcessor : AppProcessor
 		return new BillingSnapshot();
 	}
 
+	private static DateTimeOffset ResolveCurrentViewAsOf(
+		GrokHomeUsageState home,
+		DateTimeOffset start,
+		DateTimeOffset max)
+	{
+		if ((home == null) || home.IsViewLive || (home.ViewAsOf == default))
+		{
+			return max;
+		}
+
+		var asOf = home.ViewAsOf;
+		if (asOf < start)
+		{
+			return start;
+		}
+
+		if (asOf > max)
+		{
+			return max;
+		}
+
+		return asOf;
+	}
+
 	private static UsagePeriodOption ResolveSelectedPeriod(
 		GrokHomeUsageState home,
 		IReadOnlyList<UsagePeriodOption> options,
@@ -976,6 +1131,45 @@ public partial class GrokUsageProcessor : AppProcessor
 		}
 
 		return options[0];
+	}
+
+	private void StopAllReplay()
+	{
+		foreach (var home in State.GrokUsage.Homes)
+		{
+			if (home != null)
+			{
+				home.IsReplayPlaying = false;
+			}
+		}
+
+		_replayWallClock.Reset();
+	}
+
+	private void StopReplay(GrokHomeUsageState home)
+	{
+		if (home != null)
+		{
+			home.IsReplayPlaying = false;
+		}
+
+		if (!AnyReplayPlaying())
+		{
+			_replayWallClock.Reset();
+		}
+	}
+
+	private void SyncDiskMonitor()
+	{
+		if (_diskMonitor == null)
+		{
+			return;
+		}
+
+		var homes = State.GrokUsage.Homes
+			.Where(x => (x != null) && (x.Id != Guid.Empty) && !string.IsNullOrWhiteSpace(x.Path))
+			.Select(x => (x.Id, x.Path));
+		_diskMonitor.SyncHomes(homes);
 	}
 
 	private bool TryFindPlanPeriodTemplateFromHomes(
@@ -1046,6 +1240,54 @@ public partial class GrokUsageProcessor : AppProcessor
 		return true;
 	}
 
+	private void ApplyViewClockRange(GrokHomeUsageState home)
+	{
+		if ((home == null) || !TryGetViewClockRange(home, out var start, out var max))
+		{
+			if (home != null)
+			{
+				home.ViewClockStart = default;
+				home.ViewClockMax = default;
+			}
+
+			return;
+		}
+
+		home.ViewClockStart = start;
+		home.ViewClockMax = max;
+	}
+
+	private bool TryGetViewClockRange(
+		GrokHomeUsageState home,
+		out DateTimeOffset start,
+		out DateTimeOffset max)
+	{
+		start = default;
+		max = default;
+
+		if ((home == null)
+			|| (home.PeriodStart == default)
+			|| (home.PeriodEnd == default)
+			|| (home.PeriodEnd <= home.PeriodStart))
+		{
+			return false;
+		}
+
+		start = home.PeriodStart;
+		var wallNow = WallUtcNowOffset();
+		max = home.PeriodEnd <= wallNow
+			? home.PeriodEnd
+			: wallNow < home.PeriodStart
+				? home.PeriodStart
+				: wallNow;
+		if (max < start)
+		{
+			max = start;
+		}
+
+		return max > start;
+	}
+
 	/// <summary>
 	/// When this home's billing has a real SuperGrok-style period, remember it app-wide so
 	/// Business/Work synthetic weeks share the same reset phase (e.g. ~11:30pm weekly).
@@ -1077,9 +1319,14 @@ public partial class GrokUsageProcessor : AppProcessor
 		}
 	}
 
-	private DateTimeOffset ViewUtcNowOffset()
+	private DateTimeOffset ViewUtcNowOffset(GrokHomeUsageState home)
 	{
-		return new DateTimeOffset(_dateTimeProvider.UtcNow, TimeSpan.Zero);
+		if ((home == null) || home.IsViewLive || (home.ViewAsOf == default))
+		{
+			return WallUtcNowOffset();
+		}
+
+		return home.ViewAsOf.ToUniversalTime();
 	}
 
 	private DateTimeOffset WallUtcNowOffset()

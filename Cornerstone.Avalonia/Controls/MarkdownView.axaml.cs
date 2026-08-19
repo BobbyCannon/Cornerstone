@@ -6,10 +6,12 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.Controls.Primitives;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Cornerstone.Avalonia.Text;
+using Cornerstone.Avalonia.Themes;
 using Cornerstone.Collections;
 using Cornerstone.Parsers;
 using Cornerstone.Parsers.Markdown;
@@ -60,6 +62,13 @@ public partial class MarkdownView : CornerstoneTemplatedControl
 
 		// Default private buffer; hosts can replace via binding or assignment.
 		Document = CreateDocument();
+
+		TextOptions.SetTextOptions(this, new TextOptions
+		{
+			TextRenderingMode = TextRenderingMode.SubpixelAntialias,
+			TextHintingMode = TextHintingMode.Strong,
+			BaselinePixelAlignment = BaselinePixelAlignment.Aligned
+		});
 	}
 
 	static MarkdownView()
@@ -336,6 +345,7 @@ public partial class MarkdownView : CornerstoneTemplatedControl
 	protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
 	{
 		base.OnAttachedToVisualTree(e);
+		global::Cornerstone.Avalonia.Themes.Theme.AccentChanged += ThemeOnAccentChanged;
 		AttachScrollViewer();
 
 		// Tab switch reuses the control: Document still has text, but presenters may be gone.
@@ -362,8 +372,17 @@ public partial class MarkdownView : CornerstoneTemplatedControl
 
 	protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
 	{
+		global::Cornerstone.Avalonia.Themes.Theme.AccentChanged -= ThemeOnAccentChanged;
 		_scrollViewer?.ScrollChanged -= ScrollViewerOnScrollChanged;
 		base.OnDetachedFromVisualTree(e);
+	}
+
+	private void ThemeOnAccentChanged(object sender, EventArgs e)
+	{
+		foreach (var renderer in this.GetVisualDescendants().OfType<TextRenderer>())
+		{
+			renderer.InvalidateVisual();
+		}
 	}
 
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

@@ -37,7 +37,7 @@ public partial class TabAppDispatcherCollectionsView : CornerstoneUserControl<Ta
 	{
 		var viewModel = ViewModel;
 		var profiler = Profiler;
-		if ((viewModel is null) || (profiler is null))
+		if (viewModel is null || profiler is null)
 		{
 			return;
 		}
@@ -49,7 +49,7 @@ public partial class TabAppDispatcherCollectionsView : CornerstoneUserControl<Ta
 	{
 		var viewModel = ViewModel;
 		var profiler = Profiler;
-		if ((viewModel is null) || (profiler is null))
+		if (viewModel is null || profiler is null)
 		{
 			return;
 		}
@@ -94,7 +94,7 @@ public partial class TabAppDispatcherCollectionsView : CornerstoneUserControl<Ta
 	{
 		var viewModel = ViewModel;
 		var profiler = Profiler;
-		if ((viewModel is null) || (profiler is null))
+		if (viewModel is null || profiler is null)
 		{
 			return;
 		}

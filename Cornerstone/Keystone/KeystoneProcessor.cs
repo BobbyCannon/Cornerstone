@@ -30,4 +30,34 @@ public abstract class KeystoneProcessor<TBus, TState> : LifecycleTracker
 	public TState State { get; }
 
 	#endregion
+
+	#region Methods
+
+	public override void InitializeLifecycle()
+	{
+		SubscribeGeneratedHandlers();
+		base.InitializeLifecycle();
+	}
+
+	public override void UninitializeLifecycle()
+	{
+		UnsubscribeGeneratedHandlers();
+		base.UninitializeLifecycle();
+	}
+
+	/// <summary>
+	/// Generated channel subscriptions (OnRefreshHome → SubscribeToRefreshHome).
+	/// </summary>
+	protected virtual void SubscribeGeneratedHandlers()
+	{
+	}
+
+	/// <summary>
+	/// Generated channel unsubscriptions.
+	/// </summary>
+	protected virtual void UnsubscribeGeneratedHandlers()
+	{
+	}
+
+	#endregion
 }

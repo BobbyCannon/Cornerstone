@@ -1,8 +1,12 @@
 # AppDispatcher
 
-AppDispatcher is an **optional auto layer** that keeps **ViewModels in sync with models** (typically Keystone **State**) on an **adaptive poll loop**: slow when quiet, faster while work is flowing. It only processes ViewModels that are **attached to a View**, so detached UI pays no apply cost.
+AppDispatcher is an **optional auto layer** that keeps **ViewModels in sync with Keystone State** for **visual representation and user input** (what the user sees, and two-way fields they edit). It runs an **adaptive poll loop**: slow when quiet, faster while work is flowing. It only processes ViewModels that are **attached to a View**, so detached UI pays no apply cost.
+
+It is **not** a second engine. Domain rules stay in Keystone (Bus · State · Processor) and run **off** the UI dispatcher. `ApplyModelChanges` / Track\* lambdas map and format for the view; they do not implement business logic. `RequestDispatch` only wakes the poll — it does not run Keystone on the UI thread.
 
 Manual / custom UI integration remains fully valid without this layer — see [ViewIntegration.md](ViewIntegration.md).
+
+**Exception:** `TextEditor` / `TextEditorViewModel` (and `Terminal`) hold most document state (buffer, caret, undo, tokens) in the ViewModel because of how the control is built. That is a **design limitation**, not a template for feature tabs. See [Agent/TextEditor.md](Agent/TextEditor.md).
 
 ---
 
@@ -10,9 +14,10 @@ Manual / custom UI integration remains fully valid without this layer — see [V
 
 | Layer | Role |
 |-------|------|
+| **Keystone** | Application business logic only; off the UI dispatcher; never requires `IDispatcher.Dispatch` |
 | **ViewIntegration** | How any UI can attach to Keystone State (manual wiring allowed) |
-| **AppDispatcher** | Optional app loop: track attached `DispatchableViewModel`s → `HasModelChanges` / `ApplyModelChanges` |
-| **Dispatch bindings** | Optional *inside* a ViewModel: `TrackIngress` / `TrackCollection` / `TrackBinding` driven by `IDispatchPending` |
+| **AppDispatcher** | Optional UI loop: project State → ViewModel for display / input (`HasModelChanges` / `ApplyModelChanges`) |
+| **Dispatch bindings** | Optional *inside* a ViewModel: `Track*` methods that copy State or format the view on each apply tick |
 
 ---
 
@@ -79,7 +84,7 @@ Each iteration:
 
 1. **If active:** ensure `IntervalTimer(ActiveInterval)`; consume any set wake flags as `requested`; `await WaitForNextTickAsync(ct)`.
 2. **If idle:** dispose any active timer; `wake.Wait(IdleInterval, ct)` (timeout or `RequestDispatch` / stop).
-3. **`Update()`** — poll tracked roots; if any attached root has model changes, dispatch `ApplyModelChanges` on the UI thread at `DispatcherPriority.Render`. Returns **true** if any apply was scheduled.
+3. **`UpdateAsync`** — poll tracked roots; if any attached root has model changes, **await** `DispatchAsync` of `ApplyModelChanges` on the UI thread at `DispatcherPriority.Render` (does not `Invoke`/join the UI thread). Returns **true** if any feature apply ran.
 4. **Advance mode** (`AdaptiveDispatchMode`):
    - `applied || requested` → active, streak = 0
    - else increment streak; if active and streak ≥ N → idle (dispose `IntervalTimer`)
@@ -260,7 +265,10 @@ DispatchableViewModel : ViewModel
     ├── TrackIngress(...)
     ├── TrackCollection(...)
     ├── TrackBinding(...)
-    └── TrackProperties(model) → IPropertyMap (MapOneWay / MapTwoWay)
+    ├── TrackSeries(...)
+    ├── TrackProperties(model) → IPropertyMap (MapOneWay / MapTwoWay)
+    ├── TrackDerived(Action)   // format after the copies, no source of its own
+    └── TrackIntent(name, publish)  // user gesture → bus; skipped while applying
 
 DispatchableViewModel<T> : DispatchableViewModel
     where T : IUpdateable, ITrackPropertyChanges
@@ -271,11 +279,13 @@ DispatchableViewModel<T> : DispatchableViewModel
 
 **`Attach` / `Detach` / `IsAttached`**
 
+How views hook this automatically: [ViewIntegration.md](ViewIntegration.md#automatic-attach--detach-avalonia).
+
 - **Owner is required** (not null): a **View** (`Attach(this)`) or a **parent** dispatchable cascading to children. There is no anonymous / null-owner attach.
 - Idempotent per owner; `IsAttached` is true while **any** owner remains (not a single bool flip).
 - Parent registers nested VMs with `TrackDispatchChild`; on 0→1 attach it calls `child.Attach(parent)`, on last detach `child.Detach(parent)`.
-- Avalonia bases (`CornerstoneUserControl`, `Control`, `ContentControl`, `TemplatedControl`, `Window`, `AppView`) call `Attach(this)` / `Detach(this)` from **visual tree** attach/detach for **ViewModel and DataContext independently** (via `DispatchableVisualTree`). They never set or clear those properties for this purpose.
-- AppDispatcher polls only **direct** tracked roots (`IsAttached` + `HasModelChanges`). Nested work flows down: each `ApplyModelChanges` applies itself then its **direct** `TrackDispatchChild` children (no grand-child collection).
+- Avalonia bases (`CornerstoneUserControl`, `Control`, `ContentControl`, `TemplatedControl`, `Window`, `AppView`) call `Attach(this)` / `Detach(this)` from **visual tree** attach/detach for **ViewModel and DataContext independently** (via `DispatchableVisualTree`). They never set or clear those properties for this purpose. First attach of a non-dispatchable owner also `IAppDispatcher.Track`s the VM into the apply set; last detach `Release`s it.
+- AppDispatcher polls only **direct** apply-loop roots (`IsAttached` + `HasModelChanges`). Nested work flows down: each `ApplyModelChanges` applies itself then its **direct** `TrackDispatchChild` children (no grand-child collection).
 
 ### Bindings (`IDispatchBinding`)
 
@@ -285,23 +295,45 @@ Registered in the ViewModel constructor (or later). Owned by the VM; **not** reg
 |-----|----------|
 | `TrackIngress(TextIngress, Action<ReadOnlySpan<char>>)` | Drain consumer when `HasPending` |
 | `TrackIngress(TextIngress, IStringBuffer)` | `DrainTo` destination |
-| `TrackCollection(source, dest, comparer?, mode?)` | Source must be `IList<T>` **and** `IDispatchPending`; snapshot + `ReconcileList` / `ReconcileListAndItems` |
+| `TrackCollection(source, dest, comparer?, mode?)` | Same-type list; source must be `IList<T>` **and** `IDispatchPending` |
+| `TrackCollection(source, dest, same, create, update, remove)` | Model row → row ViewModel; `create` gets the source row; `remove` after a dest row is dropped; then `ClearHasPending` |
 | `TrackBinding(IDispatchPending, Action)` | Custom apply then `ClearHasPending` |
 | `TrackBinding(IDispatchBinding)` | Fully custom binding |
+| `TrackSeries(model, view)` | Fixed-length series copy when versions differ |
+| `TrackSeries(pending, getView, setView, buildSamples)` | Build samples from a pending source; then `ClearHasPending` |
 | `TrackProperties(ITrackPropertyChanges)` | Property-to-property map (rename / convert / two-way); see below |
+| `TrackDerived(Action)` | Presentation formulas after other bindings apply; see [Track\* methods](#track-methods) |
+| `TrackIntent(propertyName, publish)` | User changed a view property → publish a bus message; skipped while applying; see [Track\* methods](#track-methods) |
 
 ### Property maps (`TrackProperties`)
 
-Use when the ViewModel is **not** a 1:1 `DispatchableViewModel<T>` / shared interface, but still needs selected model fields projected on the dispatch tick.
+Prefer a **shared contract** over a long chain of `MapOneWay` / `MapTwoWay` when the ViewModel and model already share names and types.
 
 | Need | Prefer |
 |------|--------|
 | Full settings page, same names/types | `DispatchableViewModel<AppSettings>` + `AutoUpdateModel` |
-| Partial slice, rename, or type convert | `TrackProperties(model).Map…` |
-| Lists | `TrackCollection` |
+| Large 1:1 slice (dashboard vs State) | Shared interface + `[ProjectFrom<TContract>]` on the VM (generated destination bag) + `TrackProperties<TContract>(model, this)` |
+| Partial slice, rename, or type convert | Extra `.Map…` on that same map (or a small dedicated map) |
+| Lists | `TrackCollection` (same type, or model → row factory) |
 | High-rate text | `TrackIngress` |
 
+**`TrackProperties<TContract>(model, this)`** walks public properties on `TContract` that exist on both sides:
+
+- **Get-only** on the contract → **one-way** (model → view). Use this for display dashboards so the UI cannot write State.
+- **Get/set** on the contract → **two-way** (same name, identity).
+
+Leave lists, display-only strings, and converted fields **off** the contract. Chain a few `.MapOneWay` / `.MapTwoWay` only for those leftovers.
+
+Do **not** hand-list twenty same-name `MapOneWay` calls. That is what the contract overload replaces.
+
 ```csharp
+// Dashboard: IGrokHomeUsage is get-only → all those scalars one-way
+TrackProperties<IGrokHomeUsage>(home, this)
+    .MapOneWay<string, string>(
+        nameof(GrokHomeUsageState.PeriodType),
+        nameof(PeriodType),
+        GrokUsageAnalytics.FormatPeriodTypeDisplay); // convert stays off the contract
+
 // Two-way: settings path (string) ↔ VM selection (ModelInfo); names may differ
 TrackProperties(state.Settings)
     .MapTwoWay(
@@ -309,10 +341,6 @@ TrackProperties(state.Settings)
         nameof(SelectedModel),
         path => ResolveModel(path),          // string → ModelInfo
         model => model?.FilePath);           // ModelInfo → string
-
-// One-way display flags
-TrackProperties(state.ModelState)
-    .MapOneWay(nameof(ModelState.IsModelLoading), nameof(IsModelLoading), x => x);
 ```
 
 | API | Direction |
@@ -331,6 +359,93 @@ TrackProperties(state.ModelState)
 - Equality gates skip no-op writes.
 
 Unit coverage: `Tests/Cornerstone.UnitTests/Presentation/DispatchableViewModelPropertyMapTests.cs`.
+
+### Track* methods
+
+Each `Track*` call registers an `IDispatchBinding` on the ViewModel. On a dispatcher tick the VM asks every binding “are you dirty?” and, if so, “apply.” Most bindings have a **source** that can answer dirty: property-change bits, `SpeedyList.HasPending`, `TextIngress`, or a `DispatchPending` flag.
+
+| Call | Source of dirtiness | What it does |
+|------|---------------------|--------------|
+| `TrackProperties` | Mapped property bits on State / settings | Copy scalars onto the ViewModel (optional two-way) |
+| `TrackCollection` | `SpeedyList.HasPending` | Reconcile a presentation list, then **clear** pending. Projected: `same`, `create`, `update`, `remove` (`create` gets the source row; `remove` after a dest row is dropped) |
+| `TrackBinding` / derived `TrackSeries` | `IDispatchPending` | Custom copy (or chart samples), then **clear** pending |
+| `TrackIngress` | Staged character count | Drain text once per tick |
+| `TrackDerived` | **No source of its own** | Run **after** another binding on this VM actually applied |
+| `TrackIntent` | **Not an apply binding** | On user `PropertyChanged`, publish a bus message. Does not run during apply |
+| `ReleaseTracks` | **Not an apply binding** | Drops this VM's Track* recipe. `UninitializeLifecycle` already calls it. Rebind hosts call it before wiring a new session/repo |
+
+`TrackIntent` is the user → domain half. `Track*` copies State onto the ViewModel. When the user edits a combo, slider, or other view property that means “run processor work,” register `TrackIntent(nameof(SelectedPeriod), () => bus.SelectPeriod(...))`. `ApplyModelChanges` (and `BeginProjecting`) set `IsProjecting` so those same assignments from `TrackDerived` / `TrackProperties` do not publish. Do not keep `_isProjecting*` flags on the feature VM.
+
+Write-through settings still use `DispatchableViewModel<T>` + `AutoUpdateModel` (or `MapTwoWay`). Use `TrackIntent` when the gesture must publish, not write State.
+
+`TrackDerived` is not another way to copy State. It rebuilds fields that are **formulas over values the other tracks just wrote**: status sentences, combo selection match, view-clock labels, tooltips, `HasAnalytics`. Those strings are not on State.
+
+That is the same idea as:
+
+```csharp
+public override void ApplyModelChanges()
+{
+    base.ApplyModelChanges(); // all the copies
+    ProjectDerived();         // then format
+}
+```
+
+`TrackDerived(ProjectDerived)` **is** that override, registered as a binding so every feature uses one rule:
+
+1. **First apply always runs** (seed) so an empty tab gets “Loading…” / “not found” instead of blanks.
+2. **Later applies run only if some real `Track*` copied something this tick.**
+3. Derived **never clears** State pending and **never reads `HasChanges()` on State**. Resetting those bits from the ViewModel would break persistence; polling them would pin the dispatcher at the active rate.
+
+Register `TrackDerived` **last** so property / list / chart bindings apply first in the same tick. The apply loop skips derived bindings in the first pass, then runs them if `applied || NeedsSeed`.
+
+**Coarse, not source-aware.** After seed, derived runs if **any** sibling binding on that ViewModel applied — including maps for properties the lambda does not read. It does **not** run when the whole VM is quiet. A tighter design would declare “only if `UsagePercent` / `Sessions` are dirty”; that is extra bookkeeping and is not implemented.
+
+**Do not use `TrackSeries` twice on the same pending list.** The first apply clears `HasPending`, so a second series (or a caption) would miss the tick. One `TrackBinding` that fills every series and caption from that list is the right consumer. `TrackDerived` can then format flags that depend on those fills (`HasAnalytics` from day counts).
+
+**Host lists (one tab per State row).** `ApplicationViewModel` is the dispatcher, not a `DispatchableViewModel`, so it cannot call `TrackCollection` itself. Attach a small child dispatchable to the host (`Attach(this)` — the host is `IAppDispatcher`) and put `TrackCollection` / `TrackDerived` there. `create` constructs the tab from the source row; `remove` `Release`s it. Seed with `ApplyModelChanges` after the first load so the strip is not empty until the next idle poll.
+
+**Not a Track path:** View → domain (period pick, scrubber, refresh) publishes on the bus. Processors mutate State. Tracks only project inbound.
+
+#### Workflow: usage dashboard
+
+```csharp
+TrackProperties<IGrokHomeUsage>(home, this);     // 1 copy scalars
+TrackCollection(home.Sessions, Sessions, ...);   // 2 copy rows
+TrackBinding(home.DailyTokenTotals, FillCharts); // 3 copy charts
+TrackDerived(ProjectDerived);                    // 4 format UI from 1–3
+TrackIntent(nameof(SelectedPeriod), SelectIt);   // 5 user combo → bus (not during 1–4)
+```
+
+**Tick 1 — seed (tab just attached).** Processor already filled `UsagePercent`, sessions, daily totals. `HasModelChanges()` is true (maps not seeded, lists pending, derived not seeded). Apply: map writes 62%, collection writes three rows, binding builds series, then `ProjectDerived` sets `SelectedPeriod`, `StatusText` (“Updated … · 3 session(s) · Live”), tooltips, view-clock text. Derived marks itself seeded.
+
+**Tick 2 — nothing changed.** No bits, no list pending, derived is seeded. `HasModelChanges()` is false. Dispatcher parks.
+
+**Tick 3 — `home.UsagePercent = 80`.** Property map applies; `applied = true`; derived runs and rebuilds pace / ETA / status from the new 80%. Charts and sessions are left alone.
+
+**Tick 4 — a session is added.** Collection reconciles; derived runs so status can read `Sessions.Count` **after** the reconcile.
+
+**Tick 5 — only the daily-total list changes.** `TrackBinding` fills series + captions; derived updates `HasAnalytics` from the day counts those fills just stored.
+
+`ProjectDerived` may format and match combo items. It must not copy `UsagePercent` from State (`TrackProperties`), rebuild `Sessions` (`TrackCollection`), or publish `SelectPeriod` / `SetViewAsOf` (bus). Matching the combo by assigning `SelectedPeriod` is safe: apply is projecting, so `TrackIntent` does not publish.
+
+Unit coverage: `DispatchableViewModelBindingTests.TrackIntentDoesNotPublishDuringApply`.
+
+Tiny standalone example:
+
+```csharp
+TrackProperties(order);                    // OrderTotal, ItemCount
+TrackCollection(order.Lines, Lines, ...);
+TrackDerived(() =>
+{
+    SummaryText = ItemCount == 0
+        ? "Empty cart"
+        : $"{ItemCount} items · {OrderTotal:C}";
+});
+```
+
+`SummaryText` is not on State. When `ItemCount` or the line list changes, those tracks apply, then this lambda runs.
+
+Unit coverage: `DispatchableViewModelBindingTests.TrackDerivedSeedsThenReappliesWhenAnotherBindingApplies`.
 
 **Collection modes** (`CollectionReconcileMode`)
 
@@ -394,11 +509,14 @@ DispatchableViewModel.ApplyModelChanges
   ├── TrackIngress      → TextIngress.Drain
   ├── TrackCollection   → snapshot + ReconcileList* + ClearHasPending
   ├── TrackBinding      → custom + ClearHasPending
+  ├── TrackSeries       → CopyFrom / Publish + ClearHasPending (derived series)
   ├── TrackProperties   → mapped property projection
+  ├── TrackDerived      → after any of the above applied (or first-tick seed)
+  ├── TrackIntent       → not in this loop; user PropertyChanged → publish (skipped while applying)
   └── DispatchableViewModel<T> → Model.ApplyChangesTo(this)
 ```
 
-**Membership vs lifecycle:** `IAppDispatcher.Track` / `Release` only control poll membership. Docked tabs are lifecycle children of **DockingManager** (see [Controls/DockingLifecycle.md](Controls/DockingLifecycle.md)) — do not double-parent them under the app ViewModel for lifecycle.
+**Membership vs lifecycle:** Host `Track` / `Release` are lifecycle only. Apply-loop membership is `Attach` / `Detach` (views do this; that calls `IAppDispatcher.Track` / `Release`). Docked tabs are lifecycle children of **DockingManager** (see [Controls/DockingLifecycle.md](Controls/DockingLifecycle.md)) — do not also `Track` them on the app ViewModel.
 
 ---
 
@@ -411,8 +529,12 @@ DispatchableViewModel.ApplyModelChanges
 | `IDispatchPending` + `DispatchPending` | Done |
 | `SpeedyList` structural pending | Done |
 | `TextIngress` as `IDispatchPending` | Done (clear is no-op) |
-| `TrackIngress` / `TrackCollection` / `TrackBinding` | Done |
-| `TrackProperties` / `IPropertyMap` (one-way + two-way, rename, convert) | Done |
+| `TrackIngress` / `TrackCollection` / `TrackBinding` / `TrackSeries` | Done |
+| Projected `TrackCollection` `same` / `create` / `update` / `remove` | Done |
+| `ReleaseTracks` (drop apply recipe; UninitializeLifecycle already calls this) | Done |
+| `TrackProperties` / `IPropertyMap` (one-way + two-way, rename, convert, `TContract` auto-map) | Done |
+| `TrackDerived` (seed, then follow sibling applies; does not consume pending) | Done |
+| `TrackIntent` (user property change → bus; suppressed while applying) | Done |
 | Virtual Has/Apply composition on DVM / DVM`<T>` | Done |
 | Adaptive idle/active + `RequestDispatch` + park idle / `IntervalTimer` active | Done |
 | Unit tests (pending, bindings, ingress, property maps, adaptive mode) | Done |
@@ -439,13 +561,15 @@ Sample **producers** may still use `IntervalTimer` at very high rates (e.g. 2000
 | `AppViewModel` | `IAppDispatcher`, adaptive defaults (idle 10 park / active 120 IntervalTimer / N=8) |
 | `AgentViewModel` | `TrackIngress`; `TrackCollection` Models; `TrackProperties` Settings.SelectedModel ↔ SelectedModel (string ↔ ModelInfo) |
 | `SettingsViewModel` | `DispatchableViewModel<AppSettings>` + `AutoUpdateModel` |
+| GrokMonitor usage tab | `TrackProperties<IGrokHomeUsage>` + leftover convert / `TrackCollection` (sessions, periods) / `TrackBinding` for charts / `TrackDerived(ProjectDerived)` / `TrackIntent` (period combo, view-clock slider) |
+| GrokMonitor host | Child `HomeTabProjection`: `TrackCollection(Homes → HomeTabs, create, update, remove: Release)` + `TrackDerived` (Settings last) |
 
 ### Gaps / next steps
 
 - Remaining `ModelState` ingress streams when UI surfaces exist
-- Projected collection bindings (model item → row ViewModel factory)
+- Optional auto-`RequestDispatch` from projected collection factories (factory overload is implemented)
 - Optional auto-`RequestDispatch` from `IDispatchPending.MarkPending` / ingress (latency only; poll remains correct)
-- `Untrack*` / binding lifecycle cleanup if sources outlive the VM
+- Per-binding `Untrack*` if sources outlive the VM
 - Item-level dirty without list mutation (document / optional bump)
 - Optional: pause high-rate model producers when `IsAttached` becomes false
 
@@ -515,6 +639,6 @@ state.ModelState.Models.ReconcileList(...);  // marks SpeedyList.HasPending
 | [Lifecycle.md](Lifecycle.md) | Track / Release and parent/child lifecycle order |
 | [Keystone.md](Keystone.md) | Bus : State : Engine — models that feed the dispatcher |
 | [KeystoneFeatureTab.md](KeystoneFeatureTab.md) | How-to: dockable feature tab using Keystone + this layer |
-| [Controls/DockingLifecycle.md](Controls/DockingLifecycle.md) | Docking owns tab lifecycle and `IAppDispatcher.Track` / `Release` |
+| [Controls/DockingLifecycle.md](Controls/DockingLifecycle.md) | Docking owns tab lifecycle; views Attach for apply |
 | [CornerstoneApplication.md](CornerstoneApplication.md) | App shell lifecycle and Avalonia hosting |
 | [Controls/MarkdownView.md](Controls/MarkdownView.md) | Document buffer as a common drain destination for streaming text |

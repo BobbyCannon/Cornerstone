@@ -58,6 +58,7 @@ OnFrameworkInitializationCompleted
   App creates MainWindow / MainView from Keystone.ViewModel
   base → StartOwnedLifecycles
     (generic) Keystone.StartLifecycle()
+    (generic) ProcessLifecycle timer (off UI thread, 50 ms)
     StartInfrastructure()             // RuntimeInformation + Platform Start
 
 Shutdown (Exit / controlled lifetime)
@@ -117,6 +118,53 @@ public class App : CornerstoneApplication<AppKeystone>
 ```
 
 The Avalonia side only creates the **window/view shell**. Domain setup and lifecycle for Keystone are owned by `CornerstoneApplication<T>` + registrations on `AppBootstrap.DependencyProvider`.
+
+---
+
+## View / ViewModel / State (example: GrokMonitor)
+
+Worked host: `Cornerstone.GrokMonitor`. Use the same split when adding Keystone + AppDispatcher apps.
+
+| Layer | Owns | Does not |
+|-------|------|----------|
+| `*State` | Domain snapshot (`SpeedyList`, `CornerstoneObject`) | Avalonia, selection, bindings |
+| Processor | Mutate State; publish follow-up messages | Direct UI |
+| `*TabView` / `*TabViewModel` | Layout, selection, publish intent, Track* wiring | Reading State after Track* is configured |
+| Child ViewModels | Presentation rows / combo items | Being bound as State types |
+
+**Rules**
+
+- UI binds **ViewModels only**. Do not bind `*State` types in XAML.
+- Keystone (Bus, State, processors) is **business logic only** and runs **off the UI dispatcher**. Nothing in Keystone should call `IDispatcher.Dispatch` or assume Avalonia.
+- AppDispatcher exists to keep ViewModels in sync with State for **visual representation and/or user input**. Apply runs on the UI thread; it is not a place for domain rules.
+- A View/ViewModel may mention State **only when configuring** `TrackProperties` / `TrackCollection` / `TrackBinding` / `TrackIngress` (and design-time / host composition). After that, apply and commands use VM properties and bus publish.
+- Same-type lists: `TrackCollection(source, dest, comparer?, mode?)`. State row → row ViewModel: `TrackCollection(source, dest, same, create, update, remove)` (GrokUsage sessions / periods). `TrackBinding` is for charts / custom multi-sink apply, not a list factory. Do not keep `_state.FindById` in `ApplyModelChanges`.
+- Host `AppViewModel` may hold `AppState` to create tabs and apply theme. Feature tabs should not keep using State after Track*.
+- **Exception:** editor-style controls (`TextEditor` / `TextEditorViewModel`) may hold most document state in the ViewModel. That is a control architecture limit — do not copy it onto feature dashboards. See [Agent/TextEditor.md](Agent/TextEditor.md).
+
+**Naming**
+
+- Domain types: `*State` (`GrokHomeUsageState`). Settings files stay `AppSettings`.
+- Presentation: `*ViewModel` (`GrokUsageTabViewModel`, `GrokSessionRowViewModel`, `GrokUsagePeriodViewModel`).
+- Shared get-only contracts (`IGrokHomeUsage`) exist so `TrackProperties<TContract>` maps one-way. They are not bind targets.
+
+**Folders**
+
+Keep each tab **View + ViewModel side by side**. Put one-off child ViewModels in `ViewModels/` (same idea as `Models/` for reader DTOs):
+
+```
+FeatureName/
+  FeatureTabView.axaml
+  FeatureTabView.axaml.cs
+  FeatureTabViewModel.cs
+  ViewModels/          # row / combo / nested VMs
+  Models/              # non-State DTOs
+  State/  Channels/  Processors/
+```
+
+Namespaces follow folders.
+
+See [Keystone.md](Keystone.md), [KeystoneFeatureTab.md](KeystoneFeatureTab.md), and [AppDispatcher.md](AppDispatcher.md).
 
 ---
 

@@ -1,9 +1,9 @@
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="Cornerstone.Extension" Version="1.2.7" Language="en-US" Publisher="Bobby J Cannon" />
+    <Identity Id="Cornerstone.Extension" Version="1.2.8" Language="en-US" Publisher="Bobby J Cannon" />
     <DisplayName>Cornerstone</DisplayName>
     <Description xml:space="preserve">A set of tools to help you become epic. Includes Avalonia Xaml Previewer.</Description>
-    <Icon>Cornerstone.ico</Icon>
+    <Icon>Cornerstone.png</Icon>
     <Tags>Cornerstone;Avalonia;Previewer;Automation;Testing;</Tags>
   </Metadata>
   <!-- Hybrid: classic VsPackage/MEF + VisualStudio.Extensibility (modern settings contributions). -->

@@ -19,6 +19,11 @@ public class TerminalTokenizer : Tokenizer
 
 	public static readonly Regex ControlSequenceRegex;
 	private static readonly SpeedyQueue<Token> _sharedTokenPool;
+	private Color? _backgroundColor;
+	private bool? _bold;
+	private Color? _foregroundColor;
+	private bool? _italic;
+	private bool? _strikethrough;
 
 	#endregion
 
@@ -45,13 +50,40 @@ public class TerminalTokenizer : Tokenizer
 
 	internal void ProcessAnsiText(Terminal terminal, string text)
 	{
+		if (terminal?.ViewModel == null)
+		{
+			return;
+		}
+
+		ProcessAnsiText(terminal.ViewModel, text);
+	}
+
+	internal void ProcessAnsiText(TerminalViewModel viewModel, ReadOnlySpan<char> text)
+	{
+		if ((viewModel == null) || text.IsEmpty)
+		{
+			return;
+		}
+
+		ProcessAnsiText(viewModel, text.ToString());
+	}
+
+	internal void ProcessAnsiText(TerminalViewModel viewModel, string text)
+	{
+		if ((viewModel == null) || string.IsNullOrEmpty(text))
+		{
+			return;
+		}
+
 		var matches = ControlSequenceRegex.Matches(text);
+		if (matches.Count == 0)
+		{
+			viewModel.AppendStyled(text, _foregroundColor, _backgroundColor, _bold, _italic, _strikethrough);
+			viewModel.EnsureNewlineBeforeLivePrompt();
+			return;
+		}
+
 		var lastPos = 0;
-		bool? bold = null;
-		bool? italic = null;
-		bool? strikethrough = null;
-		Color? foregroundColor = null;
-		Color? backgroundColor = null;
 
 		foreach (Match m in matches)
 		{
@@ -62,30 +94,27 @@ public class TerminalTokenizer : Tokenizer
 
 				if (paramsSpan.IsEmpty)
 				{
-					foregroundColor = null;
-					backgroundColor = null;
-					bold = false;
-					italic = false;
-					strikethrough = false;
+					ResetAll(ref _foregroundColor, ref _backgroundColor, ref _bold, ref _italic, ref _strikethrough);
 				}
 				else
 				{
-					ProcessAnsiTextPattern(paramsSpan.ToString(), ref foregroundColor, ref backgroundColor, ref bold, ref italic, ref strikethrough);
+					ProcessAnsiTextPattern(paramsSpan.ToString(), ref _foregroundColor, ref _backgroundColor, ref _bold, ref _italic, ref _strikethrough);
 				}
 			}
 			else
 			{
-				terminal.AppendTextWithColor(m.Value, foregroundColor, backgroundColor, bold, italic, strikethrough);
+				viewModel.AppendStyled(m.Value, _foregroundColor, _backgroundColor, _bold, _italic, _strikethrough);
 			}
 
 			lastPos = m.Index + m.Length;
 		}
 
-		// Trailing text
 		if (lastPos < text.Length)
 		{
-			terminal.AppendTextWithColor(text.Substring(lastPos), foregroundColor, backgroundColor, bold, italic, strikethrough);
+			viewModel.AppendStyled(text.Substring(lastPos), _foregroundColor, _backgroundColor, _bold, _italic, _strikethrough);
 		}
+
+		viewModel.EnsureNewlineBeforeLivePrompt();
 	}
 
 	/// <summary>

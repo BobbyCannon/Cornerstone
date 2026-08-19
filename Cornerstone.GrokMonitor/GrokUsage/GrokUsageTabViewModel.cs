@@ -7,20 +7,20 @@ using System.IO;
 using System.Linq.Expressions;
 using Avalonia.Controls;
 using Avalonia.Media;
-using Avalonia.Threading;
 using Cornerstone.Avalonia.TreeDataGrid;
 using Cornerstone.Avalonia.TreeDataGrid.Columns;
 using Cornerstone.Avalonia.TreeDataGrid.Selection;
-using Cornerstone.Compare;
 using Cornerstone.Data;
-using Cornerstone.Extensions;
 using Cornerstone.GrokMonitor.GrokUsage.Models;
+using Cornerstone.GrokMonitor.GrokUsage.Services;
 using Cornerstone.GrokMonitor.GrokUsage.State;
+using Cornerstone.GrokMonitor.GrokUsage.ViewModels;
 using Cornerstone.GrokMonitor.Keystone;
 using Cornerstone.GrokMonitor.Keystone.State;
 using Cornerstone.Presentation;
 using Cornerstone.Profiling;
 using Cornerstone.Reflection;
+using Cornerstone.Runtime;
 using IDispatcher = Cornerstone.Presentation.IDispatcher;
 
 #endregion
@@ -33,32 +33,19 @@ namespace Cornerstone.GrokMonitor.GrokUsage;
 /// </summary>
 [SourceReflection]
 [Notifiable(["*"])]
-public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
+[ProjectFrom<IGrokHomeUsage>]
+public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab, IGrokHomeUsage
 {
-	#region Constants
-
-	/// <summary> Simulated-time multiplier while replaying (wall seconds × this). </summary>
-	private const double ReplaySpeed = 1000;
-
-	/// <summary> UI updates per second while replaying (soft reproject cadence). </summary>
-	private const double ReplayTicksPerSecond = 10;
-
-	#endregion
-
 	#region Fields
 
-	private static readonly GenericEqualityComparer<GrokUsagePeriodState> PeriodComparer;
-	private static readonly GenericEqualityComparer<GrokSessionUsageState> SessionComparer;
-
 	private readonly AppBus _bus;
+	private int _dailyTokenDayCount;
+	private int _dailyUsageDayCount;
+	private readonly IDateTimeProvider _dateTimeProvider;
+	private readonly GrokUsageState _grokUsage;
+	private readonly GrokHomeUsageState _home;
 	private bool _isDesignSample;
-	private bool _isProjectingPeriod;
-	private bool _isProjectingViewClock;
-	private bool _needsProjectionSeed = true;
-	private DispatcherTimer _replayTimer;
-	private readonly Stopwatch _replayWallClock = new();
-	private readonly AppState _state;
-	private bool _tracksWired;
+	private readonly AppSettings _settings;
 
 	#endregion
 
@@ -66,37 +53,41 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 
 	public GrokUsageTabViewModel(
 		AppBus bus,
-		AppState state,
+		GrokHomeUsageState home,
+		GrokUsageState grokUsage,
+		AppSettings settings,
 		IDispatcher dispatcher,
-		Guid homeId)
+		IDateTimeProvider dateTimeProvider)
 	{
 		_bus = bus;
-		_state = state;
-		HomeId = homeId;
+		_home = home ?? throw new ArgumentNullException(nameof(home));
+		_grokUsage = grokUsage ?? throw new ArgumentNullException(nameof(grokUsage));
+		_settings = settings ?? throw new ArgumentNullException(nameof(settings));
+		_dateTimeProvider = dateTimeProvider ?? DateTimeProvider.RealTime;
+		HomeId = home.Id;
 
-		Sessions = new PresentationList<GrokSessionUsageState>(dispatcher);
-		AvailablePeriods = new PresentationList<GrokUsagePeriodState>(dispatcher);
+		Sessions = new PresentationList<GrokSessionRowViewModel>(dispatcher);
+		AvailablePeriods = new PresentationList<GrokUsagePeriodViewModel>(dispatcher);
 
-		SessionsSource = new FlatTreeDataGridSource<GrokSessionUsageState>(Sessions)
+		SessionsSource = new FlatTreeDataGridSource<GrokSessionRowViewModel>(Sessions)
 		{
 			Columns =
 			{
-				new TextColumn<GrokSessionUsageState, string>("Title", x => x.Title, new GridLength(2, GridUnitType.Star)),
-				new TextColumn<GrokSessionUsageState, string>("Directory", x => x.WorkingDirectory, new GridLength(1, GridUnitType.Star)),
-				new TextColumn<GrokSessionUsageState, string>("Model", x => x.CurrentModelId, new GridLength(1, GridUnitType.Star)),
-				CompactCountColumn("Msgs", x => GrokUsageAnalytics.FormatCompactTokens(x.MessageCount), x => x.MessageCount, 70),
-				CompactCountColumn("Inf", x => GrokUsageAnalytics.FormatCompactTokens(x.InferenceCount), x => x.InferenceCount, 50),
-				CompactCountColumn("Prompt", x => GrokUsageAnalytics.FormatCompactTokens(x.PromptTokens), x => x.PromptTokens, 80),
-				CompactCountColumn("Cached", x => GrokUsageAnalytics.FormatCompactTokens(x.CachedPromptTokens), x => x.CachedPromptTokens, 80),
-				CompactCountColumn("Completion", x => GrokUsageAnalytics.FormatCompactTokens(x.CompletionTokens), x => x.CompletionTokens, 90),
-				CompactCountColumn("Reasoning", x => GrokUsageAnalytics.FormatCompactTokens(x.ReasoningTokens), x => x.ReasoningTokens, 90),
-				CompactCountColumn("Total", x => GrokUsageAnalytics.FormatCompactTokens(x.TotalTokens), x => x.TotalTokens, 80),
-				CompactPercentColumn("Usage", x => GrokUsageAnalytics.FormatAllocatedUsagePercent(x.UsagePercent, x.HasAllocatedUsage), x => x.UsagePercent, 80),
-				new TextColumn<GrokSessionUsageState, string>("Last", x => x.LastInferenceAtStr, new GridLength(180, GridUnitType.Pixel))
+				new TextColumn<GrokSessionRowViewModel, string>("Title", x => x.Title, new GridLength(2, GridUnitType.Star)),
+				new TextColumn<GrokSessionRowViewModel, string>("Directory", x => x.WorkingDirectory, new GridLength(1, GridUnitType.Star)),
+				new TextColumn<GrokSessionRowViewModel, string>("Model", x => x.CurrentModelId, new GridLength(1, GridUnitType.Star)),
+				CompactPercentColumn("Usage", x => GrokUsageAnalytics.FormatAllocatedUsagePercent(x.UsagePercent, x.HasAllocatedUsage), x => x.UsagePercent, 100),
+				CompactCountColumn("Total", x => GrokUsageAnalytics.FormatCompactTokens(x.TotalTokens), x => x.TotalTokens, 100),
+				CompactCountColumn("Prompt", x => GrokUsageAnalytics.FormatCompactTokens(x.PromptTokens), x => x.PromptTokens, 100),
+				CompactCountColumn("Cached", x => GrokUsageAnalytics.FormatCompactTokens(x.CachedPromptTokens), x => x.CachedPromptTokens, 100),
+				CompactCountColumn("Completion", x => GrokUsageAnalytics.FormatCompactTokens(x.CompletionTokens), x => x.CompletionTokens, 100),
+				CompactCountColumn("Reasoning", x => GrokUsageAnalytics.FormatCompactTokens(x.ReasoningTokens), x => x.ReasoningTokens, 100),
+				CompactCountColumn("Inf", x => GrokUsageAnalytics.FormatCompactTokens(x.InferenceCount), x => x.InferenceCount, 80),
+				CompactCountColumn("Msgs", x => GrokUsageAnalytics.FormatCompactTokens(x.MessageCount), x => x.MessageCount, 90)
 			}
 		};
 
-		SessionsSelection = new TreeDataGridRowSelectionModel<GrokSessionUsageState>(SessionsSource) { SingleSelect = true };
+		SessionsSelection = new TreeDataGridRowSelectionModel<GrokSessionRowViewModel>(SessionsSource) { SingleSelect = true };
 		SessionsSource.Selection = SessionsSelection;
 		SessionsSelection.SelectionChanged += SessionsSelectionOnSelectionChanged;
 
@@ -138,26 +129,10 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 		HasViewClock = false;
 		IsReplayPlaying = false;
 
-		// Seed tab title from state when the home already exists.
-		var existing = _state.GrokUsage.FindById(homeId);
-		if (existing != null)
-		{
-			DisplayName = existing.DisplayName ?? string.Empty;
-			Path = existing.Path ?? string.Empty;
-		}
-	}
-
-	static GrokUsageTabViewModel()
-	{
-		PeriodComparer = new GenericEqualityComparer<GrokUsagePeriodState>(
-			(x, y) => (x != null) && (y != null)
-				&& (x.PeriodStart == y.PeriodStart)
-				&& (x.PeriodEnd == y.PeriodEnd),
-			x => HashCode.Combine(x?.PeriodStart, x?.PeriodEnd));
-		SessionComparer = new GenericEqualityComparer<GrokSessionUsageState>(
-			(x, y) => (x != null) && (y != null)
-				&& string.Equals(x.SessionId, y.SessionId, StringComparison.Ordinal),
-			x => x?.SessionId?.GetHashCode(StringComparison.Ordinal) ?? 0);
+		// Tab headers bind before the tab is attached, so AppDispatcher has not
+		// applied TrackProperties yet. Seed identity from the home State.
+		DisplayName = home.DisplayName ?? string.Empty;
+		Path = home.Path ?? string.Empty;
 	}
 
 	#endregion
@@ -165,15 +140,9 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 	#region Properties
 
 	/// <summary>
-	/// Note when credit ETA cannot be formed.
-	/// </summary>
-	[Notify]
-	public partial string AnalyticsNote { get; set; }
-
-	/// <summary>
 	/// Billing periods for the period dropdown (selected home).
 	/// </summary>
-	public PresentationList<GrokUsagePeriodState> AvailablePeriods { get; }
+	public PresentationList<GrokUsagePeriodViewModel> AvailablePeriods { get; }
 
 	/// <summary>
 	/// Caption under the cumulative tokens chart (date span, first day → running total).
@@ -225,43 +194,10 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 	public partial SeriesDataProvider DailyUsageTotalChartData { get; set; }
 
 	[Notify]
-	public partial string DisplayName { get; set; }
-
-	[Notify]
-	public partial string ErrorText { get; set; }
-
-	[Notify]
-	public partial long GrandTotalCachedPromptTokens { get; set; }
-
-	[Notify]
-	public partial long GrandTotalCompletionTokens { get; set; }
-
-	[Notify]
-	public partial long GrandTotalPromptTokens { get; set; }
-
-	[Notify]
-	public partial long GrandTotalReasoningTokens { get; set; }
-
-	[Notify]
-	public partial long GrandTotalTokens { get; set; }
-
-	[Notify]
 	public partial bool HasAnalytics { get; set; }
 
 	[Notify]
-	public partial bool HasBilling { get; set; }
-
-	/// <summary>
-	/// True when credit-allowance percent is reported (SuperGrok-style). Hides usage gauges/charts when false.
-	/// </summary>
-	[Notify]
-	public partial bool HasCreditUsage { get; set; }
-
-	[Notify]
 	public partial bool HasOnDemandCap { get; set; }
-
-	[Notify]
-	public partial bool HasUsageEstimate { get; set; }
 
 	/// <summary>
 	/// True when a period range exists so the view-clock scrubber can be shown.
@@ -269,16 +205,10 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 	[Notify]
 	public partial bool HasViewClock { get; set; }
 
-	[Notify]
-	public partial bool HomeExists { get; set; }
-
 	/// <summary>
 	/// Fixed Grok home this dashboard projects (does not change after construction).
 	/// </summary>
 	public Guid HomeId { get; }
-
-	[Notify]
-	public partial bool IsBusy { get; set; }
 
 	/// <summary>
 	/// True while period replay is advancing the view clock.
@@ -295,20 +225,11 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 	[Notify]
 	public partial string LastError { get; set; }
 
-	[Notify]
-	public partial DateTimeOffset LastRefreshedAt { get; set; }
-
-	[Notify]
-	public partial double LinearPacePercent { get; set; }
-
 	/// <summary>
 	/// Tooltip for the linear pace percent line.
 	/// </summary>
 	[Notify]
 	public partial string LinearPaceToolTip { get; set; }
-
-	[Notify]
-	public partial double OnDemandCap { get; set; }
 
 	/// <summary>
 	/// Tooltip for on-demand spend vs cap.
@@ -322,9 +243,6 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 	[Notify]
 	public partial double OnDemandUsagePercent { get; set; }
 
-	[Notify]
-	public partial double OnDemandUsed { get; set; }
-
 	/// <summary>
 	/// Ahead of pace / On pace / Behind pace for credit allowance.
 	/// </summary>
@@ -337,12 +255,6 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 	[Notify]
 	public partial string PaceLabelToolTip { get; set; }
 
-	[Notify]
-	public partial string Path { get; set; }
-
-	[Notify]
-	public partial DateTimeOffset PeriodEnd { get; set; }
-
 	/// <summary>
 	/// Humanized remaining time until period end.
 	/// </summary>
@@ -350,66 +262,52 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 	public partial string PeriodRemainingText { get; set; }
 
 	[Notify]
-	public partial DateTimeOffset PeriodStart { get; set; }
-
-	[Notify]
 	public partial string PeriodType { get; set; }
-
-	[Notify]
-	public partial double PrepaidBalance { get; set; }
-
-	[Notify]
-	public partial string ProgressText { get; set; }
 
 	/// <summary>
 	/// Selected billing/usage period; setting publishes SelectPeriod (when not projecting).
 	/// </summary>
 	[Notify]
-	public partial GrokUsagePeriodState SelectedPeriod { get; set; }
+	public partial GrokUsagePeriodViewModel SelectedPeriod { get; set; }
 
 	/// <summary>
 	/// Currently selected session row in the Sessions grid (context menu / open commands).
 	/// </summary>
 	[Notify]
-	public partial GrokSessionUsageState SelectedSession { get; set; }
+	public partial GrokSessionRowViewModel SelectedSession { get; set; }
+
+	[Notify]
+	public partial bool SessionTokenHeatEnabled { get; set; }
+
+	[Notify]
+	public partial long SessionTokenHeatHotTokens { get; set; }
+
+	[Notify]
+	public partial long SessionTokenHeatSoftTokens { get; set; }
 
 	/// <summary>
 	/// Sessions for the selected home.
 	/// </summary>
-	public PresentationList<GrokSessionUsageState> Sessions { get; }
+	public PresentationList<GrokSessionRowViewModel> Sessions { get; }
 
 	/// <summary>
 	/// Row selection for the Sessions TreeDataGrid.
 	/// </summary>
-	public TreeDataGridRowSelectionModel<GrokSessionUsageState> SessionsSelection { get; }
+	public TreeDataGridRowSelectionModel<GrokSessionRowViewModel> SessionsSelection { get; }
 
 	/// <summary>
 	/// Flat TreeDataGrid source for the Sessions list.
 	/// </summary>
-	public FlatTreeDataGridSource<GrokSessionUsageState> SessionsSource { get; }
-
-	/// <summary>
-	/// Shell settings (session heat thresholds, theme). Used by Sessions row heat bindings.
-	/// </summary>
-	public AppSettings Settings => _state.Settings;
+	public FlatTreeDataGridSource<GrokSessionRowViewModel> SessionsSource { get; }
 
 	[Notify]
 	public partial string StatusText { get; set; }
-
-	[Notify]
-	public partial string SubscriptionTier { get; set; }
 
 	/// <summary>
 	/// Tooltip for token burn (24h).
 	/// </summary>
 	[Notify]
 	public partial string TokenBurn24hToolTip { get; set; }
-
-	[Notify]
-	public partial double TokenBurnPerHourLast24h { get; set; }
-
-	[Notify]
-	public partial double TokenBurnPerHourPeriod { get; set; }
 
 	/// <summary>
 	/// Tooltip for token burn (period).
@@ -435,12 +333,6 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 	[Notify]
 	public partial string UsageExhaustionText { get; set; }
 
-	[Notify]
-	public partial double UsagePercent { get; set; }
-
-	[Notify]
-	public partial double UsagePercentPerHour { get; set; }
-
 	/// <summary>
 	/// Tooltip for credits percent per hour.
 	/// </summary>
@@ -450,9 +342,6 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 	/// <summary>
 	/// How credit rate was derived (billing history / period average).
 	/// </summary>
-	[Notify]
-	public partial string UsageRateSource { get; set; }
-
 	/// <summary>
 	/// Tooltip for weekly credit usage percent.
 	/// </summary>
@@ -460,14 +349,17 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 	public partial string UsageToolTip { get; set; }
 
 	/// <summary>
+	/// Scrubber position 0…1 over [period start, live max]. Setting publishes SetViewAsOf / SetViewLive.
+	/// </summary>
+	[Notify]
+	public partial DateTimeOffset ViewAsOf { get; set; }
+
+	/// <summary>
 	/// Humanized view clock (As of … / Live).
 	/// </summary>
 	[Notify]
 	public partial string ViewAsOfText { get; set; }
 
-	/// <summary>
-	/// Scrubber position 0…1 over [period start, live max]. Setting publishes SetViewAsOf / SetViewLive.
-	/// </summary>
 	[Notify]
 	public partial double ViewClockProgress { get; set; }
 
@@ -475,37 +367,30 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 
 	#region Methods
 
-	public override void ApplyModelChanges()
-	{
-		base.ApplyModelChanges();
-		ProjectHome();
-		_needsProjectionSeed = false;
-	}
-
 	public bool CanOpenEvents(object parameter)
 	{
-		return parameter is GrokSessionUsageState session
+		return parameter is GrokSessionRowViewModel session
 			&& !string.IsNullOrEmpty(session.EventsPath)
 			&& File.Exists(session.EventsPath);
 	}
 
 	public bool CanOpenSessionFolder(object parameter)
 	{
-		return parameter is GrokSessionUsageState session
+		return parameter is GrokSessionRowViewModel session
 			&& !string.IsNullOrEmpty(session.SessionDirectory)
 			&& Directory.Exists(session.SessionDirectory);
 	}
 
 	public bool CanOpenSummary(object parameter)
 	{
-		return parameter is GrokSessionUsageState session
+		return parameter is GrokSessionRowViewModel session
 			&& !string.IsNullOrEmpty(session.SummaryPath)
 			&& File.Exists(session.SummaryPath);
 	}
 
 	public bool CanOpenWorkingDirectory(object parameter)
 	{
-		return parameter is GrokSessionUsageState session
+		return parameter is GrokSessionRowViewModel session
 			&& !string.IsNullOrEmpty(session.WorkingDirectory)
 			&& Directory.Exists(session.WorkingDirectory);
 	}
@@ -515,60 +400,17 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 		return !_isDesignSample && HasViewClock;
 	}
 
-	/// <summary>
-	/// Design-time / preview sample: one home with billing, analytics, and sessions.
-	/// Skips disk refresh in <see cref="InitializeLifecycle" /> so sample data is not wiped.
-	/// </summary>
-	public static GrokUsageTabViewModel CreateDesignSample(AppBus bus, AppState state, IDispatcher dispatcher)
-	{
-		var now = DateTimeOffset.UtcNow;
-		var periodStart = now.Date.AddDays(-((int) now.DayOfWeek + 6) % 7); // Monday of current week (UTC date)
-		var periodEnd = periodStart.AddDays(7);
-		var periodStartOffset = new DateTimeOffset(periodStart, TimeSpan.Zero);
-		var periodEndOffset = new DateTimeOffset(periodEnd, TimeSpan.Zero);
-
-		var homeId = Guid.Parse("A1B2C3D4-E5F6-7890-ABCD-EF1234567890");
-		var home = CreatePrimaryHomeSample(homeId, now, periodStartOffset, periodEndOffset);
-
-		state.GrokUsage.Homes.Clear();
-		state.GrokUsage.Homes.Add(home);
-		state.GrokUsage.SelectedHomeId = home.Id;
-		state.GrokUsage.LastError = string.Empty;
-
-		var sample = new GrokUsageTabViewModel(bus, state, dispatcher, homeId);
-		sample._isDesignSample = true;
-
-		// Populate presentation fields immediately for the previewer.
-		sample.ProjectHome();
-		sample._needsProjectionSeed = false;
-		return sample;
-	}
-
-	public override bool HasModelChanges()
-	{
-		if (_needsProjectionSeed || base.HasModelChanges())
-		{
-			return true;
-		}
-
-		return HomeHasPending();
-	}
-
 	public override void InitializeLifecycle()
 	{
-		EnsureTracks();
-		if (!_isDesignSample)
-		{
-			_needsProjectionSeed = true;
-		}
-
+		WireDispatchTracks();
+		ApplyModelChanges();
 		base.InitializeLifecycle();
 	}
 
 	[RelayCommand(CanExecuteMethod = nameof(CanOpenEvents))]
 	public void OpenEvents(object parameter)
 	{
-		if (parameter is not GrokSessionUsageState session || !CanOpenEvents(session))
+		if (parameter is not GrokSessionRowViewModel session || !CanOpenEvents(session))
 		{
 			return;
 		}
@@ -579,7 +421,7 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 	[RelayCommand(CanExecuteMethod = nameof(CanOpenSessionFolder))]
 	public void OpenSessionFolder(object parameter)
 	{
-		if (parameter is not GrokSessionUsageState session || !CanOpenSessionFolder(session))
+		if (parameter is not GrokSessionRowViewModel session || !CanOpenSessionFolder(session))
 		{
 			return;
 		}
@@ -590,7 +432,7 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 	[RelayCommand(CanExecuteMethod = nameof(CanOpenSummary))]
 	public void OpenSummary(object parameter)
 	{
-		if (parameter is not GrokSessionUsageState session || !CanOpenSummary(session))
+		if (parameter is not GrokSessionRowViewModel session || !CanOpenSummary(session))
 		{
 			return;
 		}
@@ -601,7 +443,7 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 	[RelayCommand(CanExecuteMethod = nameof(CanOpenWorkingDirectory))]
 	public void OpenWorkingDirectory(object parameter)
 	{
-		if (parameter is not GrokSessionUsageState session || !CanOpenWorkingDirectory(session))
+		if (parameter is not GrokSessionRowViewModel session || !CanOpenWorkingDirectory(session))
 		{
 			return;
 		}
@@ -615,7 +457,10 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 	[RelayCommand]
 	public void PauseReplay()
 	{
-		StopReplay();
+		if (!_isDesignSample)
+		{
+			_bus.GrokUsage.StopReplay(HomeId);
+		}
 	}
 
 	[RelayCommand]
@@ -629,15 +474,12 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 		{
 			_bus.GrokUsage.RefreshAll();
 		}
-
-		_needsProjectionSeed = true;
 	}
 
 	[RelayCommand]
 	public void RefreshAll()
 	{
 		_bus.GrokUsage.RefreshAll();
-		_needsProjectionSeed = true;
 	}
 
 	/// <summary>
@@ -645,24 +487,20 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 	/// Compares against home state (not <see cref="SelectedPeriod" />), because the ComboBox
 	/// already assigned SelectedPeriod before <see cref="OnPropertyChanged{T}" /> runs.
 	/// </summary>
-	public void SelectPeriod(GrokUsagePeriodState period)
+	public void SelectPeriod(GrokUsagePeriodViewModel period)
 	{
-		if (_isDesignSample || _isProjectingPeriod || (period == null) || (HomeId == Guid.Empty))
+		if (_isDesignSample || (period == null) || (HomeId == Guid.Empty))
 		{
 			return;
 		}
 
-		var home = _state.GrokUsage.FindById(HomeId);
-		if ((home != null)
-			&& (home.SelectedPeriodStart == period.PeriodStart)
-			&& (home.SelectedPeriodEnd == period.PeriodEnd))
+		if ((SelectedPeriodStart == period.PeriodStart)
+			&& (SelectedPeriodEnd == period.PeriodEnd))
 		{
 			return;
 		}
 
-		StopReplay();
 		_bus.GrokUsage.SelectPeriod(HomeId, period.PeriodStart, period.PeriodEnd);
-		_needsProjectionSeed = true;
 	}
 
 	/// <summary>
@@ -678,47 +516,26 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 
 		if (IsReplayPlaying)
 		{
-			StopReplay();
+			_bus.GrokUsage.StopReplay(HomeId);
 			return;
 		}
 
-		if (!TryGetViewClockRange(out var start, out var max))
-		{
-			return;
-		}
-
-		// Replay a full pass when already at the live end.
-		if (IsViewLive || (ViewClockProgress >= 0.999))
-		{
-			_bus.GrokUsage.SetViewAsOf(start);
-			_needsProjectionSeed = true;
-		}
-
-		IsReplayPlaying = true;
-		_replayWallClock.Restart();
-		EnsureReplayTimer().Start();
-		_needsProjectionSeed = true;
+		_bus.GrokUsage.StartReplay(HomeId);
 	}
 
 	public override void UninitializeLifecycle()
 	{
-		StopReplay();
+		if (!_isDesignSample)
+		{
+			_bus.GrokUsage.StopReplay(HomeId);
+		}
+
 		base.UninitializeLifecycle();
 	}
 
 	protected override void OnPropertyChanged<T>(string propertyName, T oldValue, T newValue)
 	{
 		base.OnPropertyChanged(propertyName, oldValue, newValue);
-
-		if ((propertyName == nameof(SelectedPeriod)) && newValue is GrokUsagePeriodState period)
-		{
-			SelectPeriod(period);
-		}
-
-		if ((propertyName == nameof(ViewClockProgress)) && !_isProjectingViewClock && !_isDesignSample)
-		{
-			OnViewClockProgressChanged();
-		}
 
 		// CanToggleReplay depends on HasViewClock; Avalonia only re-queries after CanExecuteChanged.
 		if (propertyName == nameof(HasViewClock))
@@ -751,6 +568,8 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 		UsagePercentPerHourToolTip = string.Empty;
 		UsageEtaToolTip = string.Empty;
 		OnDemandToolTip = string.Empty;
+		_dailyTokenDayCount = 0;
+		_dailyUsageDayCount = 0;
 		FillDailyTokensChart([]);
 		FillDailyUsageChart([]);
 	}
@@ -758,17 +577,17 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 	/// <summary>
 	/// Compact K/M/B display with numeric sort on the underlying count.
 	/// </summary>
-	private static TextColumn<GrokSessionUsageState, string> CompactCountColumn(
+	private static TextColumn<GrokSessionRowViewModel, string> CompactCountColumn(
 		string header,
-		Expression<Func<GrokSessionUsageState, string>> display,
-		Func<GrokSessionUsageState, long> sortKey,
+		Expression<Func<GrokSessionRowViewModel, string>> display,
+		Func<GrokSessionRowViewModel, long> sortKey,
 		int widthPixels)
 	{
-		return new TextColumn<GrokSessionUsageState, string>(
+		return new TextColumn<GrokSessionRowViewModel, string>(
 			header,
 			display,
 			new GridLength(widthPixels, GridUnitType.Pixel),
-			options: new TextColumnOptions<GrokSessionUsageState>
+			options: new TextColumnOptions<GrokSessionRowViewModel>
 			{
 				CompareAscending = (a, b) => sortKey(a).CompareTo(sortKey(b)),
 				CompareDescending = (a, b) => sortKey(b).CompareTo(sortKey(a)),
@@ -776,17 +595,17 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 			});
 	}
 
-	private static TextColumn<GrokSessionUsageState, string> CompactPercentColumn(
+	private static TextColumn<GrokSessionRowViewModel, string> CompactPercentColumn(
 		string header,
-		Expression<Func<GrokSessionUsageState, string>> display,
-		Func<GrokSessionUsageState, double> sortKey,
+		Expression<Func<GrokSessionRowViewModel, string>> display,
+		Func<GrokSessionRowViewModel, double> sortKey,
 		int widthPixels)
 	{
-		return new TextColumn<GrokSessionUsageState, string>(
+		return new TextColumn<GrokSessionRowViewModel, string>(
 			header,
 			display,
 			new GridLength(widthPixels, GridUnitType.Pixel),
-			options: new TextColumnOptions<GrokSessionUsageState>
+			options: new TextColumnOptions<GrokSessionRowViewModel>
 			{
 				CompareAscending = (a, b) => sortKey(a).CompareTo(sortKey(b)),
 				CompareDescending = (a, b) => sortKey(b).CompareTo(sortKey(a)),
@@ -794,251 +613,63 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 			});
 	}
 
-	private static GrokHomeUsageState CreatePrimaryHomeSample(
-		Guid id,
-		DateTimeOffset now,
-		DateTimeOffset periodStart,
-		DateTimeOffset periodEnd)
+	private void WireDispatchTracks()
 	{
-		var home = new GrokHomeUsageState(id)
-		{
-			DisplayName = GrokPaths.PrimaryHomeDisplayName,
-			Path = @"C:\Users\Ada\.grok",
-			HomeExists = true,
-			IsBusy = false,
-			ProgressText = string.Empty,
-			ErrorText = string.Empty,
-			HasBilling = true,
-			HasCreditUsage = true,
-			SubscriptionTier = "SuperGrok",
-			UsagePercent = 62.4,
-			PeriodType = "weekly",
-			PeriodStart = periodStart,
-			PeriodEnd = periodEnd,
-			OnDemandCap = 50,
-			OnDemandUsed = 12.75,
-			PrepaidBalance = 0,
-			GrandTotalPromptTokens = 1_284_500,
-			GrandTotalCachedPromptTokens = 412_200,
-			GrandTotalCompletionTokens = 318_750,
-			GrandTotalReasoningTokens = 96_400,
-			GrandTotalTokens = 1_603_250,
-			LastRefreshedAt = now.AddMinutes(-4),
-			TokenBurnPerHourLast24h = 48_200,
-			TokenBurnPerHourPeriod = 31_500,
-			UsagePercentPerHour = 0.42,
-			LinearPacePercent = 55.0,
-			HasUsageEstimate = true,
-			UsageRateSource = "billing history",
-			EstimatedUsageExhaustionAt = now.AddHours(90),
-			AnalyticsNote = string.Empty,
-			SelectedPeriodStart = periodStart,
-			SelectedPeriodEnd = periodEnd
-		};
+		TrackProperties(_grokUsage)
+			.MapOneWay(nameof(GrokUsageState.LastError), nameof(LastError), (string v) => v ?? string.Empty);
 
-		var prevStart = periodStart.AddDays(-7);
-		var prevEnd = periodStart;
-		home.AvailablePeriods.Load(
-		[
-			new GrokUsagePeriodState
+		TrackProperties(_settings)
+			.MapOneWay(nameof(AppSettings.SessionTokenHeatEnabled))
+			.MapOneWay(nameof(AppSettings.SessionTokenHeatSoftTokens))
+			.MapOneWay(nameof(AppSettings.SessionTokenHeatHotTokens));
+
+		var home = _home;
+
+		// Shared IGrokHomeUsage scalars (get-only → one-way). PeriodType is display-formatted.
+		TrackProperties<IGrokHomeUsage>(home, this)
+			.MapOneWay<string, string>(nameof(GrokHomeUsageState.PeriodType), nameof(PeriodType), GrokUsageAnalytics.FormatPeriodTypeDisplay);
+
+		TrackCollection(
+			home.Sessions,
+			Sessions,
+			(item, dest) => string.Equals(item.SessionId, dest.SessionId, StringComparison.Ordinal),
+			_ => new GrokSessionRowViewModel(),
+			(dest, item) => dest.UpdateWith(item),
+			_ => { });
+		TrackCollection(
+			home.AvailablePeriods,
+			AvailablePeriods,
+			(item, dest) => (item.PeriodStart == dest.PeriodStart) && (item.PeriodEnd == dest.PeriodEnd),
+			_ => new GrokUsagePeriodViewModel(),
+			(dest, item) =>
 			{
-				PeriodStart = periodStart,
-				PeriodEnd = periodEnd,
-				PeriodType = "weekly",
-				IsCurrent = true,
-				DisplayName = GrokUsageAnalytics.FormatPeriodDisplayName(periodStart, periodEnd, true)
+				dest.UpdateWith(item);
+				dest.DisplayName = GrokUsageAnalytics.FormatPeriodDisplayName(
+					item.PeriodStart,
+					item.PeriodEnd,
+					item.IsCurrent,
+					item.PeriodType);
 			},
-			new GrokUsagePeriodState
-			{
-				PeriodStart = prevStart,
-				PeriodEnd = prevEnd,
-				PeriodType = "weekly",
-				IsCurrent = false,
-				DisplayName = GrokUsageAnalytics.FormatPeriodDisplayName(prevStart, prevEnd, false)
-			}
-		]);
+			_ => { });
+		TrackBinding(home.DailyTokenTotals, () => FillDailyTokensChart(home.DailyTokenTotals));
+		TrackBinding(home.DailyUsageTotals, () => FillDailyUsageChart(home.DailyUsageTotals));
 
-		// 7 local days of token totals for the current week.
-		var today = DateTime.Today;
-		var daily = new DailyTokenTotal[7];
-		long[] dayTokens =
-		[
-			51_300, 67_900, 142_000, 155_600, 88_200, 72_400, 61_800
-		];
-		for (var i = 0; i < daily.Length; i++)
+		// Derived presentation (status, selected period, view clock, tooltips).
+		// Must be last so property/list/chart tracks apply first in the same tick.
+		TrackDerived(ProjectDerived);
+
+		if (!_isDesignSample)
 		{
-			daily[i] = new DailyTokenTotal
-			{
-				Day = today.AddDays(i - (daily.Length - 1)),
-				TotalTokens = dayTokens[i]
-			};
+			TrackIntent(nameof(SelectedPeriod), () => SelectPeriod(SelectedPeriod));
+			TrackIntent(nameof(ViewClockProgress), OnViewClockProgressChanged);
 		}
-
-		home.DailyTokenTotals.Load(daily);
-
-		// Usage per day: quiet start, one heavy day (~+27 pts), then small burns.
-		double[] usageEnds = [42, 48, 75, 82, 88, 91, 62.4];
-		double[] usageDeltas = [7, 6, 27, 7, 6, 3, 2];
-		var dailyUsage = new DailyUsageTotal[7];
-		for (var i = 0; i < dailyUsage.Length; i++)
-		{
-			dailyUsage[i] = new DailyUsageTotal
-			{
-				Day = today.AddDays(i - (dailyUsage.Length - 1)),
-				EndOfDayPercent = usageEnds[i],
-				DailyDelta = usageDeltas[i],
-				HasSnapshot = true
-			};
-		}
-
-		home.DailyUsageTotals.Load(dailyUsage);
-
-		home.Sessions.Load(
-		[
-			new GrokSessionUsageState
-			{
-				SessionId = "sess-personal-001",
-				Title = "Wire Grok usage dashboard",
-				WorkingDirectory = @"C:\Workspaces\MyApp",
-				CurrentModelId = "grok-4",
-				MessageCount = 48,
-				InferenceCount = 36,
-				PromptTokens = 520_100,
-				CachedPromptTokens = 180_400,
-				CompletionTokens = 112_300,
-				ReasoningTokens = 41_200,
-				TotalTokens = 632_400,
-				HasAllocatedUsage = true,
-				UsagePercent = GrokUsageAnalytics.AllocateSessionUsagePercent(632_400, 1_603_250, 62.4),
-				FirstInferenceAt = now.AddDays(-3).AddHours(-2),
-				LastInferenceAt = now.AddMinutes(-12),
-				SessionDirectory = @"C:\Users\Ada\.grok\sessions\sess-personal-001",
-				SummaryPath = @"C:\Users\Ada\.grok\sessions\sess-personal-001\summary.json",
-				EventsPath = @"C:\Users\Ada\.grok\sessions\sess-personal-001\events.jsonl"
-			},
-			new GrokSessionUsageState
-			{
-				SessionId = "sess-personal-002",
-				Title = "Refactor TreeDataGrid selection",
-				WorkingDirectory = @"C:\Workspaces\MyApp\Client",
-				CurrentModelId = "grok-4",
-				MessageCount = 22,
-				InferenceCount = 18,
-				PromptTokens = 310_200,
-				CachedPromptTokens = 95_100,
-				CompletionTokens = 78_400,
-				ReasoningTokens = 22_800,
-				TotalTokens = 388_600,
-				HasAllocatedUsage = true,
-				UsagePercent = GrokUsageAnalytics.AllocateSessionUsagePercent(388_600, 1_603_250, 62.4),
-				FirstInferenceAt = now.AddDays(-5),
-				LastInferenceAt = now.AddHours(-6),
-				SessionDirectory = @"C:\Users\Ada\.grok\sessions\sess-personal-002",
-				SummaryPath = @"C:\Users\Ada\.grok\sessions\sess-personal-002\summary.json",
-				EventsPath = @"C:\Users\Ada\.grok\sessions\sess-personal-002\events.jsonl"
-			},
-			new GrokSessionUsageState
-			{
-				SessionId = "sess-personal-003",
-				Title = "Design review notes",
-				WorkingDirectory = @"C:\Workspaces\Docs",
-				CurrentModelId = "grok-3-mini",
-				MessageCount = 9,
-				InferenceCount = 7,
-				PromptTokens = 84_500,
-				CachedPromptTokens = 12_200,
-				CompletionTokens = 31_050,
-				ReasoningTokens = 0,
-				TotalTokens = 115_550,
-				HasAllocatedUsage = true,
-				UsagePercent = GrokUsageAnalytics.AllocateSessionUsagePercent(115_550, 1_603_250, 62.4),
-				FirstInferenceAt = now.AddDays(-8),
-				LastInferenceAt = now.AddDays(-1).AddHours(-3),
-				SessionDirectory = @"C:\Users\Ada\.grok\sessions\sess-personal-003",
-				SummaryPath = @"C:\Users\Ada\.grok\sessions\sess-personal-003\summary.json",
-				EventsPath = @"C:\Users\Ada\.grok\sessions\sess-personal-003\events.jsonl"
-			},
-			new GrokSessionUsageState
-			{
-				// Summary-only session: no inference_done rows yet (expected zeros).
-				SessionId = "sess-personal-004",
-				Title = "Untitled session",
-				WorkingDirectory = @"C:\Workspaces\Scratch",
-				CurrentModelId = string.Empty,
-				MessageCount = 2,
-				InferenceCount = 0,
-				PromptTokens = 0,
-				CachedPromptTokens = 0,
-				CompletionTokens = 0,
-				ReasoningTokens = 0,
-				TotalTokens = 0,
-				HasAllocatedUsage = true,
-				UsagePercent = 0,
-				FirstInferenceAt = default,
-				LastInferenceAt = default,
-				SessionDirectory = @"C:\Users\Ada\.grok\sessions\sess-personal-004",
-				SummaryPath = @"C:\Users\Ada\.grok\sessions\sess-personal-004\summary.json",
-				EventsPath = string.Empty
-			},
-			new GrokSessionUsageState
-			{
-				SessionId = "sess-personal-005",
-				Title = "PowerShell host diagnostics",
-				WorkingDirectory = @"C:\Workspaces\MyApp",
-				CurrentModelId = "grok-4",
-				MessageCount = 15,
-				InferenceCount = 11,
-				PromptTokens = 198_700,
-				CachedPromptTokens = 64_300,
-				CompletionTokens = 45_200,
-				ReasoningTokens = 18_400,
-				TotalTokens = 243_900,
-				HasAllocatedUsage = true,
-				UsagePercent = GrokUsageAnalytics.AllocateSessionUsagePercent(243_900, 1_603_250, 62.4),
-				FirstInferenceAt = now.AddDays(-2),
-				LastInferenceAt = now.AddHours(-1),
-				SessionDirectory = @"C:\Users\Ada\.grok\sessions\sess-personal-005",
-				SummaryPath = @"C:\Users\Ada\.grok\sessions\sess-personal-005\summary.json",
-				EventsPath = @"C:\Users\Ada\.grok\sessions\sess-personal-005\events.jsonl"
-			}
-		]);
-
-		return home;
-	}
-
-	private DispatcherTimer EnsureReplayTimer()
-	{
-		if (_replayTimer != null)
-		{
-			return _replayTimer;
-		}
-
-		_replayTimer = new DispatcherTimer
-		{
-			Interval = TimeSpan.FromSeconds(1.0 / ReplayTicksPerSecond)
-		};
-		_replayTimer.Tick += ReplayTimerOnTick;
-		return _replayTimer;
-	}
-
-	private void EnsureTracks()
-	{
-		if (_tracksWired)
-		{
-			return;
-		}
-
-		TrackProperties(_state.GrokUsage)
-			.MapOneWay(nameof(GrokUsageState.LastError), nameof(LastError), (string v) => v ?? string.Empty)
-			.MapOneWay(nameof(GrokUsageState.IsViewLive), nameof(IsViewLive), (bool v) => v);
-
-		_tracksWired = true;
 	}
 
 	private void FillDailyTokensChart(IReadOnlyList<DailyTokenTotal> days)
 	{
 		// Snapshot SpeedyList so series build is stable.
 		var snapshot = SnapshotList(days);
+		_dailyTokenDayCount = snapshot.Count;
 		var values = GrokUsageAnalytics.BuildDailyChartSeries(snapshot);
 
 		// Runs inside ApplyModelChanges (AppDispatcher / UI). No extra IDispatcher.Dispatch.
@@ -1059,6 +690,7 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 	private void FillDailyUsageChart(IReadOnlyList<DailyUsageTotal> days)
 	{
 		var snapshot = SnapshotList(days);
+		_dailyUsageDayCount = snapshot.Count;
 		var dailyUsage = GrokUsageAnalytics.BuildDailyUsageChartSeries(snapshot);
 		SeriesPresentation.Publish(
 			dailyUsage,
@@ -1165,46 +797,27 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 			: $"{speed:0.#}×";
 	}
 
-	private static string FormatUsageExhaustion(GrokHomeUsageState home)
+	private string FormatUsageExhaustion()
 	{
-		if (home.UsagePercent >= 100)
+		if (UsagePercent >= 100)
 		{
 			return "Usage exhausted for this period";
 		}
 
-		if (home.HasUsageEstimate && (home.EstimatedUsageExhaustionAt != default))
+		if (HasUsageEstimate && (EstimatedUsageExhaustionAt != default))
 		{
-			var source = string.IsNullOrEmpty(home.UsageRateSource)
+			var source = string.IsNullOrEmpty(UsageRateSource)
 				? string.Empty
-				: $" · {home.UsageRateSource}";
-			return $"Estimate · linear · {home.EstimatedUsageExhaustionAt:u}{source}";
+				: $" · {UsageRateSource}";
+			return $"Estimate · linear · {EstimatedUsageExhaustionAt:u}{source}";
 		}
 
-		if (!string.IsNullOrEmpty(home.AnalyticsNote))
+		if (!string.IsNullOrEmpty(AnalyticsNote))
 		{
-			return home.AnalyticsNote;
+			return AnalyticsNote;
 		}
 
 		return "Insufficient data for estimate";
-	}
-
-	private bool HomeHasPending()
-	{
-		var home = _state.GrokUsage.FindById(HomeId);
-		if (home == null)
-		{
-			return false;
-		}
-
-		if (home.Sessions.HasPending
-			|| home.DailyTokenTotals.HasPending
-			|| home.DailyUsageTotals.HasPending
-			|| home.AvailablePeriods.HasPending)
-		{
-			return true;
-		}
-
-		return home is ITrackPropertyChanges trackable && trackable.HasChanges();
 	}
 
 	/// <summary>
@@ -1212,10 +825,9 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 	/// </summary>
 	private void OnViewClockProgressChanged()
 	{
-		// Manual scrub takes over from auto-play.
-		StopReplay();
+		_bus.GrokUsage.StopReplay(HomeId);
 
-		if (!TryGetViewClockRange(out var start, out var max))
+		if (!TryGetProjectedViewClockRange(out var start, out var max))
 		{
 			return;
 		}
@@ -1223,15 +835,13 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 		var progress = Math.Clamp(ViewClockProgress, 0, 1);
 		if (progress >= 0.999)
 		{
-			_bus.GrokUsage.SetViewLive();
-			_needsProjectionSeed = true;
+			_bus.GrokUsage.SetViewLive(HomeId);
 			return;
 		}
 
 		var ticks = start.UtcTicks + (long) ((max.UtcTicks - start.UtcTicks) * progress);
 		var asOf = new DateTimeOffset(ticks, TimeSpan.Zero);
-		_bus.GrokUsage.SetViewAsOf(asOf);
-		_needsProjectionSeed = true;
+		_bus.GrokUsage.SetViewAsOf(HomeId, asOf);
 	}
 
 	private static void OpenPathInShell(string path)
@@ -1255,43 +865,32 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 		}
 	}
 
-	private void ProjectAnalytics(GrokHomeUsageState home)
+	private void ProjectAnalytics()
 	{
-		TokenBurnPerHourLast24h = home.TokenBurnPerHourLast24h;
-		TokenBurnPerHourPeriod = home.TokenBurnPerHourPeriod;
-		UsagePercentPerHour = home.UsagePercentPerHour;
-		LinearPacePercent = home.LinearPacePercent;
-		HasUsageEstimate = home.HasUsageEstimate;
-		UsageRateSource = home.UsageRateSource ?? string.Empty;
-		AnalyticsNote = home.AnalyticsNote ?? string.Empty;
-
-		HasOnDemandCap = home.OnDemandCap > 0;
+		HasOnDemandCap = OnDemandCap > 0;
 		OnDemandUsagePercent = HasOnDemandCap
-			? Math.Min(100, Math.Max(0, (100.0 * home.OnDemandUsed) / home.OnDemandCap))
+			? Math.Min(100, Math.Max(0, (100.0 * OnDemandUsed) / OnDemandCap))
 			: 0;
 
-		var viewNow = _state.GrokUsage.IsViewLive || (_state.GrokUsage.ViewAsOf == default)
-			? DateTimeOffset.UtcNow
-			: _state.GrokUsage.ViewAsOf;
-		PeriodRemainingText = FormatPeriodRemaining(home.PeriodEnd, viewNow);
-		PaceLabel = FormatPaceLabel(home.UsagePercent, home.LinearPacePercent);
-		UsageExhaustionText = FormatUsageExhaustion(home);
-		ProjectAnalyticsToolTips(home);
+		var viewNow = IsViewLive || (ViewAsOf == default)
+			? new DateTimeOffset(DateTime.SpecifyKind(_dateTimeProvider.UtcNow, DateTimeKind.Utc))
+			: ViewAsOf;
+		PeriodRemainingText = FormatPeriodRemaining(PeriodEnd, viewNow);
+		PaceLabel = FormatPaceLabel(UsagePercent, LinearPacePercent);
+		UsageExhaustionText = FormatUsageExhaustion();
+		ProjectAnalyticsToolTips();
 
-		HasAnalytics = home.HasBilling
-			|| (home.DailyTokenTotals.Count > 0)
-			|| (home.DailyUsageTotals.Count > 0)
-			|| (home.TokenBurnPerHourPeriod > 0)
-			|| (home.TokenBurnPerHourLast24h > 0);
-
-		FillDailyTokensChart(home.DailyTokenTotals);
-		FillDailyUsageChart(home.DailyUsageTotals);
+		HasAnalytics = HasBilling
+			|| (_dailyTokenDayCount > 0)
+			|| (_dailyUsageDayCount > 0)
+			|| (TokenBurnPerHourPeriod > 0)
+			|| (TokenBurnPerHourLast24h > 0);
 	}
 
-	private void ProjectAnalyticsToolTips(GrokHomeUsageState home)
+	private void ProjectAnalyticsToolTips()
 	{
-		var used = home.UsagePercent;
-		var linear = home.LinearPacePercent;
+		var used = UsagePercent;
+		var linear = LinearPacePercent;
 
 		UsageToolTip =
 			"Share of your included weekly allowance already used (from Grok billing). "
@@ -1305,18 +904,18 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 		PaceLabelToolTip = FormatPaceToolTip(used, linear, PaceLabel);
 
 		TokenBurn24hToolTip =
-			$"Average subscription tokens per hour over the last 24 hours ({home.TokenBurnPerHourLast24h:N0}/h). "
+			$"Average subscription tokens per hour over the last 24 hours ({TokenBurnPerHourLast24h:N0}/h). "
 			+ "Counts grok-* model inferences only.";
 
 		TokenBurnPeriodToolTip =
-			$"Average subscription tokens per hour so far in the selected period ({home.TokenBurnPerHourPeriod:N0}/h). "
+			$"Average subscription tokens per hour so far in the selected period ({TokenBurnPerHourPeriod:N0}/h). "
 			+ "Total period tokens divided by hours elapsed in the period.";
 
-		var rateSource = string.IsNullOrEmpty(home.UsageRateSource)
+		var rateSource = string.IsNullOrEmpty(UsageRateSource)
 			? "when enough billing history exists"
-			: home.UsageRateSource;
+			: UsageRateSource;
 		UsagePercentPerHourToolTip =
-			$"Allowance used per hour ({home.UsagePercentPerHour:0.###} %/h), from {rateSource}. "
+			$"Allowance used per hour ({UsagePercentPerHour:0.###} %/h), from {rateSource}. "
 			+ "Used to project when you might hit 100% if the rate stays similar.";
 
 		UsageEtaToolTip =
@@ -1325,287 +924,145 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 
 		OnDemandToolTip = HasOnDemandCap
 			? "On-demand spend against your configured cap after the included weekly allowance. "
-			+ $"{home.OnDemandUsed:0.##} used of {home.OnDemandCap:0.##} cap."
+			+ $"{OnDemandUsed:0.##} used of {OnDemandCap:0.##} cap."
 			: "No on-demand cap was reported in billing snapshots for this home.";
 	}
 
-	private void ProjectHome()
+	private void ProjectDerived()
 	{
-		var home = _state.GrokUsage.FindById(HomeId);
-		if (home == null)
+		if (!HomeExists && string.IsNullOrEmpty(DisplayName) && string.IsNullOrEmpty(Path))
 		{
-			DisplayName = string.Empty;
-			Path = string.Empty;
-			IsBusy = false;
-			ProgressText = string.Empty;
-			ErrorText = string.Empty;
-			HomeExists = false;
-			HasBilling = false;
-			HasCreditUsage = false;
-			SubscriptionTier = string.Empty;
-			UsagePercent = 0;
-			PeriodType = string.Empty;
-			PeriodStart = default;
-			PeriodEnd = default;
-			OnDemandCap = 0;
-			OnDemandUsed = 0;
-			PrepaidBalance = 0;
-			GrandTotalPromptTokens = 0;
-			GrandTotalCachedPromptTokens = 0;
-			GrandTotalCompletionTokens = 0;
-			GrandTotalReasoningTokens = 0;
-			GrandTotalTokens = 0;
-			LastRefreshedAt = default;
-			Sessions.Clear();
-			SelectedSession = null;
-			AvailablePeriods.Clear();
-			SelectedPeriod = null;
-			TokenTotalsPeriodLabel = string.Empty;
 			ClearAnalyticsProjection();
-			ProjectViewClock(null);
+			ProjectViewClock();
 			StatusText = "Grok home not found.";
 			return;
 		}
 
-		DisplayName = home.DisplayName ?? string.Empty;
-		Path = home.Path ?? string.Empty;
-		IsBusy = home.IsBusy;
-		ProgressText = home.ProgressText ?? string.Empty;
-		ErrorText = home.ErrorText ?? string.Empty;
-		HomeExists = home.HomeExists;
-		HasBilling = home.HasBilling;
-		HasCreditUsage = home.HasCreditUsage;
-		SubscriptionTier = home.SubscriptionTier ?? string.Empty;
-		UsagePercent = home.UsagePercent;
-		PeriodType = GrokUsageAnalytics.FormatPeriodTypeDisplay(home.PeriodType);
-		PeriodStart = home.PeriodStart;
-		PeriodEnd = home.PeriodEnd;
-		OnDemandCap = home.OnDemandCap;
-		OnDemandUsed = home.OnDemandUsed;
-		PrepaidBalance = home.PrepaidBalance;
-		GrandTotalPromptTokens = home.GrandTotalPromptTokens;
-		GrandTotalCachedPromptTokens = home.GrandTotalCachedPromptTokens;
-		GrandTotalCompletionTokens = home.GrandTotalCompletionTokens;
-		GrandTotalReasoningTokens = home.GrandTotalReasoningTokens;
-		GrandTotalTokens = home.GrandTotalTokens;
-		LastRefreshedAt = home.LastRefreshedAt;
-
-		Sessions.ReconcileListAndItems(home.Sessions, SessionComparer);
-		ProjectPeriods(home);
-		ProjectAnalytics(home);
-		ProjectViewClock(home);
-
-		if (!home.IsBusy)
-		{
-			if (!string.IsNullOrEmpty(home.ErrorText))
-			{
-				StatusText = home.ErrorText;
-			}
-			else if (home.LastRefreshedAt != default)
-			{
-				var clockNote = _state.GrokUsage.IsViewLive
-					? "Live"
-					: $"As of {_state.GrokUsage.ViewAsOf.ToLocalTime():g}";
-				if (IsReplayPlaying)
-				{
-					clockNote += $" · replay {FormatSpeed(ReplaySpeed)}";
-				}
-
-				StatusText = $"Updated {home.LastRefreshedAt:u} · {home.Sessions.Count} session(s) · {clockNote}";
-			}
-			else
-			{
-				StatusText = "Ready";
-			}
-		}
-
-		if (home is ITrackPropertyChanges trackable)
-		{
-			trackable.ResetHasChanges();
-		}
-
-		home.Sessions.ClearHasPending();
-		home.DailyTokenTotals.ClearHasPending();
-		home.DailyUsageTotals.ClearHasPending();
-		home.AvailablePeriods.ClearHasPending();
+		ProjectSelectedPeriod();
+		ProjectAnalytics();
+		ProjectViewClock();
+		ProjectStatus();
 	}
 
-	private void ProjectPeriods(GrokHomeUsageState home)
+	private void ProjectSelectedPeriod()
 	{
-		_isProjectingPeriod = true;
-		try
+		GrokUsagePeriodViewModel match = null;
+		foreach (var period in AvailablePeriods)
 		{
-			AvailablePeriods.ReconcileListAndItems(home.AvailablePeriods, PeriodComparer);
+			if ((period.PeriodStart == SelectedPeriodStart)
+				&& (period.PeriodEnd == SelectedPeriodEnd))
+			{
+				match = period;
+				break;
+			}
+		}
 
-			GrokUsagePeriodState match = null;
+		if ((match == null) && (AvailablePeriods.Count > 0))
+		{
 			foreach (var period in AvailablePeriods)
 			{
-				if ((period.PeriodStart == home.SelectedPeriodStart)
-					&& (period.PeriodEnd == home.SelectedPeriodEnd))
+				if (period.IsCurrent)
 				{
 					match = period;
 					break;
 				}
 			}
 
-			if ((match == null) && (AvailablePeriods.Count > 0))
-			{
-				foreach (var period in AvailablePeriods)
-				{
-					if (period.IsCurrent)
-					{
-						match = period;
-						break;
-					}
-				}
-
-				match ??= AvailablePeriods[0];
-			}
-
-			SelectedPeriod = match;
-			TokenTotalsPeriodLabel = match == null
-				? string.Empty
-				: string.IsNullOrEmpty(match.DisplayName)
-					? "Selected period"
-					: match.DisplayName;
+			match ??= AvailablePeriods[0];
 		}
-		finally
-		{
-			_isProjectingPeriod = false;
-		}
+
+		SelectedPeriod = match;
+		TokenTotalsPeriodLabel = match == null
+			? string.Empty
+			: string.IsNullOrEmpty(match.DisplayName)
+				? "Selected period"
+				: match.DisplayName;
 	}
 
-	private void ProjectViewClock(GrokHomeUsageState home)
+	private void ProjectStatus()
 	{
-		_isProjectingViewClock = true;
-		try
+		if (IsBusy)
 		{
-			IsViewLive = _state.GrokUsage.IsViewLive;
-			if ((home == null)
-				|| (home.PeriodStart == default)
-				|| (home.PeriodEnd == default)
-				|| (home.PeriodEnd <= home.PeriodStart))
+			return;
+		}
+
+		if (!string.IsNullOrEmpty(ErrorText))
+		{
+			StatusText = ErrorText;
+			return;
+		}
+
+		if (LastRefreshedAt != default)
+		{
+			var clockNote = IsViewLive
+				? "Live"
+				: $"As of {ViewAsOf.ToLocalTime():g}";
+			if (IsReplayPlaying)
 			{
-				HasViewClock = false;
-				ViewClockProgress = 1;
-				ViewAsOfText = string.Empty;
-				return;
+				clockNote += $" · replay {FormatSpeed(GrokUsageState.ReplaySpeed)}";
 			}
 
-			PeriodStart = home.PeriodStart;
-			PeriodEnd = home.PeriodEnd;
-			if (!TryGetViewClockRange(out var start, out var max))
-			{
-				HasViewClock = false;
-				ViewClockProgress = 1;
-				ViewAsOfText = IsViewLive ? "Live" : string.Empty;
-				return;
-			}
+			StatusText = $"Updated {LastRefreshedAt:u} · {Sessions.Count} session(s) · {clockNote}";
+			return;
+		}
 
-			HasViewClock = true;
-			if (IsViewLive || (_state.GrokUsage.ViewAsOf == default))
-			{
-				ViewClockProgress = 1;
-				ViewAsOfText = IsReplayPlaying
-					? $"Live · {FormatSpeed(ReplaySpeed)}"
-					: "Live";
-				return;
-			}
+		StatusText = "Ready";
+	}
 
-			var asOf = _state.GrokUsage.ViewAsOf;
-			if (asOf < start)
-			{
-				asOf = start;
-			}
+	private void ProjectViewClock()
+	{
+		if ((PeriodStart == default)
+			|| (PeriodEnd == default)
+			|| (PeriodEnd <= PeriodStart))
+		{
+			HasViewClock = false;
+			ViewClockProgress = 1;
+			ViewAsOfText = string.Empty;
+			return;
+		}
 
-			if (asOf > max)
-			{
-				asOf = max;
-			}
+		if (!TryGetProjectedViewClockRange(out var start, out var max))
+		{
+			HasViewClock = false;
+			ViewClockProgress = 1;
+			ViewAsOfText = IsViewLive ? "Live" : string.Empty;
+			return;
+		}
 
-			var span = max.UtcTicks - start.UtcTicks;
-			ViewClockProgress = span <= 0
-				? 1
-				: Math.Clamp((double) (asOf.UtcTicks - start.UtcTicks) / span, 0, 1);
-			var asOfLabel = $"As of {asOf.ToLocalTime():g}";
+		HasViewClock = true;
+		if (IsViewLive || (ViewAsOf == default))
+		{
+			ViewClockProgress = 1;
 			ViewAsOfText = IsReplayPlaying
-				? $"{asOfLabel} · {FormatSpeed(ReplaySpeed)}"
-				: asOfLabel;
-		}
-		finally
-		{
-			_isProjectingViewClock = false;
-		}
-	}
-
-	private void ReplayTimerOnTick(object sender, EventArgs e)
-	{
-		if (!IsReplayPlaying || _isDesignSample)
-		{
+				? $"Live · {FormatSpeed(GrokUsageState.ReplaySpeed)}"
+				: "Live";
 			return;
 		}
 
-		if (!TryGetViewClockRange(out var start, out var max))
-		{
-			StopReplay();
-			return;
-		}
-
-		var wallSeconds = _replayWallClock.Elapsed.TotalSeconds;
-		_replayWallClock.Restart();
-		if (wallSeconds <= 0)
-		{
-			return;
-		}
-
-		var advance = TimeSpan.FromSeconds(wallSeconds * ReplaySpeed);
-
-		var current = ResolveCurrentViewAsOf(start, max);
-		var next = current + advance;
-		if (next >= max)
-		{
-			_bus.GrokUsage.SetViewLive();
-			StopReplay();
-			_needsProjectionSeed = true;
-			return;
-		}
-
-		if (next < start)
-		{
-			next = start;
-		}
-
-		_bus.GrokUsage.SetViewAsOf(next);
-		_needsProjectionSeed = true;
-	}
-
-	/// <summary>
-	/// View clock instant used for scrub/replay (clamped into the period range).
-	/// </summary>
-	private DateTimeOffset ResolveCurrentViewAsOf(DateTimeOffset start, DateTimeOffset max)
-	{
-		if (_state.GrokUsage.IsViewLive || (_state.GrokUsage.ViewAsOf == default))
-		{
-			return max;
-		}
-
-		var asOf = _state.GrokUsage.ViewAsOf;
+		var asOf = ViewAsOf;
 		if (asOf < start)
 		{
-			return start;
+			asOf = start;
 		}
 
 		if (asOf > max)
 		{
-			return max;
+			asOf = max;
 		}
 
-		return asOf;
+		var span = max.UtcTicks - start.UtcTicks;
+		ViewClockProgress = span <= 0
+			? 1
+			: Math.Clamp((double) (asOf.UtcTicks - start.UtcTicks) / span, 0, 1);
+		var asOfLabel = $"As of {asOf.ToLocalTime():g}";
+		ViewAsOfText = IsReplayPlaying
+			? $"{asOfLabel} · {FormatSpeed(GrokUsageState.ReplaySpeed)}"
+			: asOfLabel;
 	}
 
 	private void SessionsSelectionOnSelectionChanged(
 		object sender,
-		TreeSelectionModelSelectionChangedEventArgs<GrokSessionUsageState> e)
+		TreeSelectionModelSelectionChangedEventArgs<GrokSessionRowViewModel> e)
 	{
 		SelectedSession = SessionsSelection.SelectedItem;
 	}
@@ -1627,45 +1084,11 @@ public partial class GrokUsageTabViewModel : DispatchableViewModel, IShellTab
 		return copy;
 	}
 
-	private void StopReplay()
+	private bool TryGetProjectedViewClockRange(out DateTimeOffset start, out DateTimeOffset max)
 	{
-		if (_replayTimer != null)
-		{
-			_replayTimer.Stop();
-		}
-
-		_replayWallClock.Reset();
-		if (IsReplayPlaying)
-		{
-			IsReplayPlaying = false;
-		}
-	}
-
-	private bool TryGetViewClockRange(out DateTimeOffset start, out DateTimeOffset max)
-	{
-		start = default;
-		max = default;
-
-		if ((PeriodStart == default) || (PeriodEnd == default) || (PeriodEnd <= PeriodStart))
-		{
-			return false;
-		}
-
-		start = PeriodStart;
-
-		// Live max: cannot scrub past real now on an open period; full end for historical.
-		var wallNow = DateTimeOffset.UtcNow;
-		max = PeriodEnd <= wallNow
-			? PeriodEnd
-			: wallNow < PeriodStart
-				? PeriodStart
-				: wallNow;
-		if (max < start)
-		{
-			max = start;
-		}
-
-		return max > start;
+		start = ViewClockStart;
+		max = ViewClockMax;
+		return (start != default) && (max != default) && (max > start);
 	}
 
 	#endregion

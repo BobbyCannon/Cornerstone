@@ -16,7 +16,7 @@ public readonly struct ChannelMessagePublishResult
 
 	public ChannelMessagePublishResult(
 		string channelName,
-		int type,
+		string type,
 		IChannelMessage message,
 		long elapsedTicks,
 		int handlerCount,
@@ -24,7 +24,7 @@ public readonly struct ChannelMessagePublishResult
 		string errorMessage)
 	{
 		ChannelName = channelName ?? string.Empty;
-		Type = type;
+		Type = type ?? string.Empty;
 		Message = message;
 		ElapsedTicks = elapsedTicks;
 		HandlerCount = handlerCount;
@@ -48,7 +48,10 @@ public readonly struct ChannelMessagePublishResult
 
 	public IChannelMessage Message { get; }
 
-	public int Type { get; }
+	/// <summary>
+	/// Message CLR type name (the operation id).
+	/// </summary>
+	public string Type { get; }
 
 	#endregion
 }

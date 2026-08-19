@@ -19,7 +19,7 @@
 				Margin="10">
 			<TextBox MinWidth="240" Text="{Binding Uri}">
 				<TextBox.KeyBindings>
-					<KeyBinding Gesture="Enter" Command="{Binding RefreshCommand}"></KeyBinding>
+					<KeyBinding Gesture="Enter" Command="{Binding RefreshCommand}" />
 				</TextBox.KeyBindings>
 			</TextBox>
 			<ToggleButton x:Name="PauseButton"

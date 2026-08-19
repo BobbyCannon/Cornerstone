@@ -27,7 +27,12 @@ public partial class CornerstoneUserControl<T>
 			return;
 		}
 
-		DataContext ??= CreateDesignData();
+		// Null means “no sample” — do not assign, or inherited DataContext is blocked.
+		var designData = CreateDesignData();
+		if (designData != null)
+		{
+			DataContext ??= designData;
+		}
 		if (DataContext is ViewModel viewModel
 			&& !viewModel.IsLifecycleInitialized())
 		{

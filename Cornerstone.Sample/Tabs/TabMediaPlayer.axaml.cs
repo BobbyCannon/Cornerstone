@@ -32,16 +32,16 @@ public partial class TabMediaPlayer : CornerstoneUserControl
 	public const string HeaderName = "Media Player";
 
 	/// <summary>
-	/// Embedded hole-emergence Big Buck Bunny cut (~0.5 MB, ~9s H.264) under Assets/BigBuckBunny.mp4.
-	/// Just the rabbit hole and the bunny climbing out (not the opening forest or later scenes).
-	/// </summary>
-	public const string SampleAssetUri = "avares://Cornerstone.Sample/Assets/BigBuckBunny.mp4";
-
-	/// <summary>
 	/// Optional online sample: official Peach trailer (bunny visible; network required).
 	/// </summary>
 	public const string OnlineSampleUrl =
 		"https://download.blender.org/peach/trailer/trailer_480p.mov";
+
+	/// <summary>
+	/// Embedded hole-emergence Big Buck Bunny cut (~0.5 MB, ~9s H.264) under Assets/BigBuckBunny.mp4.
+	/// Just the rabbit hole and the bunny climbing out (not the opening forest or later scenes).
+	/// </summary>
+	public const string SampleAssetUri = "avares://Cornerstone.Sample/Assets/BigBuckBunny.mp4";
 
 	#endregion
 
@@ -149,6 +149,13 @@ public partial class TabMediaPlayer : CornerstoneUserControl
 		}
 	}
 
+	[RelayCommand]
+	public void Stop()
+	{
+		Player.StopVideo();
+		StatusText = "Stopped";
+	}
+
 	/// <summary>
 	/// Loads the public HTTPS sample URL (network required).
 	/// </summary>
@@ -157,13 +164,6 @@ public partial class TabMediaPlayer : CornerstoneUserControl
 	{
 		MediaUrl = OnlineSampleUrl;
 		PlayCurrentSource();
-	}
-
-	[RelayCommand]
-	public void Stop()
-	{
-		Player.StopVideo();
-		StatusText = "Stopped";
 	}
 
 	protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
@@ -205,8 +205,8 @@ public partial class TabMediaPlayer : CornerstoneUserControl
 		using var stream = AssetLoader.Open(new Uri(SampleAssetUri));
 		var expectedLength = stream.CanSeek ? stream.Length : -1L;
 		if (File.Exists(path)
-			&& (expectedLength < 0 || new FileInfo(path).Length == expectedLength)
-			&& new FileInfo(path).Length > 0)
+			&& ((expectedLength < 0) || (new FileInfo(path).Length == expectedLength))
+			&& (new FileInfo(path).Length > 0))
 		{
 			return path;
 		}

@@ -17,6 +17,55 @@ public partial class DispatchableViewModelPropertyMapTests : CornerstoneUnitTest
 	#region Methods
 
 	[TestMethod]
+	public void TrackPropertiesContractGetOnlyDoesNotWriteModel()
+	{
+		var model = new SharedSettingsModel { Name = "a", Count = 1 };
+		model.ResetHasChanges();
+		var vm = new SharedHostViewModel();
+		vm.RegisterContract(model);
+
+		IsTrue(vm.HasModelChanges());
+		vm.ApplyModelChanges();
+		AreEqual("a", vm.Name);
+		AreEqual(1, vm.Count);
+
+		vm.Name = "user-edit";
+		IsFalse(vm.HasModelChanges());
+		vm.ApplyModelChanges();
+		AreEqual("a", model.Name);
+		AreEqual("user-edit", vm.Name);
+	}
+
+	[TestMethod]
+	public void TrackPropertiesContractGetSetIsTwoWay()
+	{
+		var model = new SharedSettingsModel { Name = "a", Count = 1 };
+		model.ResetHasChanges();
+		var vm = new SharedHostViewModel();
+		vm.RegisterContract(model);
+
+		vm.ApplyModelChanges();
+		AreEqual(1, vm.Count);
+
+		model.Count = 4;
+		IsTrue(vm.HasModelChanges());
+		vm.ApplyModelChanges();
+		AreEqual(4, vm.Count);
+
+		vm.Count = 9;
+		IsTrue(vm.HasModelChanges());
+		vm.ApplyModelChanges();
+		AreEqual(9, model.Count);
+	}
+
+	[TestMethod]
+	public void TrackPropertiesContractRequiresTrackPropertyChanges()
+	{
+		var vm = new SharedHostViewModel();
+		ExpectedException<ArgumentException>(() => vm.RegisterContract(new PlainSharedSettings()));
+	}
+
+	[TestMethod]
 	public void MapOneWayDoesNotWriteModel()
 	{
 		var model = new SettingsModel { Path = "a" };
@@ -243,6 +292,63 @@ public partial class DispatchableViewModelPropertyMapTests : CornerstoneUnitTest
 		public void RegisterTwoWaySameName()
 		{
 			TrackProperties(_settings).MapTwoWay(nameof(Path));
+		}
+
+		#endregion
+	}
+
+	public interface ISharedSettings
+	{
+		#region Properties
+
+		int Count { get; set; }
+
+		string Name { get; }
+
+		#endregion
+	}
+
+	public class PlainSharedSettings : ISharedSettings
+	{
+		#region Properties
+
+		public int Count { get; set; }
+
+		public string Name { get; set; }
+
+		#endregion
+	}
+
+	[SourceReflection]
+	[Notifiable(["*"])]
+	public partial class SharedSettingsModel : CornerstoneObject, ISharedSettings
+	{
+		#region Properties
+
+		public partial int Count { get; set; }
+
+		public partial string Name { get; set; }
+
+		#endregion
+	}
+
+	[SourceReflection]
+	[Notifiable(["*"])]
+	public partial class SharedHostViewModel : DispatchableViewModel, ISharedSettings
+	{
+		#region Properties
+
+		public partial int Count { get; set; }
+
+		public partial string Name { get; set; }
+
+		#endregion
+
+		#region Methods
+
+		public void RegisterContract(ISharedSettings model)
+		{
+			TrackProperties(model, this);
 		}
 
 		#endregion

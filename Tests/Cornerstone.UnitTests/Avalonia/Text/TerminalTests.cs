@@ -2,6 +2,7 @@
 
 using System;
 using System.Linq;
+using Avalonia;
 using Cornerstone.Avalonia.Text;
 using Cornerstone.Avalonia.Text.Models;
 using Cornerstone.Testing;
@@ -137,6 +138,28 @@ public class TerminalTests : CornerstoneAvaloniaUnitTest
 		// ANSI is tokenized away from the plain buffer text for colored appends —
 		// buffer should still contain the message body.
 		IsTrue(terminal.ViewModel.ToString().Contains("boom"));
+	}
+
+	[TestMethod]
+	public void AppendAnsiStripsSgrAndKeepsVisibleText()
+	{
+		var viewModel = new TerminalViewModel();
+		viewModel.AppendAnsi("\u001b[32;1mMode\u001b[0m LastWriteTime");
+
+		AreEqual("Mode LastWriteTime", viewModel.ToString());
+		IsTrue(viewModel.TokenManager.Count > 0);
+	}
+
+	[TestMethod]
+	public void AppendAnsiKeepsStyleAcrossChunks()
+	{
+		var viewModel = new TerminalViewModel();
+		viewModel.AppendAnsi("\u001b[44;1m");
+		viewModel.AppendAnsi("cs");
+		viewModel.AppendAnsi("\u001b[0m");
+
+		AreEqual("cs", viewModel.ToString());
+		IsTrue(viewModel.TokenManager.Count > 0);
 	}
 
 	[TestMethod]
@@ -302,6 +325,29 @@ public class TerminalTests : CornerstoneAvaloniaUnitTest
 	}
 
 	[TestMethod]
+	public void SetInputShorterThanCurrentInputKeepsLastLineInBuffer()
+	{
+		var terminal = new Terminal
+		{
+			ViewModel = { Prompt = "> " }
+		};
+		terminal.PromptForCommand();
+		terminal.SetInput("a-very-long-draft-line");
+		AreEqual("a-very-long-draft-line", terminal.ReadInput());
+
+		terminal.SetInput("help");
+
+		AreEqual("help", terminal.ReadInput());
+		var last = terminal.ViewModel.Lines.LastOrDefault();
+		IsNotNull(last);
+		AreEqual(terminal.ViewModel.DocumentLength, last.EndOffset);
+
+		// History Up/Down used to throw: Range exceeds buffer content (logicalLength)
+		terminal.ViewModel.Lines.Measure(new Size(800, 400), false);
+		AreEqual(terminal.ViewModel.DocumentLength, last.EndOffset);
+	}
+
+	[TestMethod]
 	public void HistoryDownWhenNotBrowsingDoesNotClearInput()
 	{
 		var terminal = new Terminal
@@ -315,6 +361,320 @@ public class TerminalTests : CornerstoneAvaloniaUnitTest
 		IsNull(next);
 		IsFalse(restoredDraft);
 		AreEqual("keep-me", terminal.ReadInput());
+	}
+
+	[TestMethod]
+	public void LateOutputInsertsBeforeLivePromptAndKeepsInput()
+	{
+		var terminal = new Terminal
+		{
+			ViewModel = { Prompt = "> " }
+		};
+		terminal.PromptForCommand();
+		terminal.SetInput("foo");
+		var caretAfterInput = terminal.ViewModel.Caret.Offset;
+
+		terminal.WriteOutput("late\n");
+
+		AreEqual("late\n> foo", terminal.ViewModel.ToString());
+		AreEqual(7, terminal.ViewModel.PromptOffset);
+		AreEqual("foo", terminal.ReadInput());
+		AreEqual(caretAfterInput + "late\n".Length, terminal.ViewModel.Caret.Offset);
+		IsTrue(terminal.ViewModel.LastChangePinnedViewport);
+	}
+
+	[TestMethod]
+	public void LateOutputWithoutNewlineKeepsPromptOnOwnLine()
+	{
+		var terminal = new Terminal
+		{
+			ViewModel = { Prompt = "> " }
+		};
+		terminal.PromptForCommand();
+		terminal.SetInput("bar");
+
+		terminal.WriteOutput("late");
+
+		AreEqual("late" + Environment.NewLine + "> bar", terminal.ViewModel.ToString());
+		AreEqual("bar", terminal.ReadInput());
+		IsTrue(terminal.ViewModel.LastChangePinnedViewport);
+	}
+
+	[TestMethod]
+	public void LateAnsiOutputInsertsBeforePromptAndShiftsTokens()
+	{
+		var terminal = new Terminal
+		{
+			ViewModel = { Prompt = "> " }
+		};
+		terminal.PromptForCommand();
+		terminal.SetInput("cmd");
+		var promptStart = terminal.ViewModel.PromptOffset - terminal.ViewModel.Prompt.Length;
+
+		terminal.ViewModel.AppendAnsi("\u001b[32mgreen\u001b[0m\n");
+
+		AreEqual("green\n> cmd", terminal.ViewModel.ToString());
+		AreEqual("cmd", terminal.ReadInput());
+		IsTrue(terminal.ViewModel.TokenManager.Count > 0);
+
+		var token = terminal.ViewModel.TokenManager[0];
+		AreEqual(promptStart, token.StartOffset);
+		IsTrue(token.EndOffset <= terminal.ViewModel.PromptOffset);
+	}
+
+	[TestMethod]
+	public void OutputWhileProcessingStillAppendsAtEnd()
+	{
+		var terminal = new Terminal
+		{
+			ViewModel = { Prompt = "> " }
+		};
+		terminal.PromptForCommand();
+		terminal.SetInput("help");
+		terminal.ExecuteInput();
+		IsTrue(terminal.ViewModel.IsCommandProcessing);
+
+		terminal.WriteOutput("ok\n");
+
+		IsTrue(terminal.ViewModel.ToString().EndsWith("ok\n"));
+		IsFalse(terminal.ViewModel.LastChangePinnedViewport);
+		IsFalse(terminal.ViewModel.ToString().StartsWith("ok"));
+		IsFalse(terminal.ViewModel.IsLivePromptSuffix());
+	}
+
+	[TestMethod]
+	public void EndCommandAfterOutputPaintsNewPromptAtEnd()
+	{
+		var terminal = new Terminal
+		{
+			ViewModel = { Prompt = "> " }
+		};
+		terminal.PromptForCommand();
+		terminal.SetInput("ls -r");
+		terminal.ExecuteInput();
+		terminal.WriteOutput("file-a\nfile-b\n");
+
+		var offsetDuringCommand = terminal.ViewModel.PromptOffset;
+		IsTrue(offsetDuringCommand < terminal.ViewModel.DocumentLength);
+
+		terminal.EndCommand();
+
+		var text = terminal.ViewModel.ToString().Replace("\r\n", "\n");
+		AreEqual("> ls -r\nfile-a\nfile-b\n> ", text);
+		AreEqual(terminal.ViewModel.DocumentLength, terminal.ViewModel.PromptOffset);
+		IsTrue(terminal.ViewModel.IsLivePromptSuffix());
+		IsFalse(terminal.ViewModel.IsCommandProcessing);
+		IsFalse(terminal.ViewModel.CanModify(offsetDuringCommand));
+	}
+
+	[TestMethod]
+	public void OutputDuringCommandDoesNotInsertAtOldPrompt()
+	{
+		var terminal = new Terminal
+		{
+			ViewModel = { Prompt = "> " }
+		};
+		terminal.PromptForCommand();
+		terminal.SetInput("ls -r");
+		terminal.ExecuteInput();
+		var promptOffset = terminal.ViewModel.PromptOffset;
+
+		terminal.WriteOutput("file-a\n");
+
+		AreEqual(promptOffset, terminal.ViewModel.PromptOffset);
+		AreEqual("> ls -r\nfile-a\n", terminal.ViewModel.ToString().Replace("\r\n", "\n"));
+		IsFalse(terminal.ViewModel.IsLivePromptSuffix());
+	}
+
+	[TestMethod]
+	public void PromptForCommandAfterErrorOutputPaintsNewPrompt()
+	{
+		var terminal = new Terminal
+		{
+			ViewModel = { Prompt = "PS> " }
+		};
+		terminal.PromptForCommand();
+		terminal.SetInput("Open-File 'blah'");
+		terminal.CommandEntered += (_, _) => { };
+		terminal.ExecuteInput();
+		IsTrue(terminal.ViewModel.IsCommandProcessing);
+
+		terminal.WriteError("Open-File : File not found: blah");
+		terminal.PromptForCommand();
+
+		IsFalse(terminal.ViewModel.IsCommandProcessing);
+		IsTrue(terminal.ViewModel.ToString().Contains("File not found"));
+		IsTrue(terminal.ViewModel.ToString().EndsWith("PS> "));
+	}
+
+	[TestMethod]
+	public void InternalPromptSkipsWhenDocumentAlreadyEndsWithPrompt()
+	{
+		var terminal = new Terminal
+		{
+			ViewModel = { Prompt = "> " }
+		};
+		terminal.PromptForCommand();
+		var once = terminal.ViewModel.ToString();
+		var offset = terminal.ViewModel.PromptOffset;
+
+		terminal.PromptForCommand();
+
+		AreEqual(once, terminal.ViewModel.ToString());
+		AreEqual(offset, terminal.ViewModel.PromptOffset);
+	}
+
+	[TestMethod]
+	public void PromptForCommandWhileUserHasTypedDoesNotWrapDraft()
+	{
+		var terminal = new Terminal
+		{
+			ViewModel = { Prompt = "> " }
+		};
+		terminal.PromptForCommand();
+		terminal.SetInput("next-cmd");
+		var caret = terminal.ViewModel.Caret.Offset;
+
+		terminal.PromptForCommand();
+
+		AreEqual("> next-cmd", terminal.ViewModel.ToString());
+		AreEqual(2, terminal.ViewModel.PromptOffset);
+		AreEqual("next-cmd", terminal.ReadInput());
+		AreEqual(caret, terminal.ViewModel.Caret.Offset);
+		IsTrue(terminal.ViewModel.IsLivePromptSuffix());
+	}
+
+	[TestMethod]
+	public void PromptForCommandReplacesLivePromptWhenStringChanges()
+	{
+		var terminal = new Terminal
+		{
+			ViewModel = { Prompt = "PS C:\\old> " }
+		};
+		terminal.PromptForCommand();
+		terminal.SetInput("dir");
+
+		terminal.ViewModel.Prompt = "PS C:\\new> ";
+		terminal.PromptForCommand();
+
+		AreEqual("PS C:\\new> dir", terminal.ViewModel.ToString());
+		AreEqual("dir", terminal.ReadInput());
+		AreEqual("PS C:\\new> ".Length, terminal.ViewModel.PromptOffset);
+		IsTrue(terminal.ViewModel.IsLivePromptSuffix());
+		IsFalse(terminal.ViewModel.ToString().Contains("old"));
+	}
+
+	[TestMethod]
+	public void PromptForCommandSameStringDoesNotClearHistoryBrowse()
+	{
+		var terminal = new Terminal
+		{
+			ViewModel = { Prompt = "> " }
+		};
+		terminal.PromptForCommand();
+		terminal.ViewModel.CommandHistoryProvider.Append("help");
+		terminal.SetInput("draft");
+		var older = terminal.ViewModel.HistoryPrevious(terminal.ReadInput());
+		terminal.SetInput(older);
+		IsTrue(terminal.ViewModel.IsBrowsingHistory);
+
+		terminal.PromptForCommand();
+
+		IsTrue(terminal.ViewModel.IsBrowsingHistory);
+		AreEqual("draft", terminal.ViewModel.HistoryDraft);
+		AreEqual("help", terminal.ReadInput());
+	}
+
+	[TestMethod]
+	public void AppendTextWithoutColorInsertsBeforeLivePrompt()
+	{
+		var terminal = new Terminal
+		{
+			ViewModel = { Prompt = "> " }
+		};
+		terminal.PromptForCommand();
+		terminal.SetInput("foo");
+
+		terminal.AppendText("late");
+
+		AreEqual("late" + Environment.NewLine + "> foo", terminal.ViewModel.ToString());
+		AreEqual("foo", terminal.ReadInput());
+		IsTrue(terminal.ViewModel.LastChangePinnedViewport);
+	}
+
+	[TestMethod]
+	public void LateAnsiOutputWithoutNewlineKeepsPromptOnOwnLine()
+	{
+		var terminal = new Terminal
+		{
+			ViewModel = { Prompt = "> " }
+		};
+		terminal.PromptForCommand();
+		terminal.SetInput("bar");
+
+		terminal.ViewModel.AppendAnsi("late");
+
+		AreEqual("late" + Environment.NewLine + "> bar", terminal.ViewModel.ToString());
+		AreEqual("bar", terminal.ReadInput());
+	}
+
+	[TestMethod]
+	public void BeginPromptForInputWhileProcessingAllowsExecuteInput()
+	{
+		var terminal = new Terminal
+		{
+			ViewModel = { Prompt = "> " }
+		};
+		terminal.PromptForCommand();
+		terminal.SetInput("Read-Host");
+		terminal.CommandEntered += (_, _) => { };
+		terminal.ExecuteInput();
+		IsTrue(terminal.ViewModel.IsCommandProcessing);
+
+		terminal.WriteOutput("Name: ");
+		terminal.BeginPromptForInput("");
+
+		IsTrue(terminal.ViewModel.IsPromptingForInput);
+		IsTrue(terminal.ViewModel.CanModify(terminal.ViewModel.DocumentLength));
+
+		var seen = (string) null;
+		terminal.CommandEntered += (_, cmd) => seen = cmd;
+		terminal.SetInput("alice");
+		terminal.ExecuteInput();
+
+		AreEqual("alice", seen);
+		IsFalse(terminal.ViewModel.IsPromptingForInput);
+		IsTrue(terminal.ViewModel.IsCommandProcessing);
+		IsFalse(terminal.ViewModel.CommandHistoryProvider.Any(x => x.Command == "alice"));
+	}
+
+	[TestMethod]
+	public void BeginPromptForInputSecurelyMasksAndReturnsSecret()
+	{
+		var terminal = new Terminal
+		{
+			ViewModel = { Prompt = "> " }
+		};
+		terminal.PromptForCommand();
+		terminal.CommandEntered += (_, _) => { };
+		terminal.ExecuteInput();
+		terminal.BeginPromptForInputSecurely("Password: ");
+
+		IsTrue(terminal.ViewModel.IsPromptingForInputSecurely);
+		IsFalse(terminal.ViewModel.CanModify(terminal.ViewModel.DocumentLength));
+
+		terminal.ViewModel.AppendSecureChar('s');
+		terminal.ViewModel.AppendSecureChar('e');
+		terminal.ViewModel.AppendSecureChar('c');
+		IsTrue(terminal.ViewModel.ToString().EndsWith("***"));
+		IsFalse(terminal.ViewModel.ToString().Contains("sec"));
+
+		var seen = (string) null;
+		terminal.CommandEntered += (_, cmd) => seen = cmd;
+		terminal.ExecuteInput();
+
+		AreEqual("sec", seen);
+		IsFalse(terminal.ViewModel.IsPromptingForInputSecurely);
 	}
 
 	#endregion

@@ -1,5 +1,8 @@
 ﻿#region References
 
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -12,12 +15,9 @@ using Cornerstone.Avalonia.Text.Models;
 using Cornerstone.Avalonia.Text.Rendering;
 using Cornerstone.Avalonia.Themes;
 using Cornerstone.Parsers.Markdown;
+using Cornerstone.Presentation;
 using Cornerstone.Profiling;
 using Cornerstone.Reflection;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
 using DispatcherPriority = Avalonia.Threading.DispatcherPriority;
 using IRenderer = Cornerstone.Avalonia.Text.Rendering.IRenderer;
 
@@ -30,7 +30,7 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 {
 	#region Fields
 
-	public readonly Presentation.PresentationList<IRenderer> BackgroundRenderers;
+	public readonly PresentationList<IRenderer> BackgroundRenderers;
 	private readonly CurrentLineRenderer _currentLineRenderer;
 	private readonly DispatcherTimer _dispatchTimer;
 	private bool _eventsAttached;
@@ -58,6 +58,13 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 		ViewModel = new TextEditorViewModel();
 
 		VisualChildren.Add(CaretVisual);
+
+		TextOptions.SetTextOptions(this, new TextOptions
+		{
+			TextRenderingMode = TextRenderingMode.SubpixelAntialias,
+			TextHintingMode = TextHintingMode.Strong,
+			BaselinePixelAlignment = BaselinePixelAlignment.Aligned
+		});
 	}
 
 	static TextRenderer()
@@ -73,7 +80,8 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 			FontFamilyProperty,
 			FontSizeProperty,
 			FontStyleProperty,
-			FontWeightProperty
+			FontWeightProperty,
+			ViewModelProperty
 		);
 	}
 
@@ -94,7 +102,7 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 	[StyledProperty]
 	public partial IBrush CurrentLineBackground { get; set; }
 
-	public Size Extent => ViewModel.ViewMetrics.DocumentSize;
+	public Size Extent => ViewModel == null ? default : ViewModel.ViewMetrics.DocumentSize;
 
 	[StyledProperty]
 	public partial FontFamily FontFamily { get; set; }
@@ -116,9 +124,31 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 	[StyledProperty]
 	public partial Vector Offset { get; set; }
 
-	public Size PageScrollSize => new(ViewModel.ViewMetrics.CharacterWidth * 10, ViewModel.ViewMetrics.CharacterWidth * 10);
+	public Size PageScrollSize
+	{
+		get
+		{
+			if (ViewModel == null)
+			{
+				return default;
+			}
 
-	public Size ScrollSize => new(ViewModel.ViewMetrics.CharacterWidth * 3, ViewModel.ViewMetrics.CharacterHeight * 3);
+			return new Size(ViewModel.ViewMetrics.CharacterWidth * 10, ViewModel.ViewMetrics.CharacterWidth * 10);
+		}
+	}
+
+	public Size ScrollSize
+	{
+		get
+		{
+			if (ViewModel == null)
+			{
+				return default;
+			}
+
+			return new Size(ViewModel.ViewMetrics.CharacterWidth * 3, ViewModel.ViewMetrics.CharacterHeight * 3);
+		}
+	}
 
 	[DirectProperty]
 	public string Text
@@ -127,7 +157,7 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 		set => ViewModel.Load(value);
 	}
 
-	public Size Viewport => ViewModel.ViewMetrics.Viewport;
+	public Size Viewport => ViewModel == null ? default : ViewModel.ViewMetrics.Viewport;
 
 	internal CaretVisual CaretVisual { get; }
 
@@ -181,49 +211,177 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 
 	public Typeface GetTypeface(bool bold, bool italic)
 	{
-		// Lazy initialization + caching based on exact combination
+		// Use this control's FontFamily, not TextElement.FontFamily (we are not a TemplatedControl).
+		var family = FontFamily ?? FontFamily.Default;
 		if (bold)
 		{
 			if (italic)
 			{
-				return _typefaceBoldItalic ??= this.CreateTypeface(FontWeight.SemiBold, FontStyle.Italic);
+				return _typefaceBoldItalic ??= new Typeface(family, FontStyle.Italic, FontWeight.Bold);
 			}
 
-			return _typefaceBold ??= this.CreateTypeface(FontWeight.SemiBold, FontStyle.Normal);
+			return _typefaceBold ??= new Typeface(family, FontStyle.Normal, FontWeight.Bold);
 		}
 
 		if (italic)
 		{
-			return _typefaceItalic ??= this.CreateTypeface(FontWeight.Normal, FontStyle.Italic);
+			return _typefaceItalic ??= new Typeface(family, FontStyle.Italic, FontWeight.Normal);
 		}
 
-		return _typefaceNormal ??= this.CreateTypeface(FontWeight.Normal, FontStyle.Normal);
+		return _typefaceNormal ??= new Typeface(family, FontStyle.Normal, FontWeight.Normal);
 	}
 
 	public IEnumerable<Line> GetVisualLines()
 	{
+		if (ViewModel?.Lines == null)
+		{
+			yield break;
+		}
+
 		var topY = Offset.Y;
 		var bottomY = Offset.Y + Bounds.Bottom;
-
-		foreach (var line in ViewModel.Lines)
+		foreach (var line in ViewModel.Lines.GetVisibleLines(topY, bottomY))
 		{
-			if (line.VisualLayout.Bottom <= topY)
-			{
-				continue;
-			}
-
-			if (line.VisualLayout.Top >= bottomY)
-			{
-				break;
-			}
-
 			yield return line;
 		}
+	}
+
+	/// <summary>
+	/// Maps a pointer position (control-local) to a document offset using the same
+	/// styled <see cref="TextLayout"/> run widths as <see cref="Render"/>.
+	/// Prefer this over <see cref="Line.GetNearestOffsetAtVisual"/> when the surface
+	/// paints with proportional fonts / bold-italic runs (markdown links, etc.).
+	/// </summary>
+	public bool TryGetDocumentOffsetAtPoint(Point localPoint, out int offset)
+	{
+		offset = 0;
+		var viewModel = ViewModel;
+		if (viewModel?.Lines is null || (viewModel.ViewMetrics.CharacterHeight <= 0))
+		{
+			return false;
+		}
+
+		var visualX = localPoint.X + Offset.X;
+		var visualY = localPoint.Y + Offset.Y;
+
+		if (!viewModel.Lines.TryGetLineForOffset(visualY, visualY, out var line))
+		{
+			return false;
+		}
+
+		var relativeY = Math.Clamp(visualY - line.VisualLayout.Y, 0, Math.Max(0, line.VisualLayout.Height - 0.001));
+		var subLineIndex = (int) (relativeY / viewModel.ViewMetrics.CharacterHeight);
+		if (subLineIndex > line.WrappedStartOffsets.Count)
+		{
+			subLineIndex = line.WrappedStartOffsets.Count;
+		}
+
+		var start = subLineIndex == 0
+			? line.StartOffset
+			: line.WrappedStartOffsets[subLineIndex - 1];
+		var endExclusive = subLineIndex < line.WrappedStartOffsets.Count
+			? line.WrappedStartOffsets[subLineIndex]
+			: line.EndOffset;
+
+		if (start >= endExclusive)
+		{
+			offset = start;
+			return true;
+		}
+
+		var currentX = 0.0;
+		var currentPos = start;
+		var layoutWidth = Bounds.Width > 1 ? Bounds.Width : 999999;
+
+		foreach (var token in viewModel.TokenManager.GetTokens(start, endExclusive))
+		{
+			if (token.StartOffset > currentPos)
+			{
+				var gapLen = Math.Min(token.StartOffset, endExclusive) - currentPos;
+				if ((gapLen > 0)
+					&& TryHitTestPaintRun(currentPos, gapLen, false, false, layoutWidth, visualX, ref currentX, out offset))
+				{
+					return true;
+				}
+
+				currentPos = Math.Max(currentPos, token.StartOffset);
+			}
+
+			var runStart = Math.Max(token.StartOffset, currentPos);
+			var runEnd = Math.Min(token.EndOffset, endExclusive);
+			if ((runStart < runEnd)
+				&& TryHitTestPaintRun(runStart, runEnd - runStart, token.Bold, token.Italic, layoutWidth, visualX, ref currentX, out offset))
+			{
+				return true;
+			}
+
+			currentPos = Math.Max(currentPos, token.EndOffset);
+		}
+
+		if (currentPos < endExclusive)
+		{
+			var trailingLen = endExclusive - currentPos;
+			if (TryHitTestPaintRun(currentPos, trailingLen, false, false, layoutWidth, visualX, ref currentX, out offset))
+			{
+				return true;
+			}
+		}
+
+		// Past the painted end of this visual row — clamp to last character when present.
+		offset = endExclusive > start ? endExclusive - 1 : start;
+		return true;
 	}
 
 	public void RaiseScrollInvalidated(EventArgs e)
 	{
 		OnScrollInvalidated();
+	}
+
+	/// <summary>
+	/// Advances <paramref name="currentX"/> by the painted run width. When
+	/// <paramref name="visualX"/> falls inside the run, sets <paramref name="offset"/>
+	/// to the character under the pointer (not the trailing caret edge) and returns true.
+	/// </summary>
+	private bool TryHitTestPaintRun(
+		int runStart,
+		int runLength,
+		bool bold,
+		bool italic,
+		double layoutWidth,
+		double visualX,
+		ref double currentX,
+		out int offset)
+	{
+		offset = runStart;
+		if (runLength <= 0)
+		{
+			return false;
+		}
+
+		var runText = ViewModel.Buffer.Substring(runStart, runLength);
+		using var layout = GetTextLayout(runText, layoutWidth, false, Foreground, bold, italic);
+		var runWidth = layout.WidthIncludingTrailingWhitespace;
+
+		if (visualX > (currentX + runWidth))
+		{
+			currentX += runWidth;
+			return false;
+		}
+
+		var hit = layout.HitTestPoint(new Point(visualX - currentX, 0));
+		var indexInRun = hit.CharacterHit.FirstCharacterIndex;
+		if (indexInRun < 0)
+		{
+			indexInRun = 0;
+		}
+		else if (indexInRun >= runLength)
+		{
+			indexInRun = runLength - 1;
+		}
+
+		offset = runStart + indexInRun;
+		currentX += runWidth;
+		return true;
 	}
 
 	public override void Render(DrawingContext drawingContext)
@@ -278,23 +436,10 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 			}
 
 			var lineEnd = start + length;
-			var tokens = ViewModel
-				.TokenManager
-				.GetTokens(start, lineEnd)
-				.ToArray();
-
-			if (tokens.Length == 0)
-			{
-				var text = ViewModel.Buffer.Substring(start, length);
-				using var layout = GetTextLayout(text, Width, false, Foreground);
-				layout.Draw(drawingContext, new Point(-leftX, visualY - topY));
-				return;
-			}
-
 			var currentX = -leftX;
 			var currentPos = start;
 
-			foreach (var token in tokens)
+			foreach (var token in ViewModel.TokenManager.GetTokens(start, lineEnd))
 			{
 				// Print the gap before the token
 				if (token.StartOffset > currentPos)
@@ -304,7 +449,7 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 					{
 						var gapText = ViewModel.Buffer.Substring(currentPos, gapLen);
 						using var tl = GetTextLayout(gapText, Width, false, Foreground);
-						tl.Draw(drawingContext, new Point(currentX, visualY - topY));
+						tl.Draw(drawingContext, new Point(Math.Round(currentX), Math.Round(visualY - topY)));
 						currentX += tl.WidthIncludingTrailingWhitespace;
 					}
 					currentPos = token.StartOffset;
@@ -316,8 +461,11 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 
 				if (runStart < runEnd)
 				{
-					var brush = token.Foreground?.GetBrush() ?? Foreground;
-					if (SyntaxBrushes.TryGetValue(token.SyntaxKind, out var b))
+					var brush = token.Type == MarkdownTokenizer.TokenTypeLink
+						? global::Cornerstone.Avalonia.Themes.Theme.GetAccentBrush()
+						: token.Foreground?.GetBrush() ?? Foreground;
+					if ((token.Type != MarkdownTokenizer.TokenTypeLink)
+						&& SyntaxBrushes.TryGetValue(token.SyntaxKind, out var b))
 					{
 						brush = b;
 					}
@@ -338,7 +486,7 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 						drawingContext.DrawGeometry(backgroundBrush, null, geometry);
 					}
 
-					tl.Draw(drawingContext, new Point(currentX, visualY - topY));
+					tl.Draw(drawingContext, new Point(Math.Round(currentX), Math.Round(visualY - topY)));
 					currentX += tl.WidthIncludingTrailingWhitespace;
 				}
 
@@ -351,7 +499,7 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 				var trailingLen = lineEnd - currentPos;
 				var trailingText = ViewModel.Buffer.Substring(currentPos, trailingLen);
 				using var tl = GetTextLayout(trailingText, Width, false, Foreground);
-				tl.Draw(drawingContext, new Point(currentX, visualY - topY));
+				tl.Draw(drawingContext, new Point(Math.Round(currentX), Math.Round(visualY - topY)));
 			}
 		}
 	}
@@ -366,6 +514,11 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 
 	protected override Size ArrangeOverride(Size finalSize)
 	{
+		if (ViewModel == null)
+		{
+			return default;
+		}
+
 		// ScrollViewer measures with infinite constraints in scroll directions;
 		// the arranged size is the true viewport.
 		ViewModel.ViewMetrics.Viewport = finalSize;
@@ -376,6 +529,10 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 	protected override Size MeasureOverride(Size availableSize)
 	{
 		using var _ = ProfilerExtensions.Start(Profiler, nameof(MeasureOverride));
+		if (ViewModel == null)
+		{
+			return default;
+		}
 
 		// TextLayout maxWidth must be finite; unconstrained measure uses a large
 		// stand-in so glyph metrics still resolve.
@@ -580,6 +737,11 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 		{
 			DetachEvents(change.OldValue as TextEditorViewModel);
 			AttachEvents(change.NewValue as TextEditorViewModel);
+			if (change.NewValue != null)
+			{
+				InvalidateMeasure();
+				RaiseScrollInvalidated(EventArgs.Empty);
+			}
 		}
 
 		base.OnPropertyChanged(change);
@@ -692,6 +854,13 @@ public partial class TextRenderer : CornerstoneControl<TextEditorViewModel>, ILo
 		if (e.Type == TextDocumentChangeType.Reset)
 		{
 			Offset = new Vector(0, 0);
+		}
+
+		if (ViewModel.Lines.LastEditNeedsPaintOnly)
+		{
+			OnScrollInvalidated();
+			InvalidateVisual();
+			return;
 		}
 
 		InvalidateMeasure();

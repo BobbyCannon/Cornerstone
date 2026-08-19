@@ -6,6 +6,7 @@ using System.IO;
 using System.Threading;
 using Cornerstone.Extensions;
 using Cornerstone.GrokMonitor.GrokUsage;
+using Cornerstone.GrokMonitor.GrokUsage.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion

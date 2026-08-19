@@ -14,7 +14,7 @@ namespace Cornerstone.GrokMonitor.GrokUsage.State;
 [SourceReflection]
 [Notifiable(["*"])]
 [Updateable(UpdateableAction.All, ["*"])]
-public partial class GrokUsagePeriodState : CornerstoneObject
+public partial class GrokUsagePeriodState : CornerstoneObject, IGrokUsagePeriod, IUpdateable<IGrokUsagePeriod>
 {
 	#region Constructors
 
@@ -29,7 +29,7 @@ public partial class GrokUsagePeriodState : CornerstoneObject
 	#region Properties
 
 	/// <summary>
-	/// UI label for the combo box.
+	/// Optional period title from discovery. The dashboard ViewModel formats the combo label.
 	/// </summary>
 	public partial string DisplayName { get; set; }
 
@@ -52,6 +52,27 @@ public partial class GrokUsagePeriodState : CornerstoneObject
 	/// Period type string; empty when unknown.
 	/// </summary>
 	public partial string PeriodType { get; set; }
+
+	#endregion
+}
+
+/// <summary>
+/// Shared billing-period contract for State and the period combo option.
+/// Setters exist so UpdateWith can copy; the combo publishes SelectPeriod instead of writing State.
+/// </summary>
+public interface IGrokUsagePeriod
+{
+	#region Properties
+
+	string DisplayName { get; set; }
+
+	bool IsCurrent { get; set; }
+
+	DateTimeOffset PeriodEnd { get; set; }
+
+	DateTimeOffset PeriodStart { get; set; }
+
+	string PeriodType { get; set; }
 
 	#endregion
 }

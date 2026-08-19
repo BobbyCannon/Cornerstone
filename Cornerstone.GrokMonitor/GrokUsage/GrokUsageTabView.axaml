@@ -3,7 +3,7 @@
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:grokUsage="clr-namespace:Cornerstone.GrokMonitor.GrokUsage"
-		xmlns:state="clr-namespace:Cornerstone.GrokMonitor.GrokUsage.State"
+		xmlns:viewModels="clr-namespace:Cornerstone.GrokMonitor.GrokUsage.ViewModels"
 		mc:Ignorable="d" d:DesignWidth="1280"
 		x:Class="Cornerstone.GrokMonitor.GrokUsage.GrokUsageTabView"
 		x:DataType="grokUsage:GrokUsageTabViewModel">
@@ -36,7 +36,7 @@
 							ToolTip.Tip="Billing period for token totals and charts"
 							IsEnabled="{Binding !IsBusy}">
 						<ComboBox.ItemTemplate>
-							<DataTemplate x:DataType="state:GrokUsagePeriodState">
+							<DataTemplate x:DataType="viewModels:GrokUsagePeriodViewModel">
 								<TextBlock Text="{Binding DisplayName}" />
 							</DataTemplate>
 						</ComboBox.ItemTemplate>
@@ -236,7 +236,7 @@
 							ColumnSpacing="12"
 							RowSpacing="12"
 							HorizontalAlignment="Stretch">
-						
+
 						<!-- On-demand (rare; 5th tile → 1x5 or 2x2+1) -->
 						<StackPanel Spacing="6"
 								HorizontalAlignment="Stretch"
@@ -386,18 +386,21 @@
 							CornerRadius="{DynamicResource CornerRadius}"
 							Padding="0"
 							MinHeight="120">
-						<TreeDataGrid ItemsSource="{Binding SessionsSource}"
+						<TreeDataGrid
+								CanUserSortColumns="False"
+								ItemsSource="{Binding SessionsSource}"
+								MinRowHeight="28"
 								ShowColumnHeaders="True">
 							<TreeDataGrid.Styles>
-								<Style Selector="TreeDataGridRow" x:DataType="state:GrokSessionUsageState">
+								<Style Selector="TreeDataGridRow" x:DataType="viewModels:GrokSessionRowViewModel">
 									<Setter Property="Background">
 										<MultiBinding Converter="{x:Static grokUsage:GrokUsageConverters.TokenHeatBackground}">
 											<Binding Path="TotalTokens" />
-											<ReflectionBinding Path="DataContext.Settings.SessionTokenHeatEnabled"
+											<ReflectionBinding Path="DataContext.SessionTokenHeatEnabled"
 													RelativeSource="{RelativeSource AncestorType=UserControl}" />
-											<ReflectionBinding Path="DataContext.Settings.SessionTokenHeatSoftTokens"
+											<ReflectionBinding Path="DataContext.SessionTokenHeatSoftTokens"
 													RelativeSource="{RelativeSource AncestorType=UserControl}" />
-											<ReflectionBinding Path="DataContext.Settings.SessionTokenHeatHotTokens"
+											<ReflectionBinding Path="DataContext.SessionTokenHeatHotTokens"
 													RelativeSource="{RelativeSource AncestorType=UserControl}" />
 										</MultiBinding>
 									</Setter>

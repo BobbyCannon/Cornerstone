@@ -40,6 +40,7 @@ public partial class TabTerminal : CornerstoneUserControl
 
 	#region Fields
 
+	private bool _lateOutputRunning;
 	private bool _selectingDueToCaretMove;
 	private readonly DispatcherTimer _timer;
 
@@ -345,6 +346,7 @@ public partial class TabTerminal : CornerstoneUserControl
 				Terminal.WriteOutput($"    {AnsiCyan}ansiformat{AnsiReset}  - ANSI text formatting codes\r\n");
 				Terminal.WriteOutput($"    {AnsiCyan}console{AnsiReset}     - Console color palette\r\n");
 				Terminal.WriteOutput($"    {AnsiCyan}flood{AnsiReset}       - Inject a large amount of text\r\n");
+				Terminal.WriteOutput($"    {AnsiCyan}Late Output{AnsiReset}  - Button: prompt then leftover stream (insert-before-prompt)\r\n");
 				Terminal.WriteOutput("\r\n");
 				Terminal.WriteOutput($"{AnsiYellow}Host notes:{AnsiReset}\r\n");
 				Terminal.WriteOutput("    CommandEntered → WriteOutput/WriteError → EndCommand()\r\n");
@@ -449,6 +451,55 @@ public partial class TabTerminal : CornerstoneUserControl
 		Profiler.Refresh();
 	}
 
+	/// <summary>
+	/// Recreates cancel-after-ls: first burst while busy, then a prompt, then more
+	/// writes so leftover lines insert above the current input.
+	/// </summary>
+	private async void SimulateLateOutput(object sender, RoutedEventArgs e)
+	{
+		if (_lateOutputRunning)
+		{
+			return;
+		}
+
+		_lateOutputRunning = true;
+		try
+		{
+			Terminal.ViewModel.IsCommandProcessing = true;
+			Terminal.WriteOutput($"{AnsiYellow}Simulating ls -r — first burst, then prompt, then leftover stream.{AnsiReset}\r\n");
+			Terminal.WriteOutput("Type in the prompt while files keep arriving.\r\n");
+
+			for (var i = 0; i < 16; i++)
+			{
+				Terminal.WriteOutput($"file-{i:D3}.txt\r\n");
+				await Task.Delay(25);
+			}
+
+			// Prompt now — remaining writes must land before this line.
+			Terminal.EndCommand();
+			Terminal.SetInput("echo still typing");
+			Terminal.Focus(NavigationMethod.Pointer);
+
+			for (var i = 16; i < 64; i++)
+			{
+				Terminal.WriteOutput($"file-{i:D3}.txt\r\n");
+				await Task.Delay(40);
+			}
+		}
+		finally
+		{
+			_lateOutputRunning = false;
+			if (Terminal.ViewModel.IsCommandProcessing)
+			{
+				Terminal.EndCommand();
+			}
+			else
+			{
+				Terminal.Focus(NavigationMethod.Pointer);
+			}
+		}
+	}
+
 	private void Reset()
 	{
 		Terminal.Clear();
@@ -462,6 +513,7 @@ public partial class TabTerminal : CornerstoneUserControl
 	{
 		var button = (Button) sender;
 		var label = button.Content?.ToString() ?? string.Empty;
+
 		// Map button labels to typed commands (spaces removed for most; Sleep/Error need args).
 		var command = label switch
 		{

@@ -3,7 +3,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Cornerstone.Avalonia;
 using Cornerstone.Extensions;
@@ -65,7 +64,7 @@ public partial class TabAppDispatcherAutomaticView : CornerstoneUserControl
 	{
 		var host = Host;
 		var profiler = Profiler;
-		if ((host is null) || (profiler is null))
+		if (host is null || profiler is null)
 		{
 			return;
 		}
@@ -116,7 +115,7 @@ public partial class TabAppDispatcherAutomaticView : CornerstoneUserControl
 	{
 		var host = Host;
 		var profiler = Profiler;
-		if ((host is null) || (profiler is null))
+		if (host is null || profiler is null)
 		{
 			return;
 		}

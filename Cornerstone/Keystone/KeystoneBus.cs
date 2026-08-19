@@ -146,7 +146,7 @@ public class KeystoneBus : LifecycleTracker
 		var name = result.Message?.GetType().Name;
 		if (string.IsNullOrEmpty(name))
 		{
-			name = result.Type.ToString();
+			name = result.Type;
 		}
 
 		History.Add(new ChannelMessageHistory

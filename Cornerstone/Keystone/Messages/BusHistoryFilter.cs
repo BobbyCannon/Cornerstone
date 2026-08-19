@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 
 #endregion
 
@@ -12,7 +11,7 @@ namespace Cornerstone.Keystone.Messages;
 /// Text-driven filter for bus history rows. Empty text matches everything.
 /// Tokens are whitespace-separated and combined with AND.
 /// Structured keys: channel: (ChannelName contains, case-insensitive),
-/// type: (exact int, comma-separated OR), error:true|false.
+/// type: (type name contains, comma-separated OR), error:true|false.
 /// Remaining tokens are free-text substrings over Name, ErrorMessage, and ChannelName (view-oriented).
 /// </summary>
 public sealed class BusHistoryFilter
@@ -22,12 +21,12 @@ public sealed class BusHistoryFilter
 	private static readonly BusHistoryFilter MatchAllInstance = new(
 		string.Empty,
 		Array.Empty<string>(),
-		Array.Empty<int>(),
+		Array.Empty<string>(),
 		Array.Empty<string>(),
 		ErrorConstraint.Any);
 
 	private readonly string[] _channelContains;
-	private readonly int[] _types;
+	private readonly string[] _types;
 	private readonly string[] _freeText;
 	private readonly ErrorConstraint _errorConstraint;
 
@@ -38,13 +37,13 @@ public sealed class BusHistoryFilter
 	private BusHistoryFilter(
 		string sourceText,
 		string[] channelContains,
-		int[] types,
+		string[] types,
 		string[] freeText,
 		ErrorConstraint errorConstraint)
 	{
 		SourceText = sourceText ?? string.Empty;
 		_channelContains = channelContains ?? Array.Empty<string>();
-		_types = types ?? Array.Empty<int>();
+		_types = types ?? Array.Empty<string>();
 		_freeText = freeText ?? Array.Empty<string>();
 		_errorConstraint = errorConstraint;
 		IsMatchAll = (SourceText.Length == 0)
@@ -74,7 +73,7 @@ public sealed class BusHistoryFilter
 
 	/// <summary>
 	/// Parse filter text. Null or whitespace yields a match-all filter.
-	/// Invalid type integers are ignored. Unknown key:value tokens become free text.
+	/// Empty type tokens are ignored. Unknown key:value tokens become free text.
 	/// </summary>
 	public static BusHistoryFilter Parse(string text)
 	{
@@ -85,7 +84,7 @@ public sealed class BusHistoryFilter
 
 		var trimmed = text.Trim();
 		var channels = new List<string>();
-		var types = new List<int>();
+		var types = new List<string>();
 		var freeText = new List<string>();
 		var errorConstraint = ErrorConstraint.Any;
 
@@ -113,9 +112,10 @@ public sealed class BusHistoryFilter
 					var typeParts = value.Split(',', StringSplitOptions.RemoveEmptyEntries);
 					for (var t = 0; t < typeParts.Length; t++)
 					{
-						if (int.TryParse(typeParts[t].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var typeId))
+						var typeName = typeParts[t].Trim();
+						if (typeName.Length > 0)
 						{
-							types.Add(typeId);
+							types.Add(typeName);
 						}
 					}
 
@@ -171,7 +171,7 @@ public sealed class BusHistoryFilter
 		var name = result.Message?.GetType().Name;
 		if (string.IsNullOrEmpty(name))
 		{
-			name = result.Type.ToString();
+			name = result.Type;
 		}
 
 		return MatchesCore(result.ChannelName, result.Type, result.HadError, name, result.ErrorMessage);
@@ -195,7 +195,7 @@ public sealed class BusHistoryFilter
 		return MatchesCore(entry.ChannelName, entry.Type, entry.HadError, entry.Name, entry.ErrorMessage);
 	}
 
-	private bool MatchesCore(string channelName, int type, bool hadError, string name, string errorMessage)
+	private bool MatchesCore(string channelName, string type, bool hadError, string name, string errorMessage)
 	{
 		if (_errorConstraint == ErrorConstraint.ErrorsOnly && !hadError)
 		{
@@ -209,10 +209,11 @@ public sealed class BusHistoryFilter
 
 		if (_types.Length > 0)
 		{
+			var typeText = type ?? string.Empty;
 			var typeOk = false;
 			for (var i = 0; i < _types.Length; i++)
 			{
-				if (_types[i] == type)
+				if (typeText.IndexOf(_types[i], StringComparison.OrdinalIgnoreCase) >= 0)
 				{
 					typeOk = true;
 					break;

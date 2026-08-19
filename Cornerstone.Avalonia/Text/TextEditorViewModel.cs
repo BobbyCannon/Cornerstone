@@ -74,6 +74,12 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 	public int DocumentLength => Buffer.Count;
 
 	/// <summary>
+	/// True when the last document change asked the view to pin the viewport
+	/// (insert-before-prompt) instead of scrolling to the end.
+	/// </summary>
+	public bool LastChangePinnedViewport { get; private set; }
+
+	/// <summary>
 	/// The option to highlight the current line.
 	/// </summary>
 	[Notify]
@@ -82,6 +88,12 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 	public IndentionManager IndentionManager { get; }
 
 	public InputManager InputManager { get; }
+
+	/// <summary>
+	/// When true, the document cannot be mutated (cut, paste, typing).
+	/// </summary>
+	[Notify]
+	public partial bool IsReadOnly { get; set; }
 
 	/// <summary>
 	/// The lines of the document.
@@ -228,6 +240,21 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 		OnDocumentChanged(offset, value, TextDocumentChangeType.Add);
 	}
 
+	/// <summary>
+	/// Insert without <see cref="IReadOnlySectionProvider.CanModify" />. Used for
+	/// host output that must land before a live prompt.
+	/// </summary>
+	internal void InsertUnrestricted(int offset, string value, bool pinViewport)
+	{
+		if ((offset < 0) || string.IsNullOrEmpty(value))
+		{
+			return;
+		}
+
+		Buffer.Insert(offset, value);
+		OnDocumentChanged(offset, value, TextDocumentChangeType.Add, pinViewport);
+	}
+
 	public void Load(string data)
 	{
 		Buffer.Reset(data);
@@ -259,8 +286,19 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 
 	public void ProcessKeyDownEvent(KeyEventArgs args)
 	{
+		if (CompletionManager.TryHandleKey(args))
+		{
+			args.Handled = true;
+			return;
+		}
+
 		Caret.Selection.ProcessKeyDown(args);
 		InputManager.ProcessKeyArgs(args);
+
+		if (CompletionManager.IsOpen)
+		{
+			CompletionManager.UpdateFilterFromDocument();
+		}
 	}
 
 	public void ProcessKeyUpEvent(KeyEventArgs args)
@@ -279,6 +317,11 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 		var offset = Caret.Offset;
 		Insert(offset, text);
 		Caret.Move(offset + text.Length);
+
+		if (CompletionManager.IsOpen)
+		{
+			CompletionManager.UpdateFilterFromDocument();
+		}
 	}
 
 	public void RemoveAt(int offset, int length)
@@ -342,10 +385,11 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 		OnDocumentChanged(offset, textString, type);
 	}
 
-	protected virtual void OnDocumentChanged(int offset, string text, TextDocumentChangeType type)
+	protected virtual void OnDocumentChanged(int offset, string text, TextDocumentChangeType type, bool pinViewport = false)
 	{
 		using var _ = ProfilerExtensions.Start(Profiler, nameof(DocumentChanged));
-		var args = new TextDocumentChangedArgs(offset, text, type);
+		LastChangePinnedViewport = pinViewport;
+		var args = new TextDocumentChangedArgs(offset, text, type, pinViewport);
 		if (args.Type is TextDocumentChangeType.Reset)
 		{
 			Caret.Reset();
@@ -355,7 +399,11 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 		{
 			UndoManager.Add(args);
 		}
-		Lines.Rebuild(args);
+		if (!Lines.TryApplyLastLineEdit(args))
+		{
+			Lines.Rebuild(args);
+		}
+
 		TokenManager.Rebuild(args);
 		NotifyComputedPropertyChanged(nameof(DocumentLength));
 		NotifyComputedPropertyChanged(nameof(UndoManager));

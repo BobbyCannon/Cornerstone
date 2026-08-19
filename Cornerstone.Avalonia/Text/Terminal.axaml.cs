@@ -65,10 +65,12 @@ public partial class Terminal : TextEditor<TerminalViewModel>
 			|| ((backgroundColor != null) && (backgroundColor != BackgroundColor)))
 		{
 			AppendTextWithColor(text, foregroundColor, backgroundColor);
+			ViewModel.EnsureNewlineBeforeLivePrompt();
 			return;
 		}
 
-		ViewModel.Append(text);
+		ViewModel.AppendStyled(text, null, null, null, null, null);
+		ViewModel.EnsureNewlineBeforeLivePrompt();
 	}
 
 	/// <summary>
@@ -80,13 +82,30 @@ public partial class Terminal : TextEditor<TerminalViewModel>
 		PromptForCommand();
 	}
 
+	public void BeginPromptForInput(string message)
+	{
+		ViewModel.BeginPromptForInput(message ?? string.Empty);
+	}
+
+	public void BeginPromptForInputSecurely(string message)
+	{
+		ViewModel.BeginPromptForInputSecurely(message ?? string.Empty);
+	}
+
 	public override void Clear()
 	{
+		ViewModel.EndPromptForInput();
 		ViewModel.IsCommandProcessing = false;
 		ViewModel.ClearHistoryNavigation();
+		ViewModel.ClearPaintedPrompt();
 		ViewModel.PromptOffset = 0;
 		ViewModel.TokenManager.Clear();
 		base.Clear();
+	}
+
+	public void EndPromptForInput()
+	{
+		ViewModel.EndPromptForInput();
 	}
 
 	/// <summary>
@@ -106,7 +125,7 @@ public partial class Terminal : TextEditor<TerminalViewModel>
 
 	public void ExecuteCommand(string command)
 	{
-		if (ViewModel.IsCommandProcessing)
+		if (ViewModel.IsCommandProcessing && !ViewModel.IsPromptingForInput)
 		{
 			return;
 		}
@@ -117,26 +136,38 @@ public partial class Terminal : TextEditor<TerminalViewModel>
 
 	public void ExecuteInput()
 	{
-		if (ViewModel.IsCommandProcessing)
+		if (ViewModel.IsCommandProcessing && !ViewModel.IsPromptingForInput)
 		{
 			return;
 		}
 
-		var command = ReadInput();
+		var isInputPrompt = ViewModel.IsPromptingForInput;
+		var command = ViewModel.IsPromptingForInputSecurely
+			? ViewModel.TakeSecureInput()
+			: ReadInput();
 		ViewModel.ClearHistoryNavigation();
-		AppendText(Environment.NewLine);
+		ViewModel.Append(Environment.NewLine);
+
+		if (isInputPrompt)
+		{
+			ViewModel.EndPromptForInput();
+			CommandEntered?.Invoke(this, command);
+			return;
+		}
+
 		OnCommandEntered(command);
 	}
 
 	/// <summary>
 	/// Shows a new prompt and marks the terminal ready for input.
-	/// Clears <see cref="TerminalViewModel.IsCommandProcessing" /> and history draft/browse state.
+	/// Clears <see cref="TerminalViewModel.IsCommandProcessing" />.
+	/// History draft/browse is cleared only when a new prompt line is painted
+	/// (not when a live line is reused or the prompt string is replaced in place).
 	/// </summary>
 	public void PromptForCommand()
 	{
-		ViewModel.IsCommandProcessing = false;
-		ViewModel.ClearHistoryNavigation();
-		InternalPrompt();
+		ViewModel.PaintCommandPrompt();
+		Dispatcher.Post(() => { ScrollToOffset(ViewModel.PromptOffset); });
 	}
 
 	public string ReadInput()
@@ -149,14 +180,24 @@ public partial class Terminal : TextEditor<TerminalViewModel>
 
 	public void SetInput(string value)
 	{
-		if (ViewModel.IsCommandProcessing
+		if ((ViewModel.IsCommandProcessing && !ViewModel.IsPromptingForInput)
+			|| ViewModel.IsPromptingForInputSecurely
 			|| (value == null))
 		{
 			return;
 		}
 
-		ViewModel.Buffer.RemoveAt(ViewModel.PromptOffset, ViewModel.DocumentLength - ViewModel.PromptOffset);
-		AppendText(value);
+		var inputLength = ViewModel.DocumentLength - ViewModel.PromptOffset;
+		if (inputLength > 0)
+		{
+			// Must go through ViewModel.RemoveAt so LineManager shrinks the last line.
+			// Buffer.RemoveAt leaves EndOffset stale; the following append then
+			// GetReadOnlySpans(StartOffset, Length) past Count.
+			ViewModel.RemoveAt(ViewModel.PromptOffset, inputLength);
+		}
+
+		// Input is the live suffix after PromptOffset — never insert-before-prompt.
+		ViewModel.Append(value);
 		Dispatcher.Post(() => ViewModel.Caret.MoveToEnd());
 	}
 
@@ -187,7 +228,19 @@ public partial class Terminal : TextEditor<TerminalViewModel>
 	/// </summary>
 	public void WriteOutput(string text)
 	{
-		AppendText(text);
+		if (string.IsNullOrEmpty(text))
+		{
+			return;
+		}
+
+		if (text.Contains('\e'))
+		{
+			ViewModel.Tokenizer.ProcessAnsiText(this, text);
+			return;
+		}
+
+		ViewModel.AppendStyled(text, null, null, null, null, null);
+		ViewModel.EnsureNewlineBeforeLivePrompt();
 	}
 
 	protected virtual void OnCommandEntered(string e)
@@ -199,6 +252,21 @@ public partial class Terminal : TextEditor<TerminalViewModel>
 
 	protected override void OnTextInput(TextInputEventArgs e)
 	{
+		if (ViewModel.IsPromptingForInputSecurely)
+		{
+			if (e.Text != null)
+			{
+				foreach (var c in e.Text)
+				{
+					ViewModel.AppendSecureChar(c);
+				}
+			}
+
+			e.Handled = true;
+			base.OnTextInput(e);
+			return;
+		}
+
 		if (!CanModify())
 		{
 			e.Handled = true;
@@ -211,16 +279,7 @@ public partial class Terminal : TextEditor<TerminalViewModel>
 
 	internal void AppendTextWithColor(string text, Color? foregroundColor, Color? backgroundColor, bool? bold = null, bool? italic = null, bool? strikethrough = null)
 	{
-		var start = ViewModel.DocumentLength;
-		ViewModel.Append(text);
-
-		var token = ViewModel.Tokenizer
-			.CreateOrUpdateSection(
-				0, start, ViewModel.DocumentLength,
-				foregroundColor?.ToUInt32(), backgroundColor?.ToUInt32(),
-				bold, italic, strikethrough
-			);
-		ViewModel.TokenManager.Add(token);
+		ViewModel.AppendStyled(text, foregroundColor, backgroundColor, bold, italic, strikethrough);
 	}
 
 	private bool CanModify()
@@ -254,26 +313,6 @@ public partial class Terminal : TextEditor<TerminalViewModel>
 		}
 	}
 
-	private void InternalPrompt()
-	{
-		if ((ViewModel.DocumentLength == ViewModel.PromptOffset)
-			&& (ViewModel.PromptOffset > ViewModel.Prompt?.Length))
-		{
-			return;
-		}
-
-		if ((ViewModel.DocumentLength > 0)
-			&& (ViewModel.Buffer[ViewModel.Buffer.Count - 1] != '\n'))
-		{
-			ViewModel.Append(Environment.NewLine);
-		}
-
-		AppendText(ViewModel.Prompt);
-		ViewModel.PromptOffset = ViewModel.DocumentLength;
-		ViewModel.Caret.Move(ViewModel.PromptOffset);
-		Dispatcher.Post(() => { ScrollToOffset(ViewModel.PromptOffset); });
-	}
-
 	private bool IsSafeKey(Key key)
 	{
 		return ArrowKeys.Contains(key)
@@ -283,9 +322,22 @@ public partial class Terminal : TextEditor<TerminalViewModel>
 
 	private void OnPreviewKeyDown(object sender, KeyEventArgs e)
 	{
+		if (ViewModel.IsPromptingForInput)
+		{
+			HandleInputPromptKeyDown(e);
+			return;
+		}
+
 		// While a command runs: allow navigation/modifiers (and copy shortcuts); block submit, history, and edits.
 		if (ViewModel.IsCommandProcessing)
 		{
+			if (IsCancelShortcut(e) && (ViewModel.Caret.Selection.Length <= 0))
+			{
+				e.Handled = true;
+				CommandCancelled?.Invoke(this, EventArgs.Empty);
+				return;
+			}
+
 			if (IsSafeKey(e.Key)
 				|| IsCopyShortcut(e))
 			{
@@ -313,6 +365,12 @@ public partial class Terminal : TextEditor<TerminalViewModel>
 			{
 				ViewModel.Caret.Move(ViewModel.DocumentLength);
 			}
+		}
+
+		if (ViewModel.CompletionManager.IsOpen
+			&& (e.Key is Key.Up or Key.Down or Key.Tab or Key.Enter or Key.Return or Key.Escape))
+		{
+			return;
 		}
 
 		if ((e.Key is Key.Up or Key.Down)
@@ -361,6 +419,50 @@ public partial class Terminal : TextEditor<TerminalViewModel>
 		// null only when not browsing — leave the live line alone
 	}
 
+	private void HandleInputPromptKeyDown(KeyEventArgs e)
+	{
+		if (IsCancelShortcut(e) && (ViewModel.Caret.Selection.Length <= 0))
+		{
+			e.Handled = true;
+			CommandCancelled?.Invoke(this, EventArgs.Empty);
+			return;
+		}
+
+		if (e.Key is Key.Enter or Key.Return)
+		{
+			e.Handled = true;
+			ExecuteInput();
+			return;
+		}
+
+		if (ViewModel.Caret.Offset < ViewModel.PromptOffset)
+		{
+			ViewModel.Caret.Move(ViewModel.DocumentLength);
+		}
+
+		if (e.Key is Key.Up or Key.Down)
+		{
+			e.Handled = true;
+			return;
+		}
+
+		if (ViewModel.IsPromptingForInputSecurely)
+		{
+			if (e.Key == Key.Back)
+			{
+				ViewModel.RemoveLastSecureChar();
+				e.Handled = true;
+			}
+
+			return;
+		}
+	}
+
+	private static bool IsCancelShortcut(KeyEventArgs e)
+	{
+		return e.KeyModifiers.HasFlag(KeyModifiers.Control) && (e.Key == Key.C);
+	}
+
 	private static bool IsCopyShortcut(KeyEventArgs e)
 	{
 		// Ctrl+C / Ctrl+Insert — copy; clipboard layer still no-ops cut/paste via CanModify.
@@ -371,6 +473,8 @@ public partial class Terminal : TextEditor<TerminalViewModel>
 	#endregion
 
 	#region Events
+
+	public event EventHandler CommandCancelled;
 
 	public event EventHandler<string> CommandEntered;
 

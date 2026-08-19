@@ -60,6 +60,7 @@ public partial class AppViewModel : ApplicationViewModel
 		AddTabItemViewModel(TabRuntimeInformation.HeaderName, "Icons.Info.Circle", typeof(TabRuntimeInformation));
 		AddTabItemViewModel(TabShortcutBox.HeaderName, "Icons.Keyboard", typeof(TabShortcutBox));
 		AddTabItemViewModel(TabSpeedyPack.HeaderName, "Icons.BoxLayered", typeof(TabSpeedyPack));
+		AddTabItemViewModel(TabTokenTextFilter.HeaderName, "Icons.Search", typeof(TabTokenTextFilter));
 		AddTabItemViewModel(TabTerminal.HeaderName, "Icons.Terminal", typeof(TabTerminal));
 		AddTabItemViewModel(TabTextEditor.HeaderName, "Icons.File.Binary", typeof(TabTextEditor));
 		AddTabItemViewModel(TabTreeDataGrid.HeaderName, "Icons.File.Tree", typeof(TabTreeDataGrid));
@@ -89,10 +90,9 @@ public partial class AppViewModel : ApplicationViewModel
 
 	#region Methods
 
-	public override void LoadLifecycle()
+	public override void StartLifecycle()
 	{
-		base.LoadLifecycle();
-		// Settings load via AppState.Track; re-apply theme once UI/theme is ready.
+		base.StartLifecycle();
 		State.Settings.ApplyTheme();
 		SelectedTab = Tabs.FirstOrDefault(x => x.TabTypeName == State.Settings.SelectedTab) ?? Tabs.FirstOrDefault();
 	}
@@ -110,7 +110,7 @@ public partial class AppViewModel : ApplicationViewModel
 
 	protected override void OnPropertyChanged<TValue>(string propertyName, TValue oldValue, TValue newValue)
 	{
-		if (propertyName == nameof(SelectedTab))
+		if ((propertyName == nameof(SelectedTab)) && IsLifecycleStarted())
 		{
 			State.Settings.SelectedTab = SelectedTab.TabTypeName;
 		}

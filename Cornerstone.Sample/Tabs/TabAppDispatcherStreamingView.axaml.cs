@@ -44,7 +44,7 @@ public partial class TabAppDispatcherStreamingView : CornerstoneUserControl<TabA
 	{
 		var viewModel = ViewModel;
 		var profiler = Profiler;
-		if ((viewModel is null) || (profiler is null))
+		if (viewModel is null || profiler is null)
 		{
 			return;
 		}
