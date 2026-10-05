@@ -63,7 +63,7 @@ These landed during the CPU / stability pass. Do not re-do unless regressing.
 - [x] Lighter `FrameReceived` path (no redundant main-thread hop for trivial show-preview).
 - [x] Debounce + skip unchanged XAML to host (`Throttle` classic debounce, `_lastSentXaml`, adaptive idle).
 - [x] Suspend host when document tab not visible (`EditorPane` / `IVsWindowFrameNotify3`); Source-only idle suspend (15 s).
-- [x] Remote frame pump presents on `CompositionTarget.Rendering` (`RemoteSession`): latest frame wins, once per WPF render, so the cap is the monitor refresh. The 16 ms `DispatcherPriority.Background` timer was removed; it restarted after every blit and skipped frames. Same-size frames update pixels only and do not run layout. The hook is removed while no frame is waiting. `Stop` (tab hidden, Source-only suspend) drops it so background documents do not keep waking `devenv`. Invalid markup still ACKs and does not present.
+- [x] Remote frame pump presents on `CompositionTarget.Rendering` (`RemoteSession`): latest frame wins, once per WPF render, so the cap is the monitor refresh. The 16 ms `DispatcherPriority.Background` timer was removed; it restarted after every blit and skipped frames. Same-size frames update pixels only and do not run layout. The hook stays up for 200 ms after the last painted frame, then drops. Removing it on the first empty pass made every live frame wait on the Background queue. `Stop` (tab hidden, Source-only suspend) drops it so background documents do not keep waking `devenv`. Invalid markup still ACKs and does not present.
 - [x] Remove Fit All / Fit to Width — fixed % zoom only; drop viewport↔scale coupling and fit SizeChanged path.
 
 ---

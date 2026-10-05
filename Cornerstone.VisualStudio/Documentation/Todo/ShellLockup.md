@@ -10,7 +10,7 @@ WPF dispatcher order, highest first: Send (10), Normal (9), Render (7), Input (5
 
 ## 1. Cornerstone frames are posted at Render
 
-**Addressed.** `EnsurePump` posts one `StartPresentOnUi` at Background, and only when the render hook is not already up. Later frames wait on that hook. A Render post per frame was the stream above Input.
+**Addressed.** `EnsurePump` posts one `StartPresentOnUi` at Background, and only when the render hook is not already up. Later frames wait on that hook. While it is up, one coalesced kick at Input asks for the next pass. The hook stays up for 200 ms after the last painted frame so a live preview does not reinstall it through the Background queue on every frame (that pause-then-burst is not the lockup; it is the jitter). A Render post per frame was the stream above Input. Do not remove the hold, and do not move the kick to Render.
 
 **Was.** `RemoteSession.EnsurePump` posted `StartPresentOnUi` at `DispatcherPriority.Render` for every frame copied on the socket thread.
 

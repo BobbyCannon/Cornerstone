@@ -37,10 +37,20 @@ public sealed class RemoteSession : IDisposable
 	private int _writeSlot;
 	private int _disposed;
 	private int _presentScheduled;
+	private int _renderKickScheduled;
 	private int _pumpStopped;
 	private int _pumpSuspended;
+	private TimeSpan _lastFrameRenderingTime;
 	private byte[] _slot0;
 	private byte[] _slot1;
+
+	/// <summary>
+	/// How long the composition hook stays up after the last painted frame.
+	/// Host frames arrive between WPF passes. Dropping the hook on the first
+	/// empty pass made the next frame wait on the Background queue, which is
+	/// the pause-then-burst jitter. A static preview still unhooks after this.
+	/// </summary>
+	private const int RenderHookHoldMilliseconds = 200;
 
 	#endregion
 
@@ -56,8 +66,10 @@ public sealed class RemoteSession : IDisposable
 		_writeSlot = 0;
 		_disposed = 0;
 		_presentScheduled = 0;
+		_renderKickScheduled = 0;
 		_pumpStopped = 0;
 		_pumpSuspended = 0;
+		_lastFrameRenderingTime = TimeSpan.MinValue;
 		_slot0 = Array.Empty<byte>();
 		_slot1 = Array.Empty<byte>();
 		PauseFrames = false;
@@ -92,8 +104,9 @@ public sealed class RemoteSession : IDisposable
 	/// <summary>
 	/// Binds frame application to <paramref name="dispatcher"/>.
 	/// One callback below keyboard input installs the render hook. Later frames
-	/// ride that hook and do not each post dispatcher work. The hook is removed
-	/// while no frame is waiting, so an idle preview does not keep rendering.
+	/// ride that hook. One coalesced kick, also below Render, asks for the next
+	/// pass. The hook stays up briefly after the last frame so a live preview
+	/// does not re-enter through the Background queue, then it drops.
 	/// A size change posts layout below input instead of running it on the render pass.
 	/// </summary>
 	public void AttachDispatcher(Dispatcher dispatcher)
@@ -456,17 +469,32 @@ public sealed class RemoteSession : IDisposable
 
 		// One posted callback installs the hook. A Render or Normal post per frame
 		// sits above the keyboard, and the shell ignores input until a resize.
+		// While the hook is up, one coalesced Input kick schedules the next pass.
+		// That kick is not a Render post, and a second frame does not queue another.
+		var start = false;
+		var hooked = false;
 		lock (_frameGate)
 		{
-			if (_compositionHooked || (_presentScheduled != 0))
+			hooked = _compositionHooked;
+			if (!hooked && (_presentScheduled == 0))
 			{
-				return;
+				_presentScheduled = 1;
+				start = true;
 			}
-
-			_presentScheduled = 1;
 		}
 
-		BeginOnDispatcher(StartPresentOnUi, DispatcherPriority.Background);
+		if (hooked)
+		{
+			SchedulePresentKick();
+		}
+
+		if (start && !BeginOnDispatcher(StartPresentOnUi, DispatcherPriority.Background))
+		{
+			lock (_frameGate)
+			{
+				_presentScheduled = 0;
+			}
+		}
 	}
 
 	private void StartPresentOnUi()
@@ -527,21 +555,105 @@ public sealed class RemoteSession : IDisposable
 			_lastRenderingTime = rendering.RenderingTime;
 		}
 
-		ProcessPendingFrameOnUi();
+		var painted = ProcessPendingFrameOnUi();
+		if (painted)
+		{
+			_lastFrameRenderingTime = _lastRenderingTime;
+		}
 
-		var unhook = false;
+		var pending = false;
 		lock (_frameGate)
 		{
-			if ((_pendingFrame == null) && !_processingFrame && AcceptsFrames)
+			pending = (_pendingFrame != null) || _processingFrame;
+		}
+
+		// Stay hooked across the gap between host frames. The queue is often
+		// empty at the pass even while the preview is moving, because the next
+		// frame has not arrived yet. Unhooking there sent every frame back
+		// through the Background queue.
+		if (!pending && !painted && !WithinRenderHookHold())
+		{
+			var unhook = false;
+			lock (_frameGate)
 			{
-				_compositionHooked = false;
-				unhook = true;
+				if ((_pendingFrame == null) && !_processingFrame && _compositionHooked)
+				{
+					_compositionHooked = false;
+					unhook = true;
+				}
+			}
+
+			if (unhook)
+			{
+				System.Windows.Media.CompositionTarget.Rendering -= OnCompositionRendering;
+				return;
 			}
 		}
 
-		if (unhook)
+		SchedulePresentKick();
+	}
+
+	private bool WithinRenderHookHold()
+	{
+		if ((_lastFrameRenderingTime == TimeSpan.MinValue) || (_lastRenderingTime == TimeSpan.MinValue))
 		{
-			System.Windows.Media.CompositionTarget.Rendering -= OnCompositionRendering;
+			return false;
+		}
+
+		var elapsed = _lastRenderingTime - _lastFrameRenderingTime;
+		return (elapsed >= TimeSpan.Zero) && (elapsed.TotalMilliseconds < RenderHookHoldMilliseconds);
+	}
+
+	/// <summary>
+	/// Asks WPF for another composition pass. At most one kick is queued.
+	/// Input is below Render, so this does not sit above the keyboard, and the
+	/// same band still drains.
+	/// </summary>
+	private void SchedulePresentKick()
+	{
+		if (!AcceptsFrames)
+		{
+			return;
+		}
+
+		lock (_frameGate)
+		{
+			if (!_compositionHooked || (_renderKickScheduled != 0))
+			{
+				return;
+			}
+
+			_renderKickScheduled = 1;
+		}
+
+		if (!BeginOnDispatcher(KickPresentOnUi, DispatcherPriority.Input))
+		{
+			lock (_frameGate)
+			{
+				_renderKickScheduled = 0;
+			}
+		}
+	}
+
+	private void KickPresentOnUi()
+	{
+		var hooked = false;
+		var pending = false;
+		lock (_frameGate)
+		{
+			_renderKickScheduled = 0;
+			hooked = _compositionHooked;
+			pending = _pendingFrame != null;
+		}
+
+		if (!AcceptsFrames || !hooked)
+		{
+			return;
+		}
+
+		if (pending || WithinRenderHookHold())
+		{
+			WakePresent();
 		}
 	}
 
@@ -574,9 +686,11 @@ public sealed class RemoteSession : IDisposable
 
 	private void StopPumpOnUi()
 	{
+		_lastFrameRenderingTime = TimeSpan.MinValue;
 		lock (_frameGate)
 		{
 			_presentScheduled = 0;
+			_renderKickScheduled = 0;
 			if (!_compositionHooked)
 			{
 				return;
@@ -588,29 +702,22 @@ public sealed class RemoteSession : IDisposable
 		System.Windows.Media.CompositionTarget.Rendering -= OnCompositionRendering;
 	}
 
-	private void BeginOnDispatcher(Action action, DispatcherPriority priority)
+	private bool BeginOnDispatcher(Action action, DispatcherPriority priority)
 	{
 		var dispatcher = _dispatcher;
 		if ((dispatcher == null) || (action == null))
 		{
-			lock (_frameGate)
-			{
-				_presentScheduled = 0;
-			}
-
-			return;
+			return false;
 		}
 
 		try
 		{
 			dispatcher.BeginInvoke(priority, action);
+			return true;
 		}
 		catch (InvalidOperationException)
 		{
-			lock (_frameGate)
-			{
-				_presentScheduled = 0;
-			}
+			return false;
 		}
 	}
 
@@ -663,21 +770,21 @@ public sealed class RemoteSession : IDisposable
 		_ = CompleteConnectAsync();
 	}
 
-	private void ProcessPendingFrameOnUi()
+	private bool ProcessPendingFrameOnUi()
 	{
 		RemoteFrame frame;
 		lock (_frameGate)
 		{
 			if (_processingFrame)
 			{
-				return;
+				return false;
 			}
 
 			frame = _pendingFrame;
 			_pendingFrame = null;
 			if (frame == null)
 			{
-				return;
+				return false;
 			}
 
 			_processingFrame = true;
@@ -688,7 +795,7 @@ public sealed class RemoteSession : IDisposable
 		{
 			if (PauseFrames || !AcceptsFrames)
 			{
-				return;
+				return false;
 			}
 
 			if ((frame.Width <= 1) && (frame.Height <= 1) && (Bitmap != null))
@@ -696,7 +803,7 @@ public sealed class RemoteSession : IDisposable
 				IgnoredFrameWidth = frame.Width;
 				IgnoredFrameHeight = frame.Height;
 				FrameIgnored?.Invoke(this, EventArgs.Empty);
-				return;
+				return false;
 			}
 
 			var previous = Bitmap;
@@ -709,6 +816,8 @@ public sealed class RemoteSession : IDisposable
 			{
 				BeginOnDispatcher(RaiseFrameReceived, DispatcherPriority.Background);
 			}
+
+			return true;
 		}
 		finally
 		{

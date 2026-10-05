@@ -16,9 +16,9 @@ Open leads from this walk are in [Todo/ShellLockup.md](Todo/ShellLockup.md). Thi
 |----------|------:|-------------------|
 | Send | 10 | One-shot unhook of the preview render pump |
 | Normal | 9 | `SwitchToMainThreadAsync` (the Visual Studio default) |
-| Render | 7 | Cornerstone preview frames (`RemoteSession.EnsurePump`) |
-| Input | 5 | Keyboard and mouse, once the shell has turned them into dispatcher work |
-| Background | 4 | Avalonia frame copy, status-bar gear, process-panel refresh |
+| Render | 7 | Shell layout and render. The preview pump must not post here. |
+| Input | 5 | Keyboard and mouse. While a preview is moving, one coalesced kick shares this band. |
+| Background | 4 | Installing the preview hook, Avalonia frame copy, status-bar gear, process-panel refresh |
 
 Keyboard and mouse sit at Input. Anything posted at Render, Normal, or Send runs before them. If that higher band keeps receiving new work, Input never runs. The IDE looks frozen: clicks and keys do nothing.
 
@@ -135,9 +135,11 @@ A paint locks a framebuffer. On unlock, `SendLastFrameIfNeeded` copies pixels in
 
 ### Cornerstone client (`RemoteSession`)
 
-The socket thread copies the frame into a pending slot and calls `EnsurePump`. That posts **one** `StartPresentOnUi` at **Background** (below Input). The callback subscribes `CompositionTarget.Rendering` once. Later frames do not post again while the hook is up; the next render pass copies the latest pending frame into a `WriteableBitmap`. When no frame is waiting, the subscription is removed, so an idle preview does not keep WPF rendering.
+The socket thread copies the frame into a pending slot and calls `EnsurePump`. The first frame posts one `StartPresentOnUi` at **Background**, which subscribes `CompositionTarget.Rendering`. Later frames do not each post. The pass copies the latest pending frame into a `WriteableBitmap`, then posts **one** coalesced kick at **Input**. That kick dirties the bitmap so the next pass runs. A second frame does not queue another kick while one is waiting.
 
-A post per frame at Render filled the band above the keyboard. Input then waited until a resize. One Background post plus the shell's own render pass does not do that. Pixel copies still happen on the render pass, so a moving preview stays on the monitor refresh.
+The hook stays up for 200 ms after the last painted frame, then drops. Host frames arrive between WPF passes, so the queue is often empty at the pass even while the preview is moving. Dropping the hook on that first empty pass sent every following frame back through the Background queue. That queue is shared with the rest of the shell, so a live preview paused and then drew several frames at once.
+
+A post per frame at Render filled the band above the keyboard. Input then waited until a resize. The kick is one item at Input, not a Render item. Pixel copies still happen on the render pass.
 
 The acknowledgement (`FrameReceivedMessage`) is sent on the socket thread as soon as the frame is copied, before the UI thread paints it.
 

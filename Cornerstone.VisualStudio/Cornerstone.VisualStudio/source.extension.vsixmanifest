@@ -1,6 +1,6 @@
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="Cornerstone.Extension" Version="1.5.277.17577" Language="en-US" Publisher="Bobby J Cannon" />
+    <Identity Id="Cornerstone.Extension" Version="1.5.277.18575" Language="en-US" Publisher="Bobby J Cannon" />
     <DisplayName>Cornerstone</DisplayName>
     <Description xml:space="preserve">Live designer and IntelliSense for Cornerstone (.cxaml) and Avalonia (.axaml).</Description>
     <License>License.txt</License>
