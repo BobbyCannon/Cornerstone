@@ -1,8 +1,10 @@
 #region References
 
 using System;
-using Avalonia;
-using Cornerstone.Avalonia.Documentation;
+using Cornerstone.Presentation;
+using Cornerstone.Presentation.Logging;
+using Cornerstone.Presentation.Platforms;
+using Cornerstone.Presentation.Documentation;
 
 #endregion
 
@@ -12,7 +14,7 @@ internal static class Program
 {
 	#region Methods
 
-	public static AppBuilder BuildAvaloniaApp()
+	public static AppBuilder BuildCornerstoneApp()
 	{
 		return AppBuilder
 			.Configure<App>()
@@ -27,8 +29,9 @@ internal static class Program
 		{
 			ApplicationName = "Cornerstone.VisualStudio.Documentation",
 			ApplicationAssembly = typeof(Program).Assembly,
-			WindowTitle = "Cornerstone Visual Studio Documentation"
-		}, BuildAvaloniaApp());
+			WindowTitle = "Cornerstone Visual Studio Documentation",
+			WindowIcon = "/Assets/Cornerstone.ico"
+		}, BuildCornerstoneApp());
 	}
 
 	#endregion

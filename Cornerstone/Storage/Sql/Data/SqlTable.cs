@@ -29,6 +29,7 @@ public partial class SqlTable : CornerstoneObject
 		Schema = schema;
 		Columns = [];
 		ForeignKeys = [];
+		Indexes = [];
 	}
 
 	#endregion
@@ -38,6 +39,8 @@ public partial class SqlTable : CornerstoneObject
 	public List<SqlTableColumn> Columns { get; }
 
 	public List<SqlForeignKey> ForeignKeys { get; }
+
+	public List<SqlIndex> Indexes { get; }
 
 	public partial string Name { get; set; }
 

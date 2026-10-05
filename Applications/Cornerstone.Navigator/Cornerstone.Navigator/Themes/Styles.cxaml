@@ -1,0 +1,50 @@
+<Styles xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<Style Selector="Border.NavigatorToolBar">
+		<Setter Property="MinHeight" Value="32" />
+		<Setter Property="BorderThickness" Value="0,0,0,1" />
+		<Setter Property="BorderBrush" Value="{DynamicResource Background06}" />
+		<Setter Property="CornerRadius" Value="0" />
+	</Style>
+
+	<Style Selector="Border.PersonalToolbar">
+		<Setter Property="MinHeight" Value="26" />
+		<Setter Property="Background" Value="{DynamicResource Background03}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource Background06}" />
+		<Setter Property="BorderThickness" Value="0,0,0,1" />
+		<Setter Property="CornerRadius" Value="0" />
+		<Setter Property="Padding" Value="4,0" />
+	</Style>
+
+	<Style Selector="Border.NavigatorStatusBar">
+		<Setter Property="BorderThickness" Value="0,1,0,0" />
+		<Setter Property="BorderBrush" Value="{DynamicResource Background06}" />
+		<Setter Property="CornerRadius" Value="0" />
+		<Setter Property="MinHeight" Value="30" />
+	</Style>
+
+	<Style Selector="TextBox.Location">
+		<Setter Property="Margin" Value="4,2,4,2" />
+		<Setter Property="MinHeight" Value="24" />
+		<Setter Property="VerticalAlignment" Value="Center" />
+	</Style>
+
+	<Style Selector="CircularProgress.Throbber">
+		<Setter Property="Width" Value="22" />
+		<Setter Property="Height" Value="22" />
+		<Setter Property="MinHeight" Value="0" />
+		<Setter Property="StrokeThickness" Value="2" />
+		<Setter Property="Theme.Color" Value="Amber" />
+		<Setter Property="VerticalAlignment" Value="Center" />
+	</Style>
+
+	<Style Selector="ProgressBar.DocumentProgress">
+		<Setter Property="Width" Value="120" />
+		<Setter Property="Height" Value="8" />
+		<Setter Property="MinHeight" Value="8" />
+		<Setter Property="Margin" Value="8,0,8,0" />
+		<Setter Property="VerticalAlignment" Value="Center" />
+		<Setter Property="Theme.Color" Value="Amber" />
+	</Style>
+</Styles>

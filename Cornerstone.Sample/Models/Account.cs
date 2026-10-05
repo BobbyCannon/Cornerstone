@@ -14,10 +14,16 @@ namespace Cornerstone.Sample.Models;
 [Notifiable(["*"])]
 [Updateable(UpdateableAction.All, ["*"])]
 [Packable(1, ["*"])]
-public partial class Account : SyncModel, IAccount
+public partial class Account
+	: SyncModel, IAccount,
+		IUpdateable<Account>,
+		IUpdateable<AccountEntity>,
+		IUpdateable<IAccount>
 {
 	#region Properties
 
+	public partial Guid? AddressSyncId { get; set; }
+	public partial Guid? CustomerSyncId { get; set; }
 	public partial string EmailAddress { get; set; }
 	public partial DateTime LastLoginDate { get; set; }
 	public partial string Name { get; set; }
@@ -33,6 +39,8 @@ public interface IAccount : IComparable
 {
 	#region Properties
 
+	public Guid? AddressSyncId { get; set; }
+	public Guid? CustomerSyncId { get; set; }
 	public string EmailAddress { get; set; }
 	public DateTime LastLoginDate { get; set; }
 	public string Name { get; set; }

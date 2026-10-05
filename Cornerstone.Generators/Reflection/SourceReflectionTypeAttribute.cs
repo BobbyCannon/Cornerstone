@@ -6,6 +6,9 @@ using System;
 
 namespace Cornerstone.Reflection;
 
+/// <summary>
+/// Generates an AOT-safe map for a type this assembly does not declare. Same rule as <see cref="SourceReflectionAttribute"/>: compiled accessors, not GetConstructor/Invoke.
+/// </summary>
 [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
 public class SourceReflectionTypeAttribute(Type type) : Attribute
 {
@@ -16,6 +19,9 @@ public class SourceReflectionTypeAttribute(Type type) : Attribute
 	#endregion
 }
 
+/// <summary>
+/// Generic form of <see cref="SourceReflectionTypeAttribute"/>. Generated maps must stay AOT-safe.
+/// </summary>
 [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
 public class SourceReflectionTypeAttribute<T> : Attribute
 {

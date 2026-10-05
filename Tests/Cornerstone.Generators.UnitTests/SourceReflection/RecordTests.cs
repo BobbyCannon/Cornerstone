@@ -112,6 +112,7 @@ public class RecordTests : GeneratorUnitTest
 										NullableAnnotation = global::Cornerstone.Reflection.SourceNullableAnnotation.NotAnnotated
 									},
 								},
+								Invoke = static (parameters) => SourceReflectionConstruct_CornerstoneTestModelsSampleRecord_1((global::Cornerstone.Test.Models.SampleRecord) parameters[0])
 							},
 						},
 						DeclaredFieldsInitializer = static () => new global::Cornerstone.Reflection.SourceFieldInfo[]
@@ -244,6 +245,9 @@ public class RecordTests : GeneratorUnitTest
 						Name = "SampleRecord",
 						Type = typeof(global::Cornerstone.Test.Models.SampleRecord)
 					};
+
+					[global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Constructor)]
+					extern static global::Cornerstone.Test.Models.SampleRecord SourceReflectionConstruct_CornerstoneTestModelsSampleRecord_1(global::Cornerstone.Test.Models.SampleRecord original);
 				}
 			}
 			""",

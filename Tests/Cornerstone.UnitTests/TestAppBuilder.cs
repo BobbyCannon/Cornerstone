@@ -1,33 +1,34 @@
 #region References
 
-using Avalonia;
-using Avalonia.Headless;
-using Cornerstone.Avalonia;
+using Cornerstone.Presentation;
+using Cornerstone.Presentation.Headless;
+using Cornerstone.Presentation.Theme;
 using Cornerstone.UnitTests;
 
 #endregion
 
 // HeadlessUnitTestSession.GetOrStartForAssembly reads these attributes.
-[assembly: AvaloniaTestApplication(typeof(TestAppBuilder))]
-// PerTest resets the dispatcher when another test already touched Avalonia off-session
+[assembly: PresentationTestApplication(typeof(TestAppBuilder))]
+
+// PerTest resets the dispatcher when another test already touched Cornerstone off-session
 // (e.g. Terminal constructed without RunOnUi). Slightly slower, much more isolation-safe.
-[assembly: AvaloniaTestIsolation(AvaloniaTestIsolationLevel.PerTest)]
+[assembly: PresentationTestIsolation(PresentationTestIsolationLevel.PerTest)]
 
 namespace Cornerstone.UnitTests;
 
 /// <summary>
-/// Entry point for Avalonia headless unit tests (AvaloniaTestApplicationAttribute).
+/// Entry point for Cornerstone headless unit tests (PresentationTestApplicationAttribute).
 /// </summary>
 public class TestAppBuilder
 {
 	#region Methods
 
-	public static AppBuilder BuildAvaloniaApp()
+	public static AppBuilder BuildCornerstoneApp()
 	{
 		return AppBuilder
 			.Configure<TestApplication>()
 			.UseSkia()
-			.UseHeadless(new AvaloniaHeadlessPlatformOptions
+			.UseHeadless(new PresentationHeadlessPlatformOptions
 			{
 				// Skia path keeps layout/measure closer to real apps; drawing is still headless.
 				UseHeadlessDrawing = false

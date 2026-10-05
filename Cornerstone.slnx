@@ -1,5 +1,43 @@
 <Solution>
+  <Folder Name="/Templates/" />
+  <Folder Name="/Templates/All/">
+    <Project Path="Templates/cornerstone-all/Company.AppName.Android/Company.AppName.Android.csproj" />
+    <Project Path="Templates/cornerstone-all/Company.AppName.Browser/Company.AppName.Browser.csproj" />
+    <Project Path="Templates/cornerstone-all/Company.AppName.Desktop/Company.AppName.Desktop.csproj" />
+    <Project Path="Templates/cornerstone-all/Company.AppName.iOS/Company.AppName.iOS.csproj" />
+    <Project Path="Templates/cornerstone-all/Company.AppName/Company.AppName.csproj" />
+  </Folder>
+  <Folder Name="/Templates/Basic/">
+    <Project Path="Templates/cornerstone-basic/Company.AppName/Company.AppName.csproj" />
+  </Folder>
+  <Folder Name="/Templates/Keystone/">
+    <Project Path="Templates/cornerstone-keystone/Company.AppName/Company.AppName.csproj" />
+  </Folder>
+  <Folder Name="/Applications/">
+    <Project Path="Applications/Cornerstone.Agent/Cornerstone.Agent.csproj" />
+    <Project Path="Applications/Cornerstone.GrokMonitor/Cornerstone.GrokMonitor.csproj" />
+    <Project Path="Applications/Cornerstone.MediaPlayer/Cornerstone.MediaPlayer.Android/Cornerstone.MediaPlayer.Android.csproj">
+      <Deploy />
+    </Project>
+    <Project Path="Applications/Cornerstone.MediaPlayer/Cornerstone.MediaPlayer.Browser/Cornerstone.MediaPlayer.Browser.csproj" />
+    <Project Path="Applications/Cornerstone.MediaPlayer/Cornerstone.MediaPlayer.Desktop/Cornerstone.MediaPlayer.Desktop.csproj" />
+    <Project Path="Applications/Cornerstone.MediaPlayer/Cornerstone.MediaPlayer.iOS/Cornerstone.MediaPlayer.iOS.csproj">
+      <Deploy />
+    </Project>
+    <Project Path="Applications/Cornerstone.MediaPlayer/Cornerstone.MediaPlayer/Cornerstone.MediaPlayer.csproj" />
+    <Project Path="Applications/Cornerstone.Navigator/Cornerstone.Navigator.Android/Cornerstone.Navigator.Android.csproj">
+      <Deploy />
+    </Project>
+    <Project Path="Applications/Cornerstone.Navigator/Cornerstone.Navigator.Browser/Cornerstone.Navigator.Browser.csproj" />
+    <Project Path="Applications/Cornerstone.Navigator/Cornerstone.Navigator.Desktop/Cornerstone.Navigator.Desktop.csproj" />
+    <Project Path="Applications/Cornerstone.Navigator/Cornerstone.Navigator.iOS/Cornerstone.Navigator.iOS.csproj">
+      <Deploy />
+    </Project>
+    <Project Path="Applications/Cornerstone.Navigator/Cornerstone.Navigator/Cornerstone.Navigator.csproj" />
+    <Project Path="Applications/Cornerstone.RemoteLink/Cornerstone.RemoteLink.csproj" />
+  </Folder>
   <Folder Name="/Build/">
+    <File Path="Build/Presentation.props" />
     <File Path="Cornerstone.slnx.DotSettings" />
     <File Path="Directory.Build.props" />
     <File Path="Directory.Build.targets" />
@@ -16,35 +54,49 @@
     <File Path="Build/Release.Web.props" />
   </Folder>
   <Folder Name="/Solution Items/">
-    <File Path="../.gitattributes" />
-    <File Path="../.gitignore" />
-    <File Path="../global.json" />
-    <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="Tests/Cornerstone.AutomationTests/Cornerstone.AutomationTests.csproj" />
     <Project Path="Tests/Cornerstone.Generators.UnitTests/Cornerstone.Generators.UnitTests.csproj" />
     <Project Path="Tests/Cornerstone.PerformanceTests/Cornerstone.PerformanceTests.csproj" />
+    <Project Path="Tests/Cornerstone.Presentation.UnitTests/Cornerstone.Presentation.UnitTests.csproj" />
+    <Project Path="Tests/TestFiles/BuildTasks/PInvoke/PInvoke.csproj" />
     <Project Path="Tests/Cornerstone.UnitTests/Cornerstone.UnitTests.csproj" />
+    <Project Path="Cornerstone.IntegrationTests/Cornerstone.IntegrationTests.csproj" />
   </Folder>
-  <Project Path="Avalonia.Diagnostics/Avalonia.Diagnostics.csproj" />
-  <Project Path="Cornerstone.Agent/Cornerstone.Agent.csproj" />
+  <Folder Name="/Integrations/">
+    <Project Path="Integrations/Cornerstone.Esri/Cornerstone.Esri.csproj" />
+    <Project Path="Integrations/Cornerstone.Mapsui/Cornerstone.Mapsui.csproj" />
+    <Project Path="Integrations/Cornerstone.Vlc/Cornerstone.Vlc.csproj" />
+  </Folder>
+  <Project Path="Cornerstone.Presentation.Diagnostics/Cornerstone.Presentation.Diagnostics.csproj" />
   <Project Path="Cornerstone.Automation/Cornerstone.Automation.csproj" />
-  <Project Path="Cornerstone.Avalonia/Cornerstone.Avalonia.csproj" />
+  <Project Path="Cornerstone.Automation.Presentation/Cornerstone.Automation.Presentation.csproj" />
   <Project Path="Cornerstone.Documentation/Cornerstone.Documentation.csproj" />
   <Project Path="Cornerstone.EntityFramework/Cornerstone.EntityFramework.csproj" />
   <Project Path="Cornerstone.Generators/Cornerstone.Generators.csproj" />
   <Project Path="Cornerstone.PowerShell/Cornerstone.PowerShell.csproj" />
+  <Project Path="Cornerstone.Presentation/Cornerstone.Presentation.csproj">
+    <BuildDependency Project="Cornerstone.Presentation.BuildTasks/Cornerstone.Presentation.BuildTasks.csproj" />
+  </Project>
+  <Project Path="Cornerstone.Presentation.Remote.Protocol/Cornerstone.Presentation.Remote.Protocol.csproj" />
+  <Project Path="Cornerstone.Presentation.Remote.Wpf/Cornerstone.Presentation.Remote.Wpf.csproj" />
+  <Project Path="Cornerstone.Presentation.Remote.Wpf.Host/Cornerstone.Presentation.Remote.Wpf.Host.csproj" />
+  <Project Path="Cornerstone.Designer.HostApp/Cornerstone.Designer.HostApp.csproj" />
+  <Project Path="Cornerstone.Presentation.BuildTasks/Cornerstone.Presentation.BuildTasks.csproj" />
+  <Project Path="Cornerstone.Presentation.DevGenerators/Cornerstone.Presentation.DevGenerators.csproj" />
+  <Project Path="Cornerstone.Presentation.Sandbox/Cornerstone.Presentation.Sandbox.csproj" />
   <Project Path="Cornerstone.Sample.Android/Cornerstone.Sample.Android.csproj">
     <Deploy />
   </Project>
   <Project Path="Cornerstone.Sample.Browser/Cornerstone.Sample.Browser.csproj" />
-  <Project Path="Cornerstone.Sample.Desktop/Cornerstone.Sample.Desktop.csproj" />
+  <Project Path="Cornerstone.Sample.Desktop/Cornerstone.Sample.Desktop.csproj" DefaultStartup="true" />
   <Project Path="Cornerstone.Sample.iOS/Cornerstone.Sample.iOS.csproj">
     <Deploy />
   </Project>
   <Project Path="Cornerstone.Sample/Cornerstone.Sample.csproj" />
-  <Project Path="Cornerstone.GrokMonitor/Cornerstone.GrokMonitor.csproj" />
   <Project Path="Cornerstone.Templates/Cornerstone.Templates.csproj" />
   <Project Path="Cornerstone/Cornerstone.csproj" />
 </Solution>

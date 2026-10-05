@@ -1,7 +1,7 @@
-﻿#region References
+#region References
 
 using System.Linq;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
@@ -20,7 +20,7 @@ internal class TestUtils
 	{
 		var cursors = baseText.Where(n => n.Equals('$')).Count();
 		var thereIsSingleCursor = cursors == 1;
-		Assert.True(thereIsSingleCursor);
+		Assert.IsTrue(thereIsSingleCursor);
 
 		var cursor = baseText.IndexOf("$");
 		var text = baseText.Replace("$", "");
@@ -37,7 +37,7 @@ internal class TestUtils
 	{
 		var cursors = baseText.Where(n => n.Equals('$')).Count();
 		var thereIsSingleSpan = cursors == 2;
-		Assert.True(thereIsSingleSpan);
+		Assert.IsTrue(thereIsSingleSpan);
 
 		var spanStart = baseText.IndexOf("$");
 		var spanEnd = baseText.LastIndexOf("$");

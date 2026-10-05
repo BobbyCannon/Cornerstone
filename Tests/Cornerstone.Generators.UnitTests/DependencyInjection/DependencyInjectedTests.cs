@@ -1,4 +1,4 @@
-﻿#region References
+#region References
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -62,7 +62,7 @@ public class DependencyInjectedTests : GeneratorUnitTest
 					/// <summary>
 					/// Registers default factory services discovered via [DependencyInjected].
 					/// Call before any <c>SetSingleton</c> overrides and before first resolve.
-					/// Hosts may call this for each referenced assembly (e.g. Cornerstone, Cornerstone.Avalonia).
+					/// Hosts may call this for each referenced assembly (e.g. Cornerstone, Cornerstone.Presentation).
 					/// </summary>
 					public static void RegisterDependencies(global::Cornerstone.Runtime.DependencyProvider provider)
 					{
@@ -129,7 +129,7 @@ public class DependencyInjectedTests : GeneratorUnitTest
 					/// <summary>
 					/// Registers default factory services discovered via [DependencyInjected].
 					/// Call before any <c>SetSingleton</c> overrides and before first resolve.
-					/// Hosts may call this for each referenced assembly (e.g. Cornerstone, Cornerstone.Avalonia).
+					/// Hosts may call this for each referenced assembly (e.g. Cornerstone, Cornerstone.Presentation).
 					/// </summary>
 					public static void RegisterDependencies(global::Cornerstone.Runtime.DependencyProvider provider)
 					{
@@ -190,7 +190,7 @@ public class DependencyInjectedTests : GeneratorUnitTest
 					/// <summary>
 					/// Registers default factory services discovered via [DependencyInjected].
 					/// Call before any <c>SetSingleton</c> overrides and before first resolve.
-					/// Hosts may call this for each referenced assembly (e.g. Cornerstone, Cornerstone.Avalonia).
+					/// Hosts may call this for each referenced assembly (e.g. Cornerstone, Cornerstone.Presentation).
 					/// </summary>
 					public static void RegisterDependencies(global::Cornerstone.Runtime.DependencyProvider provider)
 					{
@@ -327,7 +327,7 @@ public class DependencyInjectedTests : GeneratorUnitTest
 					/// <summary>
 					/// Registers default factory services discovered via [DependencyInjected].
 					/// Call before any <c>SetSingleton</c> overrides and before first resolve.
-					/// Hosts may call this for each referenced assembly (e.g. Cornerstone, Cornerstone.Avalonia).
+					/// Hosts may call this for each referenced assembly (e.g. Cornerstone, Cornerstone.Presentation).
 					/// </summary>
 					public static void RegisterDependencies(global::Cornerstone.Runtime.DependencyProvider provider)
 					{

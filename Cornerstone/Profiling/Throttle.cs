@@ -24,12 +24,12 @@ public sealed class Throttle : IDisposable
 	private bool _busy;
 	private readonly IDateTimeProvider _dateTimeProvider;
 	private bool _disposed;
+	private bool _forceTrailing;
 	private readonly TimeSpan _interval;
 	private DateTime _lastExecuted;
 	private readonly object _lock;
 	private bool _trailingPending;
 	private System.Threading.Timer _trailingTimer;
-	private readonly bool _useRealTimeTimer;
 
 	#endregion
 
@@ -50,7 +50,6 @@ public sealed class Throttle : IDisposable
 		}
 
 		_dateTimeProvider = dateTimeProvider ?? DateTimeProvider.RealTime;
-		_useRealTimeTimer = ReferenceEquals(_dateTimeProvider, DateTimeProvider.RealTime);
 		_lastExecuted = DateTime.MinValue;
 		_lock = new();
 		_interval = interval;
@@ -59,6 +58,23 @@ public sealed class Throttle : IDisposable
 	#endregion
 
 	#region Methods
+
+	/// <summary>
+	/// Drops a pending trailing edge without disposing. Later <see cref="Trigger" /> still works.
+	/// Use on pause/uninitialize when the owner is a long-lived singleton.
+	/// </summary>
+	public void Cancel()
+	{
+		lock (_lock)
+		{
+			if (_disposed)
+			{
+				return;
+			}
+
+			CancelTrailingUnsafe();
+		}
+	}
 
 	public void Dispose()
 	{
@@ -115,7 +131,7 @@ public sealed class Throttle : IDisposable
 				_trailingPending = true;
 				if (force)
 				{
-					_lastExecuted = DateTime.MinValue;
+					_forceTrailing = true;
 				}
 
 				return;
@@ -152,6 +168,7 @@ public sealed class Throttle : IDisposable
 	private void CancelTrailingUnsafe()
 	{
 		_trailingPending = false;
+		_forceTrailing = false;
 		if (_trailingTimer is null)
 		{
 			return;
@@ -164,28 +181,25 @@ public sealed class Throttle : IDisposable
 	private void InvokeAction(Action toRun)
 	{
 		// Invoke outside the lock so re-entrant Trigger does not deadlock.
-		if (toRun is null)
+		// Loop instead of recurse so a zero-interval Trigger during the action
+		// cannot grow the stack.
+		while (toRun is not null)
 		{
-			return;
-		}
-
-		try
-		{
-			toRun.Invoke();
-		}
-		finally
-		{
-			Action followUp = null;
-
-			lock (_lock)
+			try
 			{
-				_busy = false;
-				TryStartTrailingUnsafe(ref followUp);
+				toRun.Invoke();
 			}
-
-			if (followUp is not null)
+			finally
 			{
-				InvokeAction(followUp);
+				Action followUp = null;
+
+				lock (_lock)
+				{
+					_busy = false;
+					TryStartTrailingUnsafe(ref followUp);
+				}
+
+				toRun = followUp;
 			}
 		}
 	}
@@ -197,11 +211,6 @@ public sealed class Throttle : IDisposable
 
 	private void ScheduleTrailingUnsafe()
 	{
-		if (!_useRealTimeTimer)
-		{
-			return;
-		}
-
 		if (_trailingTimer is not null)
 		{
 			// Already armed for the end of this window; extra hits stay coalesced.
@@ -227,8 +236,9 @@ public sealed class Throttle : IDisposable
 		}
 
 		var now = _dateTimeProvider.UtcNow;
-		if ((now - _lastExecuted) < _interval)
+		if (!_forceTrailing && ((now - _lastExecuted) < _interval))
 		{
+			ScheduleTrailingUnsafe();
 			return;
 		}
 
@@ -239,6 +249,7 @@ public sealed class Throttle : IDisposable
 		}
 
 		_trailingPending = false;
+		_forceTrailing = false;
 		_lastExecuted = now;
 		_busy = true;
 		toRun = _action;

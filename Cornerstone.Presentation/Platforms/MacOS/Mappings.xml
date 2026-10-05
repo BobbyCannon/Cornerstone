@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config id="CornerstoneNative" xmlns="urn:SharpGen.Config">
+    <assembly>Cornerstone.Presentation.Native</assembly>
+    <namespace>Cornerstone.Presentation.Platforms.MacOS.Interop</namespace>
+    <depends>SharpGen.Runtime.COM</depends>
+    <include-dir>$(THIS_CONFIG_PATH)/../../native/Cornerstone.Presentation.Native/inc</include-dir>
+    <include file="cornerstone-native.h" 
+             namespace="Cornerstone.Presentation.Platforms.MacOS.Interop"
+             attach="true"
+             pre="#define COM_GUIDS_MATERIALIZE\n"/>
+    <include file="com.h" 
+             namespace="Cornerstone.Presentation.Platforms.MacOS.Interop"
+             attach="true"
+             pre="#define COM_GUIDS_MATERIALIZE\n"/>
+    <mapping>
+        <remove function=".*" />
+        <map interface="*.Events" callback="true" autogen-shadow="true"/>
+        <map interface="*.Callback" callback="true" autogen-shadow="true"/>
+        <map param=".*::.*::ppv" return="true"/>
+        <map param=".*::.*::ret" return="true"/>
+        <map param=".*::.*::retOut" attribute="out" return="true"/>
+        <map method="ICsnAppMenu:.*" visibility="private" />
+        <map method="ICsnAppMenuItem:.*" visibility="private" />
+    </mapping>
+</config>

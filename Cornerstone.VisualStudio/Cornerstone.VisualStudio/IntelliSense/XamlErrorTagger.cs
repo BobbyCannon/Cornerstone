@@ -3,7 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Avalonia.Remote.Protocol.Designer;
+using System.Threading.Tasks;
 using Cornerstone.VisualStudio.Services;
 using EnvDTE;
 using EnvDTE80;
@@ -25,7 +25,8 @@ internal class XamlErrorTagger : ITagger<IErrorTag>, ITableDataSource, IDisposab
 	#region Fields
 
 	private readonly ITextBuffer _buffer;
-	private ExceptionDetails _error;
+	private bool _disposed;
+	private PreviewExceptionDetails _error;
 	private readonly ITextStructureNavigator _navigator;
 	private readonly string _path;
 	private readonly PreviewerProcess _process;
@@ -81,6 +82,7 @@ internal class XamlErrorTagger : ITagger<IErrorTag>, ITableDataSource, IDisposab
 
 	public void Dispose()
 	{
+		_disposed = true;
 		_sink?.RemoveAllEntries();
 
 		if (_process != null)
@@ -161,27 +163,122 @@ internal class XamlErrorTagger : ITagger<IErrorTag>, ITableDataSource, IDisposab
 
 	private void HandleErrorChanged(object sender, EventArgs e)
 	{
-		var error = _process.Error;
-		_tagSpan = null;
-		if (error is not null)
-		{
-			_sink?.AddEntries([new XamlErrorTableEntry(_projectName, _path, error)], true);
-		}
-		else
-		{
-			_sink?.RemoveAllEntries();
-		}
-		RaiseTagsChanged(error);
+		// ErrorChanged is raised from the previewer message pump (thread-pool).
+		// Error List + TagsChanged must run on the UI thread or the editor can deadlock.
+		ApplyErrorChangedOnUiAsync().FireAndForget();
 	}
 
-	private void RaiseTagsChanged(ExceptionDetails error)
+	private async Task ApplyErrorChangedOnUiAsync()
 	{
-		_error = error;
-		if (TagsChanged is { } tagsChanged)
+		try
 		{
-			var textSnapshot = _buffer.CurrentSnapshot;
-			tagsChanged(this, new SnapshotSpanEventArgs(new SnapshotSpan(textSnapshot, 0, textSnapshot.Length)));
+			await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+			if (_disposed)
+			{
+				return;
+			}
+
+			var error = _process.Error;
+			var oldSpan = _tagSpan;
+			_tagSpan = null;
+			_error = error;
+
+			if (error is not null)
+			{
+				_sink?.AddEntries([new XamlErrorTableEntry(_projectName, _path, error)], true);
+			}
+			else
+			{
+				_sink?.RemoveAllEntries();
+			}
+
+			RaiseTagsChanged(oldSpan, error);
 		}
+		catch (OperationCanceledException)
+		{
+			// Designer/editor is tearing down.
+		}
+	}
+
+	private void RaiseTagsChanged(TagSpan<IErrorTag> oldSpan, PreviewExceptionDetails error)
+	{
+		if (TagsChanged is not { } tagsChanged)
+		{
+			return;
+		}
+
+		var snapshot = _buffer.CurrentSnapshot;
+		if ((snapshot == null) || (snapshot.Length == 0))
+		{
+			return;
+		}
+
+		tagsChanged(this, new SnapshotSpanEventArgs(GetTagsChangedSpan(snapshot, oldSpan, error)));
+	}
+
+	/// <summary>
+	/// Invalidates the previous error line and the new one, not the whole document.
+	/// </summary>
+	private static SnapshotSpan GetTagsChangedSpan(
+		ITextSnapshot snapshot,
+		TagSpan<IErrorTag> oldSpan,
+		PreviewExceptionDetails error)
+	{
+		var newSpan = TryGetLineSpan(snapshot, error);
+		SnapshotSpan? old = null;
+		if (oldSpan != null)
+		{
+			try
+			{
+				old = oldSpan.Span.TranslateTo(snapshot, SpanTrackingMode.EdgeInclusive);
+			}
+			catch (Exception)
+			{
+				// Snapshot mapping can fail if the buffer was replaced.
+			}
+		}
+
+		if (old != null && newSpan != null)
+		{
+			return Union(old.Value, newSpan.Value);
+		}
+
+		if (newSpan != null)
+		{
+			return newSpan.Value;
+		}
+
+		if (old != null)
+		{
+			return old.Value;
+		}
+
+		return new SnapshotSpan(snapshot, 0, Math.Min(1, snapshot.Length));
+	}
+
+	private static SnapshotSpan? TryGetLineSpan(ITextSnapshot snapshot, PreviewExceptionDetails error)
+	{
+		if (error?.LineNumber is not int lineNumber)
+		{
+			return null;
+		}
+
+		var line = lineNumber - 1;
+		if ((line < 0) || (line >= snapshot.LineCount))
+		{
+			return null;
+		}
+
+		return snapshot.GetLineFromLineNumber(line).ExtentIncludingLineBreak;
+	}
+
+	private static SnapshotSpan Union(SnapshotSpan a, SnapshotSpan b)
+	{
+		var start = Math.Min(a.Start.Position, b.Start.Position);
+		var end = Math.Max(a.End.Position, b.End.Position);
+		start = Math.Max(0, start);
+		end = Math.Min(a.Snapshot.Length, Math.Max(start, end));
+		return new SnapshotSpan(a.Snapshot, start, end - start);
 	}
 
 	IDisposable ITableDataSource.Subscribe(ITableDataSink sink)

@@ -1,0 +1,81 @@
+using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+using Cornerstone.Presentation.Media;
+using Cornerstone.Presentation.Media.Immutable;
+using Cornerstone.Presentation.Rendering.Composition.Server;
+
+namespace Cornerstone.Presentation.Rendering.Composition.Drawing;
+
+static class ServerResourceHelperExtensions
+{
+    public static IBrush? GetServer(this IBrush? brush, Compositor? compositor)
+    {
+        if (compositor == null)
+            return brush;
+        if (brush == null)
+            return null;
+        if (brush is IImmutableBrush immutable)
+            return immutable;
+        if (brush is ICompositionRenderResource<IBrush> resource)
+            return resource.GetForCompositor(compositor);
+        if (brush is CompositionBrush compositionBrush)
+        {
+            // The server object belongs to its own compositor's render loop;
+            // handing it to another compositor would share one resource across
+            // two render threads.
+            if (compositionBrush.Compositor != compositor)
+                ThrowForeignCompositor(compositionBrush);
+            return compositionBrush.Server;
+        }
+        ThrowNotCompatible(brush);
+        return null;
+    }
+
+    public static IPen? GetServer(this IPen? pen, Compositor? compositor)
+    {
+        if (compositor == null)
+            return pen;
+        if (pen == null)
+            return null;
+        if (pen is ImmutablePen immutable)
+            return immutable;
+        if (pen is ICompositionRenderResource<IPen> resource)
+            return resource.GetForCompositor(compositor);
+        ThrowNotCompatible(pen);
+        return null;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining), DoesNotReturn]
+    static void ThrowNotCompatible(object o) =>
+        throw new InvalidOperationException(o.GetType() + " is not compatible with composition");
+
+    [MethodImpl(MethodImplOptions.NoInlining), DoesNotReturn]
+    static void ThrowForeignCompositor(CompositionObject o) =>
+        throw new InvalidOperationException(o.GetType() + " belongs to a different compositor");
+    
+    public static ITransform? GetServer(this ITransform? transform, Compositor? compositor)
+    {
+        if (compositor == null)
+            return transform;
+        if (transform == null)
+            return null;
+        if (transform is ImmutableTransform immutable)
+            return immutable;
+        if (transform is ICompositionRenderResource<ITransform> resource)
+            resource.GetForCompositor(compositor);
+        return new ImmutableTransform(transform.Value);
+    }
+
+    public static IRenderDataGeometry? GetServer(this Geometry? geometry, Compositor? compositor)
+    {
+        if (geometry == null)
+            return null;
+        if (compositor == null)
+            return geometry.PlatformImpl;
+        if (geometry is ICompositionRenderResource<ServerCompositionSimpleGeometry> resource)
+            return resource.GetForCompositor(compositor);
+        ThrowNotCompatible(geometry);
+        return null;
+    }
+}

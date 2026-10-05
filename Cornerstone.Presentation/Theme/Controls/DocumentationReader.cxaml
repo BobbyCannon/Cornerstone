@@ -1,0 +1,232 @@
+<Styles xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type DocumentationReader}" TargetType="DocumentationReader">
+				<Setter Property="Background" Value="{DynamicResource Background02}" />
+				<Setter Property="Template">
+					<ControlTemplate>
+						<DockPanel>
+							<Border DockPanel.Dock="Top"
+									Background="{DynamicResource Background00}"
+									BorderBrush="{DynamicResource BorderBrush}"
+									BorderThickness="0,0,0,1"
+									CornerRadius="0"
+									Padding="10,8"
+									ZIndex="10">
+								<Grid ColumnDefinitions="Auto,*,Auto"
+										MinHeight="36">
+									<StackPanel Grid.Column="0"
+											Orientation="Horizontal"
+											Spacing="2"
+											VerticalAlignment="Center">
+										<Button x:Name="PART_DocumentsPaneButton"
+												Classes="Icon"
+												ToolTip.Tip="Documents"
+												Width="36"
+												Height="36"
+												Padding="0">
+											<Path Width="16" Height="16"
+													Stretch="Uniform"
+													Fill="{DynamicResource Foreground00}"
+													Data="{StaticResource Icons.Bars}"
+													Margin="0,2,0,0"
+													HorizontalAlignment="Center"
+													VerticalAlignment="Center"
+													Opacity="0.9" />
+										</Button>
+										<Button x:Name="PART_BackButton"
+												Classes="Icon"
+												ToolTip.Tip="Back"
+												Width="36"
+												Height="36"
+												Padding="0">
+											<Path Width="14" Height="14"
+													Stretch="Uniform"
+													Fill="{DynamicResource Foreground00}"
+													Data="{StaticResource Icons.Arrow.Left}"
+													HorizontalAlignment="Center"
+													VerticalAlignment="Center"
+													Opacity="0.9" />
+										</Button>
+										<Button x:Name="PART_HomeButton"
+												Classes="Icon"
+												ToolTip.Tip="Home"
+												Width="36"
+												Height="36"
+												Padding="0">
+											<Path Width="18" Height="18"
+													Stretch="Uniform"
+													Fill="{DynamicResource Foreground00}"
+													Data="{StaticResource Icons.Home}"
+													Margin="0,2,0,0"
+													HorizontalAlignment="Center"
+													VerticalAlignment="Center" />
+										</Button>
+									</StackPanel>
+
+									<BreadcrumbTrail x:Name="PART_DocumentTrail"
+											Grid.Column="1"
+											Margin="12,0,12,0"
+											VerticalAlignment="Center" />
+
+									<StackPanel Grid.Column="2"
+											Orientation="Horizontal"
+											Spacing="8"
+											VerticalAlignment="Center">
+										<ComboBox x:Name="PART_ColorBox"
+												Width="128"
+												MinHeight="32"
+												ItemsSource="{x:Static ThemeChoices.Colors}"
+												ToolTip.Tip="Theme color" />
+										<ComboBox x:Name="PART_DensityBox"
+												Width="108"
+												MinHeight="32"
+												ItemsSource="{x:Static ThemeChoices.Densities}"
+												ToolTip.Tip="UI density" />
+										<ToggleButton x:Name="PART_WidthButton"
+												Classes="Icon"
+												ToolTip.Tip="Full width"
+												Width="36"
+												Height="36"
+												Padding="0">
+											<Path Width="16" Height="16"
+													Stretch="Uniform"
+													Fill="{DynamicResource Foreground00}"
+													Data="{StaticResource Icons.Compress.Wide.Regular}"
+													Margin="0,4,0,0"
+													HorizontalAlignment="Center"
+													VerticalAlignment="Center"
+													Opacity="0.9" />
+										</ToggleButton>
+										<Button x:Name="PART_ThemeButton"
+												Classes="Icon"
+												ToolTip.Tip="Toggle light / dark"
+												Width="36"
+												Height="36"
+												Padding="0">
+											<PathIcon x:Name="PART_ThemeIcon"
+													Width="16" Height="16"
+													HorizontalAlignment="Center"
+													VerticalAlignment="Center" />
+										</Button>
+										<Button x:Name="PART_ExportButton"
+												Classes="Icon"
+												ToolTip.Tip="Export static HTML site"
+												Width="36"
+												Height="36"
+												Padding="0">
+											<Path Width="16" Height="16"
+													Stretch="Uniform"
+													Fill="{DynamicResource Foreground00}"
+													Data="{StaticResource Icons.Save}"
+													HorizontalAlignment="Center"
+													VerticalAlignment="Center"
+													Opacity="0.9" />
+										</Button>
+									</StackPanel>
+								</Grid>
+							</Border>
+
+							<Border x:Name="PART_StatusHost"
+									DockPanel.Dock="Bottom"
+									IsVisible="False"
+									Background="{DynamicResource Background04}"
+									BorderBrush="{DynamicResource BorderBrush}"
+									BorderThickness="0,1,0,0"
+									Padding="12,8">
+								<Grid ColumnDefinitions="*,Auto">
+									<TextBlock x:Name="PART_StatusText"
+											Grid.Column="0"
+											FontSize="{DynamicResource ControlFontSizeSmall}"
+											TextWrapping="Wrap"
+											VerticalAlignment="Center"
+											Foreground="{DynamicResource Foreground00}" />
+									<Button x:Name="PART_StatusCloseButton"
+											Grid.Column="1"
+											Classes="Icon"
+											ToolTip.Tip="Dismiss"
+											Width="28"
+											Height="28"
+											Padding="0"
+											Margin="8,0,0,0"
+											VerticalAlignment="Center">
+										<Path Width="10"
+												Height="10"
+												Stretch="Uniform"
+												Fill="{DynamicResource Foreground00}"
+												Data="{StaticResource Icons.Close}"
+												HorizontalAlignment="Center"
+												VerticalAlignment="Center"
+												Opacity="0.9" />
+									</Button>
+								</Grid>
+							</Border>
+
+							<SplitView x:Name="PART_DocumentsSplit"
+									DisplayMode="Overlay"
+									OpenPaneLength="300"
+									CompactPaneLength="0"
+									IsPaneOpen="False"
+									PaneBackground="{DynamicResource Background04}">
+								<SplitView.Pane>
+									<Border BorderBrush="{DynamicResource BorderBrush}"
+											BorderThickness="0,0,1,0"
+											Background="{DynamicResource Background04}">
+										<DockPanel Margin="10,10,10,8">
+											<TextBox x:Name="PART_SearchBox"
+													DockPanel.Dock="Top"
+													PlaceholderText="Filter documents…"
+													Margin="0,0,0,8" />
+											<TextBlock x:Name="PART_EmptyFilterText"
+													DockPanel.Dock="Bottom"
+													Text="No matching documents"
+													Opacity="0.55"
+													Margin="4,8,0,0"
+													IsVisible="False" />
+											<TreeDataGrid x:Name="PART_DocTree"
+													ShowColumnHeaders="False" />
+										</DockPanel>
+									</Border>
+								</SplitView.Pane>
+
+								<SplitView.Content>
+									<Border Background="{DynamicResource Background02}">
+										<Border x:Name="PART_ReadingColumn"
+												MaxWidth="{x:Static DocumentationReader.ReadingColumnMaxWidth}"
+												HorizontalAlignment="Stretch"
+												Margin="16,12,16,16"
+												Background="{DynamicResource Background03}"
+												BorderBrush="{DynamicResource BorderBrush}"
+												BorderThickness="1"
+												CornerRadius="8"
+												ClipToBounds="True">
+											<MarkdownView x:Name="PART_MarkdownView"
+													AutoScroll="False"
+													WordWrap="True"
+													BorderThickness="0"
+													CornerRadius="8"
+													Background="Transparent"
+													FontFamily="{DynamicResource OpenSansRegular}"
+													FontSize="{DynamicResource ControlFontSize}"
+													Padding="28,24,28,32" />
+										</Border>
+									</Border>
+								</SplitView.Content>
+							</SplitView>
+						</DockPanel>
+					</ControlTemplate>
+				</Setter>
+				<Style Selector="^:fullwidth /template/ Border#PART_ReadingColumn">
+					<Setter Property="MaxWidth" Value="Infinity" />
+				</Style>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="500">
+			<DocumentationReader />
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</Styles>

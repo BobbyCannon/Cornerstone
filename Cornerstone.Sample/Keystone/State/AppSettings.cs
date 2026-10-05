@@ -1,10 +1,11 @@
 #region References
 
+using System;
 using System.Text.Json;
-using Cornerstone.Avalonia;
-using Cornerstone.Avalonia.Themes;
 using Cornerstone.Data;
 using Cornerstone.Presentation;
+using Cornerstone.Presentation.Theme;
+using Cornerstone.Presentation.Theme.Theming;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
 using Cornerstone.Serialization;
@@ -33,6 +34,7 @@ public partial class AppSettings : SettingsFile<AppSettings>
 	public AppSettings(IRuntimeInformation runtimeInformation)
 		: base("ApplicationSettings.json", runtimeInformation)
 	{
+		EsriApiKey = string.Empty;
 		ThemeColor = ThemeColor.Blue;
 		ThemeMode = ThemeMode.Dark;
 		ThemeDensity = ThemeDensity.Normal;
@@ -42,6 +44,12 @@ public partial class AppSettings : SettingsFile<AppSettings>
 
 	#region Properties
 
+	public partial string EsriApiKey { get; set; }
+
+	/// <summary>
+	/// Navigation menu page name: Home, About, or Settings.
+	/// Older builds stored a section type name. Startup still opens that section under Home once.
+	/// </summary>
 	public partial string SelectedTab { get; set; }
 
 	public partial ThemeColor ThemeColor { get; set; }
@@ -85,7 +93,7 @@ public partial class AppSettings : SettingsFile<AppSettings>
 	public override bool HasChanges(IncludeExcludeSettings settings)
 	{
 		return base.HasChanges(settings)
-			|| WindowLocation.HasChanges();
+			|| (WindowLocation?.HasChanges() ?? false);
 	}
 
 	public override void ResetHasChanges()
@@ -99,12 +107,12 @@ public partial class AppSettings : SettingsFile<AppSettings>
 		WindowLocation ??= new WindowLocation();
 
 		// Defaults when missing from older JSON (UseDarkMode removed).
-		if (!System.Enum.IsDefined(typeof(ThemeMode), ThemeMode))
+		if (!Enum.IsDefined(typeof(ThemeMode), ThemeMode))
 		{
 			ThemeMode = ThemeMode.Dark;
 		}
 
-		if (!System.Enum.IsDefined(typeof(ThemeDensity), ThemeDensity))
+		if (!Enum.IsDefined(typeof(ThemeDensity), ThemeDensity))
 		{
 			ThemeDensity = ThemeDensity.Normal;
 		}

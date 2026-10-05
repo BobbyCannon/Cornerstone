@@ -5,37 +5,38 @@ using System.Linq;
 using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.VisualStudio.Tests;
 
+[TestClass]
 public class KnownBugTests : XamlCompletionTestBase
 {
 	#region Methods
 
-	[Fact]
+	[TestMethod]
 	public void CompletionShouldRecognizeDoubleTransition()
 	{
 		// Non-leaf types complete as paired tags (caret between open/close).
 		AssertSingleCompletion("<", "DoubleTra", "DoubleTransition></DoubleTransition>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void CompletionShouldShowPropertiesFromBaseClasses()
 	{
 		AssertSingleCompletion("<local:EmptyClassDerivedFromGenericClassWithDouble ", "Generic", "GenericProperty=\"\"");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void InterfacePropertiesShouldNotBeShown()
 	{
-		Assert.DoesNotContain(GetCompletionsFor("<Button ").Completions, c => c.InsertText.Contains("IStyleable"));
+		Assert.IsFalse(GetCompletionsFor("<Button ").Completions.Any(c => c.InsertText.Contains("IStyleable")));
 	}
 
-	[Theory]
-	[InlineData("Item")]
+	[TestMethod]
+	[DataRow("Item")]
 	public void NonStylePropertiesShouldNotBeShownOnStyle(string propertyName)
 	{
 		var comp = GetCompletionsFor("<UserControl><UserControl.Styles><Style><Style." +
@@ -44,10 +45,10 @@ public class KnownBugTests : XamlCompletionTestBase
 		{
 			return;
 		}
-		Assert.DoesNotContain(comp.Completions, c => c.InsertText.StartsWith(propertyName));
+		Assert.IsFalse(comp.Completions.Any(c => c.InsertText.StartsWith(propertyName)));
 	}
 
-	[Fact]
+	[TestMethod]
 	public void OnlyAttachedPropertiesShouldBeShownInDottedXamlTag()
 	{
 		var gridAttachedProperties = new HashSet<string>(typeof(Grid)
@@ -58,23 +59,23 @@ public class KnownBugTests : XamlCompletionTestBase
 		var completions = GetCompletionsFor("<UserControl><Grid.").Completions;
 		foreach (var c in completions)
 		{
-			Assert.True(gridAttachedProperties.Contains(c.DisplayText), "Non-attached property " + c.DisplayText);
+			Assert.IsTrue(gridAttachedProperties.Contains(c.DisplayText), "Non-attached property " + c.DisplayText);
 		}
 
 		foreach (var a in gridAttachedProperties)
 		{
-			Assert.True(completions.Any(c => c.DisplayText == a), "Attached property " + a + " is not shown");
+			Assert.IsTrue(completions.Any(c => c.DisplayText == a), "Attached property " + a + " is not shown");
 		}
 	}
 
-	[Fact]
+	[TestMethod]
 	public void RowDefinitionsDirtyShouldNotBeShown()
 	{
 		AssertSingleCompletion("<UserControl><Grid ", "Row", "RowDefinitions=\"\"");
 	}
 
-	[Theory]
-	[InlineData("Animations")]
+	[TestMethod]
+	[DataRow("Animations")]
 	public void StylePropertiesShouldBeShown(string propertyName)
 	{
 		AssertSingleCompletion("<UserControl><UserControl.Styles><Style><Style.", propertyName.Substring(0, 1),

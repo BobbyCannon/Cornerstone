@@ -54,6 +54,35 @@ public class EntityFrameworkSyncableRepository<T, T2>
 		base.Add((T) entity);
 	}
 
+	public void Discard(ISyncEntity entity)
+	{
+		if (entity is not T item)
+		{
+			return;
+		}
+
+		var entry = Database.Entry(item);
+		switch (entry.State)
+		{
+			case EntityState.Modified:
+			{
+				entry.CurrentValues.SetValues(entry.OriginalValues);
+				entry.State = EntityState.Unchanged;
+				break;
+			}
+			case EntityState.Added:
+			{
+				entry.State = EntityState.Detached;
+				break;
+			}
+			case EntityState.Deleted:
+			{
+				entry.State = EntityState.Unchanged;
+				break;
+			}
+		}
+	}
+
 	public int GetChangeCount(DateTime since, DateTime until, SyncRepositoryFilter filter)
 	{
 		return GetChangesQuery(since, until, filter).Count();
@@ -61,16 +90,17 @@ public class EntityFrameworkSyncableRepository<T, T2>
 
 	public IEnumerable<ISyncEntity> GetChanges(DateTime since, DateTime until, int skip, int take, SyncRepositoryFilter filter)
 	{
-		var query = GetChangesQuery(since, until, filter);
+		IQueryable<T> query = GetChangesQuery(since, until, filter)
+			.OrderBy(x => x.ModifiedOn)
+			.ThenBy(x => x.Id);
 		if (skip > 0)
 		{
 			query = query.Skip(skip);
 		}
 
-		var entities = query.Take(take).ToList();
-		var objects = entities.ToList();
-
-		return objects;
+		return query
+			.Take(take)
+			.ToList();
 	}
 
 	public ISyncEntity Read(Guid syncId)
@@ -87,7 +117,13 @@ public class EntityFrameworkSyncableRepository<T, T2>
 
 		if (filter is SyncRepositoryFilter<T> { HasLookupFilter: true } srf)
 		{
-			return Set.FirstOrDefault(srf.LookupFilter.Invoke(entity));
+			var query = Set.Where(srf.LookupFilter.Invoke(entity));
+			if (srf.ScopeFilter != null)
+			{
+				query = query.Where(srf.ScopeFilter);
+			}
+
+			return query.FirstOrDefault();
 		}
 
 		var syncId = syncEntity.SyncId;
@@ -119,34 +155,33 @@ public class EntityFrameworkSyncableRepository<T, T2>
 	{
 		var query = Set
 			.AsNoTracking()
-			.Where(x =>
-				((x.CreatedOn >= since) && (x.CreatedOn < until))
-				|| ((x.ModifiedOn >= since) && (x.ModifiedOn < until))
-			);
+			.Where(x => ((x.CreatedOn >= since) && (x.CreatedOn < until))
+				|| ((x.ModifiedOn >= since) && (x.ModifiedOn < until)));
 
 		// Disable merge because merged expression is very hard to read
 		// ReSharper disable once MergeSequentialPatterns
-		if (filter is SyncRepositoryFilter<T> srf
-			&& (srf.OutgoingExpression != null))
+		if (filter is SyncRepositoryFilter<T> srf)
 		{
-			query = query.Where(srf.OutgoingFilter);
+			if (srf.ScopeFilter != null)
+			{
+				query = query.Where(srf.ScopeFilter);
+			}
+
+			if (srf.OutgoingFilter != null)
+			{
+				query = query.Where(srf.OutgoingFilter);
+			}
 		}
 
-		// If we have never synced, meaning we are syncing from DateTime.MinValue, and
-		// the repository has a filter that say we should skip deleted item on initial sync.
-		// The "SyncEntity.IsDeleted" is a soft-deleted flag that suggest an item is deleted,
-		// but it still exists in the database. If an item is "soft deleted" we will normally
-		// still sync the item to allow the clients (non-server) to have the opportunity to
-		// hard delete the item on their end.
+		// If we have never synced (since == DateTime.MinValue) and the filter says
+		// skip deleted items on initial sync, omit soft-deleted rows. After the first
+		// sync those tombstones still go out so clients can delete locally.
 		if ((since == DateTime.MinValue) && (filter?.SkipDeletedItemsOnInitialSync == true))
 		{
-			// We can skip soft deleted items that will be hard deleted on clients anyway.
 			query = query.Where(x => !x.IsDeleted);
 		}
 
-		return query
-			.OrderBy(x => x.Id)
-			.AsQueryable();
+		return query;
 	}
 
 	#endregion

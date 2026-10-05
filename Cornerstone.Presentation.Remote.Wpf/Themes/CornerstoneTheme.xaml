@@ -1,0 +1,148 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<!-- Generated from ThemeColorPalette. Do not edit by hand. -->
+	<Color x:Key="Light.Background00">#FFFFFF</Color>
+	<Color x:Key="Light.Foreground00">#000000</Color>
+	<Color x:Key="Light.Background01">#F4F4F4</Color>
+	<Color x:Key="Light.Foreground01">#090909</Color>
+	<Color x:Key="Light.Background02">#E8E8E8</Color>
+	<Color x:Key="Light.Foreground02">#131313</Color>
+	<Color x:Key="Light.Background03">#DDDDDD</Color>
+	<Color x:Key="Light.Foreground03">#1C1C1C</Color>
+	<Color x:Key="Light.Background04">#D2D2D2</Color>
+	<Color x:Key="Light.Foreground04">#262626</Color>
+	<Color x:Key="Light.Background05">#C6C6C6</Color>
+	<Color x:Key="Light.Foreground05">#2F2F2F</Color>
+	<Color x:Key="Light.Background06">#BBBBBB</Color>
+	<Color x:Key="Light.Foreground06">#393939</Color>
+	<Color x:Key="Light.Background07">#B0B0B0</Color>
+	<Color x:Key="Light.Foreground07">#424242</Color>
+	<Color x:Key="Light.Background08">#A4A4A4</Color>
+	<Color x:Key="Light.Foreground08">#4C4C4C</Color>
+	<Color x:Key="Light.Background09">#999999</Color>
+	<Color x:Key="Light.Foreground09">#555555</Color>
+	<Color x:Key="Light.Border">#BBBBBB</Color>
+	<Color x:Key="Light.Selection">#660055FF</Color>
+	<Color x:Key="Light.ThemeRed">#E53935</Color>
+	<Color x:Key="Light.ThemeDeepOrange">#F4511E</Color>
+	<Color x:Key="Light.ThemeAmber">#FF6F00</Color>
+	<Color x:Key="Light.ThemeOrange">#FB8C00</Color>
+	<Color x:Key="Light.ThemeGreen">#43A047</Color>
+	<Color x:Key="Light.ThemeTeal">#00897B</Color>
+	<Color x:Key="Light.ThemeBlue">#1E88E5</Color>
+	<Color x:Key="Light.ThemeIndigo">#3949AB</Color>
+	<Color x:Key="Light.ThemeDeepPurple">#5E35B1</Color>
+	<Color x:Key="Light.ThemePurple">#8E24AA</Color>
+	<Color x:Key="Light.ThemePink">#D81B60</Color>
+	<Color x:Key="Light.ThemeBrown">#6D4C41</Color>
+	<Color x:Key="Light.ThemeBlueGray">#546E7A</Color>
+	<Color x:Key="Light.ThemeGray">#565656</Color>
+	<SolidColorBrush x:Key="Light.Background00Brush" Color="{StaticResource Light.Background00}" />
+	<SolidColorBrush x:Key="Light.Foreground00Brush" Color="{StaticResource Light.Foreground00}" />
+	<SolidColorBrush x:Key="Light.Background01Brush" Color="{StaticResource Light.Background01}" />
+	<SolidColorBrush x:Key="Light.Foreground01Brush" Color="{StaticResource Light.Foreground01}" />
+	<SolidColorBrush x:Key="Light.Background02Brush" Color="{StaticResource Light.Background02}" />
+	<SolidColorBrush x:Key="Light.Foreground02Brush" Color="{StaticResource Light.Foreground02}" />
+	<SolidColorBrush x:Key="Light.Background03Brush" Color="{StaticResource Light.Background03}" />
+	<SolidColorBrush x:Key="Light.Foreground03Brush" Color="{StaticResource Light.Foreground03}" />
+	<SolidColorBrush x:Key="Light.Background04Brush" Color="{StaticResource Light.Background04}" />
+	<SolidColorBrush x:Key="Light.Foreground04Brush" Color="{StaticResource Light.Foreground04}" />
+	<SolidColorBrush x:Key="Light.Background05Brush" Color="{StaticResource Light.Background05}" />
+	<SolidColorBrush x:Key="Light.Foreground05Brush" Color="{StaticResource Light.Foreground05}" />
+	<SolidColorBrush x:Key="Light.Background06Brush" Color="{StaticResource Light.Background06}" />
+	<SolidColorBrush x:Key="Light.Foreground06Brush" Color="{StaticResource Light.Foreground06}" />
+	<SolidColorBrush x:Key="Light.Background07Brush" Color="{StaticResource Light.Background07}" />
+	<SolidColorBrush x:Key="Light.Foreground07Brush" Color="{StaticResource Light.Foreground07}" />
+	<SolidColorBrush x:Key="Light.Background08Brush" Color="{StaticResource Light.Background08}" />
+	<SolidColorBrush x:Key="Light.Foreground08Brush" Color="{StaticResource Light.Foreground08}" />
+	<SolidColorBrush x:Key="Light.Background09Brush" Color="{StaticResource Light.Background09}" />
+	<SolidColorBrush x:Key="Light.Foreground09Brush" Color="{StaticResource Light.Foreground09}" />
+	<SolidColorBrush x:Key="Light.BorderBrush" Color="{StaticResource Light.Border}" />
+	<SolidColorBrush x:Key="Light.SelectionBrush" Color="{StaticResource Light.Selection}" />
+	<SolidColorBrush x:Key="Light.ThemeRedBrush" Color="{StaticResource Light.ThemeRed}" />
+	<SolidColorBrush x:Key="Light.ThemeDeepOrangeBrush" Color="{StaticResource Light.ThemeDeepOrange}" />
+	<SolidColorBrush x:Key="Light.ThemeAmberBrush" Color="{StaticResource Light.ThemeAmber}" />
+	<SolidColorBrush x:Key="Light.ThemeOrangeBrush" Color="{StaticResource Light.ThemeOrange}" />
+	<SolidColorBrush x:Key="Light.ThemeGreenBrush" Color="{StaticResource Light.ThemeGreen}" />
+	<SolidColorBrush x:Key="Light.ThemeTealBrush" Color="{StaticResource Light.ThemeTeal}" />
+	<SolidColorBrush x:Key="Light.ThemeBlueBrush" Color="{StaticResource Light.ThemeBlue}" />
+	<SolidColorBrush x:Key="Light.ThemeIndigoBrush" Color="{StaticResource Light.ThemeIndigo}" />
+	<SolidColorBrush x:Key="Light.ThemeDeepPurpleBrush" Color="{StaticResource Light.ThemeDeepPurple}" />
+	<SolidColorBrush x:Key="Light.ThemePurpleBrush" Color="{StaticResource Light.ThemePurple}" />
+	<SolidColorBrush x:Key="Light.ThemePinkBrush" Color="{StaticResource Light.ThemePink}" />
+	<SolidColorBrush x:Key="Light.ThemeBrownBrush" Color="{StaticResource Light.ThemeBrown}" />
+	<SolidColorBrush x:Key="Light.ThemeBlueGrayBrush" Color="{StaticResource Light.ThemeBlueGray}" />
+	<SolidColorBrush x:Key="Light.ThemeGrayBrush" Color="{StaticResource Light.ThemeGray}" />
+	<Color x:Key="Dark.Background00">#000000</Color>
+	<Color x:Key="Dark.Foreground00">#FFFFFF</Color>
+	<Color x:Key="Dark.Background01">#090909</Color>
+	<Color x:Key="Dark.Foreground01">#F4F4F4</Color>
+	<Color x:Key="Dark.Background02">#131313</Color>
+	<Color x:Key="Dark.Foreground02">#E8E8E8</Color>
+	<Color x:Key="Dark.Background03">#1C1C1C</Color>
+	<Color x:Key="Dark.Foreground03">#DDDDDD</Color>
+	<Color x:Key="Dark.Background04">#262626</Color>
+	<Color x:Key="Dark.Foreground04">#D2D2D2</Color>
+	<Color x:Key="Dark.Background05">#2F2F2F</Color>
+	<Color x:Key="Dark.Foreground05">#C6C6C6</Color>
+	<Color x:Key="Dark.Background06">#393939</Color>
+	<Color x:Key="Dark.Foreground06">#BBBBBB</Color>
+	<Color x:Key="Dark.Background07">#424242</Color>
+	<Color x:Key="Dark.Foreground07">#B0B0B0</Color>
+	<Color x:Key="Dark.Background08">#4C4C4C</Color>
+	<Color x:Key="Dark.Foreground08">#A4A4A4</Color>
+	<Color x:Key="Dark.Background09">#555555</Color>
+	<Color x:Key="Dark.Foreground09">#999999</Color>
+	<Color x:Key="Dark.Border">#393939</Color>
+	<Color x:Key="Dark.Selection">#660055FF</Color>
+	<Color x:Key="Dark.ThemeRed">#E53935</Color>
+	<Color x:Key="Dark.ThemeDeepOrange">#F4511E</Color>
+	<Color x:Key="Dark.ThemeAmber">#FF6F00</Color>
+	<Color x:Key="Dark.ThemeOrange">#FB8C00</Color>
+	<Color x:Key="Dark.ThemeGreen">#43A047</Color>
+	<Color x:Key="Dark.ThemeTeal">#00897B</Color>
+	<Color x:Key="Dark.ThemeBlue">#1E88E5</Color>
+	<Color x:Key="Dark.ThemeIndigo">#3949AB</Color>
+	<Color x:Key="Dark.ThemeDeepPurple">#5E35B1</Color>
+	<Color x:Key="Dark.ThemePurple">#8E24AA</Color>
+	<Color x:Key="Dark.ThemePink">#D81B60</Color>
+	<Color x:Key="Dark.ThemeBrown">#6D4C41</Color>
+	<Color x:Key="Dark.ThemeBlueGray">#546E7A</Color>
+	<Color x:Key="Dark.ThemeGray">#565656</Color>
+	<SolidColorBrush x:Key="Dark.Background00Brush" Color="{StaticResource Dark.Background00}" />
+	<SolidColorBrush x:Key="Dark.Foreground00Brush" Color="{StaticResource Dark.Foreground00}" />
+	<SolidColorBrush x:Key="Dark.Background01Brush" Color="{StaticResource Dark.Background01}" />
+	<SolidColorBrush x:Key="Dark.Foreground01Brush" Color="{StaticResource Dark.Foreground01}" />
+	<SolidColorBrush x:Key="Dark.Background02Brush" Color="{StaticResource Dark.Background02}" />
+	<SolidColorBrush x:Key="Dark.Foreground02Brush" Color="{StaticResource Dark.Foreground02}" />
+	<SolidColorBrush x:Key="Dark.Background03Brush" Color="{StaticResource Dark.Background03}" />
+	<SolidColorBrush x:Key="Dark.Foreground03Brush" Color="{StaticResource Dark.Foreground03}" />
+	<SolidColorBrush x:Key="Dark.Background04Brush" Color="{StaticResource Dark.Background04}" />
+	<SolidColorBrush x:Key="Dark.Foreground04Brush" Color="{StaticResource Dark.Foreground04}" />
+	<SolidColorBrush x:Key="Dark.Background05Brush" Color="{StaticResource Dark.Background05}" />
+	<SolidColorBrush x:Key="Dark.Foreground05Brush" Color="{StaticResource Dark.Foreground05}" />
+	<SolidColorBrush x:Key="Dark.Background06Brush" Color="{StaticResource Dark.Background06}" />
+	<SolidColorBrush x:Key="Dark.Foreground06Brush" Color="{StaticResource Dark.Foreground06}" />
+	<SolidColorBrush x:Key="Dark.Background07Brush" Color="{StaticResource Dark.Background07}" />
+	<SolidColorBrush x:Key="Dark.Foreground07Brush" Color="{StaticResource Dark.Foreground07}" />
+	<SolidColorBrush x:Key="Dark.Background08Brush" Color="{StaticResource Dark.Background08}" />
+	<SolidColorBrush x:Key="Dark.Foreground08Brush" Color="{StaticResource Dark.Foreground08}" />
+	<SolidColorBrush x:Key="Dark.Background09Brush" Color="{StaticResource Dark.Background09}" />
+	<SolidColorBrush x:Key="Dark.Foreground09Brush" Color="{StaticResource Dark.Foreground09}" />
+	<SolidColorBrush x:Key="Dark.BorderBrush" Color="{StaticResource Dark.Border}" />
+	<SolidColorBrush x:Key="Dark.SelectionBrush" Color="{StaticResource Dark.Selection}" />
+	<SolidColorBrush x:Key="Dark.ThemeRedBrush" Color="{StaticResource Dark.ThemeRed}" />
+	<SolidColorBrush x:Key="Dark.ThemeDeepOrangeBrush" Color="{StaticResource Dark.ThemeDeepOrange}" />
+	<SolidColorBrush x:Key="Dark.ThemeAmberBrush" Color="{StaticResource Dark.ThemeAmber}" />
+	<SolidColorBrush x:Key="Dark.ThemeOrangeBrush" Color="{StaticResource Dark.ThemeOrange}" />
+	<SolidColorBrush x:Key="Dark.ThemeGreenBrush" Color="{StaticResource Dark.ThemeGreen}" />
+	<SolidColorBrush x:Key="Dark.ThemeTealBrush" Color="{StaticResource Dark.ThemeTeal}" />
+	<SolidColorBrush x:Key="Dark.ThemeBlueBrush" Color="{StaticResource Dark.ThemeBlue}" />
+	<SolidColorBrush x:Key="Dark.ThemeIndigoBrush" Color="{StaticResource Dark.ThemeIndigo}" />
+	<SolidColorBrush x:Key="Dark.ThemeDeepPurpleBrush" Color="{StaticResource Dark.ThemeDeepPurple}" />
+	<SolidColorBrush x:Key="Dark.ThemePurpleBrush" Color="{StaticResource Dark.ThemePurple}" />
+	<SolidColorBrush x:Key="Dark.ThemePinkBrush" Color="{StaticResource Dark.ThemePink}" />
+	<SolidColorBrush x:Key="Dark.ThemeBrownBrush" Color="{StaticResource Dark.ThemeBrown}" />
+	<SolidColorBrush x:Key="Dark.ThemeBlueGrayBrush" Color="{StaticResource Dark.ThemeBlueGray}" />
+	<SolidColorBrush x:Key="Dark.ThemeGrayBrush" Color="{StaticResource Dark.ThemeGray}" />
+</ResourceDictionary>

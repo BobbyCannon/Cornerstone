@@ -17,8 +17,9 @@ public class DatabaseKeyCache
 {
 	#region Fields
 
-	private readonly ConcurrentDictionary<Type, MemoryCache<string, object>> _cachedEntityId;
 	private readonly TimeSpan _cacheTimeout;
+
+	private readonly ConcurrentDictionary<Type, MemoryCache<string, object>> _cachedEntityId;
 
 	#endregion
 

@@ -1,0 +1,20 @@
+<Styles xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type PropertyGridControl}"
+					TargetType="PropertyGridControl">
+				<Setter Property="Template">
+					<ControlTemplate>
+						<ResponsiveGrid x:Name="PropertiesGrid" />
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="480">
+			<PropertyGridControl Width="400" Height="200" />
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</Styles>

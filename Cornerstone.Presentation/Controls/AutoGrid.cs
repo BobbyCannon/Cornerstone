@@ -1,0 +1,428 @@
+#region References
+
+using System.ComponentModel;
+using System.Linq;
+using Cornerstone.Extensions;
+using Cornerstone.Presentation.Layout;
+using Cornerstone.Presentation.Reactive;
+using Cornerstone.Presentation.Controls.Elements;
+using Cornerstone.Presentation.Controls.Layout;
+
+#endregion
+
+namespace Cornerstone.Presentation.Controls;
+
+/// <summary>
+/// Defines a flexible grid area that consists of columns and rows.
+/// Depending on the orientation, either the rows or the columns are auto-generated,
+/// and the children's position is set according to their index.
+/// </summary>
+/// <remarks>
+/// Forked from: https://github.com/CornerstoneUI/CornerstoneAutoGrid
+/// </remarks>
+public class AutoGrid : Grid
+{
+	#region Fields
+
+	public static readonly PresentationProperty ChildHorizontalAlignmentProperty;
+	public static readonly PresentationProperty ChildMarginProperty;
+	public static readonly PresentationProperty ChildVerticalAlignmentProperty;
+	public static readonly PresentationProperty ColumnCountProperty;
+	public static readonly PresentationProperty ColumnWidthProperty;
+	public static readonly PresentationProperty IsAutoIndexingProperty;
+	public static readonly PresentationProperty OrientationProperty;
+	public static readonly PresentationProperty RowCountProperty;
+	public static readonly PresentationProperty RowHeightProperty;
+
+	#endregion
+
+	#region Constructors
+
+	static AutoGrid()
+	{
+		ChildHorizontalAlignmentProperty = PresentationProperty.Register<AutoGrid, HorizontalAlignment?>(nameof(ChildHorizontalAlignment));
+		ChildMarginProperty = PresentationProperty.Register<AutoGrid, Thickness?>(nameof(ChildMargin));
+		ChildVerticalAlignmentProperty = PresentationProperty.Register<AutoGrid, VerticalAlignment?>(nameof(ChildVerticalAlignment));
+		ColumnCountProperty = PresentationProperty.RegisterAttached<AutoGrid, int>(nameof(ColumnCount), typeof(AutoGrid), 1);
+		ColumnWidthProperty = PresentationProperty.RegisterAttached<AutoGrid, GridLength>(nameof(ColumnWidth), typeof(AutoGrid), GridLength.Star);
+		IsAutoIndexingProperty = PresentationProperty.Register<AutoGrid, bool>(nameof(IsAutoIndexing), true);
+		OrientationProperty = PresentationProperty.Register<AutoGrid, Orientation>(nameof(Orientation));
+		RowCountProperty = PresentationProperty.RegisterAttached<AutoGrid, int>(nameof(RowCount), typeof(AutoGrid), 1);
+		RowHeightProperty = PresentationProperty.RegisterAttached<AutoGrid, GridLength>(nameof(RowHeight), typeof(AutoGrid), GridLength.Star);
+
+		AffectsMeasure<AutoGrid>(ChildHorizontalAlignmentProperty, ChildMarginProperty, ChildVerticalAlignmentProperty,
+			ColumnCountProperty, ColumnWidthProperty, IsAutoIndexingProperty, OrientationProperty, RowCountProperty, RowHeightProperty);
+
+		ChildHorizontalAlignmentProperty.Changed.Subscribe(new AnonymousObserver<PresentationPropertyChangedEventArgs>(OnChildHorizontalAlignmentChanged));
+		ChildMarginProperty.Changed.Subscribe(new AnonymousObserver<PresentationPropertyChangedEventArgs>(OnChildMarginChanged));
+		ChildVerticalAlignmentProperty.Changed.Subscribe(new AnonymousObserver<PresentationPropertyChangedEventArgs>(OnChildVerticalAlignmentChanged));
+		ColumnCountProperty.Changed.Subscribe(new AnonymousObserver<PresentationPropertyChangedEventArgs>(ColumnCountChanged));
+		RowCountProperty.Changed.Subscribe(new AnonymousObserver<PresentationPropertyChangedEventArgs>(RowCountChanged));
+		ColumnWidthProperty.Changed.Subscribe(new AnonymousObserver<PresentationPropertyChangedEventArgs>(FixedColumnWidthChanged));
+		RowHeightProperty.Changed.Subscribe(new AnonymousObserver<PresentationPropertyChangedEventArgs>(FixedRowHeightChanged));
+	}
+
+	#endregion
+
+	#region Properties
+
+	/// <summary>
+	/// Gets or sets the child horizontal alignment.
+	/// </summary>
+	/// <value> The child horizontal alignment. </value>
+	[Category("Layout")]
+	[Description("Presets the horizontal alignment of all child controls")]
+	public HorizontalAlignment? ChildHorizontalAlignment
+	{
+		get => (HorizontalAlignment?) GetValue(ChildHorizontalAlignmentProperty);
+		set => SetValue(ChildHorizontalAlignmentProperty, value);
+	}
+
+	/// <summary>
+	/// Gets or sets the child margin.
+	/// </summary>
+	/// <value> The child margin. </value>
+	[Category("Layout")]
+	[Description("Presets the margin of all child controls")]
+	public Thickness? ChildMargin
+	{
+		get => (Thickness?) GetValue(ChildMarginProperty);
+		set => SetValue(ChildMarginProperty, value);
+	}
+
+	/// <summary>
+	/// Gets or sets the child vertical alignment.
+	/// </summary>
+	/// <value> The child vertical alignment. </value>
+	[Category("Layout")]
+	[Description("Presets the vertical alignment of all child controls")]
+	public VerticalAlignment? ChildVerticalAlignment
+	{
+		get => (VerticalAlignment?) GetValue(ChildVerticalAlignmentProperty);
+		set => SetValue(ChildVerticalAlignmentProperty, value);
+	}
+
+	/// <summary>
+	/// Gets or sets the column count
+	/// </summary>
+	[Category("Layout")]
+	[Description("Defines a set number of columns")]
+	public int ColumnCount
+	{
+		get => (int) GetValue(ColumnCountProperty)!;
+		set => SetValue(ColumnCountProperty, value);
+	}
+
+	/// <summary>
+	/// Gets or sets the fixed column width
+	/// </summary>
+	[Category("Layout")]
+	[Description("Presets the width of all columns set using the ColumnCount property")]
+
+	public GridLength ColumnWidth
+	{
+		get => (GridLength) GetValue(ColumnWidthProperty)!;
+		set => SetValue(ColumnWidthProperty, value);
+	}
+
+	/// <summary>
+	/// Gets or sets a value indicating whether the children are automatically indexed.
+	/// <remarks>
+	/// The default is True.
+	/// Note that if children are already indexed, setting this property to false will not remove their indices.
+	/// </remarks>
+	/// </summary>
+	[Category("Layout")]
+	[Description("Set to false to disable the auto layout functionality")]
+	public bool IsAutoIndexing
+	{
+		get => (bool) GetValue(IsAutoIndexingProperty)!;
+		set => SetValue(IsAutoIndexingProperty, value);
+	}
+
+	/// <summary>
+	/// Gets or sets the orientation.
+	/// <remarks> The default is Vertical. </remarks>
+	/// </summary>
+	/// <value> The orientation. </value>
+	[Category("Layout")]
+	[Description("Defines the directionality of the auto layout. Use vertical for a column first layout, horizontal for a row first layout.")]
+	public Orientation Orientation
+	{
+		get => (Orientation) GetValue(OrientationProperty)!;
+		set => SetValue(OrientationProperty, value);
+	}
+
+	/// <summary>
+	/// Gets or sets the number of rows
+	/// </summary>
+	[Category("Layout")]
+	[Description("Defines a set number of rows")]
+	public int RowCount
+	{
+		get => (int) GetValue(RowCountProperty)!;
+		set => SetValue(RowCountProperty, value);
+	}
+
+	/// <summary>
+	/// Gets or sets the fixed row height
+	/// </summary>
+	[Category("Layout")]
+	[Description("Presets the height of all rows set using the RowCount property")]
+	public GridLength RowHeight
+	{
+		get => (GridLength) GetValue(RowHeightProperty)!;
+		set => SetValue(RowHeightProperty, value);
+	}
+
+	#endregion
+
+	#region Methods
+
+	/// <summary>
+	/// Handles the column count changed event
+	/// </summary>
+	public static void ColumnCountChanged(PresentationPropertyChangedEventArgs e)
+	{
+		if ((e.NewValue == null) || ((int) e.NewValue < 0))
+		{
+			return;
+		}
+
+		var grid = (AutoGrid) e.Sender;
+
+		// look for an existing column definition for the height
+		var width = grid.ColumnWidth;
+		if (!grid.IsSet(ColumnWidthProperty) && (grid.ColumnDefinitions.Count > 0))
+		{
+			width = grid.ColumnDefinitions[0].Width;
+		}
+
+		// clear and rebuild
+		grid.ColumnDefinitions.Clear();
+		for (var i = 0; i < (int) e.NewValue; i++)
+		{
+			grid.ColumnDefinitions.Add(new ColumnDefinition { Width = width });
+		}
+	}
+
+	/// <summary>
+	/// Handle the fixed column width changed event
+	/// </summary>
+	public static void FixedColumnWidthChanged(PresentationPropertyChangedEventArgs e)
+	{
+		var grid = (AutoGrid) e.Sender;
+
+		// add a default column if missing
+		if (grid.ColumnDefinitions.Count == 0)
+		{
+			grid.ColumnDefinitions.Add(new ColumnDefinition());
+		}
+
+		if (e.NewValue == null)
+		{
+			return;
+		}
+
+		// set all existing columns to this width
+		foreach (var t in grid.ColumnDefinitions)
+		{
+			t.Width = (GridLength) e.NewValue;
+		}
+	}
+
+	/// <summary>
+	/// Handle the fixed row height changed event
+	/// </summary>
+	public static void FixedRowHeightChanged(PresentationPropertyChangedEventArgs e)
+	{
+		var grid = (AutoGrid) e.Sender;
+
+		// add a default row if missing
+		if (grid.RowDefinitions.Count == 0)
+		{
+			grid.RowDefinitions.Add(new RowDefinition());
+		}
+
+		if (e.NewValue == null)
+		{
+			return;
+		}
+
+		// set all existing rows to this height
+		foreach (var t in grid.RowDefinitions)
+		{
+			t.Height = (GridLength) e.NewValue;
+		}
+	}
+
+	/// <summary>
+	/// Handles the row count changed event
+	/// </summary>
+	public static void RowCountChanged(PresentationPropertyChangedEventArgs e)
+	{
+		if ((e.NewValue == null) || ((int) e.NewValue < 0))
+		{
+			return;
+		}
+
+		var grid = (AutoGrid) e.Sender;
+
+		// look for an existing row to get the height
+		var height = grid.RowHeight;
+		if (!grid.IsSet(RowHeightProperty) && (grid.RowDefinitions.Count > 0))
+		{
+			height = grid.RowDefinitions[0].Height;
+		}
+
+		// clear and rebuild
+		grid.RowDefinitions.Clear();
+		for (var i = 0; i < (int) e.NewValue; i++)
+		{
+			grid.RowDefinitions.Add(new RowDefinition { Height = height });
+		}
+	}
+
+	/// <summary>
+	/// Measures the children of a <see cref="T:Grid" /> in anticipation of arranging them during the ArrangeOverride pass.
+	/// </summary>
+	/// <param name="constraint"> Indicates an upper limit size that should not be exceeded. </param>
+	/// <returns>
+	/// <see cref="Size" /> that represents the required size to arrange child content.
+	/// </returns>
+	protected override Size MeasureOverride(Size constraint)
+	{
+		PerformLayout();
+		return base.MeasureOverride(constraint);
+	}
+
+	/// <summary>
+	/// Apply child margins and layout effects such as alignment
+	/// </summary>
+	private void ApplyChildLayout(Control child)
+	{
+		if ((ChildMargin != null) && !child.IsSet(MarginProperty))
+		{
+			child.SetValue(MarginProperty, ChildMargin.Value);
+		}
+		if ((ChildHorizontalAlignment != null) && !child.IsSet(HorizontalAlignmentProperty))
+		{
+			child.SetValue(HorizontalAlignmentProperty, ChildHorizontalAlignment.Value);
+		}
+		if ((ChildVerticalAlignment != null) && !child.IsSet(VerticalAlignmentProperty))
+		{
+			child.SetValue(VerticalAlignmentProperty, ChildVerticalAlignment.Value);
+		}
+	}
+
+	/// <summary>
+	/// Called when [child horizontal alignment changed].
+	/// </summary>
+	private static void OnChildHorizontalAlignmentChanged(PresentationPropertyChangedEventArgs e)
+	{
+		var grid = (AutoGrid) e.Sender;
+		foreach (var child in grid.Children)
+		{
+			child.SetValue(HorizontalAlignmentProperty, grid.ChildHorizontalAlignment ?? PresentationProperty.UnsetValue);
+		}
+	}
+
+	/// <summary>
+	/// Called when [child layout changed].
+	/// </summary>
+	private static void OnChildMarginChanged(PresentationPropertyChangedEventArgs e)
+	{
+		var grid = (AutoGrid) e.Sender;
+		foreach (var child in grid.Children)
+		{
+			child.SetValue(MarginProperty, grid.ChildMargin ?? PresentationProperty.UnsetValue);
+		}
+	}
+
+	/// <summary>
+	/// Called when [child vertical alignment changed].
+	/// </summary>
+	private static void OnChildVerticalAlignmentChanged(PresentationPropertyChangedEventArgs e)
+	{
+		var grid = (AutoGrid) e.Sender;
+		foreach (var child in grid.Children)
+		{
+			child.SetValue(VerticalAlignmentProperty, grid.ChildVerticalAlignment ?? PresentationProperty.UnsetValue);
+		}
+	}
+
+	/// <summary>
+	/// Perform the grid layout of row and column indexes
+	/// </summary>
+	private void PerformLayout()
+	{
+		var fillRowFirst = Orientation == Orientation.Horizontal;
+		var rowCount = RowDefinitions.Count;
+		var colCount = ColumnDefinitions.Count;
+
+		if (rowCount == 0)
+		{
+			rowCount = RowCount;
+		}
+		if (colCount == 0)
+		{
+			colCount = ColumnCount;
+		}
+
+		var position = 0;
+		var skip = new bool[rowCount, colCount];
+		foreach (var child in Children.OfType<Control>())
+		{
+			var childIsCollapsed = !child.IsVisible;
+			if (IsAutoIndexing && !childIsCollapsed)
+			{
+				if (fillRowFirst)
+				{
+					var row = (position / colCount).Clamp(rowCount - 1);
+					var col = (position % colCount).Clamp(colCount - 1);
+					if (skip[row, col])
+					{
+						position++;
+						row = position / colCount;
+						col = position % colCount;
+					}
+
+					SetRow(child, row);
+					SetColumn(child, col);
+					position += GetColumnSpan(child);
+
+					var offset = GetRowSpan(child) - 1;
+					while (offset > 0)
+					{
+						skip[row + offset--, col] = true;
+					}
+				}
+				else
+				{
+					var row = (position % rowCount).Clamp(rowCount - 1);
+					var col = (position / rowCount).Clamp(colCount - 1);
+					if (skip[row, col])
+					{
+						position++;
+						row = position % rowCount;
+						col = position / rowCount;
+					}
+
+					SetRow(child, row);
+					SetColumn(child, col);
+					position += GetRowSpan(child);
+
+					var offset = GetColumnSpan(child) - 1;
+					while (offset > 0)
+					{
+						skip[row, col + offset--] = true;
+					}
+				}
+			}
+
+			ApplyChildLayout(child);
+		}
+	}
+
+	#endregion
+}

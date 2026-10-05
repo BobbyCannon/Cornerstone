@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<!-- Windows hosts only the windows TFM so F5 embeds app.manifest (layered child HWND). Portable TFM is Linux/macOS. -->
+		<TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net10.0-windows10.0.26100.0</TargetFrameworks>
+		<TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">net10.0</TargetFrameworks>
+		<BuiltInComInteropSupport Condition="$(TargetFramework.Contains('windows'))">true</BuiltInComInteropSupport>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<ApplicationIcon>..\Cornerstone.Navigator\Assets\Cornerstone.Navigator.ico</ApplicationIcon>
+	</PropertyGroup>
+	<ItemGroup Condition="$(TargetFramework.Contains('windows'))">
+		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4129.50" />
+	</ItemGroup>
+	<ItemGroup Condition="!$(TargetFramework.Contains('windows'))">
+		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.4" />
+		<PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="14.2.1.102" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\Cornerstone.Presentation.Diagnostics\Cornerstone.Presentation.Diagnostics.csproj" />
+		<ProjectReference Include="..\Cornerstone.Navigator\Cornerstone.Navigator.csproj" />
+	</ItemGroup>
+	<Import Project="..\..\..\Build\Presentation.props" />
+</Project>

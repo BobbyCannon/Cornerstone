@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using Cornerstone.Reflection;
@@ -20,7 +21,7 @@ internal class EntityState
 	/// </summary>
 	/// <param name="type"> The type of the entity. </param>
 	/// <returns> The properties for state tracking. </returns>
-	internal static IEnumerable<PropertyInfo> GetStateProperties(Type type)
+	internal static IEnumerable<PropertyInfo> GetStateProperties([DynamicallyAccessedMembers(SourceReflector.AllRuntimeMembers)] Type type)
 	{
 		return SourceReflector
 			.GetRequiredSourceType(type)
@@ -37,21 +38,13 @@ internal class EntityState
 	#endregion
 }
 
-internal class EntityState<T, T2> : EntityState
+internal class EntityState<[DynamicallyAccessedMembers(SourceReflector.AllRuntimeMembers)] T, T2> : EntityState
 	where T : Entity<T2>
 {
-	#region Fields
-
-	private readonly Type _type;
-
-	#endregion
-
 	#region Constructors
 
 	public EntityState(T entity, T oldEntity, EntityStateType state)
 	{
-		_type = typeof(T);
-
 		Entity = entity;
 		Entity.PropertyChanged += EntityOnPropertyChanged;
 		OldEntity = oldEntity;
@@ -116,7 +109,7 @@ internal class EntityState<T, T2> : EntityState
 	/// <param name="updatedEntity"> The new values to update the entity with. </param>
 	internal void UpdateEntity(Entity<T2> entity, Entity<T2> updatedEntity)
 	{
-		var properties = GetStateProperties(_type);
+		var properties = GetStateProperties(typeof(T));
 
 		foreach (var property in properties)
 		{
@@ -142,7 +135,7 @@ internal class EntityState<T, T2> : EntityState
 			return false;
 		}
 
-		var properties = GetStateProperties(_type);
+		var properties = GetStateProperties(typeof(T));
 		foreach (var property in properties)
 		{
 			var value1 = property.GetValue(entity1, null);

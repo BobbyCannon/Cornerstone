@@ -2,7 +2,6 @@
 
 using System;
 using System.IO;
-using Cornerstone.GrokMonitor.GrokUsage;
 using Cornerstone.GrokMonitor.GrokUsage.Services;
 using Cornerstone.Runtime;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -15,23 +14,6 @@ namespace Cornerstone.UnitTests.GrokMonitor.GrokUsage;
 public class GrokPathsArchiveTests : GrokMonitorUnitTest
 {
 	#region Methods
-
-	[TestMethod]
-	public void UsageArchiveUsesHomeFolderName()
-	{
-		using var appData = new IsolatedAppData();
-		var personal = Path.Combine(appData.Homes, ".grok");
-		var work = Path.Combine(appData.Homes, ".grok-work");
-		Directory.CreateDirectory(personal);
-		Directory.CreateDirectory(work);
-
-		var personalArchive = GrokPaths.GetUsageArchiveDirectory(personal, appData.Runtime);
-		var workArchive = GrokPaths.GetUsageArchiveDirectory(work, appData.Runtime);
-
-		AreEqual(".grok", Path.GetFileName(personalArchive));
-		AreEqual(".grok-work", Path.GetFileName(workArchive));
-		AreEqual(Path.Combine(appData.Path, GrokPaths.UsageArchiveRootName, ".grok"), personalArchive);
-	}
 
 	[TestMethod]
 	public void UsageArchiveSuffixesWhenFolderNameAlreadyClaimed()
@@ -53,12 +35,31 @@ public class GrokPathsArchiveTests : GrokMonitorUnitTest
 		AreEqual(firstArchive, firstAgain);
 	}
 
+	[TestMethod]
+	public void UsageArchiveUsesHomeFolderName()
+	{
+		using var appData = new IsolatedAppData();
+		var personal = Path.Combine(appData.Homes, ".grok");
+		var work = Path.Combine(appData.Homes, ".grok-work");
+		Directory.CreateDirectory(personal);
+		Directory.CreateDirectory(work);
+
+		var personalArchive = GrokPaths.GetUsageArchiveDirectory(personal, appData.Runtime);
+		var workArchive = GrokPaths.GetUsageArchiveDirectory(work, appData.Runtime);
+
+		AreEqual(".grok", Path.GetFileName(personalArchive));
+		AreEqual(".grok-work", Path.GetFileName(workArchive));
+		AreEqual(Path.Combine(appData.Path, GrokPaths.UsageArchiveRootName, ".grok"), personalArchive);
+	}
+
 	#endregion
 
 	#region Classes
 
 	private sealed class IsolatedAppData : IDisposable
 	{
+		#region Constructors
+
 		public IsolatedAppData()
 		{
 			Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "GrokArchivePaths_" + Guid.NewGuid().ToString("N"));
@@ -68,11 +69,19 @@ public class GrokPathsArchiveTests : GrokMonitorUnitTest
 			Runtime.SetOverride(nameof(IRuntimeInformation.ApplicationDataLocation), Path);
 		}
 
+		#endregion
+
+		#region Properties
+
 		public string Homes { get; }
 
 		public string Path { get; }
 
 		public RuntimeInformation Runtime { get; }
+
+		#endregion
+
+		#region Methods
 
 		public void Dispose()
 		{
@@ -88,6 +97,8 @@ public class GrokPathsArchiveTests : GrokMonitorUnitTest
 				// best-effort
 			}
 		}
+
+		#endregion
 	}
 
 	#endregion

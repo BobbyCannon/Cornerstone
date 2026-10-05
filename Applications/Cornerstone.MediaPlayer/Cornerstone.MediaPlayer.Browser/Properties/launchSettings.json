@@ -1,0 +1,13 @@
+{
+	"profiles": {
+		"Cornerstone.MediaPlayer.Browser": {
+			"commandName": "Project",
+			"launchBrowser": true,
+			"environmentVariables": {
+				"ASPNETCORE_ENVIRONMENT": "Development"
+			},
+			"applicationUrl": "https://localhost:7171;http://localhost:5237",
+			"inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}"
+		}
+	}
+}

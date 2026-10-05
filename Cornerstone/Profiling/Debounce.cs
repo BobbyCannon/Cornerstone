@@ -31,7 +31,6 @@ public sealed class Debounce : IDisposable
 	private readonly object _lock;
 	private bool _runAgain;
 	private bool _scheduled;
-	private readonly bool _useRealTimeDelay;
 
 	#endregion
 
@@ -54,13 +53,30 @@ public sealed class Debounce : IDisposable
 		_lock = new();
 		_interval = interval;
 		_dateTimeProvider = dateTimeProvider ?? DateTimeProvider.RealTime;
-		_useRealTimeDelay = ReferenceEquals(_dateTimeProvider, DateTimeProvider.RealTime);
 		_dueAt = DateTime.MinValue;
 	}
 
 	#endregion
 
 	#region Methods
+
+	/// <summary>
+	/// Drops a pending delayed run. Does not stop an action already in flight; clears coalesced re-run.
+	/// </summary>
+	public void Cancel()
+	{
+		lock (_lock)
+		{
+			if (_disposed)
+			{
+				return;
+			}
+
+			_scheduled = false;
+			_runAgain = false;
+			CancelPendingUnsafe();
+		}
+	}
 
 	public void Dispose()
 	{
@@ -94,6 +110,7 @@ public sealed class Debounce : IDisposable
 
 			if (_dateTimeProvider.UtcNow < _dueAt)
 			{
+				ScheduleDelayUnsafe();
 				return;
 			}
 
@@ -131,26 +148,7 @@ public sealed class Debounce : IDisposable
 			{
 				_dueAt = _dateTimeProvider.UtcNow + _interval;
 				_scheduled = true;
-
-				if (_useRealTimeDelay)
-				{
-					_cts = new CancellationTokenSource();
-					var token = _cts.Token;
-
-					_ = Task
-						.Delay(_interval, token)
-						.ContinueWith(t =>
-							{
-								if (t.IsCanceled)
-								{
-									return;
-								}
-
-								ProcessPending();
-							},
-							TaskContinuationOptions.OnlyOnRanToCompletion
-						);
-				}
+				ScheduleDelayUnsafe();
 			}
 		}
 
@@ -201,6 +199,34 @@ public sealed class Debounce : IDisposable
 				return;
 			}
 		}
+	}
+
+	private void ScheduleDelayUnsafe()
+	{
+		CancelPendingUnsafe();
+
+		var remaining = _dueAt - _dateTimeProvider.UtcNow;
+		if (remaining < TimeSpan.Zero)
+		{
+			remaining = TimeSpan.Zero;
+		}
+
+		_cts = new CancellationTokenSource();
+		var token = _cts.Token;
+
+		_ = Task
+			.Delay(remaining, token)
+			.ContinueWith(t =>
+				{
+					if (t.IsCanceled)
+					{
+						return;
+					}
+
+					ProcessPending();
+				},
+				TaskContinuationOptions.OnlyOnRanToCompletion
+			);
 	}
 
 	private bool TryBeginOrCoalesceUnsafe()

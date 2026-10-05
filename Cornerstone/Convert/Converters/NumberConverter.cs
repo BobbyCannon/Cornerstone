@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using Cornerstone.Extensions;
@@ -146,6 +147,7 @@ public class NumberConverter : BaseConverter
 		return value.ConvertTo<ulong>();
 	}
 
+	[UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "Converter toType is a runtime conversion target; members are preserved by generated source reflection.")]
 	public override bool TryConvertTo(object from, Type fromType, Type toType, out object value, IConverterSettings settings = null)
 	{
 		if (from == null)

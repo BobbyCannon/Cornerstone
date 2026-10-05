@@ -1,0 +1,187 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:diag="clr-namespace:Cornerstone.Diagnostics;assembly=Cornerstone"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs.Data"
+		mc:Ignorable="d" d:DesignHeight="900" d:DesignWidth="1100"
+		x:Class="Cornerstone.Sample.Tabs.Data.TabSync"
+		x:DataType="tabs:TabSyncViewModel"
+		x:Name="This">
+	<DockPanel Margin="10">
+		<Grid DockPanel.Dock="Top">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="{x:Static tabs:TabSync.HeaderName}" />
+		</Grid>
+		<WrapPanel DockPanel.Dock="Top"
+				ItemSpacing="10"
+				Margin="0,0,0,10">
+			<ToggleSwitch x:Name="ShowProfiling"
+					OnContent="Show Profiling"
+					OffContent="Show Profiling"
+					IsChecked="True" />
+		</WrapPanel>
+		<ScrollViewer DockPanel.Dock="Right"
+				x:Name="Charts"
+				IsVisible="{Binding #ShowProfiling.IsChecked}"
+				MinWidth="400">
+			<StackPanel>
+				<LineChart Title="Client SaveChanges"
+						Data="{Binding ClientSaveChangesData}"
+						Height="60" />
+				<LineChart Title="Client ProcessSyncObject"
+						Data="{Binding ClientProcessSyncObjectData}"
+						Height="60" />
+				<LineChart Title="Client GetChanges"
+						Data="{Binding ClientGetChangesData}"
+						Height="60" />
+				<LineChart Title="Client ApplyChanges"
+						Data="{Binding ClientApplyChangesData}"
+						Height="60" />
+				<LineChart Title="Server SaveChanges"
+						Data="{Binding ServerSaveChangesData}"
+						Height="60" />
+				<LineChart Title="Server ProcessSyncObject"
+						Data="{Binding ServerProcessSyncObjectData}"
+						Height="60" />
+				<LineChart Title="Server GetChanges"
+						Data="{Binding ServerGetChangesData}"
+						Height="60" />
+				<LineChart Title="Server ApplyChanges"
+						Data="{Binding ServerApplyChangesData}"
+						Height="60" />
+			</StackPanel>
+		</ScrollViewer>
+		<ScrollViewer>
+			<StackPanel Margin="12" Spacing="16" MaxWidth="720" HorizontalAlignment="Left">
+				<TextBlock TextWrapping="Wrap"
+						Opacity="0.8"
+						Text="Pick a client and server database (SQLite mapper, EF SQLite, SQL Server mapper, or EF SQL Server). Apply, inject or modify accounts, then sync. The server hop is still in-process WebSyncClient (same as api/Sync). Counts and status are copied onto this tab by AppDispatcher; the processor only writes Keystone state. Profiler charts are milliseconds per completed sync. Child scopes sit inside parents, so percents do not sum to 100. SaveChanges % is ProcessSyncObjectsSaveDatabase versus session elapsed." />
+				<Border Classes="Card" Padding="12">
+					<StackPanel Spacing="8">
+						<TextBlock Classes="SubHeader" Text="Databases" />
+						<StackPanel Orientation="Horizontal" Spacing="12">
+							<TextBlock Text="Client" VerticalAlignment="Center" Opacity="0.85" />
+							<ComboBox MinWidth="180"
+									ItemsSource="{Binding DatabaseKinds}"
+									SelectedItem="{Binding ClientDatabaseKind, Mode=TwoWay}"
+									IsEnabled="{Binding CanRunWork}" />
+						</StackPanel>
+						<StackPanel Orientation="Horizontal" Spacing="12">
+							<TextBlock Text="Server" VerticalAlignment="Center" Opacity="0.85" />
+							<ComboBox MinWidth="180"
+									ItemsSource="{Binding DatabaseKinds}"
+									SelectedItem="{Binding ServerDatabaseKind, Mode=TwoWay}"
+									IsEnabled="{Binding CanRunWork}" />
+						</StackPanel>
+						<Button Content="Apply databases"
+								HorizontalAlignment="Left"
+								Command="{Binding Bus.Sync.ApplyDatabasesCommand}"
+								IsEnabled="{Binding CanRunWork}" />
+					</StackPanel>
+				</Border>
+				<Border Classes="Card" Padding="12">
+					<StackPanel Spacing="8">
+						<TextBlock Classes="SubHeader" Text="Counts" />
+						<TextBlock Text="{Binding ClientAddressCount, StringFormat='Client addresses: {0}'}" />
+						<TextBlock Text="{Binding ClientAccountCount, StringFormat='Client accounts: {0}'}" />
+						<TextBlock Text="{Binding ServerAddressCount, StringFormat='Server addresses: {0}'}" />
+						<TextBlock Text="{Binding ServerAccountCount, StringFormat='Server accounts: {0}'}" />
+						<TextBlock Text="{Binding LastElapsed, StringFormat='Last elapsed: {0}'}" />
+						<TextBlock Text="{Binding LastStatus, StringFormat='Status: {0}'}" />
+					</StackPanel>
+				</Border>
+				<Border Classes="Card" Padding="12">
+					<StackPanel Spacing="8">
+						<TextBlock Classes="SubHeader" Text="Client last run" />
+						<ListBox ItemsSource="{Binding ClientProfilerScopes}" MaxHeight="220">
+							<ListBox.ItemTemplate>
+								<DataTemplate x:DataType="diag:ProfilerScopeModel">
+									<Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
+										<TextBlock Text="{Binding Name}" />
+										<TextBlock Grid.Column="1"
+												Text="{Binding Count, StringFormat='n={0}'}" />
+										<TextBlock Grid.Column="2"
+												Text="{Binding Elapsed.TotalMilliseconds, StringFormat='{}{0:0.00} ms'}" />
+										<TextBlock Grid.Column="3"
+												Text="{Binding Percent, StringFormat='{}{0:0.00}%'}" />
+									</Grid>
+								</DataTemplate>
+							</ListBox.ItemTemplate>
+						</ListBox>
+					</StackPanel>
+				</Border>
+				<Border Classes="Card" Padding="12">
+					<StackPanel Spacing="8">
+						<TextBlock Classes="SubHeader" Text="Server last run" />
+						<ListBox ItemsSource="{Binding ServerProfilerScopes}" MaxHeight="220">
+							<ListBox.ItemTemplate>
+								<DataTemplate x:DataType="diag:ProfilerScopeModel">
+									<Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
+										<TextBlock Text="{Binding Name}" />
+										<TextBlock Grid.Column="1"
+												Text="{Binding Count, StringFormat='n={0}'}" />
+										<TextBlock Grid.Column="2"
+												Text="{Binding Elapsed.TotalMilliseconds, StringFormat='{}{0:0.00} ms'}" />
+										<TextBlock Grid.Column="3"
+												Text="{Binding Percent, StringFormat='{}{0:0.00}%'}" />
+									</Grid>
+								</DataTemplate>
+							</ListBox.ItemTemplate>
+						</ListBox>
+					</StackPanel>
+				</Border>
+				<Border Classes="Card" Padding="12">
+					<StackPanel Spacing="8">
+						<TextBlock Classes="SubHeader" Text="Load" />
+						<StackPanel Orientation="Horizontal" Spacing="12">
+							<TextBlock Text="Side" VerticalAlignment="Center" Opacity="0.85" />
+							<ComboBox MinWidth="140"
+									ItemsSource="{Binding WorkSides}"
+									SelectedItem="{Binding WorkSide, Mode=TwoWay}"
+									IsEnabled="{Binding CanRunWork}" />
+						</StackPanel>
+						<StackPanel Orientation="Horizontal" Spacing="12">
+							<TextBlock Text="Inject" VerticalAlignment="Center" Opacity="0.85" />
+							<NumericUpDown Width="140"
+									Minimum="1"
+									Maximum="100000"
+									Increment="1000"
+									FormatString="0"
+									Value="{Binding InjectCount, Mode=TwoWay}"
+									IsEnabled="{Binding CanRunWork}" />
+							<Button Content="Inject accounts"
+									Command="{Binding Bus.Sync.InjectAccountsCommand}"
+									IsEnabled="{Binding CanRunWork}" />
+						</StackPanel>
+						<StackPanel Orientation="Horizontal" Spacing="12">
+							<TextBlock Text="Modify" VerticalAlignment="Center" Opacity="0.85" />
+							<NumericUpDown Width="140"
+									Minimum="1"
+									Maximum="100000"
+									Increment="100"
+									FormatString="0"
+									Value="{Binding ModifyCount, Mode=TwoWay}"
+									IsEnabled="{Binding CanRunWork}" />
+							<Button Content="Modify accounts"
+									Command="{Binding Bus.Sync.ModifyAccountsCommand}"
+									IsEnabled="{Binding CanRunWork}" />
+						</StackPanel>
+						<TextBlock Opacity="0.7" TextWrapping="Wrap"
+								Text="Inject adds one customer, then that many addresses and accounts. Modify picks random accounts and changes Name, EmailAddress, and LastLoginDate (not Id or SyncId)." />
+					</StackPanel>
+				</Border>
+				<WrapPanel ItemSpacing="12" LineSpacing="8">
+					<Button Content="Add client account"
+							Command="{Binding Bus.Sync.AddSampleAccountCommand}"
+							IsEnabled="{Binding CanRunWork}" />
+					<Button Content="Sync all"
+							Command="{Binding Bus.Sync.StartSyncAllCommand}"
+							IsEnabled="{Binding CanRunWork}" />
+				</WrapPanel>
+			</StackPanel>
+		</ScrollViewer>
+	</DockPanel>
+</UserControl>

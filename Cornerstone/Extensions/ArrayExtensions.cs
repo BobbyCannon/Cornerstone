@@ -71,5 +71,20 @@ public static class ArrayExtensions
 		return result;
 	}
 
+	/// <summary>
+	/// Gets a sub array from an existing array.
+	/// </summary>
+	/// <typeparam name="T"> The type of the items in the array. </typeparam>
+	/// <param name="data"> The array to pull from. </param>
+	/// <param name="index"> The index to start from. </param>
+	/// <param name="length"> The amount of data to pull. </param>
+	/// <returns> The sub array of data. </returns>
+	public static T[] SubArray<T>(this T[] data, int index, int length)
+	{
+		var result = new T[length];
+		Array.Copy(data, index, result, 0, length);
+		return result;
+	}
+
 	#endregion
 }

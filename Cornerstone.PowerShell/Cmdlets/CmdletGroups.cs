@@ -5,6 +5,7 @@ public static class CmdletGroups
 	#region Constants
 
 	public const string Environment = "Environment";
+	public const string Sql = "Sql";
 	public const string Utility = "Utility";
 
 	#endregion

@@ -4,9 +4,12 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using Cornerstone.Data.Bytes;
+using Cornerstone.Input;
 using Cornerstone.Location;
+using Cornerstone.Media;
 using Cornerstone.Runtime;
 using Cornerstone.Security;
+using Cornerstone.Security.SecurityKeys;
 using RuntimeInformation = Cornerstone.Runtime.RuntimeInformation;
 
 #endregion
@@ -78,8 +81,17 @@ public class WindowsPlatform : CornerstoneObject, IPlatform
 
 	private void AddPlatformImplementations()
 	{
+		DependencyProvider.AddTransient<AudioPlayer, WindowsAudioPlayer>();
+		DependencyProvider.AddTransient<Gamepad, WindowsGamepad>();
+
+		DependencyProvider.AddSingleton<IKeepAlive, WindowsKeepAlive>();
 		DependencyProvider.AddSingleton<ILocationProvider, WindowsLocationProvider>();
+		DependencyProvider.AddSingleton<Keyboard, WindowsKeyboard>();
+		DependencyProvider.AddSingleton<Mouse, WindowsMouse>();
+		DependencyProvider.AddSingleton<IPermissions, WindowsPermissions>();
 		DependencyProvider.AddSingleton<PlatformCredentialVault, WindowsPlatformCredentialVault>();
+		DependencyProvider.AddSingleton<SecurityCardReader, WindowsSecurityCardReader>();
+		DependencyProvider.AddSingleton<IWindowsHelloService, WindowsHelloService>();
 	}
 
 	[DllImport("kernel32.dll")]

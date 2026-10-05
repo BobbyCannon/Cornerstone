@@ -31,16 +31,16 @@ Do **not** add a generator filter or runtime predicate. Mixed desktop+shared gra
 2. Host-specific instances / design stubs (`AddDesignStubs`, `IWebClient`, DB, HTTP context).
 3. Generated methods, nearer assembly first if keys can overlap:
    - `Cornerstone.CornerstoneGenerated`
-   - `Cornerstone.Avalonia.CornerstoneGenerated` (UI hosts only)
+   - `Cornerstone.Presentation.CornerstoneGenerated` (UI hosts only)
    - product / plugin `CornerstoneGenerated`
 4. Finish all `Add*` before first feature resolve.
 
-Websites: Cornerstone + the website assembly only. Do **not** call desktop or Avalonia generated methods.
+Websites: Cornerstone + the website assembly only. Do **not** call desktop or Cornerstone.Presentation generated methods.
 
 ## Adding a service
 
-1. `[SourceReflection]` + `[DependencyInjected]` (and `typeof(IService)` / `TypeLifetime.Transient` as needed).
-2. `[DependencyInjectionConstructor]` on the DI ctor.
+1. `[SourceReflection]` + `[DependencyInjected]` (and `typeof(IService)` / `TypeLifetime.Transient` as needed). Construction is the generated AOT-safe `SourceConstructorInfo.Invoke` ([SourceReflection.md](SourceReflection.md)).
+2. `[DependencyInjectionConstructor]` on the DI ctor (may be private; generator uses `UnsafeAccessor`, not `GetConstructor`).
 3. Host already calls that assembly’s `RegisterDependencies`.
 
 Do not hand-`AddTransient<T>()` for types the generator already emits.
@@ -50,6 +50,7 @@ Do not hand-`AddTransient<T>()` for types the generator already emits.
 - Two assemblies registering the same interface: order is the contract; second `Add*` is ignored.
 - Calling a desktop assembly’s `RegisterDependencies` from ASP.NET leaves unused desktop keys (`AppKeystone`, `IWebClient`) that blow up on first resolve.
 - Instance `AddSingleton(value)` after a generated factory for the same type is a no-op — register the instance **first**.
+- `SetTransient<T, T2>()` with no factory calls `CreateInstanceForDependencyInjection`. A type with no `[DependencyInjectionConstructor]` throws `DependencyInjectorConstructorException` on `GetInstance`. On WASM that exception, thrown from inside a pointer-up, freezes the page. Pass a factory: `SetTransient<T, T2>(() => new T2())`. See [BrowserDebug.md](BrowserDebug.md).
 
 ## File map
 
@@ -58,7 +59,7 @@ Do not hand-`AddTransient<T>()` for types the generator already emits.
 | Attribute | `Cornerstone/Runtime/DependencyInjectedAttribute.cs` |
 | Provider | `Cornerstone/Runtime/DependencyProvider.cs` |
 | Generator | `Cornerstone.Generators/Processors/DependencyInjectedProcessor.cs` |
-| Agent host | `Cornerstone.Agent/App.axaml.cs` |
+| Agent host | `Applications/Cornerstone.Agent/App.axaml.cs` |
 | Sample host | `Cornerstone.Sample/App.axaml.cs` |
-| GrokMonitor host | `Cornerstone.GrokMonitor/App.axaml.cs` |
-| Template host | `Cornerstone.Templates/content/avalonia-keystone/Company.AppName/App.axaml.cs` |
+| GrokMonitor host | `Applications/Cornerstone.GrokMonitor/App.axaml.cs` |
+| Template host | `Cornerstone.Templates/content/cornerstone-keystone/Company.AppName/App.axaml.cs` |

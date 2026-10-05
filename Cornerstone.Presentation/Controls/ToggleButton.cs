@@ -1,0 +1,152 @@
+using System;
+using System.ComponentModel;
+using Cornerstone.Presentation.Automation.Peers;
+using Cornerstone.Presentation.Controls.Metadata;
+using Cornerstone.Presentation.Data;
+using Cornerstone.Presentation.Interactivity;
+using Cornerstone.Presentation.Controls.Input;
+using Cornerstone.Presentation.Controls.StyleClasses;
+
+namespace Cornerstone.Presentation.Controls
+{
+    /// <summary>
+    /// Represents a control that a user can select (check) or clear (uncheck). Base class for controls that can switch states.
+    /// </summary>
+    [PseudoClasses(":checked", ":unchecked", ":indeterminate")]
+    public class ToggleButton : Button
+    {
+        /// <summary>
+        /// Defines the <see cref="IsChecked"/> property.
+        /// </summary>
+        public static readonly StyledProperty<bool?> IsCheckedProperty =
+            PresentationProperty.Register<ToggleButton, bool?>(nameof(IsChecked), false,
+                defaultBindingMode: BindingMode.TwoWay);
+
+        /// <summary>
+        /// Defines the <see cref="IsThreeState"/> property.
+        /// </summary>
+        public static readonly StyledProperty<bool> IsThreeStateProperty =
+            PresentationProperty.Register<ToggleButton, bool>(nameof(IsThreeState));
+
+        /// <summary>
+        /// Defines the <see cref="IsCheckedChanged"/> event.
+        /// </summary>
+        public static readonly RoutedEvent<RoutedEventArgs> IsCheckedChangedEvent =
+            RoutedEvent.Register<ToggleButton, RoutedEventArgs>(
+                nameof(IsCheckedChanged),
+                RoutingStrategies.Bubble);
+
+        static ToggleButton()
+        {
+        }
+
+        public ToggleButton()
+        {
+            UpdatePseudoClasses(IsChecked);
+        }
+
+        /// <summary>
+        /// Raised when the <see cref="IsChecked"/> property value changes.
+        /// </summary>
+        public event EventHandler<RoutedEventArgs>? IsCheckedChanged
+        {
+            add => AddHandler(IsCheckedChangedEvent, value);
+            remove => RemoveHandler(IsCheckedChangedEvent, value);
+        }
+
+        /// <summary>
+        /// Gets or sets whether the <see cref="ToggleButton"/> is checked.
+        /// </summary>
+        public bool? IsChecked
+        {
+            get => GetValue(IsCheckedProperty);
+            set => SetValue(IsCheckedProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets a value that indicates whether the control supports three states.
+        /// </summary>
+        public bool IsThreeState
+        {
+            get => GetValue(IsThreeStateProperty);
+            set => SetValue(IsThreeStateProperty, value);
+        }
+
+        protected override void OnClick()
+        {
+            if (!IsEffectivelyEnabled)
+            {
+                return;
+            }
+
+            Toggle();
+            base.OnClick();
+        }
+
+        /// <summary>
+        /// Toggles the <see cref="IsChecked"/> property.
+        /// </summary>
+        protected virtual void Toggle()
+        {
+            bool? newValue;
+            if (IsChecked.HasValue)
+            {
+                if (IsChecked.Value)
+                {
+                    if (IsThreeState)
+                    {
+                        newValue = null;
+                    }
+                    else
+                    {
+                        newValue = false;
+                    }
+                }
+                else
+                {
+                    newValue = true;
+                }
+            }
+            else
+            {
+                newValue = false;
+            }
+
+            SetCurrentValue(IsCheckedProperty, newValue);
+        }
+
+        /// <summary>
+        /// Called when <see cref="IsChecked"/> changes.
+        /// </summary>
+        /// <param name="e">Event arguments for the routed event that is raised by the default implementation of this method.</param>
+        protected virtual void OnIsCheckedChanged(RoutedEventArgs e)
+        {
+            RaiseEvent(e);
+        }
+
+        protected override AutomationPeer OnCreateAutomationPeer()
+        {
+            return new ToggleButtonAutomationPeer(this);
+        }
+
+        /// <inheritdoc/>
+        protected override void OnPropertyChanged(PresentationPropertyChangedEventArgs change)
+        {
+            base.OnPropertyChanged(change);
+
+            if (change.Property == IsCheckedProperty)
+            {
+                var newValue = change.GetNewValue<bool?>();
+                UpdatePseudoClasses(newValue);
+                OnIsCheckedChanged(new RoutedEventArgs(IsCheckedChangedEvent));
+            }
+        }
+
+        private void UpdatePseudoClasses(bool? isChecked)
+        {
+            PseudoClasses.Set(":checked", isChecked == true);
+            PseudoClasses.Set(":unchecked", isChecked == false);
+            PseudoClasses.Set(":indeterminate", isChecked == null);
+        }
+    }
+}

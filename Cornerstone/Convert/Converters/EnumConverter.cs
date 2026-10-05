@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Cornerstone.Reflection;
 
 #endregion
@@ -38,6 +39,7 @@ public class EnumConverter : BaseConverter
 			|| (toType.IsEnum && SourceTypes.StringTypes.Contains(fromType));
 	}
 
+	[UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "Converter toType is a runtime conversion target; members are preserved by generated source reflection.")]
 	public override bool TryConvertTo(object from, Type fromType, Type toType, out object value, IConverterSettings settings = null)
 	{
 		if (from == null)

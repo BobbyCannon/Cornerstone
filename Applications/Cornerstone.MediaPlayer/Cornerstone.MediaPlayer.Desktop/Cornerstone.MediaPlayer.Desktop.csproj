@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net10.0-windows10.0.26100.0</TargetFrameworks>
+		<TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">net10.0</TargetFrameworks>
+		<BuiltInComInteropSupport Condition="$(TargetFramework.Contains('windows'))">true</BuiltInComInteropSupport>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<ApplicationIcon>..\Cornerstone.MediaPlayer\Assets\Cornerstone.MediaPlayer.ico</ApplicationIcon>
+	</PropertyGroup>
+	<ItemGroup Condition="!$(TargetFramework.Contains('windows'))">
+		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.4" />
+		<PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="14.2.1.102" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\Cornerstone.Presentation.Diagnostics\Cornerstone.Presentation.Diagnostics.csproj" />
+		<ProjectReference Include="..\Cornerstone.MediaPlayer\Cornerstone.MediaPlayer.csproj" />
+	</ItemGroup>
+	<Import Project="..\..\..\Build\Presentation.props" />
+</Project>

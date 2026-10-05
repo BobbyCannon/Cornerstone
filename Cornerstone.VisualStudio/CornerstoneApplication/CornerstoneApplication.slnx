@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+  </Folder>
+  <Folder Name="/Framework/">
+    <Project Path="../../Cornerstone/Cornerstone.csproj" />
+    <Project Path="../../Cornerstone.Designer.HostApp/Cornerstone.Designer.HostApp.csproj" />
+    <Project Path="../../Cornerstone.Generators/Cornerstone.Generators.csproj" />
+    <Project Path="../../Cornerstone.Presentation/Cornerstone.Presentation.csproj" />
+    <Project Path="../../Cornerstone.Presentation.BuildTasks/Cornerstone.Presentation.BuildTasks.csproj" />
+    <Project Path="../../Cornerstone.Presentation.DevGenerators/Cornerstone.Presentation.DevGenerators.csproj" />
+    <Project Path="../../Cornerstone.Presentation.Remote.Protocol/Cornerstone.Presentation.Remote.Protocol.csproj" />
+  </Folder>
+  <Project Path="CornerstoneApplication.Android/CornerstoneApplication.Android.csproj" />
+  <Project Path="CornerstoneApplication.Browser/CornerstoneApplication.Browser.csproj" />
+  <Project Path="CornerstoneApplication.Desktop/CornerstoneApplication.Desktop.csproj" />
+  <Project Path="CornerstoneApplication.iOS/CornerstoneApplication.iOS.csproj" />
+  <Project Path="CornerstoneApplication/CornerstoneApplication.csproj" />
+</Solution>

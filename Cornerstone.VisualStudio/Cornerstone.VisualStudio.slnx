@@ -1,13 +1,15 @@
 <Solution>
   <Folder Name="/Cornerstone.Extension/">
-    <Project Path="Cornerstone.VisualStudio.Core/Cornerstone.VisualStudio.Core.csproj">
-      <BuildDependency Project="templates/ProjectTemplatesDownloader/ProjectTemplatesDownloader.csproj" />
-    </Project>
+    <Project Path="../Cornerstone.Templates/Cornerstone.Templates.csproj" />
+    <Project Path="Cornerstone.VisualStudio.Core/Cornerstone.VisualStudio.Core.csproj" />
+    <Project Path="Cornerstone.VisualStudio.Protocol/Cornerstone.VisualStudio.Protocol.csproj" />
+    <Project Path="Cornerstone.VisualStudio.EditorHost/Cornerstone.VisualStudio.EditorHost.csproj" />
     <Project Path="Cornerstone.VisualStudio/Cornerstone.VisualStudio.csproj">
       <Deploy Solution="Debug|*" />
+      <BuildDependency Project="../Cornerstone.Templates/Cornerstone.Templates.csproj" />
+      <BuildDependency Project="../Cornerstone.Designer.HostApp/Cornerstone.Designer.HostApp.csproj" />
     </Project>
     <Project Path="Documentation/Documentation.csproj" Id="3f3ea69b-d726-40de-8e5e-8a8e7c92f7bd" />
-    <Project Path="templates/ProjectTemplatesDownloader/ProjectTemplatesDownloader.csproj" />
   </Folder>
   <Folder Name="/Cornerstone.Extension/Build/">
     <File Path="Directory.Build.props" />
@@ -17,5 +19,15 @@
     <Project Path="Cornerstone.VisualStudio.Tests/Cornerstone.VisualStudio.Tests.csproj" />
     <Project Path="TestAssembly1/TestAssembly1.csproj" />
     <Project Path="TestAssembly2/TestAssembly2.csproj" />
+  </Folder>
+  <Folder Name="/Cornerstone/">
+    <Project Path="../Cornerstone/Cornerstone.csproj" />
+    <Project Path="../Cornerstone.Designer.HostApp/Cornerstone.Designer.HostApp.csproj" />
+    <Project Path="../Cornerstone.Presentation/Cornerstone.Presentation.csproj" />
+    <Project Path="../Cornerstone.Presentation.BuildTasks/Cornerstone.Presentation.BuildTasks.csproj" />
+    <Project Path="../Cornerstone.Presentation.DevGenerators/Cornerstone.Presentation.DevGenerators.csproj" />
+    <Project Path="../Cornerstone.Presentation.Remote.Protocol/Cornerstone.Presentation.Remote.Protocol.csproj" />
+    <Project Path="../Cornerstone.Presentation.Remote.Wpf/Cornerstone.Presentation.Remote.Wpf.csproj" />
+    <Project Path="../Cornerstone.Presentation.Remote.Wpf.Host/Cornerstone.Presentation.Remote.Wpf.Host.csproj" />
   </Folder>
 </Solution>

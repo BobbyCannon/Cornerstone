@@ -437,6 +437,77 @@ internal sealed class UpdateableProcessor : ITypeProcessor
 		return false;
 	}
 
+	private static bool ImplementsIUpdateable(ITypeSymbol typeSymbol)
+	{
+		if (typeSymbol == null)
+		{
+			return false;
+		}
+
+		foreach (var typeSymbolInterface in typeSymbol.AllInterfaces)
+		{
+			if (typeSymbolInterface.MetadataName is UpdateableName or UpdateableGenericName)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static bool IsKnownCollectionDefinition(INamedTypeSymbol namedType, out ITypeSymbol elementType)
+	{
+		elementType = null;
+		if (!namedType.IsGenericType)
+		{
+			return false;
+		}
+
+		switch (namedType.OriginalDefinition.Name)
+		{
+			case "List":
+			case "IList":
+			case "PresentationList":
+			case "IPresentationList":
+			case "SpeedyList":
+			{
+				elementType = namedType.TypeArguments[0];
+				return true;
+			}
+			default:
+			{
+				return false;
+			}
+		}
+	}
+
+	private static bool TryGetCollectionElementType(ITypeSymbol propertyType, out ITypeSymbol elementType)
+	{
+		elementType = null;
+		if (propertyType is not INamedTypeSymbol namedType)
+		{
+			return false;
+		}
+
+		for (var current = namedType; current != null; current = current.BaseType)
+		{
+			if (IsKnownCollectionDefinition(current, out elementType))
+			{
+				return true;
+			}
+
+			foreach (var typeSymbolInterface in current.Interfaces)
+			{
+				if (IsKnownCollectionDefinition(typeSymbolInterface, out elementType))
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
 	private static bool ImplementsIUpdateableDirectly(INamedTypeSymbol typeSymbol)
 	{
 		if (typeSymbol == null)
@@ -504,18 +575,8 @@ internal sealed class UpdateableProcessor : ITypeProcessor
 			var propertyType = member.PropertySymbol.Type;
 			var fullyQualifiedType = propertyType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
-			// Collection case
-			if (propertyType is INamedTypeSymbol
-				{
-					IsGenericType: true,
-					OriginalDefinition.Name: "List"
-					or "IList"
-					or "PresentationList"
-					or "IPresentationList"
-					or "SpeedyList"
-				} namedType)
+			if (TryGetCollectionElementType(propertyType, out var elementType))
 			{
-				var elementType = namedType.TypeArguments[0];
 				var globalPropertyType = propertyType.ToDisplayString(SymbolDisplayFormats.GlobalFullyQualifiedName);
 				var globalElementType = elementType.ToDisplayString(SymbolDisplayFormats.GlobalFullyQualifiedName);
 
@@ -523,10 +584,13 @@ internal sealed class UpdateableProcessor : ITypeProcessor
 				continue;
 			}
 
-			// Normal writable property
 			if (member.CanWrite)
 			{
 				builder.IndentWriteLine($"nameof({member.Name}) => TryUpdateProperty({member.Name}, ({fullyQualifiedType})value, true, x => {member.Name} = x),");
+			}
+			else if (ImplementsIUpdateable(propertyType))
+			{
+				builder.IndentWriteLine($"nameof({member.Name}) => TryUpdateProperty({member.Name}, ({fullyQualifiedType})value, true),");
 			}
 		}
 
@@ -569,19 +633,9 @@ internal sealed class UpdateableProcessor : ITypeProcessor
 				continue;
 			}
 
-			// Check if the property type is a generic collection
 			var propertyType = member.PropertySymbol.Type;
-			if (propertyType is INamedTypeSymbol
-				{
-					IsGenericType: true,
-					OriginalDefinition.Name: "List"
-					or "IList"
-					or "PresentationList"
-					or "IPresentationList"
-					or "SpeedyList"
-				} namedType)
+			if (TryGetCollectionElementType(propertyType, out var elementType))
 			{
-				var elementType = namedType.TypeArguments[0];
 				var globalPropertyType = propertyType.ToDisplayString(SymbolDisplayFormats.GlobalFullyQualifiedName);
 				var globalElementType = elementType.ToDisplayString(SymbolDisplayFormats.GlobalFullyQualifiedName);
 				builder.IndentWriteLine($"TryUpdateProperty<{globalPropertyType}, {globalElementType}>({member.Name}, update.{member.Name}, settings.ShouldProcessProperty(nameof({member.Name})));");
@@ -591,8 +645,10 @@ internal sealed class UpdateableProcessor : ITypeProcessor
 			if (member.CanWrite)
 			{
 				builder.IndentWriteLine($"TryUpdateProperty({member.Name}, update.{member.Name}, settings.ShouldProcessProperty(nameof({member.Name})), x => {member.Name} = x);");
-
-				//$"TryUpdateProperty({member.Name}, update.{member.Name}, settings.ShouldProcessProperty(nameof({member.Name})));"
+			}
+			else if (ImplementsIUpdateable(propertyType))
+			{
+				builder.IndentWriteLine($"TryUpdateProperty({member.Name}, update.{member.Name}, settings.ShouldProcessProperty(nameof({member.Name})));");
 			}
 		}
 

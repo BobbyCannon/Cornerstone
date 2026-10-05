@@ -1,0 +1,129 @@
+<Styles xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type BookmarkBarItem}" TargetType="BookmarkBarItem">
+				<Setter Property="DragDrop.AllowDrop" Value="True" />
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="Height" Value="32" />
+				<Setter Property="ClipToBounds" Value="False" />
+				<Setter Property="VerticalAlignment" Value="Top" />
+				<Setter Property="HorizontalAlignment" Value="Left" />
+				<Setter Property="Template">
+					<ControlTemplate>
+						<Panel>
+							<Panel.ContextMenu>
+								<ContextMenu>
+									<MenuItem x:Name="PART_Edit" Header="Edit" />
+									<MenuItem x:Name="PART_Remove" Header="Remove" />
+									<Separator IsVisible="{Binding Bookmark.IsParent, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static BoolConverters.Not}}" />
+									<MenuItem x:Name="PART_ShowIconOnly"
+											Header="Show Icon Only"
+											ToggleType="CheckBox"
+											IsChecked="{Binding Bookmark.ShowIconOnly, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+											IsVisible="{Binding Bookmark.IsParent, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static BoolConverters.Not}}" />
+									<Separator />
+									<MenuItem x:Name="PART_AddFolder" Header="Add Folder" />
+								</ContextMenu>
+							</Panel.ContextMenu>
+							<Border x:Name="PART_Header"
+									Padding="8,0"
+									Height="32"
+									HorizontalAlignment="Stretch">
+								<StackPanel Orientation="Horizontal"
+										VerticalAlignment="Center">
+									<Panel Height="28"
+											Width="16"
+											VerticalAlignment="Center">
+										<Image Height="16" Width="16"
+												Opacity="0.9"
+												Source="{Binding Bookmark.Favicon, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWay, Converter={x:Static ImageConverters.ToBitmap}}"
+												VerticalAlignment="Center">
+											<Image.IsVisible>
+												<MultiBinding Converter="{x:Static BoolConverters.And}">
+													<Binding Path="Bookmark.Favicon" RelativeSource="{RelativeSource TemplatedParent}" Converter="{x:Static ObjectConverters.IsNotNull}" />
+													<Binding Path="Bookmark.IsParent" RelativeSource="{RelativeSource TemplatedParent}" Converter="{x:Static BoolConverters.Not}" />
+												</MultiBinding>
+											</Image.IsVisible>
+										</Image>
+										<Path Data="{StaticResource Icons.Folder.Fill}"
+												Fill="{DynamicResource Foreground02}"
+												IsVisible="{Binding Bookmark.IsParent, RelativeSource={RelativeSource TemplatedParent}}"
+												Height="16"
+												Width="16"
+												Margin="0,1,0,0"
+												VerticalAlignment="Center" />
+									</Panel>
+									<TextBlock Foreground="{DynamicResource Foreground02}"
+											Text="{Binding Bookmark.Name, RelativeSource={RelativeSource TemplatedParent}}"
+											Margin="6,0,0,0"
+											IsVisible="{Binding Bookmark.ShowIconOnly, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static BoolConverters.Not}}"
+											VerticalAlignment="Center" />
+									<Path x:Name="PART_FolderArrow"
+											Data="{StaticResource Icons.Triangle.Right}"
+											Fill="{DynamicResource Foreground04}"
+											Width="8"
+											Height="8"
+											Margin="8,0,0,0"
+											Stretch="Uniform"
+											VerticalAlignment="Center"
+											IsVisible="False" />
+								</StackPanel>
+							</Border>
+							<Border x:Name="PART_InsertLeading"
+									Background="{DynamicResource ThemeColor05}"
+									Width="3"
+									IsHitTestVisible="False"
+									IsVisible="False"
+									HorizontalAlignment="Left"
+									VerticalAlignment="Stretch"
+									ZIndex="2" />
+							<Border x:Name="PART_InsertTrailing"
+									Background="{DynamicResource ThemeColor05}"
+									Width="3"
+									IsHitTestVisible="False"
+									IsVisible="False"
+									HorizontalAlignment="Right"
+									VerticalAlignment="Stretch"
+									ZIndex="2" />
+							<Popup x:Name="PART_FolderPopup"
+									Placement="BottomEdgeAlignedLeft"
+									PlacementTarget="{Binding ElementName=PART_Header}"
+									IsLightDismissEnabled="False"
+									TakesFocusFromNativeControl="False"
+									WindowManagerAddShadowHint="False"
+									IsOpen="{Binding IsFolderOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+								<Border Background="{DynamicResource Background04}"
+										BorderBrush="{DynamicResource BorderBrush}"
+										BorderThickness="1"
+										Padding="0"
+										MinWidth="160"
+										MinHeight="32"
+										MaxWidth="456"
+										CornerRadius="{DynamicResource ControlCornerRadius}"
+										DragDrop.AllowDrop="True">
+									<ItemsControl ItemsSource="{Binding Bookmark.Children, RelativeSource={RelativeSource TemplatedParent}}"
+											HorizontalAlignment="Stretch">
+										<ItemsControl.ItemTemplate>
+											<DataTemplate>
+												<BookmarkBarItem Bookmark="{Binding}"
+														IsNested="True"
+														HorizontalAlignment="Stretch" />
+											</DataTemplate>
+										</ItemsControl.ItemTemplate>
+									</ItemsControl>
+								</Border>
+							</Popup>
+						</Panel>
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="500">
+			<BookmarkBarItem />
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</Styles>

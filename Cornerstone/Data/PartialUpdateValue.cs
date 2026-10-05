@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Cornerstone.Convert;
 using Cornerstone.Reflection;
 
@@ -71,6 +72,7 @@ public partial class PartialUpdateValue : CornerstoneObject, IUpdateable<Partial
 
 	#region Methods
 
+	[UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "PartialUpdateValue.Type is a runtime property type; construction uses generated source reflection.")]
 	public object GetValue()
 	{
 		return Value.TryConvertTo(Type, out var result)

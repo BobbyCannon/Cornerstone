@@ -1,0 +1,126 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs.Data"
+		xmlns:shapes="clr-namespace:Cornerstone.Presentation.Controls.Shapes;assembly=Cornerstone.Presentation"
+		mc:Ignorable="d" d:DesignHeight="900" d:DesignWidth="1100"
+		x:Class="Cornerstone.Sample.Tabs.Data.TabSyncMesh"
+		x:DataType="tabs:TabSyncMeshViewModel"
+		x:Name="This">
+	<UserControl.Styles>
+		<Style Selector="Button.MeshAction">
+			<Setter Property="IsEnabled" Value="{Binding CanRunWork}" />
+		</Style>
+		<Style Selector="Button.MeshLink">
+			<Setter Property="Width" Value="36" />
+			<Setter Property="Height" Value="36" />
+			<Setter Property="MinWidth" Value="0" />
+			<Setter Property="MinHeight" Value="0" />
+			<Setter Property="Padding" Value="0" />
+			<Setter Property="CornerRadius" Value="18" />
+			<Setter Property="Background" Value="#E53935" />
+			<Setter Property="HorizontalAlignment" Value="Center" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+		<Style Selector="Border.MeshSpoke">
+			<Setter Property="Background" Value="#3DDC84" />
+			<Setter Property="IsHitTestVisible" Value="False" />
+		</Style>
+		<Style Selector="Border.MeshSpoke.Vertical">
+			<Setter Property="Width" Value="2" />
+			<Setter Property="HorizontalAlignment" Value="Center" />
+		</Style>
+		<Style Selector="Border.MeshSpoke.Horizontal">
+			<Setter Property="Height" Value="2" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+		<Style Selector="shapes|Line.MeshLink">
+			<Setter Property="Width" Value="64" />
+			<Setter Property="Height" Value="64" />
+			<Setter Property="Stroke" Value="#3DDC84" />
+			<Setter Property="StrokeThickness" Value="2" />
+			<Setter Property="IsHitTestVisible" Value="False" />
+		</Style>
+	</UserControl.Styles>
+	<DockPanel Margin="10">
+		<Grid DockPanel.Dock="Top">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="{x:Static tabs:TabSyncMesh.HeaderName}" />
+		</Grid>
+		<StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0" Spacing="6">
+			<Button Classes="MeshAction" Content="Sync all"
+					HorizontalAlignment="Left"
+					Command="{Binding Bus.Mesh.SyncAllCommand}" />
+			<TextBlock Text="{Binding LastStatus, StringFormat='Status: {0}'}" TextWrapping="Wrap" />
+			<TextBlock Text="{Binding LastElapsed, StringFormat='Last elapsed: {0}'}" Opacity="0.8" />
+			<TextBlock Opacity="0.75" TextWrapping="Wrap"
+					Text="Center is the hub on the four spokes. Around the ring, the clockwise node is a peer in the server slot: East for North, South for East, West for South, North for West. Sync all runs spokes first, then the ring." />
+		</StackPanel>
+		<Grid HorizontalAlignment="Center" VerticalAlignment="Center"
+				ColumnDefinitions="Auto,64,Auto,64,Auto"
+				RowDefinitions="Auto,64,Auto,64,Auto">
+			<tabs:MeshAccountCard Grid.Row="0" Grid.Column="2"
+					Title="North"
+					DisplayName="{Binding NorthName, Mode=TwoWay}"
+					ModifiedOn="{Binding NorthModifiedOn}"
+					SaveCommand="{Binding Bus.Mesh.SaveNorthCommand}"
+					IsEnabled="{Binding CanRunWork}" />
+			<tabs:MeshAccountCard Grid.Row="2" Grid.Column="0"
+					Title="West"
+					DisplayName="{Binding WestName, Mode=TwoWay}"
+					ModifiedOn="{Binding WestModifiedOn}"
+					SaveCommand="{Binding Bus.Mesh.SaveWestCommand}"
+					IsEnabled="{Binding CanRunWork}" />
+			<tabs:MeshAccountCard Grid.Row="2" Grid.Column="2"
+					Title="Center"
+					DisplayName="{Binding CenterName, Mode=TwoWay}"
+					ModifiedOn="{Binding CenterModifiedOn}"
+					SaveCommand="{Binding Bus.Mesh.SaveCenterCommand}"
+					IsEnabled="{Binding CanRunWork}" />
+			<tabs:MeshAccountCard Grid.Row="2" Grid.Column="4"
+					Title="East"
+					DisplayName="{Binding EastName, Mode=TwoWay}"
+					ModifiedOn="{Binding EastModifiedOn}"
+					SaveCommand="{Binding Bus.Mesh.SaveEastCommand}"
+					IsEnabled="{Binding CanRunWork}" />
+			<tabs:MeshAccountCard Grid.Row="4" Grid.Column="2"
+					Title="South"
+					DisplayName="{Binding SouthName, Mode=TwoWay}"
+					ModifiedOn="{Binding SouthModifiedOn}"
+					SaveCommand="{Binding Bus.Mesh.SaveSouthCommand}"
+					IsEnabled="{Binding CanRunWork}" />
+			<Border Grid.Row="1" Grid.Column="2" 
+					Classes="MeshSpoke Vertical" />
+			<Button Grid.Row="1" Grid.Column="2" Classes="MeshAction MeshLink"
+					Command="{Binding Bus.Mesh.SyncNorthToCenterCommand}" />
+			<Border Grid.Row="2" Grid.Column="3" Classes="MeshSpoke Horizontal" />
+			<Button Grid.Row="2" Grid.Column="3" Classes="MeshAction MeshLink"
+					Command="{Binding Bus.Mesh.SyncEastToCenterCommand}" />
+			<Border Grid.Row="3" Grid.Column="2" Classes="MeshSpoke Vertical" />
+			<Button Grid.Row="3" Grid.Column="2" Classes="MeshAction MeshLink"
+					Command="{Binding Bus.Mesh.SyncSouthToCenterCommand}" />
+			<Border Grid.Row="2" Grid.Column="1" Classes="MeshSpoke Horizontal" />
+			<Button Grid.Row="2" Grid.Column="1" Classes="MeshAction MeshLink"
+					Command="{Binding Bus.Mesh.SyncWestToCenterCommand}" />
+			<shapes:Line Grid.Row="1" Grid.Column="3" Classes="MeshLink"
+					StartPoint="0,0" EndPoint="64,64" />
+			<Button Grid.Row="1" Grid.Column="3" Classes="MeshAction MeshLink"
+					Command="{Binding Bus.Mesh.SyncNorthToEastCommand}" />
+			<shapes:Line Grid.Row="3" Grid.Column="3" Classes="MeshLink"
+					StartPoint="64,0" EndPoint="0,64" />
+			<Button Grid.Row="3" Grid.Column="3" Classes="MeshAction MeshLink"
+					Command="{Binding Bus.Mesh.SyncEastToSouthCommand}" />
+			<shapes:Line Grid.Row="3" Grid.Column="1" Classes="MeshLink"
+					StartPoint="0,0" EndPoint="64,64" />
+			<Button Grid.Row="3" Grid.Column="1" Classes="MeshAction MeshLink"
+					Command="{Binding Bus.Mesh.SyncSouthToWestCommand}" />
+			<shapes:Line Grid.Row="1" Grid.Column="1" Classes="MeshLink"
+					StartPoint="0,64" EndPoint="64,0" />
+			<Button Grid.Row="1" Grid.Column="1" Classes="MeshAction MeshLink"
+					Command="{Binding Bus.Mesh.SyncWestToNorthCommand}" />
+		</Grid>
+	</DockPanel>
+</UserControl>

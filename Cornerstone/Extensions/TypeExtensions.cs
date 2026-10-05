@@ -9,6 +9,7 @@ using Cornerstone.Reflection;
 #endregion
 
 #pragma warning disable IL2070
+#pragma warning disable IL2075
 
 namespace Cornerstone.Extensions;
 

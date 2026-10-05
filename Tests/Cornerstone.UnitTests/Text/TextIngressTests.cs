@@ -139,6 +139,7 @@ public class TextIngressTests : CornerstoneUnitTest
 		ingress.Drain(span =>
 		{
 			firstBatch = span.ToString();
+
 			// Simulate producer writing during drain consumer
 			ingress.Append("second");
 		});

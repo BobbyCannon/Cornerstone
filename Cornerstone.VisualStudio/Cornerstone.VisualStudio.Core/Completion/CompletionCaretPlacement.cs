@@ -19,7 +19,18 @@ public static class CompletionCaretPlacement
 	{
 		if (string.IsNullOrEmpty(insertText))
 		{
+			if (recommendedCursorOffset is int emptyIdx && (emptyIdx >= 0))
+			{
+				return emptyIdx;
+			}
+
 			return 0;
+		}
+
+		var betweenQuotes = TryGetCaretIndexBetweenEmptyQuotes(insertText);
+		if (betweenQuotes != null)
+		{
+			return betweenQuotes.Value;
 		}
 
 		if (recommendedCursorOffset is int idx && (idx >= 0) && (idx <= insertText.Length))
@@ -27,14 +38,105 @@ public static class CompletionCaretPlacement
 			return idx;
 		}
 
-		// Fallback: end of insert.
 		return insertText.Length;
+	}
+
+	/// <summary>
+	/// For inserts like <c>RequestedThemeVariant=""</c>, caret after the opening quote.
+	/// </summary>
+	public static int? TryGetCaretIndexBetweenEmptyQuotes(string insertText)
+	{
+		if (string.IsNullOrEmpty(insertText))
+		{
+			return null;
+		}
+
+		var doubleQuotes = insertText.IndexOf("=\"\"", StringComparison.Ordinal);
+		if (doubleQuotes >= 0)
+		{
+			return doubleQuotes + 2;
+		}
+
+		var singleQuotes = insertText.IndexOf("=''", StringComparison.Ordinal);
+		if (singleQuotes >= 0)
+		{
+			return singleQuotes + 2;
+		}
+
+		return null;
+	}
+
+	/// <summary>
+	/// If the caret is sitting on <c>Name|=""</c>, move it between the quotes.
+	/// The XML editor often appends <c>=""</c> after the name and leaves the caret
+	/// at the end of the name.
+	/// </summary>
+	public static int SlideCaretIntoEmptyAttributeQuotes(string document, int caret)
+	{
+		if (string.IsNullOrEmpty(document) || (caret < 0) || (caret > document.Length))
+		{
+			return caret;
+		}
+
+		if ((caret > 0) && (caret < document.Length)
+			&& IsQuote(document[caret - 1]) && IsQuote(document[caret])
+			&& (document[caret - 1] == document[caret]))
+		{
+			return caret;
+		}
+
+		if (StartsAt(document, caret, "=\"\"") || StartsAt(document, caret, "=''"))
+		{
+			return caret + 2;
+		}
+
+		return caret;
+	}
+
+	private static bool IsQuote(char c)
+	{
+		return (c == '"') || (c == '\'');
+	}
+
+	private static bool StartsAt(string document, int caret, string value)
+	{
+		if (caret + value.Length > document.Length)
+		{
+			return false;
+		}
+
+		return string.CompareOrdinal(document, caret, value, 0, value.Length) == 0;
 	}
 
 	/// <summary>
 	/// Absolute caret position after replacing <c>[replaceStart, replaceStart+filterLen)</c>
 	/// with <paramref name="insertText"/>.
 	/// </summary>
+	public static (string Document, int Caret) ApplyCustomCommit(
+		string document,
+		int applicableStart,
+		int applicableLength,
+		string insertText,
+		int? recommendedCursorOffset)
+	{
+		if (document is null)
+		{
+			throw new ArgumentNullException(nameof(document));
+		}
+
+		if ((applicableStart < 0) || (applicableLength < 0) ||
+			(applicableStart + applicableLength > document.Length))
+		{
+			throw new ArgumentOutOfRangeException(nameof(applicableStart));
+		}
+
+		var after = document.Substring(0, applicableStart) + insertText +
+			document.Substring(applicableStart + applicableLength);
+		var caret = PlaceCaretOnCommittedLine(
+			after, applicableStart, insertText, recommendedCursorOffset);
+		return (after, caret);
+	}
+
 	public static int GetCaretAfterReplace(
 		int replaceStart,
 		string insertText,
@@ -45,10 +147,89 @@ public static class CompletionCaretPlacement
 	}
 
 	/// <summary>
-	/// Full commit simulation: replace filter, place caret, optionally apply indent pin
-	/// (as if smart-indent grew leading whitespace then we restored it).
+	/// After the buffer has the committed text: caret is insertStart plus the
+	/// index into InsertionText (VS replace contract). Empty-quote inserts use
+	/// the quotes in the insert text, not the first ="" on the line.
 	/// </summary>
-	/// <returns>Final document text and caret position.</returns>
+	public static int PlaceCaretOnCommittedLine(
+		string document,
+		int insertStart,
+		string insertText,
+		int? recommendedCursorOffset)
+	{
+		if (string.IsNullOrEmpty(document))
+		{
+			return 0;
+		}
+
+		insertStart = Math.Max(0, Math.Min(insertStart, document.Length));
+		insertText ??= string.Empty;
+		var caret = GetCaretAfterReplace(insertStart, insertText, recommendedCursorOffset);
+		return Math.Max(0, Math.Min(caret, document.Length));
+	}
+
+	/// <summary>
+	/// Where a position after the current leading whitespace moves when that
+	/// whitespace is replaced with a different indent. Positions inside the
+	/// whitespace clamp to the end of the restored indent.
+	/// </summary>
+	public static int AdjustPositionAfterLeadingWhitespaceReplace(
+		int position,
+		int lineStart,
+		int currentWhitespaceLength,
+		int restoredWhitespaceLength)
+	{
+		if (position <= lineStart)
+		{
+			return position;
+		}
+
+		var currentWsEnd = lineStart + Math.Max(0, currentWhitespaceLength);
+		if (position >= currentWsEnd)
+		{
+			return position + (restoredWhitespaceLength - currentWhitespaceLength);
+		}
+
+		return lineStart + restoredWhitespaceLength;
+	}
+
+	/// <summary>
+	/// Replace only the leading whitespace of the line that contains
+	/// <paramref name="positionOnLine"/>. Insert/caret positions after that
+	/// whitespace shift by the indent delta — the tag is not in the replaced span.
+	/// </summary>
+	public static (string Document, int InsertStart) RestoreLeadingWhitespaceOnly(
+		string document,
+		int positionOnLine,
+		string originalLine,
+		int insertStart)
+	{
+		if (document is null)
+		{
+			throw new ArgumentNullException(nameof(document));
+		}
+
+		var lineStart = LineStartIndex(document, positionOnLine);
+		var lineEnd = LineEndIndex(document, lineStart);
+		var currentLine = document.Substring(lineStart, lineEnd - lineStart);
+		var currentWs = CompletionEngine.GetLeadingWhitespace(currentLine);
+		var originalWs = CompletionEngine.GetLeadingWhitespace(originalLine ?? string.Empty);
+		if (currentWs == originalWs)
+		{
+			return (document, insertStart);
+		}
+
+		var restoredLine = originalWs + currentLine.Substring(currentWs.Length);
+		var after = document.Substring(0, lineStart) + restoredLine + document.Substring(lineEnd);
+		var shifted = AdjustPositionAfterLeadingWhitespaceReplace(
+			insertStart, lineStart, currentWs.Length, originalWs.Length);
+		return (after, shifted);
+	}
+
+	/// <summary>
+	/// Full commit simulation: replace filter, place caret as insertStart + index,
+	/// optionally grow then pin leading whitespace without replacing the tag.
+	/// </summary>
 	public static (string Document, int Caret) SimulateCommit(
 		string documentBefore,
 		int filterStart,
@@ -70,38 +251,31 @@ public static class CompletionCaretPlacement
 		var afterReplace = CompletionEngine.ApplyCompletionReplace(
 			documentBefore, filterStart, caretBefore, insertText);
 
-		var caret = GetCaretAfterReplace(filterStart, insertText, recommendedCursorOffset);
+		var insertStart = filterStart;
+		var caretIndex = ResolveCaretIndexInInsert(insertText, recommendedCursorOffset);
 
-		// Optional: simulate XML smart-indent growing leading ws on the edited line, then pin.
 		if (smartIndentedLeadingWs != null)
 		{
-			var lineStart = LineStartIndex(afterReplace, filterStart);
-			var lineEnd = LineEndIndex(afterReplace, filterStart);
+			var lineStart = LineStartIndex(afterReplace, insertStart);
+			var lineEnd = LineEndIndex(afterReplace, insertStart);
 			var line = afterReplace.Substring(lineStart, lineEnd - lineStart);
 			var originalLine = documentBefore.Substring(
 				LineStartIndex(documentBefore, filterStart),
 				LineEndIndex(documentBefore, filterStart) - LineStartIndex(documentBefore, filterStart));
 
-			// Grow indent artificially (what the editor does on Enter commit).
-			var grown = smartIndentedLeadingWs + line.Substring(CompletionEngine.GetLeadingWhitespace(line).Length);
+			var currentWs = CompletionEngine.GetLeadingWhitespace(line);
+			var grown = smartIndentedLeadingWs + line.Substring(currentWs.Length);
 			afterReplace = afterReplace.Substring(0, lineStart) + grown + afterReplace.Substring(lineEnd);
+			insertStart = AdjustPositionAfterLeadingWhitespaceReplace(
+				insertStart, lineStart, currentWs.Length, smartIndentedLeadingWs.Length);
 
-			// Caret shifts by the grown indent delta.
-			var grownDelta = smartIndentedLeadingWs.Length - CompletionEngine.GetLeadingWhitespace(line).Length;
-			caret += grownDelta;
-
-			// Pin back to original leading ws (our restore).
-			var line2Start = LineStartIndex(afterReplace, Math.Min(caret, afterReplace.Length - 1));
-			var line2End = LineEndIndex(afterReplace, line2Start);
-			var line2 = afterReplace.Substring(line2Start, line2End - line2Start);
-			var fixedLine = CompletionEngine.PreserveLineLeadingWhitespace(originalLine, line2);
-			var pinDelta = CompletionEngine.GetLeadingWhitespace(fixedLine).Length
-				- CompletionEngine.GetLeadingWhitespace(line2).Length;
-			afterReplace = afterReplace.Substring(0, line2Start) + fixedLine + afterReplace.Substring(line2End);
-			caret += pinDelta;
+			var pin = RestoreLeadingWhitespaceOnly(afterReplace, insertStart, originalLine, insertStart);
+			afterReplace = pin.Document;
+			insertStart = pin.InsertStart;
 		}
 
-		caret = Math.Max(0, Math.Min(caret, afterReplace.Length));
+		var caret = PlaceCaretOnCommittedLine(
+			afterReplace, insertStart, insertText, recommendedCursorOffset);
 		return (afterReplace, caret);
 	}
 
@@ -115,7 +289,7 @@ public static class CompletionCaretPlacement
 		return (before, after);
 	}
 
-	private static int LineStartIndex(string text, int position)
+	internal static int LineStartIndex(string text, int position)
 	{
 		position = Math.Max(0, Math.Min(position, Math.Max(0, text.Length - 1)));
 		var i = position;
@@ -127,7 +301,7 @@ public static class CompletionCaretPlacement
 		return i;
 	}
 
-	private static int LineEndIndex(string text, int position)
+	internal static int LineEndIndex(string text, int position)
 	{
 		position = Math.Max(0, Math.Min(position, text.Length));
 		var i = position;

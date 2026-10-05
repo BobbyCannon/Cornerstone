@@ -1,7 +1,7 @@
 ﻿#region References
 
 using Cornerstone.Data;
-using Cornerstone.Presentation;
+using Cornerstone.Reflection;
 
 #endregion
 
@@ -10,58 +10,23 @@ namespace Cornerstone.Sync;
 /// <summary>
 /// Represents the settings for a sync client
 /// </summary>
-public class SyncClientSettings : CornerstoneObject<SyncClientSettings>
+[SourceReflection]
+[Notifiable(["*"])]
+[Updateable(UpdateableAction.All, ["*"])]
+public partial class SyncClientSettings : CornerstoneObject<SyncClientSettings>
 {
 	#region Properties
 
 	/// <summary>
 	/// Determines if the sync client should cache primary keys for relationships.
 	/// </summary>
-	public bool EnablePrimaryKeyCache { get; set; }
+	public partial bool EnablePrimaryKeyCache { get; set; }
 
 	/// <summary>
 	/// Indicates this client is the server and should maintain dates, meaning as you save data the CreatedOn, ModifiedOn will
 	/// be updated to the current server time. This should only be set for the "Server" sync client that represents the primary database.
 	/// </summary>
-	public bool IsServerClient { get; set; }
-
-	#endregion
-
-	#region Methods
-
-	/// <summary>
-	/// Update the SyncClientOptions with an update.
-	/// </summary>
-	/// <param name="update"> The update to be applied. </param>
-	/// <param name="settings"> The settings for controlling the updating of the entity. </param>
-	public override bool UpdateWith(SyncClientSettings update, IncludeExcludeSettings settings)
-	{
-		// Generated Code - UpdateWith
-
-		// If the update is null then there is nothing to do.
-		if (update == null)
-		{
-			return false;
-		}
-
-		// ****** This code has been auto generated, do not edit this. ******
-
-		TryUpdateProperty(EnablePrimaryKeyCache, update.EnablePrimaryKeyCache, settings.ShouldProcessProperty(nameof(EnablePrimaryKeyCache)), x => EnablePrimaryKeyCache = x);
-		TryUpdateProperty(IsServerClient, update.IsServerClient, settings.ShouldProcessProperty(nameof(IsServerClient)), x => IsServerClient = x);
-
-		// Generated Code - /UpdateWith
-
-		return true;
-	}
-
-	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
-	{
-		return update switch
-		{
-			SyncClientSettings value => UpdateWith(value, settings),
-			_ => base.UpdateWith(update, settings)
-		};
-	}
+	public partial bool IsServerClient { get; set; }
 
 	#endregion
 }

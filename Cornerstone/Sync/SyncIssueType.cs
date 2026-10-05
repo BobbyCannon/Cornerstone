@@ -1,8 +1,15 @@
-﻿namespace Cornerstone.Sync;
+﻿#region References
+
+using Cornerstone.Reflection;
+
+#endregion
+
+namespace Cornerstone.Sync;
 
 /// <summary>
 /// Represents the type of sync issue.
 /// </summary>
+[SourceReflection]
 public enum SyncIssueType
 {
 	/// <summary>

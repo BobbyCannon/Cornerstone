@@ -1,6 +1,6 @@
 ﻿#region References
 
-using Avalonia.Remote.Protocol.Designer;
+using Cornerstone.VisualStudio.Services;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Shell.TableManager;
 
@@ -12,7 +12,7 @@ internal class XamlErrorTableEntry : TableEntryBase
 {
 	#region Fields
 
-	private readonly ExceptionDetails _error;
+	private readonly PreviewExceptionDetails _error;
 	private readonly string _fileName;
 	private readonly string _projectName;
 
@@ -23,7 +23,7 @@ internal class XamlErrorTableEntry : TableEntryBase
 	public XamlErrorTableEntry(
 		string projectName,
 		string path,
-		ExceptionDetails error)
+		PreviewExceptionDetails error)
 	{
 		_projectName = projectName;
 		_fileName = path;

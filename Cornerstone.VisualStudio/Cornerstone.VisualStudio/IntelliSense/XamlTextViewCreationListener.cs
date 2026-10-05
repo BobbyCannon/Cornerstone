@@ -1,9 +1,7 @@
 ﻿#region References
 
-using System;
 using System.ComponentModel.Composition;
 using Cornerstone.VisualStudio.Models;
-using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Utilities;
 
@@ -21,31 +19,13 @@ namespace Cornerstone.VisualStudio.IntelliSense;
 [TextViewRole(PredefinedTextViewRoles.PrimaryDocument)]
 internal sealed class XamlTextViewCreationListener : IWpfTextViewCreationListener
 {
-	#region Fields
-
-	private readonly IServiceProvider _serviceProvider;
-
-	#endregion
-
-	#region Constructors
-
-	[ImportingConstructor]
-	public XamlTextViewCreationListener(
-		[Import(typeof(SVsServiceProvider))] IServiceProvider serviceProvider)
-	{
-		_serviceProvider = serviceProvider;
-	}
-
-	#endregion
-
 	#region Methods
 
 	public void TextViewCreated(IWpfTextView textView)
 	{
-		// If the buffer contains Avalonia XAML, register a completion handler on it.
-		if (textView.TextBuffer.Properties.ContainsProperty(typeof(XamlBufferMetadata)))
+		if ((textView != null) && XamlBufferMetadataHelper.IsCornerstoneXamlBuffer(textView.TextBuffer))
 		{
-			new XamlTextManipulatorRegistrar(textView);
+			textView.Properties.GetOrCreateSingletonProperty(() => new XamlTextManipulatorRegistrar(textView));
 		}
 	}
 

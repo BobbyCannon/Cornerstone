@@ -1,6 +1,6 @@
 # MarkdownView / Markdown Parser (Agent)
 
-Dense reference for implementing or changing Markdown parsing and the Avalonia `MarkdownView`.
+Dense reference for implementing or changing Markdown parsing and the Cornerstone.Presentation `MarkdownView`.
 
 **Product behavior:** [../Controls/MarkdownView.md](../Controls/MarkdownView.md)  
 **Text editor document model:** [TextEditor.md](TextEditor.md)
@@ -33,7 +33,7 @@ Document (TextEditorViewModel.Buffer)
 | `MarkdownFence` | Open/complete fenced code (shared parser/tokenizer) |
 | `MarkdownParser` | `Block` stream for view |
 | `MarkdownTokenizer` | `Token` stream + type id registry |
-| `MarkdownTableFormatter` | Column width + wrap (pure string) |
+| `MarkdownTableFormatter` | Column width + wrap (pure string); lives in `Cornerstone.Text.Formatting` — see [TextFormatting.md](TextFormatting.md) |
 | `MarkdownRenderer.Extract*` | Code body/language, header size/content |
 
 ---
@@ -41,32 +41,39 @@ Document (TextEditorViewModel.Buffer)
 ## File map
 
 ```
-Cornerstone/Parsers/Markdown/
+Cornerstone/Text/Parsing/Markdown/
   MarkdownFence.cs              ★ incomplete + line-based closers
   MarkdownParser.cs
   MarkdownTokenizer.cs
-  MarkdownTableFormatter.cs
   MarkdownRenderer.cs
   MarkdownRendererForHtml.cs
   MarkdownService.cs
   MarkdownOptions.cs
+  ColumnAlignment.cs
 
-Cornerstone/Parsers/
+Cornerstone/Text/Formatting/
+  MarkdownTableFormatter.cs
+  DocumentFormatter.cs, *FormatOptions, *DocumentFormatter
+  Formatting.md                 colocated overview; agent: TextFormatting.md
+
+Cornerstone/Text/Parsing/
   Parser.cs, Tokenizer.cs, TextProcessor.cs, Block.cs, Token.cs
-  Parsers.md
+  Parsing.md
 
-Cornerstone.Avalonia/Controls/
+Cornerstone.Presentation/Controls/
   MarkdownView.axaml(.cs)
   MarkdownBlockGroup.cs
   MarkdownBlockPresenter.axaml(.cs)
   MarkdownViewTokenizer.cs
   MarkdownBlockConverter.cs     legacy; view template uses Presenter
 
-Tests/Cornerstone.UnitTests/Parsers/Markdown/
+Tests/Cornerstone.UnitTests/Text/Parsing/Markdown/
   MarkdownParserTests.cs        includes char-by-char stream tests
   MarkdownTokenizerTests.cs
-  MarkdownTableFormatterTests.cs
   MarkdownRendererTests.cs
+
+Tests/Cornerstone.UnitTests/Text/Formatting/
+  MarkdownTableFormatterTests.cs
 ```
 
 ---

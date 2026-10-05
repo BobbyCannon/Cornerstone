@@ -1,10 +1,10 @@
 ﻿#region References
 
-using System;
 using Cornerstone.Data.Times;
 using Cornerstone.Testing;
 using Cornerstone.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using TimeSpan = System.TimeSpan;
 
 #endregion
 

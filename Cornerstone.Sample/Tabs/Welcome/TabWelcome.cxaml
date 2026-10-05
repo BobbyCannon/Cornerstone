@@ -1,0 +1,184 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:controls="clr-namespace:Cornerstone.Presentation.Controls;assembly=Cornerstone.Presentation"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs.Welcome"
+		mc:Ignorable="d" d:DesignWidth="520"
+		x:Class="Cornerstone.Sample.Tabs.Welcome.TabWelcome"
+		x:DataType="tabs:TabWelcome"
+		x:Name="This">
+	<UserControl.Styles>
+		<Style Selector="SelectableTextBlock">
+			<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.OpenSansRegular}" />
+			<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+			<Setter Property="TextWrapping" Value="Wrap" />
+			<Setter Property="Foreground" Value="{DynamicResource Foreground04}" />
+		</Style>
+	</UserControl.Styles>
+	<controls:PageNavigator x:Name="Pages" RootTitle="Home">
+		<DockPanel>
+			<Grid DockPanel.Dock="Top"
+					HorizontalAlignment="Center">
+				<TextBlock Classes="Header"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center"
+						Text="Welcome to Cornerstone" />
+			</Grid>
+			<ScrollViewer HorizontalScrollBarVisibility="Disabled">
+				<StackPanel Margin="10" Spacing="12">
+					<SelectableTextBlock>
+						<SelectableTextBlock.Text>
+							An application framework from process to window: Keystone runs the process,
+							AppDispatcher keeps models and views honest, themes set color and density,
+							controls are the widgets, and sync moves data. Open a topic below.
+						</SelectableTextBlock.Text>
+					</SelectableTextBlock>
+					<WrapPanel ItemSpacing="12"
+							LineSpacing="12"
+							ItemWidth="340"
+							ItemsAlignment="Stretch">
+						<WrapPanel.Styles>
+							<Style Selector="TextBlock">
+								<Setter Property="TextWrapping" Value="Wrap" />
+							</Style>
+						</WrapPanel.Styles>
+					<Button Classes="ControlCard" Click="OpenKeystone">
+						<Border Classes="FeatureCard">
+							<Grid ColumnDefinitions="Auto,*">
+								<Border Classes="IconBadge Purple">
+									<Path Data="{StaticResource Icons.BoxLayered}" />
+								</Border>
+								<StackPanel Grid.Column="1">
+									<TextBlock Text="Keystone" />
+									<TextBlock Text="State, Engine, and Bus" />
+								</StackPanel>
+							</Grid>
+						</Border>
+					</Button>
+					<Button Classes="ControlCard" Click="OpenDispatcher">
+						<Border Classes="FeatureCard">
+							<Grid ColumnDefinitions="Auto,*">
+								<Border Classes="IconBadge Blue">
+									<Path Data="{StaticResource Icons.DoubleArrow.Right}" Margin="2,4,0,0" />
+								</Border>
+								<StackPanel Grid.Column="1">
+									<TextBlock Text="AppDispatcher" />
+									<TextBlock Text="Automatic, streaming, collections, series, and property maps." />
+								</StackPanel>
+							</Grid>
+						</Border>
+					</Button>
+					<Button Classes="ControlCard" Click="OpenThemes">
+						<Border Classes="FeatureCard">
+							<Grid ColumnDefinitions="Auto,*">
+								<Border Classes="IconBadge Amber">
+									<Path Data="{StaticResource Icons.Color.Palette}" />
+								</Border>
+								<StackPanel Grid.Column="1">
+									<TextBlock Text="Themes" />
+									<TextBlock Text="Color, theme, and density." />
+								</StackPanel>
+							</Grid>
+						</Border>
+					</Button>
+					<Button Classes="ControlCard" Click="OpenControls">
+						<Border Classes="FeatureCard">
+							<Grid ColumnDefinitions="Auto,*">
+								<Border Classes="IconBadge Green">
+									<Path Data="{StaticResource Icons.TapButton}" />
+								</Border>
+								<StackPanel Grid.Column="1">
+									<TextBlock Text="Controls" />
+									<TextBlock Text="Buttons, menus, tabs, progress, docking, and many more." />
+								</StackPanel>
+							</Grid>
+						</Border>
+					</Button>
+					<Button Classes="ControlCard" Click="OpenInputs">
+						<Border Classes="FeatureCard">
+							<Grid ColumnDefinitions="Auto,*">
+								<Border Classes="IconBadge Orange">
+									<Path Data="{StaticResource Icons.Keyboard}" />
+								</Border>
+								<StackPanel Grid.Column="1">
+									<TextBlock Text="Inputs" />
+									<TextBlock Text="Gamepad, keyboard, and mouse." />
+								</StackPanel>
+							</Grid>
+						</Border>
+					</Button>
+					<Button Classes="ControlCard" Click="OpenSync">
+						<Border Classes="FeatureCard">
+							<Grid ColumnDefinitions="Auto,*">
+								<Border Classes="IconBadge Teal">
+									<Path Data="{StaticResource Icons.Share.Fill}" />
+								</Border>
+								<StackPanel Grid.Column="1">
+									<TextBlock Text="Sync" />
+									<TextBlock Text="Loopback entities, SpeedyPack payloads, debounce, and throttle." />
+								</StackPanel>
+							</Grid>
+						</Border>
+					</Button>
+					<Button Classes="ControlCard" Click="OpenMaps">
+						<Border Classes="FeatureCard">
+							<Grid ColumnDefinitions="Auto,*">
+								<Border Classes="IconBadge Blue">
+									<Path Data="{StaticResource Icons.Map.Marked}" />
+								</Border>
+								<StackPanel Grid.Column="1">
+									<TextBlock Text="Maps" />
+									<TextBlock Text="Mapsui and Esri map controls." />
+								</StackPanel>
+							</Grid>
+						</Border>
+					</Button>
+					<Button Classes="ControlCard" Click="OpenMedia">
+						<Border Classes="FeatureCard">
+							<Grid ColumnDefinitions="Auto,*">
+								<Border Classes="IconBadge Purple">
+									<Path Data="{StaticResource Icons.Play}"
+											Margin="4,0,0,0" />
+								</Border>
+								<StackPanel Grid.Column="1">
+									<TextBlock Text="Media" />
+									<TextBlock Text="Camera, media player, and web content." />
+								</StackPanel>
+							</Grid>
+						</Border>
+					</Button>
+					<Button Classes="ControlCard" Click="OpenObserve">
+						<Border Classes="FeatureCard">
+							<Grid ColumnDefinitions="Auto,*">
+								<Border Classes="IconBadge Teal">
+									<Path Data="{StaticResource Icons.Info.Circle}" />
+								</Border>
+								<StackPanel Grid.Column="1">
+									<TextBlock Text="Observe" />
+									<TextBlock Text="Diagnostics, startup cost, runtime facts, and the clock." />
+								</StackPanel>
+							</Grid>
+						</Border>
+					</Button>
+					<Button Classes="ControlCard" Click="OpenDocumentation">
+						<Border Classes="FeatureCard">
+							<Grid ColumnDefinitions="Auto,*">
+								<Border Classes="IconBadge Amber">
+									<Path Data="{StaticResource Icons.Bookmark}"
+											Margin="4,0,0,0" />
+								</Border>
+								<StackPanel Grid.Column="1">
+									<TextBlock Text="Documentation" />
+									<TextBlock Text="Cornerstone documentation in the app." />
+								</StackPanel>
+							</Grid>
+						</Border>
+					</Button>
+					</WrapPanel>
+				</StackPanel>
+			</ScrollViewer>
+		</DockPanel>
+	</controls:PageNavigator>
+</UserControl>

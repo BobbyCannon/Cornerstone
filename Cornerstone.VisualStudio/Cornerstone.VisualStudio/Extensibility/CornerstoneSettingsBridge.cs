@@ -38,6 +38,7 @@ internal static class CornerstoneSettingsBridge
 	private const string KeyZoomLevel = "cornerstone.zoomLevel";
 	private const string KeyLogVerbosity = "cornerstone.minimumLogVerbosity";
 	private const string KeyTabPrefix = "cornerstone.showPreviewHostRunningInTab";
+	private const string KeyStopBuildOnFirstFailure = "cornerstone.stopBuildOnFirstFailure";
 
 	#endregion
 
@@ -89,7 +90,7 @@ internal static class CornerstoneSettingsBridge
 			else
 			{
 				_settingsJsonPath = path;
-				Log.Information("Modern Settings file: {Path}", path);
+				Log.Debug("Modern Settings file: {Path}", path);
 			}
 
 			// Apply current Options values into MEF immediately.
@@ -100,7 +101,7 @@ internal static class CornerstoneSettingsBridge
 				StartFileWatcher(_settingsJsonPath);
 			}
 
-			Log.Information(
+			Log.Debug(
 				"Cornerstone Settings bridge started (View={View}, Orientation={Orientation}, Swapped={Swapped}, Zoom={Zoom}, Log={Log}, TabPrefix={Prefix})",
 				store.DesignerView,
 				store.DesignerSplitOrientation,
@@ -178,16 +179,9 @@ internal static class CornerstoneSettingsBridge
 					return;
 				}
 
-				// Read with share so VS can keep the file open.
-				string text;
-				using (var stream = new FileStream(
-							_settingsJsonPath,
-							FileMode.Open,
-							FileAccess.Read,
-							FileShare.ReadWrite | FileShare.Delete))
-				using (var reader = new StreamReader(stream))
+				if (!TryReadSettingsText(_settingsJsonPath, out var text))
 				{
-					text = reader.ReadToEnd();
+					return;
 				}
 
 				// File may start with a /* comment */ header.
@@ -201,7 +195,7 @@ internal static class CornerstoneSettingsBridge
 				var root = JObject.Parse(text.Substring(jsonStart));
 
 				if (TryGetString(root, KeyDesignerView, out var viewText)
-					&& Enum.TryParse(viewText, ignoreCase: true, out AvaloniaDesignerView view))
+					&& Enum.TryParse(viewText, ignoreCase: true, out CornerstoneDesignerView view))
 				{
 					store.DesignerView = view;
 				}
@@ -233,9 +227,14 @@ internal static class CornerstoneSettingsBridge
 					store.ShowPreviewHostRunningInTab = tabPrefix;
 				}
 
+				if (TryGetBool(root, KeyStopBuildOnFirstFailure, out var stopBuild))
+				{
+					store.StopBuildOnFirstFailure = stopBuild;
+				}
+
 				store.Save();
 
-				Log.Information(
+				Log.Debug(
 					"Applied modern Settings from JSON: View={View}, Orientation={Orientation}, Swapped={Swapped}, Zoom={Zoom}, Log={Log}, TabPrefix={Prefix}",
 					store.DesignerView,
 					store.DesignerSplitOrientation,
@@ -249,6 +248,44 @@ internal static class CornerstoneSettingsBridge
 				Log.Warning(ex, "Failed to apply modern Settings from settings.json");
 			}
 		}
+	}
+
+	private static bool TryReadSettingsText(string path, out string text)
+	{
+		text = null;
+
+		// VS often holds settings.json exclusive while rewriting it. Share flags
+		// still fail until that handle is released; retry through the lock window.
+		const int maxAttempts = 8;
+		for (var attempt = 1; attempt <= maxAttempts; attempt++)
+		{
+			try
+			{
+				using (var stream = new FileStream(
+							path,
+							FileMode.Open,
+							FileAccess.Read,
+							FileShare.ReadWrite | FileShare.Delete))
+				using (var reader = new StreamReader(stream))
+				{
+					text = reader.ReadToEnd();
+					return true;
+				}
+			}
+			catch (IOException ex) when (IsSharingOrLockViolation(ex) && (attempt < maxAttempts))
+			{
+				Thread.Sleep(50 * attempt);
+			}
+		}
+
+		return false;
+	}
+
+	private static bool IsSharingOrLockViolation(IOException ex)
+	{
+		var code = ex.HResult & 0xFFFF;
+		// ERROR_SHARING_VIOLATION (32), ERROR_LOCK_VIOLATION (33)
+		return (code == 32) || (code == 33);
 	}
 
 	private static bool TryGetString(JObject root, string key, out string value)
@@ -370,8 +407,8 @@ internal static class CornerstoneSettingsBridge
 	{
 		try
 		{
-			// Debounce: VS may write the file multiple times in a row.
-			await Task.Delay(200);
+			// Debounce: VS may write the file multiple times and keep it exclusive while flushing.
+			await Task.Delay(400);
 			await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 			var store = _store;
 			if (store is null)

@@ -29,13 +29,15 @@ Keystone is **application business logic only** (domain rules, IO, persistence, 
 
 | Expect | Do not |
 |--------|--------|
-| Bus, State, and processors run **off the UI dispatcher** (bus handlers, `ProcessLifecycle`, background IO) | Call `IDispatcher.Dispatch`, touch Avalonia, or assume a visual tree |
+| Bus, State, and processors run **off the UI dispatcher** (bus handlers, `ProcessLifecycle`, background IO) | Call `IDispatcher.Dispatch`, touch Cornerstone.Presentation, or assume a visual tree |
 | State is a UI-free snapshot | Put selection, scroll, or control instances on State |
-| UI **publishes** messages; processors write State | Run domain rules on the UI thread “so the view updates” |
+| UI **publishes** messages; processors write State (and any other objects they own) | Run domain rules on the UI thread “so the view updates” |
 
-If a processor “needs the dispatcher,” the work belongs in a ViewModel / AppDispatcher apply, or the result should be written to State and **projected** later. Nothing called from Keystone should require dispatching.
+If a processor “needs the dispatcher,” the work belongs in a ViewModel / AppDispatcher apply, or the result should be written to State (or another model) and **projected** later. Nothing called from Keystone should require dispatching.
 
-ViewModels stay in sync for **display and user input** via [AppDispatcher](AppDispatcher.md) (or manual [ViewIntegration](ViewIntegration.md)). That projection runs **on** the UI dispatcher; Keystone producers stay off it.
+Processors are not limited to fields that sit on `AppState`. They may update services, `IRuntimeInformation`, session objects, and other models that are only referenced from State or injected. **If a View binds a property, that property is on a ViewModel and is filled by AppDispatcher `Track*`** — not by handing the live object to XAML. “It is not on State” does not make a live object safe to bind; a processor can still mutate it off the UI thread.
+
+ViewModels stay in sync for **display and user input** via [AppDispatcher](AppDispatcher.md) (or manual [ViewIntegration](ViewIntegration.md)). That projection runs **on** the UI dispatcher; Keystone producers stay off it. Every bound path is a projection, including bags copied from non-State models (`TrackProperties(source, destinationBag)`).
 
 ---
 
@@ -151,14 +153,14 @@ This makes startup, shutdown, and resource management deterministic and easy to 
 
 All hosts start with **[AppBootstrap](AppBootstrap.md)** (process DI, runtime information, platform). Keystone is then registered on that provider and driven through the lifecycle.
 
-### Avalonia (UI)
+### Cornerstone.Presentation (UI)
 
 `CornerstoneApplication<AppKeystone>` owns Keystone’s lifecycle (init/load in `Initialize`, start after the framework is ready, teardown on exit). The host only bootstraps and creates the window/view shell.
 
 ```csharp
 // Program.cs (Desktop / Browser / etc.)
 AppBootstrap.Initialize("MyApp", typeof(Program).Assembly, args);
-BuildAvaloniaApp().UseCornerstone(args).StartWithClassicDesktopLifetime(args);
+BuildCornerstoneApp().UseCornerstone(args).StartWithClassicDesktopLifetime(args);
 
 // App : CornerstoneApplication<AppKeystone>
 //   RegisterServices()
@@ -218,6 +220,6 @@ AppBootstrap.ShutdownInfrastructure();
 | [KeystoneFeatureTab.md](KeystoneFeatureTab.md) | How-to: dockable feature tab with Keystone + AppDispatcher |
 | [AppDispatcher.md](AppDispatcher.md) | Optional UI projection loop over State |
 | [Lifecycle.md](Lifecycle.md) | Track / Release and phase order |
-| [CornerstoneApplication.md](CornerstoneApplication.md) | Avalonia host lifecycle |
+| [CornerstoneApplication.md](CornerstoneApplication.md) | Cornerstone host lifecycle |
 | [AppBootstrap.md](AppBootstrap.md) | Process DI and infrastructure |
 | [Controls/DockingLifecycle.md](Controls/DockingLifecycle.md) | Tab Activate/Deactivate and dispatcher Track/Release |

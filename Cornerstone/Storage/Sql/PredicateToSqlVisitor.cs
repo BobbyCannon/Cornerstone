@@ -1,10 +1,13 @@
 ﻿#region References
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using Cornerstone.Reflection;
 
 #endregion
 
@@ -14,28 +17,44 @@ public class PredicateToSqlVisitor : ExpressionVisitor
 {
 	#region Fields
 
-	private int _paramCounter;
-	private ParameterExpression _parameter;
-	private readonly List<object> _parameters;
-	private readonly StringBuilder _sql;
-
 	private static readonly MethodInfo DateTimeEqualMethod;
 	private static readonly MethodInfo DateTimeNotEqualMethod;
+	private static readonly MethodInfo DateTimeOffsetEqualMethod;
+	private static readonly MethodInfo DateTimeOffsetNotEqualMethod;
 	private static readonly MethodInfo DecimalEqualMethod;
 	private static readonly MethodInfo DecimalNotEqualMethod;
+	private static readonly MethodInfo GuidEqualMethod;
+	private static readonly MethodInfo GuidNotEqualMethod;
+
+	private readonly string _close;
+	private readonly string _open;
+	private int _paramCounter;
+	private ParameterExpression _parameter;
+	private readonly int _parameterIndexStart;
+	private readonly List<object> _parameters;
+	private readonly SqlProvider _provider;
+	private SourceTypeInfo _sourceType;
+	private readonly StringBuilder _sql;
 
 	#endregion
 
 	#region Constructors
 
-	public PredicateToSqlVisitor() : this(0)
+	public PredicateToSqlVisitor(SqlProvider provider)
+		: this(provider, 0)
 	{
 	}
 
-	public PredicateToSqlVisitor(int parameterIndexStart)
+	public PredicateToSqlVisitor(SqlProvider provider, int parameterIndexStart)
 	{
+		var brackets = SqlGenerator.GetIdentifierBrackets(provider);
+		_open = brackets.Open;
+		_close = brackets.Close;
+		_parameterIndexStart = parameterIndexStart;
 		_paramCounter = parameterIndexStart;
 		_parameters = [];
+		_provider = provider;
+		_sourceType = null;
 		_sql = new();
 	}
 
@@ -43,14 +62,19 @@ public class PredicateToSqlVisitor : ExpressionVisitor
 	{
 		DateTimeEqualMethod = typeof(DateTime).GetMethod("op_Equality", BindingFlags.Static | BindingFlags.Public);
 		DateTimeNotEqualMethod = typeof(DateTime).GetMethod("op_Inequality", BindingFlags.Static | BindingFlags.Public);
+		DateTimeOffsetEqualMethod = typeof(DateTimeOffset).GetMethod("op_Equality", BindingFlags.Static | BindingFlags.Public);
+		DateTimeOffsetNotEqualMethod = typeof(DateTimeOffset).GetMethod("op_Inequality", BindingFlags.Static | BindingFlags.Public);
 		DecimalEqualMethod = typeof(decimal).GetMethod("op_Equality", BindingFlags.Static | BindingFlags.Public);
 		DecimalNotEqualMethod = typeof(decimal).GetMethod("op_Inequality", BindingFlags.Static | BindingFlags.Public);
+		GuidEqualMethod = typeof(Guid).GetMethod("op_Equality", BindingFlags.Static | BindingFlags.Public);
+		GuidNotEqualMethod = typeof(Guid).GetMethod("op_Inequality", BindingFlags.Static | BindingFlags.Public);
 	}
 
 	#endregion
 
 	#region Methods
 
+	[UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Predicate lambda parameter type is a [SourceReflection] entity supplied by SqlQuery / SqlRepository.")]
 	public (string Sql, object[] Parameters) Translate(LambdaExpression expression)
 	{
 		if (expression.Parameters.Count != 1)
@@ -59,7 +83,8 @@ public class PredicateToSqlVisitor : ExpressionVisitor
 		}
 
 		_parameter = expression.Parameters[0];
-		_paramCounter = 0;
+		_sourceType = SourceReflector.GetRequiredSourceType(_parameter.Type);
+		_paramCounter = _parameterIndexStart;
 		_parameters.Clear();
 		_sql.Clear();
 
@@ -70,6 +95,11 @@ public class PredicateToSqlVisitor : ExpressionVisitor
 
 	protected override Expression VisitBinary(BinaryExpression node)
 	{
+		if (TryTranslateCompareTo(node))
+		{
+			return node;
+		}
+
 		// Special null checks (IS NULL / IS NOT NULL)
 		if (node.NodeType is ExpressionType.Equal or ExpressionType.NotEqual)
 		{
@@ -98,11 +128,11 @@ public class PredicateToSqlVisitor : ExpressionVisitor
 				{
 					isTrue = !isTrue;
 				}
-				_sql.Append("([")
-					.Append(((MemberExpression) node.Left).Member.Name)
-					.Append("] = ")
-					.Append(isTrue ? 1 : 0)
-					.Append(')');
+				_sql.Append('(');
+				AppendIdentifier(((MemberExpression) node.Left).Member.Name);
+				_sql.Append(" = ");
+				_sql.Append(isTrue ? 1 : 0);
+				_sql.Append(')');
 				return node;
 			}
 			if (IsBooleanMember(node.Right) && IsBoolConstant(node.Left, out isTrue))
@@ -111,7 +141,11 @@ public class PredicateToSqlVisitor : ExpressionVisitor
 				{
 					isTrue = !isTrue;
 				}
-				_sql.Append($"([{((MemberExpression) node.Right).Member.Name}] = {(isTrue ? 1 : 0)})");
+				_sql.Append('(');
+				AppendIdentifier(((MemberExpression) node.Right).Member.Name);
+				_sql.Append(" = ");
+				_sql.Append(isTrue ? 1 : 0);
+				_sql.Append(')');
 				return node;
 			}
 		}
@@ -135,8 +169,14 @@ public class PredicateToSqlVisitor : ExpressionVisitor
 			{
 				method = node.NodeType == ExpressionType.Equal ? DateTimeEqualMethod : DateTimeNotEqualMethod;
 			}
-
-			// Add more types here if you hit them (Guid, etc.)
+			else if ((leftType == typeof(DateTimeOffset)) && (rightType == typeof(DateTimeOffset)))
+			{
+				method = node.NodeType == ExpressionType.Equal ? DateTimeOffsetEqualMethod : DateTimeOffsetNotEqualMethod;
+			}
+			else if ((leftType == typeof(Guid)) && (rightType == typeof(Guid)))
+			{
+				method = node.NodeType == ExpressionType.Equal ? GuidEqualMethod : GuidNotEqualMethod;
+			}
 
 			_sql.Append('(');
 			Visit(node.Left);
@@ -171,6 +211,13 @@ public class PredicateToSqlVisitor : ExpressionVisitor
 
 	protected override Expression VisitConstant(ConstantExpression node)
 	{
+		if (node.Value is bool boolean)
+		{
+			// SQL Server WHERE cannot use a BIT parameter as a condition.
+			_sql.Append(boolean ? "(1 = 1)" : "(1 = 0)");
+			return node;
+		}
+
 		_parameters.Add(node.Value ?? DBNull.Value);
 		_sql.Append("@p").Append(_paramCounter++);
 		return node;
@@ -183,21 +230,23 @@ public class PredicateToSqlVisitor : ExpressionVisitor
 			&& (node.Member.Name == nameof(string.Length))
 			&& (node.Member.DeclaringType == typeof(string)))
 		{
-			_sql.Append("LEN(");
-			Visit(node.Expression); // This will append [Name]
+			_sql.Append(_provider == SqlProvider.Sqlite ? "LENGTH(" : "LEN(");
+			Visit(node.Expression);
 			_sql.Append(')');
 			return node;
 		}
 
 		if (IsMemberOfParameter(node) && (node.Type == typeof(bool)))
 		{
-			_sql.Append($"([{node.Member.Name}] = 1)");
+			_sql.Append('(');
+			AppendIdentifier(node.Member.Name);
+			_sql.Append(" = 1)");
 			return node;
 		}
 
 		if (IsMemberOfParameter(node))
 		{
-			_sql.Append($"[{node.Member.Name}]");
+			AppendIdentifier(node.Member.Name);
 			return node;
 		}
 
@@ -209,22 +258,35 @@ public class PredicateToSqlVisitor : ExpressionVisitor
 
 	protected override Expression VisitMethodCall(MethodCallExpression node)
 	{
-		// Handle string methods: Contains, StartsWith, EndsWith
-		if (node.Method.DeclaringType == typeof(string))
+		if (TryTranslateIn(node))
+		{
+			return node;
+		}
+
+		var instance = node.Object;
+		var search = node.Arguments.Count > 0 ? node.Arguments[0] : null;
+		if ((instance == null) && (node.Arguments.Count >= 2))
+		{
+			instance = node.Arguments[0];
+			search = node.Arguments[1];
+		}
+
+		if ((node.Method.DeclaringType == typeof(string))
+			|| node.Method.Name is "Contains" or "StartsWith" or "EndsWith" or "ToLower" or "ToUpper")
 		{
 			string pattern = null;
 
-			if ((node.Method.Name == "Contains") && (node.Arguments.Count == 1))
+			if ((node.Method.Name == "Contains") && (search != null))
 			{
-				pattern = $"%{EvaluateExpression(node.Arguments[0])}%";
+				pattern = "%" + EscapeLikeValue(EvaluateExpression(search)) + "%";
 			}
-			else if ((node.Method.Name == "StartsWith") && (node.Arguments.Count == 1))
+			else if ((node.Method.Name == "StartsWith") && (search != null))
 			{
-				pattern = $"{EvaluateExpression(node.Arguments[0])}%";
+				pattern = EscapeLikeValue(EvaluateExpression(search)) + "%";
 			}
-			else if ((node.Method.Name == "EndsWith") && (node.Arguments.Count == 1))
+			else if ((node.Method.Name == "EndsWith") && (search != null))
 			{
-				pattern = $"%{EvaluateExpression(node.Arguments[0])}";
+				pattern = "%" + EscapeLikeValue(EvaluateExpression(search));
 			}
 			else if ((node.Method.Name == "IsNullOrEmpty") && (node.Arguments.Count == 1))
 			{
@@ -250,16 +312,19 @@ public class PredicateToSqlVisitor : ExpressionVisitor
 			if (pattern is not null)
 			{
 				_sql.Append('(');
-				Visit(node.Object);
+				Visit(instance);
 				_sql.Append(" LIKE ");
 				_parameters.Add(pattern);
-				_sql.Append($"@p{_paramCounter++})");
+				_sql.Append("@p").Append(_paramCounter++);
+				_sql.Append(" ESCAPE '\\')");
 				return node;
 			}
 
-			if (node.Method.Name is "ToLower" or "ToUpper" && (node.Arguments.Count == 0))
+			if (node.Method.Name is "ToLower" or "ToUpper")
 			{
-				Visit(node.Object);
+				_sql.Append(node.Method.Name == "ToLower" ? "LOWER(" : "UPPER(");
+				Visit(instance ?? node.Object);
+				_sql.Append(')');
 				return node;
 			}
 		}
@@ -283,7 +348,9 @@ public class PredicateToSqlVisitor : ExpressionVisitor
 			if (node.Operand is UnaryExpression { NodeType: ExpressionType.Not, Operand: MemberExpression m1 }
 				&& IsMemberOfParameter(m1) && (m1.Type == typeof(bool)))
 			{
-				_sql.Append($"([{m1.Member.Name}] = 1)");
+				_sql.Append('(');
+				AppendIdentifier(m1.Member.Name);
+				_sql.Append(" = 1)");
 				return node;
 			}
 
@@ -292,7 +359,9 @@ public class PredicateToSqlVisitor : ExpressionVisitor
 				&& IsMemberOfParameter(m2)
 				&& (m2.Type == typeof(bool)))
 			{
-				_sql.Append($"([{m2.Member.Name}] = 0)");
+				_sql.Append('(');
+				AppendIdentifier(m2.Member.Name);
+				_sql.Append(" = 0)");
 				return node;
 			}
 
@@ -331,6 +400,22 @@ public class PredicateToSqlVisitor : ExpressionVisitor
 		return base.VisitUnary(node);
 	}
 
+	private void AppendIdentifier(string name)
+	{
+		_sql.Append(_open);
+		_sql.Append(SqlGenerator.GetColumnName(_sourceType, name));
+		_sql.Append(_close);
+	}
+
+	private static string EscapeLikeValue(object value)
+	{
+		var text = value?.ToString() ?? string.Empty;
+		return text
+			.Replace("\\", "\\\\", StringComparison.Ordinal)
+			.Replace("%", "\\%", StringComparison.Ordinal)
+			.Replace("_", "\\_", StringComparison.Ordinal);
+	}
+
 	private object EvaluateExpression(Expression expr)
 	{
 		return expr switch
@@ -339,6 +424,7 @@ public class PredicateToSqlVisitor : ExpressionVisitor
 			UnaryExpression { NodeType: ExpressionType.Convert } u => EvaluateExpression(u.Operand),
 			MemberExpression m => EvaluateMember(m),
 			NewExpression n => EvaluateNew(n),
+			NewArrayExpression n => EvaluateNewArray(n),
 			MethodCallExpression mc => EvaluateMethodCall(mc),
 			_ => FallbackCompile(expr)
 		};
@@ -357,6 +443,11 @@ public class PredicateToSqlVisitor : ExpressionVisitor
 
 	private object EvaluateMethodCall(MethodCallExpression mc)
 	{
+		if (mc.Method.Name is "AsSpan" or "AsMemory" || IsSpanType(mc.Method.ReturnType))
+		{
+			return EvaluateExpression(mc.Object ?? mc.Arguments[0]);
+		}
+
 		var target = mc.Object is not null ? EvaluateExpression(mc.Object) : null;
 		var args = new object[mc.Arguments.Count];
 		for (var i = 0; i < args.Length; i++)
@@ -368,6 +459,11 @@ public class PredicateToSqlVisitor : ExpressionVisitor
 
 	private object EvaluateNew(NewExpression n)
 	{
+		if (IsSpanType(n.Type) && (n.Arguments.Count > 0))
+		{
+			return EvaluateExpression(n.Arguments[0]);
+		}
+
 		var args = new object[n.Arguments.Count];
 		for (var i = 0; i < args.Length; i++)
 		{
@@ -376,11 +472,22 @@ public class PredicateToSqlVisitor : ExpressionVisitor
 		return n.Constructor?.Invoke(args);
 	}
 
+	private object EvaluateNewArray(NewArrayExpression n)
+	{
+		var items = new List<object>(n.Expressions.Count);
+		for (var i = 0; i < n.Expressions.Count; i++)
+		{
+			items.Add(EvaluateExpression(n.Expressions[i]));
+		}
+
+		return items;
+	}
+
 	private static object FallbackCompile(Expression expr)
 	{
-		var lambda = Expression.Lambda(expr);
-		var compiled = lambda.Compile();
-		return compiled.DynamicInvoke();
+		throw new NotSupportedException(
+			$"Cannot evaluate expression of type {expr.NodeType} without Expression.Compile, which is not supported on Native AOT."
+		);
 	}
 
 	private string GetOperator(ExpressionType type)
@@ -456,6 +563,127 @@ public class PredicateToSqlVisitor : ExpressionVisitor
 		}
 
 		return false;
+	}
+
+	private static bool IsSpanType(Type type)
+	{
+		return (type == typeof(Span<>))
+			|| (type == typeof(ReadOnlySpan<>))
+			|| (type.IsGenericType
+				&& ((type.GetGenericTypeDefinition() == typeof(Span<>))
+					|| (type.GetGenericTypeDefinition() == typeof(ReadOnlySpan<>))));
+	}
+
+	private bool TryTranslateCompareTo(BinaryExpression node)
+	{
+		if (node.NodeType is not (ExpressionType.Equal or ExpressionType.NotEqual
+			or ExpressionType.GreaterThan or ExpressionType.GreaterThanOrEqual
+			or ExpressionType.LessThan or ExpressionType.LessThanOrEqual))
+		{
+			return false;
+		}
+
+		if (node.Left is not MethodCallExpression call
+			|| (call.Method.Name != nameof(IComparable.CompareTo))
+			|| (call.Arguments.Count != 1)
+			|| (call.Object == null))
+		{
+			return false;
+		}
+
+		if (node.Right is not ConstantExpression right
+			|| right.Value is not int compared
+			|| (compared != 0))
+		{
+			return false;
+		}
+
+		_sql.Append('(');
+		Visit(call.Object);
+		_sql.Append(GetOperator(node.NodeType));
+		Visit(call.Arguments[0]);
+		_sql.Append(')');
+		return true;
+	}
+
+	private bool TryTranslateIn(MethodCallExpression node)
+	{
+		if (node.Method.Name != "Contains")
+		{
+			return false;
+		}
+
+		if (node.Method.DeclaringType == typeof(string))
+		{
+			return false;
+		}
+
+		Expression collection;
+		Expression item;
+		if (node.Object != null)
+		{
+			if (node.Arguments.Count < 1)
+			{
+				return false;
+			}
+
+			collection = node.Object;
+			item = node.Arguments[0];
+		}
+		else if (node.Arguments.Count >= 2)
+		{
+			collection = node.Arguments[0];
+			item = node.Arguments[1];
+		}
+		else
+		{
+			return false;
+		}
+
+		if (!IsMemberOfParameter(item) || IsMemberOfParameter(collection))
+		{
+			return false;
+		}
+
+		if (collection.Type == typeof(string))
+		{
+			return false;
+		}
+
+		var values = EvaluateExpression(collection);
+		if (values is string || values is not IEnumerable enumerable)
+		{
+			return false;
+		}
+
+		var items = new List<object>();
+		foreach (var value in enumerable)
+		{
+			items.Add(value);
+		}
+
+		if (items.Count == 0)
+		{
+			_sql.Append("(1 = 0)");
+			return true;
+		}
+
+		_sql.Append('(');
+		Visit(item);
+		_sql.Append(" IN (");
+		for (var i = 0; i < items.Count; i++)
+		{
+			if (i > 0)
+			{
+				_sql.Append(", ");
+			}
+
+			_parameters.Add(items[i] ?? DBNull.Value);
+			_sql.Append("@p").Append(_paramCounter++);
+		}
+
+		_sql.Append("))");
+		return true;
 	}
 
 	#endregion

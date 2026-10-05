@@ -1,0 +1,85 @@
+using System;
+using System.Collections.Generic;
+using Cornerstone.Presentation.Automation.Provider;
+using Cornerstone.Presentation.Controls;
+using Cornerstone.Presentation.Controls.Primitives;
+using Cornerstone.Presentation.Controls.Selection;
+using Cornerstone.Presentation.VisualTree;
+using Cornerstone.Presentation.Utilities;
+using Cornerstone.Presentation.Controls.Items;
+using Cornerstone.Presentation.Controls.Elements;
+
+namespace Cornerstone.Presentation.Automation.Peers
+{
+    public abstract class SelectingItemsControlAutomationPeer : ItemsControlAutomationPeer,
+        ISelectionProvider
+    {
+        private ISelectionModel _selection;
+
+        protected SelectingItemsControlAutomationPeer(SelectingItemsControl owner)
+            : base(owner) 
+        {
+            _selection = owner.GetValue(ListBox.SelectionProperty);
+            _selection.SelectionChanged += OwnerSelectionChanged;
+            owner.PropertyChanged += OwnerPropertyChanged;
+        }
+
+        public bool CanSelectMultiple => GetSelectionModeCore().HasAllFlags(SelectionMode.Multiple);
+        public bool IsSelectionRequired => GetSelectionModeCore().HasAllFlags(SelectionMode.AlwaysSelected);
+        public IReadOnlyList<AutomationPeer> GetSelection() => GetSelectionCore() ?? Array.Empty<AutomationPeer>();
+
+        protected virtual IReadOnlyList<AutomationPeer>? GetSelectionCore()
+        {
+            List<AutomationPeer>? result = null;
+
+            if (Owner is SelectingItemsControl owner)
+            {
+                var selection = Owner.GetValue(ListBox.SelectionProperty);
+
+                foreach (var i in selection.SelectedIndexes)
+                {
+                    var container = owner.ContainerFromIndex(i);
+
+                    if (container is Control c && c.IsAttachedToVisualTree)
+                    {
+                        var peer = GetOrCreate(c);
+
+                        if (peer is object)
+                        {
+                            result ??= new List<AutomationPeer>();
+                            result.Add(peer);
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        protected virtual SelectionMode GetSelectionModeCore()
+        {
+            return (Owner as SelectingItemsControl)?.GetValue(ListBox.SelectionModeProperty) ?? SelectionMode.Single;
+        }
+
+        protected virtual void OwnerPropertyChanged(object? sender, PresentationPropertyChangedEventArgs e)
+        {
+            if (e.Property == ListBox.SelectionProperty)
+            {
+                _selection.SelectionChanged -= OwnerSelectionChanged;
+                _selection = Owner.GetValue(ListBox.SelectionProperty);
+                _selection.SelectionChanged += OwnerSelectionChanged;
+                RaiseSelectionChanged();
+            }
+        }
+
+        protected virtual void OwnerSelectionChanged(object? sender, SelectionModelSelectionChangedEventArgs e)
+        {
+            RaiseSelectionChanged();
+        }
+
+        private void RaiseSelectionChanged()
+        {
+            RaisePropertyChangedEvent(SelectionPatternIdentifiers.SelectionProperty, null, null);
+        }
+    }
+}

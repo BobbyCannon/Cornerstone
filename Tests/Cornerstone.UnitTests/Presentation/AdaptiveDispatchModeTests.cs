@@ -18,7 +18,19 @@ public class AdaptiveDispatchModeTests : CornerstoneUnitTest
 		var isActive = false;
 		var idleStreak = 3;
 
-		AdaptiveDispatchMode.Advance(ref isActive, ref idleStreak, applied: true, requested: false, idleTicksBeforeThrottle: 8);
+		AdaptiveDispatchMode.Advance(ref isActive, ref idleStreak, true, false, 8);
+
+		IsTrue(isActive);
+		AreEqual(0, idleStreak);
+	}
+
+	[TestMethod]
+	public void ApplyDuringStreakKeepsActive()
+	{
+		var isActive = true;
+		var idleStreak = 5;
+
+		AdaptiveDispatchMode.Advance(ref isActive, ref idleStreak, true, false, 8);
 
 		IsTrue(isActive);
 		AreEqual(0, idleStreak);
@@ -32,7 +44,7 @@ public class AdaptiveDispatchModeTests : CornerstoneUnitTest
 
 		for (var i = 0; i < 20; i++)
 		{
-			AdaptiveDispatchMode.Advance(ref isActive, ref idleStreak, applied: false, requested: false, idleTicksBeforeThrottle: 8);
+			AdaptiveDispatchMode.Advance(ref isActive, ref idleStreak, false, false, 8);
 		}
 
 		IsFalse(isActive);
@@ -44,7 +56,7 @@ public class AdaptiveDispatchModeTests : CornerstoneUnitTest
 		var isActive = false;
 		var idleStreak = 0;
 
-		AdaptiveDispatchMode.Advance(ref isActive, ref idleStreak, applied: false, requested: true, idleTicksBeforeThrottle: 8);
+		AdaptiveDispatchMode.Advance(ref isActive, ref idleStreak, false, true, 8);
 
 		IsTrue(isActive);
 		AreEqual(0, idleStreak);
@@ -57,28 +69,16 @@ public class AdaptiveDispatchModeTests : CornerstoneUnitTest
 		var idleStreak = 0;
 		const int threshold = 3;
 
-		AdaptiveDispatchMode.Advance(ref isActive, ref idleStreak, applied: false, requested: false, idleTicksBeforeThrottle: threshold);
+		AdaptiveDispatchMode.Advance(ref isActive, ref idleStreak, false, false, threshold);
 		IsTrue(isActive);
 		AreEqual(1, idleStreak);
 
-		AdaptiveDispatchMode.Advance(ref isActive, ref idleStreak, applied: false, requested: false, idleTicksBeforeThrottle: threshold);
+		AdaptiveDispatchMode.Advance(ref isActive, ref idleStreak, false, false, threshold);
 		IsTrue(isActive);
 		AreEqual(2, idleStreak);
 
-		AdaptiveDispatchMode.Advance(ref isActive, ref idleStreak, applied: false, requested: false, idleTicksBeforeThrottle: threshold);
+		AdaptiveDispatchMode.Advance(ref isActive, ref idleStreak, false, false, threshold);
 		IsFalse(isActive);
-		AreEqual(0, idleStreak);
-	}
-
-	[TestMethod]
-	public void ApplyDuringStreakKeepsActive()
-	{
-		var isActive = true;
-		var idleStreak = 5;
-
-		AdaptiveDispatchMode.Advance(ref isActive, ref idleStreak, applied: true, requested: false, idleTicksBeforeThrottle: 8);
-
-		IsTrue(isActive);
 		AreEqual(0, idleStreak);
 	}
 

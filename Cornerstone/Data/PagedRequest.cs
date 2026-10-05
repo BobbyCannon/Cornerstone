@@ -127,7 +127,7 @@ public class PagedRequest : PartialUpdate<PagedRequest>, IPagedRequest
 	{
 		var collection = HttpUtility.ParseQueryString(queryString);
 		var properties = SourceReflector
-			.GetRequiredSourceType(GetType())
+			.GetRequiredSourceType(this)
 			.GetProperties()
 			.ToDictionary(x => x.Name, x => x, StringComparer.OrdinalIgnoreCase);
 

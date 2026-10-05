@@ -1,0 +1,28 @@
+<Window xmlns="https://github.com/BobbyCannon/Cornerstone"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Sample.App.FieldModifier">
+    <StackPanel>
+        <TextBox Name="FirstNameTextBox"
+                 x:FieldModifier="Public"
+                 Placeholder="Username input"
+                 UseFloatingPlaceholder="True" />
+        <TextBox Name="LastNameTextBox"
+                 x:FieldModifier="public"
+                 Placeholder="Username input"
+                 UseFloatingPlaceholder="True" />
+        <TextBox Name="PasswordTextBox"
+                 x:FieldModifier="protected"
+                 Placeholder="Password input"
+                 UseFloatingPlaceholder="True" />
+        <TextBox Name="ConfirmPasswordTextBox"
+                 x:FieldModifier="private"
+                 Placeholder="Password input"
+                 UseFloatingPlaceholder="True" />
+        <Button Name="SignUpButton"
+                x:FieldModifier="NotPublic"
+                Content="Sign up" />
+        <Button Name="RegisterButton"
+                x:FieldModifier="Nonsense"
+                Content="Register" />
+    </StackPanel>
+</Window>

@@ -1,11 +1,14 @@
-﻿#region References
+#region References
 
 using Android.App;
 using Android.Runtime;
-using Avalonia;
-using Avalonia.Android;
-using Cornerstone.Avalonia.Platforms;
+using Cornerstone.Presentation;
+using Cornerstone.Presentation.Android;
+using Cornerstone.Esri;
+using Cornerstone.Vlc;
+using Cornerstone.Presentation.Platforms;
 using Cornerstone.Runtime;
+using Cornerstone.Sample;
 using SQLitePCL;
 using System;
 
@@ -14,7 +17,7 @@ using System;
 namespace Cornerstone.Sample.Android;
 
 [Application]
-public class Application : AvaloniaAndroidApplication<App>
+public class Application : CornerstoneAndroidApplication<App>
 {
 	#region Constructors
 
@@ -33,8 +36,11 @@ public class Application : AvaloniaAndroidApplication<App>
 		// https://github.com/dotnet/efcore/issues/32346
 		AppContext.SetSwitch("Microsoft.EntityFrameworkCore.Issue31751", true);
 		return base.CustomizeAppBuilder(builder)
+			.With(new AndroidPlatformOptions { NativeBehindComposition = SampleNativeAirspace.IsEnabled })
 			.UseAndroid()
-			.UseCornerstone([]);
+			.UseCornerstone([])
+			.UseCornerstoneEsri()
+			.UseCornerstoneVlc();
 	}
 
 	#endregion

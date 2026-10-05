@@ -1,0 +1,31 @@
+namespace Cornerstone.Presentation.Controls.MediaPlayer;
+
+/// <summary>
+/// Design-time and host fallback when a native media player is not available.
+/// </summary>
+public class MediaPlayerAdapterStub : BaseMediaPlayerAdapter
+{
+	#region Methods
+
+	/// <inheritdoc />
+	public override void Pause()
+	{
+	}
+
+	/// <inheritdoc />
+	public override void Play(string uri)
+	{
+	}
+
+	/// <inheritdoc />
+	public override void PlayFile(string filePath)
+	{
+	}
+
+	/// <inheritdoc />
+	public override void Stop()
+	{
+	}
+
+	#endregion
+}

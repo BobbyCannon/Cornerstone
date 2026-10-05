@@ -1,10 +1,8 @@
 #region References
 
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Cornerstone.Presentation;
-using Cornerstone.Runtime;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
@@ -15,6 +13,33 @@ namespace Cornerstone.UnitTests.Presentation;
 public class ApplicationViewModelDispatchTests : CornerstoneUnitTest
 {
 	#region Methods
+
+	[TestMethod]
+	public void AttachAppliesPendingTracksBeforeReturning()
+	{
+		var app = new ApplicationViewModel(this, Dispatcher);
+		var model = new DispatchableViewModelPropertyMapTests.SharedSettingsModel { Name = "seeded" };
+		model.ResetHasChanges();
+		var destination = new DispatchableViewModelPropertyMapTests.SharedSettingsBag();
+		var viewModel = new DispatchableViewModelPropertyMapTests.SharedHostViewModel();
+		viewModel.RegisterBag(model, destination);
+
+		AreEqual(null, destination.Name);
+
+		viewModel.Attach(app);
+
+		AreEqual("seeded", destination.Name);
+		IsFalse(viewModel.HasModelChanges());
+
+		viewModel.Detach(app);
+	}
+
+	[TestMethod]
+	public void RequestDispatchBeforeStartDoesNotThrow()
+	{
+		var app = new ApplicationViewModel(this, Dispatcher);
+		app.RequestDispatch();
+	}
 
 	[TestMethod]
 	public async Task RequestDispatchWakesIdleWaitAndEntersActive()
@@ -74,13 +99,6 @@ public class ApplicationViewModelDispatchTests : CornerstoneUnitTest
 
 		app.UnloadLifecycle();
 		app.UninitializeLifecycle();
-	}
-
-	[TestMethod]
-	public void RequestDispatchBeforeStartDoesNotThrow()
-	{
-		var app = new ApplicationViewModel(this, Dispatcher);
-		app.RequestDispatch();
 	}
 
 	private static async Task<bool> WaitForAsync(Func<bool> condition, TimeSpan timeout)

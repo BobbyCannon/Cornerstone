@@ -88,7 +88,7 @@ internal sealed class EditorFactory : IVsEditorFactory, IDisposable
 	{
 		ThreadHelper.ThrowIfNotOnUIThread();
 
-		Log.Logger.Verbose("Started EditorFactory.CreateEditorInstance({Filename})", pszMkDocument);
+		Log.Logger.Debug("Started EditorFactory.CreateEditorInstance({Filename})", pszMkDocument);
 
 		ppunkDocView = IntPtr.Zero;
 		ppunkDocData = IntPtr.Zero;
@@ -99,8 +99,7 @@ internal sealed class EditorFactory : IVsEditorFactory, IDisposable
 		if (pszPhysicalView == "Code")
 		{
 			// We only want to handle "View Code" if our designer pane is active
-			if (!pszMkDocument.EndsWith(".axaml", StringComparison.OrdinalIgnoreCase) &&
-				!pszMkDocument.EndsWith(".xaml", StringComparison.OrdinalIgnoreCase))
+			if (!XamlPreviewPlatformResolver.IsXamlDocument(pszMkDocument))
 			{
 				return VSConstants.E_INVALIDARG;
 			}
@@ -165,7 +164,7 @@ internal sealed class EditorFactory : IVsEditorFactory, IDisposable
 			}
 		}
 
-		Log.Logger.Verbose("Finished EditorFactory.CreateEditorInstance({Filename})", pszMkDocument);
+		Log.Logger.Debug("Finished EditorFactory.CreateEditorInstance({Filename})", pszMkDocument);
 		return VSConstants.S_OK;
 	}
 

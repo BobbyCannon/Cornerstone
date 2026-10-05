@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -19,6 +20,9 @@ using Cornerstone.Text;
 
 namespace Cornerstone.Reflection;
 
+/// <summary>
+/// Registry for source-generated type maps. Prefer generated compiled accessors. Runtime GetConstructors-style fallbacks are not Native AOT.
+/// </summary>
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
 public static class SourceReflector
 {
@@ -31,11 +35,21 @@ public static class SourceReflector
 		| System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicConstructors
 		| System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicParameterlessConstructor;
 
+	public const DynamicallyAccessedMemberTypes AllRuntimeMembers =
+		DynamicallyAccessedMemberTypes
+		| System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicFields
+		| System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicFields
+		| System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods
+		| System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods
+		| System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties
+		| System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicProperties
+		| System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.Interfaces;
+
 	#endregion
 
 	#region Fields
 
-	private static readonly Dictionary<Type, FrozenDictionary<string, Type>> _propertyTypesCache = new();
+	private static readonly ConcurrentDictionary<Type, FrozenDictionary<string, Type>> _propertyTypesCache;
 
 	#endregion
 
@@ -43,17 +57,18 @@ public static class SourceReflector
 
 	static SourceReflector()
 	{
-		Lookup = [];
-		Types = [];
+		_propertyTypesCache = new ConcurrentDictionary<Type, FrozenDictionary<string, Type>>();
+		Lookup = new ConcurrentDictionary<string, Type>();
+		Types = new ConcurrentDictionary<Type, SourceTypeInfo>();
 	}
 
 	#endregion
 
 	#region Properties
 
-	public static Dictionary<string, Type> Lookup { get; }
+	public static ConcurrentDictionary<string, Type> Lookup { get; }
 
-	public static Dictionary<Type, SourceTypeInfo> Types { get; }
+	public static ConcurrentDictionary<Type, SourceTypeInfo> Types { get; }
 
 	#endregion
 
@@ -69,11 +84,15 @@ public static class SourceReflector
 
 		if (Types.TryAdd(typeInfo.Type, typeInfo))
 		{
-			Lookup.Add(typeInfo.Type.ToAssemblyName(), typeInfo.Type);
+			Lookup.TryAdd(typeInfo.Type.ToAssemblyName(), typeInfo.Type);
 		}
 	}
 
-	public static object CreateCollectionInstance(Type collectionType, Type elementType, int elementsCount)
+	[RequiresDynamicCode("Creating generic collections or arrays of a runtime type requires dynamic code.")]
+	public static object CreateCollectionInstance(
+		[DynamicallyAccessedMembers(AllRuntimeMembers)] Type collectionType,
+		Type elementType,
+		int elementsCount)
 	{
 		// Validate elementsCount
 		if (elementsCount < 0)
@@ -137,27 +156,28 @@ public static class SourceReflector
 
 	public static SourceMethodInfo GetCachedMethod(this object value, string name, BindingFlags? flags = null)
 	{
-		return GetRequiredSourceType(value.GetType()).GetMethod(name);
+		return GetRequiredSourceType(value).GetMethod(name);
 	}
 
 	public static SourceMethodInfo GetCachedMethod(this object value, string name, Type[] parameters, BindingFlags? flags = null)
 	{
-		return GetRequiredSourceType(value.GetType()).GetMethod(name, parameters);
+		return GetRequiredSourceType(value).GetMethod(name, parameters);
 	}
 
-	public static SourceMethodInfo GetCachedMethod(this Type type, string name, Type[] parameters, BindingFlags? flags = null)
+	public static SourceMethodInfo GetCachedMethod([DynamicallyAccessedMembers(AllRuntimeMembers)] this Type type, string name, Type[] parameters, BindingFlags? flags = null)
 	{
 		return GetRequiredSourceType(type).GetMethod(name, parameters);
 	}
 
 
+	[UnconditionalSuppressMessage("Trimming", "IL2087", Justification = "typeof(T) looks up generated source reflection; annotating T would cascade DynamicallyAccessedMembers onto SourceReflection types.")]
 	public static T CreateInstance<T>(params object[] args)
 	{
 		var info = GetSourceType(typeof(T));
 		return info == null ? default : (T) CreateInstance(info, args);
 	}
 
-	public static object CreateInstance(Type type, params object[] args)
+	public static object CreateInstance([DynamicallyAccessedMembers(AllRuntimeMembers)] Type type, params object[] args)
 	{
 		var info = GetSourceType(type);
 		return info == null ? null : CreateInstance(info, args);
@@ -226,7 +246,7 @@ public static class SourceReflector
 		throw new MissingMethodException($"No constructor on {typeInfo.Type.Name} matches the supplied argument types.");
 	}
 
-	public static SourceTypeInfo CreateSourceTypeInfoUsingReflection(Type type)
+	public static SourceTypeInfo CreateSourceTypeInfoUsingReflection([DynamicallyAccessedMembers(AllRuntimeMembers)] Type type)
 	{
 		var isEnum = type.IsEnum;
 		var isStruct = type.IsValueType && !type.IsPrimitive && !isEnum;
@@ -264,7 +284,7 @@ public static class SourceReflector
 	/// <returns> The display name of the value. </returns>
 	public static string GetDisplayName(this Enum value)
 	{
-		var sourceType = GetRequiredSourceType(value.GetType());
+		var sourceType = GetRequiredSourceType(value);
 		var valueName = value.ToString();
 		var field = sourceType.GetField(valueName);
 		var details = GetEnumDetail(field);
@@ -278,7 +298,7 @@ public static class SourceReflector
 	/// <returns> The display short name of the value. </returns>
 	public static string GetDisplayShortName(this Enum value)
 	{
-		var sourceType = GetRequiredSourceType(value.GetType());
+		var sourceType = GetRequiredSourceType(value);
 		var valueName = value.ToString();
 		var field = sourceType.GetField(valueName);
 		var details = GetEnumDetail(field);
@@ -297,15 +317,16 @@ public static class SourceReflector
 		return details.TryGetValue(value, out var detail) ? detail : null;
 	}
 
+	[UnconditionalSuppressMessage("Trimming", "IL2087", Justification = "typeof(T) looks up generated source reflection; annotating T would cascade DynamicallyAccessedMembers onto SourceReflection types.")]
 	public static EnumDetails[] GetEnumDetails<T>() where T : Enum
 	{
 		return GetEnumDetails(typeof(T));
 	}
 
-	public static EnumDetails[] GetEnumDetails(Type type)
+	public static EnumDetails[] GetEnumDetails([DynamicallyAccessedMembers(AllRuntimeMembers)] Type type)
 	{
 		return Cache.EnumDetails.GetOrAdd(type,
-			add => GetRequiredSourceType(add)
+			_ => GetRequiredSourceType(type)
 				.DeclaredFields
 				.OrderBy(x => x.Name)
 				.Where(x => x.IsStatic)
@@ -314,12 +335,14 @@ public static class SourceReflector
 		);
 	}
 
+	[UnconditionalSuppressMessage("Trimming", "IL2087", Justification = "typeof(T) looks up generated source reflection; annotating T would cascade DynamicallyAccessedMembers onto SourceReflection types.")]
 	public static ImmutableDictionary<T, EnumDetails> GetEnumDetailsDictionary<T>() where T : Enum
 	{
 		return GetEnumDetails(typeof(T))
 			.ToImmutableDictionary(x => (T) x.Value, x => x);
 	}
 
+	[UnconditionalSuppressMessage("Trimming", "IL2087", Justification = "typeof(T) looks up generated source reflection; annotating T would cascade DynamicallyAccessedMembers onto SourceReflection types.")]
 	public static T[] GetEnumValues<T>(params T[] except) where T : Enum
 	{
 		return GetRequiredSourceType(typeof(T))
@@ -331,7 +354,7 @@ public static class SourceReflector
 			.ToArray();
 	}
 
-	public static object[] GetEnumValues(Type type)
+	public static object[] GetEnumValues([DynamicallyAccessedMembers(AllRuntimeMembers)] Type type)
 	{
 		return GetRequiredSourceType(type)
 			.DeclaredFields
@@ -346,12 +369,13 @@ public static class SourceReflector
 		return value.TryGetMemberValue(name, out var m) ? m : null;
 	}
 
+	[UnconditionalSuppressMessage("Trimming", "IL2087", Justification = "typeof(T) looks up generated source reflection; annotating T would cascade DynamicallyAccessedMembers onto SourceReflection types.")]
 	public static IReadOnlyDictionary<string, Type> GetPropertyTypes<T>()
 	{
 		return GetPropertyTypes(typeof(T));
 	}
 
-	public static FrozenDictionary<string, Type> GetPropertyTypes(Type type)
+	public static FrozenDictionary<string, Type> GetPropertyTypes([DynamicallyAccessedMembers(AllRuntimeMembers)] Type type)
 	{
 		if (_propertyTypesCache.TryGetValue(type, out var cached))
 		{
@@ -359,28 +383,37 @@ public static class SourceReflector
 		}
 
 		var dict = BuildPropertyTypes(type);
-		_propertyTypesCache[type] = dict;
-		return dict;
+		return _propertyTypesCache.GetOrAdd(type, dict);
 	}
 
 	[return: NotNull]
+	[UnconditionalSuppressMessage("Trimming", "IL2087", Justification = "typeof(T) looks up generated source reflection; annotating T would cascade DynamicallyAccessedMembers onto SourceReflection types.")]
 	public static SourceTypeInfo GetRequiredSourceType<T>()
 	{
 		return GetRequiredSourceType(typeof(T));
 	}
 
 	[return: NotNull]
-	public static SourceTypeInfo GetRequiredSourceType(Type type)
+	public static SourceTypeInfo GetRequiredSourceType(object value)
+	{
+		return GetSourceType(value)
+			?? throw new KeyNotFoundException($"No type info found for type '{value?.GetType()}', please ensure that the type '{value?.GetType()}' has the [SourceReflectionAttribute]");
+	}
+
+	[return: NotNull]
+	public static SourceTypeInfo GetRequiredSourceType([DynamicallyAccessedMembers(AllRuntimeMembers)] Type type)
 	{
 		return GetSourceType(type)
 			?? throw new KeyNotFoundException($"No type info found for type '{type}', please ensure that the type '{type}' has the [SourceReflectionAttribute]");
 	}
 
+	[UnconditionalSuppressMessage("Trimming", "IL2087", Justification = "typeof(T) looks up generated source reflection; annotating T would cascade DynamicallyAccessedMembers onto SourceReflection types.")]
 	public static SourceTypeInfo GetSourceType<T>()
 	{
 		return GetSourceType(typeof(T));
 	}
 
+	[UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "GetType() cannot flow DynamicallyAccessedMembers; the generated Types cache is used when the type is registered.")]
 	public static SourceTypeInfo GetSourceType(object value)
 	{
 		var type = value?.GetType();
@@ -388,7 +421,7 @@ public static class SourceReflector
 			?? CreateSourceTypeInfoUsingReflection(type);
 	}
 
-	public static SourceTypeInfo GetSourceType(Type type)
+	public static SourceTypeInfo GetSourceType([DynamicallyAccessedMembers(AllRuntimeMembers)] Type type)
 	{
 		return Types.GetValueOrDefault(type)
 			?? CreateSourceTypeInfoUsingReflection(type);
@@ -410,7 +443,7 @@ public static class SourceReflector
 	/// - For structs: always have an implicit public parameterless constructor unless
 	/// they declare at least one constructor (in which case the implicit one is suppressed).
 	/// </remarks>
-	public static bool HasDefaultConstructor(this Type type)
+	public static bool HasDefaultConstructor([DynamicallyAccessedMembers(AllRuntimeMembers)] this Type type)
 	{
 		if (type is null)
 		{
@@ -443,7 +476,13 @@ public static class SourceReflector
 
 	public static bool TryGetMemberValue<T>(this T value, string name, out object memberValue)
 	{
-		var type = GetSourceType(value?.GetType() ?? typeof(T));
+		var type = GetSourceType(value);
+		if (type == null)
+		{
+			memberValue = null;
+			return false;
+		}
+
 		var properties = type.GetProperties();
 		var property = properties.FirstOrDefault(x => x.Name == name);
 		if (property is { CanRead: true })
@@ -469,7 +508,12 @@ public static class SourceReflector
 
 	public static bool TrySetMemberValue<T>(this T value, string name, object memberValue)
 	{
-		var type = GetSourceType(value?.GetType() ?? typeof(T));
+		var type = GetSourceType(value);
+		if (type == null)
+		{
+			return false;
+		}
+
 		var property = type.GetProperties().FirstOrDefault(x => x.Name == name);
 		if (property is { CanWrite: true })
 		{
@@ -538,7 +582,7 @@ public static class SourceReflector
 		return SourceAccessibility.Private;
 	}
 
-	private static FrozenDictionary<string, Type> BuildPropertyTypes(Type type)
+	private static FrozenDictionary<string, Type> BuildPropertyTypes([DynamicallyAccessedMembers(AllRuntimeMembers)] Type type)
 	{
 		// Reuse the already-cached SourceTypeInfo + its properties
 		var sourceType = GetRequiredSourceType(type);
@@ -575,6 +619,7 @@ public static class SourceReflector
 		return GetAttributes(attributes);
 	}
 
+	[UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Attribute GetType() cannot flow DynamicallyAccessedMembers; named arguments are read from custom attribute instances.")]
 	private static SourceAttributeInfo[] GetAttributes(IEnumerable<Attribute> attributes)
 	{
 		var response = attributes
@@ -609,7 +654,8 @@ public static class SourceReflector
 		return response.ToArray();
 	}
 
-	private static SourceConstructorInfo[] GetConstructors(Type type)
+	private static SourceConstructorInfo[] GetConstructors(
+		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors)] Type type)
 	{
 		if (type == null)
 		{
@@ -652,7 +698,8 @@ public static class SourceReflector
 		};
 	}
 
-	private static SourceFieldInfo[] GetFields(Type type)
+	private static SourceFieldInfo[] GetFields(
+		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] Type type)
 	{
 		if (type == null)
 		{
@@ -666,7 +713,10 @@ public static class SourceReflector
 				{
 					Name = x.Name,
 					FieldInfo = x,
-					GetValue = x.GetValue
+					GetValue = x.GetValue,
+					IsConstant = x.IsLiteral,
+					IsReadOnly = x.IsInitOnly,
+					IsStatic = x.IsStatic
 				}
 			)
 			.ToArray();
@@ -674,7 +724,8 @@ public static class SourceReflector
 		return response;
 	}
 
-	private static SourceInterfaceInfo[] GetInterfaces(Type type)
+	private static SourceInterfaceInfo[] GetInterfaces(
+		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] Type type)
 	{
 		if (type == null)
 		{
@@ -696,7 +747,8 @@ public static class SourceReflector
 		return response;
 	}
 
-	private static SourceMethodInfo[] GetMethods(Type type)
+	private static SourceMethodInfo[] GetMethods(
+		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)] Type type)
 	{
 		if (type == null)
 		{
@@ -733,7 +785,8 @@ public static class SourceReflector
 			.ToArray();
 	}
 
-	private static SourcePropertyInfo[] GetProperties(Type type)
+	private static SourcePropertyInfo[] GetProperties(
+		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties)] Type type)
 	{
 		if (type == null)
 		{

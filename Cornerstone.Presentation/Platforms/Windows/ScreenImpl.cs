@@ -1,0 +1,104 @@
+using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using Cornerstone.Presentation.Platform;
+using Cornerstone.Presentation.Platforms.Windows.Interop;
+using Windows.Win32;
+using static Cornerstone.Presentation.Platforms.Windows.Interop.UnmanagedMethods;
+using Win32Interop = Windows.Win32;
+
+namespace Cornerstone.Presentation.Platforms.Windows;
+
+internal unsafe class ScreenImpl : ScreensBase<nint, WinScreen>
+{
+    protected override int GetScreenCount() => GetSystemMetrics(SystemMetric.SM_CMONITORS);
+
+    protected override IReadOnlyList<nint> GetAllScreenKeys()
+    {
+        return GetAllDisplayMonitorHandlers();
+    }
+
+    public static List<nint> GetAllDisplayMonitorHandlers()
+    {
+        var screens = new List<nint>();
+        var gcHandle = GCHandle.Alloc(screens);
+        try
+        {
+            PInvoke.EnumDisplayMonitors(default, default(Win32Interop.Foundation.RECT*), EnumDisplayMonitorsCallback, (IntPtr)gcHandle);
+        }
+        finally
+        {
+            gcHandle.Free();
+        }
+
+        return screens;
+
+        static Win32Interop.Foundation.BOOL EnumDisplayMonitorsCallback(
+            Win32Interop.Graphics.Gdi.HMONITOR monitor,
+            Win32Interop.Graphics.Gdi.HDC hdcMonitor,
+            Win32Interop.Foundation.RECT* lprcMonitor,
+            Win32Interop.Foundation.LPARAM dwData)
+        {
+            if (GCHandle.FromIntPtr(dwData).Target is List<nint> screens)
+            {
+                screens.Add(monitor);
+                return true;
+            }
+            return false;
+        }
+    }
+
+    protected override WinScreen CreateScreenFromKey(nint key) => new(key);
+    protected override void ScreenChanged(WinScreen screen) => screen.Refresh();
+
+    protected override Screen? ScreenFromTopLevelCore(ITopLevelImpl topLevel)
+    {
+        if (topLevel.Handle?.Handle is { } handle)
+        {
+            return ScreenFromHwnd(handle);
+        }
+
+        return null;
+    }
+
+    protected override Screen? ScreenFromPointCore(PixelPoint point)
+    {
+        var monitor = MonitorFromPoint(new POINT
+        {
+            X = point.X,
+            Y = point.Y
+        }, UnmanagedMethods.MONITOR.MONITOR_DEFAULTTONULL);
+
+        return ScreenFromHMonitor(monitor);
+    }
+
+    protected override Screen? ScreenFromRectCore(PixelRect rect)
+    {
+        var r = new RECT
+        {
+            left = rect.X,
+            top = rect.Y,
+            right = rect.Right,
+            bottom = rect.Bottom
+        };
+        var monitor = MonitorFromRect(&r, MONITOR.MONITOR_DEFAULTTONULL);
+
+        return ScreenFromHMonitor(monitor);
+    }
+
+    public WinScreen? ScreenFromHMonitor(IntPtr hmonitor)
+    {
+        if (TryGetScreen(hmonitor, out var screen))
+            return screen;
+
+        return null;
+    }
+
+    public WinScreen? ScreenFromHwnd(IntPtr hwnd, MONITOR flags = MONITOR.MONITOR_DEFAULTTONULL)
+    {
+        var monitor = MonitorFromWindow(hwnd, flags);
+
+        return ScreenFromHMonitor(monitor);
+    }
+}

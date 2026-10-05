@@ -28,31 +28,26 @@ public abstract class ServerSyncClient : SyncClientForDatabase
 
 	#region Methods
 
-	/// <inheritdoc cref="ISyncServerProxy" />
-	public override SyncSessionStart BeginSync(Guid id, SyncSettings untrustedSettings)
+	protected internal override SyncSessionStart BeginSync(Guid id, SyncSettings untrustedSettings)
 	{
 		// note: never trust the sync options. These are just suggestions from the client, you MUST ensure these suggestions are valid.
-		var syncSettings = new SyncSettings
+		untrustedSettings.IncludeIssueDetails = false;
+		untrustedSettings.ItemsPerSyncRequest = untrustedSettings.ItemsPerSyncRequest switch
 		{
-			IncludeIssueDetails = false,
-			ItemsPerSyncRequest = untrustedSettings.ItemsPerSyncRequest > 10000 ? 10000 : untrustedSettings.ItemsPerSyncRequest,
-			// Do not allow clients to permanently delete entities
-			PermanentDeletions = false,
-			LastSyncedOnClient = untrustedSettings.LastSyncedOnClient,
-			LastSyncedOnServer = untrustedSettings.LastSyncedOnServer,
-			SyncType = untrustedSettings.SyncType,
-			SyncDirection = untrustedSettings.SyncDirection
+			> 10000 => 10000,
+			<= 0 => 1,
+			_ => untrustedSettings.ItemsPerSyncRequest
 		};
+		untrustedSettings.PermanentDeletions = false;
 
-		var response = base.BeginSync(id, syncSettings);
+		var response = base.BeginSync(id, untrustedSettings);
 
 		if (!ValidateSyncClient())
 		{
 			throw new CornerstoneException(Babel.Tower[BabelKeys.SyncClientNotSupported]);
 		}
 
-		// Do not allow clients to permanently delete entities
-		syncSettings.PermanentDeletions = false;
+		untrustedSettings.PermanentDeletions = false;
 
 		return response;
 	}

@@ -16,8 +16,8 @@ public class MemoryCacheItem<TKey, TValue>
 
 	private readonly TimeSpan _defaultTimeoutValue;
 	private readonly bool _isSlidingExpiration;
-	private readonly TimeSpan? _timeout;
 	private readonly IDateTimeProvider _timeProvider;
+	private readonly TimeSpan? _timeout;
 
 	#endregion
 

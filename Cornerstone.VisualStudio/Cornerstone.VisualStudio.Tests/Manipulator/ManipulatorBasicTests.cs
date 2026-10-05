@@ -1,126 +1,127 @@
-﻿#region References
+#region References
 
 using Cornerstone.VisualStudio.Tests.Manipulator.Util;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.VisualStudio.Tests.Manipulator;
 
+[TestClass]
 public partial class ManipulatorBasicTests : ManipulatorTestBase
 {
 	#region Methods
 
-	[Fact]
+	[TestMethod]
 	public void DoesNotInsertWhenIncorrectNesting()
 	{
 		AssertInsertion("<Alpha$><Foo></Alpha>", "Beta", "<AlphaBeta><Foo></Alpha>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void DoNotCloseTag()
 	{
 		AssertInsertion("<Alpha$></Alpha>", ">", "<Alpha>></Alpha>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void DoNotInsertToAnotherTag()
 	{
 		AssertInsertion("<Alpha$><Gamma>", "Beta", "<AlphaBeta><Gamma>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void DoNotInsertToUnclosedTag()
 	{
 		AssertInsertion("<Alpha$><Alpha>", "Beta", "<AlphaBeta><Alpha>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void DoNotInsertWhitespace()
 	{
 		AssertInsertion("<Alpha$></Alpha>", "A O", "<AlphaA O></Alpha>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void DoNotRemoveTag()
 	{
 		AssertReplacement("$<$Alpha></Alpha>", "a", "aAlpha></Alpha>");
 		AssertReplacement("<Alpha$>$</Alpha>", "a", "<Alphaa</Alpha>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void InsertsInClosingTagAtEnd()
 	{
 		AssertInsertion("<Alpha$></Alpha>", "Beta", "<AlphaBeta></AlphaBeta>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void InsertsInClosingTagAtMiddle()
 	{
 		AssertInsertion("<Alpha$Beta></AlphaBeta>", "Phi", "<AlphaPhiBeta></AlphaPhiBeta>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void InsertsInClosingTagAtStart()
 	{
 		AssertInsertion("<$Beta></Beta>", "Alpha", "<AlphaBeta></AlphaBeta>");
 	}
 
-	[Theory]
-	[InlineData(".")]
-	[InlineData("")]
-	[InlineData("-")]
-	[InlineData("a")]
-	[InlineData("Ą")]
-	[InlineData("1")]
+	[TestMethod]
+	[DataRow(".")]
+	[DataRow("")]
+	[DataRow("-")]
+	[DataRow("a")]
+	[DataRow("Ą")]
+	[DataRow("1")]
 	public void InsertsSpecialCharacters(string s)
 	{
 		AssertInsertion("<Alpha$><Alpha>", s, "<Alpha" + s + "><Alpha>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void InsertsTextAtEndTagWithSubtag()
 	{
 		AssertInsertion("<Alpha$><Foo></Foo></Alpha>", "Beta", "<AlphaBeta><Foo></Foo></AlphaBeta>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void InsertsTextAtEndTagWithSubtagSelfClosed()
 	{
 		AssertInsertion("<Alpha$><Foo/></Alpha>", "Beta", "<AlphaBeta><Foo/></AlphaBeta>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void RemovesInClosingTagAtEnd()
 	{
 		AssertReplacement("<AlphaBeta$Omega$></AlphaBetaOmega>", "", "<AlphaBeta></AlphaBeta>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void RemovesInClosingTagAtMiddle()
 	{
 		AssertReplacement("<Alpha$Phi$Beta></AlphaPhiBeta>", "", "<AlphaBeta></AlphaBeta>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void RemovesInClosingTagAtStart()
 	{
 		AssertReplacement("<$Alpha$Beta></AlphaBeta>", "", "<Beta></Beta>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ReplacesInClosingTagAtEnd()
 	{
 		AssertReplacement("<AlphaBeta$Omega$></AlphaBetaOmega>", "Gamma", "<AlphaBetaGamma></AlphaBetaGamma>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ReplacesInClosingTagAtMiddle()
 	{
 		AssertReplacement("<Alpha$Phi$Beta></AlphaPhiBeta>", "Gamma", "<AlphaGammaBeta></AlphaGammaBeta>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ReplacesInClosingTagAtStart()
 	{
 		AssertReplacement("<$Alpha$Beta></AlphaBeta>", "Gamma", "<GammaBeta></GammaBeta>");

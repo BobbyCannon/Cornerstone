@@ -1,0 +1,1171 @@
+using System;
+using System.Collections.Generic;
+using Cornerstone.Presentation.Controls.Documents;
+using Cornerstone.Presentation.Controls.Primitives;
+using Cornerstone.Presentation.Input;
+using Cornerstone.Presentation.Layout;
+using Cornerstone.Presentation.Media;
+using Cornerstone.Presentation.Media.Immutable;
+using Cornerstone.Presentation.Media.TextFormatting;
+using Cornerstone.Presentation.Metadata;
+using Cornerstone.Presentation.Platform;
+using Cornerstone.Presentation.Threading;
+using Cornerstone.Presentation.Utilities;
+using Cornerstone.Presentation.VisualTree;
+using Cornerstone.Presentation.Controls.Layout;
+using Cornerstone.Presentation.Controls.Input;
+using Cornerstone.Presentation.Controls.Elements;
+using Cornerstone.Presentation.Controls.Text;
+
+namespace Cornerstone.Presentation.Controls
+{
+    public class TextPresenter : Control
+    {
+        public static readonly StyledProperty<bool> ShowSelectionHighlightProperty =
+            PresentationProperty.Register<TextPresenter, bool>(nameof(ShowSelectionHighlight), defaultValue: true);
+
+        public static readonly StyledProperty<int> CaretIndexProperty =
+            TextBox.CaretIndexProperty.AddOwner<TextPresenter>(new(coerce: TextBox.CoerceCaretIndex));
+
+        public static readonly StyledProperty<bool> RevealPasswordProperty =
+            PresentationProperty.Register<TextPresenter, bool>(nameof(RevealPassword));
+
+        public static readonly StyledProperty<char> PasswordCharProperty =
+            PresentationProperty.Register<TextPresenter, char>(nameof(PasswordChar));
+
+        public static readonly StyledProperty<IBrush?> SelectionBrushProperty =
+            PresentationProperty.Register<TextPresenter, IBrush?>(nameof(SelectionBrush));
+
+        public static readonly StyledProperty<IBrush?> SelectionForegroundBrushProperty =
+            PresentationProperty.Register<TextPresenter, IBrush?>(nameof(SelectionForegroundBrush));
+
+        public static readonly StyledProperty<IBrush?> CaretBrushProperty =
+            PresentationProperty.Register<TextPresenter, IBrush?>(nameof(CaretBrush));
+
+        public static readonly StyledProperty<TimeSpan> CaretBlinkIntervalProperty =
+            TextBox.CaretBlinkIntervalProperty.AddOwner<TextPresenter>();
+
+        public static readonly StyledProperty<int> SelectionStartProperty =
+            TextBox.SelectionStartProperty.AddOwner<TextPresenter>(new(coerce: TextBox.CoerceCaretIndex));
+
+        public static readonly StyledProperty<int> SelectionEndProperty =
+            TextBox.SelectionEndProperty.AddOwner<TextPresenter>(new(coerce: TextBox.CoerceCaretIndex));
+
+        /// <summary>
+        /// Defines the <see cref="Text"/> property.
+        /// </summary>
+        public static readonly StyledProperty<string?> TextProperty =
+            TextBlock.TextProperty.AddOwner<TextPresenter>(new(string.Empty));
+
+        /// <summary>
+        /// Defines the <see cref="PreeditText"/> property.
+        /// </summary>
+        public static readonly StyledProperty<string?> PreeditTextProperty =
+            PresentationProperty.Register<TextPresenter, string?>(nameof(PreeditText));
+
+        /// <summary>
+        /// Defines the <see cref="PreeditText"/> property.
+        /// </summary>
+        public static readonly StyledProperty<int?> PreeditTextCursorPositionProperty =
+            PresentationProperty.Register<TextPresenter, int?>(nameof(PreeditTextCursorPosition));
+
+        /// <summary>
+        /// Defines the <see cref="TextAlignment"/> property.
+        /// </summary>
+        public static readonly StyledProperty<TextAlignment> TextAlignmentProperty =
+            TextBlock.TextAlignmentProperty.AddOwner<TextPresenter>();
+
+        /// <summary>
+        /// Defines the <see cref="TextWrapping"/> property.
+        /// </summary>
+        public static readonly StyledProperty<TextWrapping> TextWrappingProperty =
+            TextBlock.TextWrappingProperty.AddOwner<TextPresenter>();
+
+        /// <summary>
+        /// Defines the <see cref="LineHeight"/> property.
+        /// </summary>
+        public static readonly StyledProperty<double> LineHeightProperty =
+            TextBlock.LineHeightProperty.AddOwner<TextPresenter>();
+
+        /// <summary>
+        /// Defines the <see cref="LetterSpacing"/> property.
+        /// </summary>
+        public static readonly StyledProperty<double> LetterSpacingProperty =
+            TextElement.LetterSpacingProperty.AddOwner<TextPresenter>();
+
+        /// <summary>
+        /// Defines the <see cref="Background"/> property.
+        /// </summary>
+        public static readonly StyledProperty<IBrush?> BackgroundProperty =
+            Border.BackgroundProperty.AddOwner<TextPresenter>();
+
+        private DispatcherTimer? _caretTimer;
+        private bool _caretBlink;
+        // Dropped by InvalidateTextLayout and InvalidateTextLayoutKeepCache when a property that
+        // affects the text changes, by MeasureOverride against a new constraint, and by
+        // ArrangeOverride when the final width differs from the measured one.
+        private TextLayout? _textLayout;
+        private TextRunCache? _textRunCache;
+        private Size _constraint;
+
+        private CharacterHit _lastCharacterHit;
+        private Rect _caretBounds;
+        private bool _caretBoundsDirty;
+        private int? _pendingCaretTextPosition;
+        private Point _navigationPosition;
+        private Point? _previousOffset;
+        private TextSelectorLayer? _layer;
+
+        static TextPresenter()
+        {
+            AffectsRender<TextPresenter>(CaretBrushProperty, SelectionBrushProperty, SelectionForegroundBrushProperty, TextElement.ForegroundProperty, ShowSelectionHighlightProperty);
+        }
+
+        public TextPresenter() { }
+
+        public event EventHandler? CaretBoundsChanged;
+
+        /// <summary>
+        /// Gets or sets a brush used to paint the control's background.
+        /// </summary>
+        public IBrush? Background
+        {
+            get => GetValue(BackgroundProperty);
+            set => SetValue(BackgroundProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets a value that determines whether the TextPresenter shows a selection highlight.
+        /// </summary>
+        public bool ShowSelectionHighlight
+        {
+            get => GetValue(ShowSelectionHighlightProperty);
+            set => SetValue(ShowSelectionHighlightProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the text.
+        /// </summary>
+        [Content]
+        public string? Text
+        {
+            get => GetValue(TextProperty);
+            set => SetValue(TextProperty, value);
+        }
+
+        public string? PreeditText
+        {
+            get => GetValue(PreeditTextProperty);
+            set => SetValue(PreeditTextProperty, value);
+        }
+
+        public int? PreeditTextCursorPosition
+        {
+            get => GetValue(PreeditTextCursorPositionProperty);
+            set => SetValue(PreeditTextCursorPositionProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the font family.
+        /// </summary>
+        public FontFamily FontFamily
+        {
+            get => TextElement.GetFontFamily(this);
+            set => TextElement.SetFontFamily(this, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the font family.
+        /// </summary>
+        public FontFeatureCollection? FontFeatures
+        {
+            get => TextElement.GetFontFeatures(this);
+            set => TextElement.SetFontFeatures(this, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the font size.
+        /// </summary>
+        public double FontSize
+        {
+            get => TextElement.GetFontSize(this);
+            set => TextElement.SetFontSize(this, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the font style.
+        /// </summary>
+        public FontStyle FontStyle
+        {
+            get => TextElement.GetFontStyle(this);
+            set => TextElement.SetFontStyle(this, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the font weight.
+        /// </summary>
+        public FontWeight FontWeight
+        {
+            get => TextElement.GetFontWeight(this);
+            set => TextElement.SetFontWeight(this, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the font stretch.
+        /// </summary>
+        public FontStretch FontStretch
+        {
+            get => TextElement.GetFontStretch(this);
+            set => TextElement.SetFontStretch(this, value);
+        }
+
+        /// <summary>
+        /// Gets or sets a brush used to paint the text.
+        /// </summary>
+        public IBrush? Foreground
+        {
+            get => TextElement.GetForeground(this);
+            set => TextElement.SetForeground(this, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the control's text wrapping mode.
+        /// </summary>
+        public TextWrapping TextWrapping
+        {
+            get => GetValue(TextWrappingProperty);
+            set => SetValue(TextWrappingProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the line height. By default, this is set to <see cref="double.NaN"/>, which determines the appropriate height automatically.
+        /// </summary>
+        public double LineHeight
+        {
+            get => GetValue(LineHeightProperty);
+            set => SetValue(LineHeightProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the letter spacing.
+        /// </summary>
+        public double LetterSpacing
+        {
+            get => GetValue(LetterSpacingProperty);
+            set => SetValue(LetterSpacingProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the text alignment.
+        /// </summary>
+        public TextAlignment TextAlignment
+        {
+            get => GetValue(TextAlignmentProperty);
+            set => SetValue(TextAlignmentProperty, value);
+        }
+
+        /// <summary>
+        /// Gets the <see cref="TextLayout"/> used to render the text.
+        /// </summary>
+        public TextLayout TextLayout
+        {
+            get
+            {
+                if (_textLayout != null)
+                {
+                    return _textLayout;
+                }
+
+                _textLayout = CreateTextLayout();
+
+                // The caret is measured against the new layout by EnsureCaretBounds, which the
+                // measure pass runs once the layout is stored. Doing it here would let a
+                // CaretBoundsChanged handler invalidate the layout this getter is returning.
+                _caretBoundsDirty = true;
+
+                return _textLayout;
+            }
+        }
+
+        public int CaretIndex
+        {
+            get => GetValue(CaretIndexProperty);
+            set => SetValue(CaretIndexProperty, value);
+        }
+
+        public char PasswordChar
+        {
+            get => GetValue(PasswordCharProperty);
+            set => SetValue(PasswordCharProperty, value);
+        }
+
+        public bool RevealPassword
+        {
+            get => GetValue(RevealPasswordProperty);
+            set => SetValue(RevealPasswordProperty, value);
+        }
+
+        public IBrush? SelectionBrush
+        {
+            get => GetValue(SelectionBrushProperty);
+            set => SetValue(SelectionBrushProperty, value);
+        }
+
+        public IBrush? SelectionForegroundBrush
+        {
+            get => GetValue(SelectionForegroundBrushProperty);
+            set => SetValue(SelectionForegroundBrushProperty, value);
+        }
+
+        public IBrush? CaretBrush
+        {
+            get => GetValue(CaretBrushProperty);
+            set => SetValue(CaretBrushProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the caret blink rate
+        /// </summary>
+        public TimeSpan CaretBlinkInterval
+        {
+            get => GetValue(CaretBlinkIntervalProperty);
+            set => SetValue(CaretBlinkIntervalProperty, value);
+        }
+
+        public int SelectionStart
+        {
+            get => GetValue(SelectionStartProperty);
+            set => SetValue(SelectionStartProperty, value);
+        }
+
+        public int SelectionEnd
+        {
+            get => GetValue(SelectionEndProperty);
+            set => SetValue(SelectionEndProperty, value);
+        }
+
+        protected override bool BypassFlowDirectionPolicies => true;
+
+        internal TextSelectionHandleCanvas? TextSelectionHandleCanvas { get; set; }
+        internal TextBoxTextInputMethodClient? CurrentImClient { get; set; }
+
+        /// <summary>
+        /// Creates the <see cref="TextLayout"/> used to render the text.
+        /// </summary>
+        /// <param name="constraint">The constraint of the text.</param>
+        /// <param name="text">The text to format.</param>
+        /// <param name="typeface"></param>
+        /// <param name="textStyleOverrides"></param>
+        /// <returns>A <see cref="TextLayout"/> object.</returns>
+        private TextLayout CreateTextLayoutInternal(Size constraint, string? text, Typeface typeface,
+            IReadOnlyList<ValueSpan<TextRunProperties>>? textStyleOverrides)
+        {
+            var maxWidth = MathUtilities.IsZero(constraint.Width) ? double.PositiveInfinity : constraint.Width;
+            var maxHeight = MathUtilities.IsZero(constraint.Height) ? double.PositiveInfinity : constraint.Height;
+
+            var textLayout = new TextLayout(
+                text,
+                typeface,
+                FontSize,
+                Foreground,
+                TextAlignment,
+                TextWrapping,
+                null,
+                null,
+                FlowDirection,
+                maxWidth,
+                maxHeight,
+                LineHeight,
+                LetterSpacing,
+                0,
+                FontFeatures,
+                textStyleOverrides,
+                _textRunCache ??= new TextRunCache());
+
+            return textLayout;
+        }
+
+        /// <summary>
+        /// Renders the <see cref="TextPresenter"/> to a drawing context.
+        /// </summary>
+        /// <param name="context">The drawing context.</param>
+        private void RenderInternal(DrawingContext context)
+        {
+            var background = Background;
+
+            if (background != null)
+            {
+                context.FillRectangle(background, new Rect(Bounds.Size));
+            }
+
+            var top = 0d;
+            var left = 0.0;
+
+            var textHeight = TextLayout.Height;
+
+            if (Bounds.Height < textHeight)
+            {
+                switch (VerticalAlignment)
+                {
+                    case VerticalAlignment.Center:
+                        top += (Bounds.Height - textHeight) / 2;
+                        break;
+
+                    case VerticalAlignment.Bottom:
+                        top += (Bounds.Height - textHeight);
+                        break;
+                }
+            }
+
+            TextLayout.Draw(context, new Point(left, top));
+        }
+
+        public sealed override void Render(DrawingContext context)
+        {
+            var selectionStart = SelectionStart;
+            var selectionEnd = SelectionEnd;
+            var selectionBrush = SelectionBrush;
+
+            if (ShowSelectionHighlight && selectionStart != selectionEnd && selectionBrush != null)
+            {
+                var start = Math.Min(selectionStart, selectionEnd);
+                var length = Math.Max(selectionStart, selectionEnd) - start;
+
+                var rects = TextLayout.HitTestTextRange(start, length);
+
+                foreach (var rect in rects)
+                {
+                    context.FillRectangle(selectionBrush, PixelRect.FromRect(rect, 1).ToRect(1));
+                }
+            }
+
+            if (VisualRoot is Visual root)
+            {
+                var offset = this.TranslatePoint(Bounds.Position, root);
+
+                if (_previousOffset != offset)
+                {
+                    _previousOffset = offset;
+                }
+            }
+
+            RenderInternal(context);
+
+            if ((selectionStart != selectionEnd || !_caretBlink))
+            {
+                return;
+            }
+
+            // Draw builds a layout when arrange replaced the measured one. The caret rect was
+            // taken from that earlier layout and still sits at the left-aligned distance.
+            EnsureCaretBounds();
+
+            var caretBrush = CaretBrush?.ToImmutable();
+
+            if (caretBrush is null)
+            {
+                var backgroundColor = (Background as ISolidColorBrush)?.Color;
+
+                if (backgroundColor.HasValue)
+                {
+                    var red = (byte)~(backgroundColor.Value.R);
+                    var green = (byte)~(backgroundColor.Value.G);
+                    var blue = (byte)~(backgroundColor.Value.B);
+
+                    caretBrush = new ImmutableSolidColorBrush(Color.FromRgb(red, green, blue));
+                }
+                else
+                {
+                    caretBrush = Brushes.Black;
+                }
+            }
+
+            var (p1, p2) = GetCaretPoints();
+
+            context.DrawLine(new ImmutablePen(caretBrush), p1, p2);
+        }
+
+        internal (Point, Point) GetCaretPoints()
+        {
+            var caretIndex = _lastCharacterHit.FirstCharacterIndex + _lastCharacterHit.TrailingLength;
+            var lineIndex = TextLayout.GetLineIndexFromCharacterIndex(caretIndex, _lastCharacterHit.TrailingLength > 0);
+            var textLine = TextLayout.TextLines[lineIndex];
+
+            var x = Math.Floor(_caretBounds.X) + 0.5;
+            var y = Math.Floor(_caretBounds.Y) + 0.5;
+            var b = Math.Ceiling(_caretBounds.Bottom) - 0.5;
+
+            if (_caretBounds.X > 0 && _caretBounds.X >= textLine.WidthIncludingTrailingWhitespace)
+            {
+                x -= 1;
+            }
+
+            return (new Point(x, y), new Point(x, b));
+        }
+
+        public void ShowCaret()
+        {
+            EnsureCaretTimer();
+            EnsureTextSelectionLayer();
+            _caretBlink = true;
+            _caretTimer?.Start();
+            InvalidateVisual();
+        }
+
+        public void HideCaret()
+        {
+            _caretBlink = false;
+            _caretTimer?.Stop();
+            InvalidateVisual();
+        }
+
+        internal void CaretChanged()
+        {
+            if (this.GetVisualParent() == null)
+            {
+                return;
+            }
+
+            EnsureCaretTimer();
+
+            if (_caretTimer?.IsEnabled ?? false)
+            {
+                _caretBlink = true;
+                _caretTimer?.Stop();
+                _caretTimer?.Start();
+                InvalidateVisual();
+            }
+            else
+            {
+                _caretTimer?.Start();
+                InvalidateVisual();
+                _caretTimer?.Stop();
+            }
+
+            if (IsMeasureValid)
+            {
+                this.BringIntoView(_caretBounds);
+            }
+            else
+            {
+                // The measure is currently invalid so there's no point trying to bring the 
+                // current char into view until a measure has been carried out as the scroll
+                // viewer extents may not be up-to-date.
+                Dispatcher.UIThread.Post(
+                    () =>
+                    {
+                        this.BringIntoView(_caretBounds);
+                    },
+                    DispatcherPriority.AfterRender);
+            }
+        }
+
+        /// <summary>
+        /// Creates the <see cref="TextLayout"/> used to render the text.
+        /// </summary>
+        /// <returns>A <see cref="TextLayout"/> object.</returns>
+        protected virtual TextLayout CreateTextLayout()
+        {
+            TextLayout result;
+
+            var caretIndex = CaretIndex;
+            var preeditText = PreeditText;
+            var text = GetCombinedText(Text, caretIndex, preeditText);
+            var typeface = new Typeface(FontFamily, FontStyle, FontWeight, FontStretch);
+            var selectionStart = SelectionStart;
+            var selectionEnd = SelectionEnd;
+            var start = Math.Min(selectionStart, selectionEnd);
+            var length = Math.Max(selectionStart, selectionEnd) - start;
+
+            IReadOnlyList<ValueSpan<TextRunProperties>>? textStyleOverrides = null;
+
+            var foreground = Foreground;
+
+            if (!string.IsNullOrEmpty(preeditText))
+            {
+                var preeditHighlight = new ValueSpan<TextRunProperties>(caretIndex, preeditText.Length,
+                        new GenericTextRunProperties(
+                            typeface,
+                            FontSize,
+                            TextDecorations.Underline,
+                            foreground,
+                            fontFeatures: FontFeatures));
+
+                textStyleOverrides = new[]
+                {
+                    preeditHighlight
+                };
+            }
+            else
+            {
+                if (ShowSelectionHighlight && length > 0 && SelectionForegroundBrush != null)
+                {
+                    textStyleOverrides = new[]
+                    {
+                        new ValueSpan<TextRunProperties>(start, length,
+                        new GenericTextRunProperties(
+                            typeface,
+                            FontSize,
+                            foregroundBrush: SelectionForegroundBrush,
+                            fontFeatures: FontFeatures))
+                    };
+                }
+            }
+
+            if (PasswordChar != default(char) && !RevealPassword)
+            {
+                result = CreateTextLayoutInternal(_constraint, new string(PasswordChar, text?.Length ?? 0), typeface,
+                    textStyleOverrides);
+            }
+            else
+            {
+                result = CreateTextLayoutInternal(_constraint, text, typeface, textStyleOverrides);
+            }
+
+            return result;
+        }
+
+        private static string? GetCombinedText(string? text, int caretIndex, string? preeditText)
+        {
+            if (string.IsNullOrEmpty(preeditText))
+            {
+                return text;
+            }
+
+            if (string.IsNullOrEmpty(text))
+            {
+                return preeditText;
+            }
+
+            var sb = StringBuilderCache.Acquire(text.Length + preeditText.Length);
+
+            sb.Append(text.Substring(0, caretIndex));
+            sb.Insert(caretIndex, preeditText);
+            sb.Append(text.Substring(caretIndex));
+
+            return StringBuilderCache.GetStringAndRelease(sb);
+        }
+
+        protected virtual void InvalidateTextLayout()
+        {
+            _textRunCache?.Invalidate();
+            _textLayout?.Dispose();
+            _textLayout = null;
+
+            InvalidateVisual();
+            InvalidateMeasure();
+        }
+
+        private void InvalidateTextLayoutKeepCache()
+        {
+            _textLayout?.Dispose();
+            _textLayout = null;
+
+            InvalidateVisual();
+            InvalidateMeasure();
+        }
+
+        protected override Size MeasureOverride(Size availableSize)
+        {
+            _constraint = availableSize;
+
+            _textLayout?.Dispose();
+            _textLayout = null;
+
+            InvalidateArrange();
+
+            var textLayout = TextLayout;
+
+            // The textWidth used here is matching that TextBlock uses to measure the text.
+            var size = new Size(textLayout.WidthIncludingTrailingWhitespace, textLayout.Height);
+
+            EnsureCaretBounds();
+
+            return size;
+        }
+
+        protected override Size ArrangeOverride(Size finalSize)
+        {
+            var finalWidth = finalSize.Width;
+
+            var textWidth = TextLayout.WidthIncludingTrailingWhitespace;
+            textWidth = Math.Ceiling(textWidth);
+
+            if (finalSize.Width < textWidth)
+            {
+                finalSize = finalSize.WithWidth(textWidth);
+            }
+
+            // Check if the '_constraint' has changed since the last measure,
+            // if so recalculate the TextLayout according to the new size
+            // NOTE: It is important to check this against the actual final size
+            // (excluding the trailing whitespace) to avoid TextLayout overflow.
+            if (MathUtilities.AreClose(_constraint.Width, finalWidth) == false)
+            {
+                _constraint = new Size(Math.Ceiling(finalWidth), double.PositiveInfinity);
+
+                _textLayout?.Dispose();
+                _textLayout = null;
+
+                // Center and right alignment place glyphs using this width. The caret was
+                // measured against the measure-pass layout, which is only as wide as the text
+                // when the presenter was given infinite space.
+                _ = TextLayout;
+                EnsureCaretBounds();
+            }
+
+            return finalSize;
+        }
+
+        private void CaretTimerTick(object? sender, EventArgs e)
+        {
+            _caretBlink = !_caretBlink;
+
+            InvalidateVisual();
+        }
+
+        /// <summary>
+        /// Normalizes a text position into a caret-valid <see cref="CharacterHit"/> via the
+        /// line's caret hit walkers, so positions on cluster or run boundaries (the end of a
+        /// preedit shaped with a fallback font, a surrogate pair) resolve to a hit the
+        /// layout can measure.
+        /// </summary>
+        private CharacterHit GetCaretCharacterHit(TextLayout textLayout, int textPosition, bool trailingEdge = false)
+        {
+            var lineIndex = textLayout.GetLineIndexFromCharacterIndex(textPosition, trailingEdge);
+            var textLine = textLayout.TextLines[lineIndex];
+
+            var characterHit = textLine.GetPreviousCaretCharacterHit(new CharacterHit(textPosition));
+
+            var nextCaretCharacterHit = textLine.GetNextCaretCharacterHit(characterHit);
+
+            if (nextCaretCharacterHit.FirstCharacterIndex <= textPosition)
+            {
+                characterHit = nextCaretCharacterHit;
+            }
+
+            if (textPosition == characterHit.FirstCharacterIndex + characterHit.TrailingLength)
+            {
+                return characterHit;
+            }
+
+            return trailingEdge ? characterHit : new CharacterHit(characterHit.FirstCharacterIndex);
+        }
+
+        public void MoveCaretToTextPosition(int textPosition, bool trailingEdge = false)
+        {
+            UpdateCaret(GetCaretCharacterHit(TextLayout, textPosition, trailingEdge));
+
+            _navigationPosition = _caretBounds.Position;
+
+            CaretChanged();
+        }
+
+        public void MoveCaretToPoint(Point point)
+        {
+            var hit = TextLayout.HitTestPoint(point);
+
+            UpdateCaret(hit.CharacterHit);
+
+            _navigationPosition = _caretBounds.Position;
+
+            CaretChanged();
+        }
+
+        public void MoveCaretVertical(LogicalDirection direction = LogicalDirection.Forward)
+        {
+            var lineIndex = TextLayout.GetLineIndexFromCharacterIndex(CaretIndex, _lastCharacterHit.TrailingLength > 0);
+
+            if (lineIndex < 0)
+            {
+                return;
+            }
+
+            var (currentX, currentY) = _navigationPosition;
+
+            if (direction == LogicalDirection.Forward)
+            {
+                if (lineIndex + 1 > TextLayout.TextLines.Count - 1)
+                {
+                    return;
+                }
+
+                var textLine = TextLayout.TextLines[lineIndex];
+
+                currentY += textLine.Height;
+            }
+            else
+            {
+                if (lineIndex - 1 < 0)
+                {
+                    return;
+                }
+
+                var textLine = TextLayout.TextLines[--lineIndex];
+
+                currentY -= textLine.Height;
+            }
+
+            var navigationPosition = _navigationPosition;
+
+            MoveCaretToPoint(new Point(currentX, currentY));
+
+            _navigationPosition = navigationPosition.WithY(_caretBounds.Y);
+
+            CaretChanged();
+        }
+
+        private void EnsureCaretTimer()
+        {
+            if (_caretTimer == null)
+            {
+                ResetCaretTimer();
+            }
+        }
+
+        private void ResetCaretTimer()
+        {
+            bool isEnabled = false;
+
+            if (_caretTimer != null)
+            {
+                _caretTimer.Tick -= CaretTimerTick;
+
+                if (_caretTimer.IsEnabled)
+                {
+                    _caretTimer.Stop();
+                    isEnabled = true;
+                }
+
+                _caretTimer = null;
+            }
+
+            if (CaretBlinkInterval.TotalMilliseconds > 0)
+            {
+                _caretTimer = new DispatcherTimer { Interval = CaretBlinkInterval };
+                _caretTimer.Tick += CaretTimerTick;
+
+                if (isEnabled)
+                    _caretTimer.Start();
+            }
+        }
+
+        public CharacterHit GetNextCharacterHit(LogicalDirection direction = LogicalDirection.Forward)
+        {
+            if (Text is null)
+            {
+                return default;
+            }
+
+            var characterHit = _lastCharacterHit;
+            var caretIndex = characterHit.FirstCharacterIndex + characterHit.TrailingLength;
+
+            var lineIndex = TextLayout.GetLineIndexFromCharacterIndex(caretIndex, false);
+
+            if (lineIndex < 0)
+            {
+                return default;
+            }
+
+            if (direction == LogicalDirection.Forward)
+            {
+                while (lineIndex < TextLayout.TextLines.Count)
+                {
+                    var textLine = TextLayout.TextLines[lineIndex];
+
+                    characterHit = textLine.GetNextCaretCharacterHit(characterHit);
+
+                    caretIndex = characterHit.FirstCharacterIndex + characterHit.TrailingLength;
+
+                    if (textLine.TrailingWhitespaceLength > 0 && caretIndex == textLine.FirstTextSourceIndex + textLine.Length)
+                    {
+                        characterHit = new CharacterHit(caretIndex);
+                    }
+
+                    if (caretIndex >= Text.Length)
+                    {
+                        characterHit = new CharacterHit(Text.Length);
+
+                        break;
+                    }
+
+                    if (caretIndex - textLine.NewLineLength == textLine.FirstTextSourceIndex + textLine.Length)
+                    {
+                        break;
+                    }
+
+                    if (caretIndex <= CaretIndex)
+                    {
+                        lineIndex++;
+
+                        continue;
+                    }
+
+                    break;
+                }
+            }
+            else
+            {
+                while (lineIndex >= 0)
+                {
+                    var textLine = TextLayout.TextLines[lineIndex];
+
+                    characterHit = textLine.GetPreviousCaretCharacterHit(characterHit);
+
+                    caretIndex = characterHit.FirstCharacterIndex + characterHit.TrailingLength;
+
+                    if (caretIndex >= CaretIndex)
+                    {
+                        lineIndex--;
+
+                        continue;
+                    }
+
+                    break;
+                }
+            }
+
+            return characterHit;
+        }
+
+        public void MoveCaretHorizontal(LogicalDirection direction = LogicalDirection.Forward)
+        {
+            if (FlowDirection == FlowDirection.RightToLeft)
+            {
+                direction = direction == LogicalDirection.Forward ?
+                    LogicalDirection.Backward :
+                    LogicalDirection.Forward;
+            }
+
+            var characterHit = GetNextCharacterHit(direction);
+
+            UpdateCaret(characterHit);
+
+            _navigationPosition = _caretBounds.Position;
+
+            CaretChanged();
+        }
+
+        internal void UpdateCaret(CharacterHit characterHit, bool notify = true)
+        {
+            _lastCharacterHit = characterHit;
+            _pendingCaretTextPosition = null;
+            _caretBoundsDirty = true;
+
+            EnsureCaretBounds();
+
+            if (notify)
+            {
+                SetCurrentValue(CaretIndexProperty, characterHit.FirstCharacterIndex + characterHit.TrailingLength);
+            }
+        }
+
+        /// <summary>
+        /// Measures the caret against the current layout and reports a move. Reads the layout
+        /// field rather than the property, so it never builds one: with no layout the caret
+        /// stays dirty until the measure pass that builds it calls back here.
+        /// </summary>
+        private void EnsureCaretBounds()
+        {
+            if (!_caretBoundsDirty || _textLayout is null)
+            {
+                return;
+            }
+
+            _caretBoundsDirty = false;
+
+            var textLayout = _textLayout;
+
+            if (_pendingCaretTextPosition is { } pendingPosition)
+            {
+                _pendingCaretTextPosition = null;
+                _lastCharacterHit = GetCaretCharacterHit(textLayout, pendingPosition);
+            }
+
+            var characterHit = _lastCharacterHit;
+            var caretIndex = characterHit.FirstCharacterIndex + characterHit.TrailingLength;
+
+            var lineIndex = textLayout.GetLineIndexFromCharacterIndex(caretIndex, characterHit.TrailingLength > 0);
+            var textLine = textLayout.TextLines[lineIndex];
+            var distanceX = textLine.GetDistanceFromCharacterHit(characterHit);
+
+            var distanceY = 0d;
+
+            for (var i = 0; i < lineIndex; i++)
+            {
+                distanceY += textLayout.TextLines[i].Height;
+            }
+
+            var caretBounds = new Rect(distanceX, distanceY, 0, textLine.Height);
+
+            if (caretBounds != _caretBounds)
+            {
+                _caretBounds = caretBounds;
+
+                // A handler may invalidate the layout from here. Nothing below reads it, and the
+                // invalidation schedules the measure pass that rebuilds it.
+                CaretBoundsChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+
+        internal Rect GetCursorRectangle()
+        {
+            EnsureCaretBounds();
+
+            return _caretBounds;
+        }
+
+        protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            base.OnAttachedToVisualTree(e);
+
+            ResetCaretTimer();
+        }
+
+        internal void EnsureTextSelectionLayer()
+        {
+            if (TextSelectionHandleCanvas == null)
+            {
+                TextSelectionHandleCanvas = new TextSelectionHandleCanvas();
+            }
+            TextSelectionHandleCanvas.SetPresenter(this);
+            _layer = TextSelectorLayer.GetTextSelectorLayer(this);
+            if (TextSelectionHandleCanvas.VisualParent is { } parent && parent != _layer)
+            {
+                if (parent is TextSelectorLayer l)
+                {
+                    l.Remove(TextSelectionHandleCanvas);
+                }
+            }
+            if (_layer != null && TextSelectionHandleCanvas.VisualParent != _layer)
+                _layer?.Add(TextSelectionHandleCanvas);
+        }
+
+        internal void RemoveTextSelectionCanvas()
+        {
+            if (_layer != null && TextSelectionHandleCanvas is { } canvas)
+            {
+                canvas.SetPresenter(null);
+                _layer.Remove(canvas);
+            }
+
+            TextSelectionHandleCanvas = null;
+        }
+
+        protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            base.OnDetachedFromVisualTree(e);
+
+            RemoveTextSelectionCanvas();
+
+            if (_caretTimer != null)
+            {
+                _caretTimer.Stop();
+                _caretTimer.Tick -= CaretTimerTick;
+            }
+        }
+
+        private void OnPreeditChanged(string? preeditText, int? cursorPosition)
+        {
+            if (string.IsNullOrEmpty(preeditText))
+            {
+                _pendingCaretTextPosition = CaretIndex;
+                _caretBoundsDirty = true;
+
+                EnsureCaretBounds();
+            }
+            else
+            {
+                var cursorPos = cursorPosition is >= 0 && cursorPosition <= preeditText.Length
+                    ? cursorPosition.Value
+                    : preeditText.Length;
+
+                _pendingCaretTextPosition = CaretIndex + cursorPos;
+                _caretBoundsDirty = true;
+
+                InvalidateMeasure();
+                CaretChanged();
+            }
+        }
+
+        protected override void OnPropertyChanged(PresentationPropertyChangedEventArgs change)
+        {
+            base.OnPropertyChanged(change);
+
+            if (change.Property == CaretIndexProperty)
+            {
+                MoveCaretToTextPosition(change.GetNewValue<int>());
+            }
+
+            if (change.Property == TextProperty || change.Property == CaretIndexProperty)
+            {
+                if (!string.IsNullOrEmpty(PreeditText))
+                {
+                    SetCurrentValue(PreeditTextProperty, null);
+                }
+            }
+
+            if (change.Property == CaretBlinkIntervalProperty)
+            {
+                ResetCaretTimer();
+            }
+
+            switch (change.Property.Name)
+            {
+                // Properties that affect shaping: invalidate the run cache + layout.
+                case nameof(PreeditText):
+                case nameof(Foreground):
+                case nameof(FontSize):
+                case nameof(FontStyle):
+                case nameof(FontWeight):
+                case nameof(FontFamily):
+                case nameof(FontStretch):
+                case nameof(Text):
+                case nameof(LetterSpacing):
+                case nameof(PasswordChar):
+                case nameof(RevealPassword):
+                case nameof(FlowDirection):
+                case nameof(SelectionForegroundBrush):
+                case nameof(ShowSelectionHighlight):
+                    {
+                        InvalidateTextLayout();
+                        break;
+                    }
+                // Properties that do not affect shaping: preserve the run cache.
+                case nameof(TextAlignment):
+                case nameof(TextWrapping):
+                case nameof(LineHeight):
+                    {
+                        InvalidateTextLayoutKeepCache();
+                        break;
+                    }
+                case nameof(SelectionStart):
+                case nameof(SelectionEnd):
+                    {
+                        if (SelectionForegroundBrush != null)
+                        {
+                            InvalidateTextLayout();
+                        }
+                        else
+                        {
+                            InvalidateTextLayoutKeepCache();
+                        }
+                        break;
+                    }
+            }
+
+            // After the invalidation above, so the caret is computed against a layout
+            // that already contains the new preedit text; the stale layout does not
+            // cover the preedit-shifted caret index.
+            if (change.Property == PreeditTextProperty)
+            {
+                OnPreeditChanged(change.NewValue as string, PreeditTextCursorPosition);
+            }
+
+            if (change.Property == PreeditTextCursorPositionProperty)
+            {
+                OnPreeditChanged(PreeditText, PreeditTextCursorPosition);
+            }
+        }
+    }
+}

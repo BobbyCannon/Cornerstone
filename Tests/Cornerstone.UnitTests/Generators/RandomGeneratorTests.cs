@@ -3,8 +3,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Security;
-using Cornerstone.Extensions;
 using Cornerstone.Generators;
 using Cornerstone.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

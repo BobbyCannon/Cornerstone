@@ -1,6 +1,10 @@
 #region References
 
+using Cornerstone.Input;
+using Cornerstone.Media;
 using Cornerstone.Runtime;
+using Cornerstone.Security;
+using Cornerstone.Security.SecurityKeys;
 
 #endregion
 
@@ -26,6 +30,27 @@ public class NullPlatform : CornerstoneObject, IPlatform
 	public DependencyProvider DependencyProvider { get; }
 
 	public RuntimeInformation RuntimeInformation { get; }
+
+	#endregion
+
+	#region Methods
+
+	public override void InitializeLifecycle()
+	{
+		if (!IsLifecycleInitialized())
+		{
+			DependencyProvider.AddTransient<AudioPlayer, AudioPlayerStub>();
+			DependencyProvider.AddSingleton<Gamepad, GamepadStub>();
+			DependencyProvider.AddSingleton<IKeepAlive, UnsupportedKeepAlive>();
+			DependencyProvider.AddSingleton<Keyboard, KeyboardStub>();
+			DependencyProvider.AddSingleton<Mouse, MouseStub>();
+			DependencyProvider.AddSingleton<IPermissions, Permissions>();
+			DependencyProvider.AddSingleton<SecurityCardReader, SecurityCardReaderStub>();
+			DependencyProvider.AddSingleton<IWindowsHelloService, WindowsHelloServiceStub>();
+		}
+
+		base.InitializeLifecycle();
+	}
 
 	#endregion
 }

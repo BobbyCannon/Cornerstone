@@ -17,6 +17,33 @@ public class SyncObjectTests : CornerstoneUnitTest
 	#region Methods
 
 	[TestMethod]
+	public void EmptySyncObjectIsBlank()
+	{
+		IsNotNull(SyncObjectExtensions.Empty);
+		IsNull(SyncObjectExtensions.Empty.TypeName);
+		AreEqual(Guid.Empty, SyncObjectExtensions.Empty.SyncId);
+	}
+
+	[TestMethod]
+	public void GetTypeNameUsesAssemblyName()
+	{
+		var account = new Account { SyncId = Guid.NewGuid() };
+		IsTrue(SyncObject.GetTypeName(account).Contains("Account"));
+	}
+
+	[TestMethod]
+	public void ToSyncModelUnknownTypeThrows()
+	{
+		var syncObject = new SyncObject
+		{
+			Data = [],
+			TypeName = "No.Such.Type, NoAssembly",
+			SyncId = Guid.NewGuid()
+		};
+		ExpectedException<Exception>(() => syncObject.ToSyncModel());
+	}
+
+	[TestMethod]
 	public void ToSyncObject()
 	{
 		var scenarios = new (SyncModel Value, int Size)[]
@@ -36,7 +63,7 @@ public class SyncObjectTests : CornerstoneUnitTest
 					SyncId = new Guid("B9825F51-AEC7-4C18-A83F-6B4558B0EA20"),
 					TimeZoneId = string.Empty
 				},
-				84
+				86
 			),
 			(
 				new SyncDevice
@@ -72,6 +99,34 @@ public class SyncObjectTests : CornerstoneUnitTest
 			var syncModel = syncObject.ToSyncModel();
 			AreEqual(scenario.Value, syncModel);
 		}
+	}
+
+	[TestMethod]
+	public void ToSyncObjectDeletedAndUpdated()
+	{
+		var deleted = new Account
+		{
+			CreatedOn = StartDateTime,
+			ModifiedOn = StartDateTime,
+			IsDeleted = true,
+			EmailAddress = "a@b.c",
+			Name = "A",
+			Roles = ",,",
+			SyncId = Guid.NewGuid()
+		};
+		AreEqual(SyncObjectStatus.Deleted, SyncObject.ToSyncObject(deleted).Status);
+
+		var updated = new Account
+		{
+			CreatedOn = StartDateTime,
+			ModifiedOn = StartDateTime.AddMinutes(1),
+			IsDeleted = false,
+			EmailAddress = "a@b.c",
+			Name = "A",
+			Roles = ",,",
+			SyncId = Guid.NewGuid()
+		};
+		AreEqual(SyncObjectStatus.Updated, SyncObject.ToSyncObject(updated).Status);
 	}
 
 	#endregion

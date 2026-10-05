@@ -2,6 +2,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -22,6 +23,8 @@ namespace Cornerstone.Web;
 /// <summary>
 /// This class is used for making GET and POST calls to an HTTP endpoint.
 /// </summary>
+[RequiresDynamicCode("JSON serialization of HTTP content may need runtime code generation.")]
+[RequiresUnreferencedCode("JSON serialization of HTTP content may require unreferenced types.")]
 public partial class WebClient : CornerstoneObject, IWebClient
 {
 	#region Fields
@@ -364,6 +367,8 @@ public partial class WebClient : CornerstoneObject, IWebClient
 	/// <typeparam name="T"> The type to deserialize into. </typeparam>
 	/// <param name="result"> The result to deserialize. </param>
 	/// <returns> The deserialized type. </returns>
+	[RequiresDynamicCode("JSON deserialization of HTTP content may need runtime code generation.")]
+	[RequiresUnreferencedCode("JSON deserialization of HTTP content may require unreferenced types.")]
 	protected virtual async Task<T> DeserializeAsync<T>(HttpResponseMessage result)
 	{
 		var content = await result.Content.ReadAsStringAsync();
@@ -444,6 +449,8 @@ public partial class WebClient : CornerstoneObject, IWebClient
 	/// </summary>
 	/// <param name="content"> The content to be converted to a serialize format. </param>
 	/// <returns> The serialized formatted content. </returns>
+	[RequiresDynamicCode("JSON serialization of HTTP content may need runtime code generation.")]
+	[RequiresUnreferencedCode("JSON serialization of HTTP content may require unreferenced types.")]
 	protected virtual string Serialize(object content)
 	{
 		return Serializer.ToJson(content);

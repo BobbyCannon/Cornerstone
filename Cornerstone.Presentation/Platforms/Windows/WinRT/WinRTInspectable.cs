@@ -1,0 +1,27 @@
+using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using MicroCom.Runtime;
+
+namespace Cornerstone.Presentation.Platforms.Windows.WinRT
+{
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+    internal class WinRTInspectable : Cornerstone.Presentation.Platform.CallbackBase, IInspectable
+    {
+        public unsafe void GetIids(ulong* iidCount, Guid** iids)
+        {
+            var interfaces = GetType().GetInterfaces().Where(typeof(IUnknown).IsAssignableFrom)
+                .Select(MicroComRuntime.GetGuidFor).ToArray();
+            var mem = (Guid*)Marshal.AllocCoTaskMem(Unsafe.SizeOf<Guid>() * interfaces.Length);
+            for (var c = 0; c < interfaces.Length; c++)
+                mem[c] = interfaces[c];
+            *iids = mem;
+            *iidCount = (ulong) interfaces.Length;
+        }
+
+        public IntPtr RuntimeClassName => NativeWinRTMethods.WindowsCreateString(GetType().FullName!);
+        public TrustLevel TrustLevel => TrustLevel.BaseTrust;
+    }
+}

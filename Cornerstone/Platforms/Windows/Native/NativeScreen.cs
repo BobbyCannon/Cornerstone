@@ -62,7 +62,7 @@ internal static class NativeScreen
 	[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto, Pack = 4)]
 	public class MONITORINFOEX
 	{
-		public int cbSize = Marshal.SizeOf(typeof(MONITORINFOEX));
+		public int cbSize = Marshal.SizeOf<MONITORINFOEX>();
 		public NativeGeneral.Rect rcMonitor = new();
 		public NativeGeneral.Rect rcWork = new();
 		public int dwFlags = 0;

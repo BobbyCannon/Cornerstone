@@ -19,10 +19,14 @@ public partial class AppEngine : KeystoneEngine<AppBus, AppState>
 	public AppEngine(
 		AppBus bus,
 		AppState state,
-		AgentProcessor agentProcessor
+		AgentProcessor agentProcessor,
+		SyncProcessor syncProcessor,
+		MeshSyncProcessor meshSyncProcessor
 	) : base(bus, state)
 	{
 		Agent = Track(agentProcessor);
+		Sync = Track(syncProcessor);
+		Mesh = Track(meshSyncProcessor);
 	}
 
 	#endregion
@@ -30,6 +34,10 @@ public partial class AppEngine : KeystoneEngine<AppBus, AppState>
 	#region Properties
 
 	public AgentProcessor Agent { get; }
+
+	public MeshSyncProcessor Mesh { get; }
+
+	public SyncProcessor Sync { get; }
 
 	#endregion
 }

@@ -2,8 +2,6 @@
 
 Why Cornerstone stays on the classic Visual Studio SDK, and when a move to the newer out-of-process model might be worth revisiting.
 
-**Last updated:** 2026-08-01
-
 ---
 
 ## Short answer
@@ -63,10 +61,10 @@ Microsoft’s newer stack is **VisualStudio.Extensibility** (sometimes called th
 | VSIX project TFM | `net472` |
 | Shared logic | `Cornerstone.VisualStudio.Core` → `netstandard2.0` |
 | Tests / sample apps | Often `net10.0` (host-agnostic) |
-| VS install range | Community **`[17.0, 19.0)`** (see `source.extension.vsixmanifest`) |
+| VS install range | Community **`[17.14,)`** amd64 and arm64 (see `source.extension.vsixmanifest`) |
 | Architectures | **amd64**, **arm64** |
-| VS 2022 | Supported (17.0+) |
-| VS 2026 | Supported (18.x; range upper bound is 19.0 exclusive) |
+| VS 2022 | Installs on 17.14 and later. The in-proc VSIX is `net472`. The editor host still needs the .NET 10 runtime. |
+| VS 2026 | Supported. The gallery treats the lower bound as the API version, and 18.0 is still experimental. |
 | Prerequisites | Core Editor, .NET Core development tools, Roslyn language services |
 
 Microsoft’s VS 2026 guidance: most extensions built for minimum 17.0+ continue to work; classic VSIX is not retired for this class of tooling.
@@ -79,10 +77,10 @@ Cornerstone’s value is deep IDE integration, not a single command or tool wind
 
 | Feature area | Current implementation | OOP VisualStudio.Extensibility today | Verdict |
 |--------------|------------------------|--------------------------------------|---------|
-| Custom Avalonia XAML editor | `IVsEditorFactory`, `ProvideEditorExtension`, `ProvideXmlEditorChooserDesignerView` for `.axaml` / Avalonia `.xaml` | No equivalent multi-pane document editor factory | **Blocker for parity**; [bypassable](#alternative-preview-outside-the-document) if the product drops the custom document |
-| Split designer pane | Hosts full `IVsCodeWindow` + WPF preview (`AvaloniaDesigner`, `VsCodeWindowHost`, `EditorPane`) | Tool windows exist; not a first-class document designer that owns the open file | **Blocker for parity**; tool window / external window is a UX rewrite, not a port |
-| Live preview host | `PreviewerProcess` + Avalonia.Remote.Protocol + WPF `WriteableBitmap` surface | Remote UI is a poor fit for live frames + pointer input (see below) | **Hard rewrite**; prefer **process-owned** preview UI over pure Remote UI |
-| IntelliSense completion | MEF `ICompletionSource` + `IOleCommandTarget` | No MEF completion OOP; closest path is an **LSP** language server | **Hard rewrite** (unchanged by tool-window pivot) |
+| Custom Cornerstone XAML editor | `IVsEditorFactory`, `ProvideEditorExtension`, `ProvideXmlEditorChooserDesignerView` for `.axaml` and `.cxaml` | No equivalent multi-pane document editor factory | **Blocker for parity**; [bypassable](#alternative-preview-outside-the-document) if the product drops the custom document |
+| Split designer pane | Hosts full `IVsCodeWindow` + WPF preview (`CornerstoneDesigner`, `VsCodeWindowHost`, `EditorPane`) | Tool windows exist; not a first-class document designer that owns the open file | **Blocker for parity**; tool window / external window is a UX rewrite, not a port |
+| Live preview host | `PreviewerProcess` + Cornerstone.Remote.Protocol + WPF `WriteableBitmap` surface | Remote UI is a poor fit for live frames + pointer input (see below) | **Hard rewrite**; prefer **process-owned** preview UI over pure Remote UI |
+| IntelliSense completion | MEF `ICompletionSource` + `ICustomCommit` + `IOleCommandTarget` (commit keys only) | No MEF completion OOP; closest path is an **LSP** language server | **Hard rewrite** (unchanged by tool-window pivot) |
 | Paste / typing manipulators | Command filter + text view listeners | Different model (editor edits / LSP); not a port | **Hard rewrite** |
 | Error squiggles + Error List | `ITagger` + `ITableManagerProvider` | Limited tagger / diagnostics support; different Error List integration | **Partial** |
 | Suggested actions (light bulbs) | `ISuggestedActionsSource` | No direct parity; LSP code actions possible | **Rewrite** |
@@ -100,7 +98,7 @@ Settings and output-window support alone are not enough to ship the product. Eve
 
 ### Idea
 
-Instead of injecting the previewer into the `.axaml` tab (`EditorPane` → `AvaloniaDesigner` split with `IVsCodeWindow`), use the **default editor** for source and show the **selected / active document** in a **tool window** (or an external window).
+Instead of injecting the previewer into the `.axaml` tab (`EditorPane` → `CornerstoneDesigner` split with `IVsCodeWindow`), use the **default editor** for source and show the **selected / active document** in a **tool window** (or an external window).
 
 That is an intentional product change:
 
@@ -113,9 +111,9 @@ That is an intentional product change:
 ### How Cornerstone works today (document-hosted)
 
 1. `IVsEditorFactory` opens a custom pane (`EditorPane`).
-2. `AvaloniaDesigner` hosts source (`IVsCodeWindow` via `VsCodeWindowHost`) and preview (`AvaloniaPreviewer`).
-3. `PreviewerProcess` runs the Avalonia remote host, receives frames, and updates a WPF `WriteableBitmap` (~60 FPS UI notify throttle; inactive tabs suspend their host).
-4. Pointer/keyboard on the WPF surface is forwarded back over Avalonia.Remote.Protocol.
+2. `CornerstoneDesigner` hosts source (`IVsCodeWindow` via `VsCodeWindowHost`) and preview (`CornerstonePreviewer`).
+3. `PreviewerProcess` runs the Cornerstone remote host, receives frames, and updates a WPF `WriteableBitmap` on the render pass (monitor refresh; inactive tabs suspend their host).
+4. Pointer/keyboard on the WPF surface is forwarded back over Cornerstone.Remote.Protocol.
 
 Only the **IDE hosting surface** is VSSDK-specific; the remote protocol and process model are already out-of-process.
 
@@ -125,7 +123,7 @@ Only the **IDE hosting surface** is VSSDK-specific; the remote protocol and proc
 |--------|---------|---------------------------|--------|
 | **A. Classic VSSDK tool window** | Still `net472` | **Yes** — same WPF + `WriteableBitmap` stack | Validates UX without changing platform. No net10 in the VSIX host. |
 | **B. OOP tool window (Remote UI)** | Host-managed .NET (net8 today) | **Poor fit** | Tool windows and `VisibleWhen` (e.g. active `\.axaml$`) exist, but Remote UI is not full WPF. |
-| **C. External / process-owned preview window** | **net10 process possible today** | **Yes** — native Avalonia UI in the host process | Best path if the goal is modern .NET libraries for preview. VS extension stays thin (launch, document path, build outputs). |
+| **C. External / process-owned preview window** | **net10 process possible today** | **Yes** — native Cornerstone UI in the host process | Best path if the goal is modern .NET libraries for preview. VS extension stays thin (launch, document path, build outputs). |
 
 **Recommended if chasing modern .NET:** option **C** (or A for UX-only), not pure Remote UI for the frame surface.
 
@@ -138,7 +136,7 @@ Remote UI (OOP tool window content) is designed for declarative WPF **DataTempla
 - Serializable data only (`DataContract`, primitives, collections, monikers, static images)
 - Image support = **VS catalog monikers + packaged static assets**, not a live `WriteableBitmap` stream
 
-Pushing designer frames through Remote UI (e.g. re-encoding PNG/base64 every frame) would be slow, awkward, and still a bad model for hit-testing and input. That is not a port of `AvaloniaPreviewer`.
+Pushing designer frames through Remote UI (e.g. re-encoding PNG/base64 every frame) would be slow, awkward, and still a bad model for hit-testing and input. That is not a port of `CornerstonePreviewer`.
 
 ### What a tool-window pivot does *not* unlock
 
@@ -175,7 +173,7 @@ OOP extensions run in a **Visual Studio extension host** that ships supported **
 |----------|-----------|------|
 | `Cornerstone.VisualStudio` VSIX | `net472` | Shipping IDE integration (classic VSSDK) |
 | `Cornerstone.VisualStudio.Core` | `netstandard2.0` | Portable logic (completion engine, parsing, cleanup, metadata) |
-| Unit tests / Avalonia sample apps | `net10.0` | Validation and demos |
+| Unit tests / Cornerstone sample apps | `net10.0` | Validation and demos |
 | **Previewer / designer host process** | Can be **net10** | Interactive preview + net10-only libraries without rewriting the VSIX |
 | **Optional future OOP project** | `net10.0-windows…` on VS 2026 | Thin shell (commands, settings, Remote UI chrome) if product accepts subset UX |
 
@@ -189,7 +187,7 @@ These pieces are host-agnostic and should stay that way for any future dual-host
 
 - **`Cornerstone.VisualStudio.Core`** — XAML/XML parsing, completion engine, text manipulation, assembly metadata (dnlib)
 - **Unit tests** against Core
-- **Previewer process concept** — external host + Avalonia remote protocol (protocol logic is not tied to VSSDK; only the IDE hosting surface is)
+- **Previewer process concept** — external host + Cornerstone remote protocol (protocol logic is not tied to VSSDK; only the IDE hosting surface is)
 
 Avoid putting new business logic only in VSIX-only types when it can live in Core (or in a net10 side process).
 
@@ -232,4 +230,4 @@ Until feature parity (or an accepted subset) is realistic, **stay on classic VSS
 - [Port, migrate, and upgrade Visual Studio projects (incl. VSIX)](https://learn.microsoft.com/en-us/visualstudio/releases/2026/port-migrate-and-upgrade-visual-studio-projects)
 - Install targets: `Cornerstone.VisualStudio/source.extension.vsixmanifest`
 - VSIX TFM: `Cornerstone.VisualStudio/Cornerstone.VisualStudio.csproj` (`net472`)
-- Designer surface today: `Views/EditorPane.cs`, `Views/AvaloniaDesigner.xaml.cs`, `Views/AvaloniaPreviewer.xaml.cs`, `Services/PreviewerProcess.cs`
+- Designer surface today: `Views/EditorPane.cs`, `Views/CornerstoneDesigner.xaml.cs`, `Views/CornerstonePreviewer.xaml.cs`, `Services/PreviewerProcess.cs`

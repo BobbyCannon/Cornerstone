@@ -350,7 +350,7 @@ public class SyncManager : Manager
 	/// <returns> True if the sync completed otherwise false if timed out waiting. </returns>
 	public bool WaitForSyncsToComplete(TimeSpan? timeout = null)
 	{
-		if (_syncQueue.IsEmpty && SyncSession.SyncCompleted)
+		if (_syncQueue.IsEmpty && SyncSession is not { SyncRunning: true })
 		{
 			return true;
 		}
@@ -358,7 +358,7 @@ public class SyncManager : Manager
 		var watch = Stopwatch.StartNew();
 		timeout ??= SyncWaitTimeout;
 
-		while (_syncQueue.IsEmpty && SyncSession.SyncCompleted)
+		while (!_syncQueue.IsEmpty || SyncSession is { SyncRunning: true })
 		{
 			if (watch.Elapsed >= timeout)
 			{
@@ -445,22 +445,13 @@ public class SyncManager : Manager
 	/// <param name="session"> The results of the completed sync. </param>
 	protected virtual void OnSyncCompleted(SyncSession session)
 	{
-		// If no issues we'll store last synced on
+		// Store last synced on before SyncCompleted. Subscribers must not dispatch.
 		if (session.SyncSuccessful)
 		{
-			_dispatcher.Dispatch(() =>
-			{
-				UpdateLastSyncedOn(session.SyncType, session.Settings.LastSyncedOnClient, session.Settings.LastSyncedOnServer);
+			UpdateLastSyncedOn(session.SyncType, session.Settings.LastSyncedOnClient, session.Settings.LastSyncedOnServer);
+		}
 
-				//SyncClientProfilerForClient.UpdateWith(session.SyncClientProfilerForClient);
-				//SyncClientProfilerForServer.UpdateWith(session.SyncClientProfilerForServer);
-				StartSyncCommand.Refresh();
-			});
-		}
-		else
-		{
-			_dispatcher.Dispatch(StartSyncCommand.Refresh);
-		}
+		_dispatcher.Dispatch(StartSyncCommand.Refresh);
 
 		SyncCompleted?.Invoke(this, session);
 	}

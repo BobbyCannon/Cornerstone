@@ -22,13 +22,16 @@ public class EnumerableComparer : BaseComparer
 
 	protected override CompareResult CompareValues(CompareSession session, object expected, object actual, Func<string> message)
 	{
+		IEnumerator expectedEnumerator = null;
+		IEnumerator actualEnumerator = null;
+
 		try
 		{
 			session.TrackReference(expected);
 			session.TrackReference(actual);
 
-			var expectedEnumerator = ((IEnumerable) expected).GetEnumerator();
-			var actualEnumerator = ((IEnumerable) actual).GetEnumerator();
+			expectedEnumerator = ((IEnumerable) expected).GetEnumerator();
+			actualEnumerator = ((IEnumerable) actual).GetEnumerator();
 
 			while (true)
 			{
@@ -67,6 +70,8 @@ public class EnumerableComparer : BaseComparer
 		}
 		finally
 		{
+			(expectedEnumerator as IDisposable)?.Dispose();
+			(actualEnumerator as IDisposable)?.Dispose();
 			session.RemoveReference(expected);
 			session.RemoveReference(actual);
 		}

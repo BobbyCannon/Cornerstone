@@ -1,0 +1,21 @@
+using Cornerstone.Presentation.Platform;
+using SkiaSharp;
+
+namespace Cornerstone.Presentation.Backends.Skia
+{
+    /// <summary>
+    /// Extended bitmap implementation that allows for drawing it's contents.
+    /// </summary>
+    internal interface IDrawableBitmapImpl : IBitmapImpl
+    {
+        /// <summary>
+        /// Draw bitmap to a drawing context.
+        /// </summary>
+        /// <param name="context">Drawing context.</param>
+        /// <param name="sourceRect">Source rect.</param>
+        /// <param name="destRect">Destination rect.</param>
+        /// <param name="samplingOptions">Interpolation sampling options.</param>
+        /// <param name="paint">Paint to use.</param>
+        void Draw(DrawingContextImpl context, SKRect sourceRect, SKRect destRect, SKSamplingOptions samplingOptions, SKPaint paint);
+    }
+}

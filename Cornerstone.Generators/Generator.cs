@@ -25,13 +25,13 @@ public partial class Generator : IIncrementalGenerator
 	#region Constants
 
 	public const string FullNameAlsoNotifyAttribute = "Cornerstone.Data.AlsoNotifyAttribute";
-	public const string FullNameAttachedPropertyAttribute = "Cornerstone.Avalonia.AttachedPropertyAttribute";
+	public const string FullNameAttachedPropertyAttribute = "Cornerstone.Presentation.AttachedPropertyAttribute";
 	public const string FullNameChannelMessageAttribute = "Cornerstone.Keystone.Messages.ChannelMessageAttribute`1";
 	public const string FullNameChannelSubscriptionAttribute = "Cornerstone.Communications.ChannelSubscriptionAttribute`2";
 	public const string FullNameDependencyInjectedAttribute = "Cornerstone.Runtime.DependencyInjectedAttribute";
 	public const string FullNameDependencyInjectedPropertyAttribute = "Cornerstone.Runtime.DependencyInjectedPropertyAttribute";
 	public const string FullNameDependencyInjectionConstructorAttribute = "Cornerstone.Runtime.DependencyInjectionConstructorAttribute";
-	public const string FullNameDirectPropertyAttribute = "Cornerstone.Avalonia.DirectPropertyAttribute";
+	public const string FullNameDirectPropertyAttribute = "Cornerstone.Presentation.DirectPropertyAttribute";
 	public const string FullNameIComparable = "System.IComparable";
 	public const string FullNameNotifiableAttribute = "Cornerstone.Data.NotifiableAttribute";
 	public const string FullNameNotifyAttribute = "Cornerstone.Data.NotifyAttribute";
@@ -44,7 +44,7 @@ public partial class Generator : IIncrementalGenerator
 	public const string FullNameSourceReflectionTypeAttribute = "Cornerstone.Reflection.SourceReflectionTypeAttribute";
 	public const string FullNameSqlTableAttribute = "Cornerstone.Storage.Sql.SqlTableAttribute";
 	public const string FullNameSqlTableColumnAttribute = "Cornerstone.Storage.Sql.SqlTableColumnAttribute";
-	public const string FullNameStyledPropertyAttribute = "Cornerstone.Avalonia.StyledPropertyAttribute";
+	public const string FullNameStyledPropertyAttribute = "Cornerstone.Presentation.StyledPropertyAttribute";
 	public const string FullNameUpdateableActionAttribute = "Cornerstone.Data.UpdateableActionAttribute";
 	public const string FullNameUpdateableAttribute = "Cornerstone.Data.UpdateableAttribute";
 	public const string GlobalIncludeExcludeSettings = "global::Cornerstone.Data.IncludeExcludeSettings";
@@ -63,6 +63,8 @@ public partial class Generator : IIncrementalGenerator
 	public const string GlobalSourceTypeInfo = "global::Cornerstone.Reflection.SourceTypeInfo";
 	public const string GlobalSqlGenerator = "global::Cornerstone.Storage.Sql.SqlGenerator";
 	public const string GlobalSqlProvider = "global::Cornerstone.Storage.Sql.SqlProvider";
+	public const string GlobalSqlSyncableDatabase = "global::Cornerstone.Storage.Sql.SqlSyncableDatabase";
+	public const string GlobalSqlSyncableRepository = "global::Cornerstone.Storage.Sql.SqlSyncableRepository";
 	public const string GlobalSqlTableAttribute = "global::Cornerstone.Storage.Sql.SqlTableAttribute";
 	public const string GlobalSqlTableColumnAttribute = "global::Cornerstone.Storage.Sql.SqlTableColumnAttribute";
 	public const string GlobalSystemArrayEmpty = "global::System.Array.Empty";
@@ -143,7 +145,7 @@ public partial class Generator : IIncrementalGenerator
 		context.RegisterSourceOutput(processorSubscriptions, static (spc, models) => ProcessorSubscriptionEmitter.Emit(spc, models));
 
 		var providers = Combine(
-			GetSourceTypeInfoForAvalonia(context),
+			GetSourceTypeInfoForCornerstonePresentation(context),
 			GetSourceTypeInfoForComparable(context),
 			GetSourceTypeInfoForDependencyInjected(context),
 			GetSourceTypeInfoForPackable(context),
@@ -219,13 +221,13 @@ public partial class Generator : IIncrementalGenerator
 	}
 
 	/// <summary>
-	/// Creates per-type processors (Avalonia, notifiable, packable, etc.).
+	/// Creates per-type processors (presentation, notifiable, packable, etc.).
 	/// </summary>
 	private static ITypeProcessor[] CreateTypeProcessors()
 	{
 		return
 		[
-			new AvaloniaProcessor(),
+			new PresentationProcessor(),
 			new ComparableProcessor(),
 			new NotifiableProcessor(),
 			new ProjectFromProcessor(),
@@ -360,7 +362,7 @@ public partial class Generator : IIncrementalGenerator
 				new SourceParameterInfo
 				{
 					Name = x.Name,
-					// global:: required so generated code is safe inside namespaces like Cornerstone.Avalonia
+					// global:: required so generated code is safe inside namespaces like Cornerstone.Presentation.Theme
 					ParameterType = x.Type.ToDisplayString(SymbolDisplayFormats.GlobalFullyQualifiedName),
 					ParameterSymbol = x.Type,
 					NullableAnnotation = x.NullableAnnotation,
@@ -574,6 +576,15 @@ public partial class Generator : IIncrementalGenerator
 					builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterDeleteQuery(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.SqlServer, {typeInfo.FullyQualifiedSourceReflectorName}DeleteSqlServer, {typeInfo.FullyQualifiedSourceReflectorName}GetPrimaryKey);");
 					builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterInsertQuery(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.Sqlite, {typeInfo.FullyQualifiedSourceReflectorName}UpsertSqlite, {typeInfo.FullyQualifiedSourceReflectorName}GetUpsertParamsSqlite);");
 					builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterInsertQuery(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.SqlServer, {typeInfo.FullyQualifiedSourceReflectorName}UpsertSqlServer, {typeInfo.FullyQualifiedSourceReflectorName}GetUpsertParamsSqlServer);");
+					if (SqlReflectionsProcessor.ShouldProcessSyncUpsert(typeInfo))
+					{
+						builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterSyncUpsertQuery(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.Sqlite, {typeInfo.FullyQualifiedSourceReflectorName}SyncUpsertSqlite, {typeInfo.FullyQualifiedSourceReflectorName}GetSyncUpsertParams);");
+						builder.IndentWriteLine($"{GlobalSqlGenerator}.RegisterSyncUpsertQuery(typeof({typeInfo.FullyGlobalQualifiedName}), {GlobalSqlProvider}.SqlServer, {typeInfo.FullyQualifiedSourceReflectorName}SyncUpsertSqlServer, {typeInfo.FullyQualifiedSourceReflectorName}GetSyncUpsertParams);");
+					}
+					if (SqlReflectionsProcessor.TryGetSyncEntityKeyGlobalName(typeInfo, out var syncEntityKeyType))
+					{
+						builder.IndentWriteLine($"{GlobalSqlSyncableDatabase}.RegisterRepository(typeof({typeInfo.FullyGlobalQualifiedName}), static db => new {GlobalSqlSyncableRepository}<{typeInfo.FullyGlobalQualifiedName}, {syncEntityKeyType}>(db));");
+					}
 				}
 			}
 			builder.Indent--;
@@ -587,7 +598,7 @@ public partial class Generator : IIncrementalGenerator
 
 	/// <summary>
 	/// Namespace for the public generated bootstrap type. Matches the compilation assembly name
-	/// (e.g. Cornerstone, Cornerstone.Avalonia) so hosts can call
+	/// (e.g. Cornerstone, Cornerstone.Presentation) so hosts can call
 	/// <c>Cornerstone.CornerstoneGenerated.RegisterDependencies</c> across assemblies.
 	/// Explicit closed generic registration is AOT / ReadyToRun friendly (no runtime type scan).
 	/// </summary>
@@ -686,7 +697,7 @@ public partial class Generator : IIncrementalGenerator
 		return null;
 	}
 
-	private IncrementalValueProvider<ImmutableArray<SourceTypeInfo>> GetSourceTypeInfoForAvalonia(IncrementalGeneratorInitializationContext context)
+	private IncrementalValueProvider<ImmutableArray<SourceTypeInfo>> GetSourceTypeInfoForCornerstonePresentation(IncrementalGeneratorInitializationContext context)
 	{
 		var attached = context.SyntaxProvider
 			.ForAttributeWithMetadataName(
@@ -933,10 +944,9 @@ public partial class Generator : IIncrementalGenerator
 	private IncrementalValueProvider<ImmutableArray<SourceTypeInfo>> GetSourceTypeInfoForUnitTests(IncrementalGeneratorInitializationContext context)
 	{
 		var mstestProvider = context.SyntaxProvider
-			.ForAttributeWithMetadataName(
-				MsTestTestMethodAttributeFullName,
-				static (node, _) => node is MethodDeclarationSyntax,
-				TransformType)
+			.CreateSyntaxProvider(
+				static (node, _) => node is MethodDeclarationSyntax method && method.AttributeLists.Count > 0,
+				TransformMsTestMethod)
 			.Where(static cls => cls is not null)
 			.Collect();
 
@@ -956,7 +966,15 @@ public partial class Generator : IIncrementalGenerator
 			.Where(static cls => cls is not null)
 			.Collect();
 
-		var combined = Combine(mstestProvider, mstestInitializeProvider, mstestCleanupProvider);
+		var mstestClassProvider = context.SyntaxProvider
+			.ForAttributeWithMetadataName(
+				MsTestTestClassAttributeFullName,
+				static (node, _) => node is ClassDeclarationSyntax,
+				TransformType)
+			.Where(static cls => cls is not null)
+			.Collect();
+
+		var combined = Combine(mstestProvider, mstestInitializeProvider, mstestCleanupProvider, mstestClassProvider);
 		return combined;
 	}
 
@@ -1096,6 +1114,47 @@ public partial class Generator : IIncrementalGenerator
 		return response;
 	}
 
+	private SourceTypeInfo TransformMsTestMethod(GeneratorSyntaxContext ctx, CancellationToken cancellationToken)
+	{
+		if (ctx.Node is not MethodDeclarationSyntax method)
+		{
+			return null;
+		}
+
+		if (ModelExtensions.GetDeclaredSymbol(ctx.SemanticModel, method, cancellationToken) is not IMethodSymbol methodSymbol)
+		{
+			return null;
+		}
+
+		var isTestMethod = false;
+		foreach (var attribute in methodSymbol.GetAttributes())
+		{
+			var type = attribute.AttributeClass;
+			while (type != null)
+			{
+				if (type.ToDisplayString() == MsTestTestMethodAttributeFullName)
+				{
+					isTestMethod = true;
+					break;
+				}
+
+				type = type.BaseType;
+			}
+
+			if (isTestMethod)
+			{
+				break;
+			}
+		}
+
+		if (!isTestMethod)
+		{
+			return null;
+		}
+
+		return ProcessTypeSymbol(methodSymbol.ContainingType);
+	}
+
 	private SourceTypeInfo TransformType(GeneratorAttributeSyntaxContext ctx, CancellationToken cancellationToken)
 	{
 		// Find the enclosing class/struct/record/enum
@@ -1114,6 +1173,21 @@ public partial class Generator : IIncrementalGenerator
 		return response;
 	}
 
+	private static object UnwrapTypedConstant(TypedConstant constant)
+	{
+		if (constant.IsNull)
+		{
+			return null;
+		}
+
+		if (constant.Kind == TypedConstantKind.Array)
+		{
+			return constant.Values.Select(UnwrapTypedConstant).ToArray();
+		}
+
+		return constant.Value;
+	}
+
 	private static void UpdateAttributes(List<SourceAttributeInfo> attributes, ISymbol symbol)
 	{
 		foreach (var attribute in symbol.GetAttributes())
@@ -1126,12 +1200,7 @@ public partial class Generator : IIncrementalGenerator
 			var attributeInfo = new SourceAttributeInfo
 			{
 				ConstructorArguments = attribute.ConstructorArguments
-					.Select(x => x.IsNull
-						? null
-						: x.Kind == TypedConstantKind.Array
-							? x.Values.Select(y => y.Value).ToArray()
-							: x.Value
-					)
+					.Select(UnwrapTypedConstant)
 					.ToArray(),
 				Data = attribute,
 				FullyGlobalQualifiedName = attribute.AttributeClass?.ToDisplayString(SymbolDisplayFormats.GlobalFullyQualifiedName),
@@ -1142,11 +1211,7 @@ public partial class Generator : IIncrementalGenerator
 				Name = attribute.AttributeClass?.Name,
 				NamedArguments = attribute.NamedArguments.ToDictionary(
 					x => x.Key,
-					x => x.Value.IsNull
-						? null
-						: x.Value.Kind == TypedConstantKind.Array
-							? x.Value.Values.Select(y => y.Value).ToArray()
-							: x.Value.Value
+					x => UnwrapTypedConstant(x.Value)
 				),
 				Type = attribute.GetType(),
 				TypeSymbol = attribute.AttributeClass

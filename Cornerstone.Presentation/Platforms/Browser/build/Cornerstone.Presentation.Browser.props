@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <CornerstoneAllowWebGl2 Condition="'$(CornerstoneAllowWebGl2)' == ''">true</CornerstoneAllowWebGl2>
+    <ShouldIncludeNativeSkiaSharp Condition=" '$(ShouldIncludeNativeSkiaSharp)' == '' ">true</ShouldIncludeNativeSkiaSharp>
+    <ShouldIncludeNativeHarfBuzzSharp Condition=" '$(ShouldIncludeNativeHarfBuzzSharp)' == '' ">true</ShouldIncludeNativeHarfBuzzSharp>
+  </PropertyGroup>
+</Project>

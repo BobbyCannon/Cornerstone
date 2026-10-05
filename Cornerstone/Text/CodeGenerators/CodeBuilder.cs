@@ -229,7 +229,9 @@ public class CodeBuilder : TextWriter
 
 	public void WriteObject<T>(T actual)
 	{
-		var sourceInfoType = SourceReflector.GetSourceType(actual?.GetType() ?? typeof(T));
+		var sourceInfoType = actual != null
+			? SourceReflector.GetSourceType(actual)
+			: SourceReflector.GetSourceType<T>();
 		var generator = _builtInGenerators.FirstOrDefault(x => x.SupportsType(sourceInfoType.Type));
 		if (generator != null)
 		{

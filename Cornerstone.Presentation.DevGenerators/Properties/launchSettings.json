@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Profile 1": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\..\\Markup\\Cornerstone.Presentation.Markup.Xaml.Loader\\Cornerstone.Presentation.Markup.Xaml.Loader.csproj"
+    }
+  }
+}

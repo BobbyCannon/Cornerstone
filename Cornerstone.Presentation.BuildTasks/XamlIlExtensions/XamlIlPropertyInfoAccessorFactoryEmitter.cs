@@ -1,0 +1,123 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Text;
+using Cornerstone.Presentation.Markup.Xaml.XamlIl.CompilerExtensions.Transformers;
+using XamlX.Ast;
+using XamlX.Transform;
+using XamlX.TypeSystem;
+using XamlX.Emit;
+using XamlX.IL;
+
+using XamlIlEmitContext = XamlX.Emit.XamlEmitContext<XamlX.IL.IXamlILEmitter, XamlX.IL.XamlILNodeEmitResult>;
+
+namespace Cornerstone.Presentation.Markup.Xaml.XamlIl.CompilerExtensions
+{
+    class XamlIlPropertyInfoAccessorFactoryEmitter
+    {
+        private const string IndexerClosureFactoryMethodName = "CreateAccessor";
+        private readonly IXamlTypeBuilder<IXamlILEmitter> _indexerClosureTypeBuilder;
+        private IXamlType? _indexerClosureType;
+        public XamlIlPropertyInfoAccessorFactoryEmitter(IXamlTypeBuilder<IXamlILEmitter> indexerClosureType)
+        {
+            _indexerClosureTypeBuilder = indexerClosureType;
+        }
+
+        public IXamlType EmitLoadInpcPropertyAccessorFactory(XamlIlEmitContext context, IXamlILEmitter codeGen)
+        {
+            codeGen.Ldnull();
+            EmitLoadPropertyAccessorFactory(context, codeGen, context.GetPresentationTypes().PropertyInfoAccessorFactory, "CreateInpcPropertyAccessor");
+            return EmitCreateAccessorFactoryDelegate(context, codeGen);
+        }
+
+        public IXamlType EmitLoadPresentationPropertyAccessorFactory(XamlIlEmitContext context, IXamlILEmitter codeGen)
+        {
+            codeGen.Ldnull();
+            EmitLoadPropertyAccessorFactory(context, codeGen, context.GetPresentationTypes().PropertyInfoAccessorFactory, "CreatePresentationPropertyAccessor");
+            return EmitCreateAccessorFactoryDelegate(context, codeGen);
+        }
+
+        [UnconditionalSuppressMessage("Trimming", "IL2122", Justification = TrimmingMessages.TypesInCoreOrCornerstoneAssembly)]
+        private void EmitLoadPropertyAccessorFactory(XamlIlEmitContext context, IXamlILEmitter codeGen, IXamlType type, string accessorFactoryName, bool isStatic = true)
+        {
+            var types = context.GetPresentationTypes();
+            var weakReferenceType = types.WeakReferenceOfT.MakeGenericType(context.Configuration.WellKnownTypes.Object);
+            FindMethodMethodSignature accessorFactorySignature = new FindMethodMethodSignature(accessorFactoryName, types.IPropertyAccessor, weakReferenceType, types.IPropertyInfo)
+            {
+                IsStatic = isStatic
+            };
+            codeGen.Ldftn(type.GetMethod(accessorFactorySignature));
+        }
+
+        [UnconditionalSuppressMessage("Trimming", "IL2122", Justification = TrimmingMessages.TypesInCoreOrCornerstoneAssembly)]
+        public IXamlType EmitLoadIndexerAccessorFactory(XamlIlEmitContext context, IXamlILEmitter codeGen, IXamlAstValueNode value)
+        {
+            var intType = context.Configuration.TypeSystem.WellKnownTypes.Int32;
+            if (_indexerClosureType is null)
+            {
+                _indexerClosureType = InitializeClosureType(context);
+            }
+
+            context.Emit(value, codeGen, intType);
+            codeGen.Newobj(_indexerClosureType.GetConstructor(new List<IXamlType> { intType }));
+            EmitLoadPropertyAccessorFactory(context, codeGen, _indexerClosureType, IndexerClosureFactoryMethodName, isStatic: false);
+            return EmitCreateAccessorFactoryDelegate(context, codeGen);
+        }
+
+        [UnconditionalSuppressMessage("Trimming", "IL2122", Justification = TrimmingMessages.TypesInCoreOrCornerstoneAssembly)]
+        private IXamlType InitializeClosureType(XamlIlEmitContext context)
+        {
+            var types = context.GetPresentationTypes();
+            var intType = context.Configuration.WellKnownTypes.Int32;
+            var weakReferenceType = types.WeakReferenceOfT.MakeGenericType(context.Configuration.WellKnownTypes.Object);
+            var indexAccessorFactoryMethod = context.GetPresentationTypes().PropertyInfoAccessorFactory.GetMethod(
+                    new FindMethodMethodSignature(
+                        "CreateIndexerPropertyAccessor",
+                        types.IPropertyAccessor,
+                        weakReferenceType,
+                        types.IPropertyInfo,
+                        intType)
+                    {
+                        IsStatic = true
+                    });
+            var indexField = _indexerClosureTypeBuilder.DefineField(intType, "_index", XamlVisibility.Private, false);
+            var ctor = _indexerClosureTypeBuilder.DefineConstructor(false, intType);
+            ctor.Generator
+                .Ldarg_0()
+                .Ldarg(1)
+                .Stfld(indexField)
+                .Ret();
+            _indexerClosureTypeBuilder.DefineMethod(
+                types.IPropertyAccessor,
+                new[] { weakReferenceType, types.IPropertyInfo },
+                IndexerClosureFactoryMethodName,
+                visibility: XamlVisibility.Public,
+                isStatic: false,
+                isInterfaceImpl: false)
+                .Generator
+                .Ldarg(1)
+                .Ldarg(2)
+                .LdThisFld(indexField)
+                .EmitCall(indexAccessorFactoryMethod)
+                .Ret();
+
+            return _indexerClosureTypeBuilder.CreateType();
+        }
+
+        [UnconditionalSuppressMessage("Trimming", "IL2122", Justification = TrimmingMessages.TypesInCoreOrCornerstoneAssembly)]
+        private IXamlType EmitCreateAccessorFactoryDelegate(XamlIlEmitContext context, IXamlILEmitter codeGen)
+        {
+            var types = context.GetPresentationTypes();
+            var weakReferenceType = types.WeakReferenceOfT.MakeGenericType(context.Configuration.WellKnownTypes.Object);
+            var funcType = context.Configuration.WellKnownTypes.GetFuncOfT(3).MakeGenericType(
+                            weakReferenceType,
+                            types.IPropertyInfo,
+                            types.IPropertyAccessor);
+            codeGen.Newobj(funcType.Constructors.First(c =>
+                                c.Parameters.Count == 2 &&
+                                c.Parameters[0].Equals(context.Configuration.WellKnownTypes.Object)));
+            return funcType;
+        }
+    }
+}

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="21701" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" colorMatched="YES">
+	<dependencies>
+		<plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21678" />
+	</dependencies>
+	<objects>
+		<placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" />
+		<placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder" />
+		<view contentMode="scaleToFill" id="iN0-l3-epB">
+			<rect key="frame" x="0.0" y="0.0" width="480" height="480" />
+			<autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+			<subviews>
+				<imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" image="Cornerstone.Navigator.png" translatesAutoresizingMaskIntoConstraints="NO" id="logo-image">
+					<rect key="frame" x="144" y="144" width="192" height="192" />
+					<constraints>
+						<constraint firstAttribute="width" constant="192" id="logo-width" />
+						<constraint firstAttribute="height" constant="192" id="logo-height" />
+					</constraints>
+				</imageView>
+			</subviews>
+			<color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB" />
+			<constraints>
+				<constraint firstItem="logo-image" firstAttribute="centerX" secondItem="iN0-l3-epB" secondAttribute="centerX" id="logo-center-x" />
+				<constraint firstItem="logo-image" firstAttribute="centerY" secondItem="iN0-l3-epB" secondAttribute="centerY" id="logo-center-y" />
+			</constraints>
+		</view>
+	</objects>
+	<resources>
+		<image name="Cornerstone.Navigator.png" width="192" height="192" />
+	</resources>
+</document>

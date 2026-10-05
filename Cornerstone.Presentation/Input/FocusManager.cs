@@ -1,0 +1,1181 @@
+using System;
+using System.Diagnostics;
+using System.Linq;
+using Cornerstone.Presentation.Input.Navigation;
+using Cornerstone.Presentation.Interactivity;
+using Cornerstone.Presentation.Metadata;
+using Cornerstone.Presentation.VisualTree;
+
+namespace Cornerstone.Presentation.Input
+{
+    /// <summary>
+    /// Manages focus for the application.
+    /// </summary>
+    public class FocusManager : IFocusManager
+    {
+        /// <summary>
+        /// Private attached property for storing the currently focused element in a focus scope.
+        /// </summary>
+        /// <remarks>
+        /// This property is set on the control which defines a focus scope and tracks the currently
+        /// focused element within that scope.
+        /// </remarks>
+        private static readonly AttachedProperty<IInputElement> FocusedElementProperty =
+            PresentationProperty.RegisterAttached<FocusManager, StyledElement, IInputElement>("FocusedElement");
+
+        private StyledElement? _focusRoot;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FocusManager"/> class.
+        /// </summary>
+        static FocusManager()
+        {
+            InputElement.PointerPressedEvent.AddClassHandler(
+                typeof(IInputElement),
+                new EventHandler<RoutedEventArgs>(OnPreviewPointerEventHandler),
+                RoutingStrategies.Tunnel);
+            InputElement.PointerReleasedEvent.AddClassHandler(
+                typeof(IInputElement),
+                new EventHandler<RoutedEventArgs>(OnPreviewPointerEventHandler),
+                RoutingStrategies.Tunnel);
+        }
+
+        [PrivateApi]
+        public FocusManager()
+        {
+        }
+
+        /// <summary>
+        /// Gets or sets the content root for the focus management system.
+        /// </summary>
+        [PrivateApi]
+        public IInputElement? ContentRoot
+        {
+            get => _contentRoot;
+            set => _contentRoot = value;
+        }
+
+        private IInputElement? Current => KeyboardDevice.Instance?.FocusedElement;
+
+        private readonly XYFocus _xyFocus = new();
+        private IInputElement? _contentRoot;
+        private XYFocusOptions? _reusableFocusOptions;
+
+        /// <inheritdoc />
+        public IInputElement? GetFocusedElement() => Current;
+
+        /// <inheritdoc />
+        public bool Focus(
+            IInputElement? element,
+            NavigationMethod method = NavigationMethod.Unspecified,
+            KeyModifiers keyModifiers = KeyModifiers.None)
+        {
+            if (KeyboardDevice.Instance is not { } keyboardDevice)
+                return false;
+
+            if (element is not null)
+            {
+                return FocusCore(keyboardDevice, element, method, keyModifiers);
+            }
+
+            if (_focusRoot?.GetValue(FocusedElementProperty) is { } restore && restore != Current)
+            {
+                if (!CanFocus(restore))
+                {
+                    // Previous effective focus is no longer part of the focus root's visual tree. We clear the focused element
+                    _focusRoot.ClearValue(FocusedElementProperty);
+
+                    if (Current != null && GetFocusScope(Current) != _focusRoot)
+                    {
+                        _focusRoot = null;
+
+                        return false;
+                    }
+                }
+                else
+                {
+                    return FocusCore(keyboardDevice, restore, method, keyModifiers);
+                }
+            }
+
+            _focusRoot = null;
+            keyboardDevice.SetFocusedElement(null, NavigationMethod.Unspecified, KeyModifiers.None, false);
+            return false;
+        }
+
+        private bool FocusCore(
+            KeyboardDevice keyboardDevice,
+            IInputElement element,
+            NavigationMethod method,
+            KeyModifiers keyModifiers)
+        {
+            if (!CanFocus(element))
+                return false;
+
+            keyboardDevice.SetFocusedElement(element, method, keyModifiers);
+
+            if (keyboardDevice.FocusedElement is { } effectivelyFocusedElement)
+            {
+                if (GetFocusScope(effectivelyFocusedElement) is { } scope)
+                {
+                    scope.SetValue(FocusedElementProperty, effectivelyFocusedElement);
+                    _focusRoot = GetFocusRoot(scope);
+                }
+
+                return effectivelyFocusedElement == element;
+            }
+
+            _focusRoot = null;
+            keyboardDevice.SetFocusedElement(null, NavigationMethod.Unspecified, KeyModifiers.None, false);
+            return false;
+        }
+
+        internal void ClearFocusOnElementRemoved(IInputElement removedElement, Visual oldParent)
+        {
+            if (oldParent is IInputElement parentElement &&
+                GetFocusScope(parentElement) is StyledElement scope &&
+                scope.GetValue(FocusedElementProperty) is IInputElement focused &&
+                focused == removedElement)
+            {
+                scope.ClearValue(FocusedElementProperty);
+            }
+
+            if (Current == removedElement)
+                Focus(null);
+        }
+
+        [PrivateApi]
+        public IInputElement? GetFocusedElement(IFocusScope scope)
+        {
+            return (scope as StyledElement)?.GetValue(FocusedElementProperty);
+        }
+
+        /// <summary>
+        /// Notifies the focus manager of a change in focus scope.
+        /// </summary>
+        /// <param name="scope">The new focus scope.</param>
+        [PrivateApi]
+        public void SetFocusScope(IFocusScope scope)
+        {
+            if (KeyboardDevice.Instance is not { } keyboardDevice)
+                return;
+
+            if (GetFocusedElement(scope) is { } focused)
+            {
+                Focus(focused);
+            }
+            else if (scope is IInputElement scopeElement && CanFocus(scopeElement))
+            {
+                // TODO: Make this do something useful, i.e. select the first focusable
+                // control, select a control that the user has specified to have default
+                // focus etc.
+                Focus(scopeElement);
+            }
+            else
+            {
+                // If the scope isn't focusable, make sure we still set it as the current focus root,
+                // otherwise it will be completely ignored
+                _focusRoot = scope as StyledElement;
+                keyboardDevice.SetFocusedElement(null, NavigationMethod.Unspecified, KeyModifiers.None, false);
+            }
+        }
+
+        [PrivateApi]
+        public void RemoveFocusRoot(IFocusScope scope)
+        {
+            if (scope == _focusRoot)
+                Focus(null);
+        }
+
+        [PrivateApi]
+        public static bool GetIsFocusScope(IInputElement e) => e is IFocusScope;
+
+        /// <summary>
+        /// Public API customers should use TopLevel.GetTopLevel(control).FocusManager.
+        /// But since we have split projects, we can't access TopLevel from Cornerstone.Presentation.Base.
+        /// That's why we need this helper method instead.
+        /// </summary>
+        internal static FocusManager? GetFocusManager(IInputElement? element)
+        {
+
+            // Element might not be a visual, and not attached to the root.
+            // But IFocusManager is always expected to be a FocusManager. 
+            return (FocusManager?)(element as Visual)?.GetInputRoot()?.FocusManager
+                // In our unit tests some elements might not have a root. Remove when we migrate to headless tests.
+                ?? (FocusManager?)PresentationLocator.Current.GetService<IFocusManager>();
+        }
+
+        /// <inheritdoc />
+        public bool TryMoveFocus(NavigationDirection direction, FindNextElementOptions? options = null)
+        {
+            ValidateDirection(direction);
+
+            var focusOptions = ToFocusOptions(options, true);
+            var result = FindAndSetNextFocus(options?.FocusedElement ?? Current, direction, focusOptions);
+            _reusableFocusOptions = focusOptions;
+            return result;
+        }
+
+        /// <summary>
+        /// Checks if the specified element can be focused.
+        /// </summary>
+        /// <param name="e">The element.</param>
+        /// <returns>True if the element can be focused.</returns>
+        internal static bool CanFocus(IInputElement e) => e.Focusable && e.IsEffectivelyEnabled && IsVisible(e);
+
+        private static bool CanPointerFocus(IInputElement e, PointerEventArgs ev)
+        {
+            if (CanFocus(e))
+            {
+                return ev switch
+                {
+                    PointerReleasedEventArgs releasedEventArgs when releasedEventArgs.Pointer.Type != PointerType.Mouse => true,
+                    PointerPressedEventArgs pressedEventArgs when pressedEventArgs.Pointer.Type == PointerType.Mouse => true,
+                    _ => false,
+                };
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Gets the focus scope of the specified control, traversing popups.
+        /// </summary>
+        /// <param name="control">The control.</param>
+        /// <returns>The focus scope.</returns>
+        private static StyledElement? GetFocusScope(IInputElement control)
+        {
+            IInputElement? c = control;
+
+            while (c != null)
+            {
+                if (c is IFocusScope &&
+                    c is Visual v &&
+                    v.VisualRoot is Visual root &&
+                    root.IsVisible)
+                {
+                    return v;
+                }
+
+                c = (c as Visual)?.GetVisualParent<IInputElement>() ??
+                    ((c as IHostedVisualTreeRoot)?.Host as IInputElement);
+            }
+
+            return null;
+        }
+
+        private static StyledElement? GetFocusRoot(StyledElement scope)
+        {
+            if (scope is not Visual v)
+                return null;
+
+            var root = v.PresentationSource?.InputRoot.FocusRoot as Visual;
+
+            while (root is IHostedVisualTreeRoot hosted &&
+                hosted.Host?.PresentationSource?.InputRoot.FocusRoot is { } parentRoot)
+            {
+                root = parentRoot;
+            }
+
+            return root;
+        }
+
+        /// <summary>
+        /// Global handler for pointer pressed events.
+        /// </summary>
+        /// <param name="sender">The event sender.</param>
+        /// <param name="e">The event args.</param>
+        private static void OnPreviewPointerEventHandler(object? sender, RoutedEventArgs e)
+        {
+            if (sender is null)
+                return;
+
+            var ev = (PointerEventArgs)e;
+            var visual = (Visual)sender;
+
+            if (sender == e.Source && (ev.GetCurrentPoint(visual).Properties.IsLeftButtonPressed || (e as PointerReleasedEventArgs)?.InitialPressMouseButton == MouseButton.Left))
+            {
+                Visual? element = ev.Pointer?.Captured as Visual ?? e.Source as Visual;
+
+                while (element != null)
+                {
+                    if (element is IInputElement inputElement && CanPointerFocus(inputElement, ev))
+                    {
+                        inputElement.Focus(NavigationMethod.Pointer, ev.KeyModifiers);
+
+                        break;
+                    }
+
+                    element = element.VisualParent;
+                }
+            }
+        }
+
+        private static bool IsVisible(IInputElement e)
+        {
+            if (e is Visual v)
+                return v.IsAttachedToVisualTree && e.IsEffectivelyVisible;
+            return true;
+        }
+
+        /// <inheritdoc />
+        public IInputElement? FindFirstFocusableElement()
+        {
+            var root = (_contentRoot as Visual)?.GetSelfAndVisualDescendants().FirstOrDefault(x => x is IInputElement) as IInputElement;
+            if (root == null)
+                return null;
+            return GetFirstFocusableElementFromRoot(false);
+        }
+
+        /// <summary>
+        /// Retrieves the first element that can receive focus based on the specified scope.
+        /// </summary>
+        /// <param name="searchScope">The root element from which to search.</param>
+        /// <returns>The first focusable element.</returns>
+        public static IInputElement? FindFirstFocusableElement(IInputElement searchScope)
+        {
+            return GetFirstFocusableElement(searchScope);
+        }
+
+        /// <inheritdoc />
+        public IInputElement? FindLastFocusableElement()
+        {
+            var root = (_contentRoot as Visual)?.GetSelfAndVisualDescendants().FirstOrDefault(x => x is IInputElement) as IInputElement;
+            if (root == null)
+                return null;
+            return GetFirstFocusableElementFromRoot(true);
+        }
+
+        /// <summary>
+        /// Retrieves the last element that can receive focus based on the specified scope.
+        /// </summary>
+        /// <param name="searchScope">The root element from which to search.</param>
+        /// <returns>The last focusable object.</returns>
+        public static IInputElement? FindLastFocusableElement(IInputElement searchScope)
+        {
+            return GetFocusManager(searchScope)?.GetLastFocusableElement(searchScope);
+        }
+
+        /// <inheritdoc />
+        public IInputElement? FindNextElement(NavigationDirection direction, FindNextElementOptions? options = null)
+        {
+            ValidateDirection(direction);
+
+            var focusOptions = ToFocusOptions(options, false);
+            var result = FindNextFocus(options?.FocusedElement ?? Current, direction, focusOptions);
+            _reusableFocusOptions = focusOptions;
+            return result;
+        }
+
+        private static void ValidateDirection(NavigationDirection direction)
+        {
+            if (direction is not (
+                NavigationDirection.Next or
+                NavigationDirection.Previous or
+                NavigationDirection.Up or
+                NavigationDirection.Down or
+                NavigationDirection.Left or
+                NavigationDirection.Right))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(direction),
+                    direction,
+                    $"Only {nameof(NavigationDirection.Next)}, {nameof(NavigationDirection.Previous)}, " +
+                    $"{nameof(NavigationDirection.Up)}, {nameof(NavigationDirection.Down)}," +
+                    $" {nameof(NavigationDirection.Left)} and {nameof(NavigationDirection.Right)} directions are supported");
+            }
+        }
+
+        private XYFocusOptions ToFocusOptions(FindNextElementOptions? options, bool updateManifold)
+        {
+            // XYFocus only uses the options and never modifies them; we can cache and reset them between calls.
+            var focusOptions = _reusableFocusOptions;
+            _reusableFocusOptions = null;
+
+            if (focusOptions is null)
+                focusOptions = new XYFocusOptions();
+            else
+                focusOptions.Reset();
+
+            if (options is not null)
+            {
+                focusOptions.SearchRoot = options.SearchRoot;
+                focusOptions.ExclusionRect = options.ExclusionRect;
+                focusOptions.FocusHintRectangle = options.FocusHintRectangle;
+                focusOptions.NavigationStrategyOverride = options.NavigationStrategyOverride;
+                focusOptions.IgnoreOcclusivity = options.IgnoreOcclusivity;
+            }
+
+            focusOptions.UpdateManifold = updateManifold;
+
+            return focusOptions;
+        }
+
+        private IInputElement? FindNextFocus(
+            IInputElement? focusedElement,
+            NavigationDirection direction,
+            XYFocusOptions focusOptions,
+            bool updateManifolds = true)
+        {
+            IInputElement? nextFocusedElement;
+
+            if (direction is NavigationDirection.Previous or NavigationDirection.Next || focusedElement == null)
+            {
+                var isReverse = direction == NavigationDirection.Previous;
+                nextFocusedElement = ProcessTabStopInternal(focusedElement, isReverse, true);
+            }
+            else
+            {
+                if (focusedElement is InputElement inputElement &&
+                    XYFocus.GetBoundsForRanking(inputElement, focusOptions.IgnoreClipping) is { } bounds)
+                {
+                    focusOptions.FocusedElementBounds = bounds;
+                }
+
+                nextFocusedElement = _xyFocus.GetNextFocusableElement(direction,
+                    focusedElement as InputElement,
+                    null,
+                    updateManifolds,
+                    focusOptions);
+            }
+
+            return nextFocusedElement;
+        }
+
+        internal static IInputElement? GetFirstFocusableElementInternal(IInputElement searchStart, IInputElement? focusCandidate = null)
+        {
+            IInputElement? firstFocusableFromCallback = null;
+            var useFirstFocusableFromCallback = false;
+            if (searchStart is InputElement inputElement)
+            {
+                firstFocusableFromCallback = inputElement.GetFirstFocusableElementOverride();
+
+                if (firstFocusableFromCallback != null)
+                {
+                    useFirstFocusableFromCallback = FocusHelpers.IsFocusable(firstFocusableFromCallback) || FocusHelpers.CanHaveFocusableChildren(firstFocusableFromCallback as PresentationObject);
+                }
+            }
+
+            if (useFirstFocusableFromCallback)
+            {
+                if (focusCandidate == null || (GetTabIndex(firstFocusableFromCallback) < GetTabIndex(focusCandidate)))
+                {
+                    focusCandidate = firstFocusableFromCallback;
+                }
+            }
+            else
+            {
+                var children = FocusHelpers.GetInputElementChildren(searchStart as PresentationObject);
+
+                foreach (var child in children)
+                {
+                    if (FocusHelpers.IsVisible(child))
+                    {
+                        var hasFocusableChildren = FocusHelpers.CanHaveFocusableChildren(child as PresentationObject);
+                        if (FocusHelpers.IsPotentialTabStop(child))
+                        {
+                            if (focusCandidate == null && (FocusHelpers.IsFocusable(child) || hasFocusableChildren))
+                            {
+                                focusCandidate = child;
+                            }
+
+                            if (FocusHelpers.IsFocusable(child) || hasFocusableChildren)
+                            {
+                                if (focusCandidate == null || GetTabIndex(child) < GetTabIndex(focusCandidate))
+                                {
+                                    focusCandidate = child;
+                                }
+                            }
+                        }
+                        else if (hasFocusableChildren)
+                        {
+                            focusCandidate = GetFirstFocusableElementInternal(child, focusCandidate);
+                        }
+                    }
+                }
+            }
+
+            return focusCandidate;
+        }
+
+        internal static IInputElement? GetLastFocusableElementInternal(IInputElement searchStart, IInputElement? lastFocus = null)
+        {
+            IInputElement? lastFocusableFromCallback = null;
+            var useLastFocusableFromCallback = false;
+            if (searchStart is InputElement inputElement)
+            {
+                lastFocusableFromCallback = inputElement.GetLastFocusableElementOverride();
+
+                if (lastFocusableFromCallback != null)
+                {
+                    useLastFocusableFromCallback = FocusHelpers.IsFocusable(lastFocusableFromCallback) || FocusHelpers.CanHaveFocusableChildren(lastFocusableFromCallback as PresentationObject);
+                }
+            }
+
+            if (useLastFocusableFromCallback)
+            {
+                if (lastFocus == null || (GetTabIndex(lastFocusableFromCallback) > GetTabIndex(lastFocus)))
+                {
+                    lastFocus = lastFocusableFromCallback;
+                }
+            }
+            else
+            {
+                var children = FocusHelpers.GetInputElementChildren(searchStart as PresentationObject);
+
+                foreach (var child in children)
+                {
+                    if (FocusHelpers.IsVisible(child))
+                    {
+                        var hasFocusableChildren = FocusHelpers.CanHaveFocusableChildren(child as PresentationObject);
+                        if (FocusHelpers.IsPotentialTabStop(child))
+                        {
+                            if (lastFocus == null && (FocusHelpers.IsFocusable(child) || hasFocusableChildren))
+                            {
+                                lastFocus = child;
+                            }
+
+                            if (FocusHelpers.IsFocusable(child) || hasFocusableChildren)
+                            {
+                                if (lastFocus == null || GetTabIndex(child) >= GetTabIndex(lastFocus))
+                                {
+                                    lastFocus = child;
+                                }
+                            }
+                        }
+                        else if (hasFocusableChildren)
+                        {
+                            lastFocus = GetLastFocusableElementInternal(child, lastFocus);
+                        }
+                    }
+                }
+            }
+
+            return lastFocus;
+        }
+
+        private IInputElement? ProcessTabStopInternal(IInputElement? focusedElement, bool isReverse, bool queryOnly)
+        {
+            IInputElement? newTabStop = null;
+
+            var defaultCandidateTabStop = GetTabStopCandidateElement(focusedElement, isReverse, queryOnly, out var didCycleFocusAtRootVisualScope);
+
+            var isTabStopOverriden = InputElement.ProcessTabStop(_contentRoot,
+                focusedElement,
+                defaultCandidateTabStop,
+                isReverse,
+                didCycleFocusAtRootVisualScope,
+                out var newTabStopFromCallback);
+
+            if (isTabStopOverriden)
+            {
+                newTabStop = newTabStopFromCallback;
+            }
+
+            if (!isTabStopOverriden && newTabStop == null && defaultCandidateTabStop != null)
+            {
+                newTabStop = defaultCandidateTabStop;
+            }
+
+            return newTabStop;
+        }
+
+        private IInputElement? GetTabStopCandidateElement(
+            IInputElement? focusedElement,
+            bool isReverse,
+            bool queryOnly,
+            out bool didCycleFocusAtRootVisualScope)
+        {
+            didCycleFocusAtRootVisualScope = false;
+            IInputElement? newTabStop;
+            var root = _contentRoot;
+
+            if (root == null)
+                return null;
+
+            bool internalCycleWorkaround = false;
+
+            if (focusedElement != null)
+            {
+                internalCycleWorkaround = CanProcessTabStop(focusedElement, isReverse);
+            }
+
+            if (focusedElement == null)
+            {
+                if (!isReverse)
+                {
+                    newTabStop = GetFirstFocusableElement(root, null);
+                }
+                else
+                {
+                    newTabStop = GetLastFocusableElement(root, null);
+                }
+
+                didCycleFocusAtRootVisualScope = true;
+            }
+            else if (!isReverse)
+            {
+                newTabStop = GetNextTabStop(focusedElement);
+
+                if (newTabStop == null && (internalCycleWorkaround || queryOnly))
+                {
+                    newTabStop = GetFirstFocusableElement(root, null);
+
+                    didCycleFocusAtRootVisualScope = true;
+                }
+            }
+            else
+            {
+                newTabStop = GetPreviousTabStop(focusedElement);
+
+                if (newTabStop == null && (internalCycleWorkaround || queryOnly))
+                {
+                    newTabStop = GetLastFocusableElement(root, null);
+                    didCycleFocusAtRootVisualScope = true;
+                }
+            }
+
+            return newTabStop;
+        }
+
+        private IInputElement? GetNextTabStop(IInputElement? currentTabStop, bool ignoreCurrentTabStop = false)
+        {
+            var focused = currentTabStop;
+            if (focused == null || _contentRoot == null)
+            {
+                return null;
+            }
+
+            IInputElement? currentCompare = focused;
+            IInputElement? newTabStop = (focused as InputElement)?.GetNextTabStopOverride();
+
+            if (newTabStop == null && !ignoreCurrentTabStop
+                && (FocusHelpers.IsVisible(focused) && (FocusHelpers.CanHaveFocusableChildren(focused as PresentationObject) || FocusHelpers.CanHaveChildren(focused))))
+            {
+                newTabStop = GetFirstFocusableElement(focused, newTabStop);
+            }
+
+            if (newTabStop == null)
+            {
+                var currentPassed = false;
+                var current = focused;
+                var parent = FocusHelpers.GetFocusParent(focused);
+                var parentIsRootVisual = parent == (_contentRoot as Visual)?.VisualRoot;
+
+                while (parent != null && !parentIsRootVisual && newTabStop == null)
+                {
+                    if (IsValidTabStopSearchCandidate(current) && current is InputElement c && KeyboardNavigation.GetTabNavigation(c) == KeyboardNavigationMode.Cycle)
+                    {
+                        if (current == GetParentTabStopElement(focused))
+                        {
+                            newTabStop = GetFirstFocusableElement(focused, null);
+                        }
+                        else
+                        {
+                            newTabStop = GetFirstFocusableElement(current, current);
+                        }
+                        break;
+                    }
+
+                    if (IsValidTabStopSearchCandidate(parent) && parent is InputElement p && KeyboardNavigation.GetTabNavigation(p) == KeyboardNavigationMode.Once)
+                    {
+                        current = parent;
+                        parent = FocusHelpers.GetFocusParent(current);
+                        if (parent == null)
+                            break;
+                    }
+                    else if (!IsValidTabStopSearchCandidate(parent))
+                    {
+                        var parentElement = GetParentTabStopElement(parent);
+                        if (parentElement == null)
+                        {
+                            parent = GetRootOfPopupSubTree(current) as IInputElement;
+
+                            if (parent != null)
+                            {
+                                newTabStop = GetNextOrPreviousTabStopInternal(parent, current, newTabStop, true, ref currentPassed, ref currentCompare);
+
+                                if (newTabStop != null && !FocusHelpers.IsFocusable(newTabStop))
+                                {
+                                    newTabStop = GetFirstFocusableElement(newTabStop, null);
+                                }
+                                if (newTabStop == null)
+                                {
+                                    newTabStop = GetFirstFocusableElement(parent, null);
+                                }
+                                break;
+                            }
+
+                            parent = (_contentRoot as Visual)?.VisualRoot as IInputElement;
+                        }
+                        else if (parentElement is InputElement pIE && KeyboardNavigation.GetTabNavigation(pIE) == KeyboardNavigationMode.None)
+                        {
+                            current = pIE;
+                            parent = FocusHelpers.GetFocusParent(current);
+                            if (parent == null)
+                                break;
+                        }
+                        else
+                        {
+                            parent = parentElement as IInputElement;
+                        }
+                    }
+
+                    newTabStop = GetNextOrPreviousTabStopInternal(parent, current, newTabStop, true, ref currentPassed, ref currentCompare);
+
+                    if (newTabStop != null && !FocusHelpers.IsFocusable(newTabStop) && FocusHelpers.CanHaveFocusableChildren(newTabStop as PresentationObject))
+                    {
+                        newTabStop = GetFirstFocusableElement(newTabStop, null);
+                    }
+
+                    if (newTabStop != null)
+                        break;
+
+                    if (IsValidTabStopSearchCandidate(parent))
+                    {
+                        current = parent;
+                    }
+
+                    parent = FocusHelpers.GetFocusParent(parent);
+                    currentPassed = false;
+
+                    parentIsRootVisual = parent == (_contentRoot as Visual)?.VisualRoot;
+                }
+            }
+
+            return newTabStop;
+        }
+
+        private IInputElement? GetPreviousTabStop(IInputElement? currentTabStop, bool ignoreCurrentTabStop = false)
+        {
+            var focused = currentTabStop;
+            if (focused == null || _contentRoot == null)
+            {
+                return null;
+            }
+            IInputElement? newTabStop = (focused as InputElement)?.GetPreviousTabStopOverride();
+            IInputElement? currentCompare = focused;
+
+            if (newTabStop == null)
+            {
+                var currentPassed = false;
+                var current = focused;
+                var parent = FocusHelpers.GetFocusParent(focused);
+                var parentIsRootVisual = parent == (_contentRoot as Visual)?.VisualRoot;
+
+                while (parent != null && !parentIsRootVisual && newTabStop == null)
+                {
+                    if (IsValidTabStopSearchCandidate(current) && current is InputElement c && KeyboardNavigation.GetTabNavigation(c) == KeyboardNavigationMode.Cycle)
+                    {
+                        // Wrapping backwards inside a Cycle scope lands on the LAST focusable
+                        // element, mirroring the forward wrap (last -> first).
+                        // Matches WinUI: GetLastFocusableElement(pCurrent, pCurrent).
+                        newTabStop = GetLastFocusableElement(current, current);
+                        break;
+                    }
+
+                    if (IsValidTabStopSearchCandidate(parent) && parent is InputElement p && KeyboardNavigation.GetTabNavigation(p) == KeyboardNavigationMode.Once)
+                    {
+                        if (FocusHelpers.IsFocusable(parent))
+                        {
+                            newTabStop = parent;
+                        }
+                        else
+                        {
+                            current = parent;
+                            parent = FocusHelpers.GetFocusParent(current);
+                            if (parent == null)
+                                break;
+                        }
+                    }
+                    else if (!IsValidTabStopSearchCandidate(parent))
+                    {
+                        var parentElement = GetParentTabStopElement(parent);
+                        if (parentElement == null)
+                        {
+                            parent = GetRootOfPopupSubTree(current) as IInputElement;
+
+                            if (parent != null)
+                            {
+                                newTabStop = GetNextOrPreviousTabStopInternal(parent, current, newTabStop, false, ref currentPassed, ref currentCompare);
+
+                                if (newTabStop != null && !FocusHelpers.IsFocusable(newTabStop))
+                                {
+                                    newTabStop = GetLastFocusableElement(newTabStop, null);
+                                }
+                                if (newTabStop == null)
+                                {
+                                    newTabStop = GetLastFocusableElement(parent, null);
+                                }
+                                break;
+                            }
+
+                            parent = (_contentRoot as Visual)?.VisualRoot as IInputElement;
+                        }
+                        else if (parentElement is InputElement pIE && KeyboardNavigation.GetTabNavigation(pIE) == KeyboardNavigationMode.None)
+                        {
+                            if (FocusHelpers.IsFocusable(parent))
+                            {
+                                newTabStop = parent;
+                            }
+                            else
+                            {
+                                current = parent;
+                                parent = FocusHelpers.GetFocusParent(current);
+                                if (parent == null)
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            parent = parentElement as IInputElement;
+                        }
+                    }
+
+                    newTabStop = GetNextOrPreviousTabStopInternal(parent, current, newTabStop, false, ref currentPassed, ref currentCompare);
+
+                    if (newTabStop == null && FocusHelpers.IsPotentialTabStop(parent) && FocusHelpers.IsFocusable(parent))
+                    {
+                        if (parent is InputElement iE && KeyboardNavigation.GetTabNavigation(iE) == KeyboardNavigationMode.Cycle)
+                        {
+                            newTabStop = GetLastFocusableElement(parent, null);
+                        }
+                        else
+                        {
+                            newTabStop = parent;
+                        }
+                    }
+                    else
+                    {
+                        if (newTabStop != null && FocusHelpers.CanHaveFocusableChildren(newTabStop as PresentationObject))
+                        {
+                            newTabStop = GetLastFocusableElement(newTabStop, null);
+                        }
+                    }
+
+                    if (newTabStop != null)
+                        break;
+
+                    if (IsValidTabStopSearchCandidate(parent))
+                    {
+                        current = parent;
+                    }
+
+                    parent = FocusHelpers.GetFocusParent(parent);
+                    currentPassed = false;
+                }
+            }
+
+            return newTabStop;
+        }
+
+        private IInputElement? GetNextOrPreviousTabStopInternal(IInputElement? parent, IInputElement? current, IInputElement? candidate, bool findNext, ref bool currentPassed, ref IInputElement? currentCompare)
+        {
+            var newTabStop = candidate;
+            IInputElement? childStop = null;
+            int compareIndexResult = 0;
+            bool compareCurrentForPreviousElement = false;
+
+            if (IsValidTabStopSearchCandidate(current))
+            {
+                currentCompare = current;
+            }
+
+            if (parent != null)
+            {
+                bool foundCurrent = false;
+                foreach (var child in FocusHelpers.GetInputElementChildren(parent as PresentationObject))
+                {
+                    childStop = null;
+                    compareCurrentForPreviousElement = false;
+                    if (child == current)
+                    {
+                        foundCurrent = true;
+                        currentPassed = true;
+                        continue;
+                    }
+
+                    if (FocusHelpers.IsVisible(child))
+                    {
+                        if (child == current)
+                        {
+                            foundCurrent = true;
+                            currentPassed = true;
+                            continue;
+                        }
+
+                        if (IsValidTabStopSearchCandidate(child))
+                        {
+                            if (!FocusHelpers.IsPotentialTabStop(child))
+                            {
+                                childStop = GetNextOrPreviousTabStopInternal(childStop, current, newTabStop, findNext, ref currentPassed, ref currentCompare);
+                                compareCurrentForPreviousElement = true;
+                            }
+                            else
+                            {
+                                childStop = child;
+                            }
+                        }
+                        else if (FocusHelpers.CanHaveFocusableChildren(child as PresentationObject))
+                        {
+                            childStop = GetNextOrPreviousTabStopInternal(child, current, newTabStop, findNext, ref currentPassed, ref currentCompare);
+                            compareCurrentForPreviousElement = true;
+                        }
+                    }
+
+                    if (childStop != null && (FocusHelpers.IsFocusable(childStop) || FocusHelpers.CanHaveFocusableChildren(childStop as PresentationObject)))
+                    {
+                        compareIndexResult = CompareTabIndex(childStop, currentCompare);
+
+                        if (findNext)
+                        {
+                            if (compareIndexResult > 0 || ((foundCurrent || currentPassed) && compareIndexResult == 0))
+                            {
+                                if (newTabStop != null)
+                                {
+                                    if (CompareTabIndex(childStop, newTabStop) < 0)
+                                    {
+                                        newTabStop = childStop;
+                                    }
+                                }
+                                else
+                                {
+                                    newTabStop = childStop;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // A candidate with an equal tab index is "previous" only while the walk has not
+                            // passed the focused element yet; candidates from a nested container scan
+                            // (compareCurrentForPreviousElement) already enforced the ordering themselves.
+                            // Matches WinUI: (((!bFoundCurrent && !bCurrentPassed) || bCurrentCompare) && ...)
+                            if (compareIndexResult < 0 || (((!foundCurrent && !currentPassed) || compareCurrentForPreviousElement) && compareIndexResult == 0))
+                            {
+                                if (newTabStop != null)
+                                {
+                                    if (CompareTabIndex(childStop, newTabStop) >= 0)
+                                    {
+                                        newTabStop = childStop;
+                                    }
+                                }
+                                else
+                                {
+                                    newTabStop = childStop;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return newTabStop;
+        }
+
+        private static int CompareTabIndex(IInputElement? control1, IInputElement? control2)
+        {
+            return GetTabIndex(control1).CompareTo(GetTabIndex(control2));
+        }
+
+        private static int GetTabIndex(IInputElement? element)
+        {
+            if (element is InputElement inputElement)
+                return inputElement.TabIndex;
+
+            return int.MaxValue;
+        }
+
+        private bool CanProcessTabStop(IInputElement? focusedElement, bool isReverse)
+        {
+            bool isFocusOnFirst = false;
+            bool isFocusOnLast = false;
+            bool canProcessTab = true;
+            if (IsFocusedElementInPopup(focusedElement))
+            {
+                return true;
+            }
+
+            if (isReverse)
+            {
+                isFocusOnFirst = IsFocusOnFirstTabStop(focusedElement);
+            }
+            else
+            {
+                isFocusOnLast = IsFocusOnLastTabStop(focusedElement);
+            }
+
+            if (isFocusOnFirst || isFocusOnLast)
+            {
+                canProcessTab = false;
+            }
+
+            if (canProcessTab)
+            {
+                var edge = GetFirstFocusableElementFromRoot(!isReverse);
+
+                if (edge != null)
+                {
+                    var edgeParent = GetParentTabStopElement(edge);
+                    if (edgeParent is InputElement inputElement && KeyboardNavigation.GetTabNavigation(inputElement) == KeyboardNavigationMode.Once && edgeParent == GetParentTabStopElement(focusedElement))
+                    {
+                        canProcessTab = false;
+                    }
+                }
+                else
+                {
+                    canProcessTab = false;
+                }
+            }
+            else
+            {
+                if (isFocusOnLast || isFocusOnFirst)
+                {
+                    if (focusedElement is InputElement inputElement && KeyboardNavigation.GetTabNavigation(inputElement) == KeyboardNavigationMode.Cycle)
+                    {
+                        canProcessTab = true;
+                    }
+                    else
+                    {
+                        var focusedParent = GetParentTabStopElement(focusedElement);
+                        while (focusedParent != null)
+                        {
+                            if (focusedParent is InputElement iE && KeyboardNavigation.GetTabNavigation(iE) == KeyboardNavigationMode.Cycle)
+                            {
+                                canProcessTab = true;
+                                break;
+                            }
+
+                            focusedParent = GetParentTabStopElement(focusedParent as IInputElement);
+                        }
+                    }
+                }
+            }
+
+            return canProcessTab;
+        }
+
+        private PresentationObject? GetParentTabStopElement(IInputElement? current)
+        {
+            if (current != null)
+            {
+                var parent = FocusHelpers.GetFocusParent(current);
+
+                while (parent != null)
+                {
+                    if (IsValidTabStopSearchCandidate(parent) && parent is InputElement element)
+                    {
+                        return element;
+                    }
+
+                    parent = FocusHelpers.GetFocusParent(parent);
+                }
+            }
+
+            return null;
+        }
+
+        private bool IsValidTabStopSearchCandidate(IInputElement? element)
+        {
+            var isValid = FocusHelpers.IsPotentialTabStop(element);
+
+            if (!isValid)
+            {
+                isValid = (element as InputElement)?.IsSet(KeyboardNavigation.TabNavigationProperty) ?? false;
+            }
+
+            return isValid;
+        }
+
+        private IInputElement? GetFirstFocusableElementFromRoot(bool isReverse)
+        {
+            var root = (_contentRoot as Visual)?.VisualRoot as IInputElement;
+
+            if (root != null)
+                return !isReverse ? GetFirstFocusableElement(root, null) : GetLastFocusableElement(root, null);
+
+            return null;
+        }
+
+        private bool IsFocusOnLastTabStop(IInputElement? focusedElement)
+        {
+            if (focusedElement == null || _contentRoot is not Visual visual)
+                return false;
+            var root = visual.VisualRoot as IInputElement;
+
+            Debug.Assert(root != null);
+
+            var lastFocus = GetLastFocusableElement(root, null);
+
+            return lastFocus == focusedElement;
+        }
+
+        private bool IsFocusOnFirstTabStop(IInputElement? focusedElement)
+        {
+            if (focusedElement == null || _contentRoot is not Visual visual)
+                return false;
+            var root = visual.VisualRoot as IInputElement;
+
+            Debug.Assert(root != null);
+
+            var firstFocus = GetFirstFocusableElement(root, null);
+
+            return firstFocus == focusedElement;
+        }
+
+        private static IInputElement? GetFirstFocusableElement(IInputElement searchStart, IInputElement? firstFocus = null)
+        {
+            firstFocus = GetFirstFocusableElementInternal(searchStart, firstFocus);
+
+            if (firstFocus != null && !firstFocus.Focusable && FocusHelpers.CanHaveFocusableChildren(firstFocus as PresentationObject))
+            {
+                firstFocus = GetFirstFocusableElement(firstFocus, null);
+            }
+
+            return firstFocus;
+        }
+
+        private IInputElement? GetLastFocusableElement(IInputElement searchStart, IInputElement? lastFocus = null)
+        {
+            lastFocus = GetLastFocusableElementInternal(searchStart, lastFocus);
+
+            if (lastFocus != null && !lastFocus.Focusable && FocusHelpers.CanHaveFocusableChildren(lastFocus as PresentationObject))
+            {
+                lastFocus = GetLastFocusableElement(lastFocus, null);
+            }
+
+            return lastFocus;
+        }
+
+        private bool IsFocusedElementInPopup(IInputElement? focusedElement) => focusedElement != null && GetRootOfPopupSubTree(focusedElement) != null;
+
+        private Visual? GetRootOfPopupSubTree(IInputElement? current)
+        {
+            //TODO Popup api
+            return null;
+        }
+
+        private bool FindAndSetNextFocus(IInputElement? focusedElement, NavigationDirection direction, XYFocusOptions xYFocusOptions)
+        {
+            var focusChanged = false;
+            if (xYFocusOptions.UpdateManifoldsFromFocusHintRect && xYFocusOptions.FocusHintRectangle != null)
+            {
+                _xyFocus.SetManifoldsFromBounds(xYFocusOptions.FocusHintRectangle ?? default);
+            }
+
+            if (FindNextFocus(focusedElement, direction, xYFocusOptions, false) is { } nextFocusedElement)
+            {
+                focusChanged = nextFocusedElement.Focus();
+
+                if (focusChanged && xYFocusOptions.UpdateManifold && nextFocusedElement is InputElement inputElement)
+                {
+                    var bounds = xYFocusOptions.FocusHintRectangle ?? xYFocusOptions.FocusedElementBounds ?? default;
+
+                    _xyFocus.UpdateManifolds(direction, bounds, inputElement, xYFocusOptions.IgnoreClipping);
+                }
+            }
+
+            return focusChanged;
+
+        }
+    }
+}

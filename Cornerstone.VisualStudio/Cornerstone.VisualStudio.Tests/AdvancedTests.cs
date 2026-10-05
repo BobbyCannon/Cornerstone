@@ -4,71 +4,72 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Cornerstone.VisualStudio.Core.Completion;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.VisualStudio.Tests;
 
+[TestClass]
 public class AdvancedTests : XamlCompletionTestBase
 {
 	#region Methods
 
-	[Fact]
+	[TestMethod]
 	public void BindingPathShouldBeCompletedFromParent()
 	{
 		AssertSingleCompletion("<UserControl Background=\"{Binding ", "$pa", "$parent[");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void BindingPathShouldBeCompletedFromParentProperty()
 	{
 		AssertSingleCompletion("<UserControl Background=\"{Binding ", "$parent.Ta", "$parent.Tag");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void BindingPathShouldBeCompletedFromParentPropertyNested()
 	{
 		AssertSingleCompletion("<UserControl Background=\"{Binding ", "$parent.Bounds.Wi", "$parent.Bounds.Width");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void BindingPathShouldBeCompletedFromParentType()
 	{
 		AssertSingleCompletion("<UserControl Background=\"{Binding ", "$parent[But", "$parent[Button].");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void BindingPathShouldBeCompletedFromParentTypeProperty()
 	{
 		AssertSingleCompletion("<UserControl Background=\"{Binding ", "$parent[Button].Ta", "$parent[Button].Tag");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void BindingPathShouldBeCompletedFromXDataType()
 	{
 		AssertSingleCompletion("<UserControl x:DataType=\"Button\"><TextBlock Tag=\"{Binding Path=", "Conte", "Content");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void BindingPathShouldBeCompletedFromXDataType2()
 	{
 		AssertSingleCompletion("<UserControl x:DataType=\"Button\"><TextBlock Tag=\"{Binding ", "Conte", "Content");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void BindingPathShouldBeCompletedFromXDataTypeIssue463()
 	{
 		AssertSingleCompletion("<UserControl x:DataType= \"Button\"><TextBlock Tag=\"{Binding Path=", "Conte", "Content");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void BindingPathShouldBeCompletedFromXName()
 	{
 		AssertSingleCompletion("<UserControl x:Name=\"foo\" Tag=\"{Binding ", "#f", "#foo");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ControlThemeNestedSelectorShouldBeCompleted()
 	{
 		var xaml =
@@ -79,11 +80,11 @@ public class AdvancedTests : XamlCompletionTestBase
 			""";
 		var compl = GetCompletionsFor(xaml).Completions;
 
-		Assert.Single(compl);
-		Assert.Contains(compl, v => v.InsertText == "^");
+		Assert.AreEqual(1, System.Linq.Enumerable.Count(compl));
+		Assert.IsTrue(compl.Any(v => v.InsertText == "^"));
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ControlThemeNestedSelectorShouldBeCompletedPseudoClass()
 	{
 		var xaml =
@@ -94,11 +95,11 @@ public class AdvancedTests : XamlCompletionTestBase
 			""";
 		var compl = GetCompletionsFor(xaml).Completions;
 
-		Assert.Equal(10, compl.Count);
-		Assert.Contains(compl, v => v.InsertText == ":disabled");
+		Assert.AreEqual(10, compl.Count);
+		Assert.IsTrue(compl.Any(v => v.InsertText == ":disabled"));
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ControlThemeNestedSelectorShouldBeCompletedSetter()
 	{
 		var expected = new[]
@@ -117,10 +118,10 @@ public class AdvancedTests : XamlCompletionTestBase
 			""";
 		var compl = GetCompletionsFor(xaml).Completions.Select(c => c.InsertText);
 
-		Assert.Equal(expected, compl);
+		Assert.AreSequenceEqual(expected, compl);
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ControlThemeNestedSelectorShouldBeCompletedTemplate()
 	{
 		var xaml =
@@ -131,58 +132,58 @@ public class AdvancedTests : XamlCompletionTestBase
 			""";
 		var compl = GetCompletionsFor(xaml).Completions;
 
-		Assert.Contains(compl, v => v.InsertText == "ContentPresenter");
+		Assert.IsTrue(compl.Any(v => v.InsertText == "ContentPresenter"));
 	}
 
-	[Fact]
+	[TestMethod]
 	public void EnumTypeinStaticExtensionShouldBeCompleted()
 	{
 		AssertSingleCompletion("<UserControl Tag=\"{x:Static ", "HorizontalAlignme", "HorizontalAlignment");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void EnumValueinStaticExtensionShouldBeCompleted()
 	{
 		AssertSingleCompletion("<UserControl HorizontalAlignment=\"{x:Static ", "HorizontalAlignment.L", "HorizontalAlignment.Left");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ExtensionDataTypeTypesShouldBeCompleted()
 	{
 		AssertSingleCompletion("<UserControl x:DataType=\"", "But", "Button");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ExtensionPropertyWithWellKnownValueShouldBeCompleted()
 	{
 		AssertSingleCompletion("<UserControl Background=\"{Binding RelativeSource=", "Se", "Self");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ExtensionWithCtorArgumentClassShouldBeCompleted()
 	{
 		AssertSingleCompletion("<UserControl Background=\"{x:Static ", "Brus", "Brushes");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ExtensionWithCtorArgumentEnumShouldBeCompleted()
 	{
 		AssertSingleCompletion("<UserControl Background=\"{Binding RelativeSource={RelativeSource ", "Se", "Self");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ExtensionWithCtorArgumentStaticFieldValuesShouldBeCompleted()
 	{
 		AssertSingleCompletion("<UserControl IsEnabled=\"{Binding Converter={x:Static ", "ObjectConverters.IsN", "ObjectConverters.IsNull");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ExtensionWithCtorArgumentStaticPropertiesValuesShouldBeCompleted()
 	{
 		AssertSingleCompletion("<UserControl Background=\"{x:Static ", "Brushes.Re", "Brushes.Red");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ExtensionWithCtorArgumentTypeShouldBeCompleted()
 	{
 		AssertSingleCompletion("<DataTemplate DataType=\"{x:Type ", "But", "Button");
@@ -335,31 +336,31 @@ public class AdvancedTests : XamlCompletionTestBase
 		];
 	}
 
-	[Fact]
-	public void ImageSourceavaresRelativeUrisShouldBeCompleted()
+	[TestMethod]
+	public void ImageSourcecsresRelativeUrisShouldBeCompleted()
 	{
 		AssertSingleCompletion("<Image Source=\"", "/", "/Test.bmp");
 	}
 
-	[Fact]
-	public void ImageSourceavaresUrisShouldBeCompleted()
+	[TestMethod]
+	public void ImageSourcecsresUrisShouldBeCompleted()
 	{
-		AssertSingleCompletion("<Image Source=\"", "avares:", "avares://Cornerstone.VisualStudio.Tests/Test.bmp");
+		AssertSingleCompletion("<Image Source=\"", "csres:", "csres://Cornerstone.VisualStudio.Tests/Test.bmp");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ImageSourceresmRelativeUrisShouldBeCompleted()
 	{
 		AssertSingleCompletion("<Image Source=\"", "resm:", "resm:Cornerstone.VisualStudio.Tests.Test.bmp");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ImageSourceresmUrisShouldBeCompleted()
 	{
 		AssertSingleCompletion("<Image Source=\"", "resm:", "resm:Cornerstone.VisualStudio.Tests.Test.bmp?assembly=Cornerstone.VisualStudio.Tests");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void MarkupExtensionAsXamlElementShouldNotHaveExtensionSuffix()
 	{
 		var xaml = "<Sta";
@@ -370,12 +371,12 @@ public class AdvancedTests : XamlCompletionTestBase
 			throw new Exception("No completions found");
 		}
 
-		Assert.NotNull(comp.Completions
+		Assert.IsNotNull(comp.Completions
 			.Where(x => x.DisplayText.Equals("StaticResource") && x.InsertText.Equals("StaticResource"))
 			.FirstOrDefault());
 	}
 
-	[Fact]
+	[TestMethod]
 	public void OnFormFactorShouldBeSuggestedAsMarkupExtension()
 	{
 		var xaml = "<Button Background=\"{O";
@@ -386,10 +387,10 @@ public class AdvancedTests : XamlCompletionTestBase
 			throw new Exception("No completions found");
 		}
 
-		Assert.NotNull(comp.Completions.Where(x => x.DisplayText.Equals("OnFormFactor")).FirstOrDefault());
+		Assert.IsNotNull(comp.Completions.Where(x => x.DisplayText.Equals("OnFormFactor")).FirstOrDefault());
 	}
 
-	[Fact]
+	[TestMethod]
 	public void OnFormFactorShouldBeSuggestedAsXamlElement()
 	{
 		var xaml = "<O";
@@ -400,10 +401,10 @@ public class AdvancedTests : XamlCompletionTestBase
 			throw new Exception("No completions found");
 		}
 
-		Assert.NotNull(comp.Completions.Where(x => x.DisplayText.Equals("OnFormFactor")).FirstOrDefault());
+		Assert.IsNotNull(comp.Completions.Where(x => x.DisplayText.Equals("OnFormFactor")).FirstOrDefault());
 	}
 
-	[Fact]
+	[TestMethod]
 	public void OnFormFactorSuggestionsAreContextSpecificInMarkupExtension()
 	{
 		var xaml = "<Button IsVisible=\"{OnFormFactor ";
@@ -415,9 +416,9 @@ public class AdvancedTests : XamlCompletionTestBase
 		}
 
 		// Suggest property completions
-		Assert.Equal(2, comp.Completions.Count);
-		Assert.Contains(comp.Completions, x => x.DisplayText.Equals("True"));
-		Assert.Contains(comp.Completions, x => x.DisplayText.Equals("False"));
+		Assert.AreEqual(2, comp.Completions.Count);
+		Assert.IsTrue(comp.Completions.Any(x => x.DisplayText.Equals("True")));
+		Assert.IsTrue(comp.Completions.Any(x => x.DisplayText.Equals("False")));
 
 		// Now comma should list platforms for other options
 		xaml += ",";
@@ -429,7 +430,7 @@ public class AdvancedTests : XamlCompletionTestBase
 
 		var formFactors = new List<string> { "Desktop", "Mobile" };
 
-		Assert.Equal(formFactors.Count, comp.Completions.Count);
+		Assert.AreEqual(formFactors.Count, comp.Completions.Count);
 		// Should suggest all platforms
 		foreach (var item in comp.Completions)
 		{
@@ -438,10 +439,10 @@ public class AdvancedTests : XamlCompletionTestBase
 				formFactors.Remove(item.DisplayText);
 			}
 		}
-		Assert.Empty(formFactors);
+		Assert.AreEqual(0, System.Linq.Enumerable.Count(formFactors));
 	}
 
-	[Fact]
+	[TestMethod]
 	public void OnPlatformShouldBeSuggestedAsMarkupExtension()
 	{
 		var xaml = "<Button Background=\"{O";
@@ -452,10 +453,10 @@ public class AdvancedTests : XamlCompletionTestBase
 			throw new Exception("No completions found");
 		}
 
-		Assert.NotNull(comp.Completions.Where(x => x.DisplayText.Equals("OnPlatform")).FirstOrDefault());
+		Assert.IsNotNull(comp.Completions.Where(x => x.DisplayText.Equals("OnPlatform")).FirstOrDefault());
 	}
 
-	[Fact]
+	[TestMethod]
 	public void OnPlatformShouldBeSuggestedAsXamlElement()
 	{
 		var xaml = "<O";
@@ -466,10 +467,10 @@ public class AdvancedTests : XamlCompletionTestBase
 			throw new Exception("No completions found");
 		}
 
-		Assert.NotNull(comp.Completions.Where(x => x.DisplayText.Equals("OnPlatform")).FirstOrDefault());
+		Assert.IsNotNull(comp.Completions.Where(x => x.DisplayText.Equals("OnPlatform")).FirstOrDefault());
 	}
 
-	[Fact]
+	[TestMethod]
 	public void OnPlatformSuggestionsAreContextSpecificInMarkupExtension()
 	{
 		var xaml = "<Button IsVisible=\"{OnPlatform ";
@@ -481,9 +482,9 @@ public class AdvancedTests : XamlCompletionTestBase
 		}
 
 		// Suggest property completions
-		Assert.Equal(2, comp.Completions.Count);
-		Assert.Contains(comp.Completions, x => x.DisplayText.Equals("True"));
-		Assert.Contains(comp.Completions, x => x.DisplayText.Equals("False"));
+		Assert.AreEqual(2, comp.Completions.Count);
+		Assert.IsTrue(comp.Completions.Any(x => x.DisplayText.Equals("True")));
+		Assert.IsTrue(comp.Completions.Any(x => x.DisplayText.Equals("False")));
 
 		// Now comma should list platforms for other options
 		xaml += ",";
@@ -495,7 +496,7 @@ public class AdvancedTests : XamlCompletionTestBase
 
 		var platforms = new List<string> { "Windows", "macOS", "Linux", "Browser", "iOS", "Android" };
 
-		Assert.Equal(platforms.Count, comp.Completions.Count);
+		Assert.AreEqual(platforms.Count, comp.Completions.Count);
 		// Should suggest all platforms
 		foreach (var item in comp.Completions)
 		{
@@ -504,22 +505,22 @@ public class AdvancedTests : XamlCompletionTestBase
 				platforms.Remove(item.DisplayText);
 			}
 		}
-		Assert.Empty(platforms);
+		Assert.AreEqual(0, System.Linq.Enumerable.Count(platforms));
 	}
 
-	[Fact]
+	[TestMethod]
 	public void PropertyOfTypeTypeTypeShouldBeCompleted()
 	{
 		AssertSingleCompletion("<DataTemplate DataType=\"", "But", "Button");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ShouldNotContainAbstractClasses()
 	{
 		const string xaml = "<UserControl.Styles><Style";
 		if (GetCompletionsFor(xaml)?.Completions?.Select(c => c.DisplayText) is { } completions)
 		{
-			Assert.DoesNotContain("StyleBase", completions);
+			Assert.IsFalse(completions.Contains("StyleBase"));
 		}
 		else
 		{
@@ -527,13 +528,13 @@ public class AdvancedTests : XamlCompletionTestBase
 		}
 	}
 
-	[Fact]
+	[TestMethod]
 	public void StyleAttachedPropertyClassNameShouldBeCompleted()
 	{
 		AssertSingleCompletion("<Style Selector=\"Button\"><Setter Property=\"", "TextBl", "TextBlock");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void StyleAttachedPropertyNameShouldBeCompleted()
 	{
 		var xaml = "<Style Selector=\"Button\"><Setter Property=\"";
@@ -549,69 +550,69 @@ public class AdvancedTests : XamlCompletionTestBase
 		// and I don't know why. I have tested this in an actual xaml document and it works
 		// perfectly fine, so I'm skipping this now
 		//var pos = xaml.Length + typed.IndexOf('.');
-		//Assert.True(pos == comp.StartPosition, $"Invalid completion start position typed");
+		//Assert.IsTrue(pos == comp.StartPosition, $"Invalid completion start position typed");
 
-		Assert.Contains(comp.Completions, c => c.InsertText == "FontWeight");
+		Assert.IsTrue(comp.Completions.Any(c => c.InsertText == "FontWeight"));
 
-		Assert.Single(comp.Completions, c => c.InsertText == "FontWeight");
+		Assert.AreEqual(1, System.Linq.Enumerable.Count(comp.Completions, c => c.InsertText == "FontWeight"));
 	}
 
-	[Fact]
+	[TestMethod]
 	public void StyleAttachedPropertyValueShouldBeCompleted()
 	{
 		AssertSingleCompletion("<Style Selector=\"Button\"><Setter Property=\"TextElement.FontWeight\" Value=\"", "Bo", "Bold");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void StyleIncludeSourceRelativeUrisShouldBeCompiledStyles()
 	{
 		AssertSingleCompletion("<StyleInclude Source=\"", "/", "/TestCompiledTheme.xaml");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void StyleIncludeSourceRelativeUrisShouldBeCompleted()
 	{
 		AssertSingleCompletion("<StyleInclude Source=\"", "/", "/Test.xaml");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void StyleIncludeSourceUrisShouldBeCompleted()
 	{
-		AssertSingleCompletion("<StyleInclude Source=\"", "avares:", "avares://Cornerstone.VisualStudio.Tests/Test.xaml");
+		AssertSingleCompletion("<StyleInclude Source=\"", "csres:", "csres://Cornerstone.VisualStudio.Tests/Test.xaml");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void StyleIncludeSourceUrisShouldBeCompletedCompiledStyles()
 	{
-		AssertSingleCompletion("<StyleInclude Source=\"", "avares:", "avares://Cornerstone.VisualStudio.Tests/TestCompiledTheme.xaml");
+		AssertSingleCompletion("<StyleInclude Source=\"", "csres:", "csres://Cornerstone.VisualStudio.Tests/TestCompiledTheme.xaml");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void StylePropertyNameShouldBeCompleted()
 	{
 		AssertSingleCompletion("<Style Selector=\"Button\"><Setter Property=\"", "HorizontalAli", "HorizontalAlignment");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void StylePropertyNameShouldBeCompletedFromLastSelectorType()
 	{
 		AssertSingleCompletion("<Style Selector=\"Button.classname:pseudoclass /template/ > Grid#name\"><Setter Property=\"", "ColumnDef", "ColumnDefinitions");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void StylePropertyValueShouldBeCompleted()
 	{
 		AssertSingleCompletion("<Style Selector=\"Button.my\"><Setter Property=\"HorizontalAlignment\" Value=\"", "Le", "Left");
 	}
 
-	[Theory]
-	[MemberData(nameof(GetStyleSelectors))]
+	[TestMethod]
+	[DynamicData(nameof(GetStyleSelectors))]
 	public void StyleSelectorCompletions(string selector, bool contain, IEnumerable<Completion> expected)
 	{
 		var compl = GetCompletionsFor(selector)?.Completions;
 		if (!contain)
 		{
-			Assert.Equal(expected, compl);
+			Assert.AreSequenceEqual(expected, compl);
 		}
 		else
 		{
@@ -619,60 +620,60 @@ public class AdvancedTests : XamlCompletionTestBase
 			{
 				// Match identity fields only — cursor/delete offsets are document-relative
 				// and not part of the completion “what to insert” contract under test.
-				Assert.Contains(compl, c =>
+				Assert.IsTrue(compl.Any(c =>
 					(c.DisplayText == item.DisplayText) &&
 					(c.InsertText == item.InsertText) &&
-					(c.Kind == item.Kind));
+					(c.Kind == item.Kind)));
 			}
 		}
 	}
 
-	[Fact]
+	[TestMethod]
 	public void StyleSelectorControlTypesShouldBeCompleted()
 	{
 		AssertSingleCompletion("<Style Selector=\"", "But", "Button");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void StyleSelectorSomeWellKnownKeywordsShouldBeCompleted()
 	{
 		var compl = GetCompletionsFor("<Style Selector=\"").Completions;
 
-		Assert.Contains(compl, v => v.InsertText == ">");
-		Assert.Contains(compl, v => v.InsertText == ".");
-		Assert.Contains(compl, v => v.InsertText == "#");
-		Assert.Contains(compl, v => v.InsertText == "/template/");
+		Assert.IsTrue(compl.Any(v => v.InsertText == ">"));
+		Assert.IsTrue(compl.Any(v => v.InsertText == "."));
+		Assert.IsTrue(compl.Any(v => v.InsertText == "#"));
+		Assert.IsTrue(compl.Any(v => v.InsertText == "/template/"));
 	}
 
-	[Fact]
+	[TestMethod]
 	public void StyleSelectorSomeWellKnownPseudoClassesShouldBeCompleted()
 	{
 		var compl = GetCompletionsFor("<Style Selector=\"Button:").Completions;
 
-		Assert.Contains(compl, v => v.InsertText == ":pointerover");
-		Assert.Contains(compl, v => v.InsertText == ":disabled");
-		Assert.Contains(compl, v => v.InsertText == ":focus");
+		Assert.IsTrue(compl.Any(v => v.InsertText == ":pointerover"));
+		Assert.IsTrue(compl.Any(v => v.InsertText == ":disabled"));
+		Assert.IsTrue(compl.Any(v => v.InsertText == ":focus"));
 	}
 
-	[Fact]
+	[TestMethod]
 	public void TemplateBindingAvaloniaPropetiesShouldBeCompleted()
 	{
 		AssertSingleCompletion("<ContentPresenter Background=\"{TemplateBinding ", "Back", "Background");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void WellKnownBrushesShouldBeCompleted()
 	{
 		AssertSingleCompletion("<UserControl Background=\"", "Re", "Red");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void WellKnownThemeKeysShouldBeCompleted()
 	{
 		AssertSingleCompletion("<UserControl Background=\"{DynamicResource ", "Theme", "ThemeBackgroundBrush");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void LocalXKeyShouldBeCompletedForStaticResource()
 	{
 		AssertSingleCompletion(
@@ -681,7 +682,7 @@ public class AdvancedTests : XamlCompletionTestBase
 			"MyLocalBrush");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void LocalXKeyShouldBeCompletedForDynamicResource()
 	{
 		AssertSingleCompletion(
@@ -690,7 +691,7 @@ public class AdvancedTests : XamlCompletionTestBase
 			"MyDynBrush");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void LocalXKeyAfterCursorShouldBeCompletedForStaticResource()
 	{
 		// Keys defined later in the document should still complete (scan full text).
@@ -699,57 +700,57 @@ public class AdvancedTests : XamlCompletionTestBase
 		AssertSingleCompletionInMiddleOfText(before, after, "Later", "LaterBrush");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void xClassDirectiveShouldBeCompleted()
 	{
 		var compl = GetCompletionsFor("<UserControl x:Cla").Completions;
 
-		Assert.Contains(compl, v => v.InsertText == "x:Class=\"\"");
+		Assert.IsTrue(compl.Any(v => v.InsertText == "x:Class=\"\""));
 	}
 
-	[Fact]
+	[TestMethod]
 	public void xClassValueShouldBeCompleted()
 	{
 		AssertSingleCompletion("<UserControl x:Class=\"", "", "Cornerstone.VisualStudio.Tests.TestUserControl");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void xKeyDirectiveShouldBeCompleted()
 	{
 		var compl = GetCompletionsFor("<UserControl x:K").Completions;
 
-		Assert.Contains(compl, v => v.InsertText == "x:Key=\"\"");
+		Assert.IsTrue(compl.Any(v => v.InsertText == "x:Key=\"\""));
 	}
 
-	[Fact]
+	[TestMethod]
 	public void xmlnsDirectiveShouldBeCompleted()
 	{
 		var compl = GetCompletionsFor("<UserControl x").Completions;
 
-		Assert.Contains(compl, v => v.InsertText == "xmlns:");
+		Assert.IsTrue(compl.Any(v => v.InsertText == "xmlns:"));
 	}
 
-	[Fact]
+	[TestMethod]
 	public void xNameDirectiveShouldBeCompleted()
 	{
 		var compl = GetCompletionsFor("<UserControl x:N").Completions;
 
-		Assert.Contains(compl, v => v.InsertText == "x:Name=\"\"");
+		Assert.IsTrue(compl.Any(v => v.InsertText == "x:Name=\"\""));
 	}
 
-	[Fact]
+	[TestMethod]
 	public void xTypeArgumentsDirectiveShouldBeCompleted()
 	{
 		AssertSingleCompletion("<local:GenericBaseClass`1 ", "x:T", "x:TypeArguments=\"\"");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void xTypeArgumentsDirectiveShouldNotBeCompletedOnNonGenericType()
 	{
-		Assert.Null(GetCompletionsFor("<UserControl x:TypeArgum"));
+		Assert.IsNull(GetCompletionsFor("<UserControl x:TypeArgum"));
 	}
 
-	[Fact]
+	[TestMethod]
 	public void xTypeArgumentsValueShouldBeCompleted()
 	{
 		AssertSingleCompletion("<local:GenericBaseClass`1 x:TypeArguments=\"", "Tex", "TextBlock");

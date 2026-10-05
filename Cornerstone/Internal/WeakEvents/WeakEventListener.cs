@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Threading.Tasks;
 using Cornerstone.Extensions;
@@ -25,6 +26,7 @@ internal class WeakEventListener<T, T2> : IWeakEventListener
 
 	#region Constructors
 
+	[UnconditionalSuppressMessage("Trim", "IL2026", Justification = "CreateDelegate targets HandleEvent on this listener type, which is never trimmed.")]
 	public WeakEventListener(T source, Type type, string eventName, T2 destination, MethodInfo methodInfo)
 	{
 		_eventInfo = type.GetMatchingEvent(eventName, methodInfo)
@@ -56,6 +58,7 @@ internal class WeakEventListener<T, T2> : IWeakEventListener
 
 	#region Methods
 
+	[UnconditionalSuppressMessage("Trim", "IL2026", Justification = "CreateDelegate targets HandleEvent on this listener type, which is never trimmed.")]
 	public virtual void StopListening()
 	{
 		if (_source.IsAlive && _source.Target is T target)
@@ -114,6 +117,7 @@ internal class WeakEventListener<T, T2, TArgs> : IWeakEventListener
 
 	#region Constructors
 
+	[UnconditionalSuppressMessage("Trim", "IL2026", Justification = "CreateDelegate targets HandleEvent on this listener type, which is never trimmed.")]
 	public WeakEventListener(T source, Type type, string eventName, T2 destination, MethodInfo methodInfo)
 	{
 		_eventInfo = type.GetMatchingEvent(eventName, methodInfo)
@@ -145,6 +149,7 @@ internal class WeakEventListener<T, T2, TArgs> : IWeakEventListener
 
 	#region Methods
 
+	[UnconditionalSuppressMessage("Trim", "IL2026", Justification = "CreateDelegate targets HandleEvent on this listener type, which is never trimmed.")]
 	public virtual void StopListening()
 	{
 		if (_source.IsAlive && _source.Target is T target)

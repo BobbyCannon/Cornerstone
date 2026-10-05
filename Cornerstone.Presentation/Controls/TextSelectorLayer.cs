@@ -1,0 +1,53 @@
+using System.Linq;
+using Cornerstone.Presentation.VisualTree;
+using Cornerstone.Presentation.Controls.Layout;
+using Cornerstone.Presentation.Controls.Elements;
+using Cornerstone.Presentation.Controls.Chrome;
+
+namespace Cornerstone.Presentation.Controls
+{
+    public class TextSelectorLayer : Canvas
+    {
+        protected override bool BypassFlowDirectionPolicies => true;
+
+        public Size AvailableSize { get; private set; }
+
+        public static TextSelectorLayer? GetTextSelectorLayer(Visual visual)
+        {
+            foreach (var v in visual.GetSelfAndVisualAncestors())
+                if (v is VisualLayerManager { TextSelectorLayer: { } textSelectorLayer })
+                    return textSelectorLayer;
+
+            if (TopLevel.GetTopLevel(visual) is { } tl)
+            {
+                var layers = tl.GetVisualDescendants().OfType<VisualLayerManager>().FirstOrDefault();
+                return layers?.TextSelectorLayer;
+            }
+
+            return null;
+        }
+
+        protected override Size MeasureOverride(Size availableSize)
+        {
+            foreach (var child in Children)
+                child.Measure(availableSize);
+            return default;
+        }
+
+        protected override Size ArrangeOverride(Size finalSize)
+        {
+            AvailableSize = finalSize;
+            return base.ArrangeOverride(finalSize);
+        }
+
+        public void Add(Control control)
+        {
+            Children.Add(control);
+        }
+
+        public void Remove(Control control)
+        {
+            Children.Remove(control);
+        }
+    }
+}

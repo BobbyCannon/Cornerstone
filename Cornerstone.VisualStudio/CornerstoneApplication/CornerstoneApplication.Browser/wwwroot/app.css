@@ -1,0 +1,42 @@
+.cornerstone-splash {
+	position: absolute;
+	height: 100%;
+	width: 100%;
+	background: white;
+	font-family: 'Outfit', sans-serif;
+	justify-content: center;
+	align-items: center;
+	display: flex;
+	pointer-events: none;
+}
+
+@media (prefers-color-scheme: light) {
+	.cornerstone-splash {
+		background: white;
+	}
+
+	.cornerstone-splash h2 {
+		color: #1b2a4e;
+	}
+}
+
+@media (prefers-color-scheme: dark) {
+	.cornerstone-splash {
+		background: #1b2a4e;
+	}
+
+	.cornerstone-splash h2 {
+		color: white;
+	}
+}
+
+.cornerstone-splash h2 {
+	font-weight: 400;
+	font-size: 1.5rem;
+}
+
+.cornerstone-splash.splash-close {
+	transition: opacity 200ms, display 200ms;
+	display: none;
+	opacity: 0;
+}

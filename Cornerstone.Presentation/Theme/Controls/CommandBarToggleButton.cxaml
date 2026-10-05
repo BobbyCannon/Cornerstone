@@ -1,0 +1,25 @@
+<ResourceDictionary
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+
+	<ControlTheme x:Key="{x:Type CommandBarToggleButton}" TargetType="CommandBarToggleButton">
+		<Setter Property="Template">
+			<ControlTemplate>
+				<StackPanel Orientation="Vertical">
+					<ContentPresenter Name="PART_IconPresenter"
+							Content="{TemplateBinding Icon}"
+							Foreground="{TemplateBinding Foreground}" />
+					<ContentPresenter Name="PART_ContentPresenter"
+							Content="{TemplateBinding Label}"
+							Foreground="{TemplateBinding Foreground}" />
+				</StackPanel>
+			</ControlTemplate>
+		</Setter>
+	</ControlTheme>
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="320">
+			<CommandBarToggleButton Label="Pin" />
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

@@ -1,0 +1,73 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs.AppDispatcher"
+		mc:Ignorable="d" d:DesignWidth="660" d:DesignHeight="860"
+		x:Class="Cornerstone.Sample.Tabs.AppDispatcher.TabAppDispatcherDemos"
+		x:DataType="tabs:TabAppDispatcherDemos"
+		x:Name="This">
+	<ScrollViewer x:Name="PageScroll"
+			HorizontalScrollBarVisibility="Disabled"
+			VerticalScrollBarVisibility="Auto">
+		<Grid x:Name="Layout" Margin="16,12,16,12" RowDefinitions="Auto,Auto,*">
+		<Grid.Styles>
+			<Style Selector="SelectableTextBlock">
+				<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+				<Setter Property="TextWrapping" Value="Wrap" />
+				<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.OpenSansLight}" />
+			</Style>
+		</Grid.Styles>
+		<StackPanel x:Name="Intro" Grid.Row="0" Spacing="12">
+			<SelectableTextBlock>
+				<SelectableTextBlock.Text>
+					Many MVVM apps forget to implement the M (Model) in MVVM. Many apps just work directly
+					with the ViewModel meaning it is really just a VVM. The goal of the IAppDispatcher
+					is to help assist with the Model to ViewModel updates.
+				</SelectableTextBlock.Text>
+			</SelectableTextBlock>
+			<SelectableTextBlock>
+				<SelectableTextBlock.Text>
+					The Model can be updated Off Dispatcher on any thread. The AppDispatcher monitors
+					the Model for updates. When there is an update, the AppDispatcher applies only
+					the Model updates to the ViewModel On Dispatcher. The AppDispatcher is processed
+					by the ApplicationViewModel on the provided worker delay.
+				</SelectableTextBlock.Text>
+			</SelectableTextBlock>
+		</StackPanel>
+		<StackPanel x:Name="Charts" Grid.Row="1" Margin="0,12,0,8" Spacing="8">
+			<WrapPanel ItemSpacing="10"
+					HorizontalAlignment="Center">
+				<LineChart x:Name="ModelChart"
+						Title="Model Updates"
+						Data="{Binding GraphDataForModel}"
+						Height="60"
+						MaxWidth="360"
+						HorizontalAlignment="Stretch" />
+				<LineChart x:Name="ViewChart"
+						Title="AppDispatcher Updates"
+						Data="{Binding GraphDataForView}"
+						Height="60"
+						MaxWidth="360"
+						HorizontalAlignment="Stretch" />
+			</WrapPanel>
+			<SelectableTextBlock>
+				<SelectableTextBlock.Text>
+					When the View is detached the ViewModel is marked as not attached. This disables
+					any updates to the ViewModel even if the Model is updating Off Dispatcher. This
+					allows for many DispatchableViewModels to be configured without much overhead.
+					Switching tabs detaches that demo. This page stays up, so the charts keep recording.
+				</SelectableTextBlock.Text>
+			</SelectableTextBlock>
+		</StackPanel>
+		<TabControl Grid.Row="2">
+			<TabItem Header="Automatic" Content="{Binding AutomaticView}" />
+			<TabItem Header="Streaming" Content="{Binding StreamingView}" />
+			<TabItem Header="Collections" Content="{Binding CollectionsView}" />
+			<TabItem Header="Series" Content="{Binding SeriesView}" />
+			<TabItem Header="Properties" Content="{Binding PropertiesView}" />
+		</TabControl>
+		</Grid>
+	</ScrollViewer>
+</UserControl>

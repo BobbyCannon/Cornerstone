@@ -1,0 +1,483 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.Versioning;
+using Cornerstone.Presentation.Automation.Peers;
+using Cornerstone.Presentation.Controls;
+using Cornerstone.Presentation.Controls.Embedding;
+using Cornerstone.Presentation.Controls.Platform;
+using Cornerstone.Presentation.Controls.Primitives;
+using Cornerstone.Presentation.Data;
+using Cornerstone.Presentation.Input;
+using Cornerstone.Presentation.Input.Platform;
+using Cornerstone.Presentation.Input.Raw;
+using Cornerstone.Presentation.Input.TextInput;
+using Cornerstone.Presentation.Platform;
+using Cornerstone.Presentation.Platform.Storage;
+using Cornerstone.Presentation.Platform.Surfaces;
+using Cornerstone.Presentation.Rendering.Composition;
+using CoreAnimation;
+using CoreGraphics;
+using Foundation;
+using ObjCRuntime;
+using UIKit;
+using IInsetsManager = Cornerstone.Presentation.Controls.Platform.IInsetsManager;
+using Cornerstone.Presentation.Controls.Acrylic;
+using Cornerstone.Presentation.Controls.Feedback;
+using Cornerstone.Presentation.Controls.Chrome;
+using Cornerstone.Presentation.Controls.Elements;
+
+namespace Cornerstone.Presentation.iOS
+{
+    /// <summary>
+    /// Root view container for Cornerstone content, that can be embedded into iOS visual tree.
+    /// </summary>
+    public partial class CornerstoneView : UIView, ITextInputMethodImpl
+    {
+        internal IInputRoot InputRoot
+            => _inputRoot ?? throw new InvalidOperationException($"{nameof(IWindowImpl.SetInputRoot)} must have been called");
+        internal TopLevel TopLevel => _topLevel;
+
+        private readonly AutomationPeerWrapper _accessWrapper;
+        private readonly TopLevelImpl _topLevelImpl;
+        private readonly EmbeddableControlRoot _topLevel;
+        private readonly InputHandler _input;
+
+        private TextInputMethodClient? _client;
+        private ICornerstoneViewController? _controller;
+        private IInputRoot? _inputRoot;
+        private Metal.MetalRenderTarget? _currentRenderTarget;
+        private (PixelSize size, double scaling) _latestLayoutProps;
+        private bool _disposedValue;
+        private readonly List<UIView> _pendingNativeIslands = new();
+
+        public CornerstoneView()
+        {
+            _topLevelImpl = new TopLevelImpl(this);
+            _input = new InputHandler(this, _topLevelImpl);
+            _topLevel = new EmbeddableControlRoot(_topLevelImpl);
+            _accessWrapper = new(this, ControlAutomationPeer.CreatePeerForElement(_topLevel));
+
+            _topLevel.Prepare();
+
+            _topLevel.StartRendering();
+
+            InitLayerSurface();
+
+            // Remote touch handling
+            if (OperatingSystem.IsTvOS())
+            {
+                AddGestureRecognizer(new UISwipeGestureRecognizer(_input.Handle)
+                {
+                    Direction = UISwipeGestureRecognizerDirection.Up
+                });
+                AddGestureRecognizer(new UISwipeGestureRecognizer(_input.Handle)
+                {
+                    Direction = UISwipeGestureRecognizerDirection.Right
+                });
+                AddGestureRecognizer(new UISwipeGestureRecognizer(_input.Handle)
+                {
+                    Direction = UISwipeGestureRecognizerDirection.Down
+                });
+                AddGestureRecognizer(new UISwipeGestureRecognizer(_input.Handle)
+                {
+                    Direction = UISwipeGestureRecognizerDirection.Left
+                });
+            }
+            else if (OperatingSystem.IsIOS() || OperatingSystem.IsMacCatalyst())
+            {
+#if !TVOS
+                MultipleTouchEnabled = true;
+                
+                if (OperatingSystem.IsIOSVersionAtLeast(13, 4) || OperatingSystem.IsMacCatalyst())
+                {
+                    var scrollGestureRecognizer = new UIPanGestureRecognizer(_input.HandleScrollWheel)
+                    {
+                        // Only respond to scroll events, not touches
+                        MaximumNumberOfTouches = 0,
+                        AllowedScrollTypesMask = UIScrollTypeMask.Discrete | UIScrollTypeMask.Continuous
+                    };
+                    AddGestureRecognizer(scrollGestureRecognizer);
+                }
+#endif
+            }
+        }
+
+        [SuppressMessage("Interoperability", "CA1422:Validate platform compatibility")]
+        private void InitLayerSurface()
+        {
+            var l = Layer;
+            l.ContentsScale = UIScreen.MainScreen.Scale;
+            l.Opaque = !NativeAirspace.BehindComposition;
+#if !MACCATALYST
+            if (l is CAEAGLLayer eaglLayer)
+            {
+                eaglLayer.DrawableProperties = new NSDictionary(
+                    OpenGLES.EAGLDrawableProperty.RetainedBacking, false,
+                    OpenGLES.EAGLDrawableProperty.ColorFormat, OpenGLES.EAGLColorFormat.RGBA8
+                );
+                _topLevelImpl.Surfaces = [new Eagl.EaglLayerSurface(eaglLayer)];
+            }
+            else
+#endif
+            if (l is CAMetalLayer metalLayer)
+            {
+                metalLayer.Opaque = !NativeAirspace.BehindComposition;
+                _topLevelImpl.Surfaces = [new Metal.MetalPlatformSurface(metalLayer, this)];
+            }
+        }
+
+        /// <inheritdoc />
+        public override bool CanBecomeFirstResponder => true;
+
+        /// <inheritdoc />
+        public override bool CanResignFirstResponder => true;
+
+        /// <inheritdoc />
+        [ObsoletedOSPlatform("ios17.0", "Use the 'UITraitChangeObservable' protocol instead.")]
+        [ObsoletedOSPlatform("maccatalyst17.0", "Use the 'UITraitChangeObservable' protocol instead.")]
+        [ObsoletedOSPlatform("tvos17.0", "Use the 'UITraitChangeObservable' protocol instead.")]
+        [SupportedOSPlatform("ios")]
+        [SupportedOSPlatform("tvos")]
+        [SupportedOSPlatform("maccatalyst")]
+        public override void TraitCollectionDidChange(UITraitCollection? previousTraitCollection)
+        {
+            base.TraitCollectionDidChange(previousTraitCollection);
+
+            var settings = PresentationLocator.Current.GetRequiredService<IPlatformSettings>() as PlatformSettings;
+            settings?.TraitCollectionDidChange();
+        }
+
+        /// <inheritdoc />
+        public override void TintColorDidChange()
+        {
+            base.TintColorDidChange();
+
+            var settings = PresentationLocator.Current.GetRequiredService<IPlatformSettings>() as PlatformSettings;
+            settings?.TraitCollectionDidChange();
+        }
+
+        public void InitWithController<TController>(TController controller)
+            where TController : UIViewController, ICornerstoneViewController
+        {
+            _controller = controller;
+            _topLevelImpl._insetsManager.InitWithController(controller);
+        }
+
+        internal class TopLevelImpl : ITopLevelImpl
+        {
+            private readonly CornerstoneView _view;
+            private readonly INativeControlHostImpl _nativeControlHost;
+            internal readonly InsetsManager _insetsManager;
+            private readonly IStorageProvider? _storageProvider;
+            private readonly IClipboard? _clipboard;
+            private readonly IInputPane? _inputPane;
+            private readonly IOSPlatformFeedback _feedback;
+            private IDisposable? _paddingInsets;
+
+            public CornerstoneView View => _view;
+
+            public TopLevelImpl(CornerstoneView view)
+            {
+                _view = view;
+                Handle = new UIViewControlHandle(_view);
+
+                _nativeControlHost = new NativeControlHostImpl(view);
+#if TVOS
+                _storageProvider = null;
+                _clipboard = null;
+                _inputPane = null;
+#else
+                _storageProvider = new Storage.IOSStorageProvider(view);
+                _clipboard = new Input.Platform.Clipboard(new Clipboard.ClipboardImpl(UIPasteboard.General));
+                _inputPane = UIKitInputPane.Instance;
+#endif
+                _feedback = new IOSPlatformFeedback(view);
+                _insetsManager = new InsetsManager();
+                _insetsManager.DisplayEdgeToEdgeChanged += (_, edgeToEdge) =>
+                {
+                    // iOS doesn't add any paddings/margins to the application by itself.
+                    // Application is fully responsible for safe area paddings.
+                    // So, unlikely to android, we need to "fake" safe area insets when edge to edge is disabled.
+                    _paddingInsets?.Dispose();
+                    if (!edgeToEdge && view._controller is { } controller)
+                    {
+                        _paddingInsets = view._topLevel.SetValue(
+                            TemplatedControl.PaddingProperty,
+                            controller.SafeAreaPadding,
+                            BindingPriority.Style); // lower priority, so it can be redefined by user
+                    }
+                };
+            }
+
+            public void Dispose()
+            {
+                // No-op
+            }
+
+            public Compositor Compositor => Platform.Compositor
+                ?? throw new InvalidOperationException("iOS backend wasn't initialized. Make sure UseiOS was called.");
+
+            public void Invalidate(Rect rect)
+            {
+                // No-op
+            }
+
+            public void SetInputRoot(IInputRoot inputRoot)
+            {
+                _view._inputRoot = inputRoot;
+            }
+
+            public Point PointToClient(PixelPoint point) => new Point(point.X, point.Y);
+
+            public PixelPoint PointToScreen(Point point) => new PixelPoint((int)point.X, (int)point.Y);
+
+            public void SetCursor(ICursorImpl? cursor)
+            {
+                // no-op
+            }
+
+            public IPopupImpl? CreatePopup()
+            {
+                // In-window popups
+                return null;
+            }
+
+            public void SetTransparencyLevelHint(IReadOnlyList<WindowTransparencyLevel> transparencyLevel)
+            {
+                // No-op
+            }
+
+            public double DesktopScaling => RenderScaling;
+            public IPlatformHandle? Handle { get; }
+            public Size ClientSize => new Size(_view.Bounds.Width, _view.Bounds.Height);
+            public Size? FrameSize => null;
+            public double RenderScaling => _view.ContentScaleFactor;
+            public IPlatformRenderSurface[] Surfaces { get; set; } = [];
+            public Action<RawInputEventArgs>? Input { get; set; }
+            public Action<Rect>? Paint { get; set; }
+            public Action<Size, WindowResizeReason>? Resized { get; set; }
+            public Action<double>? ScalingChanged { get; set; }
+            public Action<WindowTransparencyLevel>? TransparencyLevelChanged { get; set; }
+            public Action? Closed { get; set; }
+
+            public Action? LostFocus { get; set; }
+
+            public WindowTransparencyLevel TransparencyLevel => WindowTransparencyLevel.None;
+
+            public void SetFrameThemeVariant(PlatformThemeVariant? themeVariant)
+            {
+#if !TVOS
+                // TODO adjust status bar depending on full screen mode.
+                if ((OperatingSystem.IsIOSVersionAtLeast(13)
+                    || OperatingSystem.IsMacCatalyst())
+                    && _view._controller is not null)
+                {
+                    _view._controller.PreferredStatusBarStyle = themeVariant switch
+                    {
+                        PlatformThemeVariant.Light => UIStatusBarStyle.DarkContent,
+                        PlatformThemeVariant.Dark => UIStatusBarStyle.LightContent,
+                        _ => UIStatusBarStyle.Default
+                    };
+                }
+#endif
+            }
+
+            public AcrylicPlatformCompensationLevels AcrylicCompensationLevels { get; } =
+                new AcrylicPlatformCompensationLevels();
+
+            public object? TryGetFeature(Type featureType)
+            {
+                if (featureType == typeof(ITextInputMethodImpl))
+                {
+                    return _view;
+                }
+
+                if (featureType == typeof(INativeControlHostImpl))
+                {
+                    return _nativeControlHost;
+                }
+
+                if (featureType == typeof(IInsetsManager))
+                {
+                    return _insetsManager;
+                }
+
+                if (featureType == typeof(IClipboard))
+                {
+                    return _clipboard;
+                }
+
+                if (featureType == typeof(IStorageProvider))
+                {
+                    return _storageProvider;
+                }
+
+                if (featureType == typeof(IInputPane))
+                {
+                    return _inputPane;
+                }
+
+                if (featureType == typeof(ILauncher))
+                {
+                    return new IOSLauncher();
+                }
+
+                if (featureType == typeof(IScreenImpl))
+                {
+                    return (iOSScreens)PresentationLocator.Current.GetRequiredService<IScreenImpl>();
+                }
+
+                if (featureType == typeof(IPlatformFeedback))
+                {
+                    return _feedback;
+                }
+
+                return null;
+            }
+        }
+
+        [Export("layerClass")]
+        public static Class LayerClass()
+        {
+#if !MACCATALYST
+            if (Platform.Graphics is Eagl.EaglPlatformGraphics)
+            {
+                return new Class(typeof(CAEAGLLayer));
+            }
+            else
+#endif
+            {
+                return new Class(typeof(CAMetalLayer));
+            }
+        }
+
+        internal void AttachNativeIsland(UIView island)
+        {
+            if (Superview != null)
+                Superview.InsertSubviewBelow(island, this);
+            else
+                _pendingNativeIslands.Add(island);
+        }
+
+        /// <inheritdoc />
+        public override void MovedToSuperview()
+        {
+            base.MovedToSuperview();
+            if (Superview == null)
+                return;
+
+            foreach (var island in _pendingNativeIslands)
+                Superview.InsertSubviewBelow(island, this);
+            _pendingNativeIslands.Clear();
+        }
+
+        /// <inheritdoc />
+        public override UIView HitTest(CGPoint point, UIEvent? uievent)
+        {
+            if (NativeAirspace.BehindComposition && _inputRoot is { } root)
+            {
+                var hit = root.RootElement.InputHitTest(new Point(point.X, point.Y));
+                if (NativeAirspace.IsHoleHit(hit))
+                    return null!;
+            }
+
+            return base.HitTest(point, uievent);
+        }
+
+        /// <inheritdoc/>
+        public override void TouchesBegan(NSSet touches, UIEvent? evt) => _input.Handle(touches, evt);
+
+        /// <inheritdoc/>
+        public override void TouchesMoved(NSSet touches, UIEvent? evt) => _input.Handle(touches, evt);
+
+        /// <inheritdoc/>
+        public override void TouchesEnded(NSSet touches, UIEvent? evt) => _input.Handle(touches, evt);
+
+        /// <inheritdoc/>
+        public override void TouchesCancelled(NSSet touches, UIEvent? evt) => _input.Handle(touches, evt);
+
+        /// <inheritdoc/>
+        public override void PressesBegan(NSSet<UIPress> presses, UIPressesEvent evt)
+        {
+            if (!_input.Handle(presses, evt))
+            {
+                base.PressesBegan(presses, evt);
+            }
+        }
+
+        /// <inheritdoc/>
+        public override void PressesChanged(NSSet<UIPress> presses, UIPressesEvent evt)
+        {
+            if (!_input.Handle(presses, evt))
+            {
+                base.PressesBegan(presses, evt);
+            }
+        }
+
+        /// <inheritdoc/>
+        public override void PressesEnded(NSSet<UIPress> presses, UIPressesEvent evt)
+        {
+            if (!_input.Handle(presses, evt))
+            {
+                base.PressesEnded(presses, evt);
+            }
+        }
+
+        /// <inheritdoc/>
+        public override void PressesCancelled(NSSet<UIPress> presses, UIPressesEvent evt)
+        {
+            if (!_input.Handle(presses, evt))
+            {
+                base.PressesCancelled(presses, evt);
+            }
+        }
+
+        /// <inheritdoc/>
+        public override void LayoutSubviews()
+        {
+            _topLevelImpl.Resized?.Invoke(_topLevelImpl.ClientSize, WindowResizeReason.Layout);
+            var scaling = (double)ContentScaleFactor;
+            if (_latestLayoutProps.scaling != scaling)
+            {
+                _topLevelImpl.ScalingChanged?.Invoke(scaling);
+            }
+
+            _latestLayoutProps = (new PixelSize((int)(Bounds.Width * scaling), (int)(Bounds.Height * scaling)), scaling);
+            if (_currentRenderTarget is not null)
+            {
+                _currentRenderTarget.PendingLayout = _latestLayoutProps;
+            }
+
+            base.LayoutSubviews();
+        }
+
+        public Control? Content
+        {
+            get => (Control?)_topLevel.Content;
+            set => _topLevel.Content = value;
+        }
+
+        internal void SetRenderTarget(Metal.MetalRenderTarget target)
+        {
+            _currentRenderTarget = target;
+            _currentRenderTarget.PendingLayout = _latestLayoutProps;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                _disposedValue = true;
+
+                if (disposing)
+                {
+                    _accessWrapper.Dispose();
+                    _topLevel.Dispose();
+                }
+            }
+
+            base.Dispose(disposing);
+        }
+    }
+}

@@ -7,7 +7,7 @@
 	autoId: 1,
 	enableAutoId: true,
 	ignoredTags: ['script'],
-	resultElementId: 'speedyResult',
+	resultElementId: 'cornerstoneResult',
 	getElementHost: function(frameId) {
 		// Check to see if the element is an iFrame. If so get it document, else we'll just return the current element
 		var hostDocument = frameId ? document.getElementById(frameId) : document;
@@ -42,100 +42,140 @@
 		var left = Math.round(x + box.left);
 		return JSON.stringify({ x: left, y: top });
 	},
+	ensureId: function (element) {
+		if (!element) {
+			return '';
+		}
+		var currentId = Cornerstone.getValueFromElement(element, 'id');
+		if (Cornerstone.enableAutoId && (currentId === null || currentId === undefined || currentId === '')) {
+			element.id = 'cornerstone-' + Cornerstone.autoId++;
+			currentId = element.id;
+		}
+		return currentId || '';
+	},
+	elementToItem: function (element, frameId) {
+		var tagName = (element.tagName || '').toLowerCase();
+		var elementId = Cornerstone.getValueFromElement(element, 'id');
+		var elementName = Cornerstone.getValueFromElement(element, 'name') || '';
+		var parentId = (element.parentNode ? Cornerstone.getValueFromElement(element.parentNode, 'id') : '') || frameId || '';
+		var item = {
+			id: elementId,
+			parentId: parentId,
+			name: elementName,
+			tagName: tagName,
+			attributes: [],
+			frameId: frameId
+		};
+		item.width = element.offsetWidth;
+		item.height = element.offsetHeight;
+		var j;
+		for (j = 0; j < element.attributes.length; j++) {
+			var attribute = element.attributes[j];
+			if (attribute.nodeName === undefined || attribute.nodeName.length <= 0) {
+				continue;
+			}
+			if (item[attribute.nodeName]) {
+				continue;
+			}
+			item.attributes.push(attribute.nodeName);
+			item.attributes.push(attribute.nodeValue);
+		}
+		var k;
+		for (k = 0; k < Cornerstone.properties.length; k++) {
+			var name = Cornerstone.properties[k];
+			if (item[name] || name === 'textContent') {
+				continue;
+			}
+			if (element[name] !== null && element[name] !== undefined) {
+				item.attributes.push(name);
+				if (typeof element[name] === 'string') {
+					item.attributes.push(element[name]);
+				} else {
+					item.attributes.push(JSON.stringify(element[name]));
+				}
+			}
+		}
+		return item;
+	},
+	findElements: function (id, frameId, forParentId) {
+		var host = Cornerstone.getElementHost(frameId);
+		if (!host) {
+			return [];
+		}
+		var response = [];
+		var seen = {};
+		function consider(element) {
+			if (!element || element.id === Cornerstone.resultElementId) {
+				return;
+			}
+			var tagName = (element.tagName || '').toLowerCase();
+			if (Cornerstone.contains(Cornerstone.ignoredTags, tagName)) {
+				return;
+			}
+			if (element.parentNode) {
+				Cornerstone.ensureId(element.parentNode);
+			}
+			Cornerstone.ensureId(element);
+			if (seen[element.id]) {
+				return;
+			}
+			if (forParentId !== undefined && forParentId !== null) {
+				var parentId = (element.parentNode ? Cornerstone.getValueFromElement(element.parentNode, 'id') : '') || frameId || '';
+				if (parentId !== forParentId) {
+					return;
+				}
+			}
+			seen[element.id] = true;
+			response.push(Cornerstone.elementToItem(element, frameId));
+		}
+		consider(host.getElementById(id));
+		try {
+			var escaped = (window.CSS && CSS.escape) ? CSS.escape(id) : String(id).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+			var nodes = host.querySelectorAll('[id="' + escaped + '"], [name="' + escaped + '"]');
+			var n;
+			for (n = 0; n < nodes.length; n++) {
+				consider(nodes[n]);
+			}
+		} catch (e) {
+		}
+		return response;
+	},
 	getElementsFromHost: function (host, frameId, forParentId) {
 		var response = [];
 		var processedFrames = [];
 		var allElements = host.getElementsByTagName('*');
 		var i;
-
-		// Add element IDs so we can build element hierarchy.
 		for (i = 0; i < allElements.length; i++) {
-			var currentId = Cornerstone.getValueFromElement(allElements[i], 'id');
-			if (Cornerstone.enableAutoId && (currentId === null || currentId === undefined || currentId === '')) {
-				allElements[i].id = 'cornerstone-' + Cornerstone.autoId++;
-			}
+			Cornerstone.ensureId(allElements[i]);
 		}
-
 		for (i = 0; i < allElements.length; i++) {
 			var element = allElements[i];
-			var tagName = (element.tagName).toLowerCase();
-
+			var tagName = (element.tagName || '').toLowerCase();
 			if (element.id === Cornerstone.resultElementId) {
 				continue;
 			}
-
 			if (Cornerstone.contains(Cornerstone.ignoredTags, tagName)) {
 				continue;
 			}
-
-			var elementId = Cornerstone.getValueFromElement(element, 'id');
-			var elementName = Cornerstone.getValueFromElement(element, 'name') || '';
 			var parentId = Cornerstone.getValueFromElement(element.parentNode, 'id') || frameId || '';
-
 			if (forParentId !== undefined && parentId !== forParentId) {
 				continue;
 			}
-
-			var item = {
-				id: elementId,
-				parentId: parentId,
-				name: elementName,
-				tagName: tagName,
-				attributes: [],
-				frameId: frameId
-			};
-
-			item.width = element.offsetWidth;
-			item.height = element.offsetHeight;
-
-			for (var j = 0; j < element.attributes.length; j++) {
-				var attribute = element.attributes[j];
-
-				if (attribute.nodeName === undefined || attribute.nodeName.length <= 0) {
-					continue;
-				}
-
-				if (item[attribute.nodeName]) {
-					continue;
-				}
-
-				item.attributes.push(attribute.nodeName);
-				item.attributes.push(attribute.nodeValue);
-			}
-
-			for (var k = 0; k < Cornerstone.properties.length; k++) {
-				var name = Cornerstone.properties[k];
-
-				if (item[name] || name === 'textContent') {
-					continue;
-				}
-
-				if (element[name] !== null && element[name] !== undefined) {
-					item.attributes.push(name);
-					if (typeof element[name] === 'string') {
-						item.attributes.push(element[name]);
-					} else {
-						item.attributes.push(JSON.stringify(element[name]));
-					}
-				}
-			}
-			
+			var item = Cornerstone.elementToItem(element, frameId);
 			response.push(item);
-
 			try {
 				if (item.tagName.toLowerCase() === 'iframe' && !Cornerstone.contains(processedFrames, item.id)) {
 					processedFrames.push(item.id);
 					var itemHost = (element.contentDocument ? element.contentDocument : element.contentWindow.document);
 					var children = Cornerstone.getElementsFromHost(itemHost, item.id, forParentId);
-					for (var childIndex = 0; childIndex < children.length; childIndex++) {
+					var childIndex;
+					for (childIndex = 0; childIndex < children.length; childIndex++) {
 						response.push(children[childIndex]);
 					}
 				}
 			} catch (ex) {
-				//console.log(ex.message);
 			}
 		}
-
 		return response;
 	},
 	getElements: function (forParentId, frameId) {

@@ -7,7 +7,6 @@ using Cornerstone.Reflection;
 
 #endregion
 
-
 namespace Cornerstone.Presentation;
 
 /// <summary>

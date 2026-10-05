@@ -1,0 +1,71 @@
+﻿using System;
+using System.Globalization;
+using Cornerstone.Presentation.Input;
+using Cornerstone.Presentation.Input.Platform;
+using Cornerstone.Presentation.Media;
+using Cornerstone.Presentation.Metadata;
+using Cornerstone.Presentation.Threading;
+using Cornerstone.Presentation.VisualTree;
+
+namespace Cornerstone.Presentation.Platform
+{
+    /// <summary>
+    /// A default implementation of <see cref="IPlatformSettings"/> for platforms.
+    /// </summary>
+    [PrivateApi]
+    public class DefaultPlatformSettings : IPlatformSettings
+    {
+        private const int TouchTapSize = 10;
+        private const int TouchDoubleTapSize = 50; // Default TouchModeN_DtapDist value on win32
+        public virtual Size GetTapSize(PointerType type)
+        {
+            return type switch
+            {
+                PointerType.Touch or PointerType.Pen => new(TouchTapSize, TouchTapSize),
+                _ => new(4, 4),
+            };
+        }
+
+        public virtual Size GetDoubleTapSize(PointerType type)
+        {
+            return type switch
+            {
+                PointerType.Touch or PointerType.Pen => new(TouchDoubleTapSize, TouchDoubleTapSize),
+                _ => new(4, 4),
+            };
+        }
+
+        public virtual TimeSpan GetDoubleTapTime(PointerType type) => TimeSpan.FromMilliseconds(500);
+
+        public virtual TimeSpan HoldWaitDuration => TimeSpan.FromMilliseconds(300);
+
+        public PlatformHotkeyConfiguration HotkeyConfiguration =>
+            PresentationLocator.Current.GetRequiredService<PlatformHotkeyConfiguration>();
+
+        public virtual string PreferredApplicationLanguage =>
+            CultureInfo.InstalledUICulture.Name;
+
+        public virtual PlatformColorValues GetColorValues()
+        {
+            return new PlatformColorValues
+            {
+                ThemeVariant = OperatingSystemTheme.GetVariant()
+            };
+        }
+
+        public virtual event EventHandler<PlatformColorValues>? ColorValuesChanged;
+        public virtual event EventHandler? PreferredApplicationLanguageChanged;
+
+        protected void OnColorValuesChanged(PlatformColorValues colorValues)
+        {
+            Dispatcher.UIThread.Send(
+                _ => ColorValuesChanged?.Invoke(this, colorValues));
+        }
+
+        protected void OnPreferredApplicationLanguageChanged()
+        {
+            Dispatcher.UIThread.Send(
+                _ => PreferredApplicationLanguageChanged?.Invoke(this, EventArgs.Empty));
+        }
+    }
+}

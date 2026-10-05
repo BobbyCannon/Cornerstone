@@ -1,0 +1,16 @@
+﻿using System;
+
+namespace Cornerstone.Presentation.Media
+{
+    /// <summary>
+    /// Signals to a self-rendering control that changes to the resource should invoke
+    /// <see cref="Visual.InvalidateVisual"/>.
+    /// </summary>
+    internal interface IAffectsRender
+    {
+        /// <summary>
+        /// Raised when the resource changes visually.
+        /// </summary>
+        event EventHandler Invalidated;
+    }
+}

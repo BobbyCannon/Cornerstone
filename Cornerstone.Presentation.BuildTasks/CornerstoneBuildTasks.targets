@@ -1,0 +1,203 @@
+<Project>
+	<PropertyGroup>
+		<CornerstoneBuildTasksTargetsImported>true</CornerstoneBuildTasksTargetsImported>
+		<!-- Absolute consumer path. UsingTask relative paths resolve against this targets file, not the project. -->
+		<CornerstoneBuildTasksLocation Condition="'$(CornerstoneBuildTasksLocation)' == ''">$(MSBuildProjectDirectory)\obj\$(Configuration)\$(TargetFramework)\CornerstoneBuildTasks\Cornerstone.Presentation.BuildTasks.dll</CornerstoneBuildTasksLocation>
+		<CornerstoneXamlReportImportance Condition="'$(CornerstoneXamlReportImportance)' == ''">low</CornerstoneXamlReportImportance>
+		<_CornerstoneSkipXamlCompilation Condition="'$(_CornerstoneSkipXamlCompilation)' == ''">false</_CornerstoneSkipXamlCompilation>
+		<CornerstoneUseCompiledBindingsByDefault Condition="'$(CornerstoneUseCompiledBindingsByDefault)' == ''">false</CornerstoneUseCompiledBindingsByDefault>
+		<CornerstoneIncludeApplicationIconAsWindowIcon Condition="'$(CornerstoneIncludeApplicationIconAsWindowIcon)' == ''">true</CornerstoneIncludeApplicationIconAsWindowIcon>
+	</PropertyGroup>
+
+	<ItemGroup Condition="'$(EnableDefaultItems)'=='True'">
+		<Compile Update="**\*.paml.cs">
+			<DependentUpon>%(Filename)</DependentUpon>
+			<SubType>Code</SubType>
+		</Compile>
+		<Compile Update="**\*.cxaml.cs">
+			<DependentUpon>%(Filename)</DependentUpon>
+			<SubType>Code</SubType>
+		</Compile>
+		<Compile Update="**\*.axaml.cs">
+			<DependentUpon>%(Filename)</DependentUpon>
+			<SubType>Code</SubType>
+		</Compile>
+		<None Remove="**\*.cxaml" />
+		<None Remove="**\*.axaml" />
+		<None Remove="**\*.paml" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(CornerstoneIncludeApplicationIconAsWindowIcon)' == 'true'">
+		<CornerstoneResource Include="$(ApplicationIcon)"
+		                  Visible="false"
+		                  Link="!__CornerstoneDefaultWindowIcon"
+		                  Condition="'$(ApplicationIcon)' != ''" />
+	</ItemGroup>
+
+	<!-- GenerateCornerstoneResources adds CornerstoneXaml to CornerstoneResource, so it has to run first
+	     or the items read below are incomplete. -->
+	<Target Name="_InjectCornerstoneAdditionalFiles"
+	        BeforeTargets="GenerateMSBuildEditorConfigFileShouldRun"
+	        DependsOnTargets="GenerateCornerstoneResources">
+		<ItemGroup>
+			<AdditionalFiles Include="@(CornerstoneXaml)" SourceItemGroup="CornerstoneXaml" />
+			<_CornerstoneResourceXamlOnly Include="@(CornerstoneResource)"
+			                           Condition="'%(Extension)' == '.xaml' OR '%(Extension)' == '.cxaml' OR '%(Extension)' == '.axaml'"
+			                           Exclude="@(CornerstoneXaml)" />
+			<AdditionalFiles Include="@(_CornerstoneResourceXamlOnly)" SourceItemGroup="CornerstoneResource" />
+		</ItemGroup>
+		<PropertyGroup>
+			<CornerstoneResourcePaths>@(CornerstoneResource->'%(FullPath)', ',')</CornerstoneResourcePaths>
+		</PropertyGroup>
+	</Target>
+
+	<!-- TaskHostFactory loads the task in a short-lived process so Rebuild can replace BuildTasks.dll
+	     without restarting Visual Studio (same as Cornerstone build/BuildTargets.targets). -->
+	<UsingTask TaskName="GenerateCornerstoneResourcesTask" AssemblyFile="$(CornerstoneBuildTasksLocation)" TaskFactory="TaskHostFactory" />
+	<UsingTask TaskName="CompileCornerstoneXamlTask" AssemblyFile="$(CornerstoneBuildTasksLocation)" TaskFactory="TaskHostFactory" />
+
+	<!-- After ResolveProjectReferences so the BuildTasks ProjectReference can fill tools\ first.
+	     PrepareForBuild is too early (consumer starts before the referenced project builds). -->
+	<Target Name="_ShadowCopyCornerstoneBuildTasks"
+	        AfterTargets="ResolveProjectReferences"
+	        BeforeTargets="AddCornerstoneResources;GenerateCornerstoneResources;CompileCornerstoneXaml">
+		<!-- Design-time / IntelliSense inner builds often skip ProjectReference, so tools\ may not exist yet.
+		     Do not Error there — VS keeps those diagnostics active after a successful CLI/real build. -->
+		<Error Condition="'$(DesignTimeBuild)' != 'true' AND '$(BuildingProject)' != 'false' AND !Exists('$(CornerstoneBuildTasksOutput)Cornerstone.Presentation.BuildTasks.dll')"
+		       Text="Cornerstone.Presentation.BuildTasks.dll was not found at $(CornerstoneBuildTasksOutput). Build Cornerstone.Presentation.BuildTasks first (output is tools\, not bin\)." />
+		<ItemGroup>
+			<_CornerstoneBuildTasksShadow Include="$(CornerstoneBuildTasksOutput)*.dll" />
+		</ItemGroup>
+		<MakeDir Directories="$(MSBuildProjectDirectory)\obj\$(Configuration)\$(TargetFramework)\CornerstoneBuildTasks" />
+		<Copy SourceFiles="@(_CornerstoneBuildTasksShadow)"
+		      DestinationFolder="$(MSBuildProjectDirectory)\obj\$(Configuration)\$(TargetFramework)\CornerstoneBuildTasks"
+		      SkipUnchangedFiles="true"
+		      Retries="10"
+		      RetryDelayMilliseconds="250"
+		      ContinueOnError="true" />
+	</Target>
+
+	<Target Name="AddCornerstoneResources"
+	        BeforeTargets="ResolveReferences"
+	        Condition="('@(CornerstoneResource->Count())' &gt; 0) or ('@(CornerstoneXaml->Count())' &gt; 0)">
+		<PropertyGroup>
+			<CornerstoneResourcesTemporaryFilePath Condition="'$(CornerstoneResourcesTemporaryFilePath)' == ''">$(IntermediateOutputPath)/Cornerstone/resources</CornerstoneResourcesTemporaryFilePath>
+		</PropertyGroup>
+		<ItemGroup>
+			<EmbeddedResource Include="$(CornerstoneResourcesTemporaryFilePath)">
+				<LogicalName>!CornerstoneResources</LogicalName>
+			</EmbeddedResource>
+		</ItemGroup>
+	</Target>
+
+	<PropertyGroup>
+		<BuildCornerstoneResourcesDependsOn>$(BuildCornerstoneResourcesDependsOn);AddCornerstoneResources;ResolveReferences;_GenerateCornerstoneResourcesDependencyCache</BuildCornerstoneResourcesDependsOn>
+		<CompileCornerstoneXamlDependsOn>$(CompileCornerstoneXamlDependsOn);FindReferenceAssembliesForReferences</CompileCornerstoneXamlDependsOn>
+	</PropertyGroup>
+
+	<Target Name="_GenerateCornerstoneResourcesDependencyCache" BeforeTargets="GenerateCornerstoneResources">
+		<PropertyGroup>
+			<_CornerstoneResourcesInputsCacheFilePath>$(IntermediateOutputPath)/Cornerstone/Resources.Inputs.cache</_CornerstoneResourcesInputsCacheFilePath>
+		</PropertyGroup>
+		<ItemGroup>
+			<CustomAdditionalGenerateCornerstoneResourcesInputs Include="$(_CornerstoneResourcesInputsCacheFilePath)" />
+		</ItemGroup>
+		<Hash ItemsToHash="@(CornerstoneResource);@(CornerstoneXaml);$(MSBuildAllProjects)">
+			<Output TaskParameter="HashResult" PropertyName="CornerstoneResourcesDependencyHash" />
+		</Hash>
+		<MakeDir Directories="$(IntermediateOutputPath)/Cornerstone" />
+		<WriteLinesToFile Overwrite="true" File="$(_CornerstoneResourcesInputsCacheFilePath)" Lines="$(CornerstoneResourcesDependencyHash)" WriteOnlyWhenDifferent="True" />
+		<ItemGroup>
+			<FileWrites Include="$(_CornerstoneResourcesInputsCacheFilePath)" />
+		</ItemGroup>
+	</Target>
+
+	<Target Name="GenerateCornerstoneResources"
+	        BeforeTargets="CoreCompile;CoreResGen"
+	        Inputs="@(CornerstoneResource);@(CornerstoneXaml);@(CustomAdditionalGenerateCornerstoneResourcesInputs);$(MSBuildAllProjects)"
+	        Outputs="$(CornerstoneResourcesTemporaryFilePath)"
+	        DependsOnTargets="$(BuildCornerstoneResourcesDependsOn)"
+	        Condition="('@(CornerstoneResource->Count())' &gt; 0) or ('@(CornerstoneXaml->Count())' &gt; 0)">
+		<!-- Do not mutate CornerstoneResource: this target can run more than once in a VS inner build,
+		     and Include="@(CornerstoneXaml)" would pack the same x:Class twice (CSDC2002). -->
+		<ItemGroup>
+			<_CornerstonePackResources Remove="@(_CornerstonePackResources)" />
+			<_CornerstonePackResources Include="@(CornerstoneResource)" />
+			<_CornerstonePackResources Include="@(CornerstoneXaml)" />
+		</ItemGroup>
+		<!-- Design-time builds run this before _ShadowCopyCornerstoneBuildTasks has a DLL
+		     (Rebuild just deleted obj, or this TFM was not in the build). Loading the task
+		     then logs MSB4062, and Visual Studio keeps that row after the real build succeeds.
+		     Skip only in that case. A real build still loads the task and fails if the copy is missing. -->
+		<GenerateCornerstoneResourcesTask
+			Condition="'$(DesignTimeBuild)' != 'true' OR Exists('$(CornerstoneBuildTasksLocation)')"
+			Output="$(CornerstoneResourcesTemporaryFilePath)"
+			Root="$(MSBuildProjectDirectory)"
+			Resources="@(_CornerstonePackResources)"
+			ReportImportance="$(CornerstoneXamlReportImportance)"/>
+		<ItemGroup>
+			<FileWrites Include="$(CornerstoneResourcesTemporaryFilePath)" />
+		</ItemGroup>
+	</Target>
+
+	<Target Name="CornerstonePrepareCoreCompile" BeforeTargets="CoreCompile">
+		<PropertyGroup>
+			<TargetsTriggeredByCompilation>$(TargetsTriggeredByCompilation);CompileCornerstoneXaml</TargetsTriggeredByCompilation>
+		</PropertyGroup>
+		<ItemGroup>
+			<CustomAdditionalCompileInputs Include="@(CornerstoneResource)" />
+			<CustomAdditionalCompileInputs Include="@(CornerstoneXaml)" />
+		</ItemGroup>
+	</Target>
+
+	<Target Name="CornerstoneCollectUpToDateCheckInputDesignTime" BeforeTargets="CollectUpToDateCheckInputDesignTime">
+		<ItemGroup>
+			<UpToDateCheckInput Include="@(CornerstoneResource)" />
+			<UpToDateCheckInput Include="@(CornerstoneXaml)" />
+		</ItemGroup>
+	</Target>
+
+	<Target Name="CompileCornerstoneXaml"
+	        DependsOnTargets="$(CompileCornerstoneXamlDependsOn)"
+	        Condition="'@(CornerstoneResource)@(CornerstoneXaml)' != '' AND $(DesignTimeBuild) != true AND $(EnableCornerstoneXamlCompilation) != false">
+		<PropertyGroup>
+			<CornerstoneXamlIlVerifyIl Condition="'$(CornerstoneXamlIlVerifyIl)' == ''">false</CornerstoneXamlIlVerifyIl>
+			<CornerstoneXamlIlDebuggerLaunch Condition="'$(CornerstoneXamlIlDebuggerLaunch)' == ''">false</CornerstoneXamlIlDebuggerLaunch>
+			<CornerstoneXamlVerboseExceptions Condition="'$(CornerstoneXamlVerboseExceptions)' == ''">false</CornerstoneXamlVerboseExceptions>
+			<CornerstoneXamlCreateSourceInfo Condition="'$(CornerstoneXamlCreateSourceInfo)' == '' AND '$(Configuration)' == 'Debug'">true</CornerstoneXamlCreateSourceInfo>
+			<CornerstoneXamlCreateSourceInfo Condition="'$(CornerstoneXamlCreateSourceInfo)' == '' AND '$(Configuration)' != 'Debug'">false</CornerstoneXamlCreateSourceInfo>
+		</PropertyGroup>
+		<ItemGroup>
+			<IntermediateAssembly Update="*" CornerstoneCompileOutput="%(FullPath)"/>
+			<_DebugSymbolsIntermediatePath Update="*" CornerstoneCompileOutput="%(FullPath)"/>
+			<IntermediateRefAssembly Update="*" CornerstoneCompileOutput="%(FullPath)"/>
+		</ItemGroup>
+		<WriteLinesToFile
+			File="$(IntermediateOutputPath)/Cornerstone/references"
+			Lines="@(ReferencePathWithRefAssemblies)"
+			Overwrite="true" />
+		<CompileCornerstoneXamlTask
+			AssemblyFile="@(IntermediateAssembly)"
+			References="@(ReferencePathWithRefAssemblies)"
+			RefAssemblyFile="@(IntermediateRefAssembly)"
+			ProjectDirectory="$(MSBuildProjectDirectory)"
+			VerifyIl="$(CornerstoneXamlIlVerifyIl)"
+			ReportImportance="$(CornerstoneXamlReportImportance)"
+			AssemblyOriginatorKeyFile="$(AssemblyOriginatorKeyFile)"
+			SignAssembly="$(SignAssembly)"
+			DelaySign="$(DelaySign)"
+			PublicSign="$(PublicSign)"
+			SkipXamlCompilation="$(_CornerstoneSkipXamlCompilation)"
+			DebuggerLaunch="$(CornerstoneXamlIlDebuggerLaunch)"
+			CreateSourceInfo="$(CornerstoneXamlCreateSourceInfo)"
+			DefaultCompileBindings="$(CornerstoneUseCompiledBindingsByDefault)"
+			VerboseExceptions="$(CornerstoneXamlVerboseExceptions)"
+			AnalyzerConfigFiles="@(EditorConfigFiles)"/>
+	</Target>
+
+	<Target Name="CornerstoneDeleteRefAssemblyBeforeOutputCopy"
+	        BeforeTargets="CopyFilesToOutputDirectory"
+	        Condition="'@(CornerstoneResource)@(CornerstoneXaml)' != '' and '$(TargetRefPath)' != '' and '$(ProduceReferenceAssembly)' == 'true' and ('$(CopyBuildOutputToOutputDirectory)' == '' or '$(CopyBuildOutputToOutputDirectory)' == 'true') and '$(SkipCopyBuildProduct)' != 'true'">
+		<Delete Files="$(TargetRefPath)" Condition="Exists('$(TargetRefPath)')" />
+	</Target>
+</Project>

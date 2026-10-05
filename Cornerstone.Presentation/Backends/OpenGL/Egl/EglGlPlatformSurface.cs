@@ -1,0 +1,78 @@
+using System;
+using Cornerstone.Presentation.Metadata;
+using Cornerstone.Presentation.OpenGL.Surfaces;
+using Cornerstone.Presentation.Platform;
+
+namespace Cornerstone.Presentation.OpenGL.Egl
+{
+    public class EglGlPlatformSurface : EglGlPlatformSurfaceBase
+    {
+        public interface IEglWindowGlPlatformSurfaceInfo
+        {
+            IntPtr Handle { get; }
+            PixelSize Size { get; }
+            double Scaling { get; }
+        }
+        
+        [PrivateApi]
+        public interface IEglWindowGlPlatformSurfaceInfoWithWaitPolicy : IEglWindowGlPlatformSurfaceInfo
+        {
+            public bool SkipWaits { get; }
+        }
+        
+        private readonly IEglWindowGlPlatformSurfaceInfo _info;
+        
+        public EglGlPlatformSurface(IEglWindowGlPlatformSurfaceInfo info)
+        {
+            _info = info;
+        }
+
+        public override IGlPlatformSurfaceRenderTarget CreateGlRenderTarget(IGlContext context)
+        {
+            var eglContext = (EglContext)context;
+            
+            var glSurface = eglContext.Display.CreateWindowSurface(_info.Handle);
+            return new RenderTarget(glSurface, eglContext, _info);
+        }
+
+        private class RenderTarget : EglPlatformSurfaceRenderTargetBase
+        {
+            private EglSurface? _glSurface;
+            private readonly IEglWindowGlPlatformSurfaceInfo _info;
+            private PixelSize _currentSize;
+            private IntPtr _handle;
+
+            public RenderTarget(EglSurface glSurface, EglContext context, IEglWindowGlPlatformSurfaceInfo info) : base(context)
+            {
+                _glSurface = glSurface;
+                _info = info;
+                _currentSize = info.Size;
+                _handle = _info.Handle;
+                SkipWaits = info is IEglWindowGlPlatformSurfaceInfoWithWaitPolicy { SkipWaits: true };
+            }
+
+            protected override bool SkipWaits { get; }
+
+            public override void Dispose() => _glSurface?.Dispose();
+
+            public override IGlPlatformSurfaceRenderingSession BeginDrawCore(IRenderTarget.RenderTargetSceneInfo sceneInfo)
+            {
+                // TODO: use expectedPixelSize
+                var handle = _info.Handle;
+                var size = _info.Size;
+                if (size != _currentSize
+                    || _handle != handle
+                    || _glSurface == null)
+                {
+                    _glSurface?.Dispose();
+                    _glSurface = null;
+                    _glSurface = Context.Display.CreateWindowSurface(handle);
+                    _currentSize = size;
+                    _handle = handle;
+                }
+                return base.BeginDraw(_glSurface, size, _info.Scaling);
+            }
+        }
+    }
+}
+

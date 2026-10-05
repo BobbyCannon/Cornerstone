@@ -9,7 +9,7 @@ using System.Text;
 using Cornerstone.VisualStudio.Core.AssemblyMetadata;
 using Cornerstone.VisualStudio.Core.Completion;
 using Cornerstone.VisualStudio.Core.DnlibMetadataProvider;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
@@ -108,18 +108,31 @@ public class XamlCompletionTestBase
 			throw new Exception("No completions found");
 		}
 
-		Assert.True(xaml.Length == comp.StartPosition, $"Invalid completion start position typed: {typed} expected: {completion}");
+		Assert.IsTrue(xaml.Length == comp.StartPosition, $"Invalid completion start position typed: {typed} expected: {completion}");
 
-		Assert.Contains(comp.Completions, c => c.InsertText == completion);
+		Assert.IsTrue(comp.Completions.Any(c => c.InsertText == completion));
 
-		Assert.Single(comp.Completions, c => c.InsertText == completion);
+		Assert.AreEqual(1, System.Linq.Enumerable.Count(comp.Completions, c => c.InsertText == completion));
 	}
 
 	protected CompletionSet GetCompletionsFor(string xaml, string xamlAfterCursor = "")
 	{
+		return GetCompletionsFor(xaml, xamlAfterCursor, null);
+	}
+
+	protected CompletionSet GetCompletionsFor(
+		string xaml,
+		string xamlAfterCursor,
+		IReadOnlyList<string> additionalStyleClassNames)
+	{
 		xaml = Prologue + xaml;
 		var engine = new CompletionEngine();
-		var set = engine.GetCompletions(Metadata, xaml + xamlAfterCursor, xaml.Length, Assembly.GetCallingAssembly().GetName().Name);
+		var set = engine.GetCompletions(
+			Metadata,
+			xaml + xamlAfterCursor,
+			xaml.Length,
+			Assembly.GetCallingAssembly().GetName().Name,
+			additionalStyleClassNames);
 		return TransformCompletionSet(set);
 	}
 

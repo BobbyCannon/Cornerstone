@@ -1,0 +1,259 @@
+using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.Versioning;
+using Android.App;
+using Android.Content;
+using Android.Content.PM;
+using Android.OS;
+using Android.Runtime;
+using Android.Views;
+using Android.Window;
+using AndroidX.AppCompat.App;
+using Cornerstone.Presentation.Android.Platform;
+using Cornerstone.Presentation.Android.Platform.Storage;
+using Cornerstone.Presentation.Controls.ApplicationLifetimes;
+using Cornerstone.Presentation.Platform;
+
+namespace Cornerstone.Presentation.Android;
+
+/// <summary>
+/// Common implementation of android activity that is integrated with Cornerstone views.
+/// If you need a base class for main activity of Cornerstone app, see <see cref="CornerstoneMainActivity"/>.  
+/// </summary>
+public class CornerstoneActivity : AppCompatActivity, ICornerstoneActivity
+{
+    private EventHandler<ActivatedEventArgs>? _onActivated, _onDeactivated;
+    private GlobalLayoutListener? _listener;
+    private object? _content;
+    private bool _contentViewSet;
+    internal CornerstoneView? _view;
+    private BackPressedCallback? _currentBackPressedCallback;
+    private bool _shouldNavigateBack;
+
+    public Action<int, Result, Intent?>? ActivityResult { get; set; }
+    public Action<int, string[], Permission[]>? RequestPermissionsResult { get; set; }
+
+    public event EventHandler<AndroidBackRequestedEventArgs>? BackRequested;
+
+    public object? Content
+    {
+        get => _content;
+        set
+        {
+            if (_content != value)
+            {
+                _content = value;
+                if (_view is not null)
+                {
+                    if (!_contentViewSet)
+                    {
+                        _contentViewSet = true;
+
+                        SetContentView(_view);
+
+                        // By default, the view isn't focused if the activity is created anew, so we force focus.
+                        _view.RequestFocus();
+
+                        _listener = new GlobalLayoutListener(_view);
+
+                        _view.ViewTreeObserver?.AddOnGlobalLayoutListener(_listener);
+                    }
+
+                    _view.Content = _content;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets whether to call the default back handler after our back handler is called.
+    /// </summary>
+    internal bool ShouldNavigateBack
+    {
+        get
+        {
+            var goBack = _shouldNavigateBack;
+            _shouldNavigateBack = false;
+
+            return goBack;
+        }
+    }
+
+    event EventHandler<ActivatedEventArgs>? ICornerstoneActivity.Activated
+    {
+        add { _onActivated += value; }
+        remove { _onActivated -= value; }
+    }
+
+    event EventHandler<ActivatedEventArgs>? ICornerstoneActivity.Deactivated
+    {
+        add { _onDeactivated += value; }
+        remove { _onDeactivated -= value; }
+    }
+
+    [ObsoletedOSPlatform("android33.0")]
+    public override void OnBackPressed()
+    {
+        if (OperatingSystem.IsAndroidVersionAtLeast(33))
+        {
+            OnBackPressedDispatcher.OnBackPressed();
+            return;
+        }
+
+        var eventArgs = new AndroidBackRequestedEventArgs();
+
+        BackRequested?.Invoke(this, eventArgs);
+
+        if (!eventArgs.Handled)
+        {
+            base.OnBackPressed();
+        }
+    }
+
+    protected override void OnCreate(Bundle? savedInstanceState)
+    {
+        InitializeCornerstoneView(_content);
+
+        base.OnCreate(savedInstanceState);
+
+        if (Cornerstone.Presentation.Application.Current?.TryGetFeature<IActivatableLifetime>()
+            is AndroidActivatableLifetime activatableLifetime)
+        {
+            activatableLifetime.CurrentIntendActivity = this;
+        }
+
+        HandleIntent(Intent);
+    }
+
+    protected override void OnNewIntent(Intent? intent)
+    {
+        base.OnNewIntent(intent);
+
+        HandleIntent(intent);
+    }
+
+    protected override void OnStop()
+    {
+        _onDeactivated?.Invoke(this, new ActivatedEventArgs(ActivationKind.Background));
+
+        if (OperatingSystem.IsAndroidVersionAtLeast(33))
+        {
+            _currentBackPressedCallback?.Remove();
+            _currentBackPressedCallback = null;
+        }
+        base.OnStop();
+    }
+
+    protected override void OnStart()
+    {
+        _onActivated?.Invoke(this, new ActivatedEventArgs(ActivationKind.Background));
+
+        if (OperatingSystem.IsAndroidVersionAtLeast(33))
+        {
+            _currentBackPressedCallback = new BackPressedCallback(this);
+            OnBackPressedDispatcher.AddCallback(this, _currentBackPressedCallback);
+        }
+        base.OnStart();
+    }
+
+    protected override void OnResume()
+    {
+        base.OnResume();
+
+        // Android only respects LayoutInDisplayCutoutMode value if it has been set once before window becomes visible.
+        if (OperatingSystem.IsAndroidVersionAtLeast(28) && Window is { Attributes: { } attributes })
+        {
+            attributes.LayoutInDisplayCutoutMode = LayoutInDisplayCutoutMode.ShortEdges;
+        }
+
+        // We inform the ContentView that it has become visible. OnVisibleChanged() sometimes doesn't get called. Issue #15807.
+        _view?.OnVisibilityChanged(true);
+    }
+
+    protected override void OnDestroy()
+    {
+        if (_view is not null)
+        {
+            if (_listener is not null)
+            {
+                _view.ViewTreeObserver?.RemoveOnGlobalLayoutListener(_listener);
+            }
+            _view.Content = null;
+            _view.Dispose();
+            _view = null;
+        }
+
+        base.OnDestroy();
+    }
+
+    protected override void OnActivityResult(int requestCode, [GeneratedEnum] Result resultCode, Intent? data)
+    {
+        base.OnActivityResult(requestCode, resultCode, data);
+
+        ActivityResult?.Invoke(requestCode, resultCode, data);
+    }
+
+    [SupportedOSPlatform("android23.0")]
+    public override void OnRequestPermissionsResult(int requestCode, string[] permissions, Permission[] grantResults)
+    {
+        base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        RequestPermissionsResult?.Invoke(requestCode, permissions, grantResults);
+    }
+
+    [MemberNotNull(nameof(_view))]
+    private protected virtual void InitializeCornerstoneView(object? initialContent)
+    {
+        if (Cornerstone.Presentation.Application.Current is null)
+        {
+            throw new InvalidOperationException(
+                "Cornerstone Application was not initialized. Make sure you have created CornerstoneMainActivity.");
+        }
+
+        _view = new CornerstoneView(this) { Content = initialContent };
+    }
+
+    private void HandleIntent(Intent? intent)
+    {
+        if (intent?.Data is { } androidUri
+            && androidUri.IsAbsolute
+            && Uri.TryCreate(androidUri.ToString(), UriKind.Absolute, out var uri))
+        {
+            if (uri.Scheme == Uri.UriSchemeFile || uri.Scheme == "content")
+            {
+                if (AndroidStorageItem.CreateItem(this, androidUri) is { } item)
+                {
+                    _onActivated?.Invoke(this, new FileActivatedEventArgs(new[] { item }));
+                }
+            }
+            else
+            {
+                _onActivated?.Invoke(this, new ProtocolActivatedEventArgs(uri));
+            }
+        }
+    }
+
+    public void OnBackInvoked()
+    {
+        var eventArgs = new AndroidBackRequestedEventArgs();
+
+        BackRequested?.Invoke(this, eventArgs);
+
+        _shouldNavigateBack = !eventArgs.Handled;
+    }
+
+    private class GlobalLayoutListener : Java.Lang.Object, ViewTreeObserver.IOnGlobalLayoutListener
+    {
+        private readonly CornerstoneView _view;
+
+        public GlobalLayoutListener(CornerstoneView view)
+        {
+            _view = view;
+        }
+
+        public void OnGlobalLayout()
+        {
+            _view.TopLevelImpl?.Resize(_view.TopLevelImpl.ClientSize);
+        }
+    }
+}

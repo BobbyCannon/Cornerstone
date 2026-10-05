@@ -1,4 +1,4 @@
-﻿#region References
+#region References
 
 using System;
 using System.Collections.Generic;
@@ -9,11 +9,12 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
-using Avalonia.Controls;
-using Avalonia.Interactivity;
-using Cornerstone.Avalonia;
+using Cornerstone.Presentation.Controls;
+using Cornerstone.Presentation.Interactivity;
+using Cornerstone.Presentation.Theme;
 using Cornerstone.Compare;
 using Cornerstone.Extensions;
+using Cornerstone.Presentation.Controls.Elements;
 using Cornerstone.Testing;
 using Cornerstone.UnitTests;
 using Microsoft.CodeAnalysis;
@@ -21,6 +22,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Assert = Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
+using Path = System.IO.Path;
 
 #endregion
 
@@ -43,9 +45,11 @@ public abstract class GeneratorUnitTest : CornerstoneUnitTest
 	{
 		_usingStatements =
 		[
-			"using Avalonia;",
-			"using Avalonia.Data;",
-			"using Cornerstone.Avalonia;",
+			"using Cornerstone.Presentation;",
+			"using Cornerstone.Presentation.Controls;",
+			"using Cornerstone.Presentation.Controls.Primitives;",
+			"using Cornerstone.Presentation.Data;",
+			"using Cornerstone.Presentation.Theme;",
 			"using Cornerstone.Collections;",
 			"using Cornerstone.Data;",
 			"using Cornerstone.Presentation;",
@@ -354,32 +358,32 @@ public abstract class GeneratorUnitTest : CornerstoneUnitTest
 	{
 		input = $"{string.Join("\r\n", _usingStatements)}\r\n{input}";
 
-		var netCoreAppPath = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
+		var netCoreAppPath = System.IO.Path.GetDirectoryName(typeof(object).Assembly.Location)!;
 
 		var references = new List<PortableExecutableReference>
 		{
-			MetadataReference.CreateFromFile(Path.Combine(netCoreAppPath, "System.Private.CoreLib.dll")),
-			MetadataReference.CreateFromFile(Path.Combine(netCoreAppPath, "System.Console.dll")),
-			MetadataReference.CreateFromFile(Path.Combine(netCoreAppPath, "WindowsBase.dll")),
-			MetadataReference.CreateFromFile(Path.Combine(netCoreAppPath, "System.Runtime.dll")),
-			MetadataReference.CreateFromFile(Path.Combine(netCoreAppPath, "System.Collections.dll")),
-			MetadataReference.CreateFromFile(Path.Combine(netCoreAppPath, "System.ComponentModel.dll")),
-			MetadataReference.CreateFromFile(Path.Combine(netCoreAppPath, "System.ComponentModel.Annotations.dll")),
-			MetadataReference.CreateFromFile(Path.Combine(netCoreAppPath, "System.ComponentModel.DataAnnotations.dll")),
-			MetadataReference.CreateFromFile(Path.Combine(netCoreAppPath, "System.Linq.dll")),
-			MetadataReference.CreateFromFile(Path.Combine(netCoreAppPath, "System.ObjectModel.dll")),
-			MetadataReference.CreateFromFile(Path.Combine(netCoreAppPath, "System.Private.Xml.dll")),
-			MetadataReference.CreateFromFile(Path.Combine(netCoreAppPath, "System.Xml.dll")),
-			MetadataReference.CreateFromFile(typeof(Control).Assembly.Location), // Avalonia.Controls
-			MetadataReference.CreateFromFile(typeof(Interactive).Assembly.Location), // Avalonia.Base
+			MetadataReference.CreateFromFile(System.IO.Path.Combine(netCoreAppPath, "System.Private.CoreLib.dll")),
+			MetadataReference.CreateFromFile(System.IO.Path.Combine(netCoreAppPath, "System.Console.dll")),
+			MetadataReference.CreateFromFile(System.IO.Path.Combine(netCoreAppPath, "WindowsBase.dll")),
+			MetadataReference.CreateFromFile(System.IO.Path.Combine(netCoreAppPath, "System.Runtime.dll")),
+			MetadataReference.CreateFromFile(System.IO.Path.Combine(netCoreAppPath, "System.Collections.dll")),
+			MetadataReference.CreateFromFile(System.IO.Path.Combine(netCoreAppPath, "System.ComponentModel.dll")),
+			MetadataReference.CreateFromFile(System.IO.Path.Combine(netCoreAppPath, "System.ComponentModel.Annotations.dll")),
+			MetadataReference.CreateFromFile(System.IO.Path.Combine(netCoreAppPath, "System.ComponentModel.DataAnnotations.dll")),
+			MetadataReference.CreateFromFile(System.IO.Path.Combine(netCoreAppPath, "System.Linq.dll")),
+			MetadataReference.CreateFromFile(System.IO.Path.Combine(netCoreAppPath, "System.ObjectModel.dll")),
+			MetadataReference.CreateFromFile(System.IO.Path.Combine(netCoreAppPath, "System.Private.Xml.dll")),
+			MetadataReference.CreateFromFile(System.IO.Path.Combine(netCoreAppPath, "System.Xml.dll")),
+			MetadataReference.CreateFromFile(typeof(Control).Assembly.Location), // Cornerstone.Presentation.Controls
+			MetadataReference.CreateFromFile(typeof(Interactive).Assembly.Location), // Cornerstone.Presentation.Base
 			MetadataReference.CreateFromFile(typeof(TestClassAttribute).Assembly.Location), // MSTest.TestFramework
 
 			// Add more assemblies
 			MetadataReference.CreateFromFile(typeof(CornerstoneAttribute).Assembly.Location), // Cornerstone
-			MetadataReference.CreateFromFile(typeof(CornerstoneApplication).Assembly.Location) // Cornerstone.Avalonia
+			MetadataReference.CreateFromFile(typeof(CornerstoneTheme).Assembly.Location) // Cornerstone.Presentation
 
-			//MetadataReference.CreateFromFile(typeof(global::Avalonia.Application).Assembly.Location),
-			//MetadataReference.CreateFromFile(typeof(global::Avalonia.AvaloniaObject).Assembly.Location)
+			//MetadataReference.CreateFromFile(typeof(global::Cornerstone.Presentation.Application).Assembly.Location),
+			//MetadataReference.CreateFromFile(typeof(global::Cornerstone.Presentation.PresentationObject).Assembly.Location)
 		};
 
 		//foreach (var r in references)

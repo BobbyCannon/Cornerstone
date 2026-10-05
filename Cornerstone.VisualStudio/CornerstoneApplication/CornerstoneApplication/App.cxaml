@@ -1,0 +1,11 @@
+<CornerstoneApplication xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:local="using:CornerstoneApplication"
+		x:Class="CornerstoneApplication.App">
+	<CornerstoneApplication.DataTemplates>
+		<local:ViewLocator />
+	</CornerstoneApplication.DataTemplates>
+	<CornerstoneApplication.Styles>
+		<CornerstoneTheme ThemeColor="Blue" ThemeMode="Dark" />
+	</CornerstoneApplication.Styles>
+</CornerstoneApplication>

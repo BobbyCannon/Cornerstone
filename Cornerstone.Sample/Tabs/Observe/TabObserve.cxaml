@@ -1,0 +1,79 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="800"
+		x:Class="Cornerstone.Sample.Tabs.Observe.TabObserve"
+		x:Name="This">
+	<ScrollViewer HorizontalScrollBarVisibility="Disabled">
+			<StackPanel Margin="16,12,16,20" Spacing="12">
+				<TextBlock TextWrapping="Wrap"
+						Text="See the running process: dispatcher load, startup cost, host facts, and the high-resolution clock." />
+				<WrapPanel ItemSpacing="12"
+						LineSpacing="12"
+						ItemWidth="340"
+						ItemsAlignment="Stretch">
+					<WrapPanel.Styles>
+						<Style Selector="TextBlock">
+							<Setter Property="TextWrapping" Value="Wrap" />
+						</Style>
+					</WrapPanel.Styles>
+				<Button Classes="ControlCard" Click="OpenDiagnostics">
+					<Border Classes="FeatureCard">
+						<Grid ColumnDefinitions="Auto,*">
+							<Border Classes="IconBadge Blue">
+								<Path Data="{StaticResource Icons.Chart.Bar}"
+										Margin="0,4,0,0" />
+							</Border>
+							<StackPanel Grid.Column="1">
+								<TextBlock Text="Diagnostics" />
+								<TextBlock Text="AppDispatcher apply rate and tracked ViewModels." />
+							</StackPanel>
+						</Grid>
+					</Border>
+				</Button>
+				<Button Classes="ControlCard" Click="OpenProfiler">
+					<Border Classes="FeatureCard">
+						<Grid ColumnDefinitions="Auto,*">
+							<Border Classes="IconBadge Purple">
+								<Path Data="{StaticResource Icons.Hourglass}"
+										Margin="3,0,0,0" />
+							</Border>
+							<StackPanel Grid.Column="1">
+								<TextBlock Text="Profiler" />
+								<TextBlock Text="Startup profile tree for this sample host." />
+							</StackPanel>
+						</Grid>
+					</Border>
+				</Button>
+				<Button Classes="ControlCard" Click="OpenRuntime">
+					<Border Classes="FeatureCard">
+						<Grid ColumnDefinitions="Auto,*">
+							<Border Classes="IconBadge Teal">
+								<Path Data="{StaticResource Icons.Info.Circle}" />
+							</Border>
+							<StackPanel Grid.Column="1">
+								<TextBlock Text="Runtime Information" />
+								<TextBlock Text="Platform, device, and process facts." />
+							</StackPanel>
+						</Grid>
+					</Border>
+				</Button>
+				<Button Classes="ControlCard" Click="OpenDateTime">
+					<Border Classes="FeatureCard">
+						<Grid ColumnDefinitions="Auto,*">
+							<Border Classes="IconBadge Orange">
+								<Path Data="{StaticResource Icons.Calendar}" />
+							</Border>
+							<StackPanel Grid.Column="1">
+								<TextBlock Text="DateTime Provider" />
+								<TextBlock Text="Why RealTime interpolates Stopwatch, and when it recorrects after suspend." />
+							</StackPanel>
+						</Grid>
+					</Border>
+				</Button>
+				</WrapPanel>
+			</StackPanel>
+	</ScrollViewer>
+</UserControl>

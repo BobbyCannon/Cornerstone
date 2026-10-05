@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<NComposition>
+    <Using>System.Numerics</Using>
+    <Using>Cornerstone.Presentation.Rendering.Composition.Server</Using>
+    <Using>Cornerstone.Presentation.Rendering.Composition.Transport</Using>
+    <Using>Cornerstone.Presentation.Rendering.Composition.Animations</Using>
+    
+    <Manual Name="Cornerstone.Presentation.Platform.IGeometryImpl" Passthrough="true"/>
+    <Manual Name="Cornerstone.Presentation.Media.ITransform" Passthrough="true"/>
+    <Manual Name="Cornerstone.Presentation.Media.IBrush" Passthrough="true"/>
+    <Manual Name="Cornerstone.Presentation.Media.IImmutableBrush" Passthrough="true"/>
+    <Manual Name="Cornerstone.Presentation.Media.IImmutableEffect" Passthrough="true"/>
+    <Manual Name="Cornerstone.Presentation.Media.Immutable.ImmutableDashStyle" Passthrough="true"/>
+    <Manual Name="object" Passthrough="true"/>
+    <Manual Name="CompositionSurface" />
+    <Manual Name="CompositionDrawingSurface" />
+    <Object Name="CompositionVisual" Abstract="true">
+        <Property Name="Root" Type="CompositionTarget?" Internal="true" />
+        <Property Name="Parent" Type="CompositionVisual?" Internal="true"  />
+        <Property Name="Visible" Type="bool" Animated="true" DefaultValue="true"/>
+        <Property Name="Opacity" Type="float" Animated="true" DefaultValue="1"/>
+        
+        <Property Name="Clip" Type="Cornerstone.Presentation.Platform.IGeometryImpl?" Internal="true" />
+        <Property Name="ClipToBounds" Type="bool" Animated="true" DefaultValue="true"/>
+        <Property Name="Offset" Type="Vector3D" Animated="true"/>
+        <Property Name="Translation" Type="Vector3D" Animated="true"/>
+        <Property Name="Size" Type="Vector" Animated="true"/>
+        <Property Name="AnchorPoint" Type="Vector" Animated="true"/>
+        <Property Name="CenterPoint" Type="Vector3D" Animated="true"/>
+        <Property Name="RotationAngle" Type="float" Animated="true"/>
+        <Property Name="Orientation" Type="Quaternion" DefaultValue="Quaternion.Identity" Animated="true"/>
+        <Property Name="Scale" Type="Vector3D" DefaultValue="new Cornerstone.Presentation.Vector3D(1, 1, 1)" Animated="true"/>
+        <Property Name="TransformMatrix" Type="Cornerstone.Presentation.Matrix" DefaultValue="Cornerstone.Presentation.Matrix.Identity" Animated="true" Internal="true"/>
+        <Property Name="AdornedVisual" Type="CompositionVisual?" Internal="true" />
+        <Property Name="AdornerIsClipped" Type="bool" Internal="true" />
+        <Property Name="OpacityMaskBrush" ClientName="OpacityMaskBrushTransportField" Type="Cornerstone.Presentation.Media.IBrush?" Private="true"  />
+        <Property Name="Effect" Type="Cornerstone.Presentation.Media.IImmutableEffect?" Internal="true" />
+        <Property Name="RenderOptions" Type="Cornerstone.Presentation.Media.RenderOptions" />
+        <Property Name="TextOptions" Type="Cornerstone.Presentation.Media.TextOptions" />
+        <Property Name="CacheMode" Type="CompositionCacheMode?" Internal="true" />
+    </Object>
+    <Object Name="CompositionContainerVisual" Inherits="CompositionVisual"/>
+    <Object Name="CompositionSolidColorVisual" Inherits="CompositionContainerVisual" ServerBase="ServerSizeDependantVisual">
+        <Property Name="Color" Type="Cornerstone.Presentation.Media.Color" Animated="true" />
+    </Object>
+    <Object Name="CompositionSurfaceVisual" Inherits="CompositionContainerVisual" ServerBase="ServerSizeDependantVisual">
+        <Property Name="Surface" Type="CompositionSurface?" />
+    </Object>
+    <Manual Name="CompositionDrawListVisual" />
+    <Object Name="CompositionExperimentalAcrylicVisual" Inherits="CompositionDrawListVisual"
+            Internal="true" CustomCtor="true" CustomServerCtor="true">
+        <Property Name="Material" Type="Cornerstone.Presentation.Media.ImmutableExperimentalAcrylicMaterial" />
+        <Property Name="CornerRadius" Type="CornerRadius" />
+    </Object>
+    <List Name="CompositionVisualCollection" ItemType="CompositionVisual" CustomCtor="true"/>
+    <Object Name="CompositionTarget" CustomServerCtor="true" Internal="true">
+        <Property Name="Root" Type="CompositionVisual?"/>
+        <Property Name="IsEnabled" Type="bool"/>
+        <Property Name="DebugOverlays" Type="RendererDebugOverlays"/>
+        <Property Name="LastLayoutPassTiming" Type="LayoutPassTiming" Internal="true"/>
+        <Property Name="Scaling" Type="double"/>
+        <Property Name="Size" Type="Size" />
+        <Property Name="TransparencyLevel" Type="CompositionTransparencyLevel" />
+        <Property Name="PlatformSpecificSceneInfo" Type="object?" />
+    </Object>
+    <KeyFrameAnimation Name="Scalar" Type="float"/>
+    <KeyFrameAnimation Name="Double" Type="double"/>
+    <KeyFrameAnimation Name="Boolean" Type="bool"/>
+    <KeyFrameAnimation Name="Color" Type="Cornerstone.Presentation.Media.Color"/>
+    <KeyFrameAnimation Type="Vector"/>
+    <KeyFrameAnimation Type="Vector2"/>
+    <KeyFrameAnimation Type="Vector3"/>
+    <KeyFrameAnimation Type="Vector3D"/>
+    <KeyFrameAnimation Type="Vector4"/>
+    <KeyFrameAnimation Type="Quaternion"/>
+    <KeyFrameAnimation Name="RelativePoint" Type="Cornerstone.Presentation.RelativePoint"/>
+    <KeyFrameAnimation Name="RelativeScalar" Type="Cornerstone.Presentation.RelativeScalar"/>
+    <Object Name="CompositionSimpleTransform" Internal="true" ServerOnly="true" ServerBase="SimpleServerRenderResource">
+        <Property Name="Value" Type="Cornerstone.Presentation.Matrix" />
+    </Object>
+    <Object Name="CompositionSimplePen" Internal="true" ServerOnly="true" ServerBase="SimpleServerRenderResource">
+        <Property Name="Brush" Type="Cornerstone.Presentation.Media.IBrush?" />
+        <Property Name="DashStyle" Type="Cornerstone.Presentation.Media.Immutable.ImmutableDashStyle?" />
+        <Property Name="LineCap" Type="Cornerstone.Presentation.Media.PenLineCap" />
+        <Property Name="LineJoin" Type="Cornerstone.Presentation.Media.PenLineJoin" />
+        <Property Name="MiterLimit" Type="double" />
+        <Property Name="Thickness" Type="double" />
+    </Object>
+    <Object Name="CompositionSimpleGeometry" Internal="true" ServerOnly="true" ServerBase="SimpleServerRenderResource">
+        <Property Name="GeometryImpl" Type="Cornerstone.Presentation.Platform.IGeometryImpl?" />
+    </Object>
+    <Object Name="CompositionSimpleBrush" Internal="true" ServerOnly="true" ServerBase="SimpleServerRenderResource">
+        <Property Name="Opacity" Type="double" />
+        <Property Name="TransformOrigin" Type="RelativePoint" />
+        <Property Name="Transform" Type="Cornerstone.Presentation.Media.ITransform?" />
+        <Property Name="RelativeTransform" Type="Cornerstone.Presentation.Media.ITransform?" />
+    </Object>
+    <Object Name="CompositionSimpleSolidColorBrush" Internal="true" ServerOnly="true" ServerBase="ServerCompositionSimpleBrush">
+        <Property Name="Color" Type="Cornerstone.Presentation.Media.Color" />
+    </Object>
+    <Manual Name="CompositionSimpleGradientBrush" />
+    <Object Name="CompositionSimpleConicGradientBrush" Internal="true" ServerOnly="true" ServerBase="ServerCompositionSimpleGradientBrush">
+        <Property Name="Angle" Type="double" />
+        <Property Name="Center" Type="Cornerstone.Presentation.RelativePoint" />
+    </Object>
+    <Object Name="CompositionSimpleRadialGradientBrush" Internal="true" ServerOnly="true" ServerBase="ServerCompositionSimpleGradientBrush">
+        <Property Name="Center" Type="Cornerstone.Presentation.RelativePoint" />
+        <Property Name="GradientOrigin" Type="Cornerstone.Presentation.RelativePoint" />
+        <Property Name="RadiusX" Type="Cornerstone.Presentation.RelativeScalar" />
+        <Property Name="RadiusY" Type="Cornerstone.Presentation.RelativeScalar" />
+    </Object>
+    <Object Name="CompositionSimpleLinearGradientBrush" Internal="true" ServerOnly="true" ServerBase="ServerCompositionSimpleGradientBrush">
+        <Property Name="StartPoint" Type="Cornerstone.Presentation.RelativePoint" />
+        <Property Name="EndPoint" Type="Cornerstone.Presentation.RelativePoint" />
+    </Object>
+    <Object Name="CompositionSimpleTileBrush" Internal="true" ServerOnly="true" ServerBase="ServerCompositionSimpleBrush">
+        <Property Name="AlignmentX" Type="Cornerstone.Presentation.Media.AlignmentX" />
+        <Property Name="AlignmentY" Type="Cornerstone.Presentation.Media.AlignmentY" />
+        <Property Name="DestinationRect" Type="Cornerstone.Presentation.RelativeRect" />
+        <Property Name="SourceRect" Type="Cornerstone.Presentation.RelativeRect" />
+        <Property Name="Stretch" Type="Cornerstone.Presentation.Media.Stretch" />
+        <Property Name="TileMode" Type="Cornerstone.Presentation.Media.TileMode" />
+    </Object>
+    <Object Name="CompositionCacheMode" Internal="true">
+    </Object>
+    <Object Name="CompositionBitmapCache" Internal="true" Inherits="CompositionCacheMode">
+        <Property Name="RenderAtScale" Type="double" Animated="true" DefaultValue="1.0"/>
+        <Property Name="SnapsToDevicePixels" Type="bool" Animated="true" DefaultValue="false"/>
+        <Property Name="EnableClearType" Type="bool" Animated="true" DefaultValue="false"/>
+    </Object>
+    <Object Name="CompositionBrush" ServerBase="ServerRenderResource">
+        <Property Name="Opacity" Type="double" Animated="true" DefaultValue="1"/>
+        <Property Name="TransformOrigin" Type="RelativePoint" />
+        <Property Name="Transform" Type="Cornerstone.Presentation.Media.ITransform?" />
+        <Property Name="RelativeTransform" Type="Cornerstone.Presentation.Media.ITransform?" />
+    </Object>
+    <Object Name="CompositionSolidColorBrush" Inherits="CompositionBrush" ServerBase="ServerCompositionBrush">
+        <Property Name="Color" Type="Cornerstone.Presentation.Media.Color" Animated="true"/>
+    </Object>
+    <Manual Name="CompositionGradientBrush" />
+    <Object Name="CompositionConicGradientBrush" Inherits="CompositionGradientBrush" ServerBase="ServerCompositionGradientBrush">
+        <Property Name="Angle" Type="double" Animated="true"/>
+        <Property Name="Center" Type="Cornerstone.Presentation.RelativePoint"  Animated="true"/>
+    </Object>
+    <Object Name="CompositionRadialGradientBrush" Inherits="CompositionGradientBrush" ServerBase="ServerCompositionGradientBrush">
+        <Property Name="Center" Type="Cornerstone.Presentation.RelativePoint" Animated="true"/>
+        <Property Name="GradientOrigin" Type="Cornerstone.Presentation.RelativePoint"  Animated="true"/>
+        <Property Name="RadiusX" Type="Cornerstone.Presentation.RelativeScalar" Animated="true" DefaultValue="RelativeScalar.Middle"/>
+        <Property Name="RadiusY" Type="Cornerstone.Presentation.RelativeScalar" Animated="true" DefaultValue="RelativeScalar.Middle"/>
+    </Object>
+    <Object Name="CompositionLinearGradientBrush" Inherits="CompositionGradientBrush" ServerBase="ServerCompositionGradientBrush">
+        <Property Name="StartPoint" Type="Cornerstone.Presentation.RelativePoint" Animated="true"/>
+        <Property Name="EndPoint" Type="Cornerstone.Presentation.RelativePoint" Animated="true"/>
+    </Object>
+    <Object Name="CompositionTileBrush" Internal="true" ServerOnly="true" ServerBase="ServerCompositionBrush">
+        <Property Name="AlignmentX" Type="Cornerstone.Presentation.Media.AlignmentX" />
+        <Property Name="AlignmentY" Type="Cornerstone.Presentation.Media.AlignmentY" />
+        <Property Name="DestinationRect" Type="Cornerstone.Presentation.RelativeRect" />
+        <Property Name="SourceRect" Type="Cornerstone.Presentation.RelativeRect" />
+        <Property Name="Stretch" Type="Cornerstone.Presentation.Media.Stretch" />
+        <Property Name="TileMode" Type="Cornerstone.Presentation.Media.TileMode" />
+    </Object>
+    <Object Name="CompositionGradientStop" ServerBase="ServerRenderResource">
+        <Property Name="Color" Type="Cornerstone.Presentation.Media.Color" Animated="true"/>
+        <Property Name="Offset" Type="double" Animated="true"/>
+    </Object>
+</NComposition>

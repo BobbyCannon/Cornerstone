@@ -1,0 +1,3 @@
+<Project>
+	<!-- Do not import Cornerstone Directory.Build.props (signing, icon, generators). -->
+</Project>

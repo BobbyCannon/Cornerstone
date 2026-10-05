@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Bumps Cornerstone VSIX / assembly version stamps in lockstep (Major.Minor.Build only).
+    Bumps Cornerstone VSIX / assembly version stamps in lockstep.
 
 .DESCRIPTION
     Updates:
@@ -8,18 +8,28 @@
       - source.extension.vsixmanifest      Identity @Version
       - CornerstonePackage.cs              InstalledProductRegistration product version
 
-    Versions are always three-part: Major.Minor.Build (no revision).
+    Version is Major.Minor.Build or Major.Minor.Build.Revision.
+    Each part must be 0 through 65534 (Marketplace limit).
 
     Major/Minor default to the current values (-2 = keep).
-    Build defaults to day-of-year (-1). Use -2 for 0, or pass an explicit non-negative Build.
+    Build and Revision accept a number, '*', or -1.
+    '*' and -1 calculate the part from the clock, same as Scripts\Increment-Version.ps1:
+      Build    = days since January 1 of this year
+      Revision = half-seconds since midnight
+    Build -2 (or any other negative besides -1) writes 0.
+    Revision -2 omits the fourth part (Major.Minor.Build only).
 
 .EXAMPLE
     .\scripts\Update-ExtensionVersion.ps1
-    Auto day-of-year build bump from current major.minor
+    Current major.minor, build and revision from the clock
 
 .EXAMPLE
-    .\scripts\Update-ExtensionVersion.ps1 -Major 1 -Minor 2 -Build 2
-    Fixed marketing release 1.2.2
+    .\scripts\Update-ExtensionVersion.ps1 -Major 1 -Minor 5 -Build * -Revision *
+    Same clock calculation, with an explicit major and minor
+
+.EXAMPLE
+    .\scripts\Update-ExtensionVersion.ps1 -Major 1 -Minor 2 -Build 2 -Revision -2
+    Fixed three-part release 1.2.2
 
 .EXAMPLE
     .\scripts\Update-ExtensionVersion.ps1 -Major 1 -Minor 2 -WhatIf
@@ -28,7 +38,8 @@
 param(
 	[int] $Major = -2,
 	[int] $Minor = -2,
-	[int] $Build = -1,
+	[string] $Build = '*',
+	[string] $Revision = '*',
 	[switch] $WhatIf
 )
 
@@ -74,28 +85,74 @@ function Split-VersionParts {
 	$major = if ($parts.Length -ge 1 -and $parts[0] -match '^\d+$') { [int]$parts[0] } else { 1 }
 	$minor = if ($parts.Length -ge 2 -and $parts[1] -match '^\d+$') { [int]$parts[1] } else { 0 }
 	$build = if ($parts.Length -ge 3 -and $parts[2] -match '^\d+$') { [int]$parts[2] } else { 0 }
-	# Ignore any 4th+ revision segment if present in legacy stamps.
+	$revision = if ($parts.Length -ge 4 -and $parts[3] -match '^\d+$') { [int]$parts[3] } else { $null }
 	return @{
 		Major = $major
 		Minor = $minor
 		Build = $build
+		Revision = $revision
 	}
 }
 
-function Format-ThreePartVersion {
+function Get-DayOfYearBuild {
+	$yearStart = Get-Date -Year ([DateTime]::Now.Year) -Month 1 -Day 1
+	return [int][Math]::Floor(([DateTime]::Now.Date - $yearStart.Date).TotalDays)
+}
+
+function Get-HalfSecondRevision {
+	return [int][Math]::Floor([DateTime]::Now.TimeOfDay.TotalSeconds / 2)
+}
+
+function Resolve-VersionPart {
+	param(
+		[string] $Value,
+		[string] $Name,
+		[scriptblock] $Auto,
+		[switch] $AllowOmit
+	)
+
+	$text = ''
+	if ($null -ne $Value) {
+		$text = $Value.Trim()
+	}
+
+	if (($text -eq '*') -or ($text -eq '-1')) {
+		$part = [int](& $Auto)
+	}
+	elseif ($AllowOmit -and (($text -eq '') -or ($text -eq '-2'))) {
+		return $null
+	}
+	elseif ($text -match '^-?\d+$') {
+		$part = [int]$text
+		if ($part -lt 0) {
+			return 0
+		}
+	}
+	else {
+		throw "$Name must be a number, '*', or -1 (got '$Value')."
+	}
+
+	if (($part -lt 0) -or ($part -gt 65534)) {
+		throw "$Name must be 0 through 65534 (got $part)."
+	}
+
+	return $part
+}
+
+function Format-ExtensionVersion {
 	param(
 		[int] $Major,
 		[int] $Minor,
-		[int] $Build
+		[int] $Build,
+		[Nullable[int]] $Revision
 	)
-	return "$Major.$Minor.$Build"
-}
 
-function Assert-ThreePartVersion {
-	param([string] $Version)
-	if ($Version -notmatch '^\d+\.\d+\.\d+$') {
-		throw "Version must be Major.Minor.Build only (got '$Version')."
+	$version = "$Major.$Minor.$Build"
+	if ($null -ne $Revision) {
+		$version = "$version.$Revision"
 	}
+
+	return $version
 }
 
 function Set-FileContentIfChanged {
@@ -109,7 +166,7 @@ function Set-FileContentIfChanged {
 	)
 
 	if ($OldText -eq $NewText) {
-		Write-Host ("  {0,-40} {1} (unchanged)" -f $Label, $NewVersion) -ForegroundColor DarkGray
+		Write-Host ("  {0,-40} {1} (unchanged)" -f $Label, $NewVersion)
 		return $false
 	}
 
@@ -128,31 +185,20 @@ $current = Split-VersionParts -Version $currentVersion
 
 $newMajor = if ($Major -ge 0) { $Major } else { $current.Major }
 $newMinor = if ($Minor -ge 0) { $Minor } else { $current.Minor }
+$newBuild = Resolve-VersionPart -Value $Build -Name 'Build' -Auto ${function:Get-DayOfYearBuild}
+$newRevision = Resolve-VersionPart -Value $Revision -Name 'Revision' -Auto ${function:Get-HalfSecondRevision} -AllowOmit
 
-if ($Build -ge 0) {
-	$newBuild = $Build
-}
-elseif ($Build -eq -1) {
-	$yearStart = Get-Date -Year ([DateTime]::Now.Year) -Month 1 -Day 1
-	$newBuild = [int][Math]::Floor(([DateTime]::Now.Date - $yearStart.Date).TotalDays)
-}
-else {
-	# -2 or other: zero
-	$newBuild = 0
-}
-
-$newVersion = Format-ThreePartVersion -Major $newMajor -Minor $newMinor -Build $newBuild
-Assert-ThreePartVersion -Version $newVersion
+$newVersion = Format-ExtensionVersion -Major $newMajor -Minor $newMinor -Build $newBuild -Revision $newRevision
 
 Write-Host ""
-Write-Host "Cornerstone extension version bump" -ForegroundColor White
+Write-Host "Cornerstone extension version bump"
 Write-Host "  Current : $currentVersion"
 Write-Host "  New     : $newVersion"
 if ($WhatIf) {
 	Write-Host "  Mode    : WhatIf (no files will be written)" -ForegroundColor Yellow
 }
 Write-Host ""
-Write-Host "Targets:" -ForegroundColor White
+Write-Host "Targets:"
 
 $changed = 0
 
@@ -228,7 +274,7 @@ if ($WhatIf) {
 	Write-Host "WhatIf complete. $changed file(s) would change." -ForegroundColor Yellow
 }
 elseif ($changed -eq 0) {
-	Write-Host "Already at $newVersion - no files changed." -ForegroundColor DarkGray
+	Write-Host "Already at $newVersion - no files changed."
 }
 else {
 	Write-Host "Updated $changed file(s) to $newVersion." -ForegroundColor Green

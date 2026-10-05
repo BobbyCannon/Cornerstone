@@ -1,0 +1,108 @@
+using System.Runtime.InteropServices;
+using Cornerstone.Presentation.OpenGL;
+using Cornerstone.Presentation.OpenGL.Egl;
+using Cornerstone.Presentation.OpenGL.Surfaces;
+using Cornerstone.Presentation.Platform;
+using Cornerstone.Presentation.Platform.Surfaces;
+using Cornerstone.Presentation.Rendering;
+using Cornerstone.Presentation.Platforms.Windows.DirectX;
+
+namespace Cornerstone.Presentation.Platforms.Windows.OpenGl.Angle;
+
+internal class AngleD3DTextureFeature  : IGlPlatformSurfaceRenderTargetFactory
+{
+    public bool CanRenderToSurface(IGlContext context, IPlatformRenderSurface surface) =>
+        context is EglContext
+        {
+            Display: AngleWin32EglDisplay { PlatformApi: AngleOptions.PlatformApi.DirectX11 }
+        } && surface is IDirect3D11TexturePlatformSurface2;
+
+    private class RenderTargetWrapper : EglPlatformSurfaceRenderTargetBase
+    {
+        private readonly AngleWin32EglDisplay _angle;
+        private readonly IDirect3D11TextureRenderTarget2 _target;
+
+        public RenderTargetWrapper(EglContext context,
+            AngleWin32EglDisplay angle,
+            IDirect3D11TextureRenderTarget2 target) : base(context)
+        {
+            _angle = angle;
+            _target = target;
+        }
+
+        public override IGlPlatformSurfaceRenderingSession BeginDrawCore(IRenderTarget.RenderTargetSceneInfo sceneInfo)
+        {
+            // TODO: use expectedPixelSize
+            var success = false;
+            var contextLock = Context.EnsureCurrent();
+            IDirect3D11TextureRenderTargetRenderSession? session = null;
+            EglSurface? surface = null;
+            try
+            {
+                try
+                {
+                    session = _target.BeginDraw(sceneInfo);
+                }
+                catch (RenderTargetCorruptedException e)
+                {
+                    if (e.InnerException is COMException com
+                        && ((DXGI_ERROR)com.HResult).IsDeviceLostError()) 
+                        Context.NotifyContextLost();
+
+                    throw;
+                }
+
+                surface = _angle.WrapDirect3D11Texture(session.D3D11Texture2D, session.Offset.X, session.Offset.Y,
+                    session.Size.Width, session.Size.Height);
+                var rv = BeginDraw(surface, session.Size, session.Scaling, () =>
+                {
+                    using(contextLock)
+                    using (session)
+                    using (surface)
+                    {
+                    }
+                }, true);
+                success = true;
+                return rv;
+            }
+            finally
+            {
+                if (!success)
+                {
+                    using(contextLock)
+                    using (session)
+                    using (surface)
+                    {
+                    }
+                }
+            }
+        }
+
+        public override void Dispose()
+        {
+            _target.Dispose();
+            base.Dispose();
+        }
+
+        public override PlatformRenderTargetState State =>
+            base.IsCorrupted ? PlatformRenderTargetState.Corrupted : _target.State;
+    }
+    
+    public IGlPlatformSurfaceRenderTarget CreateRenderTarget(IGlContext context, IPlatformRenderSurface surface)
+    {
+        var ctx = (EglContext)context;
+        var angle = (AngleWin32EglDisplay)ctx.Display;
+        var textureSurface = (IDirect3D11TexturePlatformSurface2)surface;
+        try
+        {
+            var target = textureSurface.CreateRenderTarget(context, angle.GetDirect3DDevice());
+            return new RenderTargetWrapper(ctx, angle, target);
+        }
+        catch (COMException com)
+        {
+            if (((DXGI_ERROR)com.HResult).IsDeviceLostError())
+                ctx.NotifyContextLost();
+            throw;
+        }
+    }
+}

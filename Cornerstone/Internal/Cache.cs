@@ -115,7 +115,7 @@ internal static class Cache
 				: IncludeExcludeSettings.Empty;
 		}
 
-		var properties = SourceReflector.GetRequiredSourceType(realType)
+		var properties = SourceReflector.GetRequiredSourceType(value)
 			.GetProperties().Select(x => x.Name).ToList();
 
 		var typeOptions = UpdateableActionOptionsPerType.GetOrAdd(realType,

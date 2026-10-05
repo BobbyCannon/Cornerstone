@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Cornerstone.Collections;
 using Cornerstone.Extensions;
@@ -45,6 +46,7 @@ public class BooleanConverter : BaseConverter
 
 	#region Methods
 
+	[UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "Converter toType is a runtime conversion target; members are preserved by generated source reflection.")]
 	public override bool TryConvertTo(object from, Type fromType, Type toType, out object value, IConverterSettings settings = null)
 	{
 		if (from == null)

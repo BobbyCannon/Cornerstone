@@ -1,0 +1,38 @@
+﻿using Cornerstone.Presentation.Controls;
+using Cornerstone.Presentation.Controls.Text;
+
+namespace Cornerstone.Presentation.Automation.Peers
+{
+    public class TextBlockAutomationPeer : ControlAutomationPeer
+    {
+        public TextBlockAutomationPeer(TextBlock owner)
+            : base(owner)
+        {
+            Owner.PropertyChanged += (a, e) =>
+            {
+                if (e.Property == TextBlock.TextProperty)
+                {
+                    RaisePropertyChangedEvent(
+                        AutomationElementIdentifiers.NameProperty,
+                        e.OldValue,
+                        e.NewValue);
+                }
+            };
+        }
+
+        public new TextBlock Owner => (TextBlock)base.Owner;
+
+        protected override AutomationControlType GetAutomationControlTypeCore()
+        {
+            return AutomationControlType.Text;
+        }
+
+        protected override string? GetNameCore() => Owner.Inlines?.Text ?? Owner.Text;
+
+        protected override bool IsControlElementCore()
+        {
+            // Return false if the control is part of a control template.
+            return Owner.TemplatedParent is null && base.IsControlElementCore();
+        }
+    }
+}

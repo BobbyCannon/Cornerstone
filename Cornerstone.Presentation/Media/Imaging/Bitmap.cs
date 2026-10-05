@@ -1,0 +1,366 @@
+using System;
+using System.IO;
+using System.Runtime.CompilerServices;
+using Cornerstone.Presentation.Platform;
+using Cornerstone.Presentation.Utilities;
+
+namespace Cornerstone.Presentation.Media.Imaging
+{
+    /// <summary>
+    /// Holds a bitmap image.
+    /// </summary>
+    public class Bitmap : IBitmap, IImageBrushSource
+    {
+        private readonly bool _isTranscoded;
+        /// <summary>
+        /// Loads a Bitmap from a stream and decodes at the desired width. Aspect ratio is maintained.
+        /// This is more efficient than loading and then resizing.
+        /// </summary>
+        /// <param name="stream">The stream to read the bitmap from. This can be any supported image format.</param>
+        /// <param name="width">The desired width of the resulting bitmap.</param>
+        /// <param name="interpolationMode">The <see cref="BitmapInterpolationMode"/> to use should any scaling be required.</param>
+        /// <returns>An instance of the <see cref="Bitmap"/> class.</returns>
+        public static Bitmap DecodeToWidth(Stream stream, int width, BitmapInterpolationMode interpolationMode = BitmapInterpolationMode.HighQuality)
+        {
+            return new Bitmap(GetFactory().LoadBitmapToWidth(stream, width, interpolationMode));
+        }
+
+        /// <summary>
+        /// Loads a Bitmap from a stream and decodes at the desired height. Aspect ratio is maintained.
+        /// This is more efficient than loading and then resizing.
+        /// </summary>
+        /// <param name="stream">The stream to read the bitmap from. This can be any supported image format.</param>
+        /// <param name="height">The desired height of the resulting bitmap.</param>
+        /// <param name="interpolationMode">The <see cref="BitmapInterpolationMode"/> to use should any scaling be required.</param>
+        /// <returns>An instance of the <see cref="Bitmap"/> class.</returns>
+        public static Bitmap DecodeToHeight(Stream stream, int height, BitmapInterpolationMode interpolationMode = BitmapInterpolationMode.HighQuality)
+        {
+            return new Bitmap(GetFactory().LoadBitmapToHeight(stream, height, interpolationMode));
+        }
+
+        /// <summary>
+        /// Creates a Bitmap scaled to a specified size from the current bitmap.
+        /// </summary>        
+        /// <param name="destinationSize">The destination size.</param>
+        /// <param name="interpolationMode">The <see cref="BitmapInterpolationMode"/> to use should any scaling be required.</param>
+        /// <returns>An instance of the <see cref="Bitmap"/> class.</returns>
+        public Bitmap CreateScaledBitmap(PixelSize destinationSize, BitmapInterpolationMode interpolationMode = BitmapInterpolationMode.HighQuality)
+        {
+            return new Bitmap(GetFactory().ResizeBitmap(PlatformImpl.Item, destinationSize, interpolationMode));
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Bitmap"/> class.
+        /// </summary>
+        /// <param name="fileName">The filename of the bitmap.</param>
+        public Bitmap(string fileName)
+        {
+            PlatformImpl = RefCountable.Create(GetFactory().LoadBitmap(fileName));
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Bitmap"/> class.
+        /// </summary>
+        /// <param name="stream">The stream to read the bitmap from.</param>
+        public Bitmap(Stream stream)
+        {
+            PlatformImpl = RefCountable.Create(GetFactory().LoadBitmap(stream));
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Bitmap"/> class.
+        /// </summary>
+        /// <param name="impl">A platform-specific bitmap implementation.</param>
+        internal Bitmap(IRef<IBitmapImpl> impl)
+        {
+            PlatformImpl = impl.Clone();
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Bitmap"/> class.
+        /// </summary>
+        /// <param name="impl">A platform-specific bitmap implementation. Bitmap class takes the ownership.</param>
+        protected Bitmap(IBitmapImpl impl)
+        {
+            PlatformImpl = RefCountable.Create(impl);
+        }
+
+        /// <inheritdoc/>
+        public virtual void Dispose()
+        {
+            PlatformImpl.Dispose();
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Bitmap"/> class.
+        /// </summary>
+        /// <param name="format">The pixel format.</param>
+        /// <param name="alphaFormat">The alpha format.</param>
+        /// <param name="data">The pointer to the source bytes.</param>
+        /// <param name="size">The size of the bitmap in device pixels.</param>
+        /// <param name="dpi">The DPI of the bitmap.</param>
+        /// <param name="stride">The number of bytes per row.</param>
+        public Bitmap(PixelFormat format, AlphaFormat alphaFormat, IntPtr data, PixelSize size, Vector dpi, int stride)
+        {
+            var factory = GetFactory();
+            if (factory.IsSupportedBitmapPixelFormat(format))
+                PlatformImpl = RefCountable.Create(factory.LoadBitmap(format, alphaFormat, data, size, dpi, stride));
+            else
+            {
+                using (var transcoded = new BitmapMemory(PixelFormat.Rgba8888, Platform.AlphaFormat.Unpremul, size))
+                {
+                    var transcodedAlphaFormat = format.HasAlpha ? alphaFormat : Platform.AlphaFormat.Opaque;
+
+                    PixelFormatTranscoder.Transcode(
+                        data,
+                        size,
+                        stride,
+                        format,
+                        alphaFormat,
+                        transcoded.Address,
+                        transcoded.RowBytes,
+                        transcoded.Format,
+                        transcodedAlphaFormat);
+
+                    PlatformImpl = RefCountable.Create(factory.LoadBitmap(PixelFormat.Rgba8888, transcodedAlphaFormat,
+                        transcoded.Address, size, dpi, transcoded.RowBytes));
+                }
+
+                _isTranscoded = true;
+            }
+        }
+
+        /// <inheritdoc/>
+        public Vector Dpi => PlatformImpl.Item.Dpi;
+
+        /// <inheritdoc/>
+        public Size Size => PlatformImpl.Item.PixelSize.ToSizeWithDpi(Dpi);
+
+        /// <inheritdoc/>
+        public PixelSize PixelSize => PlatformImpl.Item.PixelSize;
+
+        /// <summary>
+        /// Gets the platform-specific bitmap implementation.
+        /// </summary>
+        internal IRef<IBitmapImpl> PlatformImpl { get; }
+
+        IRef<IBitmapImpl> IBitmap.PlatformImpl => PlatformImpl;
+
+        /// <summary>
+        /// Saves the bitmap to a file, in PNG format.
+        /// </summary>
+        /// <param name="fileName">The filename.</param>
+        /// <param name="quality">
+        /// The optional quality for compression. 
+        /// The quality value is interpreted from 0 - 100. If quality is null the default quality 
+        /// setting is applied.
+        /// </param>
+        [Obsolete($"Use the overload accepting {nameof(BitmapEncoderOptions)} instead.")]
+        public void Save(string fileName, int? quality = null)
+            => Save(fileName, PngBitmapEncoderOptions.Default);
+
+        /// <summary>
+        /// Saves the bitmap to a file with the specified options.
+        /// </summary>
+        /// <param name="fileName">The filename.</param>
+        /// <param name="options">
+        /// The options specifying the format and settings to use.
+        /// Typical usages include <see cref="PngBitmapEncoderOptions"/> and <see cref="JpegBitmapEncoderOptions"/>.
+        /// </param>
+        public void Save(string fileName, BitmapEncoderOptions options)
+        {
+            using var stream = File.Create(fileName);
+
+            Save(stream, options);
+        }
+
+        /// <summary>
+        /// Saves the bitmap to a stream, in PNG format.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
+        /// <param name="quality">
+        /// The optional quality for compression.
+        /// The quality value is interpreted from 0 - 100. If quality is null the default quality
+        /// setting is applied.
+        /// </param>
+        [Obsolete($"Use the overload accepting {nameof(BitmapEncoderOptions)} instead.")]
+        public void Save(Stream stream, int? quality = null)
+        {
+            PlatformImpl.Item.Save(stream, PngBitmapEncoderOptions.Default);
+        }
+
+        /// <inheritdoc />
+        public void Save(Stream stream, BitmapEncoderOptions options)
+        {
+            PlatformImpl.Item.Save(stream, options);
+        }
+
+        public virtual PixelFormat? Format => (PlatformImpl.Item as IReadableBitmapImpl)?.Format;
+
+        public virtual AlphaFormat? AlphaFormat => (PlatformImpl.Item as IReadableBitmapImpl)?.AlphaFormat;
+
+        private PixelRect ValidateSourceRect(PixelRect sourceRect)
+        {
+            if ((sourceRect.Width <= 0 || sourceRect.Height <= 0) && (sourceRect.X != 0 || sourceRect.Y != 0))
+                throw new ArgumentOutOfRangeException(nameof(sourceRect));
+
+            if (sourceRect.X < 0 || sourceRect.Y < 0)
+                throw new ArgumentOutOfRangeException(nameof(sourceRect));
+
+            if (sourceRect.Width <= 0)
+                sourceRect = sourceRect.WithWidth(PixelSize.Width);
+            if (sourceRect.Height <= 0)
+                sourceRect = sourceRect.WithHeight(PixelSize.Height);
+
+            if (sourceRect.Right > PixelSize.Width || sourceRect.Bottom > PixelSize.Height)
+                throw new ArgumentOutOfRangeException(nameof(sourceRect));
+            return sourceRect;
+        }
+        
+        /// <summary>
+        /// Performs a row-by-row copy of pixels from a source buffer into a destination buffer.
+        /// </summary>
+        /// <remarks>
+        /// <paramref name="sourceRowBytes"/> is signed and may be negative: a negative value means the
+        /// source rows are laid out bottom-up, with <paramref name="sourceAddress"/> pointing at the
+        /// first (top) row. The destination <paramref name="stride"/> must be positive and at least the
+        /// tightly-packed row size. The caller is responsible for validating <paramref name="sourceRect"/>
+        /// against the source bounds (e.g. via <see cref="ValidateSourceRect"/>).
+        /// </remarks>
+        internal static unsafe void CopyPixelsCore(PixelRect sourceRect, IntPtr sourceAddress, int sourceRowBytes,
+            PixelFormat sourceFormat, IntPtr buffer, int bufferSize, int stride)
+        {
+            int minStride = checked(((sourceRect.Width * sourceFormat.BitsPerPixel) + 7) / 8);
+            if (stride < minStride)
+                throw new ArgumentOutOfRangeException(nameof(stride));
+
+            // 64-bit to avoid overflowing the guard for very large strides/heights, which would
+            // otherwise let an oversized contiguous blit/loop run past the buffers.
+            var minBufferSize = (long)stride * sourceRect.Height;
+            if (minBufferSize > bufferSize)
+                throw new ArgumentOutOfRangeException(nameof(bufferSize));
+
+            var offsetX = checked(((sourceRect.X * sourceFormat.BitsPerPixel) + 7) / 8);
+
+            // Fast-path: when the source and destination layouts are identical, tightly-packed and
+            // forward (no row padding, no X offset, positive stride), the whole region is contiguous in
+            // both buffers and can be copied with a single blit. This is meaningfully faster than the
+            // per-row loop (up to ~5x for small images, ~30% for large ones). Requiring stride == minStride
+            // also guarantees we don't read past the source's last row.
+            if (offsetX == 0 && sourceRowBytes == stride && stride == minStride)
+            {
+                Unsafe.CopyBlock(buffer.ToPointer(),
+                    (sourceAddress + sourceRowBytes * sourceRect.Y).ToPointer(), (uint)minBufferSize);
+                return;
+            }
+
+            for (var y = 0; y < sourceRect.Height; y++)
+            {
+                var srcAddress = sourceAddress + sourceRowBytes * (sourceRect.Y + y) + offsetX;
+                var dstAddress = buffer + stride * y;
+                Unsafe.CopyBlock(dstAddress.ToPointer(), srcAddress.ToPointer(), (uint)minStride);
+            }
+        }
+
+        /// <summary>
+        /// Validates <paramref name="sourceRect"/> against this bitmap and copies pixels out of the
+        /// given framebuffer. Self-contained convenience wrapper around the static
+        /// <see cref="CopyPixelsCore(PixelRect,IntPtr,int,PixelFormat,IntPtr,int,int)"/> for inheritors.
+        /// </summary>
+        private protected void CopyPixelsCore(PixelRect sourceRect, IntPtr buffer, int bufferSize, int stride,
+            ILockedFramebuffer fb)
+        {
+            sourceRect = ValidateSourceRect(sourceRect);
+            CopyPixelsCore(sourceRect, fb.Address, fb.RowBytes, fb.Format, buffer, bufferSize, stride);
+        }
+
+        public virtual void CopyPixels(PixelRect sourceRect, IntPtr buffer, int bufferSize, int stride)
+        {
+            if (
+                Format == null
+                || PlatformImpl.Item is not IReadableBitmapImpl readable
+                || Format != readable.Format
+            )
+            {
+                throw new NotSupportedException("CopyPixels is not supported for this bitmap type");
+            }
+
+            if (_isTranscoded)
+                throw new NotSupportedException("CopyPixels is not supported for transcoded bitmaps");
+
+            using (var fb = readable.Lock())
+                CopyPixelsCore(sourceRect, buffer, bufferSize, stride, fb);
+        }
+
+        /// <summary>
+        /// Copies pixels to the target buffer and transcodes the pixel and alpha format if needed.
+        /// </summary>
+        /// <param name="buffer">The target buffer.</param>
+        /// <exception cref="NotSupportedException"></exception>
+        public void CopyPixels(ILockedFramebuffer buffer)
+        {
+            if (PlatformImpl.Item is not IReadableBitmapImpl readable || readable.Format == null || readable.AlphaFormat == null)
+            {
+                // Since we can't read pixels from the bitmap, we need to render it to a compatible bitmap and read pixels from it.
+                using var rtb = new RenderTargetBitmap(PixelSize);
+                using (var ctx = rtb.CreateDrawingContext())
+                    ctx.DrawImage(this, new Rect(rtb.Size));
+                rtb.CopyPixels(buffer);
+
+                return;
+            }
+
+            if (buffer.Format != readable.Format || buffer.AlphaFormat != readable.AlphaFormat)
+            {
+                using (var fb = readable.Lock())
+                {
+                    PixelFormatTranscoder.Transcode(
+                        fb.Address,
+                        fb.Size,
+                        fb.RowBytes,
+                        fb.Format,
+                        fb.AlphaFormat,
+                        buffer.Address, 
+                        buffer.RowBytes,
+                        buffer.Format,
+                        buffer.AlphaFormat);
+                }
+            }
+            else
+            {
+                using (var fb = readable.Lock())
+                {
+                    CopyPixelsCore(new PixelRect(fb.Size), buffer.Address, buffer.RowBytes * buffer.Size.Height, fb.RowBytes, fb);
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        void IImage.Draw(
+            DrawingContext context,
+            Rect sourceRect,
+            Rect destRect)
+        {
+            context.DrawBitmap(
+                PlatformImpl,
+                1,
+                sourceRect,
+                destRect);
+        }
+
+        private static IPlatformRenderInterface GetFactory()
+        {
+            return PresentationLocator.Current.GetRequiredService<IPlatformRenderInterface>();
+        }
+
+        IRef<IBitmapImpl>? IImageBrushSource.Bitmap
+        {
+            get
+            {
+                if (!PlatformImpl.IsAlive)
+                    return null;
+                return PlatformImpl;
+            }
+        }
+    }
+}

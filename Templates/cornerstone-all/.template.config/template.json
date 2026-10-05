@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "classifications": [ "Desktop", "Android", "iOS", "Web", "Xaml", "Cornerstone", "Keystone" ],
+  "description": "A Cornerstone app with AppBootstrap, Keystone (Bus : State : Engine), and Desktop, Android, Browser, and iOS hosts.",
+  "groupidentity": "Cornerstone.App.CrossPlatform",
+  "identity": "Cornerstone.App.CrossPlatform",
+  "name": "Cornerstone Cross-Platform App",
+  "preferNameDirectory": true,
+  "shortName": "cornerstone.all",
+  "sourceName": "Company.AppName",
+  "defaultName": "CornerstoneApp",
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  },
+  "symbols": {
+    "skipRestore": {
+      "type": "parameter",
+      "datatype": "bool",
+      "description": "If specified, skips the automatic restore of the project on create.",
+      "defaultValue": "false"
+    },
+    "CornerstoneVersion": {
+      "type": "parameter",
+      "description": "NuGet version of Cornerstone packages.",
+      "datatype": "text",
+      "replaces": "CornerstoneVersionTemplateParameter",
+      "defaultValue": "3.0.0"
+    },
+    "HostIdentifier": {
+      "type": "bind",
+      "binding": "HostIdentifier"
+    }
+  },
+  "primaryOutputs": [
+    { "path": "Company.AppName.slnx" },
+    { "path": "Company.AppName.Desktop/Company.AppName.Desktop.csproj" }
+  ],
+  "postActions": [
+    {
+      "id": "restore",
+      "condition": "(!skipRestore)",
+      "description": "Restore NuGet packages required by this project.",
+      "manualInstructions": [
+        { "text": "Run 'dotnet restore'" }
+      ],
+      "actionId": "210D431B-A78B-4D2F-B762-4ED3E3EA9025",
+      "continueOnError": true
+    }
+  ]
+}

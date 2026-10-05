@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Cornerstone.Data;
@@ -36,6 +37,7 @@ public class JsonConverterFactoryPartialUpdate : JsonConverterFactory
 		return definition == typeof(PartialUpdate<>);
 	}
 
+	[UnconditionalSuppressMessage("Aot", "IL3050", Justification = "JsonConverterFactory.CreateConverter cannot be annotated; closed generic is created for PartialUpdate<T>.")]
 	public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
 	{
 		// Fast path for the non-generic case

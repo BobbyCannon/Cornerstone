@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Reflection;
@@ -27,6 +28,7 @@ public class UpdateableConverter : BaseConverter
 			&& toType.ImplementsType(fromType);
 	}
 
+	[UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "Converter toType is a runtime conversion target; members are preserved by generated source reflection.")]
 	public override bool TryConvertTo(object from, Type fromType, Type toType, out object value, IConverterSettings settings = null)
 	{
 		if (SourceReflector.CreateInstance(toType) is IUpdateable response)

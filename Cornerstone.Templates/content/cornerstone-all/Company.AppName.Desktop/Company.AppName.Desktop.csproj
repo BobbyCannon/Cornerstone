@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net10.0</TargetFramework>
+		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<ApplicationIcon>..\Company.AppName\Assets\Cornerstone.ico</ApplicationIcon>
+	</PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Company.AppName\Company.AppName.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Cornerstone.Presentation" Version="CornerstoneVersionTemplateParameter" />
+	</ItemGroup>
+</Project>

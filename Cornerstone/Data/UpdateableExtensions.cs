@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Cornerstone.Extensions;
 using Cornerstone.Reflection;
@@ -50,6 +51,7 @@ public static class UpdateableExtensions
 	/// </summary>
 	/// <param name="value"> The value to be shallow cloned. </param>
 	/// <returns> The cloned object. </returns>
+	[UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "GetType() cannot flow DynamicallyAccessedMembers; clone uses generated source reflection.")]
 	public static T ShallowClone<T>(this T value) where T : IUpdateable
 	{
 		var type = value.GetType();

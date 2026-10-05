@@ -1,0 +1,163 @@
+using System;
+using System.ComponentModel;
+using Cornerstone.Presentation.Animation;
+using Cornerstone.Presentation.Media.Immutable;
+using Cornerstone.Presentation.Rendering.Composition;
+using Cornerstone.Presentation.Rendering.Composition.Drawing;
+using Cornerstone.Presentation.Rendering.Composition.Server;
+using Cornerstone.Presentation.Rendering.Composition.Transport;
+
+namespace Cornerstone.Presentation.Media
+{
+    /// <summary>
+    /// Describes how an area is painted.
+    /// </summary>
+    [TypeConverter(typeof(BrushConverter))]
+    public abstract class Brush : Animatable, IBrush, ICompositionRenderResource<IBrush>, ICompositorSerializable
+    {
+        /// <summary>
+        /// Defines the <see cref="Opacity"/> property.
+        /// </summary>
+        public static readonly StyledProperty<double> OpacityProperty =
+            PresentationProperty.Register<Brush, double>(nameof(Opacity), 1.0);
+
+        /// <summary>
+        /// Defines the <see cref="Transform"/> property.
+        /// </summary>
+        public static readonly StyledProperty<ITransform?> TransformProperty =
+            PresentationProperty.Register<Brush, ITransform?>(nameof(Transform));
+
+        /// <summary>
+        /// Defines the <see cref="TransformOrigin"/> property
+        /// </summary>
+        public static readonly StyledProperty<RelativePoint> TransformOriginProperty =
+            PresentationProperty.Register<Brush, RelativePoint>(nameof(TransformOrigin));
+
+        /// <summary>
+        /// Defines the <see cref="RelativeTransform"/> property.
+        /// </summary>
+        public static readonly StyledProperty<ITransform?> RelativeTransformProperty =
+            PresentationProperty.Register<Brush, ITransform?>(nameof(RelativeTransform));
+
+        /// <summary>
+        /// Gets or sets the opacity of the brush.
+        /// </summary>
+        public double Opacity
+        {
+            get => GetValue(OpacityProperty);
+            set => SetValue(OpacityProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the transform of the brush.
+        /// </summary>
+        public ITransform? Transform
+        {
+            get => GetValue(TransformProperty);
+            set => SetValue(TransformProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the origin of the brush <see cref="Transform"/>
+        /// </summary>
+        public RelativePoint TransformOrigin
+        {
+            get => GetValue(TransformOriginProperty);
+            set => SetValue(TransformOriginProperty, value);
+        }
+
+        /// <inheritdoc cref="IBrush.RelativeTransform"/>
+        public ITransform? RelativeTransform
+        {
+            get => GetValue(RelativeTransformProperty);
+            set => SetValue(RelativeTransformProperty, value);
+        }
+
+        /// <summary>
+        /// Parses a brush string.
+        /// </summary>
+        /// <param name="s">The brush string.</param>
+        /// <returns>The <see cref="Color"/>.</returns>
+        public static IBrush Parse(string s)
+        {
+            _ = s ?? throw new ArgumentNullException(nameof(s));
+
+            if (s.Length > 0)
+            {
+                // Attempt to get a cached known brush first
+                // This is a performance optimization for known colors
+                var brush = KnownColors.GetKnownBrush(s);
+                if (brush != null)
+                {
+                    return brush;
+                }
+
+                if (Color.TryParse(s, out Color color))
+                {
+                    return new ImmutableSolidColorBrush(color);
+                }
+            }
+
+            throw new FormatException($"Invalid brush string: '{s}'.");
+        }
+
+        protected override void OnPropertyChanged(PresentationPropertyChangedEventArgs change)
+        {
+            if (change.Property == TransformProperty || change.Property == RelativeTransformProperty)
+                _resource.ProcessPropertyChangeNotification(change);
+
+            RegisterForSerialization();
+
+            base.OnPropertyChanged(change);
+        }
+        
+        private protected void RegisterForSerialization() =>
+            _resource.RegisterForInvalidationOnAllCompositors(this);
+
+        private protected bool IsOnCompositor(Compositor c) => _resource.TryGetForCompositor(c) != null;
+
+        private CompositorResourceHolder<ServerCompositionSimpleBrush> _resource;
+
+        IBrush ICompositionRenderResource<IBrush>.GetForCompositor(Compositor c) => _resource.GetForCompositor(c);
+
+        internal abstract Func<Compositor, ServerCompositionSimpleBrush> Factory { get; }
+
+        void ICompositionRenderResource.AddRefOnCompositor(Compositor c)
+        {
+            if (_resource.CreateOrAddRef(c, this, out _, Factory))
+                OnReferencedFromCompositor(c);
+        }
+
+        private protected virtual void OnReferencedFromCompositor(Compositor c)
+        {
+            if (Transform is ICompositionRenderResource<ITransform> transform)
+                transform.AddRefOnCompositor(c);
+            if (RelativeTransform is ICompositionRenderResource<ITransform> relativeTransform)
+                relativeTransform.AddRefOnCompositor(c);
+        }
+
+        void ICompositionRenderResource.ReleaseOnCompositor(Compositor c)
+        {
+            if(_resource.Release(c))
+                OnUnreferencedFromCompositor(c);
+        }
+
+        protected virtual void OnUnreferencedFromCompositor(Compositor c)
+        {
+            if (Transform is ICompositionRenderResource<ITransform> transform)
+                transform.ReleaseOnCompositor(c);
+            if (RelativeTransform is ICompositionRenderResource<ITransform> relativeTransform)
+                relativeTransform.ReleaseOnCompositor(c);
+        }
+
+        SimpleServerObject? ICompositorSerializable.TryGetServer(Compositor c) => _resource.TryGetForCompositor(c);
+
+        private protected virtual void SerializeChanges(Compositor c, BatchStreamWriter writer)
+        {
+            ServerCompositionSimpleBrush.SerializeAllChanges(writer, Opacity, TransformOrigin, Transform.GetServer(c),
+                RelativeTransform.GetServer(c));
+        }
+
+        void ICompositorSerializable.SerializeChanges(Compositor c, BatchStreamWriter writer) => SerializeChanges(c, writer);
+    }
+}

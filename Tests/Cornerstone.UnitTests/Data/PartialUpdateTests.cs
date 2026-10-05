@@ -22,7 +22,7 @@ public class PartialUpdateTests : CornerstoneUnitTest
 	{
 		var partial = new PartialUpdate();
 		partial.Set("Age", "42");
-		IsTrue(partial.TryGet( "Age", out int age));
+		IsTrue(partial.TryGet("Age", out int age));
 		AreEqual(42, age);
 	}
 
@@ -52,7 +52,7 @@ public class PartialUpdateTests : CornerstoneUnitTest
 
 		var partial = PartialUpdate.FromDictionary(dict);
 
-		IsTrue(partial.TryGet( "Name", out string name));
+		IsTrue(partial.TryGet("Name", out string name));
 		AreEqual("John", name);
 
 		IsTrue(partial.TryGet("Age", out int age));
@@ -77,7 +77,7 @@ public class PartialUpdateTests : CornerstoneUnitTest
 		IsTrue(partial.TryGet("Name", out string name));
 		AreEqual("Alice", name);
 
-		IsTrue(partial.TryGet("Age",out int age));
+		IsTrue(partial.TryGet("Age", out int age));
 		AreEqual(30, age);
 
 		IsTrue(partial.TryGet("UnknownProp", out string extra));
@@ -92,13 +92,13 @@ public class PartialUpdateTests : CornerstoneUnitTest
 
 		var partial = PartialUpdate.FromJsonElement(typeof(PartialUpdate), element);
 
-		IsTrue(partial.TryGet( "Name",out string name));
+		IsTrue(partial.TryGet("Name", out string name));
 		AreEqual("John", name);
 
-		IsTrue(partial.TryGet( "Age",out int age));
+		IsTrue(partial.TryGet("Age", out int age));
 		AreEqual(42, age);
 
-		IsTrue(partial.TryGet("IsActive",out bool active));
+		IsTrue(partial.TryGet("IsActive", out bool active));
 		IsTrue(active);
 	}
 
@@ -109,10 +109,10 @@ public class PartialUpdateTests : CornerstoneUnitTest
 		var element = Serializer.FromJson<JsonElement>(json);
 		var partial = PartialUpdate<TestModel>.FromJsonElement(element);
 
-		IsTrue(partial.TryGet("Name",out string name));
+		IsTrue(partial.TryGet("Name", out string name));
 		AreEqual("Bob", name);
 
-		IsTrue(partial.TryGet("Age",out int age));
+		IsTrue(partial.TryGet("Age", out int age));
 		AreEqual(25, age);
 	}
 
@@ -147,13 +147,13 @@ public class PartialUpdateTests : CornerstoneUnitTest
 	{
 		var original = new PartialUpdate<TestModel>();
 		original.Set("Name", "Charlie");
-		original.Set("Age",35);
+		original.Set("Age", 35);
 
 		var json = original.ToJson();
 		var deserialized = json.FromJson<PartialUpdate<TestModel>>();
 
 		IsNotNull(deserialized);
-		IsTrue(deserialized.TryGet("Name",out string name));
+		IsTrue(deserialized.TryGet("Name", out string name));
 		AreEqual("Charlie", name);
 		IsTrue(deserialized.TryGet("Age", out int age));
 		AreEqual(35, age);
@@ -163,8 +163,8 @@ public class PartialUpdateTests : CornerstoneUnitTest
 	public void ToDictionaryReturnsCorrectValues()
 	{
 		var partial = new PartialUpdate();
-		partial.Set( "Name", "Test");
-		partial.Set("Age",99);
+		partial.Set("Name", "Test");
+		partial.Set("Age", 99);
 
 		var dict = partial.ToDictionary();
 
@@ -177,7 +177,7 @@ public class PartialUpdateTests : CornerstoneUnitTest
 	public void TryGetReturnsFalseForMissingKey()
 	{
 		var partial = new PartialUpdate();
-		IsFalse(partial.TryGet<string>( "Missing", out _));
+		IsFalse(partial.TryGet<string>("Missing", out _));
 	}
 
 	[TestMethod]
@@ -187,10 +187,10 @@ public class PartialUpdateTests : CornerstoneUnitTest
 		partial.Set("Name", "Original");
 
 		var called = false;
-		partial.TrySet<string>( "Name", _ => { called = true; });
+		partial.TrySet<string>("Name", _ => { called = true; });
 
 		IsTrue(called);
-		IsTrue(partial.TryGet( "Name", out string name));
+		IsTrue(partial.TryGet("Name", out string name));
 		AreEqual("Original", name);
 	}
 

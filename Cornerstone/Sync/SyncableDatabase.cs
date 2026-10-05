@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using Cornerstone.Profiling;
 using Cornerstone.Storage;
 
 #endregion
@@ -19,6 +20,11 @@ public interface ISyncableDatabase : IDatabase
 	/// An optional key manager for caching entity IDs (primary and sync).
 	/// </summary>
 	DatabaseKeyCache KeyCache { get; }
+
+	/// <summary>
+	/// Optional profiler for SaveChanges during sync. Null means no timing.
+	/// </summary>
+	Profiler Profiler { get; set; }
 
 	/// <summary>
 	/// The order in which to sync.

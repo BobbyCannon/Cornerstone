@@ -1,0 +1,128 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+using Cornerstone.Presentation.Media.TextFormatting;
+using Cornerstone.Presentation.Metadata;
+using Cornerstone.Presentation.Controls.Elements;
+
+namespace Cornerstone.Presentation.Controls.Documents
+{
+    /// <summary>
+    /// Span element used for grouping other Inline elements.
+    /// </summary>
+    public class Span : Inline, IAddChild<Inline>, IAddChild<Control>, IAddChild<string>
+    {
+        /// <summary>
+        /// Defines the <see cref="Inlines"/> property.
+        /// </summary>
+        public static readonly StyledProperty<InlineCollection> InlinesProperty =
+            PresentationProperty.Register<Span, InlineCollection>(
+                nameof(Inlines));
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("PresentationProperty", "AVP1012", 
+            Justification = "Collection properties shouldn't be set with SetCurrentValue.")]
+        public Span()
+        {
+            Inlines = new InlineCollection
+            {
+                LogicalChildren = LogicalChildren
+            };
+        }
+
+        /// <summary>
+        /// Gets or sets the inlines.
+        /// </summary>
+        [Content]
+        public InlineCollection Inlines
+        {
+            get => GetValue(InlinesProperty);
+            set => SetValue(InlinesProperty, value);
+        }
+
+        internal override void BuildTextRun(IList<TextRun> textRuns)
+        {
+            foreach (var inline in Inlines)
+            {
+                inline.BuildTextRun(textRuns);
+            }
+        }
+
+        internal override bool MeasureEmbeddedControls(Size blockSize)
+        {
+            var resized = false;
+
+            foreach (var inline in Inlines)
+            {
+                resized |= inline.MeasureEmbeddedControls(blockSize);
+            }
+
+            return resized;
+        }
+
+        internal override void AppendText(StringBuilder stringBuilder)
+        {
+            foreach (var inline in Inlines)
+            {
+                inline.AppendText(stringBuilder);
+            }
+        }
+
+        /// <inheritdoc />
+        protected override void OnPropertyChanged(PresentationPropertyChangedEventArgs change)
+        {
+            base.OnPropertyChanged(change);
+
+            switch (change.Property.Name)
+            {
+                case nameof(InlinesProperty):
+                    OnInlinesChanged(change.OldValue as InlineCollection, change.NewValue as InlineCollection);
+                    InlineHost?.Invalidate();
+                    break;
+            }
+        }
+
+        internal override void OnInlineHostChanged(IInlineHost? oldValue, IInlineHost? newValue)
+        {
+            base.OnInlineHostChanged(oldValue, newValue);
+
+            Inlines.InlineHost = newValue;
+        }
+
+        private void OnInlinesChanged(InlineCollection? oldValue, InlineCollection? newValue)
+        {
+            if (oldValue is not null)
+            {
+                oldValue.LogicalChildren = null;
+                oldValue.InlineHost = null;
+                oldValue.Invalidated -= OnInlinesInvalidated;
+            }
+
+            if (newValue is not null)
+            {
+                newValue.LogicalChildren = LogicalChildren;
+                newValue.InlineHost = InlineHost;
+                newValue.Invalidated += OnInlinesInvalidated;
+            }
+
+            return;
+
+            void OnInlinesInvalidated(object? sender, EventArgs e)
+                => InlineHost?.Invalidate();
+        }
+
+        void IAddChild<Inline>.AddChild(Inline inline)
+        {
+            Inlines?.Add(inline);
+        }
+
+        void IAddChild<Control>.AddChild(Control child)
+        {
+            Inlines?.Add(new InlineUIContainer(child));
+        }
+
+        void IAddChild<string>.AddChild(string text)
+        {
+            Inlines?.Add(new Run(text));
+        }
+    }
+}

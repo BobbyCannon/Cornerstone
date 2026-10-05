@@ -4,7 +4,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Cornerstone.GrokMonitor.GrokUsage;
 using Cornerstone.GrokMonitor.GrokUsage.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -61,6 +60,24 @@ public class GrokUsageReaderTests : GrokMonitorUnitTest
 	}
 
 	[TestMethod]
+	public void GetAllBillingSnapshotsReturnsChronologicalHistory()
+	{
+		using var fixture = new GrokHomeFixture();
+		fixture.WriteUnifiedLog(
+			"""
+			{"ts":"2026-08-05T12:00:00.000Z","msg":"billing: fetched credits config","ctx":{"config":{"creditUsagePercent":5.0,"currentPeriod":{"type":"USAGE_PERIOD_TYPE_WEEKLY","start":"2026-08-04T00:00:00Z","end":"2026-08-11T00:00:00Z"}}}}
+			{"ts":"2026-08-07T12:00:00.000Z","msg":"billing: fetched credits config","ctx":{"config":{"creditUsagePercent":20.0,"currentPeriod":{"type":"USAGE_PERIOD_TYPE_WEEKLY","start":"2026-08-04T00:00:00Z","end":"2026-08-11T00:00:00Z"}}}}
+			"""
+		);
+
+		var history = Import(fixture.Root).GetAllBillingSnapshots();
+		AreEqual(2, history.Count);
+		AreEqual(5.0, history[0].UsagePercent);
+		AreEqual(20.0, history[1].UsagePercent);
+		IsTrue(history[0].Timestamp < history[1].Timestamp);
+	}
+
+	[TestMethod]
 	public void GetSummaryAggregatesTotals()
 	{
 		using var fixture = new GrokHomeFixture();
@@ -92,21 +109,28 @@ public class GrokUsageReaderTests : GrokMonitorUnitTest
 	}
 
 	[TestMethod]
-	public void GetAllBillingSnapshotsReturnsChronologicalHistory()
+	public void ImportSplitsTwoWeeksIntoPeriodFolders()
 	{
 		using var fixture = new GrokHomeFixture();
 		fixture.WriteUnifiedLog(
 			"""
-			{"ts":"2026-08-05T12:00:00.000Z","msg":"billing: fetched credits config","ctx":{"config":{"creditUsagePercent":5.0,"currentPeriod":{"type":"USAGE_PERIOD_TYPE_WEEKLY","start":"2026-08-04T00:00:00Z","end":"2026-08-11T00:00:00Z"}}}}
-			{"ts":"2026-08-07T12:00:00.000Z","msg":"billing: fetched credits config","ctx":{"config":{"creditUsagePercent":20.0,"currentPeriod":{"type":"USAGE_PERIOD_TYPE_WEEKLY","start":"2026-08-04T00:00:00Z","end":"2026-08-11T00:00:00Z"}}}}
+			{"ts":"2026-08-05T12:00:00.000Z","sid":"s1","msg":"shell.turn.inference_done","ctx":{"prompt_tokens":10,"completion_tokens":1,"reasoning_tokens":0,"cached_prompt_tokens":0}}
+			{"ts":"2026-08-05T12:01:00.000Z","msg":"billing: fetched credits config","ctx":{"config":{"creditUsagePercent":8.0,"currentPeriod":{"type":"USAGE_PERIOD_TYPE_WEEKLY","start":"2026-08-04T00:00:00Z","end":"2026-08-11T00:00:00Z"}}}}
+			{"ts":"2026-08-12T12:00:00.000Z","sid":"s1","msg":"shell.turn.inference_done","ctx":{"prompt_tokens":20,"completion_tokens":2,"reasoning_tokens":0,"cached_prompt_tokens":0}}
+			{"ts":"2026-08-12T12:01:00.000Z","msg":"billing: fetched credits config","ctx":{"config":{"creditUsagePercent":15.0,"currentPeriod":{"type":"USAGE_PERIOD_TYPE_WEEKLY","start":"2026-08-11T00:00:00Z","end":"2026-08-18T00:00:00Z"}}}}
 			"""
 		);
 
-		var history = Import(fixture.Root).GetAllBillingSnapshots();
-		AreEqual(2, history.Count);
-		AreEqual(5.0, history[0].UsagePercent);
-		AreEqual(20.0, history[1].UsagePercent);
-		IsTrue(history[0].Timestamp < history[1].Timestamp);
+		var reader = new GrokUsageReader(fixture.Root);
+		reader.ImportFromGrokHome();
+		var summary = reader.GetSummary();
+		IsTrue(summary.Periods.Count >= 2);
+		AreEqual(2, reader.GetAllInferences().Count);
+
+		fixture.WriteUnifiedLog("");
+		var afterWipe = new GrokUsageReader(fixture.Root);
+		AreEqual(2, afterWipe.GetAllInferences().Count);
+		IsTrue(afterWipe.GetSummary().Periods.Count >= 2);
 	}
 
 	[TestMethod]
@@ -143,6 +167,50 @@ public class GrokUsageReaderTests : GrokMonitorUnitTest
 		AreEqual(65, session.TotalCompletionTokens);
 		AreEqual(10, session.TotalReasoningTokens);
 		AreEqual(365, session.TotalTokens);
+	}
+
+	[TestMethod]
+	public void KeepsArchivedInferencesAfterUnifiedLogIsRewritten()
+	{
+		using var fixture = new GrokHomeFixture();
+		fixture.WriteUnifiedLog(
+			"""
+			{"ts":"2026-08-05T12:00:00.000Z","sid":"old","msg":"shell.turn.inference_done","ctx":{"prompt_tokens":100,"completion_tokens":10,"reasoning_tokens":1,"cached_prompt_tokens":0}}
+			{"ts":"2026-08-05T12:01:00.000Z","msg":"billing: fetched credits config","ctx":{"config":{"creditUsagePercent":8.0,"currentPeriod":{"type":"USAGE_PERIOD_TYPE_WEEKLY","start":"2026-08-04T00:00:00Z","end":"2026-08-11T00:00:00Z"}}}}
+			"""
+		);
+
+		var first = Import(fixture.Root);
+		AreEqual(1, first.GetAllInferences().Count);
+		AreEqual(1, first.GetAllBillingSnapshots().Count);
+
+		fixture.WriteUnifiedLog(
+			"""
+			{"ts":"2026-08-12T12:00:00.000Z","sid":"new","msg":"shell.turn.inference_done","ctx":{"prompt_tokens":20,"completion_tokens":2,"reasoning_tokens":0,"cached_prompt_tokens":0}}
+			{"ts":"2026-08-12T12:01:00.000Z","msg":"billing: fetched credits config","ctx":{"config":{"creditUsagePercent":15.0,"currentPeriod":{"type":"USAGE_PERIOD_TYPE_WEEKLY","start":"2026-08-11T00:00:00Z","end":"2026-08-18T00:00:00Z"}}}}
+			"""
+		);
+
+		var second = Import(fixture.Root);
+		var inferences = second.GetAllInferences();
+		AreEqual(2, inferences.Count);
+		IsTrue(inferences.Any(x => (x.SessionId == "old") && (x.PromptTokens == 100)));
+		IsTrue(inferences.Any(x => (x.SessionId == "new") && (x.PromptTokens == 20)));
+
+		var billing = second.GetAllBillingSnapshots();
+		AreEqual(2, billing.Count);
+		AreEqual(8.0, billing[0].UsagePercent);
+		AreEqual(15.0, billing[1].UsagePercent);
+
+		var homeFile = Path.Combine(first.ArchiveDirectory, GrokPaths.UsageArchiveHomeFileName);
+		IsTrue(File.Exists(homeFile));
+		AreEqual(
+			Path.GetFullPath(fixture.Root).ToLowerInvariant(),
+			GrokPaths.TryReadUsageArchiveHomePath(first.ArchiveDirectory).ToLowerInvariant());
+
+		var periods = Directory.GetDirectories(Path.Combine(first.ArchiveDirectory, "periods"));
+		IsTrue(periods.Length >= 1);
+		IsTrue(File.Exists(Path.Combine(periods[0], "period.json")));
 	}
 
 	[TestMethod]
@@ -259,50 +327,6 @@ public class GrokUsageReaderTests : GrokMonitorUnitTest
 	}
 
 	[TestMethod]
-	public void KeepsArchivedInferencesAfterUnifiedLogIsRewritten()
-	{
-		using var fixture = new GrokHomeFixture();
-		fixture.WriteUnifiedLog(
-			"""
-			{"ts":"2026-08-05T12:00:00.000Z","sid":"old","msg":"shell.turn.inference_done","ctx":{"prompt_tokens":100,"completion_tokens":10,"reasoning_tokens":1,"cached_prompt_tokens":0}}
-			{"ts":"2026-08-05T12:01:00.000Z","msg":"billing: fetched credits config","ctx":{"config":{"creditUsagePercent":8.0,"currentPeriod":{"type":"USAGE_PERIOD_TYPE_WEEKLY","start":"2026-08-04T00:00:00Z","end":"2026-08-11T00:00:00Z"}}}}
-			"""
-		);
-
-		var first = Import(fixture.Root);
-		AreEqual(1, first.GetAllInferences().Count);
-		AreEqual(1, first.GetAllBillingSnapshots().Count);
-
-		fixture.WriteUnifiedLog(
-			"""
-			{"ts":"2026-08-12T12:00:00.000Z","sid":"new","msg":"shell.turn.inference_done","ctx":{"prompt_tokens":20,"completion_tokens":2,"reasoning_tokens":0,"cached_prompt_tokens":0}}
-			{"ts":"2026-08-12T12:01:00.000Z","msg":"billing: fetched credits config","ctx":{"config":{"creditUsagePercent":15.0,"currentPeriod":{"type":"USAGE_PERIOD_TYPE_WEEKLY","start":"2026-08-11T00:00:00Z","end":"2026-08-18T00:00:00Z"}}}}
-			"""
-		);
-
-		var second = Import(fixture.Root);
-		var inferences = second.GetAllInferences();
-		AreEqual(2, inferences.Count);
-		IsTrue(inferences.Any(x => x.SessionId == "old" && x.PromptTokens == 100));
-		IsTrue(inferences.Any(x => x.SessionId == "new" && x.PromptTokens == 20));
-
-		var billing = second.GetAllBillingSnapshots();
-		AreEqual(2, billing.Count);
-		AreEqual(8.0, billing[0].UsagePercent);
-		AreEqual(15.0, billing[1].UsagePercent);
-
-		var homeFile = Path.Combine(first.ArchiveDirectory, GrokPaths.UsageArchiveHomeFileName);
-		IsTrue(File.Exists(homeFile));
-		AreEqual(
-			Path.GetFullPath(fixture.Root).ToLowerInvariant(),
-			GrokPaths.TryReadUsageArchiveHomePath(first.ArchiveDirectory).ToLowerInvariant());
-
-		var periods = Directory.GetDirectories(Path.Combine(first.ArchiveDirectory, "periods"));
-		IsTrue(periods.Length >= 1);
-		IsTrue(File.Exists(Path.Combine(periods[0], "period.json")));
-	}
-
-	[TestMethod]
 	public void UpdatesSessionTitleOnLaterImport()
 	{
 		using var fixture = new GrokHomeFixture();
@@ -314,7 +338,7 @@ public class GrokUsageReaderTests : GrokMonitorUnitTest
 		);
 		fixture.WriteSession(sid, """
 								{
-								  "info": { "id": "session-title-upsert", "cwd": "C:\\Workspaces\\EpicSolution" },
+								  "info": { "id": "session-title-upsert", "cwd": "C:\\Workspaces\\MyApp" },
 								  "session_summary": "",
 								  "generated_title": "",
 								  "created_at": "2026-08-13T23:10:15.000Z",
@@ -332,7 +356,7 @@ public class GrokUsageReaderTests : GrokMonitorUnitTest
 
 		fixture.WriteSession(sid, """
 								{
-								  "info": { "id": "session-title-upsert", "cwd": "C:\\Workspaces\\EpicSolution" },
+								  "info": { "id": "session-title-upsert", "cwd": "C:\\Workspaces\\MyApp" },
 								  "session_summary": "GrokUsage Overhaul Missing Session Titles",
 								  "generated_title": "GrokUsage Overhaul Missing Session Titles",
 								  "created_at": "2026-08-13T23:10:15.000Z",
@@ -347,31 +371,6 @@ public class GrokUsageReaderTests : GrokMonitorUnitTest
 		IsNotNull(second);
 		AreEqual("GrokUsage Overhaul Missing Session Titles", second.Info.Title);
 		AreEqual(70, second.Info.MessageCount);
-	}
-
-	[TestMethod]
-	public void ImportSplitsTwoWeeksIntoPeriodFolders()
-	{
-		using var fixture = new GrokHomeFixture();
-		fixture.WriteUnifiedLog(
-			"""
-			{"ts":"2026-08-05T12:00:00.000Z","sid":"s1","msg":"shell.turn.inference_done","ctx":{"prompt_tokens":10,"completion_tokens":1,"reasoning_tokens":0,"cached_prompt_tokens":0}}
-			{"ts":"2026-08-05T12:01:00.000Z","msg":"billing: fetched credits config","ctx":{"config":{"creditUsagePercent":8.0,"currentPeriod":{"type":"USAGE_PERIOD_TYPE_WEEKLY","start":"2026-08-04T00:00:00Z","end":"2026-08-11T00:00:00Z"}}}}
-			{"ts":"2026-08-12T12:00:00.000Z","sid":"s1","msg":"shell.turn.inference_done","ctx":{"prompt_tokens":20,"completion_tokens":2,"reasoning_tokens":0,"cached_prompt_tokens":0}}
-			{"ts":"2026-08-12T12:01:00.000Z","msg":"billing: fetched credits config","ctx":{"config":{"creditUsagePercent":15.0,"currentPeriod":{"type":"USAGE_PERIOD_TYPE_WEEKLY","start":"2026-08-11T00:00:00Z","end":"2026-08-18T00:00:00Z"}}}}
-			"""
-		);
-
-		var reader = new GrokUsageReader(fixture.Root);
-		reader.ImportFromGrokHome();
-		var summary = reader.GetSummary();
-		IsTrue(summary.Periods.Count >= 2);
-		AreEqual(2, reader.GetAllInferences().Count);
-
-		fixture.WriteUnifiedLog("");
-		var afterWipe = new GrokUsageReader(fixture.Root);
-		AreEqual(2, afterWipe.GetAllInferences().Count);
-		IsTrue(afterWipe.GetSummary().Periods.Count >= 2);
 	}
 
 	private static GrokUsageReader Import(string grokHome)

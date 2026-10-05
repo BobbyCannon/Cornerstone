@@ -1,0 +1,444 @@
+using System;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
+using Cornerstone.Presentation.Controls.Platform;
+using Cornerstone.Presentation.Logging;
+using Cornerstone.Presentation.Platform;
+using Cornerstone.Presentation.Threading;
+using Tmds.DBus.Protocol;
+using Cornerstone.Presentation.FreeDesktop.DBus;
+
+namespace Cornerstone.Presentation.FreeDesktop
+{
+    internal class DBusTrayIconImpl : ITrayIconImpl
+    {
+        private static int s_trayIconInstanceId;
+        public static readonly (int, int, byte[]) EmptyPixmap = (1, 1, [255, 0, 0, 0]);
+
+        private readonly DBusConnection? _connection;
+        private CancellationTokenSource? _watchCts;
+        private readonly StatusNotifierItemDbusObj? _statusNotifierItemDbusObj;
+        private StatusNotifierWatcher? _statusNotifierWatcher;
+        private (int, int, byte[]) _icon;
+
+        private string? _sysTrayServiceName;
+        // This task shows if the name request is in progress, complete, or failed.
+        private Task? _sysTrayServiceNameRequest;
+        // The bus keeps the name until the release is complete. A request before that fails.
+        private Task? _sysTrayServiceNameRelease;
+        private string? _tooltipText;
+        private bool _isDisposed;
+        private bool _itemExported;
+        private bool _serviceConnected;
+        private bool _isVisible = true;
+
+        public bool IsActive { get; private set; }
+        public INativeMenuExporter? MenuExporter { get; }
+        public Action? OnClicked { get; set; }
+        public Func<IWindowIconImpl?, uint[]>? IconConverterDelegate { get; set; }
+
+        public DBusTrayIconImpl()
+        {
+            using var restoreContext = PresentationSynchronizationContext.Ensure(DispatcherPriority.Input);
+            _connection = DBusHelper.TryCreateNewConnection();
+
+            if (_connection is null)
+            {
+                Logger.TryGet(LogEventLevel.Error, "DBUS")
+                    ?.Log(this, "Unable to get a dbus connection for system tray icons.");
+
+                return;
+            }
+
+            IsActive = true;
+
+            var dbusMenuPath = DBusMenuExporter.GenerateDBusMenuObjPath;
+
+            MenuExporter = DBusMenuExporter.TryCreateDetachedNativeMenu(dbusMenuPath, _connection);
+
+            _statusNotifierItemDbusObj = new StatusNotifierItemDbusObj(_connection, dbusMenuPath);
+            _statusNotifierItemDbusObj.ActivationDelegate += () => OnClicked?.Invoke();
+
+            WatchAsync();
+        }
+
+        private async void WatchAsync()
+        {
+            try
+            {
+                _watchCts = new CancellationTokenSource();
+                using var watcher = await _connection!.WatchNameOwnerAsync("org.kde.StatusNotifierWatcher");
+                var owner = watcher.GetCurrentOwner();
+                OnOwnerChanged(owner);
+                while (!_watchCts.IsCancellationRequested)
+                {
+                    if (owner is not null)
+                    {
+                        var ct = watcher.GetOwnerChangedCancellationToken(owner);
+                        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _watchCts.Token);
+                        try
+                        {
+                            await Task.Delay(Timeout.Infinite, linked.Token);
+                        }
+                        catch (OperationCanceledException) when (!_watchCts.IsCancellationRequested)
+                        { }
+                    }
+                    else
+                    {
+                        try
+                        {
+                            await watcher.WaitForOwnerAsync(_watchCts.Token);
+                        }
+                        catch (OperationCanceledException) when (!_watchCts.IsCancellationRequested)
+                        { }
+                    }
+                    owner = watcher.GetCurrentOwner();
+                    OnOwnerChanged(owner);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Dispose cancels this task.
+            }
+            catch (Exception e)
+            {
+                // An exception that leaves this method ends the process.
+                if (!_isDisposed)
+                    Logger.TryGet(LogEventLevel.Error, "DBUS")
+                        ?.Log(this, "Interface 'org.kde.StatusNotifierWatcher' is unavailable.\n{Exception}", e);
+            }
+        }
+
+        private void OnOwnerChanged(string? newOwner)
+        {
+            if (_isDisposed || _connection is null)
+                return;
+
+            if (newOwner is not null)
+            {
+                if (!_serviceConnected)
+                {
+                    _serviceConnected = true;
+                    _statusNotifierWatcher = new StatusNotifierWatcher(_connection, "org.kde.StatusNotifierWatcher", "/StatusNotifierWatcher");
+                }
+
+                // A new watcher can take the name with no gap. It does not know the item, so register again.
+                if (_isVisible)
+                    CreateTrayIcon();
+            }
+            else
+            {
+                if (_serviceConnected)
+                {
+                    DestroyTrayIcon();
+                    _serviceConnected = false;
+                }
+
+                // Get the name before a watcher comes. A new watcher scans the bus, and it adds a second
+                // item if it finds the object before the connection owns the name.
+                if (_isVisible)
+                    CreateTrayIcon();
+            }
+        }
+
+        private async void CreateTrayIcon()
+        {
+            if (_connection is null || _isDisposed || _statusNotifierItemDbusObj is null)
+                return;
+
+            Task request = null;
+
+            try
+            {
+                while (_sysTrayServiceNameRelease is { } release)
+                {
+                    await release;
+                    if (ReferenceEquals(_sysTrayServiceNameRelease, release))
+                        _sysTrayServiceNameRelease = null;
+                    if (!ShouldOwnName)
+                        return;
+                }
+
+                if (_sysTrayServiceNameRequest is null)
+                {
+                    // Keep the name after a hide. A new id shows a new item to the host.
+                    if (_sysTrayServiceName is null)
+                    {
+#if NET5_0_OR_GREATER
+                        var pid = Environment.ProcessId;
+#else
+                        var pid = Process.GetCurrentProcess().Id;
+#endif
+                        var tid = s_trayIconInstanceId++;
+                        _sysTrayServiceName = FormattableString.Invariant($"org.kde.StatusNotifierItem-{pid}-{tid}");
+                    }
+
+                    _sysTrayServiceNameRequest = RequestTrayServiceNameAsync(_connection, _sysTrayServiceName);
+                }
+
+                request = _sysTrayServiceNameRequest;
+                await request;
+
+                // A hide while the bus answers queues the release after this line.
+                if (!ShouldShowTrayIcon || _statusNotifierWatcher is null || !ReferenceEquals(_sysTrayServiceNameRequest, request))
+                    return;
+
+                // A host that scans the bus adds a second item if the object is exported before the
+                // connection owns the name. Two calls can reach this line, and a second export throws.
+                if (!_itemExported)
+                {
+                    _connection.AddMethodHandler(_statusNotifierItemDbusObj);
+                    _itemExported = true;
+                }
+
+                if (_sysTrayServiceName is not { } name)
+                    return;
+
+                await _statusNotifierWatcher.RegisterStatusNotifierItemAsync(name);
+
+                if (!ShouldShowTrayIcon)
+                    return;
+
+                _statusNotifierItemDbusObj.SetTitleAndTooltip(_tooltipText);
+                _statusNotifierItemDbusObj.SetIcon(_icon);
+            }
+            catch (Exception e)
+            {
+                // Clear only this request, and only if it did not complete. The next call then asks for
+                // the name again.
+                if (request is { IsCompletedSuccessfully: false } && ReferenceEquals(_sysTrayServiceNameRequest, request))
+                    _sysTrayServiceNameRequest = null;
+
+                if (!_isDisposed)
+                    Logger.TryGet(LogEventLevel.Error, "DBUS")
+                        ?.Log(this, "Unable to register the system tray icon.\n{Exception}", e);
+            }
+        }
+
+        private async Task RequestTrayServiceNameAsync(DBusConnection connection, string name)
+        {
+            try
+            {
+                await connection.RequestNameAsync(name);
+            }
+            catch
+            {
+                // Tmds.DBus keeps a refused name registered on the connection. Use a new name next time,
+                // also when a hide cleared this request.
+                if (_sysTrayServiceName == name)
+                    _sysTrayServiceName = null;
+                throw;
+            }
+        }
+
+        // CreateTrayIcon reads these conditions again after each await.
+        private bool ShouldOwnName => !_isDisposed && _isVisible;
+        private bool ShouldShowTrayIcon => ShouldOwnName && _serviceConnected;
+
+        private void DestroyTrayIcon()
+        {
+            if (_connection is null || _statusNotifierItemDbusObj is null || !_itemExported)
+                return;
+
+            _connection.RemoveMethodHandler(_statusNotifierItemDbusObj.Path);
+            _itemExported = false;
+        }
+
+        // A host removes the item when the name goes away. Keep the name when only the watcher stops.
+        private void ReleaseTrayServiceName()
+        {
+            if (_connection is null || _sysTrayServiceName is null || _sysTrayServiceNameRequest is not { } request)
+                return;
+
+            _sysTrayServiceNameRequest = null;
+            _sysTrayServiceNameRelease = ReleaseTrayServiceNameAsync(request, _connection, _sysTrayServiceName);
+        }
+
+        private async Task ReleaseTrayServiceNameAsync(Task request, DBusConnection connection, string name)
+        {
+            try
+            {
+                // Wait for the request. A release before the connection owns the name has no effect.
+                try
+                {
+                    await request;
+                }
+                catch
+                {
+                    // CreateTrayIcon logs this failure. There is no name to release.
+                    return;
+                }
+
+                await connection.ReleaseNameAsync(name);
+            }
+            catch (Exception e)
+            {
+                if (!_isDisposed)
+                    Logger.TryGet(LogEventLevel.Error, "DBUS")
+                        ?.Log(this, "Unable to release the system tray icon name.\n{Exception}", e);
+            }
+        }
+
+        public void Dispose()
+        {
+            IsActive = false;
+            DestroyTrayIcon();
+            ReleaseTrayServiceName();
+            (MenuExporter as IDisposable)?.Dispose();
+            _watchCts?.Cancel();
+            _isDisposed = true;
+        }
+
+        public void SetIcon(IWindowIconImpl? icon)
+        {
+            if (_isDisposed || IconConverterDelegate is null)
+                return;
+
+            if (icon is null)
+            {
+                _statusNotifierItemDbusObj?.SetIcon(EmptyPixmap);
+                return;
+            }
+
+            var x11iconData = IconConverterDelegate(icon);
+
+            if (x11iconData.Length == 0)
+                return;
+
+            var w = (int)x11iconData[0];
+            var h = (int)x11iconData[1];
+
+            var pixLength = w * h;
+            var pixByteArrayCounter = 0;
+            var pixByteArray = new byte[w * h * 4];
+
+            for (var i = 0; i < pixLength; i++)
+            {
+                var rawPixel = x11iconData[i + 2];
+                pixByteArray[pixByteArrayCounter++] = (byte)((rawPixel & 0xFF000000) >> 24);
+                pixByteArray[pixByteArrayCounter++] = (byte)((rawPixel & 0xFF0000) >> 16);
+                pixByteArray[pixByteArrayCounter++] = (byte)((rawPixel & 0xFF00) >> 8);
+                pixByteArray[pixByteArrayCounter++] = (byte)(rawPixel & 0xFF);
+            }
+
+            _icon = (w, h, pixByteArray);
+            _statusNotifierItemDbusObj?.SetIcon(_icon);
+        }
+
+        public void SetIsVisible(bool visible)
+        {
+            if (_isDisposed || visible == _isVisible)
+                return;
+
+            // CreateTrayIcon reads _isVisible. Set it first.
+            _isVisible = visible;
+
+            if (visible)
+            {
+                CreateTrayIcon();
+            }
+            else
+            {
+                DestroyTrayIcon();
+                // Release the name also when the watcher is away. A hidden icon must not own a name.
+                ReleaseTrayServiceName();
+            }
+        }
+
+        public void SetToolTipText(string? text)
+        {
+            if (_isDisposed || text is null)
+                return;
+            _tooltipText = text;
+            _statusNotifierItemDbusObj?.SetTitleAndTooltip(_tooltipText);
+        }
+    }
+
+    /// <summary>
+    /// DBus Object used for setting system tray icons.
+    /// </summary>
+    /// <remarks>
+    /// Useful guide: https://web.archive.org/web/20210818173850/https://www.notmart.org/misc/statusnotifieritem/statusnotifieritem.html
+    /// </remarks>
+    internal class StatusNotifierItemDbusObj : DBusHandler, IStatusNotifierItemHandler, IStatusNotifierItemProperties
+    {
+        // The item is active, is more important that the item will be shown in some way to the user.
+        private const string StatusActive = "Active";
+        private string _category = "";
+        private string _id = "";
+        private string _title = "";
+        private ObjectPath _menu;
+        private (int, int, byte[])[] _iconPixmap = [];
+
+        public StatusNotifierItemDbusObj(DBusConnection connection, ObjectPath dbusMenuPath)
+            : base(connection, "/StatusNotifierItem", handlesChildPaths: false)
+        {
+            _menu = dbusMenuPath;
+        }
+
+        public event Action? ActivationDelegate;
+
+        string IStatusNotifierItemProperties.Category => _category;
+        string IStatusNotifierItemProperties.Id => _id;
+        string IStatusNotifierItemProperties.Title => _title;
+        string IStatusNotifierItemProperties.Status => StatusActive;
+        int IStatusNotifierItemProperties.WindowId => 0;
+        string IStatusNotifierItemProperties.IconThemePath => "";
+        ObjectPath IStatusNotifierItemProperties.Menu => _menu;
+        bool IStatusNotifierItemProperties.ItemIsMenu => false;
+        string IStatusNotifierItemProperties.IconName => "";
+        (int, int, byte[])[] IStatusNotifierItemProperties.IconPixmap => _iconPixmap;
+        string IStatusNotifierItemProperties.OverlayIconName => "";
+        (int, int, byte[])[] IStatusNotifierItemProperties.OverlayIconPixmap => [];
+        string IStatusNotifierItemProperties.AttentionIconName => "";
+        (int, int, byte[])[] IStatusNotifierItemProperties.AttentionIconPixmap => [];
+        string IStatusNotifierItemProperties.AttentionMovieName => "";
+        (string, (int, int, byte[])[], string, string) IStatusNotifierItemProperties.ToolTip => ("", [], "", "");
+
+        ValueTask IStatusNotifierItemHandler.HandleGetPropertyAsync(IStatusNotifierItemHandler.GetPropertyContext context)
+            => context.Handle(this);
+
+        ValueTask IStatusNotifierItemHandler.HandleGetAllPropertiesAsync(IStatusNotifierItemHandler.GetAllPropertiesContext context)
+            => context.Handle(this);
+
+        ValueTask IStatusNotifierItemHandler.ContextMenuAsync(int x, int y) => new();
+
+        ValueTask IStatusNotifierItemHandler.ActivateAsync(int x, int y)
+        {
+            ActivationDelegate?.Invoke();
+            return new ValueTask();
+        }
+
+        ValueTask IStatusNotifierItemHandler.SecondaryActivateAsync(int x, int y) => new();
+
+        ValueTask IStatusNotifierItemHandler.ScrollAsync(int delta, string orientation) => new();
+
+        public void InvalidateAll()
+        {
+            Connection.EmitNewTitle(Path);
+            Connection.EmitNewIcon(Path);
+            Connection.EmitNewAttentionIcon(Path);
+            Connection.EmitNewOverlayIcon(Path);
+            Connection.EmitNewToolTip(Path);
+            Connection.EmitNewStatus(Path, StatusActive);
+        }
+
+        public void SetIcon((int, int, byte[]) dbusPixmap)
+        {
+            _iconPixmap = [dbusPixmap];
+            InvalidateAll();
+        }
+
+        public void SetTitleAndTooltip(string? text)
+        {
+            if (text is null)
+                return;
+
+            _id = text;
+            _category = "ApplicationStatus";
+            _title = text;
+            InvalidateAll();
+        }
+    }
+}

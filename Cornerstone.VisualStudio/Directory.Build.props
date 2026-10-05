@@ -1,14 +1,18 @@
 <Project>
 	<PropertyGroup>
 		<!-- Extension / assembly version; keep in sync via scripts/Update-ExtensionVersion.ps1 -->
-		<Version>1.2.8</Version>
+		<Version>1.5.277.17577</Version>
 		<AvaloniaTemplatesPackageName>Avalonia.Templates</AvaloniaTemplatesPackageName>
 		<AvaloniaTemplatesPackageVersion>12.0.0</AvaloniaTemplatesPackageVersion>
 		<AvaloniaVersion>12.0.0</AvaloniaVersion>
 		<AvaloniaBaseVersion>12.0.0</AvaloniaBaseVersion>
 		<LangVersion>12.0</LangVersion>
-		<NoWarn>$(NoWarn);CEE0027;CS0162;CS1685;VSSDK006;VSTHRD010;VSTHRD100;VSTHRD110;</NoWarn>
-		<PublicKey>0024000004800000940000000602000000240000525341310004000001000100b111cf707bc11956645caffc0d3749fde7a81ee7bdca74d0a3f3f7f599aab8d6c256db70757a96a4589c353e81c8d521d7b72e3fbc59f90715f362057c4d06cd35a5c3956b4d38f12251cbf1d53db778c94dd6fb652a3fb27a03256a9df604bf9bb4c435e5163b605e00f18200433e354459c8a812fa1dee5b6b90efa3100db2</PublicKey>
+		<NoWarn>$(NoWarn);CEE0027;CS0162;CS1685;NU1608;VSSDK006;VSSDK007;VSTHRD010;VSTHRD100;VSTHRD110;</NoWarn>
+		<SignAssembly>true</SignAssembly>
+		<DelaySign>false</DelaySign>
+		<AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)..\Cornerstone.snk</AssemblyOriginatorKeyFile>
+		<!-- PublicKey matches Cornerstone.snk (same as Cornerstone Directory.Build.props). -->
+		<PublicKey>0024000004800000940000000602000000240000525341310004000001000100f97abdc5a6bc1880e495fb5575d8c7758e32b31d901068015d0e4f9d21dfa2d3eda859956e585ebc5d62066957face3530698eaa1eace45a9175da66211e9fff0deb7b686e01743a9a1acee9f42b8edf341c4f97a8212006a5ac0a6c211bc8206dc87f190f890ff1d041c9eb3eda3bb863240775b8ef2580ec4bca96ac0365d8</PublicKey>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="IsExternalInit" Version="1.0.3">

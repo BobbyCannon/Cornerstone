@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Cornerstone.Reflection;
@@ -59,6 +60,7 @@ public static class EnumExtensions
 	/// <param name="type"> The enum type. </param>
 	/// <returns> The individual values for the enum. </returns>
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	[UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "Enum Type is supplied at the call site; flag values are read from generated source reflection.")]
 	public static object[] GetFlagValues(this Type type)
 	{
 		return SourceReflector

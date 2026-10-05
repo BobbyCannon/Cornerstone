@@ -1,0 +1,118 @@
+<UserControl xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:vnc="clr-namespace:Cornerstone.RemoteLink.Vnc" 
+		xmlns:controls="clr-namespace:Cornerstone.RemoteLink.Vnc.Controls"
+		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+		x:Class="Cornerstone.RemoteLink.Vnc.VncTabView"
+		x:DataType="vnc:VncTabViewModel">
+	<DockPanel>
+		<Border DockPanel.Dock="Top"
+				Classes="ToolBar"
+				BorderThickness="0">
+			<Border.Styles>
+				<Style Selector="Grid > TextBox">
+					<Setter Property="Height" Value="34"/>
+				</Style>
+				<Style Selector="Grid > Button">
+					<Setter Property="Height" Value="34"/>
+				</Style>
+			</Border.Styles>
+			<Grid ColumnDefinitions="*,80,160,Auto,Auto">
+				<TextBox CornerRadius="0"
+						PlaceholderText="Host"
+						Text="{Binding Host}" />
+				<TextBox Grid.Column="1"
+						CornerRadius="0"
+						PlaceholderText="Port"
+						Text="{Binding Port}" />
+				<TextBox Grid.Column="2"
+						CornerRadius="0"
+						PlaceholderText="Password"
+						PasswordChar="*"
+						Text="{Binding Password}" />
+				<Button Grid.Column="3"
+						CornerRadius="0"
+						Content="Connect"
+						Command="{Binding ConnectAsyncCommand}" />
+				<Button Grid.Column="4"
+						CornerRadius="0"
+						Content="Disconnect"
+						Command="{Binding DisconnectAsyncCommand}" />
+			</Grid>
+		</Border>
+		<Border DockPanel.Dock="Bottom"
+				Classes="ToolBar"
+				Height="54">
+			<DockPanel>
+				<StackPanel DockPanel.Dock="Right"
+						Orientation="Horizontal"
+						Spacing="4"
+						Margin="8,0">
+					<StackPanel.Styles>
+						<Style Selector=":is(Button)">
+							<Setter Property="MinWidth" Value="70" />
+						</Style>
+					</StackPanel.Styles>
+					<Button Content="Type Clipboard"
+							Command="{Binding SetClipboardAsyncCommand}" />
+				</StackPanel>
+				<StackPanel Spacing="0"
+						VerticalAlignment="Center"
+						Margin="10,8">
+					<SelectableTextBlock Text="{Binding ErrorMessage}"
+							IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+					<SelectableTextBlock Text="{Binding ConnectionStatus}"
+							IsVisible="{Binding ConnectionStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+				</StackPanel>
+			</DockPanel>
+		</Border>
+		<Grid>
+			<StackPanel HorizontalAlignment="Center"
+					MaxWidth="520"
+					IsVisible="{Binding !IsConnected}">
+				<Image Source="/Assets/Cornerstone.RemoteLink.png"
+						Margin="0,20,0,0"
+						Height="200" Width="200" />
+				<TextBlock Classes="Header Dim"
+						TextWrapping="Wrap"
+						Margin="0,20,0,0"
+						TextAlignment="Center"
+						Text="not connected" />
+				<Expander Header="Show setup instructions"
+						Margin="0,16,0,20"
+						HorizontalAlignment="Stretch">
+					<StackPanel Spacing="8"
+							Margin="4,8,4,4">
+						<TextBlock Classes="Dim"
+								TextWrapping="Wrap"
+								Text="This client uses classic VNC password authentication (RFB type 2). Apple login (types 30–36) is not supported." />
+						<TextBlock TextWrapping="Wrap"
+								Text="macOS Screen Sharing" />
+						<TextBlock Classes="Dim"
+								TextWrapping="Wrap"
+								Text="1. System Settings → General → Sharing → Screen Sharing: turn it on." />
+						<TextBlock Classes="Dim"
+								TextWrapping="Wrap"
+								Text="2. Open Information next to Screen Sharing." />
+						<TextBlock Classes="Dim"
+								TextWrapping="Wrap"
+								Text="3. Enable “VNC viewers may control screen with password” and set a password." />
+						<TextBlock Classes="Dim"
+								TextWrapping="Wrap"
+								Text="4. Connect with the Mac’s host name or IP, port 5900, and that VNC password — not your macOS user password." />
+						<TextBlock Classes="Dim"
+								TextWrapping="Wrap"
+								Text="If that checkbox is missing or greyed out, MDM may have disabled legacy VNC. Use Screen Sharing.app from another Mac, or ask IT for an exception." />
+					</StackPanel>
+				</Expander>
+			</StackPanel>
+			<controls:VncView Connection="{Binding RfbConnection}"
+					AutoResizeRemote="False"
+					HorizontalAlignment="Stretch"
+					VerticalAlignment="Stretch"
+					DefaultFocus.IsTarget="True" />
+		</Grid>
+	</DockPanel>
+</UserControl>

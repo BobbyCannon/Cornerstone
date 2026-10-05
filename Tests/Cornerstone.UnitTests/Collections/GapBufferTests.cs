@@ -111,6 +111,16 @@ public class GapBufferTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void IndexOf()
+	{
+		//                              0  1  2  3  4  5
+		var actual = new GapBuffer<int>(1, 2, 3, 4, 5, 6);
+		AreEqual(1, actual.IndexOf(2));
+		AreEqual(1, actual.IndexOf(2, 1));
+		AreEqual(-1, actual.IndexOf(2, 2));
+	}
+
+	[TestMethod]
 	public void IndexerAndCountAfterGapMovements()
 	{
 		var buffer = new GapBuffer<string>(4);
@@ -149,16 +159,6 @@ public class GapBufferTests : CornerstoneUnitTest
 		AreEqual("X", buffer[2]);
 		AreEqual("c", buffer[3]);
 		AreEqual("E", buffer[5]);
-	}
-
-	[TestMethod]
-	public void IndexOf()
-	{
-		//                              0  1  2  3  4  5
-		var actual = new GapBuffer<int>(1, 2, 3, 4, 5, 6);
-		AreEqual(1, actual.IndexOf(2));
-		AreEqual(1, actual.IndexOf(2, 1));
-		AreEqual(-1, actual.IndexOf(2, 2));
 	}
 
 	[TestMethod]
@@ -279,7 +279,7 @@ public class GapBufferTests : CornerstoneUnitTest
 	{
 		var buffer = new GapBuffer<char>(32);
 		buffer.Add("base".ToCharArray());
-		
+
 		for (var i = 0; i < 500; i++)
 		{
 			buffer.Insert(2, (char) ('a' + (i % 26)));
@@ -296,11 +296,11 @@ public class GapBufferTests : CornerstoneUnitTest
 		var actual = new GapBuffer<int>();
 		actual.Add([1, 2, 3, 4, 5, 6], 2, 3);
 		AreEqual("Cornerstone.Collections.GapBuffer`1[System.Int32]", actual.ToString());
-		
+
 		var actual2 = new GapBuffer<char>();
 		actual2.Add("hello world");
 		AreEqual("hello world", actual2.ToString());
-		
+
 		var actual3 = new GapBuffer<char>();
 		AreEqual(string.Empty, actual3.ToString());
 	}

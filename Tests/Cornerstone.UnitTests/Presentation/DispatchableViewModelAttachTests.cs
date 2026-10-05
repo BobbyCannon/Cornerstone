@@ -14,6 +14,27 @@ public class DispatchableViewModelAttachTests : CornerstoneUnitTest
 	#region Methods
 
 	[TestMethod]
+	public void ApplyModelChangesFlowsToDirectChildrenOnly()
+	{
+		var parent = new HostViewModel();
+		var child = new HostViewModel();
+		var grand = new HostViewModel();
+		parent.AddChild(child);
+		child.AddChild(grand);
+
+		var pending = new DispatchPending();
+		grand.RegisterPending(pending);
+		pending.MarkPending();
+
+		parent.Attach(new object());
+		IsTrue(parent.HasModelChanges()); // via child → grand
+
+		parent.ApplyModelChanges();
+		IsFalse(pending.HasPending);
+		IsFalse(grand.HasModelChanges());
+	}
+
+	[TestMethod]
 	public void AttachIsIdempotentPerOwner()
 	{
 		var vm = new HostViewModel();
@@ -131,27 +152,6 @@ public class DispatchableViewModelAttachTests : CornerstoneUnitTest
 
 		parent.RemoveChild(child);
 		IsFalse(child.IsAttached);
-	}
-
-	[TestMethod]
-	public void ApplyModelChangesFlowsToDirectChildrenOnly()
-	{
-		var parent = new HostViewModel();
-		var child = new HostViewModel();
-		var grand = new HostViewModel();
-		parent.AddChild(child);
-		child.AddChild(grand);
-
-		var pending = new DispatchPending();
-		grand.RegisterPending(pending);
-		pending.MarkPending();
-
-		parent.Attach(new object());
-		IsTrue(parent.HasModelChanges()); // via child → grand
-
-		parent.ApplyModelChanges();
-		IsFalse(pending.HasPending);
-		IsFalse(grand.HasModelChanges());
 	}
 
 	#endregion

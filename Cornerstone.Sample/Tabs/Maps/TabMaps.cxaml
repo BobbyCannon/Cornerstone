@@ -1,0 +1,50 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs.Maps"
+		mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="800"
+		x:Class="Cornerstone.Sample.Tabs.Maps.TabMaps"
+		x:DataType="tabs:TabMaps"
+		x:Name="This">
+	<ScrollViewer HorizontalScrollBarVisibility="Disabled">
+			<WrapPanel Margin="16,12,16,20"
+					ItemSpacing="12"
+					LineSpacing="12"
+					ItemWidth="340"
+					ItemsAlignment="Stretch">
+				<WrapPanel.Styles>
+					<Style Selector="TextBlock">
+						<Setter Property="TextWrapping" Value="Wrap" />
+					</Style>
+				</WrapPanel.Styles>
+				<Button Classes="ControlCard" Click="OpenMapsui">
+					<Border Classes="FeatureCard">
+						<Grid ColumnDefinitions="Auto,*">
+							<Border Classes="IconBadge Blue">
+								<Path Data="{StaticResource Icons.Map.Marked}" />
+							</Border>
+							<StackPanel Grid.Column="1">
+								<TextBlock Text="Mapsui" />
+								<TextBlock Text="Skia OpenStreetMap tiles. Pan and zoom." />
+							</StackPanel>
+						</Grid>
+					</Border>
+				</Button>
+				<Button Classes="ControlCard" Click="OpenEsri">
+					<Border Classes="FeatureCard">
+						<Grid ColumnDefinitions="Auto,*">
+							<Border Classes="IconBadge Teal">
+								<Path Data="{StaticResource Icons.Location}" />
+							</Border>
+							<StackPanel Grid.Column="1">
+								<TextBlock Text="Esri" />
+								<TextBlock Text="{Binding EsriDescription}" />
+							</StackPanel>
+						</Grid>
+					</Border>
+				</Button>
+			</WrapPanel>
+	</ScrollViewer>
+</UserControl>

@@ -6,10 +6,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using Cornerstone.Collections;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Logging;
-using Cornerstone.Presentation;
 using Cornerstone.Profiling;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
@@ -23,8 +23,10 @@ namespace Cornerstone.Sync;
 /// The object to track a sync session.
 /// </summary>
 [SourceReflection]
+[Notifiable(["*"])]
+[Updateable(UpdateableAction.All, ["*"])]
 [DependencyInjected]
-public partial class SyncSession : CornerstoneObject<SyncSession>
+public partial class SyncSession : CornerstoneObject<SyncSession>, ISyncSessionStatus
 {
 	#region Fields
 
@@ -69,7 +71,7 @@ public partial class SyncSession : CornerstoneObject<SyncSession>
 		StatisticsForServer = new SyncStatistics();
 		SyncClientProfilerForClient = new Profiler("Client");
 		SyncClientProfilerForServer = new Profiler("Server");
-		SyncIssues = new PresentationList<SyncIssue>();
+		SyncIssues = new SpeedyList<SyncIssue>(isLongLivedBuffer: true);
 
 		Reset(syncType);
 		SessionId = sessionId;
@@ -93,21 +95,16 @@ public partial class SyncSession : CornerstoneObject<SyncSession>
 	/// <summary>
 	/// The percent of processing. This is based on the sync session <see cref="State" />.
 	/// </summary>
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial decimal Percent { get; private set; }
 
 	/// <summary>
 	/// Gets the ID of the sync session.
 	/// </summary>
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial Guid SessionId { get; private set; }
 
 	/// <summary>
 	/// The sync options.
 	/// </summary>
-	[UpdateableAction(UpdateableAction.All)]
 	public SyncSettings Settings { get; }
 
 	/// <summary>
@@ -118,44 +115,34 @@ public partial class SyncSession : CornerstoneObject<SyncSession>
 	/// <summary>
 	/// Gets the value to determine when to trigger <seealso cref="ShowProgress" />. Defaults to one second.
 	/// </summary>
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial TimeSpan ShowProgressThreshold { get; set; }
 
 	/// <summary>
 	/// The date time the sync started on.
 	/// </summary>
-	[Notify]
 	[AlsoNotify(nameof(Elapsed), nameof(SyncStarted), nameof(SyncRunning))]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial DateTime StartedOn { get; private set; }
 
 	/// <summary>
 	/// The state of the sync session.
 	/// </summary>
-	[Notify]
 	[AlsoNotify(nameof(SyncCancelled), nameof(SyncCompleted), nameof(SyncRunning), nameof(SyncSuccessful))]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial SyncSessionState State { get; private set; }
 
 	/// <summary>
 	/// Statistics for client
 	/// </summary>
-	[UpdateableAction(UpdateableAction.All)]
 	public SyncStatistics StatisticsForClient { get; }
 
 	/// <summary>
 	/// Statistics for server
 	/// </summary>
-	[UpdateableAction(UpdateableAction.All)]
 	public SyncStatistics StatisticsForServer { get; }
 
 	/// <summary>
 	/// The date time the sync stopped on.
 	/// </summary>
-	[Notify]
 	[AlsoNotify(nameof(Elapsed), nameof(SyncCompleted), nameof(SyncRunning))]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial DateTime StoppedOn { get; private set; }
 
 	/// <summary>
@@ -186,8 +173,7 @@ public partial class SyncSession : CornerstoneObject<SyncSession>
 	/// <summary>
 	/// Gets the list of issues that occurred during the last sync.
 	/// </summary>
-	[UpdateableAction(UpdateableAction.All)]
-	public PresentationList<SyncIssue> SyncIssues { get; }
+	public SpeedyList<SyncIssue> SyncIssues { get; }
 
 	/// <summary>
 	/// Gets a value indicating if the sync session is running.
@@ -280,14 +266,19 @@ public partial class SyncSession : CornerstoneObject<SyncSession>
 		Action<SyncSession> onSyncConfiguring,
 		Action<SyncSession> onSyncCompleted)
 	{
+		SyncClient client = null;
+		SyncClient server = null;
+		SyncSessionStart serverSession = null, clientSession = null;
+		SyncOperationResult serverResult = null;
+
 		try
 		{
 			UpdatePercent(0, 0);
 			UpdateState(SyncSessionState.Configuring);
 			updateSettings?.Invoke(Settings);
 
-			var client = syncManager.GetSyncClientForClient(StatisticsForClient, SyncClientProfilerForClient);
-			var server = syncManager.GetSyncClientForServer(StatisticsForServer, SyncClientProfilerForServer);
+			client = syncManager.GetSyncClientForClient(StatisticsForClient, SyncClientProfilerForClient);
+			server = syncManager.GetSyncClientForServer(StatisticsForServer, SyncClientProfilerForServer);
 			if ((client == null) || (server == null))
 			{
 				throw new CornerstoneException("Sync client for client or server is null.");
@@ -295,54 +286,65 @@ public partial class SyncSession : CornerstoneObject<SyncSession>
 
 			onSyncConfiguring?.Invoke(this);
 			UpdateState(SyncSessionState.Configured);
-			SyncSessionStart serverSession = null, clientSession = null;
-
-			if (!SyncCancelled)
-			{
-				UpdateState(SyncSessionState.Beginning);
-				serverSession = server.BeginSync(SessionId, Settings);
-				clientSession = client.BeginSync(SessionId, Settings);
-			}
 
 			var incoming = new Dictionary<Guid, DateTime>();
 
-			if (!SyncCancelled
-				&& Settings.SyncDirection.HasFlag(SyncDirection.PullDown)
-				&& (serverSession != null))
+			// Pull-only will not push, even when the client database has rows.
+			// Pull-then-push recounts after BeginSync. Zero outgoing rows ends the pull on the last page.
+			var clientHasNoChanges = !Settings.SyncDirection.HasFlag(SyncDirection.PushUp);
+
+			while (!SyncCancelled)
 			{
-				UpdateState(SyncSessionState.Pulling);
-				Process(server, client, Settings.LastSyncedOnServer, serverSession.StartedOn, incoming);
+				var next = NextSyncState(clientHasNoChanges, serverResult);
+				if (next == SyncSessionState.Ending)
+				{
+					break;
+				}
+
+				UpdateState(next);
+				switch (next)
+				{
+					case SyncSessionState.Beginning:
+					{
+						using (SyncClientProfilerForClient.Start("Begin"))
+						{
+							clientSession = client.BeginSync(SessionId, Settings);
+						}
+
+						// Hosts register the allow-list in SetSyncSettings during BeginSync.
+						// An empty set must not pull, push, or count as a successful sync.
+						if (!Settings.HasFilters)
+						{
+							OnLogEvent($"Sync {SyncType} requires at least one repository filter.", LogLevel.Debug);
+							SyncIssues.Add(new SyncIssue
+							{
+								Id = Guid.Empty,
+								IssueType = SyncIssueType.RepositoryFiltered,
+								Message = "Sync requires at least one repository filter.",
+								TypeName = string.Empty
+							});
+							break;
+						}
+
+						if (Settings.SyncDirection.HasFlag(SyncDirection.PushUp))
+						{
+							clientHasNoChanges = ClientHasNoOutgoingChanges(client, clientSession);
+						}
+
+						break;
+					}
+					case SyncSessionState.Pulling:
+					{
+						serverResult = PullFromServer(client, server, incoming, clientHasNoChanges, ref serverSession);
+						break;
+					}
+					case SyncSessionState.Pushing:
+					{
+						serverResult = PushToServer(client, server, clientSession, incoming, ref serverSession) ?? serverResult;
+						break;
+					}
+				}
 			}
-
-			if (!SyncCancelled
-				&& Settings.SyncDirection.HasFlag(SyncDirection.PushUp)
-				&& (clientSession != null))
-			{
-				UpdateState(SyncSessionState.Pushing);
-				Process(client, server, Settings.LastSyncedOnClient, clientSession.StartedOn, incoming);
-			}
-
-			UpdateState(SyncSessionState.Ending);
-
-			client.EndSync(SessionId);
-			server.EndSync(SessionId);
-
-			if (clientSession != null)
-			{
-				Settings.LastSyncedOnClient = clientSession.StartedOn;
-			}
-
-			if (serverSession != null)
-			{
-				Settings.LastSyncedOnServer = serverSession.StartedOn;
-			}
-
-			if (!SyncCancelled && !SyncIssues.Any())
-			{
-				UpdateState(SyncSessionState.Successful);
-			}
-
-			UpdatePercent(100, 100);
 		}
 		catch (Exception ex)
 		{
@@ -350,6 +352,44 @@ public partial class SyncSession : CornerstoneObject<SyncSession>
 		}
 		finally
 		{
+			try
+			{
+				if ((clientSession != null) || (serverSession != null))
+				{
+					using (SyncClientProfilerForClient.Start("End"))
+					{
+						UpdateState(SyncSessionState.Ending);
+
+						if (clientSession != null)
+						{
+							client.EndSync(SessionId);
+							Settings.LastSyncedOnClient = clientSession.StartedOn;
+						}
+
+						if ((serverSession != null) && (serverResult?.SessionEnded != true))
+						{
+							EndServerSession(server);
+						}
+
+						if (serverSession != null)
+						{
+							Settings.LastSyncedOnServer = serverSession.StartedOn;
+						}
+					}
+				}
+
+				if (!SyncCancelled && !SyncIssues.Any())
+				{
+					UpdateState(SyncSessionState.Successful);
+				}
+
+				UpdatePercent(100, 100);
+			}
+			catch (Exception ex)
+			{
+				HandleException(ex);
+			}
+
 			// This must be the last state that must change
 			StoppedOn = CurrentTime;
 
@@ -383,6 +423,8 @@ public partial class SyncSession : CornerstoneObject<SyncSession>
 		onSyncCompleted.Invoke(this);
 
 		UpdateState(SyncSessionState.Completed);
+		NotifyComputedPropertyChanged(nameof(StatisticsForClient));
+		NotifyComputedPropertyChanged(nameof(StatisticsForServer));
 
 		return response;
 	}
@@ -414,9 +456,92 @@ public partial class SyncSession : CornerstoneObject<SyncSession>
 		LogVerboseState(flag);
 	}
 
+	/// <summary>
+	/// Apply incoming objects to the local client, skipping ids already applied this session.
+	/// </summary>
+	private void ApplyIncoming(SyncClient destinationClient, IList<SyncObject> incoming, IDictionary<Guid, DateTime> exclude)
+	{
+		var excludedIds = new HashSet<Guid>(exclude.Keys);
+		var filtered = incoming
+			.Where(x => !excludedIds.Contains(x.SyncId)
+				|| (exclude[x.SyncId] != x.ModifiedOn))
+			.ToList();
+
+		if (filtered.Count == 0)
+		{
+			return;
+		}
+
+		var request = new SyncRequest(filtered);
+		var failed = destinationClient.ApplyChanges(SessionId, request).Collection;
+		SyncIssues.AddRange(failed);
+
+		if (failed.Count >= filtered.Count)
+		{
+			return;
+		}
+
+		var failedIds = failed.Select(i => i.Id).ToHashSet();
+		foreach (var x in filtered)
+		{
+			if (failedIds.Contains(x.SyncId))
+			{
+				continue;
+			}
+
+			exclude[x.SyncId] = x.ModifiedOn;
+		}
+	}
+
+	private void ApplyServerResult(
+		SyncClient client,
+		SyncOperationResult result,
+		IDictionary<Guid, DateTime> incoming,
+		ref SyncSessionStart serverSession)
+	{
+		serverSession = result.SessionStart ?? serverSession;
+		if (result.Statistics != null)
+		{
+			StatisticsForServer.UpdateWith(result.Statistics);
+		}
+
+		if (result.AppliedIssues?.Collection?.Count > 0)
+		{
+			SyncIssues.AddRange(result.AppliedIssues.Collection);
+		}
+
+		if (result.Changes?.Collection?.Count > 0)
+		{
+			ApplyIncoming(client, result.Changes.Collection, incoming);
+		}
+
+		if (result.Corrections?.Collection?.Count > 0)
+		{
+			ApplyIncoming(client, result.Corrections.Collection, incoming);
+		}
+	}
+
 	private void ClearState(SyncSessionState flag)
 	{
 		State = State.ClearFlag(flag);
+	}
+
+	/// <summary>
+	/// End the server session without requesting changes.
+	/// </summary>
+	private void EndServerSession(SyncClient server)
+	{
+		var endResult = server.Sync(new SyncOperation
+		{
+			SessionId = SessionId,
+			Settings = Settings,
+			EndSession = true
+		});
+
+		if (endResult.Statistics != null)
+		{
+			StatisticsForServer.UpdateWith(endResult.Statistics);
+		}
 	}
 
 	private void HandleException(Exception exception)
@@ -451,7 +576,7 @@ public partial class SyncSession : CornerstoneObject<SyncSession>
 						{
 							Id = Guid.Empty,
 							IssueType = SyncIssueType.ServiceUnavailable,
-							Message = "Unauthorized: please update your credentials in settings or contact support.",
+							Message = "Service unavailable. Please try again later.",
 							TypeName = string.Empty
 						});
 						break;
@@ -562,89 +687,220 @@ public partial class SyncSession : CornerstoneObject<SyncSession>
 		_logger?.Write(level, SessionId, message, CurrentTime);
 	}
 
-	/// <summary>
-	/// Get changes from one client and apply them to another client.
-	/// </summary>
-	/// <param name="sourceClient"> The source to get changes from. </param>
-	/// <param name="destinationClient"> The destination to apply changes to. </param>
-	/// <param name="since"> The start date and time to get changes for. </param>
-	/// <param name="until"> The end date and time to get changes for. </param>
-	/// <param name="exclude"> The optional collection of items to exclude. </param>
-	private void Process(SyncClient sourceClient, SyncClient destinationClient, DateTime since, DateTime until, IDictionary<Guid, DateTime> exclude)
+	private SyncOperationResult ProcessCorrections(SyncClient server, SyncClient client, IDictionary<Guid, DateTime> incoming)
 	{
-		var issues = new ServiceRequest<SyncIssue>();
-		var request = new SyncRequest { Since = since, Until = until };
-		bool hasMore;
-
-		var excludedIds = new HashSet<Guid>(exclude.Keys);
-
-		do
+		var issuesToProcess = new ServiceRequest<SyncIssue>
 		{
-			var changes = sourceClient.GetChanges(SessionId, request);
-			request.Skip += changes.Collection.Count;
-			hasMore = changes.HasMore;
+			Collection = SyncIssues.Take(Settings.ItemsPerSyncRequest).ToList()
+		};
+		var correctionResult = server.Sync(new SyncOperation
+		{
+			SessionId = SessionId,
+			Settings = Settings,
+			Issues = issuesToProcess
+		});
+		if (correctionResult.Statistics != null)
+		{
+			StatisticsForServer.UpdateWith(correctionResult.Statistics);
+		}
 
-			var filtered = changes.Collection
-				.Where(x => !excludedIds.Contains(x.SyncId)
-					|| (exclude[x.SyncId] != x.ModifiedOn))
-				.ToList();
+		if (correctionResult.Corrections?.Collection?.Count > 0)
+		{
+			RemoveIssues(SyncIssues, correctionResult.Corrections.Collection);
+			ApplyIncoming(client, correctionResult.Corrections.Collection, incoming);
+		}
 
-			if (filtered.Count == 0)
+		if (correctionResult.AppliedIssues?.Collection?.Count > 0)
+		{
+			SyncIssues.AddRange(correctionResult.AppliedIssues.Collection);
+		}
+
+		var localCorrections = client.GetCorrections(SessionId, issuesToProcess);
+		if (localCorrections?.Collection?.Count > 0)
+		{
+			RemoveIssues(SyncIssues, localCorrections.Collection);
+			var applied = server.Sync(new SyncOperation
 			{
-				continue;
+				SessionId = SessionId,
+				Settings = Settings,
+				Issues = issuesToProcess,
+				Changes = new ServiceRequest<SyncObject>(localCorrections.Collection)
+			});
+			if (applied.AppliedIssues?.Collection?.Count > 0)
+			{
+				SyncIssues.AddRange(applied.AppliedIssues.Collection);
 			}
 
-			request.Collection = filtered;
-			var failed = destinationClient.ApplyChanges(SessionId, request).Collection;
-			issues.Collection.AddRange(failed);
+			return applied;
+		}
 
-			// Everything NOT in failed succeeded → mark as synced
-			if (failed.Count < filtered.Count)
+		return correctionResult;
+	}
+
+	/// <summary>
+	/// The next phase this session has not run. Ending means the work loop is finished.
+	/// </summary>
+	private SyncSessionState NextSyncState(bool clientHasNoChanges, SyncOperationResult serverResult)
+	{
+		if (!Settings.HasFilters && State.HasFlag(SyncSessionState.Beginning))
+		{
+			return SyncSessionState.Ending;
+		}
+
+		if (!State.HasFlag(SyncSessionState.Beginning))
+		{
+			return SyncSessionState.Beginning;
+		}
+
+		if (Settings.SyncDirection.HasFlag(SyncDirection.PullDown) && !State.HasFlag(SyncSessionState.Pulling))
+		{
+			return SyncSessionState.Pulling;
+		}
+
+		if (Settings.SyncDirection.HasFlag(SyncDirection.PushUp)
+			&& !clientHasNoChanges
+			&& (serverResult?.SessionEnded != true)
+			&& !State.HasFlag(SyncSessionState.Pushing))
+		{
+			return SyncSessionState.Pushing;
+		}
+
+		return SyncSessionState.Ending;
+	}
+
+	/// <summary>
+	/// True when the local client has nothing to push for this session window.
+	/// </summary>
+	private bool ClientHasNoOutgoingChanges(SyncClient client, SyncSessionStart clientSession)
+	{
+		if (client is not SyncClientForDatabase databaseClient)
+		{
+			return false;
+		}
+
+		var count = databaseClient.CountOutgoingChanges(SessionId, new SyncRequest
+		{
+			Since = Settings.LastSyncedOnClient,
+			Until = clientSession.StartedOn
+		});
+		return count == 0;
+	}
+
+	/// <summary>
+	/// Pull server pages and apply them locally before the client looks for its own changes.
+	/// A row applied here is not pushed back. A newer client row is left in place and can still be pushed.
+	/// The first call begins the server session. The last page ends it when the client will not push,
+	/// including pull-only. That end is inside the pull call. There is no later end-only call.
+	/// </summary>
+	private SyncOperationResult PullFromServer(
+		SyncClient client,
+		SyncClient server,
+		IDictionary<Guid, DateTime> incoming,
+		bool clientHasNoChanges,
+		ref SyncSessionStart serverSession)
+	{
+		using (SyncClientProfilerForClient.Start("Pull"))
+		{
+			var serverSkip = 0;
+			var serverProcessed = 0;
+			SyncOperationResult result = null;
+
+			while (!SyncCancelled)
 			{
-				var failedIds = failed.Select(i => i.Id).ToHashSet();
-				foreach (var x in filtered)
+				result = server.Sync(new SyncOperation
 				{
-					if (failedIds.Contains(x.SyncId))
-					{
-						continue;
-					}
+					SessionId = SessionId,
+					Settings = Settings,
+					GetChangesSkip = serverSkip,
+					ClientHasNoChanges = clientHasNoChanges
+				});
+				ApplyServerResult(client, result, incoming, ref serverSession);
+				if (result.Changes?.Collection?.Count > 0)
+				{
+					serverSkip += result.Changes.Collection.Count;
+					serverProcessed += result.Changes.Collection.Count;
+					UpdatePercent(
+						serverProcessed + (result.Changes.HasMore ? 1 : 0),
+						serverProcessed);
+				}
 
-					excludedIds.Add(x.SyncId);
-					exclude[x.SyncId] = x.ModifiedOn;
+				if (result.SessionEnded || result.Changes is not { HasMore: true })
+				{
+					break;
 				}
 			}
 
-			UpdatePercent(changes.TotalCount, request.Skip);
-		} while (!SyncCancelled && hasMore);
+			if (!SyncCancelled && SyncIssues.Any() && (serverSession != null) && (result?.SessionEnded == false))
+			{
+				result = ProcessCorrections(server, client, incoming) ?? result;
+			}
 
-		SyncIssues.AddRange(issues.Collection);
-
-		if (SyncCancelled || !issues.Collection.Any())
-		{
-			return;
+			return result;
 		}
+	}
 
-		var issuesToProcess = new ServiceRequest<SyncIssue>
+	/// <summary>
+	/// Push local pages that were not just applied from the server.
+	/// A short page ends the server session on that call. A full page does not, because the next
+	/// local page might exist. When that next page is empty, this loop does not query the server.
+	/// The session then makes one end-only call.
+	/// The local request sets Take to the page size. SyncRequest defaults Take to 1000, and
+	/// GetChanges keeps a positive Take that does not exceed that page size, so a larger page
+	/// would otherwise look short and end the session before the remaining rows are sent.
+	/// </summary>
+	private SyncOperationResult PushToServer(
+		SyncClient client,
+		SyncClient server,
+		SyncSessionStart clientSession,
+		IDictionary<Guid, DateTime> incoming,
+		ref SyncSessionStart serverSession)
+	{
+		using (SyncClientProfilerForClient.Start("Push"))
 		{
-			Collection = issues.Collection.Take(Settings.ItemsPerSyncRequest).ToList()
-		};
+			var clientSkip = 0;
+			SyncOperationResult result = null;
+			while (!SyncCancelled && (result?.SessionEnded != true))
+			{
+				var localRequest = new SyncRequest
+				{
+					Since = Settings.LastSyncedOnClient,
+					Until = clientSession.StartedOn,
+					Skip = clientSkip,
+					Take = Settings.ItemsPerSyncRequest
+				};
+				var page = client.GetChanges(SessionId, localRequest);
+				var pageCount = page.Collection?.Count ?? 0;
+				clientSkip += pageCount;
 
-		var results = sourceClient.GetCorrections(SessionId, issuesToProcess);
+				var outgoing = page.Collection
+					.Where(x => !incoming.ContainsKey(x.SyncId) || (incoming[x.SyncId] != x.ModifiedOn))
+					.ToList();
 
-		if ((results != null) && results.Collection.Any())
-		{
-			RemoveIssues(SyncIssues, results.Collection);
-			request.Collection = results.Collection;
-			SyncIssues.AddRange(destinationClient.ApplyCorrections(SessionId, request).Collection);
-		}
+				if (outgoing.Count > 0)
+				{
+					var lastPage = pageCount < Settings.ItemsPerSyncRequest;
+					result = server.Sync(new SyncOperation
+					{
+						SessionId = SessionId,
+						Settings = Settings,
+						Changes = new ServiceRequest<SyncObject>(outgoing),
+						EndSession = lastPage && !SyncIssues.Any()
+					});
+					ApplyServerResult(client, result, incoming, ref serverSession);
+				}
 
-		results = destinationClient.GetCorrections(SessionId, issuesToProcess);
+				if ((result?.SessionEnded == true) || (pageCount < Settings.ItemsPerSyncRequest))
+				{
+					break;
+				}
+			}
 
-		if ((results != null) && results.Collection.Any())
-		{
-			RemoveIssues(SyncIssues, results.Collection);
-			request.Collection = results.Collection;
-			SyncIssues.AddRange(sourceClient.ApplyCorrections(SessionId, request).Collection);
+			if (!SyncCancelled && SyncIssues.Any() && (serverSession != null) && (result?.SessionEnded != true))
+			{
+				result = ProcessCorrections(server, client, incoming) ?? result;
+			}
+
+			return result;
 		}
 	}
 
@@ -662,6 +918,8 @@ public partial class SyncSession : CornerstoneObject<SyncSession>
 		StartedOn = DateTime.MinValue;
 		StoppedOn = DateTime.MinValue;
 		SyncIssues.Clear();
+		StatisticsForClient.Reset();
+		StatisticsForServer.Reset();
 		Settings.Reset();
 		Settings.SyncType = syncType;
 	}

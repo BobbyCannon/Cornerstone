@@ -1,4 +1,10 @@
 ﻿<Project>
-	<Import Project="$(MSBuildThisFileDirectory)..\Cornerstone\Build\Release.Platform.props"
+	<Import Project="$(MSBuildThisFileDirectory)Build\Common.Android.props"
+			Condition="$(TargetFramework.Contains('android')) or $(RuntimeIdentifier.Contains('android'))" />
+	<Import Project="$(MSBuildThisFileDirectory)Build\Release.Platform.props"
 			Condition="'$(Configuration)' == 'Release'" />
+	<PropertyGroup Condition="'$(DocumentationSingleFilePublish)' == 'true'">
+		<TargetFrameworks>net10.0</TargetFrameworks>
+		<TargetFramework>net10.0</TargetFramework>
+	</PropertyGroup>
 </Project>

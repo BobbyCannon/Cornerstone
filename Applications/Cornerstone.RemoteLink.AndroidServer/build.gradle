@@ -1,0 +1,30 @@
+plugins {
+	id "java"
+}
+
+group = "cornerstone.remotelink"
+version = "0.1.0"
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_17
+	targetCompatibility = JavaVersion.VERSION_17
+}
+
+tasks.named("jar", Jar) {
+	archiveBaseName.set("remotelink-server")
+	archiveVersion.set("")
+	manifest {
+		attributes(
+			"Main-Class": "cornerstone.remotelink.server.RemoteLinkServer",
+			"Implementation-Title": "Cornerstone RemoteLink Android server",
+			"Implementation-Version": version
+		)
+	}
+}
+
+tasks.register("runVersion", JavaExec) {
+	group = "application"
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = "cornerstone.remotelink.server.RemoteLinkServer"
+	args "--version"
+}

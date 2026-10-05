@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net10.0</TargetFrameworks>
+		<SignAssembly>true</SignAssembly>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<NoWarn>$(NoWarn);IL2046;IL2092;</NoWarn>
+		<DefineConstants>$(DefineConstants);DATAGRID_INTERNAL</DefineConstants>
+	</PropertyGroup>
+	<ItemGroup>
+		<CornerstoneXaml Include="**\*.cxaml" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
+	</ItemGroup>
+	<Import Project="..\Build\Presentation.props" />
+</Project>

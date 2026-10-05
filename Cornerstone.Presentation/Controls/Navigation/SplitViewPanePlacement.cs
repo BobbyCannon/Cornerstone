@@ -1,0 +1,30 @@
+﻿using Cornerstone.Presentation.Controls;
+
+namespace Cornerstone.Presentation.Controls.Navigation
+{
+    /// <summary>
+    /// Defines constants for where the Pane should appear
+    /// </summary>
+    public enum SplitViewPanePlacement
+    {
+        /// <summary>
+        /// The pane is shown to the left of content.
+        /// </summary>
+        Left,
+
+        /// <summary>
+        /// The pane is shown to the right of content.
+        /// </summary>
+        Right,
+
+        /// <summary>
+        /// The pane is shown above the content.
+        /// </summary>
+        Top,
+
+        /// <summary>
+        /// The pane is shown below the content.
+        /// </summary>
+        Bottom
+    }
+}

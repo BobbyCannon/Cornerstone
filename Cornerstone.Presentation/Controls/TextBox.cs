@@ -1,0 +1,2810 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using Cornerstone.Presentation.Automation.Peers;
+using Cornerstone.Presentation.Controls.Metadata;
+using Cornerstone.Presentation.Controls.Platform;
+using Cornerstone.Presentation.Controls.Presenters;
+using Cornerstone.Presentation.Controls.Primitives;
+using Cornerstone.Presentation.Controls.Utils;
+using Cornerstone.Presentation.Data;
+using Cornerstone.Presentation.Input;
+using Cornerstone.Presentation.Input.Platform;
+using Cornerstone.Presentation.Interactivity;
+using Cornerstone.Presentation.Layout;
+using Cornerstone.Presentation.Logging;
+using Cornerstone.Presentation.Media;
+using Cornerstone.Presentation.Media.TextFormatting;
+using Cornerstone.Presentation.Media.TextFormatting.Unicode;
+using Cornerstone.Presentation.Metadata;
+using Cornerstone.Presentation.Platform;
+using Cornerstone.Presentation.Reactive;
+using Cornerstone.Presentation.Threading;
+using Cornerstone.Presentation.Utilities;
+using Cornerstone.Presentation.Controls.Feedback;
+using Cornerstone.Presentation.Controls.Scrolling;
+using Cornerstone.Presentation.Controls.Documents;
+using Cornerstone.Presentation.Controls.Text;
+using Cornerstone.Presentation.Controls.Elements;
+using Cornerstone.Presentation.Controls.Chrome;
+using Cornerstone.Presentation.Controls.Naming;
+using Cornerstone.Presentation.Controls.StyleClasses;
+using Cornerstone.Presentation.Controls.Input;
+
+namespace Cornerstone.Presentation.Controls
+{
+    /// <summary>
+    /// Represents a control that can be used to display or edit unformatted text.
+    /// </summary>
+    [TemplatePart("PART_TextPresenter", typeof(TextPresenter), IsRequired = true)]
+    [TemplatePart("PART_ScrollViewer", typeof(ScrollViewer))]
+    [PseudoClasses(":empty")]
+    [PseudoClasses(":touch-mode")]
+    public class TextBox : TemplatedControl, UndoRedoHelper<TextBox.UndoRedoState>.IUndoRedoHost
+    {
+        /// <summary>
+        /// The radius for touch input. Used to determine if selection should change from moving a touch pointer.
+        /// </summary>
+        private readonly Lazy<int> _touchRadius = new(() => (int)((PresentationLocator.Current?.GetService<IPlatformSettings>()?.GetTapSize(PointerType.Touch).Height ?? 10) / 2) + 5);
+
+        /// <summary>
+        /// Gets a platform-specific <see cref="KeyGesture"/> for the Cut action
+        /// </summary>
+        public static KeyGesture? CutGesture => Application.Current?.PlatformSettings?.HotkeyConfiguration.Cut.FirstOrDefault();
+
+        /// <summary>
+        /// Gets a platform-specific <see cref="KeyGesture"/> for the Copy action
+        /// </summary>
+        public static KeyGesture? CopyGesture => Application.Current?.PlatformSettings?.HotkeyConfiguration.Copy.FirstOrDefault();
+
+        /// <summary>
+        /// Gets a platform-specific <see cref="KeyGesture"/> for the Paste action
+        /// </summary>
+        public static KeyGesture? PasteGesture => Application.Current?.PlatformSettings?.HotkeyConfiguration.Paste.FirstOrDefault();
+
+        /// <summary>
+        /// Defines the <see cref="IsInactiveSelectionHighlightEnabled"/> property
+        /// </summary>
+        public static readonly StyledProperty<bool> IsInactiveSelectionHighlightEnabledProperty =
+            PresentationProperty.Register<TextBox, bool>(nameof(IsInactiveSelectionHighlightEnabled), defaultValue: true);
+
+        /// <summary>
+        /// Defines the <see cref="ClearSelectionOnLostFocus"/> property
+        /// </summary>
+        public static readonly StyledProperty<bool> ClearSelectionOnLostFocusProperty =
+            PresentationProperty.Register<TextBox, bool>(nameof(ClearSelectionOnLostFocus), defaultValue: true);
+
+        /// <summary>
+        /// Defines the <see cref="AcceptsReturn"/> property
+        /// </summary>
+        public static readonly StyledProperty<bool> AcceptsReturnProperty =
+            PresentationProperty.Register<TextBox, bool>(nameof(AcceptsReturn));
+
+        /// <summary>
+        /// Defines the <see cref="AcceptsTab"/> property
+        /// </summary>
+        public static readonly StyledProperty<bool> AcceptsTabProperty =
+            PresentationProperty.Register<TextBox, bool>(nameof(AcceptsTab));
+
+        /// <summary>
+        /// Defines the <see cref="CaretIndex"/> property
+        /// </summary>
+        public static readonly StyledProperty<int> CaretIndexProperty =
+            PresentationProperty.Register<TextBox, int>(nameof(CaretIndex),
+                coerce: CoerceCaretIndex);
+
+        /// <summary>
+        /// Defines the <see cref="IsReadOnly"/> property
+        /// </summary>
+        public static readonly StyledProperty<bool> IsReadOnlyProperty =
+            PresentationProperty.Register<TextBox, bool>(nameof(IsReadOnly));
+
+        /// <summary>
+        /// Defines the <see cref="PasswordChar"/> property
+        /// </summary>
+        public static readonly StyledProperty<char> PasswordCharProperty =
+            PresentationProperty.Register<TextBox, char>(nameof(PasswordChar));
+
+        /// <summary>
+        /// Defines the <see cref="SelectionBrush"/> property
+        /// </summary>
+        public static readonly StyledProperty<IBrush?> SelectionBrushProperty =
+            PresentationProperty.Register<TextBox, IBrush?>(nameof(SelectionBrush));
+
+        /// <summary>
+        /// Defines the <see cref="SelectionForegroundBrush"/> property
+        /// </summary>
+        public static readonly StyledProperty<IBrush?> SelectionForegroundBrushProperty =
+            PresentationProperty.Register<TextBox, IBrush?>(nameof(SelectionForegroundBrush));
+
+        /// <summary>
+        /// Defines the <see cref="CaretBrush"/> property
+        /// </summary>
+        public static readonly StyledProperty<IBrush?> CaretBrushProperty =
+            PresentationProperty.Register<TextBox, IBrush?>(nameof(CaretBrush));
+
+        /// <summary>
+        /// Defines the <see cref="CaretBlinkInterval"/> property
+        /// </summary>
+        public static readonly StyledProperty<TimeSpan> CaretBlinkIntervalProperty =
+            PresentationProperty.Register<TextBox, TimeSpan>(nameof(CaretBlinkInterval), defaultValue: TimeSpan.FromMilliseconds(500));
+
+        /// <summary>
+        /// Defines the <see cref="SelectionStart"/> property
+        /// </summary>
+        public static readonly StyledProperty<int> SelectionStartProperty =
+            PresentationProperty.Register<TextBox, int>(nameof(SelectionStart),
+                coerce: CoerceCaretIndex);
+
+        /// <summary>
+        /// Defines the <see cref="SelectionEnd"/> property
+        /// </summary>
+        public static readonly StyledProperty<int> SelectionEndProperty =
+            PresentationProperty.Register<TextBox, int>(nameof(SelectionEnd),
+                coerce: CoerceCaretIndex);
+
+        /// <summary>
+        /// Defines the <see cref="MaxLength"/> property
+        /// </summary>
+        public static readonly StyledProperty<int> MaxLengthProperty =
+            PresentationProperty.Register<TextBox, int>(nameof(MaxLength));
+
+        /// <summary>
+        /// Defines the <see cref="MaxLines"/> property
+        /// </summary>
+        public static readonly StyledProperty<int> MaxLinesProperty =
+            PresentationProperty.Register<TextBox, int>(nameof(MaxLines));
+
+        /// <summary>
+        /// Defines the <see cref="MinLines"/> property
+        /// </summary>
+        public static readonly StyledProperty<int> MinLinesProperty =
+            PresentationProperty.Register<TextBox, int>(nameof(MinLines));
+
+        /// <summary>
+        /// Defines the <see cref="Text"/> property
+        /// </summary>
+        public static readonly StyledProperty<string?> TextProperty =
+            TextBlock.TextProperty.AddOwner<TextBox>(new(
+                coerce: CoerceText,
+                defaultBindingMode: BindingMode.TwoWay,
+                enableDataValidation: true));
+
+        /// <summary>
+        /// Defines the <see cref="TextAlignment"/> property
+        /// </summary>
+        public static readonly StyledProperty<TextAlignment> TextAlignmentProperty =
+            TextBlock.TextAlignmentProperty.AddOwner<TextBox>();
+
+        /// <summary>
+        /// Defines the <see cref="HorizontalAlignment"/> property.
+        /// </summary>
+        public static readonly StyledProperty<HorizontalAlignment> HorizontalContentAlignmentProperty =
+            ContentControl.HorizontalContentAlignmentProperty.AddOwner<TextBox>();
+
+        /// <summary>
+        /// Defines the <see cref="VerticalAlignment"/> property.
+        /// </summary>
+        public static readonly StyledProperty<VerticalAlignment> VerticalContentAlignmentProperty =
+            ContentControl.VerticalContentAlignmentProperty.AddOwner<TextBox>();
+
+        public static readonly StyledProperty<TextWrapping> TextWrappingProperty =
+            TextBlock.TextWrappingProperty.AddOwner<TextBox>();
+
+        /// <summary>
+        /// Defines see <see cref="TextPresenter.LineHeight"/> property.
+        /// </summary>
+        public static readonly StyledProperty<double> LineHeightProperty =
+            TextBlock.LineHeightProperty.AddOwner<TextBox>(new(defaultValue: double.NaN));
+
+        /// <summary>
+        /// Defines the <see cref="PlaceholderText"/> property.
+        /// </summary>
+        public static readonly StyledProperty<string?> PlaceholderTextProperty =
+            PresentationProperty.Register<TextBox, string?>(nameof(PlaceholderText));
+
+        /// <summary>
+        /// Defines the <see cref="Watermark"/> property.
+        /// </summary>
+        [Obsolete("Use PlaceholderTextProperty instead.", false)]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("PresentationProperty", "AVP1022",
+            Justification = "Obsolete property alias for backward compatibility.")]
+        public static readonly StyledProperty<string?> WatermarkProperty = PlaceholderTextProperty;
+
+        /// <summary>
+        /// Defines the <see cref="UseFloatingPlaceholder"/> property.
+        /// </summary>
+        public static readonly StyledProperty<bool> UseFloatingPlaceholderProperty =
+            PresentationProperty.Register<TextBox, bool>(nameof(UseFloatingPlaceholder));
+
+        /// <summary>
+        /// Defines the <see cref="UseFloatingWatermark"/> property.
+        /// </summary>
+        [Obsolete("Use UseFloatingPlaceholderProperty instead.", false)]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("PresentationProperty", "AVP1022",
+            Justification = "Obsolete property alias for backward compatibility.")]
+        public static readonly StyledProperty<bool> UseFloatingWatermarkProperty = UseFloatingPlaceholderProperty;
+
+        /// <summary>
+        /// Defines the <see cref="PlaceholderForeground"/> property.
+        /// </summary>
+        public static readonly StyledProperty<IBrush?> PlaceholderForegroundProperty =
+            PresentationProperty.Register<TextBox, IBrush?>(nameof(PlaceholderForeground));
+
+        /// <summary>
+        /// Defines the <see cref="WatermarkForeground"/> property.
+        /// </summary>
+        [Obsolete("Use PlaceholderForegroundProperty instead.", false)]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("PresentationProperty", "AVP1022",
+            Justification = "Obsolete property alias for backward compatibility.")]
+        public static readonly StyledProperty<IBrush?> WatermarkForegroundProperty = PlaceholderForegroundProperty;
+
+        /// <summary>
+        /// Defines the <see cref="NewLine"/> property
+        /// </summary>
+        public static readonly StyledProperty<string> NewLineProperty =
+            PresentationProperty.Register<TextBox, string>(nameof(NewLine), Environment.NewLine);
+
+        /// <summary>
+        /// Defines the <see cref="InnerLeftContent"/> property
+        /// </summary>
+        public static readonly StyledProperty<object?> InnerLeftContentProperty =
+            PresentationProperty.Register<TextBox, object?>(nameof(InnerLeftContent));
+
+        /// <summary>
+        /// Defines the <see cref="InnerRightContent"/> property
+        /// </summary>
+        public static readonly StyledProperty<object?> InnerRightContentProperty =
+            PresentationProperty.Register<TextBox, object?>(nameof(InnerRightContent));
+
+        /// <summary>
+        /// Defines the <see cref="RevealPassword"/> property
+        /// </summary>
+        public static readonly StyledProperty<bool> RevealPasswordProperty =
+            PresentationProperty.Register<TextBox, bool>(nameof(RevealPassword));
+
+        /// <summary>
+        /// Defines the <see cref="CanCut"/> property
+        /// </summary>
+        public static readonly DirectProperty<TextBox, bool> CanCutProperty =
+            PresentationProperty.RegisterDirect<TextBox, bool>(
+                nameof(CanCut),
+                o => o.CanCut);
+
+        /// <summary>
+        /// Defines the <see cref="CanCopy"/> property
+        /// </summary>
+        public static readonly DirectProperty<TextBox, bool> CanCopyProperty =
+            PresentationProperty.RegisterDirect<TextBox, bool>(
+                nameof(CanCopy),
+                o => o.CanCopy);
+
+        /// <summary>
+        /// Defines the <see cref="CanPaste"/> property
+        /// </summary>
+        public static readonly DirectProperty<TextBox, bool> CanPasteProperty =
+            PresentationProperty.RegisterDirect<TextBox, bool>(
+                nameof(CanPaste),
+                o => o.CanPaste);
+
+        /// <summary>
+        /// Defines the <see cref="IsUndoEnabled"/> property
+        /// </summary>
+        public static readonly StyledProperty<bool> IsUndoEnabledProperty =
+            PresentationProperty.Register<TextBox, bool>(
+                nameof(IsUndoEnabled),
+                defaultValue: true);
+
+        /// <summary>
+        /// Defines the <see cref="UndoLimit"/> property
+        /// </summary>
+        public static readonly StyledProperty<int> UndoLimitProperty =
+            PresentationProperty.Register<TextBox, int>(nameof(UndoLimit), UndoRedoHelper<UndoRedoState>.DefaultUndoLimit);
+
+        /// <summary>
+        /// Defines the <see cref="CanUndo"/> property
+        /// </summary>
+        public static readonly DirectProperty<TextBox, bool> CanUndoProperty =
+            PresentationProperty.RegisterDirect<TextBox, bool>(nameof(CanUndo), x => x.CanUndo);
+
+        /// <summary>
+        /// Defines the <see cref="CanRedo"/> property
+        /// </summary>
+        public static readonly DirectProperty<TextBox, bool> CanRedoProperty =
+            PresentationProperty.RegisterDirect<TextBox, bool>(nameof(CanRedo), x => x.CanRedo);
+
+        /// <summary>
+        /// Defines the <see cref="CopyingToClipboard"/> event.
+        /// </summary>
+        public static readonly RoutedEvent<RoutedEventArgs> CopyingToClipboardEvent =
+            RoutedEvent.Register<TextBox, RoutedEventArgs>(
+                nameof(CopyingToClipboard), RoutingStrategies.Bubble);
+
+        /// <summary>
+        /// Defines the <see cref="CuttingToClipboard"/> event.
+        /// </summary>
+        public static readonly RoutedEvent<RoutedEventArgs> CuttingToClipboardEvent =
+            RoutedEvent.Register<TextBox, RoutedEventArgs>(
+                nameof(CuttingToClipboard), RoutingStrategies.Bubble);
+
+        /// <summary>
+        /// Defines the <see cref="PastingFromClipboard"/> event.
+        /// </summary>
+        /// <remarks>
+        /// The event is raised with <see cref="PastingFromClipboardEventArgs"/>.
+        /// </remarks>
+        // TODO13: retype to RoutedEvent<PastingFromClipboardEventArgs>.
+        public static readonly RoutedEvent<RoutedEventArgs> PastingFromClipboardEvent =
+            RoutedEvent.Register<TextBox, RoutedEventArgs>(
+                nameof(PastingFromClipboard), RoutingStrategies.Bubble);
+
+        /// <summary>
+        /// Defines the <see cref="TextChanged"/> event.
+        /// </summary>
+        public static readonly RoutedEvent<TextChangedEventArgs> TextChangedEvent =
+            RoutedEvent.Register<TextBox, TextChangedEventArgs>(
+                nameof(TextChanged), RoutingStrategies.Bubble);
+
+        /// <summary>
+        /// Defines the <see cref="TextChanging"/> event.
+        /// </summary>
+        public static readonly RoutedEvent<TextChangingEventArgs> TextChangingEvent =
+            RoutedEvent.Register<TextBox, TextChangingEventArgs>(
+                nameof(TextChanging), RoutingStrategies.Bubble);
+
+        /// <summary>
+        /// Stores the state information for available actions in the UndoRedoHelper
+        /// </summary>
+        readonly struct UndoRedoState : IEquatable<UndoRedoState>
+        {
+            public string? Text { get; }
+
+            public int CaretPosition { get; }
+
+            public UndoRedoState(string? text, int caretPosition)
+            {
+                Text = text;
+                CaretPosition = caretPosition;
+            }
+
+            public bool Equals(UndoRedoState other) => ReferenceEquals(Text, other.Text) || Equals(Text, other.Text);
+
+            public override bool Equals(object? obj) => obj is UndoRedoState other && Equals(other);
+
+            public override int GetHashCode() => Text?.GetHashCode() ?? 0;
+        }
+
+        private enum TextMutationKind
+        {
+            ExternalReplacement,
+            Edit,
+            InternalSynchronization,
+        }
+
+        private TextPresenter? _presenter;
+        private ScrollViewer? _scrollViewer;
+        private readonly TextBoxTextInputMethodClient _imClient = new();
+        private readonly UndoRedoHelper<UndoRedoState> _undoRedoHelper;
+        private bool _isUndoingRedoing;
+        private TextMutationKind _textMutationKind;
+        // Coercion runs before the new value is committed, so a snapshot taken there would capture the old text.
+        private bool _needsUndoRedoSnapshotAfterTextChange;
+        private bool _canCut;
+        private bool _canCopy;
+        private bool _canPaste;
+        private static readonly string[] invalidCharacters = new String[1] { "\u007f" };
+        private bool _canUndo;
+        private bool _canRedo;
+
+        private int _wordSelectionStart = -1;
+        private (int Start, int End) _selectionAtPointerPress;
+        private int _selectedTextChangesMadeSinceLastUndoSnapshot;
+        private bool _hasDoneSnapshotOnce;
+        private int _currentClickCount;
+        private bool _isDoubleTapped;
+        private bool _isInTouchMode;
+        private Point _lastPoint;
+        private bool _isInTouchSelectionMode;
+        private bool _isInTouchCaretMode;
+        private bool _hasTouchSelection;
+        private const int _maxCharsBeforeUndoSnapshot = 7;
+
+        static TextBox()
+        {
+            FocusableProperty.OverrideDefaultValue<TextBox>(true);
+            PlatformFeedback.FeedbackTypeProperty.OverrideDefaultValue<TextBox>(FeedbackType.Auto);
+            TextInputMethodClientRequestedEvent.AddClassHandler<TextBox>((tb, e) =>
+            {
+                if (!tb.IsReadOnly)
+                {
+                    e.Client = tb._imClient;
+                }
+            });
+        }
+
+        public TextBox()
+        {
+            var horizontalScrollBarVisibility = Observable.CombineLatest(
+                this.GetObservable(AcceptsReturnProperty),
+                this.GetObservable(TextWrappingProperty),
+                (acceptsReturn, wrapping) =>
+                {
+                    if (wrapping != TextWrapping.NoWrap)
+                    {
+                        return ScrollBarVisibility.Disabled;
+                    }
+
+                    return acceptsReturn ? ScrollBarVisibility.Auto : ScrollBarVisibility.Hidden;
+                });
+            this.Bind(
+                ScrollViewer.HorizontalScrollBarVisibilityProperty,
+                horizontalScrollBarVisibility,
+                BindingPriority.Style);
+
+            _undoRedoHelper = new UndoRedoHelper<UndoRedoState>(this);
+            _selectedTextChangesMadeSinceLastUndoSnapshot = 0;
+            _hasDoneSnapshotOnce = false;
+            UpdateCommandStates();
+            UpdatePseudoclasses();
+        }
+
+        /// <summary>
+        /// Gets or sets a value that determines whether the TextBox shows a selection highlight when it is not focused.
+        /// </summary>
+        public bool IsInactiveSelectionHighlightEnabled
+        {
+            get => GetValue(IsInactiveSelectionHighlightEnabledProperty);
+            set => SetValue(IsInactiveSelectionHighlightEnabledProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets a value that determines whether the TextBox clears its selection after it loses focus.
+        /// </summary>
+        public bool ClearSelectionOnLostFocus
+        {
+            get => GetValue(ClearSelectionOnLostFocusProperty);
+            set => SetValue(ClearSelectionOnLostFocusProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets a value that determines whether the TextBox allows and displays newline or return characters
+        /// </summary>
+        public bool AcceptsReturn
+        {
+            get => GetValue(AcceptsReturnProperty);
+            set => SetValue(AcceptsReturnProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets a value that determines whether the TextBox allows and displays tabs
+        /// </summary>
+        public bool AcceptsTab
+        {
+            get => GetValue(AcceptsTabProperty);
+            set => SetValue(AcceptsTabProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the index of the text caret
+        /// </summary>
+        public int CaretIndex
+        {
+            get => GetValue(CaretIndexProperty);
+            set => SetValue(CaretIndexProperty, value);
+        }
+
+        private void OnCaretIndexChanged(PresentationPropertyChangedEventArgs e)
+        {
+            UndoRedoState state;
+            if (IsUndoEnabled && _undoRedoHelper.TryGetLastState(out state) && state.Text == Text)
+                _undoRedoHelper.UpdateLastState();
+
+            using var _ = _imClient.BeginChange();
+
+            var newValue = e.GetNewValue<int>();
+            SetCurrentValue(SelectionStartProperty, newValue);
+            SetCurrentValue(SelectionEndProperty, newValue);
+
+            _presenter?.SetCurrentValue(TextPresenter.CaretIndexProperty, newValue);
+        }
+
+        /// <summary>
+        /// Gets or sets a value whether this TextBox is read-only
+        /// </summary>
+        public bool IsReadOnly
+        {
+            get => GetValue(IsReadOnlyProperty);
+            set => SetValue(IsReadOnlyProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the <see cref="char"/> that should be used for password masking
+        /// </summary>
+        public char PasswordChar
+        {
+            get => GetValue(PasswordCharProperty);
+            set => SetValue(PasswordCharProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets a brush that is used to highlight selected text
+        /// </summary>
+        public IBrush? SelectionBrush
+        {
+            get => GetValue(SelectionBrushProperty);
+            set => SetValue(SelectionBrushProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets a brush that is used for the foreground of selected text
+        /// </summary>
+        public IBrush? SelectionForegroundBrush
+        {
+            get => GetValue(SelectionForegroundBrushProperty);
+            set => SetValue(SelectionForegroundBrushProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets a brush that is used for the text caret
+        /// </summary>
+        public IBrush? CaretBrush
+        {
+            get => GetValue(CaretBrushProperty);
+            set => SetValue(CaretBrushProperty, value);
+        }
+
+        /// <inheritdoc cref="TextPresenter.CaretBlinkInterval"/>
+        public TimeSpan CaretBlinkInterval
+        {
+            get => GetValue(CaretBlinkIntervalProperty);
+            set => SetValue(CaretBlinkIntervalProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the starting position of the text selected in the TextBox
+        /// </summary>
+        public int SelectionStart
+        {
+            get => GetValue(SelectionStartProperty);
+            set => SetValue(SelectionStartProperty, value);
+        }
+
+        private void OnSelectionStartChanged(PresentationPropertyChangedEventArgs e)
+        {
+            UpdateCommandStates();
+
+            var value = e.GetNewValue<int>();
+            if (SelectionEnd == value && CaretIndex != value)
+            {
+                SetCurrentValue(CaretIndexProperty, value);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the end position of the text selected in the TextBox
+        /// </summary>
+        /// <remarks>
+        /// When the SelectionEnd is equal to <see cref="SelectionStart"/>, there is no
+        /// selected text and it marks the caret position
+        /// </remarks>
+        public int SelectionEnd
+        {
+            get => GetValue(SelectionEndProperty);
+            set => SetValue(SelectionEndProperty, value);
+        }
+
+        private void OnSelectionEndChanged(PresentationPropertyChangedEventArgs e)
+        {
+            UpdateCommandStates();
+
+            var value = e.GetNewValue<int>();
+            if (SelectionStart == value && CaretIndex != value)
+            {
+                SetCurrentValue(CaretIndexProperty, value);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the maximum number of characters that the <see cref="TextBox"/> can accept.
+        /// This constraint only applies for manually entered (user-inputted) text.
+        /// </summary>
+        public int MaxLength
+        {
+            get => GetValue(MaxLengthProperty);
+            set => SetValue(MaxLengthProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the maximum number of visible lines to size to.
+        /// </summary>
+        public int MaxLines
+        {
+            get => GetValue(MaxLinesProperty);
+            set => SetValue(MaxLinesProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the minimum number of visible lines to size to.
+        /// </summary>
+        public int MinLines
+        {
+            get => GetValue(MinLinesProperty);
+            set => SetValue(MinLinesProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the line height.
+        /// </summary>
+        public double LineHeight
+        {
+            get => GetValue(LineHeightProperty);
+            set => SetValue(LineHeightProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the Text content of the TextBox
+        /// </summary>
+        [Content]
+        public string? Text
+        {
+            get => GetValue(TextProperty);
+            set => SetValue(TextProperty, value);
+        }
+
+        private static string? CoerceText(PresentationObject sender, string? value)
+            => ((TextBox)sender).CoerceText(value);
+
+        /// <summary>
+        /// Coerces the current text.
+        /// </summary>
+        /// <param name="value">The initial text.</param>
+        /// <returns>A coerced text.</returns>
+        /// <remarks>
+        /// This method also manages the internal undo/redo state whenever the text changes:
+        /// if overridden, ensure that the base is called or undo/redo won't work correctly.
+        /// </remarks>
+        protected virtual string? CoerceText(string? value)
+        {
+            if (!_isUndoingRedoing)
+            {
+                switch (_textMutationKind)
+                {
+                    case TextMutationKind.Edit:
+                        SnapshotUndoRedo();
+
+                        if (!_undoRedoHelper.CanUndo &&
+                            !string.Equals(Text, value, StringComparison.Ordinal))
+                        {
+                            _needsUndoRedoSnapshotAfterTextChange = true;
+                        }
+                        break;
+
+                    case TextMutationKind.InternalSynchronization:
+                        break;
+
+                    case TextMutationKind.ExternalReplacement:
+                    default:
+                        ClearUndoRedo();
+                        _needsUndoRedoSnapshotAfterTextChange = true;
+                        break;
+                }
+            }
+
+            return value;
+        }
+
+        /// <summary>
+        /// Gets or sets the text selected in the TextBox
+        /// </summary>
+        [AllowNull]
+        public string SelectedText
+        {
+            get => GetSelection();
+            set
+            {
+                if (string.IsNullOrEmpty(value))
+                {
+                    _selectedTextChangesMadeSinceLastUndoSnapshot++;
+                    SnapshotUndoRedo(ignoreChangeCount: false);
+                    DeleteSelection();
+                }
+                else
+                {
+                    HandleTextInput(value);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the horizontal alignment of the content within the control.
+        /// </summary>
+        public HorizontalAlignment HorizontalContentAlignment
+        {
+            get => GetValue(HorizontalContentAlignmentProperty);
+            set => SetValue(HorizontalContentAlignmentProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the vertical alignment of the content within the control.
+        /// </summary>
+        public VerticalAlignment VerticalContentAlignment
+        {
+            get => GetValue(VerticalContentAlignmentProperty);
+            set => SetValue(VerticalContentAlignmentProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the <see cref="Media.TextAlignment"/> of the TextBox
+        /// </summary>
+        public TextAlignment TextAlignment
+        {
+            get => GetValue(TextAlignmentProperty);
+            set => SetValue(TextAlignmentProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the placeholder or descriptive text that is displayed even if the <see cref="Text"/>
+        /// property is not yet set.
+        /// </summary>
+        public string? PlaceholderText
+        {
+            get => GetValue(PlaceholderTextProperty);
+            set => SetValue(PlaceholderTextProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the placeholder or descriptive text that is displayed even if the <see cref="Text"/>
+        /// property is not yet set.
+        /// </summary>
+        [Obsolete("Use PlaceholderText instead.", false)]
+        public string? Watermark
+        {
+            get => PlaceholderText;
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("PresentationProperty", "AVP1012",
+                Justification = "Obsolete property setter for backward compatibility.")]
+            set => PlaceholderText = value;
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the <see cref="PlaceholderText"/> will still be shown above the
+        /// <see cref="Text"/> even after a text value is set.
+        /// </summary>
+        public bool UseFloatingPlaceholder
+        {
+            get => GetValue(UseFloatingPlaceholderProperty);
+            set => SetValue(UseFloatingPlaceholderProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the <see cref="PlaceholderText"/> will still be shown above the
+        /// <see cref="Text"/> even after a text value is set.
+        /// </summary>
+        [Obsolete("Use UseFloatingPlaceholder instead.", false)]
+        public bool UseFloatingWatermark
+        {
+            get => UseFloatingPlaceholder;
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("PresentationProperty", "AVP1012",
+                Justification = "Obsolete property setter for backward compatibility.")]
+            set => UseFloatingPlaceholder = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the brush used for the foreground color of the placeholder text.
+        /// </summary>
+        public IBrush? PlaceholderForeground
+        {
+            get => GetValue(PlaceholderForegroundProperty);
+            set => SetValue(PlaceholderForegroundProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the brush used for the foreground color of the placeholder text.
+        /// </summary>
+        [Obsolete("Use PlaceholderForeground instead.", false)]
+        public IBrush? WatermarkForeground
+        {
+            get => PlaceholderForeground;
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("PresentationProperty", "AVP1012",
+                Justification = "Obsolete property setter for backward compatibility.")]
+            set => PlaceholderForeground = value;
+        }
+
+        /// <summary>
+        /// Gets or sets custom content that is positioned on the left side of the text layout box
+        /// </summary>
+        public object? InnerLeftContent
+        {
+            get => GetValue(InnerLeftContentProperty);
+            set => SetValue(InnerLeftContentProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets custom content that is positioned on the right side of the text layout box
+        /// </summary>
+        public object? InnerRightContent
+        {
+            get => GetValue(InnerRightContentProperty);
+            set => SetValue(InnerRightContentProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets whether text masked by <see cref="PasswordChar"/> should be revealed
+        /// </summary>
+        public bool RevealPassword
+        {
+            get => GetValue(RevealPasswordProperty);
+            set => SetValue(RevealPasswordProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the <see cref="Media.TextWrapping"/> of the TextBox
+        /// </summary>
+        public TextWrapping TextWrapping
+        {
+            get => GetValue(TextWrappingProperty);
+            set => SetValue(TextWrappingProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets which characters are inserted when Enter is pressed. Default: <see cref="Environment.NewLine"/>
+        /// </summary>
+        public string NewLine
+        {
+            get => GetValue(NewLineProperty);
+            set => SetValue(NewLineProperty, value);
+        }
+
+        /// <summary>
+        /// Clears the current selection, maintaining the <see cref="CaretIndex"/>
+        /// </summary>
+        public void ClearSelection()
+        {
+            SetCurrentValue(CaretIndexProperty, SelectionStart);
+            SetCurrentValue(SelectionEndProperty, SelectionStart);
+        }
+
+        /// <summary>
+        /// Property for determining if the Cut command can be executed.
+        /// </summary>
+        public bool CanCut
+        {
+            get => _canCut;
+            private set => SetAndRaise(CanCutProperty, ref _canCut, value);
+        }
+
+        /// <summary>
+        /// Property for determining if the Copy command can be executed.
+        /// </summary>
+        public bool CanCopy
+        {
+            get => _canCopy;
+            private set => SetAndRaise(CanCopyProperty, ref _canCopy, value);
+        }
+
+        /// <summary>
+        /// Property for determining if the Paste command can be executed.
+        /// </summary>
+        public bool CanPaste
+        {
+            get => _canPaste;
+            private set => SetAndRaise(CanPasteProperty, ref _canPaste, value);
+        }
+
+        /// <summary>
+        /// Property for determining whether undo/redo is enabled
+        /// </summary>
+        public bool IsUndoEnabled
+        {
+            get => GetValue(IsUndoEnabledProperty);
+            set => SetValue(IsUndoEnabledProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the maximum number of items that can reside in the Undo stack
+        /// </summary>
+        public int UndoLimit
+        {
+            get => GetValue(UndoLimitProperty);
+            set => SetValue(UndoLimitProperty, value);
+        }
+
+        private void OnUndoLimitChanged(int newValue)
+        {
+            _undoRedoHelper.Limit = newValue;
+
+            // from docs at
+            // https://docs.microsoft.com/en-us/dotnet/api/system.windows.controls.primitives.textboxbase.isundoenabled:
+            // "Setting UndoLimit clears the undo queue."
+            ClearUndoRedo();
+        }
+
+        /// <summary>
+        /// Gets a value that indicates whether the undo stack has an action that can be undone
+        /// </summary>
+        public bool CanUndo
+        {
+            get => _canUndo;
+            private set => SetAndRaise(CanUndoProperty, ref _canUndo, value);
+        }
+
+        /// <summary>
+        /// Gets a value that indicates whether the redo stack has an action that can be redone
+        /// </summary>
+        public bool CanRedo
+        {
+            get => _canRedo;
+            private set => SetAndRaise(CanRedoProperty, ref _canRedo, value);
+        }
+
+        /// <summary>
+        /// Get the number of lines in the TextBox.
+        /// </summary>
+        /// <value>number of lines in the TextBox, or -1 if no layout information is available</value>
+        /// <remarks>
+        /// If Wrap == true, changing the width of the TextBox may change this value.
+        /// The value returned is the number of lines in the entire TextBox, regardless of how many are
+        /// currently in view.
+        /// </remarks>
+        public int GetLineCount()
+        {
+            return this._presenter?.TextLayout.TextLines.Count ?? -1;
+        }
+
+        /// <summary>
+        /// Raised when content is being copied to the clipboard
+        /// </summary>
+        public event EventHandler<RoutedEventArgs>? CopyingToClipboard
+        {
+            add => AddHandler(CopyingToClipboardEvent, value);
+            remove => RemoveHandler(CopyingToClipboardEvent, value);
+        }
+
+        /// <summary>
+        /// Raised when content is being cut to the clipboard
+        /// </summary>
+        public event EventHandler<RoutedEventArgs>? CuttingToClipboard
+        {
+            add => AddHandler(CuttingToClipboardEvent, value);
+            remove => RemoveHandler(CuttingToClipboardEvent, value);
+        }
+
+        /// <summary>
+        /// Raised when content is being pasted from the clipboard
+        /// </summary>
+        /// <remarks>
+        /// The event is raised with <see cref="PastingFromClipboardEventArgs"/>.
+        /// </remarks>
+        // TODO13: retype to EventHandler<PastingFromClipboardEventArgs>.
+        public event EventHandler<RoutedEventArgs>? PastingFromClipboard
+        {
+            add => AddHandler(PastingFromClipboardEvent, value);
+            remove => RemoveHandler(PastingFromClipboardEvent, value);
+        }
+
+        /// <summary>
+        /// Occurs asynchronously after text changes and the new text is rendered.
+        /// </summary>
+        public event EventHandler<TextChangedEventArgs>? TextChanged
+        {
+            add => AddHandler(TextChangedEvent, value);
+            remove => RemoveHandler(TextChangedEvent, value);
+        }
+
+        /// <summary>
+        /// Occurs synchronously when text starts to change but before it is rendered.
+        /// </summary>
+        /// <remarks>
+        /// This event occurs just after the <see cref="Text"/> property value has been updated.
+        /// </remarks>
+        public event EventHandler<TextChangingEventArgs>? TextChanging
+        {
+            add => AddHandler(TextChangingEvent, value);
+            remove => RemoveHandler(TextChangingEvent, value);
+        }
+
+        protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
+        {
+            _presenter = e.NameScope.Get<TextPresenter>("PART_TextPresenter");
+
+            _scrollViewer = e.NameScope.Find<ScrollViewer>("PART_ScrollViewer");
+
+            _imClient.SetPresenter(_presenter, this);
+
+            if (IsFocused)
+            {
+                _presenter?.ShowCaret();
+            }
+        }
+
+        protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            base.OnAttachedToVisualTree(e);
+
+            if (_presenter != null)
+            {
+                if (IsFocused)
+                {
+                    _presenter.ShowCaret();
+                }
+                else
+                {
+                    if (IsInactiveSelectionHighlightEnabled)
+                    {
+                        _presenter.ShowSelectionHighlight = true;
+                    }
+                }
+
+                _presenter.PropertyChanged += PresenterPropertyChanged;
+            }
+        }
+
+        protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            base.OnDetachedFromVisualTree(e);
+
+            if (_presenter != null)
+            {
+                _presenter.HideCaret();
+
+                _presenter.PropertyChanged -= PresenterPropertyChanged;
+            }
+
+            _imClient.SetPresenter(null, null);
+        }
+
+        private void PresenterPropertyChanged(object? sender, PresentationPropertyChangedEventArgs e)
+        {
+            if (e.Property == TextPresenter.PreeditTextProperty)
+            {
+                if (string.IsNullOrEmpty(e.OldValue as string) && !string.IsNullOrEmpty(e.NewValue as string))
+                {
+                    PseudoClasses.Set(":empty", false);
+
+                    DeleteSelection();
+                }
+            }
+        }
+
+        protected override void OnPropertyChanged(PresentationPropertyChangedEventArgs change)
+        {
+            base.OnPropertyChanged(change);
+
+            if (change.Property == TextProperty)
+            {
+                if (_needsUndoRedoSnapshotAfterTextChange)
+                {
+                    _needsUndoRedoSnapshotAfterTextChange = false;
+                    SnapshotUndoRedo();
+                }
+
+                CoerceValue(CaretIndexProperty);
+                CoerceValue(SelectionStartProperty);
+                CoerceValue(SelectionEndProperty);
+
+                RaiseTextChangeEvents();
+
+                UpdatePseudoclasses();
+                UpdateCommandStates();
+            }
+            else if (change.Property == IsReadOnlyProperty ||
+                change.Property == PasswordCharProperty ||
+                change.Property == RevealPasswordProperty)
+            {
+                UpdateCommandStates();
+            }
+            else if (change.Property == CaretIndexProperty)
+            {
+                OnCaretIndexChanged(change);
+            }
+            else if (change.Property == SelectionStartProperty)
+            {
+                OnSelectionStartChanged(change);
+            }
+            else if (change.Property == SelectionEndProperty)
+            {
+                OnSelectionEndChanged(change);
+            }
+            else if (change.Property == MaxLinesProperty)
+            {
+                InvalidateMeasure();
+            }
+            else if (change.Property == MinLinesProperty)
+            {
+                InvalidateMeasure();
+            }
+            else if (change.Property == UndoLimitProperty)
+            {
+                OnUndoLimitChanged(change.GetNewValue<int>());
+            }
+            else if (change.Property == IsUndoEnabledProperty && change.GetNewValue<bool>() == false)
+            {
+                // from docs at
+                // https://docs.microsoft.com/en-us/dotnet/api/system.windows.controls.primitives.textboxbase.isundoenabled:
+                // "Setting this property to false clears the undo stack.
+                // Therefore, if you disable undo and then re-enable it, undo commands still do not work
+                // because the undo stack was emptied when you disabled undo."
+                ClearUndoRedo();
+            }
+        }
+
+        private void UpdateCommandStates()
+        {
+            var hasSelection = HasSelection();
+            CanCopy = !IsPasswordBox && hasSelection;
+            CanCut = !IsPasswordBox && hasSelection && !IsReadOnly;
+            CanPaste = !IsReadOnly;
+        }
+
+        protected override void OnGotFocus(FocusChangedEventArgs e)
+        {
+            base.OnGotFocus(e);
+
+            if (_presenter != null)
+            {
+                _presenter.ShowSelectionHighlight = true;
+            }
+
+            // when navigating to a textbox via the tab key, select all text if
+            //   1) this textbox is *not* a multiline textbox
+            //   2) this textbox has any text to select
+            if (e.NavigationMethod == NavigationMethod.Tab &&
+                !AcceptsReturn &&
+                Text?.Length > 0)
+            {
+                SelectAll();
+            }
+
+            UpdateCommandStates();
+
+            _imClient.SetPresenter(_presenter, this);
+
+            _presenter?.ShowCaret();
+
+            if (SelectionStart != SelectionEnd)
+                _presenter?.TextSelectionHandleCanvas?.Show();
+        }
+
+        protected override void OnLostFocus(FocusChangedEventArgs e)
+        {
+            base.OnLostFocus(e);
+
+            if ((ContextFlyout == null || !ContextFlyout.IsOpen) &&
+                (ContextMenu == null || !ContextMenu.IsOpen))
+            {
+                if (ClearSelectionOnLostFocus)
+                {
+                    ClearSelection();
+                }
+
+                SetCurrentValue(RevealPasswordProperty, false);
+                _presenter?.RemoveTextSelectionCanvas();
+            }
+
+            UpdateCommandStates();
+
+            _presenter?.HideCaret();
+
+            _imClient.SetPresenter(null, null);
+
+            if (_presenter != null && !IsInactiveSelectionHighlightEnabled)
+            {
+                _presenter.ShowSelectionHighlight = false;
+            }
+        }
+
+        protected override void OnTextInput(TextInputEventArgs e)
+        {
+            if (!e.Handled)
+            {
+                HandleTextInput(e.Text);
+                e.Handled = true;
+            }
+        }
+
+        private void HandleTextInput(string? input)
+        {
+            if (IsReadOnly)
+            {
+                return;
+            }
+
+            input = SanitizeInputText(input);
+
+            if (string.IsNullOrEmpty(input))
+            {
+                return;
+            }
+
+            _selectedTextChangesMadeSinceLastUndoSnapshot++;
+            SnapshotUndoRedo(ignoreChangeCount: false);
+
+            var currentText = Text ?? string.Empty;
+            var selectionLength = Math.Abs(SelectionStart - SelectionEnd);
+            var newLength = input.Length + currentText.Length - selectionLength;
+
+            if (MaxLength > 0 && newLength > MaxLength)
+            {
+                input = input.Remove(Math.Max(0, input.Length - (newLength - MaxLength)));
+                newLength = MaxLength;
+            }
+
+            if (!string.IsNullOrEmpty(input))
+            {
+                var textBuilder = StringBuilderCache.Acquire(Math.Max(currentText.Length, newLength));
+                textBuilder.Append(currentText);
+
+                var caretIndex = CaretIndex;
+
+                if (selectionLength != 0)
+                {
+                    var (start, _) = GetSelectionRange();
+
+                    textBuilder.Remove(start, selectionLength);
+
+                    caretIndex = start;
+                }
+
+                textBuilder.Insert(caretIndex, input);
+
+                var text = StringBuilderCache.GetStringAndRelease(textBuilder);
+
+                SetTextFromEdit(text);
+
+                ClearSelection();
+
+                if (IsUndoEnabled)
+                {
+                    _undoRedoHelper.DiscardRedo();
+                }
+
+                //Make sure updated text is in sync
+                _presenter?.SetCurrentValue(TextPresenter.TextProperty, text);
+
+                caretIndex += input.Length;
+
+                //Make sure caret is in sync
+                _presenter?.MoveCaretToTextPosition(caretIndex);
+
+                SetCurrentValue(CaretIndexProperty, caretIndex);
+            }
+        }
+
+        private string? SanitizeInputText(string? text)
+        {
+            if (text is null)
+                return null;
+
+            if (!AcceptsReturn)
+            {
+                var lineBreakStart = 0;
+                var graphemeEnumerator = new GraphemeEnumerator(text.AsSpan());
+
+                while (graphemeEnumerator.MoveNext(out var grapheme))
+                {
+                    if (grapheme.FirstCodepoint.IsBreakChar)
+                    {
+                        break;
+                    }
+
+                    lineBreakStart += grapheme.Length;
+                }
+
+                // All lines except the first one are discarded when TextBox does not accept Return key
+                text = text.Substring(0, lineBreakStart);
+            }
+
+            for (var i = 0; i < invalidCharacters.Length; i++)
+            {
+                text = text.Replace(invalidCharacters[i], string.Empty);
+            }
+
+            return text;
+        }
+
+        /// <summary>
+        /// Cuts the current text onto the clipboard
+        /// </summary>
+        public async void Cut()
+        {
+            var text = GetSelection();
+
+            if (string.IsNullOrEmpty(text))
+            {
+                return;
+            }
+
+            var eventArgs = new RoutedEventArgs(CuttingToClipboardEvent);
+            RaiseEvent(eventArgs);
+            if (!eventArgs.Handled)
+            {
+                SnapshotUndoRedo();
+
+                var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+
+                if (clipboard == null)
+                    return;
+
+                try
+                {
+                    await clipboard.SetTextAsync(text);
+                }
+                catch (Exception ex) when (ClipboardHelper.IsExpectedClipboardException(ex))
+                {
+                    Logger.TryGet(LogEventLevel.Warning, LogArea.Control)
+                        ?.Log(this, "Failed to write text to clipboard: {Error}", ex);
+                    return;
+                }
+
+                DeleteSelection();
+            }
+        }
+
+        /// <summary>
+        /// Copies the current text onto the clipboard
+        /// </summary>
+        public async void Copy()
+        {
+            var text = GetSelection();
+
+            if (string.IsNullOrEmpty(text))
+            {
+                return;
+            }
+
+            var eventArgs = new RoutedEventArgs(CopyingToClipboardEvent);
+            RaiseEvent(eventArgs);
+            if (!eventArgs.Handled)
+            {
+                var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+                if (clipboard is null)
+                    return;
+
+                try
+                {
+                    await clipboard.SetTextAsync(text);
+                }
+                catch (Exception ex) when (ClipboardHelper.IsExpectedClipboardException(ex))
+                {
+                    Logger.TryGet(LogEventLevel.Warning, LogArea.Control)
+                        ?.Log(this, "Failed to write text to clipboard: {Error}", ex);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Pastes the current clipboard text content into the TextBox
+        /// </summary>
+        public async void Paste()
+        {
+            await PasteCoreAsync(TopLevel.GetTopLevel(this)?.Clipboard);
+        }
+
+        private async Task PasteCoreAsync(IClipboard clipboard)
+        {
+            var eventArgs = new PastingFromClipboardEventArgs(PastingFromClipboardEvent, clipboard);
+            RaiseEvent(eventArgs);
+            if (eventArgs.Handled || clipboard is null)
+            {
+                return;
+            }
+
+            string text = null;
+
+            try
+            {
+                text = await clipboard.TryGetTextAsync();
+            }
+            catch (Exception ex) when (ClipboardHelper.IsExpectedClipboardException(ex))
+            {
+                Logger.TryGet(LogEventLevel.Warning, LogArea.Control)
+                    ?.Log(this, "Failed to read text from clipboard: {Error}", ex);
+            }
+
+            if (string.IsNullOrEmpty(text))
+            {
+                return;
+            }
+
+            SnapshotUndoRedo();
+            HandleTextInput(text);
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (_presenter == null)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(_presenter.PreeditText))
+            {
+                return;
+            }
+
+            var text = Text ?? string.Empty;
+            var caretIndex = CaretIndex;
+            var movement = false;
+            var selection = false;
+            var handled = false;
+            var modifiers = e.KeyModifiers;
+
+            var keymap = Application.Current!.PlatformSettings!.HotkeyConfiguration;
+
+            using var _ = _imClient.BeginChange();
+
+            bool Match(List<KeyGesture> gestures) => gestures.Any(g => g.Matches(e));
+            bool DetectSelection() => e.KeyModifiers.HasAllFlags(keymap.SelectionModifiers);
+
+            if (Match(keymap.SelectAll))
+            {
+                SelectAll();
+                handled = true;
+            }
+            else if (Match(keymap.Copy))
+            {
+                if (CanCopy)
+                {
+                    Copy();
+                }
+
+                handled = true;
+            }
+            else if (Match(keymap.Cut))
+            {
+                if (CanCut)
+                {
+                    Cut();
+                }
+
+                handled = true;
+            }
+            else if (Match(keymap.Paste))
+            {
+                if (CanPaste)
+                {
+                    Paste();
+                }
+
+                handled = true;
+            }
+            else if (Match(keymap.Undo) && IsUndoEnabled)
+            {
+                if (!IsReadOnly)
+                {
+                    Undo();
+                }
+
+                handled = true;
+            }
+            else if (Match(keymap.Redo) && IsUndoEnabled)
+            {
+                if (!IsReadOnly)
+                {
+                    Redo();
+                }
+
+                handled = true;
+            }
+            else if (Match(keymap.MoveCursorToTheStartOfDocument))
+            {
+                MoveHome(true);
+                movement = true;
+                selection = false;
+                handled = true;
+                SetCurrentValue(CaretIndexProperty, _presenter.CaretIndex);
+            }
+            else if (Match(keymap.MoveCursorToTheEndOfDocument))
+            {
+                MoveEnd(true);
+                movement = true;
+                selection = false;
+                handled = true;
+                SetCurrentValue(CaretIndexProperty, _presenter.CaretIndex);
+            }
+            else if (Match(keymap.MoveCursorToTheStartOfLine))
+            {
+                MoveHome(false);
+                movement = true;
+                selection = false;
+                handled = true;
+                SetCurrentValue(CaretIndexProperty, _presenter.CaretIndex);
+            }
+            else if (Match(keymap.MoveCursorToTheEndOfLine))
+            {
+                MoveEnd(false);
+                movement = true;
+                selection = false;
+                handled = true;
+                SetCurrentValue(CaretIndexProperty, _presenter.CaretIndex);
+            }
+            else if (Match(keymap.MoveCursorToTheStartOfDocumentWithSelection))
+            {
+                SetCurrentValue(SelectionStartProperty, caretIndex);
+                MoveHome(true);
+                SetCurrentValue(SelectionEndProperty, _presenter.CaretIndex);
+                movement = true;
+                selection = true;
+                handled = true;
+            }
+            else if (Match(keymap.MoveCursorToTheEndOfDocumentWithSelection))
+            {
+                SetCurrentValue(SelectionStartProperty, caretIndex);
+                MoveEnd(true);
+                SetCurrentValue(SelectionEndProperty, _presenter.CaretIndex);
+                movement = true;
+                selection = true;
+                handled = true;
+            }
+            else if (Match(keymap.MoveCursorToTheStartOfLineWithSelection))
+            {
+                SetCurrentValue(SelectionStartProperty, caretIndex);
+                MoveHome(false);
+                SetCurrentValue(SelectionEndProperty, _presenter.CaretIndex);
+                movement = true;
+                selection = true;
+                handled = true;
+
+            }
+            else if (Match(keymap.MoveCursorToTheEndOfLineWithSelection))
+            {
+                SetCurrentValue(SelectionStartProperty, caretIndex);
+                MoveEnd(false);
+                SetCurrentValue(SelectionEndProperty, _presenter.CaretIndex);
+                movement = true;
+                selection = true;
+                handled = true;
+            }
+            else if (Match(keymap.PageLeft))
+            {
+                MovePageLeft();
+                movement = true;
+                selection = false;
+                handled = true;
+            }
+            else if (Match(keymap.PageRight))
+            {
+                MovePageRight();
+                movement = true;
+                selection = false;
+                handled = true;
+            }
+            else if (Match(keymap.PageUp))
+            {
+                MovePageUp();
+                movement = true;
+                selection = false;
+                handled = true;
+            }
+            else if (Match(keymap.PageDown))
+            {
+                MovePageDown();
+                movement = true;
+                selection = false;
+                handled = true;
+            }
+            else
+            {
+                // It's not secure to rely on password field content when moving.
+                bool hasWholeWordModifiers = modifiers.HasAllFlags(keymap.WholeWordTextActionModifiers) && !IsPasswordBox;
+                switch (e.Key)
+                {
+                    case Key.Left:
+                        selection = DetectSelection();
+                        MoveHorizontal(-1, hasWholeWordModifiers, selection, true);
+                        if (caretIndex != _presenter.CaretIndex)
+                        {
+                            movement = true;
+                        }
+                        break;
+
+                    case Key.Right:
+                        selection = DetectSelection();
+                        MoveHorizontal(1, hasWholeWordModifiers, selection, true);
+                        if (caretIndex != _presenter.CaretIndex)
+                        {
+                            movement = true;
+                        }
+                        break;
+
+                    case Key.Up:
+                        selection = DetectSelection();
+                        MoveVertical(LogicalDirection.Backward, selection);
+                        if (caretIndex != _presenter.CaretIndex)
+                        {
+                            movement = true;
+                        }
+                        break;
+
+                    case Key.Down:
+                        selection = DetectSelection();
+                        MoveVertical(LogicalDirection.Forward, selection);
+                        if (caretIndex != _presenter.CaretIndex)
+                        {
+                            movement = true;
+                        }
+                        break;
+
+                    case Key.Back:
+                        if (!IsReadOnly)
+                        {
+                            SnapshotUndoRedo();
+
+                            if (hasWholeWordModifiers && SelectionStart == SelectionEnd)
+                            {
+                                SetSelectionForControlBackspace();
+                            }
+
+                            if (!DeleteSelection())
+                            {
+                                var characterHit = _presenter.GetNextCharacterHit(LogicalDirection.Backward);
+
+                                var backspacePosition = characterHit.FirstCharacterIndex + characterHit.TrailingLength;
+
+                                var lineIndex = _presenter.TextLayout.GetLineIndexFromCharacterIndex(caretIndex, true);
+
+                                var backspaceCharacterHit = _presenter.TextLayout.TextLines[lineIndex]
+                                    .GetBackspaceCaretCharacterHit(new CharacterHit(caretIndex));
+
+                                if (backspaceCharacterHit.FirstCharacterIndex > backspacePosition &&
+                                    backspaceCharacterHit.FirstCharacterIndex < caretIndex)
+                                {
+                                    backspacePosition = backspaceCharacterHit.FirstCharacterIndex;
+                                }
+
+                                if (caretIndex != backspacePosition)
+                                {
+                                    var start = Math.Min(backspacePosition, caretIndex);
+                                    var end = Math.Max(backspacePosition, caretIndex);
+
+                                    var length = end - start;
+
+                                    var sb = StringBuilderCache.Acquire(text.Length);
+                                    sb.Append(text);
+                                    sb.Remove(start, end - start);
+
+                                    SetTextFromEdit(StringBuilderCache.GetStringAndRelease(sb));
+
+                                    SetCurrentValue(CaretIndexProperty, start);
+
+                                    _presenter.MoveCaretToTextPosition(start);
+                                }
+                            }
+
+                            SnapshotUndoRedo();
+                        }
+
+                        handled = true;
+                        break;
+
+                    case Key.Delete:
+                        if (!IsReadOnly)
+                        {
+                            SnapshotUndoRedo();
+
+                            if (hasWholeWordModifiers && SelectionStart == SelectionEnd)
+                            {
+                                SetSelectionForControlDelete();
+                            }
+
+                            if (!DeleteSelection())
+                            {
+                                var characterHit = _presenter.GetNextCharacterHit();
+
+                                var nextPosition = characterHit.FirstCharacterIndex + characterHit.TrailingLength;
+
+                                if (nextPosition != caretIndex)
+                                {
+                                    var start = Math.Min(nextPosition, caretIndex);
+                                    var end = Math.Max(nextPosition, caretIndex);
+
+                                    var sb = StringBuilderCache.Acquire(text.Length);
+                                    sb.Append(text);
+                                    sb.Remove(start, end - start);
+
+                                    SetTextFromEdit(StringBuilderCache.GetStringAndRelease(sb));
+                                }
+                            }
+
+                            SnapshotUndoRedo();
+                        }
+
+                        handled = true;
+                        break;
+
+                    case Key.Enter:
+                        if (AcceptsReturn)
+                        {
+                            if (!IsReadOnly)
+                            {
+                                SnapshotUndoRedo();
+                                HandleTextInput(NewLine);
+                            }
+
+                            handled = true;
+                        }
+
+                        break;
+
+                    case Key.Tab:
+                        if (AcceptsTab)
+                        {
+                            if (!IsReadOnly)
+                            {
+                                SnapshotUndoRedo();
+                                HandleTextInput("\t");
+                            }
+
+                            handled = true;
+                        }
+                        else
+                        {
+                            base.OnKeyDown(e);
+                        }
+
+                        break;
+
+                    case Key.Space:
+                        if (!IsReadOnly)
+                        {
+                            SnapshotUndoRedo(); // always snapshot in between words
+                        }
+                        break;
+
+                    default:
+                        handled = false;
+                        break;
+                }
+            }
+
+            if (movement && !selection)
+            {
+                ClearSelection();
+            }
+
+            if (handled || movement)
+            {
+                e.Handled = true;
+            }
+        }
+
+        protected override void OnHolding(HoldingRoutedEventArgs e)
+        {
+            base.OnHolding(e);
+
+            if (_presenter == null || e.HoldingState != HoldingState.Started)
+            {
+                _isInTouchSelectionMode = e.HoldingState == HoldingState.Canceled;
+                _hasTouchSelection = false;
+                return;
+            }
+
+            var text = Text;
+
+            using var _ = _imClient.BeginChange();
+
+            if (text != null)
+            {
+                var position = e.PointerEventArgs.GetPosition(_presenter);
+                var selectionStart = SelectionStart;
+                var selectionEnd = SelectionEnd;
+                _presenter.MoveCaretToPoint(position);
+                var caretIndex = _presenter.CaretIndex;
+                var isInSelection = selectionStart != selectionEnd &&
+                    caretIndex >= selectionStart && caretIndex <= selectionEnd;
+
+                if (isInSelection)
+                {
+                    _presenter.RaiseEvent(new ContextRequestedEventArgs(e.PointerEventArgs));
+                }
+                else
+                {
+                    // We select the current held word, or the whole hidden content
+                    if (IsPasswordBox)
+                    {
+                        _wordSelectionStart = -1;
+
+                        SelectAll();
+                    }
+                    else
+                    {
+                        SelectWord(text, caretIndex, caretIndex, caretIndex);
+                    }
+
+                    _presenter?.EnsureTextSelectionLayer();
+
+                    if (SelectionStart != SelectionEnd)
+                    {
+                        _presenter?.TextSelectionHandleCanvas?.Show(true);
+                    }
+                    else
+                    {
+                        _presenter?.RaiseEvent(new ContextRequestedEventArgs(e.PointerEventArgs));
+                    }
+                }
+
+                _hasTouchSelection = true;
+
+                e.Handled = true;
+                this.PerformFeedback(FeedbackAction.Hold);
+            }
+        }
+
+        protected override void OnTapped(TappedEventArgs e)
+        {
+            base.OnTapped(e);
+
+            if (e.Pointer.Type != PointerType.Mouse)
+            {
+                _presenter?.EnsureTextSelectionLayer();
+                _presenter?.TextSelectionHandleCanvas?.Show();
+            }
+        }
+
+        protected override void OnPointerPressed(PointerPressedEventArgs e)
+        {
+            if (_presenter == null)
+            {
+                return;
+            }
+
+            var text = Text;
+            var clickInfo = e.GetCurrentPoint(this);
+
+            using var _ = _imClient.BeginChange();
+
+            _isInTouchMode = false;
+            _isInTouchSelectionMode = false;
+            _isDoubleTapped = e.ClickCount == 2;
+            _selectionAtPointerPress = GetSelectionRange();
+            if (text != null && clickInfo.Pointer?.Captured is not Border)
+            {
+                if (e.Pointer.Type == PointerType.Mouse && clickInfo.Properties.IsLeftButtonPressed)
+                {
+                    _presenter.TextSelectionHandleCanvas?.Hide();
+                    _currentClickCount = e.ClickCount;
+                    var point = e.GetPosition(_presenter);
+
+                    _presenter.MoveCaretToPoint(point);
+
+                    var caretIndex = _presenter.CaretIndex;
+                    var clickToSelect = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+                    var selectionStart = SelectionStart;
+                    var selectionEnd = SelectionEnd;
+
+                    switch (e.ClickCount)
+                    {
+                        case 1:
+                            if (clickToSelect)
+                            {
+                                if (_wordSelectionStart >= 0)
+                                {
+                                    UpdateWordSelectionRange(caretIndex, ref selectionStart, ref selectionEnd);
+
+                                    SetCurrentValue(SelectionStartProperty, selectionStart);
+                                    SetCurrentValue(SelectionEndProperty, selectionEnd);
+                                }
+                                else
+                                {
+                                    SetCurrentValue(SelectionEndProperty, caretIndex);
+                                }
+                            }
+                            else
+                            {
+                                SetCurrentValue(SelectionStartProperty, caretIndex);
+                                SetCurrentValue(SelectionEndProperty, caretIndex);
+                                _wordSelectionStart = -1;
+                            }
+
+                            break;
+                        case 2:
+                            SelectWord(text, caretIndex, selectionStart, selectionEnd);
+
+                            break;
+                        case 3:
+                            _wordSelectionStart = -1;
+
+                            SelectAll();
+                            break;
+                    }
+                }
+                else if (e.Pointer.Type != PointerType.Mouse)
+                {
+                    _isInTouchMode = true;
+                    _lastPoint = e.GetCurrentPoint(_presenter).Position;
+
+                    if (_isDoubleTapped)
+                    {
+                        _presenter.MoveCaretToPoint(_lastPoint);
+                        var caretIndex = _presenter.CaretIndex;
+
+                        var selectionStart = SelectionStart;
+                        var selectionEnd = SelectionEnd;
+
+                        SelectWord(text, caretIndex, selectionStart, selectionEnd);
+                        _presenter?.EnsureTextSelectionLayer();
+                        _presenter?.TextSelectionHandleCanvas?.Show();
+                    }
+                }
+            }
+
+            UpdatePseudoclasses();
+
+            e.Pointer.Capture(_presenter);
+            e.Handled = true;
+        }
+
+        private void SelectWord(string text, int caretIndex, int selectionStart, int selectionEnd)
+        {
+            if (IsPasswordBox)
+            {
+                // double-clicking in a cloaked single-line password box selects all text
+                // see issues/14956
+                _wordSelectionStart = -1;
+
+                SelectAll();
+            }
+
+            if (!StringUtils.IsStartOfWord(text, caretIndex))
+            {
+                selectionStart = StringUtils.PreviousWord(text, caretIndex);
+            }
+
+            if (!StringUtils.IsEndOfWord(text, caretIndex))
+            {
+                selectionEnd = StringUtils.NextWord(text, caretIndex);
+            }
+
+            if (selectionStart != selectionEnd)
+            {
+                _wordSelectionStart = selectionStart;
+            }
+
+            SetCurrentValue(SelectionStartProperty, selectionStart);
+            SetCurrentValue(SelectionEndProperty, selectionEnd);
+        }
+
+        protected override void OnPointerMoved(PointerEventArgs e)
+        {
+            if (_presenter == null || e.Pointer.Captured != _presenter)
+            {
+                return;
+            }
+            using var _ = _imClient.BeginChange();
+            var point = e.GetPosition(_presenter);
+
+            if (e.Pointer.Type == PointerType.Mouse)
+            {
+                // selection should not change during pointer move if the user right clicks
+                if (e.Pointer.Captured == _presenter && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+                {
+                    point = new Point(
+                        MathUtilities.Clamp(point.X, 0, Math.Max(_presenter.Bounds.Width - 1, 0)),
+                        MathUtilities.Clamp(point.Y, 0, Math.Max(_presenter.Bounds.Height - 1, 0)));
+
+                    var previousIndex = _presenter.CaretIndex;
+
+                    _presenter.MoveCaretToPoint(point);
+
+                    var caretIndex = _presenter.CaretIndex;
+
+                    if (Math.Abs(caretIndex - previousIndex) == 1)
+                        e.PreventGestureRecognition();
+
+                    if (e.Pointer.Type == PointerType.Mouse || _isDoubleTapped)
+                    {
+                        var selectionStart = SelectionStart;
+                        var selectionEnd = SelectionEnd;
+
+                        if (_wordSelectionStart >= 0)
+                        {
+                            UpdateWordSelectionRange(caretIndex, ref selectionStart, ref selectionEnd);
+
+                            SetCurrentValue(SelectionStartProperty, selectionStart);
+                            SetCurrentValue(SelectionEndProperty, selectionEnd);
+                        }
+                        else
+                        {
+                            SetCurrentValue(SelectionEndProperty, caretIndex);
+                        }
+                    }
+                    else
+                    {
+                        SetCurrentValue(SelectionStartProperty, caretIndex);
+                        SetCurrentValue(SelectionEndProperty, caretIndex);
+                    }
+                }
+            }
+            else if (_isInTouchMode)
+            {
+                if (_isInTouchSelectionMode)
+                {
+                    point = new Point(
+                        MathUtilities.Clamp(point.X, 0, Math.Max(_presenter.Bounds.Width - 1, 0)),
+                        MathUtilities.Clamp(point.Y, 0, Math.Max(_presenter.Bounds.Height - 1, 0)));
+
+                    var previousIndex = _presenter.CaretIndex;
+
+                    _presenter.MoveCaretToPoint(point);
+
+                    var caretIndex = _presenter.CaretIndex;
+
+                    if (Math.Abs(caretIndex - previousIndex) == 1)
+                        e.PreventGestureRecognition();
+
+                    var selectionStart = SelectionStart;
+                    var selectionEnd = SelectionEnd;
+
+                    if (_wordSelectionStart >= 0)
+                    {
+                        UpdateWordSelectionRange(caretIndex, ref selectionStart, ref selectionEnd);
+
+                        SetCurrentValue(SelectionStartProperty, selectionStart);
+                        SetCurrentValue(SelectionEndProperty, selectionEnd);
+                    }
+                    else
+                    {
+                        SetCurrentValue(SelectionEndProperty, caretIndex);
+                    }
+                }
+                else
+                {
+                    if (!_isInTouchCaretMode)
+                    {
+
+                        var touchRect = new Rect(_lastPoint.X, _lastPoint.Y, 0, 0).Inflate(_touchRadius.Value);
+                        var isInRect = touchRect.X < point.X &&
+                           touchRect.Y < point.Y &&
+                           touchRect.Right > point.X &&
+                           touchRect.Bottom > point.Y;
+                        if (!isInRect)
+                        {
+                            _isInTouchCaretMode = true;
+                        }
+                    }
+
+                    if (_isInTouchCaretMode)
+                    {
+                        e.PreventGestureRecognition();
+                        _presenter.MoveCaretToPoint(point);
+                        var caretIndex = _presenter.CaretIndex;
+                        SetCurrentValue(SelectionStartProperty, caretIndex);
+                        SetCurrentValue(SelectionEndProperty, caretIndex);
+                    }
+                }
+            }
+        }
+
+        private void UpdateWordSelectionRange(int caretIndex, ref int selectionStart, ref int selectionEnd)
+        {
+            var text = Text;
+
+            if (string.IsNullOrEmpty(text))
+            {
+                return;
+            }
+
+            if (caretIndex > _wordSelectionStart)
+            {
+                var nextWord = StringUtils.NextWord(text, caretIndex);
+
+                selectionEnd = nextWord;
+
+                selectionStart = _wordSelectionStart;
+            }
+            else
+            {
+                var previousWord = StringUtils.PreviousWord(text, caretIndex);
+                selectionStart = previousWord;
+
+                selectionEnd = StringUtils.NextWord(text, _wordSelectionStart);
+            }
+        }
+
+        protected override void OnPointerReleased(PointerReleasedEventArgs e)
+        {
+            if (_presenter == null)
+            {
+                return;
+            }
+
+            if (e.Pointer.Captured != _presenter)
+            {
+                return;
+            }
+
+            using var inputChange = _imClient.BeginChange();
+
+            if (e.Pointer.Type != PointerType.Mouse && !_isInTouchSelectionMode)
+            {
+                if (!_isDoubleTapped && !_hasTouchSelection)
+                {
+                    var point = e.GetPosition(_presenter);
+
+                    _presenter.MoveCaretToPoint(point);
+
+                    var caretIndex = _presenter.CaretIndex;
+                    SetCurrentValue(CaretIndexProperty, caretIndex);
+                    SetCurrentValue(SelectionEndProperty, caretIndex);
+                    SetCurrentValue(SelectionStartProperty, caretIndex);
+                }
+            }
+
+            if (e.InitialPressMouseButton == MouseButton.Right)
+            {
+                var point = e.GetPosition(_presenter);
+
+                _presenter.MoveCaretToPoint(point);
+
+                var caretIndex = _presenter.CaretIndex;
+
+                // see if mouse clicked inside current selection
+                // if it did not, we change the selection to where the user clicked
+                var firstSelection = Math.Min(SelectionStart, SelectionEnd);
+                var lastSelection = Math.Max(SelectionStart, SelectionEnd);
+                var didClickInSelection = SelectionStart != SelectionEnd &&
+                                          caretIndex >= firstSelection && caretIndex <= lastSelection;
+                if (!didClickInSelection)
+                {
+                    SetCurrentValue(CaretIndexProperty, caretIndex);
+                    SetCurrentValue(SelectionEndProperty, caretIndex);
+                    SetCurrentValue(SelectionStartProperty, caretIndex);
+                }
+            }
+
+            if (e.InitialPressMouseButton == MouseButton.Middle)
+            {
+                // Middle-click pastes the primary selection at the click position on platforms supporting it.
+                if (!IsReadOnly && TopLevel.GetTopLevel(this)?.TryGetClipboard(ClipboardType.PrimarySelection) is { } primarySelection)
+                {
+                    _presenter.MoveCaretToPoint(e.GetPosition(_presenter));
+
+                    var caretIndex = _presenter.CaretIndex;
+                    SetCurrentValue(CaretIndexProperty, caretIndex);
+                    SetCurrentValue(SelectionStartProperty, caretIndex);
+                    SetCurrentValue(SelectionEndProperty, caretIndex);
+
+                    _ = PasteCoreAsync(primarySelection);
+                    e.Handled = true;
+                }
+            }
+            else if (e.InitialPressMouseButton == MouseButton.Left)
+            {
+                var (start, end) = GetSelectionRange();
+                if (!IsPasswordBox && start != end && (start, end) != _selectionAtPointerPress)
+                {
+                    // The pointer gesture changed the selection, publish it to the primary selection.
+                    _ = PrimarySelectionHelper.PublishTextAsync(this, GetSelection);
+                }
+            }
+
+            _isInTouchSelectionMode = false;
+            _isInTouchCaretMode = false;
+            _hasTouchSelection = false;
+        }
+
+        protected override AutomationPeer OnCreateAutomationPeer()
+        {
+            return new TextBoxAutomationPeer(this);
+        }
+
+        internal static int CoerceCaretIndex(PresentationObject sender, int value)
+        {
+            // method also used by TextPresenter and SelectableTextBlock
+            var text = sender is SelectableTextBlock { HasComplexContent: true } textBlock
+                ? textBlock.Inlines?.Text
+                : sender.GetValue(TextProperty);
+
+            if (text == null)
+            {
+                return 0;
+            }
+            var length = text.Length;
+
+            if (value < 0)
+            {
+                return 0;
+            }
+            else if (value > length)
+            {
+                return length;
+            }
+            else if (value > 0 && text[value - 1] == '\r' && value < length && text[value] == '\n')
+            {
+                return value + 1;
+            }
+            else
+            {
+                return value;
+            }
+        }
+
+        /// <summary>
+        /// Clears the text in the TextBox
+        /// </summary>
+        public void Clear() => SetTextFromEdit(string.Empty);
+
+        private void MoveHorizontal(int direction, bool wholeWord, bool isSelecting, bool moveCaretPosition)
+        {
+            if (_presenter == null)
+            {
+                return;
+            }
+
+            using var _ = _imClient.BeginChange();
+
+            var text = Text ?? string.Empty;
+            var selectionStart = SelectionStart;
+            var selectionEnd = SelectionEnd;
+
+            if (!wholeWord)
+            {
+                if (isSelecting)
+                {
+                    _presenter.MoveCaretToTextPosition(selectionEnd);
+
+                    _presenter.MoveCaretHorizontal(direction > 0 ?
+                        LogicalDirection.Forward :
+                        LogicalDirection.Backward);
+
+                    SetCurrentValue(SelectionEndProperty, _presenter.CaretIndex);
+                }
+                else
+                {
+                    if (selectionStart != selectionEnd)
+                    {
+                        ClearSelectionAndMoveCaretToTextPosition(direction > 0 ?
+                            LogicalDirection.Forward :
+                            LogicalDirection.Backward);
+                    }
+                    else
+                    {
+                        _presenter.MoveCaretHorizontal(direction > 0 ?
+                            LogicalDirection.Forward :
+                            LogicalDirection.Backward);
+                    }
+
+                    SetCurrentValue(CaretIndexProperty, _presenter.CaretIndex);
+                }
+            }
+            else
+            {
+                int offset;
+
+                if (direction > 0)
+                {
+                    offset = StringUtils.NextWord(text, selectionEnd) - selectionEnd;
+                }
+                else
+                {
+                    offset = StringUtils.PreviousWord(text, selectionEnd) - selectionEnd;
+                }
+
+                SetCurrentValue(SelectionEndProperty, SelectionEnd + offset);
+
+                if (moveCaretPosition)
+                {
+                    _presenter.MoveCaretToTextPosition(SelectionEnd);
+                }
+
+                if (!isSelecting && moveCaretPosition)
+                {
+                    SetCurrentValue(CaretIndexProperty, SelectionEnd);
+                }
+                else
+                {
+                    SetCurrentValue(SelectionStartProperty, selectionStart);
+                }
+            }
+        }
+
+        private void MoveVertical(LogicalDirection direction, bool isSelecting)
+        {
+            if (_presenter is null)
+            {
+                return;
+            }
+
+            if (isSelecting)
+            {
+                var oldCaretIndex = _presenter.CaretIndex;
+                _presenter.MoveCaretVertical(direction);
+                var newCaretIndex = _presenter.CaretIndex;
+
+                if (oldCaretIndex == newCaretIndex)
+                {
+                    var text = Text ?? string.Empty;
+
+                    // caret did not move while we are selecting so we could not move to previous/next line,
+                    // but check if we are already at the 'boundary' of the text
+                    if (direction == LogicalDirection.Forward && newCaretIndex < text.Length)
+                    {
+                        _presenter.MoveCaretToTextPosition(text.Length);
+                    }
+                    else if (direction == LogicalDirection.Backward && newCaretIndex > 0)
+                    {
+                        _presenter.MoveCaretToTextPosition(0);
+                    }
+                }
+
+                SetCurrentValue(SelectionEndProperty, _presenter.CaretIndex);
+            }
+            else
+            {
+                if (SelectionStart != SelectionEnd)
+                {
+                    ClearSelectionAndMoveCaretToTextPosition(direction);
+                }
+
+                _presenter.MoveCaretVertical(direction);
+
+                SetCurrentValue(CaretIndexProperty, _presenter.CaretIndex);
+            }
+        }
+
+        private void MoveHome(bool document)
+        {
+            if (_presenter is null)
+            {
+                return;
+            }
+
+            var caretIndex = CaretIndex;
+
+            if (document)
+            {
+                _presenter.MoveCaretToTextPosition(0);
+            }
+            else
+            {
+                var textLines = _presenter.TextLayout.TextLines;
+                var lineIndex = _presenter.TextLayout.GetLineIndexFromCharacterIndex(caretIndex, false);
+                var textLine = textLines[lineIndex];
+
+                _presenter.MoveCaretToTextPosition(textLine.FirstTextSourceIndex);
+            }
+        }
+
+        private void MoveEnd(bool document)
+        {
+            if (_presenter is null)
+            {
+                return;
+            }
+
+            var text = Text ?? string.Empty;
+            var caretIndex = CaretIndex;
+
+            if (document)
+            {
+                _presenter.MoveCaretToTextPosition(text.Length, true);
+            }
+            else
+            {
+                var textLines = _presenter.TextLayout.TextLines;
+                var lineIndex = _presenter.TextLayout.GetLineIndexFromCharacterIndex(caretIndex, false);
+                var textLine = textLines[lineIndex];
+
+                var textPosition = textLine.FirstTextSourceIndex + textLine.Length - textLine.NewLineLength;
+
+                _presenter.MoveCaretToTextPosition(textPosition, true);
+            }
+        }
+
+        private void MovePageRight()
+        {
+            _scrollViewer?.PageRight();
+        }
+
+        private void MovePageLeft()
+        {
+            _scrollViewer?.PageLeft();
+        }
+        private void MovePageUp()
+        {
+            _scrollViewer?.PageUp();
+        }
+
+        private void MovePageDown()
+        {
+            _scrollViewer?.PageDown();
+        }
+
+        private void ClearSelectionAndMoveCaretToTextPosition(LogicalDirection direction)
+        {
+            var newPosition = direction == LogicalDirection.Forward ?
+                Math.Max(SelectionStart, SelectionEnd) :
+                Math.Min(SelectionStart, SelectionEnd);
+            SetCurrentValue(SelectionStartProperty, newPosition);
+            SetCurrentValue(SelectionEndProperty, newPosition);
+            // move caret to appropriate side of previous selection
+            _presenter?.MoveCaretToTextPosition(newPosition);
+        }
+
+        /// <summary>
+        /// Scroll the <see cref="TextBox"/> to the specified line index.
+        /// </summary>
+        /// <param name="lineIndex">The line index to scroll to.</param>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="lineIndex"/> is less than zero. -or - <paramref name="lineIndex"/> is larger than or equal to the line count.</exception>
+        public void ScrollToLine(int lineIndex)
+        {
+            if (_presenter is null)
+            {
+                return;
+            }
+
+            if (lineIndex < 0 || lineIndex >= _presenter.TextLayout.TextLines.Count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(lineIndex));
+            }
+
+            var textLine = _presenter.TextLayout.TextLines[lineIndex];
+            _presenter.MoveCaretToTextPosition(textLine.FirstTextSourceIndex);
+
+        }
+
+        /// <summary>
+        /// Select all text in the TextBox
+        /// </summary>
+        public void SelectAll()
+        {
+            using var _ = _imClient.BeginChange();
+
+            SetCurrentValue(SelectionStartProperty, 0);
+            SetCurrentValue(SelectionEndProperty, Text?.Length ?? 0);
+        }
+
+        private (int start, int end) GetSelectionRange()
+        {
+            var selectionStart = SelectionStart;
+            var selectionEnd = SelectionEnd;
+
+            return (Math.Min(selectionStart, selectionEnd), Math.Max(selectionStart, selectionEnd));
+        }
+
+        internal bool DeleteSelection()
+        {
+            if (IsReadOnly)
+                return true;
+
+            using var _ = _imClient.BeginChange();
+
+            var (start, end) = GetSelectionRange();
+
+            if (start != end)
+            {
+                var text = Text!;
+                var textBuilder = StringBuilderCache.Acquire(text.Length);
+
+                textBuilder.Append(text);
+                textBuilder.Remove(start, end - start);
+
+                SetTextFromEdit(StringBuilderCache.GetStringAndRelease(textBuilder));
+
+                _presenter?.MoveCaretToTextPosition(start);
+
+                SetCurrentValue(SelectionStartProperty, start);
+
+                ClearSelection();
+
+                return true;
+            }
+
+            SetCurrentValue(CaretIndexProperty, SelectionStart);
+
+            return false;
+        }
+
+        /// <summary>
+        /// Reports the same emptiness conditions as <see cref="GetSelection"/>, without building
+        /// the selected string.
+        /// </summary>
+        private bool HasSelection()
+        {
+            var (start, end) = GetSelectionRange();
+
+            if (start == end)
+            {
+                return false;
+            }
+
+            var textLength = Text?.Length ?? 0;
+
+            return textLength > 0 && end <= textLength;
+        }
+
+        private string GetSelection()
+        {
+            var text = Text;
+
+            if (string.IsNullOrEmpty(text))
+            {
+                return "";
+            }
+
+            var selectionStart = SelectionStart;
+            var selectionEnd = SelectionEnd;
+            var start = Math.Min(selectionStart, selectionEnd);
+            var end = Math.Max(selectionStart, selectionEnd);
+
+            if (start == end || (Text?.Length ?? 0) < end)
+            {
+                return "";
+            }
+
+            return text.Substring(start, end - start);
+        }
+
+        internal void SetTextFromEdit(string? value) => SetTextCore(value, TextMutationKind.Edit);
+
+        internal void SetTextFromInternalSynchronization(string? value) =>
+            SetTextCore(value, TextMutationKind.InternalSynchronization);
+
+        private void SetTextCore(string? value, TextMutationKind mutationKind)
+        {
+            // Stays set through the synchronous TwoWay source echo so it isn't mistaken for an external replacement.
+            var previousMutationKind = _textMutationKind;
+            _textMutationKind = mutationKind;
+
+            try
+            {
+                SetCurrentValue(TextProperty, value);
+            }
+            finally
+            {
+                _textMutationKind = previousMutationKind;
+            }
+        }
+
+        /// <summary>
+        /// Returns the sum of any vertical whitespace added between the <see cref="ScrollViewer"/> and <see cref="TextPresenter"/> in the control template.
+        /// </summary>
+        /// <returns>The total vertical whitespace.</returns>
+        private double GetVerticalSpaceBetweenScrollViewerAndPresenter()
+        {
+            var verticalSpace = 0.0;
+            if (_presenter != null)
+            {
+                Visual? visual = _presenter;
+                while ((visual != null) && (visual != this))
+                {
+                    if (visual == _scrollViewer)
+                    {
+                        // ScrollViewer is a stopping point and should only include the Padding
+                        verticalSpace += _scrollViewer.Padding.Top + _scrollViewer.Padding.Bottom;
+                        break;
+                    }
+
+                    var margin = visual.GetValue<Thickness>(Layoutable.MarginProperty);
+                    var padding = visual.GetValue<Thickness>(Decorator.PaddingProperty);
+
+                    verticalSpace += margin.Top + padding.Top + padding.Bottom + margin.Bottom;
+
+                    visual = visual.VisualParent;
+                }
+            }
+
+            return verticalSpace;
+        }
+
+        /// <summary>
+        /// Raises both the <see cref="TextChanging"/> and <see cref="TextChanged"/> events.
+        /// </summary>
+        /// <remarks>
+        /// This must be called after the <see cref="Text"/> property is set.
+        /// </remarks>
+        private void RaiseTextChangeEvents()
+        {
+            // Note the following sequence of these events (following WinUI)
+            // 1. TextChanging occurs synchronously when text starts to change but before it is rendered.
+            //    This occurs after the Text property is set.
+            // 2. TextChanged occurs asynchronously after text changes and the new text is rendered.
+
+            var textChangingEventArgs = new TextChangingEventArgs(TextChangingEvent);
+            RaiseEvent(textChangingEventArgs);
+
+            Dispatcher.UIThread.Post(() =>
+            {
+                var textChangedEventArgs = new TextChangedEventArgs(TextChangedEvent);
+                RaiseEvent(textChangedEventArgs);
+            }, DispatcherPriority.Normal);
+        }
+
+        private void SetSelectionForControlBackspace()
+        {
+            var text = Text ?? string.Empty;
+            var selectionStart = CaretIndex;
+
+            using var _ = _imClient.BeginChange();
+
+            MoveHorizontal(-1, true, false, false);
+
+            if (SelectionEnd > 0 &&
+                selectionStart < text.Length && text[selectionStart] == ' ')
+            {
+                SetCurrentValue(SelectionEndProperty, SelectionEnd - 1);
+            }
+
+            SetCurrentValue(SelectionStartProperty, selectionStart);
+        }
+
+        private void SetSelectionForControlDelete()
+        {
+            var textLength = Text?.Length ?? 0;
+            if (_presenter == null || textLength == 0)
+            {
+                return;
+            }
+
+            using var _ = _imClient.BeginChange();
+
+            SetCurrentValue(SelectionStartProperty, CaretIndex);
+
+            MoveHorizontal(1, true, true, false);
+
+            if (SelectionEnd < textLength && Text![SelectionEnd] == ' ')
+            {
+                SetCurrentValue(SelectionEndProperty, SelectionEnd + 1);
+            }
+        }
+
+        private void UpdatePseudoclasses()
+        {
+            PseudoClasses.Set(":empty", string.IsNullOrEmpty(Text));
+            PseudoClasses.Set(":touch-mode", _isInTouchMode);
+        }
+
+        private bool IsPasswordBox => PasswordChar != default(char) && !RevealPassword;
+
+        UndoRedoState UndoRedoHelper<UndoRedoState>.IUndoRedoHost.UndoRedoState
+        {
+            get => new UndoRedoState(Text, CaretIndex);
+            set
+            {
+                SetCurrentValue(TextProperty, value.Text);
+                SetCurrentValue(CaretIndexProperty, value.CaretPosition);
+                ClearSelection();
+            }
+        }
+
+        private void SnapshotUndoRedo(bool ignoreChangeCount = true)
+        {
+            if (IsUndoEnabled)
+            {
+                if (ignoreChangeCount ||
+                    !_hasDoneSnapshotOnce ||
+                    (!ignoreChangeCount &&
+                        _selectedTextChangesMadeSinceLastUndoSnapshot >= _maxCharsBeforeUndoSnapshot))
+                {
+                    _undoRedoHelper.Snapshot();
+                    _selectedTextChangesMadeSinceLastUndoSnapshot = 0;
+                    _hasDoneSnapshotOnce = true;
+                }
+            }
+        }
+
+        private void ClearUndoRedo()
+        {
+            _undoRedoHelper.Clear();
+            _selectedTextChangesMadeSinceLastUndoSnapshot = 0;
+            _hasDoneSnapshotOnce = false;
+        }
+
+        /// <summary>
+        /// Undoes the first action in the undo stack
+        /// </summary>
+        public void Undo()
+        {
+            if (IsUndoEnabled && CanUndo)
+            {
+                try
+                {
+                    // Snapshot the current Text state - this will get popped on to the redo stack
+                    // when we call undo below
+                    SnapshotUndoRedo();
+                    _isUndoingRedoing = true;
+                    _undoRedoHelper.Undo();
+                }
+                finally
+                {
+                    _isUndoingRedoing = false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Reapplies the first item on the redo stack
+        /// </summary>
+        public void Redo()
+        {
+            if (IsUndoEnabled && CanRedo)
+            {
+                try
+                {
+                    _isUndoingRedoing = true;
+                    _undoRedoHelper.Redo();
+                }
+                finally
+                {
+                    _isUndoingRedoing = false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Called from the UndoRedoHelper when the undo stack is modified
+        /// </summary>
+        void UndoRedoHelper<UndoRedoState>.IUndoRedoHost.OnUndoStackChanged()
+        {
+            CanUndo = _undoRedoHelper.CanUndo;
+        }
+
+        /// <summary>
+        /// Called from the UndoRedoHelper when the redo stack is modified
+        /// </summary>
+        void UndoRedoHelper<UndoRedoState>.IUndoRedoHost.OnRedoStackChanged()
+        {
+            CanRedo = _undoRedoHelper.CanRedo;
+        }
+
+        protected override Size MeasureOverride(Size availableSize)
+        {
+            if (_scrollViewer != null)
+            {
+                var maxHeight = double.PositiveInfinity;
+
+                if (MaxLines > 0 && double.IsNaN(Height))
+                {
+                    var fontSize = FontSize;
+                    var typeface = new Typeface(FontFamily, FontStyle, FontWeight, FontStretch);
+                    var paragraphProperties = TextLayout.CreateTextParagraphProperties(typeface, fontSize, null, default, default, null, default, LineHeight, default, FontFeatures);
+                    var textLayout = new TextLayout(new LineTextSource(MaxLines), paragraphProperties);
+                    var verticalSpace = GetVerticalSpaceBetweenScrollViewerAndPresenter();
+
+                    maxHeight = Math.Ceiling(textLayout.Height + verticalSpace);
+                }
+
+                _scrollViewer.SetCurrentValue(MaxHeightProperty, maxHeight);
+
+
+                var minHeight = 0.0;
+
+                if (MinLines > 0 && double.IsNaN(Height))
+                {
+                    var fontSize = FontSize;
+                    var typeface = new Typeface(FontFamily, FontStyle, FontWeight, FontStretch);
+                    var paragraphProperties = TextLayout.CreateTextParagraphProperties(typeface, fontSize, null, default, default, null, default, LineHeight, default, FontFeatures);
+                    var textLayout = new TextLayout(new LineTextSource(MinLines), paragraphProperties);
+                    var verticalSpace = GetVerticalSpaceBetweenScrollViewerAndPresenter();
+
+                    minHeight = Math.Ceiling(textLayout.Height + verticalSpace);
+                }
+
+                _scrollViewer.SetCurrentValue(MinHeightProperty, minHeight);
+            }
+
+            return base.MeasureOverride(availableSize);
+        }
+
+        private class LineTextSource : ITextSource
+        {
+            private readonly int _lines;
+
+            public LineTextSource(int lines)
+            {
+                _lines = lines;
+            }
+
+            public TextRun? GetTextRun(int textSourceIndex)
+            {
+                if (textSourceIndex >= _lines)
+                {
+                    return null;
+                }
+
+                return new TextEndOfLine(1);
+            }
+        }
+    }
+}

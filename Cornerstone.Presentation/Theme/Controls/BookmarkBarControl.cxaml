@@ -1,0 +1,49 @@
+<Styles xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type BookmarkBarControl}" TargetType="BookmarkBarControl">
+				<Setter Property="DragDrop.AllowDrop" Value="True" />
+				<Setter Property="Template">
+					<ControlTemplate>
+						<Border Background="{DynamicResource Background02}"
+								BorderBrush="{DynamicResource BorderBrush}"
+								BorderThickness="0,0,0,1"
+								Height="32"
+								DragDrop.AllowDrop="True">
+							<Border.ContextMenu>
+								<ContextMenu>
+									<MenuItem Header="Add Folder"
+											Command="{Binding AddFolderCommand, RelativeSource={RelativeSource TemplatedParent}}"
+											CommandParameter="{x:Null}"
+											IsVisible="{Binding AddFolderCommand, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static ObjectConverters.IsNotNull}}" />
+								</ContextMenu>
+							</Border.ContextMenu>
+							<ScrollViewer HorizontalScrollBarVisibility="Auto"
+									VerticalScrollBarVisibility="Disabled">
+								<ItemsControl ItemsSource="{Binding Bookmarks, RelativeSource={RelativeSource TemplatedParent}}">
+									<ItemsControl.ItemsPanel>
+										<ItemsPanelTemplate>
+											<StackPanel Orientation="Horizontal" />
+										</ItemsPanelTemplate>
+									</ItemsControl.ItemsPanel>
+									<ItemsControl.ItemTemplate>
+										<DataTemplate>
+											<BookmarkBarItem Bookmark="{Binding}" />
+										</DataTemplate>
+									</ItemsControl.ItemTemplate>
+								</ItemsControl>
+							</ScrollViewer>
+						</Border>
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="500">
+			<BookmarkBarControl />
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</Styles>

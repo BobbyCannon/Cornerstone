@@ -78,6 +78,122 @@ public static class XamlEditCompleteness
 		return false;
 	}
 
+	/// <summary>
+	/// True when the caret is inside a free-text attribute value (Text, Title, and the same kind of field).
+	/// Those values have no completion list. A value that starts with { is a markup extension, not free text.
+	/// </summary>
+	public static bool IsFreeTextAttributeValue(string textBeforeCaret)
+	{
+		if (string.IsNullOrEmpty(textBeforeCaret))
+		{
+			return false;
+		}
+
+		return IsFreeTextAttributeValue(XmlParser.Parse(textBeforeCaret));
+	}
+
+	/// <summary>
+	/// True when the parser is between the quotes of a free-text attribute, or on the = before those quotes.
+	/// </summary>
+	public static bool IsFreeTextAttributeValue(XmlParser parser)
+	{
+		if (parser == null)
+		{
+			return false;
+		}
+
+		if ((parser.State != XmlParser.ParserState.AttributeValue) &&
+			(parser.State != XmlParser.ParserState.BeforeAttributeValue))
+		{
+			return false;
+		}
+
+		if ((parser.AttributeValue != null) && parser.AttributeValue.StartsWith("{", StringComparison.Ordinal))
+		{
+			return false;
+		}
+
+		return IsFreeTextAttributeName(parser.AttributeName);
+	}
+
+	/// <summary>
+	/// True for attribute names whose value is prose. The local name is the part after : or .
+	/// </summary>
+	public static bool IsFreeTextAttributeName(string attributeName)
+	{
+		if (string.IsNullOrEmpty(attributeName))
+		{
+			return false;
+		}
+
+		var local = attributeName;
+		var colon = attributeName.LastIndexOf(':');
+		var dot = attributeName.LastIndexOf('.');
+		var separator = colon > dot ? colon : dot;
+		if ((separator >= 0) && (separator < attributeName.Length - 1))
+		{
+			local = attributeName.Substring(separator + 1);
+		}
+
+		return local.Equals("Text", StringComparison.Ordinal)
+			|| local.Equals("Watermark", StringComparison.Ordinal)
+			|| local.Equals("PasswordChar", StringComparison.Ordinal)
+			|| local.Equals("PlaceholderText", StringComparison.Ordinal)
+			|| local.Equals("Title", StringComparison.Ordinal)
+			|| local.Equals("Caption", StringComparison.Ordinal)
+			|| local.Equals("Content", StringComparison.Ordinal)
+			|| local.Equals("Header", StringComparison.Ordinal)
+			|| local.Equals("ToolTip", StringComparison.Ordinal)
+			|| local.Equals("Name", StringComparison.Ordinal);
+	}
+
+	/// <summary>
+	/// True when text before the caret is still inside a tag (unclosed start tag).
+	/// Used to skip tag manipulators and completion while typing element content.
+	/// </summary>
+	public static bool IsInsideOpenTag(string textBeforeCaret)
+	{
+		if (string.IsNullOrEmpty(textBeforeCaret))
+		{
+			return false;
+		}
+
+		var lastLt = textBeforeCaret.LastIndexOf('<');
+		if (lastLt < 0)
+		{
+			return false;
+		}
+
+		return textBeforeCaret.LastIndexOf('>') < lastLt;
+	}
+
+	/// <summary>
+	/// True when an insert or delete itself contains markup characters that can
+	/// start or close a tag, even if the caret is no longer inside a tag afterwards.
+	/// </summary>
+	public static bool ChangeLooksLikeMarkup(string oldText, string newText)
+	{
+		return ContainsMarkupChar(oldText) || ContainsMarkupChar(newText);
+	}
+
+	private static bool ContainsMarkupChar(string text)
+	{
+		if (string.IsNullOrEmpty(text))
+		{
+			return false;
+		}
+
+		foreach (var c in text)
+		{
+			if ((c == '<') || (c == '>') || (c == '/'))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	private static bool LooksLikeOpenComment(string xaml, int lt, int end)
 	{
 		// "<!--" ... without "-->"

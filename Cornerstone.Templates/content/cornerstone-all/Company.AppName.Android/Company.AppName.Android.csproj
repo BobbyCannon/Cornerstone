@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net10.0-android</TargetFramework>
+		<SupportedOSPlatformVersion>27</SupportedOSPlatformVersion>
+		<ApplicationId>com.Company.AppName</ApplicationId>
+		<ApplicationVersion>1</ApplicationVersion>
+		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+		<AndroidPackageFormat>apk</AndroidPackageFormat>
+		<AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+		<IntermediateOutputPath>obj\a\$(Configuration)\</IntermediateOutputPath>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	</PropertyGroup>
+	<ItemGroup>
+		<AndroidResource Include="Icon.png">
+			<Link>Resources\drawable\Icon.png</Link>
+		</AndroidResource>
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Company.AppName\Company.AppName.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Cornerstone.Presentation" Version="CornerstoneVersionTemplateParameter" />
+	</ItemGroup>
+</Project>

@@ -1,6 +1,6 @@
 # TreeDataGrid (Agent)
 
-Dense reference for implementing or changing the forked Avalonia TreeDataGrid.
+Dense reference for implementing or changing the Cornerstone.Presentation TreeDataGrid.
 
 **Product behavior:** [../Controls/TreeDataGrid.md](../Controls/TreeDataGrid.md)
 
@@ -29,7 +29,7 @@ TreeDataGrid (MinRowHeight, source, scroll)
 | `TreeDataGrid` | Host; owns `MinRowHeight`; propagates on property change |
 | `TreeDataGridRowsPresenter` | Virtualization pool; applies height on realize |
 | `TreeDataGridRow` | Realized row shell |
-| Theme `TreeDataGrid.axaml` | Default row/cell/header MinHeight; **no** ancestor height bindings |
+| Theme `TreeDataGrid.cxaml` | Default row/cell/header MinHeight; **no** ancestor height bindings |
 
 ---
 
@@ -38,7 +38,7 @@ TreeDataGrid (MinRowHeight, source, scroll)
 | Property | Type | Default | Meaning |
 |----------|------|---------|---------|
 | `TreeDataGrid.MinRowHeight` | `int` | `28` | Row minimum height |
-| `Layoutable.MinHeight` on grid | `double` | Avalonia default | Control size, not row height |
+| `Layoutable.MinHeight` on grid | `double` | Cornerstone.Presentation default | Control size, not row height |
 
 Propagation:
 
@@ -72,10 +72,10 @@ Symptom: `[Binding] ... Ancestor not found` on `TreeDataGridRow`.
 
 | Path | Notes |
 |------|-------|
-| `Cornerstone.Avalonia/TreeDataGrid/TreeDataGrid.axaml` | Control themes; row default MinHeight only |
-| `Cornerstone.Avalonia/TreeDataGrid/TreeDataGrid.axaml.cs` | `MinRowHeight`, propagate on change |
-| `Cornerstone.Avalonia/TreeDataGrid/Cells/TreeDataGridRowsPresenter.cs` | Apply MinRowHeight in RealizeElement |
-| `Cornerstone.Avalonia/TreeDataGrid/Cells/TreeDataGridRow.cs` | Realize / unrealize lifecycle |
+| `Cornerstone.Presentation/Theme/Controls/TreeDataGrid.cxaml` | Control themes; row default MinHeight only |
+| `Cornerstone.Presentation/Controls/TreeDataGrid/TreeDataGrid.cs` | `MinRowHeight`, propagate on change |
+| `Cornerstone.Presentation/Controls/TreeDataGrid/Cells/TreeDataGridRowsPresenter.cs` | Apply MinRowHeight in RealizeElement |
+| `Cornerstone.Presentation/Controls/TreeDataGrid/Cells/TreeDataGridRow.cs` | Realize / unrealize lifecycle |
 
 ---
 

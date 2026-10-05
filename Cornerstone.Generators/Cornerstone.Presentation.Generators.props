@@ -1,0 +1,30 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <CornerstoneNameGeneratorIsEnabled Condition="'$(CornerstoneNameGeneratorIsEnabled)' == ''">true</CornerstoneNameGeneratorIsEnabled>
+    <CornerstoneNameGeneratorBehavior Condition="'$(CornerstoneNameGeneratorBehavior)' == ''">InitializeComponent</CornerstoneNameGeneratorBehavior>
+    <CornerstoneNameGeneratorDefaultFieldModifier Condition="'$(CornerstoneNameGeneratorDefaultFieldModifier)' == ''">internal</CornerstoneNameGeneratorDefaultFieldModifier>
+    <CornerstoneNameGeneratorFilterByPath Condition="'$(CornerstoneNameGeneratorFilterByPath)' == ''">*</CornerstoneNameGeneratorFilterByPath>
+    <CornerstoneNameGeneratorFilterByNamespace Condition="'$(CornerstoneNameGeneratorFilterByNamespace)' == ''">*</CornerstoneNameGeneratorFilterByNamespace>
+    <CornerstoneNameGeneratorViewFileNamingStrategy Condition="'$(CornerstoneNameGeneratorViewFileNamingStrategy)' == ''">NamespaceAndClassName</CornerstoneNameGeneratorViewFileNamingStrategy>
+    <CornerstoneNameGeneratorAttachDevTools Condition="'$(CornerstoneNameGeneratorAttachDevTools)' == ''">true</CornerstoneNameGeneratorAttachDevTools>
+    <CornerstonePropertyGeneratorIsEnabled Condition="'$(CornerstonePropertyGeneratorIsEnabled)' == ''">true</CornerstonePropertyGeneratorIsEnabled>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Mark CornerstoneXaml/CornerstoneResource metadata visible for the Roslyn-compiler -->
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="SourceItemGroup"/>
+    <!-- Mark Cornerstone.Presentation.Generators config properties visible for the Roslyn-compiler  -->
+    <CompilerVisibleProperty Include="CornerstoneNameGeneratorIsEnabled" />
+    <CompilerVisibleProperty Include="CornerstoneNameGeneratorBehavior" />
+    <CompilerVisibleProperty Include="CornerstoneNameGeneratorDefaultFieldModifier" />
+    <CompilerVisibleProperty Include="CornerstoneNameGeneratorFilterByPath" />
+    <CompilerVisibleProperty Include="CornerstoneNameGeneratorFilterByNamespace" />
+    <CompilerVisibleProperty Include="CornerstoneNameGeneratorViewFileNamingStrategy" />
+    <CompilerVisibleProperty Include="CornerstoneNameGeneratorAttachDevTools"/>
+    <CompilerVisibleProperty Include="CornerstonePropertyGeneratorIsEnabled" />
+    <!-- Mark additional Cornerstone properties that might be useful for the Roslyn-compiler -->
+    <CompilerVisibleProperty Include="CornerstoneUseCompiledBindingsByDefault" />
+    <CompilerVisibleProperty Include="CornerstoneMainPackageVersion" />
+    <CompilerVisibleProperty Include="CornerstonePreviewerNetCoreToolPath" />
+    <CompilerVisibleProperty Include="CornerstoneResourcePaths" />
+  </ItemGroup>
+</Project>

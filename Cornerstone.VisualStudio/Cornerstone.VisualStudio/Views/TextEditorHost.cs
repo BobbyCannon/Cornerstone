@@ -2,6 +2,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using Cornerstone.VisualStudio.IntelliSense;
 using Cornerstone.VisualStudio.Models;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ComponentModelHost;
@@ -63,6 +64,8 @@ internal class TextEditorHost : IVsTextBufferDataEvents
 
 	public IVsCodeWindow VsCodeWindow { get; private set; }
 
+	public IWpfTextView HostedTextView { get; private set; }
+
 	public IVsTextView WpfTextView { get; private set; }
 
 	public IWpfTextViewHost WpfTextViewHost { get; private set; }
@@ -109,10 +112,15 @@ internal class TextEditorHost : IVsTextBufferDataEvents
 			0,
 			new INITVIEW[1]);
 
+		// Completion listeners run on SetBuffer. Stamp metadata first or the command
+		// handler never registers and CXAML/AXAML IntelliSense never opens.
+		var buffer = eafs.GetDocumentBuffer(TextBuffer);
+		XamlBufferMetadataHelper.Ensure(buffer);
+
 		ErrorHandler.ThrowOnFailure(window.SetBuffer(TextBuffer));
 
-		var buffer = eafs.GetDocumentBuffer(TextBuffer);
-		buffer?.Properties.GetOrCreateSingletonProperty(() => new XamlBufferMetadata());
+		buffer = eafs.GetDocumentBuffer(TextBuffer) ?? buffer;
+		XamlBufferMetadataHelper.Ensure(buffer);
 
 		var primaryView = window.GetPrimaryView(out var ppView);
 		var textViewHost = eafs.GetWpfTextViewHost(ppView);
@@ -120,6 +128,13 @@ internal class TextEditorHost : IVsTextBufferDataEvents
 		VsCodeWindow = window;
 		WpfTextView = ppView;
 		WpfTextViewHost = textViewHost;
+		HostedTextView = eafs.GetWpfTextView(ppView);
+
+		if (HostedTextView != null)
+		{
+			XamlBufferMetadataHelper.Ensure(HostedTextView.TextBuffer);
+			_componentModel.GetService<XamlIntelliSenseRegistrar>()?.Register(ppView, HostedTextView);
+		}
 
 		CodeWindowCreated?.Invoke(this, EventArgs.Empty);
 	}

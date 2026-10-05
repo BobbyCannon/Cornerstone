@@ -15,6 +15,7 @@ internal static class Utils
 	#region Constants
 
 	public const string AvaloniaNamespace = "https://github.com/avaloniaui";
+	public const string CornerstoneNamespace = "https://github.com/BobbyCannon/Cornerstone";
 	public const string Xaml2006Namespace = "http://schemas.microsoft.com/winfx/2006/xaml";
 
 	#endregion

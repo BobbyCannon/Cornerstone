@@ -1,6 +1,8 @@
 ﻿#region References
 
 using System;
+using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -25,8 +27,10 @@ namespace Cornerstone.Settings;
 /// <typeparam name="TEntity"> The type of the setting. </typeparam>
 /// <typeparam name="TKey"> The type of the setting ID. </typeparam>
 /// <typeparam name="TDatabase"> The database that stores the data. </typeparam>
+[RequiresDynamicCode("JSON serialization of settings may need runtime code generation.")]
+[RequiresUnreferencedCode("JSON serialization of settings may require unreferenced types.")]
 public class SettingsManager<TSettings, TEntity, TKey, TDatabase>
-	: ViewManagerForDatabase<PartialUpdateValue, TEntity, TKey, TDatabase>
+	: ModelManagerForDatabase<PartialUpdateValue, TEntity, TKey, TDatabase>
 	where TEntity : SettingSyncEntity<TKey>, IClientEntity, new()
 	where TDatabase : ISyncableDatabase
 {
@@ -41,9 +45,8 @@ public class SettingsManager<TSettings, TEntity, TKey, TDatabase>
 	public SettingsManager(string category,
 		ISettingsRepositoryProvider<TEntity, TKey, TDatabase> settingsRepositoryProvider,
 		IDateTimeProvider dateTimeProvider,
-		IDependencyProvider dependencyProvider,
-		IDispatcher dispatcher
-	) : base(settingsRepositoryProvider, dateTimeProvider, dependencyProvider, dispatcher,
+		IDependencyProvider dependencyProvider
+	) : base(settingsRepositoryProvider, dateTimeProvider, dependencyProvider,
 		(model, entity) => string.Equals(model.Name, entity.Name, StringComparison.OrdinalIgnoreCase))
 	{
 		_settingRepositoryProvider = settingsRepositoryProvider;
@@ -59,6 +62,8 @@ public class SettingsManager<TSettings, TEntity, TKey, TDatabase>
 	protected override Func<TEntity, bool> LoadPredicate => x => (x.Category == Category) && !x.IsDeleted;
 
 	protected override Func<PartialUpdateValue, TEntity, bool> LookupPredicate => (m, e) => (e.Category == Category) && (m.Name == e.Name);
+
+	protected override Func<TEntity, bool> UpdatePredicate => x => !x.IsDeleted && (x.GetValueType() != null);
 
 	protected override Func<TEntity, bool> RefreshPredicate => x => (x.Category == Category) && !x.IsDeleted && base.RefreshPredicate(x);
 
@@ -126,6 +131,8 @@ public class SettingsManager<TSettings, TEntity, TKey, TDatabase>
 	/// <summary>
 	/// Save the settings to the repository.
 	/// </summary>
+	[RequiresDynamicCode("JSON serialization of settings may need runtime code generation.")]
+	[RequiresUnreferencedCode("JSON serialization of settings may require unreferenced types.")]
 	public virtual void Save(bool force = false)
 	{
 		if (!CanSave() || (!force && !HasChanges()))
@@ -215,6 +222,8 @@ public class SettingsManager<TSettings, TEntity, TKey, TDatabase>
 		}
 	}
 
+	[RequiresDynamicCode("JSON serialization of settings may need runtime code generation.")]
+	[RequiresUnreferencedCode("JSON serialization of settings may require unreferenced types.")]
 	public string ToJson()
 	{
 		var partialUpdate = new PartialUpdate();
@@ -271,17 +280,35 @@ public class SettingsManager<TSettings, TEntity, TKey, TDatabase>
 		SettingSaved?.Invoke(this, EventArgs.Empty);
 	}
 
-	protected override void OnViewUpdated(PartialUpdateValue view)
+	protected override void OnModelUpdated(PartialUpdateValue model)
 	{
-		NotifyComputedPropertyChanged(view.Name);
-		base.OnViewUpdated(view);
+		NotifyComputedPropertyChanged(model.Name);
+		base.OnModelUpdated(model);
 	}
 
-	protected override bool UpdateView(PartialUpdateValue view, TEntity update)
+	public override PartialUpdateValue AddOrUpdate(TEntity value)
 	{
-		view.Name = update.Name;
-		view.Type = update.GetValueType();
-		TryUpdateViewValue(view, update.Value, view.Type);
+		if (value.GetValueType() == null)
+		{
+			return null;
+		}
+
+		return base.AddOrUpdate(value);
+	}
+
+	[UnconditionalSuppressMessage("Aot", "IL3050", Justification = "ModelManager.UpdateModel cannot be annotated; JSON parse of setting values.")]
+	[UnconditionalSuppressMessage("Trim", "IL2026", Justification = "ModelManager.UpdateModel cannot be annotated; JSON parse of setting values.")]
+	protected override bool UpdateModel(PartialUpdateValue model, TEntity update)
+	{
+		var valueType = update.GetValueType();
+		if (valueType == null)
+		{
+			return false;
+		}
+
+		model.Name = update.Name;
+		model.Type = valueType;
+		TryUpdateViewValue(model, update.Value, valueType);
 		return true;
 	}
 
@@ -291,17 +318,44 @@ public class SettingsManager<TSettings, TEntity, TKey, TDatabase>
 		AddOrUpdate(model);
 	}
 
+	[RequiresDynamicCode("JSON serialization of settings may need runtime code generation.")]
+	[RequiresUnreferencedCode("JSON serialization of settings may require unreferenced types.")]
 	private void TryUpdateViewValue(PartialUpdateValue update, string value, Type valueType)
 	{
-		if (value.TryFromJson(valueType, out var typeValue))
+		if (valueType == null)
 		{
-			update.Value = typeValue;
+			return;
 		}
-		else
+
+		object typeValue;
+		if (!value.TryFromJson(valueType, out typeValue))
 		{
-			// Default value if JSON is bad
-			update.Value = SourceReflector.CreateInstance(valueType);
+			typeValue = SourceReflector.CreateInstance(valueType);
 		}
+
+		if (update.Value != null)
+		{
+			if (UpdatePropertyWith(update.Name, typeValue))
+			{
+				return;
+			}
+
+			if ((update.Value is IPresentationList presentationList)
+				&& (typeValue is IEnumerable enumerable))
+			{
+				presentationList.Load(enumerable);
+				return;
+			}
+
+			if ((update.Value is IUpdateable updateable)
+				&& (typeValue != null))
+			{
+				updateable.UpdateWith(typeValue);
+				return;
+			}
+		}
+
+		update.Value = typeValue;
 	}
 
 	#endregion

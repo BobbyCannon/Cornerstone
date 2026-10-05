@@ -14,16 +14,16 @@ public interface ISyncClientProvider
 	#region Methods
 
 	/// <summary>
-	/// Gets an instance of the database.
-	/// </summary>
-	/// <returns> The database instance. </returns>
-	ISyncableDatabase GetSyncableDatabase();
-
-	/// <summary>
 	/// Return a client by the provided name and credential.
 	/// </summary>
 	/// <returns> The sync client. </returns>
 	SyncClient GetSyncClient(SyncStatistics syncStatistics, Profiler syncClientProfiler);
+
+	/// <summary>
+	/// Gets an instance of the database.
+	/// </summary>
+	/// <returns> The database instance. </returns>
+	ISyncableDatabase GetSyncableDatabase();
 
 	#endregion
 }

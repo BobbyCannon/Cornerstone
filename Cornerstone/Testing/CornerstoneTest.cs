@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -8,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using Cornerstone.Compare;
 using Cornerstone.Data;
@@ -16,6 +18,7 @@ using Cornerstone.Internal;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
 using Cornerstone.Text.CodeGenerators;
+using Comparer = Cornerstone.Compare.Comparer;
 #if WINDOWS
 using Cornerstone.Platforms.Windows;
 using System.Threading;
@@ -32,7 +35,7 @@ namespace Cornerstone.Testing;
 /// The base test for the Cornerstone framework.
 /// </summary>
 [SourceReflection]
-public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
+public abstract partial class CornerstoneTest : DependencyProvider, IDateTimeProvider
 {
 	#region Fields
 
@@ -100,6 +103,20 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 	#region Methods
 
 	/// <summary>
+	/// Invoke an action for every item in the source.
+	/// </summary>
+	public static void All<T>(IEnumerable<T> source, params Action<T>[] actions)
+	{
+		foreach (var item in source)
+		{
+			foreach (var action in actions)
+			{
+				action(item);
+			}
+		}
+	}
+
+	/// <summary>
 	/// Validates that the actual is equal to the expected. If they are not equal a <see cref="CompareException" /> is thrown.
 	/// </summary>
 	/// <typeparam name="T"> The data type of the expected value. </typeparam>
@@ -108,7 +125,13 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 	/// <param name="message"> An optional prefix to include with the assert message. </param>
 	/// <param name="settings"> The settings for the compare session. </param>
 	/// <param name="configure"> Optional configuration before the session processes. </param>
+	[OverloadResolutionPriority(1)]
 	public static void AreEqual<T>(T expected, T actual, Func<string> message = null, ComparerSettings? settings = null, Action<CompareSession<T, T>> configure = null)
+	{
+		AreEqual<T, T>(expected, actual, message, settings, configure);
+	}
+
+	public static void AreEqual<TExpected, TActual>(TExpected expected, TActual actual, Func<string> message = null, ComparerSettings? settings = null, Action<CompareSession<TExpected, TActual>> configure = null)
 	{
 		var session = Compare(expected, actual, settings, configure);
 		session.Assert(CompareResult.AreEqual, message);
@@ -123,10 +146,57 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 	/// <param name="message"> An optional prefix to include with the assert message. </param>
 	/// <param name="settings"> The settings for the compare session. </param>
 	/// <param name="configure"> Optional configuration before the session processes. </param>
+	[OverloadResolutionPriority(1)]
 	public static void AreNotEqual<T>(T expected, T actual, Func<string> message = null, ComparerSettings? settings = null, Action<CompareSession<T, T>> configure = null)
+	{
+		AreNotEqual<T, T>(expected, actual, message, settings, configure);
+	}
+
+	public static void AreNotEqual<TExpected, TActual>(TExpected expected, TActual actual, Func<string> message = null, ComparerSettings? settings = null, Action<CompareSession<TExpected, TActual>> configure = null)
 	{
 		using var session = Compare(expected, actual, settings, configure);
 		session.Assert(CompareResult.NotEqual, message);
+	}
+
+	/// <summary>
+	/// Assert that a collection contains the item.
+	/// </summary>
+	public static void Contains<T>(IEnumerable<T> collection, T item)
+	{
+		if (!collection.Contains(item))
+		{
+			Fail("Collection does not contain the expected item.");
+		}
+	}
+
+	/// <summary>
+	/// Assert that a string contains the expected substring.
+	/// </summary>
+	public static void Contains(string actual, string expected)
+	{
+		if ((actual == null) || !actual.Contains(expected))
+		{
+			Fail($"Expected string to contain '{expected}'.");
+		}
+	}
+
+	/// <summary>
+	/// Assert that a collection contains an item matching the predicate.
+	/// </summary>
+	public static void Contains<T>(IEnumerable<T> collection, Func<T, bool> predicate)
+	{
+		if (!collection.Any(predicate))
+		{
+			Fail("Collection does not contain a matching item.");
+		}
+	}
+
+	/// <summary>
+	/// Assert that a collection contains an item matching the predicate.
+	/// </summary>
+	public static void Contains<T>(Func<T, bool> predicate, IEnumerable<T> collection)
+	{
+		Contains(collection, predicate);
 	}
 
 	/// <summary>
@@ -160,6 +230,55 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 		#endif
 
 		return value;
+	}
+
+	/// <summary>
+	/// Assert that a collection does not contain the item.
+	/// </summary>
+	public static void DoesNotContain<T>(IEnumerable<T> collection, T item)
+	{
+		if (collection.Contains(item))
+		{
+			Fail("Collection contains an unexpected item.");
+		}
+	}
+
+	/// <summary>
+	/// Assert that a collection does not contain an item matching the predicate.
+	/// </summary>
+	public static void DoesNotContain<T>(Func<T, bool> predicate, IEnumerable<T> collection)
+	{
+		if (collection.Any(predicate))
+		{
+			Fail("Collection contains an unexpected matching item.");
+		}
+	}
+
+	/// <summary>
+	/// Assert that a collection is empty.
+	/// </summary>
+	public static void Empty(IEnumerable source)
+	{
+		if (source.Cast<object>().Any())
+		{
+			Fail("Expected the collection to be empty.");
+		}
+	}
+
+	/// <summary>
+	/// Run the action and return the thrown exception, or null if none was thrown.
+	/// </summary>
+	public static Exception Exception(Action action)
+	{
+		try
+		{
+			action();
+			return null;
+		}
+		catch (Exception ex)
+		{
+			return ex;
+		}
 	}
 
 	/// <summary>
@@ -221,6 +340,17 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 	public static void Fail(string message)
 	{
 		throw new CornerstoneException(message);
+	}
+
+	/// <summary>
+	/// Assert that the actual value is in the inclusive range.
+	/// </summary>
+	public static void InRange(double actual, double low, double high)
+	{
+		if ((actual < low) || (actual > high))
+		{
+			Fail($"Expected {actual} in [{low}, {high}].");
+		}
 	}
 
 	/// <summary>
@@ -303,9 +433,23 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 	/// <param name="condition"> The condition the test expects to be false. </param>
 	/// <param name="message"> The message is shown in test results. </param>
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	public void IsFalse([DoesNotReturnIf(true)] bool condition, Func<string> message = null)
+	public static void IsFalse([DoesNotReturnIf(true)] bool condition, Func<string> message = null)
 	{
 		if (condition)
+		{
+			throw new CornerstoneException(message?.Invoke() ?? "The condition was incorrectly true and should have been false.");
+		}
+	}
+
+	/// <summary>
+	/// Tests whether the specified condition is false and throws an exception if the condition is true.
+	/// </summary>
+	/// <param name="condition"> The condition the test expects to be false. </param>
+	/// <param name="message"> The message is shown in test results. </param>
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public static void IsFalse([DoesNotReturnIf(true)] bool? condition, Func<string> message = null)
+	{
+		if (condition != false)
 		{
 			throw new CornerstoneException(message?.Invoke() ?? "The condition was incorrectly true and should have been false.");
 		}
@@ -316,7 +460,7 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 	/// </summary>
 	/// <param name="condition"> The condition the test expects to be not null. </param>
 	/// <param name="message"> The message is shown in test results. </param>
-	public void IsNotNull([NotNull] object condition, Func<string> message = null)
+	public static void IsNotNull([NotNull] object condition, Func<string> message = null)
 	{
 		if (condition == null)
 		{
@@ -330,7 +474,7 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 	/// <param name="condition"> The condition the test expects to be null. </param>
 	/// <param name="message"> The message is shown in test results. </param>
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	public void IsNull(object condition, Func<string> message = null)
+	public static void IsNull(object condition, Func<string> message = null)
 	{
 		if (condition != null)
 		{
@@ -344,12 +488,82 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 	/// <param name="condition"> The condition the test expects to be true. </param>
 	/// <param name="message"> The message is shown in test results. </param>
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	public void IsTrue([DoesNotReturnIf(false)] bool condition, Func<string> message = null)
+	public static void IsTrue([DoesNotReturnIf(false)] bool condition, Func<string> message = null)
 	{
 		if (!condition)
 		{
 			throw new CornerstoneException(message?.Invoke() ?? "The condition was incorrectly false and should have been true.");
 		}
+	}
+
+	/// <summary>
+	/// Tests whether the specified condition is true and throws an exception if the condition is false.
+	/// </summary>
+	/// <param name="condition"> The condition the test expects to be true. </param>
+	/// <param name="message"> The message is shown in test results. </param>
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	public static void IsTrue([DoesNotReturnIf(false)] bool? condition, Func<string> message = null)
+	{
+		if (condition != true)
+		{
+			throw new CornerstoneException(message?.Invoke() ?? "The condition was incorrectly false and should have been true.");
+		}
+	}
+
+	/// <summary>
+	/// Runs each check, collecting exceptions, then fails once if any check threw.
+	/// Runs one or more checks. A single failure is rethrown as-is; two or more are reported together.
+	/// </summary>
+	/// <param name="checks"> The checks to run. Null entries are skipped. </param>
+	public static void Multiple(params Action[] checks)
+	{
+		if ((checks == null) || (checks.Length == 0))
+		{
+			return;
+		}
+
+		List<Exception> failures = null;
+
+		foreach (var check in checks)
+		{
+			if (check == null)
+			{
+				continue;
+			}
+
+			try
+			{
+				check();
+			}
+			catch (Exception ex)
+			{
+				failures ??= [];
+				failures.Add(ex);
+			}
+		}
+
+		if ((failures == null) || (failures.Count == 0))
+		{
+			return;
+		}
+
+		if (failures.Count == 1)
+		{
+			ExceptionDispatchInfo.Capture(failures[0]).Throw();
+		}
+
+		var builder = new StringBuilder();
+		builder.AppendLine("Multiple failures were encountered:");
+
+		for (var i = 0; i < failures.Count; i++)
+		{
+			builder.AppendLine();
+			builder.Append(i + 1);
+			builder.Append(") ");
+			builder.AppendLine(failures[i].Message);
+		}
+
+		throw new CornerstoneException(builder.ToString(), new AggregateException(failures));
 	}
 
 	/// <summary>
@@ -401,6 +615,27 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 	}
 
 	/// <summary>
+	/// Assert that the source contains a single item and return it.
+	/// </summary>
+	public static T Single<T>(IEnumerable<T> source)
+	{
+		var list = source as IList<T> ?? source.ToList();
+		if (list.Count != 1)
+		{
+			Fail($"Expected a single item but found {list.Count}.");
+		}
+		return list[0];
+	}
+
+	/// <summary>
+	/// Assert that the source contains a single matching item and return it.
+	/// </summary>
+	public static T Single<T>(IEnumerable<T> source, Func<T, bool> predicate)
+	{
+		return Single(source.Where(predicate));
+	}
+
+	/// <summary>
 	/// Cleanup the test.
 	/// </summary>
 	public virtual void TestCleanup()
@@ -418,6 +653,31 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 		ResetCurrentTime(StartDateTime);
 		ResetDependencyInjection();
 		Babel.Tower.Reset();
+	}
+
+	/// <summary>
+	/// Assert that the action throws an exception of type T or a derived type.
+	/// </summary>
+	public static void ThrowsAny<T>(Action action) where T : Exception
+	{
+		ExpectedException<T>(action);
+	}
+
+	/// <summary>
+	/// Assert that the action throws any exception.
+	/// </summary>
+	public static void ThrowsAny(Action action)
+	{
+		try
+		{
+			action();
+		}
+		catch
+		{
+			return;
+		}
+
+		Fail("Expected an exception.");
 	}
 
 	/// <summary>
@@ -555,6 +815,7 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 		File.WriteAllText(fileInfo.FullName, content, Encoding.UTF8);
 	}
 
+	[UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "Test helper receives types from assembly scans; they cannot flow DynamicallyAccessedMembers.")]
 	protected void UpdateableShouldUpdateAll(ComparerSettings settings, Type sourceType, Type destinationType, IncludeExcludeSettings includeExcludeSettings)
 	{
 		if (sourceType != destinationType)
@@ -599,6 +860,7 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 		ValidateUpdateWith(destinationSourceType, sourceSourceType, sourceWithNonDefaults, settings);
 	}
 
+	[UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "Test helper scans assemblies with GetTypes(); discovered types cannot flow DynamicallyAccessedMembers.")]
 	protected void UpdateableShouldUpdateAll(bool updateCodeGeneratedFiles, Type updateableType, Assembly[] assemblies,
 		List<Type> exclusions, ComparerSettings settings, Func<Type, bool> additionalTypeFilter = null)
 	{
@@ -640,6 +902,7 @@ public abstract class CornerstoneTest : DependencyProvider, IDateTimeProvider
 		}
 	}
 
+	[UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "Test helper receives types from assembly scans; they cannot flow DynamicallyAccessedMembers.")]
 	protected void UpdateableShouldUpdateAll(ComparerSettings settings, Type destinationType, Dictionary<Type, List<Type>> updateableSourceTypes)
 	{
 		destinationType.FullName.Dump();

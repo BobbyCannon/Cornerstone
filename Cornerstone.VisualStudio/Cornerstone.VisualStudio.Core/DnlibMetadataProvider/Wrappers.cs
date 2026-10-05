@@ -93,6 +93,20 @@ internal class TypeWrapper : ITypeInformation
 
 	public string AssemblyQualifiedName { get; }
 
+	public string BaseTypeName
+	{
+		get
+		{
+			var baseType = _type.BaseType;
+			if ((baseType == null) || string.IsNullOrEmpty(baseType.FullName))
+			{
+				return string.Empty;
+			}
+
+			return baseType.FullName;
+		}
+	}
+
 	public IEnumerable<string> EnumValues
 	{
 		get { return _type.Fields.Where(f => f.IsStatic).Select(f => f.Name.String).ToArray(); }

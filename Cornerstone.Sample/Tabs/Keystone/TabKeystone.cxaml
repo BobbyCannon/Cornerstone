@@ -1,0 +1,108 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		mc:Ignorable="d"  d:DesignWidth="800"
+		x:Class="Cornerstone.Sample.Tabs.Keystone.TabKeystone">
+	<ScrollViewer HorizontalScrollBarVisibility="Disabled">
+		<StackPanel Margin="16,12,16,20" Spacing="14">
+			<TextBlock TextWrapping="Wrap"
+					Text="Keystone is the process of an application: the rules, the IO, and the data those rules keep. It is not the window. Three pieces share that work, and they run off the UI thread." />
+			<WrapPanel ItemSpacing="12"
+					LineSpacing="12"
+					ItemWidth="340"
+					ItemsAlignment="Stretch">
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource Background06}"
+						BorderThickness="1"
+						CornerRadius="12"
+						Padding="16">
+					<StackPanel Spacing="8">
+						<TextBlock Classes="Header" Text="State" Foreground="{StaticResource Blue05}" />
+						<TextBlock TextWrapping="Wrap"
+								Text="The source of truth. Fields and simple derived values only. Processors are the writers. Selection, scroll, and controls stay on the view." />
+					</StackPanel>
+				</Border>
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource Background06}"
+						BorderThickness="1"
+						CornerRadius="12"
+						Padding="16">
+					<StackPanel Spacing="8">
+						<TextBlock Classes="Header" Text="Engine" Foreground="{StaticResource Blue05}" />
+						<TextBlock TextWrapping="Wrap"
+								Text="Processors. One receives a message, reads State, and writes the next State. It may publish a follow-up message. A cache or a watcher can sit on the processor. The domain data stays on State." />
+					</StackPanel>
+				</Border>
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource Background06}"
+						BorderThickness="1"
+						CornerRadius="12"
+						Padding="16">
+					<StackPanel Spacing="8">
+						<TextBlock Classes="Header" Text="Bus" Foreground="{StaticResource Blue05}" />
+						<TextBlock TextWrapping="Wrap"
+								Text="Named channels. A publisher does not know who listens. The view publishes a message. A processor handles it and writes State. AppDispatcher copies that State onto the view later, on the UI thread." />
+					</StackPanel>
+				</Border>
+			</WrapPanel>
+			<TextBlock TextWrapping="Wrap"
+					Text="In this app those pieces are AppState, AppBus, and AppEngine. Publish, handle, update State or publish again. The new State is what the rest of the process reads." />
+			<TextBlock Classes="Header" Text="Lifecycle"
+					Foreground="{StaticResource Amber05}"
+					Margin="0,20,0,0" />
+			<TextBlock TextWrapping="Wrap"
+					Text="LifecycleTracker owns children and walks Initialize, Load, Start on the way up, then Stop, Unload, Uninitialize on the way down. No processing until Start." />
+			<WrapPanel ItemSpacing="12"
+					LineSpacing="12"
+					ItemWidth="340"
+					ItemsAlignment="Stretch">
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource Background06}"
+						BorderThickness="1"
+						CornerRadius="12"
+						Padding="16">
+					<StackPanel Spacing="8">
+						<TextBlock Classes="Header" Text="Initialize" Foreground="{StaticResource Green05}" />
+						<TextBlock TextWrapping="Wrap"
+								Text="Wire handlers, bus subscriptions, construct or Track children. Do not load persisted data. Do not publish. Do not start services." />
+					</StackPanel>
+				</Border>
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource Background06}"
+						BorderThickness="1"
+						CornerRadius="12"
+						Padding="16">
+					<StackPanel Spacing="8">
+						<TextBlock Classes="Header" Text="Load" Foreground="{StaticResource Green05}" />
+						<TextBlock TextWrapping="Wrap"
+								Text="Read disk, settings, and local database into memory only. Do not process the values you just loaded." />
+					</StackPanel>
+				</Border>
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource Background06}"
+						BorderThickness="1"
+						CornerRadius="12"
+						Padding="16">
+					<StackPanel Spacing="8">
+						<TextBlock Classes="Header" Text="Start" Foreground="{StaticResource Green05}" />
+						<TextBlock TextWrapping="Wrap"
+								Text="First phase that may act: use loaded data, publish on the bus, start services, restore selection, connect, and sync." />
+					</StackPanel>
+				</Border>
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource Background06}"
+						BorderThickness="1"
+						CornerRadius="12"
+						Padding="16">
+					<StackPanel Spacing="8">
+						<TextBlock Classes="Header" Text="Process" Foreground="{StaticResource Green05}" />
+						<TextBlock TextWrapping="Wrap"
+								Text="After Start, the engine loop calls CanProcess and Process on each registered processor until stop. Stop ends the work. Unload drops what Load read. Uninitialize releases what Initialize wired." />
+					</StackPanel>
+				</Border>
+			</WrapPanel>
+		</StackPanel>
+	</ScrollViewer>
+</UserControl>

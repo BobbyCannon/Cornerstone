@@ -1,0 +1,57 @@
+<ResourceDictionary
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+
+	<!-- Carousel control theme. -->
+
+	<ControlTheme x:Key="{x:Type Carousel}" TargetType="Carousel">
+
+		<!-- Template. -->
+
+		<Setter Property="Template">
+
+			<!-- Control template. -->
+
+			<ControlTemplate>
+
+				<!-- Scroll viewer. -->
+
+				<ScrollViewer
+						Name="PART_ScrollViewer"
+						Background="{TemplateBinding Background}"
+						BorderBrush="{TemplateBinding BorderBrush}"
+						BorderThickness="{TemplateBinding BorderThickness}"
+						HorizontalScrollBarVisibility="Hidden"
+						VerticalScrollBarVisibility="Hidden">
+
+					<!-- Carousel items. -->
+
+					<ItemsPresenter
+							Name="PART_ItemsPresenter"
+							ItemsPanel="{TemplateBinding ItemsPanel}"
+							Margin="{TemplateBinding Padding}" />
+
+				</ScrollViewer>
+
+			</ControlTemplate>
+
+		</Setter>
+
+	</ControlTheme>
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="480">
+			<Carousel Height="80" Width="360">
+				<Border Background="{DynamicResource Blue05}" Padding="16">
+					<TextBlock Text="Slide 1" Foreground="White" />
+				</Border>
+				<Border Background="{DynamicResource Teal05}" Padding="16">
+					<TextBlock Text="Slide 2" Foreground="White" />
+				</Border>
+				<Border Background="{DynamicResource Purple05}" Padding="16">
+					<TextBlock Text="Slide 3" Foreground="White" />
+				</Border>
+			</Carousel>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

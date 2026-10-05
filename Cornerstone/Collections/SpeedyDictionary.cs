@@ -260,28 +260,33 @@ public class SpeedyDictionary<T, T2> : ReaderWriterLockProxy, ISpeedyDictionary<
 	{
 		try
 		{
-			EnterUpgradeableReadLock();
-
-			if (_dictionary.TryGetValue(key, out var result))
+			EnterReadLock();
+			if (_dictionary.TryGetValue(key, out var existing))
 			{
-				return result;
-			}
-
-			try
-			{
-				EnterWriteLock();
-				var value = factory();
-				_dictionary.Add(key, value);
-				return value;
-			}
-			finally
-			{
-				ExitWriteLock();
+				return existing;
 			}
 		}
 		finally
 		{
-			ExitUpgradeableReadLock();
+			ExitReadLock();
+		}
+
+		var value = factory();
+
+		try
+		{
+			EnterWriteLock();
+			if (_dictionary.TryGetValue(key, out var existing))
+			{
+				return existing;
+			}
+
+			_dictionary.Add(key, value);
+			return value;
+		}
+		finally
+		{
+			ExitWriteLock();
 		}
 	}
 

@@ -1,0 +1,249 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs.Controls"
+		mc:Ignorable="d" d:DesignWidth="800"
+		x:Class="Cornerstone.Sample.Tabs.Controls.TabControls"
+		x:DataType="tabs:TabControls"
+		x:Name="This">
+	<ScrollViewer HorizontalScrollBarVisibility="Disabled">
+		<WrapPanel Margin="16,12,16,20"
+				ItemSpacing="12"
+				LineSpacing="12"
+				ItemWidth="340"
+				ItemsAlignment="Stretch">
+			<WrapPanel.Styles>
+				<Style Selector="TextBlock">
+					<Setter Property="TextWrapping" Value="Wrap" />
+				</Style>
+			</WrapPanel.Styles>
+			<Button Classes="ControlCard" Click="OpenButtons">
+				<Border Classes="FeatureCard">
+					<Grid ColumnDefinitions="Auto,*">
+						<Border Classes="IconBadge Blue">
+							<Path Data="{StaticResource Icons.TapButton}" />
+						</Border>
+						<StackPanel Grid.Column="1">
+							<TextBlock Text="Buttons" />
+							<TextBlock Text="Button, toggle, drop-down, and press-hold." />
+						</StackPanel>
+					</Grid>
+				</Border>
+			</Button>
+			<Button Classes="ControlCard" Click="OpenCharts">
+				<Border Classes="FeatureCard">
+					<Grid ColumnDefinitions="Auto,*">
+						<Border Classes="IconBadge Teal">
+							<Path Data="{StaticResource Icons.Chart.Bar}"
+										Margin="0,4,0,0" />
+						</Border>
+						<StackPanel Grid.Column="1">
+							<TextBlock Text="Charts" />
+							<TextBlock Text="Line and bar series." />
+						</StackPanel>
+					</Grid>
+				</Border>
+			</Button>
+			<Button Classes="ControlCard" Click="OpenDocking" 
+					IsEnabled="{Binding IsDockingAvailable}">
+				<Border Classes="FeatureCard">
+					<Grid ColumnDefinitions="Auto,*">
+						<Border Classes="IconBadge Amber">
+							<Path Data="{StaticResource Icons.Layout}"
+									Margin="0,2,0,0" />
+						</Border>
+						<StackPanel Grid.Column="1">
+							<TextBlock Text="Docking Manager" />
+							<TextBlock Text="Split, float, and persist document layout." />
+						</StackPanel>
+					</Grid>
+				</Border>
+			</Button>
+			<Button Classes="ControlCard" Click="OpenGrids">
+				<Border Classes="FeatureCard">
+					<Grid ColumnDefinitions="Auto,*">
+						<Border Classes="IconBadge Blue">
+							<Path Data="{StaticResource Icons.Grid}" />
+						</Border>
+						<StackPanel Grid.Column="1">
+							<TextBlock Text="Grids" />
+							<TextBlock Text="Layout and UniformGrid samples." />
+						</StackPanel>
+					</Grid>
+				</Border>
+			</Button>
+			<Button Classes="ControlCard" Click="OpenInk">
+				<Border Classes="FeatureCard">
+					<Grid ColumnDefinitions="Auto,*">
+						<Border Classes="IconBadge Teal">
+							<Path Data="{StaticResource Icons.Pencil.Square}" />
+						</Border>
+						<StackPanel Grid.Column="1">
+							<TextBlock Text="Ink Canvas" />
+							<TextBlock Text="Pointer ink strokes." />
+						</StackPanel>
+					</Grid>
+				</Border>
+			</Button>
+			<Button Classes="ControlCard" Click="OpenMarkdown">
+				<Border Classes="FeatureCard">
+					<Grid ColumnDefinitions="Auto,*">
+						<Border Classes="IconBadge Blue">
+							<Path Data="{StaticResource Icons.Markdown}"
+									Margin="0,4,0,0" />
+						</Border>
+						<StackPanel Grid.Column="1">
+							<TextBlock Text="Markdown View" />
+							<TextBlock Text="Render and edit markdown in-app." />
+						</StackPanel>
+					</Grid>
+				</Border>
+			</Button>
+			<Button Classes="ControlCard" Click="OpenMenus">
+				<Border Classes="FeatureCard">
+					<Grid ColumnDefinitions="Auto,*">
+						<Border Classes="IconBadge Purple">
+							<Path Data="{StaticResource Icons.List.Bulleted}"
+									Margin="0,4,0,0" />
+						</Border>
+						<StackPanel Grid.Column="1">
+							<TextBlock Text="Menus" />
+							<TextBlock Text="Menu, MenuItem, context, and flyout." />
+						</StackPanel>
+					</Grid>
+				</Border>
+			</Button>
+			<Button Classes="ControlCard" Click="OpenNumberBox">
+				<Border Classes="FeatureCard">
+					<Grid ColumnDefinitions="Auto,*">
+						<Border Classes="IconBadge Teal">
+							<Grid>
+								<Border BorderThickness="1"
+										BorderBrush="{DynamicResource Teal05}"
+										Height="18" Width="24" />
+								<TextBlock Text="123"
+										FontSize="{DynamicResource ControlFontSizeSmall}"
+										Foreground="{DynamicResource Teal05}"
+										HorizontalAlignment="Center"
+										VerticalAlignment="Center" />
+							</Grid>
+						</Border>
+						<StackPanel Grid.Column="1">
+							<TextBlock Text="Number Box" />
+							<TextBlock Text="NumberBox in each theme color." />
+						</StackPanel>
+					</Grid>
+				</Border>
+			</Button>
+			<Button Classes="ControlCard" Click="OpenProgress">
+				<Border Classes="FeatureCard">
+					<Grid ColumnDefinitions="Auto,*">
+						<Border Classes="IconBadge Amber">
+							<Path Data="{StaticResource Icons.Progress}" />
+						</Border>
+						<StackPanel Grid.Column="1">
+							<TextBlock Text="Progress" />
+							<TextBlock Text="Circular and linear progress." />
+						</StackPanel>
+					</Grid>
+				</Border>
+			</Button>
+			<Button Classes="ControlCard" Click="OpenShortcut">
+				<Border Classes="FeatureCard">
+					<Grid ColumnDefinitions="Auto,*">
+						<Border Classes="IconBadge Orange">
+							<Path Data="{StaticResource Icons.Keyboard}" />
+						</Border>
+						<StackPanel Grid.Column="1">
+							<TextBlock Text="Shortcut" />
+							<TextBlock Text="Capture a key, modifiers, and optional gamepad button." />
+						</StackPanel>
+					</Grid>
+				</Border>
+			</Button>
+			<Button Classes="ControlCard" Click="OpenShortcuts">
+				<Border Classes="FeatureCard">
+					<Grid ColumnDefinitions="Auto,*">
+						<Border Classes="IconBadge Green">
+							<Path Data="{StaticResource Icons.Keyboard}" />
+						</Border>
+						<StackPanel Grid.Column="1">
+							<TextBlock Text="Shortcuts" />
+							<TextBlock Text="ShortcutBox capture and bindings." />
+						</StackPanel>
+					</Grid>
+				</Border>
+			</Button>
+			<Button Classes="ControlCard" Click="OpenTabs">
+				<Border Classes="FeatureCard">
+					<Grid ColumnDefinitions="Auto,*">
+						<Border Classes="IconBadge Teal">
+							<Path Data="{StaticResource Icons.Folder}"
+									Margin="0,4,0,0" />
+						</Border>
+						<StackPanel Grid.Column="1">
+							<TextBlock Text="Tabs" />
+							<TextBlock Text="TabControl placement and pages." />
+						</StackPanel>
+					</Grid>
+				</Border>
+			</Button>
+			<Button Classes="ControlCard" Click="OpenTerminal">
+				<Border Classes="FeatureCard">
+					<Grid ColumnDefinitions="Auto,*">
+						<Border Classes="IconBadge Amber">
+							<Path Data="{StaticResource Icons.Terminal}"
+									Margin="0,6,0,0" />
+						</Border>
+						<StackPanel Grid.Column="1">
+							<TextBlock Text="Terminal" />
+							<TextBlock Text="Host a shell inside the app." />
+						</StackPanel>
+					</Grid>
+				</Border>
+			</Button>
+			<Button Classes="ControlCard" Click="OpenTextEditor">
+				<Border Classes="FeatureCard">
+					<Grid ColumnDefinitions="Auto,*">
+						<Border Classes="IconBadge Purple">
+							<Path Data="{StaticResource Icons.File.Binary}"
+									Margin="4,0,0,0" />
+						</Border>
+						<StackPanel Grid.Column="1">
+							<TextBlock Text="Text Editor" />
+							<TextBlock Text="Syntax-aware editing." />
+						</StackPanel>
+					</Grid>
+				</Border>
+			</Button>
+			<Button Classes="ControlCard" Click="OpenTokenFilter">
+				<Border Classes="FeatureCard">
+					<Grid ColumnDefinitions="Auto,*">
+						<Border Classes="IconBadge Teal">
+							<Path Data="{StaticResource Icons.Search}" />
+						</Border>
+						<StackPanel Grid.Column="1">
+							<TextBlock Text="Token Text Filter" />
+							<TextBlock Text="Structured search tokens over text." />
+						</StackPanel>
+					</Grid>
+				</Border>
+			</Button>
+			<Button Classes="ControlCard" Click="OpenTree">
+				<Border Classes="FeatureCard">
+					<Grid ColumnDefinitions="Auto,*">
+						<Border Classes="IconBadge Purple">
+							<Path Data="{StaticResource Icons.File.Tree}" />
+						</Border>
+						<StackPanel Grid.Column="1">
+							<TextBlock Text="Tree Data Grid" />
+							<TextBlock Text="Hierarchical rows with columns." />
+						</StackPanel>
+					</Grid>
+				</Border>
+			</Button>
+		</WrapPanel>
+	</ScrollViewer>
+</UserControl>

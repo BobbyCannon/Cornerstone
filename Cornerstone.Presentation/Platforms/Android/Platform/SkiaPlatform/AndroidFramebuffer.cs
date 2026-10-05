@@ -1,0 +1,123 @@
+using System;
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
+using Cornerstone.Presentation.Platform;
+
+namespace Cornerstone.Presentation.Android.Platform.SkiaPlatform
+{
+    unsafe class AndroidFramebuffer : ILockedFramebuffer
+    {
+        private IntPtr _window;
+
+        public AndroidFramebuffer(INativePlatformHandleSurface surface, double scaling)
+        {
+            if(surface == null)
+                throw new ArgumentNullException(nameof(surface));
+            _window = surface.Handle;
+            if (_window == IntPtr.Zero)
+                throw new Exception("Unable to obtain ANativeWindow");
+            ANativeWindow_Buffer buffer;
+            var rc = new ARect()
+            {
+                right = ANativeWindow_getWidth(_window),
+                bottom = ANativeWindow_getHeight(_window)
+            };
+            Size = new PixelSize(rc.right, rc.bottom);
+            ANativeWindow_lock(_window, &buffer, &rc);
+
+            (Format, AlphaFormat, RowBytes) = buffer.format == AndroidPixelFormat.WINDOW_FORMAT_RGB_565 ?
+                (PixelFormat.Rgb565, AlphaFormat.Opaque, buffer.stride * 2) :
+                (PixelFormat.Rgba8888, AlphaFormat.Premul, buffer.stride * 4);
+
+            Address = buffer.bits;
+
+            Dpi = new Vector(96, 96) * scaling;
+        }
+
+        public void Dispose()
+        {
+            ANativeWindow_unlockAndPost(_window);
+            _window = IntPtr.Zero;
+            Address = IntPtr.Zero;
+        }
+
+        public IntPtr Address { get; set; }
+        public PixelSize Size { get; }
+        public int RowBytes { get; }
+        public Vector Dpi { get; }
+        public PixelFormat Format { get; }
+        public AlphaFormat AlphaFormat { get; }
+
+        [DllImport("android")]
+        internal static extern IntPtr ANativeWindow_fromSurface(IntPtr jniEnv, IntPtr handle);
+        [DllImport("android")]
+        internal static extern int ANativeWindow_getWidth(IntPtr window);
+        [DllImport("android")]
+        internal static extern int ANativeWindow_getHeight(IntPtr window);
+        [DllImport("android")]
+        internal static extern void ANativeWindow_release(IntPtr window);
+        [DllImport("android")]
+        internal static extern void ANativeWindow_unlockAndPost(IntPtr window);
+
+        [DllImport("android")]
+        internal static extern IntPtr AChoreographer_getInstance();
+
+        [DllImport("android")]
+        [UnsupportedOSPlatform("android29.0")]
+        internal static extern void AChoreographer_postFrameCallback(
+            IntPtr choreographer, delegate* unmanaged<int, IntPtr, void> callback, IntPtr data);
+
+        [DllImport("android")]
+        [SupportedOSPlatform("android29.0")]
+        internal static extern void AChoreographer_postFrameCallback64(
+            IntPtr choreographer, delegate* unmanaged<long, IntPtr, void> callback, IntPtr data);
+
+        [DllImport("android")]
+        internal static extern int ANativeWindow_lock(IntPtr window, ANativeWindow_Buffer* outBuffer, ARect* inOutDirtyBounds);
+        public enum AndroidPixelFormat
+        {
+            WINDOW_FORMAT_RGBA_8888 = 1,
+            WINDOW_FORMAT_RGBX_8888 = 2,
+            WINDOW_FORMAT_RGB_565 = 4,
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct ARect
+        {
+            public int left;
+            public int top;
+            public int right;
+            public int bottom;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct ANativeWindow_Buffer
+        {
+            // The number of pixels that are shown horizontally.
+            public int width;
+
+            // The number of pixels that are shown vertically.
+            public int height;
+
+            // The number of *pixels* that a line in the buffer takes in
+            // memory.  This may be >= width.
+            public int stride;
+
+            // The format of the buffer.  One of WINDOW_FORMAT_*
+            public AndroidPixelFormat format;
+
+            // The actual bits.
+            public IntPtr bits;
+
+            // Do not touch.
+#pragma warning disable CA1823 // Avoid unused private fields
+            uint reserved1;
+            uint reserved2;
+            uint reserved3;
+            uint reserved4;
+            uint reserved5;
+            uint reserved6;
+#pragma warning restore CA1823 // Avoid unused private fields
+        }
+    }
+}

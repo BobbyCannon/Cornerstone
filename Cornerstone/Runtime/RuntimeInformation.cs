@@ -16,6 +16,7 @@ using System.Drawing;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using Cornerstone.Data.Bytes;
 using Cornerstone.Reflection;
@@ -81,6 +82,8 @@ public class RuntimeInformation : CornerstoneObject, IRuntimeInformation
 
 	public bool ApplicationIsNativeBuild => GetOrCache(nameof(ApplicationIsNativeBuild), GetApplicationIsNativeBuild);
 
+	public bool ApplicationIsReadyToRunBuild => GetOrCache(nameof(ApplicationIsReadyToRunBuild), GetApplicationIsReadyToRunBuild);
+
 	public bool ApplicationIsShuttingDown => GetOrCache(nameof(ApplicationIsShuttingDown), () => false);
 
 	public string ApplicationLocation => GetOrCache(nameof(ApplicationLocation), GetApplicationLocation);
@@ -93,7 +96,7 @@ public class RuntimeInformation : CornerstoneObject, IRuntimeInformation
 
 	public Version ApplicationVersion => GetOrCache(nameof(ApplicationVersion), GetApplicationVersion);
 
-	public Version AvaloniaRuntimeVersion => GetOrCache(nameof(AvaloniaRuntimeVersion), GetAvaloniaRuntimeVersion);
+	public Version CornerstoneRuntimeVersion => GetOrCache(nameof(CornerstoneRuntimeVersion), GetCornerstoneRuntimeVersion);
 
 	[Browsable(false)]
 	public int Count => _cache.Count;
@@ -179,8 +182,69 @@ public class RuntimeInformation : CornerstoneObject, IRuntimeInformation
 		// Reset first so ApplicationIsLoaded is not wiped from the cache after we set it.
 		ResetCache();
 		SetOverride(nameof(ApplicationIsLoaded), true);
-		Refresh();
+		Refresh(false);
 		base.LoadLifecycle();
+	}
+
+	/// <summary>
+	/// Loads properties. Slow lookups (device id / WMI / ReadyToRun PE) are optional so Load stays cheap.
+	/// </summary>
+	public virtual void Refresh(bool includeSlowLookups = true)
+	{
+		_ = ApplicationBitness;
+		_ = ApplicationDataLocation;
+		_ = ApplicationFileName;
+		_ = ApplicationFilePath;
+		_ = ApplicationIsDevelopmentBuild;
+		_ = ApplicationIsElevated;
+		_ = ApplicationIsLoaded;
+		_ = ApplicationIsNativeBuild;
+		_ = ApplicationIsShuttingDown;
+		_ = ApplicationLocation;
+		_ = ApplicationName;
+		_ = ApplicationVersion;
+		_ = CornerstoneRuntimeVersion;
+		_ = DeviceDisplayRefreshRate;
+		_ = DeviceDisplaySize;
+		_ = DeviceMemory;
+		_ = DeviceName;
+		_ = DevicePlatform;
+		_ = DevicePlatformBitness;
+		_ = DevicePlatformVersion;
+		_ = DeviceType;
+		_ = DotNetRuntimeVersion;
+
+		if (!includeSlowLookups)
+		{
+			return;
+		}
+
+		_ = ApplicationIsReadyToRunBuild;
+		_ = DeviceId;
+		_ = DeviceManufacturer;
+		_ = DeviceModel;
+	}
+
+	/// <summary>
+	/// Reset the cache.
+	/// </summary>
+	public void ResetCache()
+	{
+		_cache.Clear();
+
+		if (ApplicationIsDevelopmentBuild
+			&& (DevicePlatform == DevicePlatform.Windows))
+		{
+			SetOverride(nameof(ApplicationName), ApplicationName + ".Development");
+		}
+	}
+
+	/// <summary>
+	/// Reset the cache.
+	/// </summary>
+	public void ResetCache(string name)
+	{
+		_cache.Remove(name, out _);
 	}
 
 	/// <summary>
@@ -189,6 +253,31 @@ public class RuntimeInformation : CornerstoneObject, IRuntimeInformation
 	public void SetApplicationAssembly(Assembly assembly)
 	{
 		_applicationAssembly ??= assembly;
+	}
+
+	/// <summary>
+	/// Set an override for the value.
+	/// </summary>
+	/// <returns> </returns>
+	public void SetOverride<T>(string name, T value)
+	{
+		if (!_cache.TryAdd(name, value))
+		{
+			_cache[name] = value;
+		}
+	}
+
+	/// <summary>
+	/// Set a global override for the value.
+	/// </summary>
+	public void SetPlatformOverride<T>(string name, T value)
+	{
+		if (!_platformOverrides.TryAdd(name, value))
+		{
+			_platformOverrides[name] = value;
+		}
+
+		SetOverride(name, value);
 	}
 
 	/// <inheritdoc />
@@ -219,99 +308,6 @@ public class RuntimeInformation : CornerstoneObject, IRuntimeInformation
 		base.StopLifecycle();
 	}
 
-	/// <inheritdoc />
-	public override void UninitializeLifecycle()
-	{
-		_applicationAssembly = null;
-		base.UninitializeLifecycle();
-	}
-
-	/// <inheritdoc />
-	public override void UnloadLifecycle()
-	{
-		SetOverride(nameof(ApplicationIsLoaded), false);
-		base.UnloadLifecycle();
-	}
-
-	/// <summary>
-	/// Loads all properties.
-	/// </summary>
-	public virtual void Refresh()
-	{
-		_ = ApplicationBitness;
-		_ = ApplicationDataLocation;
-		_ = ApplicationFileName;
-		_ = ApplicationFilePath;
-		_ = ApplicationIsDevelopmentBuild;
-		_ = ApplicationIsElevated;
-		_ = ApplicationIsLoaded;
-		_ = ApplicationIsNativeBuild;
-		_ = ApplicationIsShuttingDown;
-		_ = ApplicationLocation;
-		_ = ApplicationName;
-		_ = ApplicationVersion;
-		_ = AvaloniaRuntimeVersion;
-		_ = DeviceDisplayRefreshRate;
-		_ = DeviceDisplaySize;
-		_ = DeviceId;
-		_ = DeviceManufacturer;
-		_ = DeviceMemory;
-		_ = DeviceModel;
-		_ = DeviceName;
-		_ = DevicePlatform;
-		_ = DevicePlatformBitness;
-		_ = DevicePlatformVersion;
-		_ = DeviceType;
-		_ = DotNetRuntimeVersion;
-	}
-
-	/// <summary>
-	/// Reset the cache.
-	/// </summary>
-	public void ResetCache()
-	{
-		_cache.Clear();
-
-		if (ApplicationIsDevelopmentBuild
-			&& (DevicePlatform == DevicePlatform.Windows))
-		{
-			SetOverride(nameof(ApplicationName), ApplicationName + ".Development");
-		}
-	}
-
-	/// <summary>
-	/// Reset the cache.
-	/// </summary>
-	public void ResetCache(string name)
-	{
-		_cache.Remove(name, out _);
-	}
-
-	/// <summary>
-	/// Set an override for the value.
-	/// </summary>
-	/// <returns> </returns>
-	public void SetOverride<T>(string name, T value)
-	{
-		if (!_cache.TryAdd(name, value))
-		{
-			_cache[name] = value;
-		}
-	}
-
-	/// <summary>
-	/// Set a global override for the value.
-	/// </summary>
-	public void SetPlatformOverride<T>(string name, T value)
-	{
-		if (!_platformOverrides.TryAdd(name, value))
-		{
-			_platformOverrides[name] = value;
-		}
-
-		SetOverride(name, value);
-	}
-
 	public override string ToString()
 	{
 		var response = new StringBuilder();
@@ -331,12 +327,26 @@ public class RuntimeInformation : CornerstoneObject, IRuntimeInformation
 		return _cache.TryGetValue(key, out value);
 	}
 
+	/// <inheritdoc />
+	public override void UninitializeLifecycle()
+	{
+		_applicationAssembly = null;
+		base.UninitializeLifecycle();
+	}
+
+	/// <inheritdoc />
+	public override void UnloadLifecycle()
+	{
+		SetOverride(nameof(ApplicationIsLoaded), false);
+		base.UnloadLifecycle();
+	}
+
 	/// <summary>
 	/// The bitness of the application.
 	/// </summary>
 	protected Bitness GetApplicationBitness()
 	{
-		return Environment.Is64BitProcess ? Bitness.X64 : Bitness.X86;
+		return GetBitness(System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture);
 	}
 
 	/// <summary>
@@ -407,6 +417,48 @@ public class RuntimeInformation : CornerstoneObject, IRuntimeInformation
 	}
 
 	/// <summary>
+	/// Get flag indicating if the application assembly was published as ReadyToRun.
+	/// Native AOT is not ReadyToRun. There is no API for whether a given method actually ran from R2R code.
+	/// Single-file: Assembly.Location is empty; the apphost PE is not the R2R image, so the
+	/// bundle is inspected for the application assembly (or composite .r2r.dll).
+	/// </summary>
+	protected bool GetApplicationIsReadyToRunBuild()
+	{
+		#if BROWSER
+		return false;
+		#else
+		try
+		{
+			if (!RuntimeFeature.IsDynamicCodeSupported)
+			{
+				return false;
+			}
+
+			var path = _applicationAssembly?.Location;
+			if (!string.IsNullOrEmpty(path) && File.Exists(path))
+			{
+				return ReadyToRunImage.HasReadyToRunHeader(path);
+			}
+
+			var hostPath = Environment.ProcessPath;
+			if (string.IsNullOrEmpty(hostPath) || !File.Exists(hostPath))
+			{
+				hostPath = GetApplicationFilePath();
+			}
+
+			return ReadyToRunImage.HasReadyToRunInSingleFileBundle(
+				hostPath,
+				_applicationAssembly?.GetName().Name
+			);
+		}
+		catch
+		{
+			return false;
+		}
+		#endif
+	}
+
+	/// <summary>
 	/// The location of the application.
 	/// </summary>
 	protected string GetApplicationLocation()
@@ -436,15 +488,15 @@ public class RuntimeInformation : CornerstoneObject, IRuntimeInformation
 	/// </summary>
 	protected Version GetApplicationVersion()
 	{
-		return _applicationAssembly?.GetName().Version ?? new Version(1,2,3,4);
+		return _applicationAssembly?.GetName().Version ?? new Version(1, 2, 3, 4);
 	}
 
 	/// <summary>
-	/// The version of the avalonia runtime version.
+	/// The version of the cornerstone runtime version.
 	/// </summary>
-	protected virtual Version GetAvaloniaRuntimeVersion()
+	protected virtual Version GetCornerstoneRuntimeVersion()
 	{
-		return new Version(1,2,3,4);
+		return new Version(1, 2, 3, 4);
 	}
 
 	/// <summary>
@@ -479,7 +531,14 @@ public class RuntimeInformation : CornerstoneObject, IRuntimeInformation
 		#if ANDROID || IOS
 		return DeviceInfo.Name;
 		#else
-		return Environment.MachineName;
+		try
+		{
+			return Environment.MachineName;
+		}
+		catch
+		{
+			return "Unknown";
+		}
 		#endif
 	}
 
@@ -506,7 +565,7 @@ public class RuntimeInformation : CornerstoneObject, IRuntimeInformation
 	/// </summary>
 	protected Bitness GetDevicePlatformBitness()
 	{
-		return Environment.Is64BitOperatingSystem ? Bitness.X64 : Bitness.X86;
+		return GetBitness(System.Runtime.InteropServices.RuntimeInformation.OSArchitecture);
 	}
 
 	/// <summary>
@@ -523,17 +582,32 @@ public class RuntimeInformation : CornerstoneObject, IRuntimeInformation
 	protected DeviceType GetDeviceType()
 	{
 		#if ANDROID || IOS || BROWSER
-		if (DeviceInfo.Current.Idiom == DeviceIdiom.Tablet)
+		try
 		{
-			return DeviceType.Tablet;
+			var current = DeviceInfo.Current;
+			if (current == null)
+			{
+				return DeviceType.Desktop;
+			}
+
+			if (current.Idiom == DeviceIdiom.Tablet)
+			{
+				return DeviceType.Tablet;
+			}
+
+			if (current.Idiom == DeviceIdiom.Phone)
+			{
+				return DeviceType.Phone;
+			}
+
+			if (current.Idiom == DeviceIdiom.Watch)
+			{
+				return DeviceType.Watch;
+			}
 		}
-		if (DeviceInfo.Current.Idiom == DeviceIdiom.Phone)
+		catch
 		{
-			return DeviceType.Phone;
-		}
-		if (DeviceInfo.Current.Idiom == DeviceIdiom.Watch)
-		{
-			return DeviceType.Watch;
+			return DeviceType.Desktop;
 		}
 
 		return DeviceType.Desktop;
@@ -583,6 +657,19 @@ public class RuntimeInformation : CornerstoneObject, IRuntimeInformation
 		var newValue = valueFactory();
 		_cache[name] = newValue;
 		return newValue;
+	}
+
+	private static Bitness GetBitness(Architecture architecture)
+	{
+		return architecture switch
+		{
+			Architecture.X86 => Bitness.X86,
+			Architecture.X64 => Bitness.X64,
+			Architecture.Arm or Architecture.Armv6 => Bitness.Arm32,
+			Architecture.Arm64 => Bitness.Arm64,
+			Architecture.Wasm => IntPtr.Size == 8 ? Bitness.Wasm64 : Bitness.Wasm32,
+			_ => Bitness.Unknown
+		};
 	}
 
 	private int GetDeviceDisplayRefreshRate()
@@ -684,6 +771,11 @@ public interface IRuntimeInformation : IReadOnlyDictionary<string, object>, ISyn
 	bool ApplicationIsNativeBuild { get; }
 
 	/// <summary>
+	/// Flag indicating if the application assembly contains ReadyToRun native code.
+	/// </summary>
+	bool ApplicationIsReadyToRunBuild { get; }
+
+	/// <summary>
 	/// Flag indicating if the application is shutting down.
 	/// </summary>
 	bool ApplicationIsShuttingDown { get; }
@@ -699,9 +791,9 @@ public interface IRuntimeInformation : IReadOnlyDictionary<string, object>, ISyn
 	TimeSpan ApplicationStartup { get; }
 
 	/// <summary>
-	/// The Avalonia runtime version.
+	/// The Cornerstone runtime version.
 	/// </summary>
-	Version AvaloniaRuntimeVersion { get; }
+	Version CornerstoneRuntimeVersion { get; }
 
 	/// <summary>
 	/// The primary display refresh rate in hertz. Zero when unknown.

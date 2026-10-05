@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFrameworks>net10.0-ios</TargetFrameworks>
+		<RuntimeIdentifier>ios-arm64</RuntimeIdentifier>
+		<SupportedOSPlatformVersion>18.0</SupportedOSPlatformVersion>
+		<ProvisioningType>manual</ProvisioningType>
+		<CodesignKey>iPhone Developer</CodesignKey>
+		<CodesignProvision />
+		<!-- Disable AOT -->
+		<UseInterpreter>true</UseInterpreter>
+		<MtouchLink>None</MtouchLink>
+		<MtouchDebug>true</MtouchDebug>
+		<PublishTrimmed>true</PublishTrimmed>
+		<PublishAot>false</PublishAot>
+		<EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+	</PropertyGroup>
+	<ItemGroup>
+		<BundleResource Include="Cornerstone.Navigator.png" />
+		<ImageAsset Include="Assets.xcassets\Contents.json" />
+		<ImageAsset Include="Assets.xcassets\AppIcon.appiconset\Contents.json" />
+		<ImageAsset Include="Assets.xcassets\AppIcon.appiconset\AppIcon.png" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Cornerstone.Navigator\Cornerstone.Navigator.csproj" />
+	</ItemGroup>
+	<Import Project="..\..\..\Build\Presentation.props" />
+</Project>

@@ -12,7 +12,14 @@ internal static class CornerstoneConstants
 	#region Constants
 
 	public const string AvaloniaCapability = nameof(Avalonia);
-	public const string Axaml = nameof(Axaml);
+	/// <summary>
+	/// File extension without a dot. Must be lowercase; VS pkgdef / XmlChooser match this string.
+	/// </summary>
+	public const string Axaml = "axaml";
+	/// <summary>
+	/// File extension without a dot. Must be lowercase; VS pkgdef / XmlChooser match this string.
+	/// </summary>
+	public const string Cxaml = "cxaml";
 	public const string CommandSetGuidString = "B7E6A0F1-4C2D-4A8E-9F31-0D5C8A2E7B10";
 	public const string CornerstoneFactoryEditorGuidString = "6D5344A2-2FCD-49DE-A09D-6A14FD1B1224";
 	public const int CodeCleanupDocumentCommandId = 0x0100;
@@ -24,7 +31,6 @@ internal static class CornerstoneConstants
 	public const bool CodeCleanupUiEnabled = false;
 	public const string PackageGuidString = "865ba8d5-1180-4bf8-8821-345f72a4cb79";
 	public const string PackageName = "Cornerstone";
-	public const string Xaml = nameof(Xaml);
 
 	#endregion
 

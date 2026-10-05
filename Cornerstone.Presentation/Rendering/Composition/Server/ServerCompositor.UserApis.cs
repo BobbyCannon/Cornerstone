@@ -1,0 +1,100 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Cornerstone.Presentation.Platform;
+using Cornerstone.Presentation.Utilities;
+using Cornerstone.Presentation.Controls.Layout;
+
+namespace Cornerstone.Presentation.Rendering.Composition.Server;
+
+internal partial class ServerCompositor
+{
+    private IReadOnlyDictionary<Type, object>? _renderInterfaceFeatureCache;
+    private readonly object _renderInterfaceFeaturesUserApiLock = new();
+
+    void RT_OnContextCreated(IPlatformRenderInterfaceContext context)
+    {
+        lock (_renderInterfaceFeaturesUserApiLock)
+        {
+            _renderInterfaceFeatureCache = null;
+            _renderInterfaceFeatureCache = context.PublicFeatures.ToDictionary(x => x.Key, x => x.Value);
+        }
+    }
+
+    bool RT_OnContextLostExceptionFilterObserver(Exception e)
+    {
+        if (e is PlatformGraphicsContextLostException)
+        {
+            lock (_renderInterfaceFeaturesUserApiLock)
+                _renderInterfaceFeatureCache = null;
+        }
+        return false;
+    }
+    
+    void RT_OnContextDisposed()
+    {
+        lock (_renderInterfaceFeaturesUserApiLock)
+            _renderInterfaceFeatureCache = null;
+    }
+
+    public IReadOnlyDictionary<Type, object>? AT_TryGetCachedRenderInterfaceFeatures()
+    {
+        lock (_renderInterfaceFeaturesUserApiLock)
+            return _renderInterfaceFeatureCache;
+    }
+    
+    public IReadOnlyDictionary<Type, object> RT_GetRenderInterfaceFeatures()
+    {
+        lock (_renderInterfaceFeaturesUserApiLock)
+            return _renderInterfaceFeatureCache ??= RenderInterface.Value.PublicFeatures;
+    }
+
+    public IBitmapImpl CreateCompositionVisualSnapshot(ServerCompositionVisual visual,
+        double scaling, bool renderChildren)
+    {
+        using (RenderInterface.EnsureCurrent())
+        {
+            var pixelSize = PixelSize.FromSize(new Size(visual.Size.X, visual.Size.Y), scaling);
+            
+            var scaleTransform = Matrix.CreateScale(scaling, scaling);
+            var invertRootTransform = visual.CombinedTransformMatrix.Invert();
+
+            IDrawingContextLayerImpl? target = null;
+            try
+            {
+                target = RenderInterface.Value.CreateOffscreenRenderTarget(pixelSize, new(scaling, scaling), true);
+                using (var canvas = target.CreateDrawingContext())
+                {
+                    canvas.Transform = scaleTransform;
+                    visual.Render(canvas, LtrbRect.Infinite, null, renderChildren);
+                }
+
+                if (target is IDrawingContextLayerWithRenderContextAffinityImpl affined
+                    && affined.HasRenderContextAffinity)
+                    return affined.CreateNonAffinedSnapshot();
+                
+                // We are returning the original target, so prevent it from being disposed
+                var rv = target;
+                target = null;
+                return rv;
+            }
+            finally
+            {
+                target?.Dispose();
+            }
+        }
+    }
+
+    public void ResetAllGpuResources()
+    {
+        foreach (var target in _activeTargets)
+            target.ResetRenderTarget();
+        RenderInterface.Reset();
+    }
+    
+    public void InvalidateAllCompositionTargets()
+    {
+        foreach (var target in _activeTargets)
+            target.RequestFullRedraw();
+    }
+}

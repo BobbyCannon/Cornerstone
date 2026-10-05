@@ -52,6 +52,7 @@ public interface ITypeInformation
 	#region Properties
 
 	string AssemblyQualifiedName { get; }
+	string BaseTypeName { get; }
 	IEnumerable<string> EnumValues { get; }
 	IEnumerable<IEventInformation> Events { get; }
 	IEnumerable<IFieldInformation> Fields { get; }

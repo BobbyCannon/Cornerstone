@@ -45,6 +45,11 @@ public class WindowsHelloServiceStub : IWindowsHelloService
 		return Task.FromResult(Array.Empty<byte>());
 	}
 
+	/// <inheritdoc />
+	public void RememberChallenge()
+	{
+	}
+
 	#endregion
 }
 
@@ -65,6 +70,11 @@ public interface IWindowsHelloService
 	void DeleteVaultKeyAsync();
 
 	Task<byte[]> GetVaultKeyAsync();
+
+	/// <summary>
+	/// Saves the challenge from the last successful sign. Call after that signature unwraps the caller's secret.
+	/// </summary>
+	void RememberChallenge();
 
 	#endregion
 }

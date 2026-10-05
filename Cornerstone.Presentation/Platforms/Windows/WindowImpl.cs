@@ -1,0 +1,2087 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using Cornerstone.Presentation.Collections.Pooled;
+using Cornerstone.Presentation.Controls;
+using Cornerstone.Presentation.Controls.Platform;
+using Cornerstone.Presentation.Input;
+using Cornerstone.Presentation.Input.Platform;
+using Cornerstone.Presentation.Input.Raw;
+using Cornerstone.Presentation.Input.TextInput;
+using Cornerstone.Presentation.OpenGL.Egl;
+using Cornerstone.Presentation.Platform;
+using Cornerstone.Presentation.Platform.Surfaces;
+using Cornerstone.Presentation.Platform.Storage;
+using Cornerstone.Presentation.Rendering.Composition;
+using Cornerstone.Presentation.Platforms.Windows.DirectX;
+using Cornerstone.Presentation.Platforms.Windows.Input;
+using Cornerstone.Presentation.Platforms.Windows.Interop;
+using Cornerstone.Presentation.Platforms.Windows.OpenGl;
+using Cornerstone.Presentation.Platforms.Windows.OpenGl.Angle;
+using Cornerstone.Presentation.Platforms.Windows.WinRT.Composition;
+using static Cornerstone.Presentation.Platforms.Windows.Interop.UnmanagedMethods;
+using Cornerstone.Presentation.Platform.Storage.FileIO;
+using Cornerstone.Presentation.Threading;
+using Cornerstone.Presentation.VisualTree;
+using static Cornerstone.Presentation.Controls.Platform.Win32Properties;
+using Cornerstone.Presentation.Logging;
+using Cornerstone.Presentation.Media;
+using Cornerstone.Presentation.Utilities;
+using Cornerstone.Presentation.Controls.Acrylic;
+using Cornerstone.Presentation.Controls.NativeHosts;
+using Cornerstone.Presentation.Controls.Chrome;
+using Cornerstone.Presentation.Controls.DesignTime;
+
+namespace Cornerstone.Presentation.Platforms.Windows
+{
+    /// <summary>
+    /// Window implementation for Win32 platform.
+    /// </summary>
+    internal partial class WindowImpl : IWindowImpl, EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo, IWin32OptionsTopLevelImpl
+    {
+        private static readonly List<WindowImpl> s_instances = new();
+
+        private static readonly IntPtr s_defaultCursor = LoadCursor(
+            IntPtr.Zero, new IntPtr((int)UnmanagedMethods.Cursor.IDC_ARROW));
+
+        private static readonly Dictionary<WindowEdge, HitTestValues> s_edgeLookup =
+            new()
+            {
+                { WindowEdge.East, HitTestValues.HTRIGHT },
+                { WindowEdge.North, HitTestValues.HTTOP },
+                { WindowEdge.NorthEast, HitTestValues.HTTOPRIGHT },
+                { WindowEdge.NorthWest, HitTestValues.HTTOPLEFT },
+                { WindowEdge.South, HitTestValues.HTBOTTOM },
+                { WindowEdge.SouthEast, HitTestValues.HTBOTTOMRIGHT },
+                { WindowEdge.SouthWest, HitTestValues.HTBOTTOMLEFT },
+                { WindowEdge.West, HitTestValues.HTLEFT }
+            };
+
+        // COLORREF 0x00BBGGRR. Match theme Background02 (Window.Background) so GDI
+        // erase / native-host fill is not system white and not a different gray.
+        private static readonly IntPtr s_darkClientBrush = CreateSolidBrush(0x00131313);
+        private static readonly IntPtr s_lightClientBrush = CreateSolidBrush(0x00E8E8E8);
+        private static readonly Color s_darkClientColor = Color.FromRgb(0x13, 0x13, 0x13);
+        private static readonly Color s_lightClientColor = Color.FromRgb(0xE8, 0xE8, 0xE8);
+
+        /// <summary>
+        /// The Windows DPI which equates to a <see cref="RenderScaling"/> of 1.0.
+        /// </summary>
+        public const double StandardDpi = 96;
+
+        private SavedWindowInfo _savedWindowInfo;
+        private bool _isFullScreenActive;
+        private bool _isClientAreaExtended;
+        private Thickness _extendedMargins;
+        private double _extendTitleBarHint = -1;
+        private WindowResizeReason _resizeReason;
+        private MOUSEMOVEPOINT _lastWmMousePoint;
+
+#if USE_MANAGED_DRAG
+        private readonly ManagedWindowResizeDragHelper _managedDrag;
+#endif
+
+        private const WindowStyles WindowStateMask = (WindowStyles.WS_MAXIMIZE | WindowStyles.WS_MINIMIZE);
+        private readonly TouchDevice _touchDevice;
+        private readonly WindowsMouseDevice _mouseDevice;
+        private readonly PenDevice _penDevice;
+        private readonly FramebufferManager _framebuffer;
+        private readonly IPlatformRenderSurface? _glSurface;
+        private readonly bool _wmPointerEnabled;
+
+        private readonly Win32NativeControlHost _nativeControlHost;
+        private readonly Win32NativeAirspaceOverlay? _airspaceOverlay;
+        private List<NativeAirspaceHitAlpha.Cell> _interactiveOverlayCells;
+        private int _interactiveOverlayWidth;
+        private int _interactiveOverlayHeight;
+        private readonly IStorageProvider _storageProvider;
+        private WindowsInputPane? _inputPane;
+        private WndProc _wndProcDelegate;
+        private string? _className;
+        private IntPtr _hwnd;
+        private IInputRoot? _owner;
+        protected WindowProperties _windowProperties;
+        private IconImpl? _iconImpl;
+        private readonly Dictionary<(Icons type, uint dpi), Win32Icon> _iconCache = new();
+        private bool _trackingMouse;//ToDo - there is something missed. Needs investigation @Steven Kirk
+        private bool _trackingNonClientMouse;
+        private bool _topmost;
+        private double _scaling = 1;
+        private uint _dpi = 96;
+        private WindowState _showWindowState;
+        private WindowState _lastWindowState;
+        private OleDropTarget? _dropTarget;
+        private Size _minSize;
+        private Size _maxSize;
+        private POINT _maxTrackSize;
+        private WindowImpl? _parent;
+        private bool _isCloseRequested;
+        private bool _shown;
+        private bool _cloakUntilFirstPresent;
+        private bool _hiddenWindowIsParent;
+        private uint _langid;
+        internal bool _ignoreWmChar;
+        private WindowTransparencyLevel _transparencyLevel;
+        private readonly WindowTransparencyLevel _defaultTransparencyLevel;
+        private WindowCornerPreference _cornerPreference;
+
+        private const int MaxPointerHistorySize = 512;
+
+        // DWMWA_BORDER_COLOR sentinel: do not draw a system border.
+        private const uint DwmBorderColorNone = 0xFFFFFFFE;
+        private static readonly PooledList<RawPointerPoint> s_intermediatePointsPooledList = new();
+        private static readonly List<InternalPoint> s_sortedPoints = new(64);
+        private static POINTER_TOUCH_INFO[]? s_historyTouchInfos;
+        private static POINTER_PEN_INFO[]? s_historyPenInfos;
+        private static POINTER_INFO[]? s_historyInfos;
+        private static MOUSEMOVEPOINT[]? s_mouseHistoryInfos;
+        private PlatformThemeVariant _currentThemeVariant;
+        private Win32TopLevelSceneInfo _sceneInfo;
+        private IntPtr _clientBackgroundBrush;
+        private uint _clientBackgroundColorref;
+        private Color _clientBackgroundColor;
+        private bool _hasClientBackgroundColor;
+        private bool _hasWindowBorderColor;
+        private uint _windowBorderColorref;
+
+        public WindowImpl()
+        {
+            _sceneInfo = new Win32TopLevelSceneInfo(PlatformThemeVariant.Light);
+            _touchDevice = new TouchDevice();
+            _mouseDevice = Cornerstone.Presentation.Input.MouseDevice.GetOrCreatePrimary<WindowsMouseDevice>();
+            _penDevice = new PenDevice();
+
+#if USE_MANAGED_DRAG
+            _managedDrag = new ManagedWindowResizeDragHelper(this, capture =>
+            {
+                if (capture)
+                    UnmanagedMethods.SetCapture(Handle.Handle);
+                else
+                    UnmanagedMethods.ReleaseCapture();
+            });
+#endif
+
+            _windowProperties = new WindowProperties
+            {
+                ShowInTaskbar = false,
+                IsResizable = true,
+                IsMinimizable = true,
+                IsMaximizable = true,
+                Decorations = WindowDecorations.Full
+            };
+
+            var surfaceFactory = PresentationLocator.Current.GetService<IWindowsSurfaceFactory>();
+            var glPlatform = PresentationLocator.Current.GetService<IPlatformGraphics>();
+            UseRedirectionBitmap = surfaceFactory is null || glPlatform is null ||
+                                   !surfaceFactory.RequiresNoRedirectionBitmap;
+
+            var useNativeAirspaceOverlay = Win32PlatformOptions.IsNativeBehindCompositionEnabled
+                                           && this is not PopupImpl
+                                           && this is not EmbeddedWindowImpl;
+            if (useNativeAirspaceOverlay)
+            {
+                // Layered overlay presents Skia; this frame window keeps a redirection
+                // bitmap so native children paint live underneath.
+                UseRedirectionBitmap = true;
+            }
+
+            _wmPointerEnabled = Win32Platform.WindowsVersion >= PlatformConstants.Windows8;
+
+            Screen = Win32Platform.Instance.Screen;
+
+            CreateWindow();
+            SetFrameThemeVariant(Win32Platform.Instance.PlatformSettings.GetColorValues().ThemeVariant);
+            if (useNativeAirspaceOverlay)
+                _airspaceOverlay = new Win32NativeAirspaceOverlay(this);
+            var overlayHandle = _airspaceOverlay?.Handle ?? IntPtr.Zero;
+            _framebuffer = new FramebufferManager(
+                overlayHandle != IntPtr.Zero ? overlayHandle : _hwnd,
+                overlayHandle != IntPtr.Zero);
+
+            if (this is not PopupImpl)
+            {
+                UpdateInputMethod(GetKeyboardLayout(0));
+            }
+
+            if (glPlatform != null && !useNativeAirspaceOverlay)
+            {
+                if (surfaceFactory is not null)
+                {
+                    _glSurface = surfaceFactory.CreateSurface(this);
+                }
+                else
+                {
+                    if (glPlatform is D3D11AngleWin32PlatformGraphics or D3D9AngleWin32PlatformGraphics)
+                        _glSurface = new EglGlPlatformSurface(this);
+                    else if (glPlatform is WglPlatformOpenGlInterface)
+                        _glSurface = new WglGlPlatformSurface(this);
+                }
+            }
+
+            _storageProvider = new Win32StorageProvider(this);
+            _inputPane = WindowsInputPane.TryCreate(this);
+            _nativeControlHost = new Win32NativeControlHost(this, !UseRedirectionBitmap);
+            _defaultTransparencyLevel = UseRedirectionBitmap ? WindowTransparencyLevel.None : WindowTransparencyLevel.Transparent;
+            _transparencyLevel = _defaultTransparencyLevel;
+
+            lock (s_instances)
+                s_instances.Add(this);
+        }
+
+        internal IInputRoot Owner
+            => _owner ?? throw new InvalidOperationException($"{nameof(SetInputRoot)} must have been called");
+
+        internal WindowImpl? ParentImpl => _parent;
+
+        public Action? Activated { get; set; }
+
+        public Func<WindowCloseReason, bool>? Closing { get; set; }
+
+        public Action? Closed { get; set; }
+
+        public Action? Deactivated { get; set; }
+
+        public Action<RawInputEventArgs>? Input { get; set; }
+
+        public Action<Rect>? Paint { get; set; }
+
+        public Action<Size, WindowResizeReason>? Resized { get; set; }
+
+        public Action<double>? ScalingChanged { get; set; }
+
+        public Action<PixelPoint>? PositionChanged { get; set; }
+
+        public bool WindowStateGetterIsUsable => false;
+        public Action<WindowState>? WindowStateChanged { get; set; }
+
+        public Action? LostFocus { get; set; }
+
+        public Action<WindowTransparencyLevel>? TransparencyLevelChanged { get; set; }
+
+        public object PlatformSpecificSceneInfo => _sceneInfo;
+
+        public Action<object> PlatformSpecificSceneInfoChanged { get; set; }
+
+        public Thickness BorderThickness
+        {
+            get
+            {
+                var style = GetStyle();
+                if (style.HasFlag(WindowStyles.WS_BORDER))
+                {
+                    var exStyle = GetExtendedStyle();
+
+                    var padding = new RECT();
+
+                    if (AdjustWindowRectEx(ref padding, (uint)style, false, (uint)exStyle))
+                    {
+                        return new Thickness(-padding.left, -padding.top, padding.right, padding.bottom);
+                    }
+                    else
+                    {
+                        throw new Win32Exception();
+                    }
+                }
+                else
+                {
+                    return new Thickness();
+                }
+            }
+        }
+
+        private ICompositionEffectsSurface? CompositionEffectsSurface => _glSurface as ICompositionEffectsSurface;
+        private bool UseRedirectionBitmap { get; }
+
+        public double RenderScaling => _scaling;
+
+        public double DesktopScaling => RenderScaling;
+
+        public Size ClientSize
+        {
+            get
+            {
+                GetClientRect(_hwnd, out var rect);
+
+                return new Size(rect.right, rect.bottom) / RenderScaling;
+            }
+        }
+
+        Size? IWindowBaseImpl.FrameSize => FrameSize;
+
+        public Size FrameSize
+        {
+            get
+            {
+                GetWindowRect(_hwnd, out var rcWindow);
+                return new Size(rcWindow.Width, rcWindow.Height) / RenderScaling;
+            }
+        }
+
+        public ScreenImpl Screen { get; }
+
+        public IPlatformHandle Handle { get; private set; }
+
+        public virtual Size MaxAutoSizeHint => new Size(_maxTrackSize.X / RenderScaling, _maxTrackSize.Y / RenderScaling);
+
+        public IMouseDevice MouseDevice => _mouseDevice;
+
+        public WindowState WindowState
+        {
+            get
+            {
+                if (!IsWindowVisible(_hwnd))
+                {
+                    return _showWindowState;
+                }
+
+                if (_isFullScreenActive)
+                {
+                    return WindowState.FullScreen;
+                }
+
+                GetWindowPlacement(_hwnd, out var placement);
+
+                return placement.ShowCmd switch
+                {
+                    ShowWindowCommand.Maximize => WindowState.Maximized,
+                    ShowWindowCommand.Minimize => WindowState.Minimized,
+                    _ => WindowState.Normal
+                };
+            }
+
+            set
+            {
+                if (IsWindowVisible(_hwnd) && _lastWindowState != value)
+                {
+                    ShowWindow(value, value != WindowState.Minimized); // If the window is minimized, it shouldn't be activated
+                }
+
+                _lastWindowState = value;
+                _showWindowState = value;
+            }
+        }
+
+        public WindowTransparencyLevel TransparencyLevel
+        {
+            get => _transparencyLevel;
+            private set
+            {
+                if (_transparencyLevel != value)
+                {
+                    _transparencyLevel = value;
+                    TransparencyLevelChanged?.Invoke(value);
+                }
+            }
+        }
+
+        protected IntPtr Hwnd => _hwnd;
+
+        private bool IsMouseInPointerEnabled => _wmPointerEnabled && IsMouseInPointerEnabled();
+
+        public object? TryGetFeature(Type featureType)
+        {
+            if (featureType == typeof(IScreenImpl))
+            {
+                return Screen;
+            }
+
+            if (featureType == typeof(ITextInputMethodImpl))
+            {
+                return Imm32InputMethod.Current;
+            }
+
+            if (featureType == typeof(INativeControlHostImpl))
+            {
+                return _nativeControlHost;
+            }
+
+            if (featureType == typeof(IStorageProvider))
+            {
+                return _storageProvider;
+            }
+
+            if (featureType == typeof(IClipboard))
+            {
+                return PresentationLocator.Current.GetRequiredService<IClipboard>();
+            }
+
+            if (featureType == typeof(IInputPane))
+            {
+                return _inputPane;
+            }
+
+            if (featureType == typeof(ILauncher))
+            {
+                return new BclLauncher();
+            }
+
+            return null;
+        }
+
+        public void SetTransparencyLevelHint(IReadOnlyList<WindowTransparencyLevel> transparencyLevels)
+        {
+            if (transparencyLevels.Count == 1 && transparencyLevels[0] == WindowTransparencyLevel.None)
+            {
+                // Explicitly disable transparency. Ignore the UseRedirectionBitmap property.
+                TransparencyLevel = WindowTransparencyLevel.None;
+                return;
+            }
+
+            foreach (var level in transparencyLevels)
+            {
+                if (!IsSupported(level))
+                    continue;
+
+                if (level == TransparencyLevel)
+                {
+                    return;
+                }
+                if (level == WindowTransparencyLevel.Transparent)
+                {
+                    if (!SetTransparencyTransparent())
+                        continue;
+                }
+                else if (level == WindowTransparencyLevel.AcrylicBlur)
+                {
+                    if (!SetTransparencyAcrylicBlur())
+                        continue;
+                }
+                else if (level == WindowTransparencyLevel.Mica)
+                {
+                    if (!SetTransparencyMica())
+                        continue;
+                }
+
+                TransparencyLevel = level;
+                return;
+            }
+
+            // If we get here, we didn't find a supported level. Report the default.
+            TransparencyLevel = _defaultTransparencyLevel;
+        }
+
+        private bool IsSupported(WindowTransparencyLevel level)
+        {
+            // None is only supported with redirection bitmap.
+            // Note, it's still possible to have non-transparent window with a fallback background brush.
+            if (level == WindowTransparencyLevel.None)
+                return UseRedirectionBitmap;
+
+            // Transparent is supported either with DwmEnableBlurBehindWindow (win8+) or with NoRedirectionBitmap.
+            if (level == WindowTransparencyLevel.Transparent)
+                return !UseRedirectionBitmap || Win32Platform.WindowsVersion >= PlatformConstants.Windows8;
+
+            if (level == WindowTransparencyLevel.Blur)
+                return CompositionEffectsSurface?.IsBlurSupported(BlurEffect.GaussianBlur) ?? false;
+
+            if (level == WindowTransparencyLevel.AcrylicBlur)
+                return CompositionEffectsSurface?.IsBlurSupported(BlurEffect.Acrylic) ?? false;
+
+            if (level == WindowTransparencyLevel.Mica)
+                return CompositionEffectsSurface?.IsBlurSupported(BlurEffect.MicaDark) ?? false;
+
+            return false;
+        }
+
+        // The composition effects themselves are applied by the render target on the render thread,
+        // based on the transparency level and theme variant it receives with RenderTargetSceneInfo.
+        // Here we only adjust the DWM window attributes that have to be set from the UI thread.
+
+        private bool SetTransparencyTransparent()
+        {
+            if (CompositionEffectsSurface is not null)
+                return true;
+
+            return SetLegacyTransparency(true);
+        }
+
+        private bool SetTransparencyAcrylicBlur()
+        {
+            SetUseHostBackdropBrush(true);
+            SetLegacyTransparency(false);
+            return true;
+        }
+
+        private bool SetTransparencyMica()
+        {
+            SetUseHostBackdropBrush(false);
+            SetLegacyTransparency(false);
+            return true;
+        }
+
+        private bool SetLegacyTransparency(bool enabled)
+        {
+            if (Win32Platform.WindowsVersion < PlatformConstants.Windows8 || !UseRedirectionBitmap)
+                return false;
+
+            // On pre-Win8 this method was blurring a window, which is a different from desired behavior.
+            // On win8+ we use this method as a fallback, when WinUI/DComp composition with true transparency isn't available.
+            // Note: there is no guarantee that this behavior won't be changed back to true blur in Win12.
+            // See https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/nf-dwmapi-dwmenableblurbehindwindow#remarks
+            // Also https://github.com/qt/qtbase/blob/fd300f143fd30947bba60a03d614acd2711b635f/src/plugins/platforms/windows/qwindowswindow.cpp#L519
+            var blurInfo = new DWM_BLURBEHIND();
+            blurInfo.fEnable = enabled;
+            blurInfo.dwFlags = DWM_BB.Enable | DWM_BB.BlurRegion;
+            blurInfo.hRgnBlur = CreateRectRgn(0, 0, -1, -1);
+
+            var result = DwmEnableBlurBehindWindow(_hwnd, ref blurInfo);
+
+            if (blurInfo.hRgnBlur != default)
+            {
+                DeleteObject(blurInfo.hRgnBlur);
+            }
+
+            return result == 0;
+        }
+
+        private unsafe bool SetUseHostBackdropBrush(bool useHostBackdropBrush)
+        {
+            if (Win32Platform.WindowsVersion < WinUiCompositionShared.MinHostBackdropVersion)
+                return false;
+
+            // AcrylicBlur requires window to set DWMWA_USE_HOSTBACKDROPBRUSH flag on Win11+.
+            // It's not necessary on older versions and it's not necessary with Mica brush.
+
+            var pvUseBackdropBrush = useHostBackdropBrush ? 1 : 0;
+            var result = DwmSetWindowAttribute(_hwnd, (int)DwmWindowAttribute.DWMWA_USE_HOSTBACKDROPBRUSH, &pvUseBackdropBrush, sizeof(int));
+            return result == 0;
+        }
+
+        public IPlatformRenderSurface[] Surfaces
+            => _airspaceOverlay != null
+                ? [_framebuffer]
+                : _glSurface is null
+                    ? [(IPlatformRenderSurface)Handle, _framebuffer]
+                    : [(IPlatformRenderSurface)Handle, _glSurface, _framebuffer];
+
+        public PixelPoint Position
+        {
+            get
+            {
+                GetWindowRect(_hwnd, out var rc);
+                return new PixelPoint(rc.left, rc.top);
+            }
+            set
+            {
+                SetWindowPos(
+                    Handle.Handle,
+                    IntPtr.Zero,
+                    value.X,
+                    value.Y,
+                    0,
+                    0,
+                    SetWindowPosFlags.SWP_NOSIZE | SetWindowPosFlags.SWP_NOACTIVATE | SetWindowPosFlags.SWP_NOZORDER);
+
+                if (ShCoreAvailable && Win32Platform.WindowsVersion >= PlatformConstants.Windows8_1)
+                {
+                    var monitor = MonitorFromWindow(Handle.Handle, MONITOR.MONITOR_DEFAULTTONEAREST);
+
+                    if (GetDpiForMonitor(
+                            monitor,
+                            MONITOR_DPI_TYPE.MDT_EFFECTIVE_DPI,
+                            out _dpi,
+                            out _) == 0)
+                    {
+                        _scaling = _dpi / StandardDpi;
+                    }
+                }
+            }
+        }
+
+        private bool HasFullDecorations => _windowProperties.Decorations == WindowDecorations.Full;
+
+
+        public void Move(PixelPoint point) => Position = point;
+
+        public void SetMinMaxSize(Size minSize, Size maxSize)
+        {
+            _minSize = minSize;
+            _maxSize = maxSize;
+        }
+
+        public Compositor Compositor => Win32Platform.Compositor;
+
+        public void Resize(Size value, WindowResizeReason reason)
+        {
+            int requestedClientWidth = (int)(value.Width * RenderScaling);
+            int requestedClientHeight = (int)(value.Height * RenderScaling);
+
+            GetClientRect(_hwnd, out var currentClientRect);
+            if (currentClientRect.Width == requestedClientWidth && currentClientRect.Height == requestedClientHeight)
+            {
+                // Don't update our window position if the client size is already correct. This leads to Windows updating our
+                // "normal position" (i.e. restored bounds) to match our maximised or areo snap size, which is incorrect behaviour.
+                // We only want to proceed with this method if the new size is coming from Cornerstone.Presentation.
+                return;
+            }
+
+            if (_lastWindowState == WindowState.FullScreen && _isFullScreenActive)
+            {
+                // Fullscreen mode is really a restored window without a frame filling the whole monitor.
+                // It doesn't make sense to resize the window in this state, so ignore this request.
+                // (If the fullscreen mode isn't yet active, continue normally so that our normal window size gets saved.)
+                Logger.TryGet(LogEventLevel.Warning, LogArea.Win32Platform)?.Log(this, "Ignoring resize event on fullscreen window.");
+                return;
+            }
+
+            GetWindowPlacement(_hwnd, out var windowPlacement);
+
+            var requestedClientRect = new RECT
+            {
+                left = 0,
+                top = 0,
+                right = requestedClientWidth,
+                bottom = requestedClientHeight
+            };
+
+            var requestedWindowRect = ClientRectToWindowRect(requestedClientRect);
+
+            if (_isClientAreaExtended)
+            {
+                // We told Windows we have a border, but since we're actually extending into it,
+                // it should be excluded from the final window bounds.
+                var style = GetStyle();
+                if ((style & WindowStyles.WS_BORDER) != 0)
+                {
+                    var borderOnlyRect = ClientRectToWindowRect(requestedClientRect, WindowStyles.WS_BORDER);
+
+                    requestedWindowRect.top = borderOnlyRect.top;
+
+                    // If we're supposed to have a caption, the top border is actually collapsed into it.
+                    if ((style & WindowStyles.WS_CAPTION) == WindowStyles.WS_CAPTION)
+                        requestedWindowRect.top += 1;
+                }
+            }
+
+            var windowWidth = requestedWindowRect.Width;
+            var windowHeight = requestedWindowRect.Height;
+
+            if (windowWidth == windowPlacement.NormalPosition.Width && windowHeight == windowPlacement.NormalPosition.Height)
+            {
+                return;
+            }
+
+            // If the window is minimized, don't change the restore position, because this.Position is currently
+            // out of screen with values similar to -32000,-32000. Windows considers such a position invalid on restore
+            // and instead moves the window back to 0,0.
+            if (windowPlacement.ShowCmd == ShowWindowCommand.ShowMinimized)
+            {
+                // The window is minimized but will be restored to maximized: don't change our normal size,
+                // or it will incorrectly be set to the maximized size.
+                if ((windowPlacement.Flags & WindowPlacementFlags.RestoreToMaximized) != 0)
+                {
+                    return;
+                }
+            }
+
+            windowPlacement.NormalPosition.right = windowPlacement.NormalPosition.left + windowWidth;
+            windowPlacement.NormalPosition.bottom = windowPlacement.NormalPosition.top + windowHeight;
+
+            windowPlacement.ShowCmd = !_shown ? ShowWindowCommand.Hide : _lastWindowState switch
+            {
+                WindowState.Minimized => ShowWindowCommand.ShowMinNoActive,
+                WindowState.Maximized => ShowWindowCommand.ShowMaximized,
+                WindowState.Normal => ShowWindowCommand.ShowNoActivate,
+                _ => throw new NotImplementedException(),
+            };
+
+            using var scope = SetResizeReason(reason);
+            SetWindowPlacement(_hwnd, in windowPlacement);
+        }
+
+        public void Activate()
+        {
+            SetForegroundWindow(_hwnd);
+        }
+
+        public IPopupImpl? CreatePopup() => Win32Platform.UseOverlayPopups ? null : new PopupImpl(this);
+
+        public void Dispose()
+        {
+            _inputPane?.Dispose();
+            _inputPane = null;
+            HideForClose();
+            _airspaceOverlay?.Dispose();
+            if (_clientBackgroundBrush != IntPtr.Zero)
+            {
+                DeleteObject(_clientBackgroundBrush);
+                _clientBackgroundBrush = IntPtr.Zero;
+            }
+            if (_hwnd != IntPtr.Zero)
+            {
+                // Detect if we are being closed programmatically - this would mean that WM_CLOSE was not called
+                // and we didn't prepare this window for destruction.
+                if (!_isCloseRequested)
+                {
+                    BeforeCloseCleanup(true);
+                }
+
+                DestroyWindow(_hwnd);
+                _hwnd = IntPtr.Zero;
+            }
+
+            ClearIconCache();
+        }
+
+        public void Invalidate(Rect rect)
+        {
+            var scaling = RenderScaling;
+            var r = new RECT
+            {
+                left = (int)Math.Floor(rect.X * scaling),
+                top = (int)Math.Floor(rect.Y * scaling),
+                right = (int)Math.Ceiling(rect.Right * scaling),
+                bottom = (int)Math.Ceiling(rect.Bottom * scaling),
+            };
+
+            InvalidateRect(_hwnd, ref r, false);
+        }
+
+        /// <summary>
+        /// Transform a screen pixel point to the point in the client area.<br/>
+        /// To transform a point with precise value, use the <see cref="PointToClient(Point)"/> overload instead.
+        /// </summary>
+        /// <param name="point">The screen pixel point to be transformed.</param>
+        /// <returns>The point in the client area.</returns>
+        public Point PointToClient(PixelPoint point)
+        {
+            var p = new POINT { X = point.X, Y = point.Y };
+            ScreenToClient(_hwnd, ref p);
+            return new Point(p.X, p.Y) / RenderScaling;
+        }
+
+        /// <summary>
+        /// Transform a screen point to the point in the client area.<br/>
+        /// Comparing to the <see cref="PixelPoint"/> overload, this method receives double values and can be more precise.
+        /// </summary>
+        /// <param name="point">The screen point to be transformed.</param>
+        /// <returns>The point in the client area.</returns>
+        public Point PointToClient(Point point)
+        {
+            var p = new POINT { X = 0, Y = 0 };
+            ClientToScreen(_hwnd, ref p);
+            return new Point(point.X - p.X, point.Y - p.Y) / RenderScaling;
+        }
+
+        public PixelPoint PointToScreen(Point point)
+        {
+            point *= RenderScaling;
+            var p = new POINT { X = (int)point.X, Y = (int)point.Y };
+            ClientToScreen(_hwnd, ref p);
+            return new PixelPoint(p.X, p.Y);
+        }
+
+        public void SetInputRoot(IInputRoot inputRoot)
+        {
+            _owner = inputRoot;
+            CreateDropTarget(inputRoot);
+        }
+
+        public void Hide()
+        {
+            SetDwmTransitionsDisabled(true);
+            UnmanagedMethods.ShowWindow(_hwnd, ShowWindowCommand.Hide);
+            SyncNativeAirspaceOverlay();
+        }
+
+        private void HideForClose()
+        {
+            if (_hwnd == IntPtr.Zero)
+                return;
+
+            SetDwmTransitionsDisabled(true);
+            SetDwmCloaked(true);
+            UnmanagedMethods.ShowWindow(_hwnd, ShowWindowCommand.Hide);
+            SyncNativeAirspaceOverlay();
+        }
+
+        private unsafe void SetDwmCloaked(bool cloaked)
+        {
+            var value = cloaked ? 1 : 0;
+            DwmSetWindowAttribute(
+                _hwnd,
+                (int)DwmWindowAttribute.DWMWA_CLOAK,
+                &value,
+                sizeof(int));
+        }
+
+        private unsafe void SetDwmTransitionsDisabled(bool disabled)
+        {
+            var value = disabled ? 1 : 0;
+            DwmSetWindowAttribute(
+                _hwnd,
+                (int)DwmWindowAttribute.DWMWA_TRANSITIONS_FORCEDISABLED,
+                &value,
+                sizeof(int));
+        }
+
+        public virtual void Show(bool activate, bool isDialog)
+        {
+            SetParent(_parent);
+            ShowWindow(_showWindowState, activate);
+        }
+
+        public Action? GotInputWhenDisabled { get; set; }
+
+        public void SetParent(IWindowImpl? parent)
+        {
+            _parent = parent as WindowImpl;
+
+            var parentHwnd = _parent?._hwnd ?? IntPtr.Zero;
+
+            if (parentHwnd == IntPtr.Zero && !_windowProperties.ShowInTaskbar)
+            {
+                parentHwnd = OffscreenParentWindow.Handle;
+            }
+
+            _hiddenWindowIsParent = parentHwnd == OffscreenParentWindow.Handle;
+
+            SetWindowLongPtr(_hwnd, (int)WindowLongParam.GWL_HWNDPARENT, parentHwnd);
+
+            // Windows doesn't seem to respect the HWND_TOPMOST flag of a window when showing an owned window for the first time.
+            // So we set the HWND_TOPMOST again before the owned window is shown. This only needs to be done once.
+            (parent as WindowImpl)?.EnsureTopmost();
+        }
+
+        public void SetEnabled(bool enable) => EnableWindow(_hwnd, enable);
+
+        public void BeginMoveDrag(PointerPressedEventArgs e)
+        {
+            e.Pointer.Capture(null);
+
+            if (!e.Pointer.IsPrimary)
+            {
+                throw new InvalidOperationException("BeginMoveDrag Failed");
+            }
+
+            Dispatcher.UIThread.Post(() =>
+            {
+                // SendMessage's return value is dependent on the message send.  WM_SYSCOMMAND
+                // and WM_LBUTTONUP return value just signify whether the WndProc handled the
+                // message or not, so they are not interesting
+
+                SendMessage(_hwnd, (int)WindowsMessage.WM_SYSCOMMAND, (IntPtr)SC_MOUSEMOVE, IntPtr.Zero);
+                SendMessage(_hwnd, (int)WindowsMessage.WM_LBUTTONUP, IntPtr.Zero, IntPtr.Zero);
+            }, DispatcherPriority.Send);
+        }
+
+        public void BeginResizeDrag(WindowEdge edge, PointerPressedEventArgs e)
+        {
+            if (_windowProperties.IsResizable)
+            {
+#if USE_MANAGED_DRAG
+                _managedDrag.BeginResizeDrag(edge, ScreenToClient(MouseDevice.Position.ToPoint(_scaling)));
+#else
+                e.Pointer.Capture(null);
+                DefWindowProc(_hwnd, (int)WindowsMessage.WM_NCLBUTTONDOWN,
+                    new IntPtr((int)s_edgeLookup[edge]), IntPtr.Zero);
+#endif
+            }
+        }
+
+        public void SetTitle(string? title)
+        {
+            SetWindowText(_hwnd, title);
+        }
+
+        public void SetCursor(ICursorImpl? cursor)
+        {
+            var impl = cursor as CursorImpl;
+
+            var hCursor = impl?.Handle ?? s_defaultCursor;
+            SetClassLong(_hwnd, ClassLongIndex.GCLP_HCURSOR, hCursor);
+            if (_airspaceOverlay != null && _airspaceOverlay.Handle != IntPtr.Zero)
+                SetClassLong(_airspaceOverlay.Handle, ClassLongIndex.GCLP_HCURSOR, hCursor);
+
+            UnmanagedMethods.SetCursor(hCursor);
+        }
+
+        public void SetIcon(IWindowIconImpl? icon)
+        {
+            if (ReferenceEquals(_iconImpl, icon))
+                return;
+
+            _iconImpl = (IconImpl?)icon;
+            ClearIconCache();
+            RefreshIcon();
+        }
+
+        private void ClearIconCache()
+        {
+            foreach (var icon in _iconCache.Values)
+            {
+                icon.Dispose();
+            }
+            _iconCache.Clear();
+        }
+
+        private Win32Icon? LoadIcon(Icons type, uint dpi)
+        {
+            if (_iconImpl == null)
+            {
+                return null;
+            }
+
+            if (type == Icons.ICON_SMALL2)
+            {
+                type = Icons.ICON_SMALL;
+            }
+
+            var iconKey = (type, dpi);
+            if (!_iconCache.TryGetValue(iconKey, out var icon))
+            {
+                var scale = dpi / 96.0;
+                _iconCache[iconKey] = icon = type switch
+                {
+                    Icons.ICON_SMALL => _iconImpl.LoadSmallIcon(scale),
+                    Icons.ICON_BIG => _iconImpl.LoadBigIcon(scale),
+                    _ => throw new NotImplementedException(),
+                };
+            }
+
+            return icon;
+        }
+
+        private void RefreshIcon()
+        {
+            SendMessage(_hwnd, (int)WindowsMessage.WM_SETICON, (nint)Icons.ICON_SMALL, LoadIcon(Icons.ICON_SMALL, _dpi)?.Handle ?? default);
+            SendMessage(_hwnd, (int)WindowsMessage.WM_SETICON, (nint)Icons.ICON_BIG, LoadIcon(Icons.ICON_BIG, _dpi)?.Handle ?? default);
+
+            TaskBarList.SetOverlayIcon(_hwnd, default, null); // This will prompt the taskbar to redraw the icon
+        }
+
+        public void ShowTaskbarIcon(bool value)
+        {
+            var newWindowProperties = _windowProperties;
+
+            newWindowProperties.ShowInTaskbar = value;
+
+            UpdateWindowProperties(newWindowProperties);
+        }
+
+        public void CanResize(bool value)
+        {
+            var newWindowProperties = _windowProperties;
+
+            newWindowProperties.IsResizable = value;
+
+            UpdateWindowProperties(newWindowProperties);
+        }
+
+        public void SetCanMinimize(bool value)
+        {
+            var newWindowProperties = _windowProperties;
+
+            newWindowProperties.IsMinimizable = value;
+
+            UpdateWindowProperties(newWindowProperties);
+        }
+
+        public void SetCanMaximize(bool value)
+        {
+            var newWindowProperties = _windowProperties;
+
+            newWindowProperties.IsMaximizable = value;
+
+            UpdateWindowProperties(newWindowProperties);
+        }
+
+        public void SetWindowDecorations(WindowDecorations value)
+        {
+            var newWindowProperties = _windowProperties;
+
+            newWindowProperties.Decorations = value;
+
+            UpdateWindowProperties(newWindowProperties);
+        }
+
+        public void SetTopmost(bool value)
+        {
+            if (value == _topmost)
+            {
+                return;
+            }
+
+            IntPtr hWndInsertAfter = value ? WindowPosZOrder.HWND_TOPMOST : WindowPosZOrder.HWND_NOTOPMOST;
+            SetWindowPos(_hwnd,
+                hWndInsertAfter,
+                0, 0, 0, 0,
+                SetWindowPosFlags.SWP_NOMOVE | SetWindowPosFlags.SWP_NOSIZE | SetWindowPosFlags.SWP_NOACTIVATE);
+
+            _topmost = value;
+        }
+
+        private void EnsureTopmost()
+        {
+            if (_topmost)
+            {
+                SetWindowPos(_hwnd,
+                    WindowPosZOrder.HWND_TOPMOST,
+                    0, 0, 0, 0,
+                    SetWindowPosFlags.SWP_NOMOVE | SetWindowPosFlags.SWP_NOSIZE | SetWindowPosFlags.SWP_NOACTIVATE);
+            }
+        }
+
+        public unsafe void SetFrameThemeVariant(PlatformThemeVariant? themeVariant)
+        {
+            _currentThemeVariant = themeVariant ?? Win32Platform.Instance.PlatformSettings.GetColorValues().ThemeVariant;
+            if (_sceneInfo.ThemeVariant != _currentThemeVariant)
+            {
+                _sceneInfo = new Win32TopLevelSceneInfo(_currentThemeVariant);
+                PlatformSpecificSceneInfoChanged?.Invoke(_sceneInfo);
+            }
+            var isDark = _currentThemeVariant == PlatformThemeVariant.Dark ? 1 : 0;
+            if (Win32Platform.WindowsVersion.Build >= 17763)
+            {
+                DwmSetWindowAttribute(
+                    _hwnd,
+                    (int)DwmWindowAttribute.DWMWA_USE_IMMERSIVE_DARK_MODE,
+                    &isDark,
+                    sizeof(int));
+            }
+
+            if (Win32Platform.WindowsVersion.Build >= 22000)
+            {
+                ApplyCaptionColor(ClientBackgroundColorref);
+                if (TransparencyLevel == WindowTransparencyLevel.Mica)
+                {
+                    SetTransparencyMica();
+                }
+            }
+        }
+
+        public void SetClientBackgroundColor(Color color)
+        {
+            if (color.A == 0)
+            {
+                ClearClientBackgroundColor();
+                return;
+            }
+
+            var colorref = (uint)(color.R | (color.G << 8) | (color.B << 16));
+            if (_hasClientBackgroundColor && colorref == _clientBackgroundColorref)
+                return;
+
+            var brush = CreateSolidBrush(colorref);
+            if (brush == IntPtr.Zero)
+                return;
+
+            var previous = _clientBackgroundBrush;
+            _clientBackgroundBrush = brush;
+            _clientBackgroundColorref = colorref;
+            _clientBackgroundColor = color;
+            _hasClientBackgroundColor = true;
+
+            SetClassLong(_hwnd, ClassLongIndex.GCLP_HBRBACKGROUND, brush);
+            if (previous != IntPtr.Zero)
+                DeleteObject(previous);
+
+            ApplyCaptionColor(colorref);
+            PaintClientBackgroundNow();
+            GetClientRect(_hwnd, out var client);
+            InvalidateRect(_hwnd, ref client, true);
+        }
+
+        private void ClearClientBackgroundColor()
+        {
+            if (!_hasClientBackgroundColor)
+            {
+                ApplyCaptionColor(ClientBackgroundColorref);
+                return;
+            }
+
+            var previous = _clientBackgroundBrush;
+            _clientBackgroundBrush = IntPtr.Zero;
+            _clientBackgroundColorref = 0;
+            _hasClientBackgroundColor = false;
+
+            SetClassLong(_hwnd, ClassLongIndex.GCLP_HBRBACKGROUND, ClientBackgroundBrush);
+            if (previous != IntPtr.Zero)
+                DeleteObject(previous);
+
+            ApplyCaptionColor(ClientBackgroundColorref);
+            PaintClientBackgroundNow();
+            GetClientRect(_hwnd, out var client);
+            InvalidateRect(_hwnd, ref client, true);
+        }
+
+        private void PaintClientBackgroundNow()
+        {
+            var color = ClientBackgroundColor;
+            _airspaceOverlay?.PresentSolidFill(color);
+
+            var dc = GetDC(_hwnd);
+            if (dc == IntPtr.Zero)
+                return;
+
+            GetClientRect(_hwnd, out var client);
+            FillRect(dc, ref client, ClientBackgroundBrush);
+            ReleaseDC(_hwnd, dc);
+        }
+
+        public void SetWindowBorderColor(Color color)
+        {
+            if (color.A == 0)
+            {
+                _hasWindowBorderColor = false;
+                _windowBorderColorref = 0;
+            }
+            else
+            {
+                _hasWindowBorderColor = true;
+                _windowBorderColorref = (uint)(color.R | (color.G << 8) | (color.B << 16));
+            }
+
+            ApplyBorderColor();
+        }
+
+        private unsafe void ApplyCaptionColor(uint colorref)
+        {
+            if (Win32Platform.WindowsVersion.Build < 22000)
+                return;
+
+            DwmSetWindowAttribute(
+                _hwnd,
+                (int)DwmWindowAttribute.DWMWA_CAPTION_COLOR,
+                &colorref,
+                sizeof(uint));
+            ApplyBorderColor();
+        }
+
+        private unsafe void ApplyBorderColor()
+        {
+            if (Win32Platform.WindowsVersion.Build < 22000 || _hwnd == IntPtr.Zero)
+                return;
+
+            var borderColor = _hasWindowBorderColor ? _windowBorderColorref : DwmBorderColorNone;
+            DwmSetWindowAttribute(
+                _hwnd,
+                (int)DwmWindowAttribute.DWMWA_BORDER_COLOR,
+                &borderColor,
+                sizeof(uint));
+        }
+
+        protected virtual IntPtr CreateWindowOverride(ushort atom)
+        {
+            return CreateWindowEx(
+                UseRedirectionBitmap ? 0 : (int)WindowStyles.WS_EX_NOREDIRECTIONBITMAP,
+                atom,
+                null,
+                (int)WindowStyles.WS_OVERLAPPEDWINDOW | (int)WindowStyles.WS_CLIPCHILDREN,
+                CW_USEDEFAULT,
+                CW_USEDEFAULT,
+                CW_USEDEFAULT,
+                CW_USEDEFAULT,
+                IntPtr.Zero,
+                IntPtr.Zero,
+                IntPtr.Zero,
+                IntPtr.Zero);
+        }
+
+        [MemberNotNull(nameof(_wndProcDelegate))]
+        [MemberNotNull(nameof(_className))]
+        [MemberNotNull(nameof(Handle))]
+        private void CreateWindow()
+        {
+            // Ensure that the delegate doesn't get garbage collected by storing it as a field.
+            _wndProcDelegate = WndProcMessageHandler;
+
+            _className = $"Cornerstone-{Guid.NewGuid().ToString()}";
+
+            // Unique DC helps with performance when using Gpu based rendering
+            const ClassStyles windowClassStyle = ClassStyles.CS_OWNDC | ClassStyles.CS_HREDRAW | ClassStyles.CS_VREDRAW;
+
+            var theme = Win32Platform.Instance.PlatformSettings.GetColorValues().ThemeVariant;
+            var wndClassEx = new WNDCLASSEX
+            {
+                cbSize = Marshal.SizeOf<WNDCLASSEX>(),
+                style = (int)windowClassStyle,
+                lpfnWndProc = _wndProcDelegate,
+                hInstance = GetModuleHandle(null),
+                hCursor = s_defaultCursor,
+                hbrBackground = theme == PlatformThemeVariant.Dark ? s_darkClientBrush : s_lightClientBrush,
+                lpszClassName = _className
+            };
+
+            ushort atom = RegisterClassEx(ref wndClassEx);
+
+            if (atom == 0)
+            {
+                throw new Win32Exception();
+            }
+
+            _hwnd = CreateWindowOverride(atom);
+
+            if (_hwnd == IntPtr.Zero)
+            {
+                throw new Win32Exception();
+            }
+
+            Handle = new WindowImplPlatformHandle(this);
+
+            RegisterTouchWindow(_hwnd, 0);
+
+            if (ShCoreAvailable && Win32Platform.WindowsVersion >= PlatformConstants.Windows8_1)
+            {
+                var monitor = MonitorFromWindow(
+                    _hwnd,
+                    MONITOR.MONITOR_DEFAULTTONEAREST);
+
+                if (GetDpiForMonitor(
+                    monitor,
+                    MONITOR_DPI_TYPE.MDT_EFFECTIVE_DPI,
+                    out _dpi,
+                    out _) == 0)
+                {
+                    _scaling = _dpi / StandardDpi;
+                }
+            }
+        }
+
+        private IntPtr WndProcMessageHandler(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
+        {
+            bool handled = false;
+            IntPtr ret = IntPtr.Zero;
+
+            if (WndProcHookCallback is { } callback)
+                ret = callback(hWnd, msg, wParam, lParam, ref handled);
+
+            if (handled)
+                return ret;
+
+            return WndProc(hWnd, msg, wParam, lParam);
+        }
+
+        private void CreateDropTarget(IInputRoot inputRoot)
+        {
+            if (PresentationLocator.Current.GetService<IDragDropDevice>() is { } dragDropDevice)
+            {
+                var odt = new OleDropTarget(this, inputRoot, dragDropDevice);
+
+                if (OleContext.Current?.RegisterDragDrop(Handle, odt) ?? false)
+                {
+                    _dropTarget = odt;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Ported from https://github.com/chromium/chromium/blob/master/ui/views/win/fullscreen_handler.cc
+        /// Method must only be called from inside UpdateWindowProperties.
+        /// </summary>
+        /// <param name="fullscreen"></param>
+        private void SetFullScreen(bool fullscreen)
+        {
+            if (fullscreen)
+            {
+                var current = GetStyle();
+                var currentEx = GetExtendedStyle();
+                Screen? screen;
+
+                GetWindowPlacement(_hwnd, out var placement);
+                var isMinimized = placement.ShowCmd == ShowWindowCommand.ShowMinimized;
+                RECT windowRect;
+
+                // When minimized, we can't use GetWindowRect since the window is actually way outside the screen.
+                // Instead, fall back to WINDOWPLACEMENT.NormalPosition (which is in working area coordinates).
+                if (isMinimized)
+                {
+                    windowRect = placement.NormalPosition;
+                    screen = Screen.ScreenFromRect(windowRect.ToPixelRect());
+                    if (screen?.WorkingArea is { } workingArea)
+                    {
+                        windowRect.left += workingArea.X;
+                        windowRect.top += workingArea.Y;
+                        windowRect.right += workingArea.X;
+                        windowRect.bottom += workingArea.Y;
+                    }
+                }
+                else
+                {
+                    GetWindowRect(_hwnd, out windowRect);
+                    screen = Screen.ScreenFromHwnd(_hwnd, MONITOR.MONITOR_DEFAULTTONEAREST);
+                }
+
+                _savedWindowInfo.WindowRect = windowRect;
+                _savedWindowInfo.Style = current;
+                _savedWindowInfo.ExStyle = currentEx;
+
+                if (current.HasAllFlags(WindowStyles.WS_SYSMENU))
+                {
+                    // Create the system menu copy before fullscreen removes WS_SYSMENU.
+                    GetSystemMenu(_hwnd, false);
+                }
+
+                // Set new window style and size.
+                SetStyle(current & ~WindowStyles.WS_OVERLAPPEDWINDOW, false);
+                SetExtendedStyle(currentEx & ~(WindowStyles.WS_EX_DLGMODALFRAME | WindowStyles.WS_EX_WINDOWEDGE | WindowStyles.WS_EX_CLIENTEDGE | WindowStyles.WS_EX_STATICEDGE), false);
+
+                // On expand, if we're given a window_rect, grow to it, otherwise do
+                // not resize.
+                if (screen?.Bounds is { } screenBounds)
+                {
+                    _isFullScreenActive = true;
+
+                    if (isMinimized)
+                        UnmanagedMethods.ShowWindow(_hwnd, ShowWindowCommand.Restore);
+
+                    SetWindowPos(_hwnd, IntPtr.Zero, screenBounds.X, screenBounds.Y, screenBounds.Width, screenBounds.Height,
+                        SetWindowPosFlags.SWP_NOZORDER | SetWindowPosFlags.SWP_NOACTIVATE | SetWindowPosFlags.SWP_FRAMECHANGED);
+                }
+            }
+            else
+            {
+                // Reset original window style and size.  The multiple window size/moves
+                // here are ugly, but if SetWindowPos() doesn't redraw, the taskbar won't be
+                // repainted.  Better-looking methods welcome.
+                _isFullScreenActive = false;
+
+                var windowStates = GetWindowStateStyles();
+                SetStyle((_savedWindowInfo.Style & ~WindowStateMask) | windowStates, false);
+                SetExtendedStyle(_savedWindowInfo.ExStyle, false);
+
+                // On restore, resize to the previous saved rect size.
+                var newClientRect = _savedWindowInfo.WindowRect.ToPixelRect();
+
+                SetWindowPos(_hwnd, IntPtr.Zero, newClientRect.X, newClientRect.Y, newClientRect.Width,
+                             newClientRect.Height,
+                            SetWindowPosFlags.SWP_NOZORDER | SetWindowPosFlags.SWP_NOACTIVATE | SetWindowPosFlags.SWP_FRAMECHANGED);
+
+                UpdateWindowProperties(_windowProperties, true);
+            }
+
+            TaskBarList.MarkFullscreen(_hwnd, fullscreen);
+
+            ExtendClientArea();
+        }
+
+        private MARGINS UpdateExtendMargins()
+        {
+            var borderThickness = new RECT();
+            var borderCaptionThickness = new RECT();
+            var style = GetStyle();
+
+            var adjuster = CreateWindowRectAdjuster();
+            adjuster.Adjust(ref borderCaptionThickness, style, 0);
+            adjuster.Adjust(ref borderThickness, style & ~WindowStyles.WS_CAPTION, 0);
+
+            borderThickness.left *= -1;
+            borderThickness.top *= -1;
+            borderCaptionThickness.left *= -1;
+            borderCaptionThickness.top *= -1;
+
+            if (_windowProperties.Decorations == WindowDecorations.Full)
+            {
+                if (_extendTitleBarHint != -1)
+                    borderCaptionThickness.top = (int)(_extendTitleBarHint * RenderScaling);
+            }
+            else
+                borderCaptionThickness.top = borderThickness.top;
+
+            //using a default margin of 0 when using WinUiComp removes artefacts when resizing. See issue #8316
+            var defaultMargin = UseRedirectionBitmap ? 1 : 0;
+
+            MARGINS margins = new MARGINS();
+            margins.cxLeftWidth = defaultMargin;
+            margins.cxRightWidth = defaultMargin;
+            margins.cyBottomHeight = defaultMargin;
+
+            margins.cyTopHeight = defaultMargin;
+
+            if (WindowState == WindowState.Maximized)
+            {
+                _extendedMargins = new Thickness(0, (borderCaptionThickness.top - borderThickness.top) / RenderScaling, 0, 0);
+            }
+            else
+            {
+                _extendedMargins = new Thickness(0, (borderCaptionThickness.top) / RenderScaling, 0, 0);
+            }
+
+            return margins;
+        }
+
+        private void UpdateWindowCornerPreference()
+        {
+            if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000))
+                return;
+
+            unsafe
+            {
+                var preference = (int)_cornerPreference;
+                DwmSetWindowAttribute(_hwnd, (int)DwmWindowAttribute.DWMWA_WINDOW_CORNER_PREFERENCE, &preference, sizeof(int));
+            }
+        }
+
+        private void ExtendClientArea()
+        {
+            if (!_shown)
+            {
+                ExtendClientAreaToDecorationsChanged?.Invoke(_isClientAreaExtended);
+                return;
+            }
+
+            if (DwmIsCompositionEnabled(out bool compositionEnabled) < 0 || !compositionEnabled)
+            {
+                _isClientAreaExtended = false;
+                return;
+            }
+            GetWindowRect(_hwnd, out var rcWindow);
+
+            if (_isClientAreaExtended && WindowState != WindowState.FullScreen && GetStyle().HasAllFlags(WindowStyles.WS_BORDER))
+            {
+                var margins = UpdateExtendMargins();
+                DwmExtendFrameIntoClientArea(_hwnd, ref margins);
+
+                // Make sure that Windows still paints the non-client area so we get native borders and shadows.
+                SetNCRenderingPolicy(DwmNCRenderingPolicy.DWMNCRP_ENABLED);
+            }
+            else
+            {
+                var margins = new MARGINS();
+                DwmExtendFrameIntoClientArea(_hwnd, ref margins);
+
+                _extendedMargins = new Thickness();
+
+                SetNCRenderingPolicy(DwmNCRenderingPolicy.DWMNCRP_USEWINDOWSTYLE);
+            }
+
+            // Inform the application of the frame change.
+            SetWindowPos(_hwnd,
+                IntPtr.Zero,
+                rcWindow.left, rcWindow.top,
+                0, 0,
+                SetWindowPosFlags.SWP_FRAMECHANGED | SetWindowPosFlags.SWP_NOACTIVATE | SetWindowPosFlags.SWP_NOSIZE);
+
+            ExtendClientAreaToDecorationsChanged?.Invoke(_isClientAreaExtended);
+        }
+
+        private unsafe void SetNCRenderingPolicy(DwmNCRenderingPolicy value)
+            => DwmSetWindowAttribute(_hwnd, (int)DwmWindowAttribute.DWMWA_NCRENDERING_POLICY, &value, sizeof(int));
+
+        private void ShowWindow(WindowState state, bool activate)
+        {
+            if (_isClientAreaExtended)
+            {
+                ExtendClientArea();
+            }
+
+            ShowWindowCommand? command;
+
+            var newWindowProperties = _windowProperties;
+
+            switch (state)
+            {
+                case WindowState.Minimized:
+                    newWindowProperties.IsFullScreen = false;
+                    command = ShowWindowCommand.Minimize;
+                    break;
+                case WindowState.Maximized:
+                    newWindowProperties.IsFullScreen = false;
+                    command = ShowWindowCommand.Maximize;
+                    break;
+
+                case WindowState.Normal:
+                    newWindowProperties.IsFullScreen = false;
+                    command = IsWindowVisible(_hwnd) ? ShowWindowCommand.Restore :
+                        activate ? ShowWindowCommand.Normal : ShowWindowCommand.ShowNoActivate;
+                    break;
+
+                case WindowState.FullScreen:
+                    newWindowProperties.IsFullScreen = true;
+                    command = IsWindowVisible(_hwnd) ? null : ShowWindowCommand.Restore;
+                    break;
+
+                default:
+                    throw new ArgumentException("Invalid WindowState.");
+            }
+
+            newWindowProperties.WindowState = state;
+
+            UpdateWindowProperties(newWindowProperties, newWindowProperties.Decorations != WindowDecorations.Full);
+
+            // DWM shows the HWND immediately on ShowWindow: white (no bitmap), then
+            // our fill (blackish), then Skia. Cloak until the first real present.
+            var firstShow = !IsWindowVisible(_hwnd);
+            if (firstShow)
+            {
+                SetDwmTransitionsDisabled(true);
+                SetDwmCloaked(true);
+                _cloakUntilFirstPresent = true;
+            }
+
+            PaintClientBackgroundNow();
+
+            if (command.HasValue)
+            {
+                SetDwmTransitionsDisabled(true);
+                UnmanagedMethods.ShowWindow(_hwnd, command.Value);
+            }
+
+            SyncNativeAirspaceOverlay();
+
+            if (!Design.IsDesignMode && activate)
+            {
+                SetFocus(_hwnd);
+                SetForegroundWindow(_hwnd);
+            }
+        }
+
+        private void BeforeCloseCleanup(bool isDisposing)
+        {
+            // Based on https://github.com/dotnet/wpf/blob/master/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Window.cs#L4270-L4337
+            // We need to enable parent window before destroying child window to prevent OS from activating a random window behind us (or last active window).
+            // This is described here: https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-enablewindow#remarks
+            // We need to verify if parent is still alive (perhaps it got destroyed somehow).
+            if (_parent != null && IsWindow(_parent._hwnd))
+            {
+                var wasActive = GetActiveWindow() == _hwnd;
+
+                // We can only set enabled state if we are not disposing - generally Dispose happens after enabled state has been set.
+                // Ignoring this would cause us to enable a window that might be disabled.
+                if (!isDisposing)
+                {
+                    // Our window closed callback will set enabled state to a correct value after child window gets destroyed.
+                    _parent.SetEnabled(true);
+                }
+
+                // We also need to activate our parent window since again OS might try to activate a window behind if it is not set.
+                if (wasActive)
+                {
+                    SetActiveWindow(_parent._hwnd);
+                }
+            }
+        }
+
+        private void AfterCloseCleanup()
+        {
+            if (_className != null)
+            {
+                UnregisterClass(_className, GetModuleHandle(null));
+                _className = null;
+            }
+        }
+
+        private WindowStyles GetWindowStateStyles()
+        {
+            return GetStyle() & WindowStateMask;
+        }
+
+        private WindowStyles GetStyle()
+        {
+            if (_isFullScreenActive)
+            {
+                return _savedWindowInfo.Style;
+            }
+            else
+            {
+                return (WindowStyles)GetWindowLong(_hwnd, (int)WindowLongParam.GWL_STYLE);
+            }
+        }
+
+        private WindowStyles GetExtendedStyle()
+        {
+            if (_isFullScreenActive)
+            {
+                return _savedWindowInfo.ExStyle;
+            }
+            else
+            {
+                return (WindowStyles)GetWindowLong(_hwnd, (int)WindowLongParam.GWL_EXSTYLE);
+            }
+        }
+
+        private void SetStyle(WindowStyles style, bool save = true)
+        {
+            if (save)
+            {
+                _savedWindowInfo.Style = style;
+            }
+
+            if (!_isFullScreenActive)
+            {
+                SetWindowLong(_hwnd, (int)WindowLongParam.GWL_STYLE, (uint)style);
+            }
+        }
+
+        private void SetExtendedStyle(WindowStyles style, bool save = true)
+        {
+            if (save)
+            {
+                _savedWindowInfo.ExStyle = style;
+            }
+
+            if (!_isFullScreenActive)
+            {
+                SetWindowLong(_hwnd, (int)WindowLongParam.GWL_EXSTYLE, (uint)style);
+            }
+        }
+
+        private void UpdateWindowProperties(WindowProperties newProperties, bool forceChanges = false)
+        {
+            var oldProperties = _windowProperties;
+
+            // Calling SetWindowPos will cause events to be sent and we need to respond
+            // according to the new values already.
+            _windowProperties = newProperties;
+
+            if (oldProperties.IsFullScreen == newProperties.IsFullScreen)
+            {
+                var exStyle = WindowStyles.WS_EX_WINDOWEDGE | (UseRedirectionBitmap ? 0 : WindowStyles.WS_EX_NOREDIRECTIONBITMAP);
+
+                if ((oldProperties.ShowInTaskbar != newProperties.ShowInTaskbar) || forceChanges)
+                {
+                    if (newProperties.ShowInTaskbar)
+                    {
+                        exStyle |= WindowStyles.WS_EX_APPWINDOW;
+
+                        if (_hiddenWindowIsParent)
+                        {
+                            // Can't enable the taskbar icon by clearing the parent window unless the window
+                            // is hidden. Hide the window and show it again with the same activation state
+                            // when we've finished. Interestingly it seems to work fine the other way.
+                            var shown = IsWindowVisible(_hwnd);
+                            var activated = GetActiveWindow() == _hwnd;
+
+                            if (shown)
+                                Hide();
+
+                            _hiddenWindowIsParent = false;
+                            SetParent(null);
+
+                            if (shown)
+                                Show(activated, false);
+                        }
+                    }
+                    else
+                    {
+                        // To hide a non-owned window's taskbar icon we need to parent it to a hidden window.
+                        if (_parent is null)
+                        {
+                            SetWindowLongPtr(_hwnd, (int)WindowLongParam.GWL_HWNDPARENT, OffscreenParentWindow.Handle);
+                            _hiddenWindowIsParent = true;
+                        }
+
+                        exStyle &= ~WindowStyles.WS_EX_APPWINDOW;
+                    }
+                }
+
+                if (newProperties.ShowInTaskbar)
+                {
+                    exStyle |= WindowStyles.WS_EX_APPWINDOW;
+                }
+                else
+                {
+                    exStyle &= ~WindowStyles.WS_EX_APPWINDOW;
+                }
+
+                var style = WindowStyles.WS_CLIPCHILDREN | WindowStyles.WS_CLIPSIBLINGS;
+
+                if (this is EmbeddedWindowImpl)
+                    style |= WindowStyles.WS_CHILD;
+
+                if (IsWindowVisible(_hwnd))
+                    style |= WindowStyles.WS_VISIBLE;
+
+                switch (newProperties.Decorations)
+                {
+                    case WindowDecorations.Full:
+                        style |= WindowStyles.WS_BORDER | WindowStyles.WS_SYSMENU | WindowStyles.WS_CAPTION;
+                        break;
+
+                    case WindowDecorations.BorderOnly:
+                        style |= WindowStyles.WS_BORDER;
+                        break;
+                }
+
+                if (newProperties.IsMinimizable)
+                    style |= WindowStyles.WS_MINIMIZEBOX;
+
+                if (newProperties.IsMaximizable || (newProperties.WindowState == WindowState.Maximized && newProperties.IsResizable))
+                    style |= WindowStyles.WS_MAXIMIZEBOX;
+
+                if (newProperties.Decorations != WindowDecorations.None && newProperties.IsResizable)
+                    style |= WindowStyles.WS_THICKFRAME;
+
+                var windowStates = GetWindowStateStyles();
+                style &= ~WindowStateMask;
+                style |= windowStates;
+
+                _savedWindowInfo.Style = style;
+                _savedWindowInfo.ExStyle = exStyle;
+
+                if (WindowStylesCallback is { } callback)
+                {
+                    var (s, e) = callback((uint)style, (uint)exStyle);
+
+                    style = (WindowStyles)s;
+                    exStyle = (WindowStyles)e;
+                }
+
+                SetStyle(style);
+                SetExtendedStyle(exStyle);
+            }
+            else
+                SetFullScreen(newProperties.IsFullScreen);
+
+            if (!_isFullScreenActive && ((oldProperties.Decorations != newProperties.Decorations) || forceChanges))
+            {
+                var margin = newProperties.Decorations == WindowDecorations.BorderOnly ? 1 : 0;
+
+                var margins = new MARGINS
+                {
+                    cyBottomHeight = margin,
+                    cxRightWidth = margin,
+                    cxLeftWidth = margin,
+                    cyTopHeight = margin
+                };
+
+                DwmExtendFrameIntoClientArea(_hwnd, ref margins);
+
+                if (_shown || forceChanges)
+                {
+                    SetWindowPos(_hwnd, IntPtr.Zero, 0, 0, 0, 0,
+                        SetWindowPosFlags.SWP_NOZORDER | SetWindowPosFlags.SWP_NOACTIVATE |
+                        SetWindowPosFlags.SWP_NOSIZE | SetWindowPosFlags.SWP_NOMOVE |
+                        SetWindowPosFlags.SWP_FRAMECHANGED);
+                }
+            }
+
+            // Ensure window state if decorations change
+            if (_shown && oldProperties.Decorations != newProperties.Decorations)
+                ShowWindow(WindowState, false);
+        }
+
+        private const int MF_BYCOMMAND = 0x0;
+        private const int MF_ENABLED = 0x0;
+        private const int MF_GRAYED = 0x1;
+        private const int MF_DISABLED = 0x2;
+
+        private RECT ClientRectToWindowRect(RECT clientRect, WindowStyles? styleOverride = null, WindowStyles? extendedStyleOverride = null)
+        {
+            var style = styleOverride ?? GetStyle();
+            var extendedStyle = extendedStyleOverride ?? GetExtendedStyle();
+
+            var adjuster = CreateWindowRectAdjuster();
+            adjuster.Adjust(ref clientRect, style, extendedStyle);
+
+            return clientRect;
+        }
+
+#if USE_MANAGED_DRAG
+        private Point ScreenToClient(Point point)
+        {
+            var p = new UnmanagedMethods.POINT { X = (int)point.X, Y = (int)point.Y };
+            UnmanagedMethods.ScreenToClient(_hwnd, ref p);
+            return new Point(p.X, p.Y);
+        }
+#endif
+
+        PixelSize EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo.Size
+        {
+            get
+            {
+                GetClientRect(_hwnd, out var rect);
+
+                return new PixelSize(
+                    Math.Max(1, rect.right - rect.left),
+                    Math.Max(1, rect.bottom - rect.top));
+            }
+        }
+
+        double EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo.Scaling => RenderScaling;
+
+        IntPtr EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo.Handle =>
+            _airspaceOverlay != null && _airspaceOverlay.Handle != IntPtr.Zero
+                ? _airspaceOverlay.Handle
+                : Handle.Handle;
+
+        public bool TransparentClientForNativeAirspace => _airspaceOverlay != null;
+
+        internal void SyncNativeAirspaceOverlay()
+        {
+            _airspaceOverlay?.SyncToOwner(
+                IsWindowVisible(_hwnd) && _lastWindowState != WindowState.Minimized);
+        }
+
+        internal void PresentLayeredFramebuffer()
+        {
+            var cells = CollectInteractiveOverlayCells();
+            _framebuffer.PresentLayeredOnUiThread((span, size, rowBytes) =>
+                StampInteractiveOverlay(span, size, rowBytes, cells));
+            _airspaceOverlay?.NotifyLayeredPresented();
+            RevealAfterFirstPresent();
+        }
+
+        internal void RevealAfterFirstPresent()
+        {
+            if (!_cloakUntilFirstPresent)
+                return;
+
+            _cloakUntilFirstPresent = false;
+            SetDwmCloaked(false);
+        }
+
+        internal IntPtr ClientBackgroundBrush =>
+            _clientBackgroundBrush != IntPtr.Zero
+                ? _clientBackgroundBrush
+                : _currentThemeVariant == PlatformThemeVariant.Dark ? s_darkClientBrush : s_lightClientBrush;
+
+        internal Color ClientBackgroundColor =>
+            _hasClientBackgroundColor
+                ? _clientBackgroundColor
+                : _currentThemeVariant == PlatformThemeVariant.Dark ? s_darkClientColor : s_lightClientColor;
+
+        private uint ClientBackgroundColorref =>
+            _hasClientBackgroundColor
+                ? _clientBackgroundColorref
+                : _currentThemeVariant == PlatformThemeVariant.Dark ? 0x00131313u : 0x00E8E8E8u;
+
+        internal IntPtr InputHwnd =>
+            _airspaceOverlay != null && _airspaceOverlay.Handle != IntPtr.Zero
+                ? _airspaceOverlay.Handle
+                : _hwnd;
+
+        internal bool IsNativeAirspaceHoleAtScreenPoint(IntPtr lParam) =>
+            IsNativeAirspaceHole(PointToClient(PointFromLParam(lParam)));
+
+        internal bool IsNativeAirspaceHoleAtScreen(int screenX, int screenY) =>
+            IsNativeAirspaceHole(PointToClient(new PixelPoint(screenX, screenY)));
+
+        internal Visual? TryGetInputRootVisual() => _owner?.RootElement;
+
+        internal bool IsPointInNativeSibling(int clientX, int clientY)
+        {
+            if (_airspaceOverlay == null)
+                return false;
+
+            var child = GetWindow(_hwnd, GW_CHILD);
+            var pt = new POINT { X = clientX, Y = clientY };
+            while (child != IntPtr.Zero)
+            {
+                if (child != _airspaceOverlay.Handle && IsWindowVisible(child))
+                {
+                    GetWindowRect(child, out var rect);
+                    var tl = new POINT { X = rect.left, Y = rect.top };
+                    var br = new POINT { X = rect.right, Y = rect.bottom };
+                    ScreenToClient(_hwnd, ref tl);
+                    ScreenToClient(_hwnd, ref br);
+                    if (pt.X >= tl.X && pt.X < br.X && pt.Y >= tl.Y && pt.Y < br.Y)
+                        return true;
+                }
+
+                child = GetWindow(child, GW_HWNDNEXT);
+            }
+
+            return false;
+        }
+
+        internal bool IsNativeAirspaceHole(Point clientDip)
+        {
+            var clientX = (int)(clientDip.X * RenderScaling);
+            var clientY = (int)(clientDip.Y * RenderScaling);
+            if (!IsPointInNativeSibling(clientX, clientY))
+                return false;
+
+            if (_owner?.RootElement is not InputElement root)
+                return true;
+
+            var hit = root.InputHitTest(clientDip) as Visual;
+            return !NativeAirspace.IsInteractiveOverlay(hit, root);
+        }
+
+        private List<NativeAirspaceHitAlpha.Cell> CollectInteractiveOverlayCells()
+        {
+            var cells = new List<NativeAirspaceHitAlpha.Cell>();
+            if (_airspaceOverlay == null || _owner?.RootElement is not InputElement root)
+                return cells;
+
+            var holes = NativeAirspace.GetHoles(this);
+            if (holes.Length == 0)
+                return cells;
+
+            var hosts = new List<NativeControlHost>();
+            foreach (var descendant in root.GetVisualDescendants())
+            {
+                if (descendant is NativeControlHost host)
+                    hosts.Add(host);
+            }
+
+            var splitters = new List<LtrbRect>();
+            for (var i = 0; i < holes.Length; i++)
+            {
+                var hole = holes[i];
+                if (hole.IsEmpty || hole.Scaling <= 0)
+                    continue;
+                splitters.Clear();
+                NativeAirspaceHitAlpha.CollectSplitters(root, hole.Bounds, hole.Scaling, splitters);
+                var scaling = hole.Scaling;
+                NativeAirspaceHitAlpha.BuildInteractiveCells(hole.PhysicalBounds, splitters, cells, (px, py) =>
+                {
+                    var hit = root.InputHitTest(new Point(px / scaling, py / scaling)) as Visual;
+                    return NativeAirspace.IsInteractiveOverlay(hit, hosts);
+                });
+            }
+
+            return cells;
+        }
+
+        private void StampInteractiveOverlay(Span<byte> span, PixelSize size, int rowBytes, List<NativeAirspaceHitAlpha.Cell> next)
+        {
+            IReadOnlyList<NativeAirspaceHitAlpha.Cell> previous = null;
+            if (size.Width == _interactiveOverlayWidth && size.Height == _interactiveOverlayHeight)
+                previous = _interactiveOverlayCells;
+            NativeAirspaceHitAlpha.Apply(span, size.Width, size.Height, rowBytes, previous, next);
+            _interactiveOverlayCells = next;
+            _interactiveOverlayWidth = size.Width;
+            _interactiveOverlayHeight = size.Height;
+        }
+
+        public void SetExtendClientAreaToDecorationsHint(bool hint)
+        {
+            _isClientAreaExtended = hint;
+
+            ExtendClientArea();
+        }
+
+        /// <inheritdoc/>
+        public void SetExtendClientAreaTitleBarHeightHint(double titleBarHeight)
+        {
+            _extendTitleBarHint = titleBarHeight;
+
+            ExtendClientArea();
+        }
+
+        public void SetWindowCornerPreference(WindowCornerPreference preference)
+        {
+            _cornerPreference = preference;
+            UpdateWindowCornerPreference();
+        }
+
+        /// <inheritdoc/>
+        public bool IsClientAreaExtendedToDecorations => _isClientAreaExtended;
+
+        /// <inheritdoc/>
+        public Action<bool>? ExtendClientAreaToDecorationsChanged { get; set; }
+
+        /// <inheritdoc/>
+        public bool NeedsManagedDecorations => _isClientAreaExtended;
+
+        public PlatformRequestedDrawnDecoration RequestedDrawnDecorations =>
+            _isClientAreaExtended
+                ? PlatformRequestedDrawnDecoration.TitleBar
+                : PlatformRequestedDrawnDecoration.None;
+
+        /// <inheritdoc/>
+        public Thickness ExtendedMargins => _extendedMargins;
+
+        /// <inheritdoc/>
+        public Thickness OffScreenMargin => default;
+
+        /// <inheritdoc/>
+        public AcrylicPlatformCompensationLevels AcrylicCompensationLevels { get; } = new AcrylicPlatformCompensationLevels(1, 0.8, 0);
+
+        /// <inheritdoc/>
+        public CustomWindowStylesCallback? WindowStylesCallback { get; set; }
+
+        /// <inheritdoc/>
+        public CustomWndProcHookCallback? WndProcHookCallback { get; set; }
+
+        private WindowRectAdjuster CreateWindowRectAdjuster()
+            => new(this);
+
+        private ResizeReasonScope SetResizeReason(WindowResizeReason reason)
+        {
+            var old = _resizeReason;
+            _resizeReason = reason;
+            return new ResizeReasonScope(this, old);
+        }
+
+        private struct SavedWindowInfo
+        {
+            public WindowStyles Style { get; set; }
+            public WindowStyles ExStyle { get; set; }
+            public RECT WindowRect { get; set; }
+        }
+
+        protected struct WindowProperties
+        {
+            public bool ShowInTaskbar;
+            public bool IsResizable;
+            public bool IsMinimizable;
+            public bool IsMaximizable;
+            public WindowDecorations Decorations;
+            public bool IsFullScreen;
+            public WindowState WindowState;
+        }
+
+        private struct ResizeReasonScope : IDisposable
+        {
+            private readonly WindowImpl _owner;
+            private readonly WindowResizeReason _restore;
+
+            public ResizeReasonScope(WindowImpl owner, WindowResizeReason restore)
+            {
+                _owner = owner;
+                _restore = restore;
+            }
+
+            public void Dispose() => _owner._resizeReason = _restore;
+        }
+
+        private class WindowImplPlatformHandle : INativePlatformHandleSurface
+        {
+            private readonly WindowImpl _owner;
+            public WindowImplPlatformHandle(WindowImpl owner) => _owner = owner;
+            public IntPtr Handle => _owner.Hwnd;
+            public string HandleDescriptor => PlatformConstants.WindowHandleType;
+
+            public PixelSize Size => PixelSize.FromSize(_owner.ClientSize, Scaling);
+
+            public double Scaling => _owner.RenderScaling;
+        }
+
+        private struct InternalPoint
+        {
+            public int Time;
+            public PixelPoint Pt;
+        }
+
+        private struct WindowRectAdjuster
+        {
+            private static readonly bool s_hasAdjustWindowRectExForDpi = OperatingSystem.IsWindowsVersionAtLeast(10, 0, 14393);
+
+            private readonly double _relativeScaling;
+            private readonly uint _dpi;
+
+            public WindowRectAdjuster(WindowImpl owner)
+            {
+                if (s_hasAdjustWindowRectExForDpi)
+                    _dpi = (uint)(owner.RenderScaling * StandardDpi);
+                else
+                {
+                    var primaryScaling = owner.Screen.AllScreens.FirstOrDefault(screen => screen.IsPrimary)?.Scaling ?? 1;
+                    _relativeScaling = owner.RenderScaling / primaryScaling;
+                }
+            }
+
+            public void Adjust(ref RECT rect, WindowStyles style, WindowStyles exStyle)
+            {
+                if (s_hasAdjustWindowRectExForDpi)
+                    AdjustWindowRectExForDpi(ref rect, style, false, exStyle, _dpi);
+                else
+                {
+                    AdjustWindowRectEx(ref rect, (uint)style, false, (uint)exStyle);
+                    rect.top = (int)(rect.top * _relativeScaling);
+                    rect.right = (int)(rect.right * _relativeScaling);
+                    rect.left = (int)(rect.left * _relativeScaling);
+                    rect.bottom = (int)(rect.bottom * _relativeScaling);
+                }
+            }
+        }
+    }
+}
+

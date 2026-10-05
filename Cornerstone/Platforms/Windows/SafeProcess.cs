@@ -89,30 +89,15 @@ public class SafeProcess : IDisposable
 	{
 		get
 		{
-			var count = 0;
-
-			#if NET7_0_OR_GREATER
-			var zero = nint.Zero;
-			#else
-			var zero = IntPtr.Zero;
-			#endif
-
 			try
 			{
-				while ((Process.MainWindowHandle == zero) && (count <= 2))
-				{
-					var id = Process.Id;
-					Process?.Dispose();
-					Process = Process.GetProcessById(id);
-					count++;
-				}
+				Process?.Refresh();
+				return Process?.MainWindowHandle ?? nint.Zero;
 			}
 			catch
 			{
-				return zero;
+				return nint.Zero;
 			}
-
-			return Process.MainWindowHandle;
 		}
 	}
 
@@ -185,16 +170,14 @@ public class SafeProcess : IDisposable
 	/// <returns> The location of the window. </returns>
 	public Point GetWindowLocation()
 	{
-		var p = NativeGeneral.GetWindowPlacement(Process.MainWindowHandle);
-		var location = p.rcNormalPosition.Location;
-
-		if ((p.ShowState == 2) || (p.ShowState == 3))
+		var handle = MainWindowHandle;
+		if (handle == nint.Zero)
 		{
-			NativeGeneral.GetWindowRect(Process.MainWindowHandle, out var windowsRect);
-			location = new Point(windowsRect.Left + 8, windowsRect.Top + 8);
+			return Point.Empty;
 		}
 
-		return location;
+		NativeGeneral.GetWindowRect(handle, out var rect);
+		return new Point(rect.Left, rect.Top);
 	}
 
 	/// <summary>
@@ -203,7 +186,13 @@ public class SafeProcess : IDisposable
 	/// <returns> The size of the main window. </returns>
 	public Size GetWindowSize()
 	{
-		NativeGeneral.GetWindowRect(MainWindowHandle, out var data);
+		var handle = MainWindowHandle;
+		if (handle == nint.Zero)
+		{
+			return Size.Empty;
+		}
+
+		NativeGeneral.GetWindowRect(handle, out var data);
 		return new Size(data.Right - data.Left, data.Bottom - data.Top);
 	}
 

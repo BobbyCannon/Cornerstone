@@ -1,13 +1,13 @@
 ﻿#region References
 
-using Cornerstone.Sample.Models;
-using Cornerstone.Storage.Sql;
-using Cornerstone.Testing;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
+using Cornerstone.Sample.Models;
+using Cornerstone.Storage.Sql;
+using Cornerstone.Testing;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
@@ -48,14 +48,14 @@ public class PredicateToSqlVisitorTests : CornerstoneUnitTest
 			(p => p.Status == AccountStatus.Enabled, "([Status] = @p0)", [(int) AccountStatus.Enabled]),
 			(p => p.SyncId == Guid.Empty, "([SyncId] = @p0)", [Guid.Empty]),
 			(p => p.Name.Length > 5, "(LEN([Name]) > @p0)", [5]),
-			(p => p.Name.ToLower().Contains("john"), "([Name] LIKE @p0)", ["%john%"]),
-			(p => p.Name.ToUpper() == "JOHN", "([Name] = @p0)", ["JOHN"]),
+			(p => p.Name.ToLower().Contains("john"), "(LOWER([Name]) LIKE @p0 ESCAPE '\\')", ["%john%"]),
+			(p => p.Name.ToUpper() == "JOHN", "(UPPER([Name]) = @p0)", ["JOHN"]),
 			(p => string.IsNullOrEmpty(p.Name), "([Name] IS NULL OR [Name] = '')", []),
 			(p => string.IsNullOrWhiteSpace(p.Name), "([Name] IS NULL OR LTRIM(RTRIM([Name])) = '')", []),
-			(p => p.IsDeleted && p.Name == null, "(([IsDeleted] = 1) AND ([Name] IS NULL))", []),
-			(p => p.Id > 10 || p.Name.Contains("Test"), "(([Id] > @p0) OR ([Name] LIKE @p1))", [10, "%Test%"]),
-			(p => (p.Id > 10 || p.IsDeleted) && p.Name != null, "((([Id] > @p0) OR ([IsDeleted] = 1)) AND ([Name] IS NOT NULL))", [10]),
-			(p => !(p.Id > 10 || p.IsDeleted), "(NOT (([Id] > @p0) OR ([IsDeleted] = 1)))", [10]),
+			(p => p.IsDeleted && (p.Name == null), "(([IsDeleted] = 1) AND ([Name] IS NULL))", []),
+			(p => (p.Id > 10) || p.Name.Contains("Test"), "(([Id] > @p0) OR ([Name] LIKE @p1 ESCAPE '\\'))", [10, "%Test%"]),
+			(p => ((p.Id > 10) || p.IsDeleted) && (p.Name != null), "((([Id] > @p0) OR ([IsDeleted] = 1)) AND ([Name] IS NOT NULL))", [10]),
+			(p => !((p.Id > 10) || p.IsDeleted), "(NOT (([Id] > @p0) OR ([IsDeleted] = 1)))", [10]),
 			(p => !p.IsDeleted, "([IsDeleted] = 0)", []),
 			(p => p.IsDeleted, "([IsDeleted] = 1)", []),
 			(p => p.LastLoginDate <= StartDateTime, "([LastLoginDate] <= @p0)", [StartDateTime]),
@@ -63,9 +63,9 @@ public class PredicateToSqlVisitorTests : CornerstoneUnitTest
 			(p => p.LastLoginDate >= StartDateTime, "([LastLoginDate] >= @p0)", [StartDateTime]),
 			(p => p.LastLoginDate > StartDateTime, "([LastLoginDate] > @p0)", [StartDateTime]),
 			(p => p.Name == null, "([Name] IS NULL)", []),
-			(p => p.Name.Contains("John") && ((p.Id > 10) || p.IsDeleted), "(([Name] LIKE @p0) AND (([Id] > @p1) OR ([IsDeleted] = 1)))", ["%John%", 10]),
-			(p => p.Name.StartsWith("John") && ((p.Id < 10) || !p.IsDeleted), "(([Name] LIKE @p0) AND (([Id] < @p1) OR ([IsDeleted] = 0)))", ["John%", 10]),
-			(p => p.Name.EndsWith("John"), "([Name] LIKE @p0)", ["%John"]),
+			(p => p.Name.Contains("John") && ((p.Id > 10) || p.IsDeleted), "(([Name] LIKE @p0 ESCAPE '\\') AND (([Id] > @p1) OR ([IsDeleted] = 1)))", ["%John%", 10]),
+			(p => p.Name.StartsWith("John") && ((p.Id < 10) || !p.IsDeleted), "(([Name] LIKE @p0 ESCAPE '\\') AND (([Id] < @p1) OR ([IsDeleted] = 0)))", ["John%", 10]),
+			(p => p.Name.EndsWith("John"), "([Name] LIKE @p0 ESCAPE '\\')", ["%John"]),
 			(p => p.Id == StartDateTime.Ticks, "([Id] = @p0)", [StartDateTime.Ticks]),
 			(p => p.Id == int.MaxValue, "([Id] = @p0)", [int.MaxValue]),
 			(p => p.Id == int.MinValue, "([Id] = @p0)", [int.MinValue]),
@@ -85,13 +85,17 @@ public class PredicateToSqlVisitorTests : CornerstoneUnitTest
 			(p => !!p.IsDeleted, "([IsDeleted] = 1)", []),
 			(p => !(p.Name == "John"), "([Name] <> @p0)", ["John"]),
 			(p => !(p.LastLoginDate > StartDateTime), "([LastLoginDate] <= @p0)", [StartDateTime]),
-			(p => !(p.Id > 10 && p.IsDeleted), "(NOT (([Id] > @p0) AND ([IsDeleted] = 1)))", [10])
+			(p => !((p.Id > 10) && p.IsDeleted), "(NOT (([Id] > @p0) AND ([IsDeleted] = 1)))", [10]),
+			(p => new[] { 1, 2, 3 }.Contains(p.Id), "([Id] IN (@p0, @p1, @p2))", new object[] { 1, 2, 3 }),
+			(p => Array.Empty<int>().Contains(p.Id), "(1 = 0)", []),
+			(p => true, "(1 = 1)", []),
+			(p => false, "(1 = 0)", [])
 		};
 
 		for (var index = 0; index < scenarios.Length; index++)
 		{
 			var scenario = scenarios[index];
-			var visitor = new PredicateToSqlVisitor();
+			var visitor = new PredicateToSqlVisitor(SqlProvider.SqlServer);
 			var actual = visitor.Translate(scenario.value);
 			actual.Sql.Dump();
 			if (actual.Parameters.Length > 0)
@@ -102,6 +106,33 @@ public class PredicateToSqlVisitorTests : CornerstoneUnitTest
 			AreEqual(scenario.parameters, actual.Parameters);
 			Console.WriteLine();
 		}
+	}
+
+	[TestMethod]
+	public void TranslateHonorsParameterIndexStart()
+	{
+		var visitor = new PredicateToSqlVisitor(SqlProvider.SqlServer, 4);
+		Expression<Func<AccountEntity, bool>> expression = p => p.Name == "John";
+		var actual = visitor.Translate(expression);
+		AreEqual("([Name] = @p4)", actual.Sql);
+		AreEqual(new object[] { "John" }, actual.Parameters);
+	}
+
+	[TestMethod]
+	public void TranslateUsesSqliteIdentifierQuotes()
+	{
+		var visitor = new PredicateToSqlVisitor(SqlProvider.Sqlite);
+		Expression<Func<AccountEntity, bool>> expression = p => p.Name == "John";
+		var actual = visitor.Translate(expression);
+		AreEqual("(\"Name\" = @p0)", actual.Sql);
+
+		Expression<Func<AccountEntity, bool>> length = p => p.Name.Length > 5;
+		AreEqual("(LENGTH(\"Name\") > @p0)", visitor.Translate(length).Sql);
+
+		Expression<Func<AccountEntity, bool>> wildcard = p => p.Name.Contains("100%");
+		var escaped = visitor.Translate(wildcard);
+		AreEqual("(\"Name\" LIKE @p0 ESCAPE '\\')", escaped.Sql);
+		AreEqual(new object[] { "%100\\%%" }, escaped.Parameters);
 	}
 
 	#endregion

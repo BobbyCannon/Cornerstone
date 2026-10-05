@@ -1,0 +1,1805 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Cornerstone.Presentation.Controls;
+using Cornerstone.Presentation.Controls.Platform;
+using Cornerstone.Presentation.Controls.Primitives.PopupPositioning;
+using Cornerstone.Presentation.Dialogs;
+using Cornerstone.Presentation.FreeDesktop;
+using Cornerstone.Presentation.Input;
+using Cornerstone.Presentation.Input.Platform;
+using Cornerstone.Presentation.Input.Raw;
+using Cornerstone.Presentation.Input.TextInput;
+using Cornerstone.Presentation.OpenGL.Egl;
+using Cornerstone.Presentation.Platform;
+using Cornerstone.Presentation.Platform.Storage;
+using Cornerstone.Presentation.Platform.Storage.FileIO;
+using Cornerstone.Presentation.Platform.Surfaces;
+using Cornerstone.Presentation.Rendering.Composition;
+using Cornerstone.Presentation.Threading;
+using Cornerstone.Presentation.X11.Glx;
+using Cornerstone.Presentation.X11.NativeDialogs;
+using Cornerstone.Presentation.X11.Selections.DragDrop;
+using static Cornerstone.Presentation.X11.XLib;
+using Cornerstone.Presentation.X11.XShm;
+using Cornerstone.Presentation.Controls.Layout;
+using Cornerstone.Presentation.Controls.Acrylic;
+using Cornerstone.Presentation.Controls.Chrome;
+
+// ReSharper disable IdentifierTypo
+// ReSharper disable StringLiteralTypo
+
+namespace Cornerstone.Presentation.X11
+{
+    internal unsafe partial class X11Window : IWindowImpl, IPopupImpl, IXI2Client,
+        IX11OptionsToplevelImplFeature, IXdndWindow
+    {
+        private readonly X11Platform _platform;
+        private readonly bool _popup;
+        private readonly bool _overrideRedirect;
+        private readonly X11Info _x11;
+        private XConfigureEvent? _configure;
+        private PixelPoint? _configurePoint;
+        private bool _triggeredExpose;
+        private IInputRoot? _inputRoot;
+        private readonly MouseDevice _mouse;
+        private readonly PenDevice _pen;
+        private readonly TouchDevice _touch;
+        private readonly IKeyboardDevice _keyboard;
+        private readonly ITopLevelNativeMenuExporter? _nativeMenuExporter;
+        private readonly IStorageProvider _storageProvider;
+        private readonly X11NativeControlHost _nativeControlHost;
+        private PixelPoint? _position;
+        private PixelSize _realSize;
+        private bool _cleaningUp;
+        private IntPtr _handle;
+        private IntPtr _xic;
+        private IntPtr _renderHandle;
+        private IntPtr _xSyncCounter;
+        private XSyncValue _xSyncValue;
+        private XSyncState _xSyncState = 0;
+        private bool _mapped;
+        private bool _wasMappedAtLeastOnce = false;
+        private bool _shown;
+        private double? _scalingOverride;
+        private bool _disabled;
+        private TransparencyHelper? _transparencyHelper;
+        private WindowActivationTrackingHelper? _activationTracker;
+        private X11Window? _transientParent;
+        private RawEventGrouper? _rawEventGrouper;
+        private bool _useRenderWindow = false;
+        private bool _useCompositorDrivenRenderWindowResize = false;
+        private bool _usePositioningFlags = false;
+        private X11WindowMode _mode;
+        private IWindowIconImpl? _iconImpl;
+        private readonly X11DropTarget? _dropTarget;
+
+        private enum XSyncState
+        {
+            None,
+            WaitConfigure,
+            WaitPaint
+        }
+
+        public X11Window(X11Platform platform, IWindowImpl? popupParent, bool overrideRedirect = false)
+            : this(platform, popupParent,
+                platform.Options.EnableInputFocusProxy
+                    ? new InputProxyWindowMode()
+                    : new DefaultTopLevelWindowMode(),
+                overrideRedirect)
+        {
+
+        }
+
+        public X11Window(X11Platform platform, IWindowImpl? popupParent, X11WindowMode mode,
+            bool overrideRedirect = false)
+        {
+            _platform = platform;
+            _mode = mode;
+            _mode.Init(this);
+            _popup = popupParent != null;
+            _overrideRedirect = _popup || overrideRedirect;
+            _x11 = platform.Info;
+            _mouse = Cornerstone.Presentation.Input.MouseDevice.Primary;
+            _pen = new PenDevice();
+            _touch = new TouchDevice();
+            _keyboard = platform.KeyboardDevice;
+
+            var glfeature = PresentationLocator.Current.GetService<IPlatformGraphics>();
+            XSetWindowAttributes attr = new XSetWindowAttributes();
+            var valueMask = default(SetWindowValuemask);
+
+            attr.backing_store = 1;
+            attr.bit_gravity = Gravity.NorthWestGravity;
+            attr.win_gravity = Gravity.NorthWestGravity;
+            valueMask |= SetWindowValuemask.BackPixel | SetWindowValuemask.BorderPixel
+                         | SetWindowValuemask.BackPixmap | SetWindowValuemask.BackingStore
+                         | SetWindowValuemask.BitGravity | SetWindowValuemask.WinGravity;
+
+            if (_overrideRedirect)
+            {
+                attr.override_redirect = 1;
+                valueMask |= SetWindowValuemask.OverrideRedirect;
+            }
+
+            XVisualInfo? visualInfo = null;
+
+            // OpenGL seems to be do weird things to it's current window which breaks resize sometimes
+            _useRenderWindow = glfeature != null;
+
+            var glx = glfeature as GlxPlatformGraphics;
+            var egl = glfeature as EglPlatformGraphics;
+            if (glx != null)
+            {
+                visualInfo = *glx.Display.VisualInfo;
+                // TODO: We should query this from the active render surface, however we don't actually track what
+                // the target sufrace currently is
+                _useCompositorDrivenRenderWindowResize = true;
+            }
+            else if (egl != null)
+            {
+                visualInfo = X11EglHelper.GetVisualInfo(_x11, egl.Display);
+            }
+            else if (glfeature == null)
+                visualInfo = _x11.TransparentVisualInfo;
+
+            var visual = IntPtr.Zero;
+            var depth = 24;
+            if (visualInfo != null)
+            {
+                visual = visualInfo.Value.visual;
+                depth = (int)visualInfo.Value.depth;
+                attr.colormap = XCreateColormap(_x11.Display, _x11.RootWindow, visualInfo.Value.visual, 0);
+                valueMask |= SetWindowValuemask.ColorMap;   
+            }
+
+            int defaultWidth = 0, defaultHeight = 0;
+
+            if (!_popup && _platform.Screens != null)
+            {
+                var monitor = _platform.Screens.AllScreens.OrderBy(x => x.Scaling)
+                   .FirstOrDefault(m => m.Bounds.Contains(_position ?? default));
+
+                if (monitor != null)
+                {
+                    // Emulate Window 7+'s default window size behavior.
+                    defaultWidth = (int)(monitor.WorkingArea.Width * 0.75d);
+                    defaultHeight = (int)(monitor.WorkingArea.Height * 0.7d);
+
+                    // The default size is in pixels, so initialize the scaling to match the monitor.
+                    // Otherwise UpdateScaling() would treat the pixel size as DIPs and scale it again.
+                    RenderScaling = monitor.Scaling;
+                }
+            }
+
+            // check if the calculated size is zero then compensate to hardcoded resolution
+            defaultWidth = Math.Max(defaultWidth, 300);
+            defaultHeight = Math.Max(defaultHeight, 200);
+
+            _handle = XCreateWindow(_x11.Display, _x11.RootWindow, 10, 10, defaultWidth, defaultHeight, 0,
+                depth,
+                (int)CreateWindowArgs.InputOutput, 
+                visual,
+                new UIntPtr((uint)valueMask), ref attr);
+            AppendPid(_handle);
+
+            if (_useRenderWindow)
+            {
+                var renderValueMask = SetWindowValuemask.BorderPixel | SetWindowValuemask.BitGravity |
+                                      SetWindowValuemask.WinGravity | SetWindowValuemask.BackingStore;
+                // A window with a non-default visual must be created with a matching colormap, otherwise X11
+                // raises BadMatch. This is required by nvidia when a custom visual is selected for the EGL config.
+                if (visualInfo != null)
+                    renderValueMask |= SetWindowValuemask.ColorMap;
+
+                _renderHandle = XCreateWindow(_x11.Display, _handle, 0, 0, defaultWidth, defaultHeight, 0, depth,
+                    (int)CreateWindowArgs.InputOutput,
+                    visual,
+                    new UIntPtr((uint)renderValueMask), ref attr);
+            }
+            else
+            {
+                _renderHandle = _handle;
+            }
+
+            Handle = new PlatformHandle(_handle, "XID");
+
+            _mode.OnHandleCreated(_handle);
+
+            // The window mode may have set a scaling override (e.g. XEmbed forces a scaling of 1), which takes
+            // precedence over the monitor scaling. Keep them in sync, otherwise UpdateScaling() would see a
+            // mismatch and trigger a spurious DPI resize.
+            if (_scalingOverride is { } scalingOverride)
+                RenderScaling = scalingOverride;
+
+            _realSize = new PixelSize(defaultWidth, defaultHeight);
+            platform.Windows[_handle] = new X11WindowInfo(OnEvent, this);
+            XEventMask ignoredMask = XEventMask.SubstructureRedirectMask
+                                     | XEventMask.ResizeRedirectMask
+                                     | XEventMask.PointerMotionHintMask;
+            if (platform.XI2 != null)
+                ignoredMask |= platform.XI2.AddWindow(_handle, this);
+            var mask = new IntPtr(0xffffff ^ (int)ignoredMask);
+            XSelectInput(_x11.Display, _handle, mask);
+            if (!_overrideRedirect)
+            {
+                var protocols = new[]
+                {
+                    _x11.Atoms.WM_DELETE_WINDOW
+                };
+                XSetWMProtocols(_x11.Display, _handle, protocols, protocols.Length);
+                SetNetWmWindowType(X11NetWmWindowType.Normal);
+                
+                SetWmClass(_handle, _platform.Options.WmClass);
+            }
+
+            var surfaces = new List<IPlatformRenderSurface>
+            {
+                new X11FramebufferSurface(_x11.DeferredDisplay, _renderHandle, 
+                   depth, _platform.Options.UseRetainedFramebuffer ?? false)
+            };
+
+            // XShm needs a 32-bit visual (other depths would require a slow XShmPutImage conversion) and the
+            // MIT-SHM extension, probed once by X11Info on the deferred display.
+            if (_platform.Options.UseXShmFramebuffer is true && depth == 32 && _x11.HasXShm)
+            {
+                surfaces.Insert(0,
+                    new X11ShmFramebufferSurface(_x11.DeferredDisplay, _renderHandle, visual, depth,
+                        platform.DeferredDisplayDispatcher));
+            }
+            
+            if (egl != null)
+                surfaces.Insert(0,
+                    new EglGlPlatformSurface(new SurfaceInfo(this, _x11.DeferredDisplay, _handle, _renderHandle)));
+            if (glx != null)
+                surfaces.Insert(0, new GlxGlPlatformSurface(new SurfaceInfo(this, _x11.DeferredDisplay, _handle, _renderHandle)));
+
+            surfaces.Add(new SurfacePlatformHandle(this));
+
+            Surfaces = surfaces.ToArray();
+            UpdateEffectiveSystemDecorations();
+            UpdateMotifHints();
+            UpdateSizeHints(null);
+
+            _rawEventGrouper = new RawEventGrouper(DispatchInput, platform.EventGrouperDispatchQueue);
+            
+            _transparencyHelper = new TransparencyHelper(_x11, _handle, platform.Globals);
+            _transparencyHelper.SetTransparencyRequest(Array.Empty<WindowTransparencyLevel>());
+
+            _activationTracker = new(_platform, this);
+            _activationTracker.ActivationChanged += HandleActivation;
+
+            _platform.Globals.NetSupportedChanged += OnNetSupportedChanged;
+
+            CreateIC();
+
+            XFlush(_x11.Display);
+            if(_popup)
+                PopupPositioner = new ManagedPopupPositioner(new ManagedPopupPositionerPopupImplHelper(popupParent!, MoveResize));
+            if (platform.Options.UseDBusMenu)
+                _nativeMenuExporter = DBusMenuExporter.TryCreateTopLevelNativeMenu(_handle);
+            _nativeControlHost = new X11NativeControlHost(_platform, this);
+            InitializeIme();
+
+            var data = new List<IntPtr> { _x11.Atoms.WM_DELETE_WINDOW, _x11.Atoms._NET_WM_SYNC_REQUEST };
+
+            _mode.AppendWmProtocols(data);
+
+            XChangeProperty(_x11.Display, _handle, _x11.Atoms.WM_PROTOCOLS, _x11.Atoms.ATOM, 32,
+                    PropertyMode.Replace, data.ToArray(), data.Count);
+
+            if (_x11.HasXSync)
+            {
+                _xSyncCounter = XSyncCreateCounter(_x11.Display, _xSyncValue);
+                XChangeProperty(_x11.Display, _handle, _x11.Atoms._NET_WM_SYNC_REQUEST_COUNTER,
+                    _x11.Atoms.CARDINAL, 32, PropertyMode.Replace, ref _xSyncCounter, 1);
+            }
+
+            _storageProvider = new FallbackStorageProvider(new[]
+            {
+                () => _platform.Options.UseDBusFilePicker
+                    ? DBusSystemDialog.TryCreateAsync(() => Task.FromResult<IPortalParentLease?>(
+                        new TrivialPortalParentLease($"x11:{Handle.Handle:X}")))
+                    : Task.FromResult<IStorageProvider?>(null),
+                () => GtkSystemDialog.TryCreate(this),
+                // TODO: This will be incompatible with "root element is not a TopLevel" scenarios,
+                // HACK: this relies on focus root being TopLevel which currently is true
+                () => Task.FromResult(InputRoot.FocusRoot is TopLevel tl
+                    ? (IStorageProvider?)new ManagedStorageProvider(tl)
+                    : null)
+            });
+
+            if (PresentationLocator.Current.GetService<IDragDropDevice>() is { } dragDropDevice)
+            {
+                DragDropDevice = dragDropDevice;
+                _dropTarget = new X11DropTarget(dragDropDevice, this, _x11.Display, _x11.Atoms);
+            }
+
+            platform.X11Screens.Changed += OnScreensChanged;
+
+            // The render surface (EGL/GLX) is created on the deferred display connection, which is a separate
+            // X11 connection from the one the windows were created on. Force a round-trip so the server has
+            // actually created the windows before anything on the other connection tries to use them.
+            XSync(_x11.Display, false);
+        }
+
+        private class SurfaceInfo  : EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo
+        {
+            private readonly X11Window _window;
+            private readonly IntPtr _display;
+            private readonly IntPtr _parent;
+
+            public SurfaceInfo(X11Window window, IntPtr display, IntPtr parent, IntPtr xid)
+            {
+                _window = window;
+                _display = display;
+                _parent = parent;
+                Handle = xid;
+            }
+            public IntPtr Handle { get; }
+
+            public PixelSize Size
+            {
+                get
+                {
+                    XLockDisplay(_display);
+                    XGetGeometry(_display, _parent, out var geo);
+                    XResizeWindow(_display, Handle, geo.width, geo.height);
+                    XUnlockDisplay(_display);
+                    return new PixelSize(geo.width, geo.height);
+                }
+            }
+
+            public double Scaling => _window.RenderScaling;
+        }
+
+        private void UpdateMotifHints()
+        {
+            if(_overrideRedirect)
+                return;
+            var functions = MotifFunctions.Move | MotifFunctions.Close | MotifFunctions.Resize |
+                            MotifFunctions.Minimize | MotifFunctions.Maximize;
+            var decorations = MotifDecorations.Menu | MotifDecorations.Title | MotifDecorations.Border |
+                              MotifDecorations.Maximize | MotifDecorations.Minimize | MotifDecorations.ResizeH;
+
+            if (_popup 
+                || _windowDecorations == WindowDecorations.None) 
+                decorations = 0;
+
+            var isDisabled = !IsEnabled;
+
+            if (!_canResize || isDisabled)
+            {
+                functions &= ~MotifFunctions.Resize;
+                decorations &= ~MotifDecorations.ResizeH;
+            }
+
+            if (!_canMinimize || isDisabled)
+            {
+                functions &= ~MotifFunctions.Minimize;
+                decorations &= ~MotifDecorations.Minimize;
+            }
+
+            if (!_canMaximize || isDisabled)
+            {
+                functions &= ~MotifFunctions.Maximize;
+                decorations &= ~MotifDecorations.Maximize;
+            }
+
+            UpdateSizeHints(null, isDisabled);
+
+            var hints = new MotifWmHints
+            {
+                flags = new IntPtr((int)(MotifFlags.Decorations | MotifFlags.Functions)),
+                decorations = new IntPtr((int)decorations),
+                functions = new IntPtr((int)functions)
+            };
+
+            XChangeProperty(_x11.Display, _handle,
+                _x11.Atoms._MOTIF_WM_HINTS, _x11.Atoms._MOTIF_WM_HINTS, 32,
+                PropertyMode.Replace, ref hints, 5);
+        }
+
+        /// <summary>
+        /// Append `_NET_WM_PID` atom to X11 window
+        /// </summary>
+        /// <param name="windowXId"></param>
+        private void AppendPid(IntPtr windowXId)
+        {
+            // See https://github.com/AvaloniaUI/Avalonia/issues/17444
+            var pid = (uint)s_pid;
+            // The type of `_NET_WM_PID` is `CARDINAL` which is 32-bit unsigned integer, see https://specifications.freedesktop.org/wm-spec/1.3/ar01s05.html
+            XChangeProperty(_x11.Display, windowXId,
+                _x11.Atoms._NET_WM_PID, _x11.Atoms.CARDINAL, 32,
+                PropertyMode.Replace, ref pid, 1);
+
+            const int maxLength = 1024;
+            var name = stackalloc byte[maxLength];
+            var result = gethostname(name, maxLength);
+            if (result != 0)
+            {
+                // Fail
+                return;
+            }
+
+            var length = 0;
+            while (length < maxLength && name[length] != 0)
+            {
+                length++;
+            }
+
+            XChangeProperty(_x11.Display, windowXId,
+                _x11.Atoms.WM_CLIENT_MACHINE, _x11.Atoms.STRING, 8,
+                PropertyMode.Replace, name, length);
+        }
+
+        [DllImport("libc")]
+        private static extern int gethostname(byte* name, int len);
+
+        private static readonly int s_pid = GetProcessId();
+
+        private static int GetProcessId()
+        {
+            var pid = Environment.ProcessId;
+            return pid;
+        }
+
+        private void UpdateSizeHints(PixelSize? preResize, bool forceDisableResize = false)
+        {
+            if (_overrideRedirect)
+                return;
+            var min = _minMaxSize.minSize;
+            var max = _minMaxSize.maxSize;
+
+            if (!_canResize || forceDisableResize)
+            {
+                if (preResize.HasValue)
+                {
+                    max = min = preResize.Value;
+                }
+                else
+                {
+                    max = min = _realSize;
+                }
+            }
+            else
+            {
+                if (preResize.HasValue)
+                {
+                    var desired = preResize.Value;
+                    max = new PixelSize(Math.Max(desired.Width, max.Width), Math.Max(desired.Height, max.Height));
+                    min = new PixelSize(Math.Min(desired.Width, min.Width), Math.Min(desired.Height, min.Height));
+                }
+            }
+
+            var hints = new XSizeHints
+            {
+                min_width = min.Width,
+                min_height = min.Height
+            };
+            hints.height_inc = hints.width_inc = 1;
+            var flags = XSizeHintsFlags.PMinSize | XSizeHintsFlags.PResizeInc;
+            if (_usePositioningFlags)
+                flags |= XSizeHintsFlags.PPosition | XSizeHintsFlags.PSize;
+            
+            // People might be passing double.MaxValue
+            if (max.Width < 100000 && max.Height < 100000)
+            {
+                hints.max_width = max.Width;
+                hints.max_height = max.Height;
+                flags |= XSizeHintsFlags.PMaxSize;
+            }
+
+            hints.flags = (IntPtr)flags;
+
+            XSetWMNormalHints(_x11.Display, _handle, ref hints);
+        }
+
+        public Size ClientSize => new Size(_realSize.Width / RenderScaling, _realSize.Height / RenderScaling);
+
+        public Size? FrameSize
+        {
+            get
+            {
+                var extents = GetFrameExtents();
+
+                if(extents == null)
+                {
+                    return null;
+                }
+
+                return new Size(
+                    (_realSize.Width + extents.Value.Left + extents.Value.Right) / RenderScaling,
+                    (_realSize.Height + extents.Value.Top + extents.Value.Bottom) / RenderScaling);
+            }
+        }
+
+        public double RenderScaling
+        {
+            get => Interlocked.CompareExchange(ref _scaling, 0.0, 0.0); 
+            private set => Interlocked.Exchange(ref _scaling, value); 
+        }
+        
+        public double DesktopScaling => RenderScaling;
+
+        public IPlatformRenderSurface[] Surfaces { get; }
+        public Action<RawInputEventArgs>? Input { get; set; }
+        public Action<Rect>? Paint { get; set; }
+        public Action<Size, WindowResizeReason>? Resized { get; set; }
+        //TODO
+        public Action<double>? ScalingChanged { get; set; }
+        public Action? Deactivated { get; set; }
+        public Action? Activated { get; set; }
+        public Func<WindowCloseReason, bool>? Closing { get; set; }
+        public Action<WindowState>? WindowStateChanged { get; set; }
+
+        public Action<WindowTransparencyLevel>? TransparencyLevelChanged
+        {
+            get => _transparencyHelper?.TransparencyLevelChanged;
+            set
+            {
+                if (_transparencyHelper != null)
+                    _transparencyHelper.TransparencyLevelChanged = value;
+            }
+        }
+
+        public Action<bool>? ExtendClientAreaToDecorationsChanged { get; set; }
+
+        public Thickness ExtendedMargins { get; } = new Thickness();
+
+        public Thickness OffScreenMargin { get; } = new Thickness();
+
+        public bool IsClientAreaExtendedToDecorations { get; private set; }
+
+        public Action? Closed { get; set; }
+        public Action<PixelPoint>? PositionChanged { get; set; }
+        public Action? LostFocus { get; set; }
+
+        public PlatformAllowedWindowActions AllowedWindowActions => GetAllowedActions(_platform.Globals.NetSupported);
+
+        public Action<PlatformAllowedWindowActions>? AllowedWindowActionsChanged { get; set; }
+
+        public Compositor Compositor => _platform.Compositor;
+
+        public IDragDropDevice? DragDropDevice { get; }
+
+        private PlatformAllowedWindowActions GetAllowedActions(IntPtr[]? netSupported)
+        {
+            if (netSupported == null)
+                return PlatformAllowedWindowActions.All;
+
+            var actions = PlatformAllowedWindowActions.None;
+
+            if (netSupported.Contains(_x11.Atoms._NET_WM_ACTION_MAXIMIZE_VERT)
+                && netSupported.Contains(_x11.Atoms._NET_WM_ACTION_MAXIMIZE_HORZ))
+                actions |= PlatformAllowedWindowActions.Maximize;
+
+            if (netSupported.Contains(_x11.Atoms._NET_WM_ACTION_FULLSCREEN))
+                actions |= PlatformAllowedWindowActions.Fullscreen;
+
+            if (netSupported.Contains(_x11.Atoms._NET_WM_ACTION_MINIMIZE))
+                actions |= PlatformAllowedWindowActions.Minimize;
+
+            return actions;
+        }
+
+        private void OnNetSupportedChanged() =>
+            AllowedWindowActionsChanged?.Invoke(AllowedWindowActions);
+
+        private void OnEvent(ref XEvent ev)
+        {
+            if (_inputRoot is null)
+                return;
+            
+            if(_mode.OnEvent(ref ev))
+                return;
+
+            _activationTracker?.OnEvent(ref ev);
+
+            if (ev.type == XEventName.MapNotify)
+            {
+                _mapped = true;
+                if (_useRenderWindow)
+                    XMapWindow(_x11.Display, _renderHandle);
+            }
+            else if (ev.type == XEventName.UnmapNotify)
+                _mapped = false;
+            else if (ev.type == XEventName.Expose ||
+                     (ev.type == XEventName.VisibilityNotify &&
+                      ev.VisibilityEvent.state < 2))
+            {
+                EnqueuePaint();
+            }
+            else if (ev.type == XEventName.MotionNotify)
+                MouseEvent(RawPointerEventType.Move, ref ev, ev.MotionEvent.state);
+            else if (ev.type == XEventName.LeaveNotify)
+            {
+                if (IsHandledLeaveEnterDetail(ev.CrossingEvent.detail))
+                {
+                    MouseEvent(RawPointerEventType.LeaveWindow, ref ev, ev.CrossingEvent.state);
+                }
+            }
+            else if (ev.type == XEventName.EnterNotify)
+            {
+                if (IsHandledLeaveEnterDetail(ev.CrossingEvent.detail))
+                {
+                    MouseEvent(RawPointerEventType.Move, ref ev, ev.CrossingEvent.state);
+                }
+            }
+            else if (ev.type == XEventName.PropertyNotify)
+            {
+                OnPropertyChange(ev.PropertyEvent.atom, ev.PropertyEvent.state == 0);
+            }
+            else if (ev.type == XEventName.ButtonPress)
+            {
+                if (ActivateTransientChildIfNeeded())
+                    return;
+                if (ev.ButtonEvent.button < 4 || ev.ButtonEvent.button == 8 || ev.ButtonEvent.button == 9)
+                    MouseEvent(
+                        ev.ButtonEvent.button switch
+                        {
+                            1 => RawPointerEventType.LeftButtonDown,
+                            2 => RawPointerEventType.MiddleButtonDown,
+                            3 => RawPointerEventType.RightButtonDown,
+                            8 => RawPointerEventType.XButton1Down,
+                            9 => RawPointerEventType.XButton2Down,
+                            _ => throw new NotSupportedException("Unexepected RawPointerEventType.")
+                        },
+                        ref ev, ev.ButtonEvent.state);
+                else
+                {
+                    var delta = ev.ButtonEvent.button == 4
+                        ? new Vector(0, 1)
+                        : ev.ButtonEvent.button == 5
+                            ? new Vector(0, -1)
+                            : ev.ButtonEvent.button == 6
+                                ? new Vector(1, 0)
+                                : new Vector(-1, 0);
+                    ScheduleInput(new RawMouseWheelEventArgs(_mouse, (ulong)ev.ButtonEvent.time.ToInt64(),
+                        _inputRoot, new Point(ev.ButtonEvent.x, ev.ButtonEvent.y), delta,
+                        ev.ButtonEvent.state.ToRawInputModifiers()), ref ev);
+                }
+                
+            }
+            else if (ev.type == XEventName.ButtonRelease)
+            {
+                if (ev.ButtonEvent.button < 4 || ev.ButtonEvent.button == 8 || ev.ButtonEvent.button == 9)
+                    MouseEvent(
+                        ev.ButtonEvent.button switch
+                        {
+                            1 => RawPointerEventType.LeftButtonUp,
+                            2 => RawPointerEventType.MiddleButtonUp,
+                            3 => RawPointerEventType.RightButtonUp,
+                            8 => RawPointerEventType.XButton1Up,
+                            9 => RawPointerEventType.XButton2Up,
+                            _ => throw new NotSupportedException("Unexepected RawPointerEventType.")
+                        },
+                        ref ev, ev.ButtonEvent.state);
+            }
+            else if (ev.type == XEventName.ConfigureNotify)
+            {
+                if (ev.ConfigureEvent.window != _handle)
+                    return;
+                var needEnqueue = (_configure == null);
+                _configure = ev.ConfigureEvent;
+                if (ev.ConfigureEvent.override_redirect != 0  || ev.ConfigureEvent.send_event != 0)
+                    _configurePoint = new PixelPoint(ev.ConfigureEvent.x, ev.ConfigureEvent.y);
+                else
+                {
+                    XTranslateCoordinates(_x11.Display, _handle, _x11.RootWindow,
+                        0, 0,
+                        out var tx, out var ty, out _);
+                    _configurePoint = new PixelPoint(tx, ty);
+                }
+                if (needEnqueue)
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        if (_configure == null)
+                            return;
+                        var cev = _configure.Value;
+                        var npos = _configurePoint.Value;
+                        _configure = null;
+                        _configurePoint = null;
+                        
+                        var nsize = new PixelSize(cev.width, cev.height);
+                        var changedSize = _realSize != nsize;
+                        var changedPos = _position == null || npos != _position;
+                        _realSize = nsize;
+                        _position = npos;
+                        bool updatedSizeViaScaling = false;
+                        if (changedPos)
+                        {
+                            PositionChanged?.Invoke(npos);
+                            updatedSizeViaScaling = UpdateScaling();
+                        }
+                        UpdateImePosition();
+
+                        if (changedSize && !updatedSizeViaScaling && !_overrideRedirect)
+                            Resized?.Invoke(ClientSize, WindowResizeReason.Unspecified);
+
+                    }, DispatcherPriority.AsyncRenderTargetResize);
+                
+                if (_useRenderWindow && !_useCompositorDrivenRenderWindowResize)
+                    XConfigureResizeWindow(_x11.Display, _renderHandle, ev.ConfigureEvent.width,
+                        ev.ConfigureEvent.height);
+                if (_xSyncState == XSyncState.WaitConfigure)
+                {
+                    _xSyncState = XSyncState.WaitPaint;
+                    EnqueuePaint();
+                }
+            }
+            else if (ev.type == XEventName.DestroyNotify 
+                     && ev.DestroyWindowEvent.window == _handle)
+            {
+                _mode.OnDestroyNotify();
+                Cleanup(true);
+            }
+            else if (ev.type == XEventName.ClientMessage)
+            {
+                var messageType = ev.ClientMessageEvent.message_type;
+                if (messageType == _x11.Atoms.WM_PROTOCOLS)
+                {
+                    if (ev.ClientMessageEvent.ptr1 == _x11.Atoms.WM_DELETE_WINDOW)
+                    {
+                        if (IsEnabled && Closing?.Invoke(WindowCloseReason.WindowClosing) != true)
+                            Dispose();
+                    }
+                    else if (ev.ClientMessageEvent.ptr1 == _x11.Atoms._NET_WM_SYNC_REQUEST)
+                    {
+                        _xSyncValue.Lo = new UIntPtr(ev.ClientMessageEvent.ptr3.ToPointer()).ToUInt32();
+                        _xSyncValue.Hi = ev.ClientMessageEvent.ptr4.ToInt32();
+                        _xSyncState = XSyncState.WaitConfigure;
+                    }
+                }
+                else if (messageType == _x11.Atoms.XdndEnter)
+                    _dropTarget?.OnXdndEnter(ev.ClientMessageEvent);
+                else if (messageType == _x11.Atoms.XdndPosition)
+                    _dropTarget?.OnXdndPosition(ev.ClientMessageEvent);
+                else if (messageType == _x11.Atoms.XdndLeave)
+                    _dropTarget?.OnXdndLeave(ev.ClientMessageEvent);
+                else if (messageType == _x11.Atoms.XdndDrop)
+                    _dropTarget?.OnXdndDrop(ev.ClientMessageEvent);
+            }
+            else if (ev.type == XEventName.KeyPress || ev.type == XEventName.KeyRelease)
+            {
+                if (ActivateTransientChildIfNeeded())
+                    return;
+                HandleKeyEvent(ref ev);
+            }
+        }
+
+        private static bool IsHandledLeaveEnterDetail(NotifyDetail detail)
+            => detail is
+                NotifyDetail.NotifyNonlinear or
+                NotifyDetail.NotifyNonlinearVirtual or
+                NotifyDetail.NotifyVirtual or
+                NotifyDetail.NotifyAncestor;
+
+        private void HandleActivation(bool active)
+        {
+            if (active)
+            {
+                if (ActivateTransientChildIfNeeded())
+                    return;
+                Activated?.Invoke();
+                _imeControl?.SetWindowActive(true);
+            }
+            else
+            {
+                _imeControl?.SetWindowActive(false);
+                Deactivated?.Invoke();
+            }
+        }
+
+        private Thickness? GetFrameExtents()
+        {
+            if (_windowDecorations != WindowDecorations.Full)
+                return new Thickness(0);
+
+            XGetWindowProperty(_x11.Display, _handle, _x11.Atoms._NET_FRAME_EXTENTS, IntPtr.Zero,
+                new IntPtr(4), false, (IntPtr)Atom.AnyPropertyType, out var _,
+                out var _, out var nitems, out var _, out var prop);
+
+            if (nitems.ToInt64() != 4)
+            {
+                // Window hasn't been mapped by the WM yet, so can't get the extents.
+                return null;
+            }
+
+            var data = (IntPtr*)prop.ToPointer();
+            var extents = new Thickness(data[0].ToInt32(), data[2].ToInt32(), data[1].ToInt32(), data[3].ToInt32());
+            XFree(prop);
+
+            return extents;
+        }
+
+        private void OnScreensChanged()
+        {
+            UpdateScaling();
+        }
+
+        private bool UpdateScaling(bool skipResize = false)
+        {
+            double newScaling;
+            if (_scalingOverride.HasValue)
+                newScaling = _scalingOverride.Value;
+            else
+            {
+                var monitor = _platform.X11Screens.AllScreens.OrderBy(x => x.Scaling)
+                    .FirstOrDefault(m => m.Bounds.Contains(_position ?? default));
+                newScaling = monitor?.Scaling ?? RenderScaling;
+            }
+
+            if (RenderScaling != newScaling)
+            {
+                var oldScaledSize = ClientSize;
+                RenderScaling = newScaling;
+                ScalingChanged?.Invoke(RenderScaling);
+                UpdateImePosition();
+                SetMinMaxSize(_scaledMinMaxSize.minSize, _scaledMinMaxSize.maxSize);
+                if(!skipResize)
+                    Resize(oldScaledSize, true, WindowResizeReason.DpiChange);
+                return true;
+            }
+            
+            return false;
+        }
+
+        public bool WindowStateGetterIsUsable => true;
+
+        private WindowState _lastWindowState;
+        public WindowState WindowState
+        {
+            get => _lastWindowState;
+            set
+            {
+                var previousState = _lastWindowState;
+                if (previousState == value)
+                    return;
+
+                if (value == WindowState.Minimized)
+                {
+                    XIconifyWindow(_x11.Display, _handle, _x11.DefaultScreen);
+                    return;
+                }
+
+                // When going from Minimized to any other state programatically, we might need to re-map the window.
+                // Not doing that will leave the window invisible.
+                var needsRemap = _shown && previousState == WindowState.Minimized && !_mapped;
+
+                if (value == WindowState.Maximized)
+                {
+                    ChangeWMAtoms(false, _x11.Atoms._NET_WM_STATE_HIDDEN);
+                    ChangeWMAtoms(false, _x11.Atoms._NET_WM_STATE_FULLSCREEN);
+                    ChangeWMAtoms(true, _x11.Atoms._NET_WM_STATE_MAXIMIZED_VERT,
+                        _x11.Atoms._NET_WM_STATE_MAXIMIZED_HORZ);
+                }
+                else if (value == WindowState.FullScreen)
+                {
+                    ChangeWMAtoms(false, _x11.Atoms._NET_WM_STATE_HIDDEN);
+                    ChangeWMAtoms(true, _x11.Atoms._NET_WM_STATE_FULLSCREEN);
+                    ChangeWMAtoms(false, _x11.Atoms._NET_WM_STATE_MAXIMIZED_VERT,
+                        _x11.Atoms._NET_WM_STATE_MAXIMIZED_HORZ);
+                }
+                else
+                {
+                    ChangeWMAtoms(false, _x11.Atoms._NET_WM_STATE_HIDDEN);
+                    ChangeWMAtoms(false, _x11.Atoms._NET_WM_STATE_FULLSCREEN);
+                    ChangeWMAtoms(false, _x11.Atoms._NET_WM_STATE_MAXIMIZED_VERT,
+                        _x11.Atoms._NET_WM_STATE_MAXIMIZED_HORZ);
+                }
+
+                if (needsRemap)
+                    XMapWindow(_x11.Display, _handle);
+
+                if (_shown)
+                    SendNetWMMessage(_x11.Atoms._NET_ACTIVE_WINDOW, 1, _x11.LastActivityTimestamp, 0);
+            }
+        }
+
+        private void OnPropertyChange(IntPtr property, bool hasValue)
+        {
+            if (property == _x11.Atoms._NET_FRAME_EXTENTS)
+            {
+                // Occurs once the window has been mapped, which is the earliest the extents
+                // can be retrieved, so invoke event to force update of TopLevel.FrameSize.
+                Resized?.Invoke(ClientSize, WindowResizeReason.Unspecified);
+            }
+
+            if (property == _x11.Atoms._NET_WM_STATE)
+            {
+                var atoms = hasValue
+                    ? XGetWindowPropertyAsIntPtrArray(_x11.Display, _handle, _x11.Atoms._NET_WM_STATE,
+                          (IntPtr)Atom.XA_ATOM)
+                      ?? []
+                    : [];
+                int maximized = 0;
+                bool hasMinimized = false, hasFullscreen = false;
+                foreach (var atom in atoms)
+                {
+                    if (atom == _x11.Atoms._NET_WM_STATE_HIDDEN) 
+                        hasMinimized = true;
+
+                    if (atom == _x11.Atoms._NET_WM_STATE_MAXIMIZED_HORZ ||
+                        atom == _x11.Atoms._NET_WM_STATE_MAXIMIZED_VERT) 
+                        maximized++;
+                    
+                    if(atom == _x11.Atoms._NET_WM_STATE_FULLSCREEN) 
+                        hasFullscreen = true;
+                }
+
+                var state = hasMinimized ? WindowState.Minimized
+                    : hasFullscreen ? WindowState.FullScreen
+                    : maximized == 2 ? WindowState.Maximized
+                    : WindowState.Normal;
+                
+                if (_lastWindowState != state)
+                {
+                    _lastWindowState = state;
+                    WindowStateChanged?.Invoke(state);
+
+                    XGetGeometry(_x11.Display, _handle, out var _, out var _, out var _, out var width, out var height,
+                        out var _, out var _);
+                    var newSize = new PixelSize(width, height);
+                    if (newSize != _realSize)
+                    {
+                        _realSize = newSize;
+                        Resized?.Invoke(ClientSize, WindowResizeReason.Unspecified);
+                    }
+                }
+
+                _activationTracker?.OnNetWmStateChanged(atoms);
+            }
+
+        }
+
+        private WindowDecorations _requestedWindowDecorations = WindowDecorations.Full;
+        private WindowDecorations _windowDecorations = WindowDecorations.Full;
+        private bool _canResize = true;
+        private bool _canMinimize = true;
+        private bool _canMaximize = true;
+        private const int MaxWindowDimension = 100000;
+
+        private (Size minSize, Size maxSize) _scaledMinMaxSize =
+            (new Size(1, 1), new Size(double.PositiveInfinity, double.PositiveInfinity));
+
+        private (PixelSize minSize, PixelSize maxSize) _minMaxSize = (new PixelSize(1, 1),
+            new PixelSize(MaxWindowDimension, MaxWindowDimension));
+        
+        private double _scaling = 1;
+
+        private void ScheduleInput(RawInputEventArgs args, ref XEvent xev)
+        {
+            _x11.LastActivityTimestamp = xev.ButtonEvent.time;
+            ScheduleInput(args);
+        }
+
+        private void DispatchInput(RawInputEventArgs args)
+        {
+            if (_inputRoot is null)
+                return;
+
+            if (_disabled && args is RawPointerEventArgs pargs && pargs.Type == RawPointerEventType.Move)
+                return;
+
+            Input?.Invoke(args);
+            if (!args.Handled && args is RawKeyEventArgsWithText { Text: { Length: > 0 } text })
+                Input?.Invoke(new RawTextInputEventArgs(_keyboard, args.Timestamp, _inputRoot, text));
+        }
+
+        public void ScheduleXI2Input(RawInputEventArgs args)
+        {
+            if (args is RawPointerEventArgs pargs)
+            {
+                if ((pargs.Type == RawPointerEventType.TouchBegin
+                     || pargs.Type == RawPointerEventType.TouchUpdate
+                     || pargs.Type == RawPointerEventType.LeftButtonDown
+                     || pargs.Type == RawPointerEventType.RightButtonDown
+                     || pargs.Type == RawPointerEventType.MiddleButtonDown
+                     || pargs.Type == RawPointerEventType.NonClientLeftButtonDown)
+                    && ActivateTransientChildIfNeeded())
+                    return;
+                if (pargs.Type == RawPointerEventType.TouchEnd
+                    && ActivateTransientChildIfNeeded())
+                    pargs.Type = RawPointerEventType.TouchCancel;
+            }
+
+            ScheduleInput(args);
+        }
+        
+        private void ScheduleInput(RawInputEventArgs args)
+        {
+            if (args is RawPointerEventArgs mouse)
+            {
+                mouse.Position = mouse.Position / RenderScaling;
+                
+                // Chrome hit-test for drawn decorations
+                if (NeedsDrawnDecorations
+                    && mouse.Type == RawPointerEventType.LeftButtonDown
+                    && _inputRoot is { } inputRoot)
+                {
+                    var chromeRole = inputRoot.HitTestChromeElement(mouse.Position);
+                    if (chromeRole is { } role)
+                    {
+                        var moveResizeSide = role switch
+                        {
+                            WindowDecorationsElementRole.TitleBar => NetWmMoveResize._NET_WM_MOVERESIZE_MOVE,
+                            WindowDecorationsElementRole.ResizeN when _canResize => NetWmMoveResize._NET_WM_MOVERESIZE_SIZE_TOP,
+                            WindowDecorationsElementRole.ResizeS when _canResize => NetWmMoveResize._NET_WM_MOVERESIZE_SIZE_BOTTOM,
+                            WindowDecorationsElementRole.ResizeE when _canResize => NetWmMoveResize._NET_WM_MOVERESIZE_SIZE_RIGHT,
+                            WindowDecorationsElementRole.ResizeW when _canResize => NetWmMoveResize._NET_WM_MOVERESIZE_SIZE_LEFT,
+                            WindowDecorationsElementRole.ResizeNE when _canResize => NetWmMoveResize._NET_WM_MOVERESIZE_SIZE_TOPRIGHT,
+                            WindowDecorationsElementRole.ResizeNW when _canResize => NetWmMoveResize._NET_WM_MOVERESIZE_SIZE_TOPLEFT,
+                            WindowDecorationsElementRole.ResizeSE when _canResize => NetWmMoveResize._NET_WM_MOVERESIZE_SIZE_BOTTOMRIGHT,
+                            WindowDecorationsElementRole.ResizeSW when _canResize => NetWmMoveResize._NET_WM_MOVERESIZE_SIZE_BOTTOMLEFT,
+                            _ => (NetWmMoveResize?)null
+                        };
+                        
+                        if (moveResizeSide.HasValue)
+                        {
+                            var pos = GetCursorPos(_x11);
+                            XUngrabPointer(_x11.Display, IntPtr.Zero);
+                            SendNetWMMessage(_x11.Atoms._NET_WM_MOVERESIZE,
+                                (IntPtr)pos.x, (IntPtr)pos.y,
+                                (IntPtr)moveResizeSide.Value,
+                                (IntPtr)1, (IntPtr)1);
+                            return;
+                        }
+                    }
+                }
+            }
+            if (args is RawDragEvent drag)
+                drag.Location = drag.Location / RenderScaling;
+            
+            _rawEventGrouper?.HandleEvent(args);
+        }
+
+        private void MouseEvent(RawPointerEventType type, ref XEvent ev, XModifierMask mods)
+        {
+            if (_inputRoot is null)
+                return;
+            var mev = new RawPointerEventArgs(
+                _mouse, (ulong)ev.ButtonEvent.time.ToInt64(), _inputRoot,
+                type, new Point(ev.ButtonEvent.x, ev.ButtonEvent.y), mods.ToRawInputModifiers());
+            ScheduleInput(mev, ref ev);
+        }
+
+        private void EnqueuePaint()
+        {
+            if (!_triggeredExpose)
+            {
+                _triggeredExpose = true;
+                Dispatcher.UIThread.Post(() =>
+                {
+                    _triggeredExpose = false;
+                    DoPaint();
+                }, DispatcherPriority.UiThreadRender);
+            }
+        }
+
+        private void DoPaint()
+        {
+            Paint?.Invoke(new Rect());
+            if (_xSyncCounter != IntPtr.Zero && _xSyncState == XSyncState.WaitPaint)
+            {
+                _xSyncState = XSyncState.None;
+                XSyncSetCounter(_x11.Display, _xSyncCounter, _xSyncValue);
+            }
+        }
+
+        public IInputRoot InputRoot
+            => _inputRoot ?? throw new InvalidOperationException($"{nameof(SetInputRoot)} must have been called");
+        
+        public void SetInputRoot(IInputRoot inputRoot)
+        {
+            _inputRoot = inputRoot;
+        }
+
+        public void Dispose()
+        {
+            Cleanup(false);            
+        }
+
+        public virtual object? TryGetFeature(Type featureType)
+        {
+            if (featureType == typeof(ITopLevelNativeMenuExporter))
+            {
+                return _nativeMenuExporter;
+            }
+            
+            if (featureType == typeof(IStorageProvider))
+            {
+                return _storageProvider;
+            }
+
+            if (featureType == typeof(ITextInputMethodImpl))
+            {
+                return _ime;
+            }
+
+            if (featureType == typeof(INativeControlHostImpl))
+            {
+                return _nativeControlHost;
+            }
+
+            if (featureType == typeof(IClipboard))
+            {
+                return PresentationLocator.Current.GetRequiredService<IClipboard>();
+            }
+
+            if (featureType == typeof(IPlatformClipboardManagerImpl))
+            {
+                return PresentationLocator.Current.GetRequiredService<IPlatformClipboardManagerImpl>();
+            }
+
+            if (featureType == typeof(ILauncher))
+            {
+                return new BclLauncher();
+            }
+
+            if (featureType == typeof(IX11OptionsToplevelImplFeature))
+            {
+                return this;
+            }
+
+            if (featureType == typeof(IScreenImpl))
+            {
+                return _platform.Screens;
+            }
+
+            return null;
+        }
+
+        private void Cleanup(bool fromDestroyNotification)
+        {
+            // Prevent reentrancy
+            if(_cleaningUp)
+                return;
+            _cleaningUp = true;
+            
+            // Remove from AT-SPI tree before closing
+            _platform.UntrackWindow(this);
+
+            // If we're closing the active window, speculatively hand activation back to its owner so an
+            // awaited ShowDialog() sees the owner as active immediately, instead of waiting for the
+            // asynchronous activation notification (auto-corrected later if the guess is wrong).
+            // Mirroring win32's BeforeCloseCleanup, the owner has to be re-enabled before it's activated:
+            // while it's still modally disabled the activation would be swallowed by
+            // ActivateTransientChildIfNeeded. The managed layer sets the final enabled state afterwards.
+            // Only speculate when there's a root _NET_ACTIVE_WINDOW notification to auto-correct against.
+            if (_handle != IntPtr.Zero
+                && _transientParent is { } parent && parent._handle != IntPtr.Zero
+                && _activationTracker?.IsActive == true
+                && _platform.ActiveWindowTracker.TracksRootActiveWindow)
+            {
+                parent.SetEnabled(true);
+                parent.SetActiveSpeculatively();
+            }
+
+            // Before doing anything else notify the TopLevel that ITopLevelImpl is no longer valid
+            if (_handle != IntPtr.Zero)
+                Closed?.Invoke();
+            
+            if (_nativeMenuExporter is IDisposable disposable)
+                disposable.Dispose();
+            
+            if (_rawEventGrouper != null)
+            {
+                _rawEventGrouper.Dispose();
+                _rawEventGrouper = null;
+            }
+            
+            if (_activationTracker != null)
+            {
+                _activationTracker.Dispose();
+                _activationTracker = null;
+            }
+            
+            if (_transparencyHelper != null)
+            {
+                _transparencyHelper.Dispose();
+                _transparencyHelper = null;
+            }
+            
+            if (_imeControl != null)
+            {
+                _imeControl.Dispose();
+                _imeControl = null;
+                _ime = null;
+            }
+            
+            if (_xic != IntPtr.Zero)
+            {
+                XDestroyIC(_xic);
+                _xic = IntPtr.Zero;
+            }
+
+            if (_xSyncCounter != IntPtr.Zero)
+            {
+                XSyncDestroyCounter(_x11.Display, _xSyncCounter);
+                _xSyncCounter = IntPtr.Zero;
+            }
+            
+            if (_handle != IntPtr.Zero)
+            {
+                _platform.Windows.Remove(_handle);
+                _platform.XI2?.OnWindowDestroyed(_handle);
+                var handle = _handle;
+                _handle = IntPtr.Zero;
+                _pen.Dispose();
+                _touch.Dispose();
+                if (!fromDestroyNotification) 
+                    XDestroyWindow(_x11.Display, handle);
+            }
+
+            _platform.X11Screens.Changed -= OnScreensChanged;
+            _platform.Globals.NetSupportedChanged -= OnNetSupportedChanged;
+
+            if (_useRenderWindow && _renderHandle != IntPtr.Zero)
+            {                
+                _renderHandle = IntPtr.Zero;
+            }
+        }
+
+        internal bool ActivateTransientChildIfNeeded()
+        {
+            if (_disabled)
+            {
+                GotInputWhenDisabled?.Invoke();
+                return true;
+            }
+
+            return false;
+        }
+
+        private void SetActiveSpeculatively() => _activationTracker?.SetActiveSpeculatively();
+
+        public void SetParent(IWindowImpl? parent)
+        {
+            if (parent == null || parent.Handle == null || parent.Handle.Handle == IntPtr.Zero)
+            {
+                _transientParent = null;
+                XDeleteProperty(_x11.Display, _handle, _x11.Atoms.WM_TRANSIENT_FOR);
+            }
+            else
+            {
+                _transientParent = parent as X11Window;
+                XSetTransientForHint(_x11.Display, _handle, parent.Handle.Handle);
+            }
+        }
+
+        public void Show(bool activate, bool isDialog)
+        {
+            _mode.Show(activate, isDialog);
+
+            _platform.TrackWindow(this);
+        }
+
+        public void Hide() => _mode.Hide();
+
+        public Point PointToClient(PixelPoint point) => _mode.PointToClient(point);
+
+        public PixelPoint PointToScreen(Point point) => _mode.PointToScreen(point);
+        
+        public void SetWindowDecorations(WindowDecorations enabled)
+        {
+            _requestedWindowDecorations = enabled;
+            UpdateEffectiveSystemDecorations();
+        }
+
+        private void UpdateEffectiveSystemDecorations()
+        {
+            // When extending client area or forcing drawn decorations, always hide WM decorations (we draw our own)
+            var effective = UseManagedDecorations
+                ? WindowDecorations.None
+                : (_requestedWindowDecorations == WindowDecorations.Full
+                    ? WindowDecorations.Full
+                    : WindowDecorations.None);
+
+            if (_windowDecorations == effective)
+                return;
+
+            _windowDecorations = effective;
+            UpdateMotifHints();
+            UpdateSizeHints(null);
+        }
+
+
+        public void Resize(Size clientSize, WindowResizeReason reason) => Resize(clientSize, false, reason);
+        public void Move(PixelPoint point)
+        {
+            Position = point;
+            UpdateScaling();
+        }
+        private void MoveResize(PixelPoint position, Size size, double scaling)
+        {
+            Move(position);
+            _scalingOverride = scaling;
+            UpdateScaling(true);
+            Resize(size, true, WindowResizeReason.Layout);
+        }
+
+        private PixelSize ToPixelSize(Size size) => new PixelSize((int)(size.Width * RenderScaling), (int)(size.Height * RenderScaling));
+
+        private void Resize(Size clientSize, bool force, WindowResizeReason reason)
+        {
+            if (!force && (clientSize == ClientSize))
+            {
+                return;
+            }
+            
+            var needImmediatePopupResize = clientSize != ClientSize;
+
+            var pixelSize = ToPixelSize(clientSize);
+            UpdateSizeHints(pixelSize);
+            XConfigureResizeWindow(_x11.Display, _handle, pixelSize);
+            if (_useRenderWindow && !_useCompositorDrivenRenderWindowResize)
+                XConfigureResizeWindow(_x11.Display, _renderHandle, pixelSize);
+            XFlush(_x11.Display);
+
+            if (force || !_wasMappedAtLeastOnce || (_overrideRedirect && needImmediatePopupResize))
+            {
+                _realSize = pixelSize;
+                Resized?.Invoke(ClientSize, reason);
+            }
+        }
+        
+        public void CanResize(bool value)
+        {
+            _canResize = value;
+            UpdateMotifHints();
+            UpdateSizeHints(null);
+        }
+
+        public void SetCanMinimize(bool value)
+        {
+            _canMinimize = value;
+            UpdateMotifHints();
+        }
+
+        public void SetCanMaximize(bool value)
+        {
+            _canMaximize = value;
+            UpdateMotifHints();
+        }
+
+        public void SetCursor(ICursorImpl? cursor)
+        {
+            if (cursor == null)
+                XDefineCursor(_x11.Display, _handle, _x11.DefaultCursor);
+            else if (cursor is CursorImpl impl)
+            {
+                XDefineCursor(_x11.Display, _handle, impl.Handle);
+            }
+        }
+
+        public IPlatformHandle Handle { get; }
+
+        IntPtr IXdndWindow.Handle => _handle;
+
+        public PixelPoint Position
+        {
+            get
+            {
+                if(_position == null)
+                {
+                    return default;
+                }
+
+                var extents = GetFrameExtents();
+
+                if(extents == null)
+                {
+                    extents = default(Thickness);
+                }
+
+                return new PixelPoint(_position.Value.X - (int)extents.Value.Left, _position.Value.Y - (int)extents.Value.Top);
+            }
+            set
+            {
+                if (!_usePositioningFlags)
+                {
+                    _usePositioningFlags = true;
+                    UpdateSizeHints(null);
+                }
+
+                var changes = new XWindowChanges
+                {
+                    x = value.X,
+                    y = (int)value.Y
+                };
+
+                XConfigureWindow(_x11.Display, _handle, ChangeWindowFlags.CWX | ChangeWindowFlags.CWY,
+                    ref changes);
+                XFlush(_x11.Display);
+                if (!_wasMappedAtLeastOnce)
+                {
+                    _position = value;
+                    PositionChanged?.Invoke(value);
+                    UpdateScaling();
+                }
+            }
+        }
+
+        public IMouseDevice MouseDevice => _mouse;
+        public IPenDevice PenDevice => _pen;
+        public TouchDevice TouchDevice => _touch;
+
+        public IPopupImpl? CreatePopup() 
+            => _platform.Options.OverlayPopups ? null : new X11Window(_platform, this);
+
+        public void Activate() => _mode.Activate();
+
+        public Size MaxAutoSizeHint => _platform.X11Screens.AllScreens.Select(s => s.Bounds.Size.ToSize(s.Scaling))
+            .OrderByDescending(x => x.Width + x.Height).FirstOrDefault();
+
+
+        private void SendNetWMMessage(IntPtr message_type, IntPtr l0,
+            IntPtr? l1 = null, IntPtr? l2 = null, IntPtr? l3 = null, IntPtr? l4 = null)
+        {
+            var xev = new XEvent
+            {
+                ClientMessageEvent =
+                {
+                    type = XEventName.ClientMessage,
+                    send_event = 1,
+                    window = _handle,
+                    message_type = message_type,
+                    format = 32,
+                    ptr1 = l0,
+                    ptr2 = l1 ?? IntPtr.Zero,
+                    ptr3 = l2 ?? IntPtr.Zero,
+                    ptr4 = l3 ?? IntPtr.Zero,
+                    ptr5 = l4 ?? IntPtr.Zero
+                }
+            };
+            XSendEvent(_x11.Display, _x11.RootWindow, false,
+                new IntPtr((int)(EventMask.SubstructureRedirectMask | EventMask.SubstructureNotifyMask)), ref xev);
+
+        }
+
+        private void BeginMoveResize(NetWmMoveResize side, PointerPressedEventArgs e)
+        {
+            var pos = GetCursorPos(_x11);
+            XUngrabPointer(_x11.Display, new IntPtr(0));
+            SendNetWMMessage (_x11.Atoms._NET_WM_MOVERESIZE, (IntPtr) pos.x, (IntPtr) pos.y,
+                (IntPtr) side,
+                (IntPtr) 1, (IntPtr)1); // left button
+                
+            e.Pointer.Capture(null);
+        }
+
+        public void BeginMoveDrag(PointerPressedEventArgs e)
+        {
+            BeginMoveResize(NetWmMoveResize._NET_WM_MOVERESIZE_MOVE, e);
+        }
+
+        public void BeginResizeDrag(WindowEdge edge, PointerPressedEventArgs e)
+        {
+            var side = NetWmMoveResize._NET_WM_MOVERESIZE_CANCEL;
+            if (edge == WindowEdge.East)
+                side = NetWmMoveResize._NET_WM_MOVERESIZE_SIZE_RIGHT;
+            if (edge == WindowEdge.North)
+                side = NetWmMoveResize._NET_WM_MOVERESIZE_SIZE_TOP;
+            if (edge == WindowEdge.South)
+                side = NetWmMoveResize._NET_WM_MOVERESIZE_SIZE_BOTTOM;
+            if (edge == WindowEdge.West)
+                side = NetWmMoveResize._NET_WM_MOVERESIZE_SIZE_LEFT;
+            if (edge == WindowEdge.NorthEast)
+                side = NetWmMoveResize._NET_WM_MOVERESIZE_SIZE_TOPRIGHT;
+            if (edge == WindowEdge.NorthWest)
+                side = NetWmMoveResize._NET_WM_MOVERESIZE_SIZE_TOPLEFT;
+            if (edge == WindowEdge.SouthEast)
+                side = NetWmMoveResize._NET_WM_MOVERESIZE_SIZE_BOTTOMRIGHT;
+            if (edge == WindowEdge.SouthWest)
+                side = NetWmMoveResize._NET_WM_MOVERESIZE_SIZE_BOTTOMLEFT;
+            BeginMoveResize(side, e);
+        }
+
+        public void SetTitle(string? title)
+        {
+            if (string.IsNullOrEmpty(title))
+            {
+                XDeleteProperty(_x11.Display, _handle, _x11.Atoms._NET_WM_NAME);
+                XDeleteProperty(_x11.Display, _handle, _x11.Atoms.WM_NAME);
+            }
+            else
+            {
+                var data = Encoding.UTF8.GetBytes(title);
+                fixed (void* pdata = data)
+                {
+                    XChangeProperty(_x11.Display, _handle, _x11.Atoms._NET_WM_NAME, _x11.Atoms.UTF8_STRING, 8,
+                        PropertyMode.Replace, pdata, data.Length);
+                    XStoreName(_x11.Display, _handle, title);
+                }
+            }
+        }
+
+        public void SetWmClass(IntPtr handle, string? wmClass)
+        {
+            // See https://tronche.com/gui/x/icccm/sec-4.html#WM_CLASS
+            // We don't actually parse the application's command line, so we only use RESOURCE_NAME and argv[0]
+            var appId = Environment.GetEnvironmentVariable("RESOURCE_NAME") 
+                        ?? Process.GetCurrentProcess().ProcessName;
+            
+            var encodedAppId = Encoding.ASCII.GetBytes(appId);
+            var encodedWmClass = Encoding.ASCII.GetBytes(wmClass ?? appId);
+
+            var hint = XAllocClassHint();
+            fixed(byte* pAppId = encodedAppId)
+            fixed (byte* pWmClass = encodedWmClass)
+            {
+                hint->res_name = pAppId;
+                hint->res_class = pWmClass;
+                XSetClassHint(_x11.Display, handle, hint);
+            }
+
+            XFree(hint);
+        }
+        
+        public void SetWmClass(string? className)
+        {
+            if (_handle == IntPtr.Zero)
+                return;
+            SetWmClass(_handle, className ?? _platform.Options.WmClass);
+        }
+
+        public void SetMinMaxSize(Size minSize, Size maxSize)
+        {
+            _scaledMinMaxSize = (minSize, maxSize);
+            var min = new PixelSize(
+                (int)(minSize.Width < 1 ? 1 : minSize.Width * RenderScaling),
+                (int)(minSize.Height < 1 ? 1 : minSize.Height * RenderScaling));
+
+            const int maxDim = MaxWindowDimension;
+            var max = new PixelSize(
+                (int)(maxSize.Width > maxDim ? maxDim : Math.Max(min.Width, maxSize.Width * RenderScaling)),
+                (int)(maxSize.Height > maxDim ? maxDim : Math.Max(min.Height, maxSize.Height * RenderScaling)));
+            
+            _minMaxSize = (min, max);
+            UpdateSizeHints(null);
+        }
+
+        public void SetTopmost(bool value)
+        {
+            ChangeWMAtoms(value, _x11.Atoms._NET_WM_STATE_ABOVE);
+        }
+        
+        public void SetEnabled(bool enable)
+        {
+            _disabled = !enable;
+
+            UpdateWMHints();
+            UpdateMotifHints();
+
+            if (enable)
+            {
+                // Some window managers ignore Motif hints when switching from disabled to enabled on the first update
+                // so setting it again forces the update
+                UpdateMotifHints();
+            }
+            else
+            {
+                // Showing a dialog should result in pointer capture being lost. We don't currently use XGrabPointer on
+                // X11 to implement pointer capture, so no we have no OS-level event to hook into. Instead, release the 
+                // pointer capture when the owner window is disabled. This behavior matches win32, which sends a
+                // WM_CANCELMODE message when EnableWindow(hWnd, false) is called from SetEnabled.
+                _mouse.PlatformCaptureLost();
+                _touch.PlatformCaptureLost();
+            }
+        }
+
+        private void UpdateWMHints()
+        {
+            var wmHintsPtr = XGetWMHints(_x11.Display, _handle);
+
+            XWMHints hints = default;
+
+            if (wmHintsPtr != IntPtr.Zero)
+            {
+                hints = Marshal.PtrToStructure<XWMHints>(wmHintsPtr);
+            }
+
+            var flags = hints.flags.ToInt64();
+            flags |= (long)XWMHintsFlags.InputHint;
+            hints.flags = (IntPtr)flags;
+            hints.input = !_disabled ? 1 : 0;
+
+            XSetWMHints(_x11.Display, _handle, ref hints);
+
+            if (wmHintsPtr != IntPtr.Zero)
+            {
+                XFree(wmHintsPtr);
+            }
+        }
+
+        private bool _extendingClientAreaToDecorations;
+        private bool UseManagedDecorations => _extendingClientAreaToDecorations || _platform.Options.ForceDrawnDecorationsInternal;
+        private bool NeedsDrawnDecorations => UseManagedDecorations || _requestedWindowDecorations == WindowDecorations.BorderOnly;
+
+        public void SetExtendClientAreaToDecorationsHint(bool extendIntoClientAreaHint)
+        {
+            if (!_platform.Options.EnableDrawnDecorationsInternal)
+                return;
+
+            if (_extendingClientAreaToDecorations == extendIntoClientAreaHint)
+                return;
+
+            _extendingClientAreaToDecorations = extendIntoClientAreaHint;
+            UpdateEffectiveSystemDecorations();
+
+            IsClientAreaExtendedToDecorations = extendIntoClientAreaHint;
+            ExtendClientAreaToDecorationsChanged?.Invoke(extendIntoClientAreaHint);
+        }
+
+        public void SetExtendClientAreaTitleBarHeightHint(double titleBarHeight)
+        {
+        }
+
+        public Action? GotInputWhenDisabled { get; set; }
+
+        public void SetIcon(IWindowIconImpl? icon)
+        {
+            if (ReferenceEquals(_iconImpl, icon))
+                return;
+
+            _iconImpl = icon;
+
+            if (icon != null)
+            {
+                var data = ((X11IconData)icon).Data;
+                fixed (void* pdata = data)
+                    XChangeProperty(_x11.Display, _handle, _x11.Atoms._NET_WM_ICON,
+                        new IntPtr((int)Atom.XA_CARDINAL), 32, PropertyMode.Replace,
+                        pdata, data.Length);
+            }
+            else
+            {
+                XDeleteProperty(_x11.Display, _handle, _x11.Atoms._NET_WM_ICON);
+            }
+        }
+
+        public void ShowTaskbarIcon(bool value)
+        {
+            ChangeWMAtoms(!value, _x11.Atoms._NET_WM_STATE_SKIP_TASKBAR);
+        }
+
+        private void ChangeWMAtoms(bool enable, params IntPtr[] atoms)
+        {
+            if (atoms.Length != 1 && atoms.Length != 2)
+                throw new ArgumentException();
+
+            if (!_mapped)
+            {
+                var newAtoms = new HashSet<IntPtr>(XGetWindowPropertyAsIntPtrArray(_x11.Display, _handle,
+                    _x11.Atoms._NET_WM_STATE,
+                    (IntPtr)Atom.XA_ATOM) ?? []);
+                
+                foreach(var atom in atoms)
+                    if (enable)
+                        newAtoms.Add(atom);
+                    else
+                        newAtoms.Remove(atom);
+
+                XChangeProperty(_x11.Display, _handle, _x11.Atoms._NET_WM_STATE, (IntPtr)Atom.XA_ATOM, 32,
+                    PropertyMode.Replace, newAtoms.ToArray(), newAtoms.Count);
+            }
+            
+            SendNetWMMessage(_x11.Atoms._NET_WM_STATE,
+                (IntPtr)(enable ? 1 : 0),
+                atoms[0],
+                atoms.Length > 1 ? atoms[1] : IntPtr.Zero,
+                atoms.Length > 2 ? atoms[2] : IntPtr.Zero,
+                atoms.Length > 3 ? atoms[3] : IntPtr.Zero
+            );
+        }
+
+        public IPopupPositioner? PopupPositioner { get; }
+
+        public void SetTransparencyLevelHint(IReadOnlyList<WindowTransparencyLevel> transparencyLevels)
+        {
+            _transparencyHelper?.SetTransparencyRequest(transparencyLevels);
+        }
+
+        public void SetWindowManagerAddShadowHint(bool enabled)
+        {
+        }
+
+        public void SetHitTestVisible(bool isHitTestVisible)
+        {
+            if (!_x11.HasXFixes)
+                return;
+
+            // An empty input region makes the server route pointer input to whatever is behind
+            // the window. None (0) restores the default input shape, i.e. the whole window.
+            var region = IntPtr.Zero;
+            if (!isHitTestVisible)
+            {
+                var rect = default(XRectangle);
+                region = XFixesCreateRegion(_x11.Display, &rect, 0);
+            }
+
+            XFixesSetWindowShapeRegion(_x11.Display, _handle, ShapeKind.ShapeInput, 0, 0, region);
+
+            // The render window is a child of _handle when a GPU backend is in use. Shaping the
+            // parent alone doesn't take the child out of the input hierarchy, so it would keep
+            // capturing the pointer.
+            if (_renderHandle != _handle)
+                XFixesSetWindowShapeRegion(_x11.Display, _renderHandle, ShapeKind.ShapeInput, 0, 0, region);
+
+            if (region != IntPtr.Zero)
+                XFixesDestroyRegion(_x11.Display, region);
+
+            XFlush(_x11.Display);
+        }
+
+        public WindowTransparencyLevel TransparencyLevel =>
+            _transparencyHelper?.CurrentLevel ?? WindowTransparencyLevel.None;
+
+        public void SetFrameThemeVariant(PlatformThemeVariant? themeVariant)
+        {
+        }
+
+        public AcrylicPlatformCompensationLevels AcrylicCompensationLevels { get; } = new AcrylicPlatformCompensationLevels(1, 0.8, 0.8);
+
+        public bool NeedsManagedDecorations => NeedsDrawnDecorations;
+
+        public PlatformRequestedDrawnDecoration RequestedDrawnDecorations =>
+            NeedsDrawnDecorations
+                ? PlatformRequestedDrawnDecoration.Border
+                  | PlatformRequestedDrawnDecoration.ResizeGrips
+                  | PlatformRequestedDrawnDecoration.TitleBar
+                  | PlatformRequestedDrawnDecoration.Shadow
+                : PlatformRequestedDrawnDecoration.None;
+
+        public bool IsEnabled => !_disabled && !_mode.BlockInput;
+
+        public class SurfacePlatformHandle : INativePlatformHandleSurface
+        {
+            private readonly X11Window _owner;
+
+            public PixelSize Size => _owner.ToPixelSize(_owner.ClientSize);
+
+            public double Scaling => _owner.RenderScaling;
+
+            public SurfacePlatformHandle(X11Window owner)
+            {
+                _owner = owner;
+            }
+
+            public IntPtr Handle => _owner._renderHandle;
+            public string HandleDescriptor => "XID";
+        }
+
+        public void SetNetWmWindowType(X11NetWmWindowType type)
+        {
+            if(_handle == IntPtr.Zero)
+                return;
+
+            var atom = type switch
+            {
+                X11NetWmWindowType.Dialog => _x11.Atoms._NET_WM_WINDOW_TYPE_DIALOG,
+                X11NetWmWindowType.Utility => _x11.Atoms._NET_WM_WINDOW_TYPE_UTILITY,
+                X11NetWmWindowType.Toolbar => _x11.Atoms._NET_WM_WINDOW_TYPE_TOOLBAR,
+                X11NetWmWindowType.Splash => _x11.Atoms._NET_WM_WINDOW_TYPE_SPLASH,
+                X11NetWmWindowType.Dock => _x11.Atoms._NET_WM_WINDOW_TYPE_DOCK,
+                X11NetWmWindowType.Desktop => _x11.Atoms._NET_WM_WINDOW_TYPE_DESKTOP,
+                _ => _x11.Atoms._NET_WM_WINDOW_TYPE_NORMAL
+            };
+
+            XChangeProperty(_x11.Display, _handle, _x11.Atoms._NET_WM_WINDOW_TYPE, _x11.Atoms.ATOM,
+                32, PropertyMode.Replace, new[] { atom }, 1);
+
+        }
+
+        public void TakeFocus()
+        {
+            // TODO: Not yet implemented: need to check if this is required on X11 or not.
+        }
+    }
+}

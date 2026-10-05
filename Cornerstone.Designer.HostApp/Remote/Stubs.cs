@@ -1,0 +1,281 @@
+#nullable enable
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
+using Cornerstone.Presentation.Controls;
+using Cornerstone.Presentation.Controls.Platform;
+using Cornerstone.Presentation.Controls.Primitives.PopupPositioning;
+using Cornerstone.Presentation.Input;
+using Cornerstone.Presentation.Input.Platform;
+using Cornerstone.Presentation.Input.Raw;
+using Cornerstone.Presentation.Media.Imaging;
+using Cornerstone.Presentation.Platform;
+using Cornerstone.Presentation.Platform.Surfaces;
+using Cornerstone.Presentation.Platform.Storage;
+using Cornerstone.Presentation.Platform.Storage.FileIO;
+using Cornerstone.Presentation.Rendering;
+using Cornerstone.Presentation.Rendering.Composition;
+using Cornerstone.Presentation.Controls.Acrylic;
+using Cornerstone.Presentation.Controls.Chrome;
+
+namespace Cornerstone.Presentation.DesignerSupport.Remote
+{
+    class WindowStub : IWindowImpl, IPopupImpl
+    {
+        public Action? Deactivated { get; set; }
+        public Action? Activated { get; set; }
+        public IPlatformHandle? Handle { get; }
+        public Size MaxAutoSizeHint { get; }
+        public Size ClientSize { get; }
+        public Size? FrameSize => null;
+        public double RenderScaling { get; } = 1.0;
+        public double DesktopScaling => 1.0;
+        public IPlatformRenderSurface[] Surfaces => [];
+        public Action<RawInputEventArgs>? Input { get; set; }
+        public Action<Rect>? Paint { get; set; }
+        public Action<Size, WindowResizeReason>? Resized { get; set; }
+        public Action<double>? ScalingChanged { get; set; }
+        public Func<WindowCloseReason, bool>? Closing { get; set; }
+        public Action? Closed { get; set; }
+        public Action? LostFocus { get; set; }
+        public IMouseDevice MouseDevice { get; } = new MouseDevice();
+        public IPopupImpl CreatePopup() => new WindowStub(this);
+
+        public PixelPoint Position { get; set; }
+        public Action<PixelPoint>? PositionChanged { get; set; }
+        public WindowState WindowState { get; set; }
+        public bool WindowStateGetterIsUsable => false;
+        public Action<WindowState>? WindowStateChanged { get; set; }
+
+        public Action<WindowTransparencyLevel>? TransparencyLevelChanged { get; set; }
+
+        public Action<bool>? ExtendClientAreaToDecorationsChanged { get; set; }
+
+        public PlatformRequestedDrawnDecoration RequestedDrawnDecorations => IsClientAreaExtendedToDecorations
+            ? PlatformRequestedDrawnDecoration.TitleBar
+            : default;
+        public Thickness ExtendedMargins { get; } = new Thickness();
+
+        public Thickness OffScreenMargin { get; } = new Thickness();
+
+        public WindowStub(IWindowImpl? parent = null)
+        {
+            if (parent != null)
+                PopupPositioner = new ManagedPopupPositioner(new ManagedPopupPositionerPopupImplHelper(parent,
+                    (_, size, _) =>
+                    {
+                        Resize(size, WindowResizeReason.Unspecified);
+                    }));
+        }
+
+        private sealed class DummyRenderTimer : IRenderTimer
+        {
+            public Action<TimeSpan>? Tick { get; set; }
+            public bool RunsInBackground => false;
+        }
+
+        public Compositor Compositor { get; } = new(RenderLoop.FromTimer(new DummyRenderTimer()), null);
+
+        public void Dispose()
+        {
+        }
+        public void Invalidate(Rect rect)
+        {
+        }
+
+        public void SetInputRoot(IInputRoot inputRoot)
+        {
+        }
+
+        public Point PointToClient(PixelPoint p) => p.ToPoint(1);
+
+        public PixelPoint PointToScreen(Point p) => PixelPoint.FromPoint(p, 1);
+
+        public void SetCursor(ICursorImpl? cursor)
+        {
+        }
+
+        public void Show(bool activate, bool isDialog)
+        {
+        }
+
+        public void Hide()
+        {
+        }
+
+        public void BeginMoveDrag(PointerPressedEventArgs e)
+        {
+        }
+
+        public void BeginResizeDrag(WindowEdge edge, PointerPressedEventArgs e)
+        {
+        }
+
+        public void Activate()
+        {
+        }
+
+        public void Resize(Size clientSize, WindowResizeReason reason)
+        {
+        }
+
+        public void Move(PixelPoint point)
+        {
+
+        }
+        
+        public void SetMinMaxSize(Size minSize, Size maxSize)
+        {
+        }
+
+        public void SetTitle(string? title)
+        {
+        }
+
+        public void ShowDialog(IWindowImpl parent)
+        {
+        }
+
+        public void SetWindowDecorations(WindowDecorations enabled)
+        {
+        }
+
+        public void SetIcon(IWindowIconImpl? icon)
+        {
+        }
+
+        public void ShowTaskbarIcon(bool value)
+        {
+        }
+
+        public void CanResize(bool value)
+        {
+        }
+
+        public void SetCanMinimize(bool value)
+        {
+        }
+
+        public void SetCanMaximize(bool value)
+        {
+        }
+
+        public void SetTopmost(bool value)
+        {
+        }
+
+        public void SetParent(IWindowImpl? parent)
+        {
+        }
+
+        public void SetEnabled(bool enable)
+        {
+        }
+
+        public void SetExtendClientAreaToDecorationsHint(bool extendIntoClientAreaHint)
+        {
+        }
+
+        public void SetExtendClientAreaTitleBarHeightHint(double titleBarHeight)
+        {
+        }
+
+        public IPopupPositioner? PopupPositioner { get; }
+
+        public Action? GotInputWhenDisabled { get; set; }
+
+        public void SetTransparencyLevelHint(IReadOnlyList<WindowTransparencyLevel> transparencyLevel) { }
+
+        public void SetWindowManagerAddShadowHint(bool enabled)
+        {
+        }
+
+        public WindowTransparencyLevel TransparencyLevel => WindowTransparencyLevel.None;
+
+        public bool IsClientAreaExtendedToDecorations { get; }
+
+        public bool NeedsManagedDecorations => false;
+
+        public void SetFrameThemeVariant(PlatformThemeVariant? themeVariant) { }
+
+        public AcrylicPlatformCompensationLevels AcrylicCompensationLevels { get; } = new AcrylicPlatformCompensationLevels(1, 1, 1);
+
+        public object? TryGetFeature(Type featureType)
+        {
+            if (featureType == typeof(IStorageProvider))
+            {
+                return new NoopStorageProvider();
+            }
+
+            if (featureType == typeof(IScreenImpl))
+            {
+                return new ScreenStub();
+            }
+
+            return null;
+        }
+        public void TakeFocus() { }
+
+        public void SetHitTestVisible(bool isHitTestVisible) { }
+    }
+
+    class ClipboardStub : IClipboard
+    {
+        public Task ClearAsync() => Task.CompletedTask;
+
+        public Task SetDataAsync(IAsyncDataTransfer? dataTransfer) => Task.CompletedTask;
+
+        public Task<IAsyncDataTransfer?> TryGetDataAsync() => Task.FromResult<IAsyncDataTransfer?>(null);
+
+        public Task FlushAsync() => Task.CompletedTask;
+
+        public Task<IAsyncDataTransfer?> TryGetInProcessDataAsync() => Task.FromResult<IAsyncDataTransfer?>(null);
+    }
+
+    class CursorFactoryStub : ICursorFactory
+    {
+        public ICursorImpl GetCursor(StandardCursorType cursorType) => new CursorStub();
+        public ICursorImpl CreateCursor(Bitmap cursor, PixelPoint hotSpot) => new CursorStub();
+
+        private class CursorStub : ICursorImpl
+        {
+            public void Dispose() { }
+        }
+    }
+
+    class IconLoaderStub : IPlatformIconLoader
+    {
+        class IconStub : IWindowIconImpl
+        {
+            public void Save(Stream outputStream)
+            {
+
+            }
+        }
+
+        public IWindowIconImpl LoadIcon(string fileName) => new IconStub();
+
+        public IWindowIconImpl LoadIcon(Stream stream) => new IconStub();
+
+        public IWindowIconImpl LoadIcon(IBitmapImpl bitmap) => new IconStub();
+    }
+
+    class ScreenStub : ScreensBase<int, PlatformScreen>
+    {
+        protected override IReadOnlyList<int> GetAllScreenKeys() => new[] { 1 };
+
+        protected override PlatformScreen CreateScreenFromKey(int key) => new PlatformScreenStub(key);
+
+        private class PlatformScreenStub : PlatformScreen
+        {
+            public PlatformScreenStub(int key) : base(new PlatformHandle((nint) key, nameof(ScreenStub))) 
+            {
+                Scaling = 1;
+                Bounds = WorkingArea = new PixelRect(0, 0, 4000, 4000);
+                IsPrimary = true;
+            }
+        }
+    }
+}

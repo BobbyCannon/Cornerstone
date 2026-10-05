@@ -1,0 +1,13 @@
+<UserControl xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs.Documentation"
+		xmlns:docs="clr-namespace:Cornerstone.Presentation.Documentation;assembly=Cornerstone.Presentation"
+		mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="800"
+		x:Class="Cornerstone.Sample.Tabs.Documentation.TabDocumentation"
+		x:DataType="tabs:TabDocumentation"
+		Background="{DynamicResource Background02}">
+	<!-- Same reader as Cornerstone.Documentation.exe — no extra header chrome -->
+	<docs:DocumentationReader x:Name="Reader" />
+</UserControl>

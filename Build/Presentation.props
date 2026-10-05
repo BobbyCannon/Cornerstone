@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+	<!--
+		Opt-in Presentation stack: assembly ref, XAML compile tasks, compiled-binding generator,
+		browser static assets, Android JCW TFM order workaround.
+		Import from each UI csproj. Do not import from Cornerstone core or Presentation tooling.
+	-->
+	<PropertyGroup>
+		<CornerstonePresentationBuildImported>true</CornerstonePresentationBuildImported>
+		<_CornerstoneDir>$(MSBuildThisFileDirectory)..\</_CornerstoneDir>
+		<_TargetPlatformIdentifier>$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))</_TargetPlatformIdentifier>
+	</PropertyGroup>
+	<Import Project="$(_CornerstoneDir)Cornerstone.Presentation.BuildTasks\CornerstoneBuildTasks.props"
+			Condition="'$(CornerstoneBuildTasksPropsImported)' != 'true'" />
+	<ItemGroup>
+		<ProjectReference Include="$(_CornerstoneDir)Cornerstone.Presentation\Cornerstone.Presentation.csproj" />
+		<ProjectReference Include="$(_CornerstoneDir)Cornerstone.Presentation.BuildTasks\Cornerstone.Presentation.BuildTasks.csproj"
+				ReferenceOutputAssembly="false"
+				PrivateAssets="all"
+				SetTargetFramework="TargetFramework=netstandard2.0"
+				GlobalPropertiesToRemove="TargetFrameworks;RuntimeIdentifier;RuntimeIdentifiers" />
+	</ItemGroup>
+	<Import Project="$(_CornerstoneDir)Cornerstone.Presentation.BuildTasks\CornerstoneBuildTasks.targets"
+			Condition="'$(CornerstoneBuildTasksTargetsImported)' != 'true'" />
+	<Import Project="$(_CornerstoneDir)Cornerstone.Presentation\Platforms\Browser\build\Cornerstone.Presentation.Browser.props"
+			Condition="'$(_TargetPlatformIdentifier)' == 'browser'" />
+	<Import Project="$(_CornerstoneDir)Cornerstone.Presentation\Platforms\Browser\build\Cornerstone.Presentation.Browser.targets"
+			Condition="'$(_TargetPlatformIdentifier)' == 'browser'" />
+	<!--
+		JCW can load a net10.0 CopyLocal of a multi-TFM library (Presentation) instead of net10.0-android.
+		Empty *.jlo.xml, missing crc64 Java, javac fails.
+		See https://github.com/dotnet/android/issues/10858
+	-->
+	<Target Name="PreferAndroidTfmResolvedAssemblies"
+			AfterTargets="_LinkAssembliesNoShrinkInputs"
+			BeforeTargets="_LinkAssembliesNoShrink;_AfterILLinkAdditionalSteps"
+			Condition="'$(_TargetPlatformIdentifier)' == 'android'">
+		<ItemGroup>
+			<_AndroidTfmResolvedAssemblies Include="@(_AllResolvedAssemblies)"
+					Condition="$([System.String]::new('%(Identity)').Contains('-android'))" />
+			<_NonAndroidTfmResolvedAssemblies Include="@(_AllResolvedAssemblies)"
+					Condition="!$([System.String]::new('%(Identity)').Contains('-android'))" />
+			<_AllResolvedAssemblies Remove="@(_AllResolvedAssemblies)" />
+			<_AllResolvedAssemblies Include="@(_AndroidTfmResolvedAssemblies)" />
+			<_AllResolvedAssemblies Include="@(_NonAndroidTfmResolvedAssemblies)" />
+			<_AndroidTfmResolvedAssemblies Remove="@(_AndroidTfmResolvedAssemblies)" />
+			<_NonAndroidTfmResolvedAssemblies Remove="@(_NonAndroidTfmResolvedAssemblies)" />
+		</ItemGroup>
+	</Target>
+	<!--
+		Desktop Presentation copies libCornerstoneNative.dylib under runtimes/osx/native.
+		A net10.0 shared app project CopyLocals that file into the iOS head, and the iOS
+		linker then ld's a macOS dylib into an iOS binary. Drop those publish items first.
+	-->
+	<Target Name="ExcludeDesktopNativeRuntimesFromIos"
+			AfterTargets="ComputeResolvedFilesToPublishList"
+			Condition="'$(_TargetPlatformIdentifier)' == 'ios'">
+		<ItemGroup>
+			<ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+					Condition="$([System.String]::Copy('%(Identity)').Contains('runtimes\osx')) or $([System.String]::Copy('%(Identity)').Contains('runtimes/osx'))" />
+		</ItemGroup>
+	</Target>
+	<Target Name="ExcludeDesktopNativeRuntimesFromIosLink"
+			BeforeTargets="_LinkNativeExecutable"
+			Condition="'$(_TargetPlatformIdentifier)' == 'ios'">
+		<ItemGroup>
+			<_FileNativeReference Remove="@(_FileNativeReference)"
+					Condition="$([System.String]::Copy('%(Identity)').Contains('libCornerstoneNative'))" />
+			<_NativeReferences Remove="@(_NativeReferences)"
+					Condition="$([System.String]::Copy('%(Identity)').Contains('libCornerstoneNative'))" />
+			<_LinkNativeExecutableInputs Remove="@(_LinkNativeExecutableInputs)"
+					Condition="$([System.String]::Copy('%(Identity)').Contains('libCornerstoneNative'))" />
+		</ItemGroup>
+	</Target>
+</Project>

@@ -4,6 +4,7 @@ using System;
 using System.Text;
 using Cornerstone.Data;
 using Cornerstone.Profiling;
+using Cornerstone.Reflection;
 
 #endregion
 
@@ -12,7 +13,10 @@ namespace Cornerstone.Sync;
 /// <summary>
 /// Profiler for the sync client
 /// </summary>
-public class SyncClientProfiler : CornerstoneObject, IUpdateable<SyncClientProfiler>
+[SourceReflection]
+[Notifiable(["*"])]
+[Updateable(UpdateableAction.All, ["*"])]
+public partial class SyncClientProfiler : CornerstoneObject, IUpdateable<SyncClientProfiler>
 {
 	#region Constructors
 
@@ -144,23 +148,6 @@ public class SyncClientProfiler : CornerstoneObject, IUpdateable<SyncClientProfi
 		builder.AppendLine($"\t\tProcessSyncObjects::SaveDatabase {ProcessSyncObjectsSaveDatabase} : {Percent(totalTime, ProcessSyncObjectsSaveDatabase)}");
 		builder.AppendLine($"\t\tProcessSyncObjects::ToList {ProcessSyncObjectsSyncObjectsToList} : {Percent(totalTime, ProcessSyncObjectsSyncObjectsToList)}");
 		return builder.ToString();
-	}
-
-	public bool UpdateWith(SyncClientProfiler update, IncludeExcludeSettings settings)
-	{
-		ApplyChanges.UpdateWith(update.ApplyChanges);
-		GetChanges.UpdateWith(update.GetChanges);
-		GetChangeCount.UpdateWith(update.GetChangeCount);
-		ProcessSyncObjectsSyncObjectsToList.UpdateWith(update.ProcessSyncObjectsSyncObjectsToList);
-		ProcessSyncObject.UpdateWith(update.ProcessSyncObject);
-		ProcessSyncObjectAdded.UpdateWith(update.ProcessSyncObjectAdded);
-		ProcessSyncObjectDeleted.UpdateWith(update.ProcessSyncObjectDeleted);
-		ProcessSyncObjectModified.UpdateWith(update.ProcessSyncObjectModified);
-		ProcessSyncObjectReadEntity.UpdateWith(update.ProcessSyncObjectReadEntity);
-		ProcessSyncObjects.UpdateWith(update.ProcessSyncObjects);
-		ProcessSyncObjectsGetDatabase.UpdateWith(update.ProcessSyncObjectsGetDatabase);
-		ProcessSyncObjectsSaveDatabase.UpdateWith(update.ProcessSyncObjectsSaveDatabase);
-		return true;
 	}
 
 	private string Percent(TimeSpan total, Timer partial)

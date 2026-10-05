@@ -26,19 +26,19 @@ internal class MissingNamespaceSuggestedAction : BaseSuggestedAction, ISuggested
 	private readonly IWpfDifferenceViewerFactoryService _diffFactory;
 	private readonly ITextViewRoleSet _previewRoleSet;
 	private readonly ITrackingSpan _span;
-	private readonly KeyValuePair<string, string> _targetClassMetadata;
+	private readonly string _xmlNamespace;
 
 	#endregion
 
 	#region Constructors
 
 	public MissingNamespaceSuggestedAction(ITrackingSpan span, IWpfDifferenceViewerFactoryService diffFactory, IDifferenceBufferFactoryService diffBufferFactory,
-		ITextBufferFactoryService bufferFactory, ITextEditorFactoryService textEditorFactoryService, IReadOnlyDictionary<string, string> inverseNamespaces,
+		ITextBufferFactoryService bufferFactory, ITextEditorFactoryService textEditorFactoryService, string xmlNamespace,
 		Dictionary<string, string> aliases, string alias)
 	{
 		_span = span;
-		_targetClassMetadata = inverseNamespaces.FirstOrDefault(x => x.Key.Split('.').Last() == _span.GetText(_span.TextBuffer.CurrentSnapshot));
-		DisplayText = $"Add xmlns {alias}";
+		_xmlNamespace = xmlNamespace ?? string.Empty;
+		DisplayText = "Add xmlns " + alias;
 		_diffFactory = diffFactory;
 		_diffBufferFactory = diffBufferFactory;
 		_bufferFactory = bufferFactory;
@@ -75,7 +75,7 @@ internal class MissingNamespaceSuggestedAction : BaseSuggestedAction, ISuggested
 	{
 		var lastNs = _aliases.Last().Value;
 
-		buffer.Insert(buffer.CurrentSnapshot.GetText().IndexOf(lastNs) + lastNs.Length + 2, $"xmlns:{_alias}=\"{_targetClassMetadata.Value}\"");
+		buffer.Insert(buffer.CurrentSnapshot.GetText().IndexOf(lastNs) + lastNs.Length + 2, "xmlns:" + _alias + "=\"" + _xmlNamespace + "\"");
 	}
 
 	#endregion

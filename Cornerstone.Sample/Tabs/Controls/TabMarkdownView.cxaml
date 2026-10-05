@@ -1,0 +1,58 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs.Controls"
+		mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="600"
+		x:Class="Cornerstone.Sample.Tabs.Controls.TabMarkdownView"
+		x:DataType="tabs:TabMarkdownView"
+		x:Name="This">
+	<DockPanel>
+		<Grid DockPanel.Dock="Top" Margin="10">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="{x:Static tabs:TabMarkdownView.HeaderName}" />
+		</Grid>
+		<PreviewCodeSnippet>
+			<Grid ColumnDefinitions="*,4,*"
+					RowDefinitions="Auto,*">
+				<WrapPanel Grid.Row="0"
+						Grid.Column="0"
+						Grid.ColumnSpan="3"
+						ItemSpacing="20"
+						LineSpacing="10"
+						Margin="0,0,0,20">
+					<Button Theme.Color="None"
+							Click="RunSampleStream">
+						Sample Stream
+					</Button>
+					<ComboBox Width="120"
+							ItemsSource="{x:Static tabs:TabMarkdownView.StreamSpeeds}"
+							SelectedItem="{Binding StreamSpeed, Mode=TwoWay}"
+							ToolTip.Tip="How fast tokens stream into the editor and MarkdownView" />
+					<ToggleSwitch IsChecked="{Binding LoopSample}"
+							OnContent="Loop Sample"
+							OffContent="Loop Sample" />
+					<ToggleSwitch x:Name="WordWrap"
+							IsChecked="True"
+							OnContent="Word Wrap"
+							OffContent="Word Wrap" />
+				</WrapPanel>
+				<TextEditor
+						x:Name="TextEditor"
+						Grid.Row="1"
+						Grid.Column="0"
+						WordWrap="{Binding ElementName=WordWrap, Path=IsChecked}" />
+				<GridSplitter Grid.Row="1"
+						Grid.Column="1"
+						ResizeDirection="Columns" />
+				<MarkdownView
+						x:Name="MarkdownView"
+						Grid.Row="1"
+						Grid.Column="2"
+						WordWrap="{Binding ElementName=WordWrap, Path=IsChecked}" />
+			</Grid>
+		</PreviewCodeSnippet>
+	</DockPanel>
+</UserControl>

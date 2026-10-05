@@ -1,0 +1,22 @@
+﻿using Cornerstone.Presentation.Media;
+
+namespace Cornerstone.Presentation.Controls.Documents
+{
+    /// <summary>
+    /// Italic element - markup helper for indicating italicized content.
+    /// Equivalent to a Span with FontStyle property set to FontStyles.Italic.
+    /// Can contain other inline elements.
+    /// </summary>
+    public sealed class Italic : Span
+    {
+        static Italic()
+        {
+            FontStyleProperty.OverrideDefaultValue<Italic>(FontStyle.Italic);
+        }
+
+        public Italic()
+        {
+            SetCurrentValue(FontStyleProperty, FontStyle.Italic);
+        }
+    }
+}

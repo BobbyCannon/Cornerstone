@@ -1,0 +1,10 @@
+<Project>
+	<Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+	<PropertyGroup>
+		<CornerstoneUseCompiledBindingsByDefault>true</CornerstoneUseCompiledBindingsByDefault>
+	</PropertyGroup>
+	<!-- This folder's parent Directory.Build.props stops the walk before Cornerstone/Directory.Build.props, which is what attaches the XAML name generator. -->
+	<ItemGroup>
+		<ProjectReference Include="$(MSBuildThisFileDirectory)..\..\Cornerstone.Generators\Cornerstone.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" SetTargetFramework="TargetFramework=netstandard2.0" GlobalPropertiesToRemove="TargetFrameworks;RuntimeIdentifier;RuntimeIdentifiers" />
+	</ItemGroup>
+</Project>

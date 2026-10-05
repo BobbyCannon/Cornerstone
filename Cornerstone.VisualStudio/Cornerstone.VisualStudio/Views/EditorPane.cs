@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Cornerstone.VisualStudio.Extensibility;
+using Cornerstone.VisualStudio.IntelliSense;
 using Cornerstone.VisualStudio.Services;
 using EnvDTE;
 using Microsoft.VisualStudio;
@@ -67,8 +68,9 @@ internal class EditorPane : WindowPane,
 	#region Fields
 
 	private BuildEvents _buildEvents;
-	private AvaloniaDesigner _content;
+	private CornerstoneDesigner _content;
 	private DTEEvents _dteEvents;
+	private Events _events;
 	private IVsFilterKeys2 _filterKeys;
 	private bool _hasCreatedCodeWindow;
 	private bool _isInitialized;
@@ -91,8 +93,8 @@ internal class EditorPane : WindowPane,
 		// which cannot return null or the designer will E_FAIL via 'Catastrophic COM error'. Note that the
 		// IVsCodeWindow is not attached until the call to InitializeEditorPane() which won't happen until
 		// the EditorPane is initialized and the underlying IVsTextBuffer is initialized at which point
-		// the AvaloniaDesigner is fully initialized and the previewer process is started
-		_content = new AvaloniaDesigner();
+		// the CornerstoneDesigner is fully initialized and the previewer process is started
+		_content = new CornerstoneDesigner();
 	}
 
 	#endregion
@@ -256,6 +258,40 @@ internal class EditorPane : WindowPane,
 			return VSConstants.E_FAIL;
 		}
 
+		if (XamlGoToDefinitionCommand.IsCommand(pguidCmdGroup, nCmdID))
+		{
+			var textView = _textEditorHost.HostedTextView;
+			if (XamlGoToDefinitionCommand.IsHandingOff(textView))
+			{
+				if (_textEditorHost.VsCodeWindow is IOleCommandTarget handingOff)
+				{
+					return handingOff.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+				}
+
+				return (int) Constants.OLECMDERR_E_NOTSUPPORTED;
+			}
+
+			var group = pguidCmdGroup;
+			var commandId = nCmdID;
+			var options = nCmdexecopt;
+			XamlGoToDefinitionCommand.Execute(textView, XamlGoToDefinitionCommand.GetEngine(), () =>
+			{
+				if (_textEditorHost.VsCodeWindow is IOleCommandTarget next)
+				{
+					next.Exec(ref group, commandId, options, IntPtr.Zero, IntPtr.Zero);
+				}
+			});
+			return VSConstants.S_OK;
+		}
+
+		// Ctrl+Space is Edit.CompleteWord on the doc view. The XML language service on the
+		// hosted code window often never forwards it to the text-view command filter.
+		if (XamlCompletionCommandHandler.IsInvokeCompletionCommand(pguidCmdGroup, nCmdID) &&
+			XamlCompletionCommandHandler.TryInvokeFromTextView(_textEditorHost.HostedTextView))
+		{
+			return VSConstants.S_OK;
+		}
+
 		if (_textEditorHost.VsCodeWindow is IOleCommandTarget oleCT)
 		{
 			return oleCT.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
@@ -324,13 +360,16 @@ internal class EditorPane : WindowPane,
 
 		// Sub to events related to building so we can respond accordingly
 		var dte = (DTE) Package.GetGlobalService(typeof(DTE));
-		_buildEvents = dte.Events.BuildEvents;
-		_dteEvents = dte.Events.DTEEvents;
+		_events = dte.Events;
 		_isPaused = dte.Mode == vsIDEMode.vsIDEModeDebug;
-
-		_buildEvents.OnBuildBegin += HandleBuildBegin;
-		_buildEvents.OnBuildDone += HandleBuildDone;
-		_dteEvents.ModeChanged += HandleModeChanged;
+		if (_events != null)
+		{
+			_buildEvents = _events.BuildEvents;
+			_dteEvents = _events.DTEEvents;
+			_buildEvents.OnBuildBegin += HandleBuildBegin;
+			_buildEvents.OnBuildDone += HandleBuildDone;
+			_dteEvents.ModeChanged += HandleModeChanged;
+		}
 
 		_settings = this.GetMefService<ICornerstoneSettings>();
 		// Modern Settings (Tools → Options) live in Extensibility; pull into MEF before applying.
@@ -350,7 +389,7 @@ internal class EditorPane : WindowPane,
 			_settings.DesignerSplitSwapped,
 			_settings.ZoomLevel);
 
-		// Pass the full IVsCodeWindow so AvaloniaDesigner can host native editor chrome
+		// Pass the full IVsCodeWindow so CornerstoneDesigner can host native editor chrome
 		// (Window → Split / scrollbar split grip). Text-view-only hosting cannot show that UI.
 		xamlEditorView.Start(
 			_project,
@@ -378,6 +417,29 @@ internal class EditorPane : WindowPane,
 		{
 			prgCmds[0].cmdf = (uint) (OLECMDF.OLECMDF_SUPPORTED | OLECMDF.OLECMDF_ENABLED);
 			return VSConstants.S_OK;
+		}
+
+		if (XamlGoToDefinitionCommand.QueryStatus(ref pguidCmdGroup, cCmds, prgCmds) == VSConstants.S_OK)
+		{
+			return VSConstants.S_OK;
+		}
+
+		if ((pguidCmdGroup == VSConstants.VSStd2K) && (prgCmds != null))
+		{
+			var handled = false;
+			for (var i = 0; i < cCmds; i++)
+			{
+				if (XamlCompletionCommandHandler.IsInvokeCompletionCommand(pguidCmdGroup, prgCmds[i].cmdID))
+				{
+					prgCmds[i].cmdf = (uint) (OLECMDF.OLECMDF_SUPPORTED | OLECMDF.OLECMDF_ENABLED);
+					handled = true;
+				}
+			}
+
+			if (handled)
+			{
+				return VSConstants.S_OK;
+			}
 		}
 
 		if (_textEditorHost.VsCodeWindow is IOleCommandTarget oleCT)
@@ -731,17 +793,38 @@ internal class EditorPane : WindowPane,
 
 	int IVsWindowFrameNotify2.OnClose(ref uint pgrfSaveOptions)
 	{
+		StopPreviewBecauseFrameIsClosing();
 		return VSConstants.S_OK;
 	}
 
 	int IVsWindowFrameNotify3.OnClose(ref uint pgrfSaveOptions)
 	{
+		StopPreviewBecauseFrameIsClosing();
 		return VSConstants.S_OK;
+	}
+
+	/// <summary>
+	/// The document frame is going away. WindowPane.Dispose often runs later, or not
+	/// at all while the buffer stays in the running document table. Leave the host
+	/// running and its render hook keeps dirtying bitmaps at Render priority, which
+	/// sits above the keyboard. The shell then ignores input until a resize pumps
+	/// another window message.
+	/// </summary>
+	private void StopPreviewBecauseFrameIsClosing()
+	{
+		try
+		{
+			_content?.SuspendPreviewForClose();
+		}
+		catch (Exception ex)
+		{
+			Log.Logger.Debug(ex, "Failed to stop preview while the document frame was closing");
+		}
 	}
 
 	int IVsWindowFrameNotify3.OnShow(int fShow)
 	{
-		// Tab / frame visibility drives host lifetime (see AvaloniaDesigner.SetDocumentVisible).
+		// Tab / frame visibility drives host lifetime (see CornerstoneDesigner.SetDocumentVisible).
 		// Note: FRAMESHOW_Hidden and FRAMESHOW_WinHidden share value 0 — only list one.
 		switch ((__FRAMESHOW) fShow)
 		{
@@ -803,6 +886,12 @@ internal class EditorPane : WindowPane,
 
 	int IVsBackForwardNavigation.NavigateTo(IVsWindowFrame pFrame, string bstrData, object punk)
 	{
+		ThreadHelper.ThrowIfNotOnUIThread();
+		if (XamlGoToDefinitionNavigator.TryRestoreNavigationPoint(_textEditorHost.HostedTextView, bstrData))
+		{
+			return VSConstants.S_OK;
+		}
+
 		return (_textEditorHost.VsCodeWindow as IVsBackForwardNavigation)?.NavigateTo(pFrame, bstrData, punk) ?? VSConstants.E_PENDING;
 	}
 
@@ -819,6 +908,12 @@ internal class EditorPane : WindowPane,
 
 	bool IVsBackForwardNavigation2.RequestAddNavigationItem(IVsWindowFrame frame)
 	{
+		ThreadHelper.ThrowIfNotOnUIThread();
+		if (XamlGoToDefinitionNavigator.RememberNavigationPoint(_textEditorHost.HostedTextView, frame))
+		{
+			return true;
+		}
+
 		return (_textEditorHost.VsCodeWindow as IVsBackForwardNavigation2)?.RequestAddNavigationItem(frame) ?? false;
 	}
 

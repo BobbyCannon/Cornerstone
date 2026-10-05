@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Cornerstone.VisualStudio.Core.Manipulation;
+using Cornerstone.VisualStudio.Core.Parsing;
 using Cornerstone.VisualStudio.Models;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
@@ -21,6 +22,11 @@ internal class XamlTextManipulatorRegistrar
 	private readonly ITextBuffer _buffer;
 	private bool _isChangingText;
 	private readonly IWpfTextView _textView;
+
+	/// <summary>
+	/// Characters before the caret to inspect when deciding if we are inside a tag.
+	/// </summary>
+	private const int OpenTagLookback = 8192;
 
 	/// <summary>
 	/// When &gt; 0, buffer changes from IntelliSense commit (etc.) skip auto tag manipulators.
@@ -107,15 +113,27 @@ internal class XamlTextManipulatorRegistrar
 			if (_buffer.Properties.TryGetProperty<XamlBufferMetadata>(typeof(XamlBufferMetadata), out var metadata) &&
 				(metadata.CompletionMetadata != null))
 			{
+				var snapshot = _buffer.CurrentSnapshot;
+				if (snapshot.Length == 0)
+				{
+					return;
+				}
+
+				string text = null;
 				var sw = Stopwatch.StartNew();
-				var text = _buffer.CurrentSnapshot.GetText();
 
 				foreach (var change in e.Changes.ToList())
 				{
-					// Guard: NewPosition can be at EOF after delete.
-					if (text.Length == 0)
+					if (!ShouldRunManipulator(snapshot, change))
 					{
 						continue;
+					}
+
+					// Full snapshot only when a change can affect tags (not every content keystroke).
+					text ??= snapshot.GetText();
+					if (text.Length == 0)
+					{
+						break;
 					}
 
 					var pos = Math.Min(Math.Max(0, change.NewPosition), text.Length - 1);
@@ -141,6 +159,29 @@ internal class XamlTextManipulatorRegistrar
 		{
 			_isChangingText = false;
 		}
+	}
+
+	/// <summary>
+	/// Tag sync is only needed inside an open tag, or when the edit itself contains markup.
+	/// Typing element content must not allocate or parse the whole document.
+	/// </summary>
+	private static bool ShouldRunManipulator(ITextSnapshot snapshot, ITextChange change)
+	{
+		if (XamlEditCompleteness.ChangeLooksLikeMarkup(change.OldText, change.NewText))
+		{
+			return true;
+		}
+
+		var pos = Math.Min(Math.Max(0, change.NewPosition), snapshot.Length);
+		var lookbackStart = Math.Max(0, pos - OpenTagLookback);
+		var length = pos - lookbackStart;
+		if (length <= 0)
+		{
+			return false;
+		}
+
+		var prefix = snapshot.GetText(lookbackStart, length);
+		return XamlEditCompleteness.IsInsideOpenTag(prefix);
 	}
 
 	private void TextView_Closed(object sender, EventArgs e)

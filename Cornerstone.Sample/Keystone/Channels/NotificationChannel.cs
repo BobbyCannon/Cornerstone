@@ -1,8 +1,8 @@
 #region References
 
-using Avalonia.Controls.Notifications;
 using Cornerstone.Keystone;
 using Cornerstone.Keystone.Messages;
+using Cornerstone.Presentation.Controls.Notifications;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
 

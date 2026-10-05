@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Cornerstone.Data;
+using Cornerstone.Reflection;
 using Cornerstone.Runtime;
 using Cornerstone.Web;
 
@@ -14,6 +15,8 @@ namespace Cornerstone.Sync;
 /// <summary>
 /// The details to ask a sync client for changes.
 /// </summary>
+[SourceReflection]
+[Notifiable(["*"])]
 [Updateable(UpdateableAction.All, ["*"])]
 public partial class SyncRequest : ServiceRequest<SyncObject>
 {
@@ -48,12 +51,12 @@ public partial class SyncRequest : ServiceRequest<SyncObject>
 	/// <summary>
 	/// The start date and time to get changes for.
 	/// </summary>
-	public DateTime Since { get; set; }
+	public partial DateTime Since { get; set; }
 
 	/// <summary>
 	/// The end date and time to get changes for.
 	/// </summary>
-	public DateTime Until { get; set; }
+	public partial DateTime Until { get; set; }
 
 	#endregion
 

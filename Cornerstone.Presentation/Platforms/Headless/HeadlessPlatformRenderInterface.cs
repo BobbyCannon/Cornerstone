@@ -1,0 +1,806 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
+using Cornerstone.Presentation.Layout;
+using Cornerstone.Presentation.Media;
+using Cornerstone.Presentation.Media.Imaging;
+using Cornerstone.Presentation.Media.TextFormatting;
+using Cornerstone.Presentation.Platform;
+using Cornerstone.Presentation.Platform.Surfaces;
+
+namespace Cornerstone.Presentation.Headless
+{
+    internal class HeadlessPlatformRenderInterface : IPlatformRenderInterface, IPlatformRenderInterfaceContext
+    {
+        public static void Initialize()
+        {
+            PresentationLocator.CurrentMutable
+                .Bind<IPlatformRenderInterface>().ToConstant(new HeadlessPlatformRenderInterface())
+                .Bind<IFontManagerImpl>().ToConstant(new HeadlessFontManagerStub());
+        }
+
+        public IPlatformRenderInterfaceContext CreateBackendContext(IPlatformGraphicsContext? graphicsContext) => this;
+
+        public bool SupportsIndividualRoundRects => false;
+
+        public AlphaFormat DefaultAlphaFormat => AlphaFormat.Premul;
+
+        public PixelFormat DefaultPixelFormat => PixelFormat.Rgba8888;
+        public bool IsSupportedBitmapPixelFormat(PixelFormat format) => true;
+        public bool SupportsRegions => false;
+        public IPlatformRenderInterfaceRegion CreateRegion() => throw new NotSupportedException();
+
+        public IGeometryImpl CreateEllipseGeometry(Rect rect) => new HeadlessGeometryStub(rect);
+
+        public IGeometryImpl CreateLineGeometry(Point p1, Point p2)
+        {
+            return new HeadlessLineGeometryContextStub(p1, p2);
+        }
+
+        public IGeometryImpl CreateRectangleGeometry(Rect rect)
+        {
+            return new HeadlessRectangleGeometryContextStub(rect);
+        }
+
+        public IStreamGeometryImpl CreateStreamGeometry() => new HeadlessStreamingGeometryStub();
+
+        public IGeometryImpl CreateGeometryGroup(FillRule fillRule, IReadOnlyList<IGeometryImpl> children) =>
+            new HeadlessGeometryStub(children.Count != 0 ?
+                children.Select(c => c.Bounds).Aggregate((a, b) => a.Union(b)) :
+                default);
+
+        public IGeometryImpl CreateCombinedGeometry(GeometryCombineMode combineMode, IGeometryImpl g1, IGeometryImpl g2) 
+            => new HeadlessGeometryStub(g1.Bounds.Union(g2.Bounds));
+
+        public IRenderTarget CreateRenderTarget(IEnumerable<IPlatformRenderSurface> surfaces) => new HeadlessRenderTarget();
+        public IDrawingContextLayerImpl CreateOffscreenRenderTarget(PixelSize pixelSize, Vector scaling,
+            bool enableTextAntialiasing) => 
+            new HeadlessBitmapStub(pixelSize, scaling * 96);
+
+        public bool IsLost => false;
+        public IReadOnlyDictionary<Type, object> PublicFeatures { get; } = new Dictionary<Type, object>();
+        public PixelSize? MaxOffscreenRenderTargetPixelSize => null;
+        public object? TryGetFeature(Type featureType) => null;
+
+        public IRenderTargetBitmapImpl CreateRenderTargetBitmap(PixelSize size, Vector dpi)
+        {
+            return new HeadlessBitmapStub(size, dpi);
+        }
+
+        public IWriteableBitmapImpl CreateWriteableBitmap(PixelSize size, Vector dpi, PixelFormat format, AlphaFormat alphaFormat)
+        {
+            return new HeadlessBitmapStub(size, dpi);
+        }
+
+        public IBitmapImpl LoadBitmap(string fileName)
+        {
+            return new HeadlessBitmapStub(new Size(1, 1), new Vector(96, 96));
+        }
+
+        public IBitmapImpl LoadBitmap(Stream stream)
+        {
+            return new HeadlessBitmapStub(new Size(1, 1), new Vector(96, 96));
+        }
+
+        public IWriteableBitmapImpl LoadWriteableBitmapToWidth(Stream stream, int width,
+            BitmapInterpolationMode interpolationMode = BitmapInterpolationMode.HighQuality)
+        {
+            return new HeadlessBitmapStub(new Size(1, 1), new Vector(96, 96));
+        }
+
+        public IWriteableBitmapImpl LoadWriteableBitmapToHeight(Stream stream, int height,
+            BitmapInterpolationMode interpolationMode = BitmapInterpolationMode.HighQuality)
+        {
+            return new HeadlessBitmapStub(new Size(1, 1), new Vector(96, 96));
+        }
+
+        public IWriteableBitmapImpl LoadWriteableBitmap(string fileName)
+        {
+            return new HeadlessBitmapStub(new Size(1, 1), new Vector(96, 96));
+        }
+
+        public IWriteableBitmapImpl LoadWriteableBitmap(Stream stream)
+        {
+            return new HeadlessBitmapStub(new Size(1, 1), new Vector(96, 96));
+        }
+
+        public IBitmapImpl LoadBitmap(PixelFormat format, AlphaFormat alphaFormat, IntPtr data, PixelSize size, Vector dpi, int stride)
+        {
+            return new HeadlessBitmapStub(new Size(1, 1), new Vector(96, 96));
+        }        
+
+        public IBitmapImpl LoadBitmapToWidth(Stream stream, int width, BitmapInterpolationMode interpolationMode = BitmapInterpolationMode.HighQuality)
+        {
+            return new HeadlessBitmapStub(new Size(width, width), new Vector(96, 96));
+        }
+
+        public IBitmapImpl LoadBitmapToHeight(Stream stream, int height, BitmapInterpolationMode interpolationMode = BitmapInterpolationMode.HighQuality)
+        {
+            return new HeadlessBitmapStub(new Size(height, height), new Vector(96, 96));
+        }
+
+        public IBitmapImpl ResizeBitmap(IBitmapImpl bitmapImpl, PixelSize destinationSize, BitmapInterpolationMode interpolationMode = BitmapInterpolationMode.HighQuality)
+        {
+            return new HeadlessBitmapStub(destinationSize, new Vector(96, 96));
+        }
+
+        public IGeometryImpl BuildGlyphRunGeometry(GlyphRun glyphRun)
+        {
+            return new HeadlessGeometryStub(glyphRun.Bounds);
+        }
+
+        public IGlyphRunImpl CreateGlyphRun(
+            GlyphTypeface glyphTypeface, 
+            double fontRenderingEmSize,
+            IReadOnlyList<GlyphInfo> glyphInfos, 
+            Point baselineOrigin)
+        {
+            return new HeadlessGlyphRunStub(glyphTypeface, fontRenderingEmSize, baselineOrigin);
+        }
+
+        internal class HeadlessGlyphRunStub : IGlyphRunImpl
+        {
+            public HeadlessGlyphRunStub(
+                GlyphTypeface glyphTypeface,
+                double fontRenderingEmSize,
+                Point baselineOrigin)
+            {
+                GlyphTypeface = glyphTypeface;
+                FontRenderingEmSize = fontRenderingEmSize;
+                BaselineOrigin = baselineOrigin;
+            }
+
+            public Rect Bounds { get; }
+
+            public Point BaselineOrigin { get; }
+
+            public GlyphTypeface GlyphTypeface { get; }
+
+            public double FontRenderingEmSize { get; }           
+
+            public void Dispose()
+            {
+            }
+
+            public IReadOnlyList<float> GetIntersections(float lowerBound, float upperBound)
+                => Array.Empty<float>();
+        }
+
+        private class HeadlessGeometryStub : IGeometryImpl
+        {
+            public HeadlessGeometryStub(Rect bounds)
+            {
+                Bounds = bounds;
+            }
+
+            public Rect Bounds { get; set; }
+            
+            public double ContourLength { get; } = 0;
+            
+            public virtual bool FillContains(Point point) => Bounds.Contains(point);
+
+            public Rect GetRenderBounds(IPen? pen)
+            {
+                if(pen is null)
+                {
+                    return Bounds;
+                }
+
+                return Bounds.Inflate(pen.Thickness / 2);
+            }
+
+            public IGeometryImpl GetWidenedGeometry(IPen pen) => this;
+
+            public bool StrokeContains(IPen? pen, Point point)
+            {
+                return false;
+            }
+
+            public IGeometryImpl Intersect(IGeometryImpl geometry)
+            {
+                var intersection = geometry.Bounds.Intersect(Bounds);
+                if (intersection == default)
+                {
+                    // In the case that a 0-width or 0-height geometry, like a line is being tested
+                    var rect1 = Bounds;
+                    var rect2 = geometry.Bounds;
+                    var newLeft = (rect1.X > rect2.X) ? rect1.X : rect2.X;
+                    var newTop = (rect1.Y > rect2.Y) ? rect1.Y : rect2.Y;
+                    var newRight = (rect1.Right < rect2.Right) ? rect1.Right : rect2.Right;
+                    var newBottom = (rect1.Bottom < rect2.Bottom) ? rect1.Bottom : rect2.Bottom;
+
+                    if ((newRight >= newLeft) && (newBottom >= newTop))
+                    {
+                        intersection = new Rect(newLeft, newTop, newRight - newLeft, newBottom - newTop);
+                    }
+                }
+
+                return new HeadlessGeometryStub(intersection);
+            }
+
+            public ITransformedGeometryImpl WithTransform(Matrix transform) =>
+                new HeadlessTransformedGeometryStub(this, transform);
+
+            public bool TryGetPointAtDistance(double distance, out Point point)
+            {
+                point = new Point();
+                return false;
+            }
+
+            public bool TryGetPointAndTangentAtDistance(double distance, out Point point, out Point tangent)
+            {
+                point = new Point();
+                tangent = new Point();
+                return false;
+            }
+
+            public bool TryGetSegment(double startDistance, double stopDistance, bool startOnBeginFigure, [NotNullWhen(true)] out IGeometryImpl? segmentGeometry)
+            {
+                segmentGeometry = null;
+                return false;
+            }
+
+            public virtual IntersectionResult GetFillIntersectionResult(IGeometryImpl geometry)
+            {
+                var intersection = Intersect(geometry);
+
+                if (intersection?.Bounds.Size != new Size())
+                {
+                    var bounds = GetRenderBounds(null);
+                    var otherBounds = geometry.GetRenderBounds(null);
+
+                    if (bounds.Contains(otherBounds))
+                        return IntersectionResult.FullyInside;
+
+                    if (otherBounds.Contains(bounds))
+                        return IntersectionResult.FullyContains;
+
+                    return IntersectionResult.Intersects;
+                }
+
+                return IntersectionResult.Empty;
+            }
+        }
+
+        private class HeadlessTransformedGeometryStub : HeadlessGeometryStub, ITransformedGeometryImpl, IHeadlessGeometryWithEdges
+        {
+            private List<Point>? _points;
+            public HeadlessTransformedGeometryStub(IGeometryImpl b, Matrix transform) : this(Fix(b, transform))
+            {
+
+            }
+
+            private static (IGeometryImpl, Matrix, Rect) Fix(IGeometryImpl b, Matrix transform)
+            {
+                if (b is HeadlessTransformedGeometryStub transformed)
+                {
+                    b = transformed.SourceGeometry;
+                    transform = transformed.Transform * transform;
+                }
+
+                return (b, transform, b.Bounds.TransformToAABB(transform));
+            }
+
+            private HeadlessTransformedGeometryStub((IGeometryImpl b, Matrix transform, Rect bounds) fix) : base(fix.bounds)
+            {
+                SourceGeometry = fix.b;
+                Transform = fix.transform;
+            }
+
+
+            public IGeometryImpl SourceGeometry { get; }
+            public Matrix Transform { get; }
+
+            public List<Point> Points
+            {
+                get
+                {
+                    if (SourceGeometry is IHeadlessGeometryWithEdges geometryWithEdges)
+                    {
+                        return _points ??= geometryWithEdges.Points.Select(x => x.Transform(Transform)).ToList();
+                    }
+
+                    return [];
+                }
+            }
+        }
+
+        private abstract class HeadlessGeometryWithEdgesStub : HeadlessGeometryStub, IHeadlessGeometryWithEdges
+        {
+            protected HeadlessGeometryWithEdgesStub(Rect bounds) : base(bounds)
+            {
+            }
+
+            public abstract List<Point> Points { get; }
+
+            public override IntersectionResult GetFillIntersectionResult(IGeometryImpl geometry)
+            {
+                if (geometry is IHeadlessGeometryWithEdges stub)
+                {
+                    var axes = (this as IHeadlessGeometryWithEdges).GetAxes();
+                    axes.AddRange(stub.GetAxes());
+
+                    foreach (var axis in axes)
+                    {
+                        var (min, max) = (this as IHeadlessGeometryWithEdges).ProjectionOnAxis(axis);
+                        var projection2 = stub.ProjectionOnAxis(axis);
+
+                        if (max < projection2.min || projection2.max < min)
+                            return IntersectionResult.Empty;
+                    }
+
+                    var bounds = GetRenderBounds(null);
+                    var otherBounds = geometry.GetRenderBounds(null);
+
+                    if (bounds.Contains(otherBounds))
+                        return IntersectionResult.FullyInside;
+
+                    if (otherBounds.Contains(bounds))
+                        return IntersectionResult.FullyContains;
+
+                    return IntersectionResult.Intersects;
+                }
+
+                return base.GetFillIntersectionResult(geometry);
+            }
+        }
+
+        private class HeadlessLineGeometryContextStub : HeadlessGeometryWithEdgesStub
+        {
+            private readonly List<Point> _points;
+
+            public HeadlessLineGeometryContextStub(Point p1, Point p2) : base(new Rect(new Point(Math.Min(p1.X, p2.X), Math.Min(p1.Y, p2.Y)),
+                new Point(Math.Max(p1.X, p2.X), Math.Max(p1.Y, p2.Y))))
+            {
+                _points = new List<Point>();
+                _points.Add(p1);
+                _points.Add(p2);
+            }
+
+            public override List<Point> Points => _points;
+        }
+
+        private class HeadlessRectangleGeometryContextStub : HeadlessGeometryWithEdgesStub
+        {
+            private readonly List<Point> _points;
+
+            public HeadlessRectangleGeometryContextStub(Rect bounds) : base(bounds)
+            {
+                _points = new List<Point>();
+                _points.Add(bounds.TopLeft);
+                _points.Add(bounds.TopRight);
+                _points.Add(bounds.BottomLeft);
+                _points.Add(bounds.BottomRight);
+            }
+
+            public override List<Point> Points => _points;
+        }
+
+        internal interface IHeadlessGeometryWithEdges
+        {
+            List<Point> Points { get; }
+
+            public (double min, double max) ProjectionOnAxis(Vector axis)
+            {
+                double min = double.PositiveInfinity, max = double.NegativeInfinity;
+
+                foreach (var point in Points)
+                {
+                    var p = Vector.Dot(axis, new Vector(point.X, point.Y));
+
+                    if (p < min)
+                    {
+                        min = p;
+                    }
+
+                    if (p > max)
+                    {
+                        max = p;
+                    }
+                }
+
+                return (min, max);
+            }
+
+            public List<Vector> GetAxes()
+            {
+                List<Vector> axes = new List<Vector>();
+
+                for (var i = 0; i < Points.Count; i++)
+                {
+                    var point = Points[i];
+                    var otherPoint = Points[(i + i) % Points.Count];
+                    var edge = new Vector(point.X - otherPoint.X, point.Y - otherPoint.Y);
+                    axes.Add(new Vector(-edge.Y, edge.X));
+                }
+
+                return axes;
+            }
+        }
+
+        private class HeadlessStreamingGeometryStub : HeadlessGeometryStub, IStreamGeometryImpl
+        {
+            private HeadlessStreamingGeometryContextStub _context;
+
+            public HeadlessStreamingGeometryStub() : base(default)
+            {
+                _context = new HeadlessStreamingGeometryContextStub(this);
+            }
+
+            public IStreamGeometryImpl Clone()
+            {
+                return this;
+            }
+
+            public IStreamGeometryContextImpl Open()
+            {
+                return _context;
+            }
+
+            public override bool FillContains(Point point)
+            {
+                return _context.FillContains(point);
+            }
+
+            public override IntersectionResult GetFillIntersectionResult(IGeometryImpl geometry)
+            {
+                if (geometry is IHeadlessGeometryWithEdges stub)
+                    return _context.FillContains(stub);
+
+                return base.GetFillIntersectionResult(geometry);
+            }
+
+            private class HeadlessStreamingGeometryContextStub : IStreamGeometryContextImpl, IHeadlessGeometryWithEdges
+            {
+                private readonly HeadlessStreamingGeometryStub _parent;
+                private List<Point> _points = new List<Point>();
+
+                public List<Point> Points => _points;
+
+                public HeadlessStreamingGeometryContextStub(HeadlessStreamingGeometryStub parent)
+                {
+                    _parent = parent;
+                }
+
+                private void Track(Point pt)
+                {
+                    _points.Add(pt);
+                }
+
+                public Rect CalculateBounds()
+                {
+                    var left = double.MaxValue;
+                    var right = double.MinValue;
+                    var top = double.MaxValue;
+                    var bottom = double.MinValue;
+
+                    foreach (var p in _points)
+                    {
+                        left = Math.Min(p.X, left);
+                        right = Math.Max(p.X, right);
+                        top = Math.Min(p.Y, top);
+                        bottom = Math.Max(p.Y, bottom);
+                    }
+
+                    return new Rect(new Point(left, top), new Point(right, bottom));
+                }
+
+                public void Dispose()
+                {
+                    _parent.Bounds = CalculateBounds();
+                }
+
+                public void ArcTo(Point point, Size size, double rotationAngle, bool isLargeArc, SweepDirection sweepDirection, bool isStroked = true)
+                    => Track(point);
+
+                public void BeginFigure(Point startPoint, bool isFilled = true) => Track(startPoint);
+
+                public void CubicBezierTo(Point point1, Point point2, Point point3, bool isStroked = true)
+                {
+                    Track(point1);
+                    Track(point2);
+                    Track(point3);
+                }
+
+                public void QuadraticBezierTo(Point control, Point endPoint, bool isStroked = true)
+                {
+                    Track(control);
+                    Track(endPoint);
+                }
+
+                public void LineTo(Point point, bool isStroked = true) => Track(point);
+
+                public void EndFigure(bool isClosed)
+                {
+                    Dispose();
+                }
+
+                public void SetFillRule(FillRule fillRule)
+                {
+
+                }
+
+                public bool FillContains(Point point)
+                {
+                    // Use the algorithm from https://www.blackpawn.com/texts/pointinpoly/default.html
+                    // to determine if the point is in the geometry (since it will always be convex in this situation)
+                    for (int i = 0; i < _points.Count; i++)
+                    {
+                        var a = _points[i];
+                        var b = _points[(i + 1) % _points.Count];
+                        var c = _points[(i + 2) % _points.Count];
+
+                        Vector v0 = c - a;
+                        Vector v1 = b - a;
+                        Vector v2 = point - a;
+
+                        var dot00 = v0 * v0;
+                        var dot01 = v0 * v1;
+                        var dot02 = v0 * v2;
+                        var dot11 = v1 * v1;
+                        var dot12 = v1 * v2;
+
+
+                        var invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+                        var u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+                        var v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+                        if ((u >= 0) && (v >= 0) && (u + v < 1))
+                            return true;
+                    }
+                    return false;
+                }
+
+                public IntersectionResult FillContains(IHeadlessGeometryWithEdges geometry)
+                {
+                    var axes = (this as IHeadlessGeometryWithEdges).GetAxes();
+                    axes.AddRange(geometry.GetAxes());
+
+                    foreach (var axis in axes)
+                    {
+                        var (min, max) = (this as IHeadlessGeometryWithEdges).ProjectionOnAxis(axis);
+                        var projection2 = geometry.ProjectionOnAxis(axis);
+
+                        if (max < projection2.min || projection2.max < min)
+                            return IntersectionResult.Empty;
+                    }
+
+                    return IntersectionResult.Intersects;
+                }
+            }
+        }
+
+        private class HeadlessBitmapStub : IBitmapImpl, IDrawingContextLayerImpl, IWriteableBitmapImpl, IRenderTargetBitmapImpl
+        {
+            public Size Size { get; }
+
+            public HeadlessBitmapStub(Size size, Vector dpi)
+            {
+                Size = size;
+                Dpi = dpi;
+                var pixel = Size * (Dpi / 96);
+                PixelSize = new PixelSize(Math.Max(1, (int)pixel.Width), Math.Max(1, (int)pixel.Height));
+            }
+
+            public HeadlessBitmapStub(PixelSize size, Vector dpi)
+            {
+                PixelSize = size;
+                Dpi = dpi;
+                Size = PixelSize.ToSizeWithDpi(dpi);
+            }
+
+            public void Dispose()
+            {
+
+            }
+
+            public IDrawingContextImpl CreateDrawingContext(bool useScaledDrawing)
+            {
+                return new HeadlessDrawingContextStub();
+            }
+
+            public IDrawingContextImpl CreateDrawingContext()
+            {
+                return new HeadlessDrawingContextStub();
+            }
+
+            public RenderTargetProperties Properties => default;
+
+            public bool IsCorrupted => false;
+
+            public void Blit(IDrawingContextImpl context)
+            {
+                
+            }
+
+            public bool CanBlit => false;
+
+            public Vector Dpi { get; }
+            public PixelSize PixelSize { get; }
+            public PixelFormat? Format => PixelFormat.Rgba8888;
+            public AlphaFormat? AlphaFormat => Platform.AlphaFormat.Premul;
+            public int Version { get; set; }
+
+            public void Save(Stream stream, BitmapEncoderOptions options)
+            {
+            }
+
+            public ILockedFramebuffer Lock()
+            {
+                Version++;
+                var mem = Marshal.AllocHGlobal(PixelSize.Width * PixelSize.Height * 4);
+                return new LockedFramebuffer(mem, PixelSize, PixelSize.Width * 4, Dpi, PixelFormat.Rgba8888,
+                    Platform.AlphaFormat.Premul, () => Marshal.FreeHGlobal(mem));
+            }
+        }
+
+        internal class HeadlessDrawingContextStub : IDrawingContextImpl
+        {
+            public void Dispose()
+            {
+
+            }
+
+            public Matrix Transform { get; set; }
+
+            public void Clear(Color color)
+            {
+
+            }
+
+            public IDrawingContextLayerImpl CreateLayer(PixelSize size)
+            {
+                return new HeadlessBitmapStub(size, new Vector(96, 96));
+            }
+
+            public void PushClip(Rect clip)
+            {
+
+            }
+
+            public void PushClip(IPlatformRenderInterfaceRegion region)
+            {
+                
+            }
+
+            public void PopClip()
+            {
+
+            }
+
+            public void PushLayer(Rect bounds)
+            {
+            }
+
+            public void PopLayer()
+            {
+            }
+
+            public void PushOpacity(double opacity, Rect? rect)
+            {
+
+            }
+
+            public void PopOpacity()
+            {
+
+            }
+
+            public void PushOpacityMask(IBrush mask, Rect bounds)
+            {
+
+            }
+
+            public void PopOpacityMask()
+            {
+
+            }
+
+            public void PushGeometryClip(IGeometryImpl clip)
+            {
+
+            }
+
+            public void PopGeometryClip()
+            {
+
+            }
+
+            public object? GetFeature(Type t)
+            {
+                return null;
+            }
+
+            public void DrawLine(IPen? pen, Point p1, Point p2)
+            {
+            }
+
+            public void DrawGeometry(IBrush? brush, IPen? pen, IGeometryImpl geometry)
+            {
+            }
+
+            public void DrawBitmap(IBitmapImpl source, double opacity, Rect sourceRect, Rect destRect)
+            {
+                
+            }
+
+            public void DrawBitmap(IBitmapImpl source, IBrush opacityMask, Rect opacityMaskRect, Rect destRect)
+            {
+                
+            }
+
+            public void DrawRectangle(IBrush? brush, IPen? pen, RoundedRect rect, BoxShadows boxShadow = default)
+            {
+                
+            }
+
+            public void DrawRegion(IBrush? brush, IPen? pen, IPlatformRenderInterfaceRegion region)
+            {
+                
+            }
+
+            public void DrawEllipse(IBrush? brush, IPen? pen, Rect rect)
+            {
+            }
+
+            public void DrawGlyphRun(IBrush? foreground, IGlyphRunImpl glyphRun)
+            {
+                
+            }
+
+            public void PushClip(RoundedRect clip)
+            {
+                
+            }
+
+            public void PushRenderOptions(RenderOptions renderOptions)
+            {
+                
+            }
+
+            public void PopRenderOptions()
+            {
+                
+            }
+
+            public void PushTextOptions(TextOptions textOptions)
+            {
+                // No-op in headless stub
+            }
+
+            public void PopTextOptions()
+            {
+                // No-op in headless stub
+            }
+        }
+
+        private class HeadlessRenderTarget : IRenderTarget
+        {
+            public RenderTargetProperties Properties => default;
+
+            public void Dispose()
+            {
+
+            }
+
+            public IDrawingContextImpl CreateDrawingContext(bool useScaledDrawing)
+            {
+                return new HeadlessDrawingContextStub();
+            }
+
+            public IDrawingContextImpl CreateDrawingContext(IRenderTarget.RenderTargetSceneInfo sceneInfo,
+                out RenderTargetDrawingContextProperties properties)
+            {
+                properties = default;
+                return new HeadlessDrawingContextStub();
+            }
+        }
+
+        public void Dispose()
+        {
+            
+        }
+    }
+}

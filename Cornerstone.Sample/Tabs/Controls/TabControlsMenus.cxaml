@@ -1,0 +1,90 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		mc:Ignorable="d" d:DesignHeight="500" d:DesignWidth="800"
+		x:Class="Cornerstone.Sample.Tabs.Controls.TabControlsMenus">
+	<DockPanel>
+		<Menu DockPanel.Dock="Top">
+			<MenuItem Header="_File">
+				<MenuItem Header="_New" InputGesture="Ctrl+N" />
+				<MenuItem Header="_Open…" InputGesture="Ctrl+O" />
+				<MenuItem Header="-" />
+				<MenuItem Header="_Save" InputGesture="Ctrl+S" />
+				<MenuItem Header="Save _As…" />
+				<MenuItem Header="-" />
+				<MenuItem Header="E_xit" />
+			</MenuItem>
+			<MenuItem Header="_Edit">
+				<MenuItem Header="_Undo" InputGesture="Ctrl+Z" />
+				<MenuItem Header="_Redo" InputGesture="Ctrl+Y" />
+				<MenuItem Header="-" />
+				<MenuItem Header="Cu_t" InputGesture="Ctrl+X" />
+				<MenuItem Header="_Copy" InputGesture="Ctrl+C" />
+				<MenuItem Header="_Paste" InputGesture="Ctrl+V" />
+				<MenuItem Header="_Disabled" IsEnabled="False" />
+			</MenuItem>
+			<MenuItem Header="_View">
+				<MenuItem Header="Status bar" ToggleType="CheckBox" IsChecked="True" />
+				<MenuItem Header="Word wrap" ToggleType="CheckBox" />
+				<MenuItem Header="-" />
+				<MenuItem Header="Zoom">
+					<MenuItem Header="100%" />
+					<MenuItem Header="125%" />
+					<MenuItem Header="150%" />
+				</MenuItem>
+			</MenuItem>
+			<MenuItem Header="_Help">
+				<MenuItem Header="About Cornerstone" />
+			</MenuItem>
+		</Menu>
+		<ScrollViewer>
+			<StackPanel Margin="16" Spacing="16">
+				<SelectableTextBlock TextWrapping="Wrap">
+					Menu and MenuItem: nested items, gestures, separators, disabled, and checkable items.
+					Right-click the card for a context menu (same MenuItem model as a flyout).
+				</SelectableTextBlock>
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource Background06}"
+						BorderThickness="1"
+						CornerRadius="12"
+						Padding="20"
+						MinHeight="120">
+					<Border.ContextFlyout>
+						<MenuFlyout>
+							<MenuItem Header="Cut" InputGesture="Ctrl+X" />
+							<MenuItem Header="Copy" InputGesture="Ctrl+C" />
+							<MenuItem Header="Paste" InputGesture="Ctrl+V" />
+							<MenuItem Header="-" />
+							<MenuItem Header="More">
+								<MenuItem Header="Select all" />
+								<MenuItem Header="Find…" />
+							</MenuItem>
+						</MenuFlyout>
+					</Border.ContextFlyout>
+					<TextBlock Text="Right-click this card"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center"
+							Foreground="{DynamicResource Foreground04}" />
+				</Border>
+				<HeaderedContentControl Header="Drop-down (MenuFlyout)">
+					<DropDownButton Content="Open menu"
+							HorizontalAlignment="Left"
+							Width="160">
+						<DropDownButton.Flyout>
+							<MenuFlyout Placement="BottomEdgeAlignedLeft">
+								<MenuItem Header="Item 1">
+									<MenuItem Header="Subitem 1" />
+									<MenuItem Header="Subitem 2" />
+								</MenuItem>
+								<MenuItem Header="Item 2" InputGesture="Ctrl+A" />
+								<MenuItem Header="Item 3" />
+							</MenuFlyout>
+						</DropDownButton.Flyout>
+					</DropDownButton>
+				</HeaderedContentControl>
+			</StackPanel>
+		</ScrollViewer>
+	</DockPanel>
+</UserControl>

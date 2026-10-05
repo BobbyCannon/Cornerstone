@@ -1,9 +1,9 @@
-﻿#region References
+#region References
 
 using System.Collections.Generic;
 using Cornerstone.VisualStudio.Core;
 using Cornerstone.VisualStudio.Core.Manipulation;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
@@ -30,7 +30,7 @@ public class ManipulatorTestBase
 		var manipulations = manipulator.ManipulateText(change);
 		var actualOutput = ApplyManipulations(inputText, manipulations);
 
-		Assert.Equal(expectedOutput, actualOutput);
+		Assert.AreEqual(expectedOutput, actualOutput);
 	}
 
 	/// <summary>
@@ -49,7 +49,7 @@ public class ManipulatorTestBase
 		var manipulations = manipulator.ManipulateText(change);
 		var actualOutput = ApplyManipulations(inputText, manipulations);
 
-		Assert.Equal(expectedOutput, actualOutput);
+		Assert.AreEqual(expectedOutput, actualOutput);
 	}
 
 	private string ApplyManipulations(string text, IList<TextManipulation> manipulations)

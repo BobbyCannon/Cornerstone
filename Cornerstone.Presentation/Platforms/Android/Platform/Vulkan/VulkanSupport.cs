@@ -1,0 +1,71 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Cornerstone.Presentation.Platform;
+using Cornerstone.Presentation.Platform.Surfaces;
+using Cornerstone.Presentation.Vulkan;
+
+namespace Cornerstone.Presentation.Android.Platform.Vulkan
+{
+    internal partial class VulkanSupport
+    {
+        [LibraryImport("libvulkan.so", StringMarshalling = StringMarshalling.Utf8)]
+        private static partial IntPtr vkGetInstanceProcAddr(IntPtr instance, string name);
+
+        public static VulkanPlatformGraphics? TryInitialize(VulkanOptions options) =>
+            VulkanPlatformGraphics.TryCreate(options ?? new(), new VulkanPlatformSpecificOptions
+                {
+                    RequiredInstanceExtensions = { "VK_KHR_android_surface" },
+                    GetProcAddressDelegate = vkGetInstanceProcAddr,
+                    PlatformFeatures = new Dictionary<Type, object>
+                    {
+                        [typeof(IVulkanKhrSurfacePlatformSurfaceFactory)] = new VulkanSurfaceFactory()
+                    }
+                });
+
+        internal class VulkanSurfaceFactory : IVulkanKhrSurfacePlatformSurfaceFactory
+        {
+            public bool CanRenderToSurface(IVulkanPlatformGraphicsContext context, IPlatformRenderSurface surface) =>
+                surface is INativePlatformHandleSurface handle;
+
+            public IVulkanKhrSurfacePlatformSurface CreateSurface(IVulkanPlatformGraphicsContext context, IPlatformRenderSurface handle) =>
+                new AndroidVulkanSurface((INativePlatformHandleSurface)handle);
+        }
+
+        class AndroidVulkanSurface : IVulkanKhrSurfacePlatformSurface
+        {
+            private INativePlatformHandleSurface _handle;
+
+            public AndroidVulkanSurface(INativePlatformHandleSurface handle)
+            {
+                _handle = handle;
+            }
+
+            public double Scaling => _handle.Scaling;
+            public PixelSize Size => _handle.Size;
+            public ulong CreateSurface(IVulkanPlatformGraphicsContext context) =>
+                CreateAndroidSurface(_handle.Handle, context.Instance);
+
+            public void Dispose()
+            {
+                // No-op
+            }
+        }
+
+        private static ulong CreateAndroidSurface(nint handle, IVulkanInstance instance)
+        {
+            if(handle == IntPtr.Zero)
+                throw new ArgumentException("Surface handle can't be 0x0", nameof(handle));
+            var vulkanAndroid = new AndroidVulkanInterface(instance);
+            var createInfo = new VkAndroidSurfaceCreateInfoKHR()
+            {
+
+                sType = VkAndroidSurfaceCreateInfoKHR.VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR,
+                window = handle
+            };
+            VulkanException.ThrowOnError("vkCreateAndroidSurfaceKHR",
+                vulkanAndroid.vkCreateAndroidSurfaceKHR(instance.Handle, ref createInfo, IntPtr.Zero, out var surface));
+            return surface;
+        }
+    }
+}

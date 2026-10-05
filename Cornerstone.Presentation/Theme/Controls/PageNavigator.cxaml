@@ -1,0 +1,85 @@
+<ResourceDictionary xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:controls="clr-namespace:Cornerstone.Presentation.Controls.Navigation;assembly=Cornerstone.Presentation"
+		x:ClassModifier="internal">
+
+	<ControlTheme x:Key="{x:Type PageNavigator}" 
+				TargetType="PageNavigator">
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<DockPanel Background="{TemplateBinding Background}">
+					<Grid x:Name="PART_Bar"
+							DockPanel.Dock="Top"
+							ColumnDefinitions="Auto,*">
+						<Button x:Name="PART_Back"
+								Classes="Flat"
+								Theme.Color="None"
+								Padding="6,4"
+								MinHeight="0"
+								Height="NaN"
+								Width="NaN"
+								Margin="0,4,10,0"
+								BorderThickness="0"
+								VerticalAlignment="Top"
+								Command="{Binding GoBackCommand, RelativeSource={RelativeSource TemplatedParent}}"
+								IsEnabled="{TemplateBinding CanGoBack}"
+								ToolTip.Tip="Back">
+							<Path Width="18" Height="18"
+									Margin="4,0,0,0"
+									Fill="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}}"
+									Opacity="0.7"
+									Data="{StaticResource Icons.Angle.Left}"
+									HorizontalAlignment="Center"
+									VerticalAlignment="Center" />
+						</Button>
+						<BreadcrumbTrail x:Name="PART_Trail"
+								Grid.Column="1"
+								HorizontalAlignment="Stretch"
+								VerticalAlignment="Center"
+								Foreground="{TemplateBinding Foreground}" />
+					</Grid>
+					<ContentPresenter Name="PART_ContentPresenter"
+							Content="{TemplateBinding Content}"
+							ContentTemplate="{TemplateBinding ContentTemplate}"
+							HorizontalContentAlignment="Stretch"
+							VerticalContentAlignment="Stretch" />
+				</DockPanel>
+			</ControlTemplate>
+		</Setter>
+		<Style Selector="^[CanGoBack=False] /template/ Button#PART_Back">
+			<Setter Property="Opacity" Value="0" />
+		</Style>
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet>
+			<Border Padding="16"
+					Width="560"
+					Background="{DynamicResource Background02}">
+				<StackPanel Spacing="16">
+					<PageNavigator
+							RootTitle="Network &amp; internet"
+							Height="240">
+						<TextBlock Margin="24,0,24,16"
+								Text="Page content under the title trail." />
+					</PageNavigator>
+					<BreadcrumbTrail>
+						<BreadcrumbTrail.Items>
+							<controls:BreadcrumbSegment Title="Network &amp; internet"
+									Key="Network" />
+							<controls:BreadcrumbSegment Title="Wi-Fi"
+									Key="Wi-Fi"
+									ShowSeparator="True" />
+							<controls:BreadcrumbSegment Title="Manage known networks"
+									Key="Manage"
+									IsCurrent="True"
+									ShowSeparator="True" />
+						</BreadcrumbTrail.Items>
+					</BreadcrumbTrail>
+				</StackPanel>
+			</Border>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

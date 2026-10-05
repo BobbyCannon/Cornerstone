@@ -1,11 +1,16 @@
-﻿#region References
+#region References
 
 using System;
-using Avalonia;
-using Avalonia.Controls;
-using Cornerstone.Avalonia;
-using Cornerstone.Avalonia.Platforms;
+using System.Diagnostics.CodeAnalysis;
+using Cornerstone.Presentation;
+using Cornerstone.Presentation.Logging;
+using Cornerstone.Presentation.Platforms;
+using Cornerstone.Presentation.Controls;
+using Cornerstone.Esri;
+using Cornerstone.Vlc;
+using Cornerstone.Profiling;
 using Cornerstone.Runtime;
+using Cornerstone.Sample;
 
 #endregion
 
@@ -16,12 +21,15 @@ internal class Program
 	#region Methods
 
 	/// <summary>
-	/// Avalonia configuration, don't remove; also used by visual designer.
+	/// Cornerstone configuration, don't remove; also used by visual designer.
 	/// </summary>
-	public static AppBuilder BuildAvaloniaApp()
+	public static AppBuilder BuildCornerstoneApp()
 	{
 		var response = AppBuilder
 			.Configure<App>()
+			.With(new Win32PlatformOptions { NativeBehindComposition = SampleNativeAirspace.IsEnabled })
+			.With(new MacOSPlatformOptions { NativeBehindComposition = SampleNativeAirspace.IsEnabled })
+			.With(new WaylandPlatformOptions { NativeBehindComposition = SampleNativeAirspace.IsEnabled })
 			.UsePlatformDetect()
 			.LogToTrace();
 
@@ -33,15 +41,22 @@ internal class Program
 	}
 
 	/// <summary>
-	/// Initialization code. Don't use any Avalonia, third-party APIs or any
+	/// Initialization code. Don't use any Cornerstone, third-party APIs or any
 	/// SynchronizationContext-reliant code before AppMain is called: things aren't initialized
 	/// yet and stuff might break.
 	/// </summary>
 	[STAThread]
+	[UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Remote display BSON is a desktop debug/host path, not a trimmed publish.")]
 	public static void Main(string[] args)
 	{
+		AppBootstrap.StartupProfiler ??= new StartupProfiler();
 		AppBootstrap.Initialize("Cornerstone.Sample", typeof(Program).Assembly, args);
-		BuildAvaloniaApp().UseCornerstone(args).StartWithClassicDesktopLifetime(args);
+		BuildCornerstoneApp()
+			.UseCornerstone(args)
+			.UseCornerstoneEsri()
+			.UseCornerstoneVlc()
+			.UseRemoteDisplay(args)
+			.StartWithClassicDesktopLifetime(args);
 	}
 
 	#endregion

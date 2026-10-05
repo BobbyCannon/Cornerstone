@@ -5,13 +5,17 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using Cornerstone.Input;
 using Cornerstone.Location;
+using Cornerstone.Media;
 using Cornerstone.Presentation;
 using Cornerstone.Reflection;
 using Cornerstone.Security;
+using Cornerstone.Security.SecurityKeys;
 using Cornerstone.Sync;
 using Cornerstone.Web;
 
@@ -63,7 +67,12 @@ public class DependencyProvider : IDependencyProvider
 	public void AddDesignStubs()
 	{
 		AddSingleton<Gamepad, GamepadStub>();
+		AddSingleton<Keyboard, KeyboardStub>();
+		AddSingleton<Mouse, MouseStub>();
 		AddSingleton<ILocationProvider, LocationProviderStub>();
+		AddTransient<AudioPlayer, AudioPlayerStub>();
+		AddSingleton<IPermissions, Permissions>();
+		AddSingleton<SecurityCardReader, SecurityCardReaderStub>();
 		AddSingleton<PlatformCredentialVault, PlatformCredentialVaultStub>();
 		AddSingleton<IRuntimeInformation>(RuntimeInformationData.GetSample());
 		AddSingleton<SyncClient, SyncClientStub>();
@@ -258,12 +267,19 @@ public class DependencyProvider : IDependencyProvider
 		var resolving = _resolving.Value!;
 		if (!resolving.Add(type))
 		{
-			throw new InvalidOperationException($"Circular dependency detected:{Environment.NewLine}\t{string.Join($"{Environment.NewLine}\t", resolving.Append(type))}");
+			var circular = new InvalidOperationException($"Circular dependency detected:{Environment.NewLine}\t{string.Join($"{Environment.NewLine}\t", resolving.Append(type))}");
+			WriteResolveFailure(circular);
+			throw circular;
 		}
 
 		try
 		{
 			return activator.GetOrCreateInstance();
+		}
+		catch (Exception ex)
+		{
+			WriteResolveFailure(ex);
+			throw;
 		}
 		finally
 		{
@@ -421,6 +437,7 @@ public class DependencyProvider : IDependencyProvider
 		return (T) CreateInstanceForDependencyInjection(typeof(T), x => initialize?.Invoke((T) x));
 	}
 
+	[UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "DI resolves a runtime Type from registration; SourceReflection cannot carry DynamicallyAccessedMembers.")]
 	private object CreateInstanceForDependencyInjection(Type type, Action<object> initialize = null)
 	{
 		// locate constructors
@@ -434,6 +451,19 @@ public class DependencyProvider : IDependencyProvider
 	}
 
 	private object CreateInstanceForDependencyInjection(SourceTypeInfo typeInfo, Action<object> initialize = null)
+	{
+		try
+		{
+			return CreateInstanceForDependencyInjectionCore(typeInfo, initialize);
+		}
+		catch (Exception ex)
+		{
+			WriteResolveFailure(ex);
+			throw;
+		}
+	}
+
+	private object CreateInstanceForDependencyInjectionCore(SourceTypeInfo typeInfo, Action<object> initialize = null)
 	{
 		var constructors = typeInfo.DeclaredConstructors;
 		var primaryConstructor = constructors.FirstOrDefault(x => x.IsDependencyConstructor);
@@ -486,12 +516,8 @@ public class DependencyProvider : IDependencyProvider
 				Debugger.Break();
 			}
 			#endif
-			throw new DependencyInjectorConstructorException(
-				availableConstructor.Count == 0
-					? $"An injectable constructor could not be found for {typeInfo.Type.FullName}."
-					: "Too many injectable constructor was found.",
-				typeInfo.Type.FullName
-			);
+			var message = DescribeConstructorFailure(typeInfo, constructors, availableConstructor);
+			throw new DependencyInjectorConstructorException(message, typeInfo.Type.FullName);
 		}
 
 		var constructor = availableConstructor[0];
@@ -502,6 +528,61 @@ public class DependencyProvider : IDependencyProvider
 		initialize?.Invoke(response);
 		InjectProperties(typeInfo, response);
 		return response;
+	}
+
+	private string DescribeConstructorFailure(
+		SourceTypeInfo typeInfo,
+		SourceConstructorInfo[] constructors,
+		List<SourceConstructorInfo> availableConstructor)
+	{
+		var typeName = typeInfo.Type?.FullName ?? typeInfo.Name;
+		var summary = availableConstructor.Count == 0
+			? $"An injectable constructor could not be found for {typeName}."
+			: $"Too many injectable constructors were found for {typeName}.";
+		var details = new StringBuilder();
+		details.Append(summary);
+		details.AppendLine();
+		details.Append("Source reflection returned ");
+		details.Append(constructors.Length);
+		details.AppendLine(constructors.Length == 1 ? " constructor." : " constructors.");
+
+		for (var i = 0; i < constructors.Length; i++)
+		{
+			var constructor = constructors[i];
+			var parameters = constructor.Parameters ?? [];
+			details.Append("Constructor ");
+			details.Append(i);
+			if (constructor.IsDependencyConstructor)
+			{
+				details.Append(" (dependency constructor)");
+			}
+
+			details.Append(": ");
+			if (parameters.Length == 0)
+			{
+				details.AppendLine("(no parameters)");
+				continue;
+			}
+
+			details.AppendLine(string.Join(", ", parameters.Select(p => p.ParameterType?.FullName ?? p.Name ?? "(unknown)")));
+			var missing = parameters
+				.Where(p => (p.ParameterType == null) || !Factories.Keys.Contains(p.ParameterType))
+				.Select(p => p.ParameterType?.FullName ?? p.Name ?? "(unknown)")
+				.ToList();
+			if (missing.Count > 0)
+			{
+				details.Append("Missing from the container: ");
+				details.AppendLine(string.Join(", ", missing));
+			}
+		}
+
+		return details.ToString();
+	}
+
+	private static void WriteResolveFailure(Exception ex)
+	{
+		Console.WriteLine(ex);
+		Console.Out.Flush();
 	}
 
 	private void FactoriesGetOrAdd(Type[] types, TypeActivator typeActivator)

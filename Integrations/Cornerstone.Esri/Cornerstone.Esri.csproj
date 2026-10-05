@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net10.0;net10.0-android;net10.0-ios;net10.0-windows10.0.26100.0</TargetFrameworks>
+		<UseWindowsForms Condition="'$(TargetFramework)' == 'net10.0-windows10.0.26100.0'">true</UseWindowsForms>
+		<UseWPF Condition="'$(TargetFramework)' == 'net10.0-windows10.0.26100.0'">true</UseWPF>
+		<SupportedOSPlatformVersion Condition="'$(TargetFramework)' == 'net10.0-android'">35</SupportedOSPlatformVersion>
+		<AssemblyTitle>Cornerstone.Esri</AssemblyTitle>
+		<RootNamespace>Cornerstone.Esri</RootNamespace>
+		<SignAssembly>true</SignAssembly>
+		<NoWarn>$(NoWarn);CS8632;IDE0005;IDE0055</NoWarn>
+	</PropertyGroup>
+	<ItemGroup>
+		<Compile Remove="Platforms\**" />
+		<None Include="Platforms\**" />
+		<Compile Include="Platforms\*.cs" />
+		<Compile Include="Platforms\Desktop\**\*.cs" Condition="'$(TargetFramework)' == 'net10.0'" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\Cornerstone.Presentation\Cornerstone.Presentation.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Esri.ArcGISRuntime" Version="300.0.0" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
+		<Compile Include="Platforms\Android\**\*.cs" />
+		<PackageReference Include="Esri.ArcGISRuntime.Android" Version="300.0.0" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0-ios'">
+		<Compile Include="Platforms\iOS\**\*.cs" />
+		<PackageReference Include="Esri.ArcGISRuntime.iOS" Version="300.0.0" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows10.0.26100.0'">
+		<Compile Include="Platforms\Windows\**\*.cs" />
+		<PackageReference Include="Esri.ArcGISRuntime.WPF" Version="300.0.0" GeneratePathProperty="true" />
+		<PackageReference Include="Esri.ArcGISRuntime.runtimes.win" Version="300.0.0" GeneratePathProperty="true" />
+	</ItemGroup>
+	<!-- Release desktop is single-file; Esri loads RuntimeCoreNet300_0.dll from BaseDirectory, not the extract temp. -->
+	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows10.0.26100.0' and '$(PkgEsri_ArcGISRuntime_runtimes_win)' != ''">
+		<None Include="$(PkgEsri_ArcGISRuntime_runtimes_win)\runtimes\win-x64\native\*.*">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+			<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+			<Link>%(Filename)%(Extension)</Link>
+			<Visible>false</Visible>
+		</None>
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows10.0.26100.0' and '$(PkgEsri_ArcGISRuntime_WPF)' != ''">
+		<None Include="$(PkgEsri_ArcGISRuntime_WPF)\runtimes\win-x64\native\*.*">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+			<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+			<Link>%(Filename)%(Extension)</Link>
+			<Visible>false</Visible>
+		</None>
+	</ItemGroup>
+</Project>

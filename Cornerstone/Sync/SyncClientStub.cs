@@ -1,6 +1,7 @@
-﻿#region References
+#region References
 
 using System;
+using Cornerstone.Runtime;
 using Cornerstone.Web;
 
 #endregion
@@ -20,24 +21,24 @@ public class SyncClientStub : SyncClient
 
 	#region Methods
 
-	public override ServiceResult<SyncIssue> ApplyChanges(Guid sessionId, ServiceRequest<SyncObject> changes)
+	protected internal override ServiceResult<SyncIssue> ApplyChanges(Guid sessionId, ServiceRequest<SyncObject> changes)
 	{
-		throw new NotImplementedException();
+		return new ServiceResult<SyncIssue>();
 	}
 
-	public override ServiceResult<SyncIssue> ApplyCorrections(Guid sessionId, ServiceRequest<SyncObject> corrections)
+	protected internal override ServiceResult<SyncIssue> ApplyCorrections(Guid sessionId, ServiceRequest<SyncObject> corrections)
 	{
-		throw new NotImplementedException();
+		return new ServiceResult<SyncIssue>();
 	}
 
-	public override ServiceResult<SyncObject> GetChanges(Guid sessionId, SyncRequest request)
+	protected internal override ServiceResult<SyncObject> GetChanges(Guid sessionId, SyncRequest request)
 	{
-		throw new NotImplementedException();
+		return new ServiceResult<SyncObject>();
 	}
 
-	public override ServiceResult<SyncObject> GetCorrections(Guid sessionId, ServiceRequest<SyncIssue> issues)
+	protected internal override ServiceResult<SyncObject> GetCorrections(Guid sessionId, ServiceRequest<SyncIssue> issues)
 	{
-		throw new NotImplementedException();
+		return new ServiceResult<SyncObject>();
 	}
 
 	protected override SyncClientConverter GetConverter()
@@ -45,7 +46,7 @@ public class SyncClientStub : SyncClient
 		return null;
 	}
 
-	protected override void UpdateSyncSettings()
+	protected override void SetSyncSettings()
 	{
 	}
 

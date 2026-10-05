@@ -1,0 +1,16 @@
+<Project>
+	<PropertyGroup>
+		<CornerstoneBuildTasksFromPackage>true</CornerstoneBuildTasksFromPackage>
+		<_CornerstonePresentationPackageRoot>$(MSBuildThisFileDirectory)..\</_CornerstonePresentationPackageRoot>
+		<CornerstoneBuildTasksOutput Condition="'$(CornerstoneBuildTasksOutput)' == ''">$(_CornerstonePresentationPackageRoot)tools\netstandard2.0\</CornerstoneBuildTasksOutput>
+		<EnableDefaultCornerstoneXamlItems Condition="'$(EnableDefaultCornerstoneXamlItems)' == ''">true</EnableDefaultCornerstoneXamlItems>
+	</PropertyGroup>
+	<Import Project="$(MSBuildThisFileDirectory)CornerstoneBuildTasks.props" Condition="'$(CornerstoneBuildTasksPropsImported)' != 'true'" />
+	<!-- Packed previewer lives at tools/{tfm}/designer/. In-repo builds keep the sibling-bin path from CornerstoneBuildTasks.props. -->
+	<PropertyGroup>
+		<CornerstonePreviewerNetCoreToolPath Condition="'$(CornerstonePreviewerNetCoreToolPath)' == ''">$(_CornerstonePresentationPackageRoot)tools\net10.0\designer\Cornerstone.Designer.HostApp.dll</CornerstonePreviewerNetCoreToolPath>
+	</PropertyGroup>
+	<ItemGroup Condition="'$(EnableDefaultItems)' == 'true' AND '$(EnableDefaultCornerstoneXamlItems)' != 'false'">
+		<CornerstoneXaml Include="**\*.cxaml" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
+	</ItemGroup>
+</Project>

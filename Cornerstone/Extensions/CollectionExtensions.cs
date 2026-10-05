@@ -151,6 +151,11 @@ public static class CollectionExtensions
 			throw new ArgumentNullException(nameof(expected));
 		}
 
+		if (IsSameInstanceSequence(collection, expected))
+		{
+			return;
+		}
+
 		// Skip null entries — Dictionary does not allow null keys, and concurrent
 		// snapshots can leave default slots when a source list shrinks mid-copy.
 		var expectedList = expected.Cast<T>().Where(static x => x is not null).ToList();
@@ -187,7 +192,7 @@ public static class CollectionExtensions
 		var matchedIndices = new bool[collection.Count];
 		var toAdd = new List<T>();
 		var toRemove = new List<int>();
-		var toUpdatePairs = new List<(int Index, T Expected)>();
+		var toUpdatePairs = new List<(T Existing, T Expected)>();
 
 		foreach (var expectedItem in expectedList)
 		{
@@ -196,7 +201,7 @@ public static class CollectionExtensions
 				if (!matchedIndices[matchIndex])
 				{
 					matchedIndices[matchIndex] = true;
-					toUpdatePairs.Add((matchIndex, expectedItem));
+					toUpdatePairs.Add((collection[matchIndex], expectedItem));
 					continue;
 				}
 			}
@@ -224,12 +229,16 @@ public static class CollectionExtensions
 
 		foreach (var pair in toUpdatePairs)
 		{
-			if (hasChanged?.Invoke(pair.Expected, collection[pair.Index]) == false)
+			if (hasChanged?.Invoke(pair.Expected, pair.Existing) == false)
 			{
 				continue;
 			}
 
-			collection[pair.Index] = pair.Expected;
+			var index = IndexOfReference(collection, pair.Existing);
+			if (index >= 0)
+			{
+				collection[index] = pair.Expected;
+			}
 		}
 
 		for (var targetIndex = 0; targetIndex < expectedList.Count; targetIndex++)
@@ -275,6 +284,11 @@ public static class CollectionExtensions
 		if (expected == null)
 		{
 			throw new ArgumentNullException(nameof(expected));
+		}
+
+		if (IsSameInstanceSequence(collection, expected))
+		{
+			return;
 		}
 
 		// Skip null entries — Dictionary does not allow null keys, and concurrent
@@ -384,6 +398,71 @@ public static class CollectionExtensions
 				}
 			}
 		});
+	}
+
+	private static int IndexOfReference<T>(IList<T> collection, T item)
+	{
+		for (var i = 0; i < collection.Count; i++)
+		{
+			if (ReferenceEquals(collection[i], item))
+			{
+				return i;
+			}
+		}
+
+		return -1;
+	}
+
+	/// <summary>
+	/// True when expected is a list of the same length whose items are the same instances
+	/// in the same order. Avoids materializing and reconciling an unchanged snapshot.
+	/// </summary>
+	private static bool IsSameInstanceSequence<T>(IList<T> collection, IEnumerable expected)
+	{
+		if (collection == null)
+		{
+			return false;
+		}
+
+		if (expected is IList<T> typed)
+		{
+			var count = collection.Count;
+			if (count != typed.Count)
+			{
+				return false;
+			}
+
+			for (var i = 0; i < count; i++)
+			{
+				if (!ReferenceEquals(collection[i], typed[i]))
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		if (expected is IList untyped)
+		{
+			var count = collection.Count;
+			if (count != untyped.Count)
+			{
+				return false;
+			}
+
+			for (var i = 0; i < count; i++)
+			{
+				if (!ReferenceEquals(collection[i], untyped[i]))
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		return false;
 	}
 
 	/// <summary>

@@ -1,17 +1,43 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
-		<TargetFrameworks>net10.0-windows10.0.26100.0</TargetFrameworks>
-		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+		<!-- Windows hosts only the windows TFM so F5 embeds app.manifest (layered child HWND). Portable TFM is Linux/macOS. -->
+		<TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net10.0-windows10.0.26100.0</TargetFrameworks>
+		<TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">net10.0</TargetFrameworks>
+		<BuiltInComInteropSupport Condition="$(TargetFramework.Contains('windows'))">true</BuiltInComInteropSupport>
 		<ApplicationManifest>app.manifest</ApplicationManifest>
 	</PropertyGroup>
-	<ItemGroup>
-		<PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
+	<ItemGroup Condition="$(TargetFramework.Contains('windows'))">
 		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4129.50" />
+		<PackageReference Include="Esri.ArcGISRuntime.WPF" Version="300.0.0" GeneratePathProperty="true" />
+		<PackageReference Include="Esri.ArcGISRuntime.runtimes.win" Version="300.0.0" GeneratePathProperty="true" />
+		<PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.23.1" />
+	</ItemGroup>
+	<ItemGroup Condition="$(TargetFramework.Contains('windows')) and '$(PkgEsri_ArcGISRuntime_runtimes_win)' != ''">
+		<None Include="$(PkgEsri_ArcGISRuntime_runtimes_win)\runtimes\win-x64\native\*.*">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+			<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+			<Link>%(Filename)%(Extension)</Link>
+			<Visible>false</Visible>
+		</None>
+	</ItemGroup>
+	<ItemGroup Condition="$(TargetFramework.Contains('windows')) and '$(PkgEsri_ArcGISRuntime_WPF)' != ''">
+		<None Include="$(PkgEsri_ArcGISRuntime_WPF)\runtimes\win-x64\native\*.*">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+			<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+			<Link>%(Filename)%(Extension)</Link>
+			<Visible>false</Visible>
+		</None>
+	</ItemGroup>
+	<ItemGroup Condition="!$(TargetFramework.Contains('windows'))">
+		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.4" />
+		<PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="14.2.1.102" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\Avalonia.Diagnostics\Avalonia.Diagnostics.csproj" />
-		<ProjectReference Include="..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
+		<ProjectReference Include="..\Cornerstone.Presentation.Diagnostics\Cornerstone.Presentation.Diagnostics.csproj" />
 		<ProjectReference Include="..\Cornerstone.Sample\Cornerstone.Sample.csproj" />
 	</ItemGroup>
+	<Import Project="..\Build\Presentation.props" />
 </Project>

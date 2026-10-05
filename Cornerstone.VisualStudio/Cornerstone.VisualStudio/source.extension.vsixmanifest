@@ -1,18 +1,20 @@
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="Cornerstone.Extension" Version="1.2.8" Language="en-US" Publisher="Bobby J Cannon" />
+    <Identity Id="Cornerstone.Extension" Version="1.5.277.17577" Language="en-US" Publisher="Bobby J Cannon" />
     <DisplayName>Cornerstone</DisplayName>
-    <Description xml:space="preserve">A set of tools to help you become epic. Includes Avalonia Xaml Previewer.</Description>
+    <Description xml:space="preserve">Live designer and IntelliSense for Cornerstone (.cxaml) and Avalonia (.axaml).</Description>
+    <License>License.txt</License>
     <Icon>Cornerstone.png</Icon>
-    <Tags>Cornerstone;Avalonia;Previewer;Automation;Testing;</Tags>
+    <PreviewImage>Cornerstone.png</PreviewImage>
+    <Tags>Cornerstone;Avalonia;Previewer;Designer;XAML;</Tags>
   </Metadata>
   <!-- Hybrid: classic VsPackage/MEF + VisualStudio.Extensibility (modern settings contributions). -->
   <Installation ExtensionType="VSSDK+VisualStudio.Extensibility">
-    <!-- [17.14, 19.0) matches Extensibility hybrid samples; covers VS 2022 17.14+ and VS 2026 (18.x). -->
-    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.14, 19.0)">
+    <!-- Stable API 17.14. The Marketplace rejects an 18.0 lower bound. Visual Studio 2026 loads 17.x. -->
+    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.14,)">
       <ProductArchitecture>amd64</ProductArchitecture>
     </InstallationTarget>
-    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.14, 19.0)">
+    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.14,)">
       <ProductArchitecture>arm64</ProductArchitecture>
     </InstallationTarget>
   </Installation>

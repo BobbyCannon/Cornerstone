@@ -1,7 +1,5 @@
 #region References
 
-using System;
-using Cornerstone.Platforms;
 using Cornerstone.Runtime;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -18,39 +16,6 @@ public class AppBootstrapTests : CornerstoneUnitTest
 	public void Cleanup()
 	{
 		AppBootstrap.Reset();
-	}
-
-	[TestMethod]
-	public void InitializeCreatesCoreServicesAndPlatform()
-	{
-		AppBootstrap.Initialize("AppBootstrapTests", typeof(Babel).Assembly);
-
-		IsTrue(AppBootstrap.IsInitialized);
-		IsNotNull(AppBootstrap.ApplicationArguments);
-		IsNotNull(AppBootstrap.DependencyProvider);
-		IsNotNull(AppBootstrap.RuntimeInformation);
-		// Dev builds may append ".Development" to the cached ApplicationName on Windows.
-		IsTrue(AppBootstrap.RuntimeInformation.ApplicationName.StartsWith("AppBootstrapTests"));
-
-		IsTrue(AppBootstrap.TryGetPlatform(out var platform));
-		IsNotNull(platform);
-		IsTrue(platform.IsLifecycleInitialized());
-		IsTrue(platform.IsLifecycleLoaded());
-
-		IsNotNull(AppBootstrap.GetInstance<IRuntimeInformation>());
-		AreEqual(AppBootstrap.RuntimeInformation, AppBootstrap.GetInstance<RuntimeInformation>());
-	}
-
-	[TestMethod]
-	public void InitializeIsIdempotentOnlyViaEnsure()
-	{
-		AppBootstrap.Initialize("AppBootstrapTests", typeof(Babel).Assembly);
-		AppBootstrap.EnsureInitialized("OtherName", typeof(Babel).Assembly);
-		IsTrue(AppBootstrap.RuntimeInformation.ApplicationName.StartsWith("AppBootstrapTests"));
-
-		ExpectedException<CornerstoneException>(() =>
-			AppBootstrap.Initialize("Again", typeof(Babel).Assembly)
-		);
 	}
 
 	[TestMethod]
@@ -76,6 +41,40 @@ public class AppBootstrapTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void InitializeCreatesCoreServicesAndPlatform()
+	{
+		AppBootstrap.Initialize("AppBootstrapTests", typeof(Babel).Assembly);
+
+		IsTrue(AppBootstrap.IsInitialized);
+		IsNotNull(AppBootstrap.ApplicationArguments);
+		IsNotNull(AppBootstrap.DependencyProvider);
+		IsNotNull(AppBootstrap.RuntimeInformation);
+
+		// Dev builds may append ".Development" to the cached ApplicationName on Windows.
+		IsTrue(AppBootstrap.RuntimeInformation.ApplicationName.StartsWith("AppBootstrapTests"));
+
+		IsTrue(AppBootstrap.TryGetPlatform(out var platform));
+		IsNotNull(platform);
+		IsTrue(platform.IsLifecycleInitialized());
+		IsTrue(platform.IsLifecycleLoaded());
+
+		IsNotNull(AppBootstrap.GetInstance<IRuntimeInformation>());
+		AreEqual(AppBootstrap.RuntimeInformation, AppBootstrap.GetInstance<RuntimeInformation>());
+	}
+
+	[TestMethod]
+	public void InitializeIsIdempotentOnlyViaEnsure()
+	{
+		AppBootstrap.Initialize("AppBootstrapTests", typeof(Babel).Assembly);
+		AppBootstrap.EnsureInitialized("OtherName", typeof(Babel).Assembly);
+		IsTrue(AppBootstrap.RuntimeInformation.ApplicationName.StartsWith("AppBootstrapTests"));
+
+		ExpectedException<CornerstoneException>(() =>
+			AppBootstrap.Initialize("Again", typeof(Babel).Assembly)
+		);
+	}
+
+	[TestMethod]
 	public void ProfileStartupArgumentCreatesStartupProfiler()
 	{
 		IsNull(AppBootstrap.StartupProfiler);
@@ -83,13 +82,14 @@ public class AppBootstrapTests : CornerstoneUnitTest
 		AppBootstrap.Initialize(
 			"AppBootstrapTests",
 			typeof(Babel).Assembly,
-			args: ["-ProfileStartup"]
+			["-ProfileStartup"]
 		);
 
 		IsNotNull(AppBootstrap.StartupProfiler);
 		IsFalse(AppBootstrap.StartupProfiler.IsCompleted);
 		IsTrue(AppBootstrap.StartupProfiler.Samples.Count >= 1);
 		AreEqual("AppBootstrap.Initialize", AppBootstrap.StartupProfiler.Samples[0].Name);
+		AreEqual(3, AppBootstrap.StartupProfiler.Samples[0].Children.Count);
 	}
 
 	[TestMethod]
@@ -105,7 +105,7 @@ public class AppBootstrapTests : CornerstoneUnitTest
 		AppBootstrap.Initialize(
 			"AppBootstrapTests",
 			typeof(Babel).Assembly,
-			args: ["-ProfileStartup"]
+			["-ProfileStartup"]
 		);
 		IsNotNull(AppBootstrap.StartupProfiler);
 

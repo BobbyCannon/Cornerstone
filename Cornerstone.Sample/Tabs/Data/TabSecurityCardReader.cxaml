@@ -1,0 +1,83 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs.Data"
+		mc:Ignorable="d" d:DesignHeight="720" d:DesignWidth="720"
+		x:Class="Cornerstone.Sample.Tabs.Data.TabSecurityCardReader"
+		x:DataType="tabs:TabSecurityCardReader">
+	<DockPanel>
+		<Grid DockPanel.Dock="Top" Margin="10,14,10,6">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="{x:Static tabs:TabSecurityCardReader.HeaderName}" />
+		</Grid>
+		<ScrollViewer HorizontalScrollBarVisibility="Disabled">
+			<StackPanel Margin="16,8,16,20" Spacing="14" MaxWidth="720" HorizontalAlignment="Left">
+				<TextBlock TextWrapping="Wrap" Opacity="0.8"
+						Text="Read and write MiFare Classic / Ultralight cards. Windows uses a PC/SC reader. Android uses NFC (hold a tag to the device). iOS Core NFC is listening-only in this sample." />
+
+				<WrapPanel ItemSpacing="8" LineSpacing="8">
+					<NumericUpDown Increment="16"
+							Minimum="16"
+							Maximum="1024"
+							Width="180"
+							Value="{Binding SecurityCardReader.MaximumDataToRead}">
+						<NumericUpDown.InnerLeftContent>
+							<TextBlock Text="Bytes" VerticalAlignment="Center" />
+						</NumericUpDown.InnerLeftContent>
+					</NumericUpDown>
+					<Button Click="RefreshOnClick" Content="Refresh readers" />
+					<Button Click="ReadCardOnClick"
+							Content="Read card"
+							IsEnabled="{Binding HasCard}" />
+					<Button Click="WriteCardOnClick"
+							Content="Write card"
+							IsEnabled="{Binding HasCard}" />
+					<Button Click="ClearCardOnClick"
+							Content="Clear card"
+							IsEnabled="{Binding HasCard}" />
+				</WrapPanel>
+
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource Background06}"
+						BorderThickness="1"
+						CornerRadius="12"
+						Padding="16">
+					<StackPanel Spacing="8">
+						<TextBlock Text="Reader" />
+						<Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="16" RowSpacing="6">
+							<TextBlock Opacity="0.65" Text="Available" />
+							<SelectableTextBlock Grid.Column="1" Text="{Binding SecurityCardReader.IsAvailable}" />
+							<TextBlock Grid.Row="1" Opacity="0.65" Text="Listening" />
+							<SelectableTextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SecurityCardReader.IsListening}" />
+							<TextBlock Grid.Row="2" Opacity="0.65" Text="Card" />
+							<SelectableTextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CardTypeName}" />
+						</Grid>
+					</StackPanel>
+				</Border>
+
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource Background06}"
+						BorderThickness="1"
+						CornerRadius="12"
+						Padding="16"
+						IsVisible="{Binding HasCard}">
+					<StackPanel Spacing="8">
+						<CheckBox IsChecked="{Binding SecurityCardReader.Card.EnableUnsafeWrite}"
+								Content="Unsafe write" />
+						<Grid ColumnDefinitions="Auto,*" ColumnSpacing="12" RowSpacing="6">
+							<TextBlock Opacity="0.65" Text="ID" VerticalAlignment="Center" />
+							<SelectableTextBlock Grid.Column="1" Text="{Binding SecurityCardReader.Card.UniqueId}" TextWrapping="Wrap" />
+						</Grid>
+						<TextBlock Opacity="0.65" Text="Data" />
+						<SelectableTextBlock Text="{Binding CardDataHex}"
+								TextWrapping="Wrap"
+								FontFamily="Consolas" />
+					</StackPanel>
+				</Border>
+			</StackPanel>
+		</ScrollViewer>
+	</DockPanel>
+</UserControl>

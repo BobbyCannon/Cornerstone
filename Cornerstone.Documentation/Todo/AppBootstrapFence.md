@@ -19,7 +19,7 @@ Make the wrong thing hard (or impossible) for feature / library code, while host
    - Split bootstrap into a host-only type (e.g. internal or `Cornerstone.Hosting`) vs a narrow public bootstrap façade.
    - Or mark consumer-facing resolve APIs `[Obsolete]` / analyzer-forbidden outside allowed assemblies.
 2. **Analyzers / source generators**
-   - Roslyn analyzer: ban `AppBootstrap.GetInstance`, `AppBootstrap.DependencyProvider`, etc. outside allow-listed namespaces (host, tests, Avalonia application shell).
+   - Roslyn analyzer: ban `AppBootstrap.GetInstance`, `AppBootstrap.DependencyProvider`, etc. outside allow-listed namespaces (host, tests, Cornerstone application shell).
    - Same rule as “no service locator in feature code.”
 3. **Docs & repo rules**
    - Rule already updated: [framework-primitives.md](../../../.grok/rules/framework-primitives.md) (Dependency injection / AppBootstrap statics).

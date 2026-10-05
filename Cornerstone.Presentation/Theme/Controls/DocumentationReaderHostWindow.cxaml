@@ -1,0 +1,28 @@
+<Styles xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type DocumentationReaderHostWindow}"
+					TargetType="DocumentationReaderHostWindow"
+					BasedOn="{StaticResource {x:Type Window}}">
+				<Setter Property="Width" Value="1040" />
+				<Setter Property="Height" Value="780" />
+				<Setter Property="MinWidth" Value="640" />
+				<Setter Property="MinHeight" Value="480" />
+				<Setter Property="Background" Value="{DynamicResource Background02}" />
+				<Setter Property="WindowStartupLocation" Value="CenterScreen" />
+				<Setter Property="ContentTemplate">
+					<DataTemplate>
+						<ContentPresenter Content="{Binding Reader, RelativeSource={RelativeSource AncestorType=DocumentationReaderHostWindow}}" />
+					</DataTemplate>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="500">
+			<DocumentationReaderHostWindow />
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</Styles>

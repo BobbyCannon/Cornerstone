@@ -8,6 +8,9 @@
 		<PublishTrimmed>true</PublishTrimmed>
 		<TrimMode>full</TrimMode>
 		<IsAotCompatible>true</IsAotCompatible>
+		<!-- Native AOT cannot infer a RID from RuntimeIdentifiers (plural) alone, nor for portable net TFMs. -->
+		<RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' and '$(TargetFramework)' != '' and ($(TargetFramework.Contains('-windows')) or !$(TargetFramework.Contains('-')))">win-x64</RuntimeIdentifier>
+		<SelfContained Condition="'$(RuntimeIdentifier)' != ''">true</SelfContained>
 		<!-- Reduce build noise -->
 		<IlcVerbose>false</IlcVerbose>
 		<IlcGenerateStackTraceData>false</IlcGenerateStackTraceData>
@@ -28,4 +31,13 @@
 		<TrimmerRootNamespace Include="Cornerstone.EntityFramework" />
 		<TrimmerRootNamespace Include="Microsoft.Web.WebView2" />
 	</ItemGroup>
+	<!-- ILC fails if a TrimmerRootAssembly is not part of the compilation (e.g. Presentation tests have no EF). -->
+	<Target Name="RemoveUnreferencedTrimmerRootAssemblies" AfterTargets="ResolveAssemblyReferences">
+		<ItemGroup>
+			<_ReferencedAssemblyFileNames Include="@(ReferencePath->'%(FileName)')" />
+			<_ReferencedAssemblyFileNames Include="$(AssemblyName)" />
+			<_UnreferencedTrimmerRootAssemblies Include="@(TrimmerRootAssembly)" Exclude="@(_ReferencedAssemblyFileNames)" />
+			<TrimmerRootAssembly Remove="@(_UnreferencedTrimmerRootAssemblies)" />
+		</ItemGroup>
+	</Target>
 </Project>

@@ -1,0 +1,61 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:esri="clr-namespace:Cornerstone.Esri;assembly=Cornerstone.Esri"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs.Maps"
+		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+		x:Class="Cornerstone.Sample.Tabs.Maps.TabMapsEsri"
+		x:DataType="tabs:TabMapsEsri">
+	<DockPanel>
+		<TextBlock DockPanel.Dock="Top"
+				Margin="10,0,10,8"
+				Opacity="0.65"
+				TextWrapping="Wrap"
+				Text="Same IDs as the ArcGIS JS API. 2D maps are public Living Atlas web maps; 3D maps are public 3D web scenes. No API key." />
+		<WrapPanel DockPanel.Dock="Top"
+				ItemSpacing="12"
+				LineSpacing="8"
+				Margin="10,0,10,8">
+			<TextBlock Text="API key"
+					VerticalAlignment="Center"
+					Opacity="0.65" />
+			<TextBox MinWidth="280"
+					Text="{Binding Settings.EsriApiKey, Mode=TwoWay}"
+					LostFocus="ApiKeyLostFocus" />
+			<ComboBox MinWidth="200"
+					ItemsSource="{Binding Basemaps}"
+					SelectedItem="{Binding SelectedBasemap, Mode=TwoWay}"
+					SelectionChanged="BasemapSelectionChanged" />
+			<CheckBox Content="Roads"
+					IsChecked="{Binding ShowRoads, Mode=TwoWay}"
+					Click="OverlayToggled" />
+			<CheckBox Content="Places"
+					IsChecked="{Binding ShowPlaces, Mode=TwoWay}"
+					Click="OverlayToggled" />
+			<Button Content="Current location"
+					Click="GoToCurrentLocation" />
+		</WrapPanel>
+		<Grid>
+			<esri:MapView x:Name="MapHost" />
+			<esri:SceneView x:Name="SceneHost" IsVisible="False" />
+			<Border HorizontalAlignment="Stretch"
+					VerticalAlignment="Center"
+					Padding="24,16"
+					IsVisible="{Binding IsNavigatingToLocation}">
+				<Border.Background>
+					<SolidColorBrush Color="{DynamicResource Background03}" Opacity="0.5" />
+				</Border.Background>
+				<Border HorizontalAlignment="Center"
+						Padding="16,10"
+						CornerRadius="12"
+						Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource Background06}"
+						BorderThickness="1">
+					<TextBlock Text="{Binding NavigationStatus}" />
+				</Border>
+			</Border>
+		</Grid>
+	</DockPanel>
+</UserControl>

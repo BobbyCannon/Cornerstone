@@ -13,15 +13,13 @@
 		<GeneratePkgDefFile>true</GeneratePkgDefFile>
 		<UseCodebase>true</UseCodebase>
 		<IncludeAssemblyInVSIXContainer>true</IncludeAssemblyInVSIXContainer>
-		<IncludeDebugSymbolsInVSIXContainer>true</IncludeDebugSymbolsInVSIXContainer>
+		<IncludeDebugSymbolsInVSIXContainer>false</IncludeDebugSymbolsInVSIXContainer>
 		<IncludeDebugSymbolsInLocalVSIXDeployment>true</IncludeDebugSymbolsInLocalVSIXDeployment>
 		<CopyBuildOutputToOutputDirectory>true</CopyBuildOutputToOutputDirectory>
 		<CopyOutputSymbolsToOutputDirectory>false</CopyOutputSymbolsToOutputDirectory>
 		<StartAction>Program</StartAction>
 		<StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
 		<StartArguments>/rootsuffix Exp</StartArguments>
-		<SignAssembly>true</SignAssembly>
-		<AssemblyOriginatorKeyFile>..\Key.snk</AssemblyOriginatorKeyFile>
 		<!-- Required for VSPackage.resx icon (non-string resources) under modern .NET SDK -->
 		<GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
 	</PropertyGroup>
@@ -30,39 +28,39 @@
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 			<IncludeInVSIX>true</IncludeInVSIX>
 		</Content>
-		<Content Include="Snippets\Avalonia\Avalonia_AP00.snippet">
+		<Content Include="Avalonia\Snippets\Avalonia_AP00.snippet">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 			<IncludeInVSIX>true</IncludeInVSIX>
 		</Content>
-		<Content Include="Snippets\Avalonia\Avalonia_AP01.snippet">
+		<Content Include="Avalonia\Snippets\Avalonia_AP01.snippet">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 			<IncludeInVSIX>true</IncludeInVSIX>
 		</Content>
-		<Content Include="Snippets\Avalonia\Avalonia_DP00.snippet">
+		<Content Include="Avalonia\Snippets\Avalonia_DP00.snippet">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 			<IncludeInVSIX>true</IncludeInVSIX>
 		</Content>
-		<Content Include="Snippets\Avalonia\Avalonia_DP01.snippet">
+		<Content Include="Avalonia\Snippets\Avalonia_DP01.snippet">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 			<IncludeInVSIX>true</IncludeInVSIX>
 		</Content>
-		<Content Include="Snippets\Avalonia\Avalonia_RE00.snippet">
+		<Content Include="Avalonia\Snippets\Avalonia_RE00.snippet">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 			<IncludeInVSIX>true</IncludeInVSIX>
 		</Content>
-		<Content Include="Snippets\Avalonia\Avalonia_RE01.snippet">
+		<Content Include="Avalonia\Snippets\Avalonia_RE01.snippet">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 			<IncludeInVSIX>true</IncludeInVSIX>
 		</Content>
-		<Content Include="Snippets\Avalonia\Avalonia_RE02.snippet">
+		<Content Include="Avalonia\Snippets\Avalonia_RE02.snippet">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 			<IncludeInVSIX>true</IncludeInVSIX>
 		</Content>
-		<Content Include="Snippets\Avalonia\Avalonia_SP00.snippet">
+		<Content Include="Avalonia\Snippets\Avalonia_SP00.snippet">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 			<IncludeInVSIX>true</IncludeInVSIX>
 		</Content>
-		<Content Include="Snippets\Avalonia\Avalonia_SP01.snippet">
+		<Content Include="Avalonia\Snippets\Avalonia_SP01.snippet">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 			<IncludeInVSIX>true</IncludeInVSIX>
 		</Content>
@@ -70,6 +68,10 @@
 	<ItemGroup>
 		<!-- Manifest Icon (PNG for Marketplace) + classic ICO for VSPackage.resx #400. -->
 		<Content Include="Cornerstone.png">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<IncludeInVSIX>true</IncludeInVSIX>
+		</Content>
+		<Content Include="License.txt">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 			<IncludeInVSIX>true</IncludeInVSIX>
 		</Content>
@@ -97,11 +99,34 @@
 		</None>
 	</ItemGroup>
 	<Target Name="PreCreateVsixContainer" BeforeTargets="GetVsixSourceItems">
+		<PropertyGroup>
+			<_CornerstoneTemplatesProject>$(MSBuildThisFileDirectory)..\..\Cornerstone.Templates\Cornerstone.Templates.csproj</_CornerstoneTemplatesProject>
+			<_AvaloniaTemplateNupkg>$(NuGetPackageRoot)\$(AvaloniaTemplatesPackageName.ToLowerInvariant())\$(AvaloniaTemplatesPackageVersion)\$(AvaloniaTemplatesPackageName.ToLowerInvariant()).$(AvaloniaTemplatesPackageVersion).nupkg</_AvaloniaTemplateNupkg>
+			<!-- Omit Version unless the extension build passed one. An empty Version would replace the templates project's own version. -->
+			<_CornerstoneTemplatesPackProperties>Configuration=$(Configuration);TargetFramework=netstandard2.0</_CornerstoneTemplatesPackProperties>
+			<_CornerstoneTemplatesPackProperties Condition="'$(CornerstonePackageVersion)' != ''">$(_CornerstoneTemplatesPackProperties);Version=$(CornerstonePackageVersion)</_CornerstoneTemplatesPackProperties>
+		</PropertyGroup>
+		<MSBuild Projects="$(_CornerstoneTemplatesProject)" Targets="Pack" Properties="$(_CornerstoneTemplatesPackProperties)" />
+		<MSBuild Projects="$(_CornerstoneTemplatesProject)" Targets="GetTemplatePackageIdentity" Properties="$(_CornerstoneTemplatesPackProperties)">
+			<Output TaskParameter="TargetOutputs" ItemName="_CornerstoneTemplatePackage" />
+		</MSBuild>
+		<PropertyGroup>
+			<_CornerstoneTemplatesPackageVersion>%(_CornerstoneTemplatePackage.PackageVersion)</_CornerstoneTemplatesPackageVersion>
+			<_CornerstoneTemplateNupkg>%(_CornerstoneTemplatePackage.NupkgPath)</_CornerstoneTemplateNupkg>
+		</PropertyGroup>
 		<ItemGroup>
-			<_TemplatePackage Include="$(NuGetPackageRoot)\$(AvaloniaTemplatesPackageName.ToLowerInvariant())\$(AvaloniaTemplatesPackageVersion)\$(AvaloniaTemplatesPackageName.ToLowerInvariant()).$(AvaloniaTemplatesPackageVersion).nupkg" />
+			<_TemplatePackage Include="$(_AvaloniaTemplateNupkg)" />
+			<_TemplatePackage Include="$(_CornerstoneTemplateNupkg)" />
+			<_TemplatesPkgDefLine Include="[$RootKey$\TemplateEngine\Templates\avalonia.templates.nuspec\$(AvaloniaTemplatesPackageVersion)]" />
+			<_TemplatesPkgDefLine Include="&quot;InstalledPath&quot;=&quot;$PackageFolder$\ProjectTemplates&quot;" />
+			<_TemplatesPkgDefLine Include="[$RootKey$\TemplateEngine\Templates\cornerstone.templates.nuspec\$(_CornerstoneTemplatesPackageVersion)]" />
+			<_TemplatesPkgDefLine Include="&quot;InstalledPath&quot;=&quot;$PackageFolder$\ProjectTemplates&quot;" />
 		</ItemGroup>
-		<Error Text="No template files found." Condition="@(_TemplatePackage-&gt;Count()) == 0" />
-		<Error Text="Templates.pkgdef registry key must use AvaloniaTemplatesPackageVersion $(AvaloniaTemplatesPackageVersion)." Condition="!$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\Templates.pkgdef').Contains('$(AvaloniaTemplatesPackageVersion)'))" />
+		<Error Text="Avalonia.Templates nupkg not found at $(_AvaloniaTemplateNupkg)." Condition="!Exists('$(_AvaloniaTemplateNupkg)')" />
+		<Error Text="Cornerstone.Templates package version was not returned from GetTemplatePackageIdentity." Condition="'$(_CornerstoneTemplatesPackageVersion)' == ''" />
+		<Error Text="Cornerstone.Templates nupkg not found at $(_CornerstoneTemplateNupkg)." Condition="!Exists('$(_CornerstoneTemplateNupkg)')" />
+		<WriteLinesToFile File="$(IntermediateOutputPath)Templates.pkgdef" Lines="@(_TemplatesPkgDefLine)" Overwrite="true" Encoding="UTF-8" />
+		<Copy SourceFiles="$(IntermediateOutputPath)Templates.pkgdef" DestinationFiles="$(MSBuildProjectDirectory)\Templates.pkgdef" SkipUnchangedFiles="true" />
 		<Message Text="Template nuget packages found: @(_TemplatePackage)" Importance="low" />
 		<!-- don't modify the following, the pkgdef file uses the path below -->
 		<ItemGroup>
@@ -111,7 +136,12 @@
 		</ItemGroup>
 	</Target>
 	<ItemGroup>
+		<!-- Restore only: embed Avalonia.Templates nupkg in the VSIX (see PreCreateVsixContainer). -->
+		<PackageDownload Include="$(AvaloniaTemplatesPackageName)" Version="[$(AvaloniaTemplatesPackageVersion)]" />
+	</ItemGroup>
+	<ItemGroup>
 		<PackageReference Include="Avalonia.Remote.Protocol" Version="$(AvaloniaVersion)" />
+		<PackageReference Include="MessagePack" Version="2.5.302" />
 		<PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.8.43" />
 		<PackageReference Include="Microsoft.CodeAnalysis" Version="4.14.0" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
@@ -146,16 +176,25 @@
 		<Reference Include="WindowsBase" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\templates\ProjectTemplatesDownloader\ProjectTemplatesDownloader.csproj"
-				ReferenceOutputAssembly="false" PrivateAssets="all" Name="ProjectTemplatesDownloader" />
+		<ProjectReference Include="..\Cornerstone.VisualStudio.Protocol\Cornerstone.VisualStudio.Protocol.csproj">
+			<Name>Cornerstone.VisualStudio.Protocol</Name>
+		</ProjectReference>
 		<ProjectReference Include="..\Cornerstone.VisualStudio.Core\Cornerstone.VisualStudio.Core.csproj">
 			<Project>{e5819b46-75d5-de32-dd91-c24396cd4162}</Project>
 			<Name>Cornerstone.VisualStudio.Core</Name>
+		</ProjectReference>
+		<ProjectReference Include="..\..\Cornerstone.Presentation.Remote.Protocol\Cornerstone.Presentation.Remote.Protocol.csproj" AdditionalProperties="TargetFramework=netstandard2.0">
+			<Name>Cornerstone.Presentation.Remote.Protocol</Name>
 		</ProjectReference>
 		<!-- https://github.com/dotnet/sdk/issues/433 -->
 		<ProjectReference Update="@(ProjectReference)" AdditionalProperties="TargetFramework=netstandard2.0" />
 		<!-- https://github.com/Microsoft/extendvs/issues/57 -->
 		<ProjectReference Update="@(ProjectReference)" Name="%(Filename)" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\Cornerstone.Presentation.Remote.Wpf\Cornerstone.Presentation.Remote.Wpf.csproj" AdditionalProperties="TargetFramework=net472">
+			<Name>Cornerstone.Presentation.Remote.Wpf</Name>
+		</ProjectReference>
 	</ItemGroup>
 	<ItemGroup>
 		<VSCTCompile Include="Commands\CornerstonePackage.vsct">
@@ -176,6 +215,18 @@
 				<WithCulture>false</WithCulture>
 			</EmbeddedResource>
 		</ItemGroup>
+	</Target>
+	<Target Name="StageEditorHost" BeforeTargets="GetVsixSourceItems">
+		<MSBuild Projects="$(MSBuildThisFileDirectory)..\Cornerstone.VisualStudio.EditorHost\Cornerstone.VisualStudio.EditorHost.csproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=net10.0" RemoveProperties="TargetFrameworks" />
+		<ItemGroup>
+			<_EditorHostFile Include="$(MSBuildThisFileDirectory)..\Cornerstone.VisualStudio.EditorHost\bin\$(Configuration)\net10.0\**\*.*" Exclude="**\*.pdb" />
+			<VSIXSourceItem Include="@(_EditorHostFile)">
+				<VSIXSubPath>EditorHost\%(RecursiveDir)</VSIXSubPath>
+			</VSIXSourceItem>
+		</ItemGroup>
+	</Target>
+	<Target Name="OrderVsixLicenseElement" AfterTargets="DetokenizeVsixManifestFile">
+		<Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildThisFileDirectory)..\Scripts\Repair-VsixManifestLicenseOrder.ps1&quot; -Path &quot;$(IntermediateVsixManifest)&quot;" />
 	</Target>
 	<!-- Extensibility.Build already imports Microsoft.VsSDK.targets; do not import it again. -->
 	<Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />

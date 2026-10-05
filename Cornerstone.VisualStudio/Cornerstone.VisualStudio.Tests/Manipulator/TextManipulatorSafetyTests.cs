@@ -2,17 +2,18 @@
 
 using Cornerstone.VisualStudio.Core;
 using Cornerstone.VisualStudio.Core.Manipulation;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.VisualStudio.Tests.Manipulator;
 
+[TestClass]
 public class TextManipulatorSafetyTests
 {
 	#region Methods
 
-	[Fact]
+	[TestMethod]
 	public void ManipulateTextDoesNotThrowWhenParserAtEof()
 	{
 		// Repro for ActivityLog IndexOutOfRange on Span[ParserPos] when State is None.
@@ -20,10 +21,10 @@ public class TextManipulatorSafetyTests
 		var manipulator = new TextManipulator(text, text.Length);
 		var change = new FakeChange(text.Length, "", "x");
 		var result = manipulator.ManipulateText(change);
-		Assert.NotNull(result);
+		Assert.IsNotNull(result);
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ManipulateTextSkipsCompletionShapedInsert()
 	{
 		// Completing Gri → Grid></Grid> must not rewrite parent </UserControl>.
@@ -32,10 +33,10 @@ public class TextManipulatorSafetyTests
 		var manipulator = new TextManipulator(text, pos);
 		var change = new FakeChange(text.IndexOf("Gri"), "Gri", "Grid></Grid>");
 		var result = manipulator.ManipulateText(change);
-		Assert.Empty(result);
+		Assert.AreEqual(0, System.Linq.Enumerable.Count(result));
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ManipulateTextStillSyncsSingleLetterTagRename()
 	{
 		var text = "<Alpha></Alpha>";
@@ -50,7 +51,7 @@ public class TextManipulatorSafetyTests
 		var change = new FakeChange(6, "", "B");
 		// May or may not produce sync depending on parser state; must not throw.
 		var result = manipulator2.ManipulateText(change);
-		Assert.NotNull(result);
+		Assert.IsNotNull(result);
 	}
 
 	#endregion

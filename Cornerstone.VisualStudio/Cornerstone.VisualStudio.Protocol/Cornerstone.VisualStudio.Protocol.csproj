@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<RootNamespace>Cornerstone.VisualStudio.Protocol</RootNamespace>
+		<Nullable>disable</Nullable>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\Cornerstone.Presentation.Remote.Protocol\Cornerstone.Presentation.Remote.Protocol.csproj" />
+	</ItemGroup>
+</Project>

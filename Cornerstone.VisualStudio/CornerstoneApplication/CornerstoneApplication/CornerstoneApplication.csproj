@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+	</PropertyGroup>
+	<ItemGroup>
+		<CornerstoneXaml Include="**\*.cxaml" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
+		<CornerstoneResource Include="Assets\**" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\Cornerstone\Cornerstone.csproj" AdditionalProperties="TargetFramework=net10.0;TargetFrameworks=net10.0" GlobalPropertiesToRemove="RuntimeIdentifier;RuntimeIdentifiers" />
+	</ItemGroup>
+	<Import Project="..\..\..\Build\Presentation.props" />
+</Project>

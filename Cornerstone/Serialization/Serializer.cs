@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -18,6 +19,13 @@ namespace Cornerstone.Serialization;
 
 public static class Serializer
 {
+	#region Constants
+
+	private const string JsonDynamicCode = "JSON serialization may need runtime code generation. Prefer a JsonSerializerContext for Native AOT.";
+	private const string JsonUnreferenced = "JSON serialization may require unreferenced types. Prefer a JsonSerializerContext for Native AOT.";
+
+	#endregion
+
 	#region Fields
 
 	private static readonly Type _enumerableType;
@@ -26,6 +34,8 @@ public static class Serializer
 
 	#region Constructors
 
+	[UnconditionalSuppressMessage("Aot", "IL3050", Justification = "DefaultJsonTypeInfoResolver is a JIT fallback; source-gen contexts are registered first.")]
+	[UnconditionalSuppressMessage("Trim", "IL2026", Justification = "DefaultJsonTypeInfoResolver is a JIT fallback; source-gen contexts are registered first.")]
 	static Serializer()
 	{
 		_enumerableType = typeof(IEnumerable<>);
@@ -165,21 +175,34 @@ public static class Serializer
 		return options;
 	}
 
+	[RequiresDynamicCode(JsonDynamicCode)]
+	[RequiresUnreferencedCode(JsonUnreferenced)]
 	public static T FromJson<T>(this string value)
 	{
 		return JsonSerializer.Deserialize<T>(value, SerializationOptions);
 	}
 
+	[RequiresDynamicCode(JsonDynamicCode)]
+	[RequiresUnreferencedCode(JsonUnreferenced)]
 	public static T FromJson<T>(this string value, JsonSerializerOptions options)
 	{
 		return JsonSerializer.Deserialize<T>(value, options ?? SerializationOptions);
 	}
 
+	public static T FromJson<T>(this string value, JsonTypeInfo<T> typeInfo)
+	{
+		return JsonSerializer.Deserialize(value, typeInfo);
+	}
+
+	[RequiresDynamicCode(JsonDynamicCode)]
+	[RequiresUnreferencedCode(JsonUnreferenced)]
 	public static object FromJson(this string value, Type type)
 	{
 		return JsonSerializer.Deserialize(value, type, SerializationOptions);
 	}
 
+	[RequiresDynamicCode(JsonDynamicCode)]
+	[RequiresUnreferencedCode(JsonUnreferenced)]
 	public static object FromJson(this string value, Type type, JsonSerializerOptions options)
 	{
 		return JsonSerializer.Deserialize(value, type, options ?? SerializationOptions);
@@ -190,6 +213,8 @@ public static class Serializer
 		SerializationOptions.MakeReadOnly();
 	}
 
+	[RequiresDynamicCode(JsonDynamicCode)]
+	[RequiresUnreferencedCode(JsonUnreferenced)]
 	public static string ToJson<T>(this T value)
 	{
 		return JsonSerializer.Serialize(value, SerializationOptions);
@@ -198,6 +223,8 @@ public static class Serializer
 	/// <summary>
 	/// Serialize using a specific options bag (from <see cref="CreateOptions" /> or custom).
 	/// </summary>
+	[RequiresDynamicCode(JsonDynamicCode)]
+	[RequiresUnreferencedCode(JsonUnreferenced)]
 	public static string ToJson<T>(this T value, JsonSerializerOptions options)
 	{
 		return JsonSerializer.Serialize(value, options ?? SerializationOptions);
@@ -213,6 +240,8 @@ public static class Serializer
 	/// When set, controls indentation on the writer (overrides <see cref="JsonSerializerOptions.WriteIndented" />
 	/// for this write only). When null, uses <c> options.WriteIndented </c>.
 	/// </param>
+	[RequiresDynamicCode(JsonDynamicCode)]
+	[RequiresUnreferencedCode(JsonUnreferenced)]
 	public static void ToJsonFile<T>(string path, T value, JsonSerializerOptions options = null, bool? indented = null)
 	{
 		if (string.IsNullOrWhiteSpace(path))
@@ -231,18 +260,45 @@ public static class Serializer
 		JsonSerializer.Serialize(writer, value, options);
 	}
 
+	public static void ToJsonFile<T>(string path, T value, JsonTypeInfo<T> typeInfo, bool? indented = null)
+	{
+		if (string.IsNullOrWhiteSpace(path))
+		{
+			throw new ArgumentException("Path cannot be empty.", nameof(path));
+		}
+
+		if (typeInfo == null)
+		{
+			throw new ArgumentNullException(nameof(typeInfo));
+		}
+
+		using var stream = File.Create(path);
+		using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions
+		{
+			Indented = indented ?? typeInfo.Options.WriteIndented,
+			Encoder = typeInfo.Options.Encoder
+		});
+		JsonSerializer.Serialize(writer, value, typeInfo);
+	}
+
+	[RequiresDynamicCode(JsonDynamicCode)]
+	[RequiresUnreferencedCode(JsonUnreferenced)]
 	public static string ToRawJson<T>(this T value)
 	{
 		var bytes = JsonSerializer.SerializeToUtf8Bytes(value, SerializationOptions);
 		return Encoding.UTF8.GetString(bytes);
 	}
 
+	[RequiresDynamicCode(JsonDynamicCode)]
+	[RequiresUnreferencedCode(JsonUnreferenced)]
 	public static string ToRawJson<T>(this T value, JsonSerializerOptions options)
 	{
 		var bytes = JsonSerializer.SerializeToUtf8Bytes(value, options ?? SerializationOptions);
 		return Encoding.UTF8.GetString(bytes);
 	}
 
+	[RequiresDynamicCode(JsonDynamicCode)]
+	[RequiresUnreferencedCode(JsonUnreferenced)]
 	public static bool TryFromJson<T>(this string value, out T typeValue)
 	{
 		if (TryFromJson(value, typeof(T), out var valueObject))
@@ -255,6 +311,8 @@ public static class Serializer
 		return false;
 	}
 
+	[RequiresDynamicCode(JsonDynamicCode)]
+	[RequiresUnreferencedCode(JsonUnreferenced)]
 	public static bool TryFromJson(this string value, Type type, out object typeValue)
 	{
 		try
@@ -269,7 +327,7 @@ public static class Serializer
 		}
 	}
 
-	internal static Type GetArrayType(Type type)
+	internal static Type GetArrayType([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] Type type)
 	{
 		if (type.IsArray)
 		{

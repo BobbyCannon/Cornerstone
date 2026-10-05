@@ -4,7 +4,6 @@ using System;
 using System.Runtime.CompilerServices;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
-using Cornerstone.Presentation;
 
 #endregion
 
@@ -63,6 +62,12 @@ public partial class GamepadState
 
 	public bool ButtonRightTrigger => Buttons.HasFlag(GamepadButton.RightTrigger);
 
+	public bool ButtonStart => Buttons.HasFlag(GamepadButton.Start);
+
+	public bool ButtonX => Buttons.HasFlag(GamepadButton.X);
+
+	public bool ButtonY => Buttons.HasFlag(GamepadButton.Y);
+
 	/// <summary>
 	/// All button states
 	/// </summary>
@@ -75,12 +80,6 @@ public partial class GamepadState
 		nameof(ButtonRightTrigger), nameof(ButtonStart), nameof(ButtonX), nameof(ButtonY))]
 	[UpdateableAction(UpdateableAction.All)]
 	public partial GamepadButton Buttons { get; set; }
-
-	public bool ButtonStart => Buttons.HasFlag(GamepadButton.Start);
-
-	public bool ButtonX => Buttons.HasFlag(GamepadButton.X);
-
-	public bool ButtonY => Buttons.HasFlag(GamepadButton.Y);
 
 	/// <summary>
 	/// The date and time the change occured.

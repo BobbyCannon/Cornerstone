@@ -1,5 +1,6 @@
 #region References
 
+using System;
 using Cornerstone.Data;
 using Cornerstone.Reflection;
 
@@ -20,14 +21,32 @@ public partial class ProfilerScopeModel : CornerstoneObject
 	public ProfilerScopeModel()
 	{
 		Name = string.Empty;
+		AverageTicks = 0;
+		CallsPerSecond = 0;
+		Count = 0;
+		Elapsed = TimeSpan.Zero;
+		Percent = 0;
+		TotalTicks = 0;
 	}
 
 	public ProfilerScopeModel(string name, double callsPerSecond, double averageTicks, long count)
+		: this()
 	{
 		Name = name ?? string.Empty;
 		CallsPerSecond = callsPerSecond;
 		AverageTicks = averageTicks;
 		Count = count;
+	}
+
+	public ProfilerScopeModel(string name, long count, long totalTicks, double percent)
+		: this()
+	{
+		Name = name ?? string.Empty;
+		Count = count;
+		TotalTicks = totalTicks;
+		Elapsed = TimeSpan.FromTicks(totalTicks < 0 ? 0 : totalTicks);
+		Percent = percent;
+		AverageTicks = count <= 0 ? 0 : (double) totalTicks / count;
 	}
 
 	#endregion
@@ -44,7 +63,16 @@ public partial class ProfilerScopeModel : CornerstoneObject
 	public partial long Count { get; set; }
 
 	[Notify]
+	public partial TimeSpan Elapsed { get; set; }
+
+	[Notify]
 	public partial string Name { get; set; }
+
+	[Notify]
+	public partial double Percent { get; set; }
+
+	[Notify]
+	public partial long TotalTicks { get; set; }
 
 	#endregion
 }

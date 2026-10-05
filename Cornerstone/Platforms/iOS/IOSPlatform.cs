@@ -2,9 +2,12 @@
 
 using System;
 using System.Drawing;
+using Cornerstone.Input;
 using Cornerstone.Location;
+using Cornerstone.Media;
 using Cornerstone.Runtime;
 using Cornerstone.Security;
+using Cornerstone.Security.SecurityKeys;
 using UIKit;
 
 #endregion
@@ -66,11 +69,15 @@ public class IOSPlatform : CornerstoneObject, IPlatform
 
 	private void AddPlatformImplementations()
 	{
+		DependencyProvider.AddTransient<AudioPlayer, AudioPlayerStub>();
+		DependencyProvider.AddSingleton<Gamepad, GamepadStub>();
+		DependencyProvider.AddSingleton<IKeepAlive, UnsupportedKeepAlive>();
+		DependencyProvider.AddSingleton<Keyboard, KeyboardStub>();
+		DependencyProvider.AddSingleton<Mouse, MouseStub>();
 		DependencyProvider.AddSingleton<ILocationProvider, IOSLocationProvider>();
-
-		//DependencyProvider.AddSingleton<SecurityCardReader, IOSSecurityCardReader>();
-		//DependencyProvider.AddSingleton<IPermissions, IOSPermissions>();
+		DependencyProvider.AddSingleton<IPermissions, IOSPermissions>();
 		DependencyProvider.AddSingleton<PlatformCredentialVault, IOSPlatformCredentialVault>();
+		DependencyProvider.AddSingleton<SecurityCardReader, IOSSecurityCardReader>();
 	}
 
 	private static void RestrictPlatformLinkingRemoval()

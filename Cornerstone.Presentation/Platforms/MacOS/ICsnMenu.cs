@@ -1,0 +1,204 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using Cornerstone.Presentation.Controls;
+using Cornerstone.Presentation.Controls.Primitives;
+using Cornerstone.Presentation.Controls.Chrome;
+
+namespace Cornerstone.Presentation.Platforms.MacOS.Interop
+{
+    class MenuEvents : NativeCallbackBase, ICsnMenuEvents
+    {
+        private ICsnMenu? _parent;
+
+        public void Initialise(ICsnMenu parent)
+        {
+            _parent = parent;
+        }
+
+        public void NeedsUpdate()
+        {
+            _parent?.RaiseNeedsUpdate();
+        }
+
+        public void Opening()
+        {
+            _parent?.RaiseOpening();
+        }
+
+        public void Closed()
+        {
+            _parent?.RaiseClosed();
+        }
+    }
+
+    partial interface ICsnMenu
+    {
+        void RaiseNeedsUpdate();
+        void RaiseOpening();
+        void RaiseClosed();
+        void Deinitialise();
+    }
+}
+namespace Cornerstone.Presentation.Platforms.MacOS.Interop.Impl
+{
+    partial class __MicroComICsnMenuProxy
+    {
+        private MacMenuExporter _exporter;
+        private List<__MicroComICsnMenuItemProxy> _menuItems = new List<__MicroComICsnMenuItemProxy>();
+        private Dictionary<NativeMenuItemBase, __MicroComICsnMenuItemProxy> _menuItemLookup = new Dictionary<NativeMenuItemBase, __MicroComICsnMenuItemProxy>();
+
+        private void UpdateTitle(string? title)
+        {
+            if (OperatingSystem.IsMacOS())
+            {
+                // macOS does not process access key markers, so remove them.
+                title = AccessText.RemoveAccessKeyMarker(title);
+            }
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                title = "";
+            }
+            SetTitle(title);
+        }
+
+        public void RaiseNeedsUpdate()
+        {
+            (ManagedMenu as INativeMenuExporterEventsImplBridge).RaiseNeedsUpdate();
+
+            _exporter.UpdateIfNeeded();
+        }
+
+        public void RaiseOpening()
+        {
+            (ManagedMenu as INativeMenuExporterEventsImplBridge).RaiseOpening();
+        }
+
+        public void RaiseClosed()
+        {
+            (ManagedMenu as INativeMenuExporterEventsImplBridge).RaiseClosed();
+        }
+
+        internal NativeMenu ManagedMenu { get; private set; }
+
+        public static __MicroComICsnMenuProxy Create(ICornerstoneNativeFactory factory)
+        {
+            using var events = new MenuEvents();
+
+            var menu = (__MicroComICsnMenuProxy)factory.CreateMenu(events);
+
+            events.Initialise(menu);
+
+            return menu;
+        }
+
+        private void RemoveAndDispose(__MicroComICsnMenuItemProxy item)
+        {
+            _menuItemLookup.Remove(item.ManagedMenuItem);
+            _menuItems.Remove(item);
+            RemoveItem(item);
+
+            item.Deinitialize();
+            item.Dispose();
+        }
+
+        private void MoveExistingTo(int index, __MicroComICsnMenuItemProxy item)
+        {
+            _menuItems.Remove(item);
+            _menuItems.Insert(index, item);
+
+            RemoveItem(item);
+            InsertItem(index, item);
+        }
+
+        private __MicroComICsnMenuItemProxy CreateNewAt(ICornerstoneNativeFactory factory, int index, NativeMenuItemBase item)
+        {
+            var result = CreateNew(factory, item);
+
+            result.Initialize(item);
+
+            _menuItemLookup.Add(result.ManagedMenuItem, result);
+            _menuItems.Insert(index, result);
+
+            InsertItem(index, result);
+
+            return result;
+        }
+
+        private static __MicroComICsnMenuItemProxy CreateNew(ICornerstoneNativeFactory factory, NativeMenuItemBase item)
+        {
+            var nativeItem = (__MicroComICsnMenuItemProxy)(item is NativeMenuItemSeparator ?
+                factory.CreateMenuItemSeparator() :
+                factory.CreateMenuItem());
+            nativeItem.ManagedMenuItem = item;
+
+            return nativeItem;
+        }
+
+        internal void Initialize(MacMenuExporter exporter, NativeMenu managedMenu, string? title)
+        {
+            _exporter = exporter;
+            ManagedMenu = managedMenu;
+
+            ((INotifyCollectionChanged)ManagedMenu.Items).CollectionChanged += OnMenuItemsChanged;
+
+            UpdateTitle(title);
+        }
+
+        public void Deinitialise()
+        {
+            ((INotifyCollectionChanged)ManagedMenu.Items).CollectionChanged -= OnMenuItemsChanged;
+
+            foreach (var item in _menuItems)
+            {
+                item.Deinitialize();
+                item.Dispose();
+            }
+        }
+
+        internal void Update(ICornerstoneNativeFactory factory, NativeMenu menu)
+        {
+            if (menu != ManagedMenu)
+            {
+                throw new ArgumentException("The menu being updated does not match.", nameof(menu));
+            }
+
+            for (int i = 0; i < menu.Items.Count; i++)
+            {
+                __MicroComICsnMenuItemProxy? nativeItem;
+
+                if (i >= _menuItems.Count)
+                {
+                    nativeItem = CreateNewAt(factory, i, menu.Items[i]);
+                }
+                else if (menu.Items[i] == _menuItems[i].ManagedMenuItem)
+                {
+                    nativeItem = _menuItems[i];
+                }
+                else if (_menuItemLookup.TryGetValue(menu.Items[i], out nativeItem))
+                {
+                    MoveExistingTo(i, nativeItem);
+                }
+                else
+                {
+                    nativeItem = CreateNewAt(factory, i, menu.Items[i]);
+                }
+
+                if (menu.Items[i] is NativeMenuItem nmi)
+                {
+                    nativeItem.Update(_exporter, factory, nmi);
+                }
+            }
+
+            while (_menuItems.Count > menu.Items.Count)
+            {
+                RemoveAndDispose(_menuItems[_menuItems.Count - 1]);
+            }
+        }
+
+        private void OnMenuItemsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            _exporter.QueueReset();
+        }
+    }
+}

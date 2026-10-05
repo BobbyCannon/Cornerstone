@@ -1,9 +1,9 @@
 # AppBootstrap
 
 `AppBootstrap` is the **host-agnostic process bootstrap** for Cornerstone.  
-Call it once from the host entry point (console, service, website, Avalonia desktop/browser/mobile, etc.) **before** resolving services or starting application lifecycles.
+Call it once from the host entry point (console, service, website, Cornerstone.Presentation desktop/browser/mobile, etc.) **before** resolving services or starting application lifecycles.
 
-It lives in `Cornerstone.Runtime` and is independent of Avalonia or any other UI stack.
+It lives in `Cornerstone.Runtime` and is independent of Cornerstone.Presentation or any other UI stack.
 
 ---
 
@@ -32,7 +32,7 @@ AppBootstrap.Initialize(
     applicationName: "MyApp",
     applicationAssembly: typeof(Program).Assembly,
     args: args,
-    dispatcher: null,           // optional; Avalonia registers later
+    dispatcher: null,           // optional; Cornerstone.Presentation registers later
     providerName: null          // optional DependencyProvider name
 );
 
@@ -62,12 +62,12 @@ var keystone = AppBootstrap.GetInstance<AppKeystone>();
 
 Requires `Initialize` (or successful `EnsureInitialized`).
 
-**Policy (important):** Feature code, view models, commands, and most framework libraries **must not** call `AppBootstrap` statics (`GetInstance`, `DependencyProvider`, `DateTimeProvider`, …). Pass dependencies via constructor or method parameters. Static resolution is a host/design-time escape hatch only — and we intend to **fence** it so casual use is blocked (see [Todo/AppBootstrapFence.md](Todo/AppBootstrapFence.md) and `.grok/rules/framework-primitives.md`).
+**Policy (important):** Feature code, view models, commands, and most framework libraries **must not** call `AppBootstrap` statics (`GetInstance`, `DependencyProvider`, `DateTimeProvider`, …). Pass dependencies via constructor or method parameters. Static resolution is a host/design-time escape hatch only.
 
 `GetInstance` remains useful only for:
 
 - Host entry after bootstrap  
-- Avalonia/XAML default constructors (design-time)  
+- Cornerstone.Presentation/XAML default constructors (design-time)  
 - Existing host shell types that already own bootstrap (do not add new call sites)
 
 ### Infrastructure lifecycle
@@ -80,7 +80,7 @@ AppBootstrap.StartInfrastructure();       // Start RuntimeInformation then Platf
 AppBootstrap.ShutdownInfrastructure();    // Stop/Unload/Uninitialize Platform then RuntimeInformation
 ```
 
-`TeardownLifecycle(ILifecycle)` applies stop → unload → uninitialize for any lifecycle (used for Keystone on Avalonia shutdown).
+`TeardownLifecycle(ILifecycle)` applies stop → unload → uninitialize for any lifecycle (used for Keystone on Cornerstone.Presentation shutdown).
 
 ### Other
 
@@ -88,7 +88,7 @@ AppBootstrap.ShutdownInfrastructure();    // Stop/Unload/Uninitialize Platform t
 |--------|------|
 | `ApplicationArguments` | Parsed host args (if provided) |
 | `DependencyProvider` | Process DI root |
-| `RuntimeInformation` | App paths, platform info, etc. |
+| `RuntimeInformation` | App paths, platform, and device facts. See [RuntimeInformation.md](RuntimeInformation.md). |
 | `DateTimeProvider` | Set at initialize (real time) |
 | `TryGetPlatform` | Resolve `IPlatform` if registered |
 | `LogException` | Best-effort crash log under `ApplicationDataLocation/CrashLogs` |
@@ -108,7 +108,7 @@ After this, app code registers Keystone, view models, and feature services on `A
 
 ---
 
-## Lifecycle order (Avalonia + Keystone)
+## Lifecycle order (Cornerstone.Presentation + Keystone)
 
 Typical desktop/browser/mobile sample:
 
@@ -117,7 +117,7 @@ Host Main
   AppBootstrap.Initialize(name, assembly, args)
   AppBuilder…StartWithClassicDesktopLifetime (or platform equivalent)
 
-Avalonia Application.RegisterServices
+Cornerstone.Presentation Application.RegisterServices
   EnsureAppBootstrap (design-time safe)
   Register IDispatcher / ClipboardService
   App.RegisterServices(provider)  → Keystone, VMs, channels, …
@@ -140,7 +140,7 @@ Shutdown
 
 Console / headless hosts call the same `AppBootstrap` APIs, then drive Keystone lifecycle and an optional process loop themselves (see [Keystone.md](Keystone.md)).
 
-Details of the Avalonia shell: [CornerstoneApplication.md](CornerstoneApplication.md).  
+Details of the Cornerstone.Presentation shell: [CornerstoneApplication.md](CornerstoneApplication.md).  
 Lifecycle phase rules: [Lifecycle.md](Lifecycle.md).
 
 ---
@@ -152,7 +152,7 @@ Lifecycle phase rules: [Lifecycle.md](Lifecycle.md).
 public static void Main(string[] args)
 {
     AppBootstrap.Initialize("Cornerstone.Sample", typeof(Program).Assembly, args);
-    BuildAvaloniaApp().UseCornerstone(args).StartWithClassicDesktopLifetime(args);
+    BuildCornerstoneApp().UseCornerstone(args).StartWithClassicDesktopLifetime(args);
 }
 ```
 
@@ -181,12 +181,12 @@ public class App : CornerstoneApplication<AppKeystone>
 
 ## Design-time and default constructors
 
-Many Avalonia controls and sample tabs use parameterless constructors that resolve dependencies via `AppBootstrap.GetInstance<T>()`. That works because:
+Many Cornerstone.Presentation controls and sample tabs use parameterless constructors that resolve dependencies via `AppBootstrap.GetInstance<T>()`. That works because:
 
 1. Host `Main` already called `Initialize`, or  
 2. `CornerstoneApplication` called `EnsureInitialized` during `RegisterServices` / `Initialize`
 
-Prefer **constructor injection** for objects created by `DependencyProvider`. Use `GetInstance` for XAML/design paths where Avalonia constructs the type without DI.
+Prefer **constructor injection** for objects created by `DependencyProvider`. Use `GetInstance` for XAML/design paths where Cornerstone.Presentation constructs the type without DI.
 
 ---
 
@@ -230,6 +230,6 @@ AppBootstrap.RegisterAsTests(cornerstoneTest);
 |----------|--------|
 | [Keystone.md](Keystone.md) | Bus : State : Engine and hosting patterns |
 | [Lifecycle.md](Lifecycle.md) | Lifecycle phases and `LifecycleTracker` |
-| [CornerstoneApplication.md](CornerstoneApplication.md) | Avalonia application shell |
+| [CornerstoneApplication.md](CornerstoneApplication.md) | Cornerstone.Presentation application shell |
 | [ViewIntegration.md](ViewIntegration.md) | State → ViewModel projection |
 | [AppDispatcher.md](AppDispatcher.md) | Optional adaptive UI projection loop (idle/active) |

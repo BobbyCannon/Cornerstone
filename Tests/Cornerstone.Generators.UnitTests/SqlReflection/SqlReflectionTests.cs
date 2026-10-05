@@ -118,34 +118,32 @@ public class SqlReflectionTests : GeneratorUnitTest
 				{
 					private static readonly string CornerstoneTestModelsAccountCreateTableSqlite =
 						"""
-						CREATE TABLE IF NOT EXISTS "Accounts"
+						CREATE TABLE "Accounts"
 						(
-							"Age" INTEGER,
+							"Age" INTEGER NOT NULL,
 							"CreatedOn" DATE NOT NULL,
-							"Id" INTEGER PRIMARY KEY AUTOINCREMENT,
+							"Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 							"IsDeleted" INTEGER NOT NULL,
 							"ModifiedOn" DATE NOT NULL,
 							"Name" TEXT,
-							"SyncId" TEXT
+							"SyncId" TEXT NOT NULL UNIQUE
 						);
 						""";
 			
 					private static readonly string CornerstoneTestModelsAccountCreateTableSqlServer =
 						"""
-						IF NOT EXISTS (SELECT * FROM [sys].[tables] WHERE [name] = 'Accounts')
-						BEGIN
-							CREATE TABLE [Accounts]
-							(
-								"Age" INT NOT NULL,
-								"CreatedOn" DATETIME2 NOT NULL,
-								"Id" INT NOT NULL IDENTITY(1,1),
-								"IsDeleted" BIT NOT NULL,
-								"ModifiedOn" DATETIME2 NOT NULL,
-								"Name" NVARCHAR(MAX),
-								"SyncId" UNIQUEIDENTIFIER NOT NULL,
-								CONSTRAINT PK_Accounts PRIMARY KEY CLUSTERED ([Id])
-							)
-						END
+						CREATE TABLE [Accounts]
+						(
+							"Age" INT NOT NULL,
+							"CreatedOn" DATETIME2 NOT NULL,
+							"Id" INT NOT NULL IDENTITY(1,1),
+							"IsDeleted" BIT NOT NULL,
+							"ModifiedOn" DATETIME2 NOT NULL,
+							"Name" NVARCHAR(MAX),
+							"SyncId" UNIQUEIDENTIFIER NOT NULL,
+							CONSTRAINT PK_Accounts PRIMARY KEY CLUSTERED ([Id]),
+							CONSTRAINT UQ_Accounts_SyncId UNIQUE ([SyncId])
+						);
 						""";
 			
 					private static readonly string CornerstoneTestModelsAccountUpsertSqlite =
@@ -191,6 +189,39 @@ public class SqlReflectionTests : GeneratorUnitTest
 						"""
 						DELETE FROM [Accounts] WHERE [Id] = @p0;
 						""";
+
+					private static readonly string CornerstoneTestModelsAccountSyncUpsertSqlite =
+						"""
+						INSERT INTO "Accounts" ("Age", "CreatedOn", "IsDeleted", "ModifiedOn", "Name", "SyncId")
+							VALUES (@p0, @p1, @p2, @p3, @p4, @p5)
+						ON CONFLICT("SyncId") DO UPDATE SET
+							"Age" = @p0,
+							"CreatedOn" = @p1,
+							"IsDeleted" = @p2,
+							"ModifiedOn" = @p3,
+							"Name" = @p4
+						WHERE @p3 > "Accounts"."ModifiedOn"
+						RETURNING "Id";
+						""";
+
+					private static readonly string CornerstoneTestModelsAccountSyncUpsertSqlServer =
+						"""
+						MERGE INTO [Accounts] AS x
+						USING (VALUES (@p0, @p1, @p2, @p3, @p4, @p5))
+							AS y ([Age], [CreatedOn], [IsDeleted], [ModifiedOn], [Name], [SyncId])
+						ON x.[SyncId] = y.[SyncId]
+						WHEN MATCHED AND y.[ModifiedOn] > x.[ModifiedOn] THEN
+							UPDATE SET
+								[Age] = y.[Age],
+								[CreatedOn] = y.[CreatedOn],
+								[IsDeleted] = y.[IsDeleted],
+								[ModifiedOn] = y.[ModifiedOn],
+								[Name] = y.[Name]
+						WHEN NOT MATCHED THEN
+							INSERT ([Age], [CreatedOn], [IsDeleted], [ModifiedOn], [Name], [SyncId])
+							VALUES (y.[Age], y.[CreatedOn], y.[IsDeleted], y.[ModifiedOn], y.[Name], y.[SyncId])
+							OUTPUT inserted.[Id];
+						""";
 			
 					public static (object, global::System.Type) CornerstoneTestModelsAccountGetPrimaryKey(object obj)
 					{
@@ -224,6 +255,19 @@ public class SqlReflectionTests : GeneratorUnitTest
 							["@p6"] = (entity.Id, typeof(global::System.Int32)),
 						};
 					}
+					public static global::System.Collections.Generic.IDictionary<string, (object, global::System.Type)> CornerstoneTestModelsAccountGetSyncUpsertParams(object obj)
+					{
+						var entity = (global::Cornerstone.Test.Models.Account) obj;
+						return new global::System.Collections.Generic.Dictionary<string, (object, global::System.Type)>
+						{
+							["@p0"] = (entity.Age, typeof(global::System.Int32)),
+							["@p1"] = (entity.CreatedOn, typeof(global::System.DateTime)),
+							["@p2"] = (entity.IsDeleted, typeof(global::System.Boolean)),
+							["@p3"] = (entity.ModifiedOn, typeof(global::System.DateTime)),
+							["@p4"] = (entity.Name, typeof(global::System.String)),
+							["@p5"] = (entity.SyncId, typeof(global::System.Guid)),
+						};
+					}
 				}
 			}
 			"""",
@@ -244,6 +288,9 @@ public class SqlReflectionTests : GeneratorUnitTest
 						global::Cornerstone.Storage.Sql.SqlGenerator.RegisterDeleteQuery(typeof(global::Cornerstone.Test.Models.Account), global::Cornerstone.Storage.Sql.SqlProvider.SqlServer, CornerstoneTestModelsAccountDeleteSqlServer, CornerstoneTestModelsAccountGetPrimaryKey);
 						global::Cornerstone.Storage.Sql.SqlGenerator.RegisterInsertQuery(typeof(global::Cornerstone.Test.Models.Account), global::Cornerstone.Storage.Sql.SqlProvider.Sqlite, CornerstoneTestModelsAccountUpsertSqlite, CornerstoneTestModelsAccountGetUpsertParamsSqlite);
 						global::Cornerstone.Storage.Sql.SqlGenerator.RegisterInsertQuery(typeof(global::Cornerstone.Test.Models.Account), global::Cornerstone.Storage.Sql.SqlProvider.SqlServer, CornerstoneTestModelsAccountUpsertSqlServer, CornerstoneTestModelsAccountGetUpsertParamsSqlServer);
+						global::Cornerstone.Storage.Sql.SqlGenerator.RegisterSyncUpsertQuery(typeof(global::Cornerstone.Test.Models.Account), global::Cornerstone.Storage.Sql.SqlProvider.Sqlite, CornerstoneTestModelsAccountSyncUpsertSqlite, CornerstoneTestModelsAccountGetSyncUpsertParams);
+						global::Cornerstone.Storage.Sql.SqlGenerator.RegisterSyncUpsertQuery(typeof(global::Cornerstone.Test.Models.Account), global::Cornerstone.Storage.Sql.SqlProvider.SqlServer, CornerstoneTestModelsAccountSyncUpsertSqlServer, CornerstoneTestModelsAccountGetSyncUpsertParams);
+						global::Cornerstone.Storage.Sql.SqlSyncableDatabase.RegisterRepository(typeof(global::Cornerstone.Test.Models.Account), static db => new global::Cornerstone.Storage.Sql.SqlSyncableRepository<global::Cornerstone.Test.Models.Account, int>(db));
 					}
 				}
 			}

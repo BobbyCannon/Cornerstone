@@ -205,11 +205,15 @@ internal sealed class VsCodeWindowHost : ContentControl, IDisposable
 		private readonly IVsWindowPane _pane;
 		private readonly IOleServiceProvider _site;
 		private IntPtr _hwnd = IntPtr.Zero;
+		private int _appliedWidth;
+		private int _appliedHeight;
 
 		public CodeWindowHwndHost(IVsWindowPane pane, IOleServiceProvider site)
 		{
 			_pane = pane;
 			_site = site;
+			_appliedWidth = -1;
+			_appliedHeight = -1;
 		}
 
 		protected override HandleRef BuildWindowCore(HandleRef hwndParent)
@@ -244,6 +248,8 @@ internal sealed class VsCodeWindowHost : ContentControl, IDisposable
 			}
 
 			_hwnd = IntPtr.Zero;
+			_appliedWidth = -1;
+			_appliedHeight = -1;
 		}
 
 		protected override void OnWindowPositionChanged(Rect rcBoundingBox)
@@ -257,6 +263,16 @@ internal sealed class VsCodeWindowHost : ContentControl, IDisposable
 
 			var width = Math.Max(1, (int) rcBoundingBox.Width);
 			var height = Math.Max(1, (int) rcBoundingBox.Height);
+			if ((width == _appliedWidth) && (height == _appliedHeight))
+			{
+				return;
+			}
+
+			_appliedWidth = width;
+			_appliedHeight = height;
+			// SWP_ASYNCWINDOWPOS posts the size change. A synchronous SetWindowPos
+			// sends WM_WINDOWPOSCHANGED into the editor during WPF layout, and the
+			// shell stays frozen until another window message arrives.
 			SetWindowPos(
 				_hwnd,
 				IntPtr.Zero,
@@ -264,7 +280,7 @@ internal sealed class VsCodeWindowHost : ContentControl, IDisposable
 				0,
 				width,
 				height,
-				SWP_NOZORDER | SWP_NOACTIVATE);
+				SWP_NOZORDER | SWP_NOACTIVATE | SWP_ASYNCWINDOWPOS);
 		}
 
 		[DllImport("user32.dll", SetLastError = true)]
@@ -279,6 +295,7 @@ internal sealed class VsCodeWindowHost : ContentControl, IDisposable
 
 		private const uint SWP_NOZORDER = 0x0004;
 		private const uint SWP_NOACTIVATE = 0x0010;
+		private const uint SWP_ASYNCWINDOWPOS = 0x4000;
 	}
 
 	#endregion

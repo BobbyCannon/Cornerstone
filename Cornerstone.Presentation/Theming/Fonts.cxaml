@@ -1,0 +1,68 @@
+<!--
+	Font URIs under Assets/Fonts:
+
+	A folder URI (no .ttf) loads every cut in that folder as one family. Bold and italic
+	then use the real files. Pointing at a single Regular.ttf makes Bold synthetic and fuzzy.
+
+	A .ttf URI is one cut. Use it when there is only one file (DejaVuSansLight) or when you
+	need that weight as the family default (OpenSans-Light) instead of Regular from the folder.
+
+	DejaVuSansMono/ and OpenSans/ are family folders. DejaVuSansLight.ttf stays at the Fonts root.
+-->
+<ResourceDictionary xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<FontFamily x:Key="DejaVuSansMono">csres://Cornerstone.Presentation/Assets/Fonts/DejaVuSansMono#DejaVu Sans Mono</FontFamily>
+	<FontFamily x:Key="DejaVuSansLight">csres://Cornerstone.Presentation/Assets/Fonts/DejaVuSansLight.ttf#DejaVu Sans Light</FontFamily>
+	<FontFamily x:Key="OpenSansLight">csres://Cornerstone.Presentation/Assets/Fonts/OpenSans/OpenSans-Light.ttf#Open Sans</FontFamily>
+	<FontFamily x:Key="OpenSansRegular">csres://Cornerstone.Presentation/Assets/Fonts/OpenSans#Open Sans</FontFamily>
+
+	<Design.PreviewWith>
+		<StackPanel Spacing="10">
+			<TextBlock Classes="Header" Text="x:Static" />
+			<TextBlock FontFamily="{x:Static CornerstoneTheme.DejaVuSansMono}"
+					FontSize="22"
+					Text="DejaVu Sans Mono : 0oO1LlIi The quick brown fox jumped..." />
+			<TextBlock FontFamily="{x:Static CornerstoneTheme.DejaVuSansMono}"
+					FontSize="22"
+					FontWeight="Bold"
+					Text="DejaVu Sans Mono : 0oO1LlIi The quick brown fox jumped..." />
+			<TextBlock FontFamily="{x:Static CornerstoneTheme.DejaVuSansLight}"
+					FontSize="22"
+					Text="DejaVu Sans Light   : 0oO1LlIi The quick brown fox jumped..." />
+			<TextBlock FontFamily="{x:Static CornerstoneTheme.OpenSansRegular}"
+					FontSize="22"
+					Text="Open Sans Regular : The quick brown fox jumped..." />
+			<TextBlock FontFamily="{x:Static CornerstoneTheme.OpenSansRegular}"
+					FontSize="22"
+					FontWeight="Bold"
+					Text="Open Sans Bold : The quick brown fox jumped..." />
+			<TextBlock FontFamily="{x:Static CornerstoneTheme.OpenSansLight}"
+					FontSize="22"
+					Text="Open Sans Light : The quick brown fox jumped..." />
+
+			<TextBlock Classes="Header"
+					Text="Static Resource"
+					Margin="0,20,0,0" />
+			<TextBlock FontFamily="{StaticResource DejaVuSansMono}"
+					FontSize="22"
+					Text="DejaVu Sans Mono : 0oO1LlIi" />
+			<TextBlock FontFamily="{StaticResource DejaVuSansMono}"
+					FontSize="22"
+					FontWeight="Bold"
+					Text="DejaVu Sans Mono : 0oO1LlIi" />
+			<TextBlock FontFamily="{StaticResource DejaVuSansLight}"
+					FontSize="22"
+					Text="DejaVu Sans Light   : 0oO1LlIi" />
+			<TextBlock FontFamily="{StaticResource OpenSansRegular}"
+					FontSize="22"
+					Text="Open Sans Regular : The quick brown fox jumped..." />
+			<TextBlock FontFamily="{StaticResource OpenSansRegular}"
+					FontSize="22"
+					FontWeight="Bold"
+					Text="Open Sans Bold : The quick brown fox jumped..." />
+			<TextBlock FontFamily="{StaticResource OpenSansLight}"
+					FontSize="22"
+					Text="Open Sans Light : The quick brown fox jumped..." />
+		</StackPanel>
+	</Design.PreviewWith>
+</ResourceDictionary>

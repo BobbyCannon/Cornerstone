@@ -7,7 +7,8 @@
 		xmlns:conv="clr-namespace:Cornerstone.VisualStudio.Converters"
 		xmlns:a="clr-namespace:Cornerstone.VisualStudio"
 		mc:Ignorable="d"
-		d:DesignHeight="450" d:DesignWidth="800">
+		d:DesignHeight="450" d:DesignWidth="800"
+		local:VsControlStyles.UseVsControlStyles="True">
 	<!-- TEMP: Code Cleanup options UI removed for release. Restore xmlns:cleanup + section below when re-enabling (CodeCleanupUiEnabled). -->
 	<UserControl.Resources>
 		<conv:EnumValuesConverter x:Key="EnumValues" />
@@ -15,7 +16,7 @@
 
 	<ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
 		<StackPanel Margin="10">
-			<TextBlock Text="General" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,8" />
+			<TextBlock Text="General" FontSize="14" Margin="0,0,0,8" />
 			<Grid HorizontalAlignment="Left">
 				<Grid.RowDefinitions>
 					<RowDefinition Height="Auto" />
@@ -36,7 +37,7 @@
 
 				<TextBlock Text="Default Document View:" Grid.Column="0" Grid.Row="0" VerticalAlignment="Top" />
 				<ComboBox Grid.Column="2" Grid.Row="0" VerticalAlignment="Center"
-						ItemsSource="{Binding Source={x:Type local:AvaloniaDesignerView}, Converter={StaticResource EnumValues}}"
+						ItemsSource="{Binding Source={x:Type local:CornerstoneDesignerView}, Converter={StaticResource EnumValues}}"
 						SelectedItem="{Binding DesignerView, Mode=TwoWay}" />
 
 				<TextBlock Text="Split Orientation:" Grid.Column="0" Grid.Row="2" VerticalAlignment="Top" />
@@ -108,7 +109,7 @@
 				<TextBlock Text="File extensions:" Grid.Column="0" Grid.Row="0" VerticalAlignment="Center" />
 				<TextBox Grid.Column="2" Grid.Row="0" VerticalAlignment="Center"
 						Text="{Binding CleanupFileExtensions, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-						ToolTip="Semicolon-separated list, e.g. .axaml;.xaml" />
+						ToolTip="Semicolon-separated list, e.g. .cxaml;.axaml" />
 
 				<TextBlock Text="Line endings:" Grid.Column="0" Grid.Row="2" VerticalAlignment="Center" />
 				<ComboBox Grid.Column="2" Grid.Row="2" VerticalAlignment="Center"

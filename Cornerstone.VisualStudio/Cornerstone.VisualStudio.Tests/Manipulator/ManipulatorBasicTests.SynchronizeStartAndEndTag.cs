@@ -1,6 +1,6 @@
-﻿#region References
+#region References
 
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
@@ -62,7 +62,7 @@ partial class ManipulatorBasicTests
 
 	#region Methods
 
-	[Theory]
+	[TestMethod]
 	[Scenario("Adding nested Tag renames parent closing element  GitHub #338 ", nestingRenameExpected, nestingRenameSource)]
 	[Scenario("Rename with invalid nested tag", scenario2Expected, scenario2Source)]
 	public void SynchronizeStartAndEndTag(Scenario scenario)

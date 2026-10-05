@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net10.0</TargetFramework>
+		<RootNamespace>Cornerstone.VisualStudio.EditorHost</RootNamespace>
+		<Nullable>disable</Nullable>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+	<ItemGroup>
+		<InternalsVisibleTo Include="Cornerstone.VisualStudio.Tests" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Cornerstone.VisualStudio.Core\Cornerstone.VisualStudio.Core.csproj" />
+		<ProjectReference Include="..\Cornerstone.VisualStudio.Protocol\Cornerstone.VisualStudio.Protocol.csproj" />
+		<ProjectReference Include="..\..\Cornerstone.Presentation.Remote.Protocol\Cornerstone.Presentation.Remote.Protocol.csproj" />
+	</ItemGroup>
+</Project>

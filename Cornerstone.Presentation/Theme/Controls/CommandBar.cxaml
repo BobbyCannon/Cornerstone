@@ -1,0 +1,33 @@
+<ResourceDictionary
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+
+	<ControlTheme x:Key="{x:Type CommandBar}" TargetType="CommandBar">
+		<Setter Property="Template">
+			<ControlTemplate>
+				<DockPanel>
+					<Button Name="PART_OverflowButton"
+							DockPanel.Dock="Right"
+							IsVisible="{TemplateBinding IsOverflowButtonVisible}"
+							Content="..." />
+					<ContentPresenter Name="PART_ContentPresenter"
+							Content="{TemplateBinding Content}" />
+					<ItemsControl Name="PART_PrimaryItems"
+							ItemsSource="{Binding VisiblePrimaryCommands, RelativeSource={RelativeSource TemplatedParent}}" />
+					<Popup Name="PART_OverflowPopup"
+							IsOpen="{TemplateBinding IsOpen, Mode=TwoWay}"
+							Placement="Bottom">
+						<ItemsControl Name="PART_OverflowPresenter"
+								ItemsSource="{Binding OverflowItems, RelativeSource={RelativeSource TemplatedParent}}" />
+					</Popup>
+				</DockPanel>
+			</ControlTemplate>
+		</Setter>
+	</ControlTheme>
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="480">
+			<CommandBar Content="Command bar" />
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

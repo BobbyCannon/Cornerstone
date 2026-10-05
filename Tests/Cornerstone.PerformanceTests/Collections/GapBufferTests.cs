@@ -1,10 +1,9 @@
 ﻿#region References
 
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Cornerstone.Collections;
-using Cornerstone.Testing;
 using Cornerstone.UnitTests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -31,21 +30,22 @@ public class GapBufferTests : CornerstoneUnitTest
 	[TestMethod]
 	public void LoadMillion()
 	{
-		var buffer = new GapBuffer<char>();
 		var data = Enumerable.Range(0, 1_000_000).Select(i => (char) (' ' + (i % 95))).ToArray();
 
+		// Default-capacity load of 1M chars grows once to ~4 MB; 5 MB is slack, not a noise-sensitive micro-budget.
 		ValidatePerformance($"GapBuffer<char> {data.Length:N0} characters",
-			() => buffer.Add(data),
-			int.MaxValue, 2100, 1, 1,
-			buffer.Clear
+			() =>
+			{
+				var buffer = new GapBuffer<char>();
+				buffer.Add(data);
+			},
+			int.MaxValue, 5_000_000, 5, 10
 		);
 
-		AreEqual(1000000, buffer.Count);
-		var w = Stopwatch.StartNew();
-		var actual = buffer.ToArray();
-		w.Stop();
-		$"ToArray: {w.Elapsed}".Dump();
-		AreEqual(data, actual);
+		var loaded = new GapBuffer<char>();
+		loaded.Add(data);
+		AreEqual(1_000_000, loaded.Count);
+		IsTrue(data.AsSpan().SequenceEqual(loaded.ToArray()));
 	}
 
 	#endregion

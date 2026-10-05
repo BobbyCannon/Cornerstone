@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFrameworks>net10.0</TargetFrameworks>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+	</PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Cornerstone.Presentation\Cornerstone.Presentation.csproj" />
+	</ItemGroup>
+	<Import Project="..\Build\Presentation.props" />
+</Project>

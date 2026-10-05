@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+	<!--
+		Shared analysis settings for Cornerstone.
+		Import from each tree's Directory.Build.props.
+
+		IsAotCompatible (net8+): trim, single-file, and Native AOT analyzers.
+		Off for generator projects (build-time only), website hosts (MVC/Razor is
+		not AOT-safe and is never published as AOT), Cornerstone.Automation
+		(UI automation uses APIs that are not AOT-safe), test projects (generated
+		TestRunner is reflection-based; tests are never published as AOT),
+		Presentation.Diagnostics (debug-only inspector), Cornerstone.PowerShell
+		(PowerShell / Newtonsoft / Assembly.Load, never published as AOT), and
+		Cornerstone.EntityFramework (until EF itself is AOT-safe).
+
+		NoWarn (noise / not a local AOT fix):
+		AVA2001  compiled-binding analyzer
+		CA1416   platform compatibility (API not on this TFM/OS)
+		CEE0027  extra compiler diagnostic used by some hosts
+		CS0419   ambiguous cref in XML docs
+		CS0618   obsolete member
+		CS1574   XML cref could not be resolved
+		CS8002   referenced assembly is not strong-name signed
+		IL2037   unrecognized DynamicallyAccessedMembersAttribute argument
+		IL2045   DynamicallyAccessedMembersAttribute cannot apply to this member
+		IL2050   P/Invoke COM marshalling (annotation)
+		IL2057   Type.GetType(string) value the analyzer cannot see
+		IL2093   DynamicallyAccessedMembers mismatch on virtual/override
+		IL2094   DynamicallyAccessedMembers mismatch on property vs accessors
+		IL2098   DynamicallyAccessedMembers mismatch on interface vs implementation
+		IL2104   referenced assembly is not annotated for trimming
+		IL3000   Assembly.Location is empty in single-file / Native AOT
+		IL3002   member needs assembly files single-file embedding does not provide
+		IL3058   referenced assembly is not marked IsAotCompatible (often noisy)
+		MSB3277  conflicting versions of the same dependent assembly
+		NETSDK1144  failed to optimize assemblies for size (trim publish)
+		WASM0001 WebAssembly / browser-wasm SDK diagnostic
+
+		Do not suppress (fix these): IL2026, IL2055, IL2060, IL2065, IL2067,
+		IL2070–IL2072, IL2075, IL2077, IL2080, IL2091, IL3050, IL3053, IL3073.
+
+		Browser WASM (Release.Browser.props): trim analysis is suppressed there.
+		Those IL* codes still fail Native AOT / desktop trimmed publish.
+	-->
+	<PropertyGroup>
+		<IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0')) and '$(MSBuildProjectName)' != 'Cornerstone.EntityFramework' and !$(MSBuildProjectName.Contains('Generator')) and !$(MSBuildProjectName.Contains('Website')) and !$(MSBuildProjectName.Contains('Automation')) and !$(MSBuildProjectName.Contains('Test')) and !$(MSBuildProjectName.Contains('Diagnostics')) and !$(MSBuildProjectName.Contains('PowerShell'))">true</IsAotCompatible>
+		<NoWarn>$(NoWarn);AVA2001;CA1416;CEE0027;CS0419;CS0618;CS1574;CS8002;IL2037;IL2045;IL2050;IL2057;IL2093;IL2094;IL2098;IL2104;IL3000;IL3002;IL3058;MSB3277;NETSDK1144;WASM0001</NoWarn>
+		<WarningsNotAsErrors>$(WarningsNotAsErrors);AVA2001</WarningsNotAsErrors>
+	</PropertyGroup>
+</Project>

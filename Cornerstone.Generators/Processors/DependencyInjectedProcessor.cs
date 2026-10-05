@@ -64,7 +64,7 @@ internal sealed class DependencyInjectedProcessor : ITypeProcessor
 			builder.IndentWriteLine("/// <summary>");
 			builder.IndentWriteLine("/// Registers default factory services discovered via [DependencyInjected].");
 			builder.IndentWriteLine("/// Call before any <c>SetSingleton</c> overrides and before first resolve.");
-			builder.IndentWriteLine("/// Hosts may call this for each referenced assembly (e.g. Cornerstone, Cornerstone.Avalonia).");
+			builder.IndentWriteLine("/// Hosts may call this for each referenced assembly (e.g. Cornerstone, Cornerstone.Presentation).");
 			builder.IndentWriteLine("/// </summary>");
 			builder.IndentWriteLine($"public static void RegisterDependencies({GlobalDependencyProvider} provider)");
 			builder.IndentWriteLine("{");

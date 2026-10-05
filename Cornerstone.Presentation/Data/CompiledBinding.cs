@@ -1,0 +1,359 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Linq.Expressions;
+using Cornerstone.Presentation.Controls;
+using Cornerstone.Presentation.Data.Converters;
+using Cornerstone.Presentation.Data.Core;
+using Cornerstone.Presentation.Data.Core.ExpressionNodes;
+using Cornerstone.Presentation.Data.Core.Parsers;
+using Cornerstone.Presentation.Metadata;
+using Cornerstone.Presentation.Controls.Naming;
+
+namespace Cornerstone.Presentation.Data;
+
+/// <summary>
+/// A binding which does not use reflection to access members.
+/// </summary>
+public class CompiledBinding : BindingBase
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CompiledBinding"/> class.
+    /// </summary>
+    public CompiledBinding() { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CompiledBinding"/> class.
+    /// </summary>
+    /// <param name="path">The binding path.</param>
+    public CompiledBinding(CompiledBindingPath path) => Path = path;
+
+    /// <summary>
+    /// Creates a <see cref="CompiledBinding"/> from a lambda expression.
+    /// </summary>
+    /// <typeparam name="TIn">The input type of the binding expression.</typeparam>
+    /// <typeparam name="TOut">The output type of the binding expression.</typeparam>
+    /// <param name="expression">
+    /// The lambda expression representing the binding path
+    /// (e.g., <c>vm => vm.PropertyName</c>).
+    /// </param>
+    /// <param name="source"
+    /// >The source object for the binding. If null, uses the target's DataContext.
+    /// </param>
+    /// <param name="converter">
+    /// Optional value converter to transform values between source and target.
+    /// </param>
+    /// <param name="mode">
+    /// The binding mode. Default is <see cref="BindingMode.Default"/> which resolves to the
+    /// property's default binding mode.
+    /// </param>
+    /// <param name="priority">The binding priority.</param>
+    /// <param name="converterCulture">The culture in which to evaluate the converter.</param>
+    /// <param name="converterParameter">A parameter to pass to the converter.</param>
+    /// <param name="fallbackValue">
+    /// The value to use when the binding is unable to produce a value.
+    /// </param>
+    /// <param name="stringFormat">The string format for the binding result.</param>
+    /// <param name="targetNullValue">The value to use when the binding result is null.</param>
+    /// <param name="updateSourceTrigger">
+    /// The timing of binding source updates for TwoWay/OneWayToSource bindings.
+    /// </param>
+    /// <param name="delay">
+    /// The amount of time, in milliseconds, to wait before updating the binding source.
+    /// </param>
+    /// <returns>
+    /// A configured <see cref="CompiledBinding"/> instance ready to be applied to a property.
+    /// </returns>
+    /// <exception cref="ExpressionParseException">
+    /// Thrown when the expression contains unsupported operations or invalid syntax for binding
+    /// expressions.
+    /// </exception>
+    /// <remarks>
+    /// This builds a <see cref="CompiledBinding"/> with a path described by a lambda expression.
+    /// The resulting binding avoids reflection for property access, providing better performance
+    /// than reflection-based bindings.
+    ///
+    /// Supported expressions include:
+    /// <list type="bullet">
+    /// <item>Property access: <c>x => x.Property</c></item>
+    /// <item>Nested properties: <c>x => x.Property.Nested</c></item>
+    /// <item>Indexers: <c>x => x.Items[0]</c></item>
+    /// <item>Type casts: <c>x => ((DerivedType)x).Property</c></item>
+    /// <item>Logical NOT: <c>x => !x.BoolProperty</c></item>
+    /// <item>PresentationProperty access: <c>x => x[MyProperty]</c></item>
+    /// </list>
+    /// </remarks>
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Expression statically preserves members used in binding expressions.")]
+    public static CompiledBinding Create<TIn, TOut>(
+        Expression<Func<TIn, TOut>> expression,
+        object? source = null,
+        IValueConverter? converter = null,
+        BindingMode mode = BindingMode.Default,
+        BindingPriority priority = BindingPriority.LocalValue,
+        CultureInfo? converterCulture = null,
+        object? converterParameter = null,
+        object? fallbackValue = null,
+        string? stringFormat = null,
+        object? targetNullValue = null,
+        UpdateSourceTrigger updateSourceTrigger = UpdateSourceTrigger.Default,
+        int delay = 0)
+    {
+        var path = BindingExpressionVisitor<TIn>.BuildPath(expression);
+        return new CompiledBinding(path)
+        {
+            Source = source ?? PresentationProperty.UnsetValue,
+            Converter = converter,
+            ConverterCulture = converterCulture,
+            ConverterParameter = converterParameter,
+            FallbackValue = fallbackValue ?? PresentationProperty.UnsetValue,
+            Mode = mode,
+            Priority = priority,
+            StringFormat = stringFormat,
+            TargetNullValue = targetNullValue ?? PresentationProperty.UnsetValue,
+            UpdateSourceTrigger = updateSourceTrigger,
+            Delay = delay
+        };
+    }
+
+    /// <summary>
+    /// Gets or sets the amount of time, in milliseconds, to wait before updating the binding 
+    /// source after the value on the target changes.
+    /// </summary>
+    /// <remarks>
+    /// There is no delay when the source is updated via <see cref="UpdateSourceTrigger.LostFocus"/> 
+    /// or <see cref="BindingExpressionBase.UpdateSource"/>. Nor is there a delay when 
+    /// <see cref="BindingMode.OneWayToSource"/> is active and a new source object is provided.
+    /// </remarks>
+    public int Delay { get; set; }
+
+    /// <summary>
+    /// Gets or sets the <see cref="IValueConverter"/> to use.
+    /// </summary>
+    public IValueConverter? Converter { get; set; }
+
+    /// <summary>
+    /// Gets or sets the culture in which to evaluate the converter.
+    /// </summary>
+    /// <value>The default value is null.</value>
+    /// <remarks>
+    /// If this property is not set then <see cref="CultureInfo.CurrentCulture"/> will be used.
+    /// </remarks>
+    [TypeConverter(typeof(CultureInfoIetfLanguageTagConverter))]
+    public CultureInfo? ConverterCulture { get; set; }
+
+    /// <summary>
+    /// Gets or sets a parameter to pass to <see cref="Converter"/>.
+    /// </summary>
+    public object? ConverterParameter { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the value to use when the binding is unable to produce a value.
+    /// </summary>
+    public object? FallbackValue { get; set; } = PresentationProperty.UnsetValue;
+
+    /// <summary>
+    /// Gets or sets the binding mode.
+    /// </summary>
+    public BindingMode Mode { get; set; }
+
+    /// <summary>
+    /// Gets or sets the binding path.
+    /// </summary>
+    [ConstructorArgument("path")]
+    public CompiledBindingPath? Path { get; set; }
+
+    /// <summary>
+    /// Gets or sets the binding priority.
+    /// </summary>
+    public BindingPriority Priority { get; set; }
+
+    /// <summary>
+    /// Gets or sets the source for the binding.
+    /// </summary>
+    public object? Source { get; set; } = PresentationProperty.UnsetValue;
+
+    /// <summary>
+    /// Gets or sets the string format.
+    /// </summary>
+    public string? StringFormat { get; set; }
+
+    /// <summary>
+    /// Gets or sets the value to use when the binding result is null.
+    /// </summary>
+    public object? TargetNullValue { get; set; } = PresentationProperty.UnsetValue;
+
+    /// <summary>
+    /// Gets or sets a value that determines the timing of binding source updates for
+    /// <see cref="BindingMode.TwoWay"/> and <see cref="BindingMode.OneWayToSource"/> bindings.
+    /// </summary>
+    public UpdateSourceTrigger UpdateSourceTrigger { get; set; }
+
+    internal WeakReference? DefaultAnchor { get; set; }
+    internal WeakReference<INameScope?>? NameScope { get; set; }
+
+    internal override BindingExpressionBase CreateInstance(
+        PresentationObject target,
+        PresentationProperty? targetProperty,
+        object? anchor)
+    {
+        if (CanUseTypedBindingExpression(target, targetProperty, out var typed))
+        {
+            return CreateTypedExpression(typed, target, targetProperty, anchor);
+        }
+        else
+        {
+            return CreateUntypedExpression(target, targetProperty, anchor);
+        }
+    }
+
+    private bool CanUseTypedBindingExpression(
+        PresentationObject target,
+        PresentationProperty? targetProperty,
+        [NotNullWhen(true)] out TypedPropertyElement? element)
+    {
+        element = null;
+
+        // We need a path with a single TypedPropertyElement
+        if (Path?.Elements.Count != 1 || Path.Elements[0] is not TypedPropertyElement typed)
+            return false;
+
+        // We need a DataContext binding.
+        if (Source != PresentationProperty.UnsetValue)
+            return false;
+
+        // It cannot have a Converter, Delay, FallbackValue. StringFormat, TargetNullValue or
+        // UpdateSourceTrigger != PropertyChanged.
+        if (Converter is not null ||
+            Delay != 0 ||
+            FallbackValue != PresentationProperty.UnsetValue ||
+            StringFormat != null ||
+            TargetNullValue != PresentationProperty.UnsetValue ||
+            UpdateSourceTrigger is not (UpdateSourceTrigger.Default or UpdateSourceTrigger.PropertyChanged))
+        {
+            return false;
+        }
+
+        // The value must be directly assignable to the target property.
+        if (targetProperty is null ||
+            !typed.Property.PropertyType.IsAssignableTo(targetProperty.PropertyType))
+        {
+            return false;
+        }
+
+        // TypedBindingExpression only supports StyledElement targets (it listens for
+        // StyledElement.DataContextProperty changes). Other PresentationObjects that expose a
+        // DataContext (e.g. Application, which is an IDataContextProvider but not a StyledElement)
+        // must use the untyped path.
+        if (target is not StyledElement)
+            return false;
+
+        // DataContext bindings need to read their source value from the parent of the target
+        // instead of the DataContext; TypedBindingExpression does not support this (and it would
+        // probably not be worth doing so as DataContexts are usually reference types).
+        if (targetProperty == StyledElement.DataContextProperty)
+            return false;
+
+        // TypedBindingExpression does not support data validation, so fall back to the untyped
+        // path when the target property enables it.
+        if (targetProperty.GetMetadata(target).EnableDataValidation == true)
+            return false;
+
+        // For modes that write back to the source, the source property must be settable and the
+        // target value must be assignable back to the source property type. The untyped path
+        // handles read-only or wider-typed sources gracefully (failing silently), so fall back to
+        // it rather than throwing during write-back.
+        var (mode, _) = ResolveDefaultsFromMetadata(target, targetProperty);
+        if (mode is BindingMode.TwoWay or BindingMode.OneWayToSource)
+        {
+            if (!typed.Property.CanSet ||
+                !targetProperty.PropertyType.IsAssignableTo(typed.Property.PropertyType))
+            {
+                return false;
+            }
+        }
+
+        element = typed;
+        return true;
+    }
+
+    private BindingExpressionBase CreateTypedExpression(
+        TypedPropertyElement element,
+        PresentationObject target,
+        PresentationProperty? targetProperty,
+        object? anchor)
+    {
+        // The UpdateSourceTrigger has already been constrained to PropertyChanged by
+        // CanUseTypedBindingExpression, so only the mode needs to be resolved here.
+        var (mode, _) = ResolveDefaultsFromMetadata(target, targetProperty);
+
+        return element.CreateExpression(
+            target,
+            targetProperty,
+            anchor,
+            mode,
+            Priority);
+    }
+
+    private BindingExpression CreateUntypedExpression(
+        PresentationObject target,
+        PresentationProperty? targetProperty,
+        object? anchor)
+    {
+        var enableDataValidation = targetProperty?.GetMetadata(target).EnableDataValidation ?? false;
+        var nodes = new List<ExpressionNode>();
+        var isRooted = false;
+
+        Path?.BuildExpression(nodes, out isRooted);
+
+        // If the binding isn't rooted (i.e. doesn't have a Source or start with $parent, $self,
+        // #elementName etc.) then we need to add a data context source node.
+        if (Source == PresentationProperty.UnsetValue && !isRooted)
+            nodes.Insert(0, ExpressionNodeFactory.CreateDataContext(targetProperty));
+
+        // If the first node is an ISourceNode then allow it to select the source; otherwise
+        // use the binding source if specified, falling back to the target.
+        var source = nodes?.Count > 0 && nodes[0] is SourceNode sn
+            ? sn.SelectSource(Source, target, anchor ?? DefaultAnchor?.Target)
+            : Source != PresentationProperty.UnsetValue ? Source : target;
+
+        var (mode, trigger) = ResolveDefaultsFromMetadata(target, targetProperty);
+
+        return new BindingExpression(
+            source,
+            nodes,
+            FallbackValue,
+            delay: TimeSpan.FromMilliseconds(Delay),
+            converter: Converter,
+            converterCulture: ConverterCulture,
+            converterParameter: ConverterParameter,
+            enableDataValidation: enableDataValidation,
+            mode: mode,
+            priority: Priority,
+            stringFormat: StringFormat,
+            targetNullValue: TargetNullValue,
+            targetProperty: targetProperty,
+            targetTypeConverter: TargetTypeConverter.GetDefaultConverter(),
+            updateSourceTrigger: trigger);
+    }
+
+    private (BindingMode, UpdateSourceTrigger) ResolveDefaultsFromMetadata(
+        PresentationObject target,
+        PresentationProperty? targetProperty)
+    {
+        var mode = Mode;
+        var trigger = UpdateSourceTrigger == UpdateSourceTrigger.Default ?
+            UpdateSourceTrigger.PropertyChanged : UpdateSourceTrigger;
+
+        if (mode == BindingMode.Default)
+        {
+            if (targetProperty?.GetMetadata(target) is { } metadata)
+                mode = metadata.DefaultBindingMode;
+            else
+                mode = BindingMode.OneWay;
+        }
+
+        return (mode, trigger);
+    }
+}

@@ -1,0 +1,476 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using Cornerstone.Presentation.Controls;
+using Cornerstone.Presentation.Controls.Platform;
+using Cornerstone.Presentation.Controls.Primitives.PopupPositioning;
+using Cornerstone.Presentation.Input;
+using Cornerstone.Presentation.Input.Platform;
+using Cornerstone.Presentation.Input.Raw;
+using Cornerstone.Presentation.Media.Imaging;
+using Cornerstone.Presentation.Platform;
+using Cornerstone.Presentation.Platform.Surfaces;
+using Cornerstone.Presentation.Rendering.Composition;
+using Cornerstone.Presentation.Threading;
+using Cornerstone.Presentation.Controls.Acrylic;
+using Cornerstone.Presentation.Controls.Chrome;
+
+namespace Cornerstone.Presentation.Headless
+{
+    internal class HeadlessWindowImpl : IWindowImpl, IPopupImpl, IFramebufferPlatformSurface, IHeadlessWindow
+    {
+        private static int _nextGlobalZOrder = 1;
+
+        private readonly IKeyboardDevice _keyboard;
+        private readonly IScreenImpl _screen;
+        private readonly Stopwatch _st = Stopwatch.StartNew();
+        private readonly TouchDevice _touchDevice = new();
+        private WriteableBitmap? _lastRenderedFrame;
+        private readonly object _sync = new object();
+        private readonly PresentationHeadlessPlatformOptions _options;
+        private readonly HeadlessWindowImpl? _popupParent;
+        private readonly IPopupPositioner? _popupPositioner;
+        public bool IsPopup { get; }
+
+        public HeadlessWindowImpl(PresentationHeadlessPlatformOptions options)
+        {
+            Surfaces = [this];
+            _keyboard = PresentationLocator.Current.GetRequiredService<IKeyboardDevice>();
+            _screen = new HeadlessScreensStub();
+            MouseDevice = options.UseSharedMouseDevice == true
+                ? Cornerstone.Presentation.Input.MouseDevice.Primary
+                : new MouseDevice(new Pointer(Pointer.GetNextFreeId(), PointerType.Mouse, true));
+            ClientSize = new Size(1024, 768);
+            _options = options;
+        }
+
+        private HeadlessWindowImpl(HeadlessWindowImpl popupParent)
+            : this(popupParent._options)
+        {
+            IsPopup = true;
+            _popupParent = popupParent;
+            _popupPositioner = new ManagedPopupPositioner(
+                new ManagedPopupPositionerPopupImplHelper(popupParent, PopupMoveResize));
+        }
+
+        private void PopupMoveResize(PixelPoint position, Size size, double scaling)
+        {
+            Position = position;
+            PositionChanged?.Invoke(position);
+            DoResize(size, WindowResizeReason.Unspecified);
+        }
+
+        public void Dispose()
+        {
+            Closed?.Invoke();
+            _touchDevice.Dispose();
+            _lastRenderedFrame?.Dispose();
+            _lastRenderedFrame = null;
+        }
+
+        public Size ClientSize { get; set; }
+        public Size? FrameSize => null;
+        public double RenderScaling { get; private set; } = 1;
+        public double DesktopScaling => RenderScaling;
+        public IPlatformRenderSurface[] Surfaces { get; }
+        public Action<RawInputEventArgs>? Input { get; set; }
+        public Action<Rect>? Paint { get; set; }
+        public Action<Size, WindowResizeReason>? Resized { get; set; }
+        public Action<double>? ScalingChanged { get; set; }
+
+        public Compositor Compositor => PresentationHeadlessPlatform.Compositor!;
+
+        public int ZOrder { get; private set; }
+
+        public void SetInputRoot(IInputRoot inputRoot)
+        {
+            InputRoot = inputRoot;
+        }
+
+        public IInputRoot? InputRoot { get; set; }
+
+        public Point PointToClient(PixelPoint point) => (point - Position).ToPoint(RenderScaling);
+
+        public PixelPoint PointToScreen(Point point) => PixelPoint.FromPoint(point, RenderScaling) + Position;
+
+        public void SetCursor(ICursorImpl? cursor)
+        {
+
+        }
+
+        public Action? Closed { get; set; }
+        public IMouseDevice MouseDevice { get; }
+
+        public void Show(bool activate, bool isDialog)
+        {
+            if (activate)
+            {
+                ZOrder = _nextGlobalZOrder++;
+                Dispatcher.UIThread.Post(() => Activated?.Invoke(), DispatcherPriority.Input);
+            }
+        }
+
+        public void Hide()
+        {
+            Dispatcher.UIThread.Post(() => Deactivated?.Invoke(), DispatcherPriority.Input);
+        }
+
+        public PixelPoint Position { get; set; }
+        public Action<PixelPoint>? PositionChanged { get; set; }
+        public void Activate()
+        {
+            ZOrder = _nextGlobalZOrder++;
+            Dispatcher.UIThread.Post(() => Activated?.Invoke(), DispatcherPriority.Input);
+        }
+
+        public Action? Deactivated { get; set; }
+        public Action? Activated { get; set; }
+        public IPlatformHandle Handle { get; } = new PlatformHandle(IntPtr.Zero, "STUB");
+        public void Resize(Size clientSize, WindowResizeReason reason)
+        {
+            if (ClientSize == clientSize)
+                return;
+
+            // Emulate X11 behavior here
+            if (IsPopup)
+                DoResize(clientSize, reason);
+            else
+                Dispatcher.UIThread.Post(() =>
+                {
+                    DoResize(clientSize, reason);
+                }, DispatcherPriority.Send);
+        }
+
+        private void DoResize(Size clientSize, WindowResizeReason reason)
+        {
+            // Uncomment this check and experience a weird bug in layout engine
+            if (ClientSize != clientSize)
+            {
+                ClientSize = clientSize;
+                Resized?.Invoke(clientSize, reason);
+            }
+        }
+
+        public void SetMinMaxSize(Size minSize, Size maxSize)
+        {
+
+        }
+
+        public void SetTopmost(bool value)
+        {
+
+        }
+
+        public WindowState WindowState { get; set; }
+        public bool WindowStateGetterIsUsable => false;
+        public Action<WindowState>? WindowStateChanged { get; set; }
+        public void SetTitle(string? title)
+        {
+
+        }
+
+        public void SetSystemDecorations(bool enabled)
+        {
+
+        }
+
+        public void SetIcon(IWindowIconImpl? icon)
+        {
+
+        }
+
+        public void ShowTaskbarIcon(bool value)
+        {
+
+        }
+
+        public void CanResize(bool value)
+        {
+
+        }
+
+        public void SetCanMinimize(bool value)
+        {
+        }
+
+        public void SetCanMaximize(bool value)
+        {
+        }
+
+        public Func<WindowCloseReason, bool>? Closing { get; set; }
+
+        private class FramebufferProxy : ILockedFramebuffer
+        {
+            private readonly ILockedFramebuffer _fb;
+            private readonly Action _onDispose;
+            private bool _disposed;
+
+            public FramebufferProxy(ILockedFramebuffer fb, Action onDispose)
+            {
+                _fb = fb;
+                _onDispose = onDispose;
+            }
+            public void Dispose()
+            {
+                if (_disposed)
+                    return;
+                _disposed = true;
+                _fb.Dispose();
+                _onDispose();
+            }
+
+            public IntPtr Address => _fb.Address;
+            public PixelSize Size => _fb.Size;
+            public int RowBytes => _fb.RowBytes;
+            public Vector Dpi => _fb.Dpi;
+            public PixelFormat Format => _fb.Format;
+            public AlphaFormat AlphaFormat => _fb.AlphaFormat;
+        }
+
+        public ILockedFramebuffer Lock()
+        {
+            var bmp = new WriteableBitmap(PixelSize.FromSize(ClientSize, RenderScaling), new Vector(96, 96) * RenderScaling, _options.FrameBufferFormat, AlphaFormat.Premul);
+            var fb = bmp.Lock();
+            return new FramebufferProxy(fb, () =>
+            {
+                lock (_sync)
+                {
+                    _lastRenderedFrame?.Dispose();
+                    _lastRenderedFrame = bmp;
+                }
+            });
+        }
+
+        public IFramebufferRenderTarget CreateFramebufferRenderTarget() => new FuncFramebufferRenderTarget(Lock);
+
+        public WriteableBitmap? GetLastRenderedFrame()
+        {
+            lock (_sync)
+            {
+                if (_lastRenderedFrame is null)
+                {
+                    return null;
+                }
+
+                using var lockedFramebuffer = _lastRenderedFrame.Lock();
+                return new WriteableBitmap(lockedFramebuffer.Format, AlphaFormat.Opaque, lockedFramebuffer.Address,
+                    lockedFramebuffer.Size, lockedFramebuffer.Dpi, lockedFramebuffer.RowBytes);
+            }
+        }
+
+        private ulong Timestamp => (ulong)_st.ElapsedMilliseconds;
+
+        IPopupPositioner IPopupImpl.PopupPositioner => _popupPositioner!;
+
+        public Size MaxAutoSizeHint => new Size(1920, 1080);
+
+        public Action<WindowTransparencyLevel>? TransparencyLevelChanged { get; set; }
+
+        public WindowTransparencyLevel TransparencyLevel { get; set; } = WindowTransparencyLevel.Transparent;
+
+        public Action? GotInputWhenDisabled { get; set; }
+
+        public bool IsClientAreaExtendedToDecorations => false;
+
+        public Action<bool>? ExtendClientAreaToDecorationsChanged { get; set; }
+
+        public bool NeedsManagedDecorations => false;
+        public PlatformRequestedDrawnDecoration RequestedDrawnDecorations { get; }
+
+        public Thickness ExtendedMargins => new Thickness();
+
+        public Thickness OffScreenMargin => new Thickness();
+
+        public Action? LostFocus { get; set; }
+
+        public AcrylicPlatformCompensationLevels AcrylicCompensationLevels => new AcrylicPlatformCompensationLevels(1, 1, 1);
+        public object? TryGetFeature(Type featureType)
+        {
+        	if (featureType == typeof(IClipboard))
+            {
+                return PresentationLocator.Current.GetRequiredService<IClipboard>();
+            }
+
+            if (featureType == typeof(IScreenImpl))
+            {
+                return _screen;
+            }
+
+            return null;
+        }
+
+        void IHeadlessWindow.KeyPress(Key key, RawInputModifiers modifiers, PhysicalKey physicalKey, string? keySymbol)
+        {
+            Input?.Invoke(new RawKeyEventArgs(
+                _keyboard,
+                Timestamp,
+                InputRoot!,
+                RawKeyEventType.KeyDown,
+                key,
+                modifiers,
+                physicalKey,
+                keySymbol));
+        }
+
+        void IHeadlessWindow.KeyRelease(Key key, RawInputModifiers modifiers, PhysicalKey physicalKey, string? keySymbol)
+        {
+            Input?.Invoke(new RawKeyEventArgs(
+                _keyboard,
+                Timestamp,
+                InputRoot!,
+                RawKeyEventType.KeyUp,
+                key,
+                modifiers,
+                physicalKey,
+                keySymbol));
+        }
+
+        void IHeadlessWindow.TextInput(string text)
+        {
+            if (InputRoot == null)
+                return;
+
+            Input?.Invoke(new RawTextInputEventArgs(_keyboard, 0, InputRoot, text));
+        }
+
+        void IHeadlessWindow.MouseDown(Point point, MouseButton button, RawInputModifiers modifiers)
+        {
+            Input?.Invoke(new RawPointerEventArgs(MouseDevice, Timestamp, InputRoot!,
+                button switch
+                {
+                    MouseButton.Left => RawPointerEventType.LeftButtonDown,
+                    MouseButton.Right => RawPointerEventType.RightButtonDown,
+                    MouseButton.Middle => RawPointerEventType.MiddleButtonDown,
+                    MouseButton.XButton1 => RawPointerEventType.XButton1Down,
+                    MouseButton.XButton2 => RawPointerEventType.XButton2Down,
+                    _ => RawPointerEventType.Move,
+                }, point, modifiers));
+        }
+
+        void IHeadlessWindow.MouseMove(Point point, RawInputModifiers modifiers)
+        {
+            Input?.Invoke(new RawPointerEventArgs(MouseDevice, Timestamp, InputRoot!,
+                RawPointerEventType.Move, point, modifiers));
+        }
+
+        void IHeadlessWindow.MouseUp(Point point, MouseButton button, RawInputModifiers modifiers)
+        {
+            Input?.Invoke(new RawPointerEventArgs(MouseDevice, Timestamp, InputRoot!,
+                button switch
+                {
+                    MouseButton.Left => RawPointerEventType.LeftButtonUp,
+                    MouseButton.Right => RawPointerEventType.RightButtonUp,
+                    MouseButton.Middle => RawPointerEventType.MiddleButtonUp,
+                    MouseButton.XButton1 => RawPointerEventType.XButton1Up,
+                    MouseButton.XButton2 => RawPointerEventType.XButton2Up,
+                    _ => RawPointerEventType.Move,
+                }, point, modifiers));
+        }
+        
+        void IHeadlessWindow.MouseWheel(Point point, Vector delta, RawInputModifiers modifiers)
+        {
+            Input?.Invoke(new RawMouseWheelEventArgs(MouseDevice, Timestamp, InputRoot!,
+                point, delta, modifiers));
+        }
+
+        void IHeadlessWindow.Touch(Point point, long touchPointId, RawPointerEventType type, RawInputModifiers modifiers)
+        {
+            Input?.Invoke(new RawTouchEventArgs(_touchDevice, Timestamp, InputRoot!,
+                type, point, modifiers, touchPointId));
+        }
+
+        void IHeadlessWindow.DragDrop(Point point, RawDragEventType type, IDataTransfer data, DragDropEffects effects, RawInputModifiers modifiers)
+        {
+            var device = PresentationLocator.Current.GetRequiredService<IDragDropDevice>();
+            Input?.Invoke(new RawDragEvent(device, type, InputRoot!, point, data, effects, modifiers));
+        }
+
+        void IHeadlessWindow.SetRenderScaling(double scaling)
+        {
+            if (scaling <= 0)
+                throw new ArgumentOutOfRangeException(nameof(scaling), "Scaling must be greater than zero.");
+
+            if (RenderScaling == scaling)
+                return;
+
+            var oldScaledSize = ClientSize;
+            RenderScaling = scaling;
+            ScalingChanged?.Invoke(scaling);
+            Resize(oldScaledSize, WindowResizeReason.DpiChange);
+        }
+
+        void IWindowImpl.Move(PixelPoint point)
+        {
+            Position = point;
+            PositionChanged?.Invoke(point);
+        }
+
+        public IPopupImpl? CreatePopup() => _options.OverlayPopups ? null : new HeadlessWindowImpl(this);
+
+        public void SetWindowManagerAddShadowHint(bool enabled)
+        {
+            
+        }
+
+        public void SetTransparencyLevelHint(IReadOnlyList<WindowTransparencyLevel> transparencyLevel)
+        {
+            foreach (var item in transparencyLevel)
+            {
+                if (item == WindowTransparencyLevel.Transparent) {
+                    TransparencyLevel = item;
+                    return;
+                }
+            }
+
+            TransparencyLevel = WindowTransparencyLevel.None;
+        }
+
+        public void SetParent(IWindowImpl? parent)
+        {
+            
+        }
+
+        public void SetEnabled(bool enable)
+        {
+            
+        }
+
+        public void SetWindowDecorations(WindowDecorations enabled)
+        {
+            
+        }
+
+        public void BeginMoveDrag(PointerPressedEventArgs e)
+        {
+            
+        }
+
+        public void BeginResizeDrag(WindowEdge edge, PointerPressedEventArgs e)
+        {
+            
+        }
+
+        public void SetExtendClientAreaToDecorationsHint(bool extendIntoClientAreaHint)
+        {
+            
+        }
+
+        public void SetExtendClientAreaTitleBarHeightHint(double titleBarHeight)
+        {
+            
+        }
+        
+        public void SetFrameThemeVariant(PlatformThemeVariant? themeVariant)
+        {
+            
+        }
+
+        public void TakeFocus()
+        {
+        }
+
+        public void SetHitTestVisible(bool isHitTestVisible)
+        {
+        }
+    }
+}

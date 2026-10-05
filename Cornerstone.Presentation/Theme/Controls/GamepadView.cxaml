@@ -1,0 +1,191 @@
+<ResourceDictionary xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:input="clr-namespace:Cornerstone.Input;assembly=Cornerstone"
+		xmlns:c="clr-namespace:Cornerstone.Presentation.Theme.Converters;assembly=Cornerstone.Presentation">
+
+	<ControlTheme x:Key="{x:Type GamepadView}"
+			TargetType="GamepadView">
+		<Setter Property="Theme.Color" Value="None" />
+		<Setter Property="Opacity" Value="0.5" />
+		<Setter Property="Template">
+			<ControlTemplate TargetType="GamepadView">
+				<Grid ColumnDefinitions="*,Auto,*"
+						RowDefinitions="Auto,*,Auto,Auto,Auto"
+						DataContext="{TemplateBinding Gamepad}"
+						x:DataType="input:GamepadState">
+					<Grid.Styles>
+						<Style Selector="ToggleButton">
+							<Setter Property="CornerRadius" Value="17" />
+							<Setter Property="IsHitTestVisible" Value="False" />
+							<Setter Property="Height" Value="34" />
+							<Setter Property="Width" Value="34" />
+						</Style>
+					</Grid.Styles>
+					<JoystickControl Grid.Row="0"
+							Grid.Column="0"
+							Title="Left Thumb"
+							ButtonLeft="{Binding ButtonLeftStickLeft, Mode=OneWay}"
+							ButtonRight="{Binding ButtonLeftStickRight, Mode=OneWay}"
+							ButtonUp="{Binding ButtonLeftStickUp, Mode=OneWay}"
+							ButtonDown="{Binding ButtonLeftStickDown, Mode=OneWay}"
+							DeadZonePercent="{Binding DeadZoneForThumb}"
+							Margin="0,10,0,0"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center"
+							HorizontalPercent="{Binding PercentOfLeftThumbX}"
+							VerticalPercent="{Binding PercentOfLeftThumbY}" />
+					<JoystickControl Grid.Row="0"
+							Grid.Column="2"
+							Title="Right Thumb"
+							ButtonLeft="{Binding ButtonRightStickLeft, Mode=OneWay}"
+							ButtonRight="{Binding ButtonRightStickRight, Mode=OneWay}"
+							ButtonUp="{Binding ButtonRightStickUp, Mode=OneWay}"
+							ButtonDown="{Binding ButtonRightStickDown, Mode=OneWay}"
+							DeadZonePercent="{Binding DeadZoneForThumb}"
+							Margin="0,10,0,0"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center"
+							HorizontalPercent="{Binding PercentOfRightThumbX}"
+							VerticalPercent="{Binding PercentOfRightThumbY}" />
+					<StackPanel Grid.Row="0"
+							Grid.Column="1"
+							Spacing="10"
+							Margin="0,20,0,0"
+							Orientation="Vertical"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center">
+						<Grid RowDefinitions="32,32,32"
+								ColumnDefinitions="32,32"
+								HorizontalAlignment="Center">
+							<ToggleButton Grid.Row="0"
+									Grid.Column="0"
+									Grid.ColumnSpan="2"
+									HorizontalAlignment="Center"
+									IsChecked="{Binding ButtonDpadUp, Mode=OneWay}"
+									Content="U" />
+							<ToggleButton Grid.Row="1"
+									Grid.Column="0"
+									IsChecked="{Binding ButtonDpadLeft, Mode=OneWay}"
+									Content="L" />
+							<ToggleButton Grid.Row="1"
+									Grid.Column="1"
+									IsChecked="{Binding ButtonDpadRight, Mode=OneWay}"
+									Content="R" />
+							<ToggleButton Grid.Row="2"
+									Grid.Column="0"
+									Grid.ColumnSpan="2"
+									HorizontalAlignment="Center"
+									IsChecked="{Binding ButtonDpadDown, Mode=OneWay}"
+									Content="D" />
+						</Grid>
+						<StackPanel Orientation="Horizontal">
+							<ToggleButton IsChecked="{Binding ButtonBack, Mode=OneWay}"
+									Content="B"
+									ToolTip.Tip="Back (select)" />
+							<ToggleButton IsChecked="{Binding ButtonStart, Mode=OneWay}" Content="S" />
+						</StackPanel>
+					</StackPanel>
+					<StackPanel Grid.Row="1"
+							Grid.Column="0"
+							Grid.ColumnSpan="3"
+							Spacing="4"
+							Margin="0,20,0,14"
+							Orientation="Horizontal"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Bottom">
+						<ToggleButton IsChecked="{Binding ButtonLeftBumper, Mode=OneWay}" Content="LB" />
+						<ToggleButton IsChecked="{Binding ButtonRightBumper, Mode=OneWay}" Content="RB" />
+						<ToggleButton IsChecked="{Binding ButtonLeftStick, Mode=OneWay}" Content="LS" />
+						<ToggleButton IsChecked="{Binding ButtonRightStick, Mode=OneWay}" Content="RS" />
+						<ToggleButton IsChecked="{Binding ButtonLeftTrigger, Mode=OneWay}" Content="LT" />
+						<ToggleButton IsChecked="{Binding ButtonRightTrigger, Mode=OneWay}" Content="RT" />
+						<ToggleButton IsChecked="{Binding ButtonA, Mode=OneWay}" Content="A" />
+						<ToggleButton IsChecked="{Binding ButtonB, Mode=OneWay}" Content="B" />
+						<ToggleButton IsChecked="{Binding ButtonX, Mode=OneWay}" Content="X" />
+						<ToggleButton IsChecked="{Binding ButtonY, Mode=OneWay}" Content="Y" />
+					</StackPanel>
+					<ProgressBar Grid.Row="2"
+							Grid.Column="0"
+							Minimum="0"
+							Maximum="255"
+							Height="26"
+							Margin="0,10,0,0"
+							ProgressTextFormat="Left Trigger {1:0}"
+							ShowProgressText="True"
+							Value="{Binding LeftTriggerValue}"
+							Width="175" />
+					<ProgressBar Grid.Row="2"
+							Grid.Column="2"
+							Minimum="0"
+							Maximum="255"
+							Height="26"
+							Margin="0,10,0,0"
+							ProgressTextFormat="Right Trigger {1:0}"
+							ShowProgressText="True"
+							Value="{Binding RightTriggerValue}"
+							Width="175" />
+					<StackPanel Grid.Row="3"
+							Grid.Column="0"
+							Grid.ColumnSpan="3"
+							Orientation="Horizontal"
+							HorizontalAlignment="Center"
+							Margin="0,10,0,0"
+							Spacing="20">
+						<TextBlock Text="Thumb DeadZone"
+								TextAlignment="Right"
+								VerticalAlignment="Center"
+								Width="130" />
+						<Slider Theme.Color="Brown"
+								Width="200"
+								Minimum="0"
+								Maximum="0.5"
+								TickFrequency="0.01"
+								Value="{Binding DeadZoneForThumb, Mode=TwoWay}" />
+						<TextBlock Text="{Binding DeadZoneForThumb, Converter={x:Static c:Converters.Format}, ConverterParameter=F2}"
+								TextAlignment="Left"
+								VerticalAlignment="Center"
+								Width="70" />
+					</StackPanel>
+					<StackPanel Grid.Row="4"
+							Grid.Column="0"
+							Grid.ColumnSpan="3"
+							Orientation="Horizontal"
+							HorizontalAlignment="Center"
+							Margin="0,10,0,0"
+							Spacing="20">
+						<TextBlock Text="Trigger DeadZone"
+								TextAlignment="Right"
+								VerticalAlignment="Center"
+								Width="130" />
+						<Slider Theme.Color="Brown"
+								Width="200"
+								Minimum="0"
+								Maximum="0.5"
+								TickFrequency="0.01"
+								Value="{Binding DeadZoneForTrigger, Mode=TwoWay}" />
+						<TextBlock Text="{Binding DeadZoneForTrigger, Converter={x:Static c:Converters.Format}, ConverterParameter=F2}"
+								TextAlignment="Left"
+								VerticalAlignment="Center"
+								Width="70" />
+					</StackPanel>
+				</Grid>
+			</ControlTemplate>
+		</Setter>
+		<Style Selector="^:connected">
+			<Setter Property="Opacity" Value="1" />
+		</Style>
+	</ControlTheme>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet Width="600">
+			<Grid RowDefinitions="*,Auto">
+				<GamepadView x:Name="Input" />
+				<StackPanel Grid.Row="1" Margin="0,20,0,0">
+					<ToggleSwitch IsChecked="{Binding ElementName=Input, Path=Gamepad.IsConnected}"
+							OnContent="Connected"
+							OffContent="Disconnected" />
+				</StackPanel>
+			</Grid>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

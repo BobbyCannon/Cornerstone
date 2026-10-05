@@ -70,7 +70,7 @@ public class SyncObjectConverter<TSyncClient, TSyncModel, TSyncEntity> : SyncObj
 
 	public override TSyncEntity ConvertForIncoming(SyncClient client, SyncObject syncObject)
 	{
-		return IncomingConvert((TSyncClient) client, syncObject, _fromSyncObject, _fromSyncModel, UpdateableAction.SyncOutgoing);
+		return IncomingConvert((TSyncClient) client, syncObject, _fromSyncObject, _fromSyncModel, UpdateableAction.SyncIncomingAddOrUpdate);
 	}
 
 	public override SyncObject ConvertForOutgoing(SyncClient client, ISyncEntity syncEntity)
@@ -109,12 +109,12 @@ public abstract class SyncObjectConverter
 	/// <summary>
 	/// The sync entity type name.
 	/// </summary>
-	protected string SyncEntity { get; }
+	public string SyncEntity { get; }
 
 	/// <summary>
 	/// The sync model type name.
 	/// </summary>
-	protected string SyncModel { get; }
+	public string SyncModel { get; }
 
 	#endregion
 
@@ -236,6 +236,8 @@ public abstract class SyncObjectConverter
 
 		// Update will not set the sync ID
 		destination.SyncId = syncEntity.SyncId;
+		destination.ModifiedOn = syncEntity.ModifiedOn;
+		destination.CreatedOn = syncEntity.CreatedOn;
 
 		// Optional convert to do additional conversions
 		toSyncModel?.Invoke(syncClient, syncEntity, destination);

@@ -1,4 +1,4 @@
-﻿#region References
+#region References
 
 using System;
 using System.Collections;
@@ -7,6 +7,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Cornerstone.VisualStudio.Core.Completion;
+using Cornerstone.VisualStudio.Core.Preview;
 using Cornerstone.VisualStudio.Models;
 using EnvDTE;
 using EnvDTE80;
@@ -74,6 +76,8 @@ internal class SolutionService
 				{
 					IsStartupProject = startupProjects?.Contains(project.UniqueName) ?? false,
 					Name = project.Name,
+					UniqueName = TryGetUniqueName(project),
+					FullName = TryGetFullName(project),
 					Project = project,
 					LazyProjectReferences = LazyGetProjectReferences(vsProject),
 					References = GetReferences(vsProject)
@@ -136,6 +140,7 @@ internal class SolutionService
 			// next read uses the flattened lazy (otherwise the first get would stick to directs).
 			var directRefs = item.Value.LazyProjectReferences?.Value ?? Array.Empty<Project>();
 			item.Value.DirectProjectReferences = directRefs;
+			item.Value.DirectProjectReferenceUniqueNames = UniqueNamesOf(directRefs);
 			item.Value.LazyProjectReferences = LazyFlattenProjectReferences(result, directRefs);
 			item.Value.ProjectReferences = null;
 
@@ -143,7 +148,10 @@ internal class SolutionService
 			var refs = item.Value.References ?? Array.Empty<string>();
 			item.Value.HasAvaloniaDesignerSupport =
 				ContainsReference(refs, "Avalonia.DesignerSupport") ||
-				(item.Value.Outputs?.Any(o => !string.IsNullOrWhiteSpace(o.HostApp)) == true);
+				(item.Value.Outputs?.Any(o => !string.IsNullOrWhiteSpace(o.AvaloniaHostApp)) == true);
+			item.Value.HasCornerstoneDesignerSupport =
+				ContainsReference(refs, "Cornerstone.Presentation") ||
+				(item.Value.Outputs?.Any(o => !string.IsNullOrWhiteSpace(o.CornerstoneHostApp)) == true);
 			item.Value.HasAvaloniaDesktop =
 				ContainsReference(refs, "Avalonia.Desktop") ||
 				ContainsReference(refs, "Avalonia.Win32") ||
@@ -153,11 +161,218 @@ internal class SolutionService
 				// Some templates only reference the metapackage; treat Avalonia + executable as desktop-ish
 				// only when designer host tooling is present (HostApp) and it is not a web project.
 				(ContainsReference(refs, "Avalonia") &&
-					(item.Value.Outputs?.Any(o => !string.IsNullOrWhiteSpace(o.HostApp)) == true));
-			item.Value.IsWebProject = await IsWebProjectAsync(item.Key, refs);
+					(item.Value.Outputs?.Any(o => !string.IsNullOrWhiteSpace(o.AvaloniaHostApp)) == true));
+			item.Value.HasCornerstoneDesktop =
+				ContainsReference(refs, "Cornerstone.Presentation") &&
+				(item.Value.Outputs?.Any(o => !string.IsNullOrWhiteSpace(o.CornerstoneHostApp)) == true);
+			item.Value.IsWebProject = await IsWebProjectAsync(item.Key, refs, item.Value.Outputs);
+		}
+
+		InheritCornerstoneDesignerSupport(result);
+
+		foreach (var item in result.Values)
+		{
+			item.ProjectReferenceUniqueNames = UniqueNamesOf(item.ProjectReferences);
 		}
 
 		return result.Values.ToList();
+	}
+
+	/// <summary>
+	/// Desktop hosts often only ProjectReference the CXAML library. That library imports
+	/// CornerstoneBuildTasks (HostApp path + Presentation). The executable itself has neither
+	/// a Cornerstone.Presentation assembly reference nor CornerstonePreviewerNetCoreToolPath.
+	/// Inherit designer support and HostApp from the project graph.
+	/// </summary>
+	private static void InheritCornerstoneDesignerSupport(Dictionary<Project, ProjectInfo> projects)
+	{
+		var sharedHostApp = projects.Values
+			.SelectMany(p => p.Outputs ?? Array.Empty<ProjectOutputInfo>())
+			.Select(o => o.CornerstoneHostApp)
+			.FirstOrDefault(p => !string.IsNullOrWhiteSpace(p));
+
+		if (string.IsNullOrWhiteSpace(sharedHostApp))
+		{
+			sharedHostApp = projects.Values
+				.FirstOrDefault(p => string.Equals(p.Name, "Cornerstone.Designer.HostApp", StringComparison.OrdinalIgnoreCase))
+				?.Outputs
+				?.FirstOrDefault(o => !string.IsNullOrWhiteSpace(o.TargetAssembly))
+				?.TargetAssembly;
+		}
+
+		// Hosts are often listed before the CXAML library (Album.Desktop before Album).
+		// Repeat until no new flags so a later library can mark an earlier executable.
+		var pending = true;
+		var guard = 0;
+		while (pending && (guard++ < 32))
+		{
+			pending = false;
+			foreach (var item in projects.Values)
+			{
+				if (item.HasCornerstoneDesignerSupport)
+				{
+					continue;
+				}
+
+				var refs = item.ProjectReferences;
+				if (refs == null)
+				{
+					continue;
+				}
+
+				for (var i = 0; i < refs.Count; i++)
+				{
+					var referenced = refs[i];
+					var name = referenced?.Name;
+					if (string.Equals(name, "Cornerstone.Presentation", StringComparison.OrdinalIgnoreCase))
+					{
+						item.HasCornerstoneDesignerSupport = true;
+						pending = true;
+						break;
+					}
+
+					if ((referenced != null) &&
+						projects.TryGetValue(referenced, out var info) &&
+						info.HasCornerstoneDesignerSupport)
+					{
+						item.HasCornerstoneDesignerSupport = true;
+						pending = true;
+						break;
+					}
+
+					if (referenced != null)
+					{
+						var referencedInfo = FindByIdentity(projects.Values, referenced);
+						if ((referencedInfo != null) && referencedInfo.HasCornerstoneDesignerSupport)
+						{
+							item.HasCornerstoneDesignerSupport = true;
+							pending = true;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		foreach (var item in projects.Values)
+		{
+			if (!item.HasCornerstoneDesignerSupport)
+			{
+				continue;
+			}
+
+			if (item.IsExecutable && !item.IsWebProject)
+			{
+				item.HasCornerstoneDesktop = true;
+			}
+
+			if (string.IsNullOrWhiteSpace(sharedHostApp) || (item.Outputs == null))
+			{
+				continue;
+			}
+
+			for (var i = 0; i < item.Outputs.Count; i++)
+			{
+				var output = item.Outputs[i];
+				if (string.IsNullOrWhiteSpace(output.CornerstoneHostApp))
+				{
+					output.CornerstoneHostApp = sharedHostApp;
+				}
+			}
+		}
+	}
+
+	private static ProjectInfo FindByIdentity(IEnumerable<ProjectInfo> projects, Project project)
+	{
+		var unique = TryGetUniqueName(project);
+		var full = TryGetFullName(project);
+		foreach (var item in projects)
+		{
+			if (IsSameProject(item, unique, full, project))
+			{
+				return item;
+			}
+		}
+
+		return null;
+	}
+
+	internal static bool IsSameProject(ProjectInfo item, Project project)
+	{
+		if ((item == null) || (project == null))
+		{
+			return false;
+		}
+
+		return IsSameProject(item, TryGetUniqueName(project), TryGetFullName(project), project);
+	}
+
+	private static bool IsSameProject(ProjectInfo item, string uniqueName, string fullName, Project project)
+	{
+		if (item.Project == project)
+		{
+			return true;
+		}
+
+		if (!string.IsNullOrEmpty(uniqueName) &&
+			string.Equals(item.UniqueName, uniqueName, StringComparison.OrdinalIgnoreCase))
+		{
+			return true;
+		}
+
+		if (!string.IsNullOrEmpty(fullName) &&
+			string.Equals(item.FullName, fullName, StringComparison.OrdinalIgnoreCase))
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	private static IReadOnlyList<string> UniqueNamesOf(IReadOnlyList<Project> projects)
+	{
+		if ((projects == null) || (projects.Count == 0))
+		{
+			return Array.Empty<string>();
+		}
+
+		var names = new List<string>(projects.Count);
+		for (var i = 0; i < projects.Count; i++)
+		{
+			var name = TryGetUniqueName(projects[i]);
+			if (!string.IsNullOrEmpty(name))
+			{
+				names.Add(name);
+			}
+		}
+
+		return names;
+	}
+
+	private static string TryGetUniqueName(Project project)
+	{
+		ThreadHelper.ThrowIfNotOnUIThread();
+		try
+		{
+			return project?.UniqueName;
+		}
+		catch
+		{
+			return null;
+		}
+	}
+
+	private static string TryGetFullName(Project project)
+	{
+		ThreadHelper.ThrowIfNotOnUIThread();
+		try
+		{
+			return project?.FullName;
+		}
+		catch
+		{
+			return null;
+		}
 	}
 
 	private static bool ContainsReference(IReadOnlyList<string> references, string name)
@@ -262,12 +477,44 @@ internal class SolutionService
 		return msbuildProperties.FirstOrDefault(x => x.Name == propertyName)?.EvaluatedValue;
 	}
 
+	/// <summary>
+	/// Avalonia 12.0 ships net8.0 and net10.0 designer hosts; later packs may only ship net8.0.
+	/// Only rewrite when the net10.0 file exists so .axaml preview still finds HostApp.
+	/// </summary>
+	private static string PreferNet10HostApp(string hostAppPath, string targetFramework)
+	{
+		if (string.IsNullOrEmpty(hostAppPath)
+			|| string.IsNullOrEmpty(targetFramework)
+			|| !targetFramework.StartsWith("net10", StringComparison.OrdinalIgnoreCase)
+			|| (hostAppPath.IndexOf(@"\net8.0\", StringComparison.OrdinalIgnoreCase) < 0))
+		{
+			return hostAppPath;
+		}
+
+		var net10Path = hostAppPath.Replace(@"\net8.0\", @"\net10.0\");
+		return File.Exists(net10Path) ? net10Path : hostAppPath;
+	}
+
+	private static string GetActiveConfigurationName(Project project)
+	{
+		ThreadHelper.ThrowIfNotOnUIThread();
+		try
+		{
+			return project?.ConfigurationManager?.ActiveConfiguration?.ConfigurationName;
+		}
+		catch
+		{
+			return null;
+		}
+	}
+
 	private static async Task<IReadOnlyList<ProjectOutputInfo>> GetOutputInfoAsync(Project project)
 	{
 		await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
 		var alternatives = new Dictionary<string, ProjectOutputInfo>();
 		var unconfigured = (project as IVsBrowseObjectContext)?.UnconfiguredProject;
+		var activeConfiguration = GetActiveConfigurationName(project);
 
 		if (unconfigured != null)
 		{
@@ -287,20 +534,34 @@ internal class SolutionService
 				{
 					var hostAppNetCore = GetMsBuildProperty(msbuildProperties, "AvaloniaPreviewerNetCoreToolPath");
 					var hostAppNetFx = GetMsBuildProperty(msbuildProperties, "AvaloniaPreviewerNetFullToolPath");
+					var cornerstoneHostAppNetCore = GetMsBuildProperty(msbuildProperties, "CornerstonePreviewerNetCoreToolPath");
+					var cornerstoneHostAppNetFx = GetMsBuildProperty(msbuildProperties, "CornerstonePreviewerNetFullToolPath");
 
 					var tf = GetFrameworkInfo(loaded, msbuildProperties, "TargetFramework");
 					var tfi = GetFrameworkInfo(loaded, msbuildProperties, "TargetFrameworkIdentifier");
 					var rid = GetFrameworkInfo(loaded, msbuildProperties, "RuntimeIdentifier");
 					var tpi = GetFrameworkInfo(loaded, msbuildProperties, "TargetPlatformIdentifier");
-
-					if (tf.StartsWith("net10") && (hostAppNetCore != null))
+					var configuration = GetFrameworkInfo(loaded, msbuildProperties, "Configuration");
+					if (string.Equals(configuration, "unknown", StringComparison.OrdinalIgnoreCase))
 					{
-						hostAppNetCore = hostAppNetCore.Replace(@"\net8.0\", @"\net10.0\");
+						configuration = GetMsBuildProperty(msbuildProperties, "Configuration");
 					}
 
-					var hostApp = FrameworkInformation.IsNetFramework(tfi) ? hostAppNetFx : hostAppNetCore;
+					if (!MsBuildConfigurationMatch.Matches(activeConfiguration, configuration, targetPath))
+					{
+						continue;
+					}
 
-					alternatives[tf] = new ProjectOutputInfo(targetPath, tf, tfi, hostApp, rid, tpi);
+					hostAppNetCore = PreferNet10HostApp(hostAppNetCore, tf);
+					cornerstoneHostAppNetCore = PreferNet10HostApp(cornerstoneHostAppNetCore, tf);
+
+					var hostApp = FrameworkInformation.IsNetFramework(tfi) ? hostAppNetFx : hostAppNetCore;
+					var cornerstoneHostApp = FrameworkInformation.IsNetFramework(tfi)
+						? cornerstoneHostAppNetFx
+						: cornerstoneHostAppNetCore;
+
+					alternatives[tf] = new ProjectOutputInfo(
+						targetPath, tf, tfi, hostApp, rid, tpi, cornerstoneHostApp, configuration);
 				}
 			}
 		}
@@ -361,23 +622,34 @@ internal class SolutionService
 	}
 
 	/// <summary>
-	/// Detects ASP.NET / Blazor / other web SDK projects that should never host the Avalonia previewer.
+	/// Detects ASP.NET / Blazor / other web SDK projects that should never host the desktop previewer.
 	/// </summary>
-	private static async Task<bool> IsWebProjectAsync(Project project, IReadOnlyList<string> references)
+	private static async Task<bool> IsWebProjectAsync(
+		Project project,
+		IReadOnlyList<string> references,
+		IReadOnlyList<ProjectOutputInfo> outputs)
 	{
-		// Strong assembly signals for web without Avalonia desktop.
-		var hasAspNet =
-			ContainsReference(references, "Microsoft.AspNetCore") ||
-			ContainsReference(references, "Microsoft.AspNetCore.App") ||
-			references.Any(r => r.StartsWith("Microsoft.AspNetCore.", StringComparison.OrdinalIgnoreCase));
-		var hasAvaloniaDesktop =
-			ContainsReference(references, "Avalonia.Desktop") ||
-			ContainsReference(references, "Avalonia.Win32") ||
-			ContainsReference(references, "Avalonia.Native");
+		var hasDesktopPlatformOutput = false;
+		if (outputs != null)
+		{
+			for (var i = 0; i < outputs.Count; i++)
+			{
+				if (WebProjectDetection.HasDesktopPlatformOutput(outputs[i].TargetPlatformIdentifier))
+				{
+					hasDesktopPlatformOutput = true;
+					break;
+				}
+			}
+		}
 
-		if (hasAspNet && !hasAvaloniaDesktop)
+		if (WebProjectDetection.IsLikelyWebProject(references, false, hasDesktopPlatformOutput))
 		{
 			return true;
+		}
+
+		if (hasDesktopPlatformOutput || WebProjectDetection.HasDesktopUiStack(references))
+		{
+			return false;
 		}
 
 		await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -385,7 +657,7 @@ internal class SolutionService
 		var unconfigured = (project as IVsBrowseObjectContext)?.UnconfiguredProject;
 		if (unconfigured == null)
 		{
-			return false;
+			return WebProjectDetection.HasAspNetWebServerReferences(references);
 		}
 
 		foreach (var loaded in unconfigured.LoadedConfiguredProjects)
@@ -406,8 +678,7 @@ internal class SolutionService
 				var usingWebSdk = GetMsBuildProperty(msbuildProperties, "UsingMicrosoftNETSdkWeb");
 				if (string.Equals(usingWebSdk, "true", StringComparison.OrdinalIgnoreCase))
 				{
-					// Hybrid Avalonia+web is extremely rare; still allow if desktop stack is present.
-					return !hasAvaloniaDesktop;
+					return WebProjectDetection.IsLikelyWebProject(references, true, hasDesktopPlatformOutput);
 				}
 
 				var projectSdk = GetMsBuildProperty(msbuildProperties, "ProjectSdk")
@@ -415,7 +686,7 @@ internal class SolutionService
 				if (!string.IsNullOrEmpty(projectSdk) &&
 					(projectSdk.IndexOf("Microsoft.NET.Sdk.Web", StringComparison.OrdinalIgnoreCase) >= 0))
 				{
-					return !hasAvaloniaDesktop;
+					return WebProjectDetection.IsLikelyWebProject(references, true, hasDesktopPlatformOutput);
 				}
 			}
 			catch

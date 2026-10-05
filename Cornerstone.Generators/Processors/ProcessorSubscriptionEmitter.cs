@@ -22,9 +22,12 @@ internal static class ProcessorSubscriptionEmitter
 			return;
 		}
 
+		var seen = new HashSet<string>(StringComparer.Ordinal);
 		foreach (var model in models)
 		{
-			if (model.Handlers.Length == 0)
+			if ((model.Handlers.Length == 0)
+				|| string.IsNullOrEmpty(model.FullyQualifiedName)
+				|| !seen.Add(model.FullyQualifiedName))
 			{
 				continue;
 			}
@@ -84,12 +87,17 @@ internal static class ProcessorSubscriptionEmitter
 
 	public static ProcessorSubscriptionModel Transform(GeneratorSyntaxContext context)
 	{
-		if (context.Node is not ClassDeclarationSyntax)
+		if (context.Node is not ClassDeclarationSyntax classDeclaration)
 		{
 			return default;
 		}
 
-		if (context.SemanticModel.GetDeclaredSymbol(context.Node) is not INamedTypeSymbol type)
+		if (!HasChannelHandlersAttributeSyntax(classDeclaration))
+		{
+			return default;
+		}
+
+		if (context.SemanticModel.GetDeclaredSymbol(classDeclaration) is not INamedTypeSymbol type)
 		{
 			return default;
 		}
@@ -148,6 +156,26 @@ internal static class ProcessorSubscriptionEmitter
 				: type.ContainingNamespace.ToDisplayString(),
 			type.Name,
 			handlers.ToImmutableArray());
+	}
+
+	private static bool HasChannelHandlersAttributeSyntax(ClassDeclarationSyntax classDeclaration)
+	{
+		foreach (var list in classDeclaration.AttributeLists)
+		{
+			foreach (var attribute in list.Attributes)
+			{
+				var name = attribute.Name.ToString();
+				if ((name == "ChannelHandlers")
+					|| name.EndsWith(".ChannelHandlers", StringComparison.Ordinal)
+					|| (name == "ChannelHandlersAttribute")
+					|| name.EndsWith(".ChannelHandlersAttribute", StringComparison.Ordinal))
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 
 	private static bool HasChannelHandlersAttribute(INamedTypeSymbol type)

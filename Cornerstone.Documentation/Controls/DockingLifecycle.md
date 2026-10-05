@@ -15,6 +15,7 @@ Tabs (`DockableTabModel`) are lifecycle objects. **`DockingManager` (root) owns 
 | Method | Role |
 |--------|------|
 | `ActivateTab(model)` | `Track` on tab lifecycle + `IAppDispatcher.Track` if dispatchable |
+| `RestoreDockLayout` | Two-pass: every tab `RestoreLayoutData` first (no Start). Then `ActivateTab` only the selected tab in each pane. Other restored tabs Activate on first selection. |
 | `DeactivateTab(model)` | `IAppDispatcher.Release` + lifecycle `Release` |
 | `DeactivateAllTabs()` | Tear down every owned tab (app shutdown) |
 

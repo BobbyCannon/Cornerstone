@@ -31,7 +31,7 @@ public class MarkdownGenerator
 		];
 		_topics =
 		[
-			"Avalonia", "Markdown rendering", "real-time streaming", "UI performance",
+			"Cornerstone", "Markdown rendering", "real-time streaming", "UI performance",
 			"reactive updates", "cross-platform", "memory usage", "rendering pipeline"
 		];
 	}

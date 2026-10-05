@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using Cornerstone.Data;
@@ -30,6 +31,7 @@ public class DictionaryConverter : BaseConverter
 			&& !toType.ImplementsType<IDictionary>();
 	}
 
+	[UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "Converter toType is a runtime conversion target; members are preserved by generated source reflection.")]
 	public override bool TryConvertTo(object from, Type fromType, Type toType, out object value, IConverterSettings settings = null)
 	{
 		if (from is not IDictionary dictionary)
@@ -47,7 +49,7 @@ public class DictionaryConverter : BaseConverter
 			|| base.TryConvertTo(from, fromType, toType, out value, settings);
 	}
 
-	private bool TryConvertToUsingConstructor(IDictionary dictionary, Type toType, out object value, IConverterSettings settings)
+	private bool TryConvertToUsingConstructor(IDictionary dictionary, [DynamicallyAccessedMembers(SourceReflector.AllRuntimeMembers)] Type toType, out object value, IConverterSettings settings)
 	{
 		var sourceType = SourceReflector.GetRequiredSourceType(toType);
 		var constructor = sourceType.DeclaredConstructors.FirstOrDefault(x => x.Parameters.Length == dictionary.Keys.Count);
@@ -76,7 +78,8 @@ public class DictionaryConverter : BaseConverter
 		return true;
 	}
 
-	private bool TryConvertToUsingProperties(IDictionary dictionary, Type toType, out object value, IConverterSettings settings)
+	[UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Constructor parameter types come from generated source reflection.")]
+	private bool TryConvertToUsingProperties(IDictionary dictionary, [DynamicallyAccessedMembers(SourceReflector.AllRuntimeMembers)] Type toType, out object value, IConverterSettings settings)
 	{
 		var sourceType = SourceReflector.GetRequiredSourceType(toType);
 		var properties = sourceType

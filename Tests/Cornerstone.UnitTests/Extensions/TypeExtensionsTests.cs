@@ -1,15 +1,15 @@
-﻿#region References
+#region References
 
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Cornerstone.Avalonia;
 using Cornerstone.Collections;
 using Cornerstone.Compare;
 using Cornerstone.Data;
 using Cornerstone.Data.Times;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
+using Cornerstone.Presentation.Theme;
 using Cornerstone.Reflection;
 using Cornerstone.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -29,7 +29,7 @@ public class TypeExtensionsTests : CornerstoneUnitTest
 		var scenarios = new Dictionary<Type, (string Expected, bool IsSourceReflected)>
 		{
 			{ typeof(Buffer<int>), ("Cornerstone.Collections.Buffer`1[[System.Int32,System.Private.CoreLib]],Cornerstone", false) },
-			{ typeof(ClipboardService), ("Cornerstone.Avalonia.ClipboardService,Cornerstone.Avalonia", true) },
+			{ typeof(ClipboardService), ("Cornerstone.Presentation.ClipboardService,Cornerstone.Presentation", true) },
 
 			// Generated below
 			{ typeof(CornerstoneTest), ("Cornerstone.Testing.CornerstoneTest,Cornerstone", true) },

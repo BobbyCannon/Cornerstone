@@ -1,58 +1,59 @@
-﻿#region References
+#region References
 
 using Cornerstone.VisualStudio.Core.Parsing;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.VisualStudio.Tests.Parsing;
 
+[TestClass]
 public class SelectorParserTest
 {
 	#region Methods
 
-	[Fact]
+	[TestMethod]
 	public void ParseColonAfterPropertySelector()
 	{
 		var parser = SelectorParser.Parse("Button[IsDefault=True]:");
 
-		Assert.Equal(SelectorStatement.Middle, parser.PreviousStatement);
-		Assert.Equal("IsDefault", parser.PropertyName);
-		Assert.Equal(SelectorStatement.Colon, parser.Statement);
-		Assert.Equal("", parser.Class);
+		Assert.AreEqual(SelectorStatement.Middle, parser.PreviousStatement);
+		Assert.AreEqual("IsDefault", parser.PropertyName);
+		Assert.AreEqual(SelectorStatement.Colon, parser.Statement);
+		Assert.AreEqual("", parser.Class);
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ParseIsSelector()
 	{
 		var parser = SelectorParser.Parse(":is(B");
 
-		Assert.Equal(SelectorStatement.FunctionArgs, parser.PreviousStatement);
-		Assert.Equal("is", parser.FunctionName);
-		Assert.Equal(SelectorStatement.TypeName, parser.Statement);
-		Assert.Equal("B", parser.TypeName);
+		Assert.AreEqual(SelectorStatement.FunctionArgs, parser.PreviousStatement);
+		Assert.AreEqual("is", parser.FunctionName);
+		Assert.AreEqual(SelectorStatement.TypeName, parser.Statement);
+		Assert.AreEqual("B", parser.TypeName);
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ParseNotInfiniteLoop()
 	{
 		var parser = SelectorParser.Parse("Button:not(:disabled)");
 
-		Assert.Equal(SelectorStatement.FunctionArgs, parser.PreviousStatement);
-		Assert.Equal("not", parser.FunctionName);
-		Assert.Equal(SelectorStatement.Middle, parser.Statement);
-		Assert.Equal("disabled", parser.Class);
+		Assert.AreEqual(SelectorStatement.FunctionArgs, parser.PreviousStatement);
+		Assert.AreEqual("not", parser.FunctionName);
+		Assert.AreEqual(SelectorStatement.Middle, parser.Statement);
+		Assert.AreEqual("disabled", parser.Class);
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ParseNotSelector()
 	{
 		var parser = SelectorParser.Parse(":not(B");
 
-		Assert.Equal(SelectorStatement.CanHaveType, parser.PreviousStatement);
-		Assert.Equal("not", parser.FunctionName);
-		Assert.Equal(SelectorStatement.FunctionArgs, parser.Statement);
-		Assert.Equal("B", parser.TypeName);
+		Assert.AreEqual(SelectorStatement.CanHaveType, parser.PreviousStatement);
+		Assert.AreEqual("not", parser.FunctionName);
+		Assert.AreEqual(SelectorStatement.FunctionArgs, parser.Statement);
+		Assert.AreEqual("B", parser.TypeName);
 	}
 
 	#endregion

@@ -1,0 +1,84 @@
+﻿using System;
+using Cornerstone.Presentation.Controls.Elements;
+
+namespace Cornerstone.Presentation.Controls.Primitives
+{
+    public abstract class FlyoutBase : PresentationObject
+    {
+        /// <summary>
+        /// Defines the <see cref="IsOpen"/> property
+        /// </summary>
+        public static readonly StyledProperty<bool> IsOpenProperty =
+            PresentationProperty.Register<FlyoutBase, bool>(nameof(IsOpen));
+
+        /// <summary>
+        /// Defines the <see cref="Target"/> property
+        /// </summary>
+        public static readonly DirectProperty<FlyoutBase, Control?> TargetProperty =
+            PresentationProperty.RegisterDirect<FlyoutBase, Control?>(nameof(Target), x => x.Target);
+
+        /// <summary>
+        /// Defines the AttachedFlyout property
+        /// </summary>
+        public static readonly AttachedProperty<FlyoutBase?> AttachedFlyoutProperty =
+            PresentationProperty.RegisterAttached<FlyoutBase, Control, FlyoutBase?>("AttachedFlyout", null);
+
+        private Control? _target;
+
+        public event EventHandler? Opened;
+        public event EventHandler? Closed;
+
+        /// <summary>
+        /// Gets or sets whether this Flyout is currently open.
+        /// </summary>
+        /// <remarks>
+        /// Setting this property to <c>true</c> will show the flyout at the last known
+        /// placement target. If no target has been set via <see cref="ShowAt"/>,
+        /// setting this to <c>true</c> will have no effect.
+        /// </remarks>
+        public bool IsOpen
+        {
+            get => GetValue(IsOpenProperty);
+            set => SetValue(IsOpenProperty, value);
+        }
+
+        /// <summary>
+        /// Gets the Target used for showing the Flyout
+        /// </summary>
+        public Control? Target
+        {
+            get => _target;
+            protected set => SetAndRaise(TargetProperty, ref _target, value);
+        }
+        
+        public static FlyoutBase? GetAttachedFlyout(Control element)
+        {
+            return element.GetValue(AttachedFlyoutProperty);
+        }
+
+        public static void SetAttachedFlyout(Control element, FlyoutBase? value)
+        {
+            element.SetValue(AttachedFlyoutProperty, value);
+        }
+
+        public static void ShowAttachedFlyout(Control flyoutOwner)
+        {
+            var flyout = GetAttachedFlyout(flyoutOwner);
+            flyout?.ShowAt(flyoutOwner);
+        }
+
+        public abstract void ShowAt(Control placementTarget);
+        
+        public abstract void Hide();
+        
+        protected virtual void OnOpened()
+        {
+            Opened?.Invoke(this, EventArgs.Empty);
+        }
+
+        protected virtual void OnClosed()
+        {
+            Closed?.Invoke(this, EventArgs.Empty);
+        }
+    }
+}

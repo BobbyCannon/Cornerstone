@@ -129,6 +129,17 @@ internal static class CornerstoneSettingDefinitions
 			"When enabled, open AXAML tabs are prefixed with • while the design host process is running (for example •MainView.axaml)."
 	};
 
+	[VisualStudioContribution]
+	internal static Setting.Boolean StopBuildOnFirstFailure { get; } = new(
+		"stopBuildOnFirstFailure",
+		"Stop solution build on first project failure",
+		CornerstoneCategory,
+		defaultValue: true)
+	{
+		Description =
+			"When a project fails to build, cancel the rest of the solution build. Projects already compiling in parallel may still finish."
+	};
+
 	#endregion
 }
 

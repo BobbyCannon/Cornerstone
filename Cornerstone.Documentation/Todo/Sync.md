@@ -14,6 +14,36 @@ It is also clearly **evolved systems code**: strong core model, a few incomplete
 
 ---
 
+## Open defects (code walk 2026-10-05)
+
+Checked against `Cornerstone/Sync`, the EF and SQL sync repositories, and `Cornerstone.UnitTests/Sync`. Human behavior is in [../Sync.md](../Sync.md). Implementer rules are in [../Agent/Sync.md](../Agent/Sync.md). These are unfixed.
+
+1. **Queue poison after `waitFor` timeout.** `SyncAsync` enqueues the session id, then `StartSyncSession` returns null when this id is not the head before the timeout. That path does not `TryDequeue`. The id stays. When the run ahead finishes, the abandoned id is the head and has no worker. Later `SyncAsync` calls with `waitFor: null` return `CouldNotStart` because the queue is non-empty. Callers that pass `waitFor` enqueue behind the abandoned id and time out the same way. `ConcurrentSyncWaitTimeoutCannotStart` asserts the timeout result and does not start another run.
+
+2. **`Sync()` drops `CouldNotStart`.** It starts `SyncAsync`, waits, and returns the manager's live `SyncSession`. Disabled manager: the task has the `SyncManagerDisabled` issue, and `Sync()` returns the previous live session. Busy manager with `waitFor: null`: `Sync()` waits for the other run and returns that run's session. `SyncAsync` returns the right object. `DisabledManagerDoesNotStartAndCallsPostAction` uses `SyncAsync` only.
+
+3. **`SyncCompleted` while `SyncRunning`.** `ProcessSyncSession` calls `OnSyncCompleted(this)` before `UpdateState(Completed)` on the live session. The result copy is already `Completed`. During the event, `SyncSuccessful` is already decided and `SyncRunning` is still true. `SyncCompletedSeesStoredStampsBeforeDispatcherRuns` calls `RaiseCompleted` directly and does not cover this order.
+
+4. **`ClientNotSupported` is never assigned.** `ServerSyncClient.ValidateSyncClient` false throws `CornerstoneException` (`BabelKeys.SyncClientNotSupported`). `SyncSession.HandleException` records `SyncIssueType.ClientException`. The enum value `ClientNotSupported` has no writer.
+
+5. **Pull page size stops at 1,000.** `SyncRequest` defaults `Take` to 1000. `SyncClient.Sync` builds the pull request without setting `Take`. `GetChanges` uses that `Take` when it is positive and no larger than `ItemsPerSyncRequest`. A hub page of 10,000 still returns 1,000 rows per pull call. Push sets `Take` to `ItemsPerSyncRequest` so the short-page check does not end the session early. Pull still pages via `HasMore`, so the window is not dropped. It just takes more calls than the configured page size.
+
+6. **In-process sanitization mutates the client settings.** One `SyncSettings` instance is passed to the client and to every `server.Sync`. `ServerSyncClient.BeginSync` sets `PermanentDeletions` false, clamps `ItemsPerSyncRequest`, and sets `IncludeIssueDetails` false on that instance. Sample loopback posts the same object (`SampleWebClient`). After the first server call, the client apply sees hub policy. A serializing HTTP client would not write those fields back onto the caller.
+
+7. **Relationship cache is static per entity type.** `SyncClientForDatabase._relationshipCache` is a `ConcurrentDictionary<Type, Relationship[]>` built from the first database's `GetSyncableRepositories()`. A later database in the same process keeps that resolution. Sample loopback uses the same CLR types on both sides, so it does not show this. A narrower database that runs first can hide a relationship for every later database.
+
+8. **Exclude map bails out when issues outnumber the page.** `ApplyIncoming` returns before updating exclude when `failed.Count >= filtered.Count`. Direct failures store the incoming `SyncId` on the issue. A second-walk relationship failure also stores the related `SyncId`, and `UpdateEntity` adds a wrapper whose `Id` is the incoming `SyncId`, so one failed object often counts as two issues. That count can close the early return and skip exclude for siblings that did apply. Those siblings can be pushed again in this run. When the loop runs, the wrapper id keeps the failed object out of the map. The run stays unsuccessful while any issue remains, so the next session retries the window.
+
+9. **Failed batch replays issues.** Per-object issues are added before `SaveChanges`. The batch `catch` then runs every object again. Rows that already recorded an issue record it again. Saved siblings from the individual pass stay saved. Success is still all-or-nothing for the stamps.
+
+10. **Corrections are one page.** `ProcessCorrections` sends `SyncIssues.Take(ItemsPerSyncRequest)` once. It does not loop. Default `GetCorrections` is still empty, so this only matters when a host overrides it.
+
+Still true, and still not bugs by themselves: `WebSyncClient : ServerSyncClient`, last-write-wins on `ModifiedOn`, filter-as-include, `SyncObject.ToSyncModel` via `Type.GetType`, and FK detection by exception text (`FOREIGN KEY constraint` and `REFERENCE constraint`). `WaitForSyncsToComplete` itself waits while the queue is non-empty or the session is running. The queue leak above is the hole in that fix.
+
+File name `SyncIsssueException.cs` spells the class `SyncIssueException` with an extra s in the file name.
+
+---
+
 ## What is genuinely well designed
 
 ### 1. Three-layer data model (Entity / Model / Object)
@@ -66,25 +96,11 @@ Integrating sync include/exclude into the same update pipeline used elsewhere is
 
 ## Where the architecture is weak or wrong
 
-### 1. `GetCorrections` is effectively a stub
+### 1. Corrections round-trip is an empty placeholder
 
-In `SyncClientForDatabase`:
+`SyncClientForDatabase.GetCorrections` / `ApplyCorrections` validate the session and return empty results. `SyncSession` still posts issues after a failed apply; nothing is repaired unless a subclass overrides.
 
-```csharp
-public override ServiceResult<SyncObject> GetCorrections(...)
-{
-    ValidateSession(sessionId);
-    return new ServiceResult<SyncObject>(); // always empty
-}
-```
-
-But `SyncSession.Process` still has a full corrections round-trip after issues.
-
-**Honest reading:** the *protocol* has a recovery stage; the *default implementation does nothing*. That means relationship failures, constraint failures, etc. are reported, not repaired, unless a custom client overrides this.
-
-That is fine if intentional (“issues are for the user/admin”), but the code *looks* like automatic repair. Right now it is aspirational architecture with a dead branch.
-
-**Recommendation:** either implement corrections (reload authoritative objects by issue SyncId) or make the empty path explicit in naming/docs and stop implying recovery.
+Intentional: issues are reported, not auto-fixed. Do not teach “force older data” via corrections.
 
 ### 2. Inheritance inversion: `WebSyncClient : ServerSyncClient`
 
@@ -100,22 +116,11 @@ This will confuse every new reader and may cause subtle bugs if any base behavio
 `SyncClient` ← `SyncClientForDatabase` ← `ServerSyncClient`  
 `SyncClient` ← `WebSyncClient` (composition of `IWebClient`, not server inheritance)
 
-### 3. `WaitForSyncsToComplete` looks inverted / broken
+### 3. `WaitForSyncsToComplete` (loop fixed, queue leak open)
 
-```csharp
-if (_syncQueue.IsEmpty && SyncSession.SyncCompleted)
-    return true;
+`WaitForSyncsToComplete` returns immediately when the queue is empty and the session is not running. The loop continues while the queue is non-empty or `SyncRunning` is true. Do not restore a wait that continues only while the queue is already empty and the session is already complete.
 
-while (_syncQueue.IsEmpty && SyncSession.SyncCompleted)
-{
-    // timeout...
-}
-return true;
-```
-
-If work is **still running** (`!SyncCompleted` or queue non-empty), the method never enters a wait loop that waits for completion. The `while` condition only continues while already complete and empty—which is the opposite of waiting.
-
-Unless a threading trick is missing, **`Sync()` after `SyncAsync()` is not reliably waiting**. That is a correctness bug, not a style nit.
+A `waitFor` timeout still leaves its session id in `_syncQueue`. See “Open defects” item 1. Dequeue on that path, or the wait loop will treat a dead id as a running queue forever.
 
 ### 4. Success model is all-or-nothing, but time advancement is easy to get wrong
 
@@ -233,7 +238,7 @@ None of these are automatically wrong. They are choices. The problem is when the
 
 **Gaps to be aware of**
 
-- Filters and sync direction are partly client-influenced; server copies `SyncDirection` and last-synced stamps from untrusted settings after only partial re-homing. A hostile client can influence *what window* they claim. Server should re-derive or clamp last-synced from server-side session store if that matters.
+- Filters and sync direction are partly client-influenced. `ServerSyncClient.BeginSync` keeps the caller's `SyncDirection` and last-synced stamps and only overwrites page size, `IncludeIssueDetails`, and `PermanentDeletions`. There is no server-side re-home of the window. A hostile client can influence *what window* they claim. Server should re-derive or clamp last-synced from server-side session store if that matters. In-process, those three overwrites hit the same instance the client is still using (open defect 6).
 - Authorization beyond “client supported” is not visible in this layer (must live in web pipeline / credentials).
 - `IncludeIssueDetails` can leak internals if ever enabled server-side for clients.
 
@@ -241,13 +246,17 @@ None of these are automatically wrong. They are choices. The problem is when the
 
 ## What to fix first (priority)
 
-1. **Fix or delete `WaitForSyncsToComplete` wait logic** — high severity if `Sync()` is used.
-2. **Decide the story for corrections** — implement or demote the protocol noise.
-3. **Break `WebSyncClient : ServerSyncClient`** — type model currently lies.
-4. **Document conflict model as LWW** in product terms; add version column if better conflict handling is needed.
-5. **Rename filter API** toward include semantics; keep predicates secondary.
-6. **Add tests around:** filter omission, relationship order, soft delete create-then-delete, last-synced only on success, cancel mid-page.
-7. **Harden type materialization** for AOT if mobile/browser targets matter.
+1. **Dequeue on `waitFor` timeout** — an abandoned session id blocks every later run. See open defect 1.
+2. **`Sync()` should return the `SyncAsync` result** — today it returns the live session and hides `CouldNotStart`.
+3. **Mark the live session `Completed` before `SyncCompleted`** — subscribers currently observe `SyncRunning`.
+4. **Assign `ClientNotSupported`** or stop documenting it as the session's issue type.
+5. **Set pull `Take` from `ItemsPerSyncRequest`** — pull is capped at the `SyncRequest` default of 1000.
+6. **Decide the story for corrections** — implement or demote the protocol noise. The round is also a single page of issues.
+7. **Break `WebSyncClient : ServerSyncClient`** — type model currently lies.
+8. **Document conflict model as LWW** in product terms; add a version column if better conflict handling is needed.
+9. **Rename the filter API** toward include semantics; keep predicates secondary.
+10. **Cover the open defects with tests.** Filter omission, relationship order, soft-delete create-then-delete, last-synced only on success, and cancel mid-page already have coverage under `Cornerstone.UnitTests/Sync`. The holes are the queue id after timeout, `Sync()` when the run cannot start, `SyncCompleted` ordering, `ClientNotSupported`, and pull `Take` above 1,000.
+11. **Harden type materialization** for AOT if mobile or browser targets matter.
 
 ---
 
@@ -272,10 +281,11 @@ This is a **client/server entity sync engine with offline-friendly identity, pra
 
 Where it is wrong or incomplete:
 
-- Corrections look real; default path is empty.  
-- Web client inheritance says “server” when it isn’t.  
-- Wait-for-complete looks inverted.  
-- Conflict handling is weaker than the rest of the system’s sophistication implies.  
+- A timed-out waiter leaves its session id in the queue and blocks later runs.
+- `Sync()` can report a different run than the one it started.
+- Corrections look real; the default path is empty, and the round is one page.
+- Web client inheritance says “server” when it isn’t.
+- Conflict handling is weaker than the rest of the system’s sophistication implies.
 - Filter-as-include and string type names are power tools that punish small mistakes.
 
 Where it is right:

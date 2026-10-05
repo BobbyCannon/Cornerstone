@@ -1,0 +1,156 @@
+using System;
+using Cornerstone.Presentation.Input.TextInput;
+using Cornerstone.Presentation.Platforms.MacOS.Interop;
+
+namespace Cornerstone.Presentation.Platforms.MacOS
+{
+    internal class MacTextInputMethod : ITextInputMethodImpl, IDisposable
+    {
+        private TextInputMethodClient? _client;
+        private ICsnTextInputMethodClient? _nativeClient;
+        private readonly ICsnTextInputMethod _inputMethod;
+        
+        public MacTextInputMethod(ICsnTopLevel topLevel)
+        {
+            _inputMethod = topLevel.InputMethod;
+        }
+
+        public void Dispose()
+        {
+            _inputMethod.Dispose();
+            _nativeClient?.Dispose();
+        }
+
+        public void Reset()
+        {
+            _inputMethod.Reset();
+        }
+
+        public void SetClient(TextInputMethodClient? client)
+        {
+            if (_client is { SupportsSurroundingText: true })
+            {
+                _client.SurroundingTextChanged -= OnSurroundingTextChanged;
+                _client.CursorRectangleChanged -= OnCursorRectangleChanged;
+                _client.SelectionChanged -= OnSelectionChanged;
+
+                _nativeClient?.Dispose();
+            }
+
+            _nativeClient = null;
+            _client = client;
+
+            if (_client != null)
+            {
+                _nativeClient = new CsnTextInputMethodClient(_client);
+
+                OnSurroundingTextChanged(this, EventArgs.Empty);
+                OnCursorRectangleChanged(this, EventArgs.Empty);
+                // Note: OnSelectionChanged isn't called, it's already up-to-date thanks to OnSurroundingTextChanged
+
+                _client.SurroundingTextChanged += OnSurroundingTextChanged;
+                _client.CursorRectangleChanged += OnCursorRectangleChanged;
+                _client.SelectionChanged += OnSelectionChanged;
+            }
+
+            _inputMethod.SetClient(_nativeClient);
+        }
+
+        private void OnCursorRectangleChanged(object? sender, EventArgs e)
+        {
+            if (_client == null)
+            {
+                return;
+            }
+
+            var textViewVisual = _client.TextViewVisual;
+
+            if(textViewVisual is null )
+            {
+                return;
+            }
+
+            var visualRoot = textViewVisual.VisualRoot;
+
+            if(visualRoot is null)
+            {
+                return;
+            }
+
+            var transform = textViewVisual.TransformToVisual((Visual)visualRoot);
+
+            if (transform == null)
+            {
+                return;
+            }
+
+            var rect = _client.CursorRectangle.TransformToAABB(transform.Value);         
+
+            _inputMethod.SetCursorRect(rect.ToCsnRect());
+        }
+
+        private void OnSurroundingTextChanged(object? sender, EventArgs e)
+        {
+            if (_client == null)
+            {
+                return;
+            }
+
+            var surroundingText = _client.SurroundingText;
+            var selection = _client.Selection;
+
+            _inputMethod.SetSurroundingText(
+                surroundingText ?? "",
+                selection.Start,
+                selection.End
+            );
+        }
+
+        private void OnSelectionChanged(object? sender, EventArgs e)
+        {
+            if (_client is null)
+            {
+                return;
+            }
+
+            var selection = _client.Selection;
+            _inputMethod.SetSelectionInSurroundingText(selection.Start, selection.End);
+        }
+
+        public void SetCursorRect(Rect rect)
+        {
+            _inputMethod.SetCursorRect(rect.ToCsnRect());
+        }
+
+        public void SetOptions(TextInputOptions options)
+        {
+           
+        }
+
+        private class CsnTextInputMethodClient : NativeCallbackBase, ICsnTextInputMethodClient
+        {
+            private readonly TextInputMethodClient _client;
+
+            public CsnTextInputMethodClient(TextInputMethodClient client)
+            {
+                _client = client;
+            }
+
+            public void SetPreeditText(string preeditText)
+            {
+                if (_client.SupportsPreedit)
+                {
+                    _client.SetPreeditText(preeditText);
+                }
+            }
+
+            public void SelectInSurroundingText(int start, int end)
+            {
+                if (_client.SupportsSurroundingText)
+                {
+                    _client.Selection = new TextSelection(start, end);
+                }
+            }
+        }
+    }
+}

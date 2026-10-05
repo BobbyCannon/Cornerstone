@@ -1,0 +1,24 @@
+<Styles xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type DockingWindow}"
+					TargetType="DockingWindow"
+					BasedOn="{StaticResource {x:Type Window}}">
+				<Setter Property="ContentTemplate">
+					<DataTemplate>
+						<!-- Bind to the window property, not DataContext. Float windows set DataContext
+						     to the host AppViewModel for shared context. -->
+						<ContentPresenter Content="{Binding DockingManager, RelativeSource={RelativeSource AncestorType=DockingWindow}}"
+								Margin="-1,0,-1,-1" />
+					</DataTemplate>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="500">
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</Styles>

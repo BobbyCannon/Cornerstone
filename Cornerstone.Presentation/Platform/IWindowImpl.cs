@@ -1,0 +1,203 @@
+using System;
+using Cornerstone.Presentation.Controls;
+using Cornerstone.Presentation.Controls.Platform;
+using Cornerstone.Presentation.Input;
+using Cornerstone.Presentation.Metadata;
+using Cornerstone.Presentation.Controls.Chrome;
+
+namespace Cornerstone.Presentation.Platform
+{
+    /// <summary>
+    /// Defines a platform-specific window implementation.
+    /// </summary>
+    [Unstable]
+    public interface IWindowImpl : IWindowBaseImpl
+    {
+        /// <summary>
+        /// Gets or sets the minimized/maximized state of the window.
+        /// </summary>
+        WindowState WindowState { get; set; }
+        
+        /// <summary>
+        /// Indicates if platform implementation has a working getter for <see cref="WindowState"/> that produces
+        /// consistent results with WindowStateChanged callback.
+        /// If false, Window will not call the getter and will only use the setter and
+        /// <see cref="WindowStateChanged"/> callback to track window state.
+        /// </summary>
+        bool WindowStateGetterIsUsable { get; }
+
+        /// <summary>
+        /// Gets or sets a method called when the minimized/maximized state of the window changes.
+        /// </summary>
+        Action<WindowState>? WindowStateChanged { get; set; }
+
+        /// <summary>
+        /// Sets the title of the window.
+        /// </summary>
+        /// <param name="title">The title.</param>
+        void SetTitle(string? title);
+
+        /// <summary>
+        /// Sets the parent of the window.
+        /// </summary>
+        /// <param name="parent">The parent <see cref="IWindowImpl"/>.</param>
+        void SetParent(IWindowImpl? parent);
+        
+        /// <summary>
+        /// Disables the window for example when a modal dialog is open.
+        /// </summary>
+        /// <param name="enable">true if the window is enabled, or false if it is disabled.</param>
+        void SetEnabled(bool enable);
+
+        /// <summary>
+        /// Called when a disabled window received input. Can be used to activate child windows.
+        /// </summary>
+        Action? GotInputWhenDisabled { get; set; }
+
+        /// <summary>
+        /// Enables or disables window decorations (title bar, buttons, etc)
+        /// </summary>
+        void SetWindowDecorations(WindowDecorations enabled);
+
+        /// <summary>
+        /// Sets the icon of this window.
+        /// </summary>
+        void SetIcon(IWindowIconImpl? icon);
+
+        /// <summary>
+        /// Enables or disables the taskbar icon
+        /// </summary>
+        void ShowTaskbarIcon(bool value);
+
+        /// <summary>
+        /// Enables or disables resizing of the window
+        /// </summary>
+        void CanResize(bool value);
+
+        /// <summary>
+        /// Enables or disables minimizing the window.
+        /// </summary>
+        void SetCanMinimize(bool value);
+
+        /// <summary>
+        /// Enables or disables maximizing the window.
+        /// </summary>
+        void SetCanMaximize(bool value);
+
+        /// <summary>
+        /// Gets or sets a method called before the underlying implementation is destroyed.
+        /// Return true to prevent the underlying implementation from closing.
+        /// </summary>
+        Func<WindowCloseReason, bool>? Closing { get; set; }
+
+        /// <summary>
+        /// Gets a value to indicate if the platform was able to extend client area to non-client area.
+        /// </summary>
+        bool IsClientAreaExtendedToDecorations { get; }
+
+        /// <summary>
+        /// Gets or Sets an action that is called whenever one of the extend client area properties changed.
+        /// </summary>
+        Action<bool>? ExtendClientAreaToDecorationsChanged { get; set; }
+
+        /// <summary>
+        /// Gets a flag that indicates if Managed decorations i.e. caption buttons are required.
+        /// This property is used when <see cref="IsClientAreaExtendedToDecorations"/> is set.
+        /// </summary>
+        bool NeedsManagedDecorations { get; }
+
+        /// <summary>
+        /// Gets flags indicating which drawn decoration parts the platform requires.
+        /// For example, X11 needs shadow, border, and resize grips; Win32 only needs titlebar/buttons.
+        /// </summary>
+        PlatformRequestedDrawnDecoration RequestedDrawnDecorations { get; }
+
+        /// <summary>
+        /// Triggered when decorations request from platform got changed
+        /// </summary>
+        Action? DrawnDecorationsRequestChanged
+        {
+            get => null;
+            set
+            {
+
+            }
+        }
+
+        /// <summary>
+        /// Gets a thickness that describes the amount each side of the non-client area extends into the client area.
+        /// It includes the titlebar.
+        /// </summary>
+        Thickness ExtendedMargins { get; }
+
+        /// <summary>
+        /// Gets a thickness that describes the margin around the window that is offscreen.
+        /// This may happen when a window is maximized and <see cref="IsClientAreaExtendedToDecorations"/> is set.
+        /// </summary>
+        Thickness OffScreenMargin { get; }
+
+        /// <summary>
+        /// Starts moving a window with left button being held. Should be called from left mouse button press event handler.
+        /// </summary>
+        void BeginMoveDrag(PointerPressedEventArgs e);
+
+        /// <summary>
+        /// Starts resizing a window. This function is used if an application has window resizing controls. 
+        /// Should be called from left mouse button press event handler
+        /// </summary>
+        void BeginResizeDrag(WindowEdge edge, PointerPressedEventArgs e);
+
+        /// <summary>
+        /// Sets the client size of the top level.
+        /// </summary>
+        /// <param name="clientSize">The new client size.</param>
+        /// <param name="reason">The reason for the resize.</param>
+        void Resize(Size clientSize, WindowResizeReason reason = WindowResizeReason.Application);
+
+        /// <summary>
+        /// Sets the client size of the top level.
+        /// </summary>
+        void Move(PixelPoint point);
+
+        /// <summary>
+        /// Minimum width of the window.
+        /// </summary>
+        void SetMinMaxSize(Size minSize, Size maxSize);
+
+        /// <summary>
+        /// Sets if the ClientArea is extended into the non-client area.
+        /// </summary>
+        /// <param name="extendIntoClientAreaHint">true to enable, false to disable</param>
+        void SetExtendClientAreaToDecorationsHint(bool extendIntoClientAreaHint);        
+
+        /// <summary>
+        /// Sets how big the non-client titlebar area should be.
+        /// </summary>
+        /// <param name="titleBarHeight">-1 for platform default, otherwise the height in DIPs.</param>
+        void SetExtendClientAreaTitleBarHeightHint(double titleBarHeight);
+
+        /// <summary>
+        /// Gets the window actions that the underlying platform currently allows.
+        /// </summary>
+        PlatformAllowedWindowActions AllowedWindowActions => PlatformAllowedWindowActions.All;
+
+        /// <summary>
+        /// Gets or sets a callback invoked when <see cref="AllowedWindowActions"/> changes.
+        /// </summary>
+        Action<PlatformAllowedWindowActions>? AllowedWindowActionsChanged { get => null; set { } }
+        
+        /// <summary>
+        /// Informs the platform about the thickness of application-drawn shadow decorations
+        /// so that the platform can distinguish the window content area from shadows.
+        /// It's platform's responsibility to synchronize this with window resize and rendering of the next frame 
+        /// </summary>
+        /// <param name="extents">The shadow thickness on each side, in DIPs.</param>
+        void SetShadowExtents(Thickness extents) { }
+
+        /// <summary>
+        /// When true, the managed window uses a transparent client fill so native airspace holes are not covered.
+        /// Used on the Windows layered composition window. Other platforms use a non-opaque surface instead.
+        /// </summary>
+        bool TransparentClientForNativeAirspace => false;
+    }
+}

@@ -33,7 +33,7 @@ After several consecutive ticks with no apply, the loop returns to idle. Produce
 
 Every tick the dispatcher applies ViewModels that are **`IsAttached`** and report `HasModelChanges()`. Detached ViewModels are skipped.
 
-### Automatic Attach / Detach (Avalonia)
+### Automatic Attach / Detach (Cornerstone.Presentation)
 
 You do **not** call `Attach` / `Detach` from feature tab code. Cornerstone views do it from the visual tree.
 

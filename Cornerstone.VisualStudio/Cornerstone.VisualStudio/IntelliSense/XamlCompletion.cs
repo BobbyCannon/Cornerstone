@@ -1,4 +1,4 @@
-﻿#region References
+#region References
 
 using System;
 using System.Collections.Generic;
@@ -8,27 +8,37 @@ using Microsoft.VisualStudio.Imaging;
 using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.Text.Editor;
 using Completion = Cornerstone.VisualStudio.Core.Completion.Completion;
 
 #endregion
 
-
 namespace Cornerstone.VisualStudio.IntelliSense;
 
 /// <summary>
-/// An Avalonia XAML intellisense completion suggestion.
+/// XAML completion item. Implements ICustomCommit so Visual Studio calls
+/// Commit instead of replacing ApplicableTo and parking the caret
+/// at the end of InsertionText.
 /// </summary>
-internal class XamlCompletion : Completion4
+internal class XamlCompletion : Completion4, ICustomCommit
 {
 	#region Fields
 
 	private static ImageMoniker[] _images;
+	private readonly ITrackingSpan _applicableTo;
+	private readonly ITextView _textView;
 
 	#endregion
 
 	#region Constructors
 
 	public XamlCompletion(Completion completion)
+		: this(completion, null, null)
+	{
+	}
+
+	public XamlCompletion(Completion completion, ITextView textView, ITrackingSpan applicableTo)
 		: base(
 			completion.DisplayText,
 			completion.InsertText,
@@ -37,8 +47,9 @@ internal class XamlCompletion : Completion4
 			completion.Kind.ToString(),
 			suffix: string.IsNullOrWhiteSpace(completion.Suffix) ? string.Empty : $"({completion.Suffix})")
 	{
-		// Index within InsertionText where the caret should land after commit
-		// (e.g. after "TextBlock" in "TextBlock />", or after "Grid>" in "Grid></Grid>").
+		_textView = textView;
+		_applicableTo = applicableTo;
+
 		if (completion.RecommendedCursorOffset is int idx &&
 			(idx >= 0) &&
 			(idx <= (completion.InsertText?.Length ?? 0)))
@@ -48,7 +59,6 @@ internal class XamlCompletion : Completion4
 		}
 		else if (completion.RecommendedCursorOffset.HasValue)
 		{
-			// Legacy: treat as "chars from end" only if out of range as an index.
 			CursorOffset = Math.Max(0, completion.InsertText.Length - completion.RecommendedCursorOffset.Value);
 			CaretIndexInInsert = completion.InsertText.Length - CursorOffset;
 		}
@@ -69,15 +79,8 @@ internal class XamlCompletion : Completion4
 
 	#region Properties
 
-	/// <summary>
-	/// Caret position measured from the start of <see cref="InsertionText"/> after commit.
-	/// Null means leave caret at the end of the insert.
-	/// </summary>
 	public int? CaretIndexInInsert { get; }
 
-	/// <summary>
-	/// Chars to move left from the end of the insert (derived from <see cref="CaretIndexInInsert"/>).
-	/// </summary>
 	public int CursorOffset { get; }
 
 	public int? DeleteTextOffset { get; }
@@ -104,10 +107,83 @@ internal class XamlCompletion : Completion4
 
 	#region Methods
 
-	public static IEnumerable<XamlCompletion> Create(
-		IEnumerable<Completion> source)
+	public void Commit()
 	{
-		return source.Select(x => new XamlCompletion(x));
+		ThreadHelper.ThrowIfNotOnUIThread();
+
+		if ((_textView == null) || (_applicableTo == null))
+		{
+			return;
+		}
+
+		var insert = InsertionText ?? string.Empty;
+		var snapshot = _textView.TextSnapshot;
+		SnapshotSpan span;
+		try
+		{
+			span = _applicableTo.GetSpan(snapshot);
+		}
+		catch
+		{
+			return;
+		}
+
+		if ((span.Start.Position < 0) || (span.End.Position > snapshot.Length))
+		{
+			return;
+		}
+
+		var startTracker = snapshot.CreateTrackingPoint(span.Start.Position, PointTrackingMode.Negative);
+		var options = _textView.Options;
+		var previousIndent = options.GetOptionValue(DefaultOptions.IndentStyleId);
+		ITextSnapshot newSnapshot;
+		try
+		{
+			options.SetOptionValue(DefaultOptions.IndentStyleId, IndentingStyle.None);
+			using (XamlTextManipulatorRegistrar.Suppress())
+			using (var edit = _textView.TextBuffer.CreateEdit())
+			{
+				edit.Replace(span, insert);
+				newSnapshot = edit.Apply();
+			}
+		}
+		finally
+		{
+			options.SetOptionValue(DefaultOptions.IndentStyleId, previousIndent);
+		}
+
+		if (newSnapshot == null)
+		{
+			return;
+		}
+
+		newSnapshot = _textView.TextSnapshot;
+		var insertStart = startTracker.GetPosition(newSnapshot);
+		var caretPos = CompletionCaretPlacement.GetCaretAfterReplace(
+			insertStart, insert, CaretIndexInInsert);
+		caretPos = Math.Max(0, Math.Min(caretPos, newSnapshot.Length));
+		_textView.Caret.MoveTo(new SnapshotPoint(newSnapshot, caretPos));
+
+		if (DeleteTextOffset is int deleteOffset && (deleteOffset != 0))
+		{
+			var caret = _textView.Caret.Position.BufferPosition;
+			var other = caret.Add(deleteOffset);
+			var deleteSpan = other < caret ? new SnapshotSpan(other, -deleteOffset) : new SnapshotSpan(caret, deleteOffset);
+			_textView.TextBuffer.Delete(deleteSpan);
+		}
+	}
+
+	public static IEnumerable<XamlCompletion> Create(IEnumerable<Completion> source)
+	{
+		return Create(source, null, null);
+	}
+
+	public static IEnumerable<XamlCompletion> Create(
+		IEnumerable<Completion> source,
+		ITextView textView,
+		ITrackingSpan applicableTo)
+	{
+		return source.Select(x => new XamlCompletion(x, textView, applicableTo));
 	}
 
 	private static ImageMoniker GetImage(CompletionKind kind)

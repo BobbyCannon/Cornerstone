@@ -1,0 +1,124 @@
+using System;
+using System.Collections.Generic;
+using Cornerstone.Presentation.Controls;
+using Cornerstone.Presentation.Input;
+using Cornerstone.Presentation.Input.Platform;
+using Cornerstone.Presentation.Input.Raw;
+using Cornerstone.Presentation.Input.TextInput;
+using Cornerstone.Presentation.OpenGL.Surfaces;
+using Cornerstone.Presentation.Platform;
+using Cornerstone.Presentation.Platform.Surfaces;
+using Cornerstone.Presentation.Rendering.Composition;
+using Cornerstone.Presentation.Controls.Acrylic;
+using Cornerstone.Presentation.Controls.Chrome;
+
+namespace Cornerstone.Presentation.Platforms.Windows;
+
+/// <summary>
+/// A minimal <see cref="ITopLevelImpl"/> that hosts an Cornerstone content tree on top of an
+/// externally managed swap-chain surface (e.g. a WinUI <c>SwapChainPanel</c> or any other
+/// host that supplies an <see cref="IGlPlatformSurface"/>). Sizing, scaling and input
+/// pumping are driven by the host.
+/// </summary>
+internal class SwapChainTopLevelImpl : ITopLevelImpl
+{
+    private readonly IGlPlatformSurface _glSurface;
+    private Size _clientSize;
+    private double _scaling = 1.0;
+
+    public SwapChainTopLevelImpl(IGlPlatformSurface glSurface)
+    {
+        _glSurface = glSurface;
+        var platformGraphics = PresentationLocator.Current.GetService<IPlatformGraphics>();
+        Compositor = new Compositor(platformGraphics);
+    }
+
+    public Size ClientSize
+    {
+        get => _clientSize;
+        set
+        {
+            _clientSize = value;
+            Resized?.Invoke(value, WindowResizeReason.Unspecified);
+        }
+    }
+
+    public double RenderScaling
+    {
+        get => _scaling;
+        set
+        {
+            _scaling = value;
+            ScalingChanged?.Invoke(value);
+        }
+    }
+
+    public double DesktopScaling => _scaling;
+
+    public IPlatformHandle? Handle => null;
+
+    public Compositor Compositor { get; }
+
+    public IPlatformRenderSurface[] Surfaces => [_glSurface];
+
+    public Action<RawInputEventArgs>? Input { get; set; }
+
+    public Action<Rect>? Paint { get; set; }
+
+    public Action<Size, WindowResizeReason>? Resized { get; set; }
+
+    public Action<double>? ScalingChanged { get; set; }
+
+    public Action<WindowTransparencyLevel>? TransparencyLevelChanged { get; set; }
+
+    public Action? Closed { get; set; }
+
+    public Action? LostFocus { get; set; }
+
+    public WindowTransparencyLevel TransparencyLevel => WindowTransparencyLevel.None;
+
+    public AcrylicPlatformCompensationLevels AcrylicCompensationLevels { get; } = new(1, 1, 1);
+
+    public IInputRoot? InputRoot { get; private set; }
+
+    public void SetInputRoot(IInputRoot inputRoot) => InputRoot = inputRoot;
+
+    public Point PointToClient(PixelPoint point) => point.ToPoint(_scaling);
+
+    public PixelPoint PointToScreen(Point point) => PixelPoint.FromPoint(point, _scaling);
+
+    /// <summary>
+    /// Raised when Cornerstone requests a cursor change. The host is responsible
+    /// for translating the (host-supplied) <see cref="ICursorImpl"/> into a
+    /// native cursor and applying it to its surface.
+    /// </summary>
+    public Action<ICursorImpl?>? CursorChanged { get; set; }
+
+    public void SetCursor(ICursorImpl? cursor) => CursorChanged?.Invoke(cursor);
+
+    // Uses overlays instead of popups.
+    public IPopupImpl? CreatePopup() => null;
+
+    public void SetTransparencyLevelHint(IReadOnlyList<WindowTransparencyLevel> transparencyLevels) { }
+
+    public void SetFrameThemeVariant(PlatformThemeVariant? themeVariant) { }
+
+    /// <summary>
+    /// Optional IME implementation provided by the host.
+    /// </summary>
+    public ITextInputMethodImpl? TextInputMethod { get; set; }
+
+    public object? TryGetFeature(Type featureType)
+    {
+        if (featureType == typeof(IClipboard))
+            return PresentationLocator.Current.GetService<IClipboard>();
+        if (featureType == typeof(ITextInputMethodImpl))
+            return TextInputMethod;
+        return null;
+    }
+
+    public void Dispose()
+    {
+        Closed?.Invoke();
+    }
+}

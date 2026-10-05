@@ -24,14 +24,16 @@ public class SqlQueryTests : CornerstoneUnitTest
 		{
 			using var database = new SqlDatabase(connectionString, provider);
 			var repository = database.GetRepository<AccountEntity>();
-			repository.EnsureTableCreated();
+			EnsureAccountGraph(database, repository);
 			var account = CreateAccount("John", "john@domain.com");
 			repository.Add(account);
+			AreEqual(0, repository.Count());
+			database.SaveChanges();
+			AreEqual(1, account.Id);
 			AreEqual(1, repository.Count());
-			
 		});
 	}
-	
+
 	[TestMethod]
 	public void Query()
 	{
@@ -39,7 +41,7 @@ public class SqlQueryTests : CornerstoneUnitTest
 		{
 			using var database = new SqlDatabase(connectionString, provider);
 			var repository = database.GetRepository<AccountEntity>();
-			repository.EnsureTableCreated();
+			EnsureAccountGraph(database, repository);
 
 			var account = new AccountEntity
 			{
@@ -61,6 +63,7 @@ public class SqlQueryTests : CornerstoneUnitTest
 			};
 			repository.Add(account);
 			repository.Add(account2);
+			database.SaveChanges();
 
 			var accounts = repository
 				.Where(x => x.Name == "John")
@@ -78,20 +81,48 @@ public class SqlQueryTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void QueryCombinedWhereUsesDistinctParameterIndexes()
+	{
+		ForEach((connectionString, provider) =>
+		{
+			using var database = new SqlDatabase(connectionString, provider);
+			var repository = database.GetRepository<AccountEntity>();
+			EnsureAccountGraph(database, repository);
+			repository.Add(CreateAccount("John", "john@domain.com"));
+			repository.Add(CreateAccount("Jane", "jane@domain.com"));
+			database.SaveChanges();
+
+			var since = StartDateTime.AddDays(-2);
+			var until = StartDateTime.AddDays(2);
+			var accounts = new SqlQuery<AccountEntity>(database)
+				.Where(x =>
+					((x.CreatedOn >= since) && (x.CreatedOn < until))
+					|| ((x.ModifiedOn >= since) && (x.ModifiedOn < until)))
+				.Where(x => x.Name == "John")
+				.Query()
+				.ToArray();
+
+			AreEqual(1, accounts.Length);
+			AreEqual("John", accounts[0].Name);
+		});
+	}
+
+	[TestMethod]
 	public void QueryMultipleRecords()
 	{
 		ForEach((connectionString, provider) =>
 		{
 			using var database = new SqlDatabase(connectionString, provider);
 			var repository = database.GetRepository<AccountEntity>();
-			repository.EnsureTableCreated();
+			EnsureAccountGraph(database, repository);
 
 			for (var i = 0; i < 10; i++)
 			{
 				repository.Add(CreateAccount($"User{i}", $"user{i}@domain.com"));
 			}
 
-			var query = new SqlQuery<AccountEntity>(connectionString, provider);
+			database.SaveChanges();
+			var query = new SqlQuery<AccountEntity>(database);
 			var accounts = query.Query().ToArray();
 
 			AreEqual(10, accounts.Length);
@@ -105,18 +136,95 @@ public class SqlQueryTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void QueryReadsForeignKeyAndGuid()
+	{
+		ForEach((connectionString, provider) =>
+		{
+			using var database = new SqlDatabase(connectionString, provider);
+			var addresses = database.GetRepository<AddressEntity>();
+			var accounts = database.GetRepository<AccountEntity>();
+			EnsureAccountGraph(database, accounts);
+
+			var syncId = new Guid("A1B2C3D4-E5F6-7890-ABCD-EF1234567890");
+			addresses.Add(new AddressEntity
+			{
+				City = "Atlanta",
+				CreatedOn = StartDateTime,
+				Line1 = "1 Sample St",
+				ModifiedOn = StartDateTime,
+				Postal = "30301",
+				State = "GA",
+				SyncId = syncId
+			});
+			database.SaveChanges();
+
+			var storedAddress = addresses.Where(x => x.Line1 == "1 Sample St").Query().Single();
+			IsTrue(storedAddress.Id > 0);
+			AreEqual(syncId, storedAddress.SyncId);
+			AreEqual(DateTimeKind.Utc, storedAddress.CreatedOn.Kind);
+			AreEqual(StartDateTime, storedAddress.CreatedOn);
+
+			accounts.Add(new AccountEntity
+			{
+				AddressId = storedAddress.Id,
+				AddressSyncId = storedAddress.SyncId,
+				CreatedOn = StartDateTime,
+				EmailAddress = "john@domain.com",
+				Name = "John",
+				ModifiedOn = StartDateTime,
+				Roles = ",,",
+				SyncId = Guid.NewGuid()
+			});
+			database.SaveChanges();
+
+			var storedAccount = accounts.Where(x => x.Name == "John").Query().Single();
+			AreEqual(storedAddress.Id, storedAccount.AddressId);
+			AreEqual(storedAddress.SyncId, storedAccount.AddressSyncId);
+			AreEqual(null, accounts.Where(x => x.Name == "Missing").Query().FirstOrDefault());
+		});
+	}
+
+	[TestMethod]
+	public void QuerySeesUncommittedWork()
+	{
+		ForEach((connectionString, provider) =>
+		{
+			using var database = new SqlDatabase(connectionString, provider);
+			var repository = database.GetRepository<AccountEntity>();
+			EnsureAccountGraph(database, repository);
+
+			try
+			{
+				database.ExecuteInTransaction(() =>
+				{
+					repository.Add(CreateAccount("John", "john@domain.com"));
+					database.SaveChanges();
+					AreEqual(1, repository.Where(x => x.Name == "John").Query().Count());
+					throw new InvalidOperationException("rollback");
+				});
+			}
+			catch (InvalidOperationException)
+			{
+			}
+
+			AreEqual(0, repository.Count());
+		});
+	}
+
+	[TestMethod]
 	public void QueryWithEnumProperty()
 	{
 		ForEach((connectionString, provider) =>
 		{
 			using var database = new SqlDatabase(connectionString, provider);
 			var repository = database.GetRepository<AccountEntity>();
-			repository.EnsureTableCreated();
+			EnsureAccountGraph(database, repository);
 
 			repository.Add(CreateAccount("Alice", "alice@domain.com", status: AccountStatus.Enabled));
 			repository.Add(CreateAccount("Bob", "bob@domain.com", status: AccountStatus.Unknown));
+			database.SaveChanges();
 
-			var query = new SqlQuery<AccountEntity>(connectionString, provider);
+			var query = new SqlQuery<AccountEntity>(database);
 			var accounts = query
 				.Where(x => x.Status == AccountStatus.Enabled)
 				.Query()
@@ -129,19 +237,46 @@ public class SqlQueryTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void QueryWithInList()
+	{
+		ForEach((connectionString, provider) =>
+		{
+			using var database = new SqlDatabase(connectionString, provider);
+			var repository = database.GetRepository<AccountEntity>();
+			EnsureAccountGraph(database, repository);
+			repository.Add(CreateAccount("Alice", "alice@domain.com"));
+			repository.Add(CreateAccount("Bob", "bob@domain.com"));
+			repository.Add(CreateAccount("Charlie", "charlie@domain.com"));
+			database.SaveChanges();
+
+			var ids = new[] { 1, 3 };
+			var accounts = repository
+				.Where(x => ids.Contains(x.Id))
+				.OrderBy(x => x.Id)
+				.Query()
+				.ToArray();
+
+			AreEqual(2, accounts.Length);
+			AreEqual("Alice", accounts[0].Name);
+			AreEqual("Charlie", accounts[1].Name);
+		});
+	}
+
+	[TestMethod]
 	public void QueryWithMultipleWherePredicates()
 	{
 		ForEach((connectionString, provider) =>
 		{
 			using var database = new SqlDatabase(connectionString, provider);
 			var repository = database.GetRepository<AccountEntity>();
-			repository.EnsureTableCreated();
+			EnsureAccountGraph(database, repository);
 
 			repository.Add(CreateAccount("Alice", "alice@domain.com", true));
 			repository.Add(CreateAccount("Bob", "bob@domain.com", false));
 			repository.Add(CreateAccount("Alice", "alice2@domain.com", false));
+			database.SaveChanges();
 
-			var query = new SqlQuery<AccountEntity>(connectionString, provider);
+			var query = new SqlQuery<AccountEntity>(database);
 			var accounts = query
 				.Where(x => x.Name == "Alice")
 				.Where(x => x.IsDeleted == false)
@@ -160,11 +295,12 @@ public class SqlQueryTests : CornerstoneUnitTest
 		{
 			using var database = new SqlDatabase(connectionString, provider);
 			var repository = database.GetRepository<AccountEntity>();
-			repository.EnsureTableCreated();
+			EnsureAccountGraph(database, repository);
 
 			repository.Add(CreateAccount("Alice", "alice@domain.com"));
+			database.SaveChanges();
 
-			var query = new SqlQuery<AccountEntity>(connectionString, provider);
+			var query = new SqlQuery<AccountEntity>(database);
 			var accounts = query
 				.Where(x => x.Name == "NonExistent")
 				.Query()
@@ -181,7 +317,7 @@ public class SqlQueryTests : CornerstoneUnitTest
 		{
 			using var database = new SqlDatabase(connectionString, provider);
 			var repository = database.GetRepository<AccountEntity>();
-			repository.EnsureTableCreated();
+			EnsureAccountGraph(database, repository);
 
 			var account = new AccountEntity
 			{
@@ -194,8 +330,9 @@ public class SqlQueryTests : CornerstoneUnitTest
 				SyncId = Guid.NewGuid()
 			};
 			repository.Add(account);
+			database.SaveChanges();
 
-			var query = new SqlQuery<AccountEntity>(connectionString, provider);
+			var query = new SqlQuery<AccountEntity>(database);
 			var accounts = query.Query().ToArray();
 
 			AreEqual(1, accounts.Length);
@@ -211,13 +348,14 @@ public class SqlQueryTests : CornerstoneUnitTest
 		{
 			using var database = new SqlDatabase(connectionString, provider);
 			var repository = database.GetRepository<AccountEntity>();
-			repository.EnsureTableCreated();
+			EnsureAccountGraph(database, repository);
 
 			repository.Add(CreateAccount("Charlie", "charlie@domain.com"));
 			repository.Add(CreateAccount("Alice", "alice@domain.com"));
 			repository.Add(CreateAccount("Bob", "bob@domain.com"));
+			database.SaveChanges();
 
-			var query = new SqlQuery<AccountEntity>(connectionString, provider);
+			var query = new SqlQuery<AccountEntity>(database);
 			var accounts = query
 				.OrderBy(x => x.Name)
 				.Query()
@@ -237,13 +375,14 @@ public class SqlQueryTests : CornerstoneUnitTest
 		{
 			using var database = new SqlDatabase(connectionString, provider);
 			var repository = database.GetRepository<AccountEntity>();
-			repository.EnsureTableCreated();
+			EnsureAccountGraph(database, repository);
 
 			repository.Add(CreateAccount("Alice", "alice@domain.com"));
 			repository.Add(CreateAccount("Charlie", "charlie@domain.com"));
 			repository.Add(CreateAccount("Bob", "bob@domain.com"));
+			database.SaveChanges();
 
-			var query = new SqlQuery<AccountEntity>(connectionString, provider);
+			var query = new SqlQuery<AccountEntity>(database);
 			var accounts = query
 				.OrderByDescending(x => x.Name)
 				.Query()
@@ -263,13 +402,14 @@ public class SqlQueryTests : CornerstoneUnitTest
 		{
 			using var database = new SqlDatabase(connectionString, provider);
 			var repository = database.GetRepository<AccountEntity>();
-			repository.EnsureTableCreated();
+			EnsureAccountGraph(database, repository);
 
 			repository.Add(CreateAccount("Alice", "alice2@domain.com"));
 			repository.Add(CreateAccount("Alice", "alice1@domain.com"));
 			repository.Add(CreateAccount("Bob", "bob@domain.com"));
+			database.SaveChanges();
 
-			var query = new SqlQuery<AccountEntity>(connectionString, provider);
+			var query = new SqlQuery<AccountEntity>(database);
 			var accounts = query
 				.OrderBy(x => x.Name)
 				.ThenBy(x => x.EmailAddress)
@@ -290,13 +430,14 @@ public class SqlQueryTests : CornerstoneUnitTest
 		{
 			using var database = new SqlDatabase(connectionString, provider);
 			var repository = database.GetRepository<AccountEntity>();
-			repository.EnsureTableCreated();
+			EnsureAccountGraph(database, repository);
 
 			repository.Add(CreateAccount("Alice", "alice1@domain.com"));
 			repository.Add(CreateAccount("Alice", "alice2@domain.com"));
 			repository.Add(CreateAccount("Bob", "bob@domain.com"));
+			database.SaveChanges();
 
-			var query = new SqlQuery<AccountEntity>(connectionString, provider);
+			var query = new SqlQuery<AccountEntity>(database);
 			var accounts = query
 				.OrderBy(x => x.Name)
 				.ThenByDescending(x => x.EmailAddress)
@@ -317,14 +458,15 @@ public class SqlQueryTests : CornerstoneUnitTest
 		{
 			using var database = new SqlDatabase(connectionString, provider);
 			var repository = database.GetRepository<AccountEntity>();
-			repository.EnsureTableCreated();
+			EnsureAccountGraph(database, repository);
 
 			repository.Add(CreateAccount("Charlie", "charlie@domain.com", roles: "Admin"));
 			repository.Add(CreateAccount("Alice", "alice@domain.com", roles: "Admin"));
 			repository.Add(CreateAccount("Bob", "bob@domain.com", roles: "User"));
 			repository.Add(CreateAccount("Dave", "dave@domain.com", roles: "Admin"));
+			database.SaveChanges();
 
-			var query = new SqlQuery<AccountEntity>(connectionString, provider);
+			var query = new SqlQuery<AccountEntity>(database);
 			var accounts = query
 				.Where(x => x.Roles == "Admin")
 				.OrderBy(x => x.Name)
@@ -345,13 +487,14 @@ public class SqlQueryTests : CornerstoneUnitTest
 		{
 			using var database = new SqlDatabase(connectionString, provider);
 			var repository = database.GetRepository<AccountEntity>();
-			repository.EnsureTableCreated();
+			EnsureAccountGraph(database, repository);
 
 			repository.Add(CreateAccount("Alice", "alice@domain.com"));
 			repository.Add(CreateAccount("Bob", "bob@domain.com"));
 			repository.Add(CreateAccount("Charlie", "charlie@domain.com"));
+			database.SaveChanges();
 
-			var query = new SqlQuery<AccountEntity>(connectionString, provider);
+			var query = new SqlQuery<AccountEntity>(database);
 			var accounts = query
 				.Where(x => x.Name == "Bob")
 				.Query()
@@ -360,6 +503,8 @@ public class SqlQueryTests : CornerstoneUnitTest
 			AreEqual(1, accounts.Length);
 			AreEqual("Bob", accounts[0].Name);
 			AreEqual("bob@domain.com", accounts[0].EmailAddress);
+			IsTrue(query.Any());
+			IsFalse(repository.Where(x => x.Name == "Missing").Any());
 		});
 	}
 
@@ -419,7 +564,9 @@ public class SqlQueryTests : CornerstoneUnitTest
 
 			var (sql, parameters) = SqlQuery<AccountEntity>.ToSqlQuery(query);
 
+			var b = SqlGenerator.GetIdentifierBrackets(provider);
 			IsTrue(sql.Contains("ORDER BY"));
+			IsTrue(sql.Contains($"{b.Open}Name{b.Close}"));
 			IsFalse(sql.Contains("DESC"));
 			AreEqual(0, parameters.Length);
 		});
@@ -450,6 +597,7 @@ public class SqlQueryTests : CornerstoneUnitTest
 			var b = SqlGenerator.GetIdentifierBrackets(provider);
 
 			IsTrue(sql.Contains("WHERE"));
+			IsTrue(sql.Contains($"{b.Open}Name{b.Close}"));
 			IsTrue(sql.Contains($"FROM {b.Open}Accounts{b.Close}"));
 			AreEqual(1, parameters.Length);
 			AreEqual("Test", parameters[0]);
@@ -470,6 +618,12 @@ public class SqlQueryTests : CornerstoneUnitTest
 			Status = status,
 			SyncId = Guid.NewGuid()
 		};
+	}
+
+	private static void EnsureAccountGraph(SqlDatabase database, SqlRepository<AccountEntity> repository)
+	{
+		database.GetRepository<AddressEntity>().EnsureTableCreated();
+		repository.EnsureTableCreated();
 	}
 
 	private void ForEach(Action<string, SqlProvider> action)

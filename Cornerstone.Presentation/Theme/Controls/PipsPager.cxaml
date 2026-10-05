@@ -1,0 +1,27 @@
+<ResourceDictionary
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+
+	<ControlTheme x:Key="{x:Type PipsPager}" TargetType="PipsPager">
+		<Setter Property="Template">
+			<ControlTemplate>
+				<StackPanel Orientation="{TemplateBinding Orientation}">
+					<Button Name="PART_PreviousButton"
+							Theme="{TemplateBinding PreviousButtonTheme}"
+							IsVisible="{TemplateBinding IsPreviousButtonVisible}" />
+					<ListBox Name="PART_PipsPagerList"
+							ItemsSource="{Binding TemplateSettings.Pips, RelativeSource={RelativeSource TemplatedParent}}" />
+					<Button Name="PART_NextButton"
+							Theme="{TemplateBinding NextButtonTheme}"
+							IsVisible="{TemplateBinding IsNextButtonVisible}" />
+				</StackPanel>
+			</ControlTemplate>
+		</Setter>
+	</ControlTheme>
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="400">
+			<PipsPager NumberOfPages="5" SelectedPageIndex="1" />
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

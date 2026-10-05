@@ -1,0 +1,241 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs.Observe"
+		mc:Ignorable="d" d:DesignHeight="900" d:DesignWidth="1032"
+		x:Class="Cornerstone.Sample.Tabs.Observe.TabRuntimeInformation"
+		x:DataType="tabs:TabRuntimeInformation"
+		x:Name="Root">
+	<DockPanel>
+		<Grid DockPanel.Dock="Top" Margin="10,14,10,6">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="{x:Static tabs:TabRuntimeInformation.HeaderName}" />
+		</Grid>
+		<ScrollViewer HorizontalScrollBarVisibility="Disabled">
+			<ResponsiveGrid ColumnSpacing="16"
+					RowSpacing="16"
+					Margin="16,8,16,20">
+				<ResponsiveGrid.Styles>
+					<Style Selector="Border.Card">
+						<Setter Property="Background" Value="{DynamicResource Background03}" />
+						<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+						<Setter Property="BorderThickness" Value="1" />
+						<Setter Property="CornerRadius" Value="8" />
+						<Setter Property="Padding" Value="14" />
+						<Setter Property="ResponsiveGrid.XS" Value="24" />
+						<Setter Property="ResponsiveGrid.SM" Value="12" />
+						<Setter Property="ResponsiveGrid.LG" Value="6" />
+					</Style>
+					<Style Selector="TextBlock.CardTitle">
+						<Setter Property="Opacity" Value="0.9" />
+						<Setter Property="Margin" Value="0,0,0,4" />
+						<Setter Property="FontSize" Value="{DynamicResource ControlFontSizeLarge}" />
+					</Style>
+					<Style Selector="TextBlock.FactLabel">
+						<Setter Property="Opacity" Value="0.65" />
+					</Style>
+					<Style Selector="SelectableTextBlock.FactValue">
+						<Setter Property="TextWrapping" Value="Wrap" />
+					</Style>
+					<Style Selector="StackPanel.Fact">
+						<Setter Property="Spacing" Value="2" />
+						<Setter Property="ResponsiveGrid.XS" Value="24" />
+						<Setter Property="ResponsiveGrid.SM" Value="12" />
+					</Style>
+					<Style Selector="CheckBox.Flag">
+						<Setter Property="IsHitTestVisible" Value="False" />
+						<Setter Property="Focusable" Value="False" />
+					</Style>
+				</ResponsiveGrid.Styles>
+
+				<TextBlock Opacity="0.7"
+						HorizontalAlignment="Center"
+						TextWrapping="Wrap"
+						Text="Host, application, and device details from IRuntimeInformation. Values are cached after Load."
+						ResponsiveGrid.XS="24" />
+
+				<Border Classes="Card">
+					<StackPanel Spacing="12">
+						<TextBlock Classes="CardTitle" Text="Runtime" />
+						<TextBlock Opacity="0.65"
+								TextWrapping="Wrap"
+								Text="Process versions and how long this instance took to reach Start." />
+						<ResponsiveGrid 
+								Thresholds="100,200,300"
+								ColumnSpacing="12"
+								RowSpacing="10">
+							<StackPanel Classes="Fact">
+								<TextBlock Classes="FactLabel" Text="Startup" />
+								<SelectableTextBlock Classes="FactValue"
+										Text="{Binding RuntimeInformation.ApplicationStartup, Converter={x:Static Converters.Humanize}}" />
+							</StackPanel>
+							<StackPanel Classes="Fact">
+								<TextBlock Classes="FactLabel" Text=".NET" />
+								<SelectableTextBlock Classes="FactValue"
+										Text="{Binding RuntimeInformation.DotNetRuntimeVersion}" />
+							</StackPanel>
+							<StackPanel Classes="Fact">
+								<TextBlock Classes="FactLabel" Text="Cornerstone" />
+								<SelectableTextBlock Classes="FactValue"
+										Text="{Binding RuntimeInformation.CornerstoneRuntimeVersion}" />
+							</StackPanel>
+							<StackPanel Classes="Fact">
+								<TextBlock Classes="FactLabel" Text="Bitness" />
+								<SelectableTextBlock Classes="FactValue"
+										Text="{Binding RuntimeInformation.ApplicationBitness}" />
+							</StackPanel>
+						</ResponsiveGrid>
+					</StackPanel>
+				</Border>
+
+				<Border Classes="Card">
+					<StackPanel Spacing="12">
+						<TextBlock Classes="CardTitle" Text="Application" />
+						<SelectableTextBlock FontSize="{DynamicResource ControlFontSize}"
+								Text="{Binding RuntimeInformation.ApplicationName}" />
+						<WrapPanel ItemSpacing="12" LineSpacing="8">
+							<CheckBox Classes="Flag"
+									Content="Development"
+									IsChecked="{Binding RuntimeInformation.ApplicationIsDevelopmentBuild, Mode=OneWay}" />
+							<CheckBox Classes="Flag"
+									Content="Native AOT"
+									IsChecked="{Binding RuntimeInformation.ApplicationIsNativeBuild, Mode=OneWay}" />
+							<CheckBox Classes="Flag"
+									Content="ReadyToRun"
+									IsChecked="{Binding RuntimeInformation.ApplicationIsReadyToRunBuild, Mode=OneWay}" />
+							<CheckBox Classes="Flag"
+									Content="Elevated"
+									IsChecked="{Binding RuntimeInformation.ApplicationIsElevated, Mode=OneWay}" />
+							<CheckBox Classes="Flag"
+									Content="Loaded"
+									IsChecked="{Binding RuntimeInformation.ApplicationIsLoaded, Mode=OneWay}" />
+						</WrapPanel>
+						<ResponsiveGrid ColumnSpacing="12" RowSpacing="10">
+							<StackPanel Classes="Fact">
+								<TextBlock Classes="FactLabel" Text="Version" />
+								<SelectableTextBlock Classes="FactValue"
+										Text="{Binding RuntimeInformation.ApplicationVersion}" />
+							</StackPanel>
+							<StackPanel Classes="Fact">
+								<TextBlock Classes="FactLabel" Text="File" />
+								<SelectableTextBlock Classes="FactValue"
+										Text="{Binding RuntimeInformation.ApplicationFilePath}" />
+							</StackPanel>
+							<StackPanel Classes="Fact">
+								<TextBlock Classes="FactLabel" Text="Location" />
+								<SelectableTextBlock Classes="FactValue"
+										Text="{Binding RuntimeInformation.ApplicationLocation}" />
+							</StackPanel>
+							<StackPanel Classes="Fact">
+								<TextBlock Classes="FactLabel" Text="Data location" />
+								<SelectableTextBlock Classes="FactValue"
+										Text="{Binding RuntimeInformation.ApplicationDataLocation}" />
+							</StackPanel>
+						</ResponsiveGrid>
+					</StackPanel>
+				</Border>
+
+				<Border Classes="Card">
+					<StackPanel Spacing="12">
+						<TextBlock Classes="CardTitle" Text="Device" />
+						<TextBlock Opacity="0.65"
+								TextWrapping="Wrap"
+								Text="Machine identity used by sync and diagnostics." />
+						<ResponsiveGrid 
+								Thresholds="100,200,300"
+								ColumnSpacing="12"
+								RowSpacing="10">
+							<StackPanel Classes="Fact">
+								<TextBlock Classes="FactLabel" Text="Name" />
+								<SelectableTextBlock Classes="FactValue"
+										Text="{Binding RuntimeInformation.DeviceName}" />
+							</StackPanel>
+							<StackPanel Classes="Fact">
+								<TextBlock Classes="FactLabel" Text="Platform" />
+								<SelectableTextBlock Classes="FactValue"
+										Text="{Binding RuntimeInformation.DevicePlatform}" />
+							</StackPanel>
+							<StackPanel Classes="Fact">
+								<TextBlock Classes="FactLabel" Text="Platform version" />
+								<SelectableTextBlock Classes="FactValue"
+										Text="{Binding RuntimeInformation.DevicePlatformVersion}" />
+							</StackPanel>
+							<StackPanel Classes="Fact">
+								<TextBlock Classes="FactLabel" Text="Platform bitness" />
+								<SelectableTextBlock Classes="FactValue"
+										Text="{Binding RuntimeInformation.DevicePlatformBitness}" />
+							</StackPanel>
+							<StackPanel Classes="Fact">
+								<TextBlock Classes="FactLabel" Text="Type" />
+								<SelectableTextBlock Classes="FactValue"
+										Text="{Binding RuntimeInformation.DeviceType}" />
+							</StackPanel>
+							<StackPanel Classes="Fact">
+								<TextBlock Classes="FactLabel" Text="Manufacturer" />
+								<SelectableTextBlock Classes="FactValue"
+										Text="{Binding RuntimeInformation.DeviceManufacturer}" />
+							</StackPanel>
+							<StackPanel Classes="Fact">
+								<TextBlock Classes="FactLabel" Text="Model" />
+								<SelectableTextBlock Classes="FactValue"
+										Text="{Binding RuntimeInformation.DeviceModel}" />
+							</StackPanel>
+							<StackPanel Classes="Fact">
+								<TextBlock Classes="FactLabel" Text="Memory" />
+								<SelectableTextBlock Classes="FactValue"
+										Text="{Binding RuntimeInformation.DeviceMemory}" />
+							</StackPanel>
+							<StackPanel Classes="Fact">
+								<TextBlock Classes="FactLabel" Text="Display" />
+								<SelectableTextBlock Classes="FactValue"
+										Text="{Binding RuntimeInformation.DeviceDisplaySize}" />
+							</StackPanel>
+							<StackPanel Classes="Fact">
+								<TextBlock Classes="FactLabel" Text="Refresh rate" />
+								<SelectableTextBlock Classes="FactValue"
+										Text="{Binding RuntimeInformation.DeviceDisplayRefreshRate, StringFormat='{}{0} Hz'}" />
+							</StackPanel>
+							<StackPanel Classes="Fact"
+									ResponsiveGrid.SM="24">
+								<TextBlock Classes="FactLabel" Text="Device id" />
+								<SelectableTextBlock Classes="FactValue"
+										Text="{Binding RuntimeInformation.DeviceId}" />
+							</StackPanel>
+						</ResponsiveGrid>
+					</StackPanel>
+				</Border>
+
+				<Border Classes="Card">
+					<StackPanel Spacing="12">
+						<TextBlock Classes="CardTitle" Text="Platform overrides" />
+						<TextBlock Opacity="0.65"
+								TextWrapping="Wrap"
+								Text="Values forced via SetPlatformOverride. Empty when the host is using detected defaults." />
+						<TextBlock Opacity="0.65"
+								Text="No platform overrides."
+								IsVisible="{Binding !HasPlatformOverrides}" />
+						<ItemsControl ItemsSource="{Binding PlatformOverrides}">
+							<ItemsControl.ItemTemplate>
+								<DataTemplate>
+									<Grid ColumnDefinitions="160,*"
+											ColumnSpacing="12"
+											Margin="0,4">
+										<TextBlock Classes="FactLabel"
+												Text="{Binding Key}"
+												VerticalAlignment="Top" />
+										<SelectableTextBlock Classes="FactValue"
+												Grid.Column="1"
+												Text="{Binding Value}" />
+									</Grid>
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+					</StackPanel>
+				</Border>
+			</ResponsiveGrid>
+		</ScrollViewer>
+	</DockPanel>
+</UserControl>

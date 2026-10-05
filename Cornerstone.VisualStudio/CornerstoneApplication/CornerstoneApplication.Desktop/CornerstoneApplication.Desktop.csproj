@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net10.0</TargetFramework>
+		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<ApplicationIcon>..\CornerstoneApplication\Assets\Cornerstone.ico</ApplicationIcon>
+	</PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\CornerstoneApplication\CornerstoneApplication.csproj" />
+	</ItemGroup>
+	<Import Project="..\..\..\Build\Presentation.props" />
+</Project>

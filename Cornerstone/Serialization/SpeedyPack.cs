@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 #endregion
@@ -158,11 +159,14 @@ public class SpeedyPack
 		return SpeedyPacket.Pack(value).ToArray();
 	}
 
+	[RequiresDynamicCode("Unpacking collections of a runtime type requires dynamic code.")]
 	public static T Unpack<T>(byte[] pack)
 	{
 		return (T) Unpack(pack, typeof(T));
 	}
 
+	[RequiresDynamicCode("Unpacking collections of a runtime type requires dynamic code.")]
+	[UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "Unpack is given a runtime Type for collection element materialization.")]
 	public static object Unpack(byte[] pack, Type type)
 	{
 		return SpeedyPacket.Unpack(pack, type);

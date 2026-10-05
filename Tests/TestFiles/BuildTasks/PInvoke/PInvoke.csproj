@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Library</OutputType>
+		<TargetFramework>net10.0</TargetFramework>
+		<EnableCornerstoneXamlCompilation>false</EnableCornerstoneXamlCompilation>
+		<RootNamespace>PInvoke</RootNamespace>
+		<AssemblyName>PInvoke</AssemblyName>
+		<IsTestProject>false</IsTestProject>
+	</PropertyGroup>
+	<Import Project="..\..\..\..\Build\Presentation.props" />
+	<ItemGroup>
+		<CornerstoneXaml Include="**\*.cxaml" Exclude="bin\**;obj\**" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\..\Cornerstone.Presentation\Cornerstone.Presentation.csproj" />
+	</ItemGroup>
+	<Target Name="WriteReferenceList" AfterTargets="Build">
+		<WriteLinesToFile File="$(TargetDir)$(TargetFileName).refs" Lines="@(ReferencePathWithRefAssemblies)" Overwrite="true" />
+	</Target>
+</Project>

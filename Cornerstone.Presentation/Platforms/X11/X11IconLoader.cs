@@ -1,0 +1,88 @@
+using System;
+using System.IO;
+using System.Runtime.InteropServices;
+using Cornerstone.Presentation.Media.Imaging;
+using Cornerstone.Presentation.Platform;
+
+namespace Cornerstone.Presentation.X11
+{
+    internal class X11IconLoader : IPlatformIconLoader
+    {
+        private static IWindowIconImpl LoadIcon(Bitmap bitmap)
+        {
+            var rv = new X11IconData(bitmap);
+            bitmap.Dispose();
+            return rv;
+        }
+
+        public IWindowIconImpl LoadIcon(string fileName) => LoadIcon(new Bitmap(fileName));
+
+        public IWindowIconImpl LoadIcon(Stream stream) => LoadIcon(new Bitmap(stream));
+
+        public IWindowIconImpl LoadIcon(IBitmapImpl bitmap)
+        {
+            var ms = new MemoryStream();
+            bitmap.Save(ms, PngBitmapEncoderOptions.Default);
+            ms.Position = 0;
+            return LoadIcon(ms);
+        }
+    }
+
+    internal unsafe class X11IconData : IWindowIconImpl
+    {
+        private int _width;
+        private int _height;
+
+        public UIntPtr[]  Data { get; }
+        
+        public X11IconData(Bitmap bitmap)
+        {
+            _width = Math.Min(bitmap.PixelSize.Width, 128);
+            _height = Math.Min(bitmap.PixelSize.Height, 128);
+            var pixels = new uint[_width * _height];
+            var size = new PixelSize(_width, _height);
+
+            using (var rtb = new RenderTargetBitmap(size))
+            {
+                using (var ctx = rtb.CreateDrawingContext(true)) 
+                    ctx.DrawImage(bitmap, new Rect(rtb.Size));
+                
+                fixed (void* pPixels = pixels)
+                    rtb.CopyPixels(new LockedFramebuffer((IntPtr)pPixels, size, _width * 4,
+                        new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul, null));
+            }
+            
+            Data = new UIntPtr[_width * _height + 2];
+            Data[0] = new UIntPtr((uint)_width);
+            Data[1] = new UIntPtr((uint)_height);
+            for (var y = 0; y < _height; y++)
+            {
+                var r = y * _width;
+                for (var x = 0; x < _width; x++)
+                    Data[r + x + 2] = new UIntPtr(pixels[r + x]);
+            }
+
+            pixels = null;
+        }
+
+        public void Save(Stream outputStream)
+        {
+            using (var wr =
+                new WriteableBitmap(new PixelSize(_width, _height), new Vector(96, 96), PixelFormat.Bgra8888))
+            {
+                using (var fb = wr.Lock())
+                {
+                    var fbp = (uint*)fb.Address;
+                    for (var y = 0; y < _height; y++)
+                    {
+                        var r = y * _width;
+                        var fbr = y * fb.RowBytes / 4;
+                        for (var x = 0; x < _width; x++)
+                            fbp[fbr + x] = Data[r + x + 2].ToUInt32();
+                    }
+                }
+                wr.Save(outputStream, PngBitmapEncoderOptions.Default);
+            }
+        }
+    }
+}

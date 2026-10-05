@@ -1,8 +1,9 @@
-﻿#region References
+#region References
 
+using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Xunit.Sdk;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
@@ -29,7 +30,8 @@ public record class Scenario(string Description, object Expected, object Agrumen
 /// <summary>
 /// Provides a data source for a data theory, with the data coming from inline values.
 /// </summary>
-public sealed class ScenarioAttribute : DataAttribute
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+public sealed class ScenarioAttribute : Attribute, ITestDataSource
 {
 	#region Fields
 
@@ -55,10 +57,19 @@ public sealed class ScenarioAttribute : DataAttribute
 
 	#region Methods
 
-	/// <inheritdoc />
-	public override IEnumerable<object[]> GetData(MethodInfo testMethod)
+	public IEnumerable<object[]> GetData(MethodInfo methodInfo)
 	{
 		yield return data;
+	}
+
+	public string GetDisplayName(MethodInfo methodInfo, object[] data)
+	{
+		if ((data != null) && (data.Length > 0) && (data[0] is Scenario scenario))
+		{
+			return scenario.Description;
+		}
+
+		return methodInfo.Name;
 	}
 
 	#endregion

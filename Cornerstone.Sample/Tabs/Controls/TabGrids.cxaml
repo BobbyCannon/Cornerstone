@@ -1,0 +1,107 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs.Controls"
+		mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="400"
+		x:Class="Cornerstone.Sample.Tabs.Controls.TabGrids"
+		x:DataType="tabs:TabGrids"
+		x:Name="This">
+	<DockPanel>
+		<DockPanel.Styles>
+			<Style Selector="SelectableTextBlock">
+				<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+				<Setter Property="TextWrapping" Value="Wrap" />
+			</Style>
+		</DockPanel.Styles>
+		<TabControl>
+			<TabControl.Styles>
+				<Style Selector="TabItem">
+					<Setter Property="MinHeight" Value="32" />
+				</Style>
+			</TabControl.Styles>
+
+			<TabItem Header="Grid Panel">
+				<Grid RowDefinitions="Auto,Auto,*">
+					<StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10" Spacing="15" HorizontalAlignment="Center">
+						<TextBlock x:Name="MovesText"
+								Text="Moves: 0"
+								VerticalAlignment="Center"
+								FontSize="{DynamicResource ControlFontSize}"
+								FontWeight="SemiBold" />
+						<Button Theme.Color="None" Content="Scramble" Click="OnScrambleClick" />
+						<Button Theme.Color="None" Content="Reset" Click="OnResetClick" />
+					</StackPanel>
+					<TextBlock Grid.Row="1" x:Name="StatusText" HorizontalAlignment="Center" />
+					<Viewbox Grid.Row="2"
+							Stretch="Uniform"
+							StretchDirection="Both"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center">
+						<ItemsControl ItemsSource="{Binding Tiles}" Margin="20">
+							<ItemsControl.ItemsPanel>
+								<ItemsPanelTemplate>
+									<GridPanel ColumnCount="3" RowCount="3" />
+								</ItemsPanelTemplate>
+							</ItemsControl.ItemsPanel>
+							<ItemsControl.Styles>
+								<Style Selector="ItemsControl > ContentPresenter"
+										x:DataType="tabs:TabGridsPuzzleTile">
+									<Setter Property="Grid.Row" Value="{Binding Row, Mode=TwoWay}" />
+									<Setter Property="Grid.Column" Value="{Binding Column, Mode=TwoWay}" />
+								</Style>
+							</ItemsControl.Styles>
+							<ItemsControl.ItemTemplate>
+								<DataTemplate DataType="tabs:TabGridsPuzzleTile">
+									<Border CornerRadius="8"
+											Margin="6"
+											PointerPressed="OnTilePressed"
+											Cursor="Hand">
+										<Image Source="{Binding TileImage}"
+												Stretch="Fill"
+												RenderOptions.BitmapInterpolationMode="HighQuality"
+												IsVisible="{Binding IsVisible}" />
+									</Border>
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+					</Viewbox>
+				</Grid>
+			</TabItem>
+
+			<TabItem Header="Auto Grid" IsSelected="True">
+				<Grid RowDefinitions="Auto,*">
+					<WrapPanel Grid.Row="0" ItemSpacing="10" LineSpacing="10" Margin="10">
+						<NumberBox x:Name="Columns"
+								ControlHelper.DisplayName="Columns"
+								SpinButtonPlacementMode="Inline"
+								Minimum="1" Value="3" Maximum="9" />
+						<NumberBox x:Name="Rows"
+								ControlHelper.DisplayName="Rows"
+								SpinButtonPlacementMode="Inline"
+								Minimum="1" Value="3" Maximum="9" />
+					</WrapPanel>
+					<ItemsControl Grid.Row="1"
+							 ItemsSource="{Binding Tiles}">
+						<ItemsControl.ItemsPanel>
+							<ItemsPanelTemplate>
+								<AutoGrid RowCount="{Binding ElementName=Rows, Path=Value}"
+										ColumnCount="{Binding ElementName=Columns, Path=Value}" />
+							</ItemsPanelTemplate>
+						</ItemsControl.ItemsPanel>
+						<ItemsControl.ItemTemplate>
+							<DataTemplate DataType="tabs:TabGridsPuzzleTile">
+								<Border BorderThickness="1">
+									<Image Source="{Binding TileImage}"
+											Stretch="Fill"
+											RenderOptions.BitmapInterpolationMode="HighQuality" />
+								</Border>
+							</DataTemplate>
+						</ItemsControl.ItemTemplate>
+					</ItemsControl>
+				</Grid>
+			</TabItem>
+		</TabControl>
+	</DockPanel>
+</UserControl>

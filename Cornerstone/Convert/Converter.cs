@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Cornerstone.Convert.Converters;
 using Cornerstone.Reflection;
 
@@ -161,6 +162,7 @@ public static class Converter
 	/// Registers a converter.
 	/// </summary>
 	/// <param name="converter"> The converter to process. </param>
+	[UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "GetType() cannot flow DynamicallyAccessedMembers; CanConvert override is detected on registered converter types.")]
 	internal static void RegisterConverter(BaseConverter converter)
 	{
 		var fromTypes = converter.FromTypes;

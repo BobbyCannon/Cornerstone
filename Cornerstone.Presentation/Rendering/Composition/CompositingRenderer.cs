@@ -1,0 +1,304 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Threading;
+using System.Threading.Tasks;
+using Cornerstone.Presentation.Diagnostics;
+using Cornerstone.Presentation.Media;
+using Cornerstone.Presentation.Platform.Surfaces;
+using Cornerstone.Presentation.Rendering.Composition.Drawing;
+using Cornerstone.Presentation.Rendering.Composition.HitTesting;
+using Cornerstone.Presentation.Threading;
+
+namespace Cornerstone.Presentation.Rendering.Composition;
+
+/// <summary>
+/// A renderer that utilizes <see cref="Cornerstone.Presentation.Rendering.Composition.Compositor"/> to render the visual tree 
+/// </summary>
+internal class CompositingRenderer : IRendererWithCompositor, IHitTester
+{
+    private readonly IPresentationSource _root;
+    private readonly Compositor _compositor;
+    private readonly RenderDataDrawingContext _recorder;
+    private readonly HashSet<Visual> _dirty = new();
+    private readonly HashSet<Visual> _recalculateChildren = new();
+    private readonly Action _update;
+
+    private bool _queuedUpdate;
+    private bool _queuedSceneInvalidation;
+    private bool _updating;
+    private bool _isDisposed;
+
+    internal CompositionTarget CompositionTarget { get; }
+    
+    /// <inheritdoc/>
+    public RendererDiagnostics Diagnostics { get; }
+
+    /// <inheritdoc />
+    public Compositor Compositor => _compositor;
+
+    /// <summary>
+    /// Initializes a new instance of <see cref="CompositingRenderer"/>
+    /// </summary>
+    /// <param name="root">The render root using this renderer.</param>
+    /// <param name="compositor">The associated compositors.</param>
+    /// <param name="surfaces">
+    /// A function returning the list of native platform's surfaces that can be consumed by rendering subsystems.
+    /// </param>
+    public CompositingRenderer(IPresentationSource root, Compositor compositor, Func<IEnumerable<IPlatformRenderSurface>> surfaces)
+    {
+        _root = root;
+        _compositor = compositor;
+        _recorder = new(compositor);
+        CompositionTarget = compositor.CreateCompositionTarget(surfaces);
+        _update = Update;
+        Diagnostics = new RendererDiagnostics();
+        Diagnostics.PropertyChanged += OnDiagnosticsPropertyChanged;
+    }
+
+    private void OnDiagnosticsPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        switch (e.PropertyName)
+        {
+            case nameof(RendererDiagnostics.DebugOverlays):
+                CompositionTarget.DebugOverlays = Diagnostics.DebugOverlays;
+                break;
+            case nameof(RendererDiagnostics.LastLayoutPassTiming):
+                CompositionTarget.LastLayoutPassTiming = Diagnostics.LastLayoutPassTiming;
+                break;
+        }
+    }
+
+    /// <inheritdoc/>
+    public event EventHandler<SceneInvalidatedEventArgs>? SceneInvalidated;
+
+    private void QueueUpdate()
+    {
+        if(_queuedUpdate)
+            return;
+        _queuedUpdate = true;
+        _compositor.RequestCompositionUpdate(_update);
+    }
+    
+    /// <inheritdoc/>
+    public void AddDirty(Visual visual)
+    {
+        if (_isDisposed)
+            return;
+        if (_updating)
+            throw new InvalidOperationException("Visual was invalidated during the render pass");
+        _dirty.Add(visual);
+        QueueUpdate();
+    }
+
+    /// <inheritdoc/>
+    public IEnumerable<Visual> HitTest(Point p, Visual? root, Func<Visual, bool>? filter)
+        => HitTest<PointCompositionHitTester, Point, Visual>(p, root, filter, (visual, _) => visual);
+
+    public IEnumerable<GeometryHitTestResult> HitTest(Geometry geometry, Visual? root, Func<Visual, bool>? filter)
+        => HitTest<GeometryCompositionHitTester, Geometry, GeometryHitTestResult>(geometry, root, filter, (visual, intersection) => new GeometryHitTestResult(visual, intersection));
+
+    private IEnumerable<TResult> HitTest<THitTester, T, TResult>(T input, Visual? root, Func<Visual, bool>? filter, Func<Visual, IntersectionResult, TResult> resultSelector)
+        where THitTester : struct, ICompositionHitTester<T>
+        where TResult : class
+    {
+        using var _ = Diagnostic.PerformingHitTest();
+
+        CompositionVisual? rootVisual = null;
+        if (root != null)
+        {
+            if (root.CompositionVisual == null)
+                yield break;
+            rootVisual = root.CompositionVisual;
+        }
+
+        Func<CompositionVisual, bool>? f = null;
+        if (filter != null)
+            f = v =>
+            {
+                if (v is CompositionDrawListVisual dlv)
+                    return filter(dlv.Visual);
+                return true;
+            };
+
+        using var res = CompositionTarget.TryHitTest<THitTester, T>(input, rootVisual, f);
+        if (res == null)
+            yield break;
+
+        foreach (var v in res)
+        {
+            if (v.Item2 is CompositionDrawListVisual dv)
+            {
+                if (filter == null || filter(dv.Visual))
+                    yield return resultSelector(dv.Visual, v.Item1);
+            }
+        }
+    }
+
+    /// <inheritdoc/>
+    public Visual? HitTestFirst(Point p, Visual root, Func<Visual, bool>? filter)
+        => HitTestFirst<PointCompositionHitTester, Point>(p, root, filter, out _);
+
+    /// <inheritdoc/>
+    public GeometryHitTestResult? HitTestFirst(Geometry geometry, Visual root, Func<Visual, bool>? filter)
+    {
+        var visual = HitTestFirst<GeometryCompositionHitTester, Geometry>(geometry, root, filter, out var intersectionResult);
+
+        return visual != null ? new GeometryHitTestResult(visual, intersectionResult) : null;
+    }
+
+    private Visual? HitTestFirst<THitTester, T>(T input, Visual root, Func<Visual, bool>? filter, out IntersectionResult intersectionResult)
+        where THitTester : struct, ICompositionHitTester<T>
+    {
+        intersectionResult = IntersectionResult.NotCalculated;
+
+        using var _ = Diagnostic.PerformingHitTest();
+
+        if (root.CompositionVisual == null)
+            return null;
+
+        Func<CompositionVisual, bool>? f = filter is null
+            ? null :
+            v => v is not CompositionDrawListVisual dlv || filter(dlv.Visual);
+
+        return CompositionTarget.TryHitTestFirst<THitTester, T>(input, root.CompositionVisual, f, static v => v is CompositionDrawListVisual, out intersectionResult)
+            is CompositionDrawListVisual dv ? dv.Visual : null;
+    }
+
+    /// <inheritdoc/>
+    public void RecalculateChildren(Visual visual)
+    {
+        if (_isDisposed)
+            return;
+        if (_updating)
+            throw new InvalidOperationException("Visual was invalidated during the render pass");
+        _recalculateChildren.Add(visual);
+        QueueUpdate();
+    }
+
+    private void UpdateCore()
+    {
+        _queuedUpdate = false;
+        foreach (var visual in _dirty)
+        {
+            var comp = visual.CompositionVisual;
+            if(comp == null)
+                continue;
+            
+            visual.SynchronizeCompositionProperties();
+
+            try
+            {
+                visual.Render(_recorder);
+                comp.DrawList = _recorder.GetRenderResults();
+            }
+            finally
+            {
+                _recorder.Reset();
+            }
+            
+            visual.SynchronizeCompositionChildVisuals();
+        }
+        foreach(var v in _recalculateChildren)
+            if (!_dirty.Contains(v))
+                v.SynchronizeCompositionChildVisuals();
+        _dirty.Clear();
+        _recalculateChildren.Clear();
+        
+        CompositionTarget.Size = _root.ClientSize;
+        CompositionTarget.Scaling = _root.RenderScaling;
+        
+        var commit = _compositor.RequestCompositionBatchCommitAsync();
+        if (!_queuedSceneInvalidation)
+        {
+            _queuedSceneInvalidation = true;
+            // Updated hit-test information is available after full render
+            commit.Rendered.ContinueWith(_ => Dispatcher.UIThread.Post(() =>
+            {
+                _queuedSceneInvalidation = false;
+                SceneInvalidated?.Invoke(this, new SceneInvalidatedEventArgs(new Rect(_root.ClientSize)));
+            }, DispatcherPriority.Input), CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
+    }
+
+    public void TriggerSceneInvalidatedForUnitTests(Rect rect) =>
+        SceneInvalidated?.Invoke(this, new SceneInvalidatedEventArgs(rect));
+    
+    private void Update()
+    {
+        if(_updating)
+            return;
+
+        if (!CompositionTarget.IsEnabled)
+        {
+            _queuedUpdate = false;
+            return;
+        }
+
+        _updating = true;
+        try
+        {
+            using (Diagnostic.BeginLayoutRenderPass())
+                UpdateCore();
+        }
+        finally
+        {
+            _updating = false;
+        }
+    }
+
+    /// <inheritdoc />
+    public void Resized(Size size)
+    {
+    }
+
+    /// <inheritdoc />
+    public void Paint(Rect rect) => Paint(rect, true);
+    public void Paint(Rect rect, bool catchExceptions)
+    {
+        if (_isDisposed)
+            return;
+
+        QueueUpdate();
+        CompositionTarget.RequestRedraw();
+        MediaContext.Instance.ImmediateRenderRequested(CompositionTarget, catchExceptions);
+    }
+
+    /// <inheritdoc />
+    public void Start()
+    {
+        if (_isDisposed)
+            return;
+
+        CompositionTarget.IsEnabled = true;
+
+        if (_dirty.Count > 0 || _recalculateChildren.Count > 0)
+            QueueUpdate();
+    }
+
+    /// <inheritdoc />
+    public void Stop()
+        => CompositionTarget.IsEnabled = false;
+
+    /// <inheritdoc />
+    public ValueTask<object?> TryGetRenderInterfaceFeature(Type featureType)
+        => Compositor.TryGetRenderInterfaceFeature(featureType);
+
+    public bool IsDisposed => _isDisposed;
+    
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (_isDisposed)
+            return;
+
+        _isDisposed = true;
+        _dirty.Clear();
+        _recalculateChildren.Clear();
+        SceneInvalidated = null;
+
+        Stop();
+
+        MediaContext.Instance.SyncDisposeCompositionTarget(CompositionTarget);
+    }
+}

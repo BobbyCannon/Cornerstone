@@ -13,11 +13,12 @@ public class BusHistoryFilterTests : CornerstoneUnitTest
 	#region Methods
 
 	[TestMethod]
-	public void EmptyMatchesAll()
+	public void ChannelAndTypeAnd()
 	{
-		var filter = BusHistoryFilter.Parse(string.Empty);
-		IsTrue(filter.IsMatchAll);
-		IsTrue(filter.Matches(Row("NotificationChannel", "ShowMessage", "ShowMessage", false, string.Empty)));
+		var filter = BusHistoryFilter.Parse("channel:Notification type:Notification");
+		IsTrue(filter.Matches(Row("NotificationChannel", "NotificationMessage", "ShowMessage", false, string.Empty)));
+		IsFalse(filter.Matches(Row("NotificationChannel", "Other", "ShowMessage", false, string.Empty)));
+		IsFalse(filter.Matches(Row("SettingsChannel", "NotificationMessage", "ShowMessage", false, string.Empty)));
 	}
 
 	[TestMethod]
@@ -29,21 +30,11 @@ public class BusHistoryFilterTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
-	public void TypeContainsAndCommaOr()
+	public void EmptyMatchesAll()
 	{
-		var filter = BusHistoryFilter.Parse("type:MessageA,MessageC");
-		IsTrue(filter.Matches(Row("Any", "MessageA", "A", false, string.Empty)));
-		IsTrue(filter.Matches(Row("Any", "MessageC", "A", false, string.Empty)));
-		IsFalse(filter.Matches(Row("Any", "MessageB", "A", false, string.Empty)));
-	}
-
-	[TestMethod]
-	public void ChannelAndTypeAnd()
-	{
-		var filter = BusHistoryFilter.Parse("channel:Notification type:Notification");
-		IsTrue(filter.Matches(Row("NotificationChannel", "NotificationMessage", "ShowMessage", false, string.Empty)));
-		IsFalse(filter.Matches(Row("NotificationChannel", "Other", "ShowMessage", false, string.Empty)));
-		IsFalse(filter.Matches(Row("SettingsChannel", "NotificationMessage", "ShowMessage", false, string.Empty)));
+		var filter = BusHistoryFilter.Parse(string.Empty);
+		IsTrue(filter.IsMatchAll);
+		IsTrue(filter.Matches(Row("NotificationChannel", "ShowMessage", "ShowMessage", false, string.Empty)));
 	}
 
 	[TestMethod]
@@ -64,13 +55,6 @@ public class BusHistoryFilterTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
-	public void TypeColonWithoutValueIsFreeText()
-	{
-		var filter = BusHistoryFilter.Parse("type:");
-		IsFalse(filter.IsMatchAll);
-	}
-
-	[TestMethod]
 	public void MatchesPublishResult()
 	{
 		var filter = BusHistoryFilter.Parse("channel:Test type:Named");
@@ -78,6 +62,22 @@ public class BusHistoryFilterTests : CornerstoneUnitTest
 		var bad = new ChannelMessagePublishResult("Other", "NamedPayload", null, 10, 1, false, string.Empty);
 		IsTrue(filter.Matches(ok));
 		IsFalse(filter.Matches(bad));
+	}
+
+	[TestMethod]
+	public void TypeColonWithoutValueIsFreeText()
+	{
+		var filter = BusHistoryFilter.Parse("type:");
+		IsFalse(filter.IsMatchAll);
+	}
+
+	[TestMethod]
+	public void TypeContainsAndCommaOr()
+	{
+		var filter = BusHistoryFilter.Parse("type:MessageA,MessageC");
+		IsTrue(filter.Matches(Row("Any", "MessageA", "A", false, string.Empty)));
+		IsTrue(filter.Matches(Row("Any", "MessageC", "A", false, string.Empty)));
+		IsFalse(filter.Matches(Row("Any", "MessageB", "A", false, string.Empty)));
 	}
 
 	private static ChannelMessageHistory Row(string channel, string type, string name, bool hadError, string error)

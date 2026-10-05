@@ -1,0 +1,23 @@
+<Styles xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type DraggingTabWindow}"
+					TargetType="DraggingTabWindow"
+					BasedOn="{StaticResource {x:Type Window}}">
+				<Setter Property="ContentTemplate">
+					<DataTemplate>
+						<Grid Background="{DynamicResource Background02}">
+							<ContentPresenter Content="{Binding TabControl, RelativeSource={RelativeSource AncestorType=DraggingTabWindow}}" />
+						</Grid>
+					</DataTemplate>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="500">
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</Styles>

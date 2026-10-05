@@ -3,6 +3,7 @@
 using System;
 using System.Drawing;
 using System.Runtime.InteropServices;
+using System.Text;
 
 #endregion
 
@@ -15,7 +16,9 @@ internal static class NativeGeneral
 {
 	#region Constants
 
+	public const int SwRestore = 9;
 	public const int Th32CsSnapProcess = 0x00000002;
+	public const uint GwOwner = 4;
 
 	#endregion
 
@@ -46,13 +49,25 @@ internal static class NativeGeneral
 	public static extern nint CreateToolhelp32Snapshot(uint dwFlags, uint th32ProcessId);
 
 	[DllImport("user32.dll")]
+	public static extern bool AllowSetForegroundWindow(int dwProcessId);
+
+	[DllImport("user32.dll")]
 	public static extern bool EnumThreadWindows(int dwThreadId, EnumThreadDelegate lpfn, nint lParam);
+
+	[DllImport("user32.dll")]
+	public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, nint lParam);
+
+	[DllImport("user32.dll", CharSet = CharSet.Unicode)]
+	public static extern int GetClassName(nint hWnd, StringBuilder lpClassName, int nMaxCount);
 
 	[DllImport("user32.dll", SetLastError = true)]
 	public static extern nint GetForegroundWindow();
 
 	[DllImport("user32.dll", SetLastError = true)]
 	public static extern nint GetParent(nint hWnd);
+
+	[DllImport("user32.dll", SetLastError = true)]
+	public static extern nint GetWindow(nint hWnd, uint uCmd);
 
 	[DllImport("advapi32.dll", SetLastError = true)]
 	public static extern bool GetTokenInformation(nint tokenHandle, TokenInformationClass tokenInformationClass, nint tokenInformation, uint tokenInformationLength, out uint returnLength);
@@ -70,6 +85,9 @@ internal static class NativeGeneral
 
 	[DllImport("user32.dll", SetLastError = true)]
 	public static extern bool GetWindowRect(nint hWnd, out Rect lpRect);
+
+	[DllImport("user32.dll")]
+	public static extern uint GetWindowThreadProcessId(nint hWnd, out uint lpdwProcessId);
 
 	public static bool IsElevated(nint handle)
 	{
@@ -105,11 +123,17 @@ internal static class NativeGeneral
 		}
 	}
 
+	[DllImport("user32.dll")]
+	public static extern bool IsWindowVisible(nint hWnd);
+
 	[DllImport("kernel32.dll", SetLastError = true)]
 	public static extern bool IsWow64Process([In] nint hProcess, [Out] out bool isX86);
 
 	[DllImport("user32.dll", SetLastError = true)]
 	public static extern bool MoveWindow(nint hWnd, int x, int y, int nWidth, int nHeight, bool bRepaint);
+
+	[DllImport("kernel32.dll", SetLastError = true)]
+	public static extern nint OpenProcess(uint dwDesiredAccess, bool bInheritHandle, int dwProcessId);
 
 	[DllImport("advapi32.dll", SetLastError = true)]
 	public static extern bool OpenProcessToken(nint processHandle, uint desiredAccess, out nint tokenHandle);
@@ -122,6 +146,9 @@ internal static class NativeGeneral
 	[return: MarshalAs(UnmanagedType.Bool)]
 	public static extern bool Process32Next(nint hSnapshot, ref ProcessEntry32 lppe);
 
+	[DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+	public static extern bool QueryFullProcessImageName(nint hProcess, int dwFlags, StringBuilder lpExeName, ref int lpdwSize);
+
 	[DllImport("user32.dll", SetLastError = true)]
 	public static extern bool SetFocus(nint hWnd);
 
@@ -131,6 +158,9 @@ internal static class NativeGeneral
 
 	[DllImport("user32.dll", SetLastError = true)]
 	public static extern bool SetWindowPos(nint hWnd, nint hWndInsertAfter, int x, int y, int cx, int cy, SetWindowPosFlags uFlags);
+
+	[DllImport("user32.dll", SetLastError = true)]
+	public static extern bool ShowWindow(nint hWnd, int nCmdShow);
 
 	#endregion
 
@@ -209,6 +239,8 @@ internal static class NativeGeneral
 		/// </summary>
 		NoSize = 0x0001
 	}
+
+	public delegate bool EnumWindowsProc(nint hWnd, nint lParam);
 
 	internal enum TokenInformationClass
 	{

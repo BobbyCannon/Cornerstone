@@ -1,0 +1,170 @@
+#include "common.h"
+#include "CsnString.h"
+
+@interface CocoaThemeObserver : NSObject
+-(id)initWithCallback:(ICsnActionCallback *)callback;
+@end
+
+@interface CocoaLocaleObserver : NSObject
+-(id)initWithCallback:(ICsnActionCallback *)callback;
+-(void)localeDidChange:(NSNotification *)notification;
+@end
+
+class PlatformSettings : public ComSingleObject<ICsnPlatformSettings, &IID_ICsnPlatformSettings>
+{
+    CocoaThemeObserver* observer;
+    CocoaLocaleObserver* localeObserver;
+
+public:
+    FORWARD_IUNKNOWN()
+    virtual CsnPlatformThemeVariant GetPlatformTheme() override
+    {
+        @autoreleasepool
+        {
+            if (@available(macOS 10.14, *))
+            {
+                if (NSApplication.sharedApplication.effectiveAppearance.name == NSAppearanceNameAqua
+                    || NSApplication.sharedApplication.effectiveAppearance.name == NSAppearanceNameVibrantLight) {
+                    return CsnPlatformThemeVariant::Light;
+                } else if (NSApplication.sharedApplication.effectiveAppearance.name == NSAppearanceNameDarkAqua
+                    || NSApplication.sharedApplication.effectiveAppearance.name == NSAppearanceNameVibrantDark) {
+                    return CsnPlatformThemeVariant::Dark;
+                } else if (NSApplication.sharedApplication.effectiveAppearance.name == NSAppearanceNameAccessibilityHighContrastAqua
+                    || NSApplication.sharedApplication.effectiveAppearance.name == NSAppearanceNameAccessibilityHighContrastVibrantLight) {
+                    return CsnPlatformThemeVariant::HighContrastLight;
+                } else if (NSApplication.sharedApplication.effectiveAppearance.name == NSAppearanceNameAccessibilityHighContrastDarkAqua
+                    || NSApplication.sharedApplication.effectiveAppearance.name == NSAppearanceNameAccessibilityHighContrastVibrantDark) {
+                    return CsnPlatformThemeVariant::HighContrastDark;
+                }
+            }
+            return CsnPlatformThemeVariant::Light;
+        }
+    }
+    
+    virtual unsigned int GetAccentColor() override
+    {
+        @autoreleasepool
+        {
+            if (@available(macOS 11.0, *))
+            {
+                __block NSColor* color;
+                [[NSApp effectiveAppearance] performAsCurrentDrawingAppearance:^{
+                    color = [[NSColor controlAccentColor] colorUsingColorSpace:NSColorSpace.sRGBColorSpace];
+                }];
+                return to_argb(color);
+            }
+            else if (@available(macOS 10.14, *))
+            {
+                auto previousAppearance = NSAppearance.currentAppearance;
+                NSAppearance.currentAppearance = [NSApp effectiveAppearance];
+                auto color = [[NSColor controlAccentColor] colorUsingColorSpace:NSColorSpace.sRGBColorSpace];
+                NSAppearance.currentAppearance = previousAppearance;
+                return to_argb(color);
+            }
+            else
+            {
+                return 0;
+            }
+        }
+    }
+    
+    virtual void RegisterColorsChange(ICsnActionCallback *callback) override
+    {
+        if (@available(macOS 10.14, *))
+        {
+            observer = [[CocoaThemeObserver alloc] initWithCallback: callback];
+            [[NSApplication sharedApplication] addObserver:observer forKeyPath:@"effectiveAppearance" options:NSKeyValueObservingOptionNew context:nil];
+        }
+    }
+
+    virtual HRESULT GetPreferredLanguage(ICsnString** ret) override
+    {
+        @autoreleasepool
+        {
+            if (ret == nullptr)
+                return E_POINTER;
+
+            auto language = [[NSLocale preferredLanguages] firstObject];
+            *ret = language == nil ? nullptr : CreateCsnString(language);
+            return S_OK;
+        }
+    }
+
+    virtual void RegisterLanguageChange(ICsnActionCallback *callback) override
+    {
+        localeObserver = [[CocoaLocaleObserver alloc] initWithCallback: callback];
+        [[NSNotificationCenter defaultCenter] addObserver:localeObserver
+                                                 selector:@selector(localeDidChange:)
+                                                     name:NSCurrentLocaleDidChangeNotification
+                                                   object:nil];
+    }
+    
+private:
+    unsigned int to_argb(NSColor* color)
+    {
+        const CGFloat* components = CGColorGetComponents(color.CGColor);
+        unsigned int alpha = static_cast<unsigned int>(CGColorGetAlpha(color.CGColor) * 0xFF);
+        unsigned int red = static_cast<unsigned int>(components[0] * 0xFF);
+        unsigned int green = static_cast<unsigned int>(components[1] * 0xFF);
+        unsigned int blue = static_cast<unsigned int>(components[2] * 0xFF);
+        return (alpha << 24) + (red << 16) + (green << 8) + blue;
+    }
+};
+
+@implementation CocoaThemeObserver
+{
+    ComPtr<ICsnActionCallback> _callback;
+}
+- (id) initWithCallback:(ICsnActionCallback *)callback{
+    self = [super init];
+    if (self) {
+        _callback = callback;
+    }
+    return self;
+}
+
+/*- (void)didChangeValueForKey:(NSString *)key {
+    if([key isEqualToString:@"effectiveAppearance"]) {
+        _callback->Run();
+    }
+    else {
+        [super didChangeValueForKey:key];
+    }
+}*/
+
+- (void)observeValueForKeyPath:(NSString *)keyPath
+                      ofObject:(id)object
+                        change:(NSDictionary *)change
+                       context:(void *)context {
+    if([keyPath isEqualToString:@"effectiveAppearance"]) {
+        _callback->Run();
+    } else {
+        [super observeValueForKeyPath:keyPath
+                             ofObject:object
+                               change:change
+                              context:context];
+    }
+}
+@end
+
+@implementation CocoaLocaleObserver
+{
+    ComPtr<ICsnActionCallback> _callback;
+}
+- (id) initWithCallback:(ICsnActionCallback *)callback {
+    self = [super init];
+    if (self) {
+        _callback = callback;
+    }
+    return self;
+}
+
+- (void)localeDidChange:(NSNotification *)notification {
+    _callback->Run();
+}
+@end
+
+extern ICsnPlatformSettings* CreatePlatformSettings()
+{
+    return new PlatformSettings();
+}

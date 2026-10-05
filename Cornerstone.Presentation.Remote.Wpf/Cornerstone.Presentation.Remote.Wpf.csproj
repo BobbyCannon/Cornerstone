@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net472;net10.0-windows</TargetFrameworks>
+		<UseWPF>true</UseWPF>
+		<RootNamespace>Cornerstone.Presentation.Remote.Wpf</RootNamespace>
+		<AssemblyTitle>Cornerstone.Presentation.Remote.Wpf</AssemblyTitle>
+		<Nullable>disable</Nullable>
+		<EnableWindowsTargeting>true</EnableWindowsTargeting>
+	</PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Cornerstone.Presentation.Remote.Protocol\Cornerstone.Presentation.Remote.Protocol.csproj" AdditionalProperties="TargetFramework=netstandard2.0" />
+		<Compile Include="..\Cornerstone.Presentation\Compatibility\TrimmingAttributes.cs" Link="Shared\TrimmingAttributes.cs" />
+	</ItemGroup>
+</Project>

@@ -20,10 +20,21 @@ public class SelectionOption<T> : CornerstoneObject
 	/// </summary>
 	/// <param name="id"> The ID value for the option. </param>
 	/// <param name="name"> The name of the option. </param>
-	public SelectionOption(T id, string name)
+	public SelectionOption(T id, string name) : this(id, name, false)
+	{
+	}
+
+	/// <summary>
+	/// Initializes an option for a selection.
+	/// </summary>
+	/// <param name="id"> The ID value for the option. </param>
+	/// <param name="name"> The name of the option. </param>
+	/// <param name="isChecked"> True if this option is the selected item. </param>
+	public SelectionOption(T id, string name, bool isChecked)
 	{
 		Id = id;
 		Name = name;
+		IsChecked = isChecked;
 	}
 
 	#endregion
@@ -34,6 +45,23 @@ public class SelectionOption<T> : CornerstoneObject
 	/// The ID value for the option.
 	/// </summary>
 	public T Id { get; set; }
+
+	/// <summary>
+	/// True if this option is the selected item.
+	/// </summary>
+	public bool IsChecked
+	{
+		get;
+		set
+		{
+			if (field == value)
+			{
+				return;
+			}
+			field = value;
+			OnPropertyChanged(nameof(IsChecked), !value, value);
+		}
+	}
 
 	/// <summary>
 	/// The name of the option.

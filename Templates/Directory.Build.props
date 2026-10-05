@@ -1,0 +1,23 @@
+<Project>
+	<!-- Stop walking to Cornerstone/Directory.Build.props (signing, pack metadata, generators). -->
+	<PropertyGroup>
+		<IsPackable>false</IsPackable>
+		<SignAssembly>false</SignAssembly>
+		<Nullable>disable</Nullable>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<LangVersion>latest</LangVersion>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<CornerstoneUseCompiledBindingsByDefault>true</CornerstoneUseCompiledBindingsByDefault>
+		<GenerateDocumentationFile>false</GenerateDocumentationFile>
+		<NoWarn>$(NoWarn);CS8002</NoWarn>
+	</PropertyGroup>
+	<!-- Cornerstone/Directory.Build.props is not imported here. App x:Class files still need the name generator for InitializeComponent. -->
+	<ItemGroup>
+		<ProjectReference Include="$(MSBuildThisFileDirectory)..\Cornerstone.Generators\Cornerstone.Generators.csproj"
+				OutputItemType="Analyzer"
+				ReferenceOutputAssembly="false"
+				PrivateAssets="all"
+				SetTargetFramework="TargetFramework=netstandard2.0"
+				GlobalPropertiesToRemove="TargetFrameworks;RuntimeIdentifier;RuntimeIdentifiers" />
+	</ItemGroup>
+</Project>

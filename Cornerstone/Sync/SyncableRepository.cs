@@ -2,9 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Cornerstone.Collections;
-using Cornerstone.Extensions;
 using Cornerstone.Storage;
 
 #endregion
@@ -59,6 +56,12 @@ public interface ISyncableRepository
 	void Add(ISyncEntity entity);
 
 	/// <summary>
+	/// Drop a pending apply so a rejected update is not written on SaveChanges.
+	/// </summary>
+	/// <param name="entity"> The entity to forget. </param>
+	void Discard(ISyncEntity entity);
+
+	/// <summary>
 	/// Gets the count of changes from the repository.
 	/// </summary>
 	/// <param name="since"> The start date and time get changes for. </param>
@@ -69,10 +72,13 @@ public interface ISyncableRepository
 
 	/// <summary>
 	/// Gets the changes from the repository. The results are read only and will not have tracking enabled.
+	/// A change is CreatedOn in [since, until) or ModifiedOn in [since, until), ANDed with the filter
+	/// scope and outgoing keep-tests. Rows are ordered by ModifiedOn then Id. Skip is the count already
+	/// returned for this repository in this window.
 	/// </summary>
 	/// <param name="since"> The start date and time get changes for. </param>
 	/// <param name="until"> The end date and time get changes for. </param>
-	/// <param name="skip"> The number of items to skip. </param>
+	/// <param name="skip"> The number of matching rows already returned for this repository. </param>
 	/// <param name="take"> The number of items to take. </param>
 	/// <param name="filter"> The optional filter expression to filter changes. </param>
 	/// <returns> The list of changes from the repository. </returns>
@@ -95,6 +101,7 @@ public interface ISyncableRepository
 
 	/// <summary>
 	/// Read all keys for the repository.
+	/// For local/client caches only. Do not call on a server repository (100 million+ rows).
 	/// </summary>
 	/// <returns> </returns>
 	IDictionary<Guid, object> ReadAllKeys();
@@ -107,9 +114,9 @@ public interface ISyncableRepository
 	ISyncEntity ReadByPrimaryId(object primaryId);
 
 	/// <summary>
-	/// Removes a sync entity to the repository.
+	/// Removes a sync entity from the repository.
 	/// </summary>
-	/// <param name="entity"> The entity to be added. </param>
+	/// <param name="entity"> The entity to be removed. </param>
 	void Remove(ISyncEntity entity);
 
 	#endregion

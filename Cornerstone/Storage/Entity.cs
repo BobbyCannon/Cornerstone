@@ -2,6 +2,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
@@ -31,6 +32,11 @@ public abstract class Entity<T> : Entity
 
 	#region Methods
 
+	public override object GetEntityId()
+	{
+		return Id;
+	}
+
 	public override bool IdIsSet()
 	{
 		return !Equals(Id, default(T));
@@ -59,6 +65,8 @@ public abstract class Entity<T> : Entity
 		return currentKey;
 	}
 
+	[UnconditionalSuppressMessage("Aot", "IL3050", Justification = "Id JSON parse uses Serializer; IEntity.TrySetId cannot be annotated.")]
+	[UnconditionalSuppressMessage("Trim", "IL2026", Justification = "Id JSON parse uses Serializer; IEntity.TrySetId cannot be annotated.")]
 	public override bool TrySetId(string id)
 	{
 		try
@@ -125,7 +133,7 @@ public abstract class Entity : CornerstoneObject, IEntity
 	{
 	}
 
-	public object GetEntityId()
+	public virtual object GetEntityId()
 	{
 		return null;
 	}
@@ -153,6 +161,7 @@ public abstract class Entity : CornerstoneObject, IEntity
 	/// <summary>
 	/// Update all local sync IDs.
 	/// </summary>
+	[UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "GetRealType() cannot flow DynamicallyAccessedMembers; entity members come from generated source reflection.")]
 	public void UpdateLocalSyncIds()
 	{
 		var syncEntityInterface = typeof(ISyncEntity);

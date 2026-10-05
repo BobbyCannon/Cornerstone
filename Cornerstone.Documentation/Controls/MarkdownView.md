@@ -1,6 +1,6 @@
 # Markdown (Parser, Tokenizer, MarkdownView)
 
-Cornerstone’s Markdown stack turns source text into structured blocks and paints them in Avalonia. It is built for **live streaming** (for example AI output): open constructs such as fenced code should look like the right kind of block before the closing marker arrives, and finished blocks above the stream should stay stable.
+Cornerstone’s Markdown stack turns source text into structured blocks and paints them in Cornerstone.Presentation. It is built for **live streaming** (for example AI output): open constructs such as fenced code should look like the right kind of block before the closing marker arrives, and finished blocks above the stream should stay stable.
 
 Related: [DocumentationReader.md](DocumentationReader.md) for in-app navigation over catalogued `.md` files; [DebounceAndThrottle.md](../DebounceAndThrottle.md) for the view’s parse throttle.
 
@@ -12,7 +12,7 @@ Related: [DocumentationReader.md](DocumentationReader.md) for in-app navigation 
 |-------|------|
 | **Tokenizer / Parser** | Lex and structure raw markdown into tokens and blocks |
 | **Formatter / extractors** | Pure text transforms (table layout, code body, headers) |
-| **MarkdownView** | Avalonia control: document → block groups → presenters → text surface |
+| **MarkdownView** | Cornerstone.Presentation control: document → block groups → presenters → text surface |
 
 Design goals:
 
@@ -128,7 +128,7 @@ Closing is line-based and CommonMark-aligned in practice: optional indent, same 
 | Quote | Border, padding, background |
 | Header | Scaled size from `#` count |
 | Horizontal rule | Thin rule; source markers not shown |
-| Table | Structured Avalonia grid; each cell runs inline projection so **links stay clickable** |
+| Table | Structured Cornerstone.Presentation grid; each cell runs inline projection so **links stay clickable** |
 | List | Bullet prefix + per-item inlines |
 | Paragraph | Inline markers → content + emphasis / code / link tokens |
 

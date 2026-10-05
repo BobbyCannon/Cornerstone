@@ -2,7 +2,7 @@
 
 using System;
 using Cornerstone.Data;
-using Cornerstone.Presentation;
+using Cornerstone.Reflection;
 using Cornerstone.Runtime;
 
 #endregion
@@ -12,6 +12,9 @@ namespace Cornerstone.Sync;
 /// <summary>
 /// The sync client details.
 /// </summary>
+[SourceReflection]
+[Notifiable(["*"])]
+[Updateable(UpdateableAction.All, ["*"])]
 public partial class SyncClientDetails
 	: CornerstoneObject<SyncClientDetails>,
 		ISyncClientDetails,
@@ -19,26 +22,19 @@ public partial class SyncClientDetails
 {
 	#region Properties
 
-	[UpdateableAction(UpdateableAction.All)]
-	public string ApplicationName { get; set; }
+	public partial string ApplicationName { get; set; }
 
-	[UpdateableAction(UpdateableAction.All)]
-	public Version ApplicationVersion { get; set; }
+	public partial Version ApplicationVersion { get; set; }
 
-	[UpdateableAction(UpdateableAction.All)]
-	public string DeviceId { get; set; }
+	public partial string DeviceId { get; set; }
 
-	[UpdateableAction(UpdateableAction.All)]
-	public string DeviceName { get; set; }
+	public partial string DeviceName { get; set; }
 
-	[UpdateableAction(UpdateableAction.All)]
-	public DevicePlatform DevicePlatform { get; set; }
+	public partial DevicePlatform DevicePlatform { get; set; }
 
-	[UpdateableAction(UpdateableAction.All)]
-	public Version DevicePlatformVersion { get; set; }
+	public partial Version DevicePlatformVersion { get; set; }
 
-	[UpdateableAction(UpdateableAction.All)]
-	public DeviceType DeviceType { get; set; }
+	public partial DeviceType DeviceType { get; set; }
 
 	#endregion
 }

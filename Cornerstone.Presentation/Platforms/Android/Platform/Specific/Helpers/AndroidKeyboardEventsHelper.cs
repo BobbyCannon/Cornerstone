@@ -1,0 +1,181 @@
+using System;
+using System.Runtime.Versioning;
+using Android.Views;
+using Cornerstone.Presentation.Android.Platform.Input;
+using Cornerstone.Presentation.Android.Platform.SkiaPlatform;
+using Cornerstone.Presentation.Input;
+using Cornerstone.Presentation.Input.Raw;
+using Cornerstone.Presentation.Utilities;
+
+namespace Cornerstone.Presentation.Android.Platform.Specific.Helpers
+{
+    internal class AndroidKeyboardEventsHelper<TView> : IDisposable where TView : TopLevelImpl
+    {
+        private static readonly string[] s_asciiStringCache = InitAsciiStringCache();
+
+        private static string[] InitAsciiStringCache()
+        {
+            var cache = new string[128];
+            for (int i = 0; i < 128; i++)
+            {
+                cache[i] = ((char)i).ToString();
+            }
+            return cache;
+        }
+
+        private readonly TView _view;
+
+        public bool HandleEvents { get; set; }
+
+        public AndroidKeyboardEventsHelper(TView view)
+        {
+            _view = view;
+            HandleEvents = true;
+        }
+
+        public bool? DispatchKeyEvent(KeyEvent? e, out bool callBase)
+        {
+            if (!HandleEvents || e is null)
+            {
+                callBase = true;
+                return null;
+            }
+
+            return DispatchKeyEventInternal(e, out callBase);
+        }
+
+        [ObsoletedOSPlatform("android29.0")]
+        static string? UnicodeTextInput(KeyEvent keyEvent)
+        {
+            return keyEvent.Action == KeyEventActions.Multiple
+                && keyEvent.RepeatCount == 0
+                && !string.IsNullOrEmpty(keyEvent.Characters)
+                ? keyEvent.Characters
+                : null;
+        }
+
+        private bool? DispatchKeyEventInternal(KeyEvent e, out bool callBase)
+        {
+            var unicodeTextInput = OperatingSystem.IsAndroidVersionAtLeast(29) ? null : UnicodeTextInput(e);
+            var inputRoot = _view.InputRoot;
+
+            if ((e.Action == KeyEventActions.Multiple && unicodeTextInput == null)
+                || inputRoot is null)
+            {
+                callBase = true;
+                return null;
+            }
+
+            var physicalKey = AndroidKeyInterop.PhysicalKeyFromScanCode(e.ScanCode);
+            var keySymbol = GetKeySymbol(e.UnicodeChar, physicalKey);
+            var keyDeviceType = GetKeyDeviceType(e);
+
+			var rawKeyEvent = new RawKeyEventArgs(
+				AndroidKeyboardDevice.Instance!,
+				System.Convert.ToUInt64(e.EventTime),
+				inputRoot,
+				e.Action == KeyEventActions.Down ? RawKeyEventType.KeyDown : RawKeyEventType.KeyUp,
+				AndroidKeyboardDevice.ConvertKey(e.KeyCode),
+				GetModifierKeys(e),
+				physicalKey,
+				keySymbol,
+				keyDeviceType);
+
+            _view.Input?.Invoke(rawKeyEvent);
+
+            bool handled = rawKeyEvent.Handled;
+
+            if ((e.Action == KeyEventActions.Down && e.UnicodeChar >= 32)
+                || unicodeTextInput != null)
+            {
+                var rawTextEvent = new RawTextInputEventArgs(
+                  AndroidKeyboardDevice.Instance!,
+				System.Convert.ToUInt64(e.EventTime),
+                  inputRoot,
+                  unicodeTextInput ?? CharToString(e.UnicodeChar)
+                  );
+                _view.Input?.Invoke(rawTextEvent);
+
+                handled = handled || rawTextEvent.Handled;
+            }
+
+            if (e.Action == KeyEventActions.Up)
+            {
+                //nothing to do here more call base no need of more events
+                callBase = true;
+                return null;
+            }
+
+            callBase = false;
+            return handled;
+        }
+
+        private static RawInputModifiers GetModifierKeys(KeyEvent e)
+        {
+            var rv = RawInputModifiers.None;
+
+            if (e.IsCtrlPressed) rv |= RawInputModifiers.Control;
+            if (e.IsShiftPressed) rv |= RawInputModifiers.Shift;
+
+            return rv;
+        }
+
+        private static string CharToString(int unicodeChar)
+        {
+            if (unicodeChar >= 0 && unicodeChar < s_asciiStringCache.Length)
+            {
+                return s_asciiStringCache[unicodeChar];
+            }
+            return char.ConvertFromUtf32(unicodeChar);
+        }
+
+        private static string? GetKeySymbol(int unicodeChar, PhysicalKey physicalKey)
+        {
+            // Handle a very limited set of control characters so that we're consistent with other platforms
+            // (matches KeySymbolHelper.IsAllowedAsciiKeySymbol)
+            switch (physicalKey)
+            {
+                case PhysicalKey.Backspace:
+                    return "\b";
+                case PhysicalKey.Tab:
+                    return "\t";
+                case PhysicalKey.Enter:
+                case PhysicalKey.NumPadEnter:
+                    return "\r";
+                case PhysicalKey.Escape:
+                    return "\u001B";
+                default:
+                    if (unicodeChar <= 0x7F)
+                    {
+                        var asciiChar = (char)unicodeChar;
+                        return KeySymbolHelper.IsAllowedAsciiKeySymbol(asciiChar) ? s_asciiStringCache[asciiChar] : null;
+                    }
+                    return char.ConvertFromUtf32(unicodeChar);
+            }
+        }
+
+        private KeyDeviceType GetKeyDeviceType(KeyEvent e)
+        {
+            var source = e.Device?.Sources ?? InputSourceType.Unknown;
+
+            // Remote controller reports itself as "DPad | Keyboard", which is confusing,
+            // so we need to double-check KeyboardType as well.
+
+            if (source.HasAnyFlag(InputSourceType.Dpad)
+                && e.Device?.KeyboardType == InputKeyboardType.NonAlphabetic)
+                return KeyDeviceType.Remote;
+
+            // ReSharper disable BitwiseOperatorOnEnumWithoutFlags - it IS flags enum under the hood.
+            if (source.HasAnyFlag(InputSourceType.Joystick | InputSourceType.Gamepad))
+                return KeyDeviceType.Gamepad;
+            // ReSharper restore BitwiseOperatorOnEnumWithoutFlags
+
+            return KeyDeviceType.Keyboard; // fallback to the keyboard, if unknown.
+        }
+
+        public void Dispose()
+        {
+            HandleEvents = false;
+        }
+    }
+}

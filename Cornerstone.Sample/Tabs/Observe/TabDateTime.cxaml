@@ -1,0 +1,100 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs.Observe"
+		mc:Ignorable="d" d:DesignHeight="720" d:DesignWidth="720"
+		x:Class="Cornerstone.Sample.Tabs.Observe.TabDateTime"
+		x:DataType="tabs:TabDateTime">
+	<DockPanel>
+		<Grid DockPanel.Dock="Top" Margin="10,14,10,6">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="{x:Static tabs:TabDateTime.HeaderName}" />
+		</Grid>
+		<ScrollViewer HorizontalScrollBarVisibility="Disabled">
+			<StackPanel Margin="16,8,16,20" Spacing="14" MaxWidth="720" HorizontalAlignment="Left">
+				<TextBlock TextWrapping="Wrap" Opacity="0.8"
+						Text="IDateTimeProvider is the clock the app should read. RealTime interpolates UTC with Stopwatch for high resolution, then recaptures from DateTime.UtcNow if the counter stalls (sleep) or the wall clock steps. Tests replace the provider so time can be frozen or stepped." />
+
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource Background06}"
+						BorderThickness="1"
+						CornerRadius="12"
+						Padding="16">
+					<StackPanel Spacing="10">
+						<TextBlock Text="Live comparison" />
+						<TextBlock TextWrapping="Wrap" Opacity="0.8"
+								Text="Provider UTC is IDateTimeProvider. Wall UTC is DateTime.UtcNow. The delta is provider minus wall in ticks (10,000 ticks = 1 ms). While running it should stay well under 100 ms. After sleep it recaptures to wall." />
+						<Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="16" RowSpacing="8">
+							<TextBlock Opacity="0.65" Text="Wall UTC" />
+							<SelectableTextBlock Grid.Column="1" Text="{Binding WallUtcNow}" TextWrapping="Wrap" />
+							<TextBlock Grid.Row="1" Opacity="0.65" Text="Provider UTC" />
+							<SelectableTextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ProviderUtcNow}" TextWrapping="Wrap" />
+							<TextBlock Grid.Row="2" Opacity="0.65" Text="Delta (ticks)" />
+							<SelectableTextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DeltaTicksText}" />
+						</Grid>
+					</StackPanel>
+				</Border>
+
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource Background06}"
+						BorderThickness="1"
+						CornerRadius="12"
+						Padding="16">
+					<StackPanel Spacing="10">
+						<TextBlock Text="Keep running" />
+						<TextBlock TextWrapping="Wrap" Opacity="0.8"
+								Text="{Binding KeepAliveHelp}" />
+						<Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+							<CheckBox Content="Keep running"
+									IsChecked="{Binding IsKeepAliveOn, Mode=TwoWay}"
+									IsEnabled="{Binding IsKeepAliveSupported}"
+									Click="KeepAliveClick" />
+							<TextBlock Grid.Column="1" VerticalAlignment="Center" Opacity="0.65"
+									Text="{Binding KeepAliveStatus}" />
+						</Grid>
+					</StackPanel>
+				</Border>
+
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource Background06}"
+						BorderThickness="1"
+						CornerRadius="12"
+						Padding="16">
+					<DockPanel>
+						<Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+							<TextBlock Text="Time log" VerticalAlignment="Center" />
+							<Button Grid.Column="1" Content="Clear" Click="ClearLog" />
+						</Grid>
+						<TextBlock DockPanel.Dock="Top" TextWrapping="Wrap" Opacity="0.8" Margin="0,0,0,8"
+								Text="Samples every 5 seconds while this page is open, or while Keep running is on. After power-off and wake, a Resume line shows how long wall UTC jumped. Provider should recapture to wall." />
+						<ListBox ItemsSource="{Binding Log}" MaxHeight="220">
+							<ListBox.ItemTemplate>
+								<DataTemplate x:DataType="tabs:TabDateTimeLogEntry">
+									<Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+										<TextBlock Text="{Binding Kind}" Opacity="0.65" Width="72" />
+										<SelectableTextBlock Grid.Column="1" Text="{Binding Message}" TextWrapping="Wrap" />
+									</Grid>
+								</DataTemplate>
+							</ListBox.ItemTemplate>
+						</ListBox>
+					</DockPanel>
+				</Border>
+
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource Background06}"
+						BorderThickness="1"
+						CornerRadius="12"
+						Padding="16">
+					<StackPanel Spacing="8">
+						<TextBlock Text="Tests" />
+						<TextBlock TextWrapping="Wrap" Opacity="0.8"
+								Text="Do not use DateTime.UtcNow or DateTimeProvider.RealTime in tests that need a known clock. Inject IDateTimeProvider and advance it with the test host (IncrementTime). RealTime is locked so production code cannot swap it." />
+					</StackPanel>
+				</Border>
+			</StackPanel>
+		</ScrollViewer>
+	</DockPanel>
+</UserControl>

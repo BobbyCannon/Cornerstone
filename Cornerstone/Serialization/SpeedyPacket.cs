@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -95,7 +96,8 @@ public class SpeedyPacket : IReadOnlyList<object>
 		return Pack(_list);
 	}
 
-	public static object Unpack(ReadOnlySpan<byte> value, Type type)
+	[RequiresDynamicCode("Unpacking collections of a runtime type requires dynamic code.")]
+	public static object Unpack(ReadOnlySpan<byte> value, [DynamicallyAccessedMembers(SourceReflector.AllRuntimeMembers)] Type type)
 	{
 		var packet = Unpack(value);
 		return ParseType(type, packet);
@@ -125,7 +127,9 @@ public class SpeedyPacket : IReadOnlyList<object>
 		return GetEnumerator();
 	}
 
-	private static object ParseType(Type type, object value)
+	[RequiresDynamicCode("Unpacking collections of a runtime type requires dynamic code.")]
+	[UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Collection element Type is stored on TypeMetadata and cannot flow DynamicallyAccessedMembers.")]
+	private static object ParseType([DynamicallyAccessedMembers(SourceReflector.AllRuntimeMembers)] Type type, object value)
 	{
 		if (value == null)
 		{
@@ -596,7 +600,7 @@ public class SpeedyPacket : IReadOnlyList<object>
 	{
 		#region Constructors
 
-		public TypeMetadata(Type type)
+		public TypeMetadata([DynamicallyAccessedMembers(SourceReflector.AllRuntimeMembers)] Type type)
 		{
 			IsPackable = typeof(IPackable).IsAssignableFrom(type);
 			IsEnumerable = typeof(IEnumerable).IsAssignableFrom(type) && (type != typeof(string));

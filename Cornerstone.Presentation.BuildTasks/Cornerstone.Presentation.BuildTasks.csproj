@@ -1,0 +1,66 @@
+<Project Sdk="Microsoft.NET.Sdk" TreatAsLocalProperty="TargetFramework;TargetFrameworks">
+	<PropertyGroup>
+		<TargetFrameworks></TargetFrameworks>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<RootNamespace>Cornerstone.Presentation.Build.Tasks</RootNamespace>
+		<DefineConstants>$(DefineConstants);BUILDTASK;XAMLX_CECIL_INTERNAL;XAMLX_INTERNAL</DefineConstants>
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+		<EnableNETAnalyzers>false</EnableNETAnalyzers>
+		<IsPackable>false</IsPackable>
+		<Nullable>disable</Nullable>
+		<NoWarn>$(NoWarn);CS8632;NU1605;RS2008;RS1041</NoWarn>
+		<!-- Do not use bin\: VS MSBuild nodes UsingTask-load that path and Rebuild cannot overwrite it. -->
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<OutputPath>$(MSBuildThisFileDirectory)tools\$(Configuration)\netstandard2.0\</OutputPath>
+	</PropertyGroup>
+	<ItemGroup>
+		<Compile Remove="XamlIl.Cecil\**\*.cs" />
+		<Compile Include="XamlIl.Cecil\**\*.cs" />
+		<Compile Remove="..\Cornerstone.Generators\Presentation\XamlX\IL\SreTypeSystem.cs" />
+		<Compile Remove="..\Cornerstone.Generators\Presentation\XamlX\Compatibility\**\*.cs" />
+		<Compile Include="..\Cornerstone.Generators\Presentation\XamlX\**\*.cs" Exclude="..\Cornerstone.Generators\Presentation\XamlX\IL\SreTypeSystem.cs;..\Cornerstone.Generators\Presentation\XamlX\Compatibility\**\*.cs" Link="XamlIl\%(RecursiveDir)%(FileName)%(Extension)" />
+		<Compile Include="..\Cornerstone.Presentation\SourceGenerator\*.cs" Link="SourceGenerator\%(FileName)%(Extension)" />
+		<Compile Include="..\Cornerstone.Presentation\Utilities\CornerstoneResourcesIndex.cs" Link="Shared\CornerstoneResourcesIndex.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Utilities\SpanStringTokenizer.cs" Link="Shared\SpanStringTokenizer.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Platform\Internal\Constants.cs" Link="Shared\Constants.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Markup\Xaml\CornerstoneResourceXamlInfo.cs" Link="Shared\CornerstoneResourceXamlInfo.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Markup\Parsers\SelectorGrammar.cs" Link="Markup\SelectorGrammar.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Markup\Parsers\ContainerQueryGrammar.cs" Link="Markup\ContainerQueryGrammar.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Markup\Parsers\PropertyPathGrammar.cs" Link="Markup\PropertyPathGrammar.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Markup\Xaml\PropertyParser.cs" Link="Markup\PropertyParser.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Data\Core\ExpressionParseException.cs" Link="Markup\ExpressionParseException.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Utilities\CharacterReader.cs" Link="Markup\CharacterReader.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Utilities\IdentifierParser.cs" Link="Markup\IdentifierParser.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Utilities\MathUtilities.cs" Link="Markup\MathUtilities.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Platform\AssetLoader.cs" Link="Markup\AssetLoader.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Utilities\StringBuilderCache.cs" Link="Utilities\StringBuilderCache.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Data\Core\Parsers\ArgumentListParser.cs" Link="Markup\ArgumentListParser.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Utilities\KeywordParser.cs" Link="Markup\KeywordParser.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Data\Core\Parsers\BindingExpressionGrammar.cs" Link="Markup\BindingExpressionGrammar.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Utilities\StyleClassParser.cs" Link="Markup\StyleClassParser.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Thickness.cs" Link="Markup\Thickness.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Styling\StyleQueryComparisonOperator.cs" Link="Markup\StyleQueryComparisonOperator.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Size.cs" Link="Markup\Size.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Vector.cs" Link="Markup\Vector.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Point.cs" Link="Markup\Point.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Matrix.cs" Link="Markup\Matrix.cs" />
+		<Compile Include="..\Cornerstone.Presentation\CornerRadius.cs" Link="Markup\CornerRadius.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Media\Color.cs" Link="Markup\Color.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Media\HslColor.cs" Link="Markup\HslColor.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Media\HsvColor.cs" Link="Markup\HsvColor.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Media\KnownColors.cs" Link="Markup\KnownColors.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Controls\Layout\GridLength.cs" Link="Markup\GridLength.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Data\BindingPriority.cs" Link="Markup\BindingPriority.cs" />
+		<Compile Include="..\Cornerstone.Presentation\RelativePoint.cs" Link="Markup\RelativePoint.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Compatibility\NullableAttributes.cs" Link="Compatibility\NullableAttributes.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Compatibility\TrimmingAttributes.cs" Link="Compatibility\TrimmingAttributes.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Utilities\SpanHelpers.cs" Link="Utilities\SpanHelpers.cs" />
+		<Compile Include="..\Cornerstone.Presentation\TrimmingMessages.cs" Link="Diagnostics\TrimmingMessages.cs" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Cornerstone.Presentation.DevGenerators\Cornerstone.Presentation.DevGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" SetTargetFramework="TargetFramework=netstandard2.0" GlobalPropertiesToRemove="TargetFrameworks;RuntimeIdentifier;RuntimeIdentifiers" />
+		<PackageReference Include="Mono.Cecil" Version="0.11.6" />
+		<PackageReference Include="Microsoft.Build.Framework" Version="[15.1.548]" PrivateAssets="All" />
+		<PackageReference Include="System.Numerics.Vectors" Version="4.6.1" />
+	</ItemGroup>
+</Project>

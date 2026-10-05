@@ -23,7 +23,7 @@ $productName = "Cornerstone"
 
 if ($scriptPath.Length -le 0)
 {
-	$scriptPath = "C:\Workspaces\GitHub\$productName"
+	throw "Could not resolve the script directory."
 }
 
 if ($DateSince -eq $null)

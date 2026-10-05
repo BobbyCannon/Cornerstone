@@ -1,8 +1,11 @@
-﻿#region References
+#region References
 
-using Avalonia;
-using Avalonia.iOS;
-using Cornerstone.Avalonia.Platforms;
+using Cornerstone.Presentation;
+using Cornerstone.Presentation.iOS;
+using Cornerstone.Esri;
+using Cornerstone.Vlc;
+using Cornerstone.Presentation.Platforms;
+using Cornerstone.Sample;
 using Foundation;
 
 #endregion
@@ -15,13 +18,18 @@ namespace Cornerstone.Sample.iOS;
 /// application events from iOS.
 /// </summary>
 [Register("AppDelegate")]
-public class AppDelegate : AvaloniaAppDelegate<App>
+public class AppDelegate : CornerstoneAppDelegate<App>
 {
 	#region Methods
 
 	protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
 	{
-		return base.CustomizeAppBuilder(builder).UseiOS().UseCornerstone([]);
+		return base.CustomizeAppBuilder(builder)
+			.With(new iOSPlatformOptions { NativeBehindComposition = SampleNativeAirspace.IsEnabled })
+			.UseiOS()
+			.UseCornerstone([])
+			.UseCornerstoneEsri()
+			.UseCornerstoneVlc();
 	}
 
 	#endregion

@@ -1,0 +1,35 @@
+<ResourceDictionary
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		x:ClassModifier="internal">
+	<ControlTheme x:Key="{x:Type PopupRoot}" TargetType="PopupRoot">
+		<Setter Property="Background" Value="{x:Null}" />
+		<Setter Property="TransparencyLevelHint" Value="Transparent" />
+		<Setter Property="Foreground" Value="{DynamicResource Foreground00}" />
+		<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+		<Setter Property="FontFamily" Value="{DynamicResource OpenSansRegular}" />
+		<Setter Property="Template">
+			<ControlTemplate>
+				<LayoutTransformControl LayoutTransform="{TemplateBinding Transform}">
+					<Panel>
+						<Border Name="PART_TransparencyFallback" IsHitTestVisible="False" />
+						<VisualLayerManager Name="PART_VisualLayerManager">
+							<ContentPresenter Name="PART_ContentPresenter"
+									Background="{TemplateBinding Background}"
+									ContentTemplate="{TemplateBinding ContentTemplate}"
+									Content="{TemplateBinding Content}"
+									Padding="{TemplateBinding Padding}" />
+						</VisualLayerManager>
+					</Panel>
+				</LayoutTransformControl>
+			</ControlTemplate>
+		</Setter>
+	</ControlTheme>
+	<Design.PreviewWith>
+		<PreviewCodeSnippet MaxWidth="400">
+			<Border Padding="16">
+				<TextBlock Text="Popup root" />
+			</Border>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</ResourceDictionary>

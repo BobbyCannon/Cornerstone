@@ -1,7 +1,7 @@
 ﻿# Table of Contents
 
 - [EF 10 + WinRT (net10-windows)](#ef001-ef-10-winrt-startup)
-- [WebView native airspace (overlay)](#wv001-webview-native-airspace)
+- [WebView native layering](#wv001-webview-native-airspace)
 
 ---
 
@@ -21,7 +21,7 @@ This issue has been fixed in EF v11+. This also applies to Windows desktop apps 
 
 https://github.com/dotnet/efcore/pull/38304
 
-This issue has nothing to do with Avalonia’s startup timing or lifecycle. The exception
+This issue has nothing to do with Cornerstone.Presentation’s startup timing or lifecycle. The exception
 is thrown the very first time the SqliteConnection type is initialized (its static constructor),
 which happens the moment any code first touches a connection or EF Core SQLite context.
 That can be:
@@ -31,7 +31,7 @@ That can be:
 - on the first query
 - or even in a background service
 
-…and the result is identical. Avalonia’s Startup event, OnFrameworkInitializationCompleted,
+…and the result is identical. Cornerstone.Presentation’s Startup event, OnFrameworkInitializationCompleted,
 dispatcher readiness, etc. are irrelevant. 
 
 The only factors that matter are:
@@ -41,23 +41,24 @@ The only factors that matter are:
 - You are using Microsoft.Data.Sqlite 10.x.
 
 Once those three conditions are true, the first SqliteConnection construction will hit
-the ApplicationData.Current probe and throw. Changing when in the Avalonia lifetime you
+the ApplicationData.Current probe and throw. Changing when in the Cornerstone.Presentation lifetime you
 open the database does not avoid it.
 
 ---
 
 # WV001 - WebView native airspace
 
-Native WebView (Android WebView, iOS WKWebView, Windows WebView2) always paints above
-Avalonia content. You cannot place Avalonia controls over a live native WebView surface.
+How it works: [Presentation/NativeLayering.md](Presentation/NativeLayering.md). Native WebView sits **under** the Skia plane. Overlay chrome paints on live web; hole clicks go to native.
 
-### Workaround: `WebView.IsPaused`
+`NativeBehindComposition` defaults **on** (Win32, Android, iOS, macOS, Wayland). Set it false for child-on-top (native above Skia). X11 has no native-behind path.
 
-Set `WebView.IsPaused = true` (optional `BlurWhenPaused`):
+### `WebView.IsPaused`
+
+Use pause when native-behind is off, on X11, or when you want a frozen page (overlay menus on child-on-top, designer). Set `WebView.IsPaused = true` (optional `BlurWhenPaused`):
 
 1. Captures a PNG snapshot of the web surface (owned by `WebView`).
 2. Shows that image in the control and hides the native surface only (engine stays alive).
-3. Avalonia siblings placed **after** / above the WebView in Z-order can paint over the region.
+3. Cornerstone.Presentation siblings placed **after** / above the WebView in Z-order can paint over the region.
 4. Set `IsPaused = false` to restore the live WebView. Significant resize resumes by default
    (`ResumeOnResize`).
 

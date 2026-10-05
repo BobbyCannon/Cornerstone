@@ -5,7 +5,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Cornerstone.Extensions;
+using Cornerstone.Profiling;
 using Cornerstone.Reflection;
+using Cornerstone.Runtime;
 using Cornerstone.Storage;
 using Cornerstone.Sync;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +35,7 @@ public abstract class EntityFrameworkSyncableDatabase : EntityFrameworkDatabase,
 	/// </summary>
 	protected EntityFrameworkSyncableDatabase()
 	{
+		Profiler = null;
 	}
 
 	/// <summary>
@@ -42,11 +45,21 @@ public abstract class EntityFrameworkSyncableDatabase : EntityFrameworkDatabase,
 	/// <param name="settings"> The settings for this database. </param>
 	/// <param name="keyCache"> An optional key manager for caching entity IDs (primary and sync). </param>
 	protected EntityFrameworkSyncableDatabase(DbContextOptions startup, DatabaseSettings settings, DatabaseKeyCache keyCache)
-		: base(startup, settings)
+		: this(startup, settings, keyCache, Runtime.DateTimeProvider.RealTime)
+	{
+	}
+
+	protected EntityFrameworkSyncableDatabase(
+		DbContextOptions startup,
+		DatabaseSettings settings,
+		DatabaseKeyCache keyCache,
+		IDateTimeProvider dateTimeProvider)
+		: base(startup, settings, dateTimeProvider)
 	{
 		_syncableRepositories = new ConcurrentDictionary<string, ISyncableRepository>();
 
 		KeyCache = keyCache;
+		Profiler = null;
 	}
 
 	#endregion
@@ -55,13 +68,15 @@ public abstract class EntityFrameworkSyncableDatabase : EntityFrameworkDatabase,
 
 	public DatabaseKeyCache KeyCache { get; }
 
+	public Profiler Profiler { get; set; }
+
 	public abstract (string entity, string syncObject)[] SyncOrder { get; }
 
 	#endregion
 
 	#region Methods
 
-	public IEnumerable<ISyncableRepository> GetSyncableRepositories()
+	public virtual IEnumerable<ISyncableRepository> GetSyncableRepositories()
 	{
 		//
 		// NOTE: If you change this then update Cornerstone.SyncableDatabase

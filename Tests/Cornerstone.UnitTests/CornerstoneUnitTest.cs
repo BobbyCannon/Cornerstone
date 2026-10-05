@@ -9,6 +9,16 @@ namespace Cornerstone.UnitTests;
 
 public abstract class CornerstoneUnitTest : CornerstoneTest
 {
+	#region Properties
+
+	/// <summary>
+	/// When true, scenario matrices also run the SQL mapper and EF against localhost SQL Server.
+	/// Leave false so unit tests stay on SQLite.
+	/// </summary>
+	protected virtual bool IncludeSqlServerDatabase => true;
+
+	#endregion
+
 	#region Methods
 
 	[TestCleanup]

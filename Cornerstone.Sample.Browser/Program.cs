@@ -1,14 +1,16 @@
-﻿#region References
+#region References
 
+using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
-using Avalonia;
-using Avalonia.Browser;
-using Cornerstone.Avalonia;
-using Cornerstone.Avalonia.Platforms;
+using Cornerstone.Presentation;
+using Cornerstone.Presentation.Browser;
+using Cornerstone.Presentation.Platforms;
 using Cornerstone.Extensions;
 using Cornerstone.Platforms.Browser;
+using Cornerstone.Profiling;
 using Cornerstone.Runtime;
+using SQLitePCL;
 
 #endregion
 
@@ -24,7 +26,7 @@ internal sealed class Program
 
 	#region Methods
 
-	public static AppBuilder BuildAvaloniaApp()
+	public static AppBuilder BuildCornerstoneApp()
 	{
 		return AppBuilder.Configure<App>();
 	}
@@ -35,27 +37,41 @@ internal sealed class Program
 		{
 			case nameof(AppViewModel.SelectedTab):
 			{
+				var item = _applicationViewModel.SelectedTab;
+				if (item is null)
+				{
+					break;
+				}
+
 				var browser = AppBootstrap.GetInstance<BrowserInteropProxy>();
 				var location = browser.WindowsLocation;
-				location = location.UpdateQueryParameter("Tab", _applicationViewModel.SelectedTab.TabName);
+				location = location.UpdateQueryParameter("Tab", item.TabName);
 				browser.WindowsLocation = location;
 				break;
 			}
 		}
 	}
 
-	private static Task Main(string[] args)
+	private static async Task Main(string[] args)
 	{
-		AppBootstrap.Initialize("Cornerstone.Sample", typeof(Program).Assembly, args);
+		try
+		{
+			AppBootstrap.StartupProfiler ??= new StartupProfiler();
+			AppBootstrap.Initialize("Cornerstone.Sample", typeof(Program).Assembly, args);
+			Batteries.Init();
 
-		return BuildAvaloniaApp()
-			.UseCornerstone<BrowserPlatformOptions>(args, out var options)
-			.StartBrowserAppAsync("out", options)
-			.ContinueWith(_ =>
-			{
-				_applicationViewModel ??= AppBootstrap.GetInstance<AppViewModel>();
-				_applicationViewModel.PropertyChanged += AppViewModelOnPropertyChanged;
-			});
+			await BuildCornerstoneApp()
+				.UseCornerstone<BrowserPlatformOptions>(args, out var options)
+				.StartBrowserAppAsync("out", options);
+
+			_applicationViewModel ??= AppBootstrap.GetInstance<AppViewModel>();
+			_applicationViewModel.PropertyChanged += AppViewModelOnPropertyChanged;
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine(ex.ToString());
+			throw;
+		}
 	}
 
 	#endregion

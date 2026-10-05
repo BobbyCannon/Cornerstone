@@ -1,11 +1,11 @@
-﻿#region References
+#region References
 
 using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Cornerstone.VisualStudio.Core.Parsing;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
@@ -14,32 +14,33 @@ namespace Cornerstone.VisualStudio.Tests.Parsing;
 /// <summary>
 /// Tests for XmlParser behavior on which TextManipulator is dependent
 /// </summary>
+[TestClass]
 public class XmlParserTests
 {
 	#region Methods
 
-	[Fact]
+	[TestMethod]
 	public void ShouldBeInClosingTagWhenInsideEndTag()
 	{
 		var p = XmlParser.Parse("<Grid></Grid");
-		Assert.True(p.IsInClosingTag);
+		Assert.IsTrue(p.IsInClosingTag);
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ShouldBeInClosingTagWhenParsedSlash()
 	{
 		var p = XmlParser.Parse("<Grid></");
-		Assert.True(p.IsInClosingTag);
+		Assert.IsTrue(p.IsInClosingTag);
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ShouldBeInNoneStateWhenOnClosingBrace()
 	{
 		var parser = XmlParser.Parse("<Grid>");
-		Assert.Equal(XmlParser.ParserState.None, parser.State);
+		Assert.AreEqual(XmlParser.ParserState.None, parser.State);
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ShouldFailOnInavlidNesting()
 	{
 		var data = "<Grid><Foo></Grid>";
@@ -49,78 +50,78 @@ public class XmlParserTests
 		var p = XmlParser.Parse(data.AsMemory(), 0, ppos);
 		var result = p.SeekClosingTag();
 
-		Assert.False(result);
-		Assert.Equal(seek, p.ParserPos);
+		Assert.IsFalse(result);
+		Assert.AreEqual(seek, p.ParserPos);
 	}
 
-	[Theory]
-	[InlineData("<UserControl x:DataType=\"Button\"><TextBlock Tag=\"\"")]
-	[InlineData("<UserControl x:DataType= \"Button\"><TextBlock Tag=\"\"")]
-	[InlineData("<UserControl x:DataType = \"Button\"><TextBlock Tag=\"\"")]
-	[InlineData("<UserControl x:DataType =\"Button\"><TextBlock Tag=\"\"")]
-	[InlineData("<UserControl x:DataType\t=\r\"Button\"><TextBlock Tag=\"\"")]
-	[InlineData("<UserControl x:DataType\t=\n\"Button\"><TextBlock Tag=\"\"")]
-	[InlineData("<UserControl x:DataType \t=\r\"Button\"><TextBlock Tag=\"\"")]
-	[InlineData("<UserControl x:DataType\t =\r\"Button\"><TextBlock Tag=\"\"")]
+	[TestMethod]
+	[DataRow("<UserControl x:DataType=\"Button\"><TextBlock Tag=\"\"")]
+	[DataRow("<UserControl x:DataType= \"Button\"><TextBlock Tag=\"\"")]
+	[DataRow("<UserControl x:DataType = \"Button\"><TextBlock Tag=\"\"")]
+	[DataRow("<UserControl x:DataType =\"Button\"><TextBlock Tag=\"\"")]
+	[DataRow("<UserControl x:DataType\t=\r\"Button\"><TextBlock Tag=\"\"")]
+	[DataRow("<UserControl x:DataType\t=\n\"Button\"><TextBlock Tag=\"\"")]
+	[DataRow("<UserControl x:DataType \t=\r\"Button\"><TextBlock Tag=\"\"")]
+	[DataRow("<UserControl x:DataType\t =\r\"Button\"><TextBlock Tag=\"\"")]
 	public void ShouldFindParentAttributeValue(string source)
 	{
 		var state = XmlParser.Parse(source.AsMemory(), source.Length, 0);
-		Assert.NotNull(state.FindParentAttributeValue("(x\\:)?DataType"));
+		Assert.IsNotNull(state.FindParentAttributeValue("(x\\:)?DataType"));
 	}
 
-	[Theory]
-	[InlineData("OneLevel", 492, 1, 1, "Window")]
-	[InlineData("OneLevelWithCDATA", 520, 1, 1, "Window")]
-	[InlineData("OneLevelWithComment", 512, 1, 1, "Window")]
-	[InlineData("TwoLevel", 512, 1, 2, "Window.Styles")]
-	[InlineData("TwoLevelWithCDATA", 554, 1, 2, "Window.Styles")]
-	[InlineData("TwoLevelWithComment", 88, 1, 2, "Window.Styles")]
+	[TestMethod]
+	[DataRow("OneLevel", 492, 1, 1, "Window")]
+	[DataRow("OneLevelWithCDATA", 520, 1, 1, "Window")]
+	[DataRow("OneLevelWithComment", 512, 1, 1, "Window")]
+	[DataRow("TwoLevel", 512, 1, 2, "Window.Styles")]
+	[DataRow("TwoLevelWithCDATA", 554, 1, 2, "Window.Styles")]
+	[DataRow("TwoLevelWithComment", 88, 1, 2, "Window.Styles")]
 	public void ShouldGetParentTagNameAtLevel(string source, int position, int level, int nestingLevelExpected, string expectedParentTag)
 	{
 		var data = GetData(source);
 		var state = XmlParser.Parse(data.AsMemory(), position, 0);
-		Assert.NotNull(state);
-		Assert.Equal(nestingLevelExpected, state.NestingLevel);
+		Assert.IsNotNull(state);
+		Assert.AreEqual(nestingLevelExpected, state.NestingLevel);
 		var parentTag = state.GetParentTagName(level);
-		Assert.Equal(expectedParentTag, parentTag);
+		Assert.AreEqual(expectedParentTag, parentTag);
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ShouldMoveBackTo0NestingWhenParsedClosedTag()
 	{
 		var p = XmlParser.Parse("<Grid><Foo></Foo></");
-		Assert.Equal(0, p.NestingLevel);
+		Assert.AreEqual(0, p.NestingLevel);
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ShouldMoveBackTo0NestingWhenParsedDeclarationTag()
 	{
 		var p = XmlParser.Parse("<?xml version=\"1.0\" encoding=\"utf-8\" ?>");
-		Assert.Equal(0, p.NestingLevel);
+		Assert.AreEqual(0, p.NestingLevel);
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ShouldMoveBackTo0NestingWhenParsedSelfclosedTag()
 	{
 		var p = XmlParser.Parse("<Grid><Foo/></");
-		Assert.Equal(0, p.NestingLevel);
+		Assert.AreEqual(0, p.NestingLevel);
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ShouldNotBeInClosingTagWhenStartTag()
 	{
 		var p = XmlParser.Parse("<Grid");
-		Assert.False(p.IsInClosingTag);
+		Assert.IsFalse(p.IsInClosingTag);
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ShouldReturnCorrectTagName()
 	{
 		var p = XmlParser.Parse("<Grid><Tag Attribute=\"\"/");
-		Assert.Equal("Tag", p.ParseCurrentTagName());
+		Assert.AreEqual("Tag", p.ParseCurrentTagName());
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ShouldSeekEndTagInOverClosedTag()
 	{
 		var data = "<Grid><Foo/></Grid>";
@@ -130,11 +131,11 @@ public class XmlParserTests
 		var p = XmlParser.Parse(data.AsMemory(), 0, ppos);
 		var result = p.SeekClosingTag();
 
-		Assert.True(result);
-		Assert.Equal(seek, p.ParserPos);
+		Assert.IsTrue(result);
+		Assert.AreEqual(seek, p.ParserPos);
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ShouldSeekEndTagInSimpleCase()
 	{
 		var data = "<Grid></Grid>";
@@ -144,8 +145,8 @@ public class XmlParserTests
 		var p = XmlParser.Parse(data.AsMemory(), 0, ppos);
 		var result = p.SeekClosingTag();
 
-		Assert.True(result);
-		Assert.Equal(seek, p.ParserPos);
+		Assert.IsTrue(result);
+		Assert.AreEqual(seek, p.ParserPos);
 	}
 
 	private string GetData(string name, [CallerMemberName] string callerMethod = "")

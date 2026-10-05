@@ -22,7 +22,7 @@ internal sealed class PropertyMapBinding : IDispatchBinding, IPropertyMap
 	private readonly object _model;
 	private readonly ITrackPropertyChanges _modelChanges;
 	private bool _seeded;
-	private readonly DispatchableViewModel _view;
+	private readonly object _view;
 	private readonly ITrackPropertyChanges _viewChanges;
 
 	#endregion
@@ -30,11 +30,21 @@ internal sealed class PropertyMapBinding : IDispatchBinding, IPropertyMap
 	#region Constructors
 
 	public PropertyMapBinding(object model, ITrackPropertyChanges modelChanges, DispatchableViewModel view)
+		: this(model, modelChanges, view, view)
+	{
+	}
+
+	public PropertyMapBinding(
+		object model,
+		ITrackPropertyChanges modelChanges,
+		DispatchableViewModel owner,
+		object destination)
 	{
 		_model = model ?? throw new ArgumentNullException(nameof(model));
 		_modelChanges = modelChanges ?? throw new ArgumentNullException(nameof(modelChanges));
-		_view = view ?? throw new ArgumentNullException(nameof(view));
-		_viewChanges = view;
+		_view = destination ?? throw new ArgumentNullException(nameof(destination));
+		_viewChanges = destination as ITrackPropertyChanges ?? owner
+			?? throw new ArgumentNullException(nameof(owner));
 		_entries = [];
 	}
 
@@ -72,7 +82,10 @@ internal sealed class PropertyMapBinding : IDispatchBinding, IPropertyMap
 
 		foreach (var entry in _entries)
 		{
-			if (IsPropertyChanged(_modelChanges, entry.ModelPropertyName))
+			// Copy when this map has not projected the current model value, even if
+			// another map already consumed the shared change bit.
+			if (IsPropertyChanged(_modelChanges, entry.ModelPropertyName)
+				|| InboundDiffers(entry))
 			{
 				entry.ApplyInbound();
 			}
@@ -88,7 +101,8 @@ internal sealed class PropertyMapBinding : IDispatchBinding, IPropertyMap
 
 		foreach (var entry in _entries)
 		{
-			if (IsPropertyChanged(_modelChanges, entry.ModelPropertyName))
+			if (IsPropertyChanged(_modelChanges, entry.ModelPropertyName)
+				|| InboundDiffers(entry))
 			{
 				return true;
 			}
@@ -106,14 +120,16 @@ internal sealed class PropertyMapBinding : IDispatchBinding, IPropertyMap
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
 
-		_entries.Add(new MapEntry
+		var entry = new MapEntry
 		{
+			Model = _model,
 			ModelPropertyName = propertyName,
 			ViewPropertyName = propertyName,
-			TwoWay = false,
-			ApplyInbound = () => ApplyInboundIdentity(propertyName, propertyName),
-			ApplyOutbound = null
-		});
+			TwoWay = false
+		};
+		entry.ApplyInbound = () => ApplyInboundIdentity(entry);
+		entry.InboundDiffers = () => InboundIdentityDiffers(entry);
+		_entries.Add(entry);
 
 		return this;
 	}
@@ -127,14 +143,16 @@ internal sealed class PropertyMapBinding : IDispatchBinding, IPropertyMap
 		ArgumentException.ThrowIfNullOrWhiteSpace(viewPropertyName);
 		ArgumentNullException.ThrowIfNull(toView);
 
-		_entries.Add(new MapEntry
+		var entry = new MapEntry
 		{
+			Model = _model,
 			ModelPropertyName = modelPropertyName,
 			ViewPropertyName = viewPropertyName,
-			TwoWay = false,
-			ApplyInbound = () => ApplyInboundConverted(modelPropertyName, viewPropertyName, toView),
-			ApplyOutbound = null
-		});
+			TwoWay = false
+		};
+		entry.ApplyInbound = () => ApplyInboundConverted(entry, toView);
+		entry.InboundDiffers = () => InboundConvertedDiffers(entry, toView);
+		_entries.Add(entry);
 
 		return this;
 	}
@@ -149,14 +167,17 @@ internal sealed class PropertyMapBinding : IDispatchBinding, IPropertyMap
 		ArgumentException.ThrowIfNullOrWhiteSpace(modelPropertyName);
 		ArgumentException.ThrowIfNullOrWhiteSpace(viewPropertyName);
 
-		_entries.Add(new MapEntry
+		var entry = new MapEntry
 		{
+			Model = _model,
 			ModelPropertyName = modelPropertyName,
 			ViewPropertyName = viewPropertyName,
-			TwoWay = true,
-			ApplyInbound = () => ApplyInboundIdentity(modelPropertyName, viewPropertyName),
-			ApplyOutbound = () => ApplyOutboundIdentity(modelPropertyName, viewPropertyName)
-		});
+			TwoWay = true
+		};
+		entry.ApplyInbound = () => ApplyInboundIdentity(entry);
+		entry.ApplyOutbound = () => ApplyOutboundIdentity(modelPropertyName, viewPropertyName);
+		entry.InboundDiffers = () => InboundIdentityDiffers(entry);
+		_entries.Add(entry);
 
 		return this;
 	}
@@ -172,56 +193,60 @@ internal sealed class PropertyMapBinding : IDispatchBinding, IPropertyMap
 		ArgumentNullException.ThrowIfNull(toView);
 		ArgumentNullException.ThrowIfNull(toModel);
 
-		_entries.Add(new MapEntry
+		var entry = new MapEntry
 		{
+			Model = _model,
 			ModelPropertyName = modelPropertyName,
 			ViewPropertyName = viewPropertyName,
-			TwoWay = true,
-			ApplyInbound = () => ApplyInboundConverted(modelPropertyName, viewPropertyName, toView),
-			ApplyOutbound = () => ApplyOutboundConverted(modelPropertyName, viewPropertyName, toModel)
-		});
+			TwoWay = true
+		};
+		entry.ApplyInbound = () => ApplyInboundConverted(entry, toView);
+		entry.ApplyOutbound = () => ApplyOutboundConverted(modelPropertyName, viewPropertyName, toModel);
+		entry.InboundDiffers = () => InboundConvertedDiffers(entry, toView);
+		_entries.Add(entry);
 
 		return this;
 	}
 
 	private void ApplyInboundConverted<TModelValue, TViewValue>(
-		string modelPropertyName,
-		string viewPropertyName,
+		MapEntry entry,
 		Func<TModelValue, TViewValue> toView)
 	{
-		if (!TryGetValue<TModelValue>(_model, modelPropertyName, out var modelValue))
+		if (!TryGetValue<TModelValue>(_model, entry.ModelPropertyName, out var modelValue))
 		{
 			return;
 		}
 
 		var viewValue = toView(modelValue);
-		if (TryGetValue<TViewValue>(_view, viewPropertyName, out var current)
+		RememberProjected(entry, viewValue);
+		if (TryGetValue<TViewValue>(_view, entry.ViewPropertyName, out var current)
 			&& EqualityComparer<TViewValue>.Default.Equals(current, viewValue))
 		{
-			_modelChanges.ResetHasChanged(modelPropertyName);
+			_modelChanges.ResetHasChanged(entry.ModelPropertyName);
 			return;
 		}
 
-		SetViewValue(viewPropertyName, viewValue);
-		_modelChanges.ResetHasChanged(modelPropertyName);
+		SetViewValue(entry.ViewPropertyName, viewValue);
+		_modelChanges.ResetHasChanged(entry.ModelPropertyName);
 	}
 
-	private void ApplyInboundIdentity(string modelPropertyName, string viewPropertyName)
+	private void ApplyInboundIdentity(MapEntry entry)
 	{
-		if (!SourceReflector.TryGetMemberValue(_model, modelPropertyName, out var modelValue))
+		if (!SourceReflector.TryGetMemberValue(_model, entry.ModelPropertyName, out var modelValue))
 		{
 			return;
 		}
 
-		if (SourceReflector.TryGetMemberValue(_view, viewPropertyName, out var current)
+		RememberProjected(entry, modelValue);
+		if (SourceReflector.TryGetMemberValue(_view, entry.ViewPropertyName, out var current)
 			&& Equals(current, modelValue))
 		{
-			_modelChanges.ResetHasChanged(modelPropertyName);
+			_modelChanges.ResetHasChanged(entry.ModelPropertyName);
 			return;
 		}
 
-		SetViewValue(viewPropertyName, modelValue);
-		_modelChanges.ResetHasChanged(modelPropertyName);
+		SetViewValue(entry.ViewPropertyName, modelValue);
+		_modelChanges.ResetHasChanged(entry.ModelPropertyName);
 	}
 
 	private void ApplyOutboundConverted<TModelValue, TViewValue>(
@@ -274,10 +299,54 @@ internal sealed class PropertyMapBinding : IDispatchBinding, IPropertyMap
 		_viewChanges.ResetHasChanged(viewPropertyName);
 	}
 
+	private static bool InboundConvertedDiffers<TModelValue, TViewValue>(
+		MapEntry entry,
+		Func<TModelValue, TViewValue> toView)
+	{
+		if (!TryGetValue<TModelValue>(entry.Model, entry.ModelPropertyName, out var modelValue))
+		{
+			return false;
+		}
+
+		var projected = toView(modelValue);
+		if (!entry.HasProjected)
+		{
+			return true;
+		}
+
+		return !EqualityComparer<object>.Default.Equals(entry.LastProjected, projected);
+	}
+
+	private bool InboundDiffers(MapEntry entry)
+	{
+		return (entry.InboundDiffers != null) && entry.InboundDiffers();
+	}
+
+	private static bool InboundIdentityDiffers(MapEntry entry)
+	{
+		if (!SourceReflector.TryGetMemberValue(entry.Model, entry.ModelPropertyName, out var modelValue))
+		{
+			return false;
+		}
+
+		if (!entry.HasProjected)
+		{
+			return true;
+		}
+
+		return !Equals(entry.LastProjected, modelValue);
+	}
+
 	private static bool IsPropertyChanged(ITrackPropertyChanges source, string propertyName)
 	{
 		// Only the mapped property counts — do not treat unrelated dirty bits as pending for this map.
 		return source.HasChanges(new[] { propertyName }.ToOnlyIncludingSettings());
+	}
+
+	private static void RememberProjected(MapEntry entry, object value)
+	{
+		entry.LastProjected = value;
+		entry.HasProjected = true;
 	}
 
 	private void SetViewValue(string viewPropertyName, object value)
@@ -286,6 +355,7 @@ internal sealed class PropertyMapBinding : IDispatchBinding, IPropertyMap
 		try
 		{
 			SourceReflector.TrySetMemberValue(_view, viewPropertyName, value);
+
 			// Setter marks the view dirty; clear so we do not immediately write back.
 			_viewChanges.ResetHasChanged(viewPropertyName);
 		}
@@ -330,6 +400,10 @@ internal sealed class PropertyMapBinding : IDispatchBinding, IPropertyMap
 
 		public Action ApplyInbound;
 		public Action ApplyOutbound;
+		public bool HasProjected;
+		public Func<bool> InboundDiffers;
+		public object LastProjected;
+		public object Model;
 		public string ModelPropertyName;
 		public bool TwoWay;
 		public string ViewPropertyName;

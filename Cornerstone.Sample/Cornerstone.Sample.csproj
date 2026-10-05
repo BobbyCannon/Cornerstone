@@ -1,29 +1,22 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFrameworks>net10.0;net10.0-windows10.0.26100.0</TargetFrameworks>
 	</PropertyGroup>
 	<ItemGroup>
-		<AvaloniaResource Include="Assets\**" />
+		<CornerstoneXaml Include="**\*.cxaml" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
+		<CornerstoneResource Include="Assets\**" />
 		<EmbeddedResource Include="Data\**" />
-		<!-- Desktop: copy next to output for FromDirectory (live edit without re-embed). -->
-		<!-- Browser/WASM/mobile: Content is not on the app filesystem — use EmbeddedResource below. -->
-		<!-- Sample omits Agent/ and Todo/ (agent-oriented / WIP notes) — human docs only. -->
-		<Content Include="..\Cornerstone.Documentation\**\*.md"
-				Exclude="..\Cornerstone.Documentation\bin\**;..\Cornerstone.Documentation\obj\**;..\Cornerstone.Documentation\Agent\**;..\Cornerstone.Documentation\Todo\**"
-				Link="Documents\Cornerstone\%(RecursiveDir)%(Filename)%(Extension)"
-				CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
 	<!-- Stable LogicalNames with '/' so nested paths map correctly (e.g. Lifecycle.md). -->
 	<Target Name="EmbedDocumentationMarkdown" BeforeTargets="PrepareForBuild">
 		<ItemGroup>
-			<_DocumentationMarkdown Include="..\Cornerstone.Documentation\**\*.md"
-					Exclude="..\Cornerstone.Documentation\bin\**;..\Cornerstone.Documentation\obj\**;..\Cornerstone.Documentation\Agent\**;..\Cornerstone.Documentation\Todo\**" />
-			<_DocumentationMarkdown>
+			<DocumentationMarkdown Include="..\Cornerstone.Documentation\**\*.md" Exclude="..\Cornerstone.Documentation\bin\**;..\Cornerstone.Documentation\obj\**;..\Cornerstone.Documentation\Agent\**;..\Cornerstone.Documentation\Todo\**" />
+			<DocumentationMarkdown>
 				<RelativePathWithSlashes>$([System.String]::Copy('%(RecursiveDir)%(Filename)%(Extension)').Replace('\', '/'))</RelativePathWithSlashes>
-			</_DocumentationMarkdown>
+			</DocumentationMarkdown>
 			<!-- Drop previous embeds from this target so incremental builds do not duplicate items -->
 			<EmbeddedResource Remove="@(EmbeddedResource)" Condition="'%(EmbeddedResource.DocumentationMarkdown)' == 'true'" />
-			<EmbeddedResource Include="@(_DocumentationMarkdown)">
+			<EmbeddedResource Include="@(DocumentationMarkdown)">
 				<Link>Documents\Cornerstone\%(RecursiveDir)%(Filename)%(Extension)</Link>
 				<LogicalName>Documents/Cornerstone/%(RelativePathWithSlashes)</LogicalName>
 				<DocumentationMarkdown>true</DocumentationMarkdown>
@@ -31,12 +24,16 @@
 		</ItemGroup>
 	</Target>
 	<ItemGroup>
-		<PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
-		<PackageReference Include="Avalonia.Controls.ColorPicker" Version="$(AvaloniaVersion)" />
-	</ItemGroup>
-	<ItemGroup>
-		<ProjectReference Include="..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
+		<ProjectReference Include="..\Integrations\Cornerstone.Esri\Cornerstone.Esri.csproj" />
+		<ProjectReference Include="..\Integrations\Cornerstone.Vlc\Cornerstone.Vlc.csproj" />
+		<ProjectReference Include="..\Integrations\Cornerstone.Mapsui\Cornerstone.Mapsui.csproj" />
 		<ProjectReference Include="..\Cornerstone.EntityFramework\Cornerstone.EntityFramework.csproj" />
 		<ProjectReference Include="..\Cornerstone\Cornerstone.csproj" />
 	</ItemGroup>
+	<ItemGroup>
+	  <Compile Update="Tabs\DataViews\TabCharts.cxaml.cs">
+	    <DependentUpon>TabCharts.cxaml</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+	<Import Project="..\Build\Presentation.props" />
 </Project>

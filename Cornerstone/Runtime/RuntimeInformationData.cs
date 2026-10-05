@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using Cornerstone.Data;
 using Cornerstone.Data.Bytes;
 using Cornerstone.Reflection;
 
@@ -14,37 +15,43 @@ namespace Cornerstone.Runtime;
 
 /// <inheritdoc cref="IRuntimeInformation" />
 [SourceReflection]
-public struct RuntimeInformationData : IRuntimeInformation
+[Notifiable(["*"])]
+[Updateable(UpdateableAction.All, ["*"])]
+public partial class RuntimeInformationData
+	: CornerstoneObject<RuntimeInformationData>,
+		IUpdateable<IRuntimeInformation>,
+		IRuntimeInformation
 {
 	#region Properties
 
-	public Bitness ApplicationBitness { get; set; }
-	public string ApplicationDataLocation { get; set; }
-	public string ApplicationFileName { get; set; }
-	public string ApplicationFilePath { get; set; }
-	public bool ApplicationIsDevelopmentBuild { get; set; }
-	public bool ApplicationIsElevated { get; set; }
-	public bool ApplicationIsLoaded { get; set; }
-	public bool ApplicationIsNativeBuild { get; set; }
-	public bool ApplicationIsShuttingDown { get; set; }
-	public string ApplicationLocation { get; set; }
-	public string ApplicationName { get; set; }
-	public TimeSpan ApplicationStartup { get; set; }
-	public Version ApplicationVersion { get; set; }
-	public Version AvaloniaRuntimeVersion { get; set; }
+	public partial Bitness ApplicationBitness { get; set; }
+	public partial string ApplicationDataLocation { get; set; }
+	public partial string ApplicationFileName { get; set; }
+	public partial string ApplicationFilePath { get; set; }
+	public partial bool ApplicationIsDevelopmentBuild { get; set; }
+	public partial bool ApplicationIsElevated { get; set; }
+	public partial bool ApplicationIsLoaded { get; set; }
+	public partial bool ApplicationIsNativeBuild { get; set; }
+	public partial bool ApplicationIsReadyToRunBuild { get; set; }
+	public partial bool ApplicationIsShuttingDown { get; set; }
+	public partial string ApplicationLocation { get; set; }
+	public partial string ApplicationName { get; set; }
+	public partial TimeSpan ApplicationStartup { get; set; }
+	public partial Version ApplicationVersion { get; set; }
+	public partial Version CornerstoneRuntimeVersion { get; set; }
 	public int Count => Keys.Count();
-	public int DeviceDisplayRefreshRate { get; set; }
-	public Size DeviceDisplaySize { get; set; }
-	public string DeviceId { get; set; }
-	public string DeviceManufacturer { get; set; }
-	public ByteSize DeviceMemory { get; set; }
-	public string DeviceModel { get; set; }
-	public string DeviceName { get; set; }
-	public DevicePlatform DevicePlatform { get; set; }
-	public Bitness DevicePlatformBitness { get; set; }
-	public Version DevicePlatformVersion { get; set; }
-	public DeviceType DeviceType { get; set; }
-	public Version DotNetRuntimeVersion { get; set; }
+	public partial int DeviceDisplayRefreshRate { get; set; }
+	public partial Size DeviceDisplaySize { get; set; }
+	public partial string DeviceId { get; set; }
+	public partial string DeviceManufacturer { get; set; }
+	public partial ByteSize DeviceMemory { get; set; }
+	public partial string DeviceModel { get; set; }
+	public partial string DeviceName { get; set; }
+	public partial DevicePlatform DevicePlatform { get; set; }
+	public partial Bitness DevicePlatformBitness { get; set; }
+	public partial Version DevicePlatformVersion { get; set; }
+	public partial DeviceType DeviceType { get; set; }
+	public partial Version DotNetRuntimeVersion { get; set; }
 
 	public object this[string key]
 	{
@@ -100,11 +107,12 @@ public struct RuntimeInformationData : IRuntimeInformation
 			ApplicationFilePath = "C:\\Users\\Public\\Documents\\Sample.exe",
 			ApplicationIsDevelopmentBuild = false,
 			ApplicationIsNativeBuild = false,
+			ApplicationIsReadyToRunBuild = false,
 			ApplicationIsElevated = true,
 			ApplicationLocation = "C:\\Users\\Public\\Documents\\",
 			ApplicationName = "Sample",
 			ApplicationVersion = new Version(2, 16, 1, 109),
-			AvaloniaRuntimeVersion = new Version(12, 0, 999),
+			CornerstoneRuntimeVersion = new Version(12, 0, 999),
 			DeviceDisplayRefreshRate = 60,
 			DeviceDisplaySize = new Size(1920, 1280),
 			DeviceId = "WPGR602V4CZBT6BM82BPNYXMM9N8T0FK1K3G4KR3BXGB97AKYR23",

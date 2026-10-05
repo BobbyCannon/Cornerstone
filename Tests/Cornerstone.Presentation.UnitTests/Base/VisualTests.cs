@@ -1,0 +1,499 @@
+#region References
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Cornerstone.Presentation.Controls;
+using Cornerstone.Presentation.Media;
+using Cornerstone.Presentation.UnitTests.Helpers;
+using Cornerstone.Presentation.VisualTree;
+using Cornerstone.Testing;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+#endregion
+
+namespace Cornerstone.Presentation.UnitTests.Base;
+
+[TestClass]
+public class VisualTests
+{
+	#region Methods
+
+	[PresentationTestMethod]
+	public void AddedChildHasCorrectIsEffectivelyVisible()
+	{
+		using var app = UnitTestApplication.Start();
+		var root = new TestRoot { IsVisible = false };
+		var child = new Decorator();
+
+		root.Child = child;
+		CornerstoneTest.IsFalse(child.IsEffectivelyVisible);
+	}
+
+	[PresentationTestMethod]
+	public void AddedChildShouldHaveVisualParentSet()
+	{
+		var target = new TestVisual();
+		var child = new Visual();
+
+		target.AddChild(child);
+
+		CornerstoneTest.AreEqual(target, child.GetVisualParent());
+	}
+
+	[PresentationTestMethod]
+	public void AddedChildShouldNotifyVisualParentChanged()
+	{
+		var target = new TestVisual();
+		var child = new TestVisual();
+		var parents = new List<Visual>();
+
+		child.GetObservable(Visual.VisualParentProperty).Subscribe(x => parents.Add(x));
+		target.AddChild(child);
+		target.RemoveChild(child);
+
+		CornerstoneTest.AreEqual([null, target, null], parents);
+	}
+
+	[PresentationTestMethod]
+	public void AddedGrandchildHasCorrectIsEffectivelyVisible()
+	{
+		using var app = UnitTestApplication.Start();
+		var child = new Decorator();
+		var grandchild = new Decorator();
+		var root = new TestRoot
+		{
+			IsVisible = false,
+			Child = child
+		};
+
+		child.Child = grandchild;
+		CornerstoneTest.IsFalse(grandchild.IsEffectivelyVisible);
+	}
+
+	[PresentationTestMethod]
+	public void AddingAlreadyParentedControlShouldThrow()
+	{
+		var root1 = new TestRoot();
+		var root2 = new TestRoot();
+		var child = new Canvas();
+
+		root1.Child = child;
+
+		Assert.Throws<InvalidOperationException>(() => root2.Child = child);
+		CornerstoneTest.Empty(root2.GetVisualChildren());
+	}
+
+	[PresentationTestMethod]
+	public void AddingChildrenShouldFireOnAttachedToVisualTree()
+	{
+		var child2 = new Decorator();
+		var child1 = new Decorator { Child = child2 };
+		var root = new TestRoot();
+		var called1 = false;
+		var called2 = false;
+
+		child1.AttachedToVisualTree += (s, e) =>
+		{
+			// TODO: Tests are running against TestRoot, so behavior DOES NOT match the actual TopLevel.
+			CornerstoneTest.AreEqual(e.AttachmentPoint, root);
+			CornerstoneTest.AreEqual(e.RootVisual, root);
+			called1 = true;
+		};
+
+		child2.AttachedToVisualTree += (s, e) =>
+		{
+			CornerstoneTest.AreEqual(e.AttachmentPoint, root);
+			CornerstoneTest.AreEqual(e.RootVisual, root);
+			called2 = true;
+		};
+
+		root.Child = child1;
+
+		CornerstoneTest.IsTrue(called1);
+		CornerstoneTest.IsTrue(called2);
+	}
+
+	[PresentationTestMethod]
+	public void AttachingToVisualTreeShouldInvalidateVisual()
+	{
+		var renderer = new NullRenderer();
+		var child = new Decorator();
+		var root = new TestRoot
+		{
+			Renderer = renderer
+		};
+
+		root.Child = child;
+
+		renderer.Calls.VerifyCalled("AddDirty");
+	}
+
+	[PresentationTestMethod]
+	public void ChangingZIndexShouldInvalidateVisual()
+	{
+		Canvas canvas1;
+		var renderer = RendererMocks.CreateRenderer();
+		var root = new TestRoot
+		{
+			Child = new StackPanel
+			{
+				Children =
+				{
+					(canvas1 = new Canvas()),
+					new Canvas()
+				}
+			}
+		};
+
+		root.Renderer = renderer;
+		canvas1.ZIndex = 10;
+
+		renderer.Calls.VerifyCalled("AddDirty");
+	}
+
+	[PresentationTestMethod]
+	public void ChangingZIndexShouldRecalculateParentChildren()
+	{
+		Canvas canvas1;
+		StackPanel stackPanel;
+		var renderer = RendererMocks.CreateRenderer();
+		var root = new TestRoot
+		{
+			Child = stackPanel = new StackPanel
+			{
+				Children =
+				{
+					(canvas1 = new Canvas()),
+					new Canvas()
+				}
+			}
+		};
+
+		root.Renderer = renderer;
+		canvas1.ZIndex = 10;
+
+		renderer.Calls.VerifyCalled("RecalculateChildren");
+	}
+
+	[PresentationTestMethod]
+	public void ClearingChildrenShouldClearVisualParent()
+	{
+		var children = new[] { new Visual(), new Visual() };
+		var target = new TestVisual();
+
+		target.AddChildren(children);
+		target.ClearChildren();
+
+		var result = children.Select(x => x.GetVisualParent()).ToList();
+
+		CornerstoneTest.AreEqual([null, null], result);
+	}
+
+	[PresentationTestMethod]
+	public void DescendantsShouldReturnVisualRoot()
+	{
+		var root = new TestRoot();
+		var child1 = new Decorator();
+		var child2 = new Decorator();
+
+		root.Child = child1;
+		child1.Child = child2;
+
+		CornerstoneTest.Same(root, child1.VisualRoot);
+		CornerstoneTest.Same(root, child2.VisualRoot);
+	}
+
+	[PresentationTestMethod]
+	public void DetachingFromVisualTreeShouldInvalidateVisual()
+	{
+		var renderer = RendererMocks.CreateRenderer();
+		var child = new Decorator();
+		var root = new TestRoot
+		{
+			Renderer = renderer
+		};
+
+		root.Child = child;
+		renderer.Calls.Clear();
+		root.Child = null;
+
+		renderer.Calls.VerifyCalled("AddDirty");
+	}
+
+	[PresentationTestMethod]
+	[DataRow(new[] { 1, 2, 3 }, true, true, true, true, true, true)]
+	[DataRow(new[] { 3, 2, 1 }, true, true, true, true, true, true)]
+	[DataRow(new[] { 1 }, false, true, true, false, false, false)]
+	[DataRow(new[] { 2 }, true, false, true, true, false, false)]
+	[DataRow(new[] { 3 }, true, true, false, true, true, false)]
+	[DataRow(new[] { 3, 1 }, true, true, false, true, true, false)]
+	[DataRow(new[] { 2, 3, 1 }, true, false, true, true, false, false, true)]
+	[DataRow(new[] { 3, 1, 2 }, true, true, false, true, true, false, true)]
+	[DataRow(new[] { 3, 2, 1 }, true, true, false, true, true, false, true)]
+	public void IsEffectivelyVisiblePropagatesToVisualChildren(int[] assignOrder, bool rootV, bool child1V,
+		bool child2V, bool rootExpected, bool child1Expected, bool child2Expected, bool initialSetToFalse = false)
+	{
+		using var app = UnitTestApplication.Start();
+		var child2 = new Decorator();
+		var child1 = new Decorator { Child = child2 };
+		var root = new TestRoot { Child = child1 };
+
+		CornerstoneTest.IsTrue(child2.IsEffectivelyVisible);
+
+		if (initialSetToFalse)
+		{
+			root.IsVisible = false;
+			child1.IsVisible = false;
+			child2.IsVisible = false;
+		}
+
+		foreach (var order in assignOrder)
+		{
+			switch (order)
+			{
+				case 1:
+					root.IsVisible = rootV;
+					break;
+				case 2:
+					child1.IsVisible = child1V;
+					break;
+				case 3:
+					child2.IsVisible = child2V;
+					break;
+			}
+		}
+
+		CornerstoneTest.AreEqual(rootExpected, root.IsEffectivelyVisible);
+		CornerstoneTest.AreEqual(child1Expected, child1.IsEffectivelyVisible);
+		CornerstoneTest.AreEqual(child2Expected, child2.IsEffectivelyVisible);
+	}
+
+	[PresentationTestMethod]
+	public void RemovedChildShouldHaveVisualParentCleared()
+	{
+		var target = new TestVisual();
+		var child = new Visual();
+
+		target.AddChild(child);
+		target.RemoveChild(child);
+
+		CornerstoneTest.IsNull(child.GetVisualParent());
+	}
+
+	[PresentationTestMethod]
+	public void RemovingChildResetsIsEffectivelyVisible()
+	{
+		using var app = UnitTestApplication.Start();
+		var child = new Decorator();
+		var root = new TestRoot { Child = child, IsVisible = false };
+
+		CornerstoneTest.IsFalse(child.IsEffectivelyVisible);
+
+		root.Child = null;
+
+		CornerstoneTest.IsTrue(child.IsEffectivelyVisible);
+	}
+
+	[PresentationTestMethod]
+	public void RemovingChildResetsIsEffectivelyVisibleOfGrandchild()
+	{
+		using var app = UnitTestApplication.Start();
+		var grandchild = new Decorator();
+		var child = new Decorator { Child = grandchild };
+		var root = new TestRoot { Child = child, IsVisible = false };
+
+		CornerstoneTest.IsFalse(child.IsEffectivelyVisible);
+		CornerstoneTest.IsFalse(grandchild.IsEffectivelyVisible);
+
+		root.Child = null;
+
+		CornerstoneTest.IsTrue(child.IsEffectivelyVisible);
+		CornerstoneTest.IsTrue(grandchild.IsEffectivelyVisible);
+	}
+
+	[PresentationTestMethod]
+	public void RemovingChildrenShouldFireOnDetachedFromVisualTree()
+	{
+		var child2 = new Decorator();
+		var child1 = new Decorator { Child = child2 };
+		var root = new TestRoot();
+		var called1 = false;
+		var called2 = false;
+
+		root.Child = child1;
+
+		child1.DetachedFromVisualTree += (s, e) =>
+		{
+			// TODO: Tests are running against TestRoot, so behavior DOES NOT match the actual TopLevel.
+			CornerstoneTest.AreEqual(e.AttachmentPoint, root);
+			CornerstoneTest.AreEqual(e.RootVisual, root);
+			called1 = true;
+		};
+
+		child2.DetachedFromVisualTree += (s, e) =>
+		{
+			CornerstoneTest.AreEqual(e.AttachmentPoint, root);
+			CornerstoneTest.AreEqual(e.RootVisual, root);
+			called2 = true;
+		};
+
+		root.Child = null;
+
+		CornerstoneTest.IsTrue(called1);
+		CornerstoneTest.IsTrue(called2);
+	}
+
+	[PresentationTestMethod]
+	public void RootShouldReturnSelfAsVisualRoot()
+	{
+		var root = new TestRoot();
+
+		CornerstoneTest.Same(root, root.VisualRoot);
+	}
+
+	[PresentationTestMethod]
+	public void TransformToVisualShouldWork()
+	{
+		var child = new Decorator { Width = 100, Height = 100 };
+		var root = new TestRoot { Child = child, Width = 400, Height = 400 };
+
+		root.Measure(Size.Infinity);
+		root.Arrange(new Rect(new Point(), root.DesiredSize));
+
+		var tr = child.TransformToVisual(root);
+
+		CornerstoneTest.IsNotNull(tr);
+
+		var point = root.Bounds.TopLeft * tr;
+
+		//child is centered (400 - 100)/2
+		CornerstoneTest.AreEqual(new Point(150, 150), point);
+	}
+
+	[PresentationTestMethod]
+	public void TransformToVisualWithNonInvertibleRenderTransformShouldWork()
+	{
+		var child = new Decorator
+		{
+			Width = 100,
+			Height = 100,
+			RenderTransform = new ScaleTransform { ScaleX = 0, ScaleY = 0 }
+		};
+		var root = new TestRoot { Child = child, Width = 400, Height = 400 };
+
+		root.Measure(Size.Infinity);
+		root.Arrange(new Rect(new Point(), root.DesiredSize));
+
+		var tr = root.TransformToVisual(child);
+
+		CornerstoneTest.IsNull(tr);
+	}
+
+	[PresentationTestMethod]
+	public void TransformToVisualWithRenderTransformShouldWork()
+	{
+		var child = new Decorator
+		{
+			Width = 100,
+			Height = 100,
+			RenderTransform = new ScaleTransform { ScaleX = 2, ScaleY = 2 }
+		};
+		var root = new TestRoot { Child = child, Width = 400, Height = 400 };
+
+		root.Measure(Size.Infinity);
+		root.Arrange(new Rect(new Point(), root.DesiredSize));
+
+		var tr = child.TransformToVisual(root);
+
+		CornerstoneTest.IsNotNull(tr);
+
+		var point = root.Bounds.TopLeft * tr;
+
+		//child is centered (400 - 100*2 scale)/2
+		CornerstoneTest.AreEqual(new Point(100, 100), point);
+	}
+
+	[PresentationTestMethod]
+	public void VisualChildrenCanBeAddedDuringAttachedToVisualTree()
+	{
+		var root = new TestRoot();
+		var parent = new TestVisual();
+		var child1 = new TestVisual();
+		var child2 = new TestVisual();
+
+		parent.AddChild(child1);
+
+		child1.AttachedToVisualTree += (_, _) => parent.AddChild(child2);
+
+		root.VisualChildren.Add(parent);
+
+		CornerstoneTest.AreEqual(new[] { child1, child2 }, parent.VisualChildren);
+		CornerstoneTest.IsTrue(child1.IsAttachedToVisualTree());
+		CornerstoneTest.IsTrue(child2.IsAttachedToVisualTree());
+	}
+
+	[PresentationTestMethod]
+	public void VisualChildrenCanBeAddedDuringDetachedFromVisualTree()
+	{
+		var root = new TestRoot();
+		var parent = new TestVisual();
+		var child1 = new TestVisual();
+		var child2 = new TestVisual();
+
+		parent.AddChild(child1);
+		root.VisualChildren.Add(parent);
+
+		child1.DetachedFromVisualTree += (_, _) => parent.AddChild(child2);
+
+		root.VisualChildren.Remove(parent);
+
+		CornerstoneTest.AreEqual(new[] { child1, child2 }, parent.VisualChildren);
+		CornerstoneTest.IsFalse(child1.IsAttachedToVisualTree());
+		CornerstoneTest.IsFalse(child2.IsAttachedToVisualTree());
+	}
+
+	[PresentationTestMethod]
+	public void VisualChildrenCanBeRemovedDuringAttachedToVisualTree()
+	{
+		var root = new TestRoot();
+		var parent = new TestVisual();
+		var child1 = new TestVisual();
+		var child2 = new TestVisual();
+
+		parent.AddChildren([child1, child2]);
+
+		child1.AttachedToVisualTree += (_, _) => parent.RemoveChild(child2);
+
+		root.VisualChildren.Add(parent);
+
+		CornerstoneTest.AreEqual(new[] { child1 }, parent.VisualChildren);
+		CornerstoneTest.IsTrue(child1.IsAttachedToVisualTree());
+		CornerstoneTest.IsFalse(child2.IsAttachedToVisualTree());
+	}
+
+	[PresentationTestMethod]
+	public void VisualChildrenCanBeRemovedDuringDetachedFromVisualTree()
+	{
+		var root = new TestRoot();
+		var parent = new TestVisual();
+		var child1 = new TestVisual();
+		var child2 = new TestVisual();
+		var child2Detached = 0;
+
+		parent.AddChildren([child1, child2]);
+		root.VisualChildren.Add(parent);
+
+		child1.DetachedFromVisualTree += (_, _) => parent.RemoveChild(child2);
+		child2.DetachedFromVisualTree += (_, _) => ++child2Detached;
+
+		root.VisualChildren.Remove(parent);
+
+		CornerstoneTest.AreEqual(new[] { child1 }, parent.VisualChildren);
+		CornerstoneTest.IsFalse(child1.IsAttachedToVisualTree());
+		CornerstoneTest.IsFalse(child2.IsAttachedToVisualTree());
+		CornerstoneTest.AreEqual(1, child2Detached);
+	}
+
+	#endregion
+}

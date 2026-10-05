@@ -37,9 +37,8 @@ public class NmeaParser
 		_parsers = new Dictionary<NmeaMessageType, NmeaMessage>();
 		_parsersLock = new object();
 
-		var values = Enum.GetValues(typeof(NmeaMessageType))
-			.Cast<NmeaMessageType>()
-			.Except(new[] { NmeaMessageType.Unknown });
+		var values = Enum.GetValues<NmeaMessageType>()
+			.Except([NmeaMessageType.Unknown]);
 
 		values.ForEach(AddMessageParser);
 	}
@@ -48,11 +47,11 @@ public class NmeaParser
 	{
 		_regex = new Regex(@"^[$](?<prefix>[\w]{2})(?<type>[\w]{3})[,]{1}", RegexOptions.Compiled | RegexOptions.Singleline);
 
-		var prefixes = Enum.GetValues(typeof(NmeaMessagePrefix)).Cast<NmeaMessagePrefix>().Where(x => x != NmeaMessagePrefix.Unknown).ToArray();
+		var prefixes = Enum.GetValues<NmeaMessagePrefix>().Where(x => x != NmeaMessagePrefix.Unknown).ToArray();
 		_messagePrefixByShortName = prefixes.ToDictionary(x => x.GetDisplayShortName(), x => x);
 		_messagePrefixShortNames = prefixes.ToDictionary(x => x, x => x.GetDisplayShortName());
 
-		var types = Enum.GetValues(typeof(NmeaMessageType)).Cast<NmeaMessageType>().Where(x => x != NmeaMessageType.Unknown).ToArray();
+		var types = Enum.GetValues<NmeaMessageType>().Where(x => x != NmeaMessageType.Unknown).ToArray();
 		_messageTypeByShortName = types.ToDictionary(x => x.GetDisplayShortName(), x => x);
 		_messageTypeShortNames = types.ToDictionary(x => x, x => x.GetDisplayShortName());
 	}

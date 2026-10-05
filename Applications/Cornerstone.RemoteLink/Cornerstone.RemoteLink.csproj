@@ -1,0 +1,127 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFrameworks>net10.0-windows10.0.26100.0</TargetFrameworks>
+		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<ApplicationIcon>$(MSBuildThisFileDirectory)Assets/Cornerstone.RemoteLink.ico</ApplicationIcon>
+		<AssemblyTitle>Cornerstone RemoteLink</AssemblyTitle>
+		<Product>Cornerstone RemoteLink</Product>
+		<Description>Remote screen session receiver</Description>
+		<NoWarn>$(NoWarn);CS8632;CS8509;SYSLIB0006;SYSLIB0021</NoWarn>
+		<RemoteLinkAndroidServerDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\Cornerstone.RemoteLink.AndroidServer\'))</RemoteLinkAndroidServerDir>
+		<RemoteLinkServerJar>$(RemoteLinkAndroidServerDir)build\libs\remotelink-server.jar</RemoteLinkServerJar>
+	</PropertyGroup>
+	<ItemGroup>
+		<CornerstoneXaml Include="**\*.cxaml" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
+		<CornerstoneResource Include="Assets\**" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="BouncyCastle.Cryptography" Version="2.7.0" />
+		<PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+		<!--
+			NuGet audit walks the restore graph, not the output. Makaretu.Dns.Multicast 0.27.0
+			(and its netstandard1.x / NETStandard.Library 1.6 chain) still lists System.Net.Http
+			4.3.0 (GHSA-7jgj-8wvc-jh57), System.Private.Uri 4.3.0 (GHSA-5f2m-466j-3848,
+			GHSA-x5qj-9vmx-7g6g, GHSA-xhfc-gr8f-ffwc), and System.Text.RegularExpressions 4.3.0
+			(GHSA-cmhx-cq75-c4mj). This project is net10-windows: those assemblies are inbox,
+			package pruning drops the nupkgs (pinning them as PackageReference is NU1510), and
+			the app loads the shared-framework copies, not 4.3.0. TreatWarningsAsErrors promotes
+			NU1902/NU1903 to errors, so suppress the advisories rather than the unused packages.
+		-->
+		<NuGetAuditSuppress Include="https://github.com/advisories/GHSA-7jgj-8wvc-jh57" />
+		<NuGetAuditSuppress Include="https://github.com/advisories/GHSA-5f2m-466j-3848" />
+		<NuGetAuditSuppress Include="https://github.com/advisories/GHSA-x5qj-9vmx-7g6g" />
+		<NuGetAuditSuppress Include="https://github.com/advisories/GHSA-xhfc-gr8f-ffwc" />
+		<NuGetAuditSuppress Include="https://github.com/advisories/GHSA-cmhx-cq75-c4mj" />
+	</ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="AirPlay\Resources\table_s1.bin">
+			<LogicalName>AirPlay.Resources.table_s1.bin</LogicalName>
+		</EmbeddedResource>
+		<EmbeddedResource Include="AirPlay\Resources\table_s2.bin">
+			<LogicalName>AirPlay.Resources.table_s2.bin</LogicalName>
+		</EmbeddedResource>
+		<EmbeddedResource Include="AirPlay\Resources\table_s3.bin">
+			<LogicalName>AirPlay.Resources.table_s3.bin</LogicalName>
+		</EmbeddedResource>
+		<EmbeddedResource Include="AirPlay\Resources\table_s4.bin">
+			<LogicalName>AirPlay.Resources.table_s4.bin</LogicalName>
+		</EmbeddedResource>
+		<EmbeddedResource Include="AirPlay\Resources\table_s5.bin">
+			<LogicalName>AirPlay.Resources.table_s5.bin</LogicalName>
+		</EmbeddedResource>
+		<EmbeddedResource Include="AirPlay\Resources\table_s6.bin">
+			<LogicalName>AirPlay.Resources.table_s6.bin</LogicalName>
+		</EmbeddedResource>
+		<EmbeddedResource Include="AirPlay\Resources\table_s7.bin">
+			<LogicalName>AirPlay.Resources.table_s7.bin</LogicalName>
+		</EmbeddedResource>
+		<EmbeddedResource Include="AirPlay\Resources\table_s8.bin">
+			<LogicalName>AirPlay.Resources.table_s8.bin</LogicalName>
+		</EmbeddedResource>
+		<EmbeddedResource Include="AirPlay\Resources\table_s9.bin">
+			<LogicalName>AirPlay.Resources.table_s9.bin</LogicalName>
+		</EmbeddedResource>
+		<EmbeddedResource Include="AirPlay\Resources\table_s10.bin">
+			<LogicalName>AirPlay.Resources.table_s10.bin</LogicalName>
+		</EmbeddedResource>
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\Cornerstone.Presentation.Diagnostics\Cornerstone.Presentation.Diagnostics.csproj" />
+		<ProjectReference Include="..\..\Cornerstone\Cornerstone.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Update="Vnc\Client\RfbConnection.Helpers.cs">
+			<DependentUpon>RfbConnection.cs</DependentUpon>
+		</Compile>
+		<Compile Update="Vnc\Client\RfbConnection.Connection.cs">
+			<DependentUpon>RfbConnection.cs</DependentUpon>
+		</Compile>
+		<Compile Update="Vnc\Client\RfbConnection.Details.cs">
+			<DependentUpon>RfbConnection.cs</DependentUpon>
+		</Compile>
+		<Compile Update="Vnc\Client\RfbConnection.Messages.cs">
+			<DependentUpon>RfbConnection.cs</DependentUpon>
+		</Compile>
+		<Compile Update="Vnc\Controls\VncView.MouseInput.cs">
+			<DependentUpon>VncView.cs</DependentUpon>
+		</Compile>
+		<Compile Update="Vnc\Controls\VncView.KeyInput.cs">
+			<DependentUpon>VncView.cs</DependentUpon>
+		</Compile>
+		<Compile Update="Vnc\Controls\VncView.Sizing.cs">
+			<DependentUpon>VncView.cs</DependentUpon>
+		</Compile>
+	</ItemGroup>
+	<ItemGroup>
+		<InternalsVisibleTo Include="Cornerstone.UnitTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100f97abdc5a6bc1880e495fb5575d8c7758e32b31d901068015d0e4f9d21dfa2d3eda859956e585ebc5d62066957face3530698eaa1eace45a9175da66211e9fff0deb7b686e01743a9a1acee9f42b8edf341c4f97a8212006a5ac0a6c211bc8206dc87f190f890ff1d041c9eb3eda3bb863240775b8ef2580ec4bca96ac0365d8" />
+	</ItemGroup>
+	<ItemGroup>
+		<RemoteLinkAndroidJava Include="$(RemoteLinkAndroidServerDir)src\main\java\**\*.java" />
+	</ItemGroup>
+	<Target Name="BuildRemoteLinkAndroidServer"
+			BeforeTargets="BeforeBuild"
+			Condition="'$(DesignTimeBuild)' != 'true'"
+			Inputs="@(RemoteLinkAndroidJava);$(RemoteLinkAndroidServerDir)build-jar.ps1"
+			Outputs="$(RemoteLinkServerJar)">
+		<Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(RemoteLinkAndroidServerDir)build-jar.ps1&quot;" />
+	</Target>
+	<Target Name="CopyRemoteLinkServerJarToOutput"
+			AfterTargets="CopyFilesToOutputDirectory"
+			Condition="'$(DesignTimeBuild)' != 'true' and Exists('$(RemoteLinkServerJar)')">
+		<Copy SourceFiles="$(RemoteLinkServerJar)" DestinationFiles="$(OutDir)remotelink-server.jar" SkipUnchangedFiles="true" />
+	</Target>
+	<Target Name="CopyRemoteLinkServerJarToPublish"
+			AfterTargets="ComputeFilesToPublish"
+			Condition="Exists('$(RemoteLinkServerJar)')">
+		<ItemGroup>
+			<ResolvedFileToPublish Include="$(RemoteLinkServerJar)">
+				<RelativePath>remotelink-server.jar</RelativePath>
+				<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+			</ResolvedFileToPublish>
+		</ItemGroup>
+	</Target>
+	<Import Project="..\..\Build\Presentation.props" />
+</Project>

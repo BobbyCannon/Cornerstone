@@ -38,7 +38,7 @@ Uninitialize
 | Process | `ProcessLifecycle` | Ongoing ticks after Start | One-shot loads (Load) or first-time start of work (Start) |
 | Stop / Unload / Uninitialize | matching teardown | Reverse of Start / Load / Initialize | |
 
-`ViewManagerForDatabase` and `HierarchyViewManagerForDatabase` call `LoadFromDatabase()` from **`LoadLifecycle`**. That is a fill, not processing. After the first load, use `RefreshFromDatabase` (for example after a successful sync).
+`ModelManagerForDatabase` and `HierarchyModelManagerForDatabase` call `LoadFromDatabase()` from **`LoadLifecycle`**. That is a fill, not processing. After the first load, use `RefreshFromDatabase` (for example after a successful sync).
 
 Tests that assert stored rows/settings: `InitializeLifecycle()` then **`LoadLifecycle()`**. Initialize alone leaves lists empty. Tests that assert processing (selection, services, bus traffic) must also call **`StartLifecycle()`**.
 

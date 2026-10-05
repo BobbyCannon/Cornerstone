@@ -11,6 +11,8 @@ namespace Cornerstone.Sync;
 /// Represents the communication statistics for a sync client.
 /// </summary>
 [SourceReflection]
+[Notifiable(["*"])]
+[Updateable(UpdateableAction.All, ["*"])]
 public partial class SyncStatistics : CornerstoneObject<SyncStatistics>
 {
 	#region Properties
@@ -18,29 +20,21 @@ public partial class SyncStatistics : CornerstoneObject<SyncStatistics>
 	/// <summary>
 	/// Represents changes written (incoming) to this client.
 	/// </summary>
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial int AppliedChanges { get; set; }
 
 	/// <summary>
 	/// Represents corrections written (incoming) to this client.
 	/// </summary>
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial int AppliedCorrections { get; set; }
 
 	/// <summary>
 	/// Represents changes sent (outgoing) from this client.
 	/// </summary>
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial int Changes { get; set; }
 
 	/// <summary>
 	/// Represents corrections sent (outgoing) from this client.
 	/// </summary>
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial int Corrections { get; set; }
 
 	/// <summary>
@@ -48,8 +42,6 @@ public partial class SyncStatistics : CornerstoneObject<SyncStatistics>
 	/// This means at some point one of the synced items had issues saving so we have to process items
 	/// individually so we can determine which item is having issues.
 	/// </summary>
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial int IndividualProcessCount { get; set; }
 
 	/// <summary>

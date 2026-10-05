@@ -1,7 +1,10 @@
 #region References
 
+using Cornerstone.Input;
 using Cornerstone.Location;
+using Cornerstone.Media;
 using Cornerstone.Runtime;
+using Cornerstone.Security.SecurityKeys;
 
 #endregion
 
@@ -41,10 +44,14 @@ public class BrowserPlatform : CornerstoneObject, IPlatform
 
 	private void AddPlatformImplementations()
 	{
-		//DependencyProvider.AddTransient<Gamepad, BrowserGamepad>();
+		DependencyProvider.AddTransient<AudioPlayer, AudioPlayerStub>();
+		DependencyProvider.AddSingleton<Gamepad, GamepadStub>();
+		DependencyProvider.AddSingleton<IKeepAlive, UnsupportedKeepAlive>();
+		DependencyProvider.AddSingleton<Keyboard, KeyboardStub>();
+		DependencyProvider.AddSingleton<Mouse, MouseStub>();
 		DependencyProvider.AddSingleton<ILocationProvider, BrowserLocationProvider>();
-
-		//DependencyProvider.AddSingleton<IPermissions, BrowserPermissions>();
+		DependencyProvider.AddSingleton<IPermissions, BrowserPermissions>();
+		DependencyProvider.AddSingleton<SecurityCardReader, SecurityCardReaderStub>();
 	}
 
 	#endregion

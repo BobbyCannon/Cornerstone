@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
 		<TargetFrameworks>net10.0-windows10.0.26100.0</TargetFrameworks>
@@ -15,14 +15,14 @@
 		<TrimmerRootAssembly Include="Cornerstone.Sample" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="Avalonia.Headless" Version="$(AvaloniaVersion)" />
-		<PackageReference Include="Avalonia.Skia" Version="$(AvaloniaVersion)" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
-		<PackageReference Include="MSTest.TestAdapter" Version="4.3.3" />
-		<PackageReference Include="MSTest.TestFramework" Version="4.3.3" />
+		<PackageReference Include="MSTest.TestAdapter" Version="4.4.0" />
+		<PackageReference Include="MSTest.TestFramework" Version="4.4.0" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\..\Cornerstone.GrokMonitor\Cornerstone.GrokMonitor.csproj" />
+		<ProjectReference Include="..\..\Applications\Cornerstone.RemoteLink\Cornerstone.RemoteLink.csproj" />
+		<ProjectReference Include="..\..\Applications\Cornerstone.GrokMonitor\Cornerstone.GrokMonitor.csproj" />
+		<ProjectReference Include="..\..\Cornerstone.Presentation.Remote.Protocol\Cornerstone.Presentation.Remote.Protocol.csproj" />
 		<ProjectReference Include="..\..\Cornerstone.Sample\Cornerstone.Sample.csproj" />
 		<ProjectReference Include="..\..\Cornerstone\Cornerstone.csproj" />
 	</ItemGroup>

@@ -15,25 +15,36 @@ namespace Cornerstone.Sync;
 /// <typeparam name="T"> The type for the filter. </typeparam>
 public class SyncRepositoryFilter<T> : SyncRepositoryFilter
 {
+	#region Fields
+
+	private readonly Func<T, bool> _incomingCompiled;
+	private readonly Func<T, bool> _scopeCompiled;
+
+	#endregion
+
 	#region Constructors
 
 	/// <summary>
 	/// Instantiates a repository filter.
 	/// </summary>
-	/// <param name="outgoingFilter"> The filter for the type for outgoing (GetChanges/GetCorrections). </param>
-	/// <param name="incomingFilter"> The filter for the type for incoming (ApplyChanges/ApplyCorrections). </param>
-	/// <param name="lookupFilter"> The filter for the type for looking up the entity (GetChanges/GetCorrections). </param>
-	/// <param name="skipDeletedItemsOnInitialSync"> The option to skipped SyncEntity.IsDeleted on initial sync. </param>
-	/// <param name="orderBy"> An optional set of values to order by. </param>
+	/// <param name="outgoingFilter"> Travel keep-test for GetChanges/GetCorrections. </param>
+	/// <param name="incomingFilter"> Travel keep-test for ApplyChanges/ApplyCorrections. </param>
+	/// <param name="lookupFilter"> Find this incoming row by a business key instead of SyncId. </param>
+	/// <param name="skipDeletedItemsOnInitialSync"> Skip SyncEntity.IsDeleted on the first GetChanges (since is DateTime.MinValue). </param>
+	/// <param name="scopeFilter"> Ownership keep-test ANDed into GetChanges, apply, lookup, and related *SyncId checks. </param>
+	/// <param name="orderBy"> Optional order for hosts that query the same expression elsewhere. GetChanges order is ModifiedOn then Id. </param>
 	public SyncRepositoryFilter(
 		Expression<Func<T, bool>> outgoingFilter = null,
 		Expression<Func<T, bool>> incomingFilter = null,
 		Func<T, Expression<Func<T, bool>>> lookupFilter = null,
-		bool skipDeletedItemsOnInitialSync = false,
+		bool skipDeletedItemsOnInitialSync = true,
+		Expression<Func<T, bool>> scopeFilter = null,
 		params OrderBy<T>[] orderBy
 	) : base(typeof(T).ToAssemblyName(), outgoingFilter, incomingFilter,
-		lookupFilter, skipDeletedItemsOnInitialSync, orderBy)
+		lookupFilter, skipDeletedItemsOnInitialSync, orderBy, scopeFilter)
 	{
+		_incomingCompiled = incomingFilter?.Compile();
+		_scopeCompiled = scopeFilter?.Compile();
 	}
 
 	#endregion
@@ -53,19 +64,27 @@ public class SyncRepositoryFilter<T> : SyncRepositoryFilter
 	public Func<T, Expression<Func<T, bool>>> LookupFilter => LookupExpression as Func<T, Expression<Func<T, bool>>>;
 
 	/// <summary>
+	/// Optional order by values for outgoing changes.
+	/// </summary>
+	public OrderBy<T>[] OrderBys => OrderBy as OrderBy<T>[] ?? [];
+
+	/// <summary>
 	/// The outgoing filter for the type.
 	/// </summary>
 	public Expression<Func<T, bool>> OutgoingFilter => OutgoingExpression as Expression<Func<T, bool>>;
+
+	/// <summary>
+	/// The scope filter for the type.
+	/// </summary>
+	public Expression<Func<T, bool>> ScopeFilter => ScopeExpression as Expression<Func<T, bool>>;
 
 	#endregion
 
 	#region Methods
 
 	/// <summary>
-	/// A test to validate if an incoming entity should be filtered.
+	/// True when apply should skip this entity (fails scope or incoming keep-test).
 	/// </summary>
-	/// <param name="entity"> The entity to be tested. </param>
-	/// <returns> True if the entity matches the incoming filter or false if otherwise. </returns>
 	public override bool ShouldFilterIncomingEntity(object entity)
 	{
 		if (entity is not T tEntity)
@@ -73,8 +92,12 @@ public class SyncRepositoryFilter<T> : SyncRepositoryFilter
 			return false;
 		}
 
-		// Only filter if the entity does not pass the test, default to passed if no incoming filter provided.
-		return !(IncomingFilter?.Compile().Invoke(tEntity) ?? true);
+		if ((_scopeCompiled != null) && !_scopeCompiled.Invoke(tEntity))
+		{
+			return true;
+		}
+
+		return !(_incomingCompiled?.Invoke(tEntity) ?? true);
 	}
 
 	#endregion
@@ -96,8 +119,9 @@ public abstract class SyncRepositoryFilter
 	/// <param name="lookupFilter"> The lookup filter for the type. </param>
 	/// <param name="skipDeletedItemsOnInitialSync"> The option to skipped SyncEntity.IsDeleted on initial sync. </param>
 	/// <param name="orderBy"> An optional set of values to order by. </param>
+	/// <param name="scopeFilter"> The scope filter for the type. </param>
 	protected SyncRepositoryFilter(string type, object outgoingFilter, object incomingFilter, object lookupFilter,
-		bool skipDeletedItemsOnInitialSync, object orderBy)
+		bool skipDeletedItemsOnInitialSync, object orderBy, object scopeFilter)
 	{
 		RepositoryType = type;
 		OutgoingExpression = outgoingFilter;
@@ -105,11 +129,17 @@ public abstract class SyncRepositoryFilter
 		LookupExpression = lookupFilter;
 		SkipDeletedItemsOnInitialSync = skipDeletedItemsOnInitialSync;
 		OrderBy = orderBy;
+		ScopeExpression = scopeFilter;
 	}
 
 	#endregion
 
 	#region Properties
+
+	/// <summary>
+	/// True when apply must run a keep-test (scope and/or incoming).
+	/// </summary>
+	public bool HasApplyKeepTest => HasIncomingFilter || HasScopeFilter;
 
 	/// <summary>
 	/// Returns true if incoming expression is not null otherwise false.
@@ -120,6 +150,11 @@ public abstract class SyncRepositoryFilter
 	/// Returns true if lookup expression is not null otherwise false.
 	/// </summary>
 	public virtual bool HasLookupFilter => LookupExpression != null;
+
+	/// <summary>
+	/// Returns true if scope expression is not null otherwise false.
+	/// </summary>
+	public virtual bool HasScopeFilter => ScopeExpression != null;
 
 	/// <summary>
 	/// The incoming filter as a generic object.
@@ -142,6 +177,11 @@ public abstract class SyncRepositoryFilter
 	public object OutgoingExpression { get; }
 
 	/// <summary>
+	/// The scope filter as a generic object.
+	/// </summary>
+	public object ScopeExpression { get; }
+
+	/// <summary>
 	/// The type contained in the repository.
 	/// </summary>
 	public string RepositoryType { get; }
@@ -159,7 +199,7 @@ public abstract class SyncRepositoryFilter
 	/// A test to validate if an incoming entity should be filtered.
 	/// </summary>
 	/// <param name="entity"> The entity to be tested. </param>
-	/// <returns> True if the entity matches the incoming filter or false if otherwise. </returns>
+	/// <returns> True if apply should skip the entity. </returns>
 	public abstract bool ShouldFilterIncomingEntity(object entity);
 
 	#endregion

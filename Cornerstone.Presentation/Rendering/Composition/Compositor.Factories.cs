@@ -1,0 +1,58 @@
+using System;
+using System.Collections.Generic;
+using Cornerstone.Presentation.Media;
+using Cornerstone.Presentation.Platform;
+using Cornerstone.Presentation.Platform.Surfaces;
+using Cornerstone.Presentation.Rendering.Composition.Animations;
+using Cornerstone.Presentation.Rendering.Composition.Server;
+
+namespace Cornerstone.Presentation.Rendering.Composition;
+
+public partial class Compositor
+{
+    /// <summary>
+    /// Creates a new CompositionTarget
+    /// </summary>
+    /// <param name="surfaces">A factory method to create IRenderTarget to be called from the render thread</param>
+    /// <returns></returns>
+    internal CompositionTarget CreateCompositionTarget(Func<IEnumerable<IPlatformRenderSurface>> surfaces)
+    {
+        return new CompositionTarget(this, new ServerCompositionTarget(_server, surfaces));
+    }
+
+    public CompositionContainerVisual CreateContainerVisual() => new(this, new ServerCompositionContainerVisual(_server));
+
+    public ExpressionAnimation CreateExpressionAnimation() => new ExpressionAnimation(this);
+
+    public ExpressionAnimation CreateExpressionAnimation(string expression) => new ExpressionAnimation(this)
+    {
+        Expression = expression
+    };
+
+    public ImplicitAnimationCollection CreateImplicitAnimationCollection() => new ImplicitAnimationCollection(this);
+
+    public CompositionAnimationGroup CreateAnimationGroup() => new CompositionAnimationGroup(this);
+
+    public CompositionSolidColorVisual CreateSolidColorVisual() =>
+        new(this, new ServerCompositionSolidColorVisual(Server));
+
+    public CompositionCustomVisual CreateCustomVisual(CompositionCustomVisualHandler handler) => new(this, handler);
+
+    public CompositionSurfaceVisual CreateSurfaceVisual() => new(this, new ServerCompositionSurfaceVisual(_server));
+
+    public CompositionDrawingSurface CreateDrawingSurface() => new(this);
+
+    public CompositionSolidColorBrush CreateSolidColorBrush() => new(this, new ServerCompositionSolidColorBrush(Server));
+
+    public CompositionSolidColorBrush CreateSolidColorBrush(Color color) => new(this, new ServerCompositionSolidColorBrush(Server), color);
+
+    public CompositionLinearGradientBrush CreateLinearGradientBrush() => new(this, new ServerCompositionLinearGradientBrush(Server));
+
+    public CompositionConicGradientBrush CreateConicGradientBrush() => new(this, new ServerCompositionConicGradientBrush(Server));
+
+    public CompositionRadialGradientBrush CreateRadialGradientBrush() => new(this, new ServerCompositionRadialGradientBrush(Server));
+
+    public CompositionGradientStop CreateGradientStop(double offset, Color color) => new(this, new ServerCompositionGradientStop(Server), offset, color);
+
+    public CompositionGradientStop CreateGradientStop() => new(this, new ServerCompositionGradientStop(Server));
+}

@@ -1,5 +1,6 @@
 ﻿#region References
 
+using Cornerstone.Data;
 using Cornerstone.Reflection;
 
 #endregion
@@ -13,6 +14,8 @@ namespace Cornerstone.Sync;
 /// Pack properties 1-4 are in use.
 /// </remarks>
 [SourceReflection]
+[Notifiable(["*"])]
+[Updateable(UpdateableAction.All, ["*"])]
 public partial class SyncModelView : SyncModel
 {
 }

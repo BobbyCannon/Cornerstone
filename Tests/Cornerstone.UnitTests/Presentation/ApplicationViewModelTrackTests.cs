@@ -1,5 +1,6 @@
 #region References
 
+using System.Collections.Generic;
 using Cornerstone.Presentation;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -19,7 +20,7 @@ public class ApplicationViewModelTrackTests : CornerstoneUnitTest
 		var child = new HostViewModel();
 		child.Attach(app);
 
-		var list = new System.Collections.Generic.List<DispatchableViewModel>();
+		var list = new List<DispatchableViewModel>();
 		app.CopyTrackedDispatchables(list);
 		AreEqual(1, list.Count);
 		AreEqual(child, list[0]);

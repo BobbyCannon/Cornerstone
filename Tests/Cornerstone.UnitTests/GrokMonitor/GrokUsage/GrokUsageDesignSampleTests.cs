@@ -43,10 +43,12 @@ public class GrokUsageDesignSampleTests : GrokMonitorUnitTest
 		IsTrue(sample.AvailablePeriods.Count >= 2);
 		IsNotNull(sample.SelectedPeriod);
 		IsFalse(string.IsNullOrEmpty(sample.TokenTotalsPeriodLabel));
+
 		// Design sample fills 7 varied days for the current week.
 		AreEqual(7, sample.DailyTokensChartData.Length);
 		IsFalse(string.IsNullOrEmpty(sample.DailyTokensChartCaption));
 		IsTrue(sample.DailyTokensChartCaption.Contains("peak", StringComparison.OrdinalIgnoreCase));
+
 		// Values are not a flat line — peak differs from at least one other sample.
 		var max = 0d;
 		var minNonZero = double.MaxValue;

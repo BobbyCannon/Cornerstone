@@ -1,0 +1,312 @@
+#region References
+
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
+using Cornerstone.RemoteLink.AirPlay.Models.Enums;
+using Cornerstone.RemoteLink.AirPlay.Models.TcpListeners;
+
+#endregion
+
+namespace Cornerstone.RemoteLink.AirPlay.Listeners.Bases;
+
+public class BaseTcpListener : BaseListener
+{
+	#region Fields
+
+	private readonly CancellationTokenSource _cancellationTokenSource;
+	private readonly ConcurrentDictionary<string, TcpClient> _clients;
+	private readonly ConcurrentDictionary<string, Task> _connections;
+	private readonly TcpListener _listener;
+	private readonly ushort _port;
+	private readonly bool _rawData;
+
+	#endregion
+
+	#region Constructors
+
+	public BaseTcpListener(ushort port, bool rawData = false)
+	{
+		_port = port;
+		_rawData = rawData;
+		_listener = new TcpListener(IPAddress.Any, _port);
+		_clients = new ConcurrentDictionary<string, TcpClient>();
+		_connections = new ConcurrentDictionary<string, Task>();
+
+		_cancellationTokenSource = new CancellationTokenSource();
+	}
+
+	#endregion
+
+	#region Methods
+
+	public virtual Task OnDataReceivedAsync(Request request, Response response, CancellationToken cancellationToken)
+	{
+		return Task.CompletedTask;
+	}
+
+	public virtual Task OnRawReceivedAsync(TcpClient client, NetworkStream stream, CancellationToken cancellationToken)
+	{
+		return Task.CompletedTask;
+	}
+
+	public void DisconnectClients()
+	{
+		foreach (var pair in _clients.ToArray())
+		{
+			ResetAndClose(pair.Value);
+			_clients.TryRemove(pair.Key, out _);
+		}
+	}
+
+	public override Task StartAsync(CancellationToken cancellationToken)
+	{
+		var source = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cancellationTokenSource.Token);
+
+		Task.Run(() => AcceptClientsAsync(source.Token), source.Token);
+		return Task.CompletedTask;
+	}
+
+	public override Task StopAsync()
+	{
+		DisconnectClients();
+		_cancellationTokenSource.Cancel();
+		try
+		{
+			_listener.Stop();
+		}
+		catch
+		{
+		}
+		return Task.CompletedTask;
+	}
+
+	private async Task AcceptClientsAsync(CancellationToken cancellationToken)
+	{
+		_listener.Start();
+
+		try
+		{
+			while (!cancellationToken.IsCancellationRequested)
+			{
+				var client = await _listener.AcceptTcpClientAsync().ConfigureAwait(false);
+				var remoteEndpoint = client.Client.RemoteEndPoint.ToString();
+				_clients[remoteEndpoint] = client;
+				var task = HandleClientAsync(client, remoteEndpoint, cancellationToken);
+				if (!_connections.TryAdd(remoteEndpoint, task))
+				{
+					ResetAndClose(client);
+					_clients.TryRemove(remoteEndpoint, out _);
+				}
+			}
+		}
+		catch (ObjectDisposedException)
+		{
+		}
+		catch (InvalidOperationException)
+		{
+		}
+		catch (SocketException)
+		{
+		}
+	}
+
+	private async Task HandleClientAsync(TcpClient client, string remoteEndpoint, CancellationToken cancellationToken)
+	{
+		try
+		{
+			var stream = client.GetStream();
+			Console.WriteLine($"Client connected: {remoteEndpoint}");
+
+			if (_rawData)
+			{
+				await OnRawReceivedAsync(client, stream, cancellationToken).ConfigureAwait(false);
+			}
+			else
+			{
+				await ReadFormattedAsync(client, stream, cancellationToken).ConfigureAwait(false);
+			}
+
+			Console.WriteLine($"Client disconnected: {remoteEndpoint}");
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine(ex);
+		}
+		finally
+		{
+			ResetAndClose(client);
+			_clients.TryRemove(remoteEndpoint, out _);
+			_connections.TryRemove(remoteEndpoint, out _);
+		}
+	}
+
+	private static void ResetAndClose(TcpClient client)
+	{
+		if (client == null)
+		{
+			return;
+		}
+
+		try
+		{
+			if (client.Client != null)
+			{
+				client.Client.LingerState = new LingerOption(true, 0);
+				try
+				{
+					client.Client.Shutdown(SocketShutdown.Both);
+				}
+				catch
+				{
+				}
+			}
+
+			client.Close();
+		}
+		catch
+		{
+		}
+	}
+
+	private async Task ReadFormattedAsync(TcpClient client, NetworkStream stream, CancellationToken cancellationToken)
+	{
+		if (client.Connected && stream.CanRead)
+		{
+			var retBytes = 0;
+			var raw = string.Empty;
+
+			do
+			{
+				try
+				{
+					var buffer = new byte[1024];
+					var readCount = stream.Read(buffer, 0, buffer.Length);
+					retBytes += readCount;
+					raw += string.Join(string.Empty, buffer.Take(readCount).Select(b => b.ToString("X2")));
+
+					// Wait for other possible data
+					await Task.Delay(10);
+				}
+				catch (IOException)
+				{
+				}
+			} while (client.Connected && stream.DataAvailable);
+
+			// Now we have all data inside raw var
+			// Make sure the socket is still connected (if it closed we don't really care about the message because we can not reply)
+			if (client.Connected)
+			{
+				// That listener can accept only this methods: GET | POST | SETUP | GET_PARAMETER | RECORD | SET_PARAMETER | ANNOUNCE | FLUSH | TEARDOWN | OPTIONS | PAUSE
+				// Because of the persistent connection we might receive more than one request at a time
+				// I'm using a regex to find all request by 'magic numbers' (ex. GET, POST, SETUP, ecc)
+
+				var pattern =
+					$"^{RequestConst.GET}[.]*|" +
+					$"^{RequestConst.POST}[.]*|" +
+					$"^{RequestConst.SETUP}[.]*|" +
+					$"^{RequestConst.GET_PARAMETER}[.]*|" +
+					$"^{RequestConst.RECORD}[.]*|" +
+					$"^{RequestConst.SET_PARAMETER}[.]*|" +
+					$"^{RequestConst.ANNOUNCE}[.]*|" +
+					$"^{RequestConst.FLUSH}[.]*|" +
+					$"^{RequestConst.OPTIONS}[.]*|" +
+					$"^{RequestConst.PAUSE}[.]*|" +
+					$"^{RequestConst.SETPEERS}[.]*|" +
+					$"^{RequestConst.TEARDOWN}[.]*";
+
+				var r = new Regex(pattern, RegexOptions.Multiline);
+				var m = r.Matches(raw);
+
+				if ((m.Count == 0) && (raw.Length > 0))
+				{
+					// Log first 200 chars of unrecognized data for debugging
+					var preview = raw.Length > 200 ? raw.Substring(0, 200) : raw;
+					Console.WriteLine($"[DEBUG-RTSP] Unrecognized data (no regex match), len={raw.Length}, preview: {preview}");
+				}
+
+				// Split requests and create models
+				var requests = new List<Request>();
+				for (var i = 0; i < m.Count; i++)
+				{
+					if ((i + 1) < m.Count)
+					{
+						var hexReq = raw.Substring(m[i].Index, m[i + 1].Index - m[i].Index);
+						var req = new Request(hexReq);
+						requests.Add(req);
+					}
+					else
+					{
+						var hexReq = raw.Substring(m[i].Index);
+						var req = new Request(hexReq);
+						requests.Add(req);
+					}
+				}
+
+				foreach (var request in requests)
+				{
+					var response = request.GetBaseResponse();
+
+					var cseq = request.Headers.ContainsKey("CSeq") ? request.Headers["CSeq"] : "?";
+					Console.WriteLine($"[DEBUG-RTSP] >>> {request.Type} CSeq={cseq}");
+
+					await OnDataReceivedAsync(request, response, cancellationToken).ConfigureAwait(false);
+					await SendResponseAsync(stream, response);
+
+					Console.WriteLine($"[DEBUG-RTSP] <<< {response.StatusCode}");
+				}
+			}
+
+			// If we have read some bytes, leave connection open and wait for next message
+			if (retBytes != 0)
+			{
+				await ReadFormattedAsync(client, stream, cancellationToken);
+			}
+		}
+	}
+
+	private async Task SendResponseAsync(NetworkStream stream, Response response)
+	{
+		var format = $"{response.GetProtocol()} {(int) response.StatusCode} {response.StatusCode.ToString().ToUpperInvariant()}\r\n";
+
+		foreach (var header in response.Headers)
+		{
+			format += $"{header.Name}: {string.Join(",", header.Values)}\r\n";
+		}
+
+		// Ready for body
+		format += "\r\n";
+
+		var formatBuffer = Encoding.ASCII.GetBytes(format);
+
+		byte[] payload;
+		var bodyBuffer = await response.ReadAsync();
+		if (bodyBuffer?.Any() == true)
+		{
+			payload = formatBuffer.Concat(bodyBuffer).ToArray();
+		}
+		else
+		{
+			payload = formatBuffer;
+		}
+
+		try
+		{
+			stream.Write(payload, 0, payload.Length);
+			stream.Flush();
+		}
+		catch (IOException)
+		{
+		}
+	}
+
+	#endregion
+}

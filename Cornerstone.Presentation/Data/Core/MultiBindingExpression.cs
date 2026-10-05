@@ -1,0 +1,132 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Globalization;
+using Cornerstone.Presentation.Data.Converters;
+using Cornerstone.Presentation.PropertyStore;
+
+namespace Cornerstone.Presentation.Data.Core;
+
+internal class MultiBindingExpression : UntypedBindingExpressionBase, IBindingExpressionSink
+{
+    private static readonly object s_uninitialized = new object();
+    private readonly BindingBase[] _bindings;
+    private readonly IMultiValueConverter? _converter;
+    private readonly CultureInfo? _converterCulture;
+    private readonly object? _converterParameter;
+    private readonly UntypedBindingExpressionBase?[] _expressions;
+    private readonly object? _fallbackValue;
+    private readonly object? _targetNullValue;
+    private readonly object?[] _values;
+    private readonly ReadOnlyCollection<object?> _valuesView;
+
+    public MultiBindingExpression(
+        BindingPriority priority,
+        IList<BindingBase> bindings,
+        IMultiValueConverter? converter,
+        CultureInfo? converterCulture,
+        object? converterParameter,
+        object? fallbackValue,
+        object? targetNullValue)
+            : base(priority)
+    {
+        _bindings = [.. bindings];
+        _converter = converter;
+        _converterCulture = converterCulture;
+        _converterParameter = converterParameter;
+        _expressions = new UntypedBindingExpressionBase[_bindings.Length];
+        _fallbackValue = fallbackValue;
+        _targetNullValue = targetNullValue;
+        _values = new object?[_bindings.Length];
+        _valuesView = new(_values);
+
+        Array.Fill(_values, s_uninitialized);
+    }
+
+    public override string Description => "MultiBinding";
+    internal UntypedBindingExpressionBase?[] Expressions => _expressions;
+    internal IMultiValueConverter? Converter => _converter;
+    internal CultureInfo? ConverterCulture => _converterCulture;
+    internal object? ConverterParameter => _converterParameter;
+    internal object? FallbackValue => _fallbackValue;
+    internal object? TargetNullValue => _targetNullValue;
+
+    protected override void StartCore()
+    {
+        if (!TryGetTarget(out var target))
+            throw new PresentationInternalException("MultiBindingExpression has no target.");
+
+        for (var i = 0; i < _bindings.Length; ++i)
+        {
+            var expression = _bindings[i].CreateInstance(target, null, null);
+
+            if (expression is not UntypedBindingExpressionBase e)
+                throw new NotSupportedException($"Unsupported BindingExpressionBase implementation '{expression}'.");
+
+            _expressions[i] = e;
+            e.Attach(this, null, target, null, Priority);
+            e.Start(produceValue: true);
+        }
+    }
+
+    protected override void StopCore()
+    {
+        for (var i = 0; i < _expressions.Length; ++i)
+        {
+            _expressions[i]?.Dispose();
+            _expressions[i] = null;
+            _values[i] = s_uninitialized;
+        }
+    }
+
+    void IBindingExpressionSink.OnChanged(
+        BindingExpressionBase instance,
+        bool hasValueChanged,
+        bool hasErrorChanged)
+    {
+        var i = Array.IndexOf(_expressions, instance);
+        Debug.Assert(i != -1);
+
+        var entry = (IValueEntry)instance;
+        _values[i] = entry.HasValue() ?
+            BindingNotification.ExtractValue(entry.GetValue()) :
+            PresentationProperty.UnsetValue;
+        PublishValue();
+    }
+
+    void IBindingExpressionSink.OnCompleted(BindingExpressionBase instance)
+    {
+        // Nothing to do here.
+    }
+
+    private void PublishValue()
+    {
+        foreach (var v in _values)
+        {
+            if (v == s_uninitialized)
+                return;
+        }
+
+        if (_converter is not null)
+        {
+            var culture = _converterCulture ?? CultureInfo.CurrentCulture;
+            var converted = _converter.Convert(_valuesView, TargetType, _converterParameter, culture);
+
+            converted = BindingNotification.ExtractValue(converted);
+
+            if (converted != BindingOperations.DoNothing)
+            {
+                if (converted == null)
+                    converted = _targetNullValue;
+                if (converted == PresentationProperty.UnsetValue)
+                    converted = _fallbackValue;
+                PublishValue(converted);
+            }
+        }
+        else
+        {
+            PublishValue(_valuesView);
+        }
+    }
+}

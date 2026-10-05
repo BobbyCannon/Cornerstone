@@ -1,2 +1,4 @@
-﻿[$RootKey$\ShellFileAssociations\.axaml]
+﻿[$RootKey$\ShellFileAssociations\.cxaml]
+"DefaultIconMoniker"="KnownMonikers.WPFFile"
+[$RootKey$\ShellFileAssociations\.axaml]
 "DefaultIconMoniker"="KnownMonikers.WPFFile"

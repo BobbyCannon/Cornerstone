@@ -1,0 +1,75 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs.Media"
+		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+		x:Class="Cornerstone.Sample.Tabs.Media.TabMediaPlayer"
+		x:DataType="tabs:TabMediaPlayer">
+	<DockPanel>
+		<!-- Full-width URL/path row so toolbar wrapping does not shift the text box. -->
+		<TextBox DockPanel.Dock="Top"
+				Margin="10"
+				HorizontalAlignment="Stretch"
+				PlaceholderText="Media URL or local path"
+				Text="{Binding MediaUrl}" />
+		<WrapPanel DockPanel.Dock="Top"
+				ItemSpacing="12"
+				LineSpacing="8"
+				Margin="10,0,10,4">
+			<Button Content="Play sample"
+					Command="{Binding PlaySampleCommand}"
+					ToolTip.Tip="Embedded clip: rabbit hole + bunny emerging (~0.5 MB, ~9s)" />
+			<Button Content="Online sample"
+					Command="{Binding UseOnlineSampleCommand}"
+					ToolTip.Tip="Official Peach trailer via HTTPS (network required)" />
+			<Button Content="Open file…"
+					Command="{Binding OpenFileCommand}" />
+			<Button Content="Play"
+					Command="{Binding PlayCommand}" />
+			<Button Content="Stop"
+					Command="{Binding StopCommand}" />
+			<ToggleButton Content="Pause"
+					IsChecked="{Binding #Player.IsPaused, Mode=TwoWay}" />
+			<CheckBox Content="Show media controls"
+					IsChecked="{Binding #Player.ShowMediaControls, Mode=TwoWay}" />
+			<CheckBox x:Name="ShowDemoOverlayCheckBox"
+					Content="Show overlay"
+					IsChecked="False" />
+		</WrapPanel>
+		<StackPanel DockPanel.Dock="Top" Margin="10,0,10,8" Spacing="4">
+			<TextBlock Opacity="0.65"
+					TextWrapping="Wrap"
+					Text="Embedded sample: Big Buck Bunny — rabbit hole and bunny coming out (~0.5 MB, ~9s H.264). Blender Foundation, Creative Commons. https://peach.blender.org/" />
+			<TextBlock Opacity="0.85"
+					TextWrapping="Wrap"
+					Text="{Binding StatusText}" />
+		</StackPanel>
+		<!-- Place Cornerstone siblings after the player so they can paint over live native. -->
+		<Grid>
+			<MediaPlayerControl x:Name="Player"
+					ShowMediaControls="True" />
+			<Border x:Name="DemoOverlay"
+					Background="#CC1E1E1E"
+					IsVisible="{Binding #ShowDemoOverlayCheckBox.IsChecked}"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Center"
+					Padding="24"
+					CornerRadius="8"
+					MaxWidth="360">
+				<StackPanel Spacing="8">
+					<TextBlock Text="Composed overlay"
+							FontSize="{DynamicResource ControlFontSize}"
+							HorizontalAlignment="Center" />
+					<TextBlock Text="MediaPlayerControl renders native video. Other controls in this layout are composed on top of that output, so Cornerstone UI can sit over the picture without replacing it."
+							TextWrapping="Wrap"
+							Opacity="0.85" />
+					<ToggleButton Content="Close"
+							HorizontalAlignment="Center"
+							IsChecked="{Binding !#ShowDemoOverlayCheckBox.IsChecked, Mode=TwoWay}" />
+				</StackPanel>
+			</Border>
+		</Grid>
+	</DockPanel>
+</UserControl>

@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 #endregion
@@ -17,6 +18,7 @@ public partial class SourceTypeInfo
 	private SourceFieldInfo[] _fields;
 	private SourceMethodInfo[] _methods;
 	private SourcePropertyInfo[] _properties;
+	private Dictionary<string, SourcePropertyInfo> _propertyByName;
 	private string[] _propertyBitMap;
 
 	#endregion
@@ -101,7 +103,10 @@ public partial class SourceTypeInfo
 
 	public SourcePropertyInfo GetProperty(string name)
 	{
-		return GetProperties().FirstOrDefault(x => x.Name == name);
+		_propertyByName ??= GetProperties().ToDictionary(x => x.Name, StringComparer.Ordinal);
+		return (name != null) && _propertyByName.TryGetValue(name, out var property)
+			? property
+			: null;
 	}
 
 	public int GetPropertyBit(string propertyName)
@@ -122,6 +127,7 @@ public partial class SourceTypeInfo
 		return DeclaredInterfaces.Any(x => x.FullyQualifiedName == type.FullName);
 	}
 
+	[UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "BaseType is stored on generated source reflection and cannot flow DynamicallyAccessedMembers.")]
 	private static IEnumerable<SourceTypeInfo> EnumerableInherit(SourceTypeInfo type)
 	{
 		yield return type;

@@ -22,12 +22,12 @@ public class MainWindowTests : AutomationTest
 		AreEqual(1024, app.Size.Width);
 		AreEqual(768, app.Size.Height);
 
-		app.MoveWindow(200, 199, 800, 600);
+		app.MoveWindow(200, 199, 1920, 1080);
 
 		AreEqual(200, app.Location.X);
 		AreEqual(199, app.Location.Y);
-		AreEqual(800, app.Size.Width);
-		AreEqual(600, app.Size.Height);
+		AreEqual(1920, app.Size.Width);
+		AreEqual(1080, app.Size.Height);
 	}
 
 	#endregion

@@ -1,10 +1,10 @@
-﻿#region References
+#region References
 
 using System;
 using System.Collections.Generic;
-using Cornerstone.Avalonia;
 using Cornerstone.Compare;
 using Cornerstone.Data;
+using Cornerstone.Presentation.Theme;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
@@ -26,8 +26,8 @@ public class UpdateableTests : CornerstoneUnitTest
 			// Cornerstone
 			typeof(Babel).Assembly,
 
-			// Cornerstone.Avalonia
-			typeof(CornerstoneApplication).Assembly
+			// Cornerstone.Presentation.Theme
+			typeof(CornerstoneTheme).Assembly
 		};
 		var exclusions = new List<Type>();
 		var settings = new ComparerSettings { IgnoreMissingProperties = true };

@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Cornerstone.Extensions;
 using Cornerstone.Runtime;
 using Cornerstone.Serialization;
@@ -31,6 +32,8 @@ public class PlatformCredentialVaultStub : PlatformCredentialVault
 	#region Methods
 
 	
+	[UnconditionalSuppressMessage("Aot", "IL3050", Justification = "Base TryReadData cannot be annotated; JSON parse of vault payloads.")]
+	[UnconditionalSuppressMessage("Trim", "IL2026", Justification = "Base TryReadData cannot be annotated; JSON parse of vault payloads.")]
 	public override bool TryReadData<T>(string name, out T data)
 	{
 		if (_dictionary.TryGetValue(name, out var value))
@@ -50,6 +53,8 @@ public class PlatformCredentialVaultStub : PlatformCredentialVault
 	}
 
 	
+	[UnconditionalSuppressMessage("Aot", "IL3050", Justification = "Base TryWriteData cannot be annotated; JSON write of vault payloads.")]
+	[UnconditionalSuppressMessage("Trim", "IL2026", Justification = "Base TryWriteData cannot be annotated; JSON write of vault payloads.")]
 	public override bool TryWriteData<T>(string name, T data)
 	{
 		_dictionary.AddOrUpdate(name, data.ToRawJson());

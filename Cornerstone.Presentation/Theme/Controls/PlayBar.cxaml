@@ -1,0 +1,101 @@
+<Styles xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type PlayBar}" TargetType="PlayBar">
+				<Setter Property="Background" Value="#01FFFFFF"></Setter>
+				<Setter Property="Template">
+					<ControlTemplate>
+						<Border x:Name="PART_HitArea" Background="{TemplateBinding Background}">
+							<Border x:Name="PART_Bar">
+								<Border.Transitions>
+									<Transitions>
+										<DoubleTransition Property="Opacity" Duration="0:0:0.25" />
+									</Transitions>
+								</Border.Transitions>
+								<Panel>
+									<Border Background="{DynamicResource Background02}" Opacity="0.8" />
+									<Grid RowDefinitions="Auto,Auto"
+											RowSpacing="4"
+											Margin="10">
+										<Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+											<TextBlock x:Name="PART_PositionText"
+													Grid.Column="0"
+													VerticalAlignment="Center"
+													Foreground="{DynamicResource Foreground00}"
+													Text="0:00:00" />
+											<Slider x:Name="PART_SeekSlider"
+													Grid.Column="1"
+													VerticalAlignment="Center"
+													Minimum="0"
+													Maximum="1"
+													Value="0" />
+											<TextBlock x:Name="PART_DurationText"
+													Grid.Column="2"
+													VerticalAlignment="Center"
+													Foreground="{DynamicResource Foreground00}"
+													Text="0:00:00" />
+										</Grid>
+										<Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto">
+											<Button x:Name="PART_PlayPauseButton"
+													Grid.Column="0"
+													Classes="Icon"
+													Width="48"
+													Height="40"
+													HorizontalAlignment="Left"
+													ToolTip.Tip="Play/Pause">
+												<Panel>
+													<Path x:Name="PART_PlayIcon"
+															Width="22"
+															Height="22"
+															Data="{DynamicResource Icons.Play}"
+															Margin="4,0,0,0" />
+													<Path x:Name="PART_PauseIcon"
+															Width="22"
+															Height="22"
+															Data="{DynamicResource Icons.Pause}"
+															IsVisible="False" />
+												</Panel>
+											</Button>
+											<Button x:Name="PART_MuteButton"
+													Grid.Column="1"
+													Classes="Icon"
+													Margin="0,0,4,0"
+													ToolTip.Tip="Mute">
+												<Panel>
+													<Path x:Name="PART_VolumeIcon"
+															Data="{DynamicResource Icons.Volume.Light}"
+															Height="20" Width="20"
+															Margin="0,4,0,0" />
+													<Path x:Name="PART_MuteIcon"
+															Data="{DynamicResource Icons.Volume.Mute.Light}"
+															Height="20" Width="20"
+															Margin="0,4,0,0"
+															IsVisible="False" />
+												</Panel>
+											</Button>
+											<Slider x:Name="PART_VolumeSlider"
+													Grid.Column="2"
+													Width="100"
+													VerticalAlignment="Center"
+													Minimum="0"
+													Maximum="1"
+													Value="1"
+													TickFrequency="0.05" />
+										</Grid>
+									</Grid>
+								</Panel>
+							</Border>
+						</Border>
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+
+	<Design.PreviewWith>
+		<PreviewCodeSnippet Width="500">
+			<PlayBar />
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</Styles>

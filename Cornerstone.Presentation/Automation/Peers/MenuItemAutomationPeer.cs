@@ -1,0 +1,178 @@
+using System;
+using Cornerstone.Presentation.Automation.Provider;
+using Cornerstone.Presentation.Controls;
+using Cornerstone.Presentation.Controls.Platform;
+using Cornerstone.Presentation.Controls.Primitives;
+using Cornerstone.Presentation.Controls.Items;
+using Cornerstone.Presentation.Input;
+
+namespace Cornerstone.Presentation.Automation.Peers
+{
+    public class MenuItemAutomationPeer : ControlAutomationPeer,
+        IExpandCollapseProvider,
+        IInvokeProvider,
+        IToggleProvider
+    {
+        public MenuItemAutomationPeer(MenuItem owner)
+            : base(owner)
+        {
+            owner.PropertyChanged += OwnerPropertyChanged;
+        }
+
+        public new MenuItem Owner => (MenuItem)base.Owner;
+
+        ToggleState IToggleProvider.ToggleState
+            => Owner.IsChecked ? ToggleState.On : ToggleState.Off;
+
+        public ExpandCollapseState ExpandCollapseState
+        {
+            get
+            {
+                if (!Owner.HasSubMenu)
+                    return ExpandCollapseState.LeafNode;
+                return Owner.IsSubMenuOpen ?
+                    ExpandCollapseState.Expanded :
+                    ExpandCollapseState.Collapsed;
+            }
+        }
+
+        public bool ShowsMenu => Owner.HasSubMenu;
+
+        public void Invoke()
+        {
+            EnsureEnabled();
+
+            var (command, commandParameter) = (Owner.Command, Owner.CommandParameter);
+            if (command?.CanExecute(commandParameter) == false)
+                throw new ElementNotEnabledException();
+
+            // This feels like a bit of a hack: ideally we'd add a new method to MenuItem or
+            // IMenuInteractionHandler for invoking a menu item, but given that we only need it
+            // here and adding a new method would involve an API review, let's KISS for now.
+            if (Owner.MenuInteractionHandler is DefaultMenuInteractionHandler handler)
+                handler.Click(Owner);
+            else
+                ((IMenuItem)Owner).RaiseClick();
+        }
+
+        public void Expand()
+        {
+            EnsureEnabled();
+            if (!Owner.HasSubMenu)
+                throw new InvalidOperationException();
+            Owner.Open();
+        }
+
+        public void Collapse()
+        {
+            EnsureEnabled();
+            if (!Owner.HasSubMenu)
+                throw new InvalidOperationException();
+            if (!Owner.IsSubMenuOpen)
+                return;
+
+            // Match clicking an open top-level header, which closes the whole menu rather than
+            // leaving the menu bar active with no submenu open.
+            if (Owner.IsTopLevel && Owner.Parent is IMainMenu mainMenu)
+                mainMenu.Close();
+            else
+                Owner.Close();
+        }
+
+        void IToggleProvider.Toggle()
+        {
+            EnsureEnabled();
+
+            if (Owner.HasSubMenu)
+                return;
+
+            switch (Owner.ToggleType)
+            {
+                case MenuItemToggleType.CheckBox:
+                    Owner.SetCurrentValue(MenuItem.IsCheckedProperty, !Owner.IsChecked);
+                    break;
+                case MenuItemToggleType.Radio:
+                    if (!Owner.IsChecked)
+                        Owner.SetCurrentValue(MenuItem.IsCheckedProperty, true);
+                    break;
+            }
+        }
+
+        protected override string? GetAccessKeyCore()
+        {
+            var result = base.GetAccessKeyCore();
+
+            if (string.IsNullOrWhiteSpace(result))
+            {
+                if (Owner.HeaderPresenter?.Child is AccessText accessText)
+                {
+                    result = accessText.AccessKey;
+                }
+            }
+
+            return result;
+        }
+
+        protected override string? GetAcceleratorKeyCore()
+        {
+            var result = base.GetAcceleratorKeyCore();
+
+            if (string.IsNullOrWhiteSpace(result))
+            {
+                result = Owner.InputGesture?.ToString();
+            }
+
+            return result;
+        }
+
+        protected override AutomationControlType GetAutomationControlTypeCore()
+        {
+            return AutomationControlType.MenuItem;
+        }
+
+        protected override string? GetNameCore()
+        {
+            var result = base.GetNameCore();
+
+            if (result is null && Owner.Header is string header)
+            {
+                result = AccessText.RemoveAccessKeyMarker(header);
+            }
+
+            return result;
+        }
+
+        protected override object? GetProviderCore(Type providerType)
+        {
+            if (providerType == typeof(IExpandCollapseProvider) && !Owner.HasSubMenu)
+                return null;
+            if (providerType == typeof(IInvokeProvider) && Owner.HasSubMenu)
+                return null;
+            if (providerType == typeof(IToggleProvider) && Owner.ToggleType == MenuItemToggleType.None)
+                return null;
+
+            return base.GetProviderCore(providerType);
+        }
+
+        private void OwnerPropertyChanged(object? sender, PresentationPropertyChangedEventArgs e)
+        {
+            if (e.Property == MenuItem.IsCheckedProperty && Owner.ToggleType != MenuItemToggleType.None)
+            {
+                RaisePropertyChangedEvent(
+                    TogglePatternIdentifiers.ToggleStateProperty,
+                    ToState(e.GetOldValue<bool>()),
+                    ToState(e.GetNewValue<bool>()));
+            }
+            else if (e.Property == MenuItem.IsSubMenuOpenProperty && Owner.HasSubMenu)
+            {
+                RaisePropertyChangedEvent(
+                    ExpandCollapsePatternIdentifiers.ExpandCollapseStateProperty,
+                    e.GetOldValue<bool>() ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed,
+                    e.GetNewValue<bool>() ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed);
+            }
+        }
+
+        private static ToggleState ToState(bool value)
+            => value ? ToggleState.On : ToggleState.Off;
+    }
+}

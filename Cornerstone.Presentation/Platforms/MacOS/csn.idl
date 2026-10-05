@@ -1,0 +1,1398 @@
+@clr-namespace Cornerstone.Presentation.Platforms.MacOS.Interop
+@clr-access internal
+@clr-map bool int
+@clr-map u_int64_t ulong
+@clr-map uint64_t ulong
+@clr-map int64_t long
+@clr-map long IntPtr
+@cpp-preamble @@
+#pragma once
+#include "com.h"
+#include "stddef.h"
+@@
+
+enum CsnKey
+{
+    CsnKeyNone = 0,
+    CsnKeyCancel = 1,
+    CsnKeyBack = 2,
+    CsnKeyTab = 3,
+    CsnKeyLineFeed = 4,
+    CsnKeyClear = 5,
+    CsnKeyReturn = 6,
+    CsnKeyEnter = 6,
+    CsnKeyPause = 7,
+    CsnKeyCapsLock = 8,
+    CsnKeyCapital = 8,
+    CsnKeyHangulMode = 9,
+    CsnKeyKanaMode = 9,
+    CsnKeyJunjaMode = 10,
+    CsnKeyFinalMode = 11,
+    CsnKeyKanjiMode = 12,
+    CsnKeyHanjaMode = 12,
+    CsnKeyEscape = 13,
+    CsnKeyImeConvert = 14,
+    CsnKeyImeNonConvert = 15,
+    CsnKeyImeAccept = 16,
+    CsnKeyImeModeChange = 17,
+    CsnKeySpace = 18,
+    CsnKeyPageUp = 19,
+    CsnKeyPrior = 19,
+    CsnKeyPageDown = 20,
+    CsnKeyNext = 20,
+    CsnKeyEnd = 21,
+    CsnKeyHome = 22,
+    CsnKeyLeft = 23,
+    CsnKeyUp = 24,
+    CsnKeyRight = 25,
+    CsnKeyDown = 26,
+    CsnKeySelect = 27,
+    CsnKeyPrint = 28,
+    CsnKeyExecute = 29,
+    CsnKeySnapshot = 30,
+    CsnKeyPrintScreen = 30,
+    CsnKeyInsert = 31,
+    CsnKeyDelete = 32,
+    CsnKeyHelp = 33,
+    CsnKeyD0 = 34,
+    CsnKeyD1 = 35,
+    CsnKeyD2 = 36,
+    CsnKeyD3 = 37,
+    CsnKeyD4 = 38,
+    CsnKeyD5 = 39,
+    CsnKeyD6 = 40,
+    CsnKeyD7 = 41,
+    CsnKeyD8 = 42,
+    CsnKeyD9 = 43,
+    CsnKeyA = 44,
+    CsnKeyB = 45,
+    CsnKeyC = 46,
+    CsnKeyD = 47,
+    CsnKeyE = 48,
+    CsnKeyF = 49,
+    CsnKeyG = 50,
+    CsnKeyH = 51,
+    CsnKeyI = 52,
+    CsnKeyJ = 53,
+    CsnKeyK = 54,
+    CsnKeyL = 55,
+    CsnKeyM = 56,
+    CsnKeyN = 57,
+    CsnKeyO = 58,
+    CsnKeyP = 59,
+    CsnKeyQ = 60,
+    CsnKeyR = 61,
+    CsnKeyS = 62,
+    CsnKeyT = 63,
+    CsnKeyU = 64,
+    CsnKeyV = 65,
+    CsnKeyW = 66,
+    CsnKeyX = 67,
+    CsnKeyY = 68,
+    CsnKeyZ = 69,
+    CsnKeyLWin = 70,
+    CsnKeyRWin = 71,
+    CsnKeyApps = 72,
+    CsnKeySleep = 73,
+    CsnKeyNumPad0 = 74,
+    CsnKeyNumPad1 = 75,
+    CsnKeyNumPad2 = 76,
+    CsnKeyNumPad3 = 77,
+    CsnKeyNumPad4 = 78,
+    CsnKeyNumPad5 = 79,
+    CsnKeyNumPad6 = 80,
+    CsnKeyNumPad7 = 81,
+    CsnKeyNumPad8 = 82,
+    CsnKeyNumPad9 = 83,
+    CsnKeyMultiply = 84,
+    CsnKeyAdd = 85,
+    CsnKeySeparator = 86,
+    CsnKeySubtract = 87,
+    CsnKeyDecimal = 88,
+    CsnKeyDivide = 89,
+    CsnKeyF1 = 90,
+    CsnKeyF2 = 91,
+    CsnKeyF3 = 92,
+    CsnKeyF4 = 93,
+    CsnKeyF5 = 94,
+    CsnKeyF6 = 95,
+    CsnKeyF7 = 96,
+    CsnKeyF8 = 97,
+    CsnKeyF9 = 98,
+    CsnKeyF10 = 99,
+    CsnKeyF11 = 100,
+    CsnKeyF12 = 101,
+    CsnKeyF13 = 102,
+    CsnKeyF14 = 103,
+    CsnKeyF15 = 104,
+    CsnKeyF16 = 105,
+    CsnKeyF17 = 106,
+    CsnKeyF18 = 107,
+    CsnKeyF19 = 108,
+    CsnKeyF20 = 109,
+    CsnKeyF21 = 110,
+    CsnKeyF22 = 111,
+    CsnKeyF23 = 112,
+    CsnKeyF24 = 113,
+    CsnKeyNumLock = 114,
+    CsnKeyScroll = 115,
+    CsnKeyLeftShift = 116,
+    CsnKeyRightShift = 117,
+    CsnKeyLeftCtrl = 118,
+    CsnKeyRightCtrl = 119,
+    CsnKeyLeftAlt = 120,
+    CsnKeyRightAlt = 121,
+    CsnKeyBrowserBack = 122,
+    CsnKeyBrowserForward = 123,
+    CsnKeyBrowserRefresh = 124,
+    CsnKeyBrowserStop = 125,
+    CsnKeyBrowserSearch = 126,
+    CsnKeyBrowserFavorites = 127,
+    CsnKeyBrowserHome = 128,
+    CsnKeyVolumeMute = 129,
+    CsnKeyVolumeDown = 130,
+    CsnKeyVolumeUp = 131,
+    CsnKeyMediaNextTrack = 132,
+    CsnKeyMediaPreviousTrack = 133,
+    CsnKeyMediaStop = 134,
+    CsnKeyMediaPlayPause = 135,
+    CsnKeyLaunchMail = 136,
+    CsnKeySelectMedia = 137,
+    CsnKeyLaunchApplication1 = 138,
+    CsnKeyLaunchApplication2 = 139,
+    CsnKeyOemSemicolon = 140,
+    CsnKeyOem1 = 140,
+    CsnKeyOemPlus = 141,
+    CsnKeyOemComma = 142,
+    CsnKeyOemMinus = 143,
+    CsnKeyOemPeriod = 144,
+    CsnKeyOemQuestion = 145,
+    CsnKeyOem2 = 145,
+    CsnKeyOemTilde = 146,
+    CsnKeyOem3 = 146,
+    CsnKeyAbntC1 = 147,
+    CsnKeyAbntC2 = 148,
+    CsnKeyOemOpenBrackets = 149,
+    CsnKeyOem4 = 149,
+    CsnKeyOemPipe = 150,
+    CsnKeyOem5 = 150,
+    CsnKeyOemCloseBrackets = 151,
+    CsnKeyOem6 = 151,
+    CsnKeyOemQuotes = 152,
+    CsnKeyOem7 = 152,
+    CsnKeyOem8 = 153,
+    CsnKeyOemBackslash = 154,
+    CsnKeyOem102 = 154,
+    CsnKeyImeProcessed = 155,
+    CsnKeySystem = 156,
+    CsnKeyOemAttn = 157,
+    CsnKeyDbeAlphanumeric = 157,
+    CsnKeyOemFinish = 158,
+    CsnKeyDbeKatakana = 158,
+    CsnKeyDbeHiragana = 159,
+    CsnKeyOemCopy = 159,
+    CsnKeyDbeSbcsChar = 160,
+    CsnKeyOemAuto = 160,
+    CsnKeyDbeDbcsChar = 161,
+    CsnKeyOemEnlw = 161,
+    CsnKeyOemBackTab = 162,
+    CsnKeyDbeRoman = 162,
+    CsnKeyDbeNoRoman = 163,
+    CsnKeyAttn = 163,
+    CsnKeyCrSel = 164,
+    CsnKeyDbeEnterWordRegisterMode = 164,
+    CsnKeyExSel = 165,
+    CsnKeyDbeEnterImeConfigureMode = 165,
+    CsnKeyEraseEof = 166,
+    CsnKeyDbeFlushString = 166,
+    CsnKeyPlay = 167,
+    CsnKeyDbeCodeInput = 167,
+    CsnKeyDbeNoCodeInput = 168,
+    CsnKeyZoom = 168,
+    CsnKeyNoName = 169,
+    CsnKeyDbeDetermineString = 169,
+    CsnKeyDbeEnterDialogConversionMode = 170,
+    CsnKeyPa1 = 170,
+    CsnKeyOemClear = 171,
+    CsnKeyDeadCharProcessed = 172,
+    CsnKeyFnLeftArrow = 10001,
+    CsnKeyFnRightArrow = 10002,
+    CsnKeyFnUpArrow = 10003,
+    CsnKeyFnDownArrow = 10004,
+};
+
+enum CsnPhysicalKey
+{
+    CsnPhysicalKeyNone = 0,
+    CsnPhysicalKeyBackquote = 1,
+    CsnPhysicalKeyBackslash = 2,
+    CsnPhysicalKeyBracketLeft = 3,
+    CsnPhysicalKeyBracketRight = 4,
+    CsnPhysicalKeyComma = 5,
+    CsnPhysicalKeyDigit0 = 6,
+    CsnPhysicalKeyDigit1 = 7,
+    CsnPhysicalKeyDigit2 = 8,
+    CsnPhysicalKeyDigit3 = 9,
+    CsnPhysicalKeyDigit4 = 10,
+    CsnPhysicalKeyDigit5 = 11,
+    CsnPhysicalKeyDigit6 = 12,
+    CsnPhysicalKeyDigit7 = 13,
+    CsnPhysicalKeyDigit8 = 14,
+    CsnPhysicalKeyDigit9 = 15,
+    CsnPhysicalKeyEqual = 16,
+    CsnPhysicalKeyIntlBackslash = 17,
+    CsnPhysicalKeyIntlRo = 18,
+    CsnPhysicalKeyIntlYen = 19,
+    CsnPhysicalKeyA = 20,
+    CsnPhysicalKeyB = 21,
+    CsnPhysicalKeyC = 22,
+    CsnPhysicalKeyD = 23,
+    CsnPhysicalKeyE = 24,
+    CsnPhysicalKeyF = 25,
+    CsnPhysicalKeyG = 26,
+    CsnPhysicalKeyH = 27,
+    CsnPhysicalKeyI = 28,
+    CsnPhysicalKeyJ = 29,
+    CsnPhysicalKeyK = 30,
+    CsnPhysicalKeyL = 31,
+    CsnPhysicalKeyM = 32,
+    CsnPhysicalKeyN = 33,
+    CsnPhysicalKeyO = 34,
+    CsnPhysicalKeyP = 35,
+    CsnPhysicalKeyQ = 36,
+    CsnPhysicalKeyR = 37,
+    CsnPhysicalKeyS = 38,
+    CsnPhysicalKeyT = 39,
+    CsnPhysicalKeyU = 40,
+    CsnPhysicalKeyV = 41,
+    CsnPhysicalKeyW = 42,
+    CsnPhysicalKeyX = 43,
+    CsnPhysicalKeyY = 44,
+    CsnPhysicalKeyZ = 45,
+    CsnPhysicalKeyMinus = 46,
+    CsnPhysicalKeyPeriod = 47,
+    CsnPhysicalKeyQuote = 48,
+    CsnPhysicalKeySemicolon = 49,
+    CsnPhysicalKeySlash = 50,
+    CsnPhysicalKeyAltLeft = 51,
+    CsnPhysicalKeyAltRight = 52,
+    CsnPhysicalKeyBackspace = 53,
+    CsnPhysicalKeyCapsLock = 54,
+    CsnPhysicalKeyContextMenu = 55,
+    CsnPhysicalKeyControlLeft = 56,
+    CsnPhysicalKeyControlRight = 57,
+    CsnPhysicalKeyEnter = 58,
+    CsnPhysicalKeyMetaLeft = 59,
+    CsnPhysicalKeyMetaRight = 60,
+    CsnPhysicalKeyShiftLeft = 61,
+    CsnPhysicalKeyShiftRight = 62,
+    CsnPhysicalKeySpace = 63,
+    CsnPhysicalKeyTab = 64,
+    CsnPhysicalKeyConvert = 65,
+    CsnPhysicalKeyKanaMode = 66,
+    CsnPhysicalKeyLang1 = 67,
+    CsnPhysicalKeyLang2 = 68,
+    CsnPhysicalKeyLang3 = 69,
+    CsnPhysicalKeyLang4 = 70,
+    CsnPhysicalKeyLang5 = 71,
+    CsnPhysicalKeyNonConvert = 72,
+    CsnPhysicalKeyDelete = 73,
+    CsnPhysicalKeyEnd = 74,
+    CsnPhysicalKeyHelp = 75,
+    CsnPhysicalKeyHome = 76,
+    CsnPhysicalKeyInsert = 77,
+    CsnPhysicalKeyPageDown = 78,
+    CsnPhysicalKeyPageUp = 79,
+    CsnPhysicalKeyArrowDown = 80,
+    CsnPhysicalKeyArrowLeft = 81,
+    CsnPhysicalKeyArrowRight = 82,
+    CsnPhysicalKeyArrowUp = 83,
+    CsnPhysicalKeyNumLock = 84,
+    CsnPhysicalKeyNumPad0 = 85,
+    CsnPhysicalKeyNumPad1 = 86,
+    CsnPhysicalKeyNumPad2 = 87,
+    CsnPhysicalKeyNumPad3 = 88,
+    CsnPhysicalKeyNumPad4 = 89,
+    CsnPhysicalKeyNumPad5 = 90,
+    CsnPhysicalKeyNumPad6 = 91,
+    CsnPhysicalKeyNumPad7 = 92,
+    CsnPhysicalKeyNumPad8 = 93,
+    CsnPhysicalKeyNumPad9 = 94,
+    CsnPhysicalKeyNumPadAdd = 95,
+    CsnPhysicalKeyNumPadClear = 96,
+    CsnPhysicalKeyNumPadComma = 97,
+    CsnPhysicalKeyNumPadDecimal = 98,
+    CsnPhysicalKeyNumPadDivide = 99,
+    CsnPhysicalKeyNumPadEnter = 100,
+    CsnPhysicalKeyNumPadEqual = 101,
+    CsnPhysicalKeyNumPadMultiply = 102,
+    CsnPhysicalKeyNumPadParenLeft = 103,
+    CsnPhysicalKeyNumPadParenRight = 104,
+    CsnPhysicalKeyNumPadSubtract = 105,
+    CsnPhysicalKeyEscape = 106,
+    CsnPhysicalKeyF1 = 107,
+    CsnPhysicalKeyF2 = 108,
+    CsnPhysicalKeyF3 = 109,
+    CsnPhysicalKeyF4 = 110,
+    CsnPhysicalKeyF5 = 111,
+    CsnPhysicalKeyF6 = 112,
+    CsnPhysicalKeyF7 = 113,
+    CsnPhysicalKeyF8 = 114,
+    CsnPhysicalKeyF9 = 115,
+    CsnPhysicalKeyF10 = 116,
+    CsnPhysicalKeyF11 = 117,
+    CsnPhysicalKeyF12 = 118,
+    CsnPhysicalKeyF13 = 119,
+    CsnPhysicalKeyF14 = 120,
+    CsnPhysicalKeyF15 = 121,
+    CsnPhysicalKeyF16 = 122,
+    CsnPhysicalKeyF17 = 123,
+    CsnPhysicalKeyF18 = 124,
+    CsnPhysicalKeyF19 = 125,
+    CsnPhysicalKeyF20 = 126,
+    CsnPhysicalKeyF21 = 127,
+    CsnPhysicalKeyF22 = 128,
+    CsnPhysicalKeyF23 = 129,
+    CsnPhysicalKeyF24 = 130,
+    CsnPhysicalKeyPrintScreen = 131,
+    CsnPhysicalKeyScrollLock = 132,
+    CsnPhysicalKeyPause = 133,
+    CsnPhysicalKeyBrowserBack = 134,
+    CsnPhysicalKeyBrowserFavorites = 135,
+    CsnPhysicalKeyBrowserForward = 136,
+    CsnPhysicalKeyBrowserHome = 137,
+    CsnPhysicalKeyBrowserRefresh = 138,
+    CsnPhysicalKeyBrowserSearch = 139,
+    CsnPhysicalKeyBrowserStop = 140,
+    CsnPhysicalKeyEject = 141,
+    CsnPhysicalKeyLaunchApp1 = 142,
+    CsnPhysicalKeyLaunchApp2 = 143,
+    CsnPhysicalKeyLaunchMail = 144,
+    CsnPhysicalKeyMediaPlayPause = 145,
+    CsnPhysicalKeyMediaSelect = 146,
+    CsnPhysicalKeyMediaStop = 147,
+    CsnPhysicalKeyMediaTrackNext = 148,
+    CsnPhysicalKeyMediaTrackPrevious = 149,
+    CsnPhysicalKeyPower = 150,
+    CsnPhysicalKeySleep = 151,
+    CsnPhysicalKeyAudioVolumeDown = 152,
+    CsnPhysicalKeyAudioVolumeMute = 153,
+    CsnPhysicalKeyAudioVolumeUp = 154,
+    CsnPhysicalKeyWakeUp = 155,
+    CsnPhysicalKeyAgain = 156,
+    CsnPhysicalKeyCopy = 157,
+    CsnPhysicalKeyCut = 158,
+    CsnPhysicalKeyFind = 159,
+    CsnPhysicalKeyOpen = 160,
+    CsnPhysicalKeyPaste = 161,
+    CsnPhysicalKeyProps = 162,
+    CsnPhysicalKeySelect = 163,
+    CsnPhysicalKeyUndo = 164
+}
+
+enum SystemDecorations
+{
+    SystemDecorationsNone = 0,
+    SystemDecorationsBorderOnly = 1,
+    SystemDecorationsFull = 2,
+}
+
+enum CsnAutomationProperty
+{
+    AutomationPeer_AutomationId,
+    AutomationPeer_BoundingRectangle,
+    AutomationPeer_ClassName,
+    AutomationPeer_Name,
+    RangeValueProvider_Value,
+    ValueProvider_Value,
+    ToggleProvider_ToggleState,
+    ExpandCollapseProvider_ExpandCollapseState,
+    SelectionItemProvider_IsSelected,
+    SelectionProvider_Selection,
+}
+
+struct CsnSize
+{
+    double Width, Height;
+}
+
+struct CsnPixelSize
+{
+    int Width, Height;
+}
+
+struct CsnRect
+{
+    double X, Y, Width, Height;
+}
+
+struct CsnVector
+{
+    double X, Y;
+}
+
+struct CsnPoint
+{
+    double X, Y;
+}
+
+enum CsnScreenOrientation
+{
+    UnknownOrientation,
+    Landscape,
+    Portrait,
+    LandscapeFlipped,
+    PortraitFlipped
+}
+
+struct CsnScreen
+{
+    CsnRect Bounds;
+    CsnRect WorkingArea;
+    float Scaling;
+    bool IsPrimary;
+    CsnScreenOrientation Orientation;
+}
+
+enum CsnPixelFormat
+{
+    kCsnRgb565,
+    kCsnRgba8888,
+    kCsnBgra8888
+}
+
+struct CsnFramebuffer
+{
+    void* Data;
+    int Width;
+    int Height;
+    int Stride;
+    CsnVector Dpi;
+    CsnPixelFormat PixelFormat;
+}
+
+struct CsnColor
+{
+    byte Alpha;
+    byte Red;
+    byte Green;
+    byte Blue;
+}
+
+enum CsnRawMouseEventType
+{
+    LeaveWindow,
+    LeftButtonDown,
+    LeftButtonUp,
+    RightButtonDown,
+    RightButtonUp,
+    MiddleButtonDown,
+    MiddleButtonUp,
+    XButton1Down,
+    XButton1Up,
+    XButton2Down,
+    XButton2Up,
+    Move,
+    Wheel,
+    NonClientLeftButtonDown,
+    TouchBegin,
+    TouchUpdate,
+    TouchEnd,
+    TouchCancel,
+    Magnify,
+    Rotate,
+    Swipe,
+}
+
+enum CsnRawKeyEventType
+{
+    KeyDown,
+    KeyUp
+}
+
+enum CsnInputModifiers
+{
+    CsnInputModifiersNone = 0,
+    Alt = 1,
+    Control = 2,
+    Shift = 4,
+    Windows = 8,
+    LeftMouseButton = 16,
+    RightMouseButton = 32,
+    MiddleMouseButton = 64,
+    XButton1MouseButton = 128,
+    XButton2MouseButton = 256
+}
+
+[class-enum]
+enum CsnDragDropEffects
+{
+    None = 0,
+    Copy = 1,
+    Move = 2,
+    Link = 4,
+}
+
+[class-enum]
+enum CsnDragEventType
+{
+    Enter,
+    Over,
+    Leave,
+    Drop
+}
+
+enum CsnWindowState
+{
+    Normal,
+    Minimized,
+    Maximized,
+    FullScreen,
+}
+
+enum CsnStandardCursorType
+{
+    CursorArrow,
+    CursorIbeam,
+    CursorWait,
+    CursorCross,
+    CursorUpArrow,
+    CursorSizeWestEast,
+    CursorSizeNorthSouth,
+    CursorSizeAll,
+    CursorNo,
+    CursorHand,
+    CursorAppStarting,
+    CursorHelp,
+    CursorTopSide,
+    CursorBottomSize,
+    CursorLeftSide,
+    CursorRightSide,
+    CursorTopLeftCorner,
+    CursorTopRightCorner,
+    CursorBottomLeftCorner,
+    CursorBottomRightCorner,
+    CursorDragMove,
+    CursorDragCopy,
+    CursorDragLink,
+    CursorNone
+}
+
+enum CsnWindowEdge
+{
+    WindowEdgeNorthWest,
+    WindowEdgeNorth,
+    WindowEdgeNorthEast,
+    WindowEdgeWest,
+    WindowEdgeEast,
+    WindowEdgeSouthWest,
+    WindowEdgeSouth,
+    WindowEdgeSouthEast
+}
+
+enum CsnMenuItemToggleType
+{
+    None,
+    CheckMark,
+    Radio
+}
+
+enum CsnPlatformResizeReason
+{
+    ResizeUnspecified,
+    ResizeUser,
+    ResizeApplication,
+    ResizeLayout,
+    ResizeDpiChange,
+}
+
+enum CsnAutomationControlType
+{
+    AutomationNone,
+    AutomationButton,
+    AutomationCalendar,
+    AutomationCheckBox,
+    AutomationComboBox,
+    AutomationComboBoxItem,
+    AutomationEdit,
+    AutomationHyperlink,
+    AutomationImage,
+    AutomationListItem,
+    AutomationList,
+    AutomationMenu,
+    AutomationMenuBar,
+    AutomationMenuItem,
+    AutomationProgressBar,
+    AutomationRadioButton,
+    AutomationScrollBar,
+    AutomationSlider,
+    AutomationSpinner,
+    AutomationStatusBar,
+    AutomationTab,
+    AutomationTabItem,
+    AutomationText,
+    AutomationToolBar,
+    AutomationToolTip,
+    AutomationTree,
+    AutomationTreeItem,
+    AutomationCustom,
+    AutomationGroup,
+    AutomationThumb,
+    AutomationDataGrid,
+    AutomationDataItem,
+    AutomationDocument,
+    AutomationSplitButton,
+    AutomationWindow,
+    AutomationPane,
+    AutomationHeader,
+    AutomationHeaderItem,
+    AutomationTable,
+    AutomationTitleBar,
+    AutomationSeparator,
+    AutomationExpander,
+    AutomationScrollViewer,
+}
+
+enum CsnLandmarkType
+{
+    LandmarkNone = -1,
+    LandmarkBanner,
+    LandmarkComplementary,
+    LandmarkContentInfo,
+    LandmarkRegion,
+    LandmarkForm,
+    LandmarkMain,
+    LandmarkNavigation,
+    LandmarkSearch,
+}
+
+enum CsnWindowTransparencyMode
+{
+    Opaque,
+    Transparent,
+    Blur
+}
+
+enum CsnPlatformThemeVariant
+{
+    Light,
+    Dark,
+    HighContrastLight,
+    HighContrastDark,
+}
+
+enum CsnPointerDeviceType
+{
+    Mouse,
+    Pen,
+}
+
+enum CsnLiveSetting
+{
+    LiveSettingOff,
+    LiveSettingPolite,
+    LiveSettingAssertive,
+}
+
+[uuid(809c652e-7396-11d2-9771-00a0c9b4d50c)]
+interface ICornerstoneNativeFactory : IUnknown
+{
+     HRESULT Initialize(ICsnGCHandleDeallocatorCallback* deallocator, ICsnApplicationEvents* appCb,
+        ICsnDispatcher* dispatcher);
+     ICsnMacOptions* GetMacOptions();
+     HRESULT CreateTopLevel(ICsnTopLevelEvents* cb, ICsnTopLevel** ppv);
+     HRESULT CreateWindow(ICsnWindowEvents* cb, ICsnWindow** ppv);
+     HRESULT CreatePopup(ICsnWindowEvents* cb, ICsnPopup** ppv);
+     HRESULT CreatePlatformThreadingInterface(ICsnPlatformThreadingInterface** ppv);
+     HRESULT CreateStorageProvider(ICsnStorageProvider** ppv);
+     HRESULT CreateScreens(ICsnScreenEvents* cb, ICsnScreens** ppv);
+     HRESULT CreateClipboard(ICsnClipboard** ppv);
+     HRESULT CreateCursorFactory(ICsnCursorFactory** ppv);
+     HRESULT ObtainGlDisplay(ICsnGlDisplay** ppv);
+     HRESULT ObtainMetalDisplay(ICsnMetalDisplay** ppv);
+     HRESULT SetAppMenu(ICsnMenu* menu);
+     HRESULT SetServicesMenu(ICsnMenu* menu);
+     HRESULT CreateMenu(ICsnMenuEvents* cb, ICsnMenu** ppv);
+     HRESULT CreateMenuItem(ICsnMenuItem** ppv);
+     HRESULT CreateMenuItemSeparator(ICsnMenuItem** ppv);
+     HRESULT CreateTrayIcon(ICsnTrayIcon** ppv);
+     HRESULT CreateApplicationCommands(ICsnApplicationCommands** ppv);
+     HRESULT CreatePlatformSettings(ICsnPlatformSettings** ppv);
+     HRESULT CreatePlatformBehaviorInhibition(ICsnPlatformBehaviorInhibition** ppv);
+     HRESULT CreatePlatformRenderTimer(ICsnPlatformRenderTimer** ppv);
+     HRESULT ImportMTLSharedEvent([intptr]void* idMtlSharedEvent, ICsnMTLSharedEvent** ppv);
+     HRESULT CreateMemoryManagementHelper(ICsnNativeObjectsMemoryManagement** ppv);
+     HRESULT SetDockMenu(ICsnMenu* menu);
+}
+
+[uuid(233e094f-9b9f-44a3-9a6e-6948bbdd9fb1)]
+interface ICsnString : IUnknown
+{
+     HRESULT Pointer(void**retOut);
+     HRESULT Length(int*ret);
+}
+
+[uuid(e8cccd3e-e6dc-430a-a0b9-2ce7d7922de6)]
+interface ICsnTopLevel : IUnknown
+{
+     HRESULT GetClientSize(CsnSize*ret);
+     HRESULT GetScaling(double*ret);
+     
+     HRESULT Invalidate();
+     
+     HRESULT PointToClient(CsnPoint point, CsnPoint*ret);
+     HRESULT PointToScreen(CsnPoint point, CsnPoint*ret);
+     
+     HRESULT SetCursor(ICsnCursor* cursor);
+     HRESULT CreateGlRenderTarget(ICsnGlContext* context, ICsnGlSurfaceRenderTarget** ret);
+     HRESULT CreateSoftwareRenderTarget(ICsnSoftwareRenderTarget** ret);
+     HRESULT CreateMetalRenderTarget(ICsnMetalDevice* device, ICsnMetalRenderTarget** ret);
+     
+     HRESULT ObtainNSViewHandle([intptr]void** retOut);
+     HRESULT ObtainNSViewHandleRetained([intptr]void** retOut);
+     
+     HRESULT CreateNativeControlHost(ICsnNativeControlHost** retOut);
+     
+     HRESULT GetInputMethod(ICsnTextInputMethod **ppv);
+     HRESULT SetTransparencyMode(CsnWindowTransparencyMode mode);
+     
+     HRESULT GetCurrentDisplayId(uint* ret);
+
+     HRESULT BeginDragAndDropOperation(
+             CsnDragDropEffects effects,
+             CsnPoint point,
+             ICsnClipboardDataSource* source,
+             ICsnDndResultCallback* callback,
+             [intptr]void* sourceHandle);
+}
+
+[uuid(e5aca675-02b7-4129-aa79-d6e417210bda), cpp-virtual-inherits]
+interface ICsnWindowBase : ICsnTopLevel
+{
+     HRESULT GetFrameSize(CsnSize*result);
+     HRESULT SetFrameThemeVariant(CsnPlatformThemeVariant mode);
+     HRESULT SetParent(ICsnWindowBase* parent);
+     HRESULT Show(bool activate, bool isDialog);
+     HRESULT Hide();
+     HRESULT Close();
+     HRESULT Activate(); 
+     HRESULT SetMinMaxSize(CsnSize minSize, CsnSize maxSize);
+     HRESULT Resize(double width, double height, CsnPlatformResizeReason reason);
+     HRESULT BeginMoveDrag();
+     HRESULT BeginResizeDrag(CsnWindowEdge edge);
+     HRESULT GetPosition(CsnPoint*ret);
+     HRESULT SetPosition(CsnPoint point);
+     HRESULT SetTopMost(bool value);
+     HRESULT SetMainMenu(ICsnMenu* menu);
+     HRESULT ObtainNSWindowHandle([intptr]void** retOut);
+     HRESULT ObtainNSWindowHandleRetained([intptr]void** retOut);
+}
+
+[uuid(83e588f3-6981-4e48-9ea0-e1e569f79a91), cpp-virtual-inherits]
+interface ICsnPopup : ICsnWindowBase
+{
+     HRESULT SetHitTestVisible(bool value);
+}
+
+[uuid(cab661de-49d6-4ead-b59c-eac9b2b6c28d), cpp-virtual-inherits]
+interface ICsnWindow : ICsnWindowBase
+{
+     HRESULT SetEnabled(bool enable);
+     HRESULT SetCanResize(bool value);
+     HRESULT SetCanMinimize(bool value);
+     HRESULT SetCanMaximize(bool value);
+     HRESULT SetDecorations(SystemDecorations value);
+     HRESULT SetTitle(char* utf8Title);
+     HRESULT SetTitleBarColor(CsnColor color);
+     HRESULT SetWindowState(CsnWindowState state);
+     HRESULT GetWindowState(CsnWindowState*ret);
+     HRESULT TakeFocusFromChildren();
+     HRESULT SetExtendClientArea(bool enable);
+     HRESULT GetExtendTitleBarHeight(double*ret);
+     HRESULT SetExtendTitleBarHeight(double value);
+     HRESULT GetWindowZOrder(long*ret);
+}
+
+[uuid(fda9c1b3-69e0-43d7-9459-8cc97cb41f6a)]
+interface ICsnTopLevelEvents : IUnknown
+{
+    void Closed();
+
+    HRESULT Paint();
+    void Resized([const] CsnSize& size, CsnPlatformResizeReason reason);
+    void RawMouseEvent(CsnRawMouseEventType type,
+                                    CsnPointerDeviceType deviceType,
+                                    u_int64_t timeStamp,
+                                    CsnInputModifiers modifiers,
+                                    CsnPoint point,
+                                    CsnVector delta,
+                                    float pressure,
+                                    float xTilt,
+                                    float yTilt
+                                    );
+    bool RawKeyEvent(CsnRawKeyEventType type, u_int64_t timeStamp, CsnInputModifiers modifiers,
+                          CsnKey key, CsnPhysicalKey physicalKey, [const] char* keySymbol);
+    bool RawTextInputEvent(u_int64_t timeStamp, [const] char* text);
+    void ScalingChanged(double scaling);
+    void RunRenderPriorityJobs();
+    void LostFocus();
+    
+    ICsnAutomationPeer* GetAutomationPeer();
+    
+    
+    CsnDragDropEffects DragEvent(CsnDragEventType type, CsnPoint position,
+                                         CsnInputModifiers modifiers, CsnDragDropEffects effects,
+                                         ICsnClipboard* clipboard, [intptr]void* dataTransferHandle);
+
+    bool HitTestNativeAirspaceHole(CsnPoint point);
+    bool HitTestNativeAirspaceWheel(CsnPoint point);
+}
+
+[uuid(939b6599-40a8-4710-a4c8-5d72d8f174fb)]
+interface ICsnWindowBaseEvents : ICsnTopLevelEvents
+{
+     void Activated();
+     void Deactivated();
+     void PositionChanged(CsnPoint position);
+}
+
+[uuid(1ae178ee-1fcc-447f-b6dd-b7bb727f934c)]
+interface ICsnWindowEvents : ICsnWindowBaseEvents
+{
+    /**
+     * Closing Event
+     * Called when the user presses the OS window close button.
+     * return true to allow the close, return false to prevent close.
+     */
+     bool Closing();
+    
+     void WindowStateChanged(CsnWindowState state);
+    
+     void GotInputWhenDisabled();
+}
+
+[uuid(f2079145-a2d9-42b8-a85e-2732e3c2b055)]
+interface ICsnTextInputMethodClient : IUnknown
+{
+    void SetPreeditText(char* preeditText);
+    void SelectInSurroundingText(int start, int end);
+}
+
+[uuid(1382a29f-e260-4c7a-b83f-c99fc72e27c2)]
+interface ICsnTextInputMethod : IUnknown
+{
+    HRESULT SetClient(ICsnTextInputMethodClient* client);
+    void Reset();
+    void SetCursorRect(CsnRect rect);
+    void SetSurroundingText(char* text, int start, int end);
+    void SetSelectionInSurroundingText(int start, int end);
+}
+
+[uuid(e34ae0f8-18b4-48a3-b09d-2e6b19a3cf5e)]
+interface ICsnMacOptions : IUnknown
+{
+     HRESULT SetShowInDock(int show);
+     HRESULT SetApplicationTitle(char* utf8string);
+     HRESULT SetDisableSetProcessName(int disable);
+     HRESULT SetDisableAppDelegate(int disable);
+}
+
+[uuid(04c1b049-1f43-418a-9159-cae627ec1367)]
+interface ICsnActionCallback : IUnknown
+{
+     void Run();
+}
+
+[uuid(6df4d2db-0b80-4f59-ad88-0baa5e21eb14)]
+interface ICsnPlatformThreadingInterfaceEvents : IUnknown
+{
+     void Signaled();
+     void Timer();
+     void ReadyForBackgroundProcessing();
+}
+
+[uuid(97330f88-c22b-4a8e-a130-201520091b01)]
+interface ICsnLoopCancellation : IUnknown
+{
+     void Cancel();
+}
+
+[uuid(fbc06f3d-7860-42df-83fd-53c4b02dd9c3)]
+interface ICsnPlatformThreadingInterface : IUnknown
+{
+     bool GetCurrentThreadIsLoopThread();
+     void SetEvents(ICsnPlatformThreadingInterfaceEvents* cb);
+     ICsnLoopCancellation* CreateLoopCancellation();
+     void RunLoop(ICsnLoopCancellation* cancel);
+     void Signal();
+     void UpdateTimer(int ms);
+     void RequestBackgroundProcessing();
+}
+
+[uuid(6c621a6e-e4c1-4ae3-9749-83eeeffa09b6)]
+interface ICsnSystemDialogEvents : IUnknown
+{
+     void OnCompleted(ICsnStringArray*array);
+     void OnCompletedWithFilter(ICsnStringArray*array, int selectedFilterIndex);
+}
+
+[uuid(4d7a47db-a944-4061-abe7-62cb6aa0ffd5)]
+interface ICsnStorageProvider : IUnknown
+{
+     void SelectFolderDialog(ICsnTopLevel* parentTopLevel,
+                             ICsnSystemDialogEvents* events,
+                             bool allowMultiple,
+                             [const] char* title,
+                             [const] char* initialPath);
+
+     void OpenFileDialog(ICsnTopLevel* parentTopLevel,
+                                 ICsnSystemDialogEvents* events,
+                                 bool allowMultiple,
+                                 [const] char* title,
+                                 [const] char* initialDirectory,
+                                 [const] char* initialFile,
+                                 ICsnFilePickerFileTypes* filters);
+
+     void SaveFileDialog(ICsnTopLevel* parentTopLevel,
+                                 ICsnSystemDialogEvents* events,
+                                 [const] char* title,
+                                 [const] char* initialDirectory,
+                                 [const] char* initialFile,
+                                 ICsnFilePickerFileTypes* filters);
+
+     HRESULT SaveBookmarkToBytes(ICsnString*fileUri, void**err, ICsnString**ppv);
+     HRESULT ReadBookmarkFromBytes(void* ptr, int len, ICsnString**ppv);
+
+     void ReleaseBookmark(ICsnString*fileUri);
+
+     bool OpenSecurityScope(ICsnString*fileUri);
+     void CloseSecurityScope(ICsnString*fileUri);
+
+     HRESULT TryResolveFileReferenceUri(ICsnString* fileUri, ICsnString** ret);
+}
+
+[uuid(4d7ab7db-a111-406f-abeb-11cb6aa033d5)]
+interface ICsnFilePickerFileTypes : IUnknown
+{
+    int GetCount(); 
+    bool IsDefaultType(int index);
+    bool IsAnyType(int index);
+    ICsnString* GetName(int index);
+    HRESULT GetPatterns(int index, ICsnStringArray**ppv);
+    HRESULT GetExtensions(int index, ICsnStringArray**ppv);
+    HRESULT GetMimeTypes(int index, ICsnStringArray**ppv);
+    HRESULT GetAppleUniformTypeIdentifiers(int index, ICsnStringArray**ppv);
+}
+
+[uuid(424b1bd4-a111-4987-bfd0-9d642154b1b3)]
+interface ICsnScreenEvents : IUnknown
+{
+    HRESULT OnChanged();
+}
+
+[uuid(9a52bc7a-d8c7-4230-8d34-704a0b70a933)]
+interface ICsnScreens : IUnknown
+{
+     HRESULT GetScreenIds(uint* ptrFirstResult, int* ret);
+     HRESULT GetScreen(uint screenId, void** localizedName, CsnScreen* ret);
+}
+
+[uuid(792b1bd4-76cc-46ea-bfd0-9d642154b1b3)]
+interface ICsnClipboard : IUnknown
+{
+    HRESULT GetFormats(int64_t changeCount, ICsnStringArray** ret);
+    HRESULT GetItemCount(int64_t changeCount, int* ret);
+    HRESULT GetItemFormats(int index, int64_t changeCount, ICsnStringArray** ret);
+    HRESULT GetItemValueAsString(int index, int64_t changeCount, [const] char* format, ICsnString** ret);
+    HRESULT GetItemValueAsBytes(int index, int64_t changeCount, [const] char* format, ICsnString** ret);
+    HRESULT Clear(int64_t* ret);
+    HRESULT GetChangeCount(int64_t* ret);
+    HRESULT SetData(ICsnClipboardDataSource* dataSource);
+    bool IsTextFormat([const] char* format);
+}
+
+[uuid(10b39f02-efcb-428b-bee5-a0b012c1fb7d)]
+interface ICsnClipboardDataSource : IUnknown
+{
+    int GetItemCount();
+    HRESULT GetItem(int index, ICsnClipboardDataItem**ppv);
+}
+
+[uuid(e40f36d9-69f4-45fd-9ca2-6e64e80feb6d)]
+interface ICsnClipboardDataItem : IUnknown
+{
+    HRESULT ProvideFormats(ICsnStringArray** ppv);
+    HRESULT GetValue([const] char* format, ICsnClipboardDataValue** ppv);
+}
+
+[uuid(e97f24f6-1c84-4d95-8ffe-5b2c72e016ed)]
+interface ICsnClipboardDataValue : IUnknown
+{
+    bool IsString();
+    ICsnString* AsString();
+    long GetByteLength();
+    void CopyBytesTo(void* buffer);
+}
+
+[uuid(3f998545-f027-4d4d-bd2a-1a80926d984e)]
+interface ICsnCursor : IUnknown
+{
+}
+
+[uuid(51ecfb12-c427-4757-a2c9-1596bfce53ef)]
+interface ICsnCursorFactory : IUnknown
+{
+     HRESULT GetCursor(CsnStandardCursorType cursorType, ICsnCursor** retOut);
+     HRESULT CreateCustomCursor (void* bitmapData, size_t length, CsnPixelSize hotPixel, ICsnCursor** retOut);
+}
+
+[uuid(931062d2-5bc8-4062-8588-83dd8deb99c2)]
+interface ICsnSoftwareRenderTarget : IUnknown
+{
+     HRESULT SetFrame(CsnFramebuffer* fb);
+}
+
+
+[uuid(60452465-8616-40af-bc00-042e69828ce7)]
+interface ICsnGlDisplay : IUnknown
+{
+     HRESULT CreateContext(ICsnGlContext* share, ICsnGlContext**ppv);
+     void LegacyClearCurrentContext();
+     HRESULT WrapContext([intptr]void* native, ICsnGlContext**ppv);
+     [intptr]void* GetProcAddress(char* proc);
+}
+
+[uuid(78c5711e-2a98-40d2-bac4-0cc9a49dc4f3)]
+interface ICsnGlContext : IUnknown
+{
+     HRESULT MakeCurrent(IUnknown** ppv);
+     HRESULT LegacyMakeCurrent();
+     int GetSampleCount();
+     int GetStencilSize();
+     [intptr]void* GetNativeHandle();
+     int texImageIOSurface2D(int target, int internal_format,
+     						int width, int height, int format, int type, [intptr]void* ioSurface, int plane);
+     bool GetIOKitRegistryId(uint64_t* value);
+}
+
+[uuid(931062d2-5bc8-4062-8588-83dd8deb99c2)]
+interface ICsnGlSurfaceRenderTarget : IUnknown
+{
+     HRESULT BeginDrawing(ICsnGlSurfaceRenderingSession** ret);
+}
+
+[uuid(e625b406-f04c-484e-946a-4abd2c6015ad)]
+interface ICsnGlSurfaceRenderingSession : IUnknown
+{
+     HRESULT GetPixelSize(CsnPixelSize* ret);
+     HRESULT GetScaling(double* ret);
+}
+
+[uuid(da291767-4db3-4598-893d-09ecaa23893f)]
+interface ICsnMetalDisplay : IUnknown
+{
+    HRESULT CreateDevice(ICsnMetalDevice** ret);
+}
+
+[uuid(969fa914-b74a-4c9f-8725-5160dc63579e)]
+interface ICsnMetalDevice : IUnknown
+{
+    [intptr]void* GetDevice();
+    [intptr]void* GetQueue();
+    bool GetIOKitRegistryId(uint64_t* value);
+    HRESULT ImportIOSurface([intptr]void* handle, CsnPixelFormat pixelFormat, ICsnMetalTexture** ppv);
+    HRESULT ImportSharedEvent([intptr]void*mtlSharedEventInstance, ICsnMTLSharedEvent**ppv);
+    HRESULT SubmitWait(ICsnMTLSharedEvent* ev, uint64_t value);
+    HRESULT SubmitSignal(ICsnMTLSharedEvent* ev, uint64_t value);
+}
+
+[uuid(f1306b71-eca0-426e-8700-105192693b1a)]
+interface ICsnMetalRenderTarget : IUnknown
+{
+    HRESULT BeginDrawing(ICsnMetalRenderingSession** ret);
+}
+
+[uuid(a1f4fcde-9152-48bd-bf8a-b1b651134a69)]
+interface ICsnMTLSharedEvent : IUnknown
+{
+    [intptr]void* GetNativeHandle();
+    bool Wait(uint64_t value, uint64_t timeoutMS);
+    void SetSignaledValue(uint64_t value);
+    uint64_t GetSignaledValue();
+}
+
+[uuid(722aad20-a87b-4ce5-b50f-f05cfa4cda39)]
+interface ICsnMetalTexture
+{
+    [intptr]void* GetNativeHandle();
+    int GetWidth();
+    int GetHeight();
+    int GetSampleCount();
+}
+
+[uuid(74027aa2-5262-45a5-a74a-5a53373dcc17)]
+interface ICsnNativeObjectsMemoryManagement
+{
+    void RetainNSObject([intptr] void* obj);
+    void ReleaseNSObject([intptr] void* obj);
+    uint64_t GetRetainCountForNSObject([intptr] void* obj);
+    void RetainCFObject([intptr] void* obj);
+    void ReleaseCFObject([intptr] void* obj);
+    int64_t GetRetainCountForCFObject([intptr] void* obj);
+}
+    
+[uuid(e625b406-f04c-484e-946a-4abd2c6015ad)]
+interface ICsnMetalRenderingSession : IUnknown
+{
+     HRESULT GetPixelSize(CsnPixelSize* ret);
+     double GetScaling();
+     [intptr]void* GetTexture();
+}
+
+[uuid(60992d19-38f0-4141-a0a9-76ac303801f3)]
+interface ICsnTrayIcon : IUnknown
+{
+    HRESULT SetIcon(void* data, size_t length);
+    HRESULT SetMenu(ICsnMenu* menu);
+    HRESULT SetIsVisible(bool isVisible);
+    HRESULT SetToolTipText(char* text);
+    HRESULT SetIsTemplateIcon(bool text);
+}
+
+[uuid(a7724dc1-cf6b-4fa8-9d23-228bf2593edc)]
+interface ICsnMenu : IUnknown
+{
+     HRESULT InsertItem(int index, ICsnMenuItem* item);
+     HRESULT RemoveItem(ICsnMenuItem* item);
+     HRESULT SetTitle(char* utf8String);
+     HRESULT Clear();
+}
+
+[uuid(59e0586d-bd1c-4b85-9882-80d448b0fed9)]
+interface ICsnPredicateCallback : IUnknown
+{
+     bool Evaluate();
+}
+
+[uuid(f890219a-1720-4cd5-9a26-cd95fccbf53c)]
+interface ICsnMenuItem : IUnknown
+{
+     HRESULT SetSubMenu(ICsnMenu* menu);
+     HRESULT SetTitle(char* utf8String);
+     HRESULT SetToolTip(char* utf8String);
+     HRESULT SetGesture(CsnKey key, CsnInputModifiers modifiers);
+     HRESULT SetAction(ICsnPredicateCallback* predicate, ICsnActionCallback* callback);
+     HRESULT SetIsChecked(bool isChecked);
+     HRESULT SetIsVisible(bool isVisible);
+     HRESULT SetToggleType(CsnMenuItemToggleType toggleType);
+     HRESULT SetIcon(void* data, size_t length);
+}
+
+[uuid(0af7df53-7632-42f4-a650-0992c361b477)]
+interface ICsnMenuEvents : IUnknown
+{
+     void NeedsUpdate();
+     void Opening();
+     void Closed();
+}
+
+[uuid(5142bb41-66ab-49e7-bb37-cd079c000f27)]
+interface ICsnStringArray : IUnknown
+{
+     uint GetCount();
+     HRESULT Get(uint index, ICsnString**ppv);
+}
+
+[uuid(a13d2382-3b3a-4d1c-9b27-8f34653d3f01)]
+interface ICsnDndResultCallback : IUnknown
+{
+     void OnDragAndDropComplete(CsnDragDropEffects effecct);
+}
+
+[uuid(f07c608e-52e9-422d-836e-c70f6e9b80f5)]
+interface ICsnGCHandleDeallocatorCallback : IUnknown
+{
+     void FreeGCHandle([intptr]void* handle);
+}
+
+[uuid(96688589-5dc7-41ec-9ce3-d481942454ee)]
+interface ICsnDispatcher : IUnknown
+{
+    void Post(ICsnActionCallback* cb);
+}
+
+[uuid(91c7f677-f26b-4ff3-93cc-cf15aa966ffa)]
+interface ICsnNativeControlHost : IUnknown
+{
+     HRESULT CreateDefaultChild([intptr]void* parent, [intptr]void** retOut);
+     ICsnNativeControlHostTopLevelAttachment* CreateAttachment();
+     void DestroyDefaultChild([intptr]void* child);
+}
+
+[uuid(14a9e164-1aae-4271-bb78-7b5230999b52)]
+interface ICsnNativeControlHostTopLevelAttachment : IUnknown
+{
+     [intptr]void* GetParentHandle();
+     HRESULT InitializeWithChildHandle([intptr]void* child);
+     HRESULT AttachTo(ICsnNativeControlHost* host);
+     void ShowInBounds(float x, float y, float width, float height);
+     void HideWithSize(float width, float height);
+     void ReleaseChild();
+}
+
+enum CsnShutdownReply
+{
+    ShutdownReplyCancel,
+    ShutdownReplyTerminateNow,
+    ShutdownReplyDeferToManagedLoop
+}
+
+[uuid(6575b5af-f27a-4609-866c-f1f014c20f79)]
+interface ICsnApplicationEvents : IUnknown
+{
+     void FilesOpened (ICsnStringArray* args);
+     void UrlsOpened (ICsnStringArray* urls);
+     CsnShutdownReply TryShutdown(bool isOSShutdown);
+     void OnReopen ();
+     void OnHide ();
+     void OnUnhide ();
+     void OnActivate();
+     void OnDeactivate();
+     void OnTerminating();
+}
+
+[uuid(b4284791-055b-4313-8c2e-50f0a8c72ce9)]
+interface ICsnApplicationCommands : IUnknown
+{
+    HRESULT UnhideApp();
+    HRESULT HideApp();
+    HRESULT ShowAll();
+    HRESULT HideOthers();
+}
+
+[uuid(b87016f3-7eec-41de-b385-07844c268dc4)]
+interface ICsnAutomationPeer : IUnknown
+{
+     ICsnAutomationNode* GetNode();
+     void SetNode(ICsnAutomationNode* node);
+
+     ICsnString* GetAcceleratorKey();
+     ICsnString* GetAccessKey();
+     CsnAutomationControlType GetAutomationControlType();
+     ICsnString* GetAutomationId();
+     CsnRect GetBoundingRectangle();
+     ICsnAutomationPeerArray* GetChildren();
+     ICsnString* GetClassName();
+     ICsnAutomationPeer* GetLabeledBy();
+     ICsnString* GetName();
+     ICsnAutomationPeer* GetParent();
+     ICsnAutomationPeer* GetTemplatedParent();
+     ICsnAutomationPeer* GetVisualRoot();
+     bool HasKeyboardFocus();
+     bool IsContentElement();
+     bool IsControlElement();
+     bool IsEnabled();
+     bool IsKeyboardFocusable();
+     void SetFocus();
+     bool ShowContextMenu();
+     void BringIntoView();
+
+     ICsnAutomationPeer* GetRootPeer();
+     
+     bool IsInteropPeer();
+     [intptr]void* InteropPeer_GetNativeControlHandle();
+          
+     bool IsRootProvider();
+     ICsnWindowBase* RootProvider_GetWindow();
+     ICsnAutomationPeer* RootProvider_GetFocus();
+     ICsnAutomationPeer* RootProvider_GetPeerFromPoint(CsnPoint point);
+
+     bool IsEmbeddedRootProvider();
+     ICsnAutomationPeer* EmbeddedRootProvider_GetFocus();
+     ICsnAutomationPeer* EmbeddedRootProvider_GetPeerFromPoint(CsnPoint point);
+
+     bool IsExpandCollapseProvider();
+     bool ExpandCollapseProvider_GetIsExpanded();
+     bool ExpandCollapseProvider_GetShowsMenu();
+     void ExpandCollapseProvider_Expand();
+     void ExpandCollapseProvider_Collapse();
+     
+     bool IsInvokeProvider();
+     void InvokeProvider_Invoke();
+     
+     bool IsRangeValueProvider();
+     double RangeValueProvider_GetValue();
+     double RangeValueProvider_GetMinimum();
+     double RangeValueProvider_GetMaximum();
+     double RangeValueProvider_GetSmallChange();
+     double RangeValueProvider_GetLargeChange();
+     void RangeValueProvider_SetValue(double value);
+     bool RangeValueProvider_IsReadOnly();
+
+     bool IsSelectionItemProvider();
+     bool SelectionItemProvider_IsSelected();
+     void SelectionItemProvider_Select();
+     void SelectionItemProvider_AddToSelection();
+     void SelectionItemProvider_RemoveFromSelection();
+
+     ICsnAutomationPeer* ScrollProvider_GetHorizontalScrollBar();
+     ICsnAutomationPeer* ScrollProvider_GetVerticalScrollBar();
+
+     bool IsToggleProvider();
+     int ToggleProvider_GetToggleState();
+     void ToggleProvider_Toggle();
+     
+     bool IsValueProvider();
+     ICsnString* ValueProvider_GetValue();
+     void ValueProvider_SetValue([const] char* value);
+     bool ValueProvider_IsReadOnly();
+
+     ICsnString* GetHelpText();
+     ICsnString* GetPlaceholderText();
+
+     CsnLandmarkType GetLandmarkType();
+     int GetHeadingLevel();
+
+     CsnLiveSetting GetLiveSetting();
+}
+
+[uuid(b00af5da-78af-4b33-bfff-4ce13a6239a9)]
+interface ICsnAutomationPeerArray : IUnknown
+{
+     uint GetCount();
+     HRESULT Get(uint index, ICsnAutomationPeer**ppv);
+}
+
+[uuid(004dc40b-e435-49dc-bac5-6272ee35382a)]
+interface ICsnAutomationNode : IUnknown
+{
+    void Dispose();
+    void ChildrenChanged();
+    void PropertyChanged(CsnAutomationProperty property);
+    void FocusChanged();
+}
+
+[uuid(d1f009cc-9d2d-493b-845d-90d2c104baae)]
+interface ICsnPlatformSettings : IUnknown
+{
+    CsnPlatformThemeVariant GetPlatformTheme();
+    uint GetAccentColor();
+    void RegisterColorsChange(ICsnActionCallback* callback);
+    HRESULT GetPreferredLanguage(ICsnString** ret);
+    void RegisterLanguageChange(ICsnActionCallback* callback);
+}
+
+[uuid(12edf00d-5803-4d3f-9947-b4840e5e9372)]
+interface ICsnPlatformBehaviorInhibition : IUnknown
+{
+    void SetInhibitAppSleep(bool inhibitAppSleep, char* reason);
+}
+
+[uuid(22edf20d-5803-2d3f-9247-b4842e5e9322)]
+interface ICsnPlatformRenderTimer : IUnknown
+{
+    int RegisterTick(ICsnActionCallback* callback);
+    void Start();
+    void Stop();
+    bool RunsInBackground();
+}

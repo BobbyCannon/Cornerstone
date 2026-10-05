@@ -1,19 +1,20 @@
 using Cornerstone.VisualStudio.Core.Parsing;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Cornerstone.VisualStudio.Tests.Parsing;
 
+[TestClass]
 public class ResourceKeyScannerTests
 {
-	[Fact]
+	[TestMethod]
 	public void FindKeysEmptyReturnsEmpty()
 	{
-		Assert.Empty(ResourceKeyScanner.FindKeys(null));
-		Assert.Empty(ResourceKeyScanner.FindKeys(""));
-		Assert.Empty(ResourceKeyScanner.FindKeys("<Grid />"));
+		Assert.AreEqual(0, System.Linq.Enumerable.Count(ResourceKeyScanner.FindKeys(null)));
+		Assert.AreEqual(0, System.Linq.Enumerable.Count(ResourceKeyScanner.FindKeys("")));
+		Assert.AreEqual(0, System.Linq.Enumerable.Count(ResourceKeyScanner.FindKeys("<Grid />")));
 	}
 
-	[Fact]
+	[TestMethod]
 	public void FindKeysDoubleAndSingleQuoted()
 	{
 		var xaml = """
@@ -24,10 +25,10 @@ public class ResourceKeyScannerTests
 			""";
 
 		var keys = ResourceKeyScanner.FindKeys(xaml);
-		Assert.Equal(["MyBrush", "MyDouble"], keys);
+		Assert.AreSequenceEqual(["MyBrush", "MyDouble"], keys);
 	}
 
-	[Fact]
+	[TestMethod]
 	public void FindKeysDedupesAndSkipsMarkupExtensionKeys()
 	{
 		var xaml = """
@@ -37,10 +38,10 @@ public class ResourceKeyScannerTests
 			""";
 
 		var keys = ResourceKeyScanner.FindKeys(xaml);
-		Assert.Equal(["Same"], keys);
+		Assert.AreSequenceEqual(["Same"], keys);
 	}
 
-	[Fact]
+	[TestMethod]
 	public void FindKeysWorksOnIncompleteDocument()
 	{
 		var xaml = """
@@ -49,13 +50,13 @@ public class ResourceKeyScannerTests
 			""";
 
 		// Incomplete attribute value — no closed quote, so no match (resilient, no throw).
-		Assert.Empty(ResourceKeyScanner.FindKeys(xaml));
+		Assert.AreEqual(0, System.Linq.Enumerable.Count(ResourceKeyScanner.FindKeys(xaml)));
 
 		xaml = """
 			<UserControl.Resources>
 			  <SolidColorBrush x:Key="Ok" />
 			  <Button Background="{StaticResource 
 			""";
-		Assert.Equal(["Ok"], ResourceKeyScanner.FindKeys(xaml));
+		Assert.AreSequenceEqual(["Ok"], ResourceKeyScanner.FindKeys(xaml));
 	}
 }

@@ -64,6 +64,25 @@
 	</CommandPlacements>
 	-->
 
+	<Commands package="guidCornerstonePackage">
+		<Groups>
+			<Group guid="guidCornerstoneCmdSet" id="ProcessesMenuGroup" priority="0x0100">
+				<Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS0" />
+			</Group>
+		</Groups>
+		<Buttons>
+			<Button guid="guidCornerstoneCmdSet" id="cmdidShowProcesses" priority="0x0100" type="Button">
+				<Parent guid="guidCornerstoneCmdSet" id="ProcessesMenuGroup" />
+				<Strings>
+					<ButtonText>Cornerstone</ButtonText>
+					<MenuText>Cornerstone</MenuText>
+					<ToolTipText>Show Cornerstone processes</ToolTipText>
+					<CanonicalName>Cornerstone.ShowProcesses</CanonicalName>
+				</Strings>
+			</Button>
+		</Buttons>
+	</Commands>
+
 	<Symbols>
 		<GuidSymbol name="guidCornerstonePackage" value="{865ba8d5-1180-4bf8-8821-345f72a4cb79}" />
 
@@ -72,6 +91,8 @@
 			<IDSymbol name="CodeCleanupSolExpGroup" value="0x1021" />
 			<IDSymbol name="cmdidCodeCleanupDocument" value="0x0100" />
 			<IDSymbol name="cmdidCodeCleanupHierarchy" value="0x0101" />
+			<IDSymbol name="ProcessesMenuGroup" value="0x1030" />
+			<IDSymbol name="cmdidShowProcesses" value="0x0102" />
 		</GuidSymbol>
 	</Symbols>
 </CommandTable>

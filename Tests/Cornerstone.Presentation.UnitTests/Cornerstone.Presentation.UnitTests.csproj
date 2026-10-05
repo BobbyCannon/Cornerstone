@@ -1,0 +1,72 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFrameworks>net10.0</TargetFrameworks>
+		<SignAssembly>true</SignAssembly>
+		<GenerateProgramFile>false</GenerateProgramFile>
+		<IsTestProject>true</IsTestProject>
+		<DisableAutomaticXpfInit>true</DisableAutomaticXpfInit>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<NoWarn>$(NoWarn);CS8002;CS0619;NU1608;CS8600;CS8602;CS8604;MSTEST0036;MSTEST0002;MSTEST0063;MSTEST0030;MSTEST0057;MSTEST0014</NoWarn>
+		<EnableCornerstoneXamlCompilation>false</EnableCornerstoneXamlCompilation>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+		<OutputType>Library</OutputType>
+		<IsTestProject>true</IsTestProject>
+	</PropertyGroup>
+	<Import Project="..\..\Cornerstone.Presentation.BuildTasks\CornerstoneBuildTasks.props" Condition="'$(CornerstoneBuildTasksPropsImported)' != 'true'" />
+	<ItemGroup>
+		<TrimmerRootAssembly Include="Cornerstone" />
+		<TrimmerRootAssembly Include="Cornerstone.Sample" />
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Remove="**/Properties/AssemblyInfo.cs" />
+	</ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Skia\Fonts\**\*.ttf" />
+		<EmbeddedResource Include="Skia\RenderTestFonts\**\*.ttf" />
+		<Content Include="Skia\RenderTestFonts\*.ttf">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<TargetPath>Assets\%(Filename)%(Extension)</TargetPath>
+		</Content>
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
+		<PackageReference Include="MSTest.TestAdapter" Version="4.4.0" />
+		<PackageReference Include="MSTest.TestFramework" Version="4.4.0" />
+		<PackageReference Include="System.Reactive" Version="6.1.0" />
+		<PackageReference Include="Microsoft.Reactive.Testing" Version="6.1.0" />
+		<PackageReference Include="Nito.AsyncEx.Context" Version="5.1.2" />
+		<PackageReference Include="Microsoft.Build.Framework" Version="18.0.2" />
+		<PackageReference Include="Microsoft.Build.Utilities.Core" Version="18.0.2" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\Cornerstone.Presentation\Cornerstone.Presentation.csproj" />
+		<ProjectReference Include="..\..\Cornerstone\Cornerstone.csproj" />
+		<ProjectReference Include="..\..\Cornerstone.Presentation.BuildTasks\Cornerstone.Presentation.BuildTasks.csproj">
+			<Aliases>buildtasks</Aliases>
+		</ProjectReference>
+		<ProjectReference Include="..\..\Cornerstone.Presentation.DevGenerators\Cornerstone.Presentation.DevGenerators.csproj"
+				OutputItemType="Analyzer"
+				ReferenceOutputAssembly="false"
+				PrivateAssets="all" />
+		<ProjectReference Include="..\..\Cornerstone.Designer.HostApp\Cornerstone.Designer.HostApp.csproj" />
+		<ProjectReference Include="..\TestFiles\BuildTasks\PInvoke\PInvoke.csproj"
+				ReferenceOutputAssembly="false"
+				PrivateAssets="all"
+				SetConfiguration="Configuration=$(Configuration)"
+				SetTargetFramework="TargetFramework=net10.0" />
+	</ItemGroup>
+	<ItemGroup>
+		<Content Include="..\TestFiles\BuildTasks\PInvoke\bin\$(Configuration)\net10.0\PInvoke.dll" Link="Assets\PInvoke.dll" CopyToOutputDirectory="PreserveNewest" />
+		<Content Include="..\TestFiles\BuildTasks\PInvoke\bin\$(Configuration)\net10.0\PInvoke.dll.refs" Link="Assets\PInvoke.dll.refs" CopyToOutputDirectory="PreserveNewest" />
+		<CornerstoneResource Include="Markup\Xaml\Xaml\Style1.xaml" />
+		<CornerstoneResource Include="Markup\Xaml\Xaml\Style2.xaml" />
+		<CornerstoneResource Include="Markup\Xaml\Xaml\StyleWithServiceProvider.xaml" />
+		<CornerstoneResource Include="Markup\Xaml\Xaml\XamlIlClassWithPrecompiledXaml.xaml" />
+		<CornerstoneResource Include="Markup\Xaml\Xaml\XamlIlClassWithCustomProperty.xaml" />
+	</ItemGroup>
+	<Import Project="..\..\Cornerstone.Presentation.BuildTasks\CornerstoneBuildTasks.targets" Condition="'$(CornerstoneBuildTasksTargetsImported)' != 'true'" />
+</Project>

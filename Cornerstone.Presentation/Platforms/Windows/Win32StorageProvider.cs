@@ -1,0 +1,318 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
+using Cornerstone.Presentation.Controls.Utils;
+using Cornerstone.Presentation.Platform.Storage;
+using Cornerstone.Presentation.Platform.Storage.FileIO;
+using Cornerstone.Presentation.Platforms.Windows.Interop;
+using Cornerstone.Presentation.Platforms.Windows.Win32Com;
+using MicroCom.Runtime;
+using Cornerstone.Presentation.Logging;
+
+namespace Cornerstone.Presentation.Platforms.Windows
+{
+    internal class Win32StorageProvider(WindowImpl windowImpl) : BclStorageProvider
+    {
+        private const uint SIGDN_DESKTOPABSOLUTEPARSING = 0x80028000;
+
+        private const FILEOPENDIALOGOPTIONS DefaultDialogOptions =
+            FILEOPENDIALOGOPTIONS.FOS_PATHMUSTEXIST | FILEOPENDIALOGOPTIONS.FOS_FORCEFILESYSTEM |
+            FILEOPENDIALOGOPTIONS.FOS_NOVALIDATE | FILEOPENDIALOGOPTIONS.FOS_NOTESTFILECREATE |
+            FILEOPENDIALOGOPTIONS.FOS_DONTADDTORECENT;
+
+        public override bool CanOpen => true;
+
+        public override bool CanSave => true;
+
+        public override bool CanPickFolder => true;
+
+        public override async Task<IReadOnlyList<IStorageFolder>> OpenFolderPickerAsync(FolderPickerOpenOptions options)
+        {
+            var (folders, _) = await ShowFilePickerAsync(
+                true,
+                true,
+                options.AllowMultiple,
+                false,
+                options.Title,
+                options.SuggestedFileName,
+                null,
+                options.SuggestedStartLocation,
+                null,
+                null,
+                f => new BclStorageFolder(new DirectoryInfo(f)))
+            .ConfigureAwait(false);
+
+            return folders;
+        }
+
+        public override async Task<OpenFilePickerResult> OpenFilePickerWithResultAsync(FilePickerOpenOptions options)
+        {
+            var (files, typeIndex) = await ShowFilePickerAsync(
+                true,
+                false,
+                options.AllowMultiple,
+                false,
+                options.Title,
+                options.SuggestedFileName,
+                options.SuggestedFileType,
+                options.SuggestedStartLocation,
+                null,
+                options.FileTypeFilter,
+                f => new BclStorageFile(new FileInfo(f)))
+            .ConfigureAwait(false);
+
+            var selectedFileType = TryGetSelectedFileType(options.FileTypeFilter, typeIndex);
+
+            return new OpenFilePickerResult { Files = files, SelectedFileType = selectedFileType };
+        }
+
+        public override async Task<SaveFilePickerResult> SaveFilePickerWithResultAsync(FilePickerSaveOptions options)
+        {
+            var (files, typeIndex) = await ShowFilePickerAsync(
+                false,
+                false,
+                false,
+                options.ShowOverwritePrompt,
+                options.Title,
+                options.SuggestedFileName,
+                options.SuggestedFileType,
+                options.SuggestedStartLocation,
+                options.DefaultExtension,
+                options.FileTypeChoices,
+                f => new BclStorageFile(new FileInfo(f)))
+            .ConfigureAwait(false);
+
+            var file = files.Count > 0 ? files[0] : null;
+            var selectedFileType = TryGetSelectedFileType(options.FileTypeChoices, typeIndex);
+
+            return new SaveFilePickerResult { File = file, SelectedFileType = selectedFileType };
+        }
+
+        private unsafe Task<(IReadOnlyList<TStorageItem> items, int typeIndex)> ShowFilePickerAsync<TStorageItem>(
+            bool isOpenFile,
+            bool openFolder,
+            bool allowMultiple,
+            bool? showOverwritePrompt,
+            string? title,
+            string? suggestedFileName,
+            FilePickerFileType? suggestedFileType,
+            IStorageFolder? folder,
+            string? defaultExtension,
+            IReadOnlyList<FilePickerFileType>? filters,
+            Func<string, TStorageItem> convert)
+            where TStorageItem : IStorageItem
+        {
+            // TODO13: verify that we're on the correct dispatcher, matching other platforms' implementations.
+            // We should then be able to remove the dedicated thread and simply use IFileDialog directly (needs to be reconfirmed).
+
+            var tcs = new TaskCompletionSource<(IReadOnlyList<TStorageItem>, int)>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var thread = new Thread(() =>
+            {
+                IReadOnlyList<TStorageItem> result = [];
+                try
+                {
+                    var clsid = isOpenFile ? UnmanagedMethods.ShellIds.OpenFileDialog : UnmanagedMethods.ShellIds.SaveFileDialog;
+                    var iid = UnmanagedMethods.ShellIds.IFileDialog;
+                    var frm = UnmanagedMethods.CreateInstance<IFileDialog>(in clsid, in iid);
+
+                    var options = frm.Options;
+                    options |= DefaultDialogOptions;
+                    if (openFolder)
+                    {
+                        options |= FILEOPENDIALOGOPTIONS.FOS_PICKFOLDERS;
+                    }
+                    if (allowMultiple)
+                    {
+                        options |= FILEOPENDIALOGOPTIONS.FOS_ALLOWMULTISELECT;
+                    }
+
+                    if (showOverwritePrompt == false)
+                    {
+                        options &= ~FILEOPENDIALOGOPTIONS.FOS_OVERWRITEPROMPT;
+                    }
+
+                    frm.SetOptions(options);
+
+                    defaultExtension ??= string.Empty;
+
+                    fixed (char* pExt = defaultExtension)
+                    {
+                        frm.SetDefaultExtension(pExt);
+                    }
+
+                    suggestedFileName ??= "";
+                    fixed (char* fExt = suggestedFileName)
+                    {
+                        frm.SetFileName(fExt);
+                    }
+
+                    title ??= "";
+                    fixed (char* tExt = title)
+                    {
+                        frm.SetTitle(tExt);
+                    }
+
+                    if (!openFolder)
+                    {
+                        fixed (void* pFilters = FiltersToPointer(filters, out var count))
+                        {
+                            frm.SetFileTypes((ushort)count, pFilters);
+                            if (count > 0)
+                            {
+                                // FileTypeIndex is one based, not zero based.
+                                frm.SetFileTypeIndex(1);
+                            }
+                        }
+                    }
+
+                    if (suggestedFileType != null &&
+                        filters?.IndexOf(suggestedFileType) is { } fi and > -1)
+                    { 
+                        frm.SetFileTypeIndex((uint)(fi + 1));
+                    }
+
+                    if (folder?.TryGetLocalPath() is { } folderPath)
+                    {
+                        var riid = UnmanagedMethods.ShellIds.IShellItem;
+                        if (UnmanagedMethods.SHCreateItemFromParsingName(folderPath, IntPtr.Zero, ref riid, out var directoryShellItem)
+                            == (uint)UnmanagedMethods.HRESULT.S_OK)
+                        {
+                            var proxy = MicroComRuntime.CreateProxyFor<IShellItem>(directoryShellItem, true);
+                            frm.SetFolder(proxy);
+                            frm.SetDefaultFolder(proxy);
+                        }
+                    }
+
+                    var showResult = frm.Show(windowImpl.Handle.Handle);
+
+                    var typeIndex = (int)frm.FileTypeIndex;
+
+                    if ((uint)showResult == (uint)UnmanagedMethods.HRESULT.E_CANCELLED)
+                    {
+                        tcs.SetResult((result, typeIndex));
+                        return;
+                    }
+                    else if ((uint)showResult != (uint)UnmanagedMethods.HRESULT.S_OK)
+                    {
+                        throw new Win32Exception(showResult);
+                    }
+
+                    if (allowMultiple)
+                    {
+                        using var fileOpenDialog = frm.QueryInterface<IFileOpenDialog>();
+                        var shellItemArray = fileOpenDialog.Results;
+                        var count = shellItemArray.Count;
+
+                        var results = new List<TStorageItem>();
+                        for (int i = 0; i < count; i++)
+                        {
+                            var shellItem = shellItemArray.GetItemAt(i);
+                            if (GetParsingName(shellItem) is { } selected)
+                            {
+                                results.Add(convert(selected));
+                            }
+                        }
+
+                        result = results;
+                    }
+                    else if (frm.Result is { } shellItem
+                        && GetParsingName(shellItem) is { } singleResult)
+                    {
+                        result = [convert(singleResult)];
+                    }
+
+                    tcs.SetResult((result, typeIndex));
+                }
+                catch (COMException ex)
+                {
+                    var message = new Win32Exception(ex.HResult).Message;
+                    tcs.SetException(new COMException(message, ex));
+                }
+                catch (Exception ex)
+                {
+                    tcs.SetException(ex);
+                }
+            });
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.IsBackground = true;
+            thread.Start();
+
+            return tcs.Task;
+        }
+
+        private static FilePickerFileType? TryGetSelectedFileType(IReadOnlyList<FilePickerFileType>? fileTypes, int index)
+            => fileTypes is not null && index >= 1 && index <= fileTypes.Count ?
+                fileTypes[index - 1] :
+                null;
+
+        private static string? GetParsingName(IShellItem shellItem)
+        {
+            return GetDisplayName(shellItem, SIGDN_DESKTOPABSOLUTEPARSING);
+        }
+
+        private static unsafe string? GetDisplayName(IShellItem shellItem, uint sigdnName)
+        {
+            char* pszString = null;
+            if (shellItem.GetDisplayName(sigdnName, &pszString) == 0)
+            {
+                try
+                {
+                    return Marshal.PtrToStringUni((IntPtr)pszString);
+                }
+                finally
+                {
+                    Marshal.FreeCoTaskMem((IntPtr)pszString);
+                }
+            }
+            return null;
+        }
+
+        private byte[] FiltersToPointer(IReadOnlyList<FilePickerFileType>? filters, out int length)
+        {
+            if (filters is not { Count: > 0 })
+            {
+                filters = [FilePickerFileTypes.All];
+            }
+
+            var size = Marshal.SizeOf<UnmanagedMethods.COMDLG_FILTERSPEC>();
+            var resultArr = new byte[size * filters.Count];
+            length = filters.Count;
+
+            for (int i = 0; i < filters.Count; i++)
+            {
+                var filter = filters[i];
+                if (filter.Patterns is not { Count: > 0 })
+                {
+                    length--;
+                    Logger.TryGet(LogEventLevel.Warning, LogArea.Win32Platform)?.Log(this, $"Skipping invalid {nameof(FilePickerFileType)} '{filter.Name ?? "[unnamed]"}': no patterns defined.");
+                    continue;
+                }
+
+                var filterPtr = Marshal.AllocHGlobal(size);
+                try
+                {
+                    var filterStr = new UnmanagedMethods.COMDLG_FILTERSPEC
+                    {
+                        pszName = filter.Name,
+                        pszSpec = string.Join(";", filter.Patterns)
+                    };
+
+                    Marshal.StructureToPtr(filterStr, filterPtr, false);
+                    Marshal.Copy(filterPtr, resultArr, i * size, size);
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(filterPtr);
+                }
+            }
+
+            return resultArr;
+        }
+    }
+}

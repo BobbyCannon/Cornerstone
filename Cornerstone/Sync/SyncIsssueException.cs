@@ -46,14 +46,14 @@ public class SyncIssueException : SyncException
 	#region Properties
 
 	/// <summary>
-	/// Gets the child sync issues for this exception.
-	/// </summary>
-	public IEnumerable<SyncIssue> Issues { get; set; }
-
-	/// <summary>
 	/// Gets the type of the issue.
 	/// </summary>
 	public SyncIssueType IssueType { get; set; }
+
+	/// <summary>
+	/// Gets the child sync issues for this exception.
+	/// </summary>
+	public IEnumerable<SyncIssue> Issues { get; set; }
 
 	#endregion
 }

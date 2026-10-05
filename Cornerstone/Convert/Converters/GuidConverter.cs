@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Cornerstone.Extensions;
 using Cornerstone.Reflection;
 
@@ -64,6 +65,7 @@ public class GuidConverter : BaseConverter
 		return ShortGuid.TryParse(value, out var guid) ? guid : default;
 	}
 
+	[UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "Converter toType is a runtime conversion target; members are preserved by generated source reflection.")]
 	public override bool TryConvertTo(object from, Type fromType, Type toType, out object value, IConverterSettings settings = null)
 	{
 		if (from == null)

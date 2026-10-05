@@ -1,0 +1,7 @@
+namespace Cornerstone.Presentation.Data.Core
+{
+    internal static class CommonPropertyNames
+    {
+        public const string IndexerName = "Item";
+    }
+}

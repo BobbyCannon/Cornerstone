@@ -1,6 +1,6 @@
 # TreeDataGrid
 
-Cornerstone hosts a forked Avalonia **TreeDataGrid** under `Cornerstone.Avalonia`. It shows flat or hierarchical tabular data with virtualized rows.
+Cornerstone hosts a forked **TreeDataGrid** under `Cornerstone.Presentation.Theme`. It shows flat or hierarchical tabular data with virtualized rows.
 
 Product example: editor source-control history and working-change lists bind row height so the commit graph and grid stay aligned.
 

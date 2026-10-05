@@ -2,9 +2,8 @@
 
 using System;
 using System.IO;
-using Cornerstone.Avalonia.Themes;
 using Cornerstone.GrokMonitor.Keystone.State;
-using Cornerstone.Presentation;
+using Cornerstone.Presentation.Theme.Theming;
 using Cornerstone.Runtime;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -44,6 +43,7 @@ public class AppSettingsTests : GrokMonitorUnitTest
 		settings.ThemeMode = ThemeMode.Light;
 		settings.ThemeDensity = ThemeDensity.Compact;
 		settings.SessionTokenHeatEnabled = false;
+
 		// Values above default soft and below default hot so load-order sanitize does not rewrite.
 		settings.SessionTokenHeatSoftTokens = 2_000_000;
 		settings.SessionTokenHeatHotTokens = 8_000_000;
@@ -52,7 +52,7 @@ public class AppSettingsTests : GrokMonitorUnitTest
 		settings.WindowLocation.Width = 1400;
 		settings.WindowLocation.Height = 900;
 		settings.WindowLocation.Maximized = true;
-		settings.Save(force: true);
+		settings.Save(true);
 
 		var filePath = Path.Combine(temp.Path, "ApplicationSettings.json");
 		IsTrue(File.Exists(filePath));
@@ -131,17 +131,27 @@ public class AppSettingsTests : GrokMonitorUnitTest
 
 	#endregion
 
-	#region Nested Types
+	#region Classes
 
 	private sealed class TemporaryDirectory : IDisposable
 	{
+		#region Constructors
+
 		public TemporaryDirectory()
 		{
 			Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "GrokMonitor.AppSettings." + Guid.NewGuid().ToString("N"));
 			Directory.CreateDirectory(Path);
 		}
 
+		#endregion
+
+		#region Properties
+
 		public string Path { get; }
+
+		#endregion
+
+		#region Methods
 
 		public void Dispose()
 		{
@@ -149,7 +159,7 @@ public class AppSettingsTests : GrokMonitorUnitTest
 			{
 				if (Directory.Exists(Path))
 				{
-					Directory.Delete(Path, recursive: true);
+					Directory.Delete(Path, true);
 				}
 			}
 			catch
@@ -157,6 +167,8 @@ public class AppSettingsTests : GrokMonitorUnitTest
 				// Best-effort cleanup for temp test data.
 			}
 		}
+
+		#endregion
 	}
 
 	#endregion

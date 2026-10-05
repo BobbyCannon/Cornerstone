@@ -1,6 +1,7 @@
 #region References
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -9,13 +10,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using System.Xaml;
-using Avalonia.Remote.Protocol;
-using Avalonia.Remote.Protocol.Designer;
-using Avalonia.Remote.Protocol.Input;
-using Avalonia.Remote.Protocol.Viewport;
+using Cornerstone.Presentation.Remote.Wpf;
+using Cornerstone.VisualStudio.Avalonia;
+using Cornerstone.VisualStudio.Services.Preview;
 using Microsoft.VisualStudio.Shell;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -34,26 +38,50 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 	#region Fields
 
 	/// <summary>
-	/// Minimum time between UI frame notifications. Pixel data is still applied for every
-	/// processed frame; this only throttles <see cref="FrameReceived"/> (WPF Source refresh).
-	/// ~60 FPS is fine because inactive tabs suspend their host — typically one live previewer.
-	/// Frame coalescing still drops backlog if the UI thread falls behind.
+	/// Host must complete BSON handshake within this window or start is aborted.
+	/// Unbounded wait here can freeze Visual Studio when the host dies quietly.
 	/// </summary>
-	private static readonly TimeSpan MinUiFrameInterval = TimeSpan.FromMilliseconds(16); // ~60 FPS
+	private static readonly TimeSpan HandshakeTimeout = TimeSpan.FromSeconds(15);
+
+	/// <summary>
+	/// A send that stays in flight this long means the socket is wedged; stop the host.
+	/// Detected by the watchdog so pointer/frame ACKs do not each allocate a Delay timer.
+	/// </summary>
+	private static readonly TimeSpan TransportSendTimeout = TimeSpan.FromSeconds(5);
+
+	private static readonly TimeSpan WatchdogInterval = TimeSpan.FromSeconds(2);
 
 	private string _assemblyPath;
 	private WriteableBitmap _bitmap;
-	private IAvaloniaRemoteTransportConnection _connection;
-	private ExceptionDetails _error;
+	private object _connection;
+	private PreviewExceptionDetails _error;
 	private string _executablePath;
-	private DateTime _lastUiFrameUtc = DateTime.MinValue;
+	private readonly IPreviewProtocol _protocol;
+	private Dispatcher _uiDispatcher;
 	private IDisposable _listener;
 	private readonly ILogger _log;
 	private readonly SemaphoreSlim _messageGate = new(1, 1);
-	private FrameMessage _pendingFrame;
+	private PreviewFrameData _pendingFrame;
 	private Process _process;
+	private TaskCompletionSource<object> _remoteConnected;
+	private readonly RemoteSession _session;
 	private int _stopping;
+	private int _stopWaitsForExit;
+	private int _stoppedByUser;
+	private int _exitHandled;
+	private int _framePainted;
+	private int _lastFrameWidth;
+	private int _lastFrameHeight;
+	private readonly object _lifetimeGate;
+	private int _runId;
+	private int _disposedProcess;
+	private Timer _watchdog;
+	private CancellationTokenSource _runCts;
+	private int _sendInFlight;
+	private int _surfaceSuspended;
+	private long _sendStartedUtcTicks;
 	private readonly object _frameGate = new();
+	private static readonly List<PreviewerProcess> _live = new();
 
 	#endregion
 
@@ -63,7 +91,13 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 	/// Initializes a new instance of the <see cref="PreviewerProcess" /> class.
 	/// </summary>
 	public PreviewerProcess()
+		: this(CornerstonePreviewProtocol.Instance)
 	{
+	}
+
+	internal PreviewerProcess(IPreviewProtocol protocol)
+	{
+		_protocol = protocol ?? throw new ArgumentNullException(nameof(protocol));
 		_log = new LoggerConfiguration()
 			.MinimumLevel.Verbose()
 			.Destructure.ToMaximumStringLength(32)
@@ -72,6 +106,46 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 			.CreateLogger();
 
 		Scaling = 1;
+		_lifetimeGate = new object();
+		_runId = 0;
+		_stopWaitsForExit = 0;
+		_disposedProcess = 0;
+		_runCts = new CancellationTokenSource();
+		_sendInFlight = 0;
+		_surfaceSuspended = 0;
+		_sendStartedUtcTicks = 0;
+		_uiDispatcher = null;
+		_session = protocol.Platform == XamlPreviewPlatform.Cornerstone
+			? new RemoteSession()
+			: null;
+		if (_session != null)
+		{
+			_session.FramePainted += OnRemoteFramePainted;
+			_session.FrameReceived += OnRemoteFrameReceived;
+			_session.FrameIgnored += OnRemoteFrameIgnored;
+			_session.MessageReceived += OnRemoteMessageReceived;
+			_session.Connected += OnRemoteConnected;
+			_session.Faulted += OnRemoteFaulted;
+		}
+
+		lock (_live)
+		{
+			_live.Add(this);
+		}
+
+		_framePainted = 0;
+		_lastFrameWidth = 0;
+		_lastFrameHeight = 0;
+		Status = "Idle";
+		Activity = "Idle";
+	}
+
+	public static PreviewerProcess Create(XamlPreviewPlatform platform)
+	{
+		IPreviewProtocol protocol = platform == XamlPreviewPlatform.Cornerstone
+			? CornerstonePreviewProtocol.Instance
+			: AvaloniaPreviewProtocol.Instance;
+		return new PreviewerProcess(protocol);
 	}
 
 	#endregion
@@ -81,18 +155,49 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 	/// <summary>
 	/// Gets the current preview as a <see cref="BitmapSource" />.
 	/// </summary>
-	public BitmapSource Bitmap => _bitmap;
+	public BitmapSource Bitmap => _session != null ? _session.Bitmap : _bitmap;
 
 	/// <summary>
 	/// Gets the bitmap that should be shown in the designer. While markup is invalid the
 	/// last good frame is kept so the preview freezes instead of blanking or thrashing.
 	/// </summary>
-	public BitmapSource DisplayBitmap => _bitmap;
+	public BitmapSource DisplayBitmap => Bitmap;
+
+	/// <summary>
+	/// Short state for the process panel: Awaiting build, Starting, Updating, Showing, Paused.
+	/// Updating means XAML was sent and no frame has been painted yet. Showing means a frame was painted.
+	/// </summary>
+	public string Status { get; private set; }
+
+	/// <summary>
+	/// What the preview is doing right now, shown in the processes window.
+	/// </summary>
+	public string Activity { get; private set; }
+
+	/// <summary>
+	/// Forced preview theme sent with the next XAML update: Default, Light, or Dark.
+	/// </summary>
+	public string PreviewTheme { get; set; }
+
+	/// <summary>
+	/// Preview accent sent with the next XAML update, such as Blue.
+	/// </summary>
+	public string PreviewThemeColor { get; set; }
+
+	/// <summary>
+	/// Preview density sent with the next XAML update: Compact, Normal, or Large.
+	/// </summary>
+	public string PreviewThemeDensity { get; set; }
+
+	/// <summary>
+	/// File name of the designer tab, such as About.cxaml.
+	/// </summary>
+	public string Document { get; private set; }
 
 	/// <summary>
 	/// Gets the current error state as returned from the previewer process.
 	/// </summary>
-	public ExceptionDetails Error
+	public PreviewExceptionDetails Error
 	{
 		get => _error;
 		private set
@@ -100,6 +205,21 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 			if (!Equals(_error, value))
 			{
 				_error = value;
+				if (_session != null)
+				{
+					_session.PauseFrames = value != null;
+				}
+
+				if ((value != null) && (Status != "Awaiting build"))
+				{
+					Status = "Paused";
+					Activity = "Paused";
+				}
+				else if ((value == null) && (Status == "Paused"))
+				{
+					Status = "Showing";
+				}
+
 				ErrorChanged?.Invoke(this, EventArgs.Empty);
 			}
 		}
@@ -114,18 +234,77 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 	/// <summary>
 	/// Gets a value indicating whether the previewer process is ready to receive messages.
 	/// </summary>
-	public bool IsReady => IsRunning && (_connection != null);
+	public bool IsReady =>
+		IsRunning && (_session != null ? _session.IsConnected : _connection != null);
+
+	internal RemoteSession RemoteSession => _session;
 
 	/// <summary>
 	/// Gets a value indicating whether the previewer process is currently running.
 	/// </summary>
+	internal static PreviewerProcess[] Live()
+	{
+		lock (_live)
+		{
+			return _live.ToArray();
+		}
+	}
+
+	/// <summary>
+	/// Stops every previewer so those processes release files when Visual Studio closes.
+	/// </summary>
+	internal static void ShutdownAll()
+	{
+		var live = Live();
+		for (var i = 0; i < live.Length; i++)
+		{
+			try
+			{
+				live[i].Stop();
+			}
+			catch (Exception ex)
+			{
+				Log.Debug(ex, "Previewer shutdown failed");
+			}
+		}
+	}
+
+	internal string TargetPath => _executablePath;
+
+	internal int ProcessId
+	{
+		get
+		{
+			try
+			{
+				var process = _process;
+				if ((process == null) || process.HasExited)
+				{
+					return 0;
+				}
+
+				return process.Id;
+			}
+			catch (InvalidOperationException)
+			{
+				return 0;
+			}
+		}
+	}
+
 	public bool IsRunning
 	{
 		get
 		{
 			try
 			{
-				return (_process != null) && !_process.HasExited;
+				var process = _process;
+				if (process == null)
+				{
+					return false;
+				}
+
+				return !process.HasExited;
 			}
 			catch (InvalidOperationException)
 			{
@@ -137,6 +316,8 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 	/// <summary>
 	/// Gets scaling for the preview.
 	/// </summary>
+	public XamlPreviewPlatform Platform => _protocol.Platform;
+
 	public double Scaling { get; private set; }
 
 	#endregion
@@ -148,8 +329,35 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 	/// </summary>
 	public void Dispose()
 	{
+		Interlocked.Exchange(ref _disposedProcess, 1);
+		lock (_live)
+		{
+			_live.Remove(this);
+		}
+
+		StopWatchdog();
 		Stop();
+		CancelRun();
+		if (_session != null)
+		{
+			_session.FramePainted -= OnRemoteFramePainted;
+			_session.FrameReceived -= OnRemoteFrameReceived;
+			_session.FrameIgnored -= OnRemoteFrameIgnored;
+			_session.MessageReceived -= OnRemoteMessageReceived;
+			_session.Connected -= OnRemoteConnected;
+			_session.Faulted -= OnRemoteFaulted;
+			_session.Dispose();
+		}
+
 		_messageGate.Dispose();
+		try
+		{
+			_runCts?.Dispose();
+		}
+		catch
+		{
+			// Already disposed during Stop.
+		}
 	}
 
 	/// <summary>
@@ -157,19 +365,29 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 	/// </summary>
 	/// <param name="message"> The message. </param>
 	/// <returns> A task tracking the operation. </returns>
-	public async Task SendInputAsync(InputEventMessageBase message)
+	public Task SendPointerMovedAsync(double x, double y, MouseEventArgs e)
 	{
-		if (_process == null)
+		return SendInputObjectAsync(_protocol.CreatePointerMoved(x, y, e));
+	}
+
+	public Task SendPointerPressedAsync(double x, double y, MouseButtonEventArgs e)
+	{
+		return SendInputObjectAsync(_protocol.CreatePointerPressed(x, y, e));
+	}
+
+	public Task SendPointerReleasedAsync(double x, double y, MouseButtonEventArgs e)
+	{
+		return SendInputObjectAsync(_protocol.CreatePointerReleased(x, y, e));
+	}
+
+	private Task SendInputObjectAsync(object message)
+	{
+		if (!IsReady)
 		{
-			throw new InvalidOperationException("Process not started.");
+			return Task.CompletedTask;
 		}
 
-		if (_connection == null)
-		{
-			throw new InvalidOperationException("Process not finished initializing.");
-		}
-
-		await SendAsync(message);
+		return SendAsync(message);
 	}
 
 	/// <summary>
@@ -194,10 +412,47 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 
 		Scaling = scaling;
 
+		if (_session != null)
+		{
+			await _session.SetScalingAsync(scaling).ConfigureAwait(false);
+			return;
+		}
+
 		if (IsReady)
 		{
-			await SendRenderInfoAsync();
+			await SendRenderInfoAsync().ConfigureAwait(false);
 		}
+	}
+
+	internal void SetDocument(string document)
+	{
+		Document = document ?? string.Empty;
+	}
+
+	internal void SetStatus(string status)
+	{
+		Status = status ?? string.Empty;
+		if (string.Equals(Status, "Awaiting build", StringComparison.Ordinal))
+		{
+			Activity = "Waiting on build";
+			return;
+		}
+
+		if (string.Equals(Status, "Paused", StringComparison.Ordinal))
+		{
+			Activity = "Paused";
+		}
+	}
+
+	/// <summary>
+	/// Binds remote frame application to the designer dispatcher. Call from the UI thread
+	/// before <see cref="StartAsync"/>. Frames post a single pass when they arrive.
+	/// <see cref="Stop"/> drops any wait, so a suspended host does not keep waking the UI.
+	/// </summary>
+	public void AttachUiDispatcher(Dispatcher dispatcher)
+	{
+		_uiDispatcher = dispatcher;
+		_session?.AttachDispatcher(dispatcher);
 	}
 
 	/// <summary>
@@ -214,10 +469,18 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 		bool isNetFx)
 	{
 		_log.Verbose("Started PreviewerProcess.StartAsync()");
-
-		if (_listener != null)
+		if (Volatile.Read(ref _disposedProcess) != 0)
 		{
-			throw new InvalidOperationException("Previewer process already started.");
+			throw new OperationCanceledException("Previewer start was cancelled.");
+		}
+
+		Interlocked.Exchange(ref _stoppedByUser, 0);
+		Status = "Starting";
+		Activity = "Starting";
+
+		if ((_listener != null) || (_session != null && _session.IsListening) || IsRunning)
+		{
+			Stop();
 		}
 
 		if (string.IsNullOrWhiteSpace(assemblyPath))
@@ -267,30 +530,52 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 
 		_assemblyPath = assemblyPath;
 		_executablePath = executablePath;
-		Interlocked.Exchange(ref _stopping, 0);
+		int run;
+		if (!TryBeginRun(out run))
+		{
+			throw new OperationCanceledException("Previewer start was cancelled.");
+		}
+
+		ReplaceRunCancellation();
 		Error = null;
 
-		var port = FreeTcpPort();
-		var tcs = new TaskCompletionSource<object>();
-
-		_listener = new BsonTcpTransport().Listen(
-			IPAddress.Loopback,
-			port,
-			#pragma warning disable VSTHRD101
-			async t =>
+		var tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+		int port;
+		if (_session != null)
+		{
+			var dispatcher = Dispatcher.FromThread(Thread.CurrentThread);
+			if (dispatcher != null)
 			{
-				try
+				_session.AttachDispatcher(dispatcher);
+			}
+
+			_remoteConnected = tcs;
+			port = _session.ListenLoopback();
+		}
+		else
+		{
+			port = FreeTcpPort();
+			_listener = _protocol.Listen(
+				IPAddress.Loopback,
+				port,
+				#pragma warning disable VSTHRD101
+				t =>
 				{
-					await ConnectionInitializedAsync(t);
-					tcs.TrySetResult(null);
-				}
-				catch (Exception ex)
-				{
-					_log.Error(ex, "Error initializing connection");
-					tcs.TrySetException(ex);
-				}
-			});
-		#pragma warning restore VSTHRD101
+					ConnectionInitializedAsync(t).ContinueWith(task =>
+					{
+						if (task.IsFaulted)
+						{
+							_log.Error(task.Exception, "Error initializing connection");
+							tcs.TrySetException(task.Exception.GetBaseException());
+						}
+						else
+						{
+							tcs.TrySetResult(null);
+						}
+					}, TaskScheduler.Default);
+				});
+			#pragma warning restore VSTHRD101
+		}
 
 		var executableDir = Path.GetDirectoryName(_executablePath);
 		var targetName = Path.GetFileNameWithoutExtension(_executablePath);
@@ -303,7 +588,37 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 
 			EnsureExists(runtimeConfigPath);
 			EnsureExists(depsPath);
-			args = $@"exec --runtimeconfig ""{runtimeConfigPath}"" --depsfile ""{depsPath}"" ""{hostAppPath}"" --transport tcp-bson://127.0.0.1:{port}/ ""{_executablePath}""";
+			var hostDir = Path.GetDirectoryName(hostAppPath);
+			var probeArgs = "";
+			if (!string.IsNullOrEmpty(hostDir))
+			{
+				// The previewed executable often does not reference Presentation. Its deps
+				// file then has no entry for the host's assemblies, and Main dies with
+				// FileNotFound before the handshake. Probe the host output and the NuGet
+				// cache, and add the host graph with project dlls marked as flat packages.
+				probeArgs = $@" --additionalprobingpath ""{hostDir}""";
+				var nuget = Environment.GetEnvironmentVariable("NUGET_PACKAGES");
+				if (string.IsNullOrWhiteSpace(nuget))
+				{
+					nuget = Path.Combine(
+						Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+						".nuget",
+						"packages");
+				}
+
+				if (Directory.Exists(nuget))
+				{
+					probeArgs += $@" --additionalprobingpath ""{nuget}""";
+				}
+
+				var hostDeps = TryCreateHostDepsFile(hostAppPath);
+				if (hostDeps != null)
+				{
+					probeArgs += $@" --additional-deps ""{hostDeps}""";
+				}
+			}
+
+			args = $@"exec{probeArgs} --runtimeconfig ""{runtimeConfigPath}"" --depsfile ""{depsPath}"" ""{hostAppPath}"" --transport tcp-bson://127.0.0.1:{port}/ ""{_executablePath}""";
 			processInfo = new ProcessStartInfo
 			{
 				Arguments = args,
@@ -330,35 +645,156 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 			};
 		}
 
-		_log.Information("Starting previewer process for '{ExecutablePath}'", _executablePath);
+		_log.Debug("Starting previewer process for '{ExecutablePath}'", _executablePath);
 		_log.Debug("> dotnet.exe {Args}", args);
 
-		var process = _process = Process.Start(processInfo);
+		// Stop during startup increments the run id. A process launched after that
+		// used to be stored anyway, so closing the tab left it alive until devenv exited.
+		if (!IsCurrentRun(run))
+		{
+			AbandonLaunch(null);
+			throw new OperationCanceledException("Previewer start was cancelled.");
+		}
+
+		var process = Process.Start(processInfo);
+		if (process == null)
+		{
+			AbandonLaunch(null);
+			throw new InvalidOperationException("Failed to start the previewer process.");
+		}
+
+		ExtensionProcessLifetime.Track(process);
+		if (!TryPublishProcess(run, process))
+		{
+			_log.Debug("Previewer launch lost the race with Stop; killing pid {Pid}", process.Id);
+			AbandonLaunch(process);
+			throw new OperationCanceledException("Previewer start was cancelled.");
+		}
+		Interlocked.Exchange(ref _exitHandled, 0);
+		var abortOnce = 0;
 		process.EnableRaisingEvents = true;
 		process.OutputDataReceived += OnProcessOutputReceived;
 		process.ErrorDataReceived += OnProcessErrorReceived;
 		process.Exited += Abort;
 		process.Exited += OnProcessExited;
-		process.BeginErrorReadLine();
-		process.BeginOutputReadLine();
-
-		void Abort(object sender, EventArgs e)
+		try
 		{
-			_log.Information("Process exited while waiting for connection to be initialized.");
-			tcs.TrySetException(new ApplicationException($"The previewer process exited unexpectedly with code {process.ExitCode}."));
+			process.BeginErrorReadLine();
+			process.BeginOutputReadLine();
+		}
+		catch (InvalidOperationException)
+		{
+			// The process can exit inside Main before the readers are attached.
 		}
 
 		try
 		{
-			_log.Information("Started previewer process for '{ExecutablePath}'. Waiting for connection to be initialized.", _executablePath);
-			await tcs.Task;
+			if (process.HasExited)
+			{
+				Abort(process, EventArgs.Empty);
+			}
+		}
+		catch (InvalidOperationException)
+		{
+			Abort(process, EventArgs.Empty);
+		}
+
+		void Abort(object sender, EventArgs e)
+		{
+			if (Interlocked.Exchange(ref abortOnce, 1) == 1)
+			{
+				return;
+			}
+
+			var code = -1;
+			try
+			{
+				code = process.ExitCode;
+			}
+			catch (InvalidOperationException)
+			{
+				// Stop disposed the process, or the handle was already released.
+			}
+
+			_log.Information("Process exited while waiting for connection to be initialized.");
+			tcs.TrySetException(new ApplicationException(
+				"The previewer process exited unexpectedly with code " + code + "."));
+		}
+
+		StartWatchdog();
+
+		try
+		{
+			_log.Debug("Started previewer process for '{ExecutablePath}'. Waiting for connection to be initialized.", _executablePath);
+			using (var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(RunToken))
+			{
+				timeoutCts.CancelAfter(HandshakeTimeout);
+				var timeoutTask = Task.Delay(Timeout.Infinite, timeoutCts.Token);
+				var completed = await Task.WhenAny(tcs.Task, timeoutTask).ConfigureAwait(false);
+				if (completed != tcs.Task)
+				{
+					if (!tcs.Task.IsCompleted)
+					{
+						_log.Warning("Previewer handshake timed out after {Timeout}", HandshakeTimeout);
+						tcs.TrySetException(new TimeoutException(
+							"The previewer did not connect within " + HandshakeTimeout.TotalSeconds + " seconds."));
+						try
+						{
+							Stop();
+						}
+						catch (Exception ex)
+						{
+							_log.Debug(ex, "Stop after handshake timeout");
+						}
+					}
+				}
+			}
+
+			await tcs.Task.ConfigureAwait(false);
 		}
 		finally
 		{
-			process.Exited -= Abort;
+			try
+			{
+				process.Exited -= Abort;
+			}
+			catch (InvalidOperationException)
+			{
+				// The process was disposed after it exited.
+			}
 		}
 
 		_log.Verbose("Finished PreviewerProcess.StartAsync()");
+	}
+
+	/// <summary>
+	/// Unhooks the preview render pump on the calling thread when that thread is the
+	/// UI thread. Does not kill the process or close the socket.
+	/// The Cornerstone pump stays stopped until the next listen.
+	/// </summary>
+	public void ReleasePreviewSurface()
+	{
+		Interlocked.Exchange(ref _surfaceSuspended, 1);
+		_session?.RequestStopPump();
+	}
+
+	/// <summary>
+	/// Drops the render hook while the host is still running. A hidden tab or a
+	/// source-only view uses this so frames are acknowledged and not applied.
+	/// </summary>
+	public void SuspendPreviewSurface()
+	{
+		Interlocked.Exchange(ref _surfaceSuspended, 1);
+		_session?.SuspendPump();
+	}
+
+	/// <summary>
+	/// Presents frames again after <see cref="SuspendPreviewSurface"/>.
+	/// </summary>
+	public void ResumePreviewSurface()
+	{
+		Interlocked.Exchange(ref _surfaceSuspended, 0);
+		_session?.ResumePump();
 	}
 
 	/// <summary>
@@ -370,6 +806,18 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 	{
 		StopCore(waitForExit: false, timeout: TimeSpan.Zero);
 	}
+
+	/// <summary>
+	/// Stops the preview from the process list. The designer leaves it stopped
+	/// instead of showing a crash banner.
+	/// </summary>
+	public void Kill()
+	{
+		Interlocked.Exchange(ref _stoppedByUser, 1);
+		Stop();
+	}
+
+	public bool StoppedByUser => _stoppedByUser == 1;
 
 	/// <summary>
 	/// Stops the previewer process and waits until it has exited and local state is cleared.
@@ -387,32 +835,50 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 	/// </summary>
 	private void StopCore(bool waitForExit, TimeSpan timeout)
 	{
-		if (Interlocked.Exchange(ref _stopping, 1) == 1)
+		Process process;
+		var alreadyStopping = false;
+		lock (_lifetimeGate)
 		{
-			// Another stop is already in flight; still wait if the caller needs a fully quiet process.
+			// Invalidates an in-flight StartAsync. That start kills the process it
+			// launched instead of keeping an orphan until Visual Studio exits.
+			_runId++;
+			alreadyStopping = _stopping == 1;
+			_stopping = 1;
+			process = _process;
+		}
+
+		if (alreadyStopping)
+		{
+			// Another stop is already in flight; still try to abort a wedged write if the host is alive.
+			TryKillProcess(process);
 			if (waitForExit)
 			{
-				WaitForProcessExit(timeout);
+				WaitForProcessExit(process, timeout);
 			}
 
 			return;
 		}
 
 		_log.Verbose("Started PreviewerProcess.Stop(waitForExit={Wait})", waitForExit);
-		_log.Information("Stopping previewer process");
+		_log.Debug("Stopping previewer process");
+		StopWatchdog();
+		CancelRun();
 
 		_listener?.Dispose();
 		_listener = null;
+		_session?.Stop();
+		var pendingConnect = Interlocked.Exchange(ref _remoteConnected, null);
+		pendingConnect?.TrySetException(new ApplicationException("The previewer was stopped."));
 
-		if (_connection is IAvaloniaRemoteTransportConnection connection)
+		var connection = _connection;
+		if (connection != null)
 		{
 			_connection = null;
-			connection.OnMessage -= ConnectionMessageReceived;
-			connection.OnException -= ConnectionExceptionReceived;
+			_protocol.Unsubscribe(connection, ConnectionMessageReceived, ConnectionExceptionReceived);
 
 			try
 			{
-				connection.Dispose();
+				_protocol.DisposeConnection(connection);
 			}
 			catch (Exception ex)
 			{
@@ -425,62 +891,46 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 			_pendingFrame = null;
 		}
 
-		var process = _process;
 		if (process != null)
 		{
-			try
-			{
-				if (!process.HasExited)
-				{
-					_log.Debug("Killing previewer process");
-					process.Kill();
-				}
-			}
-			catch (InvalidOperationException ex)
-			{
-				_log.Debug(ex, "Failed to kill previewer process");
-			}
-			catch (Exception ex)
-			{
-				_log.Debug(ex, "Unexpected error killing previewer process");
-			}
-
 			if (waitForExit)
 			{
-				try
+				// OnProcessExited disposes the Process. WaitForExit throws
+				// "No process is associated" if that happens while we are in it.
+				Interlocked.Increment(ref _stopWaitsForExit);
+			}
+
+			try
+			{
+				TryKillProcess(process);
+
+				if (waitForExit)
 				{
-					if (!process.HasExited)
+					WaitForProcessExit(process, timeout);
+					CleanupProcessState();
+				}
+				else
+				{
+					// If the process has already exited, clean up immediately. Otherwise
+					// OnProcessExited will finish cleanup when the Exited event fires.
+					try
 					{
-						var ms = timeout <= TimeSpan.Zero
-							? 5000
-							: (int) Math.Min(timeout.TotalMilliseconds, int.MaxValue);
-						if (!process.WaitForExit(ms))
+						if (process.HasExited)
 						{
-							_log.Warning("Previewer process did not exit within {TimeoutMs}ms", ms);
+							CleanupProcessState();
 						}
 					}
-				}
-				catch (Exception ex)
-				{
-					_log.Debug(ex, "WaitForExit failed");
-				}
-
-				CleanupProcessState();
-			}
-			else
-			{
-				// If the process has already exited, clean up immediately. Otherwise
-				// OnProcessExited will finish cleanup when the Exited event fires.
-				try
-				{
-					if (process.HasExited)
+					catch (InvalidOperationException)
 					{
 						CleanupProcessState();
 					}
 				}
-				catch (InvalidOperationException)
+			}
+			finally
+			{
+				if (waitForExit)
 				{
-					CleanupProcessState();
+					Interlocked.Decrement(ref _stopWaitsForExit);
 				}
 			}
 		}
@@ -491,32 +941,49 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 		_log.Verbose("Finished PreviewerProcess.Stop()");
 	}
 
-	/// <summary>
-	/// Best-effort wait until <see cref="_process"/> is null or has exited (for concurrent Stop).
-	/// </summary>
-	private void WaitForProcessExit(TimeSpan timeout)
+	private void TryKillProcess(Process process)
 	{
-		var process = _process;
 		if (process == null)
 		{
 			return;
 		}
 
+		_log.Debug("Killing previewer process");
+		ExtensionProcessLifetime.Kill(process);
+	}
+
+	/// <summary>
+	/// Best-effort wait until <see cref="_process"/> is null or has exited (for concurrent Stop).
+	/// </summary>
+	private void WaitForProcessExit(Process process, TimeSpan timeout)
+	{
+		if ((process == null) || HasProcessExited(process))
+		{
+			return;
+		}
+
+		var ms = timeout <= TimeSpan.Zero
+			? 5000
+			: (int) Math.Min(timeout.TotalMilliseconds, int.MaxValue);
 		try
 		{
-			if (process.HasExited)
-			{
-				return;
-			}
-
-			var ms = timeout <= TimeSpan.Zero
-				? 5000
-				: (int) Math.Min(timeout.TotalMilliseconds, int.MaxValue);
 			process.WaitForExit(ms);
 		}
-		catch (Exception ex)
+		catch (InvalidOperationException)
 		{
-			_log.Debug(ex, "WaitForProcessExit failed");
+			// The handle was released because the process had already exited.
+		}
+	}
+
+	private static bool HasProcessExited(Process process)
+	{
+		try
+		{
+			return process.HasExited;
+		}
+		catch (InvalidOperationException)
+		{
+			return true;
 		}
 	}
 
@@ -530,23 +997,27 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 	/// </returns>
 	public async Task<bool> UpdateXamlAsync(string xaml)
 	{
-		if (_process == null)
+		if (!IsReady)
 		{
-			throw new InvalidOperationException("Process not started.");
+			_log.Information("Preview XAML was not sent. The host is not ready.");
+			return false;
 		}
 
-		if (_connection == null)
-		{
-			throw new InvalidOperationException("Process not finished initializing.");
-		}
-
+		var refreshedAt = DateTime.Now.ToString("h:mm:ss tt");
+		Interlocked.Exchange(ref _framePainted, 0);
+		Status = "Updating";
+		Activity = "Sent " + refreshedAt;
+		_log.Information("Preview XAML sent at {Time}. Waiting for the host.", refreshedAt);
 		try
 		{
-			await SendAsync(new UpdateXamlMessage
+			await SendAsync(_protocol.CreateUpdateXaml(xaml, _assemblyPath, PreviewTheme, PreviewThemeColor, PreviewThemeDensity)).ConfigureAwait(false);
+			// Showing means a frame was painted. Sending the XAML is not that.
+			if ((_error == null) && (Volatile.Read(ref _framePainted) == 0))
 			{
-				AssemblyPath = _assemblyPath,
-				Xaml = xaml
-			});
+				Status = "Updating";
+				Activity = "Sent " + refreshedAt;
+			}
+
 			return true;
 		}
 		catch (Exception ex) when (ex is not OperationCanceledException)
@@ -554,7 +1025,8 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 			// Keep the designer alive on transport glitches — surface as markup pause
 			// instead of letting an unhandled fault take down the session.
 			_log.Error(ex, "Failed to send UpdateXamlMessage");
-			Error = new ExceptionDetails
+			Status = "Paused";
+			Error = new PreviewExceptionDetails
 			{
 				Message = "Failed to update preview: " + ex.Message
 			};
@@ -564,11 +1036,19 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 
 	private void CleanupProcessState()
 	{
-		var process = Interlocked.Exchange(ref _process, null);
+		Process process;
+		lock (_lifetimeGate)
+		{
+			process = _process;
+			_process = null;
+		}
+
 		if (process == null)
 		{
 			return;
 		}
+
+		ExtensionProcessLifetime.Kill(process);
 
 		try
 		{
@@ -585,21 +1065,62 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 		{
 			process.Dispose();
 		}
-		catch
+		catch (InvalidOperationException)
 		{
-			// Ignore dispose failures.
+			// Already disposed, or no process is associated.
 		}
 	}
 
-	private void ConnectionExceptionReceived(IAvaloniaRemoteTransportConnection connection, Exception ex)
+	private void ConnectionExceptionReceived(object connection, Exception ex)
 	{
+		// Tab close / Stop() disposes the BSON socket (or kills the host). Avalonia's
+		// reader is still in EndReceive, so a reset looks like a connection error.
+		if (IsExpectedTransportShutdown(connection, ex))
+		{
+			_log.Debug(ex, "Previewer transport closed during stop");
+			return;
+		}
+
 		_log.Error(ex, "Connection error");
 	}
 
-	private async Task ConnectionInitializedAsync(IAvaloniaRemoteTransportConnection connection)
+	private bool IsExpectedTransportShutdown(object connection, Exception ex)
+	{
+		if ((Volatile.Read(ref _stopping) == 0) && (connection == _connection))
+		{
+			return false;
+		}
+
+		return IsTransportReset(ex);
+	}
+
+	private static bool IsTransportReset(Exception ex)
+	{
+		for (var current = ex; current != null; current = current.InnerException)
+		{
+			if (current is ObjectDisposedException)
+			{
+				return true;
+			}
+
+			if (current is SocketException)
+			{
+				return true;
+			}
+
+			if (current is IOException)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private async Task ConnectionInitializedAsync(object connection)
 	{
 		_log.Verbose("Started PreviewerProcess.ConnectionInitializedAsync()");
-		_log.Information("Connection initialized");
+		_log.Debug("Connection initialized");
 
 		if (!IsRunning)
 		{
@@ -608,17 +1129,9 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 		}
 
 		_connection = connection;
-		_connection.OnException += ConnectionExceptionReceived;
-		_connection.OnMessage += ConnectionMessageReceived;
+		_protocol.Subscribe(_connection, ConnectionMessageReceived, ConnectionExceptionReceived);
 
-		await SendAsync(new ClientSupportedPixelFormatsMessage
-		{
-			Formats =
-			[
-				Avalonia.Remote.Protocol.Viewport.PixelFormat.Bgra8888,
-				Avalonia.Remote.Protocol.Viewport.PixelFormat.Rgba8888
-			]
-		});
+		await SendAsync(_protocol.CreatePixelFormats()).ConfigureAwait(false);
 
 		// Always send render info after connect. SetScalingAsync alone is a no-op when
 		// Scaling was already set before the connection became ready.
@@ -627,18 +1140,18 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 			Scaling = 1;
 		}
 
-		await SendRenderInfoAsync();
+		await SendRenderInfoAsync().ConfigureAwait(false);
 
 		_log.Verbose("Finished PreviewerProcess.ConnectionInitializedAsync()");
 	}
 
-	private void ConnectionMessageReceived(IAvaloniaRemoteTransportConnection connection, object message)
+	private void ConnectionMessageReceived(object connection, object message)
 	{
 		// Coalesce frames: only the latest pending frame is kept so a slow UI thread
 		// cannot build an unbounded backlog of pixel buffers.
-		if (message is FrameMessage frame)
+		if (_protocol.TryGetFrame(message, out var frame))
 		{
-			FrameMessage dropped = null;
+			PreviewFrameData dropped = null;
 			lock (_frameGate)
 			{
 				dropped = _pendingFrame;
@@ -648,7 +1161,7 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 			// ACK dropped frames immediately so the host is not stalled waiting on them.
 			if (dropped != null)
 			{
-				SendAsync(new FrameReceivedMessage { SequenceId = dropped.SequenceId }).FireAndForget();
+				SendAsync(_protocol.CreateFrameAck(dropped.SequenceId)).FireAndForget();
 			}
 
 			ProcessPendingFrameAsync().FireAndForget();
@@ -673,6 +1186,99 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 		}
 	}
 
+	/// <summary>
+	/// Writes a deps file for the designer host with the host assembly removed and
+	/// project outputs marked so they load from the host directory.
+	/// </summary>
+	private static string TryCreateHostDepsFile(string hostAppPath)
+	{
+		var hostDir = Path.GetDirectoryName(hostAppPath);
+		if (string.IsNullOrEmpty(hostDir))
+		{
+			return null;
+		}
+
+		var sourcePath = Path.Combine(hostDir, Path.GetFileNameWithoutExtension(hostAppPath) + ".deps.json");
+		if (!File.Exists(sourcePath))
+		{
+			return null;
+		}
+
+		var sourceTime = File.GetLastWriteTimeUtc(sourcePath);
+		var cacheDir = Path.Combine(Path.GetTempPath(), "CornerstoneDesigner");
+		Directory.CreateDirectory(cacheDir);
+		var cachePath = Path.Combine(cacheDir, "host-" + sourceTime.Ticks + ".deps.json");
+		if (File.Exists(cachePath))
+		{
+			return cachePath;
+		}
+
+		var root = JObject.Parse(File.ReadAllText(sourcePath));
+		var hostName = Path.GetFileNameWithoutExtension(hostAppPath) + "/";
+		var targets = root["targets"] as JObject;
+		if (targets != null)
+		{
+			foreach (var tfm in targets.Properties())
+			{
+				var graph = tfm.Value as JObject;
+				if (graph == null)
+				{
+					continue;
+				}
+
+				var remove = new List<string>();
+				foreach (var entry in graph.Properties())
+				{
+					if (entry.Name.StartsWith(hostName, StringComparison.Ordinal))
+					{
+						remove.Add(entry.Name);
+					}
+				}
+
+				foreach (var name in remove)
+				{
+					graph.Remove(name);
+				}
+			}
+		}
+
+		var libraries = root["libraries"] as JObject;
+		if (libraries != null)
+		{
+			var removeLibraries = new List<string>();
+			foreach (var entry in libraries.Properties())
+			{
+				if (entry.Name.StartsWith(hostName, StringComparison.Ordinal))
+				{
+					removeLibraries.Add(entry.Name);
+				}
+			}
+
+			foreach (var name in removeLibraries)
+			{
+				libraries.Remove(name);
+			}
+
+			foreach (var entry in libraries.Properties())
+			{
+				var library = entry.Value as JObject;
+				if ((library == null) || ((string) library["type"] != "project"))
+				{
+					continue;
+				}
+
+				// Project assets are only loaded from the app directory. A package
+				// with path "." is probed in --additionalprobingpath, which is the host output.
+				library["type"] = "package";
+				library["path"] = ".";
+				library["serviceable"] = true;
+			}
+		}
+
+		File.WriteAllText(cachePath, root.ToString(Formatting.None));
+		return cachePath;
+	}
+
 	private static void EnsureExists(string path)
 	{
 		if (!File.Exists(path))
@@ -681,7 +1287,7 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 		}
 	}
 
-	private static bool Equals(ExceptionDetails a, ExceptionDetails b)
+	private static bool Equals(PreviewExceptionDetails a, PreviewExceptionDetails b)
 	{
 		if (ReferenceEquals(a, b))
 		{
@@ -707,9 +1313,8 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 	{
 		switch (message)
 		{
-			case FrameMessage frame:
-				// Never destructure FrameMessage — frame.Data is the full pixel buffer.
-				_log.Debug(
+			case var _ when _protocol.TryGetFrame(message, out var frame):
+				_log.Verbose(
 					"<= FrameMessage SequenceId={SequenceId} {Width}x{Height} Stride={Stride} Format={Format}",
 					frame.SequenceId,
 					frame.Width,
@@ -718,42 +1323,87 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 					frame.Format);
 				break;
 			default:
-				_log.Debug("<= {@Message}", message);
+				_log.Verbose("<= {@Message}", message);
 				break;
 		}
 	}
 
-	private async Task OnFrameAsync(FrameMessage frame)
+	private async Task OnFrameAsync(PreviewFrameData frame)
 	{
 		_log.Verbose("Started PreviewerProcess.OnFrameAsync()");
 		LogIncomingMessage(frame);
 
-		// While markup is invalid, freeze the last good frame: ACK the host so it does not
-		// stall, but do not WritePixels or notify the UI (avoids 1x1 / blank thrash).
+		// ACK off the UI thread first so a stuck dispatcher cannot stall the host or
+		// block devenv on a dead socket.
+		await SendAsync(_protocol.CreateFrameAck(frame.SequenceId)).ConfigureAwait(false);
+
 		if (Error != null)
 		{
-			await SendAsync(new FrameReceivedMessage
-			{
-				SequenceId = frame.SequenceId
-			});
 			_log.Verbose("Finished PreviewerProcess.OnFrameAsync() (frozen — invalid markup)");
 			return;
 		}
 
-		await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-		// Ignore degenerate frames (host sometimes sends 1x1 after a failed load race).
 		if ((frame.Width <= 1) && (frame.Height <= 1) && (_bitmap != null))
 		{
-			await SendAsync(new FrameReceivedMessage
-			{
-				SequenceId = frame.SequenceId
-			});
+			NoteFrameIgnored(frame.Width, frame.Height);
 			_log.Verbose("Finished PreviewerProcess.OnFrameAsync() (ignored degenerate frame)");
 			return;
 		}
 
-		if ((_bitmap == null) || (_bitmap.PixelWidth != frame.Width) || (_bitmap.PixelHeight != frame.Height))
+		try
+		{
+			await ApplyFrameOnUiAsync(frame).ConfigureAwait(false);
+		}
+		catch (OperationCanceledException)
+		{
+			_log.Verbose("Finished PreviewerProcess.OnFrameAsync() (cancelled)");
+			return;
+		}
+
+		_log.Verbose("Finished PreviewerProcess.OnFrameAsync()");
+	}
+
+	private async Task ApplyFrameOnUiAsync(PreviewFrameData frame)
+	{
+		if (Volatile.Read(ref _surfaceSuspended) != 0)
+		{
+			return;
+		}
+
+		var dispatcher = _uiDispatcher;
+		if ((dispatcher != null) && !dispatcher.CheckAccess())
+		{
+			// Background is below Input. SwitchToMainThreadAsync posts at Normal,
+			// which sits above the keyboard and freezes the shell while frames arrive.
+			#pragma warning disable VSTHRD001
+			await dispatcher.InvokeAsync(
+				() => ApplyFrameOnUi(frame),
+				DispatcherPriority.Background,
+				RunToken);
+			#pragma warning restore VSTHRD001
+			return;
+		}
+
+		if (dispatcher == null)
+		{
+			await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(RunToken);
+		}
+
+		ApplyFrameOnUi(frame);
+	}
+
+	private void ApplyFrameOnUi(PreviewFrameData frame)
+	{
+		if (Volatile.Read(ref _surfaceSuspended) != 0)
+		{
+			return;
+		}
+
+		var sizeChanged = (_bitmap == null) ||
+			(_bitmap.PixelWidth != frame.Width) ||
+			(_bitmap.PixelHeight != frame.Height);
+
+		if (sizeChanged)
 		{
 			_bitmap = new WriteableBitmap(
 				Math.Max(frame.Width, 1),
@@ -767,27 +1417,17 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 		if ((frame.Width > 0) && (frame.Height > 0))
 		{
 			_bitmap.WritePixels(
-				new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight),
+				new Int32Rect(0, 0, frame.Width, frame.Height),
 				frame.Data,
 				frame.Stride,
 				0);
+			NoteFramePainted(frame.Width, frame.Height);
 		}
 
-		// Always ACK so the host can continue. Throttle only the UI notification path.
-		var now = DateTime.UtcNow;
-		var notifyUi = (now - _lastUiFrameUtc) >= MinUiFrameInterval;
-		if (notifyUi)
+		if (sizeChanged)
 		{
-			_lastUiFrameUtc = now;
 			FrameReceived?.Invoke(this, EventArgs.Empty);
 		}
-
-		await SendAsync(new FrameReceivedMessage
-		{
-			SequenceId = frame.SequenceId
-		});
-
-		_log.Verbose("Finished PreviewerProcess.OnFrameAsync()");
 	}
 
 	private async Task OnNonFrameMessageAsync(object message)
@@ -795,13 +1435,13 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 		_log.Verbose("Started PreviewerProcess.OnNonFrameMessageAsync()");
 		LogIncomingMessage(message);
 
-		if (message is UpdateXamlResultMessage update)
+		if (_protocol.TryGetXamlResult(message, out var update))
 		{
 			var exception = update.Exception;
 
 			if ((exception == null) && !string.IsNullOrWhiteSpace(update.Error))
 			{
-				exception = new ExceptionDetails { Message = update.Error };
+				exception = new PreviewExceptionDetails { Message = update.Error };
 			}
 
 			var hadError = Error != null;
@@ -809,20 +1449,35 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 
 			if (exception != null)
 			{
-				_log.Information(
+				_log.Debug(
 					"Preview paused on invalid markup (line {Line}, col {Col}): {Message}",
 					exception.LineNumber,
 					exception.LinePosition,
 					exception.Message);
-				_log.Error(new XamlException(exception.Message, null, exception.LineNumber ?? 0, exception.LinePosition ?? 0), "UpdateXamlResult error");
+				_log.Debug(new XamlException(exception.Message, null, exception.LineNumber ?? 0, exception.LinePosition ?? 0), "UpdateXamlResult error");
 				if (!string.IsNullOrWhiteSpace(update.Error))
 				{
-					_log.Error("UpdateXamlResult error details: {0}", update.Error);
+					_log.Debug("UpdateXamlResult error details: {0}", update.Error);
 				}
 			}
-			else if (hadError)
+			else
 			{
-				_log.Information("Preview resumed — markup is valid again");
+				if (hadError)
+				{
+					_log.Debug("Preview resumed — markup is valid again");
+				}
+
+				if (Volatile.Read(ref _framePainted) == 0)
+				{
+					var acceptedAt = DateTime.Now.ToString("h:mm:ss tt");
+					Status = "Updating";
+					Activity = "Host accepted " + acceptedAt;
+					_log.Information("Preview host accepted XAML at {Time}. No frame painted yet.", acceptedAt);
+				}
+				else
+				{
+					_log.Information("Preview host accepted XAML. A frame is already painted.");
+				}
 			}
 		}
 
@@ -839,18 +1494,145 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 
 	private void OnProcessExited(object sender, EventArgs e)
 	{
-		_log.Information("Process exited");
-		Stop();
-		CleanupProcessState();
-		ProcessExited?.Invoke(this, EventArgs.Empty);
+		HandleProcessExited(sender as Process);
+	}
+
+	private void HandleProcessExited(Process exited)
+	{
+		lock (_lifetimeGate)
+		{
+			// A replaced or not-yet-published host must not Stop the run that superseded it.
+			if ((exited == null) || !ReferenceEquals(_process, exited))
+			{
+				return;
+			}
+		}
+
+		if (Interlocked.Exchange(ref _exitHandled, 1) == 1)
+		{
+			return;
+		}
+
+		_log.Debug("Process exited");
+		if (Status != "Awaiting build")
+		{
+			Status = "Closed";
+			Activity = "Closed";
+		}
+		StopWatchdog();
+		_remoteConnected?.TrySetException(
+			new ApplicationException("The previewer process exited unexpectedly."));
+
+		try
+		{
+			Stop();
+		}
+		catch (Exception ex)
+		{
+			_log.Debug(ex, "Stop after process exit");
+		}
+
+		if (Volatile.Read(ref _stopWaitsForExit) == 0)
+		{
+			try
+			{
+				CleanupProcessState();
+			}
+			catch (Exception ex)
+			{
+				_log.Debug(ex, "Cleanup after process exit");
+			}
+		}
+
+		try
+		{
+			ProcessExited?.Invoke(this, EventArgs.Empty);
+		}
+		catch (Exception ex)
+		{
+			_log.Debug(ex, "ProcessExited handler failed");
+		}
+	}
+
+	private void StartWatchdog()
+	{
+		StopWatchdog();
+		_watchdog = new Timer(OnWatchdog, null, WatchdogInterval, WatchdogInterval);
+	}
+
+	private void StopWatchdog()
+	{
+		var timer = Interlocked.Exchange(ref _watchdog, null);
+		if (timer == null)
+		{
+			return;
+		}
+
+		try
+		{
+			timer.Dispose();
+		}
+		catch
+		{
+			// Ignore dispose races with the callback.
+		}
+	}
+
+	private void OnWatchdog(object state)
+	{
+		var process = _process;
+		if (process == null)
+		{
+			return;
+		}
+
+		try
+		{
+			if (!process.HasExited)
+			{
+				if (Volatile.Read(ref _sendInFlight) > 0)
+				{
+					var started = Interlocked.Read(ref _sendStartedUtcTicks);
+					if ((started != 0) &&
+						((DateTime.UtcNow.Ticks - started) > TransportSendTimeout.Ticks))
+					{
+						_log.Error("Previewer send hung; stopping host");
+						try
+						{
+							Stop();
+						}
+						catch (Exception ex)
+						{
+							_log.Debug(ex, "Stop after hung send");
+						}
+					}
+				}
+
+				return;
+			}
+		}
+		catch (InvalidOperationException)
+		{
+			// Handle is gone — treat as exited.
+		}
+
+		HandleProcessExited(process);
 	}
 
 	private void OnProcessOutputReceived(object sender, DataReceivedEventArgs e)
 	{
-		if (!string.IsNullOrWhiteSpace(e.Data))
+		if (string.IsNullOrWhiteSpace(e.Data))
 		{
-			_log.Debug("<= {Data}", e.Data);
+			return;
 		}
+
+		if (e.Data.StartsWith("Preview host:", StringComparison.Ordinal))
+		{
+			_log.Information("{Data}", e.Data);
+			return;
+		}
+
+		_log.Verbose("<= {Data}", e.Data);
 	}
 
 	private async Task ProcessNonFrameMessageAsync(object message)
@@ -858,8 +1640,11 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 		await _messageGate.WaitAsync().ConfigureAwait(false);
 		try
 		{
-			if (_connection == null)
+			// The Cornerstone session never assigns _connection. Dropping here
+			// discarded UpdateXamlResult for every preview.
+			if ((_connection == null) && ((_session == null) || !_session.IsConnected))
 			{
+				_log.Information("Preview message {MessageType} dropped. No live connection.", message != null ? message.GetType().Name : "null");
 				return;
 			}
 
@@ -887,7 +1672,7 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 		{
 			while (true)
 			{
-				FrameMessage frame;
+				PreviewFrameData frame;
 				lock (_frameGate)
 				{
 					frame = _pendingFrame;
@@ -923,52 +1708,245 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 
 	private async Task SendAsync(object message)
 	{
-		if (message is FrameReceivedMessage ack)
+		_log.Verbose("=> Sending {MessageType}", message?.GetType().Name);
+
+		// Arm the hung-send watchdog before Send so a blocking caller-thread write is still visible.
+		var inFlight = Interlocked.Increment(ref _sendInFlight);
+		if (inFlight == 1)
 		{
-			_log.Debug("=> FrameReceivedMessage SequenceId={SequenceId}", ack.SequenceId);
-		}
-		else if (message is ClientRenderInfoMessage renderInfo)
-		{
-			_log.Debug("=> ClientRenderInfoMessage DpiX={DpiX} DpiY={DpiY}", renderInfo.DpiX, renderInfo.DpiY);
-		}
-		else if (message is UpdateXamlMessage)
-		{
-			_log.Debug("=> UpdateXamlMessage (xaml omitted)");
-		}
-		else
-		{
-			_log.Debug("=> Sending {@Message}", message);
+			Interlocked.Exchange(ref _sendStartedUtcTicks, DateTime.UtcNow.Ticks);
 		}
 
-		if (_connection is IAvaloniaRemoteTransportConnection connection)
+		try
 		{
-			await connection.Send(message);
+			Task send = null;
+			if (_session != null)
+			{
+				send = _session.SendAsync(message);
+			}
+			else if (_connection != null)
+			{
+				send = _protocol.SendAsync(_connection, message);
+			}
+
+			if (send == null)
+			{
+				return;
+			}
+
+			await send.ConfigureAwait(false);
 		}
+		finally
+		{
+			Interlocked.Decrement(ref _sendInFlight);
+		}
+	}
+
+	private CancellationToken RunToken
+	{
+		get
+		{
+			var cts = _runCts;
+			return cts != null ? cts.Token : CancellationToken.None;
+		}
+	}
+
+	private bool TryBeginRun(out int run)
+	{
+		lock (_lifetimeGate)
+		{
+			_runId++;
+			run = _runId;
+			if (_disposedProcess != 0)
+			{
+				return false;
+			}
+
+			_stopping = 0;
+			return true;
+		}
+	}
+
+	private bool IsCurrentRun(int run)
+	{
+		lock (_lifetimeGate)
+		{
+			return (_disposedProcess == 0) && (run == _runId);
+		}
+	}
+
+	private bool TryPublishProcess(int run, Process process)
+	{
+		lock (_lifetimeGate)
+		{
+			if ((_disposedProcess != 0) || (run != _runId))
+			{
+				return false;
+			}
+
+			_process = process;
+			return true;
+		}
+	}
+
+	private void AbandonLaunch(Process process)
+	{
+		lock (_lifetimeGate)
+		{
+			if ((process != null) && ReferenceEquals(_process, process))
+			{
+				_process = null;
+			}
+		}
+
+		try
+		{
+			_listener?.Dispose();
+		}
+		catch (Exception ex)
+		{
+			_log.Debug(ex, "Failed to dispose previewer listener");
+		}
+
+		_listener = null;
+		try
+		{
+			_session?.Stop();
+		}
+		catch (Exception ex)
+		{
+			_log.Debug(ex, "Failed to stop previewer session");
+		}
+
+		var pendingConnect = Interlocked.Exchange(ref _remoteConnected, null);
+		pendingConnect?.TrySetException(new OperationCanceledException("Previewer start was cancelled."));
+		ExtensionProcessLifetime.Kill(process);
+	}
+
+	private void ReplaceRunCancellation()
+	{
+		var next = new CancellationTokenSource();
+		var previous = Interlocked.Exchange(ref _runCts, next);
+		if (previous == null)
+		{
+			return;
+		}
+
+		try
+		{
+			previous.Cancel();
+		}
+		catch (ObjectDisposedException)
+		{
+		}
+
+		try
+		{
+			previous.Dispose();
+		}
+		catch
+		{
+			// Ignore dispose races with in-flight hops.
+		}
+	}
+
+	private void CancelRun()
+	{
+		try
+		{
+			_runCts?.Cancel();
+		}
+		catch (ObjectDisposedException)
+		{
+		}
+		catch (AggregateException)
+		{
+		}
+	}
+
+	private void OnRemoteConnected(object sender, EventArgs e)
+	{
+		_log.Debug("Remote session connected");
+		_remoteConnected?.TrySetResult(null);
+	}
+
+	private void OnRemoteFaulted(object sender, Exception exception)
+	{
+		ConnectionExceptionReceived(_session, exception);
+		var fault = exception ?? new IOException("Remote session faulted.");
+		_remoteConnected?.TrySetException(fault);
+	}
+
+	private void OnRemoteFramePainted(object sender, EventArgs e)
+	{
+		var bitmap = _session != null ? _session.Bitmap : null;
+		if (bitmap != null)
+		{
+			NoteFramePainted(bitmap.PixelWidth, bitmap.PixelHeight);
+		}
+	}
+
+	private void OnRemoteFrameReceived(object sender, EventArgs e)
+	{
+		FrameReceived?.Invoke(this, EventArgs.Empty);
+	}
+
+	private void OnRemoteFrameIgnored(object sender, EventArgs e)
+	{
+		var session = _session;
+		if (session == null)
+		{
+			return;
+		}
+
+		NoteFrameIgnored(session.IgnoredFrameWidth, session.IgnoredFrameHeight);
+	}
+
+	private void NoteFramePainted(int width, int height)
+	{
+		var first = Interlocked.Exchange(ref _framePainted, 1) == 0;
+		var sizeChanged = (width != _lastFrameWidth) || (height != _lastFrameHeight);
+		_lastFrameWidth = width;
+		_lastFrameHeight = height;
+		var paintedAt = DateTime.Now.ToString("h:mm:ss tt");
+		Status = "Showing";
+		Activity = "Frame " + width + "x" + height + " " + paintedAt;
+		if (first || sizeChanged)
+		{
+			_log.Information("Preview frame painted {Width}x{Height} at {Time}.", width, height, paintedAt);
+		}
+	}
+
+	private void NoteFrameIgnored(int width, int height)
+	{
+		var ignoredAt = DateTime.Now.ToString("h:mm:ss tt");
+		if (Volatile.Read(ref _framePainted) == 0)
+		{
+			Status = "Updating";
+		}
+
+		Activity = "Ignored frame " + width + "x" + height + " " + ignoredAt;
+		_log.Information(
+			"Preview frame ignored ({Width}x{Height}) at {Time}. The surface stays empty until a real frame is painted.",
+			width,
+			height,
+			ignoredAt);
+	}
+
+	private void OnRemoteMessageReceived(object sender, object message)
+	{
+		ProcessNonFrameMessageAsync(message).FireAndForget();
 	}
 
 	private Task SendRenderInfoAsync()
 	{
 		var scaling = Scaling > 0 ? Scaling : 1;
-		return SendAsync(new ClientRenderInfoMessage
-		{
-			DpiX = 96 * scaling,
-			DpiY = 96 * scaling
-		});
+		return SendAsync(_protocol.CreateRenderInfo(96 * scaling, 96 * scaling));
 	}
 
-	private PixelFormat ToWpf(Avalonia.Remote.Protocol.Viewport.PixelFormat format)
+	private PixelFormat ToWpf(object format)
 	{
-		switch (format)
-		{
-			case Avalonia.Remote.Protocol.Viewport.PixelFormat.Bgra8888:
-				return PixelFormats.Bgra32;
-			case Avalonia.Remote.Protocol.Viewport.PixelFormat.Rgb565:
-				return PixelFormats.Bgr565;
-			case Avalonia.Remote.Protocol.Viewport.PixelFormat.Rgba8888:
-				return PixelFormats.Pbgra32;
-			default:
-				throw new NotSupportedException("Unsupported pixel format.");
-		}
+		return _protocol.ToWpf(format);
 	}
 
 	#endregion

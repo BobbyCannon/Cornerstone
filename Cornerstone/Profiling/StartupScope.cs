@@ -14,6 +14,7 @@ public readonly ref struct StartupScope : IDisposable
 {
 	#region Fields
 
+	private readonly bool _accumulate;
 	private readonly bool _isActive;
 
 	private readonly StartupProfiler _profiler;
@@ -24,11 +25,12 @@ public readonly ref struct StartupScope : IDisposable
 	#region Constructors
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	internal StartupScope(StartupProfiler profiler, string name, long startTicks)
+	internal StartupScope(StartupProfiler profiler, string name, long startTicks, bool accumulate = false)
 	{
 		_profiler = profiler;
 		Name = name;
 		_startTicks = startTicks;
+		_accumulate = accumulate;
 		_isActive = profiler != null;
 	}
 
@@ -46,6 +48,12 @@ public readonly ref struct StartupScope : IDisposable
 	{
 		if (!_isActive)
 		{
+			return;
+		}
+
+		if (_accumulate)
+		{
+			_profiler.OnAccumulateEnded(this, _startTicks);
 			return;
 		}
 

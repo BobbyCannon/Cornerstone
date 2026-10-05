@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using Cornerstone.Collections;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
+using Cornerstone.Reflection;
 
 #endregion
 
@@ -15,7 +16,10 @@ namespace Cornerstone.Sync;
 /// <summary>
 /// Represents settings to be used during a sync.
 /// </summary>
-public class SyncSettings : CornerstoneObject<SyncSettings>
+[SourceReflection]
+[Notifiable(["*"])]
+[Updateable(UpdateableAction.All, ["*"])]
+public partial class SyncSettings : CornerstoneObject<SyncSettings>
 {
 	#region Fields
 
@@ -42,47 +46,52 @@ public class SyncSettings : CornerstoneObject<SyncSettings>
 	/// <summary>
 	/// Include the detail of the exception in the SyncIssue(s) returned.
 	/// </summary>
-	public bool IncludeIssueDetails { get; set; }
+	public partial bool IncludeIssueDetails { get; set; }
 
 	/// <summary>
 	/// Gets or sets the number of objects to be processed per sync request.
 	/// </summary>
-	public int ItemsPerSyncRequest { get; set; }
+	public partial int ItemsPerSyncRequest { get; set; }
 
 	/// <summary>
 	/// Gets or sets the client was last sync was attempted.
 	/// </summary>
-	public DateTime LastSyncAttemptedOn { get; set; }
+	public partial DateTime LastSyncAttemptedOn { get; set; }
 
 	/// <summary>
 	/// Gets or sets the client was last synced on date and time.
 	/// </summary>
-	public DateTime LastSyncedOnClient { get; set; }
+	public partial DateTime LastSyncedOnClient { get; set; }
 
 	/// <summary>
 	/// Gets or sets the server was last synced on date and time.
 	/// </summary>
-	public DateTime LastSyncedOnServer { get; set; }
+	public partial DateTime LastSyncedOnServer { get; set; }
 
 	/// <summary>
 	/// If true the sync will actually delete entities marked for deletion. Defaults to false where IsDeleted will be marked "true".
 	/// </summary>
-	public bool PermanentDeletions { get; set; }
+	public partial bool PermanentDeletions { get; set; }
 
 	/// <summary>
 	/// The direction to sync.
 	/// </summary>
-	public SyncDirection SyncDirection { get; set; }
+	public partial SyncDirection SyncDirection { get; set; }
 
 	/// <summary>
 	/// The type of the sync.
 	/// </summary>
-	public string SyncType { get; set; }
+	public partial string SyncType { get; set; }
 
 	/// <summary>
 	/// Additional values for synchronizing.
 	/// </summary>
-	public Dictionary<string, string> Values { get; set; }
+	public partial Dictionary<string, string> Values { get; set; }
+
+	/// <summary>
+	/// True when at least one repository filter is registered. An empty set syncs nothing.
+	/// </summary>
+	public bool HasFilters => _filters.Count > 0;
 
 	#endregion
 
@@ -91,13 +100,21 @@ public class SyncSettings : CornerstoneObject<SyncSettings>
 	/// <summary>
 	/// Adds a syncable filter to the options.
 	/// </summary>
-	public void AddFilter<T>(Expression<Func<T, bool>> outgoingFilter = null,
-		Expression<Func<T, bool>> incomingFilter = null,
+	/// <param name="scopeFilter"> Ownership keep-test ANDed into GetChanges, apply, lookup, and related *SyncId checks. </param>
+	/// <param name="lookupFilter"> Find this incoming time by a business key instead of SyncId. </param>
+	/// <param name="incomingFilter"> Travel keep-test for apply. </param>
+	/// <param name="outgoingFilter"> Travel keep-test for GetChanges. </param>
+	/// <param name="skipDeletedItemsOnInitialSync"> Skip tombstones on the first GetChanges. </param>
+	/// <param name="orderBy"> Optional order for host queries. GetChanges order is ModifiedOn then Id. </param>
+	public void AddFilter<T>(
+		Expression<Func<T, bool>> scopeFilter = null,
 		Func<T, Expression<Func<T, bool>>> lookupFilter = null,
-		bool skipDeletedItemsOnInitialSync = false,
+		Expression<Func<T, bool>> incomingFilter = null,
+		Expression<Func<T, bool>> outgoingFilter = null,
+		bool skipDeletedItemsOnInitialSync = true,
 		params OrderBy<T>[] orderBy)
 	{
-		AddFilter(new SyncRepositoryFilter<T>(outgoingFilter, incomingFilter, lookupFilter, skipDeletedItemsOnInitialSync, orderBy));
+		AddFilter(new SyncRepositoryFilter<T>(outgoingFilter, incomingFilter, lookupFilter, skipDeletedItemsOnInitialSync, scopeFilter, orderBy));
 	}
 
 	/// <summary>
@@ -141,10 +158,42 @@ public class SyncSettings : CornerstoneObject<SyncSettings>
 	}
 
 	/// <summary>
-	/// Check to see if a repository has been excluded from syncing.
+	/// True when a filter is registered for this entity type.
+	/// </summary>
+	public bool HasFilter(Type type)
+	{
+		return HasFilter(type?.ToAssemblyName());
+	}
+
+	/// <summary>
+	/// True when a filter is registered for this entity type assembly name.
+	/// </summary>
+	public bool HasFilter(string typeAssemblyName)
+	{
+		return (typeAssemblyName != null) && _filters.ContainsKey(typeAssemblyName);
+	}
+
+	/// <summary>
+	/// True when this repository should be skipped. A type syncs only when a filter is registered for it.
+	/// </summary>
+	public bool ShouldExcludeRepository(Type type)
+	{
+		return ShouldExcludeRepository(type?.ToAssemblyName());
+	}
+
+	/// <summary>
+	/// True when this repository should be skipped. A type syncs only when a filter is registered for it.
+	/// </summary>
+	public bool ShouldExcludeRepository(string typeAssemblyName)
+	{
+		return string.IsNullOrEmpty(typeAssemblyName) || !_filters.ContainsKey(typeAssemblyName);
+	}
+
+	/// <summary>
+	/// Check to see if a repository has been included in syncing.
 	/// </summary>
 	/// <param name="type"> The type to check for. </param>
-	/// <returns> True if the type is filter or false if otherwise. </returns>
+	/// <returns> True if the repository should sync. </returns>
 	public bool ShouldSyncRepository(Type type)
 	{
 		return ShouldSyncRepository(type?.ToAssemblyName());
@@ -154,54 +203,10 @@ public class SyncSettings : CornerstoneObject<SyncSettings>
 	/// Check to see if a repository has been included in syncing.
 	/// </summary>
 	/// <param name="typeAssemblyName"> The type name to check for. Should be in assembly name format. </param>
-	/// <returns> True if the type is filter or false if otherwise. </returns>
+	/// <returns> True if the repository should sync. </returns>
 	public bool ShouldSyncRepository(string typeAssemblyName)
 	{
-		//
-		// If we have a filter then consider the repository as included for syncing.
-		//
-		return _filters.ContainsKey(typeAssemblyName);
-	}
-
-	/// <summary>
-	/// Update the SyncSettings with an update.
-	/// </summary>
-	/// <param name="update"> The update to be applied. </param>
-	/// <param name="settings"> The settings for controlling the updating of the entity. </param>
-	public override bool UpdateWith(SyncSettings update, IncludeExcludeSettings settings)
-	{
-		// Generated Code - UpdateWith - SyncSettings
-
-		// If the update is null then there is nothing to do.
-		if (update == null)
-		{
-			return false;
-		}
-
-		// ****** This code has been auto generated, do not edit this. ******
-
-		TryUpdateProperty(IncludeIssueDetails, update.IncludeIssueDetails, settings.ShouldProcessProperty(nameof(IncludeIssueDetails)), x => IncludeIssueDetails = x);
-		TryUpdateProperty(ItemsPerSyncRequest, update.ItemsPerSyncRequest, settings.ShouldProcessProperty(nameof(ItemsPerSyncRequest)), x => ItemsPerSyncRequest = x);
-		TryUpdateProperty(LastSyncAttemptedOn, update.LastSyncAttemptedOn, settings.ShouldProcessProperty(nameof(LastSyncAttemptedOn)), x => LastSyncAttemptedOn = x);
-		TryUpdateProperty(LastSyncedOnClient, update.LastSyncedOnClient, settings.ShouldProcessProperty(nameof(LastSyncedOnClient)), x => LastSyncedOnClient = x);
-		TryUpdateProperty(LastSyncedOnServer, update.LastSyncedOnServer, settings.ShouldProcessProperty(nameof(LastSyncedOnServer)), x => LastSyncedOnServer = x);
-		TryUpdateProperty(PermanentDeletions, update.PermanentDeletions, settings.ShouldProcessProperty(nameof(PermanentDeletions)), x => PermanentDeletions = x);
-		TryUpdateProperty(SyncDirection, update.SyncDirection, settings.ShouldProcessProperty(nameof(SyncDirection)), x => SyncDirection = x);
-		TryUpdateProperty(SyncType, update.SyncType, settings.ShouldProcessProperty(nameof(SyncType)), x => SyncType = x);
-		TryUpdateProperty(Values, update.Values, settings.ShouldProcessProperty(nameof(Values)), x => Values = x);
-
-		// Generated Code - /UpdateWith - SyncSettings
-
-		return true;
-	}
-
-	public override bool UpdateWith(object update, IncludeExcludeSettings settings)
-	{
-		return update switch
-		{
-			SyncSettings value => UpdateWith(value, settings),
-			_ => base.UpdateWith(update, settings)
-		};
+		return !ShouldExcludeRepository(typeAssemblyName);
 	}
 
 	/// <summary>
@@ -223,7 +228,7 @@ public class SyncSettings : CornerstoneObject<SyncSettings>
 	internal bool ShouldFilterIncomingEntity(string typeAssemblyName, ISyncEntity entity)
 	{
 		var filter = GetFilter(typeAssemblyName);
-		if (filter is not { HasIncomingFilter: true })
+		if (filter is not { HasApplyKeepTest: true })
 		{
 			return false;
 		}

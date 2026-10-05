@@ -1,53 +1,54 @@
-﻿#region References
+#region References
 
 using Cornerstone.VisualStudio.Tests.Manipulator.Util;
-using Xunit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.VisualStudio.Tests.Manipulator;
 
+[TestClass]
 public class ClosingTagsTests : ManipulatorTestBase
 {
 	#region Methods
 
-	[Fact]
+	[TestMethod]
 	public void CloseTagAdvancedInContainedTag()
 	{
 		AssertInsertion("<Grid><Tag Attribute=\"\"$></Tag></Grid>", "/", "<Grid><Tag Attribute=\"\"/></Grid>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void CloseTagWithSlash()
 	{
 		AssertInsertion("<Tag$", "/", "<Tag/>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void CloseTagWithTrailingWhitespace()
 	{
 		AssertInsertion("<MenuItem Header=\"Header\" $>\r\n      </MenuItem >", "/", @"<MenuItem Header=""Header"" />");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ConvertTagToSelfClosingWithSlash()
 	{
 		AssertInsertion("<Tag$></Tag>", "/", "<Tag/>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void ConvertTagWithAttributesToSelfClosingWithSlash()
 	{
 		AssertInsertion("<Tag Attribute=\"value\"$></Tag>", "/", "<Tag Attribute=\"value\"/>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void DoNotCloseEmptyTag()
 	{
 		AssertInsertion("<$", "/", "</");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void DoNotCloseTagWithAngleBracket()
 	{
 		// NOTE: Visual studio closes tags by itself, so we cannot implement this in completion engine
@@ -55,13 +56,13 @@ public class ClosingTagsTests : ManipulatorTestBase
 		AssertInsertion("<Tag$", ">", "<Tag>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void DoNotConvertTagsWithNestedTag()
 	{
 		AssertInsertion("<Tag$><Foo/></Tag>", "/", "<Tag/><Foo/></Tag>");
 	}
 
-	[Fact]
+	[TestMethod]
 	public void DoNotInsertEndingTwice()
 	{
 		AssertInsertion("<Tag$ >", "/", "<Tag/ >");

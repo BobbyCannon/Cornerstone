@@ -1,0 +1,19 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:maps="clr-namespace:Cornerstone.Mapsui;assembly=Cornerstone.Mapsui"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs.Maps"
+		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+		x:Class="Cornerstone.Sample.Tabs.Maps.TabMapsMapsui"
+		x:DataType="tabs:TabMapsMapsui">
+	<DockPanel>
+		<TextBlock DockPanel.Dock="Top"
+				Margin="10,0,10,8"
+				Opacity="0.65"
+				TextWrapping="Wrap"
+				Text="OpenStreetMap tiles. Pan with the pointer and zoom with the mouse wheel. Network required." />
+		<maps:MapControl x:Name="MapHost" />
+	</DockPanel>
+</UserControl>

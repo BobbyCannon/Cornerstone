@@ -122,7 +122,9 @@ public class CodeBuilderTests : CornerstoneUnitTest
 				"""
 				public class Account
 				{
+					public Guid? AddressSyncId { get; set; }
 					public DateTime CreatedOn { get; set; }
+					public Guid? CustomerSyncId { get; set; }
 					public string EmailAddress { get; set; }
 					public bool IsDeleted { get; set; }
 					public DateTime LastLoginDate { get; set; }
@@ -162,7 +164,7 @@ public class CodeBuilderTests : CornerstoneUnitTest
 			((bool?) false, "false"),
 
 			// ReSharper disable once RedundantCast
-			((bool?) null, "null")
+			(null, "null")
 		};
 
 		foreach (var scenario in scenarios)
@@ -191,7 +193,11 @@ public class CodeBuilderTests : CornerstoneUnitTest
 				"""
 				new AccountEntity
 				{
+					AddressId = null,
+					AddressSyncId = null,
 					CreatedOn = DateTime.MinValue,
+					CustomerId = null,
+					CustomerSyncId = null,
 					EmailAddress = "john@domain.com",
 					Id = 0,
 					IsDeleted = false,
@@ -252,7 +258,9 @@ public class CodeBuilderTests : CornerstoneUnitTest
 					[
 						new Account
 						{
+							AddressSyncId = null,
 							CreatedOn = DateTime.MinValue,
+							CustomerSyncId = null,
 							EmailAddress = null,
 							IsDeleted = false,
 							LastLoginDate = DateTime.MinValue,

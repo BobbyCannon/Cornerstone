@@ -1,0 +1,351 @@
+#region References
+
+using System;
+using System.Linq;
+using Cornerstone.Presentation;
+using Cornerstone.Presentation.Controls.Text;
+using Cornerstone.Presentation.Controls.Text.Models;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+#endregion
+
+namespace Cornerstone.UnitTests.Presentation.Text;
+
+[TestClass]
+public class TextDocumentTests : CornerstoneUnitTest
+{
+	#region Methods
+
+	[TestMethod]
+	public void BackspaceOnLastLineDoesNotRescanDocument()
+	{
+		var viewModel = new TextEditorViewModel { ViewMetrics = { CharacterHeight = 20, CharacterWidth = 10 } };
+		viewModel.Load("aaa\nxy");
+		viewModel.Lines.Measure(new Size(800, 400), false);
+
+		var firstY = viewModel.Lines[0].VisualLayout.Y;
+		var lastY = viewModel.Lines[1].VisualLayout.Y;
+		var lastStart = viewModel.Lines[1].StartOffset;
+
+		viewModel.Caret.Move(viewModel.DocumentLength);
+		viewModel.Delete(viewModel.Caret.Offset, false);
+
+		IsTrue(viewModel.Lines.LastEditNeedsPaintOnly);
+		AreEqual(2, viewModel.Lines.Count);
+		AreEqual(firstY, viewModel.Lines[0].VisualLayout.Y);
+		AreEqual(lastY, viewModel.Lines[1].VisualLayout.Y);
+		AreEqual(lastStart, viewModel.Lines[1].StartOffset);
+		AreEqual(lastStart + 1, viewModel.Lines[1].EndOffset);
+		AreEqual("aaa\nx", viewModel.ToString());
+	}
+
+	[TestMethod]
+	public void CoalescedAppendsMeasureFromEarliestDirtyLine()
+	{
+		var viewModel = new TextEditorViewModel { ViewMetrics = { CharacterHeight = 20, CharacterWidth = 10 } };
+		viewModel.Load("aaa\n");
+		viewModel.Lines.Measure(new Size(800, 400), false);
+
+		viewModel.Insert(viewModel.DocumentLength, "bbbb\n");
+		viewModel.Insert(viewModel.DocumentLength, "cccc\n");
+		viewModel.Lines.Measure(new Size(800, 400), false);
+
+		AreEqual(4, viewModel.Lines.Count);
+		AreEqual(0, viewModel.Lines[0].VisualLayout.Y);
+		AreEqual(20, viewModel.Lines[1].VisualLayout.Y);
+		AreEqual(40, viewModel.Lines[2].VisualLayout.Y);
+		AreEqual(60, viewModel.Lines[3].VisualLayout.Y);
+		AreEqual(20, viewModel.Lines[1].VisualLayout.Height);
+		AreEqual(20, viewModel.Lines[2].VisualLayout.Height);
+	}
+
+	[TestMethod]
+	public void DeleteBackwards()
+	{
+		var viewModel = new TextEditorViewModel();
+
+		//             012345 6 78901
+		viewModel.Load("Hello\r\nWorld");
+		AreEqual(2, viewModel.Lines.Count);
+		AreEqual(new Line(viewModel.Lines) { StartOffset = 0, EndOffset = 7, LineNumber = 1, LineEndingLength = 2 }, viewModel.Lines[0]);
+		AreEqual(new Line(viewModel.Lines) { StartOffset = 7, EndOffset = 12, LineNumber = 2, LineEndingLength = 0 }, viewModel.Lines[1]);
+
+		// should delete the "\r\n" completely
+		viewModel.Delete(7, false);
+
+		AreEqual(1, viewModel.Lines.Count);
+		AreEqual(new Line(viewModel.Lines) { StartOffset = 0, EndOffset = 10, LineNumber = 1, LineEndingLength = 0 }, viewModel.Lines[0]);
+	}
+
+	[TestMethod]
+	public void DeleteForward()
+	{
+		var viewModel = new TextEditorViewModel();
+
+		//             012345 6 78901
+		viewModel.Load("Hello\r\nWorld");
+		AreEqual(2, viewModel.Lines.Count);
+		AreEqual(new Line(viewModel.Lines) { StartOffset = 0, EndOffset = 7, LineNumber = 1, LineEndingLength = 2 }, viewModel.Lines[0]);
+		AreEqual(new Line(viewModel.Lines) { StartOffset = 7, EndOffset = 12, LineNumber = 2, LineEndingLength = 0 }, viewModel.Lines[1]);
+
+		// should delete the "\r\n" completely
+		viewModel.Delete(5, true);
+
+		AreEqual(1, viewModel.Lines.Count);
+		AreEqual(new Line(viewModel.Lines) { StartOffset = 0, EndOffset = 10, LineNumber = 1, LineEndingLength = 0 }, viewModel.Lines[0]);
+	}
+
+	[TestMethod]
+	public void EditLineShouldSplit()
+	{
+		var viewModel = new TextEditorViewModel();
+
+		//          012345678 9 012345678 9 0123456789
+		viewModel.Load("line one\r\nline two\r\nline three");
+		AreEqual(3, viewModel.Lines.Count);
+
+		var expected = new LineManager(viewModel)
+		{
+			new Line(viewModel.Lines) { StartOffset = 0, EndOffset = 10, LineNumber = 1, LineEndingLength = 2 },
+			new Line(viewModel.Lines) { StartOffset = 10, EndOffset = 20, LineNumber = 2, LineEndingLength = 2 },
+			new Line(viewModel.Lines) { StartOffset = 20, EndOffset = 30, LineNumber = 3, LineEndingLength = 0 }
+		};
+
+		AreEqual(expected.ToArray(), viewModel.Lines.ToArray());
+
+		viewModel.Caret.Move(13);
+		viewModel.Insert(Environment.NewLine);
+
+		expected = new LineManager(viewModel)
+		{
+			new Line(viewModel.Lines) { StartOffset = 0, EndOffset = 10, LineNumber = 1, LineEndingLength = 2 },
+			new Line(viewModel.Lines) { StartOffset = 10, EndOffset = 15, LineNumber = 2, LineEndingLength = 2 },
+			new Line(viewModel.Lines) { StartOffset = 15, EndOffset = 22, LineNumber = 3, LineEndingLength = 2 },
+			new Line(viewModel.Lines) { StartOffset = 22, EndOffset = 32, LineNumber = 4, LineEndingLength = 0 }
+		};
+
+		AreEqual(expected.ToArray(), viewModel.Lines.ToArray());
+	}
+
+	[TestMethod]
+	public void EmptyViewModel()
+	{
+		var viewModel = new TextEditorViewModel();
+		AreEqual(1, viewModel.Lines.Count);
+		AreEqual(0, viewModel.DocumentLength);
+	}
+
+	[TestMethod]
+	public void EnterOnEmptyDocument()
+	{
+		var viewModel = new TextEditorViewModel { ViewMetrics = { CharacterHeight = 20, CharacterWidth = 10 } };
+		var caret = new Caret(viewModel);
+		AreEqual(1, viewModel.Lines.Count);
+		AreEqual(new Line(viewModel.Lines) { StartOffset = 0, EndOffset = 0, LineNumber = 1, LineEndingLength = 0 }, viewModel.Lines[0]);
+
+		viewModel.Insert("\r\n");
+		viewModel.Lines.Measure(new Size(800, 400), true);
+		caret.Move(caret.Offset + 2);
+
+		AreEqual(2, viewModel.Lines.Count);
+		AreEqual(new Rect(0, 0, 0, 20), viewModel.Lines[0].VisualLayout);
+		AreEqual(new Rect(0, 20, 0, 20), viewModel.Lines[1].VisualLayout);
+	}
+
+	[TestMethod]
+	public void GetVisibleLinesSkipsLinesAboveViewport()
+	{
+		var viewModel = new TextEditorViewModel { ViewMetrics = { CharacterHeight = 20, CharacterWidth = 10 } };
+		viewModel.Load("a\nb\nc\nd\ne\n");
+		viewModel.Lines.Measure(new Size(800, 400), false);
+
+		var visible = viewModel.Lines.GetVisibleLines(40, 80).ToList();
+		AreEqual(2, visible.Count);
+		AreEqual(3, visible[0].LineNumber);
+		AreEqual(4, visible[1].LineNumber);
+	}
+
+	[TestMethod]
+	public void IncrementalAppendKeepsEarlierLineMetrics()
+	{
+		var viewModel = new TextEditorViewModel { ViewMetrics = { CharacterHeight = 20, CharacterWidth = 10 } };
+		viewModel.Load("aaa\n");
+		viewModel.Lines.Measure(new Size(800, 400), false);
+
+		AreEqual(new Rect(0, 0, 30, 20), viewModel.Lines[0].VisualLayout);
+
+		viewModel.Insert(viewModel.DocumentLength, "bbbb\n");
+		viewModel.Lines.Measure(new Size(800, 400), false);
+
+		AreEqual(new Rect(0, 0, 30, 20), viewModel.Lines[0].VisualLayout);
+		AreEqual(3, viewModel.Lines.Count);
+		AreEqual(40, viewModel.Lines[2].VisualLayout.Y);
+	}
+
+	[TestMethod]
+	public void InsertAtEndOfLastLineDoesNotRescanDocument()
+	{
+		var viewModel = new TextEditorViewModel { ViewMetrics = { CharacterHeight = 20, CharacterWidth = 10 } };
+		viewModel.Load("aaa\n");
+		viewModel.Lines.Measure(new Size(800, 400), false);
+
+		var firstY = viewModel.Lines[0].VisualLayout.Y;
+		var lastY = viewModel.Lines[1].VisualLayout.Y;
+		var lastStart = viewModel.Lines[1].StartOffset;
+
+		viewModel.Insert(viewModel.DocumentLength, "x");
+
+		IsTrue(viewModel.Lines.LastEditNeedsPaintOnly);
+		AreEqual(2, viewModel.Lines.Count);
+		AreEqual(firstY, viewModel.Lines[0].VisualLayout.Y);
+		AreEqual(lastY, viewModel.Lines[1].VisualLayout.Y);
+		AreEqual(lastStart, viewModel.Lines[1].StartOffset);
+		AreEqual(lastStart + 1, viewModel.Lines[1].EndOffset);
+		AreEqual("aaa\nx", viewModel.ToString());
+	}
+
+	[TestMethod]
+	public void Load()
+	{
+		var viewModel = new TextEditorViewModel();
+
+		//          012345678 9 012345678 9 0123456789
+		viewModel.Load("line one\r\nline two\r\nline three");
+
+		AreEqual(3, viewModel.Lines.Count);
+		AreEqual("line one\r\n", viewModel.Lines[0].ToString());
+		AreEqual(0, viewModel.Lines[0].StartOffset);
+		AreEqual(10, viewModel.Lines[0].EndOffset);
+		AreEqual(10, viewModel.Lines[0].Length);
+
+		AreEqual("line two\r\n", viewModel.Lines[1].ToString());
+		AreEqual(10, viewModel.Lines[1].StartOffset);
+		AreEqual(20, viewModel.Lines[1].EndOffset);
+		AreEqual(10, viewModel.Lines[1].Length);
+
+		AreEqual("line three", viewModel.Lines[2].ToString());
+		AreEqual(20, viewModel.Lines[2].StartOffset);
+		AreEqual(30, viewModel.Lines[2].EndOffset);
+		AreEqual(10, viewModel.Lines[2].Length);
+	}
+
+	[TestMethod]
+	public void LoadAfterEmptyMeasureComputesLineVisuals()
+	{
+		var viewModel = new TextEditorViewModel { ViewMetrics = { CharacterHeight = 20, CharacterWidth = 10 } };
+		viewModel.Lines.Measure(new Size(800, 400), false);
+
+		viewModel.Load("aaa\nbbbb");
+		var size = viewModel.Lines.Measure(new Size(800, 400), false);
+
+		IsTrue(viewModel.Lines.LastMeasureChangedLayout);
+		AreEqual(2, viewModel.Lines.Count);
+		AreEqual(new Rect(0, 0, 30, 20), viewModel.Lines[0].VisualLayout);
+		AreEqual(new Rect(0, 20, 40, 20), viewModel.Lines[1].VisualLayout);
+		AreEqual(new Size(40, 40), size);
+	}
+
+	[TestMethod]
+	public void MidDocumentInsertWithoutNewlineShiftsLaterLineYOnlyWhenHeightChanges()
+	{
+		var viewModel = new TextEditorViewModel { ViewMetrics = { CharacterHeight = 20, CharacterWidth = 10 } };
+		viewModel.Load("aaa\nbbbb\ncc");
+		viewModel.Lines.Measure(new Size(800, 400), false);
+
+		var laterWidth = viewModel.Lines[1].VisualLayout.Width;
+		var laterY = viewModel.Lines[1].VisualLayout.Y;
+		var laterStart = viewModel.Lines[1].StartOffset;
+
+		viewModel.Insert(1, "xx");
+		viewModel.Lines.Measure(new Size(800, 400), false);
+
+		AreEqual(3, viewModel.Lines.Count);
+		AreEqual(laterWidth, viewModel.Lines[1].VisualLayout.Width);
+		AreEqual(laterY, viewModel.Lines[1].VisualLayout.Y);
+		AreEqual(laterStart + 2, viewModel.Lines[1].StartOffset);
+		AreEqual(50, viewModel.Lines[0].VisualLayout.Width);
+		AreEqual("axxaa\nbbbb\ncc", viewModel.ToString());
+	}
+
+	[TestMethod]
+	public void SingleLines()
+	{
+		var viewModel = new TextEditorViewModel();
+		viewModel.Load("Hello World\r\n");
+		AreEqual(2, viewModel.Lines.Count);
+		AreEqual(new Line(viewModel.Lines) { StartOffset = 0, EndOffset = 13, LineNumber = 1, LineEndingLength = 2 }, viewModel.Lines[0]);
+		AreEqual(new Line(viewModel.Lines) { StartOffset = 13, EndOffset = 13, LineNumber = 2, LineEndingLength = 0 }, viewModel.Lines[1]);
+
+		viewModel.Load("Hello World\r");
+		AreEqual(2, viewModel.Lines.Count);
+		AreEqual(new Line(viewModel.Lines) { StartOffset = 0, EndOffset = 12, LineNumber = 1, LineEndingLength = 1 }, viewModel.Lines[0]);
+		AreEqual(new Line(viewModel.Lines) { StartOffset = 12, EndOffset = 12, LineNumber = 2, LineEndingLength = 0 }, viewModel.Lines[1]);
+
+		viewModel.Load("Hello World\n");
+		AreEqual(2, viewModel.Lines.Count);
+		AreEqual(new Line(viewModel.Lines) { StartOffset = 0, EndOffset = 12, LineNumber = 1, LineEndingLength = 1 }, viewModel.Lines[0]);
+		AreEqual(new Line(viewModel.Lines) { StartOffset = 12, EndOffset = 12, LineNumber = 2, LineEndingLength = 0 }, viewModel.Lines[1]);
+
+		viewModel.Load("Hello World");
+		AreEqual(1, viewModel.Lines.Count);
+		AreEqual(new Line(viewModel.Lines) { StartOffset = 0, EndOffset = 11, LineNumber = 1, LineEndingLength = 0 }, viewModel.Lines[0]);
+	}
+
+	[TestMethod]
+	public void WordWrapLines()
+	{
+		var viewModel = new TextEditorViewModel { ViewMetrics = { CharacterHeight = 20, CharacterWidth = 10 } };
+
+		//             012345678901 2 34567890 1
+		viewModel.Load("Hello World\r\nFoo Bar\r\n");
+
+		//             0       110    0    70
+		viewModel.Lines.Measure(new Size(120, 200), true);
+
+		AreEqual(new Rect(0, 0, 110, 20), viewModel.Lines[0].VisualLayout);
+		AreEqual(new Rect(0, 20, 70, 20), viewModel.Lines[1].VisualLayout);
+		AreEqual(new Rect(0, 40, 0, 20), viewModel.Lines[2].VisualLayout);
+
+		viewModel.Lines.Measure(new Size(200, 200), false);
+
+		AreEqual(new Rect(0, 0, 110, 20), viewModel.Lines[0].VisualLayout);
+		AreEqual(new Rect(0, 20, 70, 20), viewModel.Lines[1].VisualLayout);
+		AreEqual(new Rect(0, 40, 0, 20), viewModel.Lines[2].VisualLayout);
+	}
+
+	[TestMethod]
+	public void WordWrapWidthChangeRemeasuresLineHeight()
+	{
+		var viewModel = new TextEditorViewModel { ViewMetrics = { CharacterHeight = 20, CharacterWidth = 10 } };
+		viewModel.Load("Hello World");
+		var narrow = viewModel.Lines.Measure(new Size(60, 200), true);
+		var wide = viewModel.Lines.Measure(new Size(200, 200), true);
+
+		IsTrue(viewModel.Lines.LastMeasureChangedLayout);
+		IsTrue(narrow.Height > wide.Height);
+		AreEqual(20, wide.Height);
+		AreEqual(110, wide.Width);
+	}
+
+	[TestMethod]
+	public void WrapOffResizeDoesNotRemeasureLineMetrics()
+	{
+		var viewModel = new TextEditorViewModel { ViewMetrics = { CharacterHeight = 20, CharacterWidth = 10 } };
+		viewModel.Load("aaa\nbbbb\ncc");
+		viewModel.Lines.Measure(new Size(800, 400), false);
+
+		var first = viewModel.Lines[0].VisualLayout;
+		var second = viewModel.Lines[1].VisualLayout;
+		var third = viewModel.Lines[2].VisualLayout;
+
+		var size = viewModel.Lines.Measure(new Size(400, 400), false);
+
+		IsFalse(viewModel.Lines.LastMeasureChangedLayout);
+		AreEqual(first, viewModel.Lines[0].VisualLayout);
+		AreEqual(second, viewModel.Lines[1].VisualLayout);
+		AreEqual(third, viewModel.Lines[2].VisualLayout);
+		AreEqual(new Size(40, 60), size);
+	}
+
+	#endregion
+}

@@ -1,8 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFrameworks>net10.0</TargetFrameworks>
+		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
 		<AssemblyName>Cornerstone.PowerShell</AssemblyName>
 		<PackageId>Cornerstone.PowerShell</PackageId>
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 	</PropertyGroup>
 	<Import Project="..\Package.props" />
 	<ItemGroup>
@@ -22,9 +24,10 @@
 		<PackageReference Include="PowerShellStandard.Library" Version="5.1.1">
 			<PrivateAssets>All</PrivateAssets>
 		</PackageReference>
+		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
+		<ProjectReference Include="..\Cornerstone.Presentation\Cornerstone.Presentation.csproj" />
 		<ProjectReference Include="..\Cornerstone\Cornerstone.csproj" />
 	</ItemGroup>
 </Project>

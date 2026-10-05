@@ -14,6 +14,38 @@ public class StartupProfilerTests : CornerstoneUnitTest
 	#region Methods
 
 	[TestMethod]
+	public void AccumulateMergesExclusiveTimeByNameUnderCurrentScope()
+	{
+		var profiler = new StartupProfiler(this);
+
+		using (profiler.Start("Parent"))
+		{
+			using (profiler.Accumulate("ApplyStyling"))
+			{
+				IncrementTime(milliseconds: 10);
+			}
+			using (profiler.Accumulate("ApplyTemplate"))
+			{
+				IncrementTime(milliseconds: 5);
+			}
+			using (profiler.Accumulate("ApplyStyling"))
+			{
+				IncrementTime(milliseconds: 7);
+			}
+		}
+
+		profiler.Complete();
+
+		AreEqual(1, profiler.Samples.Count);
+		AreEqual("Parent", profiler.Samples[0].Name);
+		AreEqual(2, profiler.Samples[0].Children.Count);
+		AreEqual("ApplyStyling", profiler.Samples[0].Children[0].Name);
+		AreEqual(TimeSpan.FromMilliseconds(17), profiler.Samples[0].Children[0].Elapsed);
+		AreEqual("ApplyTemplate", profiler.Samples[0].Children[1].Name);
+		AreEqual(TimeSpan.FromMilliseconds(5), profiler.Samples[0].Children[1].Elapsed);
+	}
+
+	[TestMethod]
 	public void CompleteClosesOpenScopes()
 	{
 		var profiler = new StartupProfiler(this);
@@ -48,6 +80,48 @@ public class StartupProfilerTests : CornerstoneUnitTest
 		AreEqual(StartupProfiler.UnknownName, profiler.Samples[1].Name);
 		AreEqual(TimeSpan.FromMilliseconds(50), profiler.Samples[1].Elapsed);
 		AreEqual(TimeSpan.FromMilliseconds(150), profiler.Root.Elapsed);
+	}
+
+	[TestMethod]
+	public void EmptyScopeThenNestedSiblingRecordsBoth()
+	{
+		var profiler = new StartupProfiler(this);
+
+		using (profiler.Start($"Built on {DateTime.UtcNow:O}"))
+		{
+			// no op
+		}
+
+		using (profiler.Start("AppBootstrap.Initialize"))
+		{
+			IncrementTime(milliseconds: 10);
+			using (profiler.Start("RuntimeInformation"))
+			{
+				IncrementTime(milliseconds: 20);
+			}
+		}
+
+		profiler.Complete();
+
+		AreEqual(2, profiler.Samples.Count);
+		IsTrue(profiler.Samples[0].Name.StartsWith("Built on"));
+		AreEqual("AppBootstrap.Initialize", profiler.Samples[1].Name);
+		AreEqual(1, profiler.Samples[1].Children.Count);
+		AreEqual("RuntimeInformation", profiler.Samples[1].Children[0].Name);
+	}
+
+	[TestMethod]
+	public void MarkAndRecordMarkNamesTheGap()
+	{
+		var profiler = new StartupProfiler(this);
+		profiler.Time("First", () => IncrementTime(milliseconds: 10));
+		profiler.Mark("Between");
+		IncrementTime(milliseconds: 55);
+		profiler.RecordMark();
+		profiler.Complete();
+
+		AreEqual("Between", profiler.Samples[1].Name);
+		AreEqual(TimeSpan.FromMilliseconds(55), profiler.Samples[1].Elapsed);
 	}
 
 	[TestMethod]
@@ -92,6 +166,19 @@ public class StartupProfilerTests : CornerstoneUnitTest
 		}
 
 		IsTrue(true);
+	}
+
+	[TestMethod]
+	public void RecordNamesAGapWithoutAnOpenScope()
+	{
+		var profiler = new StartupProfiler(this);
+		var start = profiler.GetTicks();
+		IncrementTime(milliseconds: 40);
+		profiler.Record("Gap", start);
+		profiler.Complete();
+
+		AreEqual("Gap", profiler.Samples[0].Name);
+		AreEqual(TimeSpan.FromMilliseconds(40), profiler.Samples[0].Elapsed);
 	}
 
 	[TestMethod]
@@ -145,9 +232,55 @@ public class StartupProfilerTests : CornerstoneUnitTest
 
 		var report = profiler.ToReport();
 		IsTrue(report.Contains(StartupProfiler.RootName));
+		IsTrue(report.Contains(" at "));
 		IsTrue(report.Contains("Outer"));
 		IsTrue(report.Contains("Inner"));
-		IsTrue(profiler.IsCompleted);
+		IsFalse(profiler.IsCompleted);
+
+		_ = profiler.ToString();
+		IsFalse(profiler.IsCompleted);
+	}
+
+	[TestMethod]
+	public void ToReportDoesNotCompleteAndLaterScopesStillRecord()
+	{
+		var profiler = new StartupProfiler(this);
+		profiler.Time("First", () => IncrementTime(milliseconds: 10));
+
+		_ = profiler.ToReport();
+		_ = profiler.ToString();
+		IsFalse(profiler.IsCompleted);
+
+		profiler.Time("Second", () => IncrementTime(milliseconds: 15));
+		profiler.Complete();
+
+		AreEqual(2, profiler.Samples.Count);
+		AreEqual("First", profiler.Samples[0].Name);
+		AreEqual("Second", profiler.Samples[1].Name);
+	}
+
+	[TestMethod]
+	public void ToReportDrawsTreeCorners()
+	{
+		var profiler = new StartupProfiler(this);
+
+		using (profiler.Start("Outer"))
+		{
+			IncrementTime(milliseconds: 5);
+			profiler.Time("Inner", () => IncrementTime(milliseconds: 10));
+			profiler.Time("Leaf", () => IncrementTime(milliseconds: 20));
+		}
+
+		profiler.Time("Sibling", () => IncrementTime(milliseconds: 8));
+		profiler.Complete();
+
+		var report = profiler.ToReport();
+		var lines = report.Replace("\r\n", "\n").Split('\n');
+		IsTrue(lines[0].StartsWith(StartupProfiler.RootName));
+		AreEqual("├── Outer 35.0 ms  (81.4%)", lines[1]);
+		AreEqual("│   ├── Inner 10.0 ms  (28.6%)", lines[2]);
+		AreEqual("│   └── Leaf 20.0 ms  (57.1%)", lines[3]);
+		AreEqual("└── Sibling 8.0 ms  (18.6%)", lines[4]);
 	}
 
 	[TestMethod]

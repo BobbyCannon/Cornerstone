@@ -1,0 +1,21 @@
+<Project>
+	<PropertyGroup>
+		<CornerstoneBuildTasksPropsImported>true</CornerstoneBuildTasksPropsImported>
+		<!-- Built output of Cornerstone.Presentation.BuildTasks. Do not UsingTask this path: Rebuild All
+		     overwrites it while MSBuild/.NET Host still have it loaded. -->
+		<CornerstoneBuildTasksOutput Condition="'$(CornerstoneBuildTasksOutput)' == ''">$(MSBuildThisFileDirectory)tools\$(Configuration)\netstandard2.0\</CornerstoneBuildTasksOutput>
+		<EnableCornerstoneXamlCompilation Condition="'$(EnableCornerstoneXamlCompilation)'==''">true</EnableCornerstoneXamlCompilation>
+		<CornerstoneUseCompiledBindingsByDefault Condition="'$(CornerstoneUseCompiledBindingsByDefault)'==''">true</CornerstoneUseCompiledBindingsByDefault>
+		<_CornerstonePresentationIsTooling Condition="'$(MSBuildProjectName)' == 'Cornerstone.Presentation' OR '$(MSBuildProjectName)' == 'Cornerstone.Presentation.BuildTasks' OR '$(MSBuildProjectName)' == 'Cornerstone.Presentation.DevGenerators' OR '$(MSBuildProjectName)' == 'Cornerstone.Presentation.Remote.Protocol' OR '$(MSBuildProjectName)' == 'Cornerstone.Designer.HostApp' OR '$(MSBuildProjectName)' == 'Cornerstone.Templates'">true</_CornerstonePresentationIsTooling>
+		<CornerstonePreviewerNetCoreToolPath Condition="'$(CornerstonePreviewerNetCoreToolPath)' == '' AND '$(CornerstoneBuildTasksFromPackage)' != 'true'">$(MSBuildThisFileDirectory)..\Cornerstone.Designer.HostApp\bin\$(Configuration)\net10.0\Cornerstone.Designer.HostApp.dll</CornerstonePreviewerNetCoreToolPath>
+	</PropertyGroup>
+	<ItemGroup>
+		<AvailableItemName Include="CornerstoneXaml" />
+		<AvailableItemName Include="CornerstoneResource" />
+		<PropertyPageSchema Include="$(MSBuildThisFileDirectory)CornerstoneItemSchema.xaml" />
+	</ItemGroup>
+	<Import Project="$(MSBuildThisFileDirectory)Cornerstone.Presentation.Generators.props"
+			Condition="'$(_CornerstonePresentationIsTooling)' != 'true' AND Exists('$(MSBuildThisFileDirectory)Cornerstone.Presentation.Generators.props')" />
+	<Import Project="$(MSBuildThisFileDirectory)..\Cornerstone.Generators\Cornerstone.Presentation.Generators.props"
+			Condition="'$(_CornerstonePresentationIsTooling)' != 'true' AND !Exists('$(MSBuildThisFileDirectory)Cornerstone.Presentation.Generators.props')" />
+</Project>

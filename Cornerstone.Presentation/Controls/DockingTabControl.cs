@@ -1,0 +1,613 @@
+#region References
+
+using System;
+using System.Collections.Specialized;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Windows.Input;
+using Cornerstone.Presentation;
+using Cornerstone.Presentation.Controls.Metadata;
+using Cornerstone.Presentation.Controls.Presenters;
+using Cornerstone.Presentation.Controls.Primitives;
+using Cornerstone.Presentation.Input;
+using Cornerstone.Presentation.Interactivity;
+using Cornerstone.Presentation.VisualTree;
+using Cornerstone.Collections;
+using Cornerstone.Runtime;
+using Cornerstone.Presentation.Controls.Layout;
+using Cornerstone.Presentation.Controls.Input;
+using Cornerstone.Presentation.Controls.Items;
+using Cornerstone.Presentation.Controls.Elements;
+using Cornerstone.Presentation.Controls.DesignTime;
+using Cornerstone.Presentation.Controls.Naming;
+using Cornerstone.Presentation.Controls.StyleClasses;
+using Cornerstone.Presentation.Controls.DockingManager;
+
+#endregion
+
+namespace Cornerstone.Presentation.Controls;
+
+[PseudoClasses(":active")]
+[PseudoClasses(":toolbar")]
+public partial class DockingTabControl : TabControl
+{
+	#region Fields
+
+	private global::Cornerstone.Presentation.Controls.DockingManager.DockingManager _dockingManager;
+	private DraggedOutTabHandler _draggedOutTabHandler;
+	private (DockableTabView tabItem, Point offset)? _draggedTab;
+	private (Rect bounds, int index)? _draggedTabGhost;
+	private readonly RearrangePreventFlicker _dragRearrangePreventFlicker;
+	private ItemsPresenter _itemsPresenterPart;
+	private readonly PresentationList<DockableTabView> _selectedOrder;
+	private static readonly Type[] _toolbarOnly;
+
+	#endregion
+
+	#region Constructors
+
+	public DockingTabControl() : this([])
+	{
+	}
+
+	public DockingTabControl(params Type[] allowedDockTypes)
+	{
+		_dragRearrangePreventFlicker = new();
+		_selectedOrder = new PresentationList<DockableTabView>(null, new OrderBy<DockableTabView>(x => x.LastSelectedOn, true));
+
+		SetValue(AllowedDockTypesProperty, allowedDockTypes ?? []);
+
+		IsHitTestVisible = true;
+		Margin = new Thickness(0);
+		Padding = new Thickness(0);
+
+		if (Design.IsDesignMode)
+		{
+			AllowedDockTypes = [typeof(ToolbarTabModel)];
+		}
+
+		UpdatePseudoClasses();
+		AddHandler(PointerPressedEvent, OnPointerPressed, RoutingStrategies.Bubble, true);
+	}
+
+	static DockingTabControl()
+	{
+		_toolbarOnly = [typeof(ToolbarTabModel)];
+	}
+
+	#endregion
+
+	#region Properties
+
+	[StyledProperty]
+	public partial Type[] AllowedDockTypes { get; set; }
+
+	/// <summary>
+	/// Gets or sets if this is the currently active dockable.
+	/// </summary>
+	[StyledProperty]
+	public partial bool IsActive { get; set; }
+
+	[StyledProperty]
+	public partial bool IsCollapsed { get; set; }
+
+	[StyledProperty]
+	public partial bool IsToolbar { get; set; }
+
+	/// <summary>
+	/// Gets or sets if the new NewTab command.
+	/// </summary>
+	[StyledProperty(EnableDataValidation = true)]
+	public partial ICommand NewTabCommand { get; set; }
+
+	protected override Type StyleKeyOverride => typeof(DockingTabControl);
+
+	#endregion
+
+	#region Methods
+
+	public void Add(DockableTabModel tabModel)
+	{
+		if (!CanAcceptTabModel(tabModel))
+		{
+			throw new InvalidOperationException(
+				$"This {nameof(DockingTabControl)} only accepts specific tab models. " +
+				$"{tabModel?.GetType().Name} is not allowed here.");
+		}
+
+		_dockingManager?.ActivateTab(tabModel);
+		var tabView = new DockableTabView(tabModel);
+		Add(tabView);
+	}
+
+	public void Add(DockableTabView tabView)
+	{
+		if ((tabView?.TabModel != null) && !CanAcceptTabModel(tabView.TabModel))
+		{
+			throw new InvalidOperationException(
+				$"This {nameof(DockingTabControl)} only accepts specific tab models. " +
+				$"{tabView.TabModel.GetType().Name} is not allowed here."
+			);
+		}
+
+		Items.Add(tabView);
+		Dispatcher.Post(() => SelectedItem = tabView);
+
+		if (tabView?.TabModel != null)
+		{
+			_dockingManager?.OnTabModelAdded(tabView.TabModel);
+		}
+	}
+
+	/// <summary>
+	/// Returns true if this global::Cornerstone.Presentation.Controls.DockingManager.DockingManager (and all its child panes/windows)
+	/// is allowed to host the given tab model based on its concrete type.
+	/// </summary>
+	public bool CanAcceptTabModel(DockableTabModel model)
+	{
+		if (model == null)
+		{
+			return false;
+		}
+
+		// No filter = accept everything (backward compatible)
+		if ((AllowedDockTypes == null)
+			|| (AllowedDockTypes.Length == 0))
+		{
+			return true;
+		}
+
+		var modelType = model.GetType();
+
+		return AllowedDockTypes.Any(allowedType =>
+			allowedType.IsAssignableFrom(modelType));
+	}
+
+	public void CloseAllTabs()
+	{
+		var items = Items.ToList();
+		foreach (var item in items)
+		{
+			if (item is DockableTabView tabItem)
+			{
+				tabItem.Close(false);
+			}
+		}
+	}
+
+	public void Initialize(global::Cornerstone.Presentation.Controls.DockingManager.DockingManager dockingManager)
+	{
+		if (_dockingManager == null)
+		{
+			_dockingManager = dockingManager;
+			Items.CollectionChanged += ItemsCollectionChanged;
+		}
+	}
+
+	public void Insert(int index, DockableTabModel tabModel)
+	{
+		if (!CanAcceptTabModel(tabModel))
+		{
+			throw new InvalidOperationException(
+				$"This {nameof(DockingTabControl)} only accepts specific tab models. " +
+				$"{tabModel?.GetType().Name} is not allowed here.");
+		}
+
+		// Lifecycle owned by root global::Cornerstone.Presentation.Controls.DockingManager.DockingManager (Activate is idempotent).
+		_dockingManager?.ActivateTab(tabModel);
+		var tabView = new DockableTabView(tabModel);
+		Insert(index, tabView);
+	}
+
+	public void Insert(int index, DockableTabView tabView)
+	{
+		if ((tabView?.TabModel != null) && !CanAcceptTabModel(tabView.TabModel))
+		{
+			throw new InvalidOperationException(
+				$"This {nameof(DockingTabControl)} only accepts specific tab models. " +
+				$"{tabView.TabModel.GetType().Name} is not allowed here.");
+		}
+
+		Items.Insert(index, tabView);
+		Dispatcher.Post(() => SelectedItem = tabView);
+
+		if (tabView?.TabModel != null)
+		{
+			_dockingManager?.OnTabModelAdded(tabView.TabModel);
+		}
+	}
+
+	public void RegisterDraggedOutTabHandler(DraggedOutTabHandler handler)
+	{
+		if (_draggedOutTabHandler != null)
+		{
+			throw new InvalidOperationException(
+				$"There is already a {nameof(DraggedOutTabHandler)} registered with this {nameof(DockingTabControl)}\n" +
+				$"You must call {nameof(UnregisterDraggedOutTabHandler)} first");
+		}
+
+		_draggedOutTabHandler = handler;
+	}
+
+	public void Uninitialize()
+	{
+		_dockingManager = null;
+		Items.CollectionChanged -= ItemsCollectionChanged;
+	}
+
+	public void UnregisterDraggedOutTabHandler()
+	{
+		_draggedOutTabHandler = null;
+	}
+
+	protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
+	{
+		base.OnApplyTemplate(e);
+
+		_itemsPresenterPart = e.NameScope.Find<ItemsPresenter>("PART_ItemsPresenter");
+	}
+
+	protected override void OnLostFocus(FocusChangedEventArgs e)
+	{
+		if (e.NewFocusedElement is Control { DataContext: DockableTabModel tabModel }
+			&& _draggedTab is { } draggedTab
+			&& !ReferenceEquals(tabModel, draggedTab.tabItem.TabModel))
+		{
+			ReleaseDraggedTab();
+		}
+
+		base.OnLostFocus(e);
+	}
+
+	protected override void OnPointerMoved(PointerEventArgs e)
+	{
+		base.OnPointerMoved(e);
+
+		var draggedTab = _draggedTab;
+		if (draggedTab == null)
+		{
+			return;
+		}
+
+		// Calculate distance moved
+		var hitPoint = e.GetPosition(this);
+		var offset = draggedTab.Value.offset;
+		var deltaX = hitPoint.X - offset.X;
+		var deltaY = hitPoint.Y - offset.Y;
+		var distance = Math.Sqrt((deltaX * deltaX) + (deltaY * deltaY));
+
+		// Define drag threshold (in pixels)
+		if (distance < 10.0)
+		{
+			return;
+		}
+
+		if (_dockingManager?.RuntimeInformation?.DevicePlatform == DevicePlatform.Windows)
+		{
+			var tabBarHovered = TryGetTabBarRect(out var rect) && rect.Contains(hitPoint);
+			if (!tabBarHovered)
+			{
+				OnTabDraggedOut(e);
+				return;
+			}
+		}
+
+		OnDragToRearrange(e);
+	}
+
+	protected void OnPointerPressed(object sender, PointerPressedEventArgs e)
+	{
+		var currentPoint = e.GetCurrentPoint(this);
+		if (!currentPoint.Properties.IsLeftButtonPressed)
+		{
+			return;
+		}
+
+		// Content (e.g. terminal) often takes focus without focusing the TabItem.
+		// Pointer in this pane still means this dock is the active one.
+		IsActive = true;
+
+		if (!IsTabHeaderDragSource(e.Source))
+		{
+			return;
+		}
+
+		var hitPoint = currentPoint.Position;
+		var tabItem = Items
+			.OfType<DockableTabView>()
+			.LastOrDefault(x =>
+				this.GetBoundsOf(x)
+					.Contains(hitPoint)
+			);
+
+		if (tabItem == null)
+		{
+			return;
+		}
+
+		_draggedTab = (tabItem, hitPoint);
+	}
+
+	protected override void OnPointerReleased(PointerReleasedEventArgs e)
+	{
+		base.OnPointerReleased(e);
+		ReleaseDraggedTab();
+	}
+
+	protected override void OnPropertyChanged(PresentationPropertyChangedEventArgs change)
+	{
+		if (change.Property == IsActiveProperty)
+		{
+			UpdatePseudoClasses();
+		}
+		if ((change.Property == IsKeyboardFocusWithinProperty) && change.GetNewValue<bool>())
+		{
+			IsActive = true;
+		}
+		if (change.Property == SelectedItemProperty)
+		{
+			if (change.NewValue is DockableTabView tab)
+			{
+				tab.IsSelected = true;
+				tab.LastSelectedOn = DateTimeProvider.RealTime.UtcNow;
+				_dockingManager?.ActivateTab(tab.TabModel);
+				_selectedOrder.RefreshOrder();
+			}
+		}
+
+		base.OnPropertyChanged(change);
+	}
+
+	/// <summary>
+	/// Scroll arrows, new-tab, and close are buttons on the tab strip. Their presses
+	/// still bubble to this control (handledEventsToo) and must not start a tab drag.
+	/// </summary>
+	internal static bool IsTabHeaderDragSource(object source)
+	{
+		for (var current = source as Visual; current != null; current = current.GetVisualParent())
+		{
+			switch (current)
+			{
+				case RepeatButton:
+				case Button:
+					return false;
+				case DockableTabView:
+					return true;
+			}
+		}
+
+		return false;
+	}
+
+	private void DockableTabItemClosed(object sender, RoutedEventArgs e)
+	{
+		var closeableTabItem = (DockableTabView) sender!;
+		SelectedItem = _selectedOrder.FirstOrDefault(x => x != closeableTabItem);
+		Items.Remove(closeableTabItem);
+		var tabModel = closeableTabItem.TabModel;
+		// Stop → Unload → Uninitialize + AppDispatcher.Release via root manager.
+		_dockingManager?.DeactivateTab(tabModel);
+		_dockingManager?.OnTabModelRemoved(tabModel);
+
+		if (_draggedTab is { } d && (closeableTabItem == d.tabItem))
+		{
+			ReleaseDraggedTab();
+		}
+	}
+
+	private void ItemsCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+	{
+		//
+		// Items Collection Changes when tabs move, this does not necessarily mean the tab is closing.
+		//
+
+		if (e.OldItems != null)
+		{
+			foreach (var item in e.OldItems.OfType<DockableTabView>())
+			{
+				item.Closed -= DockableTabItemClosed;
+
+				_selectedOrder.Remove(item);
+			}
+		}
+		if (e.NewItems != null)
+		{
+			foreach (var item in e.NewItems.OfType<DockableTabView>())
+			{
+				item.TabControl = this;
+				item.Closed += DockableTabItemClosed;
+				item.LastSelectedOn = DateTimeProvider.RealTime.UtcNow;
+
+				_selectedOrder.Add(item);
+				_selectedOrder.RefreshOrder();
+			}
+		}
+	}
+
+	private void OnDragToRearrange(PointerEventArgs e)
+	{
+		var (draggedTab, _) = _draggedTab!.Value;
+
+		if (!Items.Contains(_draggedTab?.tabItem))
+		{
+			Debug.Fail("Dragged tab is not an Item of this TabControl");
+			return;
+		}
+
+		if (!TryGetHoveredTabItem(e, out var hoveredIndex, out var hovered))
+		{
+			//only rearrange when hovering a tab item
+			return;
+		}
+
+		_dragRearrangePreventFlicker.Evaluate(hovered, out var isHoveredValid);
+
+		if (hovered == draggedTab)
+		{
+			// it can not be the same item as the one dragged
+			return;
+		}
+
+		// make dragging back to the last position a lot easier
+		if (_draggedTabGhost.HasValue && _draggedTabGhost.Value.bounds.Contains(e.GetPosition(this)))
+		{
+			Items.Remove(draggedTab);
+			Items.Insert(_draggedTabGhost.Value.index, draggedTab);
+			return;
+		}
+
+		if (!isHoveredValid)
+		{
+			// don't count the tab hovered after rearrange to prevent flickering
+			return;
+		}
+
+		// see <see cref="RearrangePreventFlicker"/>
+
+		var draggedTabIndex = Items.IndexOf(draggedTab);
+		var isAfter = hoveredIndex > draggedTabIndex;
+		_draggedTabGhost = (this.GetBoundsOf(draggedTab), draggedTabIndex);
+
+		// Calculate target index accounting for the shift caused by removal
+		var targetIndex = hoveredIndex + (isAfter ? 1 : 0);
+		if (draggedTabIndex < hoveredIndex)
+		{
+			// Shift correction
+			targetIndex--;
+		}
+
+		Items.RemoveAt(draggedTabIndex);
+		Items.Insert(targetIndex, draggedTab);
+		_dragRearrangePreventFlicker.SetRearranged();
+	}
+
+	private void OnTabDraggedOut(PointerEventArgs e)
+	{
+		var (tabItem, offset) = _draggedTab!.Value;
+
+		if (_draggedOutTabHandler == null)
+		{
+			return;
+		}
+
+		SelectedItem = _selectedOrder.FirstOrDefault(x => x != tabItem);
+
+		// modifying Items has side effects, so we can't rely on the handler still having a value
+		var handler = _draggedOutTabHandler;
+		Items.Remove(tabItem);
+
+		ReleaseDraggedTab();
+
+		handler?.Invoke(this, e, tabItem, offset);
+	}
+
+	private void ReleaseDraggedTab()
+	{
+		_draggedTab = null;
+		_draggedTabGhost = null;
+		_dragRearrangePreventFlicker.Reset();
+	}
+
+	private bool TryGetHoveredTabItem(PointerEventArgs e, out int index, [NotNullWhen(true)] out TabItem hovered)
+	{
+		var hitPoint = e.GetPosition(this);
+
+		for (var i = Items.Count - 1; i >= 0; i--)
+		{
+			var tab = (TabItem) Items[i]!;
+			var tabItemBounds = this.GetBoundsOf(tab);
+
+			if (tabItemBounds.Contains(hitPoint))
+			{
+				hovered = tab;
+				index = i;
+				return true;
+			}
+		}
+
+		hovered = null;
+		index = -1;
+		return false;
+	}
+
+	private bool TryGetTabBarRect(out Rect rect)
+	{
+		var tabBarPanel = _itemsPresenterPart?.Panel;
+		if (tabBarPanel is null)
+		{
+			rect = default;
+			return false;
+		}
+
+		rect = this.GetBoundsOf(tabBarPanel);
+		return true;
+	}
+
+	private void UpdatePseudoClasses()
+	{
+		IsToolbar = AllowedDockTypes.SequenceEqual(_toolbarOnly);
+		PseudoClasses.Set(":active", IsActive);
+		PseudoClasses.Set(":toolbar", IsToolbar);
+		PseudoClasses.Set(":vertical", TabStripPlacement is Dock.Left or Dock.Right);
+		PseudoClasses.Set(":horizontal", TabStripPlacement is Dock.Top or Dock.Bottom);
+	}
+
+	#endregion
+
+	#region Classes
+
+	private class RearrangePreventFlicker
+	{
+		#region Fields
+
+		private bool _hasUnaccountedRearrange;
+		private object _hoveredObjectAfterRearrange;
+
+		#endregion
+
+		#region Methods
+
+		public void Evaluate(object hovered, out bool isValid)
+		{
+			if (_hasUnaccountedRearrange)
+			{
+				_hoveredObjectAfterRearrange = hovered;
+				_hasUnaccountedRearrange = false;
+				isValid = false;
+				return;
+			}
+
+			if (hovered == _hoveredObjectAfterRearrange)
+			{
+				isValid = false;
+				return;
+			}
+
+			_hoveredObjectAfterRearrange = null;
+			isValid = true;
+		}
+
+		public void Reset()
+		{
+			_hoveredObjectAfterRearrange = null;
+			_hasUnaccountedRearrange = false;
+		}
+
+		public void SetRearranged()
+		{
+			_hoveredObjectAfterRearrange = null;
+			_hasUnaccountedRearrange = true;
+		}
+
+		#endregion
+	}
+
+	#endregion
+
+	#region Delegates
+
+	public delegate void DraggedOutTabHandler(object sender, PointerEventArgs e, DockableTabView viewRef, Point offset);
+
+	#endregion
+}

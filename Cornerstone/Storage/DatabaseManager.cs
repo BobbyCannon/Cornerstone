@@ -3,6 +3,7 @@
 using System.Linq;
 using Cornerstone.Presentation;
 using Cornerstone.Profiling;
+using Cornerstone.Runtime;
 using Cornerstone.Sync;
 
 #endregion
@@ -17,13 +18,21 @@ public abstract class DatabaseManager<T>
 	: Manager, ISyncableDatabaseProvider<T>
 	where T : ISyncableDatabase
 {
+	#region Fields
+
+	private readonly IDateTimeProvider _dateTimeProvider;
+
+	#endregion
+
 	#region Constructors
 
 	protected DatabaseManager(
+		IDateTimeProvider dateTimeProvider,
 		DatabaseKeyCache databaseKeyCache,
 		DatabaseSettings databaseSettings,
 		Profiler profiler)
 	{
+		_dateTimeProvider = dateTimeProvider ?? DateTimeProvider.RealTime;
 		KeyCache = databaseKeyCache;
 		Settings = databaseSettings;
 		Profiler = profiler;
@@ -62,11 +71,21 @@ public abstract class DatabaseManager<T>
 
 	public T GetSyncableDatabase(DatabaseSettings settings, DatabaseKeyCache keyCache)
 	{
-		var database = GetDatabaseFromManager(settings, keyCache);
+		var database = GetDatabaseFromManager(settings, keyCache, _dateTimeProvider);
 		var isMigrated = database.IsDatabaseMigrated();
 		if (!isMigrated)
 		{
-			Profiler.Time(nameof(database.Migrate), () => database.Migrate());
+			Profiler.Time(nameof(database.Migrate), () =>
+			{
+				try
+				{
+					database.Migrate();
+				}
+				catch
+				{
+					OnMigrationFailed(database);
+				}
+			});
 		}
 
 		return database;
@@ -76,12 +95,32 @@ public abstract class DatabaseManager<T>
 	{
 		if (KeyCache != null)
 		{
-			Profiler.Time("KeyCache", () => KeyCache?.InitializeAndLoad(this, Settings.SyncOrder.Select(x => x.entity).ToArray()));
+			void LoadKeyCache()
+			{
+				Profiler.Time("KeyCache", () => KeyCache.InitializeAndLoad(this, Settings.SyncOrder.Select(x => x.entity).ToArray()));
+			}
+
+			var profiler = AppBootstrap.StartupProfiler;
+			if (profiler != null)
+			{
+				profiler.Time("KeyCache", LoadKeyCache);
+			}
+			else
+			{
+				LoadKeyCache();
+			}
 		}
 		base.LoadLifecycle();
 	}
 
-	protected abstract T GetDatabaseFromManager(DatabaseSettings settings, DatabaseKeyCache keyCache);
+	protected abstract T GetDatabaseFromManager(
+		DatabaseSettings settings,
+		DatabaseKeyCache keyCache,
+		IDateTimeProvider dateTimeProvider);
+
+	protected virtual void OnMigrationFailed(T database)
+	{
+	}
 
 	IDatabase IDatabaseProvider.GetDatabase()
 	{

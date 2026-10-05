@@ -16,53 +16,6 @@ public class SpeedyListTests : CornerstoneUnitTest
 	#region Methods
 
 	[TestMethod]
-	public void DispatchPendingIsSetByStructuralMutationsAndCleared()
-	{
-		using var list = new SpeedyList<int>(16);
-		IsFalse(list.HasPending);
-
-		list.Add(1);
-		IsTrue(list.HasPending);
-		list.ClearHasPending();
-		IsFalse(list.HasPending);
-
-		list.Add([2, 3]);
-		IsTrue(list.HasPending);
-		list.ClearHasPending();
-
-		list.Insert(0, 0);
-		IsTrue(list.HasPending);
-		list.ClearHasPending();
-
-		list[0] = 9;
-		IsTrue(list.HasPending);
-		list.ClearHasPending();
-
-		list.RemoveAt(0);
-		IsTrue(list.HasPending);
-		list.ClearHasPending();
-
-		list.Remove(2);
-		IsTrue(list.HasPending);
-		list.ClearHasPending();
-
-		list.RemoveRange(0, list.Count);
-		IsTrue(list.HasPending);
-		list.ClearHasPending();
-
-		// Clear on empty does not mark pending
-		list.Clear();
-		IsFalse(list.HasPending);
-
-		list.Add(1);
-		list.ClearHasPending();
-		list.Clear();
-		IsTrue(list.HasPending);
-		list.ClearHasPending();
-		IsFalse(list.HasPending);
-	}
-
-	[TestMethod]
 	public void AddArgumentExceptions()
 	{
 		using var buffer = new SpeedyList<char>(16);
@@ -171,11 +124,11 @@ public class SpeedyListTests : CornerstoneUnitTest
 		span = buffer.AsSpan(0);
 		AreEqual(6, span.Length);
 		AreEqual("ABCDEF"u8.ToArray(), span.ToArray());
-		
+
 		span = buffer.AsSpan(3);
 		AreEqual(3, span.Length);
 		AreEqual("DEF"u8.ToArray(), span.ToArray());
-		
+
 		span = buffer.AsSpan(0, 3);
 		AreEqual(3, span.Length);
 		AreEqual("ABC"u8.ToArray(), span.ToArray());
@@ -323,6 +276,53 @@ public class SpeedyListTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void DispatchPendingIsSetByStructuralMutationsAndCleared()
+	{
+		using var list = new SpeedyList<int>(16);
+		IsFalse(list.HasPending);
+
+		list.Add(1);
+		IsTrue(list.HasPending);
+		list.ClearHasPending();
+		IsFalse(list.HasPending);
+
+		list.Add([2, 3]);
+		IsTrue(list.HasPending);
+		list.ClearHasPending();
+
+		list.Insert(0, 0);
+		IsTrue(list.HasPending);
+		list.ClearHasPending();
+
+		list[0] = 9;
+		IsTrue(list.HasPending);
+		list.ClearHasPending();
+
+		list.RemoveAt(0);
+		IsTrue(list.HasPending);
+		list.ClearHasPending();
+
+		list.Remove(2);
+		IsTrue(list.HasPending);
+		list.ClearHasPending();
+
+		list.RemoveRange(0, list.Count);
+		IsTrue(list.HasPending);
+		list.ClearHasPending();
+
+		// Clear on empty does not mark pending
+		list.Clear();
+		IsFalse(list.HasPending);
+
+		list.Add(1);
+		list.ClearHasPending();
+		list.Clear();
+		IsTrue(list.HasPending);
+		list.ClearHasPending();
+		IsFalse(list.HasPending);
+	}
+
+	[TestMethod]
 	public void Dispose()
 	{
 		var buffer = new SpeedyList<int>(16);
@@ -452,6 +452,19 @@ public class SpeedyListTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void IndexOf()
+	{
+		using var buffer = new SpeedyList<int>(16);
+		buffer.Add([1, 2, 3, 4]);
+		AreEqual(0, buffer.IndexOf(1));
+		AreEqual(1, buffer.IndexOf(2));
+		AreEqual(2, buffer.IndexOf(3));
+		AreEqual(3, buffer.IndexOf(4));
+		AreEqual(-1, buffer.IndexOf(5));
+		AreEqual(-1, buffer.IndexOf(0));
+	}
+
+	[TestMethod]
 	public void Indexer()
 	{
 		using var buffer = new SpeedyList<int>(16);
@@ -471,19 +484,6 @@ public class SpeedyListTests : CornerstoneUnitTest
 		ExpectedException<IndexOutOfRangeException>(() => _ = buffer[-1]);
 		ExpectedException<IndexOutOfRangeException>(() => _ = buffer[2]);
 		ExpectedException<IndexOutOfRangeException>(() => buffer[5] = 99);
-	}
-
-	[TestMethod]
-	public void IndexOf()
-	{
-		using var buffer = new SpeedyList<int>(16);
-		buffer.Add([1, 2, 3, 4]);
-		AreEqual(0, buffer.IndexOf(1));
-		AreEqual(1, buffer.IndexOf(2));
-		AreEqual(2, buffer.IndexOf(3));
-		AreEqual(3, buffer.IndexOf(4));
-		AreEqual(-1, buffer.IndexOf(5));
-		AreEqual(-1, buffer.IndexOf(0));
 	}
 
 	[TestMethod]
@@ -580,7 +580,24 @@ public class SpeedyListTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
-	public void Read_IndexAndLength_ReturnsCorrectSlice()
+	public void ReadArgumentChecks()
+	{
+		using var buffer = new SpeedyList<int>(16);
+		var destination = new int[16];
+		ExpectedException<ArgumentNullException>(() => buffer.Read(0, null, 0, 0));
+		ExpectedException<ArgumentOutOfRangeException>(() => buffer.Read(-1, destination, 0, 0));
+		ExpectedException<ArgumentOutOfRangeException>(() => buffer.Read(0, destination, -1, 0));
+		ExpectedException<ArgumentOutOfRangeException>(() => buffer.Read(0, destination, 0, -1));
+		ExpectedException<ArgumentOutOfRangeException>(() => buffer.Read(0, destination, 16, 2));
+		destination = new int[32];
+		ExpectedException<ArgumentOutOfRangeException>(
+			() => buffer.Read(0, destination, 0, 17),
+			Babel.Tower[BabelKeys.IndexAndLengthOutOfRange]
+		);
+	}
+
+	[TestMethod]
+	public void ReadIndexAndLengthReturnsCorrectSlice()
 	{
 		using var buffer = new SpeedyList<int>(32);
 		buffer.Add([10, 20, 30, 40, 50, 60, 70]);
@@ -596,23 +613,6 @@ public class SpeedyListTests : CornerstoneUnitTest
 		// Edge: read to end
 		slice = buffer.Read(5, 2);
 		AreEqual([60, 70], slice);
-	}
-
-	[TestMethod]
-	public void ReadArgumentChecks()
-	{
-		using var buffer = new SpeedyList<int>(16);
-		var destination = new int[16];
-		ExpectedException<ArgumentNullException>(() => buffer.Read(0, null, 0, 0));
-		ExpectedException<ArgumentOutOfRangeException>(() => buffer.Read(-1, destination, 0, 0));
-		ExpectedException<ArgumentOutOfRangeException>(() => buffer.Read(0, destination, -1, 0));
-		ExpectedException<ArgumentOutOfRangeException>(() => buffer.Read(0, destination, 0, -1));
-		ExpectedException<ArgumentOutOfRangeException>(() => buffer.Read(0, destination, 16, 2));
-		destination = new int[32];
-		ExpectedException<ArgumentOutOfRangeException>(
-			() => buffer.Read(0, destination, 0, 17),
-			Babel.Tower[BabelKeys.IndexAndLengthOutOfRange]
-		);
 	}
 
 	[TestMethod]
@@ -758,6 +758,7 @@ public class SpeedyListTests : CornerstoneUnitTest
 
 		ExpectedException<ArgumentOutOfRangeException>(() => buffer.RemoveRange(-1, 2));
 		ExpectedException<ArgumentOutOfRangeException>(() => buffer.RemoveRange(0, -1));
+
 		// this is valid, should it not be?
 		//ExpectedException<ArgumentOutOfRangeException>(() => buffer.RemoveRange(0, 0)); // zero length
 		ExpectedException<ArgumentOutOfRangeException>(() => buffer.RemoveRange(3, 10)); // exceeds count

@@ -1,0 +1,43 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		mc:Ignorable="d" d:DesignWidth="280"
+		x:Class="Cornerstone.Sample.Tabs.Data.MeshAccountCard"
+		x:Name="Card">
+	<UserControl.Styles>
+		<Style Selector="Border.MeshCard">
+			<Setter Property="Padding" Value="8" />
+			<Setter Property="Margin" Value="4" />
+			<Setter Property="MinWidth" Value="280" />
+		</Style>
+		<Style Selector="Border.MeshCard > StackPanel">
+			<Setter Property="Spacing" Value="4" />
+		</Style>
+		<Style Selector="TextBlock.MeshLabel">
+			<Setter Property="Opacity" Value="0.75" />
+			<Setter Property="TextWrapping" Value="Wrap" />
+		</Style>
+	</UserControl.Styles>
+	<Border Classes="Card MeshCard"
+			BorderThickness="1">
+		<StackPanel>
+			<TextBlock Classes="SubHeader"
+					HorizontalAlignment="Center"
+					Text="{Binding Title, ElementName=Card}" />
+			<TextBox Text="{Binding DisplayName, ElementName=Card, Mode=TwoWay}">
+				<TextBox.InnerRightContent>
+					<Button Classes="Icon"
+							Command="{Binding SaveCommand, ElementName=Card}"
+							Focusable="False">
+						<Path Data="{StaticResource Icons.Save}" />
+					</Button>
+				</TextBox.InnerRightContent>
+			</TextBox>
+			<TextBlock Classes="MeshLabel"
+					HorizontalAlignment="Center"
+					Text="{Binding ModifiedOn, ElementName=Card, StringFormat='Modified on {0:yyyy-MM-dd HH:mm:ss}'}" />
+		</StackPanel>
+	</Border>
+</UserControl>

@@ -1,0 +1,620 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Cornerstone.Presentation.Collections;
+using Cornerstone.Presentation.Controls.Utils;
+using Cornerstone.Presentation.Input;
+using Cornerstone.Presentation.Input.Platform;
+using Cornerstone.Presentation.Interactivity;
+using Cornerstone.Presentation.Logging;
+using Cornerstone.Presentation.Media;
+using Cornerstone.Presentation.Media.TextFormatting;
+using Cornerstone.Presentation.Utilities;
+using Cornerstone.Presentation.Controls.Input;
+using Cornerstone.Presentation.Controls.Text;
+using Cornerstone.Presentation.Controls.Chrome;
+using Cornerstone.Presentation.Controls.Documents;
+
+namespace Cornerstone.Presentation.Controls
+{
+    /// <summary>
+    /// A control that displays a block of formatted text.
+    /// </summary>
+    public class SelectableTextBlock : TextBlock, IInlineHost
+    {
+        public static readonly StyledProperty<int> SelectionStartProperty =
+            TextBox.SelectionStartProperty.AddOwner<SelectableTextBlock>(new(coerce: TextBox.CoerceCaretIndex));
+
+        public static readonly StyledProperty<int> SelectionEndProperty =
+            TextBox.SelectionEndProperty.AddOwner<SelectableTextBlock>(new(coerce: TextBox.CoerceCaretIndex));
+
+        public static readonly DirectProperty<SelectableTextBlock, string> SelectedTextProperty =
+            PresentationProperty.RegisterDirect<SelectableTextBlock, string>(
+                nameof(SelectedText),
+                o => o.SelectedText);
+
+        public static readonly StyledProperty<IBrush?> SelectionBrushProperty =
+            TextBox.SelectionBrushProperty.AddOwner<SelectableTextBlock>();
+
+        public static readonly StyledProperty<IBrush?> SelectionForegroundBrushProperty =
+            TextBox.SelectionForegroundBrushProperty.AddOwner<SelectableTextBlock>();
+
+        public static readonly DirectProperty<SelectableTextBlock, bool> CanCopyProperty =
+            TextBox.CanCopyProperty.AddOwner<SelectableTextBlock>(o => o.CanCopy);
+
+        public static readonly RoutedEvent<RoutedEventArgs> CopyingToClipboardEvent =
+            RoutedEvent.Register<SelectableTextBlock, RoutedEventArgs>(
+                nameof(CopyingToClipboard), RoutingStrategies.Bubble);
+
+        private bool _canCopy;
+        private int _wordSelectionStart = -1;
+        private (int Start, int End) _selectionAtPointerPress;
+
+        static SelectableTextBlock()
+        {
+            FocusableProperty.OverrideDefaultValue<SelectableTextBlock>(true);
+            AffectsRender<SelectableTextBlock>(SelectionStartProperty, SelectionEndProperty, SelectionBrushProperty);
+        }
+
+        public event EventHandler<RoutedEventArgs>? CopyingToClipboard
+        {
+            add => AddHandler(CopyingToClipboardEvent, value);
+            remove => RemoveHandler(CopyingToClipboardEvent, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the brush that highlights selected text.
+        /// </summary>
+        public IBrush? SelectionBrush
+        {
+            get => GetValue(SelectionBrushProperty);
+            set => SetValue(SelectionBrushProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets a brush that is used for the foreground of selected text
+        /// </summary>
+        public IBrush? SelectionForegroundBrush
+        {
+            get => GetValue(SelectionForegroundBrushProperty);
+            set => SetValue(SelectionForegroundBrushProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets a character index for the beginning of the current selection.
+        /// </summary>
+        public int SelectionStart
+        {
+            get => GetValue(SelectionStartProperty);
+            set => SetValue(SelectionStartProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets a character index for the end of the current selection.
+        /// </summary>
+        public int SelectionEnd
+        {
+            get => GetValue(SelectionEndProperty);
+            set => SetValue(SelectionEndProperty, value);
+        }
+
+        /// <summary>
+        /// Gets the content of the current selection.
+        /// </summary>
+        public string SelectedText
+        {
+            get => GetSelection();
+        }
+
+        /// <summary>
+        /// Property for determining if the Copy command can be executed.
+        /// </summary>
+        public bool CanCopy
+        {
+            get => _canCopy;
+            private set => SetAndRaise(CanCopyProperty, ref _canCopy, value);
+        }
+
+        /// <summary>
+        /// Copies the current selection to the Clipboard.
+        /// </summary>
+        public async void Copy()
+        {
+            if (!_canCopy)
+            {
+                return;
+            }
+
+            var text = GetSelection();
+
+            if (string.IsNullOrEmpty(text))
+            {
+                return;
+            }
+
+            var eventArgs = new RoutedEventArgs(CopyingToClipboardEvent);
+
+            RaiseEvent(eventArgs);
+
+            if (!eventArgs.Handled)
+            {
+                var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+
+                if (clipboard is null)
+                    return;
+
+                try
+                {
+                    await clipboard.SetTextAsync(text);
+                }
+                catch (Exception ex) when (ClipboardHelper.IsExpectedClipboardException(ex))
+                {
+                    Logger.TryGet(LogEventLevel.Warning, LogArea.Control)
+                        ?.Log(this, "Failed to write text to clipboard: {Error}", ex);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Select all text in the TextBox
+        /// </summary>
+        public void SelectAll()
+        {
+            var text = HasComplexContent ? Inlines?.Text : Text;
+
+            SetCurrentValue(SelectionStartProperty, 0);
+            SetCurrentValue(SelectionEndProperty, text?.Length ?? 0);
+        }
+
+        /// <summary>
+        /// Clears the current selection
+        /// </summary>
+        public void ClearSelection()
+        {
+            SetCurrentValue(SelectionEndProperty, SelectionStart);
+        }
+
+        protected override void OnGotFocus(FocusChangedEventArgs e)
+        {
+            base.OnGotFocus(e);
+
+            UpdateCommandStates();
+        }
+
+        protected override void OnLostFocus(FocusChangedEventArgs e)
+        {
+            base.OnLostFocus(e);
+
+            if ((ContextFlyout == null || !ContextFlyout.IsOpen) &&
+               (ContextMenu == null || !ContextMenu.IsOpen))
+            {
+                ClearSelection();
+            }
+
+            UpdateCommandStates();
+        }
+
+        protected override TextLayout CreateTextLayout(string? text)
+        {
+            var typeface = new Typeface(FontFamily, FontStyle, FontWeight, FontStretch);
+
+            var defaultProperties = new GenericTextRunProperties(
+                typeface,
+                FontSize,
+                TextDecorations,
+                Foreground,
+                fontFeatures: FontFeatures);
+
+            var paragraphProperties = new GenericTextParagraphProperties(FlowDirection, TextAlignment, true, false,
+                defaultProperties, TextWrapping, LineHeight, 0, LetterSpacing)
+            {
+                LineSpacing = LineSpacing
+            };
+
+            List<ValueSpan<TextRunProperties>>? textStyleOverrides = null;
+            var selectionStart = SelectionStart;
+            var selectionEnd = SelectionEnd;
+            var start = Math.Min(selectionStart, selectionEnd);
+            var length = Math.Max(selectionStart, selectionEnd) - start;
+
+            if (length > 0 && SelectionForegroundBrush != null)
+            {
+                if (_textRuns != null)
+                {
+                    // Apply selection foreground color without changing the original text formatting.
+                    // The built-in SelectableTextBlock selection logic recreates TextRunProperties,
+                    // which overwrites run-specific Typeface/FontFeatures/FontSize and breaks bold/italic.
+                    // Here we reuse each run's existing properties and only override the foreground brush.
+
+                    var accumulatedLength = 0;
+                    foreach (var textRun in _textRuns)
+                    {
+                        var runLength = textRun.Text.Length;
+                        if (accumulatedLength + runLength <= start ||
+                            accumulatedLength >= start + length)
+                        {
+                            accumulatedLength += runLength;
+                            continue;
+                        }
+
+                        var overlapStart = Math.Max(start, accumulatedLength);
+                        var overlapEnd = Math.Min(start + length, accumulatedLength + runLength);
+                        var overlapLength = overlapEnd - overlapStart;
+
+                        textStyleOverrides ??= [];
+
+                        textStyleOverrides.Add(
+                            new ValueSpan<TextRunProperties>(
+                                overlapStart,
+                                overlapLength,
+                                new GenericTextRunProperties(
+                                    textRun.Properties?.Typeface ?? typeface,
+                                    FontSize,
+                                    foregroundBrush: SelectionForegroundBrush,
+                                    fontFeatures: textRun.Properties?.FontFeatures ?? FontFeatures)));
+
+                        accumulatedLength += runLength;
+                    }
+                }
+                else
+                {
+                    textStyleOverrides =
+                    [
+                        new ValueSpan<TextRunProperties>(start, length,
+                            new GenericTextRunProperties(
+                                typeface,
+                                FontSize,
+                                foregroundBrush: SelectionForegroundBrush,
+                                fontFeatures: FontFeatures))
+                    ];
+                }
+            }
+
+            ITextSource textSource;
+
+            if (HasComplexContent)
+            {
+                EnsureTextRuns();
+
+                textSource = new InlinesTextSource(_textRuns!, textStyleOverrides);
+            }
+            else
+            {
+                textSource = new FormattedTextSource(text ?? "", defaultProperties, textStyleOverrides);
+            }
+
+            var maxSize = GetMaxSizeFromConstraint();
+
+            return new TextLayout(
+                textSource,
+                paragraphProperties,
+                TextTrimming,
+                maxSize.Width,
+                maxSize.Height,
+                MaxLines);
+        }
+
+        protected override void RenderTextLayout(DrawingContext context, Point origin)
+        {
+            var selectionStart = SelectionStart;
+            var selectionEnd = SelectionEnd;
+            var selectionBrush = SelectionBrush;
+
+            if (selectionStart != selectionEnd && selectionBrush != null)
+            {
+                var start = Math.Min(selectionStart, selectionEnd);
+                var length = Math.Max(selectionStart, selectionEnd) - start;
+
+                var rects = TextLayout.HitTestTextRange(start, length);
+
+                using (context.PushTransform(Matrix.CreateTranslation(origin)))
+                {
+                    foreach (var rect in rects)
+                    {
+                        context.FillRectangle(selectionBrush, PixelRect.FromRect(rect, 1).ToRect(1));
+                    }
+                }
+            }
+
+            base.RenderTextLayout(context, origin);
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+
+            var handled = false;
+            var modifiers = e.KeyModifiers;
+            var keymap = Application.Current!.PlatformSettings!.HotkeyConfiguration;
+
+            bool Match(List<KeyGesture> gestures) => gestures.Any(g => g.Matches(e));
+
+            if (Match(keymap.Copy))
+            {
+                Copy();
+                handled = true;
+            }
+            else if (Match(keymap.SelectAll))
+            {
+                SelectAll();
+                handled = true;
+            }
+
+            e.Handled = handled;
+        }
+
+        protected override void OnPropertyChanged(PresentationPropertyChangedEventArgs change)
+        {
+            base.OnPropertyChanged(change);
+
+            if (change.Property == InlinesProperty)
+            {
+                if (change.OldValue is InlineCollection oldInlines)
+                {
+                    oldInlines.Invalidated -= OnInlinesInvalidated;
+                }
+
+                if (change.NewValue is InlineCollection newInlines)
+                {
+                    newInlines.Invalidated += OnInlinesInvalidated;
+                }
+
+                OnTextOrInlinesChanged();
+            }
+            else if (change.Property == TextProperty)
+            {
+                OnTextOrInlinesChanged();
+            }
+            else if (change.Property == SelectionStartProperty || change.Property == SelectionEndProperty)
+            {
+                RaisePropertyChanged(SelectedTextProperty, "", "");
+                UpdateCommandStates();
+                InvalidateTextLayout();
+            }
+            else if (change.Property == SelectionForegroundBrushProperty)
+            {
+                InvalidateTextLayout();
+            }
+        }
+
+        protected override void OnPointerPressed(PointerPressedEventArgs e)
+        {
+            base.OnPointerPressed(e);
+
+            _selectionAtPointerPress = GetSelectionRange();
+
+            var text = HasComplexContent ? Inlines?.Text : Text;
+            var clickInfo = e.GetCurrentPoint(this);
+
+            if (text != null && clickInfo.Properties.IsLeftButtonPressed)
+            {
+                var padding = Padding;
+
+                var point = e.GetPosition(this) - new Point(padding.Left, padding.Top);
+
+                var clickToSelect = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+
+                var oldIndex = SelectionStart;
+
+                var hit = TextLayout.HitTestPoint(point);
+                var index = hit.TextPosition;
+
+                switch (e.ClickCount)
+                {
+                    case 1:
+                        if (clickToSelect)
+                        {
+                            if (_wordSelectionStart >= 0)
+                            {
+                                var previousWord = StringUtils.PreviousWord(text, index);
+
+                                if (index > _wordSelectionStart)
+                                {
+                                    SetCurrentValue(SelectionEndProperty, StringUtils.NextWord(text, index));
+                                }
+
+                                if (index < _wordSelectionStart || previousWord == _wordSelectionStart)
+                                {
+                                    SetCurrentValue(SelectionStartProperty, previousWord);
+                                }
+                            }
+                            else
+                            {
+                                SetCurrentValue(SelectionStartProperty, Math.Min(oldIndex, index));
+                                SetCurrentValue(SelectionEndProperty, Math.Max(oldIndex, index));
+                            }
+                        }
+                        else
+                        {
+                            SetCurrentValue(SelectionStartProperty, index);
+                            SetCurrentValue(SelectionEndProperty, index);
+                            _wordSelectionStart = -1;
+                        }
+
+                        break;
+                    case 2:
+                        if (!StringUtils.IsStartOfWord(text, index))
+                        {
+                            SetCurrentValue(SelectionStartProperty, StringUtils.PreviousWord(text, index));
+                        }
+
+                        _wordSelectionStart = SelectionStart;
+
+                        if (!StringUtils.IsEndOfWord(text, index))
+                        {
+                            SetCurrentValue(SelectionEndProperty, StringUtils.NextWord(text, index));
+                        }
+
+                        break;
+                    case 3:
+                        _wordSelectionStart = -1;
+
+                        SelectAll();
+                        break;
+                }
+            }
+
+            e.Pointer.Capture(this);
+            e.Handled = true;
+        }
+
+        protected override void OnPointerMoved(PointerEventArgs e)
+        {
+            base.OnPointerMoved(e);
+
+            // selection should not change during pointer move if the user right clicks
+            if (e.Pointer.Captured == this && e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+            {
+                var text = HasComplexContent ? Inlines?.Text : Text;
+                var padding = Padding;
+
+                var point = e.GetPosition(this) - new Point(padding.Left, padding.Top);
+
+                var hit = TextLayout.HitTestPoint(point);
+                var textPosition = hit.TextPosition;
+
+                if (text != null && _wordSelectionStart >= 0)
+                {
+                    var distance = textPosition - _wordSelectionStart;
+
+                    if (distance <= 0)
+                    {
+                        SetCurrentValue(SelectionStartProperty, StringUtils.PreviousWord(text, textPosition));
+                    }
+
+                    if (distance >= 0)
+                    {
+                        if (SelectionStart != _wordSelectionStart)
+                        {
+                            SetCurrentValue(SelectionStartProperty, _wordSelectionStart);
+                        }
+
+                        SetCurrentValue(SelectionEndProperty, StringUtils.NextWord(text, textPosition));
+                    }
+                }
+                else
+                {
+                    SetCurrentValue(SelectionEndProperty, textPosition);
+                }
+
+            }
+        }
+
+        protected override void OnPointerReleased(PointerReleasedEventArgs e)
+        {
+            base.OnPointerReleased(e);
+
+            if (e.Pointer.Captured != this)
+            {
+                return;
+            }
+
+            if (e.InitialPressMouseButton == MouseButton.Right)
+            {
+                var padding = Padding;
+
+                var point = e.GetPosition(this) - new Point(padding.Left, padding.Top);
+
+                var hit = TextLayout.HitTestPoint(point);
+
+                // A point below the text hits one past its end, so clamp it as TextBox does for its caret.
+                var caretIndex = TextBox.CoerceCaretIndex(this, hit.TextPosition);
+
+                // see if mouse clicked inside current selection
+                // if it did not, we change the selection to where the user clicked
+                var firstSelection = Math.Min(SelectionStart, SelectionEnd);
+                var lastSelection = Math.Max(SelectionStart, SelectionEnd);
+                var didClickInSelection = SelectionStart != SelectionEnd &&
+                                          caretIndex >= firstSelection && caretIndex <= lastSelection;
+                if (!didClickInSelection)
+                {
+                    SetCurrentValue(SelectionStartProperty, caretIndex);
+                    SetCurrentValue(SelectionEndProperty, caretIndex);
+                }
+            }
+
+            var selection = GetSelectionRange();
+            if (e.InitialPressMouseButton == MouseButton.Left &&
+                selection.Start != selection.End &&
+                selection != _selectionAtPointerPress)
+            {
+                // The pointer gesture changed the selection, publish it to the primary selection.
+                _ = PrimarySelectionHelper.PublishTextAsync(this, GetSelection);
+            }
+
+            e.Pointer.Capture(null);
+        }
+
+        private (int Start, int End) GetSelectionRange()
+        {
+            var selectionStart = SelectionStart;
+            var selectionEnd = SelectionEnd;
+
+            return (Math.Min(selectionStart, selectionEnd), Math.Max(selectionStart, selectionEnd));
+        }
+
+        private void OnInlinesInvalidated(object? sender, EventArgs e) => OnTextOrInlinesChanged();
+
+        private void OnTextOrInlinesChanged()
+        {
+            CoerceValue(SelectionStartProperty);
+            CoerceValue(SelectionEndProperty);
+            RaisePropertyChanged(SelectedTextProperty, "", "");
+            UpdateCommandStates();
+        }
+
+        private void UpdateCommandStates()
+        {
+            CanCopy = HasSelection();
+        }
+
+        /// <summary>
+        /// Reports the same emptiness conditions as <see cref="GetSelection"/>, without building
+        /// the selected string.
+        /// </summary>
+        private bool HasSelection()
+        {
+            var selectionStart = SelectionStart;
+            var selectionEnd = SelectionEnd;
+            var start = Math.Min(selectionStart, selectionEnd);
+            var end = Math.Max(selectionStart, selectionEnd);
+
+            if (start == end)
+            {
+                return false;
+            }
+
+            var textLength = (HasComplexContent ? Inlines?.Text : Text)?.Length ?? 0;
+
+            return textLength > 0 && end <= textLength;
+        }
+
+        private string GetSelection()
+        {
+            var text = HasComplexContent ? Inlines?.Text : Text;
+
+            var textLength = text?.Length ?? 0;
+
+            if (textLength == 0)
+            {
+                return "";
+            }
+
+            var selectionStart = SelectionStart;
+            var selectionEnd = SelectionEnd;
+            var start = Math.Min(selectionStart, selectionEnd);
+            var end = Math.Max(selectionStart, selectionEnd);
+
+            if (start == end || textLength < end)
+            {
+                return "";
+            }
+
+            var length = Math.Max(0, end - start);
+
+            var selectedText = text!.Substring(start, length);
+
+            return selectedText;
+        }
+    }
+}

@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -33,6 +34,8 @@ public class WindowsPlatformCredentialVault : PlatformCredentialVault
 
 	#region Methods
 
+	[UnconditionalSuppressMessage("Aot", "IL3050", Justification = "Base TryReadData cannot be annotated; JSON parse of vault payloads.")]
+	[UnconditionalSuppressMessage("Trim", "IL2026", Justification = "Base TryReadData cannot be annotated; JSON parse of vault payloads.")]
 	public override bool TryReadData<T>(string name, out T data)
 	{
 		try
@@ -78,6 +81,8 @@ public class WindowsPlatformCredentialVault : PlatformCredentialVault
 		}
 	}
 
+	[UnconditionalSuppressMessage("Aot", "IL3050", Justification = "Base TryWriteData cannot be annotated; JSON write of vault payloads.")]
+	[UnconditionalSuppressMessage("Trim", "IL2026", Justification = "Base TryWriteData cannot be annotated; JSON write of vault payloads.")]
 	public override bool TryWriteData<T>(string name, T data)
 	{
 		try

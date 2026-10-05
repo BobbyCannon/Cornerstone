@@ -7,9 +7,12 @@ using Android.Hardware.Display;
 using Android.OS;
 using Android.Views;
 using Cornerstone.Data.Bytes;
+using Cornerstone.Input;
 using Cornerstone.Location;
+using Cornerstone.Media;
 using Cornerstone.Runtime;
 using Cornerstone.Security;
+using Cornerstone.Security.SecurityKeys;
 using SecureSettings = Android.Provider.Settings.Secure;
 using DrawingSize = System.Drawing.Size;
 
@@ -30,6 +33,8 @@ public class AndroidPlatform : CornerstoneObject, IPlatform
 	#endregion
 
 	#region Properties
+
+	public static Activity Activity { get; private set; }
 
 	public DependencyProvider DependencyProvider { get; }
 
@@ -57,16 +62,50 @@ public class AndroidPlatform : CornerstoneObject, IPlatform
 		base.LoadLifecycle();
 	}
 
+	public void OnNewIntent(Intent intent)
+	{
+		if (DependencyProvider.TryGetInstance<SecurityCardReader>(out var reader)
+			&& reader is AndroidSecurityCardReader androidReader)
+		{
+			androidReader.OnHandleIntent(intent);
+		}
+	}
+
+	public void OnRequestPermissionsResult(int requestCode, string[] permissions, global::Android.Content.PM.Permission[] grantResults)
+	{
+		if (DependencyProvider.TryGetInstance<IPermissions>(out var permissionsManager)
+			&& permissionsManager is AndroidPermissions androidPermissions)
+		{
+			androidPermissions.OnRequestPermissionResult(requestCode, permissions, grantResults);
+		}
+	}
+
+	public void OnResume()
+	{
+		SetActivity(Activity);
+		if (DependencyProvider.TryGetInstance<SecurityCardReader>(out var reader)
+			&& reader is AndroidSecurityCardReader androidReader)
+		{
+			androidReader.HandleOnResume();
+		}
+	}
+
+	public static void SetActivity(Activity activity)
+	{
+		Activity = activity;
+	}
+
 	private void AddPlatformImplementations()
 	{
-		//DependencyProvider.AddTransient<AudioPlayer, AndroidAudioPlayer>();
-		//DependencyProvider.AddTransient<AudioPlayer, AudioPlayerStub>();
-		//DependencyProvider.AddSingleton<FileService, AndroidFileService>();
+		DependencyProvider.AddTransient<AudioPlayer, AndroidAudioPlayer>();
+		DependencyProvider.AddSingleton<Gamepad, GamepadStub>();
+		DependencyProvider.AddSingleton<IKeepAlive, AndroidKeepAlive>();
+		DependencyProvider.AddSingleton<Keyboard, KeyboardStub>();
+		DependencyProvider.AddSingleton<Mouse, MouseStub>();
 		DependencyProvider.AddSingleton<ILocationProvider>(() => new AndroidLocationProvider());
-
-		//DependencyProvider.AddSingleton<SecurityCardReader, AndroidSecurityCardReader>();
-		//DependencyProvider.AddSingleton<IPermissions, AndroidPermissions>();
+		DependencyProvider.AddSingleton<IPermissions, AndroidPermissions>();
 		DependencyProvider.AddSingleton<PlatformCredentialVault, AndroidPlatformCredentialVault>();
+		DependencyProvider.AddSingleton<SecurityCardReader, AndroidSecurityCardReader>();
 	}
 
 	private static string GetSystemSetting(string name, bool isGlobal = false)

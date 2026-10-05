@@ -21,6 +21,8 @@ public partial class Generator
 
 	public const string MsTestTestAssemblyInitializeAttributeFullName = "Microsoft.VisualStudio.TestTools.UnitTesting.AssemblyInitializeAttribute";
 	public const string MsTestTestClassAttributeFullName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute";
+	public const string MsTestTestClassCleanupAttributeFullName = "Microsoft.VisualStudio.TestTools.UnitTesting.ClassCleanupAttribute";
+	public const string MsTestTestClassInitializeAttributeFullName = "Microsoft.VisualStudio.TestTools.UnitTesting.ClassInitializeAttribute";
 	public const string MsTestTestCleanupAttributeFullName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestCleanupAttribute";
 	public const string MsTestTestInitializeAttributeFullName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestInitializeAttribute";
 	public const string MsTestTestMethodAttributeFullName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute";
@@ -29,6 +31,67 @@ public partial class Generator
 	#endregion
 
 	#region Methods
+
+	private static bool IsMsTestMethodAttribute(SourceAttributeInfo attribute)
+	{
+		if (attribute.FullyQualifiedName is MsTestTestMethodAttributeFullName)
+		{
+			return true;
+		}
+
+		var type = attribute.TypeSymbol;
+		while (type != null)
+		{
+			if (type.ToDisplayString() == MsTestTestMethodAttributeFullName)
+			{
+				return true;
+			}
+
+			type = type.BaseType;
+		}
+
+		return false;
+	}
+
+	private static List<SourceMethodInfo> CollectTestMethods(SourceTypeInfo type)
+	{
+		var methods = new List<SourceMethodInfo>();
+
+		for (var symbol = type.TypeSymbol; symbol is { SpecialType: not SpecialType.System_Object }; symbol = symbol.BaseType)
+		{
+			foreach (var method in ProcessTypeSymbol(symbol).Methods)
+			{
+				if (!method.Attributes.Any(IsMsTestMethodAttribute))
+				{
+					continue;
+				}
+
+				if (methods.Any(x => x.Name == method.Name))
+				{
+					continue;
+				}
+
+				methods.Add(method);
+			}
+		}
+
+		return methods;
+	}
+
+	private static SourceAttributeInfo FindSkipInAotAttribute(SourceTypeInfo testClass)
+	{
+		for (var symbol = testClass.TypeSymbol; symbol is { SpecialType: not SpecialType.System_Object }; symbol = symbol.BaseType)
+		{
+			var attribute = ProcessTypeSymbol(symbol).Attributes
+				.FirstOrDefault(a => a.FullyQualifiedName == SkipInAotAttributeAttributeFullName);
+			if (attribute != null)
+			{
+				return attribute;
+			}
+		}
+
+		return null;
+	}
 
 	private static SourceMethodInfo FindTestMethodUsingAttribute(
 		SourceTypeInfo type,
@@ -64,7 +127,6 @@ public partial class Generator
 			.ReferencedAssemblyNames.Any(a =>
 				string.Equals(a.Name, "Microsoft.NET.Test.Sdk", StringComparison.OrdinalIgnoreCase)
 				|| string.Equals(a.Name, "MSTest.TestFramework", StringComparison.OrdinalIgnoreCase)
-				|| string.Equals(a.Name, "NUnit.Framework", StringComparison.OrdinalIgnoreCase)
 			);
 
 		var isExecutable = compilation.Options.OutputKind
@@ -78,7 +140,9 @@ public partial class Generator
 		}
 
 		var testClasses = typesToProcess
-			.Where(x => x.Methods.Any(m => m.Attributes.Any(a => a.FullyQualifiedName is MsTestTestMethodAttributeFullName)))
+			.Where(x => !x.IsAbstract)
+			.Where(x => x.Attributes.Any(a => a.FullyQualifiedName is MsTestTestClassAttributeFullName))
+			.Where(x => CollectTestMethods(x).Count > 0)
 			.OrderBy(x => x.Name)
 			.ToArray();
 
@@ -87,13 +151,18 @@ public partial class Generator
 			return;
 		}
 
-		foreach (var testClass in testClasses)
+		foreach (var type in typesToProcess)
 		{
-			var isMsTest = testClass.Methods.Any(m => m.Attributes.Any(a => a.FullyQualifiedName is MsTestTestMethodAttributeFullName));
-			var hasTestClassAttribute = testClass.Attributes.Any(a => a.FullyQualifiedName is MsTestTestClassAttributeFullName);
+			if (type.IsAbstract)
+			{
+				continue;
+			}
+
+			var isMsTest = CollectTestMethods(type).Count > 0;
+			var hasTestClassAttribute = type.Attributes.Any(a => a.FullyQualifiedName is MsTestTestClassAttributeFullName);
 			if (isMsTest && !hasTestClassAttribute)
 			{
-				DiagnosticReporter.ReportMissingTestClassAttribute(testClass.TypeSymbol);
+				DiagnosticReporter.ReportMissingTestClassAttribute(type.TypeSymbol);
 			}
 		}
 
@@ -113,7 +182,7 @@ public partial class Generator
 
 		foreach (var testClass in testClasses)
 		{
-			var aotSkipClassAttribute = testClass.Attributes.FirstOrDefault(a => a.FullyQualifiedName == SkipInAotAttributeAttributeFullName);
+			var aotSkipClassAttribute = FindSkipInAotAttribute(testClass);
 
 			builder.IndentWriteLine("runner.AddTest(");
 			builder.IncreaseIndent();
@@ -133,7 +202,7 @@ public partial class Generator
 				builder.WriteLine($"new {nameof(TestMethodInfo)} {{");
 				builder.IncreaseIndent();
 				builder.WriteAssignment(nameof(TestMethodInfo.Name), initializeMethod.Name);
-				builder.IndentWriteLine($"{nameof(TestMethodInfo.MethodInfo)} = typeof({testClass.FullyGlobalQualifiedName}).GetMethod(\"{initializeMethod.Name}\"),");
+				builder.IndentWriteLine($"{nameof(TestMethodInfo.MethodInfo)} = {nameof(TestRunner)}.{nameof(TestRunner.GetTestMethod)}(typeof({testClass.FullyGlobalQualifiedName}), \"{initializeMethod.Name}\"),");
 				builder.DecreaseIndent();
 				builder.IndentWriteLine("},");
 			}
@@ -152,7 +221,39 @@ public partial class Generator
 				builder.WriteLine($"new {nameof(TestMethodInfo)} {{");
 				builder.IncreaseIndent();
 				builder.WriteAssignment(nameof(TestMethodInfo.Name), cleanupMethod.Name);
-				builder.IndentWriteLine($"{nameof(TestMethodInfo.MethodInfo)} = typeof({testClass.FullyGlobalQualifiedName}).GetMethod(\"{cleanupMethod.Name}\"),");
+				builder.IndentWriteLine($"{nameof(TestMethodInfo.MethodInfo)} = {nameof(TestRunner)}.{nameof(TestRunner.GetTestMethod)}(typeof({testClass.FullyGlobalQualifiedName}), \"{cleanupMethod.Name}\"),");
+				builder.DecreaseIndent();
+				builder.IndentWriteLine("},");
+			}
+			else
+			{
+				builder.WriteLine("null,");
+			}
+
+			var classInitializeMethod = FindTestMethodUsingAttribute(testClass, MsTestTestClassInitializeAttributeFullName, typesLookup);
+			builder.IndentWrite($"{nameof(TestClassInfo.ClassInitializeMethod)} = ");
+			if (classInitializeMethod != null)
+			{
+				builder.WriteLine($"new {nameof(TestMethodInfo)} {{");
+				builder.IncreaseIndent();
+				builder.WriteAssignment(nameof(TestMethodInfo.Name), classInitializeMethod.Name);
+				builder.IndentWriteLine($"{nameof(TestMethodInfo.MethodInfo)} = {nameof(TestRunner)}.{nameof(TestRunner.GetTestMethod)}(typeof({testClass.FullyGlobalQualifiedName}), \"{classInitializeMethod.Name}\"),");
+				builder.DecreaseIndent();
+				builder.IndentWriteLine("},");
+			}
+			else
+			{
+				builder.WriteLine("null,");
+			}
+
+			var classCleanupMethod = FindTestMethodUsingAttribute(testClass, MsTestTestClassCleanupAttributeFullName, typesLookup);
+			builder.IndentWrite($"{nameof(TestClassInfo.ClassCleanupMethod)} = ");
+			if (classCleanupMethod != null)
+			{
+				builder.WriteLine($"new {nameof(TestMethodInfo)} {{");
+				builder.IncreaseIndent();
+				builder.WriteAssignment(nameof(TestMethodInfo.Name), classCleanupMethod.Name);
+				builder.IndentWriteLine($"{nameof(TestMethodInfo.MethodInfo)} = {nameof(TestRunner)}.{nameof(TestRunner.GetTestMethod)}(typeof({testClass.FullyGlobalQualifiedName}), \"{classCleanupMethod.Name}\"),");
 				builder.DecreaseIndent();
 				builder.IndentWriteLine("},");
 			}
@@ -164,13 +265,9 @@ public partial class Generator
 			builder.WriteArray($"{nameof(TestClassInfo.TestMethods)} =", () =>
 			{
 				var first = true;
-				var orderedMethods = testClass.Methods.OrderBy(x => x.Name);
+				var orderedMethods = CollectTestMethods(testClass).OrderBy(x => x.Name);
 				foreach (var method in orderedMethods)
 				{
-					if (!method.Attributes.Any(a => a.FullyQualifiedName is MsTestTestMethodAttributeFullName))
-					{
-						continue;
-					}
 
 					var aotSkipMethodAttribute = method.Attributes.FirstOrDefault(a => a.FullyQualifiedName == SkipInAotAttributeAttributeFullName);
 
@@ -182,7 +279,7 @@ public partial class Generator
 					builder.IndentWriteLine($"new {nameof(TestMethodInfo)} {{");
 					builder.IncreaseIndent();
 					builder.WriteAssignment(nameof(TestMethodInfo.Name), method.Name);
-					builder.IndentWriteLine($"{nameof(TestMethodInfo.MethodInfo)} = typeof({testClass.FullyGlobalQualifiedName}).GetMethod(\"{method.Name}\"),");
+					builder.IndentWriteLine($"{nameof(TestMethodInfo.MethodInfo)} = {nameof(TestRunner)}.{nameof(TestRunner.GetTestMethod)}(typeof({testClass.FullyGlobalQualifiedName}), \"{method.Name}\"),");
 					builder.WriteAssignment(nameof(TestMethodInfo.SkipInAot), aotSkipMethodAttribute != null);
 					builder.WriteAssignment(nameof(TestMethodInfo.SkipInAotReason), aotSkipMethodAttribute?.ConstructorArguments.FirstOrDefault()?.ToString() ?? "Not compatible with AOT");
 					builder.DecreaseIndent();

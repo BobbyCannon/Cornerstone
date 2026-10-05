@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Cornerstone.Navigator/Cornerstone.Navigator.csproj" />
+  <Project Path="Cornerstone.Navigator.Android/Cornerstone.Navigator.Android.csproj" />
+  <Project Path="Cornerstone.Navigator.Browser/Cornerstone.Navigator.Browser.csproj" />
+  <Project Path="Cornerstone.Navigator.Desktop/Cornerstone.Navigator.Desktop.csproj" />
+  <Project Path="Cornerstone.Navigator.iOS/Cornerstone.Navigator.iOS.csproj" />
+</Solution>

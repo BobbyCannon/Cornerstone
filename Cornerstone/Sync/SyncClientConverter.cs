@@ -101,6 +101,22 @@ public class SyncClientConverter
 	}
 
 	/// <summary>
+	/// Maps an incoming wire type name (sync model) to the entity type name used by repositories.
+	/// </summary>
+	public string GetEntityTypeNameForIncoming(string syncModelTypeName)
+	{
+		foreach (var converter in _converters)
+		{
+			if (converter.CanConvertIncoming(syncModelTypeName))
+			{
+				return converter.SyncEntity;
+			}
+		}
+
+		return null;
+	}
+
+	/// <summary>
 	/// Updates this sync object with another object.
 	/// </summary>
 	/// <param name="client"> The sync client doing the update. </param>

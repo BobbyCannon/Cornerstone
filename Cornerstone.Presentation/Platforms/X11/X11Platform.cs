@@ -1,0 +1,612 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using Cornerstone.Presentation;
+using Cornerstone.Presentation.Controls.Platform;
+using Cornerstone.Presentation.FreeDesktop;
+using Cornerstone.Presentation.FreeDesktop.DBusIme;
+using Cornerstone.Presentation.Input;
+using Cornerstone.Presentation.Input.Platform;
+using Cornerstone.Presentation.OpenGL;
+using Cornerstone.Presentation.OpenGL.Egl;
+using Cornerstone.Presentation.Platform;
+using Cornerstone.Presentation.Rendering;
+using Cornerstone.Presentation.Rendering.Composition;
+using Cornerstone.Presentation.Threading;
+using Cornerstone.Presentation.Vulkan;
+using Cornerstone.Presentation.X11;
+using Cornerstone.Presentation.X11.Dispatching;
+using Cornerstone.Presentation.X11.Glx;
+using Cornerstone.Presentation.X11.Screens;
+using Cornerstone.Presentation.X11.Selections.Clipboard;
+using Cornerstone.Presentation.X11.Selections.DragDrop;
+using Cornerstone.Presentation.X11.Vulkan;
+using static Cornerstone.Presentation.X11.XLib;
+
+namespace Cornerstone.Presentation.X11
+{
+    internal class X11Platform : IWindowingPlatform
+    {
+        public const int DefaultFps = 60;
+
+        private Lazy<KeyboardDevice> _keyboardDevice = new Lazy<KeyboardDevice>(() => new KeyboardDevice());
+        private X11AtSpiAccessibility? _accessibility;
+        internal object AtSpiServer => _accessibility?.Server;
+        public KeyboardDevice KeyboardDevice => _keyboardDevice.Value;
+        public Dictionary<IntPtr, X11WindowInfo> Windows { get; } = new ();
+        public XI2Manager? XI2 { get; private set; }
+        public X11Info Info { get; private set; } = null!;
+        public X11Screens X11Screens { get; private set; } = null!;
+        public Compositor Compositor { get; private set; } = null!;
+        public IScreenImpl Screens { get; private set; } = null!;
+        public X11PlatformOptions Options { get; private set; } = null!;
+        public IntPtr OrphanedWindow { get; private set; }
+        public X11Globals Globals { get; private set; } = null!;
+        public X11ActiveWindowTracker ActiveWindowTracker { get; private set; } = null!;
+        public XResources Resources { get; private set; } = null!;
+        public ManualRawEventGrouperDispatchQueue EventGrouperDispatchQueue { get; } = new();
+        public IX11PlatformDispatcher DispatcherImpl { get; private set; } = null!;
+
+        public void Initialize(X11PlatformOptions options)
+        {
+            Options = options;
+
+            bool useXim = false;
+            if (EnableIme(options))
+            {
+                // Attempt to configure DBus-based input method and check if we can fall back to XIM
+                if (!X11DBusImeHelper.DetectAndRegister() && ShouldUseXim())
+                    useXim = true;
+            }
+
+            XInitThreads();
+            Display = XOpenDisplay(IntPtr.Zero);
+            if (Display == IntPtr.Zero)
+                throw new Exception("XOpenDisplay failed");
+            DeferredDisplay = XOpenDisplay(IntPtr.Zero);
+            if (DeferredDisplay == IntPtr.Zero)
+                throw new Exception("XOpenDisplay failed");
+                
+            OrphanedWindow = XCreateSimpleWindow(Display, XDefaultRootWindow(Display), 0, 0, 1, 1, 0, IntPtr.Zero,
+                IntPtr.Zero);
+            XError.Init();
+
+            Info = new X11Info(Display, DeferredDisplay, useXim);
+            Globals = new X11Globals(this);
+            ActiveWindowTracker = new X11ActiveWindowTracker(this);
+            Resources = new XResources(this);
+
+            IRenderTimer timer = options.ShouldRenderOnUIThread
+               ? new UiThreadRenderTimer(DefaultFps)
+               : new SleepLoopRenderTimer(DefaultFps);
+
+            var clipboardImpl = new X11ClipboardImpl(this, Info.Atoms.CLIPBOARD);
+            var clipboard = new Input.Platform.Clipboard(clipboardImpl);
+            var primarySelection = new Input.Platform.Clipboard(new X11ClipboardImpl(this, Info.Atoms.PRIMARY));
+            var clipboardManager = new PlatformClipboardManager(clipboard, primarySelection);
+
+            PresentationLocator.CurrentMutable.BindToSelf(this)
+                .Bind<IWindowingPlatform>().ToConstant(this);
+            DispatcherImpl = options.UseGLibMainLoop
+                ? new GlibDispatcherImpl(this)
+                : new X11PlatformThreading(this);
+            Dispatcher.InitializeUIThreadDispatcher(DispatcherImpl);
+            PresentationLocator.CurrentMutable
+                .Bind<IRenderLoop>().ToConstant(RenderLoop.FromTimer(timer))
+                .Bind<PlatformHotkeyConfiguration>().ToConstant(new PlatformHotkeyConfiguration(KeyModifiers.Control))
+                .Bind<KeyGestureFormatInfo>().ToConstant(new KeyGestureFormatInfo(new Dictionary<Key, string>() { }, meta: "Super"))
+                .Bind<IKeyboardDevice>().ToFunc(() => KeyboardDevice)
+                .Bind<ICursorFactory>().ToConstant(new X11CursorFactory(Display))
+                .Bind<IClipboardImpl>().ToConstant(clipboardImpl)
+                .Bind<IClipboard>().ToConstant(clipboard)
+                .Bind<IPlatformClipboardManagerImpl>().ToConstant(clipboardManager)
+                .Bind<IPlatformDragSource>().ToConstant(new X11DragSource(this))
+                .Bind<IPlatformSettings>().ToSingleton<DBusPlatformSettings>()
+                .Bind<IPlatformIconLoader>().ToConstant(new X11IconLoader())
+                .Bind<IMountedVolumeInfoProvider>().ToConstant(new LinuxMountedVolumeInfoProvider())
+                .Bind<IPlatformLifetimeEventsImpl>().ToConstant(new X11PlatformLifetimeEvents(this));
+            
+            Screens = X11Screens = new X11Screens(this);
+
+            if (timer is SleepLoopRenderTimer loopTimer)
+            {
+                X11Screens.Changed += () => { loopTimer.DesiredFps = X11Screens.MaxRefreshRate; };
+                loopTimer.DesiredFps = X11Screens.MaxRefreshRate;
+            }
+            
+            if (Info.XInputVersion != null)
+            {
+                XI2 = XI2Manager.TryCreate(this);
+            }
+
+            var graphics = InitializeGraphics(options, Info);
+            if (graphics is not null)
+            {
+                PresentationLocator.CurrentMutable.Bind<IPlatformGraphics>().ToConstant(graphics);
+            }
+
+            Compositor = new Compositor(graphics);
+            PresentationLocator.CurrentMutable.Bind<Compositor>().ToConstant(Compositor);
+            
+            _accessibility = new X11AtSpiAccessibility(this);
+            _accessibility.Initialize();
+        }
+
+        internal void TrackWindow(X11Window window) => _accessibility?.TrackWindow(window);
+        internal void UntrackWindow(X11Window window) => _accessibility?.UntrackWindow(window);
+
+        public IntPtr DeferredDisplay { get; set; }
+        public IntPtr Display { get; set; }
+
+        private X11DeferredDisplayDispatcher? _deferredDisplayDispatcher;
+
+        /// <summary>
+        /// Shared, lazily-created dispatcher that drains events (currently XShm completions) off the
+        /// DeferredDisplay connection for every window.
+        /// </summary>
+        internal X11DeferredDisplayDispatcher DeferredDisplayDispatcher =>
+            _deferredDisplayDispatcher ??= new X11DeferredDisplayDispatcher(DeferredDisplay);
+
+        private static uint[] X11IconConverter(IWindowIconImpl? icon)
+        {
+            if (!(icon is X11IconData x11icon))
+                return Array.Empty<uint>();
+
+            return x11icon.Data.Select(x => x.ToUInt32()).ToArray();
+        }
+
+        public ITrayIconImpl CreateTrayIcon()
+        {
+            var dbusTrayIcon = new DBusTrayIconImpl();
+
+            if (!dbusTrayIcon.IsActive) return new XEmbedTrayIconImpl();
+
+            dbusTrayIcon.IconConverterDelegate = X11IconConverter;
+
+            return dbusTrayIcon;
+        }
+        
+        public IWindowImpl CreateWindow()
+        {
+            return new X11Window(this, null);
+        }
+
+        public ITopLevelImpl CreateEmbeddableTopLevel() => CreateEmbeddableWindow();
+
+        public IWindowImpl CreateEmbeddableWindow()
+        {
+            throw new NotSupportedException();
+        }
+
+        private static bool EnableIme(X11PlatformOptions options)
+        {
+            // Disable if explicitly asked by user
+            var imModule = Environment.GetEnvironmentVariable("CORNERSTONE_IM_MODULE");
+            if (imModule == "none")
+                return false;
+            
+            // Use value from options when specified
+            if (options.EnableIme.HasValue)
+                return options.EnableIme.Value;
+            
+            // Automatically enable for CJK locales
+            var lang = Environment.GetEnvironmentVariable("LANG");
+            var isCjkLocale = lang != null &&
+                              (lang.Contains("zh")
+                               || lang.Contains("ja")
+                               || lang.Contains("vi")
+                               || lang.Contains("ko"));
+
+            return isCjkLocale;
+        }
+
+        private static bool ShouldUseXim()
+        {
+            // Priority: CORNERSTONE_IM_MODULE > GTK_IM_MODULE >= QT_IM_MODULE
+            string imeOverride = Environment.GetEnvironmentVariable("CORNERSTONE_IM_MODULE");
+            if (string.IsNullOrEmpty(imeOverride))
+                imeOverride = Environment.GetEnvironmentVariable("GTK_IM_MODULE");
+            if (string.IsNullOrEmpty(imeOverride))
+                imeOverride = Environment.GetEnvironmentVariable("QT_IM_MODULE");
+
+            // Check if we are forbidden from using IME
+            if (imeOverride == "none")
+                return false;
+
+            // Check if XIM is configured
+            var modifiers = Environment.GetEnvironmentVariable("XMODIFIERS");
+            if (modifiers is not null && modifiers.Contains("@im="))
+            {
+                // If XIM is explicitly requested, or no IME override is configured
+                if (imeOverride == "xim" || string.IsNullOrEmpty(imeOverride))
+                    return true;
+            }
+
+            return false;
+        }
+        
+        private static IPlatformGraphics? InitializeGraphics(X11PlatformOptions opts, X11Info info)
+        {
+            if (opts.RenderingMode is null || !opts.RenderingMode.Any())
+            {
+                throw new InvalidOperationException($"{nameof(X11PlatformOptions)}.{nameof(X11PlatformOptions.RenderingMode)} must not be empty or null");
+            }
+
+            foreach (var renderingMode in opts.RenderingMode)
+            {
+                if (renderingMode == X11RenderingMode.Software)
+                {
+                    return null;
+                }
+                
+                if (renderingMode == X11RenderingMode.Glx)
+                {
+                    if (GlxPlatformGraphics.TryCreate(info, opts.GlProfiles) is { } glx)
+                    {
+                        return glx;
+                    }
+                }
+
+                if (renderingMode == X11RenderingMode.Egl)
+                {
+                    if (EglPlatformGraphics.TryCreate(() =>
+                        {
+                            var egl = new EglInterface();
+                            var options = new EglDisplayCreationOptions
+                            {
+                                SupportsContextSharing = true,
+                                SupportsMultipleContexts = true,
+                                GlVersions = opts.GlProfiles,
+                                Egl = egl,
+                                // nvidia exposes multiple indistinguishable configs of which only some work,
+                                // so we probe candidates by creating a throwaway window surface and pick a usable one.
+                                ProbeConfig = (probeEgl, display, configs) =>
+                                    X11EglHelper.ChooseConfig(info, probeEgl, display, configs)
+                            };
+
+                            // nvidia requires the display to be created through the X11 platform extension,
+                            // otherwise EGL_NATIVE_VISUAL_ID doesn't match the actual window visual.
+                            var clientExtensions = egl.QueryString(IntPtr.Zero, EglConsts.EGL_EXTENSIONS);
+                            if (egl.IsGetPlatformDisplayExtAvailable
+                                && clientExtensions != null
+                                && (clientExtensions.Contains("EGL_KHR_platform_x11")
+                                    || clientExtensions.Contains("EGL_EXT_platform_x11")))
+                            {
+                                options.PlatformType = EglConsts.EGL_PLATFORM_X11_EXT;
+                                options.PlatformDisplay = info.DeferredDisplay;
+                            }
+
+                            return new EglDisplay(options);
+                        }) is { } egl)
+                    {
+                        return egl;
+                    }
+                }
+
+                if (renderingMode == X11RenderingMode.Vulkan)
+                {
+                    var vulkan = VulkanSupport.TryInitialize(info,
+                        PresentationLocator.Current.GetService<VulkanOptions>() ?? new());
+                    if (vulkan != null)
+                        return vulkan;
+                }
+            }
+
+            throw new InvalidOperationException($"{nameof(X11PlatformOptions)}.{nameof(X11PlatformOptions.RenderingMode)} has a value of \"{string.Join(", ", opts.RenderingMode)}\", but no options were applied.");
+        }
+
+        public void GetWindowsZOrder(ReadOnlySpan<IWindowImpl> windows, Span<long> outputZOrder)
+        {
+            // a mapping of parent windows to their children, sorted by z-order (bottom to top)
+            var windowsChildren = new Dictionary<IntPtr, List<IntPtr>>();
+
+            var indexInWindowsSpan = new Dictionary<IntPtr, int>();
+            for (var i = 0; i < windows.Length; i++)
+                if (windows[i] is X11Window { Handle: { } handle })
+                    indexInWindowsSpan[handle.Handle] = i;
+
+            foreach (var window in windows)
+            {
+                if (window is not X11Window x11Window)
+                    continue;
+
+                var node = x11Window.Handle.Handle;
+                while (node != IntPtr.Zero)
+                {
+                    if (windowsChildren.ContainsKey(node))
+                    {
+                        break;
+                    }
+
+                    if (XQueryTree(Info.Display, node, out _, out var parent,
+                            out var childrenPtr, out var childrenCount) == 0)
+                    {
+                        break;
+                    }
+
+                    if (childrenPtr != IntPtr.Zero)
+                    {
+                        unsafe
+                        {
+                            var children = (IntPtr*)childrenPtr;
+                            windowsChildren[node] = new List<IntPtr>(childrenCount);
+                            for (var i = 0; i < childrenCount; i++)
+                            {
+                                windowsChildren[node].Add(children[i]);
+                            }
+
+                            XFree(childrenPtr);
+                        }
+                    }
+
+                    node = parent;
+                }
+            }
+
+            var stack = new Stack<IntPtr>();
+            var zOrder = 0;
+            stack.Push(Info.RootWindow);
+
+            while (stack.Count > 0)
+            {
+                var currentWindow = stack.Pop();
+
+                if (!windowsChildren.TryGetValue(currentWindow, out var children))
+                {
+                    continue;
+                }
+
+                if (indexInWindowsSpan.TryGetValue(currentWindow, out var index))
+                {
+                    outputZOrder[index] = zOrder;
+                }
+
+                zOrder++;
+
+                // Children are returned bottom to top, so we need to push them in reverse order
+                // In order to traverse bottom children first
+                for (int i = children.Count - 1; i >= 0; i--)
+                {
+                    stack.Push(children[i]);
+                }
+            }
+        }
+    }
+}
+
+namespace Cornerstone.Presentation
+{
+    /// <summary>
+    /// Represents the rendering mode for platform graphics.
+    /// </summary>
+    public enum X11RenderingMode
+    {
+        /// <summary>
+        /// Cornerstone is rendered into a framebuffer.
+        /// </summary>
+        Software = 1,
+
+        /// <summary>
+        /// Enables Glx rendering.
+        /// </summary>
+        Glx = 2,
+
+        /// <summary>
+        /// Enables native Linux EGL rendering.
+        /// </summary>
+        Egl = 3,
+        
+        /// <summary>
+        /// Enables Vulkan rendering
+        /// </summary>
+        Vulkan = 4
+    }
+    
+    /// <summary>
+    /// Platform-specific options which apply to Linux.
+    /// </summary>
+    public class X11PlatformOptions
+    {
+        /// <summary>
+        /// Gets or sets Cornerstone rendering modes with fallbacks.
+        /// The first element in the array has the highest priority.
+        /// The default value is: <see cref="X11RenderingMode.Glx"/>, <see cref="X11RenderingMode.Software"/>.
+        /// </summary>
+        /// <remarks>
+        /// If application should work on as wide range of devices as possible, at least add <see cref="X11RenderingMode.Software"/> as a fallback value.
+        /// </remarks>
+        /// <exception cref="System.InvalidOperationException">Thrown if no values were matched.</exception>
+        public IReadOnlyList<X11RenderingMode> RenderingMode { get; set; } = new[]
+        {
+            X11RenderingMode.Glx, X11RenderingMode.Software
+        };
+
+        /// <summary>
+        /// Embeds popups to the window when set to true. The default value is false.
+        /// </summary>
+        public bool OverlayPopups { get; set; }
+
+        /// <summary>
+        /// Enables global menu support on Linux desktop environments where it's supported (e. g. XFCE and MATE with plugin, KDE, etc).
+        /// The default value is true.
+        /// </summary>
+        public bool UseDBusMenu { get; set; } = true;
+
+        /// <summary>
+        /// Enables DBus file picker instead of GTK.
+        /// The default value is true.
+        /// </summary>
+        public bool UseDBusFilePicker { get; set; } = true;
+        
+        /// <summary>
+        /// Determines whether to use IME.
+        /// IME would be enabled by default if the current user input language is one of the following: Mandarin, Japanese, Vietnamese or Korean.
+        /// </summary>
+        /// <remarks>
+        /// Input method editor is a component that enables users to generate characters not natively available 
+        /// on their input devices by using sequences of characters or mouse operations that are natively available on their input devices.
+        /// </remarks>
+        public bool? EnableIme { get; set; } = true;
+
+        /// <summary>
+        /// Determines whether to use Input Focus Proxy.
+        /// The default value is false.
+        /// </summary> 
+        public bool EnableInputFocusProxy { get; set; }
+        
+        /// <summary>
+        /// Determines whether to enable support for the
+        /// X Session Management Protocol.
+        /// </summary>
+        /// <remarks>
+        /// X Session Management Protocol is a standard implemented on most
+        /// Linux systems that uses Xorg. This enables apps to control how they
+        /// can control and/or cancel the pending shutdown requested by the user.
+        /// </remarks>
+        public bool EnableSessionManagement { get; set; } = 
+            Environment.GetEnvironmentVariable("CORNERSTONE_X11_USE_SESSION_MANAGEMENT") != "0";
+
+        /// <summary>
+        /// Render directly on the UI thread instead of using a dedicated render thread.
+        /// This can be usable if your device don't have multiple cores to begin with.
+        /// This setting is false by default.
+        /// </summary>
+        public bool ShouldRenderOnUIThread { get; set; }
+
+        public IList<GlVersion> GlProfiles { get; set; } = new List<GlVersion>
+        {
+            new GlVersion(GlProfileType.OpenGL, 4, 0),
+            new GlVersion(GlProfileType.OpenGL, 3, 2),
+            new GlVersion(GlProfileType.OpenGL, 3, 0),
+            new GlVersion(GlProfileType.OpenGLES, 3, 2),
+            new GlVersion(GlProfileType.OpenGLES, 3, 0),
+            new GlVersion(GlProfileType.OpenGLES, 2, 0)
+        };
+
+        public IList<string> GlxRendererBlacklist { get; set; } = new List<string>
+        {
+            // llvmpipe is a software GL rasterizer. If it's returned by glGetString,
+            // that usually means that something in the system is horribly misconfigured
+            // and sometimes attempts to use GLX might cause a segfault
+            "llvmpipe",
+            // SVGA3D is a driver for VMWare virtual GPU
+            // There were reports of various glitches like parts of the UI not being rendered
+            // Given that VMs are mostly used by testing, we've decided to blacklist that driver
+            // for now
+            "SVGA3D"
+        };
+
+        
+        public string? WmClass { get; set; }
+
+        /// <summary>
+        /// Enables multitouch support. The default value is true.
+        /// </summary>
+        /// <remarks>
+        /// Multitouch allows a surface (a touchpad or touchscreen) to recognize the presence of more than one point of contact with the surface at the same time.
+        /// </remarks>
+        public bool? EnableMultiTouch { get; set; } = true;
+
+        /// <summary>
+        /// Retain window framebuffer contents if using CPU rendering mode.
+        /// This will keep an offscreen bitmap for each window with contents of the previous frame
+        /// While improving performance by saving a blit, it will increase memory consumption
+        /// if you have many windows 
+        /// </summary>
+        public bool? UseRetainedFramebuffer { get; set; }
+
+        /// <summary>
+        /// Enables the MIT-SHM extension for CPU rendering mode, which uses shared memory
+        /// to transfer the framebuffer contents to the X server instead of sending pixels
+        /// over the connection socket.
+        /// Only used when set to true and the extension is supported by the server.
+        /// The default value is null.
+        /// </summary>
+        public bool? UseXShmFramebuffer { get; set; }
+
+        /// <summary>
+        /// If this option is set to true, GMainLoop and GSource based dispatcher implementation will be used instead
+        /// of epoll-based one.
+        /// Use this if you need to use GLib-based libraries on the main thread
+        /// </summary>
+        public bool UseGLibMainLoop { get; set; }
+
+        /// <summary>
+        /// Enables client-side drawn window decorations on X11.
+        /// When true and ExtendClientAreaToDecorationsHint is set on a window,
+        /// Cornerstone will draw its own decorations (titlebar, borders, resize grips)
+        /// instead of using the X11 window manager decorations.
+        /// </summary>
+        [Experimental("CORNERSTONE_X11_CSD"
+            #if NET10_0_OR_GREATER
+            , Message = "Experimental, used mostly for testing"
+            #endif
+            )]
+        public bool? EnableDrawnDecorations { get; set; }
+        
+        internal bool EnableDrawnDecorationsInternal =>
+#pragma warning disable CORNERSTONE_X11_CSD
+            EnableDrawnDecorations == true || ForceDrawnDecorationsInternal;
+#pragma warning restore CORNERSTONE_X11_CSD
+
+
+        /// <summary>
+        /// Forces client-side drawn window decorations on X11 for all windows,
+        /// even when the app has not opted in via ExtendClientAreaToDecorationsHint.
+        /// In this mode, Window.ClientSize reflects the usable content area
+        /// (platform client size minus decoration margins) and the app is unaware
+        /// of the decorations.
+        /// Implies EnableDrawnDecorations = true.
+        /// </summary>
+        [Experimental("CORNERSTONE_X11_FORCE_CSD"
+            #if NET10_0_OR_GREATER
+            , Message = "Experimental, used mostly for testing"
+            #endif
+            )]
+        public bool ForceDrawnDecorations { get; set; }
+
+#pragma warning disable CORNERSTONE_X11_FORCE_CSD
+        internal bool ForceDrawnDecorationsInternal => ForceDrawnDecorations;
+#pragma warning restore CORNERSTONE_X11_FORCE_CSD
+
+        /// <summary>
+        /// If Cornerstone is in control of a run loop, we propagate exceptions by stopping the run loop frame
+        /// and rethrowing an exception. However, if there is no Cornerstone-controlled run loop frame,
+        /// there is no way to report such exceptions, since allowing those to escape native->managed call boundary
+        /// will likely brick GLib machinery since it's not aware of managed Exceptions
+        /// This property allows to inspect such exceptions before they will be ignored
+        /// </summary>
+        public Action<Exception>? ExternalGLibMainLoopExceptionLogger { get; set; }
+
+        public X11PlatformOptions()
+        {
+            try
+            {
+                WmClass = Assembly.GetEntryAssembly()?.GetName().Name;
+            }
+            catch
+            {
+                //
+            }
+        }
+    }
+    public static class X11PlatformExtensions
+    {
+        public static AppBuilder UseX11(this AppBuilder builder)
+        {
+            builder
+                .UseStandardRuntimePlatformSubsystem()
+                .UseWindowingSubsystem(() =>
+                new X11Platform().Initialize(PresentationLocator.Current.GetService<X11PlatformOptions>() ??
+                                                     new X11PlatformOptions()));
+            return builder;
+        }
+
+        public static void InitializeX11Platform(X11PlatformOptions? options = null) =>
+            new X11Platform().Initialize(options ?? new X11PlatformOptions());
+    }
+
+}

@@ -76,7 +76,12 @@ public class CompletionEngine
 		return type.IsEnum ? CompletionKind.Enum : CompletionKind.StaticProperty;
 	}
 
-	public CompletionSet? GetCompletions(Metadata metadata, string fullText, int pos, string? currentAssemblyName = null)
+	public CompletionSet? GetCompletions(
+		Metadata metadata,
+		string fullText,
+		int pos,
+		string? currentAssemblyName = null,
+		IReadOnlyList<string> additionalStyleClassNames = null)
 	{
 		var textToCursor = fullText.Substring(0, pos);
 		Helper.SetMetadata(metadata, textToCursor, currentAssemblyName);
@@ -92,6 +97,17 @@ public class CompletionEngine
 		}
 
 		var state = XmlParser.Parse(textToCursor);
+		// Caret sitting on the closing quote (Foreground="Bl"|) is AfterAttributeValue,
+		// which has no value list. Step back into the value so Blue still completes.
+		if ((state.State == XmlParser.ParserState.AfterAttributeValue) &&
+			(textToCursor.Length > 0) &&
+			(textToCursor[textToCursor.Length - 1] == '"'))
+		{
+			textToCursor = textToCursor.Substring(0, textToCursor.Length - 1);
+			pos = textToCursor.Length;
+			state = XmlParser.Parse(textToCursor);
+		}
+
 		var completions = new List<Completion>();
 		var curStart = state.CurrentValueStart ?? 0;
 
@@ -179,12 +195,9 @@ public class CompletionEngine
 				}
 
 				var attributeSuffix = "=\"\"";
-				var attributeOffset = 2;
 				if ((fullText.Length > pos) && (fullText[pos] == '='))
 				{
-					// attribute already has value, we are editing name only
 					attributeSuffix = "";
-					attributeOffset = 0;
 				}
 				var attributeName = state.AttributeName;
 				if (attributeName?.Contains('.') == true)
@@ -193,15 +206,19 @@ public class CompletionEngine
 					curStart += dotPos + 1;
 					var split = attributeName.Split(['.'], 2);
 					completions.AddRange(Helper.FilterPropertyNames(split[0], split[1], true, true)
-						.Select(x => new Completion(x, x + attributeSuffix, x, CompletionKind.AttachedProperty, x.Length + attributeOffset)));
+						.Select(x => QuotedAttributeCompletion(x, attributeSuffix, CompletionKind.AttachedProperty)));
 
 					completions.AddRange(Helper.FilterEventNames(split[0], split[1], true)
-						.Select(v => new Completion(v, v + attributeSuffix, v, CompletionKind.AttachedEvent, v.Length + attributeOffset)));
+						.Select(v => QuotedAttributeCompletion(v, attributeSuffix, CompletionKind.AttachedEvent)));
 				}
 				else if (state.TagName is not null)
 				{
 					completions.AddRange(Helper.FilterPropertyNames(state.TagName, attributeName, false, true)
-						.Select(x => new Completion(x, x + attributeSuffix, x, CompletionKind.Property, x.Length + attributeOffset)));
+						.Select(x => QuotedAttributeCompletion(x, attributeSuffix, CompletionKind.Property)));
+
+					// Classes is get-only. XAML still assigns Classes="foo bar" by filling the collection.
+					// The setter filter above hides the attribute name; the value list already handles it.
+					AddStyleClassesAttribute(state.TagName, attributeName, attributeSuffix, completions);
 
 					// Special case for "<On " here, 'Options' property is get only list property
 					// which is skipped above - Add it back here
@@ -210,12 +227,11 @@ public class CompletionEngine
 					// this up to be dealt with in the future
 					if (state.TagName.Equals("On"))
 					{
-						completions.Add(new Completion("Options", "Options=\"\"", "Options",
-							CompletionKind.Property, 9 /*recommendedCursorOffset*/));
+						completions.Add(QuotedAttributeCompletion("Options", "=\"\"", CompletionKind.Property));
 					}
 
 					completions.AddRange(Helper.FilterEventNames(state.TagName, attributeName, false)
-						.Select(v => new Completion(v, v + attributeSuffix, v, CompletionKind.Event, v.Length + attributeOffset)));
+						.Select(v => QuotedAttributeCompletion(v, attributeSuffix, CompletionKind.Event)));
 
 					var targetType = Helper.LookupType(state.TagName);
 					if (targetType is not null)
@@ -223,7 +239,7 @@ public class CompletionEngine
 						completions.AddRange(
 							Helper.FilterTypes(attributeName, xamlDirectiveOnly: true)
 								.Where(t => t.Value.IsValidForXamlContextFunc?.Invoke(currentAssemblyName, targetType, null) ?? true)
-								.Select(v => new Completion(v.Key, v.Key + attributeSuffix, v.Key, CompletionKind.Class, v.Key.Length + attributeOffset)));
+								.Select(v => QuotedAttributeCompletion(v.Key, attributeSuffix, CompletionKind.Class)));
 
 						if (targetType.IsAvaloniaObjectType)
 						{
@@ -277,7 +293,23 @@ public class CompletionEngine
 				{
 					prop ??= Helper.LookupType(state.AttributeName)?.Properties.FirstOrDefault(p => string.IsNullOrEmpty(p.Name));
 
-					if ((prop?.Type?.HasHintValues == true) && state.CurrentValueStart.HasValue)
+					if ((prop != null) && (prop.Type != null) && prop.Type.IsNullable && (prop.Type.UnderlyingType != null))
+					{
+						prop = prop with { Type = prop.Type.UnderlyingType };
+					}
+
+					if ((state.AttributeName?.Equals("Classes", StringComparison.Ordinal) == true) &&
+						state.CurrentValueStart.HasValue)
+					{
+						AddStyleClassValueCompletions(
+							fullText,
+							textToCursor,
+							state.CurrentValueStart.Value,
+							completions,
+							ref curStart,
+							additionalStyleClassNames);
+					}
+					else if ((prop?.Type?.HasHintValues == true) && state.CurrentValueStart.HasValue)
 					{
 						var search = textToCursor.Substring(state.CurrentValueStart.Value);
 						var hintCompletions = true;
@@ -287,7 +319,7 @@ public class CompletionEngine
 							if (state.AttributeName!.Equals("Selector"))
 							{
 								hintCompletions = false;
-								if (ProcessSelector(search.AsSpan(), state, completions, currentAssemblyName, fullText) is int delta)
+								if (ProcessSelector(search.AsSpan(), state, completions, currentAssemblyName, fullText, additionalStyleClassNames) is int delta)
 								{
 									curStart = curStart + delta;
 								}
@@ -474,7 +506,9 @@ public class CompletionEngine
 		}
 		if (!rv.ContainsKey(""))
 		{
-			rv[""] = Utils.AvaloniaNamespace;
+			rv[""] = xml != null && xml.IndexOf(Utils.CornerstoneNamespace, StringComparison.OrdinalIgnoreCase) >= 0
+				? Utils.CornerstoneNamespace
+				: Utils.AvaloniaNamespace;
 		}
 		return rv;
 	}
@@ -499,7 +533,13 @@ public class CompletionEngine
 		return string.Concat(source);
 	}
 
-	public int? ProcessSelector(ReadOnlySpan<char> text, XmlParser state, List<Completion> completions, string? currentAssemblyName, string? fullText)
+	public int? ProcessSelector(
+		ReadOnlySpan<char> text,
+		XmlParser state,
+		List<Completion> completions,
+		string? currentAssemblyName,
+		string? fullText,
+		IReadOnlyList<string> additionalStyleClassNames = null)
 	{
 		int? parsed = null;
 		var parser = SelectorParser.Parse(text);
@@ -799,8 +839,18 @@ public class CompletionEngine
 				}
 			}
 				break;
-			case SelectorStatement.Function:
 			case SelectorStatement.Class:
+			{
+				var prefix = parser.Class ?? "";
+				var classCompletions = CreateStyleClassCompletions(fullText, prefix, additionalStyleClassNames).ToList();
+				if (classCompletions.Count > 0)
+				{
+					completions.AddRange(classCompletions);
+					parsed = (parser.LastParsedPosition ?? 0) - prefix.Length;
+				}
+			}
+				break;
+			case SelectorStatement.Function:
 			case SelectorStatement.Middle:
 			case SelectorStatement.End:
 			default:
@@ -854,7 +904,88 @@ public class CompletionEngine
 		return char.IsLetterOrDigit(typedChar) || (typedChar == '/') || (typedChar == '<')
 			|| (typedChar == ' ') || (typedChar == '.') || (typedChar == ':') || (typedChar == '$')
 			|| (typedChar == '#') || (typedChar == '-') || (typedChar == '^') || (typedChar == '{')
-			|| (typedChar == '=') || (typedChar == '[') || (typedChar == '|') || (typedChar == '(');
+			|| (typedChar == '=') || (typedChar == '[') || (typedChar == '|') || (typedChar == '(')
+			|| (typedChar == '"') || (typedChar == '\'');
+	}
+
+	private static void AddStyleClassValueCompletions(
+		string fullText,
+		string textToCursor,
+		int valueStart,
+		List<Completion> completions,
+		ref int curStart,
+		IReadOnlyList<string> additionalStyleClassNames)
+	{
+		if ((valueStart < 0) || (valueStart > textToCursor.Length))
+		{
+			return;
+		}
+
+		var search = textToCursor.Substring(valueStart);
+		var lastSpace = search.LastIndexOf(' ');
+		var last = lastSpace >= 0 ? search.Substring(lastSpace + 1) : search;
+		curStart = valueStart + search.Length - last.Length;
+		completions.AddRange(CreateStyleClassCompletions(fullText, last, additionalStyleClassNames));
+	}
+
+	private static IEnumerable<Completion> CreateStyleClassCompletions(
+		string fullText,
+		string prefix,
+		IReadOnlyList<string> additionalStyleClassNames)
+	{
+		prefix ??= "";
+		HashSet<string> seen = null;
+		foreach (var name in StyleClassScanner.FindClassNames(fullText))
+		{
+			if (!TryAddStyleClassCompletion(name, prefix, ref seen, out var completion))
+			{
+				continue;
+			}
+
+			yield return completion;
+		}
+
+		if (additionalStyleClassNames == null)
+		{
+			yield break;
+		}
+
+		foreach (var name in additionalStyleClassNames)
+		{
+			if (!TryAddStyleClassCompletion(name, prefix, ref seen, out var completion))
+			{
+				continue;
+			}
+
+			yield return completion;
+		}
+	}
+
+	private static bool TryAddStyleClassCompletion(
+		string name,
+		string prefix,
+		ref HashSet<string> seen,
+		out Completion completion)
+	{
+		completion = null;
+		if (string.IsNullOrEmpty(name))
+		{
+			return false;
+		}
+
+		if ((prefix.Length > 0) && !name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+		{
+			return false;
+		}
+
+		seen ??= new HashSet<string>(StringComparer.Ordinal);
+		if (!seen.Add(name))
+		{
+			return false;
+		}
+
+		completion = new Completion(name, CompletionKind.Enum);
+		return true;
 	}
 
 	private int BuildCompletionsForMarkupExtension(MetadataProperty? property, List<Completion> completions, string fullText, XmlParser state, string data, string? currentAssemblyName)
@@ -1250,6 +1381,40 @@ public class CompletionEngine
 	/// Leaf controls → <c>TextBlock /&gt;</c> (caret after name).
 	/// Containers → <c>StackPanel&gt;&lt;/StackPanel&gt;</c> (caret between tags).
 	/// </summary>
+	private void AddStyleClassesAttribute(string tagName, string attributeName, string attributeSuffix, List<Completion> completions)
+	{
+		var classes = Helper.LookupProperty(tagName, "Classes");
+		if ((classes == null) || !IsStyleClassesProperty(classes))
+		{
+			return;
+		}
+
+		if (!string.IsNullOrEmpty(attributeName) &&
+			!classes.Name.StartsWith(attributeName, StringComparison.OrdinalIgnoreCase))
+		{
+			return;
+		}
+
+		completions.Add(QuotedAttributeCompletion(classes.Name, attributeSuffix, CompletionKind.Property));
+	}
+
+	private static bool IsStyleClassesProperty(MetadataProperty property)
+	{
+		if (property.IsStatic || property.IsAttached || !property.HasGetter || property.HasSetter)
+		{
+			return false;
+		}
+
+		return (property.Type == null) || string.Equals(property.Type.Name, "Classes", StringComparison.Ordinal);
+	}
+
+	private static Completion QuotedAttributeCompletion(string name, string suffix, CompletionKind kind)
+	{
+		var insert = name + suffix;
+		var caret = CompletionCaretPlacement.TryGetCaretIndexBetweenEmptyQuotes(insert) ?? insert.Length;
+		return new Completion(name, insert, name, kind, caret);
+	}
+
 	public static (string InsertText, int RecommendedCursorOffset) BuildElementTagInsert(string xamlName)
 	{
 		if (PreferSelfClosingElement(xamlName))
@@ -1403,7 +1568,7 @@ public class CompletionEngine
 		var kind = GetCompletionKindForHintValues(type);
 
 		var completions = FilterHintValues(type, entered, currentAssemblyName, state)
-			.Select(val => new Completion(val, kind)).ToList();
+			.Select(val => new Completion(val, val, val, kind, val.Length)).ToList();
 
 		// Local document x:Key values for StaticResource / DynamicResource (theme keys stay in HintValues).
 		if (IsResourceKeyMarkupExtension(type) && !string.IsNullOrEmpty(fullText))
@@ -1413,7 +1578,7 @@ public class CompletionEngine
 			{
 				if (existing.Add(key))
 				{
-					completions.Add(new Completion(key, kind));
+					completions.Add(new Completion(key, key, key, kind, key.Length));
 				}
 			}
 		}
@@ -1683,6 +1848,12 @@ public class CompletionEngine
 				// the tag name won't include 'Extension'
 				_types?.TryGetValue($"{name}Extension", out rv);
 			}
+
+			if ((rv == null) && TryMapXamlApplicationName(name, out var applicationName))
+			{
+				_types?.TryGetValue(applicationName, out rv);
+			}
+
 			return rv;
 		}
 
@@ -1715,6 +1886,11 @@ public class CompletionEngine
 			Metadata = metadata;
 			_types = null;
 			_currentAssemblyName = currentAssemblyName;
+			if (metadata == null)
+			{
+				_types = new Dictionary<string, MetadataType>();
+				return;
+			}
 
 			var types = new Dictionary<string, MetadataType>();
 			foreach (var alias in Aliases.Concat([new KeyValuePair<string, string>("", "")]))
@@ -1735,10 +1911,38 @@ public class CompletionEngine
 				foreach (var type in ns.Values)
 				{
 					types[prefix + type.Name] = type;
+					if (type.Name == "Application")
+					{
+						types[prefix + "CornerstoneApplication"] = type;
+					}
 				}
 			}
 
 			_types = types;
+		}
+
+		/// <summary>
+		/// App.cxaml roots are tagged CornerstoneApplication; the CLR type is Application.
+		/// </summary>
+		private static bool TryMapXamlApplicationName(string name, out string applicationName)
+		{
+			const string xamlName = "CornerstoneApplication";
+			const string typeName = "Application";
+			if (name == xamlName)
+			{
+				applicationName = typeName;
+				return true;
+			}
+
+			var suffix = ":" + xamlName;
+			if (name.EndsWith(suffix, StringComparison.Ordinal))
+			{
+				applicationName = name.Substring(0, name.Length - xamlName.Length) + typeName;
+				return true;
+			}
+
+			applicationName = null;
+			return false;
 		}
 
 		#endregion

@@ -14,12 +14,15 @@ public partial class SqlTableColumn : CornerstoneObject
 
 	public SqlTableColumn()
 	{
+		ClrTypeName = string.Empty;
 		Order = -1;
 	}
 
 	#endregion
 
 	#region Properties
+
+	public string ClrTypeName { get; set; }
 
 	public partial string ColumnType { get; set; }
 	public partial string DefaultValue { get; set; }

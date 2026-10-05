@@ -1,0 +1,20 @@
+<Styles x:Class="Cornerstone.Presentation.Theme.CornerstoneTheme"
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ResourceDictionary.ThemeDictionaries>
+				<ResourceInclude x:Key="Light" Source="csres://Cornerstone.Presentation/Theming/Theme.Light.cxaml" />
+				<ResourceInclude x:Key="Dark" Source="csres://Cornerstone.Presentation/Theming/Theme.Dark.cxaml" />
+				<ResourceInclude x:Key="Default" Source="csres://Cornerstone.Presentation/Theming/Theme.Dark.cxaml" />
+			</ResourceDictionary.ThemeDictionaries>
+			<ResourceDictionary.MergedDictionaries>
+				<ResourceInclude Source="csres://Cornerstone.Presentation/Theming/Fonts.cxaml" />
+				<ResourceInclude Source="csres://Cornerstone.Presentation/Theming/FullPalette.cxaml" />
+				<ResourceInclude Source="csres://Cornerstone.Presentation/Theming/Icons.cxaml" />
+				<ResourceInclude Source="csres://Cornerstone.Presentation/Theming/Theme.Constants.cxaml" />
+			</ResourceDictionary.MergedDictionaries>
+		</ResourceDictionary>
+	</Styles.Resources>
+	<StyleInclude Source="csres://Cornerstone.Presentation/Theming/Controls.cxaml" />
+</Styles>

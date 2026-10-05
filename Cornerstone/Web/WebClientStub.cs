@@ -103,7 +103,7 @@ public class WebClientStub : CornerstoneObject, IWebClient
 		return new HttpResponseMessage(HttpStatusCode.OK);
 	}
 
-	public TResult Post<TContent, TResult>(string uri, TContent content, TimeSpan? timeout = null)
+	public virtual TResult Post<TContent, TResult>(string uri, TContent content, TimeSpan? timeout = null)
 	{
 		return default;
 	}

@@ -1,4 +1,4 @@
-﻿#region References
+#region References
 
 using System;
 using System.Threading;
@@ -22,11 +22,11 @@ public static class DispatcherExtensions
 	/// <param name="action"> The action to be executed. </param>
 	/// <param name="priority"> An optional priority for the action. </param>
 	/// <param name="cancellationToken"> A cancellation token that can be used to cancel the operation. </param>
-	public static void Dispatch(this IDispatcher dispatcher, Action action, DispatcherPriority priority = DispatcherPriority.Normal, CancellationToken? cancellationToken = null)
+	public static void Dispatch(this IDispatcher dispatcher, Action action, DispatcherPriority priority = default, CancellationToken? cancellationToken = null)
 	{
 		if (dispatcher.ShouldDispatch())
 		{
-			dispatcher.Dispatch(action, priority, cancellationToken);
+			dispatcher.Post(action, priority);
 			return;
 		}
 
@@ -40,11 +40,16 @@ public static class DispatcherExtensions
 	/// <param name="action"> The action to be executed. </param>
 	/// <param name="priority"> An optional priority for the action. </param>
 	/// <param name="cancellationToken"> A cancellation token that can be used to cancel the operation. </param>
-	public static T Dispatch<T>(this IDispatcher dispatcher, Func<T> action, DispatcherPriority priority = DispatcherPriority.Normal, CancellationToken? cancellationToken = null)
+	public static T Dispatch<T>(this IDispatcher dispatcher, Func<T> action, DispatcherPriority priority = default, CancellationToken? cancellationToken = null)
 	{
-		return dispatcher.ShouldDispatch()
-			? dispatcher.Dispatch(action, priority, cancellationToken)
-			: action();
+		if (!dispatcher.ShouldDispatch())
+		{
+			return action();
+		}
+
+		var tcs = new TaskCompletionSource<T>();
+		dispatcher.Post(() => tcs.SetResult(action()), priority);
+		return tcs.Task.GetAwaiter().GetResult();
 	}
 
 	/// <summary>
@@ -54,11 +59,12 @@ public static class DispatcherExtensions
 	/// <param name="action"> The action to be executed. </param>
 	/// <param name="priority"> An optional priority for the action. </param>
 	/// <param name="cancellationToken"> A cancellation token that can be used to cancel the operation. </param>
-	public static Task DispatchAsync(this IDispatcher dispatcher, Action action, DispatcherPriority priority = DispatcherPriority.Normal, CancellationToken? cancellationToken = null)
+	public static Task DispatchAsync(this IDispatcher dispatcher, Action action, DispatcherPriority priority = default, CancellationToken? cancellationToken = null)
 	{
 		if (dispatcher.ShouldDispatch())
 		{
-			return dispatcher.DispatchAsync(action, priority, cancellationToken);
+			dispatcher.Post(action, priority);
+			return Task.CompletedTask;
 		}
 
 		action();
@@ -72,15 +78,16 @@ public static class DispatcherExtensions
 	/// <param name="action"> The action to be executed. </param>
 	/// <param name="priority"> An optional priority for the action. </param>
 	/// <param name="cancellationToken"> A cancellation token that can be used to cancel the operation. </param>
-	public static Task<T2> DispatchAsync<T2>(this IDispatcher dispatcher, Func<T2> action, DispatcherPriority priority = DispatcherPriority.Normal, CancellationToken? cancellationToken = null)
+	public static Task<T2> DispatchAsync<T2>(this IDispatcher dispatcher, Func<T2> action, DispatcherPriority priority = default, CancellationToken? cancellationToken = null)
 	{
-		if (dispatcher.ShouldDispatch())
+		if (!dispatcher.ShouldDispatch())
 		{
-			return dispatcher.DispatchAsync(action, priority, cancellationToken);
+			return Task.FromResult(action());
 		}
 
-		var result = action();
-		return Task.FromResult(result);
+		var tcs = new TaskCompletionSource<T2>();
+		dispatcher.Post(() => tcs.SetResult(action()), priority);
+		return tcs.Task;
 	}
 
 	/// <summary>
@@ -90,7 +97,7 @@ public static class DispatcherExtensions
 	/// <returns> True if on the dispatcher thread otherwise false. </returns>
 	public static bool ShouldDispatch(this IDispatcher dispatcher)
 	{
-		return dispatcher is { IsEnabled: true, IsDispatcherThread: false };
+		return !dispatcher?.CheckAccess() ?? false;
 	}
 
 	#endregion

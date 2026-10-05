@@ -1,0 +1,92 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		mc:Ignorable="d" d:DesignHeight="600" d:DesignWidth="800"
+		x:Class="Cornerstone.Sample.Tabs.Data.TabData"
+		x:Name="This">
+	<ScrollViewer HorizontalScrollBarVisibility="Disabled">
+			<StackPanel Margin="16,12,16,20" Spacing="12">
+				<TextBlock TextWrapping="Wrap" Opacity="0.8"
+						Text="Sync help with data transmission. Speedy Pack help with data serialization. Security Card Reader talks to MiFare cards over PC/SC or NFC. Debounce and throttle collapse or cap bursts of work." />
+				<WrapPanel ItemSpacing="12"
+						LineSpacing="12"
+						ItemWidth="340"
+						ItemsAlignment="Stretch">
+					<WrapPanel.Styles>
+						<Style Selector="TextBlock">
+							<Setter Property="TextWrapping" Value="Wrap" />
+						</Style>
+					</WrapPanel.Styles>
+				<Button Classes="ControlCard" Click="OpenSync">
+					<Border Classes="FeatureCard">
+						<Grid ColumnDefinitions="Auto,*">
+							<Border Classes="IconBadge Teal">
+								<Path Data="{StaticResource Icons.Share.Fill}" />
+							</Border>
+							<StackPanel Grid.Column="1">
+								<TextBlock Text="Sync" />
+								<TextBlock Text="Add an address and account on the in-memory client database, then sync them to the in-memory server." />
+							</StackPanel>
+						</Grid>
+					</Border>
+				</Button>
+				<Button Classes="ControlCard" Click="OpenSyncMesh">
+					<Border Classes="FeatureCard">
+						<Grid ColumnDefinitions="Auto,*">
+							<Border Classes="IconBadge Teal">
+								<Path Data="{StaticResource Icons.Share.Fill}" />
+							</Border>
+							<StackPanel Grid.Column="1">
+								<TextBlock Text="Mesh" />
+								<TextBlock Text="Five databases. The center is the hub. The ring picks a clockwise peer as the server. Edit one account and sync a link." />
+							</StackPanel>
+						</Grid>
+					</Border>
+				</Button>
+				<Button Classes="ControlCard" Click="OpenSecurityCardReader">
+					<Border Classes="FeatureCard">
+						<Grid ColumnDefinitions="Auto,*">
+							<Border Classes="IconBadge Purple">
+								<Path Data="{StaticResource Icons.File.Binary}"
+										Margin="4,0,0,0" />
+							</Border>
+							<StackPanel Grid.Column="1">
+								<TextBlock Text="Security Card Reader" />
+								<TextBlock Text="Read and write MiFare Classic / Ultralight cards from a PC/SC reader or Android NFC." />
+							</StackPanel>
+						</Grid>
+					</Border>
+				</Button>
+				<Button Classes="ControlCard" Click="OpenSpeedyPack">
+					<Border Classes="FeatureCard">
+						<Grid ColumnDefinitions="Auto,*">
+							<Border Classes="IconBadge Blue">
+								<Path Data="{StaticResource Icons.BoxLayered}" />
+							</Border>
+							<StackPanel Grid.Column="1">
+								<TextBlock Text="Speedy Pack" />
+								<TextBlock Text="Binary payloads versus System.Text.Json size and speed." />
+							</StackPanel>
+						</Grid>
+					</Border>
+				</Button>
+				<Button Classes="ControlCard" Click="OpenDebounce">
+					<Border Classes="FeatureCard">
+						<Grid ColumnDefinitions="Auto,*">
+							<Border Classes="IconBadge Amber">
+								<Path Data="{StaticResource Icons.Signal}"
+										Margin="0,6,0,0" />
+							</Border>
+							<StackPanel Grid.Column="1">
+								<TextBlock Text="Debounce / Throttle" />
+								<TextBlock Text="Collapse bursts or cap the rate before work runs." />
+							</StackPanel>
+						</Grid>
+					</Border>
+				</Button>
+				</WrapPanel>
+			</StackPanel>
+	</ScrollViewer>
+</UserControl>

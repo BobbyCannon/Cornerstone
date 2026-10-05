@@ -17,6 +17,24 @@ public class DebounceTests : CornerstoneUnitTest
 	#region Methods
 
 	[TestMethod]
+	public void CancelDropsPendingWithoutRunning()
+	{
+		var count = 0;
+		using var debounce = new Debounce(() => Interlocked.Increment(ref count), TimeSpan.FromMilliseconds(80), this);
+
+		debounce.Trigger();
+		debounce.Cancel();
+		IncrementTime(milliseconds: 150);
+		debounce.ProcessPending();
+		AreEqual(0, count);
+
+		debounce.Trigger();
+		IncrementTime(milliseconds: 80);
+		debounce.ProcessPending();
+		AreEqual(1, count);
+	}
+
+	[TestMethod]
 	public void DisposeCancelsPendingAndBlocksNewTriggers()
 	{
 		var count = 0;
@@ -30,6 +48,24 @@ public class DebounceTests : CornerstoneUnitTest
 		IncrementTime(milliseconds: 150);
 		debounce.ProcessPending();
 		AreEqual(0, count);
+	}
+
+	[TestMethod]
+	public void ProcessPendingDoesNothingUntilDue()
+	{
+		var count = 0;
+		using var debounce = new Debounce(() => Interlocked.Increment(ref count), TimeSpan.FromMilliseconds(80), this);
+
+		debounce.Trigger();
+		AreEqual(0, count);
+
+		IncrementTime(milliseconds: 40);
+		debounce.ProcessPending();
+		AreEqual(0, count);
+
+		IncrementTime(milliseconds: 40);
+		debounce.ProcessPending();
+		AreEqual(1, count);
 	}
 
 	[TestMethod]

@@ -16,7 +16,7 @@ using Cornerstone.Testing;
 namespace Cornerstone.Runtime;
 
 /// <summary>
-/// Host-agnostic process bootstrap for Cornerstone (console, service, website, Avalonia, etc.).
+/// Host-agnostic process bootstrap for Cornerstone (console, service, website, presentation, etc.).
 /// Call <see cref="Initialize" /> once from the host entry point before resolving services.
 /// </summary>
 public static class AppBootstrap
@@ -159,6 +159,7 @@ public static class AppBootstrap
 		}
 
 		IsInitialized = true;
+		StartupProfiler?.Mark("Cornerstone.Presentation.Startup");
 	}
 
 	/// <summary>
@@ -239,9 +240,13 @@ public static class AppBootstrap
 	public static void RegisterAsTests(CornerstoneTest cornerstoneTest)
 	{
 		ApplicationArguments = new ApplicationArguments();
+		DateTimeProvider = cornerstoneTest;
 		DependencyProvider = cornerstoneTest;
 		RuntimeInformation = cornerstoneTest.GetInstance<RuntimeInformation>();
 		IsInitialized = true;
+
+		// RegisterServices / generated AddSingleton run before this; pin the test clock last.
+		cornerstoneTest.SetSingleton<IDateTimeProvider>(cornerstoneTest);
 	}
 
 	/// <summary>

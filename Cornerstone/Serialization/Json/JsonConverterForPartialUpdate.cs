@@ -1,6 +1,7 @@
 ﻿#region References
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Cornerstone.Data;
@@ -23,6 +24,8 @@ public class JsonConverterForPartialUpdate<T> : JsonConverter<PartialUpdate<T>>
 
 	#region Methods
 
+	[UnconditionalSuppressMessage("Aot", "IL3050", Justification = "JsonConverter.Read cannot be annotated; uses PartialUpdate JSON helpers.")]
+	[UnconditionalSuppressMessage("Trim", "IL2026", Justification = "JsonConverter.Read cannot be annotated; uses PartialUpdate JSON helpers.")]
 	public override PartialUpdate<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
 	{
 		using var doc = JsonDocument.ParseValue(ref reader);
@@ -30,6 +33,8 @@ public class JsonConverterForPartialUpdate<T> : JsonConverter<PartialUpdate<T>>
 		return element.ValueKind == JsonValueKind.Null ? null : PartialUpdate<T>.FromJsonElement(element);
 	}
 
+	[UnconditionalSuppressMessage("Aot", "IL3050", Justification = "JsonConverter.Write cannot be annotated; uses JsonSerializer.")]
+	[UnconditionalSuppressMessage("Trim", "IL2026", Justification = "JsonConverter.Write cannot be annotated; uses JsonSerializer.")]
 	public override void Write(Utf8JsonWriter writer, PartialUpdate<T> value, JsonSerializerOptions options)
 	{
 		if (value == null)
@@ -57,6 +62,9 @@ public class JsonConverterForPartialUpdate : JsonConverter<PartialUpdate>
 
 	#region Methods
 
+	[UnconditionalSuppressMessage("Aot", "IL3050", Justification = "JsonConverter.Read cannot be annotated; uses PartialUpdate JSON helpers.")]
+	[UnconditionalSuppressMessage("Trim", "IL2026", Justification = "JsonConverter.Read cannot be annotated; uses PartialUpdate JSON helpers.")]
+	[UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "JsonConverter.Read typeToConvert cannot carry DynamicallyAccessedMembers; PartialUpdate construction uses generated source reflection.")]
 	public override PartialUpdate Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
 	{
 		using var doc = JsonDocument.ParseValue(ref reader);
@@ -64,6 +72,8 @@ public class JsonConverterForPartialUpdate : JsonConverter<PartialUpdate>
 		return element.ValueKind == JsonValueKind.Null ? null : PartialUpdate.FromJsonElement(typeToConvert, element);
 	}
 
+	[UnconditionalSuppressMessage("Aot", "IL3050", Justification = "JsonConverter.Write cannot be annotated; uses JsonSerializer.")]
+	[UnconditionalSuppressMessage("Trim", "IL2026", Justification = "JsonConverter.Write cannot be annotated; uses JsonSerializer.")]
 	public override void Write(Utf8JsonWriter writer, PartialUpdate value, JsonSerializerOptions options)
 	{
 		if (value == null)

@@ -2,7 +2,7 @@ namespace Cornerstone.Keystone.Messages;
 
 /// <summary>
 /// UI-free notification severity for bus messages.
-/// Values match Avalonia NotificationType for host mapping.
+/// Values match Cornerstone NotificationType for host mapping.
 /// </summary>
 public enum NotificationLevel
 {

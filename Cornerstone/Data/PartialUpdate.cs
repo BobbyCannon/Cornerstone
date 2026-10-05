@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -20,6 +21,8 @@ public class PartialUpdate<T> : PartialUpdate
 {
 	#region Methods
 
+	[RequiresDynamicCode("JSON deserialization of partial updates may need runtime code generation.")]
+	[RequiresUnreferencedCode("JSON deserialization of partial updates may require unreferenced types.")]
 	public new static PartialUpdate<T> FromDictionary(Dictionary<string, JsonElement> dictionary)
 	{
 		if (dictionary is null || (dictionary.Count == 0))
@@ -55,6 +58,8 @@ public class PartialUpdate<T> : PartialUpdate
 		return partial;
 	}
 
+	[RequiresDynamicCode("JSON deserialization of partial updates may need runtime code generation.")]
+	[RequiresUnreferencedCode("JSON deserialization of partial updates may require unreferenced types.")]
 	public static PartialUpdate<T> FromJsonElement(JsonElement element)
 	{
 		if (element.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
@@ -139,7 +144,9 @@ public class PartialUpdate : CornerstoneObject
 		return partial;
 	}
 
-	public static PartialUpdate FromJsonElement(Type toType, JsonElement element)
+	[RequiresDynamicCode("JSON deserialization of partial updates may need runtime code generation.")]
+	[RequiresUnreferencedCode("JSON deserialization of partial updates may require unreferenced types.")]
+	public static PartialUpdate FromJsonElement([DynamicallyAccessedMembers(SourceReflector.AllRuntimeMembers)] Type toType, JsonElement element)
 	{
 		if (element.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
 		{
@@ -194,7 +201,7 @@ public class PartialUpdate : CornerstoneObject
 			var type = GetType();
 			if (!_propertyCache.TryGetValue(type, out _properties))
 			{
-				_properties = SourceReflector.GetRequiredSourceType(type).GetProperties();
+				_properties = SourceReflector.GetRequiredSourceType(this).GetProperties();
 				_propertyCache[type] = _properties;
 			}
 		}
@@ -305,7 +312,7 @@ public class PartialUpdate : CornerstoneObject
 	protected internal virtual void RefreshUpdates()
 	{
 		var options = GetDefaultIncludedProperties(UpdateableAction.PartialUpdate);
-		var properties = SourceReflector.GetSourceType(GetType()).GetProperties();
+		var properties = SourceReflector.GetRequiredSourceType(this).GetProperties();
 
 		foreach (var option in options)
 		{

@@ -1,0 +1,114 @@
+using System.Collections.Generic;
+using System.Text;
+using Cornerstone.Presentation.Media;
+using Cornerstone.Presentation.Media.TextFormatting;
+using Cornerstone.Presentation.Metadata;
+using Cornerstone.Presentation.Controls.Elements;
+
+namespace Cornerstone.Presentation.Controls.Documents
+{
+    /// <summary>
+    /// InlineUIContainer - a wrapper for embedded UIElements in text 
+    /// flow content inline collections
+    /// </summary>
+    public class InlineUIContainer : Inline
+    {
+        /// <summary>
+        /// Defines the <see cref="Child"/> property.
+        /// </summary>
+        public static readonly StyledProperty<Control> ChildProperty =
+            PresentationProperty.Register<InlineUIContainer, Control>(nameof(Child));
+
+        private double _measuredWidth = double.NaN;
+
+        /// <summary>
+        /// Initializes a new instance of InlineUIContainer element.
+        /// </summary>
+        /// <remarks>
+        /// The purpose of this element is to be a wrapper for UIElements
+        /// when they are embedded into text flow - as items of
+        /// InlineCollections.
+        /// </remarks>
+        public InlineUIContainer()
+        {
+        }
+
+        /// <summary>
+        /// Initializes an InlineBox specifying its child UIElement
+        /// </summary>
+        /// <param name="child">
+        /// UIElement set as a child of this inline item
+        /// </param>
+        public InlineUIContainer(Control child)
+        {
+            Child = child;
+        }
+
+        /// <summary>
+        /// The content spanned by this TextElement.
+        /// </summary>
+        [Content]
+        public Control Child
+        {
+            get => GetValue(ChildProperty);
+            set => SetValue(ChildProperty, value);
+        }
+
+        internal override void BuildTextRun(IList<TextRun> textRuns)
+        {
+            textRuns.Add(new EmbeddedControlRun(Child, CreateTextRunProperties()));
+        }
+
+        internal override bool MeasureEmbeddedControls(Size blockSize)
+        {
+            if (_measuredWidth == blockSize.Width && Child.IsMeasureValid)
+            {
+                return false;
+            }
+
+            var previousSize = Child.DesiredSize;
+
+            Child.Measure(new Size(blockSize.Width, double.PositiveInfinity));
+            _measuredWidth = blockSize.Width;
+
+            return Child.DesiredSize != previousSize;
+        }
+
+        internal override void AppendText(StringBuilder stringBuilder)
+        {
+            // EmbeddedControlRun occupies one position in TextLayout (TextRun.DefaultTextSourceLength = 1).
+            // Append the Unicode Object Replacement Character so that Inlines.Text stays in sync with
+            // the character offsets returned by TextLayout.HitTestPoint.
+            stringBuilder.Append('\uFFFC');
+        }
+
+        protected override void OnPropertyChanged(PresentationPropertyChangedEventArgs change)
+        {
+            base.OnPropertyChanged(change);
+
+            if (change.Property == ChildProperty)
+            {
+                if(change.OldValue is Control oldChild)
+                {
+                    LogicalChildren.Remove(oldChild);
+                    InlineHost?.VisualChildren.Remove(oldChild);
+                }
+
+                if(change.NewValue is Control newChild)
+                {
+                    LogicalChildren.Add(newChild);
+                    InlineHost?.VisualChildren.Add(newChild);
+                }
+
+                InlineHost?.Invalidate();
+            }
+        }
+
+        internal override void OnInlineHostChanged(IInlineHost? oldValue, IInlineHost? newValue)
+        {
+            var child = Child;
+            oldValue?.VisualChildren.Remove(child);
+            newValue?.VisualChildren.Add(child);
+        }
+    }
+}

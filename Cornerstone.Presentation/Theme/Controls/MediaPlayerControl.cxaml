@@ -1,0 +1,29 @@
+<Styles xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type MediaPlayerControl}" TargetType="MediaPlayerControl">
+				<Setter Property="Background" Value="{DynamicResource Background00}" />
+				<Setter Property="Template">
+					<ControlTemplate>
+						<Grid>
+							<!-- Black letterbox when aspect is preserved (default). Video fills behind the overlay chrome. -->
+							<Border Background="Black">
+								<MediaPlayerNativeHost x:Name="PART_NativeHost" />
+							</Border>
+
+							<!-- Nearly clear so the native picture stays visible and a touch still hits Cornerstone. Hover stays on the bar. -->
+							<Border x:Name="PART_TapSurface" Background="#01FFFFFF" />
+							<PlayBar x:Name="PART_PlayBar" VerticalAlignment="Bottom" />
+						</Grid>
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+	<Design.PreviewWith>
+		<PreviewCodeSnippet Width="500">
+			<MediaPlayerControl />
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</Styles>

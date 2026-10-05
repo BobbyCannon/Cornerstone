@@ -1,112 +1,91 @@
 <img align="left" src="https://github.com/BobbyCannon/Cornerstone/blob/master/Cornerstone.png?raw=true"
     height="64" width="64" style="margin-bottom: 8px; margin-right: 8px;" />
 
-**Cornerstone** is a high-performance .NET framework that accelerates  
-development of reliable, observable, syncable, and testable applications – without sacrificing speed  
-or introducing reflection-based surprises.
-
-It is the complete evolution and replacement of the **Speedy** framework, rebuilt from the ground  
-up for .NET 10+ with a strong emphasis on maximum performance, reliability, and modern development practices.
-
-Yes, we may not hit all these goals perfectly but they are still the goal. If you run into any issue  
-we would love to hear about them.
+**Cornerstone** is a shared .NET 10 framework for desktop and cross-platform apps: process bootstrap, Keystone (Bus, State, Engine), lifecycle, sync and storage, and an optional UI runtime. Markup is `.cxaml`, compiled at build time.
 
 ![GitHub](https://img.shields.io/github/license/BobbyCannon/Cornerstone?style=flat-square&color=purple)
 ![.NET](https://img.shields.io/badge/.NET-10+-blueviolet?style=flat-square&color=purple)
 
 ---
 
-## Table of Contents
+## Shape of an app
 
-- [Key Features](#key-features)
-- [Performance & Reliability](#performance--reliability--by-design)
-- [Architecture Overview](#architecture-overview)
-- [References](#references)
----
-
-## ✨ Key Features
-
-- **Performance-driven design** – engineered for exceptional speed, minimal allocations, fast startup, and small binaries
-- **Source-generation** (via Cornerstone Generators):
-  - Binary serialization (`Packable`) – fast, compact, and reflection-free alternative to traditional serializers
-  - Automatic property change notifications (`INotifyPropertyChanging` / `INotifyPropertyChanged`)
-  - Source-generated reflection helpers (safe, fast metadata access)
-  - `RelayCommand` / modern commanding pattern
-  - `Updateable` tracking for change detection & syncing
-  - Automatic `IComparable` implementation
-- **Ultra-fast unit & integration testing** – optimized for high-speed execution and true end-to-end validation
-- **Powerful deep comparison & diffing** utilities (excellent for sync, auditing, and testing)
-- **Built-in sync framework** – reliable data synchronization across clients, services, and databases
-
----
-
-## 💎 Performance & Reliability – by Design
-
-Cornerstone is built with three non-negotiable goals:
-
-- **Maximum performance** – source generators, minimal allocations, and careful design deliver outstanding speed
-- **Rock-solid reliability** – zero known bugs is the target
-- **Performance-first architecture** – every component is optimized for speed while remaining fully usable across all modern .NET scenarios
-
-### How it’s achieved
-
-- Every feature is developed with performance and reliability in mind from day one
-- **Cornerstone Generators** power fast, reflection-free implementations
-- Tests (unit, integration, performance, and automation) are tuned for maximum execution speed
-- Continuous profiling and optimization to eliminate unnecessary allocations and hot paths
-- Aim: **100% code coverage + high context coverage** (edge cases, threading, boundary conditions, etc.)
-
----
-
-## Architecture Overview
-
-Cornerstone layers a host process, runtime infrastructure, domain logic, and optional presentation:
+Process entry builds one stack. Domain work stays in Keystone. Presentation is optional.
 
 ```
-Host entry (console / Avalonia / mobile / browser / service)
+Process entry (console / desktop / mobile / browser / service)
   └─ AppBootstrap.Initialize(…)     process DI, runtime info, platform
-       └─ App services (Keystone, view models, features)
-            ├─ Keystone  — Bus : State : Engine
+       └─ App services
+            ├─ Keystone — Bus : State : Engine
             ├─ Lifecycle — Initialize → Load → Start → Process → Stop → …
+            ├─ Sync and storage
             └─ Presentation (optional)
                  ├─ ViewModels + ViewIntegration
-                 └─ AppDispatcher (optional adaptive poll loop)
+                 └─ AppDispatcher (attached ViewModels)
 ```
 
-### Keystone (domain core)
-
-At the heart of application logic is **Keystone** – a lightweight pattern that cleanly separates:
-
-- **State** (the model / single source of truth)
-- **Engine** (processors that mutate state)
-- **Bus** (channels for communication)
-
-This foundation makes applications highly testable, observable, and easy to reason about, while still delivering the performance Cornerstone is known for.
-
-### AppBootstrap (process entry)
-
-**AppBootstrap** is the host-agnostic process bootstrap: call `Initialize` once from `Main` (or platform entry) before resolving services. It creates the dependency provider, runtime information, application arguments, and platform registration, and exposes helpers for infrastructure lifecycle and crash logging. Design-time and tests can use `EnsureInitialized` / `Reset`.
-
-### Who owns what
+State is the model. The engine's processors mutate that state. The bus carries the messages. Processors run off the UI thread. When a view is attached, ViewModels and AppDispatcher project that state onto the screen.
 
 | Piece | Role |
 |-------|------|
-| **AppBootstrap** | Process-wide DI and infrastructure (once per process) |
-| **Keystone** | Domain Bus / State / Engine and its lifecycle tree |
-| **LifecycleTracker** | Hierarchical Initialize → Load → Start / reverse teardown |
-| **CornerstoneApplication** | Avalonia shell: wires bootstrap, dispatcher, and Keystone start/stop |
+| **AppBootstrap** | Process-wide dependency injection and infrastructure (once per process) |
+| **Keystone** | Domain Bus, State, and Engine, and its lifecycle tree |
+| **LifecycleTracker** | Hierarchical Initialize → Load → Start, and reverse teardown |
+| **Sync and storage** | Entity sync between a client and a server, and a source-generated SQL table mapper. Entity Framework is a separate package. |
+| **CornerstoneApplication** | Shell that wires bootstrap, the dispatcher, and Keystone start and stop |
 | **AppDispatcher** | Optional UI projection loop (attached ViewModels only) |
-
-Full documentation index: [Cornerstone.Documentation/Readme.md](Cornerstone.Documentation/Readme.md).
 
 ---
 
-## References
+## Native controls without compromise
 
-- [Keystone](Cornerstone.Documentation/Keystone.md) — Bus : State : Engine pattern
-- [AppBootstrap](Cornerstone.Documentation/AppBootstrap.md) — Process bootstrap, DI root, infrastructure lifecycle
-- [Lifecycle](Cornerstone.Documentation/Lifecycle.md) — Object lifecycle phases and trackers
-- [CornerstoneApplication](Cornerstone.Documentation/CornerstoneApplication.md) — Avalonia application shell
-- [View Integration](Cornerstone.Documentation/ViewIntegration.md) — Keystone State → MVVM
-- [AppDispatcher](Cornerstone.Documentation/AppDispatcher.md) — Optional adaptive dispatch loop (idle/active)
-- [Build](Cornerstone.Documentation/Build.md) — Build process notes
+Most UI stacks treat native controls as a foreign window glued on top of everything else. Buttons, menus, and popups cannot sit over a live WebView, map, or video. Workarounds are snapshots, pause-and-cover, or "don't overlap." You are expected to pick: native content, or a real UI.
+
+Cornerstone does not make that trade. Native and Cornerstone controls live as **peers** — equal in every way. A WebView, a map, a video player, and a toolbar are just controls in the same tree. You can stack them, overlap them, and mix first-party and **third-party** native SDKs without giving one side of the UI away.
+
+Details: [Native layering](Cornerstone.Documentation/Presentation/NativeLayering.md).
+
+---
+
+## See it
+
+Sample apps in `Applications/` run on Desktop, Android, iOS, and in the browser. Projects in `Integrations/` host a third-party SDK. An app takes an integration with a project reference and builds it from this tree. Each SDK keeps its own license.
+
+| Project | What it shows |
+|---------|----------------|
+| **[Cornerstone.Navigator](Applications/Cornerstone.Navigator/)** | A browser around WebView: address bar, back and forward, and favorites. |
+| **[Cornerstone.MediaPlayer](Applications/Cornerstone.MediaPlayer/)** | `MediaPlayerControl` and playback chrome on the same four hosts. |
+| **[Cornerstone.Esri](Integrations/Cornerstone.Esri/)** | ArcGIS Runtime `MapView` and `SceneView`. GIS types stay Esri's. |
+| **[Cornerstone.Vlc](Integrations/Cornerstone.Vlc/)** | LibVLCSharp `VideoView`. Playback types stay LibVLCSharp's. |
+| **[Cornerstone.Mapsui](Integrations/Cornerstone.Mapsui/)** | Mapsui map control. |
+
+---
+
+## Start
+
+```
+dotnet new install Cornerstone.Templates
+dotnet new cornerstone.app -n MyApp
+```
+
+| Template | What you get |
+|----------|----------------|
+| `cornerstone.basic` | Desktop window with AppBootstrap |
+| `cornerstone.app` | Desktop app with AppBootstrap and Keystone |
+| `cornerstone.all` | The same Keystone host on Desktop, Android, Browser, and iOS |
+
+A UI app references `Cornerstone` and `Cornerstone.Presentation`. The analyzer ships inside `Cornerstone`, so both references are required to compile `.cxaml`. Default theme and product controls are already in Presentation. Entity Framework, PowerShell, and automation ship as their own packages.
+
+Templates: [Cornerstone.Templates/README.md](Cornerstone.Templates/README.md). Documentation: [Cornerstone.Documentation/Readme.md](Cornerstone.Documentation/Readme.md).
+
+---
+
+The aim is a framework for developers by developers: fast, open, free, and reliable, and software that makes building applications enjoyable. A release may miss a goal. If you run into an issue, we would love to hear about it.
+
+---
+
+## License
+
+Cornerstone is MIT. See [license.txt](license.txt).
+
+`Cornerstone.Presentation` includes source from the other projects. The upstream license and the other third-party notices are in [Cornerstone.Presentation/NOTICE.md](Cornerstone.Presentation/NOTICE.md).

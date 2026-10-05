@@ -1,0 +1,11 @@
+<Project>
+	<Import Project="$(MSBuildThisFileDirectory)CornerstoneBuildTasks.targets" Condition="'$(CornerstoneBuildTasksTargetsImported)' != 'true'" />
+	<!-- A Condition cannot quote $(TargetFramework) inside a function argument (MSB4092). -->
+	<PropertyGroup>
+		<_CornerstonePresentationPlatform>$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))</_CornerstonePresentationPlatform>
+	</PropertyGroup>
+	<Import Project="$(MSBuildThisFileDirectory)..\build\Cornerstone.Presentation.Browser.props"
+			Condition="'$(_CornerstonePresentationPlatform)' == 'browser'" />
+	<Import Project="$(MSBuildThisFileDirectory)..\build\Cornerstone.Presentation.Browser.targets"
+			Condition="'$(_CornerstonePresentationPlatform)' == 'browser'" />
+</Project>

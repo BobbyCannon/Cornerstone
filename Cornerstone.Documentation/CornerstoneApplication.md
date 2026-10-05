@@ -1,6 +1,6 @@
 # Cornerstone Application
 
-Avalonia application shell that wires **[AppBootstrap](AppBootstrap.md)**, infrastructure lifecycle, and optional **[Keystone](Keystone.md)** start/stop.
+Cornerstone.Presentation application shell that wires **[AppBootstrap](AppBootstrap.md)**, infrastructure lifecycle, and optional **[Keystone](Keystone.md)** start/stop.
 
 ---
 
@@ -8,7 +8,7 @@ Avalonia application shell that wires **[AppBootstrap](AppBootstrap.md)**, infra
 
 | Type | Role |
 |------|------|
-| `CornerstoneApplication` | Base Avalonia `Application`: ensure bootstrap, UI dispatcher, infrastructure init/start/shutdown, crash logging |
+| `CornerstoneApplication` | Base Cornerstone.Presentation `Application`: ensure bootstrap, UI dispatcher, infrastructure init/start/shutdown, crash logging |
 | `CornerstoneApplication<T>` where `T : ILifecycle` | Resolves `T` (usually `AppKeystone`) from DI; init/load/start/teardown with the app |
 
 ---
@@ -43,8 +43,8 @@ Host Main
   AppBootstrap.Initialize(name, assembly, args)
   AppBuilder.Configure<App>().UseCornerstone(args).Start…
 
-Avalonia RegisterServices
-  EnsureAppBootstrapForAvalonia()     // design-time safe
+Cornerstone.Presentation RegisterServices
+  EnsureAppBootstrapForCornerstone()     // design-time safe
   SetSingleton IDispatcher + ClipboardService
   App.RegisterServices(provider)      // Keystone, VMs, features
 
@@ -70,12 +70,12 @@ Unhandled exceptions are forwarded to `AppBootstrap.LogException` (AppDomain, UI
 
 ---
 
-## Avalonia app pattern
+## Cornerstone.Presentation app pattern
 
 ```csharp
 // Program.cs
 AppBootstrap.Initialize("MyApp", typeof(Program).Assembly, args);
-BuildAvaloniaApp().UseCornerstone(args).StartWithClassicDesktopLifetime(args);
+BuildCornerstoneApp().UseCornerstone(args).StartWithClassicDesktopLifetime(args);
 
 // App.axaml.cs
 public class App : CornerstoneApplication<AppKeystone>
@@ -117,7 +117,7 @@ public class App : CornerstoneApplication<AppKeystone>
 }
 ```
 
-The Avalonia side only creates the **window/view shell**. Domain setup and lifecycle for Keystone are owned by `CornerstoneApplication<T>` + registrations on `AppBootstrap.DependencyProvider`.
+The Cornerstone.Presentation side only creates the **window/view shell**. Domain setup and lifecycle for Keystone are owned by `CornerstoneApplication<T>` + registrations on `AppBootstrap.DependencyProvider`.
 
 ---
 
@@ -127,7 +127,7 @@ Worked host: `Cornerstone.GrokMonitor`. Use the same split when adding Keystone 
 
 | Layer | Owns | Does not |
 |-------|------|----------|
-| `*State` | Domain snapshot (`SpeedyList`, `CornerstoneObject`) | Avalonia, selection, bindings |
+| `*State` | Domain snapshot (`SpeedyList`, `CornerstoneObject`) | Cornerstone.Presentation, selection, bindings |
 | Processor | Mutate State; publish follow-up messages | Direct UI |
 | `*TabView` / `*TabViewModel` | Layout, selection, publish intent, Track* wiring | Reading State after Track* is configured |
 | Child ViewModels | Presentation rows / combo items | Being bound as State types |
@@ -135,12 +135,12 @@ Worked host: `Cornerstone.GrokMonitor`. Use the same split when adding Keystone 
 **Rules**
 
 - UI binds **ViewModels only**. Do not bind `*State` types in XAML.
-- Keystone (Bus, State, processors) is **business logic only** and runs **off the UI dispatcher**. Nothing in Keystone should call `IDispatcher.Dispatch` or assume Avalonia.
+- Keystone (Bus, State, processors) is **business logic only** and runs **off the UI dispatcher**. Nothing in Keystone should call `IDispatcher.Dispatch` or assume Cornerstone.Presentation.
 - AppDispatcher exists to keep ViewModels in sync with State for **visual representation and/or user input**. Apply runs on the UI thread; it is not a place for domain rules.
 - A View/ViewModel may mention State **only when configuring** `TrackProperties` / `TrackCollection` / `TrackBinding` / `TrackIngress` (and design-time / host composition). After that, apply and commands use VM properties and bus publish.
 - Same-type lists: `TrackCollection(source, dest, comparer?, mode?)`. State row → row ViewModel: `TrackCollection(source, dest, same, create, update, remove)` (GrokUsage sessions / periods). `TrackBinding` is for charts / custom multi-sink apply, not a list factory. Do not keep `_state.FindById` in `ApplyModelChanges`.
 - Host `AppViewModel` may hold `AppState` to create tabs and apply theme. Feature tabs should not keep using State after Track*.
-- **Exception:** editor-style controls (`TextEditor` / `TextEditorViewModel`) may hold most document state in the ViewModel. That is a control architecture limit — do not copy it onto feature dashboards. See [Agent/TextEditor.md](Agent/TextEditor.md).
+- **Exception:** editor-style controls (`TextEditor` / `TextEditorViewModel`) may hold most document state in the ViewModel. That is a control architecture limit — do not copy it onto feature dashboards.
 
 **Naming**
 
@@ -176,7 +176,7 @@ No `CornerstoneApplication` required. Use AppBootstrap + manual Keystone lifecyc
 
 ## Design-time
 
-If Avalonia constructs the app without host `Main`, `RegisterServices` / `Initialize` call `EnsureInitialized` so `GetInstance` and control default constructors still work. Prefer calling `AppBootstrap.Initialize` from every real host entry point.
+If Cornerstone.Presentation constructs the app without host `Main`, `RegisterServices` / `Initialize` call `EnsureInitialized` so `GetInstance` and control default constructors still work. Prefer calling `AppBootstrap.Initialize` from every real host entry point.
 
 ---
 

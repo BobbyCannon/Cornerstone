@@ -23,7 +23,14 @@
 		<_IsApp Condition="'$(OutputType)' == 'Exe' or '$(OutputType)' == 'WinExe'">true</_IsApp>
 
 		<_SupportsR2R>true</_SupportsR2R>
-		<_SupportsR2R Condition="'$(_IsAndroid)' == 'true' or '$(_IsiOS)' == 'true' or '$(_IsBrowser)' == 'true' or '$(_IsWeb)' == 'true' or '$(_IsApp)' != 'true'">false</_SupportsR2R>
+		<_SupportsR2R Condition="'$(_IsAndroid)' == 'true' or '$(_IsiOS)' == 'true' or '$(_IsBrowser)' == 'true' or '$(_IsWeb)' == 'true' or '$(_IsApp)' != 'true' or !$(TargetFramework.Contains('-windows'))">false</_SupportsR2R>
+
+		<!-- Native AOT is net (Core) only. Command-line EnableAot=true still flows to
+		     netstandard analyzers/build tasks; they must not import PublishAot. -->
+		<_SupportsAot>false</_SupportsAot>
+		<_SupportsAot Condition="$(TargetFramework.StartsWith('net'))
+			and !$(TargetFramework.StartsWith('netstandard'))
+			and !$(TargetFramework.StartsWith('net4'))">true</_SupportsAot>
 	</PropertyGroup>
 
 	<!-- Platform-specific Release settings -->
@@ -41,9 +48,9 @@
 			Condition="'$(_IsWeb)' == 'true'
                      and '$(EnableAot)' != 'true'" />
 
-	<!-- AOT has highest priority -->
+	<!-- AOT has highest priority, but only on TFMs that support Native AOT -->
 	<Import Project="$(MSBuildThisFileDirectory)Release.Aot.props"
-			Condition="'$(EnableAot)' == 'true'" />
+			Condition="'$(EnableAot)' == 'true' and '$(_SupportsAot)' == 'true'" />
 
 	<!-- Desktop R2R (single-file) only on supported platforms + Release + AOT not requested -->
 	<Import Project="$(MSBuildThisFileDirectory)Release.R2R.props"

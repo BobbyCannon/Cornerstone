@@ -1,0 +1,82 @@
+using Cornerstone.Presentation.Media;
+using Cornerstone.Presentation.Rendering.Composition.Drawing;
+using Cornerstone.Presentation.Rendering.Composition.Server;
+using Cornerstone.Presentation.Rendering.Composition.Transport;
+
+namespace Cornerstone.Presentation.Rendering.Composition;
+
+/// <summary>
+/// A composition visual that holds a list of drawing commands issued by <see cref="Cornerstone.Presentation.Visual"/>
+/// </summary>
+internal class CompositionDrawListVisual : CompositionContainerVisual
+{
+    /// <summary>
+    /// The associated <see cref="Cornerstone.Presentation.Visual"/>
+    /// </summary>
+    public Visual Visual { get; }
+
+    private bool _drawListChanged;
+    private CompositionRenderData? _drawList;
+    
+    /// <summary>
+    /// The list of drawing commands
+    /// </summary>
+    public CompositionRenderData? DrawList
+    {
+        get => _drawList;
+        set
+        {
+            // Nothing to do
+            if (value == null && _drawList == null)
+                return;
+            
+            _drawList?.Dispose();
+            _drawList = value;
+            _drawListChanged = true;
+            RegisterForSerialization();
+        }
+    }
+
+    private protected override void SerializeChangesCore(BatchStreamWriter writer)
+    {
+        writer.Write((byte)(_drawListChanged ? 1 : 0));
+        if (_drawListChanged)
+        {
+            writer.WriteObject(DrawList?.Server);
+            _drawListChanged = false;
+        }
+        base.SerializeChangesCore(writer);
+    }
+
+    internal CompositionDrawListVisual(Compositor compositor, ServerCompositionDrawListVisual server, Visual visual) : base(compositor, server)
+    {
+        Visual = visual;
+        CustomHitTestCountInSubTree = visual is ICustomHitTest ? 1 : 0;
+    }
+
+    internal override bool HitTest(Point pt)
+    {
+        var custom = Visual as ICustomHitTest;
+        if (DrawList == null && custom == null)
+            return false;
+        if (custom != null)
+        {
+            return custom.HitTest(pt);
+        }
+
+        return DrawList?.HitTest(pt) ?? false;
+    }
+
+    internal override IntersectionResult HitTest(Geometry geometry)
+    {
+        var custom = Visual as ICustomHitTest;
+        if (DrawList == null && custom == null)
+            return IntersectionResult.Empty;
+        if (custom != null)
+        {
+            return custom.HitTest(geometry);
+        }
+
+        return DrawList?.HitTest(geometry) ?? IntersectionResult.Empty;
+    }
+}

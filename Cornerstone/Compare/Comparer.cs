@@ -29,6 +29,7 @@ public static class Comparer
 			new EnumComparer(),
 			new EnumerableComparer(),
 			new TypeComparer(),
+			new EqualsComparer(),
 			new ObjectComparer()
 		];
 

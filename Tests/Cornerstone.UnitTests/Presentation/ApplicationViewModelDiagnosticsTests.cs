@@ -63,9 +63,9 @@ public class ApplicationViewModelDiagnosticsTests : CornerstoneUnitTest
 		var app = new ApplicationViewModel(
 			this,
 			Dispatcher,
-			activeUpdatesPerSecond: 50,
-			idleUpdatesPerSecond: 20,
-			idleTicksBeforeThrottle: 8);
+			50,
+			20,
+			8);
 
 		var diagnostics = new PendingDispatchable();
 		var capture = new ForcePendingCapture(diagnostics);
@@ -84,6 +84,7 @@ public class ApplicationViewModelDiagnosticsTests : CornerstoneUnitTest
 
 			var applied = await WaitForAsync(() => diagnostics.ApplyCount > 0, TimeSpan.FromSeconds(2));
 			IsTrue(applied);
+
 			// Feature pending was empty; batch size is feature-only.
 			AreEqual(0, app.LastApplyBatchSize);
 			IsTrue(diagnostics.ApplyCount >= 1);
@@ -107,11 +108,12 @@ public class ApplicationViewModelDiagnosticsTests : CornerstoneUnitTest
 		var app = new ApplicationViewModel(
 			this,
 			Dispatcher,
-			activeUpdatesPerSecond: 80,
-			idleUpdatesPerSecond: 40,
-			idleTicksBeforeThrottle: 2);
+			80,
+			40,
+			2);
 
 		var diagnostics = new PendingDispatchable();
+
 		// Mark pending every capture (like mode/session changes), but no feature roots.
 		var capture = new ForcePendingCapture(diagnostics);
 
@@ -151,53 +153,13 @@ public class ApplicationViewModelDiagnosticsTests : CornerstoneUnitTest
 		var app = new ApplicationViewModel(
 			this,
 			Dispatcher,
-			activeUpdatesPerSecond: 60,
-			idleUpdatesPerSecond: 5,
-			idleTicksBeforeThrottle: 3);
+			60,
+			5,
+			3);
 
 		IsTrue(app.ActiveInterval.TotalMilliseconds > 0);
 		IsTrue(app.IdleInterval.TotalMilliseconds > 0);
 		AreEqual(0, app.LastApplyBatchSize);
-	}
-
-	#endregion
-
-	#region Classes
-
-	private sealed class ForcePendingCapture : IDiagnosticsCapture
-	{
-		private readonly PendingDispatchable _diagnostics;
-
-		public ForcePendingCapture(PendingDispatchable diagnostics)
-		{
-			_diagnostics = diagnostics;
-		}
-
-		public void Capture(ApplicationViewModel host, int pendingApplyCount)
-		{
-			_diagnostics.MarkPending();
-		}
-	}
-
-	private sealed class PendingDispatchable : DispatchableViewModel
-	{
-		private readonly DispatchPending _pending = new();
-
-		public PendingDispatchable()
-		{
-			TrackBinding(_pending, () => ApplyCount++);
-		}
-
-		public int ApplyCount { get; private set; }
-
-		public void MarkPending()
-		{
-			_pending.MarkPending();
-		}
-	}
-
-	private sealed class SampleDispatchable : DispatchableViewModel
-	{
 	}
 
 	private static async Task<bool> WaitForAsync(Func<bool> condition, TimeSpan timeout)
@@ -214,6 +176,74 @@ public class ApplicationViewModelDiagnosticsTests : CornerstoneUnitTest
 		}
 
 		return condition();
+	}
+
+	#endregion
+
+	#region Classes
+
+	private sealed class ForcePendingCapture : IDiagnosticsCapture
+	{
+		#region Fields
+
+		private readonly PendingDispatchable _diagnostics;
+
+		#endregion
+
+		#region Constructors
+
+		public ForcePendingCapture(PendingDispatchable diagnostics)
+		{
+			_diagnostics = diagnostics;
+		}
+
+		#endregion
+
+		#region Methods
+
+		public void Capture(ApplicationViewModel host, int pendingApplyCount)
+		{
+			_diagnostics.MarkPending();
+		}
+
+		#endregion
+	}
+
+	private sealed class PendingDispatchable : DispatchableViewModel
+	{
+		#region Fields
+
+		private readonly DispatchPending _pending = new();
+
+		#endregion
+
+		#region Constructors
+
+		public PendingDispatchable()
+		{
+			TrackBinding(_pending, () => ApplyCount++);
+		}
+
+		#endregion
+
+		#region Properties
+
+		public int ApplyCount { get; private set; }
+
+		#endregion
+
+		#region Methods
+
+		public void MarkPending()
+		{
+			_pending.MarkPending();
+		}
+
+		#endregion
+	}
+
+	private sealed class SampleDispatchable : DispatchableViewModel
+	{
 	}
 
 	#endregion

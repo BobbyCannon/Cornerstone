@@ -10,6 +10,7 @@ using Cornerstone.Extensions;
 
 #pragma warning disable IL2055
 #pragma warning disable IL2070
+#pragma warning disable IL2075
 
 namespace Cornerstone.Reflection;
 

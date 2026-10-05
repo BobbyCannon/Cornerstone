@@ -1,0 +1,55 @@
+using System;
+using Cornerstone.Presentation.Metadata;
+using Cornerstone.Presentation.Rendering.Composition;
+
+namespace Cornerstone.Presentation.Platform
+{
+    /// <summary>
+    /// Defines a render target
+    /// </summary>
+    /// <remarks>
+    /// The interface used for obtaining drawing context from surfaces you can render on.
+    /// </remarks>
+    [PrivateApi]
+    public interface IRenderTarget : IDisposable
+    {
+        /// <summary>
+        /// Gets the properties of the render target.
+        /// </summary>
+        RenderTargetProperties Properties { get; }
+
+        /// <summary>
+        /// Creates an <see cref="IDrawingContextImpl"/> for a rendering session.
+        /// </summary>
+        /// <param name="sceneInfo">Information about the scene that's about to be rendered into this render target.
+        /// This is expected to be reported to the underlying platform and affect the framebuffer size, however
+        /// the implementation may choose to ignore that information.
+        /// </param>
+        /// <param name="properties">Returns various properties about the returned drawing context</param>
+        IDrawingContextImpl CreateDrawingContext(RenderTargetSceneInfo sceneInfo, out RenderTargetDrawingContextProperties properties);
+
+        /// <summary>
+        /// Gets the current readiness state of the render target.
+        /// </summary>
+        PlatformRenderTargetState PlatformRenderTargetState => PlatformRenderTargetState.Ready;
+        
+        /// <summary>
+        /// Describes the scene that is about to be rendered into a render target.
+        /// </summary>
+        /// <param name="Size">The size of the scene in device pixels.</param>
+        /// <param name="Scaling">The render scaling of the scene.</param>
+        /// <param name="LogicalSize">The size of the scene in device-independent pixels.</param>
+        /// <param name="TransparencyLevel">The transparency level that the scene is composed with.</param>
+        /// <param name="PlatformSpecificSceneInfo">
+        /// An opaque immutable object provided by the platform's <c>ITopLevelImpl.PlatformSpecificSceneInfo</c>,
+        /// or null when the platform doesn't provide one.
+        /// </param>
+        public record struct RenderTargetSceneInfo(PixelSize Size, double Scaling, Size LogicalSize,
+            CompositionTransparencyLevel TransparencyLevel, object PlatformSpecificSceneInfo = null)
+        {
+            public RenderTargetSceneInfo(PixelSize size, double scaling, CompositionTransparencyLevel transparencyLevel) : this(size, scaling, size.ToSize(scaling), transparencyLevel)
+            {
+            }
+        }
+    }
+}

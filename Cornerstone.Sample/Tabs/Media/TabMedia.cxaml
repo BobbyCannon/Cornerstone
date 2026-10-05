@@ -1,0 +1,82 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs.Media"
+		mc:Ignorable="d" d:DesignWidth="800"
+		x:Class="Cornerstone.Sample.Tabs.Media.TabMedia"
+		x:DataType="tabs:TabMedia"
+		x:Name="This">
+	<ScrollViewer HorizontalScrollBarVisibility="Disabled">
+			<StackPanel Margin="16,12,16,20" Spacing="12">
+				<TextBlock TextWrapping="Wrap"
+						Text="Capture, playback, and web content inside the same window." />
+				<WrapPanel ItemSpacing="12"
+						LineSpacing="12"
+						ItemWidth="340"
+						ItemsAlignment="Stretch">
+					<WrapPanel.Styles>
+						<Style Selector="TextBlock">
+							<Setter Property="TextWrapping" Value="Wrap" />
+						</Style>
+					</WrapPanel.Styles>
+				<Button Classes="ControlCard" Click="OpenCamera" IsVisible="{Binding IsCaptureAvailable}">
+					<Border Classes="FeatureCard">
+						<Grid ColumnDefinitions="Auto,*">
+							<Border Classes="IconBadge Blue">
+								<Path Data="{StaticResource Icons.Camera}"
+										Margin="0,4,0,0" />
+							</Border>
+							<StackPanel Grid.Column="1">
+								<TextBlock Text="Camera" />
+								<TextBlock Text="Device camera preview." />
+							</StackPanel>
+						</Grid>
+					</Border>
+				</Button>
+				<Button Classes="ControlCard" Click="OpenPlayer" IsVisible="{Binding IsCaptureAvailable}">
+					<Border Classes="FeatureCard">
+						<Grid ColumnDefinitions="Auto,*">
+							<Border Classes="IconBadge Purple">
+								<Path Data="{StaticResource Icons.Play}"
+										Margin="5,0,0,0" />
+							</Border>
+							<StackPanel Grid.Column="1">
+								<TextBlock Text="Media Player" />
+								<TextBlock Text="Play video with the built-in player." />
+							</StackPanel>
+						</Grid>
+					</Border>
+				</Button>
+				<Button Classes="ControlCard" Click="OpenVlc">
+					<Border Classes="FeatureCard">
+						<Grid ColumnDefinitions="Auto,*">
+							<Border Classes="IconBadge Red">
+								<Path Data="{StaticResource Icons.Play}"
+										Margin="5,0,0,0" />
+							</Border>
+							<StackPanel Grid.Column="1">
+								<TextBlock Text="VLC" />
+								<TextBlock Text="{Binding VlcDescription}" />
+							</StackPanel>
+						</Grid>
+					</Border>
+				</Button>
+				<Button Classes="ControlCard" Click="OpenWeb">
+					<Border Classes="FeatureCard">
+						<Grid ColumnDefinitions="Auto,*">
+							<Border Classes="IconBadge Amber">
+								<Path Data="{StaticResource Icons.Web}" />
+							</Border>
+							<StackPanel Grid.Column="1">
+								<TextBlock Text="WebView" />
+								<TextBlock Text="Embedded web content." />
+							</StackPanel>
+						</Grid>
+					</Border>
+				</Button>
+				</WrapPanel>
+			</StackPanel>
+	</ScrollViewer>
+</UserControl>

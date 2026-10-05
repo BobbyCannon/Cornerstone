@@ -1,0 +1,41 @@
+<UserControl xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:airPlay="clr-namespace:Cornerstone.RemoteLink.AirPlay"
+		mc:Ignorable="d" d:DesignWidth="660" d:DesignHeight="640"
+		x:Class="Cornerstone.RemoteLink.AirPlay.AirPlayTabView"
+		x:DataType="airPlay:AirPlayTabViewModel">
+	<DockPanel>
+		<Border DockPanel.Dock="Top" Classes="ToolBar">
+			<DockPanel>
+				<Button DockPanel.Dock="Right"
+						Margin="0,0,8,0"
+						VerticalAlignment="Center"
+						Content="Disconnect"
+						Command="{Binding DisconnectCommand}"
+						IsVisible="{Binding IsConnected}" />
+				<SelectableTextBlock Margin="10,0"
+						VerticalAlignment="Center"
+						TextWrapping="NoWrap"
+						Text="{Binding StatusText}" />
+			</DockPanel>
+		</Border>
+		<Grid>
+			<StackPanel HorizontalAlignment="Center">
+				<Image Source="/Assets/Cornerstone.RemoteLink.png"
+						Margin="0,20,0,0"
+						Height="200" Width="200" />
+				<TextBlock Classes="Header"
+						TextWrapping="Wrap"
+						Margin="0,20,0,0"
+						MaxWidth="480"
+						TextAlignment="Center"
+						IsVisible="{Binding !IsConnected}"
+						Text="On your iPhone or iPad: Control Center → Screen Mirroring → pick this PC. Same Wi-Fi required. Windows Firewall must allow TCP 5000 and 7000." />
+			</StackPanel>
+			<airPlay:AirPlayPreviewControl x:Name="PreviewSurface"
+					IsVisible="{Binding IsConnected}" />
+		</Grid>
+	</DockPanel>
+</UserControl>

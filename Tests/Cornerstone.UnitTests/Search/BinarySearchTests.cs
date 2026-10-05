@@ -34,7 +34,7 @@ public class BinarySearchTests : CornerstoneUnitTest
 		AreEqual(1, BinarySearch.FindCeilIndex(valueArray, 20));
 		AreEqual(0, BinarySearch.FindCeilIndex(valueArray, 5));
 		AreEqual(-1, BinarySearch.FindCeilIndex(valueArray, 50));
-		
+
 		SpeedyList<int> valueSpeedyList = [10, 20, 20, 35, 42];
 
 		AreEqual(35, BinarySearch.FindCeil(valueSpeedyList, 21, -1));
@@ -62,7 +62,7 @@ public class BinarySearchTests : CornerstoneUnitTest
 		AreEqual(2, BinarySearch.FindCeilIndex(valuesArray, -5));
 		AreEqual(3, BinarySearch.FindCeilIndex(valuesArray, 10));
 		AreEqual(-1, BinarySearch.FindCeilIndex(valuesArray, 100));
-		
+
 		SpeedyList<int> valuesSpeedyList = [-50, -10, 0, 15, 30];
 
 		AreEqual(0, BinarySearch.FindCeilIndex(valuesSpeedyList, -60));
@@ -76,7 +76,7 @@ public class BinarySearchTests : CornerstoneUnitTest
 	public void CeilNegativeNumbers()
 	{
 		int[] valuesArray = [-50, -10, 0, 15, 30];
-		
+
 		AreEqual(-50, BinarySearch.FindCeil(valuesArray, -60, -999));
 		AreEqual(-10, BinarySearch.FindCeil(valuesArray, -20, -999));
 		AreEqual(0, BinarySearch.FindCeil(valuesArray, -5, -999));
@@ -84,7 +84,7 @@ public class BinarySearchTests : CornerstoneUnitTest
 		AreEqual(-999, BinarySearch.FindCeil(valuesArray, 100, -999));
 
 		SpeedyList<int> valuesSpeedyList = [-50, -10, 0, 15, 30];
-		
+
 		AreEqual(-50, BinarySearch.FindCeil(valuesSpeedyList, -60, -999));
 		AreEqual(-10, BinarySearch.FindCeil(valuesSpeedyList, -20, -999));
 		AreEqual(0, BinarySearch.FindCeil(valuesSpeedyList, -5, -999));
@@ -136,7 +136,7 @@ public class BinarySearchTests : CornerstoneUnitTest
 
 		AreEqual(2, BinarySearch.FindFloorIndex(valueArray, 20));
 		AreEqual(3, BinarySearch.FindFloorIndex(valueArray, 36));
-		
+
 		SpeedyList<int> valueSpeedyList = [10, 20, 20, 35, 42];
 
 		AreEqual(10, BinarySearch.FindFloor(valueSpeedyList, 18, -1));

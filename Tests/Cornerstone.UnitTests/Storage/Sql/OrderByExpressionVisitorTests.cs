@@ -32,17 +32,20 @@ public class OrderByExpressionVisitorTests : CornerstoneUnitTest
 		for (var index = 0; index < scenarios.Length; index++)
 		{
 			var scenario = scenarios[index];
-			var visitor = new OrderByExpressionVisitor();
+			var visitor = new OrderByExpressionVisitor(SqlProvider.SqlServer);
 			var actual = visitor.Translate(scenario.value);
 			AreEqual(scenario.sql, actual);
 			Console.WriteLine();
 		}
+
+		var sqlite = new OrderByExpressionVisitor(SqlProvider.Sqlite);
+		AreEqual("\"Name\"", sqlite.Translate((Expression<Func<AccountEntity, object>>) (p => p.Name)));
 	}
 
 	[TestMethod]
 	public void TranslateMultiParameterLambdaThrows()
 	{
-		var visitor = new OrderByExpressionVisitor();
+		var visitor = new OrderByExpressionVisitor(SqlProvider.SqlServer);
 		Expression<Func<AccountEntity, AccountEntity, object>> expr = (a, b) => a.Id;
 		ExpectedException<ArgumentException>(() => visitor.Translate(expr));
 	}
@@ -50,7 +53,7 @@ public class OrderByExpressionVisitorTests : CornerstoneUnitTest
 	[TestMethod]
 	public void TranslateNestedMemberThrows()
 	{
-		var visitor = new OrderByExpressionVisitor();
+		var visitor = new OrderByExpressionVisitor(SqlProvider.SqlServer);
 		Expression<Func<AccountEntity, object>> expr = p => p.Name.Length;
 		ExpectedException<NotSupportedException>(() => visitor.Translate(expr));
 	}

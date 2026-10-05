@@ -1,12 +1,11 @@
 ﻿#region References
 
+using System;
 using Cornerstone.Data;
 using Cornerstone.Location;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
 using Cornerstone.Serialization;
-using System;
-
 
 #endregion
 

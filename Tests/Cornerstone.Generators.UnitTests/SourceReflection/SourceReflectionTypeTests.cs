@@ -223,6 +223,7 @@ public class SourceReflectionTypeTests : GeneratorUnitTest
 										NullableAnnotation = global::Cornerstone.Reflection.SourceNullableAnnotation.None
 									},
 								},
+								Invoke = static (parameters) => SourceReflectionConstruct_SystemVersion_5((global::System.Version) parameters[0])
 							},
 						},
 						DeclaredFieldsInitializer = static () => new global::Cornerstone.Reflection.SourceFieldInfo[]
@@ -753,6 +754,9 @@ public class SourceReflectionTypeTests : GeneratorUnitTest
 						Name = "Version",
 						Type = typeof(global::System.Version)
 					};
+
+					[global::System.Runtime.CompilerServices.UnsafeAccessor(global::System.Runtime.CompilerServices.UnsafeAccessorKind.Constructor)]
+					extern static global::System.Version SourceReflectionConstruct_SystemVersion_5(global::System.Version version);
 				}
 			}
 			""",

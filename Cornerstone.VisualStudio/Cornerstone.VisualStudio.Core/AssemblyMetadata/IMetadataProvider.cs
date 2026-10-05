@@ -23,5 +23,7 @@ public interface IMetadataReaderSession : IDisposable
 	IReadOnlyCollection<IAssemblyInformation> Assemblies { get; }
 	string TargetAssemblyName { get; }
 
+	bool IsTargetAssembly(IAssemblyInformation assembly);
+
 	#endregion
 }

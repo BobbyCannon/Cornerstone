@@ -1,15 +1,9 @@
 ﻿#region References
 
 using System;
-using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Linq.Expressions;
-using Cornerstone.Collections;
-using Cornerstone.Data;
-using Cornerstone.Sync;
 
 #endregion
 

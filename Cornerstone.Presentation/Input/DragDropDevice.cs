@@ -1,0 +1,128 @@
+﻿using Cornerstone.Presentation.Interactivity;
+using Cornerstone.Presentation.VisualTree;
+using System.Linq;
+using Cornerstone.Presentation.Input.Platform;
+using Cornerstone.Presentation.Input.Raw;
+using Cornerstone.Presentation.Metadata;
+
+namespace Cornerstone.Presentation.Input
+{
+    [PrivateApi]
+    public class DragDropDevice : IDragDropDevice
+    {
+        public static readonly DragDropDevice Instance = new DragDropDevice();
+        
+        private Interactive? _lastTarget = null;
+        
+        private static Interactive? GetTarget(IInputRoot root, Point local)
+        {
+            var hit = root.RootElement?.InputHitTest(local) as Visual;
+            var target = hit?.GetSelfAndVisualAncestors()?.OfType<Interactive>()?.FirstOrDefault();
+            if (target != null && DragDrop.GetAllowDrop(target))
+                return target;
+            return null;
+        }
+
+        private static DragDropEffects RaiseDragEvent(
+            Interactive? target,
+            IInputRoot inputRoot,
+            Point point,
+            RoutedEvent<DragEventArgs> routedEvent,
+            DragDropEffects operation,
+            IDataTransfer dataTransfer,
+            KeyModifiers modifiers)
+        {
+            if (target == null)
+                return DragDropEffects.None;
+
+            var p = (inputRoot.RootElement).TranslatePoint(point, target);
+
+            if (!p.HasValue)
+                return DragDropEffects.None;
+
+            var args = new DragEventArgs(routedEvent, dataTransfer, target, p.Value, modifiers)
+            {
+                RoutedEvent = routedEvent,
+                DragEffects = operation
+            };
+            target.RaiseEvent(args);
+            return args.DragEffects;
+        }
+        
+        private DragDropEffects DragEnter(IInputRoot inputRoot, Point point, IDataTransfer data, DragDropEffects effects, KeyModifiers modifiers)
+        {
+            _lastTarget = GetTarget(inputRoot, point);
+            return RaiseDragEvent(_lastTarget, inputRoot, point, DragDrop.DragEnterEvent, effects, data, modifiers);
+        }
+
+        private DragDropEffects DragOver(IInputRoot inputRoot, Point point, IDataTransfer data, DragDropEffects effects, KeyModifiers modifiers)
+        {
+            var target = GetTarget(inputRoot, point);
+
+            if (target == _lastTarget)
+                return RaiseDragEvent(target, inputRoot, point, DragDrop.DragOverEvent, effects, data, modifiers);
+            
+            try
+            {
+                if (_lastTarget != null)
+                    RaiseDragEvent(_lastTarget, inputRoot, point, DragDrop.DragLeaveEvent, effects, data, modifiers);
+                return RaiseDragEvent(target, inputRoot, point, DragDrop.DragEnterEvent, effects, data, modifiers);
+            }
+            finally
+            {
+                _lastTarget = target;
+            }            
+        }
+
+        private void DragLeave(IInputRoot inputRoot, Point point, IDataTransfer data, DragDropEffects effects, KeyModifiers modifiers)
+        {
+            if (_lastTarget == null)
+                return;
+            try
+            {
+                RaiseDragEvent(_lastTarget, inputRoot, point, DragDrop.DragLeaveEvent, effects, data, modifiers);
+            }
+            finally 
+            {
+                _lastTarget = null;
+            }
+        }
+
+        private DragDropEffects Drop(IInputRoot inputRoot, Point point, IDataTransfer data, DragDropEffects effects, KeyModifiers modifiers)
+        {
+            try
+            {
+                return RaiseDragEvent(_lastTarget, inputRoot, point, DragDrop.DropEvent, effects, data, modifiers);
+            }
+            finally 
+            {
+                _lastTarget = null;
+            }
+        }
+
+        public void ProcessRawEvent(RawInputEventArgs e)
+        {
+            if (!e.Handled && e is RawDragEvent margs)
+                ProcessRawEvent(margs);
+        }
+
+        private void ProcessRawEvent(RawDragEvent e)
+        {
+            switch (e.Type)
+            {
+                case RawDragEventType.DragEnter:
+                    e.Effects = DragEnter(e.Root, e.Location, e.DataTransfer, e.Effects, e.KeyModifiers);
+                    break;
+                case RawDragEventType.DragOver:
+                    e.Effects = DragOver(e.Root, e.Location, e.DataTransfer, e.Effects, e.KeyModifiers);
+                    break;
+                case RawDragEventType.DragLeave:
+                    DragLeave(e.Root, e.Location, e.DataTransfer, e.Effects, e.KeyModifiers);
+                    break;
+                case RawDragEventType.Drop:
+                    e.Effects = Drop(e.Root, e.Location, e.DataTransfer, e.Effects, e.KeyModifiers);
+                    break;
+            }
+        }
+    }
+}

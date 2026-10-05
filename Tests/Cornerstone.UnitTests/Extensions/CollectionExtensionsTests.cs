@@ -55,6 +55,34 @@ public partial class CollectionExtensionsTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void ReconcileListKeepsSiblingsWhenRemovingEarlierItem()
+	{
+		var first = new Person { Id = 1, Name = "Alice", Age = 30 };
+		var second = new Person { Id = 2, Name = "Bob", Age = 25 };
+		var third = new Person { Id = 3, Name = "Charlie", Age = 35 };
+		var collection = new List<Person> { first, second, third };
+		var comparer = EqualityComparer<Person>.Create((x, y) => x.Id == y.Id, x => x.Id.GetHashCode());
+		var incomingBob = new Person { Id = 2, Name = "Robert", Age = 26 };
+		var incomingCharlie = new Person { Id = 3, Name = "Charles", Age = 36 };
+
+		collection.ReconcileListAndItems(
+			new[] { incomingBob, incomingCharlie },
+			comparer,
+			(incoming, existing) =>
+			{
+				existing.Name = incoming.Name;
+				existing.Age = incoming.Age;
+				return false;
+			});
+
+		AreEqual(2, collection.Count);
+		IsTrue(ReferenceEquals(second, collection[0]));
+		IsTrue(ReferenceEquals(third, collection[1]));
+		AreEqual("Robert", collection[0].Name);
+		AreEqual("Charles", collection[1].Name);
+	}
+
+	[TestMethod]
 	public void ReconcileLoadsExpectedItemsWhenCollectionIsEmpty()
 	{
 		var collection = new PresentationList<string>();

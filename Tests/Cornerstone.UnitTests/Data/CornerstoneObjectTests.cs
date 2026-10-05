@@ -390,7 +390,6 @@ public class CornerstoneObjectTests : CornerstoneUnitTest
 		var obj = new TestObject();
 		obj.InitializeLifecycle();
 		Assert.IsTrue(obj.IsLifecycleInitialized());
-		
 	}
 
 	[TestMethod]
@@ -406,7 +405,6 @@ public class CornerstoneObjectTests : CornerstoneUnitTest
 		IsTrue(account.IsPropertyChangeNotificationsEnabled());
 	}
 
-	
 	[TestMethod]
 	public void NotificationsCanBeDisabled()
 	{

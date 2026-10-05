@@ -27,8 +27,8 @@ internal class MissingNamespaceAndAliasSuggestedAction : BaseSuggestedAction, IS
 	private readonly ITextViewRoleSet _previewRoleSet;
 	private readonly ITextSnapshot _snapshot;
 	private readonly ITrackingSpan _span;
-	private readonly KeyValuePair<string, string> _targetClassMetadata;
 	private readonly string _targetClassName;
+	private readonly string _xmlNamespace;
 
 	#endregion
 
@@ -36,19 +36,14 @@ internal class MissingNamespaceAndAliasSuggestedAction : BaseSuggestedAction, IS
 
 	public MissingNamespaceAndAliasSuggestedAction(ITrackingSpan span, IWpfDifferenceViewerFactoryService diffFactory,
 		IDifferenceBufferFactoryService diffBufferFactory, ITextBufferFactoryService bufferFactory, ITextEditorFactoryService textEditorFactoryService,
-		IReadOnlyDictionary<string, string> inverseNamespaces, Dictionary<string, string> aliases)
+		string xmlNamespace, string alias, Dictionary<string, string> aliases)
 	{
 		_span = span;
 		_snapshot = _span.TextBuffer.CurrentSnapshot;
 		_targetClassName = _span.GetText(_snapshot);
-		_targetClassMetadata = inverseNamespaces.FirstOrDefault(x => x.Key.Split('.').Last() == _targetClassName);
-
-		// _targetClassMetadata.Value is the namespace of the control we are trying to add the namespace to. 
-		// It is usually in the format using:MyNamespace.Something.
-		// So to get the prefix for the control we are splitting it by ':'
-		// Then taking the MyNamespace.Something part and splitting it by '.' and getting Something.
-		_namespaceAlias = _targetClassMetadata.Value.Split(':').Last().Split('.').Last();
-		DisplayText = $"Add xmlns {_namespaceAlias}";
+		_xmlNamespace = xmlNamespace ?? string.Empty;
+		_namespaceAlias = alias ?? string.Empty;
+		DisplayText = "Add xmlns " + _namespaceAlias;
 		_diffFactory = diffFactory;
 		_diffBufferFactory = diffBufferFactory;
 		_bufferFactory = bufferFactory;
@@ -88,7 +83,7 @@ internal class MissingNamespaceAndAliasSuggestedAction : BaseSuggestedAction, IS
 
 		// We get the index of the last namespace in the list and add the last namespace length without quotes and add 2.
 		// One for qutation mark and one to place the new namespace in an empty space.
-		buffer.Insert(buffer.CurrentSnapshot.GetText().IndexOf(lastNs) + lastNs.Length + 2, $"xmlns:{_namespaceAlias.ToLower()}=\"{_targetClassMetadata.Value}\"");
+		buffer.Insert(buffer.CurrentSnapshot.GetText().IndexOf(lastNs) + lastNs.Length + 2, "xmlns:" + _namespaceAlias.ToLower() + "=\"" + _xmlNamespace + "\"");
 	}
 
 	#endregion

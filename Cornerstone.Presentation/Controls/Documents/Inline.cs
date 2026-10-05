@@ -1,0 +1,144 @@
+using System.Collections.Generic;
+using System.Text;
+using Cornerstone.Presentation.Media;
+using Cornerstone.Presentation.Media.TextFormatting;
+using Cornerstone.Presentation.Controls.Elements;
+
+namespace Cornerstone.Presentation.Controls.Documents
+{
+    /// <summary>
+    /// Inline element.
+    /// </summary>
+    public abstract class Inline : TextElement
+    {
+        /// <summary>
+        /// PresentationProperty for <see cref="TextDecorations" /> property.
+        /// </summary>
+        public static readonly AttachedProperty<TextDecorationCollection?> TextDecorationsProperty =
+            PresentationProperty.RegisterAttached<Inline, Inline, TextDecorationCollection?>(
+                nameof(TextDecorations),
+                inherits: true);
+
+        /// <summary>
+        /// PresentationProperty for <see cref="BaselineAlignment" /> property.
+        /// </summary>
+        public static readonly StyledProperty<BaselineAlignment> BaselineAlignmentProperty =
+            PresentationProperty.Register<Inline, BaselineAlignment>(
+                nameof(BaselineAlignment),
+                BaselineAlignment.Baseline);
+
+        /// <summary>
+        /// The TextDecorations property specifies decorations that are added to the text of an element.
+        /// </summary>
+        public TextDecorationCollection? TextDecorations
+        {
+            get => GetValue(TextDecorationsProperty);
+            set => SetValue(TextDecorationsProperty, value);
+        }
+
+        /// <summary>
+        /// Describes how the baseline for a text-based element is positioned on the vertical axis,
+        /// relative to the established baseline for text.
+        /// </summary>
+        public BaselineAlignment BaselineAlignment
+        {
+            get => GetValue(BaselineAlignmentProperty);
+            set => SetValue(BaselineAlignmentProperty, value);
+        }
+
+        /// <summary>
+        /// Gets the value of the attached <see cref="TextDecorationsProperty"/> on a control.
+        /// </summary>
+        /// <param name="control">The control.</param>
+        /// <returns>The font style.</returns>
+        public static TextDecorationCollection? GetTextDecorations(Control control)
+        {
+            return control.GetValue(TextDecorationsProperty);
+        }
+
+        /// <summary>
+        /// Sets the value of the attached <see cref="TextDecorationsProperty"/> on a control.
+        /// </summary>
+        /// <param name="control">The control.</param>
+        /// <param name="value">The property value to set.</param>
+        public static void SetTextDecorations(Control control, TextDecorationCollection? value)
+        {
+            control.SetValue(TextDecorationsProperty, value);
+        }
+        
+        internal abstract void BuildTextRun(IList<TextRun> textRuns);
+
+        /// <summary>
+        /// Measures the controls this inline embeds against the width available to the block.
+        /// </summary>
+        /// <returns>
+        /// True when a control came back a different size, so the caller can drop line metrics
+        /// that were measured against the old one.
+        /// </returns>
+        /// <remarks>
+        /// Text runs depend on the content alone, so they survive a constraint change. An embedded
+        /// control is the exception: its size answers to the available width. The run reports that
+        /// size live, but a formatted line snapshots its metrics, so a layout built before the
+        /// control resized keeps reporting the old width and height.
+        /// </remarks>
+        internal virtual bool MeasureEmbeddedControls(Size blockSize) => false;
+
+        internal abstract void AppendText(StringBuilder stringBuilder);
+
+        protected TextRunProperties CreateTextRunProperties()
+        {
+            var parentOrSelfBackground = Background ?? FindParentBackground();
+
+            var typeface = new Typeface(
+                FontFamily, 
+                FontStyle, 
+                FontWeight, 
+                FontStretch);
+
+            return new GenericTextRunProperties(
+                typeface,
+                FontSize,
+                TextDecorations,
+                Foreground,
+                parentOrSelfBackground,
+                BaselineAlignment,
+                null,
+                FontFeatures);
+        }
+
+        /// <summary>
+        /// Searches for the next parent inline element with a non-null Background and returns its Background brush.
+        /// </summary>
+        /// <returns>The first non-null Background brush found in parent inline elements, or null if none is found.</returns>
+        private IBrush? FindParentBackground()
+        {
+            var parent = Parent;
+
+            while (parent is Inline inline)
+            {
+                if (inline.Background != null)
+                {
+                    return inline.Background;
+                }
+                  
+                parent = inline.Parent;
+            }
+
+            return null;
+        }
+
+        /// <inheritdoc />
+        protected override void OnPropertyChanged(PresentationPropertyChangedEventArgs change)
+        {
+            base.OnPropertyChanged(change);
+
+            switch (change.Property.Name)
+            {
+                case nameof(TextDecorations):
+                case nameof(BaselineAlignment):
+                    InlineHost?.Invalidate();
+                    break;
+            }
+        }
+    }
+}

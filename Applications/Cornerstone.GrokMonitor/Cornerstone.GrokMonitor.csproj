@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFrameworks>net10.0-windows10.0.26100.0</TargetFrameworks>
+		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<ApplicationIcon>$(MSBuildThisFileDirectory)Assets/Cornerstone.GrokMonitor.ico</ApplicationIcon>
+	</PropertyGroup>
+	<ItemGroup>
+		<CornerstoneXaml Include="**\*.cxaml" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
+		<CornerstoneResource Include="Assets\**" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\Cornerstone.Presentation.Diagnostics\Cornerstone.Presentation.Diagnostics.csproj" />
+		<ProjectReference Include="..\..\Cornerstone\Cornerstone.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<!-- PublicKey matches Cornerstone.snk used by Directory.Build.props -->
+		<InternalsVisibleTo Include="Cornerstone.UnitTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100f97abdc5a6bc1880e495fb5575d8c7758e32b31d901068015d0e4f9d21dfa2d3eda859956e585ebc5d62066957face3530698eaa1eace45a9175da66211e9fff0deb7b686e01743a9a1acee9f42b8edf341c4f97a8212006a5ac0a6c211bc8206dc87f190f890ff1d041c9eb3eda3bb863240775b8ef2580ec4bca96ac0365d8" />
+	</ItemGroup>
+	<Import Project="..\..\Build\Presentation.props" />
+</Project>
+

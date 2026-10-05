@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Cornerstone.MediaPlayer/Cornerstone.MediaPlayer.csproj" />
+  <Project Path="Cornerstone.MediaPlayer.Android/Cornerstone.MediaPlayer.Android.csproj" />
+  <Project Path="Cornerstone.MediaPlayer.Browser/Cornerstone.MediaPlayer.Browser.csproj" />
+  <Project Path="Cornerstone.MediaPlayer.Desktop/Cornerstone.MediaPlayer.Desktop.csproj" />
+  <Project Path="Cornerstone.MediaPlayer.iOS/Cornerstone.MediaPlayer.iOS.csproj" />
+</Solution>

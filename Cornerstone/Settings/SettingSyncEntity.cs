@@ -1,7 +1,7 @@
 ﻿#region References
 
 using System;
-using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Cornerstone.Data;
 using Cornerstone.Extensions;
 using Cornerstone.Serialization;
@@ -65,8 +65,7 @@ public partial class SettingSyncEntity<TKey> : SyncEntity<TKey>, ISetting
 		{
 			return type;
 		}
-		
-		Debugger.Break();
+
 		return null;
 	}
 
@@ -79,6 +78,8 @@ public partial class SettingSyncEntity<TKey> : SyncEntity<TKey>, ISetting
 		ResetHasChanges();
 	}
 
+	[RequiresDynamicCode("JSON serialization of setting values may need runtime code generation.")]
+	[RequiresUnreferencedCode("JSON serialization of setting values may require unreferenced types.")]
 	public void SetData<TData>(TData value)
 	{
 		Value = value.ToJson();

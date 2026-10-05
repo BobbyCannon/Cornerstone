@@ -344,6 +344,15 @@ public readonly struct MovementDelta : IEquatable<MovementDelta>
 	}
 
 	/// <summary>
+	/// Gets the <see cref="string" /> representation of the <see cref="MovementDelta" /> instance.
+	/// </summary>
+	/// <returns> The <see cref="string" /> representation of the <see cref="MovementDelta" />. </returns>
+	public override string ToString()
+	{
+		return $"{X}, {Y}";
+	}
+
+	/// <summary>
 	/// Determines if both <see cref="MovementDelta" /> objects are identical.
 	/// </summary>
 	/// <param name="left"> Left <see cref="MovementDelta" /> operand. </param>
@@ -369,15 +378,6 @@ public readonly struct MovementDelta : IEquatable<MovementDelta>
 	public static bool operator !=(MovementDelta left, MovementDelta right)
 	{
 		return !left.Equals(right);
-	}
-
-	/// <summary>
-	/// Gets the <see cref="string" /> representation of the <see cref="MovementDelta" /> instance.
-	/// </summary>
-	/// <returns> The <see cref="string" /> representation of the <see cref="MovementDelta" />. </returns>
-	public override string ToString()
-	{
-		return $"{X}, {Y}";
 	}
 
 	#endregion

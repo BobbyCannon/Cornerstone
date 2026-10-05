@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net472</TargetFramework>
+		<UseWPF>true</UseWPF>
+		<RootNamespace>Cornerstone.Presentation.Remote.Wpf.Host</RootNamespace>
+		<AssemblyTitle>Cornerstone.Presentation.Remote.Wpf.Host</AssemblyTitle>
+		<Nullable>disable</Nullable>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Cornerstone.Presentation.Remote.Wpf\Cornerstone.Presentation.Remote.Wpf.csproj" AdditionalProperties="TargetFramework=net472" />
+		<ProjectReference Include="..\Cornerstone.Presentation.Remote.Protocol\Cornerstone.Presentation.Remote.Protocol.csproj" AdditionalProperties="TargetFramework=netstandard2.0" />
+		<ProjectReference Include="..\Cornerstone.Sample.Desktop\Cornerstone.Sample.Desktop.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" SetTargetFramework="TargetFramework=net10.0-windows10.0.26100.0" AdditionalProperties="TargetFramework=net10.0-windows10.0.26100.0" />
+	</ItemGroup>
+	<Target Name="GenerateRemoteHostPaths" BeforeTargets="BeforeCompile">
+		<!-- Sample.Desktop uses TargetFrameworks, so the outer project has no GetTargetPath. -->
+		<PropertyGroup>
+			<RemoteAppTfm>net10.0-windows10.0.26100.0</RemoteAppTfm>
+			<RemoteAppPath>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\Cornerstone.Sample.Desktop\bin\$(Configuration)\$(RemoteAppTfm)\Cornerstone.Sample.Desktop.dll'))</RemoteAppPath>
+			<RemoteHostPathsFile>$(IntermediateOutputPath)RemoteHostPaths.g.cs</RemoteHostPathsFile>
+		</PropertyGroup>
+		<ItemGroup>
+			<_RemoteHostPathLine Include="namespace Cornerstone.Presentation.Remote.Wpf.Host" />
+			<_RemoteHostPathLine Include="{" />
+			<_RemoteHostPathLine Include="	internal static class RemoteHostPaths" />
+			<_RemoteHostPathLine Include="	{" />
+			<_RemoteHostPathLine Include="		public const string AppDll = @&quot;$(RemoteAppPath)&quot;%3B" />
+			<_RemoteHostPathLine Include="	}" />
+			<_RemoteHostPathLine Include="}" />
+		</ItemGroup>
+		<WriteLinesToFile File="$(RemoteHostPathsFile)" Lines="@(_RemoteHostPathLine)" Overwrite="true" Encoding="UTF-8" />
+		<ItemGroup>
+			<Compile Include="$(RemoteHostPathsFile)" />
+		</ItemGroup>
+	</Target>
+</Project>

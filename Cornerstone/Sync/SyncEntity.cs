@@ -41,6 +41,7 @@ public abstract partial class SyncEntity<TKey> : Entity<TKey>, ISyncEntity
 
 	public partial bool IsDeleted { get; set; }
 
+	[SqlIndex]
 	public partial DateTime ModifiedOn { get; set; }
 
 	[SqlTableColumn(IsUnique = true)]

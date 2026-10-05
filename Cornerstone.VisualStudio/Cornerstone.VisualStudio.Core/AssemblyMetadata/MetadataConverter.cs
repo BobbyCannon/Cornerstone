@@ -40,7 +40,19 @@ public static class MetadataConverter
 		"Avalonia.Controls.WindowIcon,",
 		"Avalonia.Markup.Xaml.Styling.StyleIncludeExtension,",
 		"Avalonia.Markup.Xaml.Styling.StyleInclude,",
-		"Avalonia.Markup.Xaml.Styling.StyleIncludeExtension,"
+		"Avalonia.Markup.Xaml.Styling.StyleIncludeExtension,",
+		"Cornerstone.Presentation.Markup.Xaml.MarkupExtensions.BindingExtension,",
+		"Cornerstone.Presentation.Data.Binding,",
+		"Cornerstone.Presentation.Controls.Control,",
+		"Cornerstone.Presentation.Data.TemplateBinding,",
+		"Cornerstone.Presentation.Markup.Xaml.MarkupExtensions.DynamicResourceExtension,",
+		"Cornerstone.Presentation.Markup.Xaml.MarkupExtensions.StaticResourceExtension,",
+		"Cornerstone.Presentation.Media.Brushes",
+		"Cornerstone.Presentation.Styling.Selector,",
+		"Cornerstone.Presentation.Media.Imaging.IBitmap",
+		"Cornerstone.Presentation.Media.IImage",
+		"Cornerstone.Presentation.Controls.Chrome.WindowIcon,",
+		"Cornerstone.Presentation.Markup.Xaml.Styling.StyleInclude,"
 	];
 
 	private static readonly Regex _extractType = new(
@@ -56,11 +68,16 @@ public static class MetadataConverter
 
 	public static Metadata ConvertMetadata(IMetadataReaderSession provider)
 	{
+		return ConvertMetadata(provider, null);
+	}
+
+	public static Metadata ConvertMetadata(IMetadataReaderSession provider, Action<string, int, int> assemblyProgress)
+	{
 		var types = new Dictionary<string, MetadataType>();
 		var typeDefs = new Dictionary<MetadataType, ITypeInformation>();
 		var metadata = new Metadata();
 		var resourceUrls = new List<string>();
-		var avaresValues = new List<AvaresInfo>();
+		var csresValues = new List<CsresInfo>();
 		var pseudoclasses = new HashSet<string>();
 		var typepseudoclasses = new HashSet<string>();
 
@@ -72,9 +89,21 @@ public static class MetadataConverter
 		}
 
 		PreProcessTypes(types, metadata);
-		var targetAssembly = provider.Assemblies.FirstOrDefault() ?? throw new InvalidOperationException("IMetadataReaderSession.Assemblies list is empty.");
-		foreach (var asm in provider.Assemblies)
+		var assemblies = provider.Assemblies.ToArray();
+		if (assemblies.Length == 0)
 		{
+			throw new InvalidOperationException("IMetadataReaderSession.Assemblies list is empty.");
+		}
+
+		var targetAssembly = assemblies[0];
+		for (var i = 0; i < assemblies.Length; i++)
+		{
+			var asm = assemblies[i];
+			if (assemblyProgress != null)
+			{
+				assemblyProgress(asm.Name, i + 1, assemblies.Length);
+			}
+
 			var aliases = new Dictionary<string, string[]>();
 
 			ProcessWellKnownAliases(asm, aliases);
@@ -82,50 +111,20 @@ public static class MetadataConverter
 
 			Func<ITypeInformation, bool> typeFilter = type => !type.IsInterface && type.IsPublic;
 
-			if ((asm.AssemblyName == provider.TargetAssemblyName)
-				||
-				asm.InternalsVisibleTo.Any(att =>
+			var includeInternals = provider.IsTargetAssembly(asm);
+			if (!includeInternals)
+			{
+				foreach (var candidate in provider.Assemblies)
 				{
-					var endNameIndex = att.IndexOf(',');
-					var assemblyName = att;
-					var targetPublicKey = targetAssembly.PublicKey;
-					if (endNameIndex > 0)
+					if (provider.IsTargetAssembly(candidate) && IsVisibleTo(asm, candidate))
 					{
-						assemblyName = att.Substring(0, endNameIndex);
+						includeInternals = true;
+						break;
 					}
-					if (assemblyName == targetAssembly.Name)
-					{
-						if (endNameIndex == -1)
-						{
-							return true;
-						}
-						var publicKeyIndex = att.IndexOf("PublicKey", endNameIndex, StringComparison.OrdinalIgnoreCase);
-						if (publicKeyIndex > 0)
-						{
-							publicKeyIndex += 9;
-							if (publicKeyIndex > att.Length)
-							{
-								return false;
-							}
-							while ((publicKeyIndex < att.Length) && att[publicKeyIndex] is ' ' or '=')
-							{
-								publicKeyIndex++;
-							}
-							if (targetPublicKey.Length == (att.Length - publicKeyIndex))
-							{
-								for (var i = publicKeyIndex; i < att.Length; i++)
-								{
-									if (att[i] != targetPublicKey[i - publicKeyIndex])
-									{
-										return false;
-									}
-								}
-								return true;
-							}
-						}
-					}
-					return false;
-				}))
+				}
+			}
+
+			if (includeInternals)
 			{
 				typeFilter = type => (type.Name != "<Module>") && !type.IsInterface && !type.IsAbstract;
 			}
@@ -135,6 +134,7 @@ public static class MetadataConverter
 			foreach (var type in asmTypes)
 			{
 				var mt = types[type.AssemblyQualifiedName] = ConvertTypeInformation(type);
+				mt.BaseTypeFullName = type.BaseTypeName ?? string.Empty;
 				typeDefs[mt] = type;
 				metadata.AddType("clr-namespace:" + type.Namespace + ";assembly=" + asm.Name, mt);
 				var usingNamespace = $"using:{type.Namespace}";
@@ -154,7 +154,7 @@ public static class MetadataConverter
 				}
 			}
 
-			ProcessAvaloniaResources(asm, asmTypes, avaresValues);
+			ProcessAvaloniaResources(asm, asmTypes, csresValues);
 
 			resourceUrls.AddRange(asm.ManifestResourceNames.Where(r => !SkipRes(r)).Select(r => $"resm:{r}?assembly={asm.Name}"));
 		}
@@ -202,6 +202,14 @@ public static class MetadataConverter
 					}
 
 					var propertyType = GetType(types, prop.TypeFullName, prop.QualifiedTypeFullName);
+					if (propertyType == null)
+					{
+						var hintFullName = UnresolvedHintFullName(prop.TypeFullName);
+						if (hintFullName != null)
+						{
+							propertyType = EnsureHintType(hintFullName);
+						}
+					}
 
 					var p = new MetadataProperty(prop.Name, propertyType,
 						currentType, false, prop.IsStatic, prop.HasPublicGetter,
@@ -286,7 +294,8 @@ public static class MetadataConverter
 					}
 				}
 
-				if (typeDef.FullName == "Avalonia.AvaloniaObject")
+				if ((typeDef.FullName == "Avalonia.AvaloniaObject") ||
+					(typeDef.FullName == "Cornerstone.Presentation.PresentationObject"))
 				{
 					type.IsAvaloniaObjectType = true;
 				}
@@ -334,7 +343,7 @@ public static class MetadataConverter
 			}
 		}
 
-		PostProcessTypes(types, metadata, resourceUrls, avaresValues, pseudoclasses);
+		PostProcessTypes(types, metadata, resourceUrls, csresValues, pseudoclasses);
 
 		MetadataType? GetType(Dictionary<string, MetadataType> types, params string[] keys)
 		{
@@ -365,6 +374,88 @@ public static class MetadataConverter
 			return type;
 		}
 
+		MetadataType EnsureHintType(string fullName)
+		{
+			foreach (var existing in types.Values)
+			{
+				if (existing.FullName == fullName)
+				{
+					return existing;
+				}
+			}
+
+			var simpleName = fullName;
+			var dot = fullName.LastIndexOf('.');
+			if (dot >= 0)
+			{
+				simpleName = fullName.Substring(dot + 1);
+			}
+
+			var created = new MetadataType(simpleName)
+			{
+				FullName = fullName
+			};
+			types[fullName] = created;
+			return created;
+		}
+
+		string UnresolvedHintFullName(string typeName)
+		{
+			if (NamesType(typeName, "IBrush"))
+			{
+				return "Cornerstone.Presentation.Media.IBrush";
+			}
+
+			if (NamesType(typeName, "IImage"))
+			{
+				return "Cornerstone.Presentation.Media.IImage";
+			}
+
+			if (NamesType(typeName, "IBitmap"))
+			{
+				return "Cornerstone.Presentation.Media.Imaging.IBitmap";
+			}
+
+			if (NamesType(typeName, "TextTrimming"))
+			{
+				return "Cornerstone.Presentation.Media.TextTrimming";
+			}
+
+			if (NamesType(typeName, "CacheMode"))
+			{
+				return "Cornerstone.Presentation.Media.CacheMode";
+			}
+
+			if (NamesType(typeName, "IEffect"))
+			{
+				return "Cornerstone.Presentation.Media.Effects.IEffect";
+			}
+
+			if (NamesType(typeName, "ITransform"))
+			{
+				return "Cornerstone.Presentation.Media.ITransform";
+			}
+
+			if (NamesType(typeName, ".Transform"))
+			{
+				return "Cornerstone.Presentation.Media.Transform";
+			}
+
+			return null;
+		}
+
+		bool NamesType(string typeName, string simpleName)
+		{
+			if (string.IsNullOrEmpty(typeName))
+			{
+				return false;
+			}
+
+			return typeName.EndsWith(simpleName, StringComparison.Ordinal) ||
+				typeName.Contains(simpleName + ",") ||
+				typeName.Contains(simpleName + "]");
+		}
+
 		return metadata;
 	}
 
@@ -385,7 +476,82 @@ public static class MetadataConverter
 		{
 			mt.HintValues = type.EnumValues.ToArray();
 		}
+
+		if (type.FullName == "Cornerstone.Presentation.Styling.ThemeVariant")
+		{
+			mt.HasHintValues = true;
+			mt.HintValues = ["Default", "Light", "Dark"];
+		}
+
 		return mt;
+	}
+
+	private static bool IsVisibleTo(IAssemblyInformation asm, IAssemblyInformation target)
+	{
+		if ((asm == null) || (target == null))
+		{
+			return false;
+		}
+
+		foreach (var att in asm.InternalsVisibleTo)
+		{
+			var endNameIndex = att.IndexOf(',');
+			var assemblyName = att;
+			var targetPublicKey = target.PublicKey ?? string.Empty;
+			if (endNameIndex > 0)
+			{
+				assemblyName = att.Substring(0, endNameIndex);
+			}
+
+			if (assemblyName != target.Name)
+			{
+				continue;
+			}
+
+			if (endNameIndex == -1)
+			{
+				return true;
+			}
+
+			var publicKeyIndex = att.IndexOf("PublicKey", endNameIndex, StringComparison.OrdinalIgnoreCase);
+			if (publicKeyIndex <= 0)
+			{
+				continue;
+			}
+
+			publicKeyIndex += 9;
+			if (publicKeyIndex > att.Length)
+			{
+				continue;
+			}
+
+			while ((publicKeyIndex < att.Length) && (att[publicKeyIndex] == ' ' || att[publicKeyIndex] == '='))
+			{
+				publicKeyIndex++;
+			}
+
+			if (targetPublicKey.Length != (att.Length - publicKeyIndex))
+			{
+				continue;
+			}
+
+			var matches = true;
+			for (var i = publicKeyIndex; i < att.Length; i++)
+			{
+				if (att[i] != targetPublicKey[i - publicKeyIndex])
+				{
+					matches = false;
+					break;
+				}
+			}
+
+			if (matches)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	internal static bool IsMarkupExtension(ITypeInformation type)
@@ -416,7 +582,7 @@ public static class MetadataConverter
 	}
 
 	private static void PostProcessTypes(Dictionary<string, MetadataType> types, Metadata metadata,
-		IEnumerable<string> resourceUrls, List<AvaresInfo> avaResValues, HashSet<string> pseudoclasses)
+		IEnumerable<string> resourceUrls, List<CsresInfo> avaResValues, HashSet<string> pseudoclasses)
 	{
 		bool Rhasext(string resource, string ext)
 		{
@@ -425,7 +591,7 @@ public static class MetadataConverter
 
 		var allresourceUrls = avaResValues.Select(v => v.GlobalUrl).Concat(resourceUrls).ToArray();
 
-		var resType = new MetadataType("avares://,resm:")
+		var resType = new MetadataType("csres://,resm:")
 		{
 			IsStatic = true,
 			HasHintValues = true,
@@ -434,18 +600,18 @@ public static class MetadataConverter
 
 		types.Add(resType.Name, resType);
 
-		var xamlResType = new MetadataType("avares://*.xaml,resm:*.xaml")
+		var xamlResType = new MetadataType("csres://*.xaml,resm:*.xaml")
 		{
 			HasHintValues = true,
-			HintValues = resType.HintValues.Where(r => Rhasext(r, ".xaml") || Rhasext(r, ".paml") || Rhasext(r, ".axaml")).ToArray()
+			HintValues = resType.HintValues.Where(r => Rhasext(r, ".xaml") || Rhasext(r, ".paml") || Rhasext(r, ".cxaml") || Rhasext(r, ".axaml")).ToArray()
 		};
 
-		var styleResType = new MetadataType("Style avares://*.xaml,resm:*.xaml")
+		var styleResType = new MetadataType("Style csres://*.xaml,resm:*.xaml")
 		{
 			HasHintValues = true,
 			HintValues = avaResValues.Where(v => v.ReturnTypeFullName.StartsWith("Avalonia.Styling.Style"))
 				.Select(v => v.GlobalUrl)
-				.Concat(resourceUrls.Where(r => Rhasext(r, ".xaml") || Rhasext(r, ".paml") || Rhasext(r, ".axaml")))
+				.Concat(resourceUrls.Where(r => Rhasext(r, ".xaml") || Rhasext(r, ".paml") || Rhasext(r, ".cxaml") || Rhasext(r, ".axaml")))
 				.ToArray()
 		};
 
@@ -455,12 +621,12 @@ public static class MetadataConverter
 		{
 			if (currentAssemblyName is not null)
 			{
-				var localResPrefix = $"avares://{currentAssemblyName}";
+				var localResPrefix = $"csres://{currentAssemblyName}";
 				var resmSuffix = $"?assembly={currentAssemblyName}";
 
 				foreach (var hint in type.HintValues ?? [])
 				{
-					if (hint.StartsWith("avares://"))
+					if (hint.StartsWith("csres://"))
 					{
 						if (hint.StartsWith(localResPrefix))
 						{
@@ -514,21 +680,52 @@ public static class MetadataConverter
 		}
 
 		var allAvaloniaProps = allProps.Keys.ToArray();
+		var defaultXmlns = types.Keys.Any(k => k.StartsWith("Cornerstone.Presentation.", StringComparison.Ordinal))
+			? Utils.CornerstoneNamespace
+			: Utils.AvaloniaNamespace;
 
-		if (!avaloniaBaseType.TryGetValue("Avalonia.Markup.Xaml.MarkupExtensions.BindingExtension", out var bindingExtType))
+		void AliasBaseType(string avaloniaName, string cornerstoneName)
 		{
-			if (avaloniaBaseType.TryGetValue("Avalonia.Data.Binding", out var origBindingType))
+			if (!avaloniaBaseType.ContainsKey(avaloniaName) &&
+				avaloniaBaseType.TryGetValue(cornerstoneName, out var cornerstoneType))
 			{
-				//avalonia 0.10 has implicit binding extension
+				avaloniaBaseType[avaloniaName] = cornerstoneType;
+			}
+		}
+
+		AliasBaseType("Avalonia.Markup.Xaml.MarkupExtensions.BindingExtension", "Cornerstone.Presentation.Markup.Xaml.MarkupExtensions.BindingExtension");
+		AliasBaseType("Avalonia.Data.Binding", "Cornerstone.Presentation.Data.Binding");
+		AliasBaseType("Avalonia.Controls.Control", "Cornerstone.Presentation.Controls.Control");
+		AliasBaseType("Avalonia.Data.TemplateBinding", "Cornerstone.Presentation.Data.TemplateBinding");
+		AliasBaseType("Avalonia.Markup.Xaml.MarkupExtensions.DynamicResourceExtension", "Cornerstone.Presentation.Markup.Xaml.MarkupExtensions.DynamicResourceExtension");
+		AliasBaseType("Avalonia.Markup.Xaml.MarkupExtensions.StaticResourceExtension", "Cornerstone.Presentation.Markup.Xaml.MarkupExtensions.StaticResourceExtension");
+		AliasBaseType("Avalonia.Media.Brushes", "Cornerstone.Presentation.Media.Brushes");
+		AliasBaseType("Avalonia.Styling.Selector", "Cornerstone.Presentation.Styling.Selector");
+		AliasBaseType("Avalonia.Media.Imaging.IBitmap", "Cornerstone.Presentation.Media.Imaging.IBitmap");
+		AliasBaseType("Avalonia.Media.IImage", "Cornerstone.Presentation.Media.IImage");
+		AliasBaseType("Avalonia.Controls.WindowIcon", "Cornerstone.Presentation.Controls.Chrome.WindowIcon");
+		AliasBaseType("Avalonia.Markup.Xaml.Styling.StyleInclude", "Cornerstone.Presentation.Markup.Xaml.Styling.StyleInclude");
+
+		if (!types.ContainsKey("Avalonia.Media.IBrush") &&
+			types.TryGetValue("Cornerstone.Presentation.Media.IBrush", out var cornerstoneBrush))
+		{
+			types["Avalonia.Media.IBrush"] = cornerstoneBrush;
+		}
+
+		if (!avaloniaBaseType.TryGetValue("Avalonia.Markup.Xaml.MarkupExtensions.BindingExtension", out var bindingExtType) &&
+			!avaloniaBaseType.TryGetValue("Cornerstone.Presentation.Markup.Xaml.MarkupExtensions.BindingExtension", out bindingExtType))
+		{
+			if (avaloniaBaseType.TryGetValue("Avalonia.Data.Binding", out var origBindingType) ||
+				avaloniaBaseType.TryGetValue("Cornerstone.Presentation.Data.Binding", out origBindingType))
+			{
+				// Avalonia 11 has no BindingExtension type; {Binding} is still that name in XAML.
 				bindingExtType = origBindingType with
 				{
 					Name = "BindingExtension",
 					FullName = "Avalonia.Markup.Xaml.MarkupExtensions.BindingExtension"
 				};
 				bindingExtType.IsMarkupExtension = true;
-
-				types.Add(bindingExtType.FullName, bindingExtType);
-				metadata.AddType(Utils.AvaloniaNamespace, bindingExtType);
+				types[bindingExtType.FullName] = bindingExtType;
 			}
 		}
 
@@ -543,21 +740,25 @@ public static class MetadataConverter
 		};
 
 		//bindings related hints
-		if (types.TryGetValue("Avalonia.Markup.Xaml.MarkupExtensions.BindingExtension", out var bindingType))
+		if (bindingExtType != null)
 		{
-			bindingType.SupportCtorArgument = MetadataTypeCtorArgument.None;
-			for (var i = 0; i < bindingType.Properties.Count; i++)
+			bindingExtType.IsMarkupExtension = true;
+			bindingExtType.SupportCtorArgument = MetadataTypeCtorArgument.None;
+			for (var i = 0; i < bindingExtType.Properties.Count; i++)
 			{
-				if (bindingType.Properties[i].Name == "Path")
+				if (bindingExtType.Properties[i].Name == "Path")
 				{
-					bindingType.Properties[i] = bindingType.Properties[i] with
+					bindingExtType.Properties[i] = bindingExtType.Properties[i] with
 					{
 						Type = dataContextType
 					};
 				}
 			}
 
-			bindingType.Properties.Add(new MetadataProperty("", dataContextType, bindingType, false, false, true, true));
+			bindingExtType.Properties.Add(new MetadataProperty("", dataContextType, bindingExtType, false, false, true, true));
+			// Tests use the Avalonia xmlns. Cornerstone documents use the Cornerstone xmlns.
+			metadata.AddType(Utils.AvaloniaNamespace, bindingExtType);
+			metadata.AddType(Utils.CornerstoneNamespace, bindingExtType);
 		}
 
 		if (avaloniaBaseType.TryGetValue("Avalonia.Data.TemplateBinding", out var templBinding))
@@ -573,6 +774,7 @@ public static class MetadataConverter
 
 			types["TemplateBindingExtension"] = tbext;
 			metadata.AddType(Utils.AvaloniaNamespace, tbext);
+			metadata.AddType(Utils.CornerstoneNamespace, tbext);
 		}
 
 		if (avaloniaBaseType.TryGetValue("Portable.Xaml.Markup.TypeExtension", out var typeExtension))
@@ -609,12 +811,142 @@ public static class MetadataConverter
 			stRes.HintValues = commonResKeys;
 		}
 
-		//brushes
-		if (types.TryGetValue("Avalonia.Media.IBrush", out var brushType) &&
-			avaloniaBaseType.TryGetValue("Avalonia.Media.Brushes", out var brushes))
+		//brushes and colors. types is keyed by assembly-qualified name, so match FullName.
+		ApplyStaticHints(
+			"Cornerstone.Presentation.Media.IBrush",
+			"Avalonia.Media.IBrush",
+			"Cornerstone.Presentation.Media.Brushes",
+			"Avalonia.Media.Brushes");
+		ApplyStaticHints(
+			"Cornerstone.Presentation.Media.Color",
+			"Avalonia.Media.Color",
+			"Cornerstone.Presentation.Media.Colors",
+			"Avalonia.Media.Colors");
+		ApplyStaticHints(
+			"Cornerstone.Presentation.Media.TextDecorationCollection",
+			"Avalonia.Media.TextDecorationCollection",
+			"Cornerstone.Presentation.Media.TextDecorations",
+			"Avalonia.Media.TextDecorations");
+		ApplyStaticHints(
+			"Cornerstone.Presentation.Input.Cursor",
+			"Avalonia.Input.Cursor",
+			"Cornerstone.Presentation.Input.StandardCursorType",
+			"Avalonia.Input.StandardCursorType");
+		ApplyFixedHints(
+			"Cornerstone.Presentation.Media.TextTrimming",
+			"Avalonia.Media.TextTrimming",
+			["None", "CharacterEllipsis", "WordEllipsis", "PrefixCharacterEllipsis", "LeadingCharacterEllipsis", "PathSegmentEllipsis"]);
+		ApplyFixedHints(
+			"Cornerstone.Presentation.Media.CacheMode",
+			"Avalonia.Media.CacheMode",
+			["BitmapCache"]);
+		ApplyFixedHints(
+			"Cornerstone.Presentation.Media.ITransform",
+			"Avalonia.Media.ITransform",
+			["translate", "translateX", "translateY", "scale", "scaleX", "scaleY", "skew", "skewX", "skewY", "rotate", "matrix"]);
+		ApplyFixedHints(
+			"Cornerstone.Presentation.Media.Transform",
+			"Avalonia.Media.Transform",
+			["translate", "translateX", "translateY", "scale", "scaleX", "scaleY", "skew", "skewX", "skewY", "rotate", "matrix"]);
+		ApplyFixedHints(
+			"Cornerstone.Presentation.Media.Effects.IEffect",
+			"Avalonia.Media.IEffect",
+			["blur(", "drop-shadow("]);
+
+		void ApplyStaticHints(string targetFullName, string targetAlias, string sourceFullName, string sourceAlias)
 		{
-			brushType.HasHintValues = true;
-			brushType.HintValues = brushes.Properties.Where(p => p.IsStatic && p.HasGetter).Select(p => p.Name).ToArray();
+			var target = FindType(targetFullName) ?? FindType(targetAlias);
+			var source = FindType(sourceFullName) ?? FindType(sourceAlias);
+			if (target == null)
+			{
+				types.TryGetValue(targetFullName, out target);
+			}
+
+			if (target == null)
+			{
+				types.TryGetValue(targetAlias, out target);
+			}
+
+			if ((target == null) || (source == null))
+			{
+				return;
+			}
+
+			var hints = source.Properties.Where(p => p.IsStatic && p.HasGetter).Select(p => p.Name).ToArray();
+			if (hints.Length == 0)
+			{
+				return;
+			}
+
+			// Property types are often the short-name placeholder inserted before the real type.
+			StampHintValues(target, hints);
+			StampHintValues(FindType(targetAlias), hints);
+			if (types.TryGetValue(targetFullName, out var keyedTarget))
+			{
+				StampHintValues(keyedTarget, hints);
+			}
+
+			if (types.TryGetValue(targetAlias, out var keyedAlias))
+			{
+				StampHintValues(keyedAlias, hints);
+			}
+		}
+
+		void StampHintValues(MetadataType type, string[] hints)
+		{
+			if (type == null)
+			{
+				return;
+			}
+
+			type.HasHintValues = true;
+			type.HintValues = hints;
+			foreach (var wrapper in types.Values)
+			{
+				if (wrapper.IsNullable && (wrapper.UnderlyingType == type))
+				{
+					wrapper.HasHintValues = true;
+					wrapper.HintValues = hints;
+				}
+			}
+		}
+
+		MetadataType FindType(string fullName)
+		{
+			foreach (var type in types.Values)
+			{
+				if (type.FullName == fullName)
+				{
+					return type;
+				}
+			}
+
+			return null;
+		}
+
+		void ApplyFixedHints(string targetFullName, string targetAlias, string[] hints)
+		{
+			Apply(FindType(targetFullName));
+			Apply(FindType(targetAlias));
+
+			void Apply(MetadataType target)
+			{
+				if (target == null)
+				{
+					return;
+				}
+
+				target.HasHintValues = true;
+				target.HintValues = hints;
+				foreach (var wrapper in types.Values)
+				{
+					if (wrapper.IsNullable && (wrapper.UnderlyingType == target))
+					{
+						wrapper.HasHintValues = true;
+						wrapper.HintValues = hints;
+					}
+				}
+			}
 		}
 
 		//TODO: Remove
@@ -643,25 +975,45 @@ public static class MetadataConverter
 			return bitmaptypes.Any(ext => Rhasext(resource, ext));
 		}
 
-		if (avaloniaBaseType.TryGetValue("Avalonia.Media.Imaging.IBitmap", out var ibitmapType))
-		{
-			ibitmapType.HasHintValues = true;
-			ibitmapType.HintValues = allresourceUrls.Where(r => Isbitmaptype(r)).ToArray();
-			ibitmapType.XamlContextHintValuesFunc = (a, t, p) => FilterLocalRes(ibitmapType, a);
-		}
+		ApplyResourceHints(
+			"Avalonia.Media.Imaging.IBitmap",
+			"Cornerstone.Presentation.Media.Imaging.IBitmap",
+			Isbitmaptype);
+		ApplyResourceHints(
+			"Avalonia.Media.IImage",
+			"Cornerstone.Presentation.Media.IImage",
+			Isbitmaptype);
+		ApplyResourceHints(
+			"Avalonia.Controls.WindowIcon",
+			"Cornerstone.Presentation.Controls.Chrome.WindowIcon",
+			resource => Rhasext(resource, ".ico"));
 
-		if (avaloniaBaseType.TryGetValue("Avalonia.Media.IImage", out var iImageType))
+		void ApplyResourceHints(string avaloniaName, string cornerstoneFullName, Func<string, bool> match)
 		{
-			iImageType.HasHintValues = true;
-			iImageType.HintValues = allresourceUrls.Where(r => Isbitmaptype(r)).ToArray();
-			iImageType.XamlContextHintValuesFunc = (a, t, p) => FilterLocalRes(iImageType, a);
-		}
+			var hints = allresourceUrls.Where(match).ToArray();
+			Apply(avaloniaBaseType.TryGetValue(avaloniaName, out var avaloniaType) ? avaloniaType : null);
+			Apply(FindType(cornerstoneFullName));
 
-		if (avaloniaBaseType.TryGetValue("Avalonia.Controls.WindowIcon", out var winIcon))
-		{
-			winIcon.HasHintValues = true;
-			winIcon.HintValues = allresourceUrls.Where(r => Rhasext(r, ".ico")).ToArray();
-			winIcon.XamlContextHintValuesFunc = (a, t, p) => FilterLocalRes(winIcon, a);
+			void Apply(MetadataType target)
+			{
+				if (target == null)
+				{
+					return;
+				}
+
+				target.HasHintValues = true;
+				target.HintValues = hints;
+				target.XamlContextHintValuesFunc = (assemblyName, type, property) => FilterLocalRes(target, assemblyName);
+				foreach (var wrapper in types.Values)
+				{
+					if (wrapper.IsNullable && (wrapper.UnderlyingType == target))
+					{
+						wrapper.HasHintValues = true;
+						wrapper.HintValues = hints;
+						wrapper.XamlContextHintValuesFunc = target.XamlContextHintValuesFunc;
+					}
+				}
+			}
 		}
 
 		if (avaloniaBaseType.TryGetValue("Avalonia.Markup.Xaml.Styling.StyleInclude", out var styleIncludeType))
@@ -751,6 +1103,11 @@ public static class MetadataConverter
 
 		foreach (var t in toAdd)
 		{
+			if (string.IsNullOrEmpty(t.FullName))
+			{
+				t.FullName = t.Name;
+			}
+
 			types.Add(t.Name, t);
 		}
 
@@ -819,43 +1176,43 @@ public static class MetadataConverter
 		//metadata.AddType("", new MetadataType("xmlns") { IsXamlDirective = true });
 	}
 
-	private static void ProcessAvaloniaResources(IAssemblyInformation asm, ITypeInformation[] asmTypes, List<AvaresInfo> avaresValues)
+	private static void ProcessAvaloniaResources(IAssemblyInformation asm, ITypeInformation[] asmTypes, List<CsresInfo> csresValues)
 	{
-		const string avaresToken = "Build:"; //or "Populate:" should work both ways
+		const string csresToken = "Build:"; //or "Populate:" should work both ways
 
-		void Registeravares(string? localUrl, string returnTypeFullName = "")
+		void Registercsres(string? localUrl, string returnTypeFullName = "")
 		{
 			if (localUrl is null)
 			{
 				return;
 			}
 
-			var globalUrl = $"avares://{asm.Name}{localUrl}";
+			var globalUrl = $"csres://{asm.Name}{localUrl}";
 
-			if (!avaresValues.Any(v => v.GlobalUrl == globalUrl))
+			if (!csresValues.Any(v => v.GlobalUrl == globalUrl))
 			{
-				var avres = new AvaresInfo(asm, returnTypeFullName, localUrl, globalUrl);
+				var avres = new CsresInfo(asm, returnTypeFullName, localUrl, globalUrl);
 
-				avaresValues.Add(avres);
+				csresValues.Add(avres);
 			}
 		}
 
 		var resType = asmTypes.FirstOrDefault(t => t.FullName == "CompiledAvaloniaXaml.!AvaloniaResources");
 		if (resType != null)
 		{
-			foreach (var res in resType.Methods.Where(m => m.Name.StartsWith(avaresToken)))
+			foreach (var res in resType.Methods.Where(m => m.Name.StartsWith(csresToken)))
 			{
-				Registeravares(res.Name.Replace(avaresToken, ""), res.ReturnTypeFullName ?? "");
+				Registercsres(res.Name.Replace(csresToken, ""), res.ReturnTypeFullName ?? "");
 			}
 		}
 
-		//try add avares Embedded resources like image,stream and x:Class
+		//try add csres Embedded resources like image,stream and x:Class
 		if (asm.ManifestResourceNames.Contains("!AvaloniaResources"))
 		{
 			try
 			{
-				using var avaresStream = asm.GetManifestResourceStream("!AvaloniaResources");
-				using var r = new BinaryReader(avaresStream);
+				using var csresStream = asm.GetManifestResourceStream("!AvaloniaResources");
+				using var r = new BinaryReader(csresStream);
 				var ms = new MemoryStream(r.ReadBytes(r.ReadInt32()));
 				var br = new BinaryReader(ms);
 
@@ -897,7 +1254,7 @@ public static class MetadataConverter
 				{
 					try
 					{
-						avaresStream.Seek(xClassEntries.Offset, SeekOrigin.Current);
+						csresStream.Seek(xClassEntries.Offset, SeekOrigin.Current);
 						var xClassDoc = XDocument.Load(new MemoryStream(r.ReadBytes(xClassEntries.Size)));
 						var xClassMappingNode = xClassDoc.Root?.Element(xClassDoc.Root.GetDefaultNamespace().GetName("ClassToResourcePathIndex"));
 						if (xClassMappingNode != null)
@@ -924,7 +1281,7 @@ public static class MetadataConverter
 								{
 									//we set here base class like Style, Styles, UserControl so we can manage
 									//resources in a common way later
-									Registeravares(xcm.Path, resultType.GetBaseType()?.FullName ?? "");
+									Registercsres(xcm.Path, resultType.GetBaseType()?.FullName ?? "");
 								}
 							}
 						}
@@ -940,7 +1297,7 @@ public static class MetadataConverter
 				{
 					foreach (var entry in avaResEntries.Where(v => v.Path is not null && !v.Path.StartsWith("/!")))
 					{
-						Registeravares(entry.Path);
+						Registercsres(entry.Path);
 					}
 				}
 			}
@@ -956,6 +1313,7 @@ public static class MetadataConverter
 		foreach (
 			var attr in
 			asm.CustomAttributes.Where(a => (a.TypeFullName == "Avalonia.Metadata.XmlnsDefinitionAttribute") ||
+				(a.TypeFullName == "Cornerstone.Presentation.Metadata.XmlnsDefinitionAttribute") ||
 				(a.TypeFullName == "Portable.Xaml.Markup.XmlnsDefinitionAttribute")))
 		{
 			var ns = attr.ConstructorArguments[1].Value?.ToString();
@@ -981,13 +1339,14 @@ public static class MetadataConverter
 		//look like we don't have xmlns for avalonia.layout TODO: add it in avalonia
 		//may be don 't remove it for avalonia 0.7 or below for support completion for layout enums etc.
 		aliases["Avalonia.Layout"] = ["https://github.com/avaloniaui"];
+		aliases["Cornerstone.Presentation.Layout"] = ["https://github.com/BobbyCannon/Cornerstone"];
 	}
 
 	#endregion
 
 	#region Records
 
-	private record AvaresInfo(
+	private record CsresInfo(
 		IAssemblyInformation Assembly,
 		string ReturnTypeFullName,
 		string LocalUrl,

@@ -20,7 +20,7 @@ public static class DispatchableExtensions
 	/// <param name="dispatchable"> The dispatchable to use. </param>
 	/// <param name="action"> The action to be executed. </param>
 	/// <param name="priority"> An optional priority for the action. </param>
-	public static void Dispatch(this IDispatchable dispatchable, Action action, DispatcherPriority priority = DispatcherPriority.Normal)
+	public static void Dispatch(this IDispatchable dispatchable, Action action, DispatcherPriority priority = default)
 	{
 		var dispatcher = dispatchable.GetDispatcher();
 		if (dispatcher.ShouldDispatch())
@@ -38,7 +38,7 @@ public static class DispatchableExtensions
 	/// <param name="dispatchable"> The dispatchable to use. </param>
 	/// <param name="action"> The action to be executed. </param>
 	/// <param name="priority"> An optional priority for the action. </param>
-	public static T Dispatch<T>(this IDispatchable dispatchable, Func<T> action, DispatcherPriority priority = DispatcherPriority.Normal)
+	public static T Dispatch<T>(this IDispatchable dispatchable, Func<T> action, DispatcherPriority priority = default)
 	{
 		var dispatcher = dispatchable.GetDispatcher();
 		return dispatcher.ShouldDispatch()
@@ -52,7 +52,7 @@ public static class DispatchableExtensions
 	/// <param name="dispatchable"> The dispatchable to use. </param>
 	/// <param name="action"> The action to be executed. </param>
 	/// <param name="priority"> An optional priority for the action. </param>
-	public static Task DispatchAsync(this IDispatchable dispatchable, Action action, DispatcherPriority priority = DispatcherPriority.Normal)
+	public static Task DispatchAsync(this IDispatchable dispatchable, Action action, DispatcherPriority priority = default)
 	{
 		var dispatcher = dispatchable.GetDispatcher();
 		if (dispatcher.ShouldDispatch())
@@ -70,7 +70,7 @@ public static class DispatchableExtensions
 	/// <param name="dispatchable"> The dispatchable to use. </param>
 	/// <param name="action"> The action to be executed. </param>
 	/// <param name="priority"> An optional priority for the action. </param>
-	public static Task<T2> DispatchAsync<T2>(this IDispatchable dispatchable, Func<T2> action, DispatcherPriority priority = DispatcherPriority.Normal)
+	public static Task<T2> DispatchAsync<T2>(this IDispatchable dispatchable, Func<T2> action, DispatcherPriority priority = default)
 	{
 		var dispatcher = dispatchable.GetDispatcher();
 		if (dispatcher.ShouldDispatch())
@@ -88,12 +88,12 @@ public static class DispatchableExtensions
 	/// <param name="dispatchable"> The dispatchable to use. </param>
 	/// <param name="action"> The action to be executed. </param>
 	/// <param name="priority"> An optional priority for the action. </param>
-	public static void DispatchPost(this IDispatchable dispatchable, Action action, DispatcherPriority priority = DispatcherPriority.Normal)
+	public static void DispatchPost(this IDispatchable dispatchable, Action action, DispatcherPriority priority = default)
 	{
 		var dispatcher = dispatchable.GetDispatcher();
 		if (dispatcher.ShouldDispatch())
 		{
-			dispatcher.DispatchPost(action, priority);
+			dispatcher.Post(action, priority);
 			return;
 		}
 
@@ -108,7 +108,7 @@ public static class DispatchableExtensions
 	public static bool ShouldDispatch(this IDispatchable dispatchable)
 	{
 		var dispatcher = dispatchable.GetDispatcher();
-		return dispatcher is { IsEnabled: true, IsDispatcherThread: false };
+		return !dispatcher?.CheckAccess() ?? false;
 	}
 
 	#endregion

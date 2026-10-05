@@ -11,7 +11,7 @@ public sealed class CleanupOptions
 {
 	#region Constants
 
-	public const string DefaultFileExtensions = ".axaml;.xaml";
+	public const string DefaultFileExtensions = ".cxaml;.axaml";
 	public const int DefaultIndentSize = 2;
 	public const long DefaultMaxFileBytes = 5 * 1024 * 1024;
 

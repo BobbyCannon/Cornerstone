@@ -8,7 +8,7 @@ using EnvDTE;
 namespace Cornerstone.VisualStudio.Models;
 
 /// <summary>
-/// Represents an executable target for the <see cref="AvaloniaDesigner" /> previewer.
+/// Represents an executable target for the <see cref="CornerstoneDesigner" /> previewer.
 /// </summary>
 internal class DesignerRunTarget
 {
@@ -20,7 +20,7 @@ internal class DesignerRunTarget
 	public string ExecutableAssembly { get; set; }
 
 	/// <summary>
-	/// Gets the full path to the Avalonia.Designer.HostApp.dll to use.
+	/// Gets the full path to the designer HostApp.dll (Avalonia or Cornerstone).
 	/// </summary>
 	public string HostApp { get; set; }
 

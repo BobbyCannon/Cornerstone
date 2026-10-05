@@ -1,0 +1,66 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs.Inputs"
+		mc:Ignorable="d" d:DesignHeight="720" d:DesignWidth="720"
+		x:Class="Cornerstone.Sample.Tabs.Inputs.TabInputsShortcut"
+		x:DataType="tabs:TabInputsShortcut">
+	<DockPanel>
+		<Grid DockPanel.Dock="Top" Margin="10,14,10,6">
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="{x:Static tabs:TabInputsShortcut.HeaderName}" />
+		</Grid>
+		<ScrollViewer HorizontalScrollBarVisibility="Disabled">
+			<PreviewCodeSnippet>
+				<StackPanel Spacing="16">
+					<WrapPanel ItemSpacing="10" LineSpacing="10">
+						<ShortcutBox x:Name="Input"
+								MinWidth="200"
+								Gamepad="{Binding Gamepad}"
+								Watermark="enter shortcut">
+							<ShortcutBox.InnerRightContent>
+								<Button Click="ResetOnClick"
+										Classes="Icon Dim"
+										BorderThickness="0"
+										Height="30"
+										IsVisible="{Binding ElementName=Input, Path=Binding.HasBinding}">
+									<Path Data="{StaticResource Icons.Clear.All}" />
+								</Button>
+							</ShortcutBox.InnerRightContent>
+						</ShortcutBox>
+						<StackPanel Orientation="Horizontal" Spacing="4">
+							<TextBlock Text="Button:" VerticalAlignment="Center" />
+							<TextBlock Text="{Binding ElementName=Input, Path=Binding.GamepadButton}" VerticalAlignment="Center" />
+						</StackPanel>
+						<StackPanel Orientation="Horizontal" Spacing="4">
+							<TextBlock Text="Key" VerticalAlignment="Center" />
+							<TextBlock Text="{Binding ElementName=Input, Path=Binding.Key}" VerticalAlignment="Center" />
+						</StackPanel>
+						<StackPanel Orientation="Horizontal" Spacing="4">
+							<TextBlock Text="Modifiers:" VerticalAlignment="Center" />
+							<TextBlock Text="{Binding ElementName=Input, Path=Binding.KeyModifiers}" VerticalAlignment="Center" />
+						</StackPanel>
+					</WrapPanel>
+					<TextBlock Classes="Header" Text="Colors" />
+					<ItemsControl ItemsSource="{x:Static Theme.ThemeColors}">
+						<ItemsControl.ItemsPanel>
+							<ItemsPanelTemplate>
+								<WrapPanel ItemSpacing="10" LineSpacing="10" />
+							</ItemsPanelTemplate>
+						</ItemsControl.ItemsPanel>
+						<ItemsControl.ItemTemplate>
+							<DataTemplate DataType="ThemeColor">
+								<ShortcutBox Theme.Color="{Binding}"
+										MinWidth="120"
+										Watermark="{Binding}" />
+							</DataTemplate>
+						</ItemsControl.ItemTemplate>
+					</ItemsControl>
+				</StackPanel>
+			</PreviewCodeSnippet>
+		</ScrollViewer>
+	</DockPanel>
+</UserControl>

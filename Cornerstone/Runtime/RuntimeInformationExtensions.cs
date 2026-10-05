@@ -1,8 +1,4 @@
-﻿#region References
-
-#endregion
-
-namespace Cornerstone.Runtime;
+﻿namespace Cornerstone.Runtime;
 
 /// <summary>
 /// Extensions for RuntimeInformation.
@@ -42,12 +38,13 @@ public static class RuntimeInformationExtensions
 			ApplicationIsElevated = runtimeInformation.ApplicationIsElevated,
 			ApplicationIsLoaded = runtimeInformation.ApplicationIsLoaded,
 			ApplicationIsNativeBuild = runtimeInformation.ApplicationIsNativeBuild,
+			ApplicationIsReadyToRunBuild = runtimeInformation.ApplicationIsReadyToRunBuild,
 			ApplicationIsShuttingDown = runtimeInformation.ApplicationIsShuttingDown,
 			ApplicationLocation = runtimeInformation.ApplicationLocation,
 			ApplicationName = runtimeInformation.ApplicationName,
 			ApplicationStartup = runtimeInformation.ApplicationStartup,
 			ApplicationVersion = runtimeInformation.ApplicationVersion,
-			AvaloniaRuntimeVersion = runtimeInformation.AvaloniaRuntimeVersion,
+			CornerstoneRuntimeVersion = runtimeInformation.CornerstoneRuntimeVersion,
 			DeviceDisplayRefreshRate = runtimeInformation.DeviceDisplayRefreshRate,
 			DeviceDisplaySize = runtimeInformation.DeviceDisplaySize,
 			DeviceId = runtimeInformation.DeviceId,

@@ -261,7 +261,7 @@ public partial class ApplicationViewModel : LifecycleTracker<ViewModel>, IAppNav
 	/// after the feature loop when attached and dirty (no ordering of the feature list).
 	/// </summary>
 	/// <returns>
-	/// True when at least one <strong>feature</strong> ViewModel was applied.
+	/// True when at least one <strong> feature </strong> ViewModel was applied.
 	/// Diagnostics-only apply does not count — otherwise capture of IsDispatchActive
 	/// feeds back into Active↔Idle oscillation (dirty → apply → Active → quiet → Idle → dirty).
 	/// </returns>
@@ -319,30 +319,26 @@ public partial class ApplicationViewModel : LifecycleTracker<ViewModel>, IAppNav
 		return pending is not null;
 	}
 
-	void IAppDispatcher.Release(DispatchableViewModel dispatchableViewModel)
+	void IAppDispatcher.ApplyPendingTracks(DispatchableViewModel dispatchableViewModel)
 	{
-		if (dispatchableViewModel == null)
+		if ((dispatchableViewModel == null)
+			|| !dispatchableViewModel.IsAttached
+			|| !dispatchableViewModel.HasModelChanges())
 		{
 			return;
 		}
 
-		lock (_dispatchables)
+		_dispatcher.Dispatch(() =>
 		{
-			_dispatchables.Remove(dispatchableViewModel);
-		}
-	}
+			if (!dispatchableViewModel.IsAttached
+				|| !dispatchableViewModel.HasModelChanges())
+			{
+				return;
+			}
 
-	void IAppDispatcher.Track(DispatchableViewModel dispatchableViewModel)
-	{
-		if (dispatchableViewModel == null)
-		{
-			return;
-		}
-
-		lock (_dispatchables)
-		{
-			_dispatchables.Add(dispatchableViewModel);
-		}
+			dispatchableViewModel.ApplyModelChanges();
+			SystemProfiler?.Increment(ApplyScopeName);
+		});
 	}
 
 	private List<DispatchableViewModel> CollectPendingDispatchables()
@@ -383,6 +379,19 @@ public partial class ApplicationViewModel : LifecycleTracker<ViewModel>, IAppNav
 		timer = new IntervalTimer(ActiveInterval);
 		_activeTimer = timer;
 		return timer;
+	}
+
+	void IAppDispatcher.Release(DispatchableViewModel dispatchableViewModel)
+	{
+		if (dispatchableViewModel == null)
+		{
+			return;
+		}
+
+		lock (_dispatchables)
+		{
+			_dispatchables.Remove(dispatchableViewModel);
+		}
 	}
 
 	private async Task RunWorkerAsync(CancellationToken cancellationToken)
@@ -489,6 +498,21 @@ public partial class ApplicationViewModel : LifecycleTracker<ViewModel>, IAppNav
 	private void SelectView(object assemblyName)
 	{
 		TryToSelectViewByModel(assemblyName.ToString());
+	}
+
+	void IAppDispatcher.Track(DispatchableViewModel dispatchableViewModel)
+	{
+		if (dispatchableViewModel == null)
+		{
+			return;
+		}
+
+		lock (_dispatchables)
+		{
+			_dispatchables.Add(dispatchableViewModel);
+		}
+
+		RequestDispatch();
 	}
 
 	#endregion

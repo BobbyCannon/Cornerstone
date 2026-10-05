@@ -2,6 +2,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text.Json;
 using Cornerstone.Extensions;
@@ -74,6 +75,7 @@ public abstract class SettingsFile<T>
 	/// <summary>
 	/// Loads the settings from a byte[].
 	/// </summary>
+	[RequiresDynamicCode("Settings unpack may need runtime code generation.")]
 	public void Load(byte[] data)
 	{
 		try
@@ -99,6 +101,8 @@ public abstract class SettingsFile<T>
 	/// <summary>
 	/// Loads the settings from a string.
 	/// </summary>
+	[RequiresDynamicCode("JSON settings load may need runtime code generation.")]
+	[RequiresUnreferencedCode("JSON settings load may require unreferenced types.")]
 	public void Load(string data)
 	{
 		try
@@ -126,6 +130,8 @@ public abstract class SettingsFile<T>
 	/// <summary>
 	/// Loads the settings from a json file in the application data location.
 	/// </summary>
+	[UnconditionalSuppressMessage("Aot", "IL3050", Justification = "ILifecycle.LoadLifecycle cannot be annotated; JSON/bson load of settings.")]
+	[UnconditionalSuppressMessage("Trim", "IL2026", Justification = "ILifecycle.LoadLifecycle cannot be annotated; JSON/bson load of settings.")]
 	public override void LoadLifecycle()
 	{
 		var filePath = Path.Combine(_directory, _fileName);
@@ -162,6 +168,8 @@ public abstract class SettingsFile<T>
 	/// this type's PropertyChanged. Match SettingsManager: persist when either the
 	/// local dirty flag or HasChanges() is true.
 	/// </remarks>
+	[RequiresDynamicCode("JSON settings save may need runtime code generation.")]
+	[RequiresUnreferencedCode("JSON settings save may require unreferenced types.")]
 	public void Save(bool force = false)
 	{
 		if (!force && !_needsSaving && !HasChanges())

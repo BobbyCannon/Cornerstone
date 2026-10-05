@@ -2,20 +2,20 @@
 
 How Cornerstone hosts and navigates markdown documentation in-app.
 
-Related: [MarkdownView.md](MarkdownView.md) (parser + Avalonia control).
+Related: [MarkdownView.md](MarkdownView.md) (parser + Cornerstone.Presentation control).
 
 ---
 
 ## What it is
 
-A small Avalonia stack that turns a set of **known** `.md` files into a clickable reader:
+A small Cornerstone.Presentation stack that turns a set of **known** `.md` files into a clickable reader:
 
 | Piece | Role |
 |-------|------|
 | **`MarkdownView`** | Renders markdown; raises `LinkClicked` for `[text](href)` (including **links inside tables**); `ScrollToHome` on new file open; `ScrollToFragment` for heading links (`Controls`) |
-| **`DocumentationCatalog` / `DocumentationReader`** | Catalog + chrome (Back / Home / path / **Export**); namespace `Cornerstone.Avalonia.Documentation` |
-| **`DocumentationReaderHost`** | Shared WinExe entry: bootstrap, `--export` → `Catalog.Name` folder, open-`.md`, stock window |
-| **Thin host** | Application name, window title, Content packaging, optional open-arg resolver (Epic `EpicCoders/`) |
+| **`DocumentationCatalog` / `DocumentationReader`** | Catalog + chrome (Back / Home / path / **Export**); namespace `Cornerstone.Presentation.Theme.Documentation` |
+| **`DocumentationReaderHost`** | Shared WinExe entry: bootstrap, `--export` → `Catalog.Name` folder, `--export-include` / `appsettings.json` allowlist, open-`.md`, stock window |
+| **Thin host** | Application name, window title, window icon (`/Assets/…`), Content packaging, optional open-arg resolver |
 | **Embedded** | Sample `TabDocumentation` sets `Reader.Catalog` only (no `Host.Run`) |
 
 ```
@@ -44,12 +44,18 @@ A small Avalonia stack that turns a set of **known** `.md` files into a clickabl
 
 The reader **does not** open arbitrary disk paths. Every navigable page is registered in a `DocumentationCatalog`:
 
-- **Id / logical path** — e.g. `Readme.md`, `Agent/Sync.md`, or prefixed `cornerstone/Keystone.md`
+- **Id / logical path** — e.g. `Readme.md`, `Controls/MarkdownView.md`, or prefixed `Cornerstone/Keystone.md`
 - **Content** — usually `File.ReadAllText` for files copied next to the EXE
 
 ### Single-tree host (this project)
 
-`DocumentationCatalog.FromDirectory(AppContext.BaseDirectory, "Readme.md")` after MSBuild copies all `**/*.md` to the output directory.
+Markdown is **embedded** in the WinExe (`LogicalName` = catalog id with `/`). `BuildCatalog` uses `FromAssemblyResources` unless `ContentRoot` is set (tests). `appsettings.json` stays a loose file next to the EXE (`ExcludeFromSingleFile`). Release publish imports `Cornerstone/Build/SingleFile.props` (single-file, self-contained, ReadyToRun).
+
+```text
+dotnet publish Cornerstone.Documentation.csproj -c Release -r win-x64 --self-contained -p:DocumentationSingleFilePublish=true
+```
+
+Copy `*.exe` and `appsettings.json` from the publish folder. `-p:DocumentationSingleFilePublish=true` is required so referenced Cornerstone projects restore only `net10.0` (not browser/Mono).
 
 ### Multi-tree host (Sample)
 
@@ -58,21 +64,24 @@ Sample ships the same markdown two ways so **Desktop** and **Browser (WASM) / mo
 | Packaging | Runtime load | When |
 |-----------|--------------|------|
 | `Content` + `CopyToOutputDirectory` → `Documents/cornerstone/**` | `DocumentationCatalog.FromDirectory` | Desktop / host filesystem present |
-| `EmbeddedResource` with `LogicalName` like `Documents/cornerstone/Agent/Sync.md` | `DocumentationCatalog.FromAssemblyResources` | Browser WASM, Android, iOS (no Content filesystem) |
+| `EmbeddedResource` with `LogicalName` like `Documents/Cornerstone/Keystone.md` | `DocumentationCatalog.FromAssemblyResources` | Browser WASM, Android, iOS (no Content filesystem) |
 
-```xml
-<!-- Desktop: files next to the app -->
-<Content Include="..\Cornerstone.Documentation\**\*.md"
-         Link="Documents\cornerstone\%(RecursiveDir)%(Filename)%(Extension)"
-         CopyToOutputDirectory="PreserveNewest" />
-
-<!-- All platforms (required for WASM): embed with '/' LogicalNames -->
-<!-- See EmbedDocumentationMarkdown target in Cornerstone.Sample.csproj -->
-```
+Sample **embeds** markdown (`EmbedDocumentationMarkdown` in `Cornerstone.Sample.csproj`) with `LogicalName` `Documents/Cornerstone/...`. Private and in-progress trees are omitted from that catalog.
 
 `TabDocumentation` tries directory first, then assembly resources (`Documents/cornerstone/` prefix), then a monorepo source walk for local dev.
 
 Use a union catalog with `idPrefix` when combining multiple documentation trees.
+
+### Export allowlist
+
+The reader catalog is every packaged `.md`. Static export can be a subset:
+
+- Empty `ExportIncludePaths` (options, `appsettings.json` `Documentation:ExportIncludePaths`, and CLI) → export everything
+- Any prefixes → only matching ids (`Controls` includes `Controls/Foo.md`, not `ControlsExtra.md`)
+- Wildcards: `folder/*` or `folder/**` is everything under that folder; `*` is one path segment (`*.md`, `Documentation/*.md`); `**` is any depth
+- Union of Program.cs, `appsettings.json` next to the EXE, and repeatable `--export-include`
+
+New top-level folders stay off the public site until listed. Do not include a parent that contains private children.
 
 ---
 
@@ -80,7 +89,7 @@ Use a union catalog with `idPrefix` when combining multiple documentation trees.
 
 | Href | Behavior |
 |------|----------|
-| `Other.md` / `Agent/Foo.md` | Resolve relative to current document’s logical directory; navigate **only if** in catalog |
+| `Other.md` / `Controls/Foo.md` | Resolve relative to current document’s logical directory; navigate **only if** in catalog |
 | `#heading-id` | Stay on current doc; scroll to first matching heading |
 | `Other.md#heading-id` | Load other doc (if known), then scroll |
 | `http://` / `https://` | Open system browser |
@@ -107,6 +116,8 @@ Markdown still appears in Solution Explorer for editing; F5 launches the reader.
 - **Export** (toolbar, top right) writes the current catalog as static HTML + generated theme CSS. Pick a parent folder; files go into a subfolder named from `DocumentationCatalog.Name` (typically `IRuntimeInformation.ApplicationName`). The site opens in the system file browser when the write succeeds.
 - **CLI:** `dotnet run --project <host> -- --export <parent-dir>` (shared `DocumentationReaderHost`; writes `<parent>/<Catalog.Name>/`, exit `0` / `1`). Root `Documentation` also allows bare `--export` → `./site/<Catalog.Name>/`.
 - Toolbar **color** (default Blue), **density** (Compact / Normal / Large), and **light/dark** apply the same `CornerstoneTheme` tokens the rest of the host uses. The exported site repeats those controls in the page header (`data-theme-color` / `data-theme` / `data-density`, remembered in `localStorage`). Links use `--Theme-Accent`.
+- Toolbar **width** (icon before light/dark) switches the article column between the 920 reading measure and the full content width. `DocumentationReader.IsFullWidth` is the same switch.
+- The host remembers **window placement** and **reading width** in `ApplicationSettings.json`. The folder comes from `IRuntimeInformation`: `ApplicationDataLocation`, with `ApplicationName` appended when that folder is shared. Epic Coders Documentation and Cornerstone Documentation each keep their own file. Close writes the window bounds and `ReadingWidth` (`Column` or `Full`). The next launch restores both. `appsettings.json` stays the export allowlist.
 
 ---
 
@@ -114,9 +125,9 @@ Markdown still appears in Solution Explorer for editing; F5 launches the reader.
 
 | Item | Location |
 |------|----------|
-| Link parse + heading ids | `Cornerstone/Parsers/Markdown/MarkdownLink.cs` |
+| Link parse + heading ids | `Cornerstone/Text/Parsing/Markdown/MarkdownLink.cs` |
 | `TokenTypeLink` | `MarkdownTokenizer` / `MarkdownParser` |
-| View + fragment scroll | `Cornerstone.Avalonia/Controls/MarkdownView*` |
-| Catalog / reader / export / host | `Cornerstone.Avalonia/Documentation/*` (`DocumentationCatalog`, `DocumentationReader`, `DocumentationExportCommand`, `DocumentationReaderHost`, …) |
+| View + fragment scroll | `Cornerstone.Presentation.Theme/Controls/MarkdownView*` |
+| Catalog / reader / export / host | `Cornerstone.Presentation.Theme/Documentation/*` (`DocumentationCatalog`, `DocumentationReader`, `DocumentationExportCommand`, `DocumentationReaderHost`, …) |
 | Thin WinExes | `Documentation`, `Cornerstone.Documentation`, `Cornerstone.VisualStudio/Documentation` (`Program` + `App` stub) |
 | Sample tab | `Cornerstone.Sample/Tabs/TabDocumentation` (directory + embedded resources) |

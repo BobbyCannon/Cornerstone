@@ -1,0 +1,19 @@
+<ProjectSchemaDefinitions xmlns="http://schemas.microsoft.com/build/2009/properties">
+    <ContentType
+        Name="CornerstoneXaml"
+        DisplayName="Cornerstone XAML"
+        ItemType="CornerstoneXaml">
+      <NameValuePair Name="DependentFileExtensions" Value=".cs" />
+      <NameValuePair Name="DefaultMetadata_SubType" Value="Designer" />
+    </ContentType>
+
+    <ItemType Name="CornerstoneXaml" DisplayName="Cornerstone XAML" />
+    <FileExtension Name=".cxaml" ContentType="CornerstoneXaml" />
+    <FileExtension Name=".axaml" ContentType="CornerstoneXaml" />
+    <FileExtension Name=".paml" ContentType="CornerstoneXaml" />
+    <ContentType
+        Name="CornerstoneResource"
+        DisplayName="Cornerstone Resource"
+        ItemType="CornerstoneResource"
+    />
+</ProjectSchemaDefinitions>

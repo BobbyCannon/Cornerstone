@@ -1,0 +1,153 @@
+<Styles xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:completion="clr-namespace:Cornerstone.Presentation.Controls.Text.Completion;assembly=Cornerstone.Presentation">
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ControlTheme x:Key="{x:Type TextEditor}"
+					TargetType="TextEditor">
+				<Setter Property="Background" Value="{DynamicResource Background03}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+				<Setter Property="BorderThickness" Value="1" />
+				<Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}" />
+				<Setter Property="FontFamily" Value="{x:Static CornerstoneTheme.DejaVuSansMono}" />
+				<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+				<Setter Property="Foreground" Value="{DynamicResource Foreground03}" />
+				<Setter Property="Padding" Value="8" />
+				<Setter Property="Focusable" Value="True" />
+				<Setter Property="UseLayoutRounding" Value="True" />
+				<Setter Property="(TextInputOptions.Multiline)" Value="True" />
+				<Setter Property="Template">
+					<ControlTemplate>
+						<Border Background="{TemplateBinding Background}"
+								BorderThickness="{TemplateBinding BorderThickness}"
+								BorderBrush="{TemplateBinding BorderBrush}"
+								CornerRadius="{TemplateBinding CornerRadius}">
+							<Grid ColumnDefinitions="Auto,*">
+								<Popup x:Name="PART_CompletionPopup"
+										Grid.Column="1"
+										Focusable="False"
+										IsLightDismissEnabled="True"
+										OverlayDismissEventPassThrough="True"
+										Placement="AnchorAndGravity"
+										PlacementAnchor="TopLeft"
+										PlacementGravity="BottomRight">
+									<Border Background="{DynamicResource Background02}"
+											BorderBrush="{DynamicResource BorderBrush}"
+											BorderThickness="1"
+											CornerRadius="{StaticResource ControlCornerRadius}"
+											MaxHeight="280"
+											MinWidth="180"
+											Padding="0">
+										<ListBox x:Name="PART_CompletionList"
+												Focusable="False"
+												MaxHeight="280"
+												ItemsSource="{Binding ViewModel.CompletionManager.VisibleItems, RelativeSource={RelativeSource TemplatedParent}}"
+												SelectedItem="{Binding ViewModel.CompletionManager.SelectedItem, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+											<ListBox.ItemTemplate>
+												<DataTemplate x:DataType="completion:CompletionItem">
+													<TextBlock Text="{Binding DisplayText}" />
+												</DataTemplate>
+											</ListBox.ItemTemplate>
+										</ListBox>
+									</Border>
+								</Popup>
+								<Border Grid.Column="0"
+										Background="Transparent"
+										BorderThickness="0"
+										ClipToBounds="False"
+										CornerRadius="0"
+										IsVisible="{TemplateBinding ShowMargins}">
+									<ItemsControl
+											Background="Transparent"
+											ClipToBounds="False"
+											ItemsSource="{TemplateBinding LeftMargins}"
+											Padding="{TemplateBinding Padding}">
+										<ItemsControl.ItemsPanel>
+											<ItemsPanelTemplate>
+												<StackPanel Background="Transparent" Orientation="Horizontal" Spacing="0" />
+											</ItemsPanelTemplate>
+										</ItemsControl.ItemsPanel>
+									</ItemsControl>
+								</Border>
+								<ScrollViewer Grid.Column="1"
+										x:Name="PART_ScrollViewer"
+										Focusable="False"
+										AllowAutoHide="{TemplateBinding ScrollViewer.AllowAutoHide}"
+										HorizontalScrollBarVisibility="{TemplateBinding HorizontalScrollBarVisibility}"
+										VerticalScrollBarVisibility="Auto"
+										Padding="{TemplateBinding Padding}">
+									<TextRenderer Name="PART_TextRenderer"
+											Cursor="IBeam"
+											CurrentLineBackground="{DynamicResource Background02}"
+											Foreground="{TemplateBinding Foreground}"
+											FontFamily="{Binding FontFamily, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+											FontSize="{Binding FontSize, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+											FontWeight="{Binding FontWeight, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+											FontStyle="{Binding FontStyle, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+											Profiler="{Binding Profiler, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+											ViewModel="{Binding ViewModel, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" />
+								</ScrollViewer>
+							</Grid>
+						</Border>
+					</ControlTemplate>
+				</Setter>
+				<Setter Property="ContextMenu">
+					<Setter.Value>
+						<ContextMenu>
+							<MenuItem x:Name="TextEditorContextFlyoutCutItem"
+									Header="Cut"
+									Command="{Binding $parent[TextEditor].ViewModel.Clipboard.CutCommand}"
+									InputGesture="{x:Static TextBox.CutGesture}">
+								<MenuItem.Icon>
+									<Path Data="{StaticResource Icons.Cut}" />
+								</MenuItem.Icon>
+							</MenuItem>
+							<MenuItem x:Name="TextEditorContextFlyoutCopyItem"
+									Header="Copy"
+									Command="{Binding $parent[TextEditor].ViewModel.Clipboard.CopyCommand}"
+									InputGesture="{x:Static TextBox.CopyGesture}">
+								<MenuItem.Icon>
+									<Path Data="{StaticResource Icons.Copy}" />
+								</MenuItem.Icon>
+							</MenuItem>
+							<MenuItem x:Name="TextEditorContextFlyoutPasteItem"
+									Header="Paste"
+									Command="{Binding $parent[TextEditor].ViewModel.Clipboard.PasteCommand}"
+									InputGesture="{x:Static TextBox.PasteGesture}">
+								<MenuItem.Icon>
+									<Path Data="{StaticResource Icons.Paste.Outline}" />
+								</MenuItem.Icon>
+							</MenuItem>
+						</ContextMenu>
+					</Setter.Value>
+				</Setter>
+			</ControlTheme>
+		</ResourceDictionary>
+	</Styles.Resources>
+	<Design.PreviewWith>
+		<PreviewCodeSnippet Height="430" Width="600">
+			<Grid RowDefinitions="Auto,*">
+				<WrapPanel Grid.Row="0"
+						ItemSpacing="20"
+						LineSpacing="20"
+						Margin="0,0,0,10">
+					<NumericUpDown x:Name="FontSize2"
+							ControlHelper.DisplayName="FontSize"
+							FormatString="0"
+							HorizontalContentAlignment="Center"
+							Minimum="10"
+							Maximum="40"
+							Value="{Binding ElementName=Editor, Path=FontSize}"
+							Width="200" />
+					<CheckBox IsChecked="{Binding ElementName=Editor, Path=ViewModel.ShowLineNumbers}">Line Numbers</CheckBox>
+					<CheckBox IsChecked="{Binding ElementName=Editor, Path=ViewModel.WordWrap}">Word Wrap</CheckBox>
+				</WrapPanel>
+				<TextEditor x:Name="Editor"
+						Grid.Row="1"
+						FontSize="20"
+						ScrollViewer.AllowAutoHide="false"
+						Text="aoeuthoeu&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;taoheunth&#x0a;" />
+			</Grid>
+		</PreviewCodeSnippet>
+	</Design.PreviewWith>
+</Styles>

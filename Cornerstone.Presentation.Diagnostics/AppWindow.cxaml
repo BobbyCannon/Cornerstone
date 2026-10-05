@@ -1,0 +1,18 @@
+<Window xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:diag="clr-namespace:Cornerstone.Presentation.Diagnostics"
+		Title="Cornerstone DiagnosticTools"
+		x:Class="Cornerstone.Presentation.Diagnostics.AppWindow"
+		x:DataType="diag:AppViewModel">
+	<Window.DataTemplates>
+		<diag:ViewLocator />
+	</Window.DataTemplates>
+	<Window.Styles>
+		<CornerstoneTheme />
+		<StyleInclude Source="/Controls/ThicknessEditor.cxaml" />
+		<StyleInclude Source="/Controls/FilterTextBox.cxaml" />
+		<StyleInclude Source="/Controls/BrushEditor.cxaml" />
+		<StyleInclude Source="csres://Cornerstone.Presentation/Controls/ColorPickers/Themes/Simple/Simple.xaml" />
+	</Window.Styles>
+	<diag:AppView />
+</Window>

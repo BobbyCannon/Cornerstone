@@ -1,5 +1,6 @@
 ﻿#region References
 
+using System.Diagnostics.CodeAnalysis;
 using Cornerstone.Extensions;
 using Cornerstone.Presentation;
 using Cornerstone.Reflection;
@@ -27,6 +28,8 @@ public partial class AndroidPlatformCredentialVault : PlatformCredentialVault
 
 	#region Methods
 
+	[UnconditionalSuppressMessage("Aot", "IL3050", Justification = "Base TryReadData cannot be annotated; JSON parse of vault payloads.")]
+	[UnconditionalSuppressMessage("Trim", "IL2026", Justification = "Base TryReadData cannot be annotated; JSON parse of vault payloads.")]
 	public override bool TryReadData<T>(string key, out T data)
 	{
 		var storeKey = GetVaultKey(key);
@@ -49,6 +52,8 @@ public partial class AndroidPlatformCredentialVault : PlatformCredentialVault
 		return SecureStorage.Default.Remove(keyName);
 	}
 
+	[UnconditionalSuppressMessage("Aot", "IL3050", Justification = "Base TryWriteData cannot be annotated; JSON write of vault payloads.")]
+	[UnconditionalSuppressMessage("Trim", "IL2026", Justification = "Base TryWriteData cannot be annotated; JSON write of vault payloads.")]
 	public override bool TryWriteData<T>(string key, T data)
 	{
 		var storeKey = GetVaultKey(key);

@@ -2,13 +2,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml;
 using Cornerstone.VisualStudio.Core.Completion;
 using Cornerstone.VisualStudio.Models;
+using Cornerstone.VisualStudio.Protocol;
+using Cornerstone.VisualStudio.Services;
 using Cornerstone.VisualStudio.SuggestedActions.Actions;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
@@ -28,9 +27,17 @@ internal class SuggestedActionsSource : ISuggestedActionsSource
 	private readonly IDifferenceBufferFactoryService _diffBufferFactory;
 	private readonly IWpfDifferenceViewerFactoryService _diffFactory;
 	private readonly SuggestedActionsSourceProvider _factory;
+	private readonly object _suggestionGate;
 	private readonly ITextBuffer _textBuffer;
 	private readonly ITextEditorFactoryService _textEditorFactoryService;
 	private readonly ITextView _textView;
+	private string _suggestionAlias;
+	private string _suggestionType;
+	private int _suggestionVersion;
+	private LookupNamespaceResponseMessage _suggestion;
+	private ConvertGridDefinitionsResponseMessage _grid;
+	private int _gridCaret;
+	private int _gridVersion;
 
 	#endregion
 
@@ -47,6 +54,14 @@ internal class SuggestedActionsSource : ISuggestedActionsSource
 		_bufferFactory = bufferFactory;
 		_textEditorFactoryService = textEditorFactoryService;
 		_textView = textView;
+		_suggestionGate = new object();
+		_suggestionAlias = string.Empty;
+		_suggestionType = string.Empty;
+		_suggestionVersion = -1;
+		_suggestion = null;
+		_grid = null;
+		_gridCaret = -1;
+		_gridVersion = -1;
 	}
 
 	#endregion
@@ -60,42 +75,85 @@ internal class SuggestedActionsSource : ISuggestedActionsSource
 	public IEnumerable<SuggestedActionSet> GetSuggestedActions(ISuggestedActionCategorySet requestedActionCategories, SnapshotSpan range,
 		CancellationToken cancellationToken)
 	{
-		var availableSuggestedActions = SuggestedActionsAreAvailable(range);
-		if (TryGetWordUnderCaret(out var extent) && (availableSuggestedActions.Item1 || availableSuggestedActions.Item2 || availableSuggestedActions.Item3))
+		try
 		{
-			extent.Span.Snapshot.TextBuffer.Properties.TryGetProperty<XamlBufferMetadata>(typeof(XamlBufferMetadata), out var metadata);
-			var trackingSpan = range.Snapshot.CreateTrackingSpan(extent.Span, SpanTrackingMode.EdgeInclusive);
-			ISuggestedAction suggestedAction = null;
-			if (availableSuggestedActions.Item1)
+			var actions = new List<ISuggestedAction>();
+			if (TryGetWordUnderCaret(out var extent))
 			{
-				suggestedAction = new MissingNamespaceAndAliasSuggestedAction(trackingSpan, _diffFactory, _diffBufferFactory, _bufferFactory, _textEditorFactoryService,
-					metadata.CompletionMetadata.InverseNamespace, CompletionEngine.GetNamespaceAliases(extent.Span.Snapshot.TextBuffer.CurrentSnapshot.GetText()));
+				var suggestion = CurrentSuggestion(extent.Span.GetText(), extent.Span.Snapshot.Version.VersionNumber);
+				if ((suggestion != null) && string.IsNullOrEmpty(suggestion.Error) && (suggestion.Kind != LookupNamespaceResponseMessage.KindNone))
+				{
+					var trackingSpan = range.Snapshot.CreateTrackingSpan(extent.Span, SpanTrackingMode.EdgeInclusive);
+					var aliases = CompletionEngine.GetNamespaceAliases(extent.Span.Snapshot.GetText());
+					if (suggestion.Kind == LookupNamespaceResponseMessage.KindAddNamespaceAndAlias)
+					{
+						actions.Add(new MissingNamespaceAndAliasSuggestedAction(trackingSpan, _diffFactory, _diffBufferFactory, _bufferFactory, _textEditorFactoryService,
+							suggestion.XmlNamespace, suggestion.Alias, aliases));
+					}
+					else if (suggestion.Kind == LookupNamespaceResponseMessage.KindUseAlias)
+					{
+						actions.Add(new MissingAliasSuggestedAction(trackingSpan, _diffFactory, _diffBufferFactory, _bufferFactory, _textEditorFactoryService,
+							suggestion.XmlNamespace, suggestion.Alias));
+					}
+					else if (suggestion.Kind == LookupNamespaceResponseMessage.KindAddNamespace)
+					{
+						actions.Add(new MissingNamespaceSuggestedAction(trackingSpan, _diffFactory, _diffBufferFactory, _bufferFactory, _textEditorFactoryService,
+							suggestion.XmlNamespace, aliases, suggestion.Alias));
+					}
+				}
 			}
-			else if (availableSuggestedActions.Item2)
+
+			var grid = CurrentGrid();
+			if ((grid != null) && (grid.CanConvert != 0) && string.IsNullOrEmpty(grid.Error))
 			{
-				suggestedAction = new MissingAliasSuggestedAction(trackingSpan, _diffFactory, _diffBufferFactory, _bufferFactory, _textEditorFactoryService,
-					metadata.CompletionMetadata.InverseNamespace);
+				var gridSpan = range.Snapshot.CreateTrackingSpan(new Span(grid.RemoveStart, grid.RemoveLength), SpanTrackingMode.EdgeInclusive);
+				actions.Add(new ConvertGridDefinitionsSuggestedAction(gridSpan, _diffFactory, _diffBufferFactory, _bufferFactory, _textEditorFactoryService,
+					grid.AttributeName, grid.AttributeValue, grid.RemoveStart, grid.RemoveLength, grid.InsertAt, grid.Insertion, grid.DisplayText));
 			}
-			else if (availableSuggestedActions.Item3)
+
+			if (actions.Count == 0)
 			{
-				HasAlias(out var alias);
-				suggestedAction = new MissingNamespaceSuggestedAction(trackingSpan, _diffFactory, _diffBufferFactory, _bufferFactory, _textEditorFactoryService,
-					metadata.CompletionMetadata.InverseNamespace, CompletionEngine.GetNamespaceAliases(extent.Span.Snapshot.TextBuffer.CurrentSnapshot.GetText()), alias);
+				return [];
 			}
-			return [new SuggestedActionSet(null, [suggestedAction])];
+
+			return [new SuggestedActionSet(null, actions)];
 		}
+		catch
+		{
+			// Lightbulb must not throw; VS queries this on caret/F12.
+		}
+
 		return [];
 	}
 
-	public Task<bool> HasSuggestedActionsAsync(ISuggestedActionCategorySet requestedActionCategories, SnapshotSpan range, CancellationToken cancellationToken)
+	public async Task<bool> HasSuggestedActionsAsync(ISuggestedActionCategorySet requestedActionCategories, SnapshotSpan range, CancellationToken cancellationToken)
 	{
-		var availableSuggestedActions = SuggestedActionsAreAvailable(range);
-		if (availableSuggestedActions.Item1 || availableSuggestedActions.Item2 || availableSuggestedActions.Item3)
+		try
 		{
-			return Task.FromResult(true);
+			if (cancellationToken.IsCancellationRequested)
+			{
+				return false;
+			}
+
+			var hasNamespace = false;
+			if (TryGetWordUnderCaret(out var extent))
+			{
+				var suggestion = await LookupAsync(extent, cancellationToken).ConfigureAwait(true);
+				hasNamespace = (suggestion != null) &&
+					string.IsNullOrEmpty(suggestion.Error) &&
+					(suggestion.Kind != LookupNamespaceResponseMessage.KindNone);
+			}
+
+			var grid = await LookupGridAsync(cancellationToken).ConfigureAwait(true);
+			var hasGrid = (grid != null) && string.IsNullOrEmpty(grid.Error) && (grid.CanConvert != 0);
+			return hasNamespace || hasGrid;
+		}
+		catch
+		{
+			// Lightbulb must not throw; VS queries this on caret/F12 and a debugger break blocks Go To Definition.
 		}
 
-		return Task.FromResult(false);
+		return false;
 	}
 
 	public bool TryGetTelemetryId(out Guid telemetryId)
@@ -111,22 +169,38 @@ internal class SuggestedActionsSource : ISuggestedActionsSource
 
 	private bool HasAlias(out string alias)
 	{
-		var span = _textView.Caret.ContainingTextViewLine.Extent.GetText().Trim();
-		var xmlReader = XmlReader.Create(new StringReader(span));
-		try
-		{
-			xmlReader.Read();
-		}
-		catch
-		{
-			if ((xmlReader.NodeType == XmlNodeType.Element) && !string.IsNullOrEmpty(xmlReader.Prefix))
-			{
-				alias = xmlReader.Prefix;
-				return true;
-			}
-		}
 		alias = null;
-		return false;
+		var span = _textView.Caret.ContainingTextViewLine.Extent.GetText();
+		var start = span.IndexOf('<');
+		if (start < 0)
+		{
+			return false;
+		}
+
+		var i = start + 1;
+		if ((i < span.Length) && (span[i] == '/'))
+		{
+			i++;
+		}
+
+		var nameStart = i;
+		while ((i < span.Length) && IsXmlNameChar(span[i]))
+		{
+			i++;
+		}
+
+		if ((i >= span.Length) || (span[i] != ':') || (i == nameStart))
+		{
+			return false;
+		}
+
+		alias = span.Substring(nameStart, i - nameStart);
+		return alias.Length > 0;
+	}
+
+	private static bool IsXmlNameChar(char c)
+	{
+		return char.IsLetterOrDigit(c) || (c == '_') || (c == '.');
 	}
 
 	/// <returns>
@@ -134,38 +208,106 @@ internal class SuggestedActionsSource : ISuggestedActionsSource
 	/// Second one defines whether MissingAliasSuggestedAction should be applied.
 	/// Third one defines whether MissingNamespaceSuggestedAction should be applied.
 	/// </returns>
-	private (bool, bool, bool) SuggestedActionsAreAvailable(SnapshotSpan range)
+	private LookupNamespaceResponseMessage CurrentSuggestion(string typeName, int version)
 	{
-		if (TryGetWordUnderCaret(out var extent))
+		lock (_suggestionGate)
 		{
-			var span = range.Snapshot.CreateTrackingSpan(extent.Span, SpanTrackingMode.EdgeInclusive);
-			var snapshot = span.TextBuffer.CurrentSnapshot;
-			var targetClassName = span.GetText(snapshot);
-			span.TextBuffer.Properties.TryGetProperty<XamlBufferMetadata>(typeof(XamlBufferMetadata), out var metadata);
-			if ((metadata == null) || (metadata.CompletionMetadata?.InverseNamespace == null))
+			if ((_suggestion == null) || (_suggestionVersion != version) || (_suggestionType != typeName))
 			{
-				return (false, false, false);
+				return null;
 			}
-			var targetClassMetadata = metadata.CompletionMetadata.InverseNamespace.FirstOrDefault(x => x.Key.Split('.').Last() == targetClassName);
 
-			// Exclude all classes from avaloniaui namespace because controls from this namespace are included by default.
-			if ((targetClassMetadata.Value != null) && (targetClassMetadata.Key != null) && !metadata.CompletionMetadata.Namespaces.First(x => x.Key == "https://github.com/avaloniaui").Value.ContainsKey(targetClassName))
-			{
-				if (!CompletionEngine.GetNamespaceAliases(span.TextBuffer.CurrentSnapshot.GetText()).ContainsValue(targetClassMetadata.Value))
-				{
-					if (!HasAlias(out _))
-					{
-						return (true, false, false);
-					}
-					return (false, false, true);
-				}
-				if (!HasAlias(out _))
-				{
-					return (false, true, false);
-				}
-			}
+			return _suggestion;
 		}
-		return (false, false, false);
+	}
+
+	private async Task<LookupNamespaceResponseMessage> LookupAsync(TextExtent extent, CancellationToken cancellationToken)
+	{
+		var snapshot = extent.Span.Snapshot;
+		var typeName = extent.Span.GetText();
+		var version = snapshot.Version.VersionNumber;
+		string alias;
+		var hasAlias = HasAlias(out alias);
+		var cached = CurrentSuggestion(typeName, version);
+		if ((cached != null) && (_suggestionAlias == (alias ?? string.Empty)))
+		{
+			return cached;
+		}
+
+		if (cancellationToken.IsCancellationRequested)
+		{
+			return null;
+		}
+
+		snapshot.TextBuffer.Properties.TryGetProperty(typeof(XamlBufferMetadata), out XamlBufferMetadata metadata);
+		var paths = metadata?.AssemblyPaths;
+		if ((paths == null) || (paths.Count == 0))
+		{
+			return null;
+		}
+
+		var pathList = new List<string>(paths.Count);
+		for (var i = 0; i < paths.Count; i++)
+		{
+			pathList.Add(paths[i]);
+		}
+
+		var response = await EditorHostSession.LookupNamespaceAsync(
+			snapshot.GetText(),
+			typeName,
+			hasAlias,
+			alias,
+			pathList).ConfigureAwait(true);
+		lock (_suggestionGate)
+		{
+			_suggestion = response;
+			_suggestionType = typeName;
+			_suggestionVersion = version;
+			_suggestionAlias = alias ?? string.Empty;
+		}
+
+		return response;
+	}
+
+	private ConvertGridDefinitionsResponseMessage CurrentGrid()
+	{
+		var snapshot = _textBuffer.CurrentSnapshot;
+		var caret = _textView.Caret.Position.BufferPosition.Position;
+		lock (_suggestionGate)
+		{
+			if ((_grid == null) || (_gridVersion != snapshot.Version.VersionNumber) || (_gridCaret != caret))
+			{
+				return null;
+			}
+
+			return _grid;
+		}
+	}
+
+	private async Task<ConvertGridDefinitionsResponseMessage> LookupGridAsync(CancellationToken cancellationToken)
+	{
+		var snapshot = _textBuffer.CurrentSnapshot;
+		var caret = _textView.Caret.Position.BufferPosition.Position;
+		var cached = CurrentGrid();
+		if (cached != null)
+		{
+			return cached;
+		}
+
+		if (cancellationToken.IsCancellationRequested)
+		{
+			return null;
+		}
+
+		var response = await EditorHostSession.ConvertGridDefinitionsAsync(snapshot.GetText(), caret).ConfigureAwait(true);
+		lock (_suggestionGate)
+		{
+			_grid = response;
+			_gridVersion = snapshot.Version.VersionNumber;
+			_gridCaret = caret;
+		}
+
+		return response;
 	}
 
 	private bool TryGetWordUnderCaret(out TextExtent wordExtent)

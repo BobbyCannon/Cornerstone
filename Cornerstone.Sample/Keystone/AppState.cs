@@ -24,19 +24,27 @@ public partial class AppState : KeystoneState
 	[DependencyInjectionConstructor]
 	public AppState(
 		AppSettings settings,
-		IRuntimeInformation runtimeInformation)
+		IRuntimeInformation runtimeInformation,
+		SyncFeatureState sync,
+		MeshFeatureState mesh)
 	{
 		Settings = Track(settings);
 		RuntimeInformation = runtimeInformation;
+		Sync = Track(sync);
+		Mesh = Track(mesh);
 	}
 
 	#endregion
 
 	#region Properties
 
+	public MeshFeatureState Mesh { get; }
+
 	public IRuntimeInformation RuntimeInformation { get; }
 
 	public AppSettings Settings { get; }
+
+	public SyncFeatureState Sync { get; }
 
 	#endregion
 }

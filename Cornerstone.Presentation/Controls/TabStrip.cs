@@ -1,0 +1,46 @@
+using Cornerstone.Presentation.Controls.Items;
+using Cornerstone.Presentation.Controls.Templates;
+using Cornerstone.Presentation.Input;
+using Cornerstone.Presentation.Interactivity;
+using Cornerstone.Presentation.Layout;
+using Cornerstone.Presentation.Controls.Layout;
+using Cornerstone.Presentation.Controls.Elements;
+
+namespace Cornerstone.Presentation.Controls
+{
+    public class TabStrip : SelectingItemsControl
+    {
+        private static readonly FuncTemplate<Panel?> DefaultPanel =
+            new(() => new WrapPanel { Orientation = Orientation.Horizontal });
+
+        static TabStrip()
+        {
+            SelectionModeProperty.OverrideDefaultValue<TabStrip>(SelectionMode.AlwaysSelected);
+            FocusableProperty.OverrideDefaultValue(typeof(TabStrip), false);
+            ItemsPanelProperty.OverrideDefaultValue<TabStrip>(DefaultPanel);
+        }
+
+        protected internal override Control CreateContainerForItemOverride(object? item, int index, object? recycleKey)
+        {
+            return new TabStripItem();
+        }
+
+        protected internal override bool NeedsContainerOverride(object? item, int index, out object? recycleKey)
+        {
+            return NeedsContainer<TabStripItem>(item, out recycleKey);
+        }
+
+        protected override bool ShouldTriggerSelection(Visual selectable, PointerEventArgs e) =>
+            e.Properties.PointerUpdateKind is PointerUpdateKind.LeftButtonPressed or PointerUpdateKind.LeftButtonReleased && base.ShouldTriggerSelection(selectable, e);
+
+        public override bool UpdateSelectionFromEvent(Control container, RoutedEventArgs eventArgs)
+        {
+            if (eventArgs is FocusChangedEventArgs { NavigationMethod: not NavigationMethod.Directional })
+            {
+                return false;
+            }
+
+            return base.UpdateSelectionFromEvent(container, eventArgs);
+        }
+    }
+}

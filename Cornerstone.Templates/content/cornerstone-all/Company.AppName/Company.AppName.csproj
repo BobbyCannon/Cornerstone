@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<CornerstoneUseCompiledBindingsByDefault>true</CornerstoneUseCompiledBindingsByDefault>
+	</PropertyGroup>
+	<ItemGroup>
+		<CornerstoneXaml Include="**\*.cxaml" Exclude="bin\**;obj\**" />
+		<CornerstoneResource Include="Assets\**" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Cornerstone" Version="CornerstoneVersionTemplateParameter" />
+		<PackageReference Include="Cornerstone.Presentation" Version="CornerstoneVersionTemplateParameter" />
+	</ItemGroup>
+</Project>

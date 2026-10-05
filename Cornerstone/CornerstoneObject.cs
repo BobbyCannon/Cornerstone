@@ -109,7 +109,7 @@ public abstract partial class CornerstoneObject : ILifecycle, ICloneable, INotif
 
 	public virtual object DeepCloneObject(int? maxDepth = null, IncludeExcludeSettings settings = null)
 	{
-		return this.DeepCloneUsingUpdateWith(GetType(), maxDepth, settings);
+		return this.DeepCloneUsingUpdateWith(maxDepth, settings);
 	}
 
 	public virtual void DisablePropertyChangeNotifications()

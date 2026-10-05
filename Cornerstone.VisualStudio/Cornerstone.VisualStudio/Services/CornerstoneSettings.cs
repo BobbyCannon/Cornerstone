@@ -39,11 +39,12 @@ public class CornerstoneSettings : ICornerstoneSettings
 	private bool _cleanupTrimTrailingWhitespace = true;
 	private Orientation _designerSplitOrientation;
 	private bool _designerSplitSwapped;
-	private AvaloniaDesignerView _designerView;
+	private CornerstoneDesignerView _designerView;
 	private LogEventLevel _minimumLogVerbosity;
 	private bool _modernSettingsSeeded;
 	private readonly WritableSettingsStore _settings;
 	private bool _showPreviewHostRunningInTab;
+	private bool _stopBuildOnFirstFailure;
 	private bool _usageTracking;
 	private string _zoomLevel;
 
@@ -55,8 +56,9 @@ public class CornerstoneSettings : ICornerstoneSettings
 	public CornerstoneSettings(SVsServiceProvider vsServiceProvider)
 	{
 		var shellSettingsManager = new ShellSettingsManager(vsServiceProvider);
-		_designerView = AvaloniaDesignerView.Split;
+		_designerView = CornerstoneDesignerView.Split;
 		_minimumLogVerbosity = LogEventLevel.Information;
+		_stopBuildOnFirstFailure = true;
 		_settings = shellSettingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
 		Load();
 	}
@@ -133,7 +135,7 @@ public class CornerstoneSettings : ICornerstoneSettings
 		set => SetField(ref _designerSplitSwapped, value);
 	}
 
-	public AvaloniaDesignerView DesignerView
+	public CornerstoneDesignerView DesignerView
 	{
 		get => _designerView;
 		set => SetField(ref _designerView, value);
@@ -153,6 +155,16 @@ public class CornerstoneSettings : ICornerstoneSettings
 	{
 		get => _showPreviewHostRunningInTab;
 		set => SetField(ref _showPreviewHostRunningInTab, value);
+	}
+
+	/// <summary>
+	/// When true, cancel the rest of the solution build after the first project fails.
+	/// Default is true.
+	/// </summary>
+	public bool StopBuildOnFirstFailure
+	{
+		get => _stopBuildOnFirstFailure;
+		set => SetField(ref _stopBuildOnFirstFailure, value);
 	}
 
 	/// <summary>
@@ -234,10 +246,10 @@ public class CornerstoneSettings : ICornerstoneSettings
 				SettingsKey,
 				nameof(DesignerSplitSwapped),
 				false);
-			DesignerView = (AvaloniaDesignerView) _settings.GetInt32(
+			DesignerView = (CornerstoneDesignerView) _settings.GetInt32(
 				SettingsKey,
 				nameof(DesignerView),
-				(int) AvaloniaDesignerView.Split);
+				(int) CornerstoneDesignerView.Split);
 			MinimumLogVerbosity = (LogEventLevel) _settings.GetInt32(
 				SettingsKey,
 				nameof(MinimumLogVerbosity),
@@ -246,6 +258,10 @@ public class CornerstoneSettings : ICornerstoneSettings
 				SettingsKey,
 				nameof(ShowPreviewHostRunningInTab),
 				false);
+			StopBuildOnFirstFailure = _settings.GetBoolean(
+				SettingsKey,
+				nameof(StopBuildOnFirstFailure),
+				true);
 			ModernSettingsSeeded = _settings.GetBoolean(
 				SettingsKey,
 				nameof(ModernSettingsSeeded),
@@ -317,6 +333,7 @@ public class CornerstoneSettings : ICornerstoneSettings
 			_settings.SetInt32(SettingsKey, nameof(DesignerView), (int) DesignerView);
 			_settings.SetInt32(SettingsKey, nameof(MinimumLogVerbosity), (int) MinimumLogVerbosity);
 			_settings.SetBoolean(SettingsKey, nameof(ShowPreviewHostRunningInTab), ShowPreviewHostRunningInTab);
+			_settings.SetBoolean(SettingsKey, nameof(StopBuildOnFirstFailure), StopBuildOnFirstFailure);
 			_settings.SetBoolean(SettingsKey, nameof(ModernSettingsSeeded), ModernSettingsSeeded);
 			_settings.SetString(SettingsKey, nameof(ZoomLevel), ZoomLevel);
 			_settings.SetBoolean(SettingsKey, nameof(UsageTracking), UsageTracking);
@@ -377,12 +394,16 @@ public interface ICornerstoneSettings : INotifyPropertyChanged
 	bool CleanupTrimTrailingWhitespace { get; set; }
 	Orientation DesignerSplitOrientation { get; set; }
 	bool DesignerSplitSwapped { get; set; }
-	AvaloniaDesignerView DesignerView { get; set; }
+	CornerstoneDesignerView DesignerView { get; set; }
 	LogEventLevel MinimumLogVerbosity { get; set; }
 	/// <summary>
 	/// When true, document tabs are prefixed with "•" while the previewer host is running.
 	/// </summary>
 	bool ShowPreviewHostRunningInTab { get; set; }
+	/// <summary>
+	/// When true, cancel the rest of the solution build after the first project fails.
+	/// </summary>
+	bool StopBuildOnFirstFailure { get; set; }
 	/// <summary>
 	/// True after legacy store values were copied into modern Extensibility Settings once.
 	/// </summary>

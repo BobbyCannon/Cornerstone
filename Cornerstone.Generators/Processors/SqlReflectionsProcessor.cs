@@ -90,9 +90,33 @@ internal sealed class SqlReflectionsProcessor : ITypeProcessor
 				builder.DecreaseIndent();
 				builder.WriteLine();
 
+				Dictionary<string, string> syncParamMap = null;
+				if (ShouldProcessSyncUpsert(columns))
+				{
+					builder.IndentWriteLine($"private static readonly string {type.FullyQualifiedSourceReflectorName}SyncUpsertSqlite =");
+					builder.IncreaseIndent();
+					builder.IndentWriteLine("\"\"\"");
+					syncParamMap = AppendSyncUpsertSqlite(builder, tableName, columns);
+					builder.IndentWriteLine("\"\"\";");
+					builder.DecreaseIndent();
+					builder.WriteLine();
+
+					builder.IndentWriteLine($"private static readonly string {type.FullyQualifiedSourceReflectorName}SyncUpsertSqlServer =");
+					builder.IncreaseIndent();
+					builder.IndentWriteLine("\"\"\"");
+					AppendSyncUpsertSqlServer(builder, tableName, columns);
+					builder.IndentWriteLine("\"\"\";");
+					builder.DecreaseIndent();
+					builder.WriteLine();
+				}
+
 				EmitGetPrimaryKeyParameters(builder, type, columns);
-				EmitGetInsertParameters(builder, type, columns, sqliteParamMap, "Sqlite");
-				EmitGetInsertParameters(builder, type, columns, sqlServerParamMap, "SqlServer");
+				EmitGetInsertParameters(builder, type, columns, sqliteParamMap, "GetUpsertParamsSqlite");
+				EmitGetInsertParameters(builder, type, columns, sqlServerParamMap, "GetUpsertParamsSqlServer");
+				if (syncParamMap != null)
+				{
+					EmitGetInsertParameters(builder, type, columns, syncParamMap, "GetSyncUpsertParams");
+				}
 			});
 	}
 
@@ -102,6 +126,38 @@ internal sealed class SqlReflectionsProcessor : ITypeProcessor
 	internal static bool ShouldProcess(SourceTypeInfo sourceTypeInfo)
 	{
 		return sourceTypeInfo.Attributes.Any(x => x.Name is NameSqlTableAttribute);
+	}
+
+	/// <summary>
+	/// True when the type has SyncId + ModifiedOn and SyncId is not the primary key.
+	/// </summary>
+	internal static bool ShouldProcessSyncUpsert(SourceTypeInfo sourceTypeInfo)
+	{
+		return ShouldProcess(sourceTypeInfo) && ShouldProcessSyncUpsert(GetSqlColumnProperties(sourceTypeInfo));
+	}
+
+	/// <summary>
+	/// True when the type inherits SyncEntity&lt;TKey&gt;. Used to emit a closed
+	/// SqlSyncableRepository&lt;T, TKey&gt; factory (AOT-safe, no MakeGenericType).
+	/// </summary>
+	internal static bool TryGetSyncEntityKeyGlobalName(SourceTypeInfo sourceTypeInfo, out string keyGlobalName)
+	{
+		keyGlobalName = null;
+		if (!ShouldProcess(sourceTypeInfo))
+		{
+			return false;
+		}
+
+		for (var current = sourceTypeInfo.TypeSymbol; current != null; current = current.BaseType)
+		{
+			if ((current.OriginalDefinition.Name == "SyncEntity") && (current.TypeArguments.Length == 1))
+			{
+				keyGlobalName = current.TypeArguments[0].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private static void AppendDeleteSqlite(CSharpCodeBuilder builder, string tableName, List<SourcePropertyInfo> columns)
@@ -120,7 +176,7 @@ internal sealed class SqlReflectionsProcessor : ITypeProcessor
 
 	private static void AppendTableSqlite(CSharpCodeBuilder builder, string tableName, List<SourcePropertyInfo> columns)
 	{
-		builder.IndentWriteLine($"CREATE TABLE IF NOT EXISTS \"{tableName}\"");
+		builder.IndentWriteLine($"CREATE TABLE \"{tableName}\"");
 		builder.IndentWrite("(");
 		builder.IncreaseIndent();
 
@@ -134,10 +190,7 @@ internal sealed class SqlReflectionsProcessor : ITypeProcessor
 			var sqlType = GetSqliteTypeFromSymbol(prop.PropertySymbol.Type);
 			builder.IndentWrite($"\"{columnName}\" {sqlType}");
 
-			if ((columnAttr == null)
-				|| (IsNullableSymbol(prop.PropertySymbol.Type)
-					&& TryGetNamedArg(columnAttr, "IsNullable", out bool isNullable)
-					&& !isNullable))
+			if (ShouldWriteNotNull(prop, columnAttr))
 			{
 				builder.Write(" NOT NULL");
 			}
@@ -150,8 +203,13 @@ internal sealed class SqlReflectionsProcessor : ITypeProcessor
 					: " PRIMARY KEY"
 				);
 			}
+			else if (IsUniqueColumn(columnAttr))
+			{
+				builder.Write(" UNIQUE");
+			}
 		}
 
+		AppendForeignKeys(builder, tableName, columns, false);
 		builder.WriteLine();
 		builder.DecreaseIndent();
 		builder.IndentWriteLine(");");
@@ -159,9 +217,6 @@ internal sealed class SqlReflectionsProcessor : ITypeProcessor
 
 	private static void AppendTableSqlServer(CSharpCodeBuilder builder, string tableName, List<SourcePropertyInfo> columns)
 	{
-		builder.IndentWriteLine($"IF NOT EXISTS (SELECT * FROM [sys].[tables] WHERE [name] = '{tableName}')");
-		builder.IndentWriteLine("BEGIN");
-		builder.IncreaseIndent();
 		builder.IndentWriteLine($"CREATE TABLE [{tableName}]");
 		builder.IndentWrite("(");
 		builder.IncreaseIndent();
@@ -177,8 +232,7 @@ internal sealed class SqlReflectionsProcessor : ITypeProcessor
 			var sqlType = GetSqlServerTypeFromSymbol(prop, columnAttr);
 			builder.IndentWrite($"\"{columnName}\" {sqlType}");
 
-			if (!IsNullableSymbol(prop.PropertySymbol.Type)
-				|| ((columnAttr != null) && TryGetNamedArg(columnAttr, "IsNullable", out bool isNullable) && !isNullable))
+			if (ShouldWriteNotNull(prop, columnAttr))
 			{
 				builder.Write(" NOT NULL");
 			}
@@ -204,11 +258,60 @@ internal sealed class SqlReflectionsProcessor : ITypeProcessor
 			builder.Write(")");
 		}
 
+		foreach (var uniqueColumn in columns
+			.Select(c => (prop: c, attr: GetSqlColumnAttributeInfo(c)))
+			.Where(c => IsUniqueColumn(c.attr) && !IsPrimaryKeyColumn(c.attr))
+			.Select(c => GetSqlColumnName(c.prop, c.attr)))
+		{
+			builder.WriteLine(",");
+			builder.IndentWrite($"CONSTRAINT UQ_{tableName}_{uniqueColumn} UNIQUE ([{uniqueColumn}])");
+		}
+
+		AppendForeignKeys(builder, tableName, columns, true);
 		builder.WriteLine();
 		builder.DecreaseIndent();
-		builder.IndentWriteLine(")");
-		builder.DecreaseIndent();
-		builder.IndentWriteLine("END");
+		builder.IndentWriteLine(");");
+	}
+
+	private static void AppendForeignKeys(CSharpCodeBuilder builder, string tableName, List<SourcePropertyInfo> columns, bool sqlServer)
+	{
+		foreach (var prop in columns)
+		{
+			var fkAttr = prop.Attributes.FirstOrDefault(a =>
+				(a.Name == "SqlForeignKeyAttribute") || (a.Name == "SqlForeignKey"));
+			if (fkAttr == null)
+			{
+				continue;
+			}
+
+			var principalTable = fkAttr.ConstructorArguments.Length > 0
+				? fkAttr.ConstructorArguments[0] as string
+				: null;
+			if (string.IsNullOrWhiteSpace(principalTable))
+			{
+				continue;
+			}
+
+			var principalColumn = "Id";
+			if (TryGetNamedArg(fkAttr, "PrincipalColumn", out string named) && !string.IsNullOrWhiteSpace(named))
+			{
+				principalColumn = named;
+			}
+
+			var columnAttr = GetSqlColumnAttributeInfo(prop);
+			var columnName = GetSqlColumnName(prop, columnAttr);
+			builder.WriteLine(",");
+			if (sqlServer)
+			{
+				builder.IndentWrite(
+					$"CONSTRAINT FK_{tableName}_{principalTable}_{columnName} FOREIGN KEY ([{columnName}]) REFERENCES [{principalTable}]([{principalColumn}])");
+			}
+			else
+			{
+				builder.IndentWrite(
+					$"FOREIGN KEY (\"{columnName}\") REFERENCES \"{principalTable}\" (\"{principalColumn}\")");
+			}
+		}
 	}
 
 	private static Dictionary<string, string> AppendUpsertSqlite(CSharpCodeBuilder builder, string tableName, List<SourcePropertyInfo> columns)
@@ -249,6 +352,125 @@ internal sealed class SqlReflectionsProcessor : ITypeProcessor
 		builder.IndentWriteLine($"RETURNING \"{pkColumnName}\";");
 
 		return paramMap.ToDictionary(x => x.Key, x => x.Value);
+	}
+
+	private static Dictionary<string, string> AppendSyncUpsertSqlite(CSharpCodeBuilder builder, string tableName, List<SourcePropertyInfo> columns)
+	{
+		var pkColumn = FindPrimaryKeyColumn(columns);
+		var syncIdColumn = FindSyncIdColumn(columns);
+		var modifiedOnColumn = FindModifiedOnColumn(columns);
+		var syncIdColumnName = GetSqlColumnName(syncIdColumn, GetSqlColumnAttributeInfo(syncIdColumn));
+		var modifiedOnColumnName = GetSqlColumnName(modifiedOnColumn, GetSqlColumnAttributeInfo(modifiedOnColumn));
+
+		var nonPkColumns = columns.Where(c => c.Name != pkColumn.Name).ToList();
+		var paramMap = new Dictionary<string, string>();
+		var index = 0;
+		foreach (var col in nonPkColumns)
+		{
+			paramMap[$"@p{index++}"] = col.Name;
+		}
+
+		var insertColumnNames = nonPkColumns
+			.Select(c => GetSqlColumnName(c, GetSqlColumnAttributeInfo(c)))
+			.ToArray();
+		var updateAssignments = paramMap
+			.Where(kvp => kvp.Value != syncIdColumn.Name)
+			.Select(kvp =>
+			{
+				var col = nonPkColumns.First(c => c.Name == kvp.Value);
+				var columnName = GetSqlColumnName(col, GetSqlColumnAttributeInfo(col));
+				return $"\"{columnName}\" = {kvp.Key}";
+			})
+			.ToArray();
+		var modifiedOnParam = paramMap.First(kvp => kvp.Value == modifiedOnColumn.Name).Key;
+
+		builder.IndentWrite($"INSERT INTO \"{tableName}\" (\"");
+		builder.Write(string.Join("\", \"", insertColumnNames));
+		builder.WriteLine("\")");
+		builder.IncreaseIndent();
+		builder.IndentWrite("VALUES (");
+		builder.Write(string.Join(", ", paramMap.Keys));
+		builder.WriteLine(")");
+		builder.DecreaseIndent();
+
+		builder.IndentWrite($"ON CONFLICT(\"{syncIdColumnName}\") DO UPDATE SET");
+		builder.IncreaseIndent();
+		for (var i = 0; i < updateAssignments.Length; i++)
+		{
+			builder.WriteLine(i > 0 ? "," : string.Empty);
+			builder.IndentWrite(updateAssignments[i]);
+		}
+
+		builder.WriteLine();
+		builder.DecreaseIndent();
+		builder.IndentWriteLine($"WHERE {modifiedOnParam} > \"{tableName}\".\"{modifiedOnColumnName}\"");
+		builder.IndentWriteLine($"RETURNING \"{GetSqlColumnName(pkColumn, GetSqlColumnAttributeInfo(pkColumn))}\";");
+
+		return paramMap;
+	}
+
+	private static Dictionary<string, string> AppendSyncUpsertSqlServer(CSharpCodeBuilder builder, string tableName, List<SourcePropertyInfo> columns)
+	{
+		var pkColumn = FindPrimaryKeyColumn(columns);
+		var syncIdColumn = FindSyncIdColumn(columns);
+		var modifiedOnColumn = FindModifiedOnColumn(columns);
+		var pkColumnName = GetSqlColumnName(pkColumn, GetSqlColumnAttributeInfo(pkColumn));
+		var syncIdColumnName = GetSqlColumnName(syncIdColumn, GetSqlColumnAttributeInfo(syncIdColumn));
+		var modifiedOnColumnName = GetSqlColumnName(modifiedOnColumn, GetSqlColumnAttributeInfo(modifiedOnColumn));
+
+		var nonPkColumns = columns.Where(c => c.Name != pkColumn.Name).ToList();
+		var nonPkColumnNames = nonPkColumns.Select(c => GetSqlColumnName(c, GetSqlColumnAttributeInfo(c))).ToList();
+		var updateColumnNames = nonPkColumns
+			.Where(c => c.Name != syncIdColumn.Name)
+			.Select(c => GetSqlColumnName(c, GetSqlColumnAttributeInfo(c)))
+			.ToList();
+
+		var paramMap = new Dictionary<string, string>();
+		var paramNames = new List<string>();
+		var index = 0;
+		foreach (var col in nonPkColumns)
+		{
+			var paramName = $"@p{index++}";
+			paramMap[paramName] = col.Name;
+			paramNames.Add(paramName);
+		}
+
+		builder.IndentWriteLine($"MERGE INTO [{tableName}] AS x");
+		builder.IndentWrite("USING (VALUES (");
+		builder.Write(string.Join(", ", paramNames));
+		builder.WriteLine("))");
+		builder.IncreaseIndent();
+		builder.IndentWrite("AS y ([");
+		builder.Write(string.Join("], [", nonPkColumnNames));
+		builder.WriteLine("])");
+		builder.DecreaseIndent();
+
+		builder.IndentWriteLine($"ON x.[{syncIdColumnName}] = y.[{syncIdColumnName}]");
+		builder.IndentWriteLine($"WHEN MATCHED AND y.[{modifiedOnColumnName}] > x.[{modifiedOnColumnName}] THEN");
+		builder.IncreaseIndent();
+		builder.IndentWrite("UPDATE SET");
+		builder.IncreaseIndent();
+		for (var i = 0; i < updateColumnNames.Count; i++)
+		{
+			builder.WriteLine(i > 0 ? "," : string.Empty);
+			builder.IndentWrite($"[{updateColumnNames[i]}] = y.[{updateColumnNames[i]}]");
+		}
+
+		builder.DecreaseIndent();
+		builder.WriteLine();
+		builder.DecreaseIndent();
+		builder.IndentWriteLine("WHEN NOT MATCHED THEN");
+		builder.IncreaseIndent();
+		builder.IndentWrite("INSERT ([");
+		builder.Write(string.Join("], [", nonPkColumnNames));
+		builder.WriteLine("])");
+		builder.IndentWrite("VALUES (");
+		builder.Write(string.Join(", ", nonPkColumnNames.Select(n => $"y.[{n}]")));
+		builder.WriteLine(")");
+		builder.IndentWriteLine($"OUTPUT inserted.[{pkColumnName}];");
+		builder.DecreaseIndent();
+
+		return paramMap;
 	}
 
 	private static Dictionary<string, string> AppendUpsertSqlServer(CSharpCodeBuilder builder, string tableName, List<SourcePropertyInfo> columns)
@@ -310,10 +532,10 @@ internal sealed class SqlReflectionsProcessor : ITypeProcessor
 	}
 
 	private static void EmitGetInsertParameters(CSharpCodeBuilder builder, SourceTypeInfo type,
-		List<SourcePropertyInfo> columns, Dictionary<string, string> paramToProperty, string providerSuffix)
+		List<SourcePropertyInfo> columns, Dictionary<string, string> paramToProperty, string methodName)
 	{
 		builder.WriteBlock(
-			$"public static global::System.Collections.Generic.IDictionary<string, (object, global::System.Type)> {type.FullyQualifiedSourceReflectorName}GetUpsertParams{providerSuffix}(object obj)",
+			$"public static global::System.Collections.Generic.IDictionary<string, (object, global::System.Type)> {type.FullyQualifiedSourceReflectorName}{methodName}(object obj)",
 			() =>
 			{
 				builder.IndentWriteLine($"var entity = ({type.FullyGlobalQualifiedName}) obj;");
@@ -342,15 +564,47 @@ internal sealed class SqlReflectionsProcessor : ITypeProcessor
 			});
 	}
 
+	private static SourcePropertyInfo FindColumnByName(List<SourcePropertyInfo> columns, string name)
+	{
+		return columns.FirstOrDefault(c => c.Name == name);
+	}
+
+	private static SourcePropertyInfo FindModifiedOnColumn(List<SourcePropertyInfo> columns)
+	{
+		return FindColumnByName(columns, "ModifiedOn");
+	}
+
 	private static SourcePropertyInfo FindPrimaryKeyColumn(List<SourcePropertyInfo> columns)
 	{
-		return columns.FirstOrDefault(p =>
-			{
-				var attr = GetSqlColumnAttributeInfo(p);
-				return (attr != null) && TryGetNamedArg(attr, "IsPrimaryKey", out bool isPk) && isPk;
-			})
+		return columns.FirstOrDefault(p => IsPrimaryKeyColumn(GetSqlColumnAttributeInfo(p)))
 			?? columns.FirstOrDefault(x => x.Name == "Id")
 			?? columns.FirstOrDefault();
+	}
+
+	private static SourcePropertyInfo FindSyncIdColumn(List<SourcePropertyInfo> columns)
+	{
+		return FindColumnByName(columns, "SyncId");
+	}
+
+	private static bool IsPrimaryKeyColumn(SourceAttributeInfo columnAttr)
+	{
+		return (columnAttr != null) && TryGetNamedArg(columnAttr, "IsPrimaryKey", out bool isPk) && isPk;
+	}
+
+	private static bool IsUniqueColumn(SourceAttributeInfo columnAttr)
+	{
+		return (columnAttr != null) && TryGetNamedArg(columnAttr, "IsUnique", out bool isUnique) && isUnique;
+	}
+
+	private static bool ShouldProcessSyncUpsert(List<SourcePropertyInfo> columns)
+	{
+		var pkColumn = FindPrimaryKeyColumn(columns);
+		var syncIdColumn = FindSyncIdColumn(columns);
+		var modifiedOnColumn = FindModifiedOnColumn(columns);
+		return (syncIdColumn != null)
+			&& (modifiedOnColumn != null)
+			&& (pkColumn != null)
+			&& (syncIdColumn.Name != pkColumn.Name);
 	}
 
 	private static IList<IPropertySymbol> GetAllProperties(INamedTypeSymbol type)
@@ -479,6 +733,21 @@ internal sealed class SqlReflectionsProcessor : ITypeProcessor
 		}
 
 		return typeSymbol.IsReferenceType;
+	}
+
+	/// <summary>
+	/// NOT NULL when the CLR type cannot be null, or [SqlTableColumn(IsNullable = false)] is set.
+	/// </summary>
+	private static bool ShouldWriteNotNull(SourcePropertyInfo prop, SourceAttributeInfo columnAttr)
+	{
+		if (!IsNullableSymbol(prop.PropertySymbol.Type))
+		{
+			return true;
+		}
+
+		return (columnAttr != null)
+			&& TryGetNamedArg(columnAttr, "IsNullable", out bool isNullable)
+			&& !isNullable;
 	}
 
 	private static string MapNonSpecialTypeToSqlite(ITypeSymbol type)

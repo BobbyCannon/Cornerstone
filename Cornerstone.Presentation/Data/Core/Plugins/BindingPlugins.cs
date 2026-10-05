@@ -1,0 +1,59 @@
+﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+
+namespace Cornerstone.Presentation.Data.Core.Plugins
+{
+    /// <summary>
+    /// Holds a registry of plugins used for bindings.
+    /// </summary>
+    [RequiresUnreferencedCode(TrimmingMessages.PropertyAccessorsRequiresUnreferencedCodeMessage)]
+    internal static class BindingPlugins
+    {
+        internal static readonly List<IPropertyAccessorPlugin> s_propertyAccessors = new()
+        {
+            new PresentationPropertyAccessorPlugin(),
+            new InpcPropertyAccessorPlugin(),
+        };
+
+        internal static readonly List<IDataValidationPlugin> s_dataValidators = new()
+        {
+            new IndeiValidationPlugin(),
+            new ExceptionValidationPlugin(),
+        };
+
+        internal static readonly List<IStreamPlugin> s_streamHandlers = new()
+        {
+            new TaskStreamPlugin(),
+            new ObservableStreamPlugin(),
+        };
+
+        [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "We're checking if dynamic code is supported.")]
+        static BindingPlugins()
+        {
+            // When building with AOT, don't create ReflectionMethodAccessorPlugin instance.
+            // This branch can be eliminated in compile time with AOT.
+            if (System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported)
+            {
+                s_propertyAccessors.Insert(1, new ReflectionMethodAccessorPlugin());
+            }
+        }
+
+        /// <summary>
+        /// An ordered collection of property accessor plugins that can be used to customize
+        /// the reading and subscription of property values on a type.
+        /// </summary>
+        public static IList<IPropertyAccessorPlugin> PropertyAccessors => s_propertyAccessors;
+
+        /// <summary>
+        /// An ordered collection of validation checker plugins that can be used to customize
+        /// the validation of view model and model data.
+        /// </summary>
+        public static IList<IDataValidationPlugin> DataValidators => s_dataValidators;
+
+        /// <summary>
+        /// An ordered collection of stream plugins that can be used to customize the behavior
+        /// of the '^' stream binding operator.
+        /// </summary>
+        public static IList<IStreamPlugin> StreamHandlers => s_streamHandlers;
+    }
+}

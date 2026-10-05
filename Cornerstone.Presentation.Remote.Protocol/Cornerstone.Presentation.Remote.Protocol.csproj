@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk" TreatAsLocalProperty="TargetFramework;TargetFrameworks">
+	<PropertyGroup>
+		<TargetFrameworks></TargetFrameworks>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<RootNamespace>Cornerstone.Presentation.Remote.Protocol</RootNamespace>
+		<AssemblyTitle>Cornerstone.Presentation.Remote.Protocol</AssemblyTitle>
+		<DefineConstants>$(DefineConstants);CORNERSTONE_REMOTE_PROTOCOL</DefineConstants>
+		<Nullable>disable</Nullable>
+		<NoWarn>$(NoWarn);CS8632</NoWarn>
+	</PropertyGroup>
+	<ItemGroup>
+		<Compile Include="..\Cornerstone.Presentation\TrimmingMessages.cs" Link="Shared\TrimmingMessages.cs" />
+		<Compile Include="..\Cornerstone.Presentation\Compatibility\TrimmingAttributes.cs" Link="Shared\TrimmingAttributes.cs" />
+	</ItemGroup>
+</Project>

@@ -1,0 +1,40 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:sample="clr-namespace:Cornerstone.Sample.Tabs"
+		mc:Ignorable="d" d:DesignHeight="640" d:DesignWidth="520"
+		x:Class="Cornerstone.Sample.Tabs.AboutView"
+		x:DataType="sample:AboutView"
+		x:Name="This">
+	<ScrollViewer HorizontalScrollBarVisibility="Disabled">
+		<StackPanel Margin="16,28,16,28" Spacing="16" MaxWidth="520" HorizontalAlignment="Center">
+			<Border CornerRadius="80"
+					ClipToBounds="True"
+					Width="140"
+					Height="140"
+					HorizontalAlignment="Center">
+				<Image Source="/Assets/profile.jpg" />
+			</Border>
+			<TextBlock Classes="Header"
+					HorizontalAlignment="Center"
+					Text="Cornerstone Sample" />
+			<TextBlock TextWrapping="Wrap"
+					Opacity="0.8"
+					Text="A showcase for the framework, from process to window. Home opens the demos. Settings stores the theme for this app and the layout of this menu." />
+			<Border Background="{DynamicResource Background03}"
+					BorderBrush="{DynamicResource BorderBrush}"
+					BorderThickness="1"
+					CornerRadius="8"
+					Padding="14">
+				<StackPanel Spacing="8">
+					<TextBlock Opacity="0.65" Text="This run" />
+					<TextBlock Text="{Binding RuntimeInformation.ApplicationName}" />
+					<TextBlock Opacity="0.8" Text="{Binding RuntimeInformation.ApplicationVersion}" />
+					<TextBlock Opacity="0.8" Text="{Binding RuntimeInformation.DevicePlatform}" />
+				</StackPanel>
+			</Border>
+		</StackPanel>
+	</ScrollViewer>
+</UserControl>

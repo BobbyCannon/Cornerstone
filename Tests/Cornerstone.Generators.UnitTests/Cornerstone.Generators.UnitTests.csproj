@@ -1,12 +1,17 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<OutputType>Library</OutputType>
-		<TargetFrameworks>net10.0</TargetFrameworks>
+		<OutputType>Exe</OutputType>
+		<TargetFrameworks>net10.0-windows10.0.26100.0</TargetFrameworks>
 		<SignAssembly>true</SignAssembly>
+		<NoWarn>$(NoWarn);CS8002</NoWarn>
+		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+		<GenerateProgramFile>false</GenerateProgramFile>
 		<IsTestProject>true</IsTestProject>
-		<IsPackable>false</IsPackable>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+		<OutputType>Library</OutputType>
+		<IsTestProject>true</IsTestProject>
+		<IsPackable>false</IsPackable>
 		<PublishAot>false</PublishAot>
 		<TrimMode>partial</TrimMode>
 		<InvariantGlobalization>false</InvariantGlobalization>
@@ -27,13 +32,20 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
-		<PackageReference Include="MSTest.TestAdapter" Version="4.3.3" />
-		<PackageReference Include="MSTest.TestFramework" Version="4.3.3" />
+		<PackageReference Include="MSTest.TestAdapter" Version="4.4.0" />
+		<PackageReference Include="MSTest.TestFramework" Version="4.4.0" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
-		<ProjectReference Include="..\..\Cornerstone.Generators\Cornerstone.Generators.csproj" SetTargetFramework="TargetFramework=netstandard2.0" GlobalPropertiesToRemove="TargetFrameworks" />
+		<ProjectReference Include="..\..\Cornerstone.Presentation\Cornerstone.Presentation.csproj" />
+		<ProjectReference Include="..\..\Cornerstone.Generators\Cornerstone.Generators.csproj" SetTargetFramework="TargetFramework=netstandard2.0" GlobalPropertiesToRemove="TargetFrameworks;RuntimeIdentifier;RuntimeIdentifiers" />
 		<ProjectReference Include="..\..\Cornerstone\Cornerstone.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Presentation\NameGenerator\Views\*.xml" />
+		<EmbeddedResource Include="Presentation\NameGenerator\OnlyProperties\GeneratedCode\*.txt" />
+		<EmbeddedResource Include="Presentation\NameGenerator\InitializeComponent\GeneratedInitializeComponent\*.txt" />
+		<EmbeddedResource Include="Presentation\PropertyGenerator\GeneratedCode\*.txt" />
 	</ItemGroup>
 </Project>

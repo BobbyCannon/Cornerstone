@@ -74,6 +74,12 @@ public class CSharpCodeBuilder
 
 	public static string GetConstantLiteral(TypedConstant constant)
 	{
+		if (constant.Kind == TypedConstantKind.Array)
+		{
+			var items = constant.Values.Select(GetConstantLiteral);
+			return "new[] { " + string.Join(", ", items) + " }";
+		}
+
 		if (constant is { Kind: TypedConstantKind.Type, Value: ITypeSymbol typeFromConstant })
 		{
 			return ToTypeofLiteral(typeFromConstant);

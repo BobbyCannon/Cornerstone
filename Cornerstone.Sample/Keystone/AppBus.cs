@@ -18,19 +18,27 @@ public partial class AppBus : KeystoneBus
 	[DependencyInjectionConstructor]
 	public AppBus(
 		NotificationChannel notificationChannel,
-		SettingsChannel settingsChannel)
+		SettingsChannel settingsChannel,
+		SyncChannel syncChannel,
+		MeshChannel meshChannel)
 	{
 		Notification = Track(notificationChannel);
 		Settings = Track(settingsChannel);
+		Sync = Track(syncChannel);
+		Mesh = Track(meshChannel);
 	}
 
 	#endregion
 
 	#region Properties
 
+	public MeshChannel Mesh { get; private set; }
+
 	public NotificationChannel Notification { get; private set; }
 
 	public SettingsChannel Settings { get; private set; }
+
+	public SyncChannel Sync { get; private set; }
 
 	#endregion
 }

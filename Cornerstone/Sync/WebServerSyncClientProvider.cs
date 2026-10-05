@@ -55,17 +55,17 @@ public class WebServerSyncClientProvider : IServerSyncClientProvider
 
 	public ServerSyncClient GetServerSyncClient(SyncStatistics syncStatistics, Profiler syncClientProfiler)
 	{
-		return new WebSyncClient(_name, _dateTimeProvider, Provider, _webClient, logger: _logger);
+		return new WebSyncClient(_name, _dateTimeProvider, Provider, _webClient, logger: _logger, profiler: syncClientProfiler);
+	}
+
+	public SyncClient GetSyncClient(SyncStatistics syncStatistics, Profiler syncClientProfiler)
+	{
+		return new WebSyncClient(_name, _dateTimeProvider, Provider, _webClient, logger: _logger, profiler: syncClientProfiler);
 	}
 
 	public ISyncableDatabase GetSyncableDatabase()
 	{
 		return Provider.GetSyncableDatabase();
-	}
-
-	public SyncClient GetSyncClient(SyncStatistics syncStatistics, Profiler syncClientProfiler)
-	{
-		return new WebSyncClient(_name, _dateTimeProvider, Provider, _webClient, logger: _logger);
 	}
 
 	#endregion

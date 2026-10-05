@@ -1,4 +1,4 @@
-﻿#region References
+#region References
 
 using System.Collections.Generic;
 
@@ -8,9 +8,22 @@ namespace Cornerstone.Storage.Sql.Data;
 
 public class SqlIndex
 {
+	#region Constructors
+
+	public SqlIndex()
+	{
+		Columns = [];
+		IsClustered = false;
+		IsPrimaryKey = false;
+		IsUnique = false;
+		Name = string.Empty;
+	}
+
+	#endregion
+
 	#region Properties
 
-	public List<SqlIndexColumn> Columns { get; set; }
+	public List<SqlIndexColumn> Columns { get; }
 
 	public bool IsClustered { get; set; }
 

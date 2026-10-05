@@ -1,0 +1,95 @@
+<Styles xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<Style Selector="Button.ControlCard">
+		<Setter Property="Theme.Color" Value="None" />
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="BorderThickness" Value="0" />
+		<Setter Property="HorizontalAlignment" Value="Stretch" />
+		<Setter Property="HorizontalContentAlignment" Value="Stretch" />
+		<Setter Property="VerticalContentAlignment" Value="Stretch" />
+		<Setter Property="Height" Value="NaN" />
+		<Setter Property="MinHeight" Value="0" />
+		<Setter Property="Padding" Value="0" />
+		<Setter Property="Margin" Value="0" />
+	</Style>
+	<Style Selector="Button.ControlCard:focused">
+		<Setter Property="Background" Value="Transparent" />
+	</Style>
+	<Style Selector="Button.ControlCard:pointerover">
+		<Setter Property="Background" Value="Transparent" />
+	</Style>
+	<Style Selector="Button.ControlCard:pressed">
+		<Setter Property="Background" Value="Transparent" />
+	</Style>
+	<Style Selector="Button.ControlCard:disabled">
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="Opacity" Value="0.5" />
+	</Style>
+	<Style Selector="Border.FeatureCard">
+		<Setter Property="Background" Value="{DynamicResource Background03}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource Background06}" />
+		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="CornerRadius" Value="14" />
+		<Setter Property="Padding" Value="14" />
+		<Setter Property="IsHitTestVisible" Value="False" />
+	</Style>
+	<Style Selector="Button.ControlCard:focused > Border.FeatureCard">
+		<Setter Property="BorderBrush" Value="{DynamicResource Background08}" />
+	</Style>
+	<Style Selector="Button.ControlCard:pointerover > Border.FeatureCard">
+		<Setter Property="Background" Value="{DynamicResource Background04}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource Background08}" />
+	</Style>
+	<Style Selector="Button.ControlCard:pressed > Border.FeatureCard">
+		<Setter Property="Background" Value="{DynamicResource Background05}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource Background08}" />
+	</Style>
+	<Style Selector="Border.FeatureCard > Grid > StackPanel">
+		<Setter Property="VerticalAlignment" Value="Center" />
+	</Style>
+	<Style Selector="Border.FeatureCard > Grid > StackPanel > TextBlock">
+		<Setter Property="Foreground" Value="{DynamicResource Foreground08}" />
+		<Setter Property="FontSize" Value="{DynamicResource ControlFontSizeSmall}" />
+	</Style>
+	<Style Selector="Border.FeatureCard > Grid > StackPanel > TextBlock:nth-child(1)">
+		<Setter Property="Foreground" Value="{DynamicResource Foreground01}" />
+		<Setter Property="FontSize" Value="{DynamicResource ControlFontSize}" />
+		<Setter Property="Margin" Value="0,0,0,2" />
+	</Style>
+	<Style Selector="Border.IconBadge">
+		<Setter Property="Width" Value="44" />
+		<Setter Property="Height" Value="44" />
+		<Setter Property="CornerRadius" Value="22" />
+		<Setter Property="Margin" Value="0,0,14,0" />
+		<Setter Property="VerticalAlignment" Value="Center" />
+		<Setter Property="Background" Value="{DynamicResource Background04}" />
+	</Style>
+	<Style Selector="Border.IconBadge > Path">
+		<Setter Property="Width" Value="22" />
+		<Setter Property="Height" Value="22" />
+		<Setter Property="Stretch" Value="Uniform" />
+		<Setter Property="HorizontalAlignment" Value="Center" />
+		<Setter Property="VerticalAlignment" Value="Center" />
+	</Style>
+	<Style Selector="Border.IconBadge.Amber > Path">
+		<Setter Property="Fill" Value="{DynamicResource Amber05}" />
+	</Style>
+	<Style Selector="Border.IconBadge.Blue > Path">
+		<Setter Property="Fill" Value="{DynamicResource Blue05}" />
+	</Style>
+	<Style Selector="Border.IconBadge.Green > Path">
+		<Setter Property="Fill" Value="{DynamicResource Green05}" />
+	</Style>
+	<Style Selector="Border.IconBadge.Orange > Path">
+		<Setter Property="Fill" Value="{DynamicResource Orange05}" />
+	</Style>
+	<Style Selector="Border.IconBadge.Purple > Path">
+		<Setter Property="Fill" Value="{DynamicResource Purple05}" />
+	</Style>
+	<Style Selector="Border.IconBadge.Red > Path">
+		<Setter Property="Fill" Value="{DynamicResource Red05}" />
+	</Style>
+	<Style Selector="Border.IconBadge.Teal > Path">
+		<Setter Property="Fill" Value="{DynamicResource Teal05}" />
+	</Style>
+</Styles>

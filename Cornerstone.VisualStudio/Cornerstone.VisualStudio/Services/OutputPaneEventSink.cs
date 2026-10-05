@@ -23,7 +23,7 @@ internal class OutputPaneEventSink : ILogEventSink
 
 	private readonly ITextFormatter _formatter;
 	private readonly IVsOutputWindowPane _pane;
-	private static readonly Guid _paneGuid;
+	private static readonly Guid PaneGuid = new("DC845612-459C-485C-8157-71BC39C9A044");
 
 	#endregion
 
@@ -40,13 +40,13 @@ internal class OutputPaneEventSink : ILogEventSink
 
 		_formatter = new MessageTemplateTextFormatter(outputTemplate);
 
-		ErrorHandler.ThrowOnFailure(output.CreatePane(_paneGuid, "Cornerstone Diagnostics", 1, 1));
-		output.GetPane(_paneGuid, out _pane);
-	}
-
-	static OutputPaneEventSink()
-	{
-		_paneGuid = new("DC845612-459C-485C-8157-71BC39C9A044");
+		var guid = PaneGuid;
+		// Recreate so a renamed pane (e.g. old "Cornerstone Diagnostics") picks up the new caption.
+		output.DeletePane(ref guid);
+		// Do not clear on solution load — that wipes the initialized line before you open AXAML.
+		ErrorHandler.ThrowOnFailure(output.CreatePane(ref guid, "Cornerstone", 1, 0));
+		ErrorHandler.ThrowOnFailure(output.GetPane(ref guid, out _pane));
+		_pane.Activate();
 	}
 
 	#endregion
@@ -59,19 +59,7 @@ internal class OutputPaneEventSink : ILogEventSink
 		_formatter.Format(logEvent, sw);
 		var message = sw.ToString();
 
-		if (_pane is IVsOutputWindowPaneNoPump noPump)
-		{
-			noPump.OutputStringNoPump(message);
-		}
-		else
-		{
-			ErrorHandler.ThrowOnFailure(_pane.OutputStringThreadSafe(message));
-		}
-
-		if (logEvent.Level == LogEventLevel.Error)
-		{
-			_pane.Activate();
-		}
+		ErrorHandler.ThrowOnFailure(_pane.OutputStringThreadSafe(message));
 	}
 
 	#endregion

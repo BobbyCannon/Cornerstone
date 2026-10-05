@@ -1,0 +1,147 @@
+<UserControl xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:android="clr-namespace:Cornerstone.RemoteLink.Android"
+		xmlns:airPlay="clr-namespace:Cornerstone.RemoteLink.AirPlay"
+		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="640"
+		x:Class="Cornerstone.RemoteLink.Android.AndroidTabView"
+		x:DataType="android:AndroidTabViewModel">
+	<DockPanel>
+		<Border DockPanel.Dock="Top"
+				Classes="ToolBar"
+				BorderThickness="0">
+			<Border.Styles>
+				<Style Selector="Grid > TextBox">
+					<Setter Property="Height" Value="34" />
+				</Style>
+				<Style Selector="Grid > Button">
+					<Setter Property="Height" Value="34" />
+				</Style>
+				<Style Selector="Grid > ComboBox">
+					<Setter Property="Height" Value="34" />
+					<Setter Property="MinWidth" Value="220" />
+				</Style>
+			</Border.Styles>
+			<Grid ColumnDefinitions="*,2*,Auto,Auto,Auto">
+				<TextBox CornerRadius="0"
+						PlaceholderText="adb.exe path (empty = PATH)"
+						Text="{Binding AdbPath}" />
+				<ComboBox Grid.Column="1"
+						CornerRadius="0"
+						ItemsSource="{Binding Devices}"
+						SelectedItem="{Binding SelectedDevice}">
+					<ComboBox.ItemTemplate>
+						<DataTemplate x:DataType="android:AndroidDeviceItem">
+							<TextBlock Text="{Binding DisplayLabel}" />
+						</DataTemplate>
+					</ComboBox.ItemTemplate>
+				</ComboBox>
+				<Button Grid.Column="2"
+						CornerRadius="0"
+						Content="Refresh"
+						Command="{Binding RefreshDevicesAsyncCommand}" />
+				<Button Grid.Column="3"
+						CornerRadius="0"
+						Content="Connect"
+						Command="{Binding ConnectAsyncCommand}" />
+				<Button Grid.Column="4"
+						CornerRadius="0"
+						Content="Disconnect"
+						Command="{Binding DisconnectAsyncCommand}" />
+			</Grid>
+		</Border>
+		<Border DockPanel.Dock="Bottom"
+				BorderBrush="#333"
+				BorderThickness="0,1,0,0"
+				Padding="8,6"
+				IsVisible="{Binding ShowDiagnosticLog}">
+			<DockPanel>
+				<Button DockPanel.Dock="Right"
+						VerticalAlignment="Top"
+						Margin="8,0,0,0"
+						Content="Copy log"
+						Command="{Binding CopyDiagnosticLogAsyncCommand}" />
+				<ScrollViewer Height="120"
+						HorizontalScrollBarVisibility="Auto"
+						VerticalScrollBarVisibility="Auto">
+					<SelectableTextBlock FontFamily="Cascadia Mono, Consolas, Courier New"
+							FontSize="11"
+							TextWrapping="NoWrap"
+							Text="{Binding DiagnosticLog}" />
+				</ScrollViewer>
+			</DockPanel>
+		</Border>
+		<Border DockPanel.Dock="Bottom"
+				Classes="ToolBar"
+				Height="54">
+			<DockPanel>
+				<StackPanel DockPanel.Dock="Right"
+						Orientation="Horizontal"
+						Spacing="4"
+						Margin="8,0">
+					<StackPanel.Styles>
+						<Style Selector=":is(Button)">
+							<Setter Property="MinWidth" Value="70" />
+						</Style>
+					</StackPanel.Styles>
+					<Button Content="Back"
+							Command="{Binding SendBackCommand}" />
+					<Button Content="Home"
+							Command="{Binding SendHomeCommand}" />
+					<Button Content="Recents"
+							Command="{Binding SendAppSwitchCommand}" />
+					<Button Content="Type Clipboard"
+							Command="{Binding TypeClipboardAsyncCommand}" />
+					<ToggleButton Content="Log"
+							IsChecked="{Binding ShowDiagnosticLog}" />
+				</StackPanel>
+				<StackPanel Spacing="0" 
+						VerticalAlignment="Center"
+						Margin="10,8">
+					<SelectableTextBlock Text="{Binding ErrorMessage}"
+							IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+					<SelectableTextBlock Text="{Binding StatusText}"
+							IsVisible="{Binding StatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+					<SelectableTextBlock Classes="Dim"
+							Text="{Binding ProtocolSummary}" />
+				</StackPanel>
+			</DockPanel>
+		</Border>
+		<Grid>
+			<StackPanel HorizontalAlignment="Center"
+					IsVisible="{Binding !IsConnected}">
+				<Image Source="/Assets/Cornerstone.RemoteLink.png"
+						Margin="0,20,0,0"
+						Height="200" Width="200" />
+				<TextBlock Classes="Header Dim"
+						TextWrapping="Wrap"
+						Margin="0,20,0,0"
+						MaxWidth="520"
+						TextAlignment="Center"
+						Text="USB debugging on, then Refresh and Connect. Connect works input-only without the jar (taps, typing, Back/Home/Recents). Click the preview to type. A socket session needs remotelink-server.jar from the AndroidServer Gradle project." />
+			</StackPanel>
+			<Border x:Name="PreviewHost"
+					Background="#202020"
+					Focusable="True"
+					IsVisible="{Binding IsConnected}"
+					PointerPressed="OnPreviewPointerPressed"
+					PointerMoved="OnPreviewPointerMoved"
+					PointerReleased="OnPreviewPointerReleased"
+					KeyDown="OnPreviewKeyDown"
+					TextInput="OnPreviewTextInput">
+				<Grid>
+					<TextBlock Classes="Header Dim"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center"
+							TextAlignment="Center"
+							TextWrapping="Wrap"
+							MaxWidth="420"
+							IsVisible="{Binding ShowCaptureHint}"
+							Text="Waiting for screen capture…" />
+					<airPlay:AirPlayPreviewControl x:Name="PreviewSurface" />
+				</Grid>
+			</Border>
+		</Grid>
+	</DockPanel>
+</UserControl>

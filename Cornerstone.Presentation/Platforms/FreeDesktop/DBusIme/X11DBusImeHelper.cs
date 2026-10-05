@@ -1,0 +1,66 @@
+using System;
+using System.Collections.Generic;
+using Cornerstone.Presentation;
+using Cornerstone.Presentation.FreeDesktop.DBusIme.Fcitx;
+using Cornerstone.Presentation.FreeDesktop.DBusIme.IBus;
+using Tmds.DBus.Protocol;
+
+namespace Cornerstone.Presentation.FreeDesktop.DBusIme
+{
+    internal class X11DBusImeHelper
+    {
+        private static readonly Dictionary<string, Func<DBusConnection, IX11InputMethodFactory>> KnownMethods = new()
+            {
+                ["fcitx"] = static conn =>
+                    new DBusInputMethodFactory<FcitxX11TextInputMethod>(_ => new FcitxX11TextInputMethod(conn)),
+                ["fcitx5"] = static conn =>
+                    new DBusInputMethodFactory<FcitxX11TextInputMethod>(_ => new FcitxX11TextInputMethod(conn)),
+                ["ibus"] = static conn =>
+                    new DBusInputMethodFactory<IBusX11TextInputMethod>(_ => new IBusX11TextInputMethod(conn))
+            };
+
+        private static Func<DBusConnection, IX11InputMethodFactory>? DetectInputMethod()
+        {
+            foreach (var name in new[] { "CORNERSTONE_IM_MODULE", "GTK_IM_MODULE", "QT_IM_MODULE" })
+            {
+                var value = Environment.GetEnvironmentVariable(name);
+
+                if (value == "none")
+                    return null;
+
+                if (value is not null && KnownMethods.TryGetValue(value, out var factory))
+                    return factory;
+            }
+
+            var modifiers = Environment.GetEnvironmentVariable("XMODIFIERS");
+            if (modifiers is not null && modifiers.Contains("@im="))
+            {
+                int imNameStart = modifiers.IndexOf("@im=") + "@im=".Length;
+                int imNameEnd = modifiers.IndexOf("@", imNameStart);
+                string imName = imNameEnd == -1 ? modifiers.Substring(imNameStart) : modifiers.Substring(imNameStart, imNameEnd - imNameStart);
+
+                if (KnownMethods.TryGetValue(imName, out var factory))
+                    return factory;
+            }
+
+            return null;
+        }
+
+        public static bool DetectAndRegister()
+        {
+            var factory = DetectInputMethod();
+            if (factory is not null)
+            {
+                var conn = DBusHelper.DefaultConnection;
+                if (conn is not null)
+                {
+                    PresentationLocator.CurrentMutable.Bind<IX11InputMethodFactory>().ToConstant(factory(conn));
+                    return true;
+                }
+            }
+
+            return false;
+
+        }
+    }
+}

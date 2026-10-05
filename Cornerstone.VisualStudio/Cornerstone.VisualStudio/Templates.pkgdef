@@ -1,2 +1,4 @@
 ﻿[$RootKey$\TemplateEngine\Templates\avalonia.templates.nuspec\12.0.0]
 "InstalledPath"="$PackageFolder$\ProjectTemplates"
+[$RootKey$\TemplateEngine\Templates\cornerstone.templates.nuspec\3.0.277.17112]
+"InstalledPath"="$PackageFolder$\ProjectTemplates"

@@ -1,5 +1,6 @@
 #region References
 
+using System.Collections.Generic;
 using System.Linq;
 using Cornerstone.Keystone.Lifecycle;
 using Cornerstone.Profiling;
@@ -60,11 +61,7 @@ public class LifecycleTrackerStartupProfilerTests : CornerstoneUnitTest
 		IsTrue(tracker.IsLifecycleStarted());
 	}
 
-	#endregion
-
-	#region Methods (helpers)
-
-	private static System.Collections.Generic.IEnumerable<string> FlattenNames(StartupSample sample)
+	private static IEnumerable<string> FlattenNames(StartupSample sample)
 	{
 		if (sample == null)
 		{
@@ -83,16 +80,24 @@ public class LifecycleTrackerStartupProfilerTests : CornerstoneUnitTest
 
 	#endregion
 
-	#region Nested Types
+	#region Classes
 
 	private sealed class NamedLifecycle : CornerstoneObject
 	{
+		#region Constructors
+
 		public NamedLifecycle(string name)
 		{
 			Name = name;
 		}
 
+		#endregion
+
+		#region Properties
+
 		public string Name { get; }
+
+		#endregion
 	}
 
 	#endregion

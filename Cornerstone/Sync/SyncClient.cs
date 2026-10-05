@@ -1,4 +1,4 @@
-﻿#region References
+#region References
 
 using System;
 using System.Collections.Generic;
@@ -92,27 +92,102 @@ public abstract class SyncClient
 	#region Methods
 
 	/// <summary>
-	/// Sends changes to a server.
+	/// Run one sync round-trip: begin if needed, apply a push page, return a pull page, or end.
+	/// Empty Changes with PullDown and EndSession false is GetChanges (pull).
+	/// Non-empty Changes is ApplyChanges only (push). An end-only call does not query.
+	/// A pull ends on the last page when the direction is pull-only or the client has nothing to push.
 	/// </summary>
-	/// <param name="sessionId"> The ID of the sync session. </param>
-	/// <param name="changes"> The changes to write to the server. </param>
-	/// <returns> A list of sync issues if there were any. </returns>
-	public abstract ServiceResult<SyncIssue> ApplyChanges(Guid sessionId, ServiceRequest<SyncObject> changes);
+	public virtual SyncOperationResult Sync(SyncOperation operation)
+	{
+		if (operation == null)
+		{
+			throw new ArgumentNullException(nameof(operation));
+		}
+
+		var result = new SyncOperationResult();
+		var startedThisCall = SyncSessionStart == null;
+		var sessionStart = SyncSessionStart ?? BeginSync(operation.SessionId, operation.Settings ?? SyncSettings);
+		if (startedThisCall && (operation.ResumeStatistics != null))
+		{
+			Statistics.UpdateWith(operation.ResumeStatistics);
+		}
+		result.SessionStart = sessionStart;
+
+		var clientChanges = operation.Changes ?? new ServiceRequest<SyncObject>();
+		var changeCount = clientChanges.Collection?.Count ?? 0;
+		var issues = operation.Issues;
+
+		if (issues?.Collection is { Count: > 0 })
+		{
+			if (changeCount > 0)
+			{
+				result.AppliedIssues = ApplyCorrections(operation.SessionId, clientChanges);
+			}
+
+			result.Corrections = GetCorrections(operation.SessionId, issues);
+			result.Changes = new ServiceResult<SyncObject>();
+		}
+		else
+		{
+			if (changeCount > 0)
+			{
+				result.AppliedIssues = ApplyChanges(operation.SessionId, clientChanges);
+			}
+
+			// Pull is a separate direction from push. A non-empty Changes page is apply-only
+			// so the session can pull all server pages first, then push, without echoing.
+			// EndSession alone must not query; that query would count as outgoing changes.
+			else if (!operation.EndSession && SyncSettings.SyncDirection.HasFlag(SyncDirection.PullDown))
+			{
+				var request = new SyncRequest
+				{
+					Since = SyncSettings.LastSyncedOnServer,
+					Until = sessionStart.StartedOn,
+					Skip = operation.GetChangesSkip
+				};
+				result.Changes = GetChanges(operation.SessionId, request);
+
+				var clientWillNotPush = operation.ClientHasNoChanges || !SyncSettings.SyncDirection.HasFlag(SyncDirection.PushUp);
+				if (clientWillNotPush && (result.Changes != null) && !result.Changes.HasMore)
+				{
+					result.Statistics = EndSync(operation.SessionId);
+					result.SessionEnded = true;
+				}
+			}
+		}
+
+		if (result.SessionEnded)
+		{
+			return result;
+		}
+
+		if (operation.EndSession)
+		{
+			result.Statistics = EndSync(operation.SessionId);
+			result.SessionEnded = true;
+		}
+		else
+		{
+			result.Statistics = Statistics;
+		}
+
+		return result;
+	}
 
 	/// <summary>
-	/// Sends issue corrections to a server.
+	/// Sends changes to a server.
 	/// </summary>
-	/// <param name="sessionId"> The ID of the sync session. </param>
-	/// <param name="corrections"> The corrections to write to the server. </param>
-	/// <returns> A list of sync issues if there were any. </returns>
-	public abstract ServiceResult<SyncIssue> ApplyCorrections(Guid sessionId, ServiceRequest<SyncObject> corrections);
+	protected internal abstract ServiceResult<SyncIssue> ApplyChanges(Guid sessionId, ServiceRequest<SyncObject> changes);
+
+	/// <summary>
+	/// Apply issue-driven corrections. Same as ApplyChanges except last-write-wins is skipped.
+	/// </summary>
+	protected internal abstract ServiceResult<SyncIssue> ApplyCorrections(Guid sessionId, ServiceRequest<SyncObject> corrections);
 
 	/// <summary>
 	/// Starts the sync session.
 	/// </summary>
-	/// <param name="sessionId"> The ID of the sync session. </param>
-	/// <param name="settings"> The settings for the sync session. </param>
-	public virtual SyncSessionStart BeginSync(Guid sessionId, SyncSettings settings)
+	protected internal virtual SyncSessionStart BeginSync(Guid sessionId, SyncSettings settings)
 	{
 		if (SyncSessionStart != null)
 		{
@@ -124,8 +199,8 @@ public abstract class SyncClient
 		Statistics.Reset();
 		SyncSettings = settings;
 
-		UpdateSyncSettings();
-		
+		SetSyncSettings();
+
 		Converter = GetConverter();
 
 		return SyncSessionStart;
@@ -134,8 +209,7 @@ public abstract class SyncClient
 	/// <summary>
 	/// Ends the sync session.
 	/// </summary>
-	/// <param name="sessionId"> The ID of the sync session. </param>
-	public virtual SyncStatistics EndSync(Guid sessionId)
+	protected internal virtual SyncStatistics EndSync(Guid sessionId)
 	{
 		ValidateSession(sessionId);
 		SyncSessionStart = null;
@@ -145,41 +219,31 @@ public abstract class SyncClient
 	/// <summary>
 	/// Gets the changes from the server.
 	/// </summary>
-	/// <param name="sessionId"> The ID of the sync session. </param>
-	/// <param name="request"> The details for the request. </param>
-	/// <returns> The list of changes from the server. </returns>
-	public abstract ServiceResult<SyncObject> GetChanges(Guid sessionId, SyncRequest request);
+	protected internal abstract ServiceResult<SyncObject> GetChanges(Guid sessionId, SyncRequest request);
 
 	/// <summary>
-	/// Gets the list of sync objects to try and resolve the issue list.
+	/// Optional issue-driven outgoing objects. Default database client returns none.
 	/// </summary>
-	/// <param name="sessionId"> The ID of the sync session. </param>
-	/// <param name="issues"> The issues to process. </param>
-	/// <returns> The sync objects to resolve the issues. </returns>
-	public abstract ServiceResult<SyncObject> GetCorrections(Guid sessionId, ServiceRequest<SyncIssue> issues);
+	protected internal abstract ServiceResult<SyncObject> GetCorrections(Guid sessionId, ServiceRequest<SyncIssue> issues);
 
-	protected IQueryable<T> GetChangesQuery<T>(IEnumerable<T> collection, DateTime since, DateTime until)
+	protected IEnumerable<T> GetChangesQuery<T>(IEnumerable<T> collection, DateTime since, DateTime until)
 		where T : ISyncEntity
 	{
 		return collection
-			.Where(x =>
-				((x.CreatedOn >= since) && (x.CreatedOn < until))
-				|| ((x.ModifiedOn >= since) && (x.ModifiedOn < until))
-			)
-			.AsQueryable();
+			.Where(x => ((x.CreatedOn >= since) && (x.CreatedOn < until))
+				|| ((x.ModifiedOn >= since) && (x.ModifiedOn < until)));
 	}
 
 	protected abstract SyncClientConverter GetConverter();
 
 	/// <summary>
-	/// Update sync settings filter and other such on BeginSync.
+	/// BeginSync will use this to set sync settings, filters, and other values.
 	/// </summary>
-	protected abstract void UpdateSyncSettings();
+	protected abstract void SetSyncSettings();
 
 	/// <summary>
 	/// Validates the sync session. The SyncSession will be set on BeginSync and cleared on EndSync.
 	/// </summary>
-	/// <param name="sessionId"> </param>
 	protected virtual void ValidateSession(Guid sessionId)
 	{
 		if (sessionId != SyncSessionStart?.Id)

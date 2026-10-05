@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Cornerstone.Collections;
 using Cornerstone.Presentation;
@@ -19,6 +20,29 @@ namespace Cornerstone.UnitTests.Presentation;
 public class DispatchableViewModelBindingTests : CornerstoneUnitTest
 {
 	#region Methods
+
+	[TestMethod]
+	public void ReleaseTracksDropsBindingsSoInitializeCanTrackAgain()
+	{
+		var pending = new DispatchPending();
+		var applied = 0;
+		var vm = new BindingHostViewModel();
+		vm.RegisterBinding(pending, () => applied++);
+		pending.MarkPending();
+		vm.ApplyModelChanges();
+		AreEqual(1, applied);
+
+		vm.ReleaseAllTracks();
+		IsFalse(vm.HasModelChanges());
+
+		pending.MarkPending();
+		IsFalse(vm.HasModelChanges());
+
+		vm.RegisterBinding(pending, () => applied++);
+		IsTrue(vm.HasModelChanges());
+		vm.ApplyModelChanges();
+		AreEqual(2, applied);
+	}
 
 	[TestMethod]
 	public void TrackBindingAppliesAndClearsPending()
@@ -37,62 +61,6 @@ public class DispatchableViewModelBindingTests : CornerstoneUnitTest
 		AreEqual(1, applied);
 		IsFalse(pending.HasPending);
 		IsFalse(vm.HasModelChanges());
-	}
-
-	[TestMethod]
-	public void TrackCollectionReconcilesWhenSourcePending()
-	{
-		var source = new SpeedyList<string>(8);
-		var destination = new List<string>();
-		var vm = new BindingHostViewModel();
-		vm.RegisterCollection(source, destination);
-
-		source.Add("a");
-		source.Add("b");
-		IsTrue(vm.HasModelChanges());
-
-		vm.ApplyModelChanges();
-		AreEqual(2, destination.Count);
-		AreEqual("a", destination[0]);
-		AreEqual("b", destination[1]);
-		IsFalse(source.HasPending);
-		IsFalse(vm.HasModelChanges());
-
-		source.Add("c");
-		vm.ApplyModelChanges();
-		AreEqual(3, destination.Count);
-		AreEqual("c", destination[2]);
-	}
-
-	[TestMethod]
-	public void TrackCollectionProjectsDifferentItemTypes()
-	{
-		var source = new SpeedyList<int>(8);
-		var destination = new List<ProjectedRow>();
-		var vm = new BindingHostViewModel();
-		vm.RegisterProjectedCollection(
-			source,
-			destination,
-			(item, dest) => dest.Id == item,
-			_ => new ProjectedRow(),
-			(dest, item) =>
-			{
-				dest.Id = item;
-				dest.Label = item.ToString();
-			},
-			_ => { });
-
-		source.Add(1);
-		source.Add(2);
-		vm.ApplyModelChanges();
-		AreEqual(2, destination.Count);
-		AreEqual("1", destination[0].Label);
-		AreEqual("2", destination[1].Label);
-
-		source.Add(3);
-		vm.ApplyModelChanges();
-		AreEqual(3, destination.Count);
-		AreEqual("3", destination[2].Label);
 	}
 
 	[TestMethod]
@@ -128,6 +96,87 @@ public class DispatchableViewModelBindingTests : CornerstoneUnitTest
 		AreEqual(1, destination[0].Id);
 		AreEqual(3, destination[1].Id);
 		AreEqual(new[] { 2 }, removedIds.ToArray());
+	}
+
+	[TestMethod]
+	public void TrackCollectionProjectsAfterAnotherConsumerClearsPending()
+	{
+		var source = new SpeedyList<string>(8);
+		source.Add("a");
+		source.Add("b");
+
+		var first = new BindingHostViewModel();
+		var firstDest = new List<string>();
+		first.RegisterCollection(source, firstDest);
+		first.ApplyModelChanges();
+		AreEqual(2, firstDest.Count);
+		IsFalse(source.HasPending);
+
+		var second = new BindingHostViewModel();
+		var secondDest = new List<string>();
+		second.RegisterCollection(source, secondDest);
+		IsTrue(second.HasModelChanges());
+		second.ApplyModelChanges();
+		AreEqual(2, secondDest.Count);
+		AreEqual("a", secondDest[0]);
+		AreEqual("b", secondDest[1]);
+		IsFalse(second.HasModelChanges());
+	}
+
+	[TestMethod]
+	public void TrackCollectionProjectsDifferentItemTypes()
+	{
+		var source = new SpeedyList<int>(8);
+		var destination = new List<ProjectedRow>();
+		var vm = new BindingHostViewModel();
+		vm.RegisterProjectedCollection(
+			source,
+			destination,
+			(item, dest) => dest.Id == item,
+			_ => new ProjectedRow(),
+			(dest, item) =>
+			{
+				dest.Id = item;
+				dest.Label = item.ToString();
+			},
+			_ => { });
+
+		source.Add(1);
+		source.Add(2);
+		vm.ApplyModelChanges();
+		AreEqual(2, destination.Count);
+		AreEqual("1", destination[0].Label);
+		AreEqual("2", destination[1].Label);
+
+		source.Add(3);
+		vm.ApplyModelChanges();
+		AreEqual(3, destination.Count);
+		AreEqual("3", destination[2].Label);
+	}
+
+	[TestMethod]
+	public void TrackCollectionReconcilesWhenSourcePending()
+	{
+		var source = new SpeedyList<string>(8);
+		var destination = new List<string>();
+		var vm = new BindingHostViewModel();
+		vm.RegisterCollection(source, destination);
+
+		source.Add("a");
+		source.Add("b");
+		IsTrue(vm.HasModelChanges());
+
+		vm.ApplyModelChanges();
+		AreEqual(2, destination.Count);
+		AreEqual("a", destination[0]);
+		AreEqual("b", destination[1]);
+		IsFalse(source.HasPending);
+		IsFalse(vm.HasModelChanges());
+
+		source.Add("c");
+		vm.ApplyModelChanges();
+		AreEqual(3, destination.Count);
+		AreEqual("c", destination[2]);
 	}
 
 	[TestMethod]
@@ -167,7 +216,7 @@ public class DispatchableViewModelBindingTests : CornerstoneUnitTest
 	{
 		// Reproduces the sample race: Count is read, then the list shrinks before
 		// CopyTo finishes, which used to leave null slots and crash Dictionary.TryGetValue.
-		var source = new SpeedyList<string>(64, isLongLivedBuffer: true);
+		var source = new SpeedyList<string>(64, true);
 		var destination = new PresentationList<string>();
 		var vm = new BindingHostViewModel();
 		vm.RegisterCollection(source, destination, CollectionReconcileMode.ListAndItems);
@@ -180,7 +229,7 @@ public class DispatchableViewModelBindingTests : CornerstoneUnitTest
 		vm.ApplyModelChanges();
 		AreEqual(20, destination.Count);
 
-		using var cts = new System.Threading.CancellationTokenSource();
+		using var cts = new CancellationTokenSource();
 		var producer = Task.Run(async () =>
 		{
 			var id = 20;
@@ -223,6 +272,28 @@ public class DispatchableViewModelBindingTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void TrackDerivedSeedsThenReappliesWhenAnotherBindingApplies()
+	{
+		var pending = new DispatchPending();
+		var derivedApplied = 0;
+		var vm = new BindingHostViewModel();
+		vm.RegisterBinding(pending, () => { });
+		vm.RegisterDerived(() => derivedApplied++);
+
+		IsTrue(vm.HasModelChanges());
+		vm.ApplyModelChanges();
+		AreEqual(1, derivedApplied);
+		IsFalse(vm.HasModelChanges());
+
+		pending.MarkPending();
+		IsTrue(vm.HasModelChanges());
+		vm.ApplyModelChanges();
+		AreEqual(2, derivedApplied);
+		IsFalse(pending.HasPending);
+		IsFalse(vm.HasModelChanges());
+	}
+
+	[TestMethod]
 	public void TrackIngressDrainsToConsumer()
 	{
 		var ingress = new TextIngress();
@@ -262,37 +333,55 @@ public class DispatchableViewModelBindingTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
-	public void TrackSeriesFixedCopiesWhenVersionsDiffer()
+	public void TrackIntentDoesNotPublishDuringApply()
 	{
-		var model = new SeriesDataProvider(4);
-		var view = new SeriesDataProvider(4);
+		var pending = new DispatchPending();
+		var published = 0;
 		var vm = new BindingHostViewModel();
-		vm.RegisterSeries(model, view);
+		vm.RegisterBinding(pending, () => vm.Selected = "from-model");
+		vm.RegisterIntent(nameof(BindingHostViewModel.Selected), () => published++);
 
-		IsFalse(vm.HasModelChanges());
-
-		model.AddRange([1, 2, 3, 4]);
-		IsTrue(vm.HasModelChanges());
-		IsTrue(model.Version != view.Version);
-
+		pending.MarkPending();
 		vm.ApplyModelChanges();
-		AreEqual(model.Version, view.Version);
-		AreEqual(model.ToArray(), view.ToArray());
-		IsFalse(vm.HasModelChanges());
+		AreEqual(0, published);
+		AreEqual("from-model", vm.Selected);
 
-		model.Add(5);
-		vm.ApplyModelChanges();
-		AreEqual(new[] { 2d, 3d, 4d, 5d }, view.ToArray());
-		AreEqual(model.Version, view.Version);
+		vm.Selected = "from-user";
+		AreEqual(1, published);
 	}
 
 	[TestMethod]
-	public void TrackSeriesFixedMismatchedLengthThrows()
+	public void TrackIntentDoesNotPublishInsideBeginProjecting()
 	{
-		var model = new SeriesDataProvider(4);
-		var view = new SeriesDataProvider(8);
+		var published = 0;
 		var vm = new BindingHostViewModel();
-		ExpectedException<ArgumentException>(() => vm.RegisterSeries(model, view));
+		vm.RegisterIntent(nameof(BindingHostViewModel.Selected), () => published++);
+
+		using (vm.OpenProjecting())
+		{
+			vm.Selected = "projected";
+		}
+
+		AreEqual(0, published);
+		AreEqual("projected", vm.Selected);
+
+		vm.Selected = "from-user";
+		AreEqual(1, published);
+	}
+
+	[TestMethod]
+	public void TrackIntentPublishesWhenUserChangesProperty()
+	{
+		var published = 0;
+		var vm = new BindingHostViewModel();
+		vm.RegisterIntent(nameof(BindingHostViewModel.Selected), () => published++);
+
+		vm.Selected = "from-user";
+		AreEqual(1, published);
+		AreEqual("from-user", vm.Selected);
+
+		vm.Selected = "from-user";
+		AreEqual(1, published);
 	}
 
 	[TestMethod]
@@ -337,112 +426,42 @@ public class DispatchableViewModelBindingTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
-	public void TrackDerivedSeedsThenReappliesWhenAnotherBindingApplies()
+	public void TrackSeriesFixedCopiesWhenVersionsDiffer()
 	{
-		var pending = new DispatchPending();
-		var derivedApplied = 0;
+		var model = new SeriesDataProvider(4);
+		var view = new SeriesDataProvider(4);
 		var vm = new BindingHostViewModel();
-		vm.RegisterBinding(pending, () => { });
-		vm.RegisterDerived(() => derivedApplied++);
+		vm.RegisterSeries(model, view);
 
+		IsFalse(vm.HasModelChanges());
+
+		model.AddRange([1, 2, 3, 4]);
 		IsTrue(vm.HasModelChanges());
+		IsTrue(model.Version != view.Version);
+
 		vm.ApplyModelChanges();
-		AreEqual(1, derivedApplied);
+		AreEqual(model.Version, view.Version);
+		AreEqual(model.ToArray(), view.ToArray());
 		IsFalse(vm.HasModelChanges());
 
-		pending.MarkPending();
-		IsTrue(vm.HasModelChanges());
+		model.Add(5);
 		vm.ApplyModelChanges();
-		AreEqual(2, derivedApplied);
-		IsFalse(pending.HasPending);
-		IsFalse(vm.HasModelChanges());
+		AreEqual(new[] { 2d, 3d, 4d, 5d }, view.ToArray());
+		AreEqual(model.Version, view.Version);
 	}
 
 	[TestMethod]
-	public void ReleaseTracksDropsBindingsSoInitializeCanTrackAgain()
+	public void TrackSeriesFixedMismatchedLengthThrows()
 	{
-		var pending = new DispatchPending();
-		var applied = 0;
+		var model = new SeriesDataProvider(4);
+		var view = new SeriesDataProvider(8);
 		var vm = new BindingHostViewModel();
-		vm.RegisterBinding(pending, () => applied++);
-		pending.MarkPending();
-		vm.ApplyModelChanges();
-		AreEqual(1, applied);
-
-		vm.ReleaseAllTracks();
-		IsFalse(vm.HasModelChanges());
-
-		pending.MarkPending();
-		IsFalse(vm.HasModelChanges());
-
-		vm.RegisterBinding(pending, () => applied++);
-		IsTrue(vm.HasModelChanges());
-		vm.ApplyModelChanges();
-		AreEqual(2, applied);
-	}
-
-	[TestMethod]
-	public void TrackIntentPublishesWhenUserChangesProperty()
-	{
-		var published = 0;
-		var vm = new BindingHostViewModel();
-		vm.RegisterIntent(nameof(BindingHostViewModel.Selected), () => published++);
-
-		vm.Selected = "from-user";
-		AreEqual(1, published);
-		AreEqual("from-user", vm.Selected);
-
-		vm.Selected = "from-user";
-		AreEqual(1, published);
-	}
-
-	[TestMethod]
-	public void TrackIntentDoesNotPublishDuringApply()
-	{
-		var pending = new DispatchPending();
-		var published = 0;
-		var vm = new BindingHostViewModel();
-		vm.RegisterBinding(pending, () => vm.Selected = "from-model");
-		vm.RegisterIntent(nameof(BindingHostViewModel.Selected), () => published++);
-
-		pending.MarkPending();
-		vm.ApplyModelChanges();
-		AreEqual(0, published);
-		AreEqual("from-model", vm.Selected);
-
-		vm.Selected = "from-user";
-		AreEqual(1, published);
-	}
-
-	[TestMethod]
-	public void TrackIntentDoesNotPublishInsideBeginProjecting()
-	{
-		var published = 0;
-		var vm = new BindingHostViewModel();
-		vm.RegisterIntent(nameof(BindingHostViewModel.Selected), () => published++);
-
-		using (vm.OpenProjecting())
-		{
-			vm.Selected = "projected";
-		}
-
-		AreEqual(0, published);
-		AreEqual("projected", vm.Selected);
-
-		vm.Selected = "from-user";
-		AreEqual(1, published);
+		ExpectedException<ArgumentException>(() => vm.RegisterSeries(model, view));
 	}
 
 	#endregion
 
 	#region Classes
-
-	private sealed class ProjectedRow
-	{
-		public int Id { get; set; }
-
-		public string Label { get; set; }
-	}
 
 	private sealed class BindingHostViewModel : DispatchableViewModel
 	{
@@ -483,17 +502,12 @@ public class DispatchableViewModelBindingTests : CornerstoneUnitTest
 
 		#region Methods
 
-		public void ReleaseAllTracks()
-		{
-			ReleaseTracks();
-		}
-
-		public DispatchableViewModel.ProjectingScope OpenProjecting()
+		public ProjectingScope OpenProjecting()
 		{
 			return BeginProjecting();
 		}
 
-		public void RegisterBinding(IDispatchPending pending, System.Action apply)
+		public void RegisterBinding(IDispatchPending pending, Action apply)
 		{
 			TrackBinding(pending, apply);
 		}
@@ -506,6 +520,11 @@ public class DispatchableViewModelBindingTests : CornerstoneUnitTest
 			TrackCollection(source, destination, mode: mode);
 		}
 
+		public void RegisterDerived(Action apply)
+		{
+			TrackDerived(apply);
+		}
+
 		public void RegisterDerivedSeries(
 			IDispatchPending pending,
 			Func<SeriesDataProvider> getView,
@@ -513,6 +532,16 @@ public class DispatchableViewModelBindingTests : CornerstoneUnitTest
 			Func<double[]> buildSamples)
 		{
 			TrackSeries(pending, getView, setView, buildSamples);
+		}
+
+		public void RegisterIngress(TextIngress source, Action<ReadOnlySpan<char>> consumer)
+		{
+			TrackIngress(source, consumer);
+		}
+
+		public void RegisterIntent(string propertyName, Action publish)
+		{
+			TrackIntent(propertyName, publish);
 		}
 
 		public void RegisterProjectedCollection<TSource, TDest>(
@@ -526,25 +555,26 @@ public class DispatchableViewModelBindingTests : CornerstoneUnitTest
 			TrackCollection(source, destination, same, create, update, remove);
 		}
 
-		public void RegisterIngress(TextIngress source, System.Action<System.ReadOnlySpan<char>> consumer)
-		{
-			TrackIngress(source, consumer);
-		}
-
 		public void RegisterSeries(ISeriesDataProvider model, SeriesDataProvider view)
 		{
 			TrackSeries(model, view);
 		}
 
-		public void RegisterDerived(Action apply)
+		public void ReleaseAllTracks()
 		{
-			TrackDerived(apply);
+			ReleaseTracks();
 		}
 
-		public void RegisterIntent(string propertyName, Action publish)
-		{
-			TrackIntent(propertyName, publish);
-		}
+		#endregion
+	}
+
+	private sealed class ProjectedRow
+	{
+		#region Properties
+
+		public int Id { get; set; }
+
+		public string Label { get; set; }
 
 		#endregion
 	}

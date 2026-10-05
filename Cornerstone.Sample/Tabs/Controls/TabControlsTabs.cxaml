@@ -1,0 +1,50 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		mc:Ignorable="d" d:DesignHeight="500" d:DesignWidth="800"
+		x:Class="Cornerstone.Sample.Tabs.Controls.TabControlsTabs">
+	<DockPanel>
+		<WrapPanel DockPanel.Dock="Top"
+				ItemSpacing="12"
+				LineSpacing="8"
+				Margin="12,8">
+			<ComboBox x:Name="TabPlacement"
+					ControlHelper.DisplayName="Placement"
+					SelectedIndex="0"
+					SelectedValueBinding="{Binding Content, DataType=ComboBoxItem}"
+					Width="160">
+				<ComboBoxItem>
+					<Dock>Top</Dock>
+				</ComboBoxItem>
+				<ComboBoxItem>
+					<Dock>Left</Dock>
+				</ComboBoxItem>
+				<ComboBoxItem>
+					<Dock>Right</Dock>
+				</ComboBoxItem>
+				<ComboBoxItem>
+					<Dock>Bottom</Dock>
+				</ComboBoxItem>
+			</ComboBox>
+		</WrapPanel>
+		<TabControl Margin="12,0,12,12"
+				TabStripPlacement="{Binding ElementName=TabPlacement, Path=SelectedValue}">
+			<TabItem Header="Overview">
+				<SelectableTextBlock Margin="16"
+						TextWrapping="Wrap"
+						Text="TabControl hosts pages in the content well. Use TabStripPlacement for Top, Left, Right, or Bottom. This is the same control as the inner tabs on this Controls gallery." />
+			</TabItem>
+			<TabItem Header="Second">
+				<TextBlock Margin="16" Text="Second tab content." />
+			</TabItem>
+			<TabItem Header="Disabled" IsEnabled="False">
+				<TextBlock Margin="16" Text="Disabled tab." />
+			</TabItem>
+			<TabItem Header="Third">
+				<TextBlock Margin="16" Text="Third tab content." />
+			</TabItem>
+		</TabControl>
+	</DockPanel>
+</UserControl>

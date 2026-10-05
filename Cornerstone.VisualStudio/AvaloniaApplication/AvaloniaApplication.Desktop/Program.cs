@@ -1,4 +1,6 @@
-﻿using System;
+using Cornerstone.Presentation.Logging;
+using Cornerstone.Presentation.Platforms;
+using System;
 using Avalonia;
 
 namespace AvaloniaApplication.Desktop;

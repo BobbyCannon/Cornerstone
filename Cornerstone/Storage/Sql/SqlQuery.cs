@@ -3,8 +3,10 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq.Expressions;
+using System.Text;
 using Cornerstone.Reflection;
 using Cornerstone.Text;
 using Microsoft.Data.SqlClient;
@@ -15,27 +17,39 @@ using Microsoft.Data.Sqlite;
 namespace Cornerstone.Storage.Sql;
 
 public class SqlQuery<T> : SqlQuery
-	where T : class, new()
+	where T : Entity, new()
 {
 	#region Fields
 
 	private readonly string _connectionString;
+	private readonly SqlDatabase _database;
 	private readonly List<(LambdaExpression KeySelector, bool Descending)> _orderings;
+	private int _skip;
 	private readonly SourceTypeInfo _sourceType;
+	private int? _take;
 	private readonly List<LambdaExpression> _wherePredicates;
 
 	#endregion
 
 	#region Constructors
 
+	public SqlQuery(SqlDatabase database)
+		: this(database.ConnectionString, database.Provider)
+	{
+		_database = database;
+	}
+
 	public SqlQuery(string connectionString, SqlProvider provider)
 	{
 		Provider = provider;
 
 		_connectionString = connectionString;
+		_database = null;
 		_orderings = [];
+		_skip = 0;
 		_wherePredicates = [];
 		_sourceType = SourceReflector.GetRequiredSourceType<T>();
+		_take = null;
 	}
 
 	#endregion
@@ -47,6 +61,18 @@ public class SqlQuery<T> : SqlQuery
 	#endregion
 
 	#region Methods
+
+	public bool Any()
+	{
+		var (sql, parameters) = ToExistsSqlQuery(this);
+		return System.Convert.ToInt32(ExecuteScalar(sql, parameters)) != 0;
+	}
+
+	public int Count()
+	{
+		var (sql, parameters) = ToCountSqlQuery(this);
+		return System.Convert.ToInt32(ExecuteScalar(sql, parameters));
+	}
 
 	public SqlQuery<T> OrderBy<TKey>(Expression<Func<T, TKey>> keySelector)
 	{
@@ -62,9 +88,27 @@ public class SqlQuery<T> : SqlQuery
 
 	public IEnumerable<T> Query()
 	{
+		var (sql, parameters) = ToSqlQuery(this);
+		if (_database != null)
+		{
+			return _database.ExecuteOnCommand(sql, command => AddParameters(command, parameters), ReadResults);
+		}
+
 		return Provider == SqlProvider.SqlServer
-			? QuerySqlServer()
-			: QuerySqlite();
+			? QuerySqlServer(sql, parameters)
+			: QuerySqlite(sql, parameters);
+	}
+
+	public SqlQuery<T> Skip(int count)
+	{
+		_skip = count;
+		return this;
+	}
+
+	public SqlQuery<T> Take(int count)
+	{
+		_take = count;
+		return this;
 	}
 
 	public SqlQuery<T> ThenBy<TKey>(Expression<Func<T, TKey>> keySelector)
@@ -96,46 +140,26 @@ public class SqlQuery<T> : SqlQuery
 		builder.Append("SELECT ");
 
 		var (open, close) = SqlGenerator.GetIdentifierBrackets(query.Provider);
-
-		var ps = query._sourceType.GetProperties();
-		var first = true;
-		for (var index = 0; index < ps.Length; index++)
+		var columns = SqlGenerator.GetExpectedTableInfo(typeof(T)).Columns;
+		if (columns.Count == 0)
 		{
-			if (!first)
+			throw new InvalidOperationException(
+				$"No mapped SQL columns for '{typeof(T).Name}'. Add [SqlTable] / [SqlTableColumn] so SELECT cannot emit non-column properties.");
+		}
+
+		for (var index = 0; index < columns.Count; index++)
+		{
+			if (index > 0)
 			{
 				builder.Append(", ");
 			}
-			var p = ps[index];
+
 			builder.Append(open);
-			builder.Append(p.Name);
+			builder.Append(columns[index].Name);
 			builder.Append(close);
-			first = false;
 		}
 
-		builder.Append($" FROM {open}{SqlGenerator.GetTableName(query._sourceType)}{close}");
-
-		if (query._wherePredicates.Count > 0)
-		{
-			builder.Append(" WHERE ");
-			var parameterIndex = 0;
-
-			for (var i = 0; i < query._wherePredicates.Count; i++)
-			{
-				if (i > 0)
-				{
-					builder.Append(" AND ");
-				}
-
-				var visitor = new PredicateToSqlVisitor(parameterIndex);
-				var (whereSql, whereParams) = visitor.Translate(query._wherePredicates[i]);
-				parameterIndex += whereParams.Length;
-
-				builder.Append('(');
-				builder.Append(whereSql);
-				builder.Append(')');
-				parameters.AddRange(whereParams);
-			}
-		}
+		AppendFromAndWhere(builder, query, parameters);
 
 		if (query._orderings.Count > 0)
 		{
@@ -149,7 +173,7 @@ public class SqlQuery<T> : SqlQuery
 				}
 
 				var (selector, desc) = query._orderings[i];
-				var orderVisitor = new OrderByExpressionVisitor();
+				var orderVisitor = new OrderByExpressionVisitor(query.Provider);
 				var columnSql = orderVisitor.Translate(selector);
 				builder.Append(columnSql);
 
@@ -160,6 +184,8 @@ public class SqlQuery<T> : SqlQuery
 			}
 		}
 
+		AppendSkipTake(builder, query);
+
 		return (builder.ToString().Trim(), parameters.ToArray());
 	}
 
@@ -169,20 +195,111 @@ public class SqlQuery<T> : SqlQuery
 		return this;
 	}
 
+	private static void AddParameters(DbCommand command, object[] parameters)
+	{
+		for (var i = 0; i < parameters.Length; i++)
+		{
+			var param = command.CreateParameter();
+			param.ParameterName = $"@p{i}";
+			param.Value = parameters[i] ?? DBNull.Value;
+			if (parameters[i] != null)
+			{
+				param.DbType = SqlGenerator.GetParameterDbType(parameters[i].GetType());
+			}
+			command.Parameters.Add(param);
+		}
+	}
+
+	private static void AppendFromAndWhere(StringBuilder builder, SqlQuery<T> query, List<object> parameters)
+	{
+		var (open, close) = SqlGenerator.GetIdentifierBrackets(query.Provider);
+		builder.Append($" FROM {open}{SqlGenerator.GetTableName(query._sourceType)}{close}");
+
+		if (query._wherePredicates.Count <= 0)
+		{
+			return;
+		}
+
+		builder.Append(" WHERE ");
+		var parameterIndex = 0;
+
+		for (var i = 0; i < query._wherePredicates.Count; i++)
+		{
+			if (i > 0)
+			{
+				builder.Append(" AND ");
+			}
+
+			var visitor = new PredicateToSqlVisitor(query.Provider, parameterIndex);
+			var (whereSql, whereParams) = visitor.Translate(query._wherePredicates[i]);
+			parameterIndex += whereParams.Length;
+
+			builder.Append('(');
+			builder.Append(whereSql);
+			builder.Append(')');
+			parameters.AddRange(whereParams);
+		}
+	}
+
+	private static void AppendSkipTake(StringBuilder builder, SqlQuery<T> query)
+	{
+		if ((query._skip <= 0) && (query._take == null))
+		{
+			return;
+		}
+
+		if (query.Provider == SqlProvider.SqlServer)
+		{
+			if (query._orderings.Count == 0)
+			{
+				throw new InvalidOperationException("SQL Server OFFSET/FETCH requires ORDER BY.");
+			}
+
+			builder.Append(" OFFSET ");
+			builder.Append(query._skip);
+			builder.Append(" ROWS");
+			if (query._take != null)
+			{
+				builder.Append(" FETCH NEXT ");
+				builder.Append(query._take.Value);
+				builder.Append(" ROWS ONLY");
+			}
+
+			return;
+		}
+
+		builder.Append(" LIMIT ");
+		builder.Append(query._take ?? -1);
+		if (query._skip > 0)
+		{
+			builder.Append(" OFFSET ");
+			builder.Append(query._skip);
+		}
+	}
+
+	[UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "Column CLR types come from generated source reflection property maps.")]
 	private object ConvertTo(object dbValue, Type targetType)
 	{
 		if ((dbValue == null)
 			|| (dbValue == DBNull.Value))
 		{
+			if (Nullable.GetUnderlyingType(targetType) != null)
+			{
+				return null;
+			}
+
 			return targetType.IsValueType ? SourceReflector.CreateInstance(targetType) : null;
 		}
 
-		if (targetType.IsInstanceOfType(dbValue))
+		var underlyingType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+
+		// Most columns can be returned as-is when the reader already produced the
+		// target type. DateTime cannot: the database does not store Kind, so the
+		// value is Unspecified. The DateTime branch below sets Kind to UTC.
+		if (targetType.IsInstanceOfType(dbValue) && (underlyingType != typeof(DateTime)))
 		{
 			return dbValue;
 		}
-
-		var underlyingType = Nullable.GetUnderlyingType(targetType) ?? targetType;
 
 		if (Converters.TryGetValue(underlyingType, out var converter))
 		{
@@ -247,12 +364,17 @@ public class SqlQuery<T> : SqlQuery
 			}
 			if (underlyingType == typeof(DateTime))
 			{
+				if (dbValue is DateTime dateTime)
+				{
+					return ToUtcDateTime(dateTime);
+				}
+
 				// SQLite usually returns TEXT or REAL (Unix time)
 				if (dbValue is string str)
 				{
 					if (DateTime.TryParse(str, null, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var dt))
 					{
-						return dt;
+						return ToUtcDateTime(dt);
 					}
 					if (long.TryParse(str, out var unix))
 					{
@@ -265,7 +387,7 @@ public class SqlQuery<T> : SqlQuery
 				{
 					return DateTime.UnixEpoch.AddSeconds(dbl);
 				}
-				return System.Convert.ToDateTime(dbValue);
+				return ToUtcDateTime(System.Convert.ToDateTime(dbValue));
 			}
 
 			if (underlyingType == typeof(DateTimeOffset))
@@ -373,36 +495,76 @@ public class SqlQuery<T> : SqlQuery
 		}
 	}
 
-	private IEnumerable<T> QuerySqlite()
+	private object ExecuteScalar(string sql, object[] parameters)
 	{
-		using var connection = new SqliteConnection(_connectionString);
-		connection.Open();
-
-		var (query, parameters) = ToSqlQuery(this);
-		using var command = new SqliteCommand(query, connection);
-
-		for (var i = 0; i < parameters.Length; i++)
+		if (_database != null)
 		{
-			command.Parameters.AddWithValue($"@p{i}", parameters[i] ?? DBNull.Value);
+			return _database.ExecuteScalar(sql, command => AddParameters(command, parameters));
 		}
 
-		return ReadResults(command);
+		if (Provider == SqlProvider.SqlServer)
+		{
+			using var connection = new SqlConnection(_connectionString);
+			connection.Open();
+			using var command = new SqlCommand(sql, connection);
+			AddParameters(command, parameters);
+			return command.ExecuteScalar();
+		}
+
+		using var sqliteConnection = new SqliteConnection(_connectionString);
+		sqliteConnection.Open();
+		using var sqliteCommand = new SqliteCommand(sql, sqliteConnection);
+		AddParameters(sqliteCommand, parameters);
+		return sqliteCommand.ExecuteScalar();
 	}
 
-	private IEnumerable<T> QuerySqlServer()
+	private IEnumerable<T> QuerySqlServer(string sql, object[] parameters)
 	{
 		using var connection = new SqlConnection(_connectionString);
 		connection.Open();
+		using var command = new SqlCommand(sql, connection);
+		AddParameters(command, parameters);
+		return ReadResults(command);
+	}
 
-		var (query, parameters) = ToSqlQuery(this);
-		using var command = new SqlCommand(query, connection);
+	private IEnumerable<T> QuerySqlite(string sql, object[] parameters)
+	{
+		using var connection = new SqliteConnection(_connectionString);
+		connection.Open();
+		using var command = new SqliteCommand(sql, connection);
+		AddParameters(command, parameters);
+		return ReadResults(command);
+	}
 
-		for (var i = 0; i < parameters.Length; i++)
+	private object ReadColumn(DbDataReader reader, int ordinal, Type targetType, Type fieldType)
+	{
+		if (reader.IsDBNull(ordinal))
 		{
-			command.Parameters.AddWithValue($"@p{i}", parameters[i] ?? DBNull.Value);
+			return ConvertTo(null, targetType);
 		}
 
-		return ReadResults(command);
+		var destinationType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+		var expectedFieldType = destinationType.IsEnum
+			? Enum.GetUnderlyingType(destinationType)
+			: destinationType;
+
+		if (fieldType == expectedFieldType)
+		{
+			var raw = ReadTyped(reader, ordinal, fieldType);
+			if (destinationType.IsEnum)
+			{
+				return Enum.ToObject(destinationType, raw);
+			}
+
+			return raw;
+		}
+
+		if (fieldType == typeof(string))
+		{
+			return ConvertTo(reader.GetString(ordinal), targetType);
+		}
+
+		return ConvertTo(reader.GetValue(ordinal), targetType);
 	}
 
 	private IEnumerable<T> ReadResults(DbCommand command)
@@ -421,18 +583,145 @@ public class SqlQuery<T> : SqlQuery
 			typeMap[i] = prop.PropertyInfo.PropertyType;
 		}
 
+		var fieldTypes = new Type[fieldCount];
+		for (var i = 0; i < fieldCount; i++)
+		{
+			fieldTypes[i] = reader.GetFieldType(i);
+		}
+
 		while (reader.Read())
 		{
 			var item = new T();
 			for (var i = 0; i < fieldCount; i++)
 			{
-				var value = reader.IsDBNull(i) ? null : reader.GetValue(i);
-				propertyMap[i].SetValue(item, ConvertTo(value, typeMap[i]));
+				propertyMap[i].SetValue(item, ReadColumn(reader, i, typeMap[i], fieldTypes[i]));
 			}
+
 			results.Add(item);
 		}
 
 		return results;
+	}
+
+	private static object ReadTyped(DbDataReader reader, int ordinal, Type fieldType)
+	{
+		if (fieldType == typeof(string))
+		{
+			return reader.GetString(ordinal);
+		}
+
+		if (fieldType == typeof(bool))
+		{
+			return reader.GetBoolean(ordinal);
+		}
+
+		if (fieldType == typeof(int))
+		{
+			return reader.GetInt32(ordinal);
+		}
+
+		if (fieldType == typeof(long))
+		{
+			return reader.GetInt64(ordinal);
+		}
+
+		if (fieldType == typeof(short))
+		{
+			return reader.GetInt16(ordinal);
+		}
+
+		if (fieldType == typeof(byte))
+		{
+			return reader.GetByte(ordinal);
+		}
+
+		if (fieldType == typeof(uint))
+		{
+			return reader.GetFieldValue<uint>(ordinal);
+		}
+
+		if (fieldType == typeof(ulong))
+		{
+			return reader.GetFieldValue<ulong>(ordinal);
+		}
+
+		if (fieldType == typeof(ushort))
+		{
+			return reader.GetFieldValue<ushort>(ordinal);
+		}
+
+		if (fieldType == typeof(sbyte))
+		{
+			return reader.GetFieldValue<sbyte>(ordinal);
+		}
+
+		if (fieldType == typeof(double))
+		{
+			return reader.GetDouble(ordinal);
+		}
+
+		if (fieldType == typeof(float))
+		{
+			return reader.GetFloat(ordinal);
+		}
+
+		if (fieldType == typeof(decimal))
+		{
+			return reader.GetDecimal(ordinal);
+		}
+
+		if (fieldType == typeof(DateTime))
+		{
+			return ToUtcDateTime(reader.GetDateTime(ordinal));
+		}
+
+		if (fieldType == typeof(DateTimeOffset))
+		{
+			return reader.GetFieldValue<DateTimeOffset>(ordinal);
+		}
+
+		if (fieldType == typeof(Guid))
+		{
+			return reader.GetGuid(ordinal);
+		}
+
+		if (fieldType == typeof(byte[]))
+		{
+			return (byte[]) reader.GetValue(ordinal);
+		}
+
+		return reader.GetValue(ordinal);
+	}
+
+	private static (string Sql, object[] Parameters) ToCountSqlQuery(SqlQuery<T> query)
+	{
+		using var rented = StringBuilderPool.Rent();
+		var builder = rented.Value;
+		var parameters = new List<object>();
+		builder.Append("SELECT COUNT(*)");
+		AppendFromAndWhere(builder, query, parameters);
+		return (builder.ToString().Trim(), parameters.ToArray());
+	}
+
+	private static (string Sql, object[] Parameters) ToExistsSqlQuery(SqlQuery<T> query)
+	{
+		using var rented = StringBuilderPool.Rent();
+		var builder = rented.Value;
+		var parameters = new List<object>();
+		builder.Append("SELECT CASE WHEN EXISTS (SELECT 1");
+		AppendFromAndWhere(builder, query, parameters);
+		builder.Append(") THEN 1 ELSE 0 END");
+		return (builder.ToString().Trim(), parameters.ToArray());
+	}
+
+	private static DateTime ToUtcDateTime(DateTime value)
+	{
+		return value.Kind switch
+		{
+			DateTimeKind.Utc => value,
+			DateTimeKind.Local => value.ToUniversalTime(),
+			_ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+		};
 	}
 
 	#endregion

@@ -29,7 +29,7 @@ public class OptionsDialogPage : DialogPage
 {
 	#region Fields
 
-	private AvaloniaDesignerView _designerView = AvaloniaDesignerView.Split;
+	private CornerstoneDesignerView _designerView = CornerstoneDesignerView.Split;
 	private Orientation _designerSplitOrientation = Orientation.Vertical;
 	private bool _designerSplitSwapped;
 	private string _zoomLevel = "100%";
@@ -43,7 +43,7 @@ public class OptionsDialogPage : DialogPage
 	[Category("Designer")]
 	[DisplayName("Default document view")]
 	[Description("Initial view mode when opening an AXAML / Avalonia XAML document.")]
-	public AvaloniaDesignerView DesignerView
+	public CornerstoneDesignerView DesignerView
 	{
 		get => _designerView;
 		set => _designerView = value;

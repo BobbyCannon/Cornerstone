@@ -335,33 +335,6 @@ public partial class PresentationListTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
-	public void RefreshFilterRestoresSourceOrderWhenCleared()
-	{
-		// Unordered list: active must follow Load/_allItems order when filter widens again.
-		// Old bug: re-added items were appended to the filtered remnant → scrambled history.
-		var list = new PresentationList<string>();
-		list.Load("wd", "c0", "c1", "c2", "c3");
-		AreEqual(["wd", "c0", "c1", "c2", "c3"], list.ToArray());
-
-		list.FilterCheck = x => (x == "c1") || (x == "c3");
-		list.RefreshFilter();
-		AreEqual(["c1", "c3"], list.ToArray());
-
-		list.FilterCheck = null;
-		list.RefreshFilter();
-		AreEqual(["wd", "c0", "c1", "c2", "c3"], list.ToArray());
-
-		// Narrow then widen with a predicate (not null FilterCheck).
-		list.FilterCheck = x => x.StartsWith('c');
-		list.RefreshFilter();
-		AreEqual(["c0", "c1", "c2", "c3"], list.ToArray());
-
-		list.FilterCheck = _ => true;
-		list.RefreshFilter();
-		AreEqual(["wd", "c0", "c1", "c2", "c3"], list.ToArray());
-	}
-
-	[TestMethod]
 	public void First()
 	{
 		var list = new PresentationList<string>("a", "b", "c");
@@ -404,6 +377,25 @@ public partial class PresentationListTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void IndexOf()
+	{
+		var list = new PresentationList<string>("a", "b", "c");
+
+		AreEqual(1, list.IndexOf("b"));
+		AreEqual(1, ((IList) list).IndexOf("b"));
+
+		AreEqual(-1, list.IndexOf("z"));
+		AreEqual(-1, list.IndexOf(string.Empty));
+		AreEqual(-1, list.IndexOf((string) null));
+		AreEqual(-1, ((IList) list).IndexOf(Now));
+
+		list.DistinctCheck = EqualityComparer<string>.Default;
+
+		AreEqual(1, list.IndexOf("b"));
+		AreEqual(-1, list.IndexOf("z"));
+	}
+
+	[TestMethod]
 	public void Indexer()
 	{
 		var list = new PresentationList<string>("a", "b", "c");
@@ -429,25 +421,6 @@ public partial class PresentationListTests : CornerstoneUnitTest
 
 		ExpectedException<ArgumentOutOfRangeException>(() => _ = list2[-1], "Specified argument was out of the range of valid values.");
 		ExpectedException<ArgumentOutOfRangeException>(() => _ = list2[3], "Specified argument was out of the range of valid values.");
-	}
-
-	[TestMethod]
-	public void IndexOf()
-	{
-		var list = new PresentationList<string>("a", "b", "c");
-
-		AreEqual(1, list.IndexOf("b"));
-		AreEqual(1, ((IList) list).IndexOf("b"));
-
-		AreEqual(-1, list.IndexOf("z"));
-		AreEqual(-1, list.IndexOf(string.Empty));
-		AreEqual(-1, list.IndexOf((string) null));
-		AreEqual(-1, ((IList) list).IndexOf(Now));
-
-		list.DistinctCheck = EqualityComparer<string>.Default;
-
-		AreEqual(1, list.IndexOf("b"));
-		AreEqual(-1, list.IndexOf("z"));
 	}
 
 	[TestMethod]
@@ -873,6 +846,33 @@ public partial class PresentationListTests : CornerstoneUnitTest
 		});
 
 		AreEqual(expected, list.ToArray());
+	}
+
+	[TestMethod]
+	public void RefreshFilterRestoresSourceOrderWhenCleared()
+	{
+		// Unordered list: active must follow Load/_allItems order when filter widens again.
+		// Old bug: re-added items were appended to the filtered remnant → scrambled history.
+		var list = new PresentationList<string>();
+		list.Load("wd", "c0", "c1", "c2", "c3");
+		AreEqual(["wd", "c0", "c1", "c2", "c3"], list.ToArray());
+
+		list.FilterCheck = x => (x == "c1") || (x == "c3");
+		list.RefreshFilter();
+		AreEqual(["c1", "c3"], list.ToArray());
+
+		list.FilterCheck = null;
+		list.RefreshFilter();
+		AreEqual(["wd", "c0", "c1", "c2", "c3"], list.ToArray());
+
+		// Narrow then widen with a predicate (not null FilterCheck).
+		list.FilterCheck = x => x.StartsWith('c');
+		list.RefreshFilter();
+		AreEqual(["c0", "c1", "c2", "c3"], list.ToArray());
+
+		list.FilterCheck = _ => true;
+		list.RefreshFilter();
+		AreEqual(["wd", "c0", "c1", "c2", "c3"], list.ToArray());
 	}
 
 	[TestMethod]

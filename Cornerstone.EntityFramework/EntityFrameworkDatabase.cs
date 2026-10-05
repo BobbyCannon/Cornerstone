@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Cornerstone.Compare;
 using Cornerstone.Extensions;
+using Cornerstone.Profiling;
 using Cornerstone.Runtime;
 using Cornerstone.Storage;
 using Cornerstone.Sync;
@@ -48,11 +49,16 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 	/// <param name="startup"> The startup options for this database. </param>
 	/// <param name="settings"> The options for this database. </param>
 	protected EntityFrameworkDatabase(DbContextOptions startup, DatabaseSettings settings)
+		: this(startup, settings, Runtime.DateTimeProvider.RealTime)
+	{
+	}
+
+	protected EntityFrameworkDatabase(DbContextOptions startup, DatabaseSettings settings, IDateTimeProvider dateTimeProvider)
 		: base(startup)
 	{
 		_collectionChangeTracker = new CollectionChangeTracker();
 
-		DateTimeProvider = Runtime.DateTimeProvider.RealTime;
+		DateTimeProvider = dateTimeProvider ?? Runtime.DateTimeProvider.RealTime;
 		DbContextOptions = startup;
 		DatabaseSettings = new DatabaseSettings();
 		if (settings != null)
@@ -182,7 +188,7 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 					return true;
 				}
 			}
-			catch (Exception)
+			catch
 			{
 				//Debug.WriteLine(ex.Message);
 
@@ -192,13 +198,8 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 
 		// 2. Slow Path: Use EF Core's robust logic if the fast path failed or wasn't applicable
 		var pending = Database.GetPendingMigrations().ToList();
-		if (pending.Count > 0)
-		{
-			Database.Migrate();
-		}
-
-		_isMigrated = true;
-		return true;
+		_isMigrated = pending.Count <= 0;
+		return _isMigrated.Value;
 	}
 
 	public void Migrate()
@@ -208,9 +209,7 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 			return;
 		}
 
-		Database.Migrate();
-
-		_isMigrated = true;
+		MigrateDatabase();
 	}
 
 	public T Remove<T, T2>(T item) where T : Entity<T2>
@@ -241,28 +240,36 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 				_collectionChangeTracker.Reset();
 			}
 
+			var profiler = (this as ISyncableDatabase)?.Profiler;
 			var entries = ChangeTracker.Entries().ToList();
-			entries.ForEach(ProcessEntity);
-
-			var comparer = new GenericEqualityComparer<EntityEntry>(
-				(x, y) => ReferenceEquals(x.Entity, y.Entity),
-				x => x.Entity.GetHashCode()
-			);
-			var newEntries = ChangeTracker
-				.Entries()
-				.Except(entries, comparer)
-				.ToList();
-
-			if (newEntries.Any())
+			using (ProfilerExtensions.Start(profiler, "SaveChangesProcessEntity"))
 			{
-				newEntries.ForEach(ProcessEntity);
-				entries.AddRange(newEntries);
+				entries.ForEach(ProcessEntity);
+
+				var comparer = new GenericEqualityComparer<EntityEntry>(
+					(x, y) => ReferenceEquals(x.Entity, y.Entity),
+					x => x.Entity.GetHashCode()
+				);
+				var newEntries = ChangeTracker
+					.Entries()
+					.Except(entries, comparer)
+					.ToList();
+
+				if (newEntries.Any())
+				{
+					newEntries.ForEach(ProcessEntity);
+					entries.AddRange(newEntries);
+				}
+
+				// The local relationships may have changed. We need keep our sync IDs in sync with any relationships that may have changed.
+				entries.ForEach(x => (x.Entity as Entity)?.UpdateLocalSyncIds());
 			}
 
-			// The local relationships may have changed. We need keep our sync IDs in sync with any relationships that may have changed.
-			entries.ForEach(x => (x.Entity as Entity)?.UpdateLocalSyncIds());
-
-			var response = base.SaveChanges();
+			int response;
+			using (ProfilerExtensions.Start(profiler, "SaveChangesEfCore"))
+			{
+				response = base.SaveChanges();
+			}
 			var needsMoreSaving = entries.Any(x => (x.State != EntityState.Detached) && (x.State != EntityState.Unchanged));
 			if (needsMoreSaving)
 			{
@@ -402,7 +409,7 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 		var types = assembly.GetTypes();
 		var mappingTypes = types.Where(x => !x.IsAbstract && x.GetInterfaces().Any(y => y == typeof(IEntityMappingConfiguration)));
 		var mappings = mappingTypes
-			.Select(x => Activator.CreateInstance(x))
+			.Select(Activator.CreateInstance)
 			.Cast<IEntityMappingConfiguration>()
 			.ToList();
 
@@ -519,6 +526,36 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 				}
 			}
 		}
+	}
+
+	private static bool IsMissingSqliteTable(Exception ex)
+	{
+		for (var current = ex; current != null; current = current.InnerException)
+		{
+			if (current is SqliteException sqlite && (sqlite.SqliteErrorCode == 1))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/// <summary>
+	/// EF Core's SQLite migrator inserts a row into __EFMigrationsLock and then retries forever
+	/// when that row is already present. Fail instead of taking the lock away from whoever holds it.
+	/// </summary>
+	private void MigrateDatabase()
+	{
+		if ((GetDatabaseType() == DatabaseType.Sqlite)
+			&& SqliteMigrationLockIsHeld())
+		{
+			throw new InvalidOperationException("SQLite migration lock __EFMigrationsLock is still held. Another process is migrating this database, or a previous migration was interrupted. Delete that table only when nothing else is migrating.");
+		}
+
+		Database.Migrate();
+
+		_isMigrated = true;
 	}
 
 	/// <summary>
@@ -661,6 +698,19 @@ public abstract class EntityFrameworkDatabase : DbContext, IDatabase
 			Debugger.Break();
 		}
 		#endif
+	}
+
+	private bool SqliteMigrationLockIsHeld()
+	{
+		Database.CloseConnection();
+		try
+		{
+			return Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM \"__EFMigrationsLock\"").FirstOrDefault() > 0;
+		}
+		catch (Exception ex) when (IsMissingSqliteTable(ex))
+		{
+			return false;
+		}
 	}
 
 	private static void WarmUpSqliteForKnownIssueEF001()

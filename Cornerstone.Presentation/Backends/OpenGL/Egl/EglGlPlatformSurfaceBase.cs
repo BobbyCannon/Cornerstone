@@ -1,0 +1,139 @@
+using System;
+using Cornerstone.Presentation.OpenGL.Surfaces;
+using Cornerstone.Presentation.Platform;
+using Cornerstone.Presentation.Rendering;
+
+namespace Cornerstone.Presentation.OpenGL.Egl
+{
+    public abstract class EglGlPlatformSurfaceBase : IGlPlatformSurface
+    {
+        public abstract IGlPlatformSurfaceRenderTarget CreateGlRenderTarget(IGlContext context);
+    }
+
+    public abstract class EglPlatformSurfaceRenderTargetBase : IGlPlatformSurfaceRenderTarget
+    {
+        protected EglContext Context { get; }
+
+        protected EglPlatformSurfaceRenderTargetBase(EglContext context)
+        {
+            Context = context;
+        }
+
+        public virtual void Dispose()
+        {
+            
+        }
+
+        public IGlPlatformSurfaceRenderingSession BeginDraw(IRenderTarget.RenderTargetSceneInfo sceneInfo)
+        {
+            if (Context.IsLost)
+                throw new RenderTargetCorruptedException();
+            
+            return BeginDrawCore(sceneInfo);
+        }
+
+        protected virtual bool SkipWaits => false;
+
+        public abstract IGlPlatformSurfaceRenderingSession BeginDrawCore(IRenderTarget.RenderTargetSceneInfo sceneInfo);
+
+        protected IGlPlatformSurfaceRenderingSession BeginDraw(EglSurface surface,
+            PixelSize size, double scaling, Action? onFinish = null, bool isYFlipped = false,
+            Action? beforeSwap = null)
+        {
+
+            var restoreContext = Context.MakeCurrent(surface);
+            var success = false;
+            try
+            {
+                var egli = Context.Display.EglInterface;
+                if (!SkipWaits)
+                {
+                    egli.WaitClient();
+                    egli.WaitGL();
+                    egli.WaitNative(EglConsts.EGL_CORE_NATIVE_ENGINE);
+                }
+
+                Context.GlInterface.BindFramebuffer(GlConsts.GL_FRAMEBUFFER, 0);
+                
+                // Workaround for driver quirk https://github.com/NVIDIA/egl-wayland2/issues/46
+                // This is NVIDIA-specific, but setting buffers to GL_BACK won't hurt for other drivers too
+                if (Context.Version.Type == GlProfileType.OpenGL)
+                {
+                    var gl = Context.GlInterface;
+                    gl.Viewport(0, 0, size.Width, size.Height);
+                    if (gl.IsReadBufferAvailable)
+                        gl.ReadBuffer(GlConsts.GL_BACK);
+                    if (gl.IsWriteBufferAvailable)
+                        gl.WriteBuffer(GlConsts.GL_BACK);
+                    if(gl.IsDrawBufferAvailable)
+                        gl.DrawBuffer(GlConsts.GL_BACK);
+                }
+
+                
+                success = true;
+                return new Session(Context.Display, Context, surface, size, scaling,  restoreContext, onFinish, isYFlipped, SkipWaits, beforeSwap);
+            }
+            finally
+            {
+                if(!success)
+                    restoreContext.Dispose();
+            }
+        }
+
+        private class Session : IGlPlatformSurfaceRenderingSession
+        {
+            private readonly EglContext _context;
+            private readonly EglSurface _glSurface;
+            private readonly EglDisplay _display;
+            private readonly IDisposable _restoreContext;
+            private readonly Action? _onFinish;
+            private readonly Action? _beforeSwap;
+            private readonly bool _skipWaits;
+
+            public Session(EglDisplay display, EglContext context,
+                EglSurface glSurface, PixelSize size, double scaling,
+                IDisposable restoreContext, Action? onFinish, bool isYFlipped, bool skipWaits,
+                Action? beforeSwap = null)
+            {
+                Size = size;
+                Scaling = scaling;
+                IsYFlipped = isYFlipped;
+                _context = context;
+                _display = display;
+                _glSurface = glSurface;
+                _restoreContext = restoreContext;
+                _onFinish = onFinish;
+                _beforeSwap = beforeSwap;
+                _skipWaits = skipWaits;
+            }
+
+            public void Dispose()
+            {
+                _context.GlInterface.Flush();
+                if (!_skipWaits)
+                    _display.EglInterface.WaitGL();
+                _beforeSwap?.Invoke();
+                _glSurface.SwapBuffers();
+                if (!_skipWaits)
+                {
+                    _display.EglInterface.WaitClient();
+                    _display.EglInterface.WaitGL();
+                    _display.EglInterface.WaitNative(EglConsts.EGL_CORE_NATIVE_ENGINE);
+                }
+
+                _restoreContext.Dispose();
+                _onFinish?.Invoke();
+            }
+
+            public IGlContext Context => _context;
+            public PixelSize Size { get; }
+            public double Scaling { get; }
+            public bool IsYFlipped { get; }
+        }
+
+        public virtual PlatformRenderTargetState State =>
+            IsCorrupted ? PlatformRenderTargetState.Corrupted : PlatformRenderTargetState.Ready;
+        
+        public virtual bool IsCorrupted => Context.IsLost;
+    }
+}

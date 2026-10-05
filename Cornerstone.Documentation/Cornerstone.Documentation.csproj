@@ -1,22 +1,37 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
 		<TargetFramework>net10.0</TargetFramework>
 		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
 		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<ApplicationIcon>$(MSBuildThisFileDirectory)Assets/Cornerstone.ico</ApplicationIcon>
 		<RootNamespace>Cornerstone.Documentation</RootNamespace>
 		<AssemblyName>Cornerstone.Documentation</AssemblyName>
+		<RestoreUseStaticGraphEvaluation>false</RestoreUseStaticGraphEvaluation>
 	</PropertyGroup>
+	<Import Project="..\Build\SingleFile.props" Condition="'$(Configuration)' == 'Release'" />
 	<ItemGroup>
-		<PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
-		<PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
+		<CornerstoneXaml Include="**\*.cxaml" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
+		<CornerstoneResource Include="Assets\**" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\Cornerstone.Avalonia\Cornerstone.Avalonia.csproj" />
-		<ProjectReference Include="..\Cornerstone\Cornerstone.csproj" />
+		<ProjectReference Include="..\Cornerstone\Cornerstone.csproj" AdditionalProperties="TargetFramework=net10.0;TargetFrameworks=net10.0" GlobalPropertiesToRemove="RuntimeIdentifier;RuntimeIdentifiers" />
 	</ItemGroup>
-	<!-- Ship all markdown next to the EXE for file-based catalog resolution -->
 	<ItemGroup>
-		<Content Include="**\*.md" Exclude="bin\**;obj\**" CopyToOutputDirectory="PreserveNewest" />
+		<Content Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+		<None Include="**\*.md" Exclude="bin\**;obj\**">
+			<LogicalName>$([System.String]::Copy('%(RecursiveDir)%(Filename)%(Extension)').Replace('\', '/'))</LogicalName>
+		</None>
 	</ItemGroup>
+	<Target Name="EmbedDocumentationMarkdown" BeforeTargets="PrepareForBuild">
+		<ItemGroup>
+			<EmbeddedResource Remove="@(EmbeddedResource)" Condition="'%(EmbeddedResource.DocumentationMarkdown)' == 'true'" />
+			<EmbeddedResource Include="@(None)" Condition="'%(None.LogicalName)' != ''">
+				<LogicalName>%(None.LogicalName)</LogicalName>
+				<DocumentationMarkdown>true</DocumentationMarkdown>
+				<Visible>false</Visible>
+			</EmbeddedResource>
+		</ItemGroup>
+	</Target>
+	<Import Project="..\Build\Presentation.props" />
 </Project>

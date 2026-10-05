@@ -24,6 +24,13 @@ public class CornerstoneTestTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void AreEqualDoubleWithinPrecision()
+	{
+		AreEqual(10.0, 10.000000000000002, 0.0001);
+		ExpectedException<CornerstoneException>(() => AreEqual(10.0, 10.2, 0.0001));
+	}
+
+	[TestMethod]
 	public void AreNotEqual()
 	{
 		AreNotEqual("1", "2");
@@ -86,6 +93,14 @@ public class CornerstoneTestTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void IsNotNullReturnsValue()
+	{
+		var value = IsNotNull("ok");
+		AreEqual("ok", value);
+		ExpectedException<CornerstoneException>(() => IsNotNull<string>(null));
+	}
+
+	[TestMethod]
 	public void IsNotNullShouldThrowIfNull()
 	{
 		IsNotNull(new object());
@@ -104,6 +119,51 @@ public class CornerstoneTestTests : CornerstoneUnitTest
 	{
 		IsTrue(true);
 		ExpectedException<CornerstoneException>(() => IsTrue(false), "The condition was incorrectly false and should have been true.");
+	}
+
+	[TestMethod]
+	public void MultipleCombinesSeveralFailures()
+	{
+		try
+		{
+			Multiple(
+				() => IsTrue(false, () => "first"),
+				() => AreEqual(1, 2, () => "second")
+			);
+			Fail("Multiple should have thrown.");
+		}
+		catch (CornerstoneException ex)
+		{
+			IsTrue(ex.Message.Contains("Multiple failures were encountered:"));
+			IsTrue(ex.Message.Contains("first"));
+			IsTrue(ex.Message.Contains("second"));
+			IsTrue(ex.InnerException is AggregateException);
+		}
+	}
+
+	[TestMethod]
+	public void MultiplePassesWhenAllChecksSucceed()
+	{
+		Multiple(
+			() => IsTrue(true),
+			() => AreEqual(1, 1)
+		);
+	}
+
+	[TestMethod]
+	public void MultipleRethrowsSingleFailure()
+	{
+		ExpectedException<CornerstoneException>(
+			() => Multiple(() => IsTrue(false)),
+			"The condition was incorrectly false and should have been true."
+		);
+	}
+
+	[TestMethod]
+	public void ThrowsReturnsException()
+	{
+		var ex = Throws<InvalidOperationException>(() => throw new InvalidOperationException("nope"));
+		AreEqual("nope", ex.Message);
 	}
 
 	#endregion

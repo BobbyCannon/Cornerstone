@@ -5,5 +5,13 @@
 		<OptimizationPreference>Speed</OptimizationPreference>
 		<PublishTrimmed>true</PublishTrimmed>
 		<TrimMode>full</TrimMode>
+		<!-- Browser WASM is not Native AOT. ILLink still trims for size; analysis of
+		     shared libraries (reflection, JSON, XAML bindings) is not a local AOT
+		     defect and fails the publish when TreatWarningsAsErrors is on. -->
+		<IsAotCompatible>false</IsAotCompatible>
+		<EnableAotAnalyzer>false</EnableAotAnalyzer>
+		<EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+		<SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
+		<ILLinkTreatWarningsAsErrors>false</ILLinkTreatWarningsAsErrors>
 	</PropertyGroup>
 </Project>

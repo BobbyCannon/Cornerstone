@@ -4,6 +4,7 @@ using Cornerstone.Reflection;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using Cornerstone.Data;
@@ -36,6 +37,8 @@ public class CollectionConverter : BaseConverter
 			&& targetIsNotCollection;
 	}
 
+	[UnconditionalSuppressMessage("Aot", "IL3050", Justification = "Array.CreateInstance is used only for runtime element types in collection conversion.")]
+	[UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "Converter toType is a runtime conversion target; members are preserved by generated source reflection.")]
 	public override bool TryConvertTo(object from, Type fromType, Type toType, out object value, IConverterSettings settings = null)
 	{
 		if (from is not IEnumerable enumerable)
@@ -51,7 +54,8 @@ public class CollectionConverter : BaseConverter
 			|| base.TryConvertTo(from, fromType, toType, out value, settings);
 	}
 
-	private bool TryConvertToUsingConstructor(List<object> items, Type toType, out object value, IConverterSettings settings)
+	[UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Constructor parameter types come from generated source reflection.")]
+	private bool TryConvertToUsingConstructor(List<object> items, [DynamicallyAccessedMembers(SourceReflector.AllRuntimeMembers)] Type toType, out object value, IConverterSettings settings)
 	{
 		var sourceType = SourceReflector.GetRequiredSourceType(toType);
 		var constructor = sourceType.DeclaredConstructors
@@ -89,7 +93,9 @@ public class CollectionConverter : BaseConverter
 		return true;
 	}
 
-	private bool TryConvertToUsingProperties(List<object> items, Type toType, out object value, IConverterSettings settings)
+	[RequiresDynamicCode("Creating arrays of a runtime element type requires dynamic code.")]
+	[UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Element and constructor parameter types come from generated source reflection.")]
+	private bool TryConvertToUsingProperties(List<object> items, [DynamicallyAccessedMembers(SourceReflector.AllRuntimeMembers)] Type toType, out object value, IConverterSettings settings)
 	{
 		var sourceType = SourceReflector.GetRequiredSourceType(toType);
 

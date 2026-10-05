@@ -1,0 +1,231 @@
+﻿using System;
+using Cornerstone.Presentation.Layout;
+using Cornerstone.Presentation.Utilities;
+using Cornerstone.Presentation.Controls.Elements;
+
+namespace Cornerstone.Presentation.Controls
+{
+    /// <summary>
+    /// A <see cref="Panel"/> with uniform column and row sizes.
+    /// </summary>
+    public class UniformGrid : Panel
+    {
+        /// <summary>
+        /// Defines the <see cref="Rows"/> property.
+        /// </summary>
+        public static readonly StyledProperty<int> RowsProperty =
+            PresentationProperty.Register<UniformGrid, int>(nameof(Rows));
+
+        /// <summary>
+        /// Defines the <see cref="Columns"/> property.
+        /// </summary>
+        public static readonly StyledProperty<int> ColumnsProperty =
+            PresentationProperty.Register<UniformGrid, int>(nameof(Columns));
+
+        /// <summary>
+        /// Defines the <see cref="FirstColumn"/> property.
+        /// </summary>
+        public static readonly StyledProperty<int> FirstColumnProperty =
+            PresentationProperty.Register<UniformGrid, int>(nameof(FirstColumn));
+
+        /// <summary>
+        /// Defines the <see cref="RowSpacing"/> property.
+        /// </summary>
+        public static readonly StyledProperty<double> RowSpacingProperty =
+            PresentationProperty.Register<UniformGrid, double>(nameof(RowSpacing), 0);
+
+        /// <summary>
+        /// Defines the <see cref="ColumnSpacing"/> property.
+        /// </summary>
+        public static readonly StyledProperty<double> ColumnSpacingProperty =
+            PresentationProperty.Register<UniformGrid, double>(nameof(ColumnSpacing), 0);
+
+        private int _rows;
+        private int _columns;
+
+        static UniformGrid()
+        {
+            AffectsMeasure<UniformGrid>(RowsProperty, ColumnsProperty, FirstColumnProperty);
+        }
+
+        /// <summary>
+        /// Specifies the row count. If set to 0, row count will be calculated automatically.
+        /// </summary>
+        public int Rows
+        {
+            get => GetValue(RowsProperty);
+            set => SetValue(RowsProperty, value);
+        }
+
+        /// <summary>
+        /// Specifies the column count. If set to 0, column count will be calculated automatically.
+        /// </summary>
+        public int Columns
+        {
+            get => GetValue(ColumnsProperty);
+            set => SetValue(ColumnsProperty, value);
+        }
+
+        /// <summary>
+        /// Specifies, for the first row, the column where the items should start.
+        /// </summary>
+        public int FirstColumn
+        {
+            get => GetValue(FirstColumnProperty);
+            set => SetValue(FirstColumnProperty, value);
+        }
+
+        /// <summary>
+        /// Specifies the spacing between rows.
+        /// </summary>
+        public double RowSpacing
+        {
+            get => GetValue(RowSpacingProperty);
+            set => SetValue(RowSpacingProperty, value);
+        }
+
+        /// <summary>
+        /// Specifies the spacing between columns.
+        /// </summary>
+        public double ColumnSpacing
+        {
+            get => GetValue(ColumnSpacingProperty);
+            set => SetValue(ColumnSpacingProperty, value);
+        }
+
+        protected override Size MeasureOverride(Size availableSize)
+        {
+            UpdateRowsAndColumns();
+
+            var maxWidth = 0d;
+            var maxHeight = 0d;
+
+            var childAvailableSize = new Size(
+                (availableSize.Width - (_columns - 1) * ColumnSpacing) / _columns,
+                (availableSize.Height - (_rows - 1) * RowSpacing) / _rows);
+
+            foreach (var child in Children)
+            {
+                child.Measure(childAvailableSize);
+
+                if (child.DesiredSize.Width > maxWidth)
+                {
+                    maxWidth = child.DesiredSize.Width;
+                }
+
+                if (child.DesiredSize.Height > maxHeight)
+                {
+                    maxHeight = child.DesiredSize.Height;
+                }
+            }
+
+            if (UseLayoutRounding)
+            {
+                var scale = LayoutHelper.GetLayoutScale(this);
+                maxWidth = LayoutHelper.RoundLayoutValue(maxWidth, scale);
+                maxHeight = LayoutHelper.RoundLayoutValue(maxHeight, scale);
+            }
+
+            var totalWidth = maxWidth * _columns + ColumnSpacing * (_columns - 1);
+            var totalHeight = maxHeight * _rows + RowSpacing * (_rows - 1);
+
+            totalWidth = Math.Max(totalWidth, 0);
+            totalHeight = Math.Max(totalHeight, 0);
+
+            return new Size(totalWidth, totalHeight);
+        }
+
+        protected override Size ArrangeOverride(Size finalSize)
+        {
+            var x = FirstColumn;
+            var y = 0;
+
+            var columnSpacing = ColumnSpacing;
+            var rowSpacing = RowSpacing;
+
+            var width = Math.Max((finalSize.Width - (_columns - 1) * columnSpacing) / _columns, 0);
+            var height = Math.Max((finalSize.Height - (_rows - 1) * rowSpacing) / _rows, 0);
+
+            // If layout rounding is enabled, round the per-cell unit size to integral device units.
+            if (UseLayoutRounding)
+            {
+                var scale = LayoutHelper.GetLayoutScale(this);
+                width = LayoutHelper.RoundLayoutValue(width, scale);
+                height = LayoutHelper.RoundLayoutValue(height, scale);
+            }
+
+            foreach (var child in Children)
+            {
+                if (!child.IsVisible)
+                {
+                    continue;
+                }
+
+                var rect = new Rect(
+                    x * (width + columnSpacing),
+                    y * (height + rowSpacing),
+                    width,
+                    height);
+
+                child.Arrange(rect);
+
+                x++;
+
+                if (x >= _columns)
+                {
+                    x = 0;
+                    y++;
+                }
+            }
+
+            return finalSize;
+        }
+
+        private void UpdateRowsAndColumns()
+        {
+            _rows = Rows;
+            _columns = Columns;
+
+            if (FirstColumn >= _columns)
+            {
+                SetCurrentValue(FirstColumnProperty, 0);
+            }
+
+            var itemCount = FirstColumn;
+
+            foreach (var child in Children)
+            {
+                if (child.IsVisible)
+                {
+                    itemCount++;
+                }
+            }
+
+            if (_rows == 0)
+            {
+                if (_columns == 0)
+                {
+                    _rows = _columns = (int)Math.Ceiling(Math.Sqrt(itemCount));
+                }
+                else
+                {
+                    _rows = Math.DivRem(itemCount, _columns, out int rem);
+
+                    if (rem != 0)
+                    {
+                        _rows++;
+                    }
+                }
+            }
+            else if (_columns == 0)
+            {
+                _columns = Math.DivRem(itemCount, _rows, out int rem);
+
+                if (rem != 0)
+                {
+                    _columns++;
+                }
+            }
+        }
+    }
+}

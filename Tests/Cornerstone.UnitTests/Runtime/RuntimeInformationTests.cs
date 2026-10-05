@@ -20,7 +20,7 @@ public class RuntimeInformationTests : CornerstoneUnitTest
 		var runtimeInformation = new RuntimeInformation();
 		runtimeInformation.SetPlatformOverride(nameof(IRuntimeInformation.ApplicationName), "UnitTest");
 		runtimeInformation.Initialize(typeof(Babel).Assembly);
-		runtimeInformation.Refresh();
+		runtimeInformation.Refresh(true);
 
 		AreEqual("""
 				ApplicationBitness
@@ -31,11 +31,12 @@ public class RuntimeInformationTests : CornerstoneUnitTest
 				ApplicationIsElevated
 				ApplicationIsLoaded
 				ApplicationIsNativeBuild
+				ApplicationIsReadyToRunBuild
 				ApplicationIsShuttingDown
 				ApplicationLocation
 				ApplicationName
 				ApplicationVersion
-				AvaloniaRuntimeVersion
+				CornerstoneRuntimeVersion
 				DeviceDisplayRefreshRate
 				DeviceDisplaySize
 				DeviceId
@@ -54,6 +55,7 @@ public class RuntimeInformationTests : CornerstoneUnitTest
 		IsTrue(runtimeInformation.ApplicationDataLocation.Length > 0);
 		AreEqual(Environment.IsPrivilegedProcess, runtimeInformation.ApplicationIsElevated);
 		AreEqual(!RuntimeFeature.IsDynamicCodeSupported, runtimeInformation.ApplicationIsNativeBuild);
+		IsFalse(runtimeInformation.ApplicationIsReadyToRunBuild);
 		AreEqual(DevicePlatform.Windows, runtimeInformation.DevicePlatform);
 
 		#if DEBUG
@@ -67,6 +69,19 @@ public class RuntimeInformationTests : CornerstoneUnitTest
 		IsTrue(runtimeInformation.IsLifecycleInitialized());
 		IsTrue(runtimeInformation.IsLifecycleLoaded());
 		IsFalse(runtimeInformation.IsLifecycleStarted());
+	}
+
+	[TestMethod]
+	public void InitializeIsIdempotentForLifecycle()
+	{
+		var runtimeInformation = new RuntimeInformation();
+		runtimeInformation.SetPlatformOverride(nameof(IRuntimeInformation.ApplicationName), "UnitTest");
+		runtimeInformation.Initialize(typeof(Babel).Assembly);
+		runtimeInformation.Initialize(typeof(Babel).Assembly);
+
+		IsTrue(runtimeInformation.IsLifecycleInitialized());
+		IsTrue(runtimeInformation.IsLifecycleLoaded());
+		IsTrue(runtimeInformation.ApplicationIsLoaded);
 	}
 
 	[TestMethod]
@@ -88,6 +103,8 @@ public class RuntimeInformationTests : CornerstoneUnitTest
 		IsTrue(runtimeInformation.IsLifecycleLoaded());
 		IsTrue(runtimeInformation.ApplicationIsLoaded);
 		IsFalse(runtimeInformation.IsLifecycleStarted());
+		IsFalse(runtimeInformation.ContainsKey(nameof(IRuntimeInformation.DeviceId)));
+		IsFalse(runtimeInformation.ContainsKey(nameof(IRuntimeInformation.ApplicationIsReadyToRunBuild)));
 		AreEqual(TimeSpan.Zero, runtimeInformation.ApplicationStartup);
 
 		runtimeInformation.StartLifecycle();
@@ -109,19 +126,6 @@ public class RuntimeInformationTests : CornerstoneUnitTest
 
 		runtimeInformation.UninitializeLifecycle();
 		IsFalse(runtimeInformation.IsLifecycleInitialized());
-	}
-
-	[TestMethod]
-	public void InitializeIsIdempotentForLifecycle()
-	{
-		var runtimeInformation = new RuntimeInformation();
-		runtimeInformation.SetPlatformOverride(nameof(IRuntimeInformation.ApplicationName), "UnitTest");
-		runtimeInformation.Initialize(typeof(Babel).Assembly);
-		runtimeInformation.Initialize(typeof(Babel).Assembly);
-
-		IsTrue(runtimeInformation.IsLifecycleInitialized());
-		IsTrue(runtimeInformation.IsLifecycleLoaded());
-		IsTrue(runtimeInformation.ApplicationIsLoaded);
 	}
 
 	#endregion

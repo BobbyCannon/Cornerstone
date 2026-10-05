@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Company.AppName/Company.AppName.csproj" />
+  <Project Path="Company.AppName.Android/Company.AppName.Android.csproj" />
+  <Project Path="Company.AppName.Browser/Company.AppName.Browser.csproj" />
+  <Project Path="Company.AppName.Desktop/Company.AppName.Desktop.csproj" />
+  <Project Path="Company.AppName.iOS/Company.AppName.iOS.csproj" />
+</Solution>

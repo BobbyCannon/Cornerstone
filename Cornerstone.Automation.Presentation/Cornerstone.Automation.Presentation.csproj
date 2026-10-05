@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net10.0-windows10.0.26100.0</TargetFrameworks>
+		<AssemblyTitle>Cornerstone.Automation.Presentation</AssemblyTitle>
+		<PackageId>Cornerstone.Automation.Presentation</PackageId>
+		<SignAssembly>true</SignAssembly>
+	</PropertyGroup>
+	<Import Project="..\Package.props" />
+	<ItemGroup>
+		<ProjectReference Include="..\Cornerstone.Automation\Cornerstone.Automation.csproj" />
+		<ProjectReference Include="..\Cornerstone.Presentation\Cornerstone.Presentation.csproj" />
+	</ItemGroup>
+</Project>

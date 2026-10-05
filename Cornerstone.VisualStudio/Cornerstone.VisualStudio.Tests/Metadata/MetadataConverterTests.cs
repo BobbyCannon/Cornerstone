@@ -1,4 +1,4 @@
-﻿#region References
+#region References
 
 extern alias A1;
 extern alias A2;
@@ -9,22 +9,15 @@ using Avalonia.Controls;
 using CompletionEngineTests.Models;
 using Cornerstone.VisualStudio.Core.AssemblyMetadata;
 using Cornerstone.VisualStudio.Core.DnlibMetadataProvider;
-using Xunit;
-using Xunit.Abstractions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 #endregion
 
 namespace Cornerstone.VisualStudio.Tests.Metadata;
 
+[TestClass]
 public class MetadataConverterTests
 {
-	private readonly ITestOutputHelper _testOutputHelper;
-
-	public MetadataConverterTests(ITestOutputHelper testOutputHelper)
-	{
-		_testOutputHelper = testOutputHelper;
-	}
-
 	#region Fields
 
 	private static readonly string[] _expectedPublicOrInternalProperties;
@@ -56,23 +49,23 @@ public class MetadataConverterTests
 
 	#region Methods
 
-	[Fact]
+	[TestMethod]
 	public void AttachedPropertySetterAndGetterMixMatch()
 	{
 		var clrType = typeof(Grid);
 		var nsName = "clr-namespace:" + clrType.Namespace + ";assembly=" + clrType.Assembly.GetName().Name;
 		var ns = _metadata.Namespaces[nsName];
-		Assert.NotNull(ns);
+		Assert.IsNotNull(ns);
 		ns.TryGetValue(clrType.Name, out var type);
-		Assert.NotNull(type);
+		Assert.IsNotNull(type);
 
 		var property = type.Properties.SingleOrDefault(p => p.Name == "Column");
-		Assert.NotNull(property);
-		Assert.True(property.IsAttached);
-		Assert.Equal("System.Int32", property.Type?.Name);
+		Assert.IsNotNull(property);
+		Assert.IsTrue(property.IsAttached);
+		Assert.AreEqual("System.Int32", property.Type?.Name);
 	}
 
-	[Fact]
+	[TestMethod]
 	public void DiscoverAttachedEventIfItIsDerivedFromRoutedEvent()
 	{
 		var clrType = typeof(MetadataTestClass);
@@ -81,59 +74,59 @@ public class MetadataConverterTests
 		var type = ns[clrType.Name];
 
 		var attachedEvent = type.Events.Single();
-		Assert.True(attachedEvent.Type.FullName == typeof(MetadataTestClass).FullName);
+		Assert.IsTrue(attachedEvent.Type.FullName == typeof(MetadataTestClass).FullName);
 	}
 
-	[Fact]
+	[TestMethod]
 	public void DiscoverDoNotOverlapped()
 	{
 		var clrType = typeof(AttachedBehavior);
 		var nsName = "clr-namespace:" + clrType.Namespace + ";assembly=" + clrType.Assembly.GetName().Name;
 		var ns = _metadata.Namespaces[nsName];
 
-		Assert.NotNull(ns);
+		Assert.IsNotNull(ns);
 		var type = ns[clrType.Name];
-		Assert.NotNull(type);
-		Assert.Equal(GetName(clrType), type.AssemblyQualifiedName);
+		Assert.IsNotNull(type);
+		Assert.AreEqual(GetName(clrType), type.AssemblyQualifiedName);
 
 		var clrTypeA1 = typeof(A1::CompletionEngineTests.Models.AttachedBehavior);
 		nsName = "clr-namespace:" + clrTypeA1.Namespace + ";assembly=" + clrTypeA1.Assembly.GetName().Name;
 
 		ns = _metadata.Namespaces[nsName];
 
-		Assert.NotNull(ns);
+		Assert.IsNotNull(ns);
 
 		var typeA1 = ns[clrTypeA1.Name];
 
-		Assert.NotNull(typeA1);
+		Assert.IsNotNull(typeA1);
 
-		Assert.Equal(GetName(clrTypeA1), typeA1.AssemblyQualifiedName);
+		Assert.AreEqual(GetName(clrTypeA1), typeA1.AssemblyQualifiedName);
 
 		var clrTypeA2 = typeof(A2::CompletionEngineTests.Models.AttachedBehavior);
 		nsName = "clr-namespace:" + clrTypeA1.Namespace + ";assembly=" + clrTypeA2.Assembly.GetName().Name;
 
 		ns = _metadata.Namespaces[nsName];
 
-		Assert.NotNull(ns);
+		Assert.IsNotNull(ns);
 
 		var typeA2 = ns[clrTypeA2.Name];
 
-		Assert.NotNull(typeA2);
+		Assert.IsNotNull(typeA2);
 
-		Assert.Equal(GetName(clrTypeA2), typeA2.AssemblyQualifiedName);
+		Assert.AreEqual(GetName(clrTypeA2), typeA2.AssemblyQualifiedName);
 	}
 
-	[Theory]
-	[MemberData(nameof(GetCases))]
+	[TestMethod]
+	[DynamicData(nameof(GetCases))]
 	public void DiscoverInternalsVisibleTo(TestScenario scenario)
 	{
-		Assert.NotNull(scenario.ClrType);
+		Assert.IsNotNull(scenario.ClrType);
 		var nsName = "clr-namespace:" + scenario.ClrType.Namespace + ";assembly=" + scenario.ClrType.Assembly.GetName().Name;
 		var ns = _metadata.Namespaces[nsName];
 
-		Assert.NotNull(ns);
+		Assert.IsNotNull(ns);
 		
-		_testOutputHelper.WriteLine(nsName + "; " + scenario.ClrType.FullName);
+		System.Diagnostics.Debug.WriteLine(nsName + "; " + scenario.ClrType.FullName);
 
 		ns.TryGetValue(scenario.ClrType.Name, out var type);
 		scenario.CheckAction(scenario.ClrType, type);
@@ -146,7 +139,7 @@ public class MetadataConverterTests
 		[
 			new TestScenario("Local Internal Attached Behavior",
 				typeof(InternalAttachedBehavior),
-				static (clrType, mdType) => { Assert.Equal(GetName(clrType), mdType.AssemblyQualifiedName); })
+				static (clrType, mdType) => { Assert.AreEqual(GetName(clrType), mdType.AssemblyQualifiedName); })
 		];
 		yield return
 		[
@@ -154,8 +147,8 @@ public class MetadataConverterTests
 				typeof(InternalClass),
 				static (clrType, mdType) =>
 				{
-					Assert.Equal(GetName(clrType), mdType.AssemblyQualifiedName);
-					Assert.Equal(_expectedPublicOrInternalProperties, mdType.Properties.Select(p => p.Name));
+					Assert.AreEqual(GetName(clrType), mdType.AssemblyQualifiedName);
+					Assert.AreSequenceEqual(_expectedPublicOrInternalProperties, mdType.Properties.Select(p => p.Name));
 				})
 		];
 		yield return
@@ -164,8 +157,8 @@ public class MetadataConverterTests
 				typeof(PublicWithInternalPropertiesClass),
 				static (clrType, mdType) =>
 				{
-					Assert.Equal(GetName(clrType), mdType.AssemblyQualifiedName);
-					Assert.Equal(_expectedPublicOrInternalProperties, mdType.Properties.Select(p => p.Name));
+					Assert.AreEqual(GetName(clrType), mdType.AssemblyQualifiedName);
+					Assert.AreSequenceEqual(_expectedPublicOrInternalProperties, mdType.Properties.Select(p => p.Name));
 				})
 		];
 		// TestAssembly1 with InternalsVisibleTo
@@ -173,7 +166,7 @@ public class MetadataConverterTests
 		[
 			new TestScenario("InternalsVisibleTo Internal Attached Behavior",
 				typeof(A1::CompletionEngineTests.Models.InternalAttachedBehavior),
-				static (clrType, mdType) => { Assert.Equal(GetName(clrType), mdType?.AssemblyQualifiedName); })
+				static (clrType, mdType) => { Assert.AreEqual(GetName(clrType), mdType?.AssemblyQualifiedName); })
 		];
 		yield return
 		[
@@ -181,8 +174,8 @@ public class MetadataConverterTests
 				typeof(A1::CompletionEngineTests.Models.InternalClass),
 				static (clrType, mdType) =>
 				{
-					Assert.Equal(GetName(clrType), mdType?.AssemblyQualifiedName);
-					Assert.Equal(_expectedPublicOrInternalProperties, mdType?.Properties.Select(p => p.Name));
+					Assert.AreEqual(GetName(clrType), mdType?.AssemblyQualifiedName);
+					Assert.AreSequenceEqual(_expectedPublicOrInternalProperties, mdType?.Properties.Select(p => p.Name));
 				})
 		];
 		yield return
@@ -191,8 +184,8 @@ public class MetadataConverterTests
 				typeof(A1::CompletionEngineTests.Models.PublicWithInternalPropertiesClass),
 				static (clrType, mdType) =>
 				{
-					Assert.Equal(GetName(clrType), mdType.AssemblyQualifiedName);
-					Assert.Equal(_expectedPublicOrInternalProperties, mdType.Properties.Select(p => p.Name));
+					Assert.AreEqual(GetName(clrType), mdType.AssemblyQualifiedName);
+					Assert.AreSequenceEqual(_expectedPublicOrInternalProperties, mdType.Properties.Select(p => p.Name));
 				})
 		];
 		// TestAssembly2 without InternalsVisibleTo
@@ -200,13 +193,13 @@ public class MetadataConverterTests
 		[
 			new TestScenario("Not InternalsVisibleTo Internal Attached Behavior",
 				Type.GetType("CompletionEngineTests.Models.InternalAttachedBehavior, TestAssembly2"),
-				static (clrType, mdType) => { Assert.Null(mdType); })
+				static (clrType, mdType) => { Assert.IsNull(mdType); })
 		];
 		yield return
 		[
 			new TestScenario("Not InternalsVisibleTo Internal Class",
 				Type.GetType("CompletionEngineTests.Models.InternalAttachedBehavior, TestAssembly2"),
-				static (clrType, mdType) => { Assert.Null(mdType); })
+				static (clrType, mdType) => { Assert.IsNull(mdType); })
 		];
 		yield return
 		[
@@ -214,8 +207,8 @@ public class MetadataConverterTests
 				Type.GetType("CompletionEngineTests.Models.PublicWithInternalPropertiesClass, TestAssembly2"),
 				static (clrType, mdType) =>
 				{
-					Assert.Equal(GetName(clrType), mdType.AssemblyQualifiedName);
-					Assert.Equal(_expectedPublicProperties, mdType.Properties.Select(p => p.Name));
+					Assert.AreEqual(GetName(clrType), mdType.AssemblyQualifiedName);
+					Assert.AreSequenceEqual(_expectedPublicProperties, mdType.Properties.Select(p => p.Name));
 				})
 		];
 	}

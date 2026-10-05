@@ -1,9 +1,8 @@
 # Cornerstone Visual Studio Extension — Performance Optimization Plan
 
-Living document for CPU / latency work on the Avalonia XAML designer and related IDE features.  
+Living document for CPU / latency work on the Cornerstone XAML designer and related IDE features.  
 Return here when resuming optimization work.
 
-**Last updated:** 2026-07-31  
 **Context:** Random high CPU while the designer is open; investigation centered on the previewer host process and related IDE-side work.  
 **Ship notes:** User-facing changes for the next VSIX go in [../NextRelease.md](../NextRelease.md).
 
@@ -13,7 +12,7 @@ Return here when resuming optimization work.
 
 | Symptom | Likely process | Notes |
 |---------|----------------|-------|
-| CPU while designer idle / open | Host `dotnet` (Designer HostApp) and/or `devenv` | Host uses a ~60 Hz design-mode render timer; VS applies frames + WPF layout |
+| CPU while designer idle / open | Host `dotnet` (Designer HostApp) and/or `devenv` | Host render timer runs only while the scene is dirty (up to 120 Hz). Visual Studio presents a frame on the WPF render pass and unhooks while the picture is still |
 | Spikes on open / after build | `devenv` | Metadata (dnlib) + solution graph walk |
 | Typing hitches | `devenv` | Full-document copies, completion, manipulators |
 | Host dies on bad XAML / app code | Host exits | Should pause UI, not thrash |
@@ -53,17 +52,18 @@ These landed during the CPU / stability pass. Do not re-do unless regressing.
 
 - [x] **Root cause:** BuildBegin pauses + `Kill()`; BuildDone unpaused via `IsPaused` and `StartStopProcessAsync` only if `!IsRunning`. Kill is async; unpause often skipped start; intentional `ProcessExited` did not restart → frozen last frame / old assemblies. C# `CreateDesignData` never reloads via `UpdateXaml` alone.
 - [x] `PreviewerProcess.StopAndWaitAsync` waits for exit before restart.
-- [x] `AvaloniaDesigner.OnBuildCompletedAsync` / `RecycleHostAsync`: wait-stop → `LoadTargetsAsync` → start + push buffer XAML.
+- [x] `CornerstoneDesigner.OnBuildCompletedAsync` / `RecycleHostAsync`: wait-stop → `LoadTargetsAsync` → start + push buffer XAML.
 - [x] `EditorPane.HandleBuildDone` calls recycle instead of only flipping `IsPaused`.
 
 ### Designer / preview UI
 
-- [x] Skip layout (size/margin) when size/scaling unchanged (`AvaloniaPreviewer`).
+- [x] Skip layout (size/margin) when size/scaling unchanged (`CornerstonePreviewer`).
 - [x] Filter tiny mouse moves before sending pointer input to host.
 - [x] Fit-zoom feedback break (superseded: Fit modes removed entirely; percentage zoom only, default 100%).
 - [x] Lighter `FrameReceived` path (no redundant main-thread hop for trivial show-preview).
 - [x] Debounce + skip unchanged XAML to host (`Throttle` classic debounce, `_lastSentXaml`, adaptive idle).
 - [x] Suspend host when document tab not visible (`EditorPane` / `IVsWindowFrameNotify3`); Source-only idle suspend (15 s).
+- [x] Remote frame pump presents on `CompositionTarget.Rendering` (`RemoteSession`): latest frame wins, once per WPF render, so the cap is the monitor refresh. The 16 ms `DispatcherPriority.Background` timer was removed; it restarted after every blit and skipped frames. Same-size frames update pixels only and do not run layout. The hook is removed while no frame is waiting. `Stop` (tab hidden, Source-only suspend) drops it so background documents do not keep waking `devenv`. Invalid markup still ACKs and does not present.
 - [x] Remove Fit All / Fit to Width — fixed % zoom only; drop viewport↔scale coupling and fit SizeChanged path.
 
 ---
@@ -74,7 +74,7 @@ These landed during the CPU / stability pass. Do not re-do unless regressing.
 
 #### 1. Debounce + skip unchanged XAML to host
 
-**Files:** `Services/Throttle.cs`, `Views/AvaloniaDesigner.xaml.cs`  
+**Files:** `Services/Throttle.cs`, `Views/CornerstoneDesigner.xaml.cs`  
 **Why:** Every settled edit still ships full XAML and forces host reload/render.
 
 - [x] Always restart debounce timer on each edit (classic debounce), even when values compare equal if needed.
@@ -85,7 +85,7 @@ These landed during the CPU / stability pass. Do not re-do unless regressing.
 
 #### 2. Stop or suspend host when not needed
 
-**Files:** `Views/AvaloniaDesigner.xaml.cs`, `Views/EditorPane.cs`, `Services/PreviewerProcess.cs`  
+**Files:** `Views/CornerstoneDesigner.xaml.cs`, `Views/EditorPane.cs`, `Services/PreviewerProcess.cs`  
 **Why:** One 60 Hz design host per open designer; Source-only mode previously kept the process alive forever.
 
 - [x] Stop host when document tab is not visible (2 s delay via `IVsWindowFrameNotify3.OnShow` + `SetDocumentVisible`).
@@ -95,7 +95,7 @@ These landed during the CPU / stability pass. Do not re-do unless regressing.
 
 #### 3. Smarter completion metadata cache
 
-**Files:** `Views/AvaloniaDesigner.xaml.cs` (`CreateCompletionMetadataAsync`, `_metadataCache`), `DnlibMetadataProvider`, `MetadataConverter`  
+**Files:** `Views/CornerstoneDesigner.xaml.cs` (`CreateCompletionMetadataAsync`, `_metadataCache`), `DnlibMetadataProvider`, `MetadataConverter`  
 **Why:** Full assembly walk + convert on open/build is a major spike.
 
 - [ ] Cache key = executable path + reference list hash + assembly write times (not path alone).
@@ -106,7 +106,7 @@ These landed during the CPU / stability pass. Do not re-do unless regressing.
 
 #### 4. Remove WPF Gaussian blur “shadow”
 
-**File:** `Views/AvaloniaPreviewer.xaml`  
+**File:** `Views/CornerstonePreviewer.xaml`  
 **Why:** `BlurEffect` on a full-size border is expensive when layout/size changes.
 
 - [x] Replaced with simple border shadow (no `BlurEffect` / `DropShadowEffect`).
@@ -116,9 +116,11 @@ These landed during the CPU / stability pass. Do not re-do unless regressing.
 **Files:** `XamlCompletionSource.cs`, `XamlTextManipulatorRegistrar.cs`, `XamlCompletionCommandHandler.cs`, suggested actions  
 **Why:** Large AXAML → allocation + GC on typing and completion.
 
-- [ ] Completion: pass only text-to-caret (or reuse engine’s substring) without double materialization.
-- [ ] Manipulator: only run for changes that can affect structure; scope to changed line ± window.
-- [ ] Command handler: avoid full-snapshot parse on every commit key; cache parse for caret line/position.
+- [x] Completion: do not start a session for letters/spaces in element content (avoids full `GetText()` per keystroke); parse-to-caret instead of full snapshot on session key handlers.
+- [x] Manipulator: skip unless the edit looks like markup or the caret is inside an open tag (lookback, not full document).
+- [x] Designer `ChangedOnBackground`: debounce without copying the snapshot; read buffer once when idle.
+- [x] Error tagger: marshal `ErrorChanged` to the UI thread; `TagsChanged` only the error line(s), not the whole snapshot.
+- [x] Frames: ACK same-size frames without UI hop / `WritePixels` when inside the ~16 ms interval.
 - [ ] Suggested actions: cache xmlns aliases until buffer version changes.
 
 ---
@@ -147,11 +149,13 @@ These landed during the CPU / stability pass. Do not re-do unless regressing.
 
 #### 8. Preview frame / input policy when inactive
 
-**Files:** `PreviewerProcess.cs`, `AvaloniaPreviewer.xaml.cs`  
+**Files:** `PreviewerProcess.cs`, `CornerstonePreviewer.xaml.cs`  
 **Why:** Extra work when user is not looking at the design surface.
 
 - [x] When tab inactive or VS minimized: stop host (via P1#2 visibility suspend).
+- [x] Visual Studio frame apply is the WPF render pass. `RemoteSession` hooks only while a frame is queued and drops that hook on `Stop`.
 - [ ] Throttle pointer moves to ~30 Hz; skip input when not over preview or when markup-paused.
+- [ ] Host: do not send a frame whose pixels match the last sent frame (animations that tick without changing pixels).
 
 #### 9. Logging policy
 
@@ -174,7 +178,8 @@ These landed during the CPU / stability pass. Do not re-do unless regressing.
 
 ### P3 — Lower impact / polish
 
-- [x] Stronger “pause preview while typing” / soft invalid markup — incomplete preflight skip, 500 ms debounce, deferred error overlay, long-idle force send (`XamlEditCompleteness`, `AvaloniaDesigner`).
+- [x] Stronger “pause preview while typing” / soft invalid markup — incomplete preflight skip, 500 ms debounce, deferred error overlay, long-idle force send (`XamlEditCompleteness`, `CornerstoneDesigner`).
+- [x] Editor hang on document edit — error tagger UI marshal + narrow tags; no full-snapshot work on content keystrokes; throttle `WritePixels` before the UI hop.
 - [ ] Document that design-time animations / clocks keep the host hot; optional “disable animations in designer” if AppBuilder can be influenced.
 - [ ] Parallel dnlib assembly reads only if measured safe (I/O-bound).
 - [ ] Error tagger: keep full-snapshot `TagsChanged` only while single diagnostic; narrow span if multi-diag later.
@@ -200,14 +205,14 @@ These landed during the CPU / stability pass. Do not re-do unless regressing.
 ## Architecture notes (previewer)
 
 ```
-VS (devenv)                              Host (dotnet Avalonia.Designer.HostApp)
+VS (devenv)                              Host (dotnet Cornerstone.Designer.HostApp)
 ─────────────────────────────────────    ──────────────────────────────────────
 StartAsync → TCP BSON listen             Connect, Design.IsDesignMode
-ClientSupportedPixelFormats              UiThreadRenderTimer(~60 Hz)
-ClientRenderInfoMessage (DPI)            Paint → FrameMessage
-UpdateXaml → load design window          Wait for FrameReceivedMessage ACK
-On frame: WritePixels (if not frozen)    Flow-controlled by ACK
-FrameReceived → WPF Image / layout
+ClientSupportedPixelFormats              UiThreadRenderTimer(120 Hz)
+ClientRenderInfoMessage (DPI)            Paint → private pixel copy → FrameMessage
+UpdateXaml → load design window          Send the latest frame when the socket write is free
+On frame: present on WPF render          ACK caps the pipe at two frames
+FrameReceived → WPF Image / layout       BSON frame is one pre-sized write; pixel buffers are reused
 ```
 
 - Host always has a render loop while the process lives; dirty trees (animations, continuous invalidate) drive frames.
@@ -219,8 +224,8 @@ Key types:
 | Area | Primary files |
 |------|----------------|
 | Host process | `Services/PreviewerProcess.cs` |
-| Designer shell | `Views/AvaloniaDesigner.xaml(.cs)` |
-| Preview surface | `Views/AvaloniaPreviewer.xaml(.cs)` |
+| Designer shell | `Views/CornerstoneDesigner.xaml(.cs)` |
+| Preview surface | `Views/CornerstonePreviewer.xaml(.cs)` |
 | Editor lifecycle | `Views/EditorPane.cs`, `Services/EditorFactory.cs` |
 | Debounce | `Services/Throttle.cs` |
 | Solution graph | `Services/SolutionService.cs` |
@@ -231,9 +236,9 @@ Key types:
 
 ## Related issues / external context
 
-- Avalonia designer host continuous frames (historical): [Avalonia#10203](https://github.com/AvaloniaUI/Avalonia/issues/10203)
-- Previewer high CPU reports: [Avalonia#12438](https://github.com/AvaloniaUI/Avalonia/issues/12438)
-- Extension code was largely aligned with archived AvaloniaVS `PreviewerProcess` patterns.
+- Cornerstone designer host continuous frames (historical): [Cornerstone#10203](issues/10203)
+- Previewer high CPU reports: [Cornerstone#12438](issues/12438)
+- Extension code was largely aligned with archived CornerstoneVS `PreviewerProcess` patterns.
 
 ---
 

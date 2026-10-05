@@ -1,0 +1,16 @@
+<UserControl
+		xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:sample="clr-namespace:Cornerstone.Sample"
+		xmlns:themes="clr-namespace:Cornerstone.Presentation.Theme.Theming;assembly=Cornerstone.Presentation"
+		xmlns:w="clr-namespace:Cornerstone.Sample.Tabs.Welcome"
+		mc:Ignorable="d" d:DesignHeight="720" d:DesignWidth="560"
+		x:Class="Cornerstone.Sample.Tabs.SettingsView"
+		x:DataType="sample:AppViewModel"
+		x:Name="This">
+	<ScrollViewer HorizontalScrollBarVisibility="Disabled">
+		<w:TabThemes />
+	</ScrollViewer>
+</UserControl>

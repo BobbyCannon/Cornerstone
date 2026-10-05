@@ -35,6 +35,16 @@ internal class ProjectInfo
 	public bool HasAvaloniaDesignerSupport { get; set; }
 
 	/// <summary>
+	/// Project references Cornerstone.Presentation and has a designer HostApp path.
+	/// </summary>
+	public bool HasCornerstoneDesktop { get; set; }
+
+	/// <summary>
+	/// Cornerstone.Presentation designer host tooling is present.
+	/// </summary>
+	public bool HasCornerstoneDesignerSupport { get; set; }
+
+	/// <summary>
 	/// Gets or sets a value indicating whether the project is an executable.
 	/// </summary>
 	public bool IsExecutable { get; set; }
@@ -55,7 +65,17 @@ internal class ProjectInfo
 	/// </summary>
 	public IReadOnlyList<Project> DirectProjectReferences { get; set; }
 
+	/// <summary>
+	/// UniqueName of each direct project reference (stable vs DTE COM identity).
+	/// </summary>
+	public IReadOnlyList<string> DirectProjectReferenceUniqueNames { get; set; }
+
 	public Lazy<IReadOnlyList<Project>> LazyProjectReferences { get; set; }
+
+	/// <summary>
+	/// DTE FullName (path), when available.
+	/// </summary>
+	public string FullName { get; set; }
 
 	/// <summary>
 	/// Gets or sets the project name.
@@ -82,6 +102,16 @@ internal class ProjectInfo
 	}
 
 	/// <summary>
+	/// UniqueName of each flattened project reference.
+	/// </summary>
+	public IReadOnlyList<string> ProjectReferenceUniqueNames { get; set; }
+
+	/// <summary>
+	/// DTE UniqueName (solution-relative), when available.
+	/// </summary>
+	public string UniqueName { get; set; }
+
+	/// <summary>
 	/// Gets or sets the project's assembly references.
 	/// </summary>
 	public IReadOnlyList<string> References { get; set; }
@@ -95,7 +125,13 @@ internal class ProjectInfo
 		IsExecutable &&
 		!IsWebProject &&
 		HasAvaloniaDesignerSupport &&
-		(Outputs?.Any(o => !string.IsNullOrWhiteSpace(o.HostApp)) == true);
+		(Outputs?.Any(o => !string.IsNullOrWhiteSpace(o.AvaloniaHostApp)) == true);
+
+	public bool IsCornerstoneDesktopHostCandidate =>
+		IsExecutable &&
+		!IsWebProject &&
+		HasCornerstoneDesignerSupport &&
+		(Outputs?.Any(o => !string.IsNullOrWhiteSpace(o.CornerstoneHostApp)) == true);
 
 	#endregion
 }

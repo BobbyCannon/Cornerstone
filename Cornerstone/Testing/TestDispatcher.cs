@@ -1,8 +1,6 @@
 ﻿#region References
 
 using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Cornerstone.Presentation;
 
 #endregion
@@ -12,48 +10,21 @@ namespace Cornerstone.Testing;
 /// <summary>
 /// Represents a test dispatcher
 /// </summary>
-public class TestDispatcher : Dispatcher
+public class TestDispatcher : IDispatcher
 {
-	#region Constructors
-
-	public TestDispatcher()
-	{
-		IsDispatcherThread = true;
-	}
-
-	#endregion
-
-	#region Properties
-
-	public override bool IsDispatcherThread { get; }
-
-	#endregion
-
 	#region Methods
 
-	protected override void ExecuteOnDispatcher(Action action, DispatcherPriority priority, CancellationToken cancellationToken)
+	public bool CheckAccess()
 	{
-		action();
+		return true;
 	}
 
-	protected override T ExecuteOnDispatcher<T>(Func<T> action, DispatcherPriority priority, CancellationToken cancellationToken)
+	public void Post(Action action, DispatcherPriority priority = default)
 	{
-		return action();
 	}
 
-	protected override Task ExecuteOnDispatcherAsync(Action action, DispatcherPriority priority, CancellationToken cancellationToken)
+	public void VerifyAccess()
 	{
-		return Task.Run(action);
-	}
-
-	protected override Task<T> ExecuteOnDispatcherAsync<T>(Func<T> action, DispatcherPriority priority, CancellationToken cancellationToken)
-	{
-		return Task.Run(action);
-	}
-
-	protected override void ExecuteOnDispatcherPost(Action action, DispatcherPriority priority)
-	{
-		action();
 	}
 
 	#endregion

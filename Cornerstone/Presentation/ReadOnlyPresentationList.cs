@@ -1,13 +1,14 @@
-﻿#region References
+#region References
 
+using Cornerstone.Collections;
+using Cornerstone.Data;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
-using Cornerstone.Collections;
-using Cornerstone.Data;
+
 
 #endregion
 
@@ -16,7 +17,9 @@ namespace Cornerstone.Presentation;
 /// <summary>
 /// A readonly proxy for a presentation list.
 /// </summary>
-public partial class ReadOnlyPresentationList<T> : ReaderWriterLockProxy, IPresentationList<T>, IPresentationList
+public partial class ReadOnlyPresentationList<T> : ReaderWriterLockProxy,
+	IPresentationList<T>,
+	IPresentationList
 {
 	#region Constructors
 

@@ -2,7 +2,7 @@
 
 Recipe for adding a **dockable document tab** that uses **Keystone** (Bus · State · Engine) for domain work and **AppDispatcher** to project state into a thin ViewModel/View.
 
-This is the pattern used by **DockingManager** hosts (document tabs such as source control or a shell). **Cornerstone.GrokMonitor** uses the same Bus · State · Processor · AppDispatcher stack but hosts one home dashboard per shell `TabControl` tab (no docking). Framework pieces stay Avalonia-aware only at the View/tab boundary.
+This is the pattern used by **DockingManager** hosts (document tabs such as source control or a shell). **Cornerstone.GrokMonitor** uses the same Bus · State · Processor · AppDispatcher stack but hosts one home dashboard per shell `TabControl` tab (no docking). Framework pieces stay Cornerstone.Presentation-aware only at the View/tab boundary.
 
 ---
 
@@ -13,7 +13,7 @@ This is the pattern used by **DockingManager** hosts (document tabs such as sour
 | Domain state shared by more than one surface | One-off dialog or static page |
 | Async / process / IO work that must not live in the View | Pure UI layout or local-only chrome |
 | Multi-instance resources scoped by id (repo, session, home) | No engine mutations |
-| Testable processors without Avalonia | No bus messages |
+| Testable processors without Cornerstone.Presentation | No bus messages |
 
 For manual State → View wiring without the dispatch loop, see [ViewIntegration.md](ViewIntegration.md).
 
@@ -43,7 +43,7 @@ AppDispatcher            only while tab IsAttached
 
 | Layer | Owns | Does not own |
 |-------|------|--------------|
-| **State** | Domain snapshot, short status/error strings, list membership | Avalonia controls, scroll/selection |
+| **State** | Domain snapshot, short status/error strings, list membership | Cornerstone.Presentation controls, scroll/selection |
 | **Processor** | IO, parsing, process lifecycle; writes State | Direct UI updates |
 | **Bus** | Typed, scoped messages | Business rules |
 | **Tab ViewModel** | Which id is focused, layout flags, projection bindings | Domain mutations |
@@ -52,7 +52,7 @@ AppDispatcher            only while tab IsAttached
 **Rules of thumb**
 
 - UI **publishes** messages; it does not call “god services” for domain work.
-- Keystone (channel, State, processor) is **business logic only** and runs **off** the UI dispatcher — no `IDispatcher.Dispatch`, no Avalonia.
+- Keystone (channel, State, processor) is **business logic only** and runs **off** the UI dispatcher — no `IDispatcher.Dispatch`, no Cornerstone.Presentation.
 - AppDispatcher / the tab ViewModel only **project** State for what the user sees and types; they do not implement domain rules. Copy with `TrackProperties` / `TrackCollection` / `TrackBinding`; format status and other computed labels with `TrackDerived`. User gestures that must run processor work use `TrackIntent` (publish on the bus). How each `Track*` chooses dirtiness: [AppDispatcher.md — Track\* methods](AppDispatcher.md#track-methods).
 - Operations are **scoped by id** (repository, session, home, …). Processors never assume “the active tab.”
 - Pass dependencies through **constructors**. Do not use `AppBootstrap.GetInstance` from feature code.
@@ -219,13 +219,13 @@ Sample demos: Cornerstone.Sample `TabAppDispatcher*` surfaces.
 | Processor | Resolve `AppBus` / `AppState` / processor from test DI; `InitializeLifecycle`; publish messages; assert State |
 | Tab projection | Optional; prefer processor tests for domain truth |
 
-Avoid Avalonia in processor tests.
+Avoid Cornerstone.Presentation in processor tests.
 
 ---
 
 ## Worked example: Grok Usage (`Cornerstone.GrokMonitor`)
 
-Standalone **desktop-only** sample app: local CLI usage dashboard for discovered Grok homes (`~/.grok*`, env overrides). Host project: `Cornerstone.GrokMonitor/`.
+Standalone **desktop-only** sample app: local CLI usage dashboard for discovered Grok homes (`~/.grok*`, env overrides). Host project: `Applications/Cornerstone.GrokMonitor/`.
 
 | Piece | Location |
 |-------|----------|
@@ -258,5 +258,5 @@ The same architecture is used in larger DockingManager hosts (multi-instance doc
 | [Controls/DockingLifecycle.md](Controls/DockingLifecycle.md) | ActivateTab / DeactivateTab and dispatcher Track/Release |
 | [Lifecycle.md](Lifecycle.md) | Track / Release order |
 | [ViewIntegration.md](ViewIntegration.md) | Manual projection without AppDispatcher |
-| [CornerstoneApplication.md](CornerstoneApplication.md) | Avalonia host lifecycle |
+| [CornerstoneApplication.md](CornerstoneApplication.md) | Cornerstone host lifecycle |
 

@@ -1,0 +1,147 @@
+#region References
+
+using System.ComponentModel;
+using Cornerstone.Presentation;
+using Cornerstone.Presentation.Controls.Primitives;
+using Cornerstone.Presentation.Media;
+using Cornerstone.Presentation.Controls.TreeDataGrid.Models;
+using Cornerstone.Presentation.Controls.TreeDataGrid.Selection;
+using Cornerstone.Presentation.Controls.Input;
+using Cornerstone.Presentation.Controls.Naming;
+using Cornerstone.Presentation.Controls.TreeDataGrid.Cells;
+
+#endregion
+
+namespace Cornerstone.Presentation.Controls;
+
+public class TreeDataGridTextCell : TreeDataGridCell
+{
+	#region Fields
+
+	public static readonly DirectProperty<TreeDataGridTextCell, TextAlignment> TextAlignmentProperty;
+	public static readonly DirectProperty<TreeDataGridTextCell, TextTrimming> TextTrimmingProperty;
+	public static readonly DirectProperty<TreeDataGridTextCell, TextWrapping> TextWrappingProperty;
+	public static readonly DirectProperty<TreeDataGridTextCell, string> ValueProperty;
+
+	private TextBox _edit;
+	private bool _modelValueChanging;
+	private TextAlignment _textAlignment;
+	private TextTrimming _textTrimming;
+	private TextWrapping _textWrapping;
+	private string _value;
+
+	#endregion
+
+	#region Constructors
+
+	public TreeDataGridTextCell()
+	{
+		_textTrimming = TextTrimming.CharacterEllipsis;
+		_textWrapping = TextWrapping.NoWrap;
+		_textAlignment = TextAlignment.Left;
+	}
+
+	static TreeDataGridTextCell()
+	{
+		TextAlignmentProperty = PresentationProperty.RegisterDirect<TreeDataGridTextCell, TextAlignment>(nameof(TextAlignment), o => o.TextAlignment, (o, v) => o.TextAlignment = v);
+		TextTrimmingProperty = PresentationProperty.RegisterDirect<TreeDataGridTextCell, TextTrimming>(nameof(TextTrimming), o => o.TextTrimming);
+		TextWrappingProperty = PresentationProperty.RegisterDirect<TreeDataGridTextCell, TextWrapping>(nameof(TextWrapping), o => o.TextWrapping);
+		ValueProperty = PresentationProperty.RegisterDirect<TreeDataGridTextCell, string>(nameof(Value), o => o.Value, (o, v) => o.Value = v);
+	}
+
+	#endregion
+
+	#region Properties
+
+	public TextAlignment TextAlignment
+	{
+		get => _textAlignment;
+		set => SetAndRaise(TextAlignmentProperty, ref _textAlignment, value);
+	}
+
+	public TextTrimming TextTrimming
+	{
+		get => _textTrimming;
+		set => SetAndRaise(TextTrimmingProperty, ref _textTrimming, value);
+	}
+
+	public TextWrapping TextWrapping
+	{
+		get => _textWrapping;
+		set => SetAndRaise(TextWrappingProperty, ref _textWrapping, value);
+	}
+
+	public string Value
+	{
+		get => _value;
+		set
+		{
+			if (SetAndRaise(ValueProperty, ref _value, value) && Model is ITextCell cell)
+			{
+				if (!_modelValueChanging)
+				{
+					cell.Text = _value;
+				}
+				RaiseCellValueChanged();
+			}
+		}
+	}
+
+	#endregion
+
+	#region Methods
+
+	public override void Realize(TreeDataGridElementFactory factory, ITreeDataGridSelectionInteraction selection, ICell model, int columnIndex, int rowIndex)
+	{
+		Value = (model as ITextCell)?.Text;
+		TextTrimming = (model as ITextCell)?.TextTrimming ?? TextTrimming.CharacterEllipsis;
+		TextWrapping = (model as ITextCell)?.TextWrapping ?? TextWrapping.NoWrap;
+		TextAlignment = (model as ITextCell)?.TextAlignment ?? TextAlignment.Left;
+		base.Realize(factory, selection, model, columnIndex, rowIndex);
+		SubscribeToModelChanges();
+	}
+
+	public override void Unrealize()
+	{
+		UnsubscribeFromModelChanges();
+		base.Unrealize();
+	}
+
+	protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
+	{
+		base.OnApplyTemplate(e);
+
+		_edit = e.NameScope.Find<TextBox>("PART_Edit");
+
+		if (_edit is not null)
+		{
+			_edit.SelectAll();
+			_edit.Focus();
+		}
+	}
+
+	protected override void OnModelPropertyChanged(object sender, PropertyChangedEventArgs e)
+	{
+		base.OnModelPropertyChanged(sender, e);
+
+		if (e.PropertyName == nameof(ITextCell.Value))
+		{
+			try
+			{
+				_modelValueChanging = true;
+				UpdateValue();
+			}
+			finally
+			{
+				_modelValueChanging = false;
+			}
+		}
+	}
+
+	protected override void UpdateValue()
+	{
+		Value = (Model as ITextCell)?.Text;
+	}
+
+	#endregion
+}

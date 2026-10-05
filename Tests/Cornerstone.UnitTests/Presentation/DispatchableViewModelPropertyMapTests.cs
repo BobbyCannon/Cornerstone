@@ -17,55 +17,6 @@ public partial class DispatchableViewModelPropertyMapTests : CornerstoneUnitTest
 	#region Methods
 
 	[TestMethod]
-	public void TrackPropertiesContractGetOnlyDoesNotWriteModel()
-	{
-		var model = new SharedSettingsModel { Name = "a", Count = 1 };
-		model.ResetHasChanges();
-		var vm = new SharedHostViewModel();
-		vm.RegisterContract(model);
-
-		IsTrue(vm.HasModelChanges());
-		vm.ApplyModelChanges();
-		AreEqual("a", vm.Name);
-		AreEqual(1, vm.Count);
-
-		vm.Name = "user-edit";
-		IsFalse(vm.HasModelChanges());
-		vm.ApplyModelChanges();
-		AreEqual("a", model.Name);
-		AreEqual("user-edit", vm.Name);
-	}
-
-	[TestMethod]
-	public void TrackPropertiesContractGetSetIsTwoWay()
-	{
-		var model = new SharedSettingsModel { Name = "a", Count = 1 };
-		model.ResetHasChanges();
-		var vm = new SharedHostViewModel();
-		vm.RegisterContract(model);
-
-		vm.ApplyModelChanges();
-		AreEqual(1, vm.Count);
-
-		model.Count = 4;
-		IsTrue(vm.HasModelChanges());
-		vm.ApplyModelChanges();
-		AreEqual(4, vm.Count);
-
-		vm.Count = 9;
-		IsTrue(vm.HasModelChanges());
-		vm.ApplyModelChanges();
-		AreEqual(9, model.Count);
-	}
-
-	[TestMethod]
-	public void TrackPropertiesContractRequiresTrackPropertyChanges()
-	{
-		var vm = new SharedHostViewModel();
-		ExpectedException<ArgumentException>(() => vm.RegisterContract(new PlainSharedSettings()));
-	}
-
-	[TestMethod]
 	public void MapOneWayDoesNotWriteModel()
 	{
 		var model = new SettingsModel { Path = "a" };
@@ -77,6 +28,7 @@ public partial class DispatchableViewModelPropertyMapTests : CornerstoneUnitTest
 		AreEqual("a", vm.SelectedPath);
 
 		vm.SelectedPath = "user-edit";
+
 		// One-way maps do not treat view dirty bits as pending work
 		IsFalse(vm.HasModelChanges());
 		vm.ApplyModelChanges();
@@ -154,6 +106,7 @@ public partial class DispatchableViewModelPropertyMapTests : CornerstoneUnitTest
 
 		model.Path = "stable"; // same value still marks change on CornerstoneObject
 		vm.ApplyModelChanges();
+
 		// After apply, bits for Path should be cleared even if value equal
 		IsFalse(model.HasChanges(new[] { nameof(SettingsModel.Path) }.ToOnlyIncludingSettings()));
 	}
@@ -175,6 +128,34 @@ public partial class DispatchableViewModelPropertyMapTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void SecondMapStillAppliesAfterFirstConsumesChangeBits()
+	{
+		var model = new SharedSettingsModel { Name = "locked", Count = 0 };
+		var first = new SharedHostViewModel();
+		var second = new SharedHostViewModel();
+		first.RegisterContract(model);
+		second.RegisterContract(model);
+		first.ApplyModelChanges();
+		second.ApplyModelChanges();
+
+		model.Name = "opening";
+		first.ApplyModelChanges();
+		second.ApplyModelChanges();
+		AreEqual("opening", second.Name);
+
+		model.Count = 1;
+		first.ApplyModelChanges();
+		AreEqual(1, first.Count);
+		AreEqual(0, second.Count);
+
+		model.Name = "open";
+		IsTrue(second.HasModelChanges());
+		second.ApplyModelChanges();
+		AreEqual(1, second.Count);
+		AreEqual("open", second.Name);
+	}
+
+	[TestMethod]
 	public void SeedAppliesWithoutPriorChangeBits()
 	{
 		var model = new SettingsModel { Path = "preloaded" };
@@ -189,6 +170,95 @@ public partial class DispatchableViewModelPropertyMapTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void TrackPropertiesContractGetOnlyDoesNotWriteModel()
+	{
+		var model = new SharedSettingsModel { Name = "a", Count = 1 };
+		model.ResetHasChanges();
+		var vm = new SharedHostViewModel();
+		vm.RegisterContract(model);
+
+		IsTrue(vm.HasModelChanges());
+		vm.ApplyModelChanges();
+		AreEqual("a", vm.Name);
+		AreEqual(1, vm.Count);
+
+		vm.Name = "user-edit";
+		IsFalse(vm.HasModelChanges());
+		vm.ApplyModelChanges();
+		AreEqual("a", model.Name);
+		AreEqual("user-edit", vm.Name);
+	}
+
+	[TestMethod]
+	public void TrackPropertiesContractGetSetIsTwoWay()
+	{
+		var model = new SharedSettingsModel { Name = "a", Count = 1 };
+		model.ResetHasChanges();
+		var vm = new SharedHostViewModel();
+		vm.RegisterContract(model);
+
+		vm.ApplyModelChanges();
+		AreEqual(1, vm.Count);
+
+		model.Count = 4;
+		IsTrue(vm.HasModelChanges());
+		vm.ApplyModelChanges();
+		AreEqual(4, vm.Count);
+
+		vm.Count = 9;
+		IsTrue(vm.HasModelChanges());
+		vm.ApplyModelChanges();
+		AreEqual(9, model.Count);
+	}
+
+	[TestMethod]
+	public void TrackPropertiesContractRequiresTrackPropertyChanges()
+	{
+		var vm = new SharedHostViewModel();
+		ExpectedException<ArgumentException>(() => vm.RegisterContract(new PlainSharedSettings()));
+	}
+
+	[TestMethod]
+	public void TrackPropertiesCopiesOntoDestinationBag()
+	{
+		var model = new SharedSettingsModel { Name = "from-state", Count = 3 };
+		model.ResetHasChanges();
+		var destination = new SharedSettingsBag();
+		var viewModel = new SharedHostViewModel();
+		viewModel.RegisterBag(model, destination);
+
+		IsTrue(viewModel.HasModelChanges());
+		viewModel.ApplyModelChanges();
+		AreEqual("from-state", destination.Name);
+		AreEqual(3, destination.Count);
+
+		model.Name = "updated";
+		IsTrue(viewModel.HasModelChanges());
+		viewModel.ApplyModelChanges();
+		AreEqual("updated", destination.Name);
+	}
+
+	[TestMethod]
+	public void TrackPropertiesMapsInheritedInterfaceMembers()
+	{
+		var model = new RuntimeBagModel
+		{
+			ApplicationVersion = new Version(3, 0, 1),
+			DeviceId = "device-1",
+			DotNetRuntimeVersion = new Version(10, 0)
+		};
+		model.ResetHasChanges();
+		var destination = new RuntimeBagData();
+		var viewModel = new SharedHostViewModel();
+		viewModel.RegisterRuntimeBag(model, destination);
+		viewModel.ApplyModelChanges();
+
+		AreEqual(new Version(3, 0, 1), destination.ApplicationVersion);
+		AreEqual("device-1", destination.DeviceId);
+		AreEqual(new Version(10, 0), destination.DotNetRuntimeVersion);
+	}
+
+	[TestMethod]
 	public void UnmappedModelChangeDoesNotForceMapPendingAfterSeed()
 	{
 		var model = new SettingsModel { Path = "p", Notes = "n" };
@@ -200,6 +270,7 @@ public partial class DispatchableViewModelPropertyMapTests : CornerstoneUnitTest
 		IsFalse(vm.HasModelChanges());
 
 		model.Notes = "changed notes only";
+
 		// Map should not report pending for unmapped Notes
 		IsFalse(vm.HasModelChanges());
 		AreEqual("changed notes only", model.Notes);
@@ -211,32 +282,42 @@ public partial class DispatchableViewModelPropertyMapTests : CornerstoneUnitTest
 
 	#endregion
 
+	#region Interfaces
+
+	public interface ISharedSettings
+	{
+		#region Properties
+
+		int Count { get; set; }
+
+		string Name { get; }
+
+		#endregion
+	}
+
+	public interface IRuntimeBagBase
+	{
+		#region Properties
+
+		Version ApplicationVersion { get; }
+
+		string DeviceId { get; }
+
+		#endregion
+	}
+
+	public interface IRuntimeBag : IRuntimeBagBase
+	{
+		#region Properties
+
+		Version DotNetRuntimeVersion { get; }
+
+		#endregion
+	}
+
+	#endregion
+
 	#region Classes
-
-	/// <summary>
-	/// Stand-in for ModelInfo-like view value (path only).
-	/// </summary>
-	public sealed class ModelRef
-	{
-		#region Properties
-
-		public string Path { get; set; }
-
-		#endregion
-	}
-
-	[SourceReflection]
-	[Notifiable(["*"])]
-	public partial class SettingsModel : CornerstoneObject
-	{
-		#region Properties
-
-		public partial string FavoriteModel { get; set; }
-		public partial string Notes { get; set; }
-		public partial string Path { get; set; }
-
-		#endregion
-	}
 
 	[SourceReflection]
 	[Notifiable(["*"])]
@@ -285,7 +366,7 @@ public partial class DispatchableViewModelPropertyMapTests : CornerstoneUnitTest
 				.MapTwoWay(
 					nameof(SettingsModel.Path),
 					nameof(Selected),
-					(string path) => path == null ? null : new ModelRef { Path = path },
+					path => path == null ? null : new ModelRef { Path = path },
 					(ModelRef selected) => selected?.Path);
 		}
 
@@ -297,18 +378,103 @@ public partial class DispatchableViewModelPropertyMapTests : CornerstoneUnitTest
 		#endregion
 	}
 
-	public interface ISharedSettings
+	/// <summary>
+	/// Stand-in for ModelInfo-like view value (path only).
+	/// </summary>
+	public sealed class ModelRef
 	{
 		#region Properties
 
-		int Count { get; set; }
-
-		string Name { get; }
+		public string Path { get; set; }
 
 		#endregion
 	}
 
 	public class PlainSharedSettings : ISharedSettings
+	{
+		#region Properties
+
+		public int Count { get; set; }
+
+		public string Name { get; set; }
+
+		#endregion
+	}
+
+	public class RuntimeBagData : IRuntimeBag
+	{
+		#region Properties
+
+		public Version ApplicationVersion { get; set; }
+
+		public string DeviceId { get; set; }
+
+		public Version DotNetRuntimeVersion { get; set; }
+
+		#endregion
+	}
+
+	[SourceReflection]
+	[Notifiable(["*"])]
+	public partial class RuntimeBagModel : CornerstoneObject, IRuntimeBag
+	{
+		#region Properties
+
+		public partial Version ApplicationVersion { get; set; }
+
+		public partial string DeviceId { get; set; }
+
+		public partial Version DotNetRuntimeVersion { get; set; }
+
+		#endregion
+	}
+
+	[SourceReflection]
+	[Notifiable(["*"])]
+	public partial class SettingsModel : CornerstoneObject
+	{
+		#region Properties
+
+		public partial string FavoriteModel { get; set; }
+		public partial string Notes { get; set; }
+		public partial string Path { get; set; }
+
+		#endregion
+	}
+
+	[SourceReflection]
+	[Notifiable(["*"])]
+	public partial class SharedHostViewModel : DispatchableViewModel, ISharedSettings
+	{
+		#region Properties
+
+		public partial int Count { get; set; }
+
+		public partial string Name { get; set; }
+
+		#endregion
+
+		#region Methods
+
+		public void RegisterBag(ISharedSettings model, ISharedSettings destination)
+		{
+			TrackProperties(model, destination);
+		}
+
+		public void RegisterContract(ISharedSettings model)
+		{
+			TrackProperties(model, this);
+		}
+
+		public void RegisterRuntimeBag(IRuntimeBag model, IRuntimeBag destination)
+		{
+			TrackProperties(model, destination);
+		}
+
+		#endregion
+	}
+
+	public class SharedSettingsBag : ISharedSettings
 	{
 		#region Properties
 
@@ -328,28 +494,6 @@ public partial class DispatchableViewModelPropertyMapTests : CornerstoneUnitTest
 		public partial int Count { get; set; }
 
 		public partial string Name { get; set; }
-
-		#endregion
-	}
-
-	[SourceReflection]
-	[Notifiable(["*"])]
-	public partial class SharedHostViewModel : DispatchableViewModel, ISharedSettings
-	{
-		#region Properties
-
-		public partial int Count { get; set; }
-
-		public partial string Name { get; set; }
-
-		#endregion
-
-		#region Methods
-
-		public void RegisterContract(ISharedSettings model)
-		{
-			TrackProperties(model, this);
-		}
 
 		#endregion
 	}

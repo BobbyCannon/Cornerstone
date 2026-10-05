@@ -1,7 +1,5 @@
 ﻿#region References
 
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Cornerstone.VisualStudio.SuggestedActions.Actions.Base;
@@ -32,18 +30,17 @@ internal class MissingAliasSuggestedAction : BaseSuggestedAction, ISuggestedActi
 
 	#region Constructors
 
-	public MissingAliasSuggestedAction(ITrackingSpan span, IWpfDifferenceViewerFactoryService diffFactory, IDifferenceBufferFactoryService diffBufferFactory, ITextBufferFactoryService bufferFactory, ITextEditorFactoryService textEditorFactoryService, IReadOnlyDictionary<string, string> inverseNamespaces)
+	public MissingAliasSuggestedAction(ITrackingSpan span, IWpfDifferenceViewerFactoryService diffFactory, IDifferenceBufferFactoryService diffBufferFactory, ITextBufferFactoryService bufferFactory, ITextEditorFactoryService textEditorFactoryService, string xmlNamespace, string alias)
 	{
 		_span = span;
 		_snapshot = _span.TextBuffer.CurrentSnapshot;
 		_targetClassName = _span.GetText(_snapshot);
-		var targetClassMetadata = inverseNamespaces.FirstOrDefault(x => x.Key.Split('.').Last() == _targetClassName);
-		_namespaceAlias = targetClassMetadata.Value.Split(':').Last().Split('.').Last();
+		_namespaceAlias = alias ?? string.Empty;
 		_diffFactory = diffFactory;
 		_diffBufferFactory = diffBufferFactory;
 		_bufferFactory = bufferFactory;
 		_previewRoleSet = textEditorFactoryService.CreateTextViewRoleSet(PredefinedTextViewRoles.Analyzable);
-		DisplayText = $"Use {_namespaceAlias.ToLower()} ({targetClassMetadata.Value})";
+		DisplayText = "Use " + _namespaceAlias.ToLower() + " (" + (xmlNamespace ?? string.Empty) + ")";
 	}
 
 	#endregion

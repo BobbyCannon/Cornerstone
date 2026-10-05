@@ -1,0 +1,10 @@
+using Cornerstone.Presentation.Platform;
+
+namespace Cornerstone.Presentation.Platforms.Windows;
+
+/// <summary>
+/// An immutable bag with Win32-specific per-frame scene information, published via
+/// <see cref="ITopLevelImpl.PlatformSpecificSceneInfo"/> and consumed by render targets
+/// on the render thread.
+/// </summary>
+internal sealed record Win32TopLevelSceneInfo(PlatformThemeVariant ThemeVariant);

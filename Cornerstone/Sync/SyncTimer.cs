@@ -2,6 +2,7 @@
 
 using Cornerstone.Data;
 using Cornerstone.Profiling;
+using Cornerstone.Reflection;
 using Cornerstone.Runtime;
 
 #endregion
@@ -11,6 +12,9 @@ namespace Cornerstone.Sync;
 /// <summary>
 /// Represents a timer for tracking a sync session.
 /// </summary>
+[SourceReflection]
+[Notifiable(["*"])]
+[Updateable(UpdateableAction.All, ["*"])]
 public partial class SyncTimer : AverageTimer, IUpdateable<SyncTimer>
 {
 	#region Constructors
@@ -38,22 +42,16 @@ public partial class SyncTimer : AverageTimer, IUpdateable<SyncTimer>
 	/// <summary>
 	/// Tracks the number of cancelled syncs.
 	/// </summary>
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial int CancelledSyncs { get; set; }
 
 	/// <summary>
 	/// Tracks the number of failed syncs.
 	/// </summary>
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial int FailedSyncs { get; set; }
 
 	/// <summary>
 	/// Tracks the number of successful syncs.
 	/// </summary>
-	[Notify]
-	[UpdateableAction(UpdateableAction.All)]
 	public partial int SuccessfulSyncs { get; set; }
 
 	#endregion

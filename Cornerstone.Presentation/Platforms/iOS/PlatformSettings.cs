@@ -1,0 +1,95 @@
+using System;
+using Cornerstone.Presentation.Media;
+using Cornerstone.Presentation.Platform;
+using Foundation;
+using UIKit;
+
+namespace Cornerstone.Presentation.iOS;
+
+// TODO: ideally should be created per view/activity.
+internal class PlatformSettings : DefaultPlatformSettings
+{
+    private PlatformColorValues? _colorValues;
+    private string? _lastLanguage;
+
+    public PlatformSettings()
+    {
+        NSLocale.Notifications.ObserveCurrentLocaleDidChange(OnPreferredLanguageChanged);
+    }
+
+    public override PlatformColorValues GetColorValues()
+        => _colorValues ??= GetUncachedColorValues();
+
+    private static PlatformColorValues GetUncachedColorValues()
+    {
+        var themeVariant = UITraitCollection.CurrentTraitCollection.UserInterfaceStyle == UIUserInterfaceStyle.Dark ?
+            PlatformThemeVariant.Dark :
+            PlatformThemeVariant.Light;
+
+
+        var contrastPreference = UITraitCollection.CurrentTraitCollection.AccessibilityContrast == UIAccessibilityContrast.High ?
+            ColorContrastPreference.High :
+            ColorContrastPreference.NoPreference;
+
+        UIColor? tintColor = null;
+        if (OperatingSystem.IsIOSVersionAtLeast(14))
+        {
+            tintColor = UIConfigurationColorTransformer.PreferredTint(UIColor.Clear);
+        }
+
+        if (tintColor is not null)
+        {
+            tintColor.GetRGBA(out var red, out var green, out var blue, out var alpha);
+            if (red != 0 && green != 0 && blue != 0 && alpha != 0)
+            {
+                return new PlatformColorValues
+                {
+                    ThemeVariant = themeVariant,
+                    ContrastPreference = contrastPreference,
+                    AccentColor1 = new Color(
+                        (byte)(alpha * 255),
+                        (byte)(red * 255),
+                        (byte)(green * 255),
+                        (byte)(blue * 255))
+                };
+            }
+        }
+
+        return new PlatformColorValues
+        {
+            ThemeVariant = themeVariant,
+            ContrastPreference = contrastPreference
+        };
+    }
+
+    public void TraitCollectionDidChange()
+    {
+        var oldColorValues = _colorValues;
+        var colorValues = GetUncachedColorValues();
+
+        if (oldColorValues != colorValues)
+        {
+            _colorValues = colorValues;
+            OnColorValuesChanged(colorValues);
+        }
+    }
+
+    public override string PreferredApplicationLanguage =>
+        _lastLanguage ??= QueryPreferredApplicationLanguage();
+
+    private string QueryPreferredApplicationLanguage() =>
+        NSLocale.PreferredLanguages is [{ Length: > 0 } language, ..]
+            ? language
+            : base.PreferredApplicationLanguage;
+
+    private void OnPreferredLanguageChanged(object? sender, NSNotificationEventArgs args)
+    {
+        var oldLanguage = _lastLanguage;
+        _lastLanguage = null;
+
+        if (oldLanguage != PreferredApplicationLanguage)
+        {
+            OnPreferredApplicationLanguageChanged();
+        }
+    }
+}

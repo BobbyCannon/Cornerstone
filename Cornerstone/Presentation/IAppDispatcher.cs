@@ -20,6 +20,13 @@ public interface IAppDispatcher
 
 	#region Methods
 
+	/// <summary>
+	/// Apply pending Track* bindings on the UI dispatcher and wait until that apply
+	/// finishes. After this returns, the ViewModel has been seeded once. Attach uses
+	/// this so the first paint is not an empty bag. Later updates still come from the poll.
+	/// </summary>
+	void ApplyPendingTracks(DispatchableViewModel dispatchableViewModel);
+
 	void Release(DispatchableViewModel dispatchableViewModel);
 
 	/// <summary>

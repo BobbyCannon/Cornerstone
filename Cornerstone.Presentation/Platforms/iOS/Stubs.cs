@@ -1,0 +1,73 @@
+using System;
+using System.IO;
+using Cornerstone.Presentation.Input;
+using Cornerstone.Presentation.Media.Imaging;
+using Cornerstone.Presentation.Platform;
+
+namespace Cornerstone.Presentation.iOS
+{
+    internal class CursorFactoryStub : ICursorFactory
+    {
+        public ICursorImpl CreateCursor(Cornerstone.Presentation.Media.Imaging.Bitmap cursor, PixelPoint hotSpot) => new CursorImplStub();
+        ICursorImpl ICursorFactory.GetCursor(StandardCursorType cursorType) => new CursorImplStub();
+
+        private class CursorImplStub : ICursorImpl
+        {
+            public CursorImplStub(){}
+            public void Dispose() { }
+        }
+    }
+
+    internal class WindowingPlatformStub : IWindowingPlatform
+    {
+        public IWindowImpl CreateWindow() => throw new NotSupportedException();
+        public ITopLevelImpl CreateEmbeddableTopLevel() => CreateEmbeddableWindow();
+
+        public IWindowImpl CreateEmbeddableWindow() => throw new NotSupportedException();
+
+        public ITrayIconImpl? CreateTrayIcon() => null;
+
+        public void GetWindowsZOrder(ReadOnlySpan<IWindowImpl> windows, Span<long> zOrder)
+            => throw new NotSupportedException();
+    }
+    
+    internal class PlatformIconLoaderStub : IPlatformIconLoader
+    {
+        public IWindowIconImpl LoadIcon(IBitmapImpl bitmap)
+        {
+            using var stream = new MemoryStream();
+
+            bitmap.Save(stream, PngBitmapEncoderOptions.Default);
+            return LoadIcon(stream);
+        }
+
+        public IWindowIconImpl LoadIcon(Stream stream)
+        {
+            var ms = new MemoryStream();
+            stream.CopyTo(ms);
+            return new IconStub(ms);
+        }
+
+        public IWindowIconImpl LoadIcon(string fileName)
+        {
+            using (var file = File.Open(fileName, FileMode.Open))
+                return LoadIcon(file);
+        }
+    }
+
+    internal class IconStub : IWindowIconImpl
+    {
+        private readonly MemoryStream _ms;
+
+        public IconStub(MemoryStream stream)
+        {
+            _ms = stream;
+        }
+
+        public void Save(Stream outputStream)
+        {
+            _ms.Position = 0;
+            _ms.CopyTo(outputStream);
+        }
+    }
+}
