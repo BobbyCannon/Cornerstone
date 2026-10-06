@@ -2,7 +2,7 @@
 
 Human model: [../Presentation/NativeLayering.md](../Presentation/NativeLayering.md).
 
-**Handoff (2026-09-07):** Shipped, default on. Operator testing. Next is not a new hosting path — test, then consider deleting the child-on-top off switch. X11 stays pause.
+**Handoff:** Native-behind is the overlay path. Freeze-frame pause (`PausableNativeHost`, `IsPaused`, snapshot underlay) is removed. X11 and `NativeBehindComposition = false` have no fallback snapshot.
 
 ## File map
 
@@ -13,7 +13,7 @@ Human model: [../Presentation/NativeLayering.md](../Presentation/NativeLayering.
 | Skia region clip | `Backends/Skia/DrawingContextImpl.cs` (`PushClip(region)` in device pixels) |
 | Host control | `Controls/NativeControlHost.cs` (Src-clear hole, hole publish) |
 | Portal walk | `Rendering/Composition/ServerCompositionVisual.Render.cs` (clip around `RenderCore` and cache blits; pop before children) |
-| Pause | Theme `PausableNativeHost` |
+| Native surface host | `Controls/NativeSurfaceHost.cs` (`INativeSurface`) |
 | WebView | Theme `WebView` + platform adapters |
 | Win32 overlay HWND | `Win32/Win32NativeAirspaceOverlay.cs` |
 | Win32 present | `Win32/FramebufferManager.cs` (`PresentLayeredOnUiThread`) |

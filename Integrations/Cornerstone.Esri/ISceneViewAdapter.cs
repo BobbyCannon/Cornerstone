@@ -9,7 +9,7 @@ using Cornerstone.Presentation.Controls.NativeHosts;
 
 namespace Cornerstone.Esri;
 
-public interface ISceneViewAdapter : ISceneView, IPausableNativeSurface
+public interface ISceneViewAdapter : ISceneView, INativeSurface
 {
 	#region Methods
 

@@ -1,6 +1,5 @@
 #region References
 
-using System.Threading.Tasks;
 using Cornerstone.Presentation.Platform;
 
 #endregion
@@ -8,15 +7,14 @@ using Cornerstone.Presentation.Platform;
 namespace Cornerstone.Presentation.Controls.NativeHosts;
 
 /// <summary>
-/// Platform surface behind a <see cref="PausableNativeHost" />: handle, snapshot, visibility, resize.
+/// Platform surface behind a <see cref="NativeSurfaceHost" />: handle, visibility, and resize.
 /// </summary>
-public interface IPausableNativeSurface
+public interface INativeSurface
 {
 	#region Properties
 
 	/// <summary>
 	/// Whether the native surface is currently painting.
-	/// When false, Cornerstone content in the same slot can appear on top.
 	/// </summary>
 	bool IsNativeSurfaceVisible { get; }
 
@@ -25,11 +23,6 @@ public interface IPausableNativeSurface
 	#endregion
 
 	#region Methods
-
-	/// <summary>
-	/// Captures the currently visible native surface as a PNG for placeholder underlay mode.
-	/// </summary>
-	Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null);
 
 	void HandleResize(int width, int height, float scaling);
 

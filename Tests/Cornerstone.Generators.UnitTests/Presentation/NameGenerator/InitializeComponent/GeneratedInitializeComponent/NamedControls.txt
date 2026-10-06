@@ -9,11 +9,11 @@ namespace Sample.App
 {
 	partial class SampleView
 	{
-		[global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.InitializeComponentCodeGenerator", "3.0.251.31480")]
+		[global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.InitializeComponentCodeGenerator", "3.0.0.0")]
 		internal global::Cornerstone.Presentation.Controls.TextBox UserNameTextBox;
-		[global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.InitializeComponentCodeGenerator", "3.0.251.31480")]
+		[global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.InitializeComponentCodeGenerator", "3.0.0.0")]
 		internal global::Cornerstone.Presentation.Controls.TextBox PasswordTextBox;
-		[global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.InitializeComponentCodeGenerator", "3.0.251.31480")]
+		[global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.InitializeComponentCodeGenerator", "3.0.0.0")]
 		internal global::Cornerstone.Presentation.Controls.Button SignUpButton;
 
 		/// <summary>
@@ -21,7 +21,7 @@ namespace Sample.App
 		/// </summary>
 		/// <param name="loadXaml">Should the XAML be loaded into the component.</param>
 
-		[global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.InitializeComponentCodeGenerator", "3.0.251.31480")]
+		[global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.InitializeComponentCodeGenerator", "3.0.0.0")]
 		[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 		public void InitializeComponent(bool loadXaml = true)
 		{

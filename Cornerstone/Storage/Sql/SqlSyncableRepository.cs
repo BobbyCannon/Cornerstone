@@ -87,9 +87,22 @@ public class SqlSyncableRepository<T, TKey> : ISqlSyncableRepository
 
 	public IEnumerable<ISyncEntity> GetChanges(DateTime since, DateTime until, int skip, int take, SyncRepositoryFilter filter)
 	{
-		var query = CreateChangesQuery(since, until, filter)
-			.OrderBy(x => x.ModifiedOn)
-			.ThenBy(x => x.Id);
+		var query = CreateChangesQuery(since, until, filter);
+		if (filter is SyncRepositoryFilter<T> { OrderBys.Length: > 0 } typed)
+		{
+			foreach (var orderBy in typed.OrderBys)
+			{
+				query = orderBy.Descending
+					? query.OrderByDescending(orderBy.KeySelector)
+					: query.OrderBy(orderBy.KeySelector);
+			}
+
+			query = query.ThenBy(x => x.ModifiedOn).ThenBy(x => x.Id);
+		}
+		else
+		{
+			query = query.OrderBy(x => x.ModifiedOn).ThenBy(x => x.Id);
+		}
 		if (skip > 0)
 		{
 			query = query.Skip(skip);

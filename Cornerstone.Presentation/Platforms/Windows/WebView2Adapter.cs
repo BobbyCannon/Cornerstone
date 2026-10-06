@@ -112,28 +112,6 @@ internal partial class WebView2Adapter : CornerstoneObject, IWebViewAdapter, IDi
 
 	#region Methods
 
-	public async Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
-	{
-		if (!_webViewInitialized || (_webView.CoreWebView2 == null))
-		{
-			return NativeSurfaceSnapshot.Failed("WebView2 is not initialized.");
-		}
-
-		try
-		{
-			using var stream = new MemoryStream();
-			await _webView.CoreWebView2.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, stream);
-			var pngBytes = stream.ToArray();
-			var width = Math.Max(1, _webView.ClientSize.Width);
-			var height = Math.Max(1, _webView.ClientSize.Height);
-			return NativeSurfaceSnapshotHelper.ProcessPng(pngBytes, width, height, options);
-		}
-		catch (Exception ex)
-		{
-			return NativeSurfaceSnapshot.Failed(ex.Message);
-		}
-	}
-
 	public async Task ClearBrowsingDataAsync()
 	{
 		if (_webViewInitialized)
@@ -480,11 +458,6 @@ internal partial class WebView2Adapter : CornerstoneObject, IWebViewAdapter, IDi
 					&& !string.IsNullOrWhiteSpace(Content))
 				{
 					NavigateToString(Content);
-				}
-
-				if (_webViewInitialized)
-				{
-					OnNavigationCompleted();
 				}
 
 				// Pause/HideWithSize can run before the first paint (0x0 HWND). Chromium

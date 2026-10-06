@@ -128,7 +128,6 @@ public partial class MainView : UserControl
 
 		try
 		{
-			Player.IsPaused = false;
 			if (IsLocalFilePath(viewModel.MediaUrl))
 			{
 				Player.PlayVideoFile(viewModel.MediaUrl);

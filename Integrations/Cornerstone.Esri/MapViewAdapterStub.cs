@@ -43,11 +43,6 @@ public class MapViewAdapterStub : IMapViewAdapter
 
 	#region Methods
 
-	public Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
-	{
-		return Task.FromResult(NativeSurfaceSnapshot.Failed("MapView adapter stub does not support snapshots."));
-	}
-
 	public Viewpoint GetCurrentViewpoint(ViewpointType viewpointType)
 	{
 		return null;

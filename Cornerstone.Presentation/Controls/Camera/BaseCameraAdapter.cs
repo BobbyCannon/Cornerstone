@@ -142,29 +142,6 @@ internal abstract class BaseCameraAdapter : CornerstoneObject, ICameraAdapter, I
 
 	#region Methods
 
-	/// <inheritdoc />
-	public virtual Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
-	{
-		try
-		{
-			if (Frame == null)
-			{
-				return Task.FromResult(NativeSurfaceSnapshot.Failed("Camera frame is not available."));
-			}
-
-			using var stream = new MemoryStream();
-			Frame.Save(stream);
-			var png = stream.ToArray();
-			var width = Math.Max(1, (int) Frame.Size.Width);
-			var height = Math.Max(1, (int) Frame.Size.Height);
-			return Task.FromResult(NativeSurfaceSnapshotHelper.ProcessPng(png, width, height, options));
-		}
-		catch (Exception ex)
-		{
-			return Task.FromResult(NativeSurfaceSnapshot.Failed(ex.Message));
-		}
-	}
-
 	/// <summary>
 	/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
 	/// </summary>
@@ -246,7 +223,7 @@ internal abstract class BaseCameraAdapter : CornerstoneObject, ICameraAdapter, I
 	#endregion
 }
 
-public interface ICameraAdapter : INotifyPropertyChanged, IDisposable, IPausableNativeSurface
+public interface ICameraAdapter : INotifyPropertyChanged, IDisposable, INativeSurface
 {
 	#region Properties
 

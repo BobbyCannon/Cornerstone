@@ -132,7 +132,7 @@ public class DocumentationReader : TemplatedControl
 
 	static DocumentationReader()
 	{
-		IsFullWidthProperty = PresentationProperty.Register<DocumentationReader, bool>(nameof(IsFullWidth), true);
+		IsFullWidthProperty = PresentationProperty.Register<DocumentationReader, bool>(nameof(IsFullWidth), false);
 	}
 
 	#endregion

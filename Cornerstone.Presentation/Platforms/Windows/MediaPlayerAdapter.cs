@@ -2,13 +2,11 @@
 
 using Cornerstone.Presentation;
 using Cornerstone.Presentation.Controls;
-using Cornerstone.Presentation.Media.Imaging;
 using Cornerstone.Presentation.Platform;
 using Cornerstone.Presentation.Controls.MediaPlayer;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
@@ -26,8 +24,6 @@ internal class MediaPlayerAdapter : BaseMediaPlayerAdapter
 
 	private const uint MfVideoArModeNone = 0;
 	private const uint MfVideoArModePreservePicture = 1;
-	private const int PwRenderFullContent = 0x00000002;
-	private const int SrcCopy = 0x00CC0020;
 	private const ushort VtI8 = 20;
 
 	#endregion
@@ -136,48 +132,6 @@ internal class MediaPlayerAdapter : BaseMediaPlayerAdapter
 	#endregion
 
 	#region Methods
-
-	/// <inheritdoc />
-	public override async Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
-	{
-		if (_nativeHost == null)
-		{
-			return NativeSurfaceSnapshot.Failed("Media player host is not available.");
-		}
-
-		try
-		{
-			var hwnd = await _nativeHost.GetHwndAsync().ConfigureAwait(true);
-			if (hwnd == IntPtr.Zero)
-			{
-				return NativeSurfaceSnapshot.Failed("Media player HWND is not available.");
-			}
-
-			if (!GetClientRect(hwnd, out var rect))
-			{
-				return NativeSurfaceSnapshot.Failed("Could not read media player client size.");
-			}
-
-			var width = Math.Max(1, rect.Right - rect.Left);
-			var height = Math.Max(1, rect.Bottom - rect.Top);
-			if ((width <= 1) || (height <= 1))
-			{
-				return NativeSurfaceSnapshot.Failed("Media player has no measurable size.");
-			}
-
-			var png = CaptureHwndToPng(hwnd, width, height);
-			if (png is not { Length: > 0 })
-			{
-				return NativeSurfaceSnapshot.Failed("Failed to encode media player snapshot.");
-			}
-
-			return NativeSurfaceSnapshotHelper.ProcessPng(png, width, height, options);
-		}
-		catch (Exception ex)
-		{
-			return NativeSurfaceSnapshot.Failed(ex.Message);
-		}
-	}
 
 	public override void Initialize(NativeControlHost nativeHost)
 	{
@@ -291,81 +245,6 @@ internal class MediaPlayerAdapter : BaseMediaPlayerAdapter
 		base.Dispose(disposing);
 	}
 
-	private static byte[] CaptureHwndToPng(IntPtr hwnd, int width, int height)
-	{
-		var hdcWindow = GetDC(hwnd);
-		if (hdcWindow == IntPtr.Zero)
-		{
-			return null;
-		}
-
-		var hdcMem = CreateCompatibleDC(hdcWindow);
-		var hBitmap = CreateCompatibleBitmap(hdcWindow, width, height);
-		var old = SelectObject(hdcMem, hBitmap);
-
-		try
-		{
-			// Prefer PrintWindow so layered/video content is included when the host supports it.
-			if (!PrintWindow(hwnd, hdcMem, PwRenderFullContent))
-			{
-				BitBlt(hdcMem, 0, 0, width, height, hdcWindow, 0, 0, SrcCopy);
-			}
-
-			var bmi = new BitmapInfo
-			{
-				BmiHeader = new BitmapInfoHeader
-				{
-					BiSize = Marshal.SizeOf<BitmapInfoHeader>(),
-					BiWidth = width,
-					BiHeight = -height, // top-down
-					BiPlanes = 1,
-					BiBitCount = 32,
-					BiCompression = 0
-				}
-			};
-
-			var pixelCount = width * height;
-			var pixels = new byte[pixelCount * 4];
-			if (GetDIBits(hdcMem, hBitmap, 0, (uint) height, pixels, ref bmi, 0) == 0)
-			{
-				return null;
-			}
-
-			using var writeable = new WriteableBitmap(
-				new PixelSize(width, height),
-				new Vector(96, 96),
-				PixelFormat.Bgra8888,
-				AlphaFormat.Opaque);
-
-			using (var fb = writeable.Lock())
-			{
-				var srcStride = width * 4;
-				if (fb.RowBytes == srcStride)
-				{
-					Marshal.Copy(pixels, 0, fb.Address, pixels.Length);
-				}
-				else
-				{
-					for (var y = 0; y < height; y++)
-					{
-						Marshal.Copy(pixels, y * srcStride, fb.Address + (y * fb.RowBytes), srcStride);
-					}
-				}
-			}
-
-			using var stream = new MemoryStream();
-			writeable.Save(stream);
-			return stream.ToArray();
-		}
-		finally
-		{
-			SelectObject(hdcMem, old);
-			DeleteObject(hBitmap);
-			DeleteDC(hdcMem);
-			ReleaseDC(hwnd, hdcWindow);
-		}
-	}
-
 	private static string FormatCreatePlayerError(int hr, string url)
 	{
 		// HRESULT_FROM_WIN32(ERROR_ACCESS_DENIED) — common when the URL is blocked (HTTP 403),
@@ -407,30 +286,6 @@ internal class MediaPlayerAdapter : BaseMediaPlayerAdapter
 		_currentUrl = null;
 	}
 
-	[DllImport("gdi32.dll")]
-	private static extern bool BitBlt(IntPtr hdcDest, int x, int y, int width, int height, IntPtr hdcSrc, int xSrc, int ySrc, int rop);
-
-	[DllImport("gdi32.dll")]
-	private static extern IntPtr CreateCompatibleBitmap(IntPtr hdc, int width, int height);
-
-	[DllImport("gdi32.dll")]
-	private static extern IntPtr CreateCompatibleDC(IntPtr hdc);
-
-	[DllImport("gdi32.dll")]
-	private static extern bool DeleteDC(IntPtr hdc);
-
-	[DllImport("gdi32.dll")]
-	private static extern bool DeleteObject(IntPtr hObject);
-
-	[DllImport("user32.dll")]
-	private static extern IntPtr GetDC(IntPtr hWnd);
-
-	[DllImport("gdi32.dll")]
-	private static extern int GetDIBits(IntPtr hdc, IntPtr hbm, uint start, uint lines, byte[] bits, ref BitmapInfo bmi, uint usage);
-
-	[DllImport("user32.dll")]
-	private static extern bool GetClientRect(IntPtr hWnd, out Rect rect);
-
 	[DllImport("mfplay.dll")]
 	private static extern int MFPCreateMediaPlayer(
 		[MarshalAs(UnmanagedType.LPWStr)] string pwszURL,
@@ -445,15 +300,6 @@ internal class MediaPlayerAdapter : BaseMediaPlayerAdapter
 
 	[DllImport("mfplat.dll")]
 	private static extern int MFStartup(uint Version, uint dwFlags);
-
-	[DllImport("user32.dll")]
-	private static extern bool PrintWindow(IntPtr hwnd, IntPtr hdcBlt, int nFlags);
-
-	[DllImport("user32.dll")]
-	private static extern int ReleaseDC(IntPtr hWnd, IntPtr hDc);
-
-	[DllImport("gdi32.dll")]
-	private static extern IntPtr SelectObject(IntPtr hdc, IntPtr h);
 
 	#endregion
 
@@ -472,28 +318,6 @@ internal class MediaPlayerAdapter : BaseMediaPlayerAdapter
 
 	#region Structures
 
-	[StructLayout(LayoutKind.Sequential)]
-	private struct BitmapInfo
-	{
-		public BitmapInfoHeader BmiHeader;
-	}
-
-	[StructLayout(LayoutKind.Sequential)]
-	private struct BitmapInfoHeader
-	{
-		public int BiSize;
-		public int BiWidth;
-		public int BiHeight;
-		public short BiPlanes;
-		public short BiBitCount;
-		public int BiCompression;
-		public int BiSizeImage;
-		public int BiXPelsPerMeter;
-		public int BiYPelsPerMeter;
-		public int BiClrUsed;
-		public int BiClrImportant;
-	}
-
 	// PROPVARIANT is 16 bytes on 32-bit but 24 bytes on 64-bit Windows. The explicit size keeps the managed layout in sync with the native
 	// one so duration/position (VT_I8 at offset 8) marshal correctly and seek requests are well-formed.
 	[StructLayout(LayoutKind.Explicit, Size = 24)]
@@ -504,15 +328,6 @@ internal class MediaPlayerAdapter : BaseMediaPlayerAdapter
 
 		[FieldOffset(8)]
 		public long Int64Value;
-	}
-
-	[StructLayout(LayoutKind.Sequential)]
-	private struct Rect
-	{
-		public int Left;
-		public int Top;
-		public int Right;
-		public int Bottom;
 	}
 
 	#endregion

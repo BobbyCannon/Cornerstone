@@ -23,7 +23,7 @@ namespace Cornerstone.Presentation.Controls;
 /// <summary>
 /// Cross-platform web view.
 /// </summary>
-public class WebView : PausableNativeHost, IWebView
+public class WebView : NativeSurfaceHost, IWebView
 {
 	#region Constants
 
@@ -273,7 +273,7 @@ public class WebView : PausableNativeHost, IWebView
 	}
 
 	/// <inheritdoc />
-	protected override IPausableNativeSurface GetSurface()
+	protected override INativeSurface GetSurface()
 	{
 		return _webViewAdapter;
 	}
@@ -441,10 +441,6 @@ public class WebView : PausableNativeHost, IWebView
 				IsNavigating = false;
 				OnPropertyChanged(nameof(IsNavigating));
 				OnPropertyChanged(nameof(Uri));
-				if (!IsPaused)
-				{
-					RequestWarmUnderlay();
-				}
 			});
 		NavigationCompleted?.Invoke(this, e);
 	}

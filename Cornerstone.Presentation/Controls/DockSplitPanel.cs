@@ -16,8 +16,8 @@ public class DockSplitPanel : DockPanel
 	#region Fields
 
 	private (int index, Dock dock, Point lastPointerPosition)? _draggedSplitLine;
-	private static readonly Cursor _horizontalResizeCursor;
-	private static readonly Cursor _verticalResizeCursor;
+	private static Cursor _horizontalResizeCursor;
+	private static Cursor _verticalResizeCursor;
 
 	#endregion
 
@@ -28,17 +28,15 @@ public class DockSplitPanel : DockPanel
 		SplitLines = [];
 	}
 
-	static DockSplitPanel()
-	{
-		_verticalResizeCursor = new(StandardCursorType.SizeNorthSouth);
-		_horizontalResizeCursor = new(StandardCursorType.SizeWestEast);
-	}
-
 	#endregion
 
 	#region Properties
 
+	private static Cursor HorizontalResizeCursor => _horizontalResizeCursor ??= new Cursor(StandardCursorType.SizeWestEast);
+
 	private List<SplitPanelLine> SplitLines { get; }
+
+	private static Cursor VerticalResizeCursor => _verticalResizeCursor ??= new Cursor(StandardCursorType.SizeNorthSouth);
 
 	#endregion
 
@@ -59,22 +57,22 @@ public class DockSplitPanel : DockPanel
 				case Dock.Left:
 					splitLine.StartPoint = bounds.TopRight;
 					splitLine.EndPoint = bounds.BottomRight;
-					splitLine.Cursor = _horizontalResizeCursor;
+					splitLine.Cursor = HorizontalResizeCursor;
 					break;
 				case Dock.Right:
 					splitLine.StartPoint = bounds.TopLeft;
 					splitLine.EndPoint = bounds.BottomLeft;
-					splitLine.Cursor = _horizontalResizeCursor;
+					splitLine.Cursor = HorizontalResizeCursor;
 					break;
 				case Dock.Top:
 					splitLine.StartPoint = bounds.BottomLeft;
 					splitLine.EndPoint = bounds.BottomRight;
-					splitLine.Cursor = _verticalResizeCursor;
+					splitLine.Cursor = VerticalResizeCursor;
 					break;
 				case Dock.Bottom:
 					splitLine.StartPoint = bounds.TopLeft;
 					splitLine.EndPoint = bounds.TopRight;
-					splitLine.Cursor = _verticalResizeCursor;
+					splitLine.Cursor = VerticalResizeCursor;
 					break;
 			}
 

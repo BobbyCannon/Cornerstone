@@ -38,11 +38,6 @@ public class VideoViewAdapterStub : IVideoViewAdapter
 
 	#region Methods
 
-	public Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
-	{
-		return Task.FromResult(NativeSurfaceSnapshot.Failed("VideoView adapter stub does not support snapshots."));
-	}
-
 	public void HandleResize(int width, int height, float scaling)
 	{
 	}

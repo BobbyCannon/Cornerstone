@@ -7,9 +7,9 @@ namespace Sample.App
 {
     partial class SampleView
     {
-        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.251.31480")]
+        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.0.0")]
         internal global::Cornerstone.Presentation.Controls.TextBox UserNameTextBox => this.FindNameScope()?.Find<global::Cornerstone.Presentation.Controls.TextBox>("UserNameTextBox");
-        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.251.31480")]
+        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.0.0")]
         internal global::Cornerstone.Presentation.Controls.ListBox NamedListBox => this.FindNameScope()?.Find<global::Cornerstone.Presentation.Controls.ListBox>("NamedListBox");
     }
 }

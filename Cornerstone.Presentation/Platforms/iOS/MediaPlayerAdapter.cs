@@ -1,16 +1,13 @@
 #region References
 
 using System;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using AVFoundation;
 using Cornerstone.Presentation;
 using Cornerstone.Presentation.Controls;
 using CoreGraphics;
-using CoreImage;
 using CoreMedia;
-using CoreVideo;
 using Cornerstone.Presentation.Controls.MediaPlayer;
 using Foundation;
 using UIKit;
@@ -34,7 +31,6 @@ public class MediaPlayerAdapter : BaseMediaPlayerAdapter
 	private AVPlayer _player;
 	private AVPlayerItem _playerItem;
 	private AVPlayerLayer _playerLayer;
-	private AVPlayerItemVideoOutput _videoOutput;
 	private double _volume = 1.0;
 
 	#endregion
@@ -121,36 +117,6 @@ public class MediaPlayerAdapter : BaseMediaPlayerAdapter
 	#endregion
 
 	#region Methods
-
-	/// <inheritdoc />
-	public override async Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
-	{
-		try
-		{
-			// Prefer the frame currently in the playback pipeline (matches on-screen content).
-			// UIView hierarchy snapshots of AVPlayerLayer are almost always black and must not
-			// be treated as a successful underlay.
-			var fromOutput = CaptureFrameFromVideoOutput(options);
-			if (fromOutput is { Success: true })
-			{
-				return fromOutput;
-			}
-
-			var fromAsset = await CaptureFrameFromAssetAsync(options).ConfigureAwait(true);
-			if (fromAsset is { Success: true })
-			{
-				return fromAsset;
-			}
-
-			Debug.WriteLine($"iOS media snapshot failed. output={fromOutput?.Error}; asset={fromAsset?.Error}");
-			return fromOutput ?? fromAsset
-				?? NativeSurfaceSnapshot.Failed("iOS media player snapshot failed.");
-		}
-		catch (Exception ex)
-		{
-			return NativeSurfaceSnapshot.Failed(ex.Message);
-		}
-	}
 
 	public override void Initialize(NativeControlHost nativeHost)
 	{
@@ -255,10 +221,6 @@ public class MediaPlayerAdapter : BaseMediaPlayerAdapter
 		_playerLayer?.Dispose();
 		_player?.Dispose();
 
-		DetachVideoOutput();
-		_videoOutput?.Dispose();
-		_videoOutput = null;
-
 		_nativeView?.RemoveFromSuperview();
 		_nativeView?.Dispose();
 
@@ -293,230 +255,6 @@ public class MediaPlayerAdapter : BaseMediaPlayerAdapter
 		UpdatePlayerLayerFrame();
 	}
 
-	private void AttachVideoOutput(AVPlayerItem item)
-	{
-		if (item == null)
-		{
-			return;
-		}
-
-		EnsureVideoOutput();
-		DetachVideoOutput();
-		item.AddOutput(_videoOutput);
-	}
-
-	private NativeSurfaceSnapshot CaptureFrameFromVideoOutput(NativeSurfaceSnapshotOptions options)
-	{
-		if ((_videoOutput == null) || (_player == null) || (_playerItem == null))
-		{
-			return NativeSurfaceSnapshot.Failed("Video output is not available.");
-		}
-
-		// Pull the sample nearest the playhead. AVPlayerItemVideoOutput keeps the decoded
-		// frame that feeds AVPlayerLayer — unlike UIView snapshots, which cannot see video.
-		var time = _player.CurrentTime;
-		if (time.IsInvalid || time.IsIndefinite || (time.Value < 0))
-		{
-			time = CMTime.Zero;
-		}
-
-		CVPixelBuffer buffer = null;
-		try
-		{
-			CMTime displayTime = default;
-			if (_videoOutput.HasNewPixelBufferForItemTime(time))
-			{
-				buffer = _videoOutput.CopyPixelBuffer(time, ref displayTime);
-			}
-
-			// Still try even when HasNew is false (common right after pause / first frame).
-			buffer ??= _videoOutput.CopyPixelBuffer(time, ref displayTime);
-
-			if (buffer == null)
-			{
-				return NativeSurfaceSnapshot.Failed("No pixel buffer available from AVPlayerItemVideoOutput.");
-			}
-
-			return EncodePixelBufferToSnapshot(buffer, options);
-		}
-		finally
-		{
-			buffer?.Dispose();
-		}
-	}
-
-	private async Task<NativeSurfaceSnapshot> CaptureFrameFromAssetAsync(NativeSurfaceSnapshotOptions options)
-	{
-		var asset = _playerItem?.Asset;
-		if (asset == null)
-		{
-			return NativeSurfaceSnapshot.Failed("No media item loaded.");
-		}
-
-		// Ensure tracks are ready — image generation fails silently / empty when tracks are not loaded.
-		var tracksReady = await WaitForAssetTracksAsync(asset, TimeSpan.FromSeconds(2)).ConfigureAwait(true);
-		if (!tracksReady)
-		{
-			return NativeSurfaceSnapshot.Failed("Media asset tracks are not ready for image generation.");
-		}
-
-		var generator = new AVAssetImageGenerator(asset)
-		{
-			AppliesPreferredTrackTransform = true,
-			// Zero tolerance often fails on compressed keyframe media; allow nearest frame.
-			RequestedTimeToleranceAfter = CMTime.PositiveInfinity,
-			RequestedTimeToleranceBefore = CMTime.PositiveInfinity,
-			MaximumSize = new CGSize(1920, 1920)
-		};
-
-		var time = ResolveCaptureTime(asset);
-		var tcs = new TaskCompletionSource<NativeSurfaceSnapshot>();
-		generator.GenerateCGImagesAsynchronously([NSValue.FromCMTime(time)],
-			(requestedTime, imageRef, actualTime, result, error) =>
-			{
-				try
-				{
-					if ((result != AVAssetImageGeneratorResult.Succeeded) || (imageRef == null))
-					{
-						tcs.TrySetResult(NativeSurfaceSnapshot.Failed(
-							error?.LocalizedDescription ?? $"AVAssetImageGenerator result: {result}."));
-						return;
-					}
-
-					// Retain pixels before the generator releases the CGImage.
-					using var uiImage = new UIImage(imageRef);
-					tcs.TrySetResult(EncodeUiImageToSnapshot(uiImage, options));
-				}
-				catch (Exception ex)
-				{
-					tcs.TrySetResult(NativeSurfaceSnapshot.Failed(ex.Message));
-				}
-				finally
-				{
-					generator.Dispose();
-				}
-			});
-
-		return await tcs.Task.ConfigureAwait(true);
-	}
-
-	private static Task<bool> WaitForAssetTracksAsync(AVAsset asset, TimeSpan timeout)
-	{
-		var tcs = new TaskCompletionSource<bool>();
-		asset.LoadValuesAsynchronously(new[] { "tracks", "duration", "playable" }, () =>
-		{
-			try
-			{
-				var status = asset.StatusOfValue("tracks", out var error);
-				tcs.TrySetResult((status == AVKeyValueStatus.Loaded) && (error == null));
-			}
-			catch
-			{
-				tcs.TrySetResult(false);
-			}
-		});
-
-		return Task.WhenAny(tcs.Task, Task.Delay(timeout))
-			.ContinueWith(t => tcs.Task.IsCompletedSuccessfully && tcs.Task.Result);
-	}
-
-	private void DetachVideoOutput()
-	{
-		if ((_videoOutput == null) || (_playerItem == null))
-		{
-			return;
-		}
-
-		if (_playerItem.Outputs != null)
-		{
-			foreach (var output in _playerItem.Outputs)
-			{
-				if (ReferenceEquals(output, _videoOutput))
-				{
-					_playerItem.RemoveOutput(_videoOutput);
-					break;
-				}
-			}
-		}
-	}
-
-	private static NativeSurfaceSnapshot EncodePixelBufferToSnapshot(CVPixelBuffer buffer, NativeSurfaceSnapshotOptions options)
-	{
-		if (buffer == null)
-		{
-			return NativeSurfaceSnapshot.Failed("Pixel buffer was null.");
-		}
-
-		using var ciImage = new CIImage(buffer);
-		using var context = new CIContext(null as CIContextOptions);
-		var extent = ciImage.Extent;
-		if ((extent.Width < 1) || (extent.Height < 1))
-		{
-			return NativeSurfaceSnapshot.Failed("Pixel buffer had empty extent.");
-		}
-
-		using var cgImage = context.CreateCGImage(ciImage, extent);
-		if (cgImage == null)
-		{
-			return NativeSurfaceSnapshot.Failed("Failed to create CGImage from pixel buffer.");
-		}
-
-		using var uiImage = new UIImage(cgImage);
-		return EncodeUiImageToSnapshot(uiImage, options);
-	}
-
-	private static NativeSurfaceSnapshot EncodeUiImageToSnapshot(UIImage uiImage, NativeSurfaceSnapshotOptions options)
-	{
-		if (uiImage == null)
-		{
-			return NativeSurfaceSnapshot.Failed("Snapshot image was null.");
-		}
-
-		using var pngData = uiImage.AsPNG();
-		if ((pngData == null) || (pngData.Length == 0))
-		{
-			return NativeSurfaceSnapshot.Failed("Failed to encode media player snapshot as PNG.");
-		}
-
-		var bytes = pngData.ToArray();
-		var scale = uiImage.CurrentScale > 0 ? uiImage.CurrentScale : 1;
-		var width = (int) Math.Max(1, Math.Round(uiImage.Size.Width * scale));
-		var height = (int) Math.Max(1, Math.Round(uiImage.Size.Height * scale));
-		return NativeSurfaceSnapshotHelper.ProcessPng(bytes, width, height, options);
-	}
-
-	private void EnsureVideoOutput()
-	{
-		if (_videoOutput != null)
-		{
-			return;
-		}
-
-		// BGRA matches typical UIKit / CIImage conversion paths.
-		var attributes = new CVPixelBufferAttributes
-		{
-			PixelFormatType = CVPixelFormatType.CV32BGRA
-		};
-		_videoOutput = new AVPlayerItemVideoOutput(attributes);
-	}
-
-	private CMTime ResolveCaptureTime(AVAsset asset)
-	{
-		var time = _player?.CurrentTime ?? CMTime.Zero;
-		if (time.IsInvalid || time.IsIndefinite || (time.Value < 0))
-		{
-			time = CMTime.Zero;
-		}
-
-		var duration = asset?.Duration ?? CMTime.Invalid;
-		if (!duration.IsInvalid && !duration.IsIndefinite && (duration.Seconds > 0)
-			&& (time.Seconds >= duration.Seconds - 0.05))
-		{
-			time = CMTime.FromSeconds(Math.Max(0, duration.Seconds - 0.1), 600);
-		}
-
-		return time;
-	}
 
 	private void ClearCurrentItem()
 	{
@@ -527,7 +265,6 @@ public class MediaPlayerAdapter : BaseMediaPlayerAdapter
 			_endObserver = null;
 		}
 
-		DetachVideoOutput();
 		_player?.ReplaceCurrentItemWithPlayerItem(null);
 		_playerItem?.Dispose();
 		_playerItem = null;
@@ -625,7 +362,6 @@ public class MediaPlayerAdapter : BaseMediaPlayerAdapter
 		}
 
 		_playerItem = new AVPlayerItem(asset);
-		AttachVideoOutput(_playerItem);
 		_endObserver = NSNotificationCenter.DefaultCenter.AddObserver(
 			AVPlayerItem.DidPlayToEndTimeNotification,
 			OnPlayToEnd,

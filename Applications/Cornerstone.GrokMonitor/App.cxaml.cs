@@ -8,6 +8,7 @@ using Cornerstone.Presentation;
 using Cornerstone.Presentation.Theme;
 using Cornerstone.GrokMonitor.Keystone;
 using Cornerstone.Runtime;
+using Cornerstone.Presentation.ApplicationUpdate;
 using Cornerstone.Presentation.Controls.DesignTime;
 
 #endregion
@@ -28,7 +29,15 @@ public partial class App : Application<AppKeystone>
 	{
 		if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
 		{
-			desktop.MainWindow = new AppWindow(Keystone.ViewModel);
+			desktop.MainWindow = ApplicationUpdate.IsRequested(AppBootstrap.ApplicationArguments)
+				? new ApplicationUpdateWindow(new ApplicationUpdateWindowOptions
+				{
+					Title = "Grok Monitor: Updating",
+					ImageAssembly = typeof(App).Assembly,
+					ProductImage = "/Assets/Cornerstone.GrokMonitor.png",
+					WindowIcon = "/Assets/Cornerstone.GrokMonitor.ico"
+				})
+				: new AppWindow(Keystone.ViewModel);
 		}
 
 		base.OnFrameworkInitializationCompleted();

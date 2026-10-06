@@ -103,6 +103,11 @@ public partial class BookmarkBarItem : TemplatedControl
 		ShowInsertLine(_insertTrailing, false);
 	}
 
+	internal bool HostsPopup(TopLevel topLevel)
+	{
+		return (topLevel != null) && ReferenceEquals(_folderPopupTopLevel, topLevel);
+	}
+
 	internal bool IsOverHeader(Point pointOnItem)
 	{
 		return (pointOnItem.X >= 0)

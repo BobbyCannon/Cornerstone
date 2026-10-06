@@ -9,11 +9,11 @@ using Cornerstone.Presentation.Controls.MediaPlayer;
 namespace Cornerstone.Presentation.Controls;
 
 /// <summary>
-/// Pausable native surface for media playback.
+/// Native surface for media playback.
 /// Windows/iOS use Cornerstone's default child (HWND / attach target).
 /// Android publishes AndroidViewControlHandle (TextureView host) via the adapter.
 /// </summary>
-public sealed class MediaPlayerNativeHost : PausableNativeHost
+public sealed class MediaPlayerNativeHost : NativeSurfaceHost
 {
 	#region Fields
 
@@ -24,7 +24,7 @@ public sealed class MediaPlayerNativeHost : PausableNativeHost
 	#region Methods
 
 	/// <summary>
-	/// Binds the playback adapter used for snapshot, visibility, resize, and platform surface.
+	/// Binds the playback adapter used for visibility, resize, and the platform surface.
 	/// </summary>
 	public void SetAdapter(BaseMediaPlayerAdapter adapter)
 	{
@@ -61,7 +61,7 @@ public sealed class MediaPlayerNativeHost : PausableNativeHost
 	}
 
 	/// <inheritdoc />
-	protected override IPausableNativeSurface GetSurface()
+	protected override INativeSurface GetSurface()
 	{
 		return _adapter;
 	}

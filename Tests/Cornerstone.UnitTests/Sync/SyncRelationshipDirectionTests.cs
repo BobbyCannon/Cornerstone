@@ -14,7 +14,8 @@ namespace Cornerstone.UnitTests.Sync;
 
 /// <summary>
 /// Relationships, repository sync order, lookup keys, and scope filters for each direction.
-/// GetChanges walks repositories in sync order, then ModifiedOn. Rows of one type stay in ModifiedOn order.
+/// GetChanges walks repositories in sync order. A type with orderBy uses that order, then ModifiedOn.
+/// Bookmark order is ParentSyncId, then Order, so a parent precedes its children.
 /// </summary>
 [TestClass]
 [DoNotParallelize]
@@ -102,7 +103,7 @@ public class SyncRelationshipDirectionTests : SyncRecordingTest
 	}
 
 	[TestMethod]
-	public void ChildBeforeParentLeavesParentIdNullOnPullDown()
+	public void OlderChildFollowsItsParentOnPullDown()
 	{
 		WithRecording((client, server, manager, calls, _, serverProvider) =>
 		{
@@ -114,18 +115,18 @@ public class SyncRelationshipDirectionTests : SyncRecordingTest
 
 			AssertPhases(session, pulling: true, pushing: false);
 			AreEqual(2, calls.Count, () => FormatCalls(calls));
-			AreEqual(child.SyncId, calls[0].ResultChangeIds[0]);
-			AreEqual(parent.SyncId, calls[1].ResultChangeIds[0]);
+			AreEqual(parent.SyncId, calls[0].ResultChangeIds[0]);
+			AreEqual(child.SyncId, calls[1].ResultChangeIds[0]);
+			var clientParent = (BookmarkEntity) client.Bookmarks.Read(parent.SyncId);
 			var stored = (BookmarkEntity) client.Bookmarks.Read(child.SyncId);
 			AreEqual(parent.SyncId, stored.ParentSyncId);
-			IsNull(stored.ParentId);
-			IsNotNull(client.Bookmarks.Read(parent.SyncId));
+			AreEqual(clientParent.Id, stored.ParentId);
 			AssertStatistics(session, manager, clientChanges: 0, clientApplied: 2, serverChanges: 2, serverApplied: 0);
 		});
 	}
 
 	[TestMethod]
-	public void ChildBeforeParentLeavesParentIdNullOnPushUp()
+	public void OlderChildFollowsItsParentOnPushUp()
 	{
 		WithRecording((client, server, manager, calls, clientProvider, _) =>
 		{
@@ -137,12 +138,12 @@ public class SyncRelationshipDirectionTests : SyncRecordingTest
 
 			AssertPhases(session, pulling: false, pushing: true);
 			AreEqual(3, calls.Count, () => FormatCalls(calls));
-			AreEqual(child.SyncId, calls[0].ChangeIds[0]);
-			AreEqual(parent.SyncId, calls[1].ChangeIds[0]);
+			AreEqual(parent.SyncId, calls[0].ChangeIds[0]);
+			AreEqual(child.SyncId, calls[1].ChangeIds[0]);
+			var serverParent = (BookmarkEntity) server.Bookmarks.Read(parent.SyncId);
 			var stored = (BookmarkEntity) server.Bookmarks.Read(child.SyncId);
 			AreEqual(parent.SyncId, stored.ParentSyncId);
-			IsNull(stored.ParentId);
-			IsNotNull(server.Bookmarks.Read(parent.SyncId));
+			AreEqual(serverParent.Id, stored.ParentId);
 			AssertStatistics(session, manager, clientChanges: 2, clientApplied: 0, serverChanges: 0, serverApplied: 2);
 		});
 	}
@@ -170,7 +171,7 @@ public class SyncRelationshipDirectionTests : SyncRecordingTest
 	}
 
 	[TestMethod]
-	public void SamePageParentLeavesParentIdNullUntilALaterPage()
+	public void SamePageParentBindsParentId()
 	{
 		WithRecording((client, server, manager, calls, _, _) =>
 		{
@@ -183,10 +184,10 @@ public class SyncRelationshipDirectionTests : SyncRecordingTest
 			AreEqual(2, calls.Count, () => FormatCalls(calls));
 			AssertPull(calls[0], resultChanges: 0, sessionEnded: false, clientHasNoChanges: false);
 			AssertPush(calls[1], changeCount: 2, endSession: true);
+			var serverParent = (BookmarkEntity) server.Bookmarks.Read(parent.SyncId);
 			var serverChild = (BookmarkEntity) server.Bookmarks.Read(child.SyncId);
 			AreEqual(parent.SyncId, serverChild.ParentSyncId);
-			IsNull(serverChild.ParentId);
-			IsNotNull(server.Bookmarks.Read(parent.SyncId));
+			AreEqual(serverParent.Id, serverChild.ParentId);
 			AssertStatistics(session, manager, clientChanges: 2, clientApplied: 0, serverChanges: 0, serverApplied: 2);
 		});
 	}

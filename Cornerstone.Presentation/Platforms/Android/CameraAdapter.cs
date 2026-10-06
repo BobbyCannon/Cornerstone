@@ -86,31 +86,6 @@ internal class CameraAdapter : BaseCameraAdapter
 
 	#region Methods
 
-	/// <inheritdoc />
-	public override Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
-	{
-		try
-		{
-			if (_hostView == null)
-			{
-				return base.CaptureSnapshotAsync(options);
-			}
-
-			var width = Math.Max(1, _hostView.Width);
-			var height = Math.Max(1, _hostView.Height);
-			if ((width <= 1) || (height <= 1))
-			{
-				return Task.FromResult(NativeSurfaceSnapshot.Failed("Camera preview has no measurable size."));
-			}
-
-			return CaptureWithPixelCopyAsync(width, height, options);
-		}
-		catch (Exception ex)
-		{
-			return Task.FromResult(NativeSurfaceSnapshot.Failed(ex.Message));
-		}
-	}
-
 	public override async Task StartPreviewAsync()
 	{
 		EnsureCameraPermissions();
@@ -251,70 +226,6 @@ internal class CameraAdapter : BaseCameraAdapter
 	{
 	}
 
-	private Task<NativeSurfaceSnapshot> CaptureWithPixelCopyAsync(int width, int height, NativeSurfaceSnapshotOptions options)
-	{
-		var window = AndroidHost.Activity?.Window;
-		if (window == null)
-		{
-			return Task.FromResult(NativeSurfaceSnapshot.Failed("Activity window is not available for camera snapshot."));
-		}
-
-		var tcs = new TaskCompletionSource<NativeSurfaceSnapshot>();
-		Bitmap bitmap = null;
-
-		try
-		{
-			var location = new int[2];
-			_hostView.GetLocationInWindow(location);
-			var sourceRect = new global::Android.Graphics.Rect(location[0], location[1], location[0] + width, location[1] + height);
-
-			bitmap = Bitmap.CreateBitmap(width, height, Bitmap.Config.Argb8888!);
-			var handler = new Handler(Looper.MainLooper!);
-
-			var listener = new PixelCopyFinishedListener(copyResult =>
-			{
-				try
-				{
-					if (copyResult != (int) PixelCopyResult.Success)
-					{
-						bitmap?.Recycle();
-						bitmap = null;
-						tcs.TrySetResult(NativeSurfaceSnapshot.Failed($"PixelCopy failed with code {copyResult}."));
-						return;
-					}
-
-					using var stream = new MemoryStream();
-					if (!bitmap.Compress(Bitmap.CompressFormat.Png!, 100, stream))
-					{
-						bitmap?.Recycle();
-						bitmap = null;
-						tcs.TrySetResult(NativeSurfaceSnapshot.Failed("Failed to encode camera bitmap as PNG."));
-						return;
-					}
-
-					var bytes = stream.ToArray();
-					bitmap?.Recycle();
-					bitmap = null;
-					tcs.TrySetResult(NativeSurfaceSnapshotHelper.ProcessPng(bytes, width, height, options));
-				}
-				catch (Exception ex)
-				{
-					bitmap?.Recycle();
-					bitmap = null;
-					tcs.TrySetResult(NativeSurfaceSnapshot.Failed(ex.Message));
-				}
-			});
-
-			PixelCopy.Request(window, sourceRect, bitmap, listener, handler);
-		}
-		catch (Exception ex)
-		{
-			bitmap?.Recycle();
-			return Task.FromResult(NativeSurfaceSnapshot.Failed(ex.Message));
-		}
-
-		return tcs.Task;
-	}
 
 	private void EnsureHostCreated()
 	{
@@ -582,35 +493,6 @@ internal class CameraAdapter : BaseCameraAdapter
 
 	#region Classes
 
-	private sealed class PixelCopyFinishedListener : Object, PixelCopy.IOnPixelCopyFinishedListener
-	{
-		#region Fields
-
-		private readonly Action<int> _callback;
-
-
-#endregion
-
-		#region Constructors
-
-		public PixelCopyFinishedListener(Action<int> callback)
-		{
-			_callback = callback;
-		}
-
-
-#endregion
-
-		#region Methods
-
-		public void OnPixelCopyFinished(int copyResult)
-		{
-			_callback(copyResult);
-		}
-
-
-#endregion
-	}
 
 	private class RecordingConsumer : Object, IConsumer
 	{

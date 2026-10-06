@@ -84,6 +84,7 @@
 		</ResourceDictionary>
 	</Styles.Resources>
 
+	<StyleInclude Source="csres://Cornerstone.Presentation/Theme/Controls/ApplicationUpdateWindow.cxaml" />
 	<StyleInclude Source="csres://Cornerstone.Presentation/Theme/Controls/ActivityControl.cxaml" />
 	<StyleInclude Source="csres://Cornerstone.Presentation/Theme/Controls/BookmarkBar.cxaml" />
 	<StyleInclude Source="csres://Cornerstone.Presentation/Theme/Controls/BookmarkBarControl.cxaml" />

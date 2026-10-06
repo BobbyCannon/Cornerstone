@@ -9,7 +9,7 @@ using Cornerstone.Presentation.Controls.NativeHosts;
 
 namespace Cornerstone.Esri;
 
-public interface IMapViewAdapter : IMapView, IPausableNativeSurface
+public interface IMapViewAdapter : IMapView, INativeSurface
 {
 	#region Methods
 

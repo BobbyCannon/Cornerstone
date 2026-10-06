@@ -7,17 +7,17 @@ namespace Sample.App
 {
     partial class SampleView
     {
-        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.251.31480")]
+        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.0.0")]
         public global::Cornerstone.Presentation.Controls.TextBox FirstNameTextBox => this.FindNameScope()?.Find<global::Cornerstone.Presentation.Controls.TextBox>("FirstNameTextBox");
-        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.251.31480")]
+        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.0.0")]
         public global::Cornerstone.Presentation.Controls.TextBox LastNameTextBox => this.FindNameScope()?.Find<global::Cornerstone.Presentation.Controls.TextBox>("LastNameTextBox");
-        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.251.31480")]
+        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.0.0")]
         protected global::Cornerstone.Presentation.Controls.TextBox PasswordTextBox => this.FindNameScope()?.Find<global::Cornerstone.Presentation.Controls.TextBox>("PasswordTextBox");
-        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.251.31480")]
+        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.0.0")]
         private global::Cornerstone.Presentation.Controls.TextBox ConfirmPasswordTextBox => this.FindNameScope()?.Find<global::Cornerstone.Presentation.Controls.TextBox>("ConfirmPasswordTextBox");
-        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.251.31480")]
+        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.0.0")]
         internal global::Cornerstone.Presentation.Controls.Button SignUpButton => this.FindNameScope()?.Find<global::Cornerstone.Presentation.Controls.Button>("SignUpButton");
-        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.251.31480")]
+        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.0.0")]
         internal global::Cornerstone.Presentation.Controls.Button RegisterButton => this.FindNameScope()?.Find<global::Cornerstone.Presentation.Controls.Button>("RegisterButton");
     }
 }

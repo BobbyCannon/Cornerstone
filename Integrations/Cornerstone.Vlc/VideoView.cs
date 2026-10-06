@@ -16,7 +16,7 @@ namespace Cornerstone.Vlc;
 /// <summary>
 /// Cross-platform LibVLC video island. The native child is the platform LibVLCSharp VideoView.
 /// </summary>
-public class VideoView : PausableNativeHost, IVideoView
+public class VideoView : NativeSurfaceHost, IVideoView
 {
 	#region Fields
 
@@ -97,7 +97,7 @@ public class VideoView : PausableNativeHost, IVideoView
 		base.Dispose(disposing);
 	}
 
-	protected override IPausableNativeSurface GetSurface()
+	protected override INativeSurface GetSurface()
 	{
 		return EnsureAdapter();
 	}

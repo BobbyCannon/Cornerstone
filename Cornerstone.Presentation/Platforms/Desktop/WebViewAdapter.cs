@@ -70,11 +70,6 @@ internal sealed class WebViewAdapter : CornerstoneObject, IWebViewAdapter, IDisp
 
 	#region Methods
 
-	public Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
-	{
-		return Task.FromResult(NativeSurfaceSnapshot.Failed("macOS WKWebView snapshot is not implemented."));
-	}
-
 	public Task ClearBrowsingDataAsync()
 	{
 		return Task.CompletedTask;

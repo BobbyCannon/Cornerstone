@@ -21,7 +21,7 @@ using Task = System.Threading.Tasks.Task;
 namespace Cornerstone.VisualStudio;
 
 [Guid(CornerstoneConstants.PackageGuidString)]
-[InstalledProductRegistration("#110", "#112", "1.5.277.18575", IconResourceID = 400)]
+[InstalledProductRegistration("#110", "#112", "1.5.277.37869", IconResourceID = 400)]
 [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
 // Priority must beat the XML editor (0x2710 / 10000). .axaml is Avalonia. .cxaml is Cornerstone.
 // .xaml stays with the Visual Studio XAML editor.

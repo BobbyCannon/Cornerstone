@@ -63,11 +63,6 @@ internal class VideoViewAdapter : CornerstoneObject, IVideoViewAdapter, IDisposa
 
 	#region Methods
 
-	public Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
-	{
-		return Task.FromResult(NativeSurfaceSnapshot.Failed("VideoView snapshot is not implemented."));
-	}
-
 	public void Dispose()
 	{
 		if (_disposed)

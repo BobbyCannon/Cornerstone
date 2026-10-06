@@ -29,6 +29,8 @@ public abstract class SyncClientForDatabase : SyncClient
 
 	private ISyncableDatabase _applyDatabase;
 	private (DateTime Since, DateTime Until, List<(string TypeName, int Count)> Counts)? _changeCountCache;
+	private Dictionary<(string TypeName, Guid SyncId), ISyncEntity> _groupAdded;
+	private List<ISyncEntity> _groupEntities;
 	private Dictionary<(string TypeName, Guid SyncId), ISyncEntity> _relatedBySyncId;
 	private static readonly ConcurrentDictionary<Type, Relationship[]> _relationshipCache;
 	private List<string> _syncOrder;
@@ -437,6 +439,17 @@ public abstract class SyncClientForDatabase : SyncClient
 	{
 		var typeName = relatedType.ToAssemblyName();
 		var key = (typeName, syncId);
+		// A parent added in this group has no database key until SaveChanges.
+		// Reading it back would copy 0 (or a temporary key) into the child and
+		// the group insert fails the foreign key. Use the instance only after
+		// its key is persisted, so the follow-up save can bind without another read.
+		if ((_groupAdded != null)
+			&& _groupAdded.TryGetValue(key, out var added)
+			&& HasPersistedKey(added))
+		{
+			return added;
+		}
+
 		if (_relatedBySyncId is { } cache && cache.TryGetValue(key, out var cached))
 		{
 			return cached;
@@ -570,10 +583,12 @@ public abstract class SyncClientForDatabase : SyncClient
 			// Disable caching when running "individual" processing just in case there is caching issues.
 			// Disable caching if the repository is using a different lookup filter because matching could be using a different "sync lookup key"
 			//  - todo: change key cache to add a "GetEntitySyncId" (see GetEntityId) method, this way we could cache on any lookup key
+			// Disable caching when a scope filter is registered. The cache has no scope.
 			// Disable caching if the cache does not support the sync entity type
 			//
 			var doesNotHaveLookupFilter = syncRepositoryFilter?.HasLookupFilter != true;
 			if (doesNotHaveLookupFilter
+				&& (syncRepositoryFilter?.HasScopeFilter != true)
 				&& !isIndividualProcess
 				&& !IsServerClient
 				&& (database.KeyCache?.SupportsType(type) == true))
@@ -620,22 +635,20 @@ public abstract class SyncClientForDatabase : SyncClient
 
 		if (foundEntity != null)
 		{
-			if (RejectIfIncomingFiltered(foundEntity, syncObject, issues))
+			if (RejectIfIncomingFiltered(foundEntity, syncObject, issues) || RejectIfStoredScopeFailed(foundEntity, syncObject, issues))
 			{
 				return false;
 			}
 		}
 		else if (syncRepositoryFilter?.HasLookupFilter == true)
 		{
-			// Lookup missed. Use the SyncId row when it exists and is in
-			// scope (update, not a second insert). Out of scope is filtered.
-			var bySyncId = repository.Read(syncObject.SyncId);
-			if (RejectIfIncomingFiltered(bySyncId, syncObject, issues))
+			// Lookup missed. One SyncId read. In scope is an update.
+			// Outside scope is filtered. Missing stays missing. No second probe.
+			foundEntity = repository.Read(syncObject.SyncId);
+			if (RejectIfIncomingFiltered(foundEntity, syncObject, issues) || RejectIfStoredScopeFailed(foundEntity, syncObject, issues))
 			{
 				return false;
 			}
-
-			foundEntity = bySyncId;
 		}
 
 		var syncStatus = syncObject.Status;
@@ -673,6 +686,7 @@ public abstract class SyncClientForDatabase : SyncClient
 
 				if (UpdateEntity(syncObject, syncEntity, foundEntity, syncStatus, issues, database))
 				{
+					RememberGroupEntity(foundEntity, added: true);
 					repository.Add(foundEntity);
 					return true;
 				}
@@ -698,6 +712,7 @@ public abstract class SyncClientForDatabase : SyncClient
 					return false;
 				}
 
+				RememberGroupEntity(foundEntity, added: false);
 				return true;
 			}
 			case SyncObjectStatus.Deleted:
@@ -773,6 +788,8 @@ public abstract class SyncClientForDatabase : SyncClient
 			{
 				var changes = 0;
 				_applyDatabase = database;
+				_groupAdded = new Dictionary<(string TypeName, Guid SyncId), ISyncEntity>();
+				_groupEntities = new List<ISyncEntity>();
 				_relatedBySyncId = new Dictionary<(string TypeName, Guid SyncId), ISyncEntity>();
 
 				for (var i = 0; i < objects.Count; i++)
@@ -783,14 +800,14 @@ public abstract class SyncClientForDatabase : SyncClient
 					}
 				}
 
-				// Save the whole group in one call. Do not SaveChanges per row.
-				// Per-row saves turn a bulk request into one transaction per item
-				// and destroy sync performance. Parent local keys are set in the
-				// entity update (GetEntityPrimaryKey: KeyCache, then one filtered
-				// repository read) before this save.
+				// Save the whole group together. Do not SaveChanges per row.
+				// A parent added in this group has no key yet. Children that point
+				// at that parent stay out of the first insert, then insert once the
+				// parent key is on the instance already in memory. That is one save
+				// per tree level in the page, not a query or a save per row.
 				using (Profiler.Start(nameof(ProcessSyncObjects) + "SaveDatabase"))
 				{
-					database.SaveChanges();
+					SaveGroup(database, TakeDeferredRelationships(database));
 				}
 
 				if (corrections)
@@ -805,6 +822,8 @@ public abstract class SyncClientForDatabase : SyncClient
 			finally
 			{
 				_applyDatabase = null;
+				_groupAdded = null;
+				_groupEntities = null;
 				_relatedBySyncId = null;
 				database.Dispose();
 			}
@@ -972,7 +991,13 @@ public abstract class SyncClientForDatabase : SyncClient
 	private ISyncEntity ReadRelatedEntity(ISyncableDatabase database, Type relatedType, Guid syncId)
 	{
 		var found = GetRelatedBySyncId(database, relatedType, syncId);
-		if ((found != null) && SyncSettings.ShouldFilterIncomingEntity(relatedType.ToAssemblyName(), found))
+		if (found == null)
+		{
+			return null;
+		}
+
+		var typeName = relatedType.ToAssemblyName();
+		if (SyncSettings.ShouldFilterIncomingEntity(typeName, found) || SyncSettings.FailsScope(typeName, found))
 		{
 			return null;
 		}
@@ -981,7 +1006,8 @@ public abstract class SyncClientForDatabase : SyncClient
 	}
 
 	/// <summary>
-	/// Payload fields can be rewritten to pass the session incoming filter. The stored row cannot.
+	/// Payload fields can be rewritten to pass the incoming filter. The stored row is tested with the same filter.
+	/// Scope is a store read, not this keep-test.
 	/// </summary>
 	private bool RejectIfIncomingFiltered(ISyncEntity entity, SyncObject syncObject, ICollection<SyncIssue> issues)
 	{
@@ -1003,9 +1029,32 @@ public abstract class SyncClientForDatabase : SyncClient
 	}
 
 	/// <summary>
-	/// Incoming *SyncId can name a stored related row that fails that type's
-	/// apply keep-test (scope and/or incoming). Reject after convert, before
-	/// the destination row is loaded or updated.
+	/// The stored row was already loaded by the SyncId read. Scope runs on that instance.
+	/// A missing row is a new insert and does not touch the store again.
+	/// </summary>
+	private bool RejectIfStoredScopeFailed(ISyncEntity entity, SyncObject syncObject, ICollection<SyncIssue> issues)
+	{
+		if ((entity == null) || !SyncSettings.FailsScope(entity.GetRealType().ToAssemblyName(), entity))
+		{
+			return false;
+		}
+
+		var issue = new SyncIssue
+		{
+			Id = syncObject.SyncId,
+			IssueType = SyncIssueType.SyncEntityFiltered,
+			Message = "The item is not being processed because the sync entity is being filtered.",
+			TypeName = syncObject.TypeName
+		};
+		issues.Add(issue);
+		Logger?.Write(LogLevel.Debug, SyncSessionStart?.Id ?? Guid.Empty, issue.Message, DateTimeProvider.UtcNow);
+		return true;
+	}
+
+	/// <summary>
+	/// Incoming *SyncId can name a stored related row the session must not use.
+	/// A row outside that type's scope, or a row that fails its incoming filter,
+	/// is rejected after convert and before the destination row is updated.
 	/// </summary>
 	private bool RejectIfRelatedIncomingFiltered(
 		ISyncEntity incoming,
@@ -1029,14 +1078,15 @@ public abstract class SyncClientForDatabase : SyncClient
 			}
 
 			var filter = SyncSettings.GetFilter(repository);
-			if (filter?.HasApplyKeepTest != true)
+			if ((filter?.HasApplyKeepTest != true) && (filter?.HasScopeFilter != true))
 			{
 				continue;
 			}
 
 			var typeName = relationship.Type.ToAssemblyName();
 			var related = GetRelatedBySyncId(database, relationship.Type, relatedSyncId.Value);
-			if ((related == null) || !SyncSettings.ShouldFilterIncomingEntity(typeName, related))
+			if ((related == null)
+				|| (!SyncSettings.ShouldFilterIncomingEntity(typeName, related) && !SyncSettings.FailsScope(typeName, related)))
 			{
 				continue;
 			}
@@ -1196,16 +1246,183 @@ public abstract class SyncClientForDatabase : SyncClient
 		}
 	}
 
+	private static bool IsPersistedKeyValue(object id)
+	{
+		return id switch
+		{
+			int value => value > 0,
+			long value => value > 0,
+			Guid value => value != Guid.Empty,
+			_ => false
+		};
+	}
+
+	[UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Sync entity Id is a public property on source-reflected sync entities.")]
+	private static bool HasPersistedKey(ISyncEntity entity)
+	{
+		var idProperty = entity.GetRealType().GetProperty("Id", BindingFlags.Instance | BindingFlags.Public);
+		return (idProperty != null) && IsPersistedKeyValue(idProperty.GetValue(entity));
+	}
+
+	private bool DependsOnUnpersistedAdd(ISyncableDatabase database, ISyncEntity entity)
+	{
+		if (_groupAdded == null)
+		{
+			return false;
+		}
+
+		foreach (var relationship in GetRelationshipConfigurations(entity.GetRealType(), database))
+		{
+			var relatedSyncId = GetRelatedSyncId(entity, relationship);
+			if (relatedSyncId == null)
+			{
+				continue;
+			}
+
+			if (_groupAdded.TryGetValue((relationship.Type.ToAssemblyName(), relatedSyncId.Value), out var added)
+				&& !HasPersistedKey(added))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private void RememberGroupEntity(ISyncEntity entity, bool added)
+	{
+		if (_groupEntities == null)
+		{
+			return;
+		}
+
+		_groupEntities.Add(entity);
+		if (!added || (_groupAdded == null))
+		{
+			return;
+		}
+
+		_groupAdded[(entity.GetRealType().ToAssemblyName(), entity.SyncId)] = entity;
+	}
+
+	private void SaveGroup(ISyncableDatabase database, List<ISyncEntity> deferred)
+	{
+		if ((deferred == null) || (deferred.Count == 0))
+		{
+			database.SaveChanges();
+			return;
+		}
+
+		// New children cannot insert with their parent key until that parent insert
+		// has assigned one. Updates stay in the first save; the parent key is set after.
+		var waitingAdds = new List<ISyncEntity>();
+		var pendingUpdates = new List<ISyncEntity>();
+		for (var i = 0; i < deferred.Count; i++)
+		{
+			var entity = deferred[i];
+			if (HasPersistedKey(entity))
+			{
+				pendingUpdates.Add(entity);
+				continue;
+			}
+
+			database.GetSyncableRepository(entity.GetRealType())?.Discard(entity);
+			waitingAdds.Add(entity);
+		}
+
+		database.SaveChanges();
+
+		var guard = waitingAdds.Count + 1;
+		while ((waitingAdds.Count > 0) && (guard-- > 0))
+		{
+			_relatedBySyncId?.Clear();
+			var stillWaiting = new List<ISyncEntity>();
+			var ready = false;
+			for (var i = 0; i < waitingAdds.Count; i++)
+			{
+				var entity = waitingAdds[i];
+				if (DependsOnUnpersistedAdd(database, entity))
+				{
+					stillWaiting.Add(entity);
+					continue;
+				}
+
+				UpdateLocalRelationships(entity, database, enforceMissing: false);
+				database.GetSyncableRepository(entity.GetRealType())?.Add(entity);
+				ready = true;
+			}
+
+			if (!ready)
+			{
+				for (var i = 0; i < stillWaiting.Count; i++)
+				{
+					var entity = stillWaiting[i];
+					UpdateLocalRelationships(entity, database, enforceMissing: false);
+					database.GetSyncableRepository(entity.GetRealType())?.Add(entity);
+				}
+
+				database.SaveChanges();
+				waitingAdds.Clear();
+				break;
+			}
+
+			database.SaveChanges();
+			waitingAdds = stillWaiting;
+		}
+
+		if (pendingUpdates.Count == 0)
+		{
+			return;
+		}
+
+		_relatedBySyncId?.Clear();
+		for (var i = 0; i < pendingUpdates.Count; i++)
+		{
+			UpdateLocalRelationships(pendingUpdates[i], database);
+		}
+
+		database.SaveChanges();
+	}
+
+	private List<ISyncEntity> TakeDeferredRelationships(ISyncableDatabase database)
+	{
+		var deferred = new List<ISyncEntity>();
+		if ((_groupEntities == null) || (_groupAdded == null) || (_groupAdded.Count == 0))
+		{
+			return deferred;
+		}
+
+		foreach (var entity in _groupEntities)
+		{
+			foreach (var relationship in GetRelationshipConfigurations(entity.GetRealType(), database))
+			{
+				var relatedSyncId = GetRelatedSyncId(entity, relationship);
+				if (relatedSyncId == null)
+				{
+					continue;
+				}
+
+				if (_groupAdded.ContainsKey((relationship.Type.ToAssemblyName(), relatedSyncId.Value)))
+				{
+					deferred.Add(entity);
+					break;
+				}
+			}
+		}
+
+		return deferred;
+	}
+
 	private bool TrySetRelationshipId(ISyncEntity entity, Relationship relationship, ISyncableDatabase database, Guid relatedSyncId)
 	{
 		var relatedRepository = database.GetSyncableRepository(relationship.Type);
 		if ((relatedRepository != null) && !IsServerClient)
 		{
 			var relatedFilter = SyncSettings.GetFilter(relatedRepository);
-			if (relatedFilter?.HasApplyKeepTest != true)
+			if ((relatedFilter?.HasScopeFilter != true) && (relatedFilter?.HasApplyKeepTest != true))
 			{
 				var cachedId = database.KeyCache?.GetEntityId(relationship.Type, relatedSyncId);
-				if (cachedId != null)
+				if ((cachedId != null) && IsPersistedKeyValue(cachedId))
 				{
 					SetRelationshipId(relationship.EntityIdPropertyInfo, entity, cachedId);
 					return true;
@@ -1220,14 +1437,21 @@ public abstract class SyncClientForDatabase : SyncClient
 		}
 
 		var id = relationship.RelatedIdPropertyInfo.GetValue(found);
+		// An unsaved parent still has a default or temporary key. Writing that
+		// into the child fails the foreign key on insert.
+		if (!IsPersistedKeyValue(id))
+		{
+			return false;
+		}
+
 		SetRelationshipId(relationship.EntityIdPropertyInfo, entity, id);
 		database.KeyCache?.AddEntityId(relationship.Type, relatedSyncId, id);
 		return true;
 	}
 
 	/// <summary>
-	/// Set local *Id values from *SyncId. Related rows are Read(syncId), not a lookup filter.
-	/// A keep-test miss (scope and/or incoming) is treated as missing.
+	/// Set local *Id values from *SyncId. Related rows are one Read(syncId), not a lookup filter.
+	/// A stored row outside scope, or one that fails the incoming filter, is treated as missing.
 	/// When <paramref name="enforceMissing" /> is false, a missing required id stays at its default.
 	/// </summary>
 	private void UpdateLocalRelationships(ISyncEntity entity, ISyncableDatabase database, bool enforceMissing = true)

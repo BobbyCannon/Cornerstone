@@ -65,26 +65,27 @@ public class SyncSettingsTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
-	public void ScopeFilterIsApplyKeepTestWithoutIncoming()
+	public void ScopeFilterDoesNotFilterTheIncomingEntity()
 	{
 		var filter = new SyncRepositoryFilter<AddressEntity>(scopeFilter: x => x.State == "SC");
 		IsTrue(filter.HasScopeFilter);
-		IsTrue(filter.HasApplyKeepTest);
+		IsFalse(filter.HasApplyKeepTest);
 		IsFalse(filter.HasIncomingFilter);
 		IsFalse(filter.ShouldFilterIncomingEntity(new AddressEntity { State = "SC" }));
-		IsTrue(filter.ShouldFilterIncomingEntity(new AddressEntity { State = "GA" }));
+		IsFalse(filter.ShouldFilterIncomingEntity(new AddressEntity { State = "GA" }));
 		IsFalse(filter.ShouldFilterIncomingEntity(new AccountEntity { Name = "John" }));
 	}
 
 	[TestMethod]
-	public void ScopeFilterAndIncomingBothMustPass()
+	public void IncomingFilterDecidesTheEntityWhenScopeIsSet()
 	{
 		var filter = new SyncRepositoryFilter<AddressEntity>(
 			incomingFilter: x => x.Line1 == "Keep",
 			scopeFilter: x => x.State == "SC"
 		);
+		IsTrue(filter.HasApplyKeepTest);
 		IsFalse(filter.ShouldFilterIncomingEntity(new AddressEntity { Line1 = "Keep", State = "SC" }));
-		IsTrue(filter.ShouldFilterIncomingEntity(new AddressEntity { Line1 = "Keep", State = "GA" }));
+		IsFalse(filter.ShouldFilterIncomingEntity(new AddressEntity { Line1 = "Keep", State = "GA" }));
 		IsTrue(filter.ShouldFilterIncomingEntity(new AddressEntity { Line1 = "Drop", State = "SC" }));
 	}
 

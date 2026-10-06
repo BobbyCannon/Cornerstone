@@ -20,7 +20,7 @@ namespace Cornerstone.Esri;
 /// <summary>
 /// Cross-platform Esri SceneView island. Native child is platform Esri SceneView; GIS types stay Esri.
 /// </summary>
-public class SceneView : PausableNativeHost, ISceneView
+public class SceneView : NativeSurfaceHost, ISceneView
 {
 	#region Fields
 
@@ -138,7 +138,7 @@ public class SceneView : PausableNativeHost, ISceneView
 		base.Dispose(disposing);
 	}
 
-	protected override IPausableNativeSurface GetSurface()
+	protected override INativeSurface GetSurface()
 	{
 		return EnsureAdapter();
 	}

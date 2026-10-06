@@ -282,7 +282,7 @@ Headless coverage here is the in-process surface and the null or stub path. Do n
 | Window | WindowTests | open |
 | EmbeddableControlRoot | | open |
 | NativeControlHost | | open |
-| PausableNativeHost | | open |
+| NativeSurfaceHost | | open |
 | WebView | | open |
 | CameraView | | open |
 | CameraNativeHost | | open |

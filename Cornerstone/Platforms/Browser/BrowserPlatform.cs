@@ -4,6 +4,7 @@ using Cornerstone.Input;
 using Cornerstone.Location;
 using Cornerstone.Media;
 using Cornerstone.Runtime;
+using Cornerstone.Security;
 using Cornerstone.Security.SecurityKeys;
 
 #endregion
@@ -52,6 +53,7 @@ public class BrowserPlatform : CornerstoneObject, IPlatform
 		DependencyProvider.AddSingleton<ILocationProvider, BrowserLocationProvider>();
 		DependencyProvider.AddSingleton<IPermissions, BrowserPermissions>();
 		DependencyProvider.AddSingleton<SecurityCardReader, SecurityCardReaderStub>();
+		DependencyProvider.AddSingleton<IWindowsHelloService, WindowsHelloServiceStub>();
 	}
 
 	#endregion

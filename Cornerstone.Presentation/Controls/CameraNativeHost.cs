@@ -12,11 +12,11 @@ using Cornerstone.Presentation.Controls.Camera;
 namespace Cornerstone.Presentation.Controls;
 
 /// <summary>
-/// Pausable native camera surface. Hosts platform PreviewView (Android) when the adapter
+/// Native camera surface. Hosts platform PreviewView (Android) when the adapter
 /// publishes a platform handle; stays collapsed for frame-based platforms so Cornerstone Image
 /// preview is not covered by an empty native child.
 /// </summary>
-public sealed class CameraNativeHost : PausableNativeHost
+public sealed class CameraNativeHost : NativeSurfaceHost
 {
 	#region Fields
 
@@ -62,7 +62,7 @@ public sealed class CameraNativeHost : PausableNativeHost
 	}
 
 	/// <inheritdoc />
-	protected override IPausableNativeSurface GetSurface()
+	protected override INativeSurface GetSurface()
 	{
 		return CameraAdapter;
 	}
@@ -77,12 +77,6 @@ public sealed class CameraNativeHost : PausableNativeHost
 		}
 
 		base.OnPropertyChanged(change);
-
-		if (change.Property == IsPausedProperty)
-		{
-			// After resume, keep host collapsed when there is no platform surface (frame-based).
-			SyncNativeHostAvailability();
-		}
 	}
 
 	/// <inheritdoc />
@@ -104,10 +98,6 @@ public sealed class CameraNativeHost : PausableNativeHost
 			|| (e.PropertyName == nameof(ICameraAdapter.IsPreviewing)))
 		{
 			SyncNativeHostAvailability();
-			if (!IsPaused && HasPlatformHandle())
-			{
-				RequestWarmUnderlay();
-			}
 		}
 	}
 
@@ -137,17 +127,11 @@ public sealed class CameraNativeHost : PausableNativeHost
 	}
 
 	/// <summary>
-	/// Show the nested native host only when the adapter published a real surface and we are not paused.
+	/// Show the nested native host only when the adapter published a real surface.
 	/// Recreate when the handle instance changes so Cornerstone's Android host attaches the PreviewView.
 	/// </summary>
 	private void SyncNativeHostAvailability()
 	{
-		if (IsPaused)
-		{
-			// Pause path owns NestedNativeHost.IsVisible (HideWithSize).
-			return;
-		}
-
 		var show = HasPlatformHandle();
 		if (!show)
 		{

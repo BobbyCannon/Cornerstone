@@ -9,7 +9,7 @@ using Cornerstone.Presentation.Platform;
 
 namespace Cornerstone.Vlc;
 
-public interface IVideoViewAdapter : IVideoView, IPausableNativeSurface
+public interface IVideoViewAdapter : IVideoView, INativeSurface
 {
 	#region Methods
 

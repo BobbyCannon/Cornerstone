@@ -30,11 +30,6 @@ public class WebViewAdapterStub : IWebViewAdapter
 
 	#region Methods
 
-	public Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
-	{
-		return Task.FromResult(NativeSurfaceSnapshot.Failed("WebView adapter stub does not support snapshots."));
-	}
-
 	public Task ClearBrowsingDataAsync()
 	{
 		return Task.CompletedTask;
@@ -149,13 +144,13 @@ public class WebViewAdapterStub : IWebViewAdapter
 	#endregion
 }
 
-public interface IWebViewAdapter : IWebView, IPausableNativeSurface
+public interface IWebViewAdapter : IWebView, INativeSurface
 {
 	#region Methods
 
 	/// <summary>
 	/// Bind the adapter to the host control. Linux reparents / injects input; browser attaches the DOM overlay.
-	/// Other platforms return <see cref="IPausableNativeSurface.PlatformHandle" />.
+	/// Other platforms return <see cref="INativeSurface.PlatformHandle" />.
 	/// </summary>
 	IPlatformHandle AttachToHost(IPlatformHandle parent, InputElement inputHost)
 	{

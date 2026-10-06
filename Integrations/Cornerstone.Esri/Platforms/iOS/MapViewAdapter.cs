@@ -68,11 +68,6 @@ internal class MapViewAdapter : CornerstoneObject, IMapViewAdapter, IDisposable
 
 	#region Methods
 
-	public Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
-	{
-		return MapViewSnapshot.CaptureAsync(_mapView, options);
-	}
-
 	public void Dispose()
 	{
 		if (_disposed)

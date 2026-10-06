@@ -43,7 +43,7 @@ A new control class goes in the root namespace. Its helpers go in an existing ki
 | Validation | `Controls.Validation` | DataValidationErrors. Moved. | — |
 | Platform | `Controls.Platform` | Win32, MacOS, and X11 attached properties, and PlatformInhibitionType. Moved into the existing folder. | Native control hosts, which are `Controls.NativeHosts` |
 | Labels | `Controls.Labels` | Label and ByteSizeLabel. Moved. The namespace is plural so it does not hide the Label type. | TextBlock, which is `Controls.Text` |
-| Native hosts | `Controls.NativeHosts` | NativeControlHost, PausableNativeHost, native surface snapshots, and NativeDock. Moved. | The Window type |
+| Native hosts | `Controls.NativeHosts` | NativeControlHost, NativeSurfaceHost, INativeSurface, and NativeDock. | The Window type |
 | Theming | `Controls.Theming` | ThemeVariantScope, IThemeVariantProvider, and ThemeBrushes. Moved. | Theme palettes, which stay in Cornerstone.Presentation.Theme.Theming |
 | Application lifetimes | `Controls.ApplicationLifetimes` | Desktop lifetime types, DesktopApplicationExtensions, and ShutdownMode. Moved into the existing folder. | — |
 | Transitioning | `Controls.Transitioning` | TransitioningContentControl and TransitionCompletedEventArgs. Moved. The namespace is Transitioning so it does not hide the Transitions type. | — |

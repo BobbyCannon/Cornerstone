@@ -90,9 +90,10 @@ public class EntityFrameworkSyncableRepository<T, T2>
 
 	public IEnumerable<ISyncEntity> GetChanges(DateTime since, DateTime until, int skip, int take, SyncRepositoryFilter filter)
 	{
-		IQueryable<T> query = GetChangesQuery(since, until, filter)
-			.OrderBy(x => x.ModifiedOn)
-			.ThenBy(x => x.Id);
+		var changes = GetChangesQuery(since, until, filter);
+		IQueryable<T> query = filter is SyncRepositoryFilter<T> { OrderBys.Length: > 0 } typed
+			? changes.Order(typed.OrderBys).ThenBy(x => x.ModifiedOn).ThenBy(x => x.Id)
+			: changes.OrderBy(x => x.ModifiedOn).ThenBy(x => x.Id);
 		if (skip > 0)
 		{
 			query = query.Skip(skip);

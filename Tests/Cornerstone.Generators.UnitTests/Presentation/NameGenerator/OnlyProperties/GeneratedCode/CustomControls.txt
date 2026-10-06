@@ -7,11 +7,11 @@ namespace Sample.App
 {
     partial class SampleView
     {
-        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.251.31480")]
+        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.0.0")]
         internal global::Cornerstone.Presentation.Controls.ColorPicker ClrNamespaceColorPicker => this.FindNameScope()?.Find<global::Cornerstone.Presentation.Controls.ColorPicker>("ClrNamespaceColorPicker");
-        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.251.31480")]
+        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.0.0")]
         internal global::Cornerstone.Presentation.Controls.ColorPicker UriColorPicker => this.FindNameScope()?.Find<global::Cornerstone.Presentation.Controls.ColorPicker>("UriColorPicker");
-        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.251.31480")]
+        [global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.OnlyPropertiesCodeGenerator", "3.0.0.0")]
         internal global::Controls.CustomTextBox UserNameTextBox => this.FindNameScope()?.Find<global::Controls.CustomTextBox>("UserNameTextBox");
     }
 }

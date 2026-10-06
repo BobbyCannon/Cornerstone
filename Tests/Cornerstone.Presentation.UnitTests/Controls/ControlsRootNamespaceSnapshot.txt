@@ -113,6 +113,7 @@ MenuItem
 MultiPage
 NativeControlHost
 NativeMenuBar
+NativeSurfaceHost
 NavigationMenu
 NavigationPage
 NotificationCard
@@ -124,10 +125,13 @@ Page
 PageNavigationHost
 PageNavigator
 Panel
+PastingFromClipboardEventArgs
 PathIcon
-PausableNativeHost
 PickerPresenterBase
 PipsPager
+PlayBar
+PlayBarSeekEventArgs
+PlayBarVolumeEventArgs
 Popup
 PopupRoot
 PopupView

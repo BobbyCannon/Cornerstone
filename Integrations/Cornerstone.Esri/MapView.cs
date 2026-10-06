@@ -20,7 +20,7 @@ namespace Cornerstone.Esri;
 /// <summary>
 /// Cross-platform Esri MapView island. Native child is platform Esri MapView; GIS types stay Esri.
 /// </summary>
-public class MapView : PausableNativeHost, IMapView
+public class MapView : NativeSurfaceHost, IMapView
 {
 	#region Fields
 
@@ -131,7 +131,7 @@ public class MapView : PausableNativeHost, IMapView
 		base.Dispose(disposing);
 	}
 
-	protected override IPausableNativeSurface GetSurface()
+	protected override INativeSurface GetSurface()
 	{
 		return EnsureAdapter();
 	}

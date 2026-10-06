@@ -30,8 +30,6 @@
 					Command="{Binding PlayCommand}" />
 			<Button Content="Stop"
 					Command="{Binding StopCommand}" />
-			<ToggleButton Content="Pause"
-					IsChecked="{Binding #Player.IsPaused, Mode=TwoWay}" />
 			<CheckBox Content="Show media controls"
 					IsChecked="{Binding #Player.ShowMediaControls, Mode=TwoWay}" />
 			<CheckBox x:Name="ShowDemoOverlayCheckBox"

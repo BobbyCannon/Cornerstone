@@ -20,7 +20,7 @@ namespace Cornerstone.Presentation.Controls;
 [TemplatePart(PartNativeHost, typeof(MediaPlayerNativeHost))]
 [TemplatePart(PartPlayBar, typeof(PlayBar))]
 [TemplatePart(PartTapSurface, typeof(Border))]
-public class MediaPlayerControl : TemplatedControl, INativeHostPausable
+public class MediaPlayerControl : TemplatedControl
 {
 	#region Constants
 
@@ -31,8 +31,6 @@ public class MediaPlayerControl : TemplatedControl, INativeHostPausable
 	#endregion
 
 	#region Fields
-
-	public static readonly StyledProperty<bool> IsPausedProperty;
 
 	public static readonly DirectProperty<MediaPlayerControl, string> MediaUrlProperty;
 	public static readonly StyledProperty<bool> ShowMediaControlsProperty;
@@ -74,7 +72,6 @@ public class MediaPlayerControl : TemplatedControl, INativeHostPausable
 	static MediaPlayerControl()
 	{
 		MediaUrlProperty = PresentationProperty.RegisterDirect<MediaPlayerControl, string>(nameof(MediaUrl), o => o.MediaUrl, (o, v) => o.MediaUrl = v);
-		IsPausedProperty = PresentationProperty.Register<MediaPlayerControl, bool>(nameof(IsPaused));
 		ShowMediaControlsProperty = PresentationProperty.Register<MediaPlayerControl, bool>(nameof(ShowMediaControls), true);
 	}
 
@@ -83,16 +80,6 @@ public class MediaPlayerControl : TemplatedControl, INativeHostPausable
 	#region Properties
 
 	public TimeSpan Duration => _mediaPlayerAdapter?.Duration ?? TimeSpan.Zero;
-
-	/// <summary>
-	/// When true, freezes the video surface as a snapshot underlay and hides the native host
-	/// so Cornerstone content can paint over this region. Also pauses decoding/audio.
-	/// </summary>
-	public bool IsPaused
-	{
-		get => GetValue(IsPausedProperty);
-		set => SetValue(IsPausedProperty, value);
-	}
 
 	public string MediaUrl
 	{
@@ -193,11 +180,6 @@ public class MediaPlayerControl : TemplatedControl, INativeHostPausable
 
 	public void ResumeVideo()
 	{
-		if (IsPaused)
-		{
-			IsPaused = false;
-		}
-
 		_mediaPlayerAdapter.Resume();
 		_timer.Start();
 		UpdateTransportState();
@@ -208,7 +190,6 @@ public class MediaPlayerControl : TemplatedControl, INativeHostPausable
 		_timer.Stop();
 		_mediaPlayerAdapter.Stop();
 		_activeSource = null;
-		IsPaused = false;
 		ResetTransport();
 	}
 
@@ -242,7 +223,6 @@ public class MediaPlayerControl : TemplatedControl, INativeHostPausable
 		if (_nativeHost != null)
 		{
 			_nativeHost.SetAdapter(_mediaPlayerAdapter);
-			_nativeHost.IsPaused = IsPaused;
 		}
 
 		if (_playBar != null)
@@ -291,20 +271,6 @@ public class MediaPlayerControl : TemplatedControl, INativeHostPausable
 		if (change.Property == ShowMediaControlsProperty)
 		{
 			UpdateTransportChrome();
-		}
-		else if ((change.Property == IsPausedProperty) && (_nativeHost != null))
-		{
-			_nativeHost.IsPaused = change.GetNewValue<bool>();
-			if (change.GetNewValue<bool>())
-			{
-				_timer.Stop();
-			}
-			else if (_mediaPlayerAdapter.State == MediaPlaybackState.Playing)
-			{
-				_timer.Start();
-			}
-
-			UpdateTransportState();
 		}
 	}
 
@@ -372,11 +338,7 @@ public class MediaPlayerControl : TemplatedControl, INativeHostPausable
 			_mediaPlayerAdapter.SetVideoStretch(_fillMode);
 
 			RefreshTransportFromAdapter();
-			if (!IsPaused)
-			{
-				_timer.Start();
-				_nativeHost?.RequestWarmUnderlay();
-			}
+			_timer.Start();
 		}
 
 		if (Dispatcher.UIThread.CheckAccess())
@@ -425,10 +387,7 @@ public class MediaPlayerControl : TemplatedControl, INativeHostPausable
 
 	private void OnControlSizeChanged(object sender, SizeChangedEventArgs e)
 	{
-		if (!IsPaused)
-		{
-			_mediaPlayerAdapter?.UpdateVideoLayout();
-		}
+		_mediaPlayerAdapter?.UpdateVideoLayout();
 	}
 
 	private void OnMuteRequested(object sender, EventArgs e)
@@ -442,11 +401,6 @@ public class MediaPlayerControl : TemplatedControl, INativeHostPausable
 
 	private void OnPlayPauseClick(object sender, RoutedEventArgs e)
 	{
-		if (IsPaused)
-		{
-			IsPaused = false;
-		}
-
 		switch (_mediaPlayerAdapter.State)
 		{
 			case MediaPlaybackState.Playing:
@@ -478,12 +432,7 @@ public class MediaPlayerControl : TemplatedControl, INativeHostPausable
 	{
 		// Always apply stretch policy (default false = preserve aspect ratio).
 		_mediaPlayerAdapter.SetVideoStretch(_fillMode);
-
-		if (!IsPaused)
-		{
-			_timer.Start();
-		}
-
+		_timer.Start();
 		UpdateVolumeGlyph();
 		UpdateTransportState();
 	}
@@ -605,8 +554,7 @@ public class MediaPlayerControl : TemplatedControl, INativeHostPausable
 		}
 
 		var playing = (_mediaPlayerAdapter != null)
-			&& (_mediaPlayerAdapter.State == MediaPlaybackState.Playing)
-			&& !IsPaused;
+			&& (_mediaPlayerAdapter.State == MediaPlaybackState.Playing);
 		_playBar.IsPlaying = playing;
 		UpdateTransportChrome();
 	}

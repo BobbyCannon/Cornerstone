@@ -23,8 +23,6 @@
 			<ComboBox MinWidth="120"
 					ItemsSource="{Binding #Camera.AvailableModes}"
 					SelectedItem="{Binding #Camera.Mode, Mode=TwoWay}" />
-			<ToggleButton Content="Pause"
-					IsChecked="{Binding #Camera.IsPaused, Mode=TwoWay}" />
 			<CheckBox x:Name="ShowDemoOverlayCheckBox"
 					Content="Show overlay"
 					IsChecked="False" />

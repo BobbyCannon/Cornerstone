@@ -78,6 +78,7 @@ public class IOSPlatform : CornerstoneObject, IPlatform
 		DependencyProvider.AddSingleton<IPermissions, IOSPermissions>();
 		DependencyProvider.AddSingleton<PlatformCredentialVault, IOSPlatformCredentialVault>();
 		DependencyProvider.AddSingleton<SecurityCardReader, IOSSecurityCardReader>();
+		DependencyProvider.AddSingleton<IWindowsHelloService, WindowsHelloServiceStub>();
 	}
 
 	private static void RestrictPlatformLinkingRemoval()

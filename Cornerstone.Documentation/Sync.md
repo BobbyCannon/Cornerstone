@@ -2,7 +2,7 @@
 
 Cornerstone can keep **syncable entities** aligned between a local client database and a server (another database, or a web API in front of one). Rows are identified by a stable global `SyncId` (`Guid`), not by local primary keys. A change is a row whose `CreatedOn` or `ModifiedOn` falls in the session window. Deletes are soft (`IsDeleted`) unless a client asks for permanent delete — a **server** client refuses that and always soft-deletes.
 
-A server database is expected to hold **100 million or more** rows per repository. Sync never loads a whole table. Each request works one page (`ItemsPerSyncRequest`, at most 10,000 on the server; zero or negative is raised to 1) and finds rows by unique `SyncId` or a time window (`CreatedOn` or `ModifiedOn` in range) ordered by `ModifiedOn` (then `Id` when two rows share a timestamp). The next page uses `Skip` (how many changes were already returned), not a local primary key or type-name cursor. Sync entities index `ModifiedOn` for that window. “Are there more pages?” is skip plus this page versus the window count.
+A server database is expected to hold **100 million or more** rows per repository. Sync never loads a whole table. Each request works one page (`ItemsPerSyncRequest`, at most 10,000 on the server; zero or negative is raised to 1) and finds rows by unique `SyncId` or a time window (`CreatedOn` or `ModifiedOn` in range). Order is the filter `OrderBy` when the host set one, then `ModifiedOn`, then `Id`. The next page uses `Skip` (how many changes were already returned), not a local primary key or type-name cursor. Sync entities index `ModifiedOn` for that window. “Are there more pages?” is skip plus this page versus the window count.
 
 This is the entity engine under `Cornerstone.Sync`. File-system differ code under `Cornerstone/FileSystem/Sync/` is a different utility.
 
@@ -74,7 +74,7 @@ Related rows use `FooId` (local, not identity) plus `FooSyncId` (global). Do not
 
 ### Change window and paging
 
-A change is a row whose `CreatedOn` **or** `ModifiedOn` falls in `[since, until)` (`until` exclusive). Order is `ModifiedOn`, then local `Id` when two rows share a timestamp. Filter `OrderBy` is not used for that order.
+A change is a row whose `CreatedOn` **or** `ModifiedOn` falls in `[since, until)` (`until` exclusive). Order is the filter `OrderBy` when the host set one (so a parent can be sent before its children), then `ModifiedOn`, then local `Id`.
 
 GetChanges walks included repositories in sync order, subtracts remaining skip from earlier repositories, then takes a page. “Are there more?” is skip plus this page versus the window count. Pull follows that flag. Push continues until a local page is shorter than the session page size.
 
@@ -86,7 +86,7 @@ If `Since` equals `Until`, GetChanges extends `Until` to now so the window is no
 
 A repository syncs only when a filter is registered for that entity type. An empty set syncs nothing. `AddFilter` with no predicates still includes that type. Hosts usually register the list in `SetSyncSettings` while the session is beginning. The manager checks after that. If the list is still empty, it records a repository-filtered issue and does not pull or push.
 
-`scopeFilter` is ownership: it is ANDed into GetChanges and into apply. Outgoing predicates are extra travel limits on GetChanges. Incoming-only predicates do **not** hide pull. Incoming predicates run on apply with scope: the keep test fails → `SyncEntityFiltered`. Lookup predicates find **this** incoming row by a business key instead of `SyncId` (ANDed with scope). Related `*SyncId` bind always reads by `SyncId`, never by lookup, then the related type’s scope/incoming keep-test.
+`scopeFilter` limits which stored rows a session can read or write. It is ANDed into the GetChanges query and the lookup query. Those queries already run. Scope does not add a round trip, and a miss does not probe the store again. Outgoing predicates are extra travel limits on GetChanges. Incoming predicates are the entity keep-test on apply: a failure is `SyncEntityFiltered`. The incoming image is not run through scope, so a new row is applied and the server sync client stamps the owner. The one indexed `Read(SyncId)` still loads a stored row. That instance is tested in memory. Outside scope is `SyncEntityFiltered` and is not inserted again. Lookup finds **this** incoming row by a business key instead of `SyncId` (ANDed with scope). A related `*SyncId` is that same one `Read(SyncId)`. A stored related row outside scope is `RelationshipConstraint`.
 
 On first sync (`since` is `DateTime.MinValue`), a registered filter defaults to omitting tombstones from outgoing changes. After that, tombstones for that type go out so the other side can delete. A type that is not registered sends nothing.
 
@@ -94,13 +94,13 @@ Filters key on the **entity** type. Wire type name is the **model**.
 
 ### Apply
 
-Apply groups by model type name, using database sync order when set. Non-deletes run first, then deletes in reverse group order (children before parents). Each group saves once; a failed group is retried one object at a time. A converter is required.
+Apply groups by model type name, using database sync order when set. Non-deletes run first, then deletes in reverse group order (children before parents). Each group saves once. A child whose parent is added in that same page waits for the parent insert, then inserts with the parent key. That is one extra save per new level in the page, not a save per row. A failed group is retried one object at a time. A converter is required.
 
-Per object: convert once, copy the wire `ModifiedOn` onto the incoming image, then reject if the type is not in the session. Then set each local `*Id` from `*SyncId`. The keep-test reads that entity, so a scope filter that compares a local integer sees the id on this side. A missing related row leaves the integer at 0 and the keep-test rejects the row. Then reject if the **payload** fails scope and incoming, then (for add/update) reject if a related `*SyncId` names a stored row that fails **that type’s** scope/incoming keep-test. Then find the stored row (optional key cache / `SyncId` / lookup; lookup miss then `Read(SyncId)`). A rewritten payload that passes the keep-test must not update a stored row that fails it — the stored row is tested too. Lookup miss plus an in-scope `SyncId` row is a merge, not a second insert.
+Per object: convert once, copy the wire `ModifiedOn` onto the incoming image, then reject if the type is not in the session. Then set each local `*Id` from one `Read(SyncId)`. The incoming keep-test is the incoming filter. Scope does not read that incoming image. A new row is applied, and the server sync client stamps the session owner. Then (for add/update) reject if that same related read returned a stored row outside scope, or an in-scope row that fails the incoming filter. Then find this row (optional key cache when the type has no scope and no lookup / one `Read(SyncId)` / lookup). Lookup miss uses that one `Read(SyncId)`: in scope is a merge, outside scope is `SyncEntityFiltered`, missing stays a new row. No follow-up existence query.
 
 Failed update discards the destination so the group save does not persist a rejected copy. A missing converter, failed convert, or converter that refuses the update is `UpdateException`.
 
-After a successful copy, the relationship walk runs again on the stored row. The update does not copy local ids, so the saved row gets them from that second walk. A missing required id then fails. Same-batch new parent then child may leave the child’s local id unset. A later apply of that child can bind it once the parent is already saved. The next sync does not select that child again on its own when the client kept the incoming ModifiedOn.
+After a successful copy, the relationship walk runs again on the stored row. The update does not copy local ids, so the saved row gets them from that second walk. A missing required id then fails. A parent added in the same page has no key during that walk, so the child does not store a temporary key. After the parent insert assigns the key, the child inserts with it. The parent instance is already in memory. That does not read the store again.
 
 During apply, created-on maintenance is off. Modified-on restamp is **on** only for a hub server client. Clients keep the incoming `ModifiedOn`.
 
@@ -120,9 +120,9 @@ Corrections are the same apply path with last-write-wins skipped (updates and hu
 
 ### Relationships and isolation
 
-Add/update is rejected (`RelationshipConstraint`) when `*SyncId` points at a stored related row that fails that related type’s scope/incoming keep-test. Missing or empty `*SyncId` still passes (not synced yet, or nullable). After a successful copy, a related row that is missing — or treated as missing because it fails the keep-test — leaves a nullable local id null, or fails if that id is required.
+Add/update is rejected (`RelationshipConstraint`) when `*SyncId` points at a stored related row outside that type’s scope, or an in-scope row that fails that type’s incoming filter. Missing or empty `*SyncId` still passes (not synced yet, or nullable). After a successful copy, a related row that is missing — or treated as missing because it is outside scope or fails the incoming filter — leaves a nullable local id null, or fails if that id is required.
 
-Isolation is `scopeFilter`. Incoming and outgoing are travel policy. The engine has no tenant or account types.
+Isolation is `scopeFilter` on the store. Incoming and outgoing filters, and the server sync client, decide the entity. The engine has no tenant or account types.
 
 ### SQL writes
 

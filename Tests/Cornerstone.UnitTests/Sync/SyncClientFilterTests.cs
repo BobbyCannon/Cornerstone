@@ -719,15 +719,16 @@ public class SyncClientFilterTests : SyncScenarioTest
 			AreEqual(0, result.Collection.Count, () => string.Join("; ", result.Collection.Select(x => x.Message)));
 			IsNotNull(database.Addresses.Read(payload.SyncId));
 
-			var rejected = client.ApplyChanges(sessionId, new ServiceRequest<SyncObject>(SyncObject.ToSyncObject(NewAddressPayload(Guid.NewGuid(), "Out Of Scope", "GA"))));
+			var outside = NewAddressPayload(Guid.NewGuid(), "Out Of Scope", "GA");
+			var accepted = client.ApplyChanges(sessionId, new ServiceRequest<SyncObject>(SyncObject.ToSyncObject(outside)));
 			DetachTrackedEntities(database);
-			AreEqual(1, rejected.Collection.Count);
-			AreEqual(SyncIssueType.SyncEntityFiltered, rejected.Collection[0].IssueType);
+			AreEqual(0, accepted.Collection.Count, () => string.Join("; ", accepted.Collection.Select(x => x.Message)));
+			IsNotNull(database.Addresses.Read(outside.SyncId));
 		});
 	}
 
 	[TestMethod]
-	public void ScopeFilterRejectsApplyWhenIncomingIsUnset()
+	public void ScopeFilterAllowsANewRow()
 	{
 		WithEachProvider((provider, database) =>
 		{
@@ -738,12 +739,15 @@ public class SyncClientFilterTests : SyncScenarioTest
 			settings.AddFilter<AccountEntity>();
 			client.BeginSync(sessionId, settings);
 
-			var result = client.ApplyChanges(sessionId, new ServiceRequest<SyncObject>(SyncObject.ToSyncObject(NewAddressPayload(Guid.NewGuid(), "Work", "GA"))));
+			var payload = NewAddressPayload(Guid.NewGuid(), "Work", "GA");
+			var result = client.ApplyChanges(sessionId, new ServiceRequest<SyncObject>(SyncObject.ToSyncObject(payload)));
 
 			DetachTrackedEntities(database);
-			AreEqual(1, result.Collection.Count);
-			AreEqual(SyncIssueType.SyncEntityFiltered, result.Collection[0].IssueType);
-			AreEqual(0, ReadAll<AddressEntity>(database.Addresses).Count);
+			AreEqual(0, result.Collection.Count, () => string.Join("; ", result.Collection.Select(x => x.Message)));
+			var stored = (AddressEntity) database.Addresses.Read(payload.SyncId);
+			IsNotNull(stored);
+			AreEqual("Work", stored.Line1);
+			AreEqual("GA", stored.State);
 		});
 	}
 

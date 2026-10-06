@@ -100,12 +100,12 @@ public partial class SyncSettings : CornerstoneObject<SyncSettings>
 	/// <summary>
 	/// Adds a syncable filter to the options.
 	/// </summary>
-	/// <param name="scopeFilter"> Ownership keep-test ANDed into GetChanges, apply, lookup, and related *SyncId checks. </param>
+	/// <param name="scopeFilter"> Store fence. ANDed into GetChanges and lookup. The stored row from the apply SyncId read is tested in memory. The incoming image is not. </param>
 	/// <param name="lookupFilter"> Find this incoming time by a business key instead of SyncId. </param>
 	/// <param name="incomingFilter"> Travel keep-test for apply. </param>
 	/// <param name="outgoingFilter"> Travel keep-test for GetChanges. </param>
 	/// <param name="skipDeletedItemsOnInitialSync"> Skip tombstones on the first GetChanges. </param>
-	/// <param name="orderBy"> Optional order for host queries. GetChanges order is ModifiedOn then Id. </param>
+	/// <param name="orderBy"> Optional GetChanges order, applied before ModifiedOn then Id. </param>
 	public void AddFilter<T>(
 		Expression<Func<T, bool>> scopeFilter = null,
 		Func<T, Expression<Func<T, bool>>> lookupFilter = null,
@@ -238,6 +238,19 @@ public partial class SyncSettings : CornerstoneObject<SyncSettings>
 		//var method = methods.First(x => x.Name == nameof(ShouldFilterIncomingEntity));
 		//return (bool) method.Invoke(filter, [entity]);
 		return filter.ShouldFilterIncomingEntity(entity);
+	}
+
+	/// <summary>
+	/// True when the stored row already loaded for this type is outside scope.
+	/// </summary>
+	internal bool FailsScope(string typeAssemblyName, ISyncEntity entity)
+	{
+		if (entity == null)
+		{
+			return false;
+		}
+
+		return GetFilter(typeAssemblyName)?.FailsScope(entity) == true;
 	}
 
 	/// <summary>

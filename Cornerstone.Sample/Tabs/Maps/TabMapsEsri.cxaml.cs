@@ -142,8 +142,6 @@ public partial class TabMapsEsri : UserControl
 		var isScene = SelectedBasemap.IsScene;
 		MapHost.IsVisible = !isScene;
 		SceneHost.IsVisible = isScene;
-		MapHost.IsPaused = isScene;
-		SceneHost.IsPaused = !isScene;
 
 		if (isScene)
 		{

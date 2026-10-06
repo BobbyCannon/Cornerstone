@@ -916,6 +916,7 @@ public class SyncEngineScenarioTests : SyncScenarioTest
 			IsNotNull(serverChild);
 			IsNotNull(serverParent);
 			AreEqual(parent.SyncId, serverChild.ParentSyncId);
+			AreEqual(serverParent.Id, serverChild.ParentId);
 		});
 	}
 

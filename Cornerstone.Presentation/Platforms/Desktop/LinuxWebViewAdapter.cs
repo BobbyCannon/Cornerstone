@@ -138,11 +138,6 @@ internal sealed class LinuxWebViewAdapter : CornerstoneObject, IWebViewAdapter, 
 			true);
 	}
 
-	public Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
-	{
-		return Task.FromResult(NativeSurfaceSnapshot.Failed("Linux WebKit snapshot is not implemented."));
-	}
-
 	public Task ClearBrowsingDataAsync() => Task.CompletedTask;
 
 	public void DeleteAllCookies()

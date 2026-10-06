@@ -5,7 +5,7 @@
 		<Company>Bobby Cannon</Company>
 		<Authors>Bobby Cannon</Authors>
 		<Copyright>© Copyright 2014</Copyright>
-		<Version>3.0.277.17112</Version>
+		<Version>3.0.277.37790</Version>
 		<AssemblyVersion>$(Version)</AssemblyVersion>
 		<FileVersion>$(Version)</FileVersion>
 		<CornerstoneUseCompiledBindingsByDefault>true</CornerstoneUseCompiledBindingsByDefault>

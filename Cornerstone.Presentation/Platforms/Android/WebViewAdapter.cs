@@ -106,35 +106,6 @@ internal class WebViewAdapter : CornerstoneObject, IWebViewAdapter, IDisposable
 	{
 	}
 
-	public Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
-	{
-		try
-		{
-			var width = Math.Max(1, _webView.Width);
-			var height = Math.Max(1, _webView.Height);
-			if ((width <= 1) || (height <= 1))
-			{
-				return Task.FromResult(NativeSurfaceSnapshot.Failed("WebView has no measurable size."));
-			}
-
-			using var bitmap = global::Android.Graphics.Bitmap.CreateBitmap(width, height, global::Android.Graphics.Bitmap.Config.Argb8888!);
-			using var canvas = new global::Android.Graphics.Canvas(bitmap);
-			_webView.Draw(canvas);
-
-			using var stream = new System.IO.MemoryStream();
-			if (!bitmap.Compress(global::Android.Graphics.Bitmap.CompressFormat.Png!, 100, stream))
-			{
-				return Task.FromResult(NativeSurfaceSnapshot.Failed("Failed to encode WebView bitmap as PNG."));
-			}
-
-			return Task.FromResult(NativeSurfaceSnapshotHelper.ProcessPng(stream.ToArray(), width, height, options));
-		}
-		catch (Exception ex)
-		{
-			return Task.FromResult(NativeSurfaceSnapshot.Failed(ex.Message));
-		}
-	}
-
 	public Task ClearBrowsingDataAsync()
 	{
 		return Task.CompletedTask;

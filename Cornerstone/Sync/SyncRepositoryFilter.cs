@@ -31,8 +31,8 @@ public class SyncRepositoryFilter<T> : SyncRepositoryFilter
 	/// <param name="incomingFilter"> Travel keep-test for ApplyChanges/ApplyCorrections. </param>
 	/// <param name="lookupFilter"> Find this incoming row by a business key instead of SyncId. </param>
 	/// <param name="skipDeletedItemsOnInitialSync"> Skip SyncEntity.IsDeleted on the first GetChanges (since is DateTime.MinValue). </param>
-	/// <param name="scopeFilter"> Ownership keep-test ANDed into GetChanges, apply, lookup, and related *SyncId checks. </param>
-	/// <param name="orderBy"> Optional order for hosts that query the same expression elsewhere. GetChanges order is ModifiedOn then Id. </param>
+	/// <param name="scopeFilter"> Store fence. ANDed into GetChanges and lookup. The stored row from the apply SyncId read is tested in memory. The incoming image is not. </param>
+	/// <param name="orderBy"> Optional GetChanges order, applied before ModifiedOn then Id. Hosts use this so a parent row is sent before its children. </param>
 	public SyncRepositoryFilter(
 		Expression<Func<T, bool>> outgoingFilter = null,
 		Expression<Func<T, bool>> incomingFilter = null,
@@ -83,18 +83,26 @@ public class SyncRepositoryFilter<T> : SyncRepositoryFilter
 	#region Methods
 
 	/// <summary>
-	/// True when apply should skip this entity (fails scope or incoming keep-test).
+	/// True when this stored row is outside scope. A null scope passes.
+	/// </summary>
+	public override bool FailsScope(object entity)
+	{
+		if ((_scopeCompiled == null) || (entity is not T tEntity))
+		{
+			return false;
+		}
+
+		return !_scopeCompiled.Invoke(tEntity);
+	}
+
+	/// <summary>
+	/// True when apply should skip this entity (fails the incoming keep-test).
 	/// </summary>
 	public override bool ShouldFilterIncomingEntity(object entity)
 	{
 		if (entity is not T tEntity)
 		{
 			return false;
-		}
-
-		if ((_scopeCompiled != null) && !_scopeCompiled.Invoke(tEntity))
-		{
-			return true;
 		}
 
 		return !(_incomingCompiled?.Invoke(tEntity) ?? true);
@@ -137,9 +145,9 @@ public abstract class SyncRepositoryFilter
 	#region Properties
 
 	/// <summary>
-	/// True when apply must run a keep-test (scope and/or incoming).
+	/// True when apply must run the incoming keep-test.
 	/// </summary>
-	public bool HasApplyKeepTest => HasIncomingFilter || HasScopeFilter;
+	public bool HasApplyKeepTest => HasIncomingFilter;
 
 	/// <summary>
 	/// Returns true if incoming expression is not null otherwise false.
@@ -194,6 +202,16 @@ public abstract class SyncRepositoryFilter
 	#endregion
 
 	#region Methods
+
+	/// <summary>
+	/// True when this stored row is outside the scope predicate.
+	/// </summary>
+	/// <param name="entity"> The stored row already loaded by SyncId. </param>
+	/// <returns> True when the row is outside scope. </returns>
+	public virtual bool FailsScope(object entity)
+	{
+		return false;
+	}
 
 	/// <summary>
 	/// A test to validate if an incoming entity should be filtered.

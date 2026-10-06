@@ -156,6 +156,7 @@ public class ProgressBarTests : ScopedTestBase
 	[PresentationTestMethod]
 	public void VerticalIndeterminateStartsAboveTheTrack()
 	{
+		using var app = UnitTestApplication.Start(TestServices.MockPlatformRenderInterface);
 		var indicator = new Indicator();
 		var target = new ProgressBar
 		{

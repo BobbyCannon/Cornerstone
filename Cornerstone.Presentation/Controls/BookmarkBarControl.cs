@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Cornerstone.Presentation;
 using Cornerstone.Presentation.Input;
 using Cornerstone.Presentation.LogicalTree;
 using Cornerstone.Presentation.Threading;
@@ -322,7 +323,12 @@ public partial class BookmarkBarControl : TemplatedControl
 		}
 
 		e.Handled = true;
-		var classified = TryClassify(e, source, out var item, out var insertBefore, out var intoFolder, out var overBar);
+		if (!OwnsDragEvent(sender, e))
+		{
+			return;
+		}
+
+		var classified = TryClassify(sender, e, source, out var item, out var insertBefore, out var intoFolder, out var overBar);
 		if ((MoveCommand == null) || !classified)
 		{
 			e.DragEffects = DragDropEffects.None;
@@ -359,7 +365,12 @@ public partial class BookmarkBarControl : TemplatedControl
 		}
 
 		e.Handled = true;
-		var classified = TryClassify(e, source, out var item, out var insertBefore, out var intoFolder, out _);
+		if (!OwnsDragEvent(sender, e))
+		{
+			return;
+		}
+
+		var classified = TryClassify(sender, e, source, out var item, out var insertBefore, out var intoFolder, out _);
 		ClearDropHint();
 		ClearFolderHover();
 
@@ -392,6 +403,7 @@ public partial class BookmarkBarControl : TemplatedControl
 	}
 
 	private bool TryClassify(
+		object sender,
 		DragEventArgs e,
 		IBookmarkBarItem source,
 		out BookmarkBarItem item,
@@ -410,7 +422,28 @@ public partial class BookmarkBarControl : TemplatedControl
 
 		if (item == null)
 		{
-			return overBar;
+			// Popup padding is not a chip. Drop into the folder that owns this
+			// window. Do not treat that as an empty bar, or the row moves to root.
+			var host = FindPopupHost(sender as TopLevel);
+			if ((host == null) && (e.Source is Visual visual))
+			{
+				host = FindPopupHost(TopLevel.GetTopLevel(visual));
+			}
+
+			if (host == null)
+			{
+				return overBar && !IsPopupTopLevel(sender as TopLevel);
+			}
+
+			if ((host.Bookmark != null) && BookmarkBarDrop.CannotDropOn(source, host.Bookmark))
+			{
+				return false;
+			}
+
+			item = host;
+			intoFolder = true;
+			insertBefore = false;
+			return true;
 		}
 
 		if ((item.Bookmark != null) && BookmarkBarDrop.CannotDropOn(source, item.Bookmark))
@@ -572,13 +605,12 @@ public partial class BookmarkBarControl : TemplatedControl
 
 	private void CloseFoldersOutside(BookmarkBarItem keep)
 	{
+		var items = EnumerateItems();
 		var keepChain = new HashSet<BookmarkBarItem>();
-		for (var current = keep; current != null; current = current.FindLogicalAncestorOfType<BookmarkBarItem>())
-		{
-			keepChain.Add(current);
-		}
+		AddLogicalChain(keepChain, keep);
+		AddPopupHosts(keepChain, items, keep);
 
-		foreach (var item in EnumerateItems())
+		foreach (var item in items)
 		{
 			if (item.IsFolderOpen && !keepChain.Contains(item))
 			{
@@ -603,6 +635,88 @@ public partial class BookmarkBarControl : TemplatedControl
 		}
 
 		return false;
+	}
+
+	private bool OwnsDragEvent(object sender, DragEventArgs e)
+	{
+		if (sender is not TopLevel topLevel)
+		{
+			return true;
+		}
+
+		var sourceTopLevel = e.Source is Visual visual ? TopLevel.GetTopLevel(visual) : null;
+		if (sourceTopLevel == null)
+		{
+			return ReferenceEquals(topLevel, _dragTopLevel);
+		}
+
+		return ReferenceEquals(topLevel, sourceTopLevel);
+	}
+
+	private BookmarkBarItem FindPopupHost(TopLevel topLevel)
+	{
+		if (!IsPopupTopLevel(topLevel))
+		{
+			return null;
+		}
+
+		foreach (var item in EnumerateItems())
+		{
+			if (item.HostsPopup(topLevel))
+			{
+				return item;
+			}
+		}
+
+		return null;
+	}
+
+	private bool IsPopupTopLevel(TopLevel topLevel)
+	{
+		return (topLevel != null) && _popupTopLevels.Contains(topLevel);
+	}
+
+	private static void AddLogicalChain(HashSet<BookmarkBarItem> keepChain, BookmarkBarItem item)
+	{
+		for (var current = item; current != null; current = current.FindLogicalAncestorOfType<BookmarkBarItem>())
+		{
+			if (!keepChain.Add(current))
+			{
+				return;
+			}
+		}
+	}
+
+	private static void AddPopupHosts(HashSet<BookmarkBarItem> keepChain, List<BookmarkBarItem> items, BookmarkBarItem keep)
+	{
+		var home = keep == null ? null : TopLevel.GetTopLevel(keep);
+		var guard = 0;
+		while ((home != null) && (guard++ < 16))
+		{
+			BookmarkBarItem host = null;
+			for (var i = 0; i < items.Count; i++)
+			{
+				if (items[i].HostsPopup(home))
+				{
+					host = items[i];
+					break;
+				}
+			}
+
+			if (host == null)
+			{
+				return;
+			}
+
+			AddLogicalChain(keepChain, host);
+			var next = TopLevel.GetTopLevel(host);
+			if (ReferenceEquals(next, home))
+			{
+				return;
+			}
+
+			home = next;
+		}
 	}
 
 	private List<BookmarkBarItem> EnumerateItems()

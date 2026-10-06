@@ -75,11 +75,6 @@ internal class SceneViewAdapter : CornerstoneObject, ISceneViewAdapter, IDisposa
 
 	#region Methods
 
-	public Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
-	{
-		return MapViewSnapshot.CaptureAsync(_sceneView, options);
-	}
-
 	public void Dispose()
 	{
 		if (_disposed)

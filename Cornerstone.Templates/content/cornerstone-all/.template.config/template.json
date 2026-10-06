@@ -25,7 +25,7 @@
       "description": "NuGet version of Cornerstone packages.",
       "datatype": "text",
       "replaces": "CornerstoneVersionTemplateParameter",
-      "defaultValue": "3.0.277.17112"
+      "defaultValue": "3.0.277.37790"
     },
     "HostIdentifier": {
       "type": "bind",

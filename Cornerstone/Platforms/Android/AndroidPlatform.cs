@@ -106,6 +106,7 @@ public class AndroidPlatform : CornerstoneObject, IPlatform
 		DependencyProvider.AddSingleton<IPermissions, AndroidPermissions>();
 		DependencyProvider.AddSingleton<PlatformCredentialVault, AndroidPlatformCredentialVault>();
 		DependencyProvider.AddSingleton<SecurityCardReader, AndroidSecurityCardReader>();
+		DependencyProvider.AddSingleton<IWindowsHelloService, WindowsHelloServiceStub>();
 	}
 
 	private static string GetSystemSetting(string name, bool isGlobal = false)

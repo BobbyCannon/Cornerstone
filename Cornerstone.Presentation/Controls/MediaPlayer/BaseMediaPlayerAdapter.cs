@@ -10,7 +10,7 @@ using Cornerstone.Presentation.Controls.NativeHosts;
 
 namespace Cornerstone.Presentation.Controls.MediaPlayer;
 
-public abstract class BaseMediaPlayerAdapter : IDisposable, IPausableNativeSurface
+public abstract class BaseMediaPlayerAdapter : IDisposable, INativeSurface
 {
 	#region Properties
 
@@ -45,12 +45,6 @@ public abstract class BaseMediaPlayerAdapter : IDisposable, IPausableNativeSurfa
 	#endregion
 
 	#region Methods
-
-	/// <inheritdoc />
-	public virtual Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
-	{
-		return Task.FromResult(NativeSurfaceSnapshot.Failed("Media player snapshot is not supported on this platform."));
-	}
 
 	/// <summary>
 	/// Performs application-defined tasks associated with freeing, or resetting unmanaged resources.

@@ -91,48 +91,6 @@ internal class WebViewAdapter : CornerstoneObject, IWebViewAdapter, IDisposable
 
 	#region Methods
 
-	public Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
-	{
-		var tcs = new TaskCompletionSource<NativeSurfaceSnapshot>();
-
-		try
-		{
-			var configuration = new WKSnapshotConfiguration();
-			_webView.TakeSnapshot(configuration, (image, error) =>
-			{
-				if (error != null)
-				{
-					tcs.TrySetResult(NativeSurfaceSnapshot.Failed(error.LocalizedDescription));
-					return;
-				}
-
-				if (image == null)
-				{
-					tcs.TrySetResult(NativeSurfaceSnapshot.Failed("WKWebView snapshot returned no image."));
-					return;
-				}
-
-				using var pngData = image.AsPNG();
-				if (pngData == null)
-				{
-					tcs.TrySetResult(NativeSurfaceSnapshot.Failed("Failed to encode WKWebView snapshot as PNG."));
-					return;
-				}
-
-				var bytes = pngData.ToArray();
-				var width = (int) Math.Max(1, Math.Round(image.Size.Width * image.CurrentScale));
-				var height = (int) Math.Max(1, Math.Round(image.Size.Height * image.CurrentScale));
-				tcs.TrySetResult(NativeSurfaceSnapshotHelper.ProcessPng(bytes, width, height, options));
-			});
-		}
-		catch (Exception ex)
-		{
-			tcs.TrySetResult(NativeSurfaceSnapshot.Failed(ex.Message));
-		}
-
-		return tcs.Task;
-	}
-
 	public Task ClearBrowsingDataAsync()
 	{
 		return Task.CompletedTask;

@@ -66,6 +66,7 @@ using Cornerstone.Presentation.Metadata;
 [assembly: XmlnsDefinition("https://github.com/BobbyCannon/Cornerstone", "Cornerstone.Presentation.Controls.TreeDataGrid")]
 [assembly: XmlnsDefinition("https://github.com/BobbyCannon/Cornerstone", "Cornerstone.Presentation.Controls.TreeDataGrid.Cells")]
 [assembly: XmlnsDefinition("https://github.com/BobbyCannon/Cornerstone", "Cornerstone.Presentation.Controls.TreeDataGrid.Columns")]
+[assembly: XmlnsDefinition("https://github.com/BobbyCannon/Cornerstone", "Cornerstone.Presentation.ApplicationUpdate")]
 [assembly: XmlnsDefinition("https://github.com/BobbyCannon/Cornerstone", "Cornerstone.Presentation.Documentation")]
 [assembly: XmlnsDefinition("https://github.com/BobbyCannon/Cornerstone", "Cornerstone.Presentation.Theme")]
 [assembly: XmlnsDefinition("https://github.com/BobbyCannon/Cornerstone", "Cornerstone.Presentation.Theme.Controls")]

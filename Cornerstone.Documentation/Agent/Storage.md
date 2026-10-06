@@ -117,7 +117,7 @@ Sync apply is full images + time + filters. `SyncClientForDatabase.ProcessSyncOb
 | Skip older | `ModifiedOn` predicate on the SyncId upsert | `SavePending` turns the guard off for `IsDeleted` rows. EF tombstones `Remove` via `PermanentSyncEntityDeletions`; SQL `Remove` is still hard delete |
 | Combined `Where` | Date window AND outgoing / skip-deleted filters | `PredicateToSqlVisitor` start index must continue across predicates (`@p0` then `@p4`, not reset) |
 | `SavePending` | Pending add/update/delete | Applies `MaintainCreatedOn` / `MaintainModifiedOn` / `MaintainSyncId` from `DatabaseSettings` using the database `IDateTimeProvider` |
-| Local FKs (`AccountId`) | Copied if present on the row | **`UpdateLocalRelationships`** sets `*Id` from `*SyncId` using the session lookup / incoming filters |
+| Local FKs (`AccountId`) | Copied if present on the row | **`UpdateLocalRelationships`** sets `*Id` from one `Read(syncId)`. A stored related row outside scope, or failing the incoming filter, is treated as missing |
 | Batch | `UpsertSync` / `Delete` lists, chunks of 64 | `SavePending` uses those list overloads |
 
 `UpdateEntity` **requires** `SyncClientConverter`. `Converter.Update` copies the image and must set local `*Id` from `*SyncId`. Missing converter or `Update == false` → `SyncIssue` (`UpdateException`). Custom converters throw `SyncUpdateException` / `SyncIssueException` when a related row cannot be resolved.

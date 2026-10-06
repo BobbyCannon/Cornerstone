@@ -9,7 +9,7 @@ namespace Sample.App
 {
 	partial class SampleView
 	{
-		[global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.InitializeComponentCodeGenerator", "3.0.251.31480")]
+		[global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.InitializeComponentCodeGenerator", "3.0.0.0")]
 		internal global::Cornerstone.Presentation.Controls.TextBox UserNameTextBox;
 
 		/// <summary>
@@ -18,7 +18,7 @@ namespace Sample.App
 		/// <param name="loadXaml">Should the XAML be loaded into the component.</param>
         /// <param name="attachDevTools">Should the dev tools be attached.</param>
 
-		[global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.InitializeComponentCodeGenerator", "3.0.251.31480")]
+		[global::System.CodeDom.Compiler.GeneratedCode("Cornerstone.Generators.Presentation.NameGenerator.InitializeComponentCodeGenerator", "3.0.0.0")]
 		[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 		public void InitializeComponent(bool loadXaml = true, bool attachDevTools = true)
 		{

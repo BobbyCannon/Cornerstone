@@ -1,12 +1,10 @@
 #region References
 
-using System.ComponentModel;
 using Cornerstone.Data;
 using Cornerstone.Presentation;
 using Cornerstone.Presentation.Controls;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
-using Cornerstone.Presentation.Controls.Navigation;
 using Cornerstone.Presentation.Controls.Elements;
 
 #endregion
@@ -63,32 +61,8 @@ public partial class TabWebView : UserControl
 
 	protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
 	{
-		ViewModel.PropertyChanged += ViewModelOnPropertyChanged;
 		base.OnAttachedToVisualTree(e);
 		WebView.Navigate(Uri);
-	}
-
-	protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
-	{
-		ViewModel.PropertyChanged -= ViewModelOnPropertyChanged;
-		base.OnDetachedFromVisualTree(e);
-	}
-
-	private void ViewModelOnPropertyChanged(object sender, PropertyChangedEventArgs e)
-	{
-		switch (e.PropertyName)
-		{
-			case nameof(ViewModel.NavigationMenuIsOpen):
-			{
-				// Native behind Skia: overlay chrome paints on live web. Child-on-top: pause so the menu is not covered.
-				WebView.IsPaused = !SampleNativeAirspace.IsEnabled
-					&& ViewModel.NavigationMenuIsOpen
-					&& ViewModel.NavigationMenuDisplayMode
-						is SplitViewDisplayMode.Overlay
-						or SplitViewDisplayMode.CompactOverlay;
-				break;
-			}
-		}
 	}
 
 	#endregion

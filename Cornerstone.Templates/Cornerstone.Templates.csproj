@@ -56,6 +56,9 @@
 		<PropertyGroup>
 			<_TemplatePackageVersion>$(PackageVersion)</_TemplatePackageVersion>
 			<_TemplatePackageVersion Condition="'$(_TemplatePackageVersion)' == ''">$(Version)</_TemplatePackageVersion>
+			<!-- NuGet omits a zero revision in the nupkg name and nuspec (3.0.0.0 becomes 3.0.0). -->
+			<_TemplatePackageRevision>$([System.Version]::Parse('$(_TemplatePackageVersion)').Revision)</_TemplatePackageRevision>
+			<_TemplatePackageVersion Condition="'$(_TemplatePackageRevision)' == '0'">$([System.Version]::Parse('$(_TemplatePackageVersion)').ToString(3))</_TemplatePackageVersion>
 			<_TemplateNupkgPath>$([System.IO.Path]::GetFullPath('$(PackageOutputPath)$(PackageId).$(_TemplatePackageVersion).nupkg'))</_TemplateNupkgPath>
 		</PropertyGroup>
 		<ItemGroup>

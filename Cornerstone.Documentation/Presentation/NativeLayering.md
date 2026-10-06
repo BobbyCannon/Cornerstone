@@ -2,7 +2,7 @@
 
 Native views (WebView, camera, and other `NativeControlHost` islands) sit **under** Cornerstone’s Skia plane. Where a native control should show, that plane is transparent and hit-test skips unless a later Cornerstone visual hit-tests at that pixel. That visual can be fully transparent and still take the event. Overlay buttons, menus, and adorners stay on top of live native content.
 
-This is the supported composition model, not a workaround. `WebView.IsPaused` remains for menus, designers, X11, and hosts that turn native-behind off.
+This is the supported composition model. Overlay chrome is a later sibling over the live native surface.
 
 ---
 
@@ -68,12 +68,6 @@ Premultiplied alpha applies while native-behind is on and that window has a nati
 | Browser | DOM node | z-index / CSS; smallest delta |
 
 Linux WebView is system WebKitGTK. X11 reparents the widget XID. Wayland cannot share Cornerstone’s `wl_display`, so GTK renders in a hidden X11 window and frames are copied into the subsurface.
-
----
-
-## Pause
-
-`PausableNativeHost` / `WebView.IsPaused` snapshots the native surface and hides it so Skia can own the rect. Use it when native-behind is off, on X11, or when you explicitly want a frozen page (overlay menus on child-on-top, designer, Sample). Do not use `IsVisible = false` on the whole WebView to clear airspace.
 
 ---
 

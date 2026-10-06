@@ -43,11 +43,6 @@ public class SceneViewAdapterStub : ISceneViewAdapter
 
 	#region Methods
 
-	public Task<NativeSurfaceSnapshot> CaptureSnapshotAsync(NativeSurfaceSnapshotOptions options = null)
-	{
-		return Task.FromResult(NativeSurfaceSnapshot.Failed("SceneView adapter stub does not support snapshots."));
-	}
-
 	public Viewpoint GetCurrentViewpoint(ViewpointType viewpointType)
 	{
 		return null;

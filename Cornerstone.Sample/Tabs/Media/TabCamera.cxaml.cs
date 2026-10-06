@@ -10,7 +10,6 @@ using Cornerstone.Presentation.Controls;
 using Cornerstone.Presentation.Controls.Camera;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
-using Cornerstone.Presentation.Controls.Navigation;
 using Cornerstone.Presentation.Controls.Elements;
 
 #endregion
@@ -18,7 +17,7 @@ using Cornerstone.Presentation.Controls.Elements;
 namespace Cornerstone.Sample.Tabs.Media;
 
 /// <summary>
-/// Sample for CameraView: start/stop preview, start/stop record, mode, and IsPaused overlay.
+/// Sample for CameraView: start/stop preview, start/stop record, and mode.
 /// </summary>
 [SourceReflection]
 public partial class TabCamera : UserControl
@@ -132,7 +131,6 @@ public partial class TabCamera : UserControl
 
 	protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
 	{
-		ViewModel.PropertyChanged += ViewModelOnPropertyChanged;
 		if (Camera.CameraAdapter != null)
 		{
 			WeakEventManager.AddPropertyChanged<ICameraAdapter, TabCamera>(Camera.CameraAdapter, this, AdapterOnPropertyChanged);
@@ -144,7 +142,6 @@ public partial class TabCamera : UserControl
 
 	protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
 	{
-		ViewModel.PropertyChanged -= ViewModelOnPropertyChanged;
 		_ = Camera.StopAsync();
 		base.OnDetachedFromVisualTree(e);
 	}
@@ -188,23 +185,6 @@ public partial class TabCamera : UserControl
 		}
 
 		StatusText = "Stopped";
-	}
-
-	private void ViewModelOnPropertyChanged(object sender, PropertyChangedEventArgs e)
-	{
-		switch (e.PropertyName)
-		{
-			case nameof(ViewModel.NavigationMenuIsOpen):
-			{
-				// Native behind Skia: overlay chrome paints on live camera. Child-on-top: pause so the menu is not covered.
-				Camera.IsPaused = !SampleNativeAirspace.IsEnabled
-					&& ViewModel.NavigationMenuIsOpen
-					&& ViewModel.NavigationMenuDisplayMode
-						is SplitViewDisplayMode.Overlay
-						or SplitViewDisplayMode.CompactOverlay;
-				break;
-			}
-		}
 	}
 
 	#endregion

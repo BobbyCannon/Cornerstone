@@ -21,14 +21,13 @@ namespace Cornerstone.Presentation.Controls;
 
 [TemplatePart(PartCameraPreview, typeof(Image))]
 [TemplatePart(PartNativeHost, typeof(CameraNativeHost))]
-public class CameraView : TemplatedControl, INativeHostPausable
+public class CameraView : TemplatedControl
 {
 	#region Fields
 
 	public const string PartCameraPreview = "PART_CameraPreview";
 	public const string PartNativeHost = "PART_NativeHost";
 
-	public static readonly StyledProperty<bool> IsPausedProperty;
 	public static readonly StyledProperty<CameraMode> ModeProperty;
 
 	private Image _cameraPreview;
@@ -48,7 +47,6 @@ public class CameraView : TemplatedControl, INativeHostPausable
 
 	static CameraView()
 	{
-		IsPausedProperty = PresentationProperty.Register<CameraView, bool>(nameof(IsPaused));
 		ModeProperty = PresentationProperty.Register<CameraView, CameraMode>(nameof(Mode), CameraMode.Video);
 	}
 
@@ -63,16 +61,6 @@ public class CameraView : TemplatedControl, INativeHostPausable
 	public byte[] CapturedData => CameraAdapter.CapturedData;
 
 	public Bitmap Frame => CameraAdapter.Frame;
-
-	/// <summary>
-	/// When true, freezes the camera surface as a snapshot underlay and hides the native host
-	/// so Cornerstone content can paint over this region. Does not stop an in-progress recording.
-	/// </summary>
-	public bool IsPaused
-	{
-		get => GetValue(IsPausedProperty);
-		set => SetValue(IsPausedProperty, value);
-	}
 
 	public bool IsPreviewing => CameraAdapter.IsPreviewing;
 
@@ -96,7 +84,6 @@ public class CameraView : TemplatedControl, INativeHostPausable
 			return;
 		}
 
-		IsPaused = false;
 		await CameraAdapter.StartPreviewAsync();
 	}
 
@@ -121,8 +108,6 @@ public class CameraView : TemplatedControl, INativeHostPausable
 
 	public async Task StopAsync()
 	{
-		IsPaused = false;
-
 		if (CameraAdapter.IsRecording)
 		{
 			await CameraAdapter.StopRecordingAsync();
@@ -136,7 +121,7 @@ public class CameraView : TemplatedControl, INativeHostPausable
 	}
 
 	/// <summary>
-	/// Clears the on-screen preview (frame image and pause underlay). Native hosts unbind separately.
+	/// Clears the on-screen preview image. Native hosts unbind separately.
 	/// </summary>
 	public void ClearPreviewDisplay()
 	{
@@ -144,11 +129,6 @@ public class CameraView : TemplatedControl, INativeHostPausable
 		{
 			_cameraPreview.Source = null;
 			_cameraPreview.InvalidateVisual();
-		}
-
-		if (_nativeHost != null)
-		{
-			_nativeHost.IsPaused = false;
 		}
 
 		InvalidateVisual();
@@ -168,11 +148,6 @@ public class CameraView : TemplatedControl, INativeHostPausable
 	{
 		_cameraPreview = e.NameScope.Find<Image>(PartCameraPreview);
 		_nativeHost = e.NameScope.Find<CameraNativeHost>(PartNativeHost);
-
-		if (_nativeHost != null)
-		{
-			_nativeHost.IsPaused = IsPaused;
-		}
 
 		if ((_cameraPreview != null) && (CameraAdapter != null))
 		{
@@ -205,10 +180,6 @@ public class CameraView : TemplatedControl, INativeHostPausable
 		{
 			CameraAdapter.Mode = (CameraMode) change.NewValue;
 		}
-		else if ((change.Property == IsPausedProperty) && (_nativeHost != null))
-		{
-			_nativeHost.IsPaused = change.GetNewValue<bool>();
-		}
 
 		base.OnPropertyChanged(change);
 	}
@@ -219,7 +190,6 @@ public class CameraView : TemplatedControl, INativeHostPausable
 		{
 			case nameof(CameraAdapter.Frame):
 			{
-				// Do not RequestWarmUnderlay every frame — snapshot capture kills preview FPS.
 				if (_cameraPreview == null)
 				{
 					break;

@@ -1,7 +1,6 @@
 #region References
 
 using System;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,7 +12,6 @@ using Cornerstone.Presentation.Platform;
 using Cornerstone.Presentation.Platform.Storage;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
-using Cornerstone.Presentation.Controls.Navigation;
 using Cornerstone.Presentation.Controls.Elements;
 
 #endregion
@@ -22,7 +20,7 @@ namespace Cornerstone.Sample.Tabs.Media;
 
 /// <summary>
 /// Sample for MediaPlayerControl: embedded sample asset, URL and local file playback,
-/// media controls, and IsPaused overlay.
+/// and media controls.
 /// </summary>
 [SourceReflection]
 public partial class TabMediaPlayer : UserControl
@@ -168,7 +166,6 @@ public partial class TabMediaPlayer : UserControl
 
 	protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
 	{
-		ViewModel.PropertyChanged += ViewModelOnPropertyChanged;
 		base.OnAttachedToVisualTree(e);
 
 		// Prefill with the embedded asset path once Cornerstone assets are available.
@@ -189,7 +186,6 @@ public partial class TabMediaPlayer : UserControl
 
 	protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
 	{
-		ViewModel.PropertyChanged -= ViewModelOnPropertyChanged;
 		base.OnDetachedFromVisualTree(e);
 	}
 
@@ -251,8 +247,6 @@ public partial class TabMediaPlayer : UserControl
 
 		try
 		{
-			Player.IsPaused = false;
-
 			// Call Play* directly so pressing Play again restarts the same source
 			// (assigning MediaUrl is a no-op when the string is unchanged).
 			if (IsLocalFilePath(MediaUrl))
@@ -269,23 +263,6 @@ public partial class TabMediaPlayer : UserControl
 		catch (Exception ex)
 		{
 			StatusText = ex.Message;
-		}
-	}
-
-	private void ViewModelOnPropertyChanged(object sender, PropertyChangedEventArgs e)
-	{
-		switch (e.PropertyName)
-		{
-			case nameof(ViewModel.NavigationMenuIsOpen):
-			{
-				// Native behind Skia: overlay chrome paints on live video. Child-on-top: pause so the menu is not covered.
-				Player.IsPaused = !SampleNativeAirspace.IsEnabled
-					&& ViewModel.NavigationMenuIsOpen
-					&& ViewModel.NavigationMenuDisplayMode
-						is SplitViewDisplayMode.Overlay
-						or SplitViewDisplayMode.CompactOverlay;
-				break;
-			}
 		}
 	}
 

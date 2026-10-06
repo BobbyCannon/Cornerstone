@@ -20,9 +20,9 @@ public class SplitPanel : Panel
 
 	private (int index, Point lastPointerPosition)? _draggedSplitLine;
 	private SplitFractions _fractions;
-	private static readonly Cursor _horizontalResizeCursor;
+	private static Cursor _horizontalResizeCursor;
 	private Orientation _orientation;
-	private static readonly Cursor _verticalResizeCursor;
+	private static Cursor _verticalResizeCursor;
 
 	#endregion
 
@@ -34,12 +34,6 @@ public class SplitPanel : Panel
 		_orientation = Orientation.Horizontal;
 
 		SplitLines = [];
-	}
-
-	static SplitPanel()
-	{
-		_verticalResizeCursor = new(StandardCursorType.SizeNorthSouth);
-		_horizontalResizeCursor = new(StandardCursorType.SizeWestEast);
 	}
 
 	#endregion
@@ -67,8 +61,8 @@ public class SplitPanel : Panel
 					var line = new SplitPanelLine
 					{
 						Cursor = Orientation == Orientation.Horizontal
-							? _horizontalResizeCursor
-							: _verticalResizeCursor
+							? HorizontalResizeCursor
+							: VerticalResizeCursor
 					};
 
 					SplitLines.Add(line);
@@ -95,8 +89,8 @@ public class SplitPanel : Panel
 			foreach (var line in SplitLines)
 			{
 				line.Cursor = value == Orientation.Horizontal
-					? _horizontalResizeCursor
-					: _verticalResizeCursor;
+					? HorizontalResizeCursor
+					: VerticalResizeCursor;
 			}
 
 			InvalidateArrange();
@@ -106,6 +100,10 @@ public class SplitPanel : Panel
 	public int SlotCount => Fractions.Count;
 
 	protected List<SplitPanelLine> SplitLines { get; }
+
+	private static Cursor HorizontalResizeCursor => _horizontalResizeCursor ??= new Cursor(StandardCursorType.SizeWestEast);
+
+	private static Cursor VerticalResizeCursor => _verticalResizeCursor ??= new Cursor(StandardCursorType.SizeNorthSouth);
 
 	#endregion
 

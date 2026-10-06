@@ -50,19 +50,4 @@ open the database does not avoid it.
 
 How it works: [Presentation/NativeLayering.md](Presentation/NativeLayering.md). Native WebView sits **under** the Skia plane. Overlay chrome paints on live web; hole clicks go to native.
 
-`NativeBehindComposition` defaults **on** (Win32, Android, iOS, macOS, Wayland). Set it false for child-on-top (native above Skia). X11 has no native-behind path.
-
-### `WebView.IsPaused`
-
-Use pause when native-behind is off, on X11, or when you want a frozen page (overlay menus on child-on-top, designer). Set `WebView.IsPaused = true` (optional `BlurWhenPaused`):
-
-1. Captures a PNG snapshot of the web surface (owned by `WebView`).
-2. Shows that image in the control and hides the native surface only (engine stays alive).
-3. Cornerstone.Presentation siblings placed **after** / above the WebView in Z-order can paint over the region.
-4. Set `IsPaused = false` to restore the live WebView. Significant resize resumes by default
-   (`ResumeOnResize`).
-
-Do **not** set `IsVisible=false` on the whole WebView to clear airspace — use pause instead.
-
-Tradeoffs: the page freezes while paused; media freezes visually; capture can fail (solid
-fallback still clears airspace).
+`NativeBehindComposition` defaults **on** (Win32, Android, iOS, macOS, Wayland). Set it false for child-on-top (native above Skia). X11 has no native-behind path. There is no freeze-frame pause; overlay chrome has to be a later sibling on a platform where native-behind is on.
