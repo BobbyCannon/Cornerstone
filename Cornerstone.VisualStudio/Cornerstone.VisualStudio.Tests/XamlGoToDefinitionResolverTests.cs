@@ -212,6 +212,105 @@ public class XamlGoToDefinitionResolverTests : XamlCompletionTestBase
 	}
 
 	[TestMethod]
+	public void ResolvesNestedBindingPathToLeafProperty()
+	{
+		var xml = AboutMarkup("<SelectableTextBlock Text=\"{Binding Authentication.AuthenticatedAccountId}\" />");
+		var caret = xml.IndexOf("AuthenticatedAccountId") + "Authenticat".Length;
+		var target = ResolveAbout(xml, caret);
+		Assert.AreEqual(XamlGoToDefinitionKind.Member, target.Kind);
+		Assert.AreEqual("AuthenticatedAccountId", target.MemberName);
+		Assert.AreEqual("Cornerstone.Editor.Views.AboutAuthenticationViewModel", target.TypeFullName);
+	}
+
+	[TestMethod]
+	public void ResolvesNestedBindingPathToFirstProperty()
+	{
+		var xml = AboutMarkup("<SelectableTextBlock Text=\"{Binding Authentication.AuthenticatedAccountId}\" />");
+		var caret = xml.IndexOf("Authentication") + 4;
+		var target = ResolveAbout(xml, caret);
+		Assert.AreEqual(XamlGoToDefinitionKind.Member, target.Kind);
+		Assert.AreEqual("Authentication", target.MemberName);
+		Assert.AreEqual("Cornerstone.Editor.Views.AboutViewModel", target.TypeFullName);
+	}
+
+	[TestMethod]
+	public void ResolvesDeepBindingPathToLeafProperty()
+	{
+		var xml = AboutMarkup("<SelectableTextBlock Text=\"{Binding Authentication.Account.Id}\" />");
+		var caret = xml.IndexOf(".Id") + 2;
+		var target = ResolveAbout(xml, caret);
+		Assert.AreEqual(XamlGoToDefinitionKind.Member, target.Kind);
+		Assert.AreEqual("Id", target.MemberName);
+		Assert.AreEqual("Cornerstone.Editor.Views.AccountModel", target.TypeFullName);
+	}
+
+	[TestMethod]
+	public void ResolvesNamedBindingPathToLeafProperty()
+	{
+		var xml = AboutMarkup("<SelectableTextBlock Text=\"{Binding Path=Authentication.AuthenticatedAccountId, Mode=OneWay}\" />");
+		var caret = xml.IndexOf("AuthenticatedAccountId") + 4;
+		var target = ResolveAbout(xml, caret);
+		Assert.AreEqual(XamlGoToDefinitionKind.Member, target.Kind);
+		Assert.AreEqual("AuthenticatedAccountId", target.MemberName);
+		Assert.AreEqual("Cornerstone.Editor.Views.AboutAuthenticationViewModel", target.TypeFullName);
+	}
+
+	[TestMethod]
+	public void ResolvesNegatedBindingPathToLeafProperty()
+	{
+		var xml = AboutMarkup("<SelectableTextBlock IsEnabled=\"{Binding !SyncSession.SyncRunning}\" />");
+		var caret = xml.IndexOf("SyncRunning") + 4;
+		var target = ResolveAbout(xml, caret);
+		Assert.AreEqual(XamlGoToDefinitionKind.Member, target.Kind);
+		Assert.AreEqual("SyncRunning", target.MemberName);
+		Assert.AreEqual("Cornerstone.Editor.Views.AboutSyncViewModel", target.TypeFullName);
+	}
+
+	[TestMethod]
+	public void ResolvesBindingPathOnNearestDataType()
+	{
+		var xml = AboutMarkup("<DataTemplate DataType=\"views:AboutSyncViewModel\"><SelectableTextBlock Text=\"{Binding SyncRunning}\" /></DataTemplate>");
+		var caret = xml.IndexOf("SyncRunning") + 4;
+		var target = ResolveAbout(xml, caret);
+		Assert.AreEqual(XamlGoToDefinitionKind.Member, target.Kind);
+		Assert.AreEqual("SyncRunning", target.MemberName);
+		Assert.AreEqual("Cornerstone.Editor.Views.AboutSyncViewModel", target.TypeFullName);
+	}
+
+	[TestMethod]
+	public void ResolvesInheritedBindingPathToDeclaringType()
+	{
+		var baseType = new MetadataType("DocumentTabModel")
+		{
+			FullName = "Cornerstone.Presentation.Controls.DockingManager.DocumentTabModel"
+		};
+		baseType.Properties.Add(new MetadataProperty("Title", null, baseType, false, false, true, true));
+		var viewModel = new MetadataType("AboutViewModel")
+		{
+			FullName = "Cornerstone.Editor.Views.AboutViewModel"
+		};
+		viewModel.Properties.Add(new MetadataProperty("Title", null, baseType, false, false, true, true));
+		var metadata = new Core.AssemblyMetadata.Metadata();
+		metadata.AddType("using:Cornerstone.Editor.Views", viewModel);
+		var xml = AboutMarkup("<SelectableTextBlock Text=\"{Binding Title}\" />");
+		var caret = xml.IndexOf("Title") + 2;
+		var engine = new CompletionEngine();
+		var target = XamlGoToDefinitionResolver.Resolve(engine, metadata, xml, caret, "Cornerstone.Editor");
+		Assert.AreEqual(XamlGoToDefinitionKind.Member, target.Kind);
+		Assert.AreEqual("Title", target.MemberName);
+		Assert.AreEqual("Cornerstone.Presentation.Controls.DockingManager.DocumentTabModel", target.TypeFullName);
+	}
+
+	[TestMethod]
+	public void MissingNestedBindingPropertyDoesNotResolve()
+	{
+		var xml = AboutMarkup("<SelectableTextBlock Text=\"{Binding Authentication.Missing}\" />");
+		var caret = xml.IndexOf("Missing") + 2;
+		var target = ResolveAbout(xml, caret);
+		Assert.AreNotEqual(XamlGoToDefinitionKind.Member, target.Kind);
+	}
+
+	[TestMethod]
 	public void ResolvesEnumAttributeValue()
 	{
 		var alignment = new MetadataType("HorizontalAlignment")
@@ -289,6 +388,56 @@ public class XamlGoToDefinitionResolverTests : XamlCompletionTestBase
 		Assert.AreEqual(XamlGoToDefinitionKind.Member, target.Kind);
 		Assert.AreEqual("Red", target.MemberName);
 		Assert.AreEqual("Cornerstone.Presentation.Media.Brushes", target.TypeFullName);
+	}
+
+	private static string AboutMarkup(string inner)
+	{
+		return @"<UserControl xmlns=""https://github.com/BobbyCannon/Cornerstone""
+        xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml""
+        xmlns:views=""using:Cornerstone.Editor.Views""
+        x:DataType=""views:AboutViewModel"">" + inner + "</UserControl>";
+	}
+
+	private static Core.AssemblyMetadata.Metadata CreateAboutBindingMetadata()
+	{
+		var account = new MetadataType("AccountModel")
+		{
+			FullName = "Cornerstone.Editor.Views.AccountModel"
+		};
+		account.Properties.Add(new MetadataProperty("Id", null, account, false, false, true, true));
+
+		var authentication = new MetadataType("AboutAuthenticationViewModel")
+		{
+			FullName = "Cornerstone.Editor.Views.AboutAuthenticationViewModel"
+		};
+		authentication.Properties.Add(new MetadataProperty("AuthenticatedAccountId", null, authentication, false, false, true, true));
+		authentication.Properties.Add(new MetadataProperty("Account", account, authentication, false, false, true, true));
+
+		var sync = new MetadataType("AboutSyncViewModel")
+		{
+			FullName = "Cornerstone.Editor.Views.AboutSyncViewModel"
+		};
+		sync.Properties.Add(new MetadataProperty("SyncRunning", null, sync, false, false, true, true));
+
+		var viewModel = new MetadataType("AboutViewModel")
+		{
+			FullName = "Cornerstone.Editor.Views.AboutViewModel"
+		};
+		viewModel.Properties.Add(new MetadataProperty("Authentication", authentication, viewModel, false, false, true, true));
+		viewModel.Properties.Add(new MetadataProperty("SyncSession", sync, viewModel, false, false, true, true));
+
+		var metadata = new Core.AssemblyMetadata.Metadata();
+		metadata.AddType("using:Cornerstone.Editor.Views", account);
+		metadata.AddType("using:Cornerstone.Editor.Views", authentication);
+		metadata.AddType("using:Cornerstone.Editor.Views", sync);
+		metadata.AddType("using:Cornerstone.Editor.Views", viewModel);
+		return metadata;
+	}
+
+	private static XamlGoToDefinitionTarget ResolveAbout(string xml, int caret)
+	{
+		var engine = new CompletionEngine();
+		return XamlGoToDefinitionResolver.Resolve(engine, CreateAboutBindingMetadata(), xml, caret, "Cornerstone.Editor");
 	}
 
 	private static string Wrap(string inner)

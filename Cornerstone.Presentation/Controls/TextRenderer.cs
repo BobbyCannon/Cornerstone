@@ -14,6 +14,7 @@ using Cornerstone.Presentation.Media.TextFormatting;
 using Cornerstone.Presentation.Threading;
 using Cornerstone.Profiling;
 using Cornerstone.Reflection;
+using Cornerstone.Search;
 using Cornerstone.Text.Parsing;
 using Cornerstone.Text.Parsing.Markdown;
 using IRenderer = Cornerstone.Presentation.Controls.Text.Rendering.IRenderer;
@@ -62,7 +63,8 @@ public partial class TextRenderer : Control<TextEditorViewModel>, ILogicalScroll
 		_currentLineRenderer = new CurrentLineRenderer(this);
 		_diagnosticRenderer = new DiagnosticRenderer(this);
 		_selectionRenderer = new SelectionRenderer(this);
-		_dispatchTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(500), DispatcherPriority.Background, DispatchTimerCallback);
+		_dispatchTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(500), DispatcherPriority.Background, Dispatcher.CurrentDispatcher);
+		_dispatchTimer.Tick += DispatchTimerCallback;
 
 		BackgroundRenderers = [_currentLineRenderer, _selectionRenderer];
 		CaretVisual = new CaretVisual(this);
@@ -681,6 +683,7 @@ public partial class TextRenderer : Control<TextEditorViewModel>, ILogicalScroll
 		ViewModel.Measure(sample, availableSize);
 		if (ViewModel.Lines.LastMeasureChangedLayout)
 		{
+			ApplyPaintedCaretPositions();
 			CaretVisual.InvalidateVisual();
 		}
 
@@ -731,10 +734,8 @@ public partial class TextRenderer : Control<TextEditorViewModel>, ILogicalScroll
 		// Selection still works without a caret; skip blink timer when caret is hidden.
 		if ((ViewModel != null) && ViewModel.ShowCaret)
 		{
-			_dispatchTimer.IsEnabled = true;
 			ViewModel.Caret.IsVisible = true;
-			ViewModel.Caret.ResetBlink();
-			CaretVisual.InvalidateVisual();
+			ShowBlinkingCaret();
 		}
 		else if (ViewModel != null)
 		{
@@ -1119,6 +1120,23 @@ public partial class TextRenderer : Control<TextEditorViewModel>, ILogicalScroll
 		UpdateCaret();
 	}
 
+	/// <summary>
+	/// Show the caret and start a full blink interval. Stop/Start drops a tick
+	/// already queued for the hidden phase.
+	/// </summary>
+	private void ShowBlinkingCaret()
+	{
+		if ((ViewModel?.Caret == null) || !ViewModel.ShowCaret || !ViewModel.Caret.IsVisible)
+		{
+			return;
+		}
+
+		ViewModel.Caret.ResetBlink();
+		_dispatchTimer.Stop();
+		_dispatchTimer.Start();
+		UpdateCaret();
+	}
+
 	private void EnsureCaretVisible(Caret caret)
 	{
 		if (ViewModel is { IsRestoringViewport: true })
@@ -1311,6 +1329,106 @@ public partial class TextRenderer : Control<TextEditorViewModel>, ILogicalScroll
 		_lineNumberLayouts.Clear();
 	}
 
+	private void ApplyPaintedCaretPositions()
+	{
+		if (ViewModel?.Carets == null)
+		{
+			return;
+		}
+
+		foreach (var caret in ViewModel.Carets.All)
+		{
+			ApplyPaintedCaretX(caret);
+		}
+	}
+
+	private void ApplyPaintedCaretX(Caret caret)
+	{
+		if ((caret == null) || (caret.VisualLayout.Height <= 0) || !TryGetPaintedCaretX(caret, out var x))
+		{
+			return;
+		}
+
+		caret.ApplyPaintedX(x);
+	}
+
+	/// <summary>
+	/// X of <paramref name="caret" /> using the same styled run widths as text paint.
+	/// </summary>
+	private bool TryGetPaintedCaretX(Caret caret, out double x)
+	{
+		x = 0;
+		var line = caret.Line;
+		var viewModel = ViewModel;
+		if ((line == null) || (viewModel?.TokenManager == null))
+		{
+			return false;
+		}
+
+		var offset = Math.Min(caret.Offset, line.EndOffset);
+		if ((line.LineEndingLength > 0) && (offset > (line.EndOffset - line.LineEndingLength)))
+		{
+			offset = line.EndOffset - line.LineEndingLength;
+		}
+
+		var subLineIndex = BinarySearch.FindFloorIndex(line.WrappedStartOffsets, caret.Offset);
+		if (caret.IsAtEndOfLine
+			&& (subLineIndex >= 0)
+			&& (subLineIndex < line.WrappedStartOffsets.Count)
+			&& (line.WrappedStartOffsets[subLineIndex] == caret.Offset))
+		{
+			subLineIndex--;
+		}
+
+		var start = (subLineIndex >= 0) && (subLineIndex < line.WrappedStartOffsets.Count)
+			? line.WrappedStartOffsets[subLineIndex]
+			: line.StartOffset;
+		if (offset < start)
+		{
+			offset = start;
+		}
+
+		x = MeasurePaintedWidth(start, offset);
+		return true;
+	}
+
+	private double MeasurePaintedWidth(int start, int end)
+	{
+		if (end <= start)
+		{
+			return 0;
+		}
+
+		var layoutWidth = Width > 1 ? Width : 999999;
+		var x = 0.0;
+		var current = start;
+		foreach (var token in ViewModel.TokenManager.GetOverlappingTokens(start, end))
+		{
+			if (token.StartOffset > current)
+			{
+				var gapLength = Math.Min(token.StartOffset, end) - current;
+				x += MeasurePaintRunWidth(current, gapLength, false, false, layoutWidth);
+				current = token.StartOffset;
+			}
+
+			var runStart = Math.Max(token.StartOffset, current);
+			var runEnd = Math.Min(token.EndOffset, end);
+			if (runStart < runEnd)
+			{
+				x += MeasurePaintRunWidth(runStart, runEnd - runStart, token.Bold, token.Italic, layoutWidth);
+			}
+
+			current = Math.Max(current, token.EndOffset);
+		}
+
+		if (current < end)
+		{
+			x += MeasurePaintRunWidth(current, end - current, false, false, layoutWidth);
+		}
+
+		return x;
+	}
+
 	private double MeasurePaintRunWidth(int runStart, int runLength, bool bold, bool italic, double layoutWidth)
 	{
 		if (runLength <= 0)
@@ -1331,13 +1449,23 @@ public partial class TextRenderer : Control<TextEditorViewModel>, ILogicalScroll
 			InvalidateVisual();
 		}
 
+		ApplyPaintedCaretX(caret);
 		EnsureCaretVisible(caret);
-		caret.ResetBlink();
-		UpdateCaret();
+		if (caret == ViewModel.Caret)
+		{
+			ShowBlinkingCaret();
+		}
+		else
+		{
+			UpdateCaret();
+		}
 	}
 
 	private void OnCaretsChanged(object sender, EventArgs e)
 	{
+		// A new extra is moved before it is wired, so CaretMoved never runs for it.
+		// Character advance is wider than proportional glyphs and would leave that caret ahead of the column.
+		ApplyPaintedCaretPositions();
 		InvalidateVisual();
 		CaretVisual?.InvalidateVisual();
 	}
@@ -1345,6 +1473,8 @@ public partial class TextRenderer : Control<TextEditorViewModel>, ILogicalScroll
 	private void OnDocumentChanged(object sender, TextDocumentChangedArgs e)
 	{
 		InvalidatePaintLayouts();
+		ApplyPaintedCaretPositions();
+		CaretVisual?.InvalidateVisual();
 		if (ViewModel.Lines.LastEditNeedsPaintOnly)
 		{
 			RaiseScrollInvalidatedIfChanged();

@@ -47,8 +47,11 @@ public static class AppBuilderExtensions
 			var dependencyProvider = AppBootstrap.DependencyProvider;
 			dependencyProvider.SetTransient<ICameraAdapter, CameraAdapterStub>(() =>
 				new CameraAdapterStub());
-			dependencyProvider.SetTransient<BaseMediaPlayerAdapter, MediaPlayerAdapterStub>(() =>
-				new MediaPlayerAdapterStub());
+			if (OperatingSystem.IsLinux())
+				dependencyProvider.SetTransient<BaseMediaPlayerAdapter, Desktop.LinuxMediaPlayerAdapter>();
+			else
+				dependencyProvider.SetTransient<BaseMediaPlayerAdapter, MediaPlayerAdapterStub>(() =>
+					new MediaPlayerAdapterStub());
 			if (OperatingSystem.IsMacOS())
 				dependencyProvider.SetTransient<IWebViewAdapter, Desktop.WebViewAdapter>();
 			else if (OperatingSystem.IsLinux())

@@ -297,6 +297,22 @@ public class SqlDatabase : IDisposable
 		return _migrations;
 	}
 
+	/// <summary>
+	/// Runs one command on the open SQLite connection. Used for import pragmas.
+	/// </summary>
+	protected int Execute(string sql)
+	{
+		var written = 0;
+		WithConnection((connection, transaction) =>
+		{
+			using var command = connection.CreateCommand();
+			command.Transaction = transaction;
+			command.CommandText = sql;
+			written = command.ExecuteNonQuery();
+		});
+		return written;
+	}
+
 	internal void ExecuteInTransaction(Action action)
 	{
 		ExecuteInTransaction(() =>

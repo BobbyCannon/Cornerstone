@@ -30,7 +30,7 @@ public abstract class NugetCache
 
 	#region Methods
 
-	public abstract Task<NugetPackage> GetOrAddAsync(string packageId, Func<string, Task<NugetPackage>> factoryAsync, CancellationToken ct = default);
+	public abstract Task<NugetPackage> GetOrAddAsync(string packageId, Func<string, CancellationToken, Task<NugetPackage>> factoryAsync, CancellationToken ct = default);
 
 	protected bool CacheStillValid(NugetPackage package)
 	{

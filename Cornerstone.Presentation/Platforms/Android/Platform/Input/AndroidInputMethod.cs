@@ -86,7 +86,10 @@ namespace Cornerstone.Presentation.Android.Platform.Input
 
                 _imm.RestartInput(View);
 
-                _imm.ShowSoftInput(_host, ShowFlags.Implicit);
+                if (_client.ShowInputPane)
+                {
+                    _imm.ShowSoftInput(_host, ShowFlags.Implicit);
+                }
 
                 _inputConnection?.UpdateState();
 
@@ -104,7 +107,7 @@ namespace Cornerstone.Presentation.Android.Platform.Input
 
         private void _client_InputPaneActivationRequested(object? sender, EventArgs e)
         {
-            if(IsActive)
+            if (IsActive && _client.ShowInputPane)
             {
                 _imm.ShowSoftInput(_host, ShowFlags.Implicit);
             }

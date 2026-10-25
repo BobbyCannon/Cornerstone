@@ -24,7 +24,9 @@ Product behavior and host-facing overviews live under the parent folder: [../Rea
 | [NativeLayering.md](NativeLayering.md) | Native-behind Skia: file map, failed attempts, flag | `NativeControlHost`, `Win32NativeAirspaceOverlay`, platform hosts |
 | [DependencyInjection.md](DependencyInjection.md) | `[DependencyInjected]`, `RegisterDependencies`, first-wins `Add*`, which assemblies a host should call | `Cornerstone/Runtime/DependencyProvider.cs`, `Cornerstone.Generators` |
 | [BrowserDebug.md](BrowserDebug.md) | Browser lockup: numbered `TabTrace` console procedure, and the Welcome card `BrowserInteropProxy` exception | `Cornerstone.Sample.Browser/Program.cs`, `Platforms/Browser/HostAppBuilderExtensions.cs` |
-| [SourceReflection.md](SourceReflection.md) | Generated AOT-safe type maps: compiled `Invoke` / get/set, never `GetConstructor` for construct | `Cornerstone.Generators/Processors/SourceReflectionProcessor.cs`, `Cornerstone/Reflection/` |
+| [Performance.md](Performance.md) | UI-thread cost and the next-change list: dispatcher drain, layout, dirty rects, virtualization, text | `Threading/Dispatcher.Queue.cs`, `Media/MediaContext.cs`, `Layout/LayoutManager.cs` |
+| [SourceReflection.md](SourceReflection.md) | Generated AOT-safe type maps. Browser DI needs `[SourceReflection]` or construction returns 0 constructors | `Cornerstone.Generators/Processors/SourceReflectionProcessor.cs`, `Cornerstone/Reflection/`, `Platforms/Browser/BrowserGamepad.cs` |
+| [Gamepad.md](Gamepad.md) | Sample Inputs Gamepad tab across platforms. Slot registration, per-OS readers, Ally X resume | `Cornerstone.Sample/Tabs/Inputs/TabInputsGamepad.cxaml`, `Cornerstone/Platforms/` |
 | [Testing.md](Testing.md) | MSTest Exe + generated `Program.Main`; SkipCornerstoneGenerators; CS5001 / CSG003 | `Cornerstone.Generators/Generator.UnitTests.cs`, `Tests/` |
 
 ---

@@ -1,12 +1,20 @@
+using Cornerstone.Runtime;
+
 namespace CornerstoneApplication.ViewModels;
 
-public class MainViewModel : ViewModelBase
+public class 
+MainViewModel : ViewModelBase
 {
-	#region Constructors
+    #region Constructors
 
-	public MainViewModel()
+    public MainViewModel() : this(AppBootstrap.GetInstance<IRuntimeInformation>())
+    {
+    }
+
+    public MainViewModel(IRuntimeInformation runtimeInformation)
 	{
 		Greeting = "Welcome to Cornerstone!";
+		RuntimeInformation = runtimeInformation;
 	}
 
 	#endregion
@@ -14,6 +22,8 @@ public class MainViewModel : ViewModelBase
 	#region Properties
 
 	public string Greeting { get; set; }
+
+	public IRuntimeInformation RuntimeInformation { get; }
 
 	#endregion
 }

@@ -11,7 +11,7 @@
 		<PackageReference Include="System.Memory" Version="[4.5.4]" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="dnlib" Version="3.6.0" />
+		<PackageReference Include="dnlib" Version="4.5.0" />
 	</ItemGroup>
 	<Import Project="../Props/NullableEnable.props" />
 	<Import Project="../Props/NetAnalyzers.props" />

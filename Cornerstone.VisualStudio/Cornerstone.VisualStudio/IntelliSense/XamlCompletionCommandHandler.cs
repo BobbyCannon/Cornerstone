@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Cornerstone.VisualStudio.Core;
 using Cornerstone.VisualStudio.Core.Completion;
 using Cornerstone.VisualStudio.Protocol;
 using Cornerstone.VisualStudio.Services;
@@ -130,6 +131,13 @@ internal class XamlCompletionCommandHandler : IOleCommandTarget
 			}
 
 			return _nextCommandHandler.Exec(ref pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+		}
+
+		// The Delete key is Edit.Delete (standard command set), not VSStd2K DELETE.
+		// Join an indented next line before the editor deletes one character.
+		if (IsDeleteCommand(pguidCmdGroup, nCmdID) && TryJoinIndentedLine())
+		{
+			return VSConstants.S_OK;
 		}
 
 		if (TryGetChar(ref pguidCmdGroup, nCmdID, pvaIn, out var c))
@@ -1348,6 +1356,91 @@ internal class XamlCompletionCommandHandler : IOleCommandTarget
 		{
 			_session = null;
 			LogCompletionStartFailed("Filter after start failed", ex);
+		}
+	}
+
+	private static bool IsDeleteCommand(Guid pguidCmdGroup, uint nCmdID)
+	{
+		return ((pguidCmdGroup == VSConstants.VSStd2K)
+				&& ((VSConstants.VSStd2KCmdID) nCmdID == VSConstants.VSStd2KCmdID.DELETE))
+			// Edit.Delete. The text view fires this for the Delete key.
+			|| ((pguidCmdGroup == VSConstants.GUID_VSStandardCommandSet97)
+				&& ((VSConstants.VSStd97CmdID) nCmdID == VSConstants.VSStd97CmdID.Delete));
+	}
+
+	/// <summary>
+	/// At the end of a line, replace the line break and the next line's indent with one
+	/// space. Returns false when the editor should delete.
+	/// </summary>
+	private bool TryJoinIndentedLine()
+	{
+		var selection = _textView.Selection;
+		if ((selection != null) && !selection.IsEmpty)
+		{
+			return false;
+		}
+
+		var caret = _textView.Caret.Position.BufferPosition;
+		var snapshot = caret.Snapshot;
+		var position = caret.Position;
+		if ((position < 0) || (position > snapshot.Length))
+		{
+			return false;
+		}
+
+		var line = snapshot.GetLineFromPosition(position);
+		if ((position != line.End.Position) || (line.LineBreakLength <= 0))
+		{
+			return false;
+		}
+
+		var nextLineNumber = line.LineNumber + 1;
+		if (nextLineNumber >= snapshot.LineCount)
+		{
+			return false;
+		}
+
+		var nextLine = snapshot.GetLineFromLineNumber(nextLineNumber).GetText();
+		if (!LineJoinDelete.TryGetReplaceLength(line.LineBreakLength, nextLine, out var replaceLength))
+		{
+			return false;
+		}
+
+		if (GetActiveAvaloniaSession() != null)
+		{
+			return false;
+		}
+
+		var applied = false;
+		var tracking = snapshot.CreateTrackingPoint(position, PointTrackingMode.Positive);
+		ITextUndoTransaction transaction = null;
+		try
+		{
+			if (_textUndoHistoryRegistry != null)
+			{
+				var history = _textUndoHistoryRegistry.RegisterHistory(snapshot.TextBuffer);
+				transaction = history.CreateTransaction("Delete");
+			}
+
+			using (var edit = snapshot.TextBuffer.CreateEdit())
+			{
+				edit.Replace(position, replaceLength, LineJoinDelete.Replacement);
+				edit.Apply();
+			}
+
+			applied = true;
+			_textView.Caret.MoveTo(tracking.GetPoint(_textView.TextSnapshot));
+			transaction?.Complete();
+			return true;
+		}
+		catch (Exception ex)
+		{
+			Log.Logger.Error(ex, "XAML delete indent failed");
+			return applied;
+		}
+		finally
+		{
+			transaction?.Dispose();
 		}
 	}
 

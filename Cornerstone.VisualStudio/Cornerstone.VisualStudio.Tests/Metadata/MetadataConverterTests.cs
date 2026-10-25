@@ -8,6 +8,7 @@ using System.Linq;
 using Avalonia.Controls;
 using CompletionEngineTests.Models;
 using Cornerstone.VisualStudio.Core.AssemblyMetadata;
+using Cornerstone.VisualStudio.Core.Completion;
 using Cornerstone.VisualStudio.Core.DnlibMetadataProvider;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -48,6 +49,39 @@ public class MetadataConverterTests
 	#endregion
 
 	#region Methods
+
+	[TestMethod]
+	public void BindingPathUsesDeclaringInterface()
+	{
+		var clrType = typeof(DetailsViewModel);
+		var nsName = "clr-namespace:" + clrType.Namespace + ";assembly=" + clrType.Assembly.GetName().Name;
+		var ns = _metadata.Namespaces[nsName];
+		var type = ns[clrType.Name];
+		var runtime = type.Properties.Single(property => property.Name == "RuntimeInformation");
+		Assert.IsNotNull(runtime.Type);
+		Assert.AreEqual(typeof(IRuntimeDetails).FullName, runtime.Type.FullName);
+		var deviceId = runtime.Type.Properties.Single(property => property.Name == "DeviceId");
+		Assert.AreEqual(typeof(IDeviceDetails).FullName, deviceId.DeclaringType.FullName);
+		Assert.IsFalse(ns.ContainsKey(nameof(IRuntimeDetails)));
+		Assert.IsFalse(ns.ContainsKey(nameof(IDeviceDetails)));
+
+		var xml = @"<UserControl xmlns=""https://github.com/BobbyCannon/Cornerstone""
+        xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml""
+        xmlns:vm=""using:CompletionEngineTests.Models""
+        x:DataType=""vm:DetailsViewModel"">
+        <TextBlock Text=""{Binding RuntimeInformation.DeviceId}"" />
+        </UserControl>";
+		var caret = xml.IndexOf("DeviceId") + 4;
+		var target = XamlGoToDefinitionResolver.Resolve(
+			new CompletionEngine(),
+			_metadata,
+			xml,
+			caret,
+			clrType.Assembly.GetName().Name);
+		Assert.AreEqual(XamlGoToDefinitionKind.Member, target.Kind);
+		Assert.AreEqual("DeviceId", target.MemberName);
+		Assert.AreEqual(typeof(IDeviceDetails).FullName, target.TypeFullName);
+	}
 
 	[TestMethod]
 	public void AttachedPropertySetterAndGetterMixMatch()

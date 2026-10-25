@@ -1382,8 +1382,10 @@ namespace Cornerstone.Presentation.Platforms.Windows
             else
                 borderCaptionThickness.top = borderThickness.top;
 
-            //using a default margin of 0 when using WinUiComp removes artefacts when resizing. See issue #8316
-            var defaultMargin = UseRedirectionBitmap ? 1 : 0;
+            // Windows 10 with a redirection bitmap needs one pixel of frame so a resize
+            // does not flash an unpainted strip. Windows 11 draws DWMWA_BORDER_COLOR, so
+            // that same pixel shows up as a second border on the left, right, and bottom.
+            var defaultMargin = UseRedirectionBitmap && Win32Platform.WindowsVersion.Build < 22000 ? 1 : 0;
 
             MARGINS margins = new MARGINS();
             margins.cxLeftWidth = defaultMargin;

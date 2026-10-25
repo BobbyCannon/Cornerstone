@@ -3,26 +3,19 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using Cornerstone.Presentation;
+using Cornerstone.Presentation.Controls.Overlays;
 using Cornerstone.Presentation.Controls.Primitives;
 using Cornerstone.Presentation.Controls.Primitives.PopupPositioning;
+using Cornerstone.Presentation.Controls.Scrolling;
+using Cornerstone.Presentation.Controls.Text;
+using Cornerstone.Presentation.Controls.Text.Models;
+using Cornerstone.Presentation.Data;
 using Cornerstone.Presentation.Input;
 using Cornerstone.Presentation.Interactivity;
 using Cornerstone.Presentation.Media;
-using Cornerstone.Presentation.Threading;
 using Cornerstone.Presentation.VisualTree;
-using Cornerstone.Presentation.Controls.Text.Models;
 using Cornerstone.Profiling;
-using Cornerstone.Runtime;
-using Cornerstone.Presentation.Controls.Layout;
-using Cornerstone.Presentation.Controls.Items;
-using Cornerstone.Presentation.Controls.Overlays;
-using Cornerstone.Presentation.Controls.Scrolling;
-using Cornerstone.Presentation.Controls.Elements;
-using Cornerstone.Presentation.Controls.Text;
-
 using Dispatcher = Cornerstone.Presentation.Threading.Dispatcher;
-using DispatcherPriority = Cornerstone.Presentation.DispatcherPriority;
 
 #endregion
 
@@ -38,13 +31,6 @@ public partial class TextEditor : TextEditor<TextEditorViewModel>
 public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 	where T : TextEditorViewModel, new()
 {
-	#region Properties
-
-	[StyledProperty]
-	public partial Profiler Profiler { get; set; }
-
-	#endregion
-
 	#region Fields
 
 	private readonly TextEditorTextInputMethodClient<T> _imClient;
@@ -61,17 +47,19 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 	/// </summary>
 	private bool _isRestoringScroll;
 
+	/// <summary>
+	/// True after a local ShowMargins assignment. Derived gutter updates must not overwrite it.
+	/// </summary>
+	private bool _showMarginsPinned;
 
-#endregion
+	/// <summary>
+	/// True while UpdateShowMargins writes ShowMargins so that write is not treated as a local pin.
+	/// </summary>
+	private bool _updatingShowMargins;
+
+	#endregion
 
 	#region Constructors
-
-	public IDispatcher GetDispatcher()
-	{
-		// CurrentDispatcher builds a dispatcher for the calling thread. The editor
-		// was created on the UI thread, and VerifyAccess checks that one.
-		return Dispatcher;
-	}
 
 	public TextEditor()
 	{
@@ -80,7 +68,13 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 		_imClient = new(this);
 
 		LeftMargins = [];
-		TextInputMethodClientRequestedEvent.AddClassHandler<TextEditor>((tb, e) => e.Client = tb._imClient);
+		TextInputMethodClientRequestedEvent.AddClassHandler<TextEditor>((tb, e) =>
+		{
+			if (!tb.IsReadOnly)
+			{
+				e.Client = tb._imClient;
+			}
+		});
 
 		TextOptions.SetTextOptions(this, new TextOptions
 		{
@@ -108,14 +102,13 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 		);
 	}
 
-
-#endregion
+	#endregion
 
 	#region Properties
 
 	/// <summary>
 	/// When true, document growth keeps the viewport pinned to the bottom.
-	/// Forwards <see cref="TextEditorViewModel.AutoScroll"/>.
+	/// Forwards <see cref="TextEditorViewModel.AutoScroll" />.
 	/// </summary>
 	[DirectProperty(nameof(TextEditorViewModel.AutoScroll))]
 	public partial bool AutoScroll { get; set; }
@@ -135,6 +128,9 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 
 	[DirectProperty]
 	public ObservableCollection<Control> LeftMargins { get; }
+
+	[StyledProperty]
+	public partial Profiler Profiler { get; set; }
 
 	[AttachedProperty]
 	public partial TextRenderer Renderer { get; private set; }
@@ -159,14 +155,20 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 
 	protected ScrollViewer ScrollViewer { get; private set; }
 
-
-#endregion
+	#endregion
 
 	#region Methods
 
 	public virtual void Clear()
 	{
 		ViewModel.Clear();
+	}
+
+	public IDispatcher GetDispatcher()
+	{
+		// CurrentDispatcher builds a dispatcher for the calling thread. The editor
+		// was created on the UI thread, and VerifyAccess checks that one.
+		return Dispatcher;
 	}
 
 	public Vector GetScrollOffset()
@@ -187,36 +189,6 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 		return (ScrollViewer != null)
 			&& (ScrollViewer.Viewport.Height > 1)
 			&& (ScrollViewer.Extent.Height > 1);
-	}
-
-	public void SetScrollOffset(Vector offset)
-	{
-		if (ViewModel != null)
-		{
-			ViewModel.ViewMetrics.Offset = offset;
-		}
-
-		if (ScrollViewer is null)
-		{
-			return;
-		}
-
-		_isProgrammaticScroll = true;
-		try
-		{
-			if (Renderer != null)
-			{
-				Renderer.Offset = offset;
-			}
-
-			ScrollViewer.Offset = offset;
-		}
-		finally
-		{
-			Dispatcher.UIThread.Post(
-				() => _isProgrammaticScroll = false,
-				DispatcherPriority.Loaded);
-		}
 	}
 
 	public void ScrollToEnd()
@@ -288,6 +260,47 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 		}
 	}
 
+	public void SetScrollOffset(Vector offset)
+	{
+		if (ViewModel != null)
+		{
+			ViewModel.ViewMetrics.Offset = offset;
+		}
+
+		if (ScrollViewer is null)
+		{
+			return;
+		}
+
+		_isProgrammaticScroll = true;
+		try
+		{
+			if (Renderer != null)
+			{
+				Renderer.Offset = offset;
+			}
+
+			ScrollViewer.Offset = offset;
+		}
+		finally
+		{
+			Dispatcher.UIThread.Post(
+				() => _isProgrammaticScroll = false,
+				DispatcherPriority.Loaded);
+		}
+	}
+
+	protected virtual void EnsureLeftMargins()
+	{
+		if (LeftMargins.Count != 0)
+		{
+			return;
+		}
+
+		LeftMargins.Add(new LineNumberMargin<T>(this) { IsVisible = ViewModel.ShowLineNumbers });
+		LeftMargins.Add(new FoldingMargin<T>(this));
+	}
+
 	/// <summary>
 	/// Ensures the ViewModel exists and returns it.
 	/// Use this in property getters/setters.
@@ -313,6 +326,7 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 		if (e.NameScope.Find("PART_TextRenderer") is TextRenderer textRenderer)
 		{
 			Renderer = textRenderer;
+			ApplyReadOnlyInputMethod();
 		}
 
 		if (CompletionPopup != null)
@@ -336,17 +350,6 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 		EnsureLeftMargins();
 		UpdateShowMargins();
 		ScheduleApplyViewModelScroll();
-	}
-
-	protected virtual void EnsureLeftMargins()
-	{
-		if (LeftMargins.Count != 0)
-		{
-			return;
-		}
-
-		LeftMargins.Add(new LineNumberMargin<T>(this) { IsVisible = ViewModel.ShowLineNumbers });
-		LeftMargins.Add(new FoldingMargin<T>(this));
 	}
 
 	protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
@@ -405,6 +408,11 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 			ViewModel?.Profiler = Profiler;
 			ScheduleApplyViewModelScroll();
 		}
+		else if ((change.Property == ShowMarginsProperty) && !_updatingShowMargins && (change.Priority == BindingPriority.LocalValue))
+		{
+			_showMarginsPinned = true;
+			ApplyShowMargins();
+		}
 
 		base.OnPropertyChanged(change);
 	}
@@ -430,6 +438,106 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 	protected override void OnUnloaded(RoutedEventArgs e)
 	{
 		base.OnUnloaded(e);
+	}
+
+	private void ApplyReadOnlyInputMethod()
+	{
+		if (Renderer == null)
+		{
+			return;
+		}
+
+		InputMethod.SetIsInputMethodEnabled(Renderer, !IsReadOnly);
+	}
+
+	private void ApplyRequestedFocus()
+	{
+		if (!this.IsAttachedToVisualTree())
+		{
+			return;
+		}
+
+		Focus();
+		Renderer?.Focus();
+	}
+
+	private void ApplyShowMargins()
+	{
+		var show = ShowMargins;
+		foreach (var leftMargin in LeftMargins)
+		{
+			if (!show)
+			{
+				leftMargin.IsVisible = false;
+				continue;
+			}
+
+			if (leftMargin is LineNumberMargin<T>)
+			{
+				leftMargin.IsVisible = (ViewModel != null) && ViewModel.ShowLineNumbers;
+			}
+			else
+			{
+				leftMargin.IsVisible = true;
+			}
+		}
+	}
+
+	private void ApplyViewModelScroll()
+	{
+		if ((ViewModel == null) || ScrollViewer is null || !HasStableScrollViewport())
+		{
+			return;
+		}
+
+		// Saved scroll needs a document taller than the pane. First measure often
+		// reports a tiny extent that would clamp the offset to 0.
+		if ((ViewModel.ViewMetrics.Offset.Y > 1)
+			&& (ScrollViewer.Extent.Height <= (ScrollViewer.Viewport.Height + 1)))
+		{
+			return;
+		}
+
+		_isProgrammaticScroll = true;
+		try
+		{
+			if (AutoScroll)
+			{
+				ScrollToEnd();
+				ViewModel.ViewMetrics.Offset = ScrollViewer.Offset;
+			}
+			else
+			{
+				var offset = ViewModel.ViewMetrics.ClampOffset(ScrollViewer.Extent, ScrollViewer.Viewport);
+				if (Renderer != null)
+				{
+					Renderer.Offset = offset;
+				}
+
+				ScrollViewer.Offset = offset;
+			}
+
+			_isRestoringScroll = false;
+			ViewModel.IsRestoringViewport = false;
+		}
+		finally
+		{
+			Dispatcher.UIThread.Post(
+				() => _isProgrammaticScroll = false,
+				DispatcherPriority.Loaded);
+		}
+	}
+
+	private void AttachCompletionManager(CompletionManager manager)
+	{
+		if (manager == null)
+		{
+			return;
+		}
+
+		manager.PropertyChanged -= CompletionManagerOnPropertyChanged;
+		manager.PropertyChanged += CompletionManagerOnPropertyChanged;
+		UpdateCompletionPopup();
 	}
 
 	private void AttachScrollViewer()
@@ -461,6 +569,58 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 		vm.CompletionManager.Dispatcher = GetDispatcher();
 		AttachCompletionManager(vm.CompletionManager);
 		SyncForwardedViewModelProperties(null);
+		ApplyReadOnlyInputMethod();
+	}
+
+	private void CompletionListOnDoubleTapped(object sender, TappedEventArgs e)
+	{
+		ViewModel?.CompletionManager.ApplySelected();
+	}
+
+	private void CompletionManagerOnPropertyChanged(object sender, PropertyChangedEventArgs e)
+	{
+		if ((e.PropertyName == nameof(CompletionManager.IsOpen))
+			|| (e.PropertyName == nameof(CompletionManager.VisibleItems)))
+		{
+			UpdateCompletionPopup();
+		}
+	}
+
+	private void CompletionPopupOnClosed(object sender, EventArgs e)
+	{
+		if (ViewModel?.CompletionManager.IsOpen == true)
+		{
+			ViewModel.CompletionManager.Close();
+		}
+	}
+
+	private static int CountNewlines(string text)
+	{
+		if (string.IsNullOrEmpty(text))
+		{
+			return 0;
+		}
+
+		var count = 0;
+		for (var i = 0; i < text.Length; i++)
+		{
+			if (text[i] == '\n')
+			{
+				count++;
+			}
+		}
+
+		return count;
+	}
+
+	private void DetachCompletionManager(CompletionManager manager)
+	{
+		if (manager == null)
+		{
+			return;
+		}
+
+		manager.PropertyChanged -= CompletionManagerOnPropertyChanged;
 	}
 
 	private void DetachScrollViewer()
@@ -481,16 +641,6 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 		vm.PropertyChanged -= ViewModelOnPropertyChanged;
 		vm.FocusRequested -= ViewModelOnFocusRequested;
 		DetachCompletionManager(vm.CompletionManager);
-	}
-
-	private void FoldingsOnChanged(object sender, EventArgs e)
-	{
-		Renderer?.InvalidateMeasure();
-		foreach (var leftMargin in LeftMargins)
-		{
-			leftMargin.InvalidateMeasure();
-			leftMargin.InvalidateVisual();
-		}
 	}
 
 	private void DocumentOnDocumentChanged(object sender, TextDocumentChangedArgs e)
@@ -526,6 +676,21 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 		FollowCaretIfAutoScrolling();
 	}
 
+	private void EnsureViewModel()
+	{
+		ViewModel ??= new T();
+	}
+
+	private void FoldingsOnChanged(object sender, EventArgs e)
+	{
+		Renderer?.InvalidateMeasure();
+		foreach (var leftMargin in LeftMargins)
+		{
+			leftMargin.InvalidateMeasure();
+			leftMargin.InvalidateVisual();
+		}
+	}
+
 	/// <summary>
 	/// AutoScroll follows the end of the buffer with both the viewport and the caret,
 	/// unless the user is selecting.
@@ -549,11 +714,6 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 		}
 	}
 
-	private void EnsureViewModel()
-	{
-		ViewModel ??= new T();
-	}
-
 	private bool IsNearBottom(double thresholdPixels = 32)
 	{
 		var scrollViewer = ScrollViewer;
@@ -564,6 +724,28 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 
 		var maxOffset = Math.Max(0, scrollViewer.Extent.Height - scrollViewer.Viewport.Height);
 		return (maxOffset - scrollViewer.Offset.Y) <= thresholdPixels;
+	}
+
+	private void PersistScrollOffsetToViewModel()
+	{
+		if ((ViewModel == null) || ViewModel.IsRestoringViewport || !HasStableScrollViewport())
+		{
+			return;
+		}
+
+		ViewModel.ViewMetrics.Offset = ScrollViewer.Offset;
+	}
+
+	private void ScheduleApplyViewModelScroll()
+	{
+		if (ViewModel == null)
+		{
+			return;
+		}
+
+		_isRestoringScroll = true;
+		ViewModel.IsRestoringViewport = true;
+		Dispatcher.UIThread.Post(ApplyViewModelScroll, DispatcherPriority.Loaded);
 	}
 
 	/// <summary>
@@ -602,25 +784,6 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 				}
 			},
 			DispatcherPriority.Loaded);
-	}
-
-	private static int CountNewlines(string text)
-	{
-		if (string.IsNullOrEmpty(text))
-		{
-			return 0;
-		}
-
-		var count = 0;
-		for (var i = 0; i < text.Length; i++)
-		{
-			if (text[i] == '\n')
-			{
-				count++;
-			}
-		}
-
-		return count;
 	}
 
 	/// <summary>
@@ -682,115 +845,16 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 		}
 	}
 
-	private void PersistScrollOffsetToViewModel()
+	private void SetShowMargins(bool show)
 	{
-		if ((ViewModel == null) || ViewModel.IsRestoringViewport || !HasStableScrollViewport())
+		if (ShowMargins == show)
 		{
 			return;
 		}
 
-		ViewModel.ViewMetrics.Offset = ScrollViewer.Offset;
-	}
-
-	private void ScheduleApplyViewModelScroll()
-	{
-		if (ViewModel == null)
-		{
-			return;
-		}
-
-		_isRestoringScroll = true;
-		ViewModel.IsRestoringViewport = true;
-		Dispatcher.UIThread.Post(ApplyViewModelScroll, DispatcherPriority.Loaded);
-	}
-
-	private void ApplyViewModelScroll()
-	{
-		if ((ViewModel == null) || (ScrollViewer is null) || !HasStableScrollViewport())
-		{
-			return;
-		}
-
-		// Saved scroll needs a document taller than the pane. First measure often
-		// reports a tiny extent that would clamp the offset to 0.
-		if ((ViewModel.ViewMetrics.Offset.Y > 1)
-			&& (ScrollViewer.Extent.Height <= (ScrollViewer.Viewport.Height + 1)))
-		{
-			return;
-		}
-
-		_isProgrammaticScroll = true;
-		try
-		{
-			if (AutoScroll)
-			{
-				ScrollToEnd();
-				ViewModel.ViewMetrics.Offset = ScrollViewer.Offset;
-			}
-			else
-			{
-				var offset = ViewModel.ViewMetrics.ClampOffset(ScrollViewer.Extent, ScrollViewer.Viewport);
-				if (Renderer != null)
-				{
-					Renderer.Offset = offset;
-				}
-
-				ScrollViewer.Offset = offset;
-			}
-
-			_isRestoringScroll = false;
-			ViewModel.IsRestoringViewport = false;
-		}
-		finally
-		{
-			Dispatcher.UIThread.Post(
-				() => _isProgrammaticScroll = false,
-				DispatcherPriority.Loaded);
-		}
-	}
-
-	private void AttachCompletionManager(CompletionManager manager)
-	{
-		if (manager == null)
-		{
-			return;
-		}
-
-		manager.PropertyChanged -= CompletionManagerOnPropertyChanged;
-		manager.PropertyChanged += CompletionManagerOnPropertyChanged;
-		UpdateCompletionPopup();
-	}
-
-	private void CompletionListOnDoubleTapped(object sender, TappedEventArgs e)
-	{
-		ViewModel?.CompletionManager.ApplySelected();
-	}
-
-	private void CompletionManagerOnPropertyChanged(object sender, PropertyChangedEventArgs e)
-	{
-		if ((e.PropertyName == nameof(CompletionManager.IsOpen))
-			|| (e.PropertyName == nameof(CompletionManager.VisibleItems)))
-		{
-			UpdateCompletionPopup();
-		}
-	}
-
-	private void CompletionPopupOnClosed(object sender, EventArgs e)
-	{
-		if (ViewModel?.CompletionManager.IsOpen == true)
-		{
-			ViewModel.CompletionManager.Close();
-		}
-	}
-
-	private void DetachCompletionManager(CompletionManager manager)
-	{
-		if (manager == null)
-		{
-			return;
-		}
-
-		manager.PropertyChanged -= CompletionManagerOnPropertyChanged;
+		_updatingShowMargins = true;
+		ShowMargins = show;
+		_updatingShowMargins = false;
 	}
 
 	private void UpdateCompletionPopup()
@@ -824,16 +888,42 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 
 	private void UpdateShowMargins()
 	{
+		if (LeftMargins.Count == 0)
+		{
+			return;
+		}
+
+		if (_showMarginsPinned)
+		{
+			ApplyShowMargins();
+			return;
+		}
+
+		var show = false;
 		foreach (var leftMargin in LeftMargins)
 		{
+			// The folding gutter follows the strip. It must not keep the strip open by itself.
+			if (leftMargin is FoldingMargin<T>)
+			{
+				continue;
+			}
+
 			if (leftMargin.IsVisible)
 			{
-				ShowMargins = true;
-				return;
+				show = true;
+				break;
 			}
 		}
 
-		ShowMargins = false;
+		SetShowMargins(show);
+
+		foreach (var leftMargin in LeftMargins)
+		{
+			if (leftMargin is FoldingMargin<T>)
+			{
+				leftMargin.IsVisible = show;
+			}
+		}
 	}
 
 	private void ViewModelOnFocusRequested(object sender, EventArgs e)
@@ -847,23 +937,17 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 		Dispatcher.UIThread.Post(ApplyRequestedFocus, DispatcherPriority.Input);
 	}
 
-	private void ApplyRequestedFocus()
-	{
-		if (!this.IsAttachedToVisualTree())
-		{
-			return;
-		}
-
-		Focus();
-		Renderer?.Focus();
-	}
-
 	private void ViewModelOnPropertyChanged(object sender, PropertyChangedEventArgs e)
 	{
 		SyncForwardedViewModelProperties(e.PropertyName);
 
 		switch (e.PropertyName)
 		{
+			case nameof(ViewModel.IsReadOnly):
+			{
+				ApplyReadOnlyInputMethod();
+				break;
+			}
 			case nameof(ViewModel.ShowLineNumbers):
 			{
 				foreach (var leftMargin in LeftMargins)
@@ -900,13 +984,11 @@ public partial class TextEditor<T> : TemplatedControl<T>, IDispatchable
 		}
 	}
 
-
-#endregion
+	#endregion
 
 	#region Events
 
 	public event EventHandler ScrollOffsetChanged;
 
-
-#endregion
+	#endregion
 }

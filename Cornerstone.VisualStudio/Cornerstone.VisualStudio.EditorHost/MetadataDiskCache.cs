@@ -13,7 +13,7 @@ namespace Cornerstone.VisualStudio.EditorHost;
 
 /// <summary>
 /// Writes one assembly's metadata graph into the solution .cscache folder.
-/// Every project in the solution uses that folder. Version 3 files are per assembly path.
+/// Every project in the solution uses that folder. Version 4 files are per assembly path.
 /// Older files are ignored so a stub written for a second target framework is not reused.
 /// </summary>
 internal static class MetadataDiskCache
@@ -21,7 +21,7 @@ internal static class MetadataDiskCache
 	#region Constants
 
 	private const int Magic = 0x43534331;
-	private const int Version = 3;
+	private const int Version = 4;
 	private const int FlagAbstract = 1;
 	private const int FlagAvaloniaObject = 2;
 	private const int FlagComposite = 4;

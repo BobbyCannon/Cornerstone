@@ -272,6 +272,7 @@ public class SyncManager : Manager
 				Id = Guid.Empty,
 				IssueType = SyncIssueType.SyncManagerDisabled,
 				Message = Babel.Tower[BabelKeys.SyncManagerDisabled],
+				Side = "Client",
 				TypeName = string.Empty
 			});
 			postAction?.Invoke(session);

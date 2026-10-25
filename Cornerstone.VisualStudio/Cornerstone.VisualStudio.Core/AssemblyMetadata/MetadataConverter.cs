@@ -81,6 +81,7 @@ public static class MetadataConverter
 		var pseudoclasses = new HashSet<string>();
 		var typepseudoclasses = new HashSet<string>();
 
+		var typesByName = new Dictionary<string, ITypeInformation>(StringComparer.Ordinal);
 		var ignoredResExt = new[] { ".resources", ".rd.xml", "!AvaloniaResources" };
 
 		bool SkipRes(string res)
@@ -129,7 +130,16 @@ public static class MetadataConverter
 				typeFilter = type => (type.Name != "<Module>") && !type.IsInterface && !type.IsAbstract;
 			}
 
-			var asmTypes = asm.Types.Where(typeFilter).ToArray();
+			var allTypes = asm.Types.Where(candidate => (candidate != null) && (candidate.Name != "<Module>")).ToArray();
+			foreach (var candidate in allTypes)
+			{
+				if (!string.IsNullOrEmpty(candidate.AssemblyQualifiedName))
+				{
+					typesByName[candidate.AssemblyQualifiedName] = candidate;
+				}
+			}
+
+			var asmTypes = allTypes.Where(typeFilter).ToArray();
 
 			foreach (var type in asmTypes)
 			{
@@ -159,9 +169,21 @@ public static class MetadataConverter
 			resourceUrls.AddRange(asm.ManifestResourceNames.Where(r => !SkipRes(r)).Select(r => $"resm:{r}?assembly={asm.Name}"));
 		}
 
-		var at = types.Values.ToArray();
-		foreach (var type in at)
+		var pending = new Queue<MetadataType>();
+		foreach (var existingType in types.Values)
 		{
+			pending.Enqueue(existingType);
+		}
+
+		var processed = new HashSet<MetadataType>();
+		while (pending.Count > 0)
+		{
+			var type = pending.Dequeue();
+			if (!processed.Add(type))
+			{
+				continue;
+			}
+
 			typeDefs.TryGetValue(type, out var typeDef);
 
 			var ctors = typeDef?.Methods
@@ -177,6 +199,7 @@ public static class MetadataConverter
 				}
 			}
 
+			var originalType = typeDef;
 			var level = 0;
 			typepseudoclasses.Clear();
 
@@ -201,7 +224,8 @@ public static class MetadataConverter
 						continue;
 					}
 
-					var propertyType = GetType(types, prop.TypeFullName, prop.QualifiedTypeFullName);
+					var propertyType = GetType(types, prop.TypeFullName, prop.QualifiedTypeFullName)
+						?? EnsureReferencedType(prop.TypeFullName, prop.QualifiedTypeFullName);
 					if (propertyType == null)
 					{
 						var hintFullName = UnresolvedHintFullName(prop.TypeFullName);
@@ -304,6 +328,12 @@ public static class MetadataConverter
 				level++;
 			}
 
+			// Interfaces are not XAML elements. A binding still needs the interface that declares the member.
+			if ((originalType != null) && originalType.IsInterface)
+			{
+				AddInterfaceProperties(type, originalType);
+			}
+
 			type.HasAttachedProperties = type.Properties.Any(p => p.IsAttached);
 			type.HasAttachedEvents = type.Events.Any(e => e.IsAttached);
 			type.HasStaticGetProperties = type.Properties.Any(p => p.IsStatic && p.HasGetter);
@@ -345,11 +375,112 @@ public static class MetadataConverter
 
 		PostProcessTypes(types, metadata, resourceUrls, csresValues, pseudoclasses);
 
+		MetadataType EnsureReferencedType(string fullName, string qualifiedName)
+		{
+			var found = GetType(types, fullName, qualifiedName);
+			if (found != null)
+			{
+				return found;
+			}
+
+			ITypeInformation info = null;
+			if (!string.IsNullOrEmpty(qualifiedName))
+			{
+				typesByName.TryGetValue(qualifiedName, out info);
+			}
+
+			if ((info == null) && !string.IsNullOrEmpty(fullName))
+			{
+				typesByName.TryGetValue(fullName, out info);
+			}
+
+			if ((info == null) || !info.IsInterface || string.IsNullOrEmpty(info.AssemblyQualifiedName))
+			{
+				return null;
+			}
+
+			if (types.TryGetValue(info.AssemblyQualifiedName, out found))
+			{
+				return found;
+			}
+
+			var created = ConvertTypeInformation(info);
+			types[info.AssemblyQualifiedName] = created;
+			typeDefs[created] = info;
+			pending.Enqueue(created);
+			return created;
+		}
+
+		void AddInterfaceProperties(MetadataType target, ITypeInformation owner)
+		{
+			var names = new HashSet<string>(StringComparer.Ordinal);
+			foreach (var existing in target.Properties)
+			{
+				if (!existing.IsAttached && !existing.IsStatic && !string.IsNullOrEmpty(existing.Name))
+				{
+					names.Add(existing.Name);
+				}
+			}
+
+			var visited = new HashSet<string>(StringComparer.Ordinal);
+			var stack = new Stack<ITypeInformation>();
+			foreach (var direct in owner.GetInterfaces())
+			{
+				if (direct != null)
+				{
+					stack.Push(direct);
+				}
+			}
+
+			while (stack.Count > 0)
+			{
+				var iface = stack.Pop();
+				var key = string.IsNullOrEmpty(iface.AssemblyQualifiedName) ? iface.FullName : iface.AssemblyQualifiedName;
+				if (string.IsNullOrEmpty(key) || !visited.Add(key))
+				{
+					continue;
+				}
+
+				var declaring = EnsureReferencedType(iface.FullName, iface.AssemblyQualifiedName);
+				foreach (var prop in iface.Properties)
+				{
+					if (prop.IsStatic || !prop.IsVisibleTo(targetAssembly) || !names.Add(prop.Name))
+					{
+						continue;
+					}
+
+					var propertyType = GetType(types, prop.TypeFullName, prop.QualifiedTypeFullName)
+						?? EnsureReferencedType(prop.TypeFullName, prop.QualifiedTypeFullName);
+					target.Properties.Add(new MetadataProperty(
+						prop.Name,
+						propertyType,
+						declaring ?? target,
+						false,
+						false,
+						prop.HasPublicGetter,
+						prop.HasPublicSetter));
+				}
+
+				foreach (var baseInterface in iface.GetInterfaces())
+				{
+					if (baseInterface != null)
+					{
+						stack.Push(baseInterface);
+					}
+				}
+			}
+		}
+
 		MetadataType? GetType(Dictionary<string, MetadataType> types, params string[] keys)
 		{
 			MetadataType? type = null;
 			foreach (var key in keys)
 			{
+				if (string.IsNullOrEmpty(key))
+				{
+					continue;
+				}
+
 				if (types.TryGetValue(key, out type))
 				{
 					break;
@@ -668,13 +799,10 @@ public static class MetadataConverter
 			if (_avaloniaBaseType.FirstOrDefault((a, b) => b.StartsWith(a, StringComparison.OrdinalIgnoreCase), kv.Key) is string at)
 			{
 				var len = at.Length - 1;
-				if (at[len] == ',')
+				var mapped = at[len] == ',' ? at.Substring(0, at.Length - 1) : at;
+				if (!avaloniaBaseType.ContainsKey(mapped))
 				{
-					avaloniaBaseType.Add(at.Substring(0, at.Length - 1), kv.Value);
-				}
-				else
-				{
-					avaloniaBaseType.Add(at, kv.Value);
+					avaloniaBaseType.Add(mapped, kv.Value);
 				}
 			}
 		}

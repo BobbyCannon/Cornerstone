@@ -3,6 +3,7 @@
 using System;
 using System.Drawing;
 using Cornerstone.Input;
+using Cornerstone.Platforms;
 using Cornerstone.Location;
 using Cornerstone.Media;
 using Cornerstone.Runtime;
@@ -70,15 +71,16 @@ public class IOSPlatform : CornerstoneObject, IPlatform
 	private void AddPlatformImplementations()
 	{
 		DependencyProvider.AddTransient<AudioPlayer, AudioPlayerStub>();
-		DependencyProvider.AddSingleton<Gamepad, GamepadStub>();
+		DependencyProvider.AddSingleton<IBiometricKeyService, IOSBiometricKeyService>();
+		DependencyProvider.AddTransient<Gamepad, IOSGamepad>();
 		DependencyProvider.AddSingleton<IKeepAlive, UnsupportedKeepAlive>();
 		DependencyProvider.AddSingleton<Keyboard, KeyboardStub>();
 		DependencyProvider.AddSingleton<Mouse, MouseStub>();
 		DependencyProvider.AddSingleton<ILocationProvider, IOSLocationProvider>();
 		DependencyProvider.AddSingleton<IPermissions, IOSPermissions>();
 		DependencyProvider.AddSingleton<PlatformCredentialVault, IOSPlatformCredentialVault>();
+		DependencyProvider.AddSingleton<IScreenSampler, ScreenSamplerStub>();
 		DependencyProvider.AddSingleton<SecurityCardReader, IOSSecurityCardReader>();
-		DependencyProvider.AddSingleton<IWindowsHelloService, WindowsHelloServiceStub>();
 	}
 
 	private static void RestrictPlatformLinkingRemoval()

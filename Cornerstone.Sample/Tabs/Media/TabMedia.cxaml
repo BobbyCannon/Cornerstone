@@ -21,7 +21,8 @@
 							<Setter Property="TextWrapping" Value="Wrap" />
 						</Style>
 					</WrapPanel.Styles>
-				<Button Classes="ControlCard" Click="OpenCamera" IsVisible="{Binding IsCaptureAvailable}">
+				<Button Classes="ControlCard" Click="OpenCamera"
+						 IsEnabled="{Binding IsCaptureAvailable}">
 					<Border Classes="FeatureCard">
 						<Grid ColumnDefinitions="Auto,*">
 							<Border Classes="IconBadge Blue">
@@ -35,7 +36,7 @@
 						</Grid>
 					</Border>
 				</Button>
-				<Button Classes="ControlCard" Click="OpenPlayer" IsVisible="{Binding IsCaptureAvailable}">
+				<Button Classes="ControlCard" Click="OpenPlayer">
 					<Border Classes="FeatureCard">
 						<Grid ColumnDefinitions="Auto,*">
 							<Border Classes="IconBadge Purple">

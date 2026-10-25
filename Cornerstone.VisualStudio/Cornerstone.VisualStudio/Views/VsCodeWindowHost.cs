@@ -2,9 +2,11 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
+using System.Windows.Threading;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
@@ -34,6 +36,7 @@ internal sealed class VsCodeWindowHost : ContentControl, IDisposable
 	private HwndHost _hwndHost;
 	private bool _disposed;
 	private bool _hosted;
+	private int _hostQueued;
 
 	#endregion
 
@@ -43,6 +46,7 @@ internal sealed class VsCodeWindowHost : ContentControl, IDisposable
 	{
 		_codeWindow = codeWindow ?? throw new ArgumentNullException(nameof(codeWindow));
 		_oleServiceProvider = oleServiceProvider ?? throw new ArgumentNullException(nameof(oleServiceProvider));
+		_hostQueued = 0;
 		Focusable = true;
 		Loaded += OnLoaded;
 	}
@@ -69,6 +73,7 @@ internal sealed class VsCodeWindowHost : ContentControl, IDisposable
 
 		_disposed = true;
 		Loaded -= OnLoaded;
+		SizeChanged -= OnHostSized;
 		HostFailed = null;
 
 		try
@@ -96,8 +101,48 @@ internal sealed class VsCodeWindowHost : ContentControl, IDisposable
 	private void OnLoaded(object sender, RoutedEventArgs e)
 	{
 		Loaded -= OnLoaded;
+		ScheduleHost();
+	}
+
+	/// <summary>
+	/// Attaches the code window after Loaded has returned, and only once this
+	/// control has a real size. Creating the text view inside Loaded arranges it
+	/// at zero size. Visual Studio then calls ScrollIntoViewWhenPossiblyUnloaded
+	/// and CaretAdornmentLayer.QueueScroll on that stack, and those calls do not
+	/// return until another window message arrives.
+	/// </summary>
+	private void ScheduleHost()
+	{
+		if (_disposed || _hosted || (_hostQueued != 0))
+		{
+			return;
+		}
+
+		_hostQueued = 1;
+		try
+		{
+			#pragma warning disable VSTHRD001
+			Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(HostAfterLayout));
+			#pragma warning restore VSTHRD001
+		}
+		catch (InvalidOperationException)
+		{
+			_hostQueued = 0;
+		}
+	}
+
+	private void HostAfterLayout()
+	{
+		_hostQueued = 0;
 		if (_disposed || _hosted)
 		{
+			return;
+		}
+
+		if ((ActualWidth < 1) || (ActualHeight < 1))
+		{
+			SizeChanged -= OnHostSized;
+			SizeChanged += OnHostSized;
 			return;
 		}
 
@@ -126,6 +171,17 @@ internal sealed class VsCodeWindowHost : ContentControl, IDisposable
 		{
 			HostFailed?.Invoke(this, ex);
 		}
+	}
+
+	private void OnHostSized(object sender, SizeChangedEventArgs e)
+	{
+		if (_disposed || _hosted || (ActualWidth < 1) || (ActualHeight < 1))
+		{
+			return;
+		}
+
+		SizeChanged -= OnHostSized;
+		ScheduleHost();
 	}
 
 	private bool TryHostAsUiElement()
@@ -204,16 +260,33 @@ internal sealed class VsCodeWindowHost : ContentControl, IDisposable
 	{
 		private readonly IVsWindowPane _pane;
 		private readonly IOleServiceProvider _site;
-		private IntPtr _hwnd = IntPtr.Zero;
+		private IntPtr _hwnd;
+		private Rect _pendingBounds;
+		private bool _positionQueued;
+		private bool _applied;
+		private int _appliedX;
+		private int _appliedY;
 		private int _appliedWidth;
 		private int _appliedHeight;
+		private int _generation;
+		private bool _resizeRunning;
+		private readonly object _resizeGate;
 
 		public CodeWindowHwndHost(IVsWindowPane pane, IOleServiceProvider site)
 		{
 			_pane = pane;
 			_site = site;
-			_appliedWidth = -1;
-			_appliedHeight = -1;
+			_hwnd = IntPtr.Zero;
+			_pendingBounds = Rect.Empty;
+			_positionQueued = false;
+			_applied = false;
+			_appliedX = 0;
+			_appliedY = 0;
+			_appliedWidth = 0;
+			_appliedHeight = 0;
+			_generation = 0;
+			_resizeRunning = false;
+			_resizeGate = new object();
 		}
 
 		protected override HandleRef BuildWindowCore(HandleRef hwndParent)
@@ -247,40 +320,143 @@ internal sealed class VsCodeWindowHost : ContentControl, IDisposable
 				// Ignore double-close.
 			}
 
-			_hwnd = IntPtr.Zero;
-			_appliedWidth = -1;
-			_appliedHeight = -1;
+			lock (_resizeGate)
+			{
+				_hwnd = IntPtr.Zero;
+				_generation++;
+			}
+
+			_positionQueued = false;
+			_applied = false;
 		}
 
+		/// <summary>
+		/// Records the layout rect. The editor is resized off this thread.
+		/// </summary>
+		/// <remarks>
+		/// Do not call the base method, and do not call SetWindowPos on the UI
+		/// thread. The editor window belongs to this thread, so SWP_ASYNCWINDOWPOS
+		/// does not post here: the size handler runs nested in the caller, and the
+		/// shell stays stuck until a later move. HwndHost calls this on every
+		/// layout pass. A thread-pool SetWindowPos with that flag posts the size
+		/// onto the UI thread's normal message pump.
+		/// </remarks>
 		protected override void OnWindowPositionChanged(Rect rcBoundingBox)
 		{
-			base.OnWindowPositionChanged(rcBoundingBox);
+			_pendingBounds = rcBoundingBox;
+			if (_positionQueued || (_hwnd == IntPtr.Zero))
+			{
+				return;
+			}
 
+			_positionQueued = true;
+			try
+			{
+				#pragma warning disable VSTHRD001
+				Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(ApplyPendingBounds));
+				#pragma warning restore VSTHRD001
+			}
+			catch (InvalidOperationException)
+			{
+				_positionQueued = false;
+			}
+		}
+
+		private void ApplyPendingBounds()
+		{
+			_positionQueued = false;
 			if (_hwnd == IntPtr.Zero)
 			{
 				return;
 			}
 
-			var width = Math.Max(1, (int) rcBoundingBox.Width);
-			var height = Math.Max(1, (int) rcBoundingBox.Height);
-			if ((width == _appliedWidth) && (height == _appliedHeight))
+			var bounds = _pendingBounds;
+			var x = (int) bounds.X;
+			var y = (int) bounds.Y;
+			var width = (int) bounds.Width;
+			var height = (int) bounds.Height;
+			if (width < 0)
+			{
+				width = 0;
+			}
+
+			if (height < 0)
+			{
+				height = 0;
+			}
+
+			if (_applied &&
+				(x == _appliedX) &&
+				(y == _appliedY) &&
+				(width == _appliedWidth) &&
+				(height == _appliedHeight))
 			{
 				return;
 			}
 
-			_appliedWidth = width;
-			_appliedHeight = height;
-			// SWP_ASYNCWINDOWPOS posts the size change. A synchronous SetWindowPos
-			// sends WM_WINDOWPOSCHANGED into the editor during WPF layout, and the
-			// shell stays frozen until another window message arrives.
-			SetWindowPos(
-				_hwnd,
-				IntPtr.Zero,
-				0,
-				0,
-				width,
-				height,
-				SWP_NOZORDER | SWP_NOACTIVATE | SWP_ASYNCWINDOWPOS);
+			var start = false;
+			lock (_resizeGate)
+			{
+				_applied = true;
+				_appliedX = x;
+				_appliedY = y;
+				_appliedWidth = width;
+				_appliedHeight = height;
+				_generation++;
+				if (!_resizeRunning)
+				{
+					_resizeRunning = true;
+					start = true;
+				}
+			}
+
+			if (start)
+			{
+				ThreadPool.UnsafeQueueUserWorkItem(ResizeOffThread, null);
+			}
+		}
+
+		private void ResizeOffThread(object state)
+		{
+			while (true)
+			{
+				IntPtr hwnd;
+				int x;
+				int y;
+				int width;
+				int height;
+				int generation;
+				lock (_resizeGate)
+				{
+					hwnd = _hwnd;
+					x = _appliedX;
+					y = _appliedY;
+					width = _appliedWidth;
+					height = _appliedHeight;
+					generation = _generation;
+				}
+
+				if (hwnd != IntPtr.Zero)
+				{
+					SetWindowPos(
+						hwnd,
+						IntPtr.Zero,
+						x,
+						y,
+						width,
+						height,
+						SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_ASYNCWINDOWPOS);
+				}
+
+				lock (_resizeGate)
+				{
+					if ((hwnd == IntPtr.Zero) || (generation == _generation))
+					{
+						_resizeRunning = false;
+						return;
+					}
+				}
+			}
 		}
 
 		[DllImport("user32.dll", SetLastError = true)]
@@ -295,6 +471,7 @@ internal sealed class VsCodeWindowHost : ContentControl, IDisposable
 
 		private const uint SWP_NOZORDER = 0x0004;
 		private const uint SWP_NOACTIVATE = 0x0010;
+		private const uint SWP_NOCOPYBITS = 0x0100;
 		private const uint SWP_ASYNCWINDOWPOS = 0x4000;
 	}
 

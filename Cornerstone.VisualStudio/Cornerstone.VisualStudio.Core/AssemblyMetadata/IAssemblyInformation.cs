@@ -78,6 +78,8 @@ public interface ITypeInformation
 
 	ITypeInformation? GetBaseType();
 
+	IEnumerable<ITypeInformation> GetInterfaces();
+
 	#endregion
 }
 

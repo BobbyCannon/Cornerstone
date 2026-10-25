@@ -2,7 +2,7 @@
 
 Walk of the Cornerstone designer extension: what loads inside Visual Studio, how a `.cxaml` or `.axaml` document gets a preview, and how completion and the other features reach out of process.
 
-Each section ends with a **Shell** note. That note answers one question: can this section leave Visual Studio ignoring input until a key or a window resize gets through?
+Each section ends with a **Shell** note. That note answers one question: can this section leave Visual Studio ignoring input until a key, a resize, or moving the window gets through?
 
 Open leads from this walk are in [Todo/ShellLockup.md](Todo/ShellLockup.md). This page does not change code.
 
@@ -24,7 +24,9 @@ Keyboard and mouse sit at Input. Anything posted at Render, Normal, or Send runs
 
 A window resize is still a Win32 message (`WM_SIZE`). The shell handles that message in the native window loop, which is why dragging the border can make the IDE respond again. A key that the native filter still sees can do the same. The backlog was never lost. The higher-priority band finally yielded.
 
-That is the symptom this walk is checking for. A one-time post at Normal is a hitch. A stream of posts above Input is the lockup.
+A move can also wake a shell that is not draining that queue. The hosted code editor is a child window on the UI thread. Resizing it during layout runs its size handler before layout finishes, and input does not get a turn. Moving the Visual Studio window is the message that lets that handler finish. Section 2 applies the editor rectangle after layout. A lockup that still clears only when the window moves means that resize is synchronous again.
+
+A one-time post at Normal is a hitch. A stream of posts above Input is the queue lockup. The layout resize is the other one.
 
 ---
 
@@ -59,11 +61,11 @@ The pane’s content is a `CornerstoneDesigner` WPF control, created in the pane
 - Registers the pane as the frame’s `VSFPROPID_ViewHelper` so show, hide, and close notifications arrive.
 - Reads settings and starts the preview when the document is visible.
 
-The hosted editor is a native HWND inside WPF. When WPF layout changes that HWND’s size, `CodeWindowHwndHost.OnWindowPositionChanged` calls `SetWindowPos` with `SWP_ASYNCWINDOWPOS`. The size change is posted. A synchronous `SetWindowPos` during layout sends `WM_WINDOWPOSCHANGED` back into the editor on the same stack, and the shell stays frozen until another window message arrives. That flag is the fix for that path.
+The hosted editor is a native window inside WPF when the code window does not offer a WPF element. WPF reports the window rectangle during layout. The host stores that rectangle and applies it from a thread that does not own the window, so the size is posted to the UI thread's message pump. Calling `SetWindowPos` on the UI thread runs the editor's size handler immediately, even with `SWP_ASYNCWINDOWPOS`, and the shell stays stuck until the window is moved. One move can be needed for each open designer.
 
 The pane forwards find, status bar, toolbox, and most editor commands to the hosted code window. F12 is handled first (section 7). Quick Find asks for the real `IVsFindTarget` through `cmdidLocateFindTarget`; the pane returns the code window’s target so find stays in the document.
 
-**Shell.** Creating the pane is UI-thread work, then it returns. The HWND size path posts. It does not wait. This section matches the resize symptom only if something else calls `SetWindowPos` without `SWP_ASYNCWINDOWPOS` during layout. The hosted editor itself does not.
+**Shell.** Creating the pane is UI-thread work, then it returns. The HWND size path does not call `SetWindowPos` on the UI thread. A stuck shell that clears when the window moves matches this section if that call is on the UI thread again.
 
 ---
 
@@ -106,18 +108,18 @@ The host stays up while the document is the active view. Other cases:
 
 | Event | What happens |
 |-------|----------------|
-| Tab hidden, deactivated, or the window minimized | Render hook drops immediately. The process stops about 2 s later |
+| Tab hidden, deactivated, or the window minimized | Presenting stops immediately. The process stops about 2 s later |
 | Frame close | Host stops immediately (`EditorPane.OnClose` → `SuspendPreviewForClose`) |
-| Source-only view | Render hook drops immediately. The process stops about 15 s later. The last error tag remains |
+| Source-only view | Presenting stops immediately. The process stops about 15 s later. The last error tag remains |
 | Build or debug pause | Host stops and a paused banner shows |
 | Build finished | Host is killed, targets reload, a new process starts so new assemblies are loaded |
 | Manual refresh | Same recycle |
 
-`SuspendHost` unhooks the render pump on the UI thread (`ReleasePreviewSurface`), then `Stop` runs off the UI thread so `WaitForExit` cannot sit on `devenv`. Closing the document does not close the code window in that path. Tearing the native editor down during frame close re-enters the shell.
+`SuspendHost` stops presenting on the UI thread (`ReleasePreviewSurface`), then `Stop` runs off the UI thread so `WaitForExit` cannot sit on `devenv`. Closing the document does not close the code window in that path. Tearing the native editor down during frame close re-enters the shell.
 
 Hidden tabs use the 2-second delay so a transient hide/show pair does not thrash the process. Close does not use that delay.
 
-**Shell.** Start, stop, and XAML send are off the UI thread. Hide and Source drop the render hook immediately, then the process exits on the delay. Close removes the pump and the process together. The process can still be alive for those two seconds. It is not posting frames onto the shell.
+**Shell.** Start, stop, and XAML send are off the UI thread. Hide and Source stop presenting immediately, then the process exits on the delay. Close removes the pump and the process together. The process can still be alive for those two seconds. It is not posting frames onto the shell.
 
 ---
 
@@ -135,25 +137,23 @@ A paint locks a framebuffer. On unlock, `SendLastFrameIfNeeded` copies pixels in
 
 ### Cornerstone client (`RemoteSession`)
 
-The socket thread copies the frame into a pending slot and calls `EnsurePump`. The first frame posts one `StartPresentOnUi` at **Background**, which subscribes `CompositionTarget.Rendering`. Later frames do not each post. The pass copies the latest pending frame into a `WriteableBitmap`, then posts **one** coalesced kick at **Input**. That kick dirties the bitmap so the next pass runs. A second frame does not queue another kick while one is waiting.
+The socket thread copies the frame into a pending slot and calls `EnsurePump`. The first copy after attach, resume, or a new listen is posted at **Input** so a restored document paints. Every later copy is posted at **Background**. The scheduled flag stays set until `CopyOnUi` returns, so a frame that arrives during the copy cannot queue another Input operation into the same drain. If one did arrive, `CopyOnUi` posts one Background follow-up for it. A frame that arrives while the surface is suspended is kept and presented on resume. The host does not send that frame again.
 
-The hook stays up for 200 ms after the last painted frame, then drops. Host frames arrive between WPF passes, so the queue is often empty at the pass even while the preview is moving. Dropping the hook on that first empty pass sent every following frame back through the Background queue. That queue is shared with the rest of the shell, so a live preview paused and then drew several frames at once.
-
-A post per frame at Render filled the band above the keyboard. Input then waited until a resize. The kick is one item at Input, not a Render item. Pixel copies still happen on the render pass.
+Loaded, Normal, and Render are foreground. WPF posts a dispatcher message for each item there even while a key is waiting. Input does the same when no key is already down, so a stream of Input copies keeps a build waiting until Ctrl. Background arms a timer and yields while a message is waiting. A Background post never ran while a restored document was opening, so the first paint stays on the Input callback, and the pending frame is not dropped on suspend.
 
 The acknowledgement (`FrameReceivedMessage`) is sent on the socket thread as soon as the frame is copied, before the UI thread paints it.
 
-`RequestStopPump` sets a flag, drops the pending frame, and posts `StopPumpOnUi` at **Send** so the unhook runs before a queued present. `SuspendHost` calls this on the UI thread before the process is killed. `ListenLoopback` clears that flag. Recycle listens again on the same session, and a pump left stopped would acknowledge frames and never show them.
+`RequestStopPump` sets a flag, drops the pending frame, and posts `StopPumpOnUi` at **Send** so the stop runs before a queued copy. `SuspendHost` calls this on the UI thread before the process is killed. `ListenLoopback` clears that flag. Recycle listens again on the same session, and a pump left stopped would acknowledge frames and never show them.
 
-`SuspendPump` unhooks without stopping the session. `CornerstoneDesigner.UpdatePreviewPump` calls it while the tab is hidden or the view is Source. Showing Design or Split calls `ResumePump`. The hidden-tab process still waits about 2 seconds before it is killed. The render hook does not wait with it.
+`SuspendPump` stops presenting without stopping the session. `CornerstoneDesigner.UpdatePreviewPump` calls it while the tab is hidden or the view is Source. Showing Design or Split calls `ResumePump`. The hidden-tab process still waits about 2 seconds before it is killed. Presenting does not wait with it.
 
-When the bitmap instance changes (first frame, or a new size), `FrameReceived` is posted at Background, not raised on the render stack:
+When the bitmap instance changes (first frame, or a new size), `FrameReceived` is raised on the copy callback:
 
 - `RemoteView.ApplyBitmap` assigns `Image.Source` and, on a size change, sets `Image.Width` and `Image.Height`.
 - `PreviewerProcess` forwards the event. `CornerstonePreviewer.Update` sets the surface size and `PreviewGrid.Margin`.
 - `CornerstoneDesigner.FrameReceived` applies zoom on the first frame and clears the error overlay.
 
-Same-size frames raise `FramePainted` on the render pass only. That updates the process-panel text. It does not measure the designer or the hosted editor.
+Same-size frames raise `FramePainted` on that copy. That updates the process-panel text. It does not measure the designer or the hosted editor.
 
 ### Avalonia client
 
@@ -163,7 +163,7 @@ Same-size frames raise `FramePainted` on the render pass only. That updates the 
 
 The preview control shows `RemoteView` for Cornerstone and a WPF `Image` for Avalonia. Pointer events on the image are forwarded to the host (move events smaller than half a pixel are dropped). Ctrl+wheel changes the designer zoom. The zoom box is a list of percentages. Fit modes were removed because a viewport resize and a host scale chased each other.
 
-**Shell.** Cornerstone frames no longer post a Render-priority item per frame, and a size change no longer lays out inside the render pass. A hidden tab and Source view drop the hook immediately. The host can still paint every tick while Design or Split is on screen. That is one WPF render pass per frame, the same shape as an animation, and it yields to input between frames. The acknowledgement is still sent before the UI copy, so a busy preview can stay at the host's paint rate. That remaining rate is lead 3 in [Todo/ShellLockup.md](Todo/ShellLockup.md).
+**Shell.** The first Cornerstone frame after the surface is shown is one Input copy. Later frames are Background copies, and a copy does not queue another Input copy before it returns. They do not subscribe to the shell render pass or dirty the bitmap to force another paint. `WritePixels` invalidates the image. A hidden tab and Source view stop presenting immediately. The host can still paint every tick while Design or Split is on screen. The acknowledgement is still sent before the UI copy, so a busy preview can stay at the host's paint rate. Those copies yield. That remaining rate is lead 3 in [Todo/ShellLockup.md](Todo/ShellLockup.md).
 
 The Avalonia copy is at Background, and it is skipped while the surface is suspended.
 
@@ -181,7 +181,7 @@ Build and debug set `IsPaused`. The preview stops and a banner replaces it. `OnB
 
 The error tagger (`XamlErrorTagger`) keeps the last host exception for the Error List and the squiggle. Tag and Error List updates are marshalled to the UI thread. A tag update off the UI thread can deadlock the editor.
 
-**Shell.** Theme, zoom, and view changes are UI clicks, then a XAML send off-thread. `ApplyTextChangedOnUiAsync` uses `SwitchToMainThreadAsync` (Normal, above Input) once per buffer change to arm the debounce timer. That is one post per edit, then the timer. It becomes a problem only if buffer changes never stop. Build completion uses the same switch once per build. The error tagger uses it when applying tags. None of these are a frame stream. They are listed in the lockup todo so a later frame-pump fix does not assume the shell is clear.
+**Shell.** Theme, zoom, and view changes are UI clicks, then a XAML send off-thread. A buffer change posts one Background callback per burst to arm the debounce timer. It does not use `SwitchToMainThreadAsync`. Build completion uses that switch once per build. The error tagger uses it when applying tags. Those are one post, then they return. They are listed in the lockup todo so a later frame-pump fix does not assume the shell is clear.
 
 ---
 
@@ -189,7 +189,7 @@ The error tagger (`XamlErrorTagger`) keeps the last host exception for the Error
 
 Completion, Enter indent, Go to Definition, grid-definition lightbulbs, and the missing-xmlns lightbulb run in one net10 process per Visual Studio instance: `Cornerstone.VisualStudio.EditorHost`. `EditorHostSession` starts it with `dotnet exec` and talks over the protocol in `Cornerstone.VisualStudio.Protocol`. The type’s own contract is that the UI thread must not wait on it.
 
-The host loads assembly metadata from the paths the designer already resolved, caches them under the solution’s `.cscache` folder, and re-reads a file when its size or write time changes. `CompletionMetadataWarmup` asks for that load when the solution opens and after a build. Progress is reported through `EditorHostActivity`. The status-bar gear and the process panel subscribe. Both post their UI update at Background, and only one update is queued at a time. A Normal post per assembly used to sit above the keyboard for the whole metadata load. That path is closed.
+The host loads assembly metadata from the paths the designer already resolved, caches them under the solution’s `.cscache` folder, and re-reads a file when its size or write time changes, or when the cache format changes. `CompletionMetadataWarmup` asks for that load when the solution opens and after a build. Progress is reported through `EditorHostActivity`. The status-bar gear and the process panel subscribe. Both post their UI update at Background, and only one update is queued at a time. The gear steps on a Background timer while a call is in flight. A forever render animation, and a Normal post per assembly, used to sit above the keyboard for the whole metadata load. That path is closed.
 
 ### Completion
 
@@ -255,6 +255,6 @@ The panel refreshes on a 1-second `DispatcherTimer` and when `EditorHostActivity
 
 `CornerstonePackage.Dispose` calls `EditorHostSession.Shutdown` and `PreviewerProcess.ShutdownAll`. `ExtensionProcessLifetime` tracks preview processes so a hard close of Visual Studio still has a handle to kill. A preview that survives `devenv` keeps the extension folder locked, and the next install leaves the old folder beside the new one.
 
-Per document, close is earlier than package dispose: `OnClose` stops that document’s host and its render hook without waiting for `WindowPane.Dispose`.
+Per document, close is earlier than package dispose: `OnClose` stops that document’s host and its frame pump without waiting for `WindowPane.Dispose`.
 
-**Shell.** Shutdown must run `RequestStopPump` on the UI thread before the process dies. `SuspendHost` does that. A host that is still sending frames, with the composition hook still attached, is the leftover-tab case described in section 5. Close is written to prevent it. A document that never received `OnClose` (frame helper not set) would still hit it. `AdviseWindowFrameNotifications` sets the helper during pane init, and the pane also implements `IVsWindowFrameNotify3` so the shell can query the interface directly.
+**Shell.** Shutdown must run `RequestStopPump` on the UI thread before the process dies. `SuspendHost` does that. A host that is still sending frames is the leftover-tab case described in section 5. Close is written to prevent it. A document that never received `OnClose` (frame helper not set) would still hit it. `AdviseWindowFrameNotifications` sets the helper during pane init, and the pane also implements `IVsWindowFrameNotify3` so the shell can query the interface directly.

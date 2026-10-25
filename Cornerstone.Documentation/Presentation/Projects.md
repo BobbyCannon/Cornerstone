@@ -79,6 +79,7 @@ The Presentation nupkg copies `Cornerstone.Designer.HostApp.dll` under `tools/ne
 |---------|------------|
 | **Cornerstone.Presentation.Diagnostics** | In-app DevTools (`AttachDevTools`): visual tree, properties, events. Desktop product apps project-reference it and attach after setup in DEBUG. Not packed, so it does not ship in every themed app. Different from the Keystone bus / Profiler panel in [Diagnostics.md](../Diagnostics.md). |
 | **Cornerstone.Presentation.Sandbox** | Tiny desktop **exe**: one unstyled window on Presentation only (no Theme). Proves Win32 + Skia + HarfBuzz boot without chrome. Not a library and not packed. |
+| **Cornerstone.Presentation.Themes.Extras** | Demo skins. `Halloween/` is a purple and pumpkin palette on the product control templates. The sample Themes tab swaps skins through `SampleThemeCatalog`. Not packed. The product skin stays in `Cornerstone.Presentation`. |
 
 Related but named outside Presentation*: `Cornerstone.Automation.Presentation` automates an in-process WebView on top of Theme (Windows). It is a NuGet of its own.
 
@@ -88,7 +89,7 @@ Related but named outside Presentation*: `Cornerstone.Automation.Presentation` a
 
 What publishes, what is embedded, and what stays a project reference is [NuGet.md](../NuGet.md).
 
-`Cornerstone.Presentation` is the only Presentation-family package. It carries the runtime, the `.cxaml` build tasks, build props and targets, and `Cornerstone.Presentation.Remote.Protocol.dll`. There is no Theme package and no protocol package. BuildTasks, DevGenerators, HostApp (except the optional designer DLL under `tools/`), Diagnostics, Sandbox, Remote.Wpf, and Remote.Wpf.Host are not packages.
+`Cornerstone.Presentation` is the only Presentation-family package. It carries the runtime, the `.cxaml` build tasks, build props and targets, and `Cornerstone.Presentation.Remote.Protocol.dll`. There is no Theme package and no protocol package. BuildTasks, DevGenerators, HostApp (except the optional designer DLL under `tools/`), Diagnostics, Sandbox, Themes.Extras, Remote.Wpf, and Remote.Wpf.Host are not packages.
 
 ---
 

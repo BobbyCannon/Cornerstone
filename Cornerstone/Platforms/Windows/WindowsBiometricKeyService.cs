@@ -20,21 +20,24 @@ using Cornerstone.Security;
 namespace Cornerstone.Platforms.Windows;
 
 /// <summary>
-/// Windows Hello key-credential wrapper. Consent UI must run on the UI thread;
-/// otherwise the system prompt can appear behind the app window.
+/// Windows Hello key-credential wrapper. GetVaultKeyAsync returns a signature of the saved
+/// challenge. Those bytes are the vault secret, so a later sign of the same challenge must
+/// match. The private key stays in the platform key store. On unpackaged desktop, a same-user
+/// process that knows the key name can request a signature after one Hello approval.
+/// Consent UI must run on the UI thread; otherwise the system prompt can appear behind the app.
 /// </summary>
 [SourceReflection]
 [DependencyInjected]
-[DependencyInjected(typeof(IWindowsHelloService))]
-public class WindowsHelloService : IWindowsHelloService
+[DependencyInjected(typeof(IBiometricKeyService))]
+public class WindowsBiometricKeyService : IBiometricKeyService
 {
 	#region Constants
 
 	private const string BrokerImageName = "CredentialUIBroker.exe";
 	private const string BrokerWindowClass = "Credential Dialog Xaml Host";
+	private const string ChallengeFileName = "Biometric.challenge";
 	private const string CoreWindowClass = "Windows.UI.Core.CoreWindow";
 	private const string EnrollmentImageName = "BioEnrollmentHost.exe";
-	private const string ChallengeFileName = "WindowsHello.challenge";
 	private const int MaxWindowParentDepth = 32;
 	private const int ProcessQueryLimitedInformation = 0x1000;
 
@@ -42,54 +45,141 @@ public class WindowsHelloService : IWindowsHelloService
 
 	#region Fields
 
-	private string _challengeValue;
+	private readonly BiometricChallengeFile _challengeFile;
 	private readonly IDispatcher _dispatcher;
+	private readonly object _gate;
 	private bool? _isSupported;
 	private readonly string _keyName;
-	private readonly IRuntimeInformation _runtimeInformation;
+	private Task<byte[]> _pendingUnlock;
 
 	#endregion
 
 	#region Constructors
 
 	[DependencyInjectionConstructor]
-	public WindowsHelloService(IRuntimeInformation runtimeInformation, IDispatcher dispatcher)
-		: this(runtimeInformation.ApplicationName, null)
+	public WindowsBiometricKeyService(IRuntimeInformation runtimeInformation, IDispatcher dispatcher)
+		: this(
+			runtimeInformation.ApplicationName,
+			null,
+			() => runtimeInformation.ApplicationDataLocation,
+			() => runtimeInformation.DeviceId)
 	{
-		_runtimeInformation = runtimeInformation;
 		_dispatcher = dispatcher;
 	}
 
-	public WindowsHelloService(string keyName, string challengeValue)
+	internal WindowsBiometricKeyService(string keyName, string challengeValue)
+		: this(keyName, challengeValue, null, null)
+	{
+	}
+
+	private WindowsBiometricKeyService(string keyName, string challengeValue, Func<string> directory, Func<string> deviceId)
 	{
 		_keyName = keyName;
-		_challengeValue = challengeValue;
+		_challengeFile = new BiometricChallengeFile(directory, deviceId, ChallengeFileName, challengeValue);
 		_dispatcher = null;
-		_runtimeInformation = null;
+		_gate = new object();
+		_pendingUnlock = null;
 	}
 
 	#endregion
 
 	#region Properties
 
-	public bool HasBeenSetup => IsSupported && (GetCredentialStatus() == KeyCredentialStatus.Success);
+	public string DisplayName => IsSupported ? "Windows Hello" : string.Empty;
 
-	public bool HasNotBeenSetup => IsSupported && (GetCredentialStatus() != KeyCredentialStatus.Success);
+	public bool HasBeenSetup
+	{
+		get
+		{
+			if (!IsSupported)
+			{
+				return false;
+			}
 
-	public bool IsSupported => _isSupported ??= WaitWithoutContext(() => KeyCredentialManager.IsSupportedAsync().AsTask());
+			return BiometricKeyRules.KeyMaterialExists(ToOpenStatus(GetCredentialStatus()));
+		}
+	}
+
+	public bool HasNotBeenSetup
+	{
+		get
+		{
+			if (!IsSupported)
+			{
+				return false;
+			}
+
+			return !HasBeenSetup;
+		}
+	}
+
+	public bool StaleKeyRemoved => false;
+
+	public bool IsSupported
+	{
+		get
+		{
+			if (_isSupported == true)
+			{
+				return true;
+			}
+
+			var supported = WaitWithoutContext(() => KeyCredentialManager.IsSupportedAsync().AsTask());
+			if (supported)
+			{
+				_isSupported = true;
+			}
+
+			return supported;
+		}
+	}
 
 	#endregion
 
 	#region Methods
 
-	public void DeleteVaultKeyAsync()
+	public async Task DeleteVaultKeyAsync()
 	{
-		WaitWithoutContext(() => KeyCredentialManager.DeleteAsync(_keyName).AsTask());
-		DeleteSavedChallenge();
-		_challengeValue = null;
+		await KeyCredentialManager.DeleteAsync(_keyName).AsTask().ConfigureAwait(false);
+		_challengeFile.Delete();
 	}
 
-	public async Task<byte[]> GetVaultKeyAsync()
+	public Task<byte[]> GetVaultKeyAsync()
+	{
+		lock (_gate)
+		{
+			if (_pendingUnlock is { IsCompleted: false })
+			{
+				return _pendingUnlock;
+			}
+
+			_pendingUnlock = UnlockAsync();
+			return _pendingUnlock;
+		}
+	}
+
+	internal static BiometricOpenStatus ToOpenStatus(KeyCredentialStatus status)
+	{
+		switch (status)
+		{
+			case KeyCredentialStatus.Success:
+				return BiometricOpenStatus.Success;
+			case KeyCredentialStatus.NotFound:
+				return BiometricOpenStatus.NotFound;
+			case KeyCredentialStatus.UserCanceled:
+				return BiometricOpenStatus.UserCanceled;
+			case KeyCredentialStatus.UserPrefersPassword:
+				return BiometricOpenStatus.UserPrefersPassword;
+			case KeyCredentialStatus.CredentialAlreadyExists:
+				return BiometricOpenStatus.CredentialAlreadyExists;
+			case KeyCredentialStatus.SecurityDeviceLocked:
+				return BiometricOpenStatus.SecurityDeviceLocked;
+			default:
+				return BiometricOpenStatus.UnknownError;
+		}
+	}
+
+	private async Task<byte[]> UnlockAsync()
 	{
 		var keyCredentialAvailable = await KeyCredentialManager.IsSupportedAsync();
 		if (!keyCredentialAvailable)
@@ -107,12 +197,17 @@ public class WindowsHelloService : IWindowsHelloService
 			}
 		}
 
+		if (openKeyResult?.Status == KeyCredentialStatus.SecurityDeviceLocked)
+		{
+			throw new InvalidOperationException("Windows Hello is locked. Try again later.");
+		}
+
 		if ((openKeyResult == null) || (openKeyResult.Status != KeyCredentialStatus.Success) || (openKeyResult.Credential == null))
 		{
 			return null;
 		}
 
-		var challenge = GetChallengeValue();
+		var challenge = _challengeFile.GetChallengeValue();
 		if (string.IsNullOrEmpty(challenge))
 		{
 			return null;
@@ -121,50 +216,25 @@ public class WindowsHelloService : IWindowsHelloService
 		var userKey = openKeyResult.Credential;
 		var buffer = CryptographicBuffer.ConvertStringToBinary(challenge, BinaryStringEncoding.Utf8);
 		var signResult = await RunOnUiThread(() => RequestSignWithForegroundAsync(userKey, buffer));
+		if (signResult?.Status == KeyCredentialStatus.SecurityDeviceLocked)
+		{
+			throw new InvalidOperationException("Windows Hello is locked. Try again later.");
+		}
+
 		if ((signResult == null) || (signResult.Status != KeyCredentialStatus.Success) || (signResult.Result == null))
 		{
 			return null;
 		}
 
+		// Freeze the signed challenge before the caller wraps the master password.
+		// A later device-id change must not produce a different signature.
+		_challengeFile.EnsurePersisted();
 		return signResult.Result.ToArray();
 	}
 
-	/// <inheritdoc />
 	public void RememberChallenge()
 	{
-		var challenge = _challengeValue;
-		var path = GetChallengePath();
-		if (string.IsNullOrEmpty(challenge) || string.IsNullOrEmpty(path))
-		{
-			return;
-		}
-
-		var directory = Path.GetDirectoryName(path);
-		if (!string.IsNullOrEmpty(directory))
-		{
-			Directory.CreateDirectory(directory);
-		}
-
-		// Rename into place so a crash cannot truncate the challenge a caller already signed.
-		var temporaryPath = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
-		try
-		{
-			File.WriteAllText(temporaryPath, challenge);
-			File.Move(temporaryPath, path, true);
-		}
-		catch
-		{
-			try
-			{
-				File.Delete(temporaryPath);
-			}
-			catch
-			{
-				// The failed save is the error the caller has to surface.
-			}
-
-			throw;
-		}
+		_challengeFile.Remember();
 	}
 
 	private static async Task CompleteOnUi<T>(Func<Task<T>> work, TaskCompletionSource<T> completion)
@@ -213,69 +283,6 @@ public class WindowsHelloService : IWindowsHelloService
 		}
 
 		return 0;
-	}
-
-	/// <summary>
-	/// Saved challenge when the challenge file exists. The device id is used only when that file is absent.
-	/// An empty or unreadable file returns null so a later read can try again.
-	/// Callers that already stored a signature depend on the saved text staying stable.
-	/// </summary>
-	private string GetChallengeValue()
-	{
-		if (!string.IsNullOrEmpty(_challengeValue))
-		{
-			return _challengeValue;
-		}
-
-		var path = GetChallengePath();
-		if (!string.IsNullOrEmpty(path))
-		{
-			try
-			{
-				var saved = File.ReadAllText(path);
-				if (string.IsNullOrEmpty(saved))
-				{
-					return null;
-				}
-
-				_challengeValue = saved;
-				return _challengeValue;
-			}
-			catch (IOException ex) when ((ex is FileNotFoundException) || (ex is DirectoryNotFoundException))
-			{
-				// No challenge file yet. The device id below is the challenge.
-			}
-			catch
-			{
-				// The file is present but unreadable. Signing the device id would not unwrap an existing vault.
-				return null;
-			}
-		}
-
-		_challengeValue = _runtimeInformation?.DeviceId;
-		return string.IsNullOrEmpty(_challengeValue) ? null : _challengeValue;
-	}
-
-	private void DeleteSavedChallenge()
-	{
-		var path = GetChallengePath();
-		if (string.IsNullOrEmpty(path))
-		{
-			return;
-		}
-
-		File.Delete(path);
-	}
-
-	private string GetChallengePath()
-	{
-		var directory = _runtimeInformation?.ApplicationDataLocation;
-		if (string.IsNullOrEmpty(directory))
-		{
-			return null;
-		}
-
-		return Path.Combine(directory, ChallengeFileName);
 	}
 
 	private static ConsentWindowKind GetConsentWindowKind(nint window)
@@ -360,6 +367,7 @@ public class WindowsHelloService : IWindowsHelloService
 	private static bool IsSameWindowOrDescendant(nint window, nint ancestor)
 	{
 		var current = window;
+
 		// A parent/owner cycle would leave the raise task running, and a completed PIN would never return.
 		for (var depth = 0; (depth < MaxWindowParentDepth) && (current != 0); depth++)
 		{
@@ -467,22 +475,11 @@ public class WindowsHelloService : IWindowsHelloService
 	}
 
 	/// <summary>
-	/// Restacks the consent window above the app and leaves it topmost so another topmost window cannot cover the PIN dialog.
-	/// </summary>
-	private static void RaiseConsentWindow(nint window)
-	{
-		var flags = NativeGeneral.SetWindowPosFlags.NoMove | NativeGeneral.SetWindowPosFlags.NoSize;
-		NativeGeneral.SetWindowPos(window, new(-2), 0, 0, 0, 0, flags);
-		NativeGeneral.SetWindowPos(window, new(-1), 0, 0, 0, 0, flags);
-		NativeGeneral.SetForegroundWindow(window);
-	}
-
-	/// <summary>
 	/// Watches until the WinRT call cancels. A dialog that takes more than a couple of seconds to appear is still raised.
 	/// Handles already visible at the start belong to another prompt and stay put.
 	/// Each new broker is restacked once and foregrounded at most once more.
 	/// </summary>
-	private static async Task RaiseHelloPromptAsync(CancellationToken token)
+	private static async Task RaiseBiometricPromptAsync(CancellationToken token)
 	{
 		var visibleBrokers = new List<nint>();
 		var visibleEnrollments = new List<nint>();
@@ -537,29 +534,40 @@ public class WindowsHelloService : IWindowsHelloService
 		}
 	}
 
+	/// <summary>
+	/// Restacks the consent window above the app and leaves it topmost so another topmost window cannot cover the PIN dialog.
+	/// </summary>
+	private static void RaiseConsentWindow(nint window)
+	{
+		var flags = NativeGeneral.SetWindowPosFlags.NoMove | NativeGeneral.SetWindowPosFlags.NoSize;
+		NativeGeneral.SetWindowPos(window, new(-2), 0, 0, 0, 0, flags);
+		NativeGeneral.SetWindowPos(window, new(-1), 0, 0, 0, 0, flags);
+		NativeGeneral.SetForegroundWindow(window);
+	}
+
 	private static async Task<KeyCredentialRetrievalResult> RequestCreateWithForegroundAsync(string keyName)
 	{
-		var raisePrompt = StartRaisingHelloPrompt();
+		var raisePrompt = StartRaisingBiometricPrompt();
 		try
 		{
 			return await KeyCredentialManager.RequestCreateAsync(keyName, KeyCredentialCreationOption.FailIfExists);
 		}
 		finally
 		{
-			await StopRaisingHelloPrompt(raisePrompt.Cancellation, raisePrompt.RaiseTask);
+			await StopRaisingBiometricPrompt(raisePrompt.Cancellation, raisePrompt.RaiseTask);
 		}
 	}
 
 	private static async Task<KeyCredentialOperationResult> RequestSignWithForegroundAsync(KeyCredential userKey, IBuffer buffer)
 	{
-		var raisePrompt = StartRaisingHelloPrompt();
+		var raisePrompt = StartRaisingBiometricPrompt();
 		try
 		{
 			return await userKey.RequestSignAsync(buffer);
 		}
 		finally
 		{
-			await StopRaisingHelloPrompt(raisePrompt.Cancellation, raisePrompt.RaiseTask);
+			await StopRaisingBiometricPrompt(raisePrompt.Cancellation, raisePrompt.RaiseTask);
 		}
 	}
 
@@ -575,14 +583,14 @@ public class WindowsHelloService : IWindowsHelloService
 		return await completion.Task;
 	}
 
-	private static (CancellationTokenSource Cancellation, Task RaiseTask) StartRaisingHelloPrompt()
+	private static (CancellationTokenSource Cancellation, Task RaiseTask) StartRaisingBiometricPrompt()
 	{
 		var cancellation = new CancellationTokenSource();
-		var raiseTask = RaiseHelloPromptAsync(cancellation.Token);
+		var raiseTask = RaiseBiometricPromptAsync(cancellation.Token);
 		return (cancellation, raiseTask);
 	}
 
-	private static async Task StopRaisingHelloPrompt(CancellationTokenSource cancellation, Task raiseTask)
+	private static async Task StopRaisingBiometricPrompt(CancellationTokenSource cancellation, Task raiseTask)
 	{
 		cancellation.Cancel();
 		try
@@ -596,23 +604,6 @@ public class WindowsHelloService : IWindowsHelloService
 		{
 			cancellation.Dispose();
 		}
-	}
-
-	private static void WaitWithoutContext(Func<Task> start)
-	{
-		var captured = SynchronizationContext.Current;
-		SynchronizationContext.SetSynchronizationContext(null);
-		Task task;
-		try
-		{
-			task = start();
-		}
-		finally
-		{
-			SynchronizationContext.SetSynchronizationContext(captured);
-		}
-
-		task.GetAwaiter().GetResult();
 	}
 
 	private static T WaitWithoutContext<T>(Func<Task<T>> start)

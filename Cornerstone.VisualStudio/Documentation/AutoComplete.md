@@ -132,7 +132,7 @@ Related types: `XamlCompletion` (`ICustomCommit`), `XamlCompletionSource` (`Appl
 
 ## Go To Definition
 
-F12 and Peek are documented in [GoToDefinition.md](GoToDefinition.md). They use the same metadata as completion. Binding paths follow `x:DataType`. Enum values and named brushes (`Center`, `Red`) open that member.
+F12 and Peek are documented in [GoToDefinition.md](GoToDefinition.md). They use the same metadata as completion. Binding paths follow `x:DataType`, including a dotted path and a property declared on a base interface. Enum values and named brushes (`Center`, `Red`) open that member.
 
 ---
 

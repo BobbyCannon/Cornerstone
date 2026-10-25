@@ -61,6 +61,7 @@ public partial class DockingTabControl : TabControl
 		IsHitTestVisible = true;
 		Margin = new Thickness(0);
 		Padding = new Thickness(0);
+		ShowTabStrip = true;
 
 		if (Design.IsDesignMode)
 		{
@@ -100,6 +101,12 @@ public partial class DockingTabControl : TabControl
 	/// </summary>
 	[StyledProperty(EnableDataValidation = true)]
 	public partial ICommand NewTabCommand { get; set; }
+
+	/// <summary>
+	/// When false, the tab headers and the new-tab button are hidden and only the selected content shows.
+	/// </summary>
+	[StyledProperty]
+	public partial bool ShowTabStrip { get; set; }
 
 	protected override Type StyleKeyOverride => typeof(DockingTabControl);
 
@@ -283,7 +290,7 @@ public partial class DockingTabControl : TabControl
 			return;
 		}
 
-		if (_dockingManager?.RuntimeInformation?.DevicePlatform == DevicePlatform.Windows)
+		if (CanTearOff(_dockingManager?.RuntimeInformation))
 		{
 			var tabBarHovered = TryGetTabBarRect(out var rect) && rect.Contains(hitPoint);
 			if (!tabBarHovered)
@@ -357,6 +364,31 @@ public partial class DockingTabControl : TabControl
 		}
 
 		base.OnPropertyChanged(change);
+	}
+
+	private static bool CanTearOff(IRuntimeInformation runtime)
+	{
+		var platform = runtime?.DevicePlatform ?? DevicePlatform.Unknown;
+		if (platform != DevicePlatform.Unknown)
+		{
+			if (platform.HasFlag(DevicePlatform.Android)
+				|| platform.HasFlag(DevicePlatform.IOS)
+				|| platform.HasFlag(DevicePlatform.Browser))
+			{
+				return false;
+			}
+
+			return platform.HasFlag(DevicePlatform.Windows)
+				|| platform.HasFlag(DevicePlatform.Linux)
+				|| platform.HasFlag(DevicePlatform.MacOS);
+		}
+
+		if (OperatingSystem.IsAndroid() || OperatingSystem.IsIOS() || OperatingSystem.IsBrowser())
+		{
+			return false;
+		}
+
+		return OperatingSystem.IsWindows() || OperatingSystem.IsLinux() || OperatingSystem.IsMacOS();
 	}
 
 	/// <summary>

@@ -61,6 +61,14 @@ public abstract class BaseMediaPlayerAdapter : IDisposable, INativeSurface
 		UpdateVideoLayout();
 	}
 
+	/// <summary>
+	/// Receives the platform child created for this host. The default child is not stored on
+	/// <see cref="NativeControlHost" /> when this returns null, so Wayland must capture it here.
+	/// </summary>
+	public virtual void BindHostHandle(IPlatformHandle parent)
+	{
+	}
+
 	public virtual void Initialize(NativeControlHost nativeHost)
 	{
 		OnInitialized();

@@ -103,6 +103,21 @@ namespace Cornerstone.Presentation
             return Deflate(-dx, -dy);
         }
 
+        /// <summary>
+        /// Returns the stroke centerline for a uniform border of <paramref name="thickness"/>
+        /// drawn inside this rounded rectangle. Radii shrink by half the thickness so the
+        /// stroke's outer edge follows this rectangle's corners.
+        /// </summary>
+        /// <param name="thickness">Uniform border thickness, in the same units as <see cref="Rect"/>.</param>
+        /// <returns>The centerline rounded rectangle, or this rectangle when <paramref name="thickness"/> is not positive.</returns>
+        public RoundedRect UniformBorderCenterline(double thickness)
+        {
+            if (thickness <= 0 || double.IsNaN(thickness))
+                return this;
+
+            return Deflate(thickness * 0.5, thickness * 0.5);
+        }
+
         public unsafe RoundedRect Deflate(double dx, double dy)
         {
             if (!IsRounded)

@@ -8,6 +8,7 @@ using Cornerstone.Presentation.Theme;
 using Cornerstone.Presentation.Theme.Theming;
 using Cornerstone.Reflection;
 using Cornerstone.Runtime;
+using Cornerstone.Sample.Theming;
 using Cornerstone.Serialization;
 using Cornerstone.Settings;
 
@@ -35,6 +36,7 @@ public partial class AppSettings : SettingsFile<AppSettings>
 		: base("ApplicationSettings.json", runtimeInformation)
 	{
 		EsriApiKey = string.Empty;
+		ThemeSkin = SampleThemeCatalog.CornerstoneName;
 		ThemeColor = ThemeColor.Blue;
 		ThemeMode = ThemeMode.Dark;
 		ThemeDensity = ThemeDensity.Normal;
@@ -55,6 +57,11 @@ public partial class AppSettings : SettingsFile<AppSettings>
 	public partial ThemeColor ThemeColor { get; set; }
 
 	/// <summary>
+	/// Skin name from <see cref="SampleThemeCatalog" />. Cornerstone is the product theme.
+	/// </summary>
+	public partial string ThemeSkin { get; set; }
+
+	/// <summary>
 	/// Compact / Normal / Large chrome and list text.
 	/// </summary>
 	public partial ThemeDensity ThemeDensity { get; set; }
@@ -71,11 +78,13 @@ public partial class AppSettings : SettingsFile<AppSettings>
 	#region Methods
 
 	/// <summary>
-	/// Push Color / Mode / Density onto the live <see cref="CornerstoneTheme" />.
+	/// Put the selected skin on Application.Styles, then push Color / Mode / Density onto it.
+	/// Skins share the product control templates, so the swap replaces the style in place.
+	/// Rebuilding templates collapses layout and makes the window jump.
 	/// </summary>
 	public void ApplyTheme()
 	{
-		var theme = Theme.GetCornerstoneTheme();
+		var theme = EnsureThemeSkin();
 		if (theme != null)
 		{
 			theme.ThemeColor = ThemeColor;
@@ -122,6 +131,12 @@ public partial class AppSettings : SettingsFile<AppSettings>
 			ThemeColor = ThemeColor.Blue;
 		}
 
+		var skin = SampleThemeCatalog.Find(ThemeSkin);
+		if (!string.Equals(ThemeSkin, skin.Name, StringComparison.Ordinal))
+		{
+			ThemeSkin = skin.Name;
+		}
+
 		ApplyTheme();
 		base.FinalizeLoad();
 	}
@@ -130,12 +145,58 @@ public partial class AppSettings : SettingsFile<AppSettings>
 	{
 		base.OnPropertyChanged(propertyName, oldValue, newValue);
 
-		if ((propertyName == nameof(ThemeColor))
+		if ((propertyName == nameof(ThemeSkin))
+			|| (propertyName == nameof(ThemeColor))
 			|| (propertyName == nameof(ThemeMode))
 			|| (propertyName == nameof(ThemeDensity)))
 		{
 			ApplyTheme();
 		}
+	}
+
+	private CornerstoneTheme EnsureThemeSkin()
+	{
+		var application = Application.Current;
+		if (application == null)
+		{
+			return null;
+		}
+
+		var skin = SampleThemeCatalog.Find(ThemeSkin);
+		var styles = application.Styles;
+		CornerstoneTheme current = null;
+		var index = -1;
+		var i = 0;
+		foreach (var style in styles)
+		{
+			if (style is CornerstoneTheme found)
+			{
+				current = found;
+				index = i;
+				break;
+			}
+
+			i++;
+		}
+
+		if ((current != null) && (current.GetType() == skin.ThemeType))
+		{
+			return current;
+		}
+
+		var created = skin.Create();
+		created.ThemeColor = ThemeColor;
+		created.ThemeMode = ThemeMode;
+		if (index >= 0)
+		{
+			styles[index] = created;
+		}
+		else
+		{
+			styles.Insert(0, created);
+		}
+
+		return created;
 	}
 
 	#endregion

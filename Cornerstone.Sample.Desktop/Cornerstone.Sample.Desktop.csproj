@@ -8,10 +8,10 @@
 		<ApplicationManifest>app.manifest</ApplicationManifest>
 	</PropertyGroup>
 	<ItemGroup Condition="$(TargetFramework.Contains('windows'))">
-		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4129.50" />
+		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
 		<PackageReference Include="Esri.ArcGISRuntime.WPF" Version="300.0.0" GeneratePathProperty="true" />
 		<PackageReference Include="Esri.ArcGISRuntime.runtimes.win" Version="300.0.0" GeneratePathProperty="true" />
-		<PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.23.1" />
+		<PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.24" />
 	</ItemGroup>
 	<ItemGroup Condition="$(TargetFramework.Contains('windows')) and '$(PkgEsri_ArcGISRuntime_runtimes_win)' != ''">
 		<None Include="$(PkgEsri_ArcGISRuntime_runtimes_win)\runtimes\win-x64\native\*.*">
@@ -33,7 +33,7 @@
 	</ItemGroup>
 	<ItemGroup Condition="!$(TargetFramework.Contains('windows'))">
 		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.4" />
-		<PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="14.2.1.102" />
+		<PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="14.2.1.301" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Cornerstone.Presentation.Diagnostics\Cornerstone.Presentation.Diagnostics.csproj" />

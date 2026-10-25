@@ -261,7 +261,7 @@ public class PlayBar : TemplatedControl
 			value = TimeSpan.Zero;
 		}
 
-		return value.ToString(@"h\:mm\:ss");
+		return value.ToString(@"hh\:mm\:ss");
 	}
 
 	private void ApplyChrome()

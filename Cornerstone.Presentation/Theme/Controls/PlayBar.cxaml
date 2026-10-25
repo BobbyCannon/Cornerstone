@@ -2,89 +2,181 @@
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 	<Styles.Resources>
 		<ResourceDictionary>
-			<ControlTheme x:Key="{x:Type PlayBar}" TargetType="PlayBar">
-				<Setter Property="Background" Value="#01FFFFFF"></Setter>
+			<ControlTheme x:Key="PlayBarSeekFill" TargetType="RepeatButton">
 				<Setter Property="Template">
 					<ControlTemplate>
-						<Border x:Name="PART_HitArea" Background="{TemplateBinding Background}">
-							<Border x:Name="PART_Bar">
+						<Border Background="Transparent">
+							<Border Height="14"
+									VerticalAlignment="Center"
+									Background="#FFA34E0C" />
+						</Border>
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+
+			<ControlTheme x:Key="PlayBarSeekRest" TargetType="RepeatButton">
+				<Setter Property="Template">
+					<ControlTemplate>
+						<Border Background="Transparent">
+							<Border Height="14"
+									VerticalAlignment="Center"
+									Background="#FF101010" />
+						</Border>
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+
+			<ControlTheme x:Key="PlayBarSeekThumb" TargetType="Thumb">
+				<Setter Property="Template">
+					<ControlTemplate>
+						<Border Background="#FFFF8614" />
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+
+			<ControlTheme x:Key="PlayBarVolumeFill" TargetType="RepeatButton">
+				<Setter Property="Template">
+					<ControlTemplate>
+						<Border Background="Transparent" />
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+
+			<ControlTheme x:Key="PlayBarVolumeRest" TargetType="RepeatButton">
+				<Setter Property="Template">
+					<ControlTemplate>
+						<Border Background="#FF101010" />
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+
+			<ControlTheme x:Key="PlayBarVolumeThumb" TargetType="Thumb">
+				<Setter Property="Template">
+					<ControlTemplate>
+						<Border Background="Transparent" />
+					</ControlTemplate>
+				</Setter>
+			</ControlTheme>
+
+			<ControlTheme x:Key="{x:Type PlayBar}" TargetType="PlayBar">
+				<Setter Property="Background" Value="{DynamicResource Background03}" />
+				<Setter Property="Theme.Color" Value="Current" />
+				<Setter Property="Template">
+					<ControlTemplate>
+						<Border x:Name="PART_HitArea"
+								 Background="{TemplateBinding Background}">
+							<Border x:Name="PART_Bar"
+									Background=""
+									Padding="10,6">
 								<Border.Transitions>
 									<Transitions>
 										<DoubleTransition Property="Opacity" Duration="0:0:0.25" />
 									</Transitions>
 								</Border.Transitions>
-								<Panel>
-									<Border Background="{DynamicResource Background02}" Opacity="0.8" />
-									<Grid RowDefinitions="Auto,Auto"
-											RowSpacing="4"
-											Margin="10">
-										<Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-											<TextBlock x:Name="PART_PositionText"
-													Grid.Column="0"
-													VerticalAlignment="Center"
-													Foreground="{DynamicResource Foreground00}"
-													Text="0:00:00" />
-											<Slider x:Name="PART_SeekSlider"
-													Grid.Column="1"
-													VerticalAlignment="Center"
-													Minimum="0"
-													Maximum="1"
-													Value="0" />
-											<TextBlock x:Name="PART_DurationText"
-													Grid.Column="2"
-													VerticalAlignment="Center"
-													Foreground="{DynamicResource Foreground00}"
-													Text="0:00:00" />
-										</Grid>
-										<Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto">
-											<Button x:Name="PART_PlayPauseButton"
-													Grid.Column="0"
-													Classes="Icon"
-													Width="48"
-													Height="40"
-													HorizontalAlignment="Left"
-													ToolTip.Tip="Play/Pause">
-												<Panel>
-													<Path x:Name="PART_PlayIcon"
-															Width="22"
-															Height="22"
-															Data="{DynamicResource Icons.Play}"
-															Margin="4,0,0,0" />
-													<Path x:Name="PART_PauseIcon"
-															Width="22"
-															Height="22"
-															Data="{DynamicResource Icons.Pause}"
-															IsVisible="False" />
-												</Panel>
-											</Button>
-											<Button x:Name="PART_MuteButton"
-													Grid.Column="1"
-													Classes="Icon"
-													Margin="0,0,4,0"
-													ToolTip.Tip="Mute">
-												<Panel>
-													<Path x:Name="PART_VolumeIcon"
-															Data="{DynamicResource Icons.Volume.Light}"
-															Height="20" Width="20"
-															Margin="0,4,0,0" />
-													<Path x:Name="PART_MuteIcon"
-															Data="{DynamicResource Icons.Volume.Mute.Light}"
-															Height="20" Width="20"
-															Margin="0,4,0,0"
-															IsVisible="False" />
-												</Panel>
-											</Button>
-											<Slider x:Name="PART_VolumeSlider"
-													Grid.Column="2"
-													Width="100"
-													VerticalAlignment="Center"
-													Minimum="0"
-													Maximum="1"
-													Value="1"
-													TickFrequency="0.05" />
-										</Grid>
+								<Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto"
+										ColumnSpacing="8"
+										VerticalAlignment="Center">
+									<Button x:Name="PART_PlayPauseButton"
+											Grid.Column="0"
+											Theme.Color="{TemplateBinding Theme.Color}"
+											Width="34"
+											Height="26"
+											Padding="0"
+											BorderThickness="0"
+											CornerRadius="4"
+											ToolTip.Tip="Play/Pause">
+										<Panel HorizontalAlignment="Center" VerticalAlignment="Center">
+											<Path x:Name="PART_PlayIcon"
+													Width="14"
+													Height="14"
+													Stretch="Uniform"
+													Margin="4,0,0,0"
+													Data="{DynamicResource Icons.Play}"
+													IsVisible="False" />
+											<Path x:Name="PART_PauseIcon"
+													Width="14"
+													Height="14"
+													Stretch="Uniform"
+													Data="{DynamicResource Icons.Pause}"
+													IsVisible="False" />
+										</Panel>
+									</Button>
+									<TextBlock x:Name="PART_PositionText"
+											Grid.Column="1"
+											FontFamily="{x:Static CornerstoneTheme.DejaVuSansMono}"
+											Text="00:00:00"
+											VerticalAlignment="Center" />
+									<Slider x:Name="PART_SeekSlider"
+											Theme.Color="{TemplateBinding Theme.Color}"
+											Grid.Column="2"
+											MinHeight="18"
+											VerticalAlignment="Center"
+											BorderThickness="0"
+											Minimum="0"
+											Maximum="1"
+											Value="0">
+										<Slider.Template>
+											<ControlTemplate>
+												<Track x:Name="PART_Track"
+														Minimum="{TemplateBinding Minimum}"
+														Maximum="{TemplateBinding Maximum}"
+														Value="{TemplateBinding Value, Mode=TwoWay}"
+														IsDirectionReversed="{TemplateBinding IsDirectionReversed}"
+														Orientation="Horizontal">
+													<Track.DecreaseButton>
+														<RepeatButton x:Name="PART_DecreaseButton"
+																Theme="{StaticResource PlayBarSeekFill}"
+																Focusable="False" />
+													</Track.DecreaseButton>
+													<Track.IncreaseButton>
+														<RepeatButton x:Name="PART_IncreaseButton"
+																Theme="{StaticResource PlayBarSeekRest}"
+																Focusable="False" />
+													</Track.IncreaseButton>
+													<Thumb x:Name="thumb"
+															Width="4"
+															Height="18"
+															Theme="{StaticResource PlayBarSeekThumb}" />
+												</Track>
+											</ControlTemplate>
+										</Slider.Template>
+									</Slider>
+									<TextBlock x:Name="PART_DurationText"
+											Grid.Column="3"
+											FontFamily="{x:Static CornerstoneTheme.DejaVuSansMono}"
+											Text="00:00:00"
+											VerticalAlignment="Center" />
+									<Button x:Name="PART_MuteButton"
+											Grid.Column="4"
+											Classes="Icon"
+											ToolTip.Tip="Mute">
+										<Panel>
+											<Path x:Name="PART_VolumeIcon"
+													Data="{DynamicResource Icons.Volume.Light}"
+													Height="20"
+													Width="20"
+													Stretch="Uniform"
+													Margin="0,2,0,0" />
+											<Path x:Name="PART_MuteIcon"
+													Data="{DynamicResource Icons.Volume.Mute.Light}"
+													Height="20"
+													Width="20"
+													Stretch="Uniform"
+													IsVisible="False" />
+										</Panel>
+									</Button>
+									<Grid Grid.Column="5"
+											Width="112"
+											VerticalAlignment="Center">
+										<Slider x:Name="PART_VolumeSlider"
+												Theme.Color="{TemplateBinding Theme.Color}"
+												MinHeight="16"
+												Minimum="0"
+												Maximum="1"
+												Value="1"
+												TickFrequency="0.05" />
 									</Grid>
-								</Panel>
+								</Grid>
 							</Border>
 						</Border>
 					</ControlTemplate>
@@ -94,8 +186,17 @@
 	</Styles.Resources>
 
 	<Design.PreviewWith>
-		<PreviewCodeSnippet Width="500">
-			<PlayBar />
+		<PreviewCodeSnippet Width="760">
+			<PreviewCodeSnippet.ItemTemplate>
+				<DataTemplate DataType="ThemeColor">
+					<PlayBar Theme.Color="{Binding}"
+							HorizontalAlignment="Center"
+							Position="00:06:34"
+							Duration="00:25:40"
+							Volume="0.78"
+							Width="700" />
+				</DataTemplate>
+			</PreviewCodeSnippet.ItemTemplate>
 		</PreviewCodeSnippet>
 	</Design.PreviewWith>
 </Styles>

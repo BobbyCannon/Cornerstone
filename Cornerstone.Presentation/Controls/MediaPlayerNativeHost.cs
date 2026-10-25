@@ -29,6 +29,13 @@ public sealed class MediaPlayerNativeHost : NativeSurfaceHost
 	public void SetAdapter(BaseMediaPlayerAdapter adapter)
 	{
 		_adapter = adapter;
+		// Template children attach before OnApplyTemplate, so the subsurface may already
+		// exist with no adapter. Recreate it now that the adapter can take the parent.
+		if (NativeHost.IsAttachedToVisualTree)
+		{
+			NativeHost.RecreateNativeControl();
+		}
+
 		RefreshPlatformSurface();
 	}
 
@@ -50,7 +57,14 @@ public sealed class MediaPlayerNativeHost : NativeSurfaceHost
 	/// <inheritdoc />
 	protected override IPlatformHandle CreateNativeControlCore(IPlatformHandle parent)
 	{
-		// Android: TextureView host. Windows: null → default HWND child for MFPlay.
+		_adapter?.BindHostHandle(parent);
+		// Returning null makes the nested host create a second subsurface and destroy
+		// this one. The visible island would stay the orange placeholder.
+		if (parent is INativePixelBufferHost)
+		{
+			return parent;
+		}
+
 		var handle = _adapter?.PlatformHandle;
 		if (handle != null)
 		{
@@ -72,6 +86,12 @@ public sealed class MediaPlayerNativeHost : NativeSurfaceHost
 		// Adapter owns the Android TextureView host for the player lifetime.
 		if ((_adapter?.PlatformHandle != null)
 			&& ReferenceEquals(control, _adapter.PlatformHandle))
+		{
+			return false;
+		}
+
+		// Wayland: the attachment owns the subsurface. The adapter only borrows it.
+		if (control is INativePixelBufferHost)
 		{
 			return false;
 		}

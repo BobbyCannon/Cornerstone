@@ -556,6 +556,18 @@ public class RuntimeInformation : CornerstoneObject, IRuntimeInformation
 		#elif WINDOWS
 		return DevicePlatform.Windows;
 		#else
+		if (OperatingSystem.IsWindows())
+		{
+			return DevicePlatform.Windows;
+		}
+		if (OperatingSystem.IsLinux())
+		{
+			return DevicePlatform.Linux;
+		}
+		if (OperatingSystem.IsMacOS())
+		{
+			return DevicePlatform.MacOS;
+		}
 		return DevicePlatform.Unknown;
 		#endif
 	}

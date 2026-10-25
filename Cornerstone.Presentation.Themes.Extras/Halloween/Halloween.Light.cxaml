@@ -1,0 +1,33 @@
+<ResourceDictionary xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<!-- Pumpkin cream and purple ink, the light side of the same Halloween palette. -->
+	<Color x:Key="Background00">#FFF6EE</Color>
+	<Color x:Key="Background01">#FFE8D2</Color>
+	<Color x:Key="Background02">#F6D4B4</Color>
+	<Color x:Key="Background03">#ECC09A</Color>
+	<Color x:Key="Background04">#E0A878</Color>
+	<Color x:Key="Background05">#D49268</Color>
+	<Color x:Key="Background06">#C45E16</Color>
+	<Color x:Key="Background07">#A84810</Color>
+	<Color x:Key="Background08">#6A3010</Color>
+	<Color x:Key="Background09">#3A1860</Color>
+	<Color x:Key="Foreground00">#1A0A14</Color>
+	<Color x:Key="Foreground01">#2C1020</Color>
+	<Color x:Key="Foreground02">#3A1860</Color>
+	<Color x:Key="Foreground03">#4A2274</Color>
+	<Color x:Key="Foreground04">#5C2C88</Color>
+	<Color x:Key="Foreground05">#6E38A0</Color>
+	<Color x:Key="Foreground06">#8A4CB8</Color>
+	<Color x:Key="Foreground07">#A86AD0</Color>
+	<Color x:Key="Foreground08">#C49A78</Color>
+	<Color x:Key="Foreground09">#D7B08C</Color>
+
+	<ResourceDictionary.MergedDictionaries>
+		<ResourceInclude Source="csres://Cornerstone.Presentation/Theming/SyntaxColor.Light.cxaml" />
+		<ResourceInclude Source="csres://Cornerstone.Presentation/Theming/Theme.Shared.cxaml" />
+	</ResourceDictionary.MergedDictionaries>
+
+	<Color x:Key="SelectionColor">#66E85D04</Color>
+	<SolidColorBrush x:Key="SelectionBrush" Color="#66E85D04" />
+</ResourceDictionary>

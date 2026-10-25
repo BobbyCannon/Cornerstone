@@ -11,7 +11,7 @@ namespace Cornerstone.PowerShell.Cmdlets;
 
 [CmdletGroup(CmdletGroups.Environment)]
 [Cmdlet(VerbsLifecycle.Restart, "WebsiteAppPool")]
-[CmdletDescription("Restart a website application pool")]
+[CmdletDescription("Restart (or start) a website application pool.")]
 [CmdletExample(Code = "", Remarks = "")]
 public class RestartWebsiteAppPoolCmdlet : PSCmdlet
 {
@@ -28,7 +28,19 @@ public class RestartWebsiteAppPoolCmdlet : PSCmdlet
 	{
 		using var server = new ServerManager();
 		var sitePool = server.ApplicationPools.FirstOrDefault(pool => pool.Name == Name);
-		sitePool?.Recycle();
+		if (sitePool == null)
+		{
+			return;
+		}
+
+		// Recycle throws 0x800710D8 when the pool is stopped.
+		if (sitePool.State == ObjectState.Stopped)
+		{
+			sitePool.Start();
+			return;
+		}
+
+		sitePool.Recycle();
 	}
 
 	#endregion

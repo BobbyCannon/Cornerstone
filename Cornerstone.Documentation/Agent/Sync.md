@@ -63,6 +63,7 @@ These are the engine’s working laws. Speedy is the behavioral source of truth 
 - **A repository syncs only when a filter is registered for that entity type.** An empty set syncs nothing. `AddFilter` with null predicates still includes that type. Speedy’s empty set syncs every repository. Cornerstone does not. Do not restore that Speedy rule.
 - Filters key on **entity** type. Incoming wire TypeName is the **model**.
 - **`scopeFilter` is the store fence.** GetChanges WHERE is time window AND scope AND outgoing. Lookup `Where` is lookup AND scope. Both are the queries sync already runs. Apply still does one indexed `Read(SyncId)` per row and per related id. Scope on that instance is in memory (`FailsScope`). A null read is a new row and does not query again. A stored row outside scope is `SyncEntityFiltered` (this row) or `RelationshipConstraint` (related) and is not inserted again. `ShouldFilterIncomingEntity` runs `incomingFilter` only. Do not add an existence probe. Thousands to millions of objects make a second query per miss too expensive.
+- **Do not copy the scope predicate onto `outgoingFilter` or into the lookup expression.** Scope is already ANDed into both queries. Outgoing is only the extra travel limit (`CanSync`, a date window, or `false` for write-only). Lookup is only the business key.
 - Incoming/outgoing are **entity travel policy** (write-only: outgoing `false`; catalog: incoming `false`; date/`CanSync` extras on one side). They do not substitute for scope on the store. Incoming-only does **not** hide pull. Outgoing-only does **not** hide a stored row outside scope. There is no “outgoing null → use incoming” fallback in SQL or EF. The server sync client decides a new row (stamp the session owner, or return false).
 - Lookup filter is **this-row identity** (business key instead of SyncId). It does not walk `*SyncId`. Related bind and `GetEntityPrimaryKey` are one `Read(syncId)`. Lookup miss then that same read: in-scope is a merge, out-of-scope is `SyncEntityFiltered`, not a second insert. Missing does not probe again.
 - Payload fields can be rewritten to pass the incoming filter. The stored row from that one read cannot. `FailsScope` on that instance refuses the update. Test that path (SyncId steal/delete).
@@ -143,7 +144,7 @@ The first walk (`enforceMissing: false`) fills `AccountId` from `AccountSyncId` 
 
 `BrowserBookmark` scopes stored rows on `AccountId`. Its model does not pack `AccountSyncId`, so the walk cannot fill `AccountId` from the packet. Scope does not reject that incoming image. A stored row for another account is still refused. `UpdateBrowserBookmark` stamps the session account when the stored `AccountSyncId` is empty, including an update of a row this account already owns. The relationship walk treats that empty value as no account and would write `AccountId` 0, and the account foreign key rejects the save. A stored `AccountSyncId` that is already set is left alone. Do not add `AccountSyncId` to that model unless asked.
 
-`AccountSetting` packs `AccountSyncId` and does not pack `AccountId`. Hub scope is `AccountId ==` the signed-in account, on GetChanges, lookup, and the stored row from one `Read(SyncId)`. Outgoing is `CanSync` only. Lookup is that account plus `SyncId`, or that account plus name, category, and `SyncDeviceSyncId`. There is no device exception and no `IsAccountSettingInScope`. A new setting stays `AccountId` 0 and is not scope-rejected. `UpdateAccountSetting` requires `CanSync`, refuses a stored row whose `AccountId` is another account, then `AssignAccount`. Deletes return false.
+`AccountSetting` packs `AccountSyncId` and does not pack `AccountId`. Hub scope is `AccountId ==` the signed-in account, on GetChanges, lookup, and the stored row from one `Read(SyncId)`. Outgoing is `CanSync` only. Do not copy `AccountId` onto that outgoing filter. Lookup is name, category, and the resolved `SyncDeviceId`. `UpdateLocalRelationships` sets that integer from `SyncDeviceSyncId` before the lookup read. Scope already ANDs `AccountId`, so the lookup expression does not repeat it and does not OR `SyncId`. The unique index is `(Name, AccountId, Category, SyncDeviceId)` where `SyncDeviceId` is not null. One payload whose `SyncId` names a different device's row would match two stored rows, and rewriting the `SyncId` row onto the other device hits that index. There is no device exception and no `IsAccountSettingInScope`. A new setting stays `AccountId` 0 and is not scope-rejected. `UpdateAccountSetting` requires `CanSync`, refuses a stored row whose `AccountId` is another account, then `AssignAccount`. Deletes return false. Client lookup is still name plus category.
 
 `EmptyFiltersExcludeOutgoingChanges` expects GetChanges to return nothing when no filter is registered. That is the engine rule. Do not restore the old Speedy behavior where an empty set synced every repository.
 
@@ -458,10 +459,10 @@ A type participates only when `AddFilter` registered it (`ShouldSyncRepository`)
 
 ```csharp
 settings.AddFilter<AccountEntity>(
-    scopeFilter: x => x.CustomerSyncId == tenant,  // store fence: GetChanges, lookup, SyncId reads
-    outgoingFilter: x => !x.IsDeleted,             // extra GetChanges travel
+    scopeFilter: x => x.CustomerSyncId == tenant,  // ownership. GetChanges and lookup AND this. Do not repeat it.
+    outgoingFilter: x => !x.IsDeleted,             // extra GetChanges travel only
     incomingFilter: x => x.Status != ...,          // extra apply travel (true to KEEP)
-    lookupFilter: e => x => x.Email == e.Email,    // optional alternate match key (AND scope)
+    lookupFilter: e => x => x.Email == e.Email,    // business key only. The repository ANDs scope.
     skipDeletedItemsOnInitialSync: true,
     orderBy: ...
 );
@@ -814,7 +815,7 @@ Register the type with `AddFilter`, or it does not sync. Null predicates still i
 |------|-----------------|
 | Include/exclude entity type for a sync | `SyncSettings.AddFilter` / remove filter |
 | Limit which stored rows sync can read or write | `scopeFilter` |
-| Change which rows go out (travel) | Outgoing expression on filter |
+| Change which rows go out (travel) | Outgoing expression on filter. Extra travel only. Do not repeat `scopeFilter`. |
 | Reject certain incoming rows (travel) | Incoming expression on filter |
 | Match on business key not SyncId | `lookupFilter` (ANDed with scope) |
 | Map non-matching property names | Converter `fromSyncModel` / `toSyncModel` / `update` |
@@ -858,7 +859,7 @@ Register the type with `AddFilter`, or it does not sync. Null predicates still i
 21. **Pull then push** — Speedy order. Pull first, exclude `SyncId`+`ModifiedOn`, then push. Do not apply a client page in the same `Sync()` that returns server GetChanges.  
 22. **Hub vs peer** — `ServerSyncClient` is only for an untrusted hub. Peer sync uses a normal `SyncClient` in the server slot; that peer still wins the session.
 23. **Server table size** — hub repositories are 100 million+ rows. No `ReadAllKeys` on the server, no filter that scans the table, no convert-the-page-then-apply pass, no existence probe after a SyncId miss. GetChanges is CreatedOn-or-ModifiedOn in the window, ordered by the filter `OrderBy` when set, then ModifiedOn, then Id, paged with `Skip`/`Take` like Speedy. Do not resume with local `Id` or entity type name. Index `ModifiedOn` (`[SqlIndex]` on `SyncEntity`; EF maps must add `HasIndex` — Sample does). Related checks are one indexed `Read(syncId)` after convert, and only when that type has scope or an incoming filter. Scope on that instance is in memory.
-24. **Scope vs travel** — `scopeFilter` fences GetChanges, lookup, and the stored row already loaded by `Read(SyncId)`. A new row is the incoming filter and the server sync client. Outgoing-only still leaves a new apply open. Incoming-only still leaves pull open. Write-only is scope + outgoing `false` for GetChanges; a new apply still lands unless an incoming filter refuses it. Catalog is incoming `false` (often no scope).
+24. **Scope vs travel** — `scopeFilter` fences GetChanges, lookup, and the stored row already loaded by `Read(SyncId)`. Do not copy that predicate onto `outgoingFilter` or into the lookup expression. A new row is the incoming filter and the server sync client. Outgoing-only still leaves a new apply open. Incoming-only still leaves pull open. Write-only is scope + outgoing `false` for GetChanges; a new apply still lands unless an incoming filter refuses it. Catalog is incoming `false` (often no scope).
 25. **Lookup filter is this-row identity** — do not resolve `*SyncId` / `GetEntityPrimaryKey` with a stub that only has `SyncId` set.
 26. **Failed update must Discard** — SQL `Read` attaches INPC; a false `UpdateEntity` still queued an upsert until Discard.
 27. **Delete copies payload** — existing-row delete runs `UpdateEntity` then sets `IsDeleted`. Client pull does not last-write-wins on deletes (hub wins). Server push still skips when hub `ModifiedOn` is newer so an older spoke tombstone cannot wipe another spoke’s hub row.

@@ -36,10 +36,17 @@ namespace Cornerstone.Presentation.Controls.Text;
 [Updateable(UpdateableAction.All, ["*"])]
 public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel>
 {
+	#region Fields
+
+	private readonly List<DeferredDocumentChange> _deferredDocumentChanges;
+
+	#endregion
+
 	#region Constructors
 
 	public TextEditorViewModel()
 	{
+		_deferredDocumentChanges = [];
 		Buffer = new StringGapBuffer(16384);
 		Lines = new LineManager(this);
 		Carets = new CaretManager(this);
@@ -276,6 +283,11 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 
 	public int Delete(int offset, bool forward)
 	{
+		if (IsReadOnly)
+		{
+			return 0;
+		}
+
 		if (Carets.Count > 1)
 		{
 			var total = 0;
@@ -349,14 +361,14 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 	{
 		if ((modifiers & KeyModifiers.Alt) != 0)
 		{
-			var caret = Carets.AddAt(offset);
-			if (caret == null)
+			var active = Carets.PlaceActiveAt(offset);
+			if (active == null)
 			{
 				return;
 			}
 
-			caret.Selection.Reset(offset);
-			caret.Selection.StartMouseSelection();
+			active.Selection.Reset(offset);
+			active.Selection.StartMouseSelection();
 			return;
 		}
 
@@ -394,6 +406,11 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 	/// </summary>
 	public void Indent()
 	{
+		if (IsReadOnly)
+		{
+			return;
+		}
+
 		ForEachCaretEdit(caret =>
 		{
 			if (caret.Selection.Length > 0)
@@ -611,7 +628,7 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 	/// </summary>
 	public void ProcessPaste(string text)
 	{
-		if (string.IsNullOrEmpty(text))
+		if (IsReadOnly || string.IsNullOrEmpty(text))
 		{
 			return;
 		}
@@ -636,7 +653,7 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 
 	public void ProcessTextInput(string text)
 	{
-		if (string.IsNullOrEmpty(text))
+		if (IsReadOnly || string.IsNullOrEmpty(text))
 		{
 			return;
 		}
@@ -678,6 +695,34 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 		var removed = Buffer.Substring(offset, length);
 		Buffer.RemoveAt(offset, length);
 		OnDocumentChanged(offset, removed, TextDocumentChangeType.Remove);
+	}
+
+	/// <summary>
+	/// Removes text and shifts the other carets before the document notification.
+	/// The notification clamps anything still past the end. Clamping first, then
+	/// shifting, moves an end caret twice.
+	/// </summary>
+	private int RemoveText(int offset, int length, Caret source)
+	{
+		if ((offset < 0) || (length <= 0) || (offset >= Buffer.Count))
+		{
+			return 0;
+		}
+
+		if ((offset + length) > Buffer.Count)
+		{
+			length = Buffer.Count - offset;
+			if (length <= 0)
+			{
+				return 0;
+			}
+		}
+
+		var removed = Buffer.Substring(offset, length);
+		Buffer.RemoveAt(offset, length);
+		Carets.ShiftAfter(offset, -length, source);
+		OnDocumentChanged(offset, removed, TextDocumentChangeType.Remove);
+		return length;
 	}
 
 	public void SelectAllText()
@@ -765,6 +810,11 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 	/// </summary>
 	public void Unindent()
 	{
+		if (IsReadOnly)
+		{
+			return;
+		}
+
 		ForEachCaretEdit(caret =>
 		{
 			if (caret.Selection.Length > 0)
@@ -840,7 +890,6 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 		try
 		{
 			NotifyComputedPropertyChanged(nameof(DocumentLength));
-			NotifyComputedPropertyChanged(nameof(UndoManager));
 		}
 		catch
 		{
@@ -849,12 +898,82 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 		Carets.EnsureAllInDocument();
 		try
 		{
+			Carets.UpdateVisualLayouts();
+		}
+		catch
+		{
+			// Visuals are derived from lines. A bad line must not drop the edit.
+		}
+
+		if (UndoManager.IsProcessing || UndoManager.IsCompoundOpen)
+		{
+			// Paste and other grouped edits commit the undo unit after this returns.
+			// Hold the host event until that commit so CanUndo matches the buffer.
+			_deferredDocumentChanges.Add(new DeferredDocumentChange(args, Lines.LastEditNeedsPaintOnly));
+			return;
+		}
+
+		NotifyUndoManagerChanged();
+		RaiseDocumentChanged(args);
+	}
+
+	internal void CommitDeferredDocumentChanges()
+	{
+		if (UndoManager.IsProcessing || UndoManager.IsCompoundOpen || (_deferredDocumentChanges.Count == 0))
+		{
+			return;
+		}
+
+		var pending = _deferredDocumentChanges.ToArray();
+		_deferredDocumentChanges.Clear();
+		NotifyUndoManagerChanged();
+		foreach (var change in pending)
+		{
+			Lines.RestoreLastEditNeedsPaintOnly(change.PaintOnly);
+			RaiseDocumentChanged(change.Args);
+		}
+	}
+
+	internal void DiscardDeferredDocumentChanges()
+	{
+		_deferredDocumentChanges.Clear();
+	}
+
+	private void NotifyUndoManagerChanged()
+	{
+		try
+		{
+			NotifyComputedPropertyChanged(nameof(UndoManager));
+		}
+		catch
+		{
+			// Host listeners must not take down typing.
+		}
+	}
+
+	private void RaiseDocumentChanged(TextDocumentChangedArgs args)
+	{
+		try
+		{
 			DocumentChanged?.Invoke(this, args);
 		}
 		catch
 		{
 			// Host listeners must not take down typing.
 		}
+	}
+
+	private readonly struct DeferredDocumentChange
+	{
+		public DeferredDocumentChange(TextDocumentChangedArgs args, bool paintOnly)
+		{
+			Args = args;
+			PaintOnly = paintOnly;
+		}
+
+		public TextDocumentChangedArgs Args { get; }
+
+		public bool PaintOnly { get; }
 	}
 
 	internal void NotifyDiagnosticVersion(int version)
@@ -873,6 +992,11 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 
 	internal void HandleEnterKey()
 	{
+		if (IsReadOnly)
+		{
+			return;
+		}
+
 		ForEachCaretEdit(caret =>
 		{
 			TryRemoveSelection(caret, out _);
@@ -955,11 +1079,7 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 			for (var i = segments.Count - 1; i >= 0; i--)
 			{
 				var segment = segments[i];
-				var text = Buffer.Substring(segment.StartOffset, segment.Length);
-				Buffer.RemoveAt(segment.StartOffset, segment.Length);
-				OnDocumentChanged(segment.StartOffset, text, TextDocumentChangeType.Remove);
-				Carets.ShiftAfter(segment.StartOffset, -segment.Length, caret);
-				removed += segment.Length;
+				removed += RemoveText(segment.StartOffset, segment.Length, caret);
 			}
 
 			var caretTarget = segments[0].StartOffset;
@@ -968,13 +1088,14 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 			return true;
 		}
 
-		removed = end - start;
-		var selection = Buffer.Substring(start, removed);
-		Buffer.RemoveAt(start, removed);
+		removed = RemoveText(start, end - start, caret);
+		if (removed <= 0)
+		{
+			return false;
+		}
+
 		caret.Move(start);
 		caret.Selection.Reset(start);
-		OnDocumentChanged(start, selection, TextDocumentChangeType.Remove);
-		Carets.ShiftAfter(start, -removed, caret);
 		return true;
 	}
 
@@ -1035,17 +1156,12 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 			&& (Buffer[offset - 1] == '\r'))
 		{
 			offset--;
-			Buffer.RemoveAt(offset, 2);
-			OnDocumentChanged(offset, "\r\n", TextDocumentChangeType.Remove);
-			Carets.ShiftAfter(offset, -2, caret);
+			RemoveText(offset, 2, caret);
 			caret.Move(offset);
 			return 2;
 		}
 
-		var removed = Buffer.Substring(offset, 1);
-		Buffer.RemoveAt(offset, 1);
-		OnDocumentChanged(offset, removed, TextDocumentChangeType.Remove);
-		Carets.ShiftAfter(offset, -1, caret);
+		RemoveText(offset, 1, caret);
 		caret.Move(offset);
 		return 1;
 	}
@@ -1072,16 +1188,12 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 			&& ((caretOffset + 1) < Buffer.Count)
 			&& (Buffer[caretOffset + 1] == '\n'))
 		{
-			Buffer.RemoveAt(caretOffset, 2);
-			OnDocumentChanged(caretOffset, "\r\n", TextDocumentChangeType.Remove);
-			Carets.ShiftAfter(caretOffset, -2, caret);
+			RemoveText(caretOffset, 2, caret);
 			caret.Move(caretOffset);
 			return 2;
 		}
-		var deleted = Buffer.Substring(caretOffset, 1);
-		Buffer.RemoveAt(caretOffset, 1);
-		OnDocumentChanged(caretOffset, deleted, TextDocumentChangeType.Remove);
-		Carets.ShiftAfter(caretOffset, -1, caret);
+
+		RemoveText(caretOffset, 1, caret);
 		caret.Move(caretOffset);
 		return 1;
 	}
@@ -1158,6 +1270,15 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 
 			Carets.MergeOverlapping();
 			Carets.EnsureAllInDocument();
+			try
+			{
+				// Inserts shift carets after the notification. Refresh once the group is done.
+				Carets.UpdateVisualLayouts();
+			}
+			catch
+			{
+				// Visuals are derived from lines. A bad line must not drop the edit.
+			}
 		}
 		finally
 		{
@@ -1324,8 +1445,7 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 			removeOffset = Math.Max(line.StartOffset, offset - removeCount);
 		}
 
-		RemoveAt(removeOffset, removeCount);
-		Carets.ShiftAfter(removeOffset, -removeCount, caret);
+		RemoveText(removeOffset, removeCount, caret);
 
 		var newOffset = offset - removeCount;
 		caret.Move(Math.Max(line.StartOffset, newOffset));
@@ -1396,8 +1516,7 @@ public partial class TextEditorViewModel : CornerstoneObject<TextEditorViewModel
 		for (var i = 0; i < changes.Count; i++)
 		{
 			var (offset, length) = changes[i];
-			RemoveAt(offset, length);
-			Carets.ShiftAfter(offset, -length, caret);
+			RemoveText(offset, length, caret);
 		}
 
 		var newStart = Math.Max(0, startOffset - removedFromStart);

@@ -20,27 +20,39 @@
 		<Compile Include="..\Cornerstone.Generators\Reflection\*.cs" LinkBase="Reflection" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
-		<PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.11" />
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.1" />
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.13" />
 		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
 		<PackageReference Include="NuGet.Frameworks" Version="7.9.0" />
 	</ItemGroup>
+	<!-- SqlClient 7.1.1 asks for Pkcs >= 9.0.18. The Directory.Build.props pin is PrivateAssets=all, so the package never depended on 10.0.13 and consumers restored vulnerable 9.0.18. -->
+	<ItemGroup>
+		<PackageReference Remove="System.Security.Cryptography.Pkcs" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+		<Compile Include="Platforms\Linux\**\*.cs" />
+		<Compile Include="Platforms\MacOS\**\*.cs" />
+		<Compile Include="Platforms\Windows\WindowsScreenSampler.cs" />
+	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
-		<PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.90" />
+		<PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.110" />
 		<Compile Include="Platforms\Android\**\*.cs" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0-browser'">
-		<PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.90" />
+		<PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.110" />
 		<Compile Include="Platforms\Browser\**\*.cs" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0-ios'">
-		<PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.90" />
+		<PackageReference Include="Microsoft.Maui.Essentials" Version="10.0.110" />
 		<Compile Include="Platforms\iOS\**\*.cs" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows10.0.26100.0'">
 		<Compile Include="Platforms\Windows\**\*.cs" />
-		<PackageReference Include="System.Management" Version="10.0.11" />
-		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.11" />
+		<PackageReference Include="System.Management" Version="10.0.13" />
+		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.13" />
 	</ItemGroup>
 	<ItemGroup>
 		<InternalsVisibleTo Include="Cornerstone.Automation, PublicKey=0024000004800000940000000602000000240000525341310004000001000100f97abdc5a6bc1880e495fb5575d8c7758e32b31d901068015d0e4f9d21dfa2d3eda859956e585ebc5d62066957face3530698eaa1eace45a9175da66211e9fff0deb7b686e01743a9a1acee9f42b8edf341c4f97a8212006a5ac0a6c211bc8206dc87f190f890ff1d041c9eb3eda3bb863240775b8ef2580ec4bca96ac0365d8" />

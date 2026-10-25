@@ -35,6 +35,7 @@ Full map: [Projects.md](Projects.md). Short list:
 | `Cornerstone.Designer.HostApp` | Exe Visual Studio launches for the XAML previewer (design-mode load + remote protocol) |
 | `Cornerstone.Presentation.Diagnostics` | Optional DevTools (`AttachDevTools`) |
 | `Cornerstone.Presentation.Sandbox` | Unstyled desktop smoke-test app |
+| `Cornerstone.Presentation.Themes.Extras` | Demo skins (`HalloweenTheme`). Not packed |
 
 ---
 

@@ -8,9 +8,8 @@ using Cornerstone.Platforms.Android;
 namespace Cornerstone.Presentation.Platforms.Android;
 
 /// <summary>
-/// Holds the current Android activity for native camera / media features that need a
-/// lifecycle owner or window (CameraX, PixelCopy, system video intents).
-/// Call <see cref="Initialize" /> from your main activity (e.g. OnCreate).
+/// Holds the current Android activity for native features that need a window.
+/// CornerstoneActivity registers itself. A host can still call Initialize from OnCreate.
 /// </summary>
 public static class AndroidHost
 {

@@ -125,6 +125,43 @@ After
 
 ---
 
+## Delete
+
+Delete with the caret on the line break joins the next line when that line has a leading indent. The line break and the indent (spaces or tabs) become one space. The caret sits after that space. This is any line, not only a start tag.
+
+A line with no indent is left to the editor. A selection is left to the editor. An open completion list is left to the editor.
+
+```
+Before
+<TextBlock Classes="InputValue"|
+                    Text="" />
+
+After
+<TextBlock Classes="InputValue" |Text="" />
+```
+
+The twenty spaces before `Text` are the indent. They are not kept.
+
+```
+Before
+<StackPanel>|
+    <TextBlock />
+
+After
+<StackPanel> |<TextBlock />
+```
+
+```
+Before
+Hello|
+        world
+
+After
+Hello |world
+```
+
+---
+
 ## More behavior
 
 Add a heading per key or gesture. One short rule, then Before / After pairs. Useful next topics: quote skipping, self-closing versus container tags on commit, and paste.

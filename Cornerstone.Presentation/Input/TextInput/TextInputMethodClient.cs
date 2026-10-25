@@ -40,6 +40,11 @@ namespace Cornerstone.Presentation.Input.TextInput
         public abstract Visual TextViewVisual { get; }
 
         /// <summary>
+        /// When false, the platform must not open the soft keyboard for this client.
+        /// </summary>
+        public virtual bool ShowInputPane => true;
+
+        /// <summary>
         /// Indicates if TextViewVisual is capable of displaying non-committed input on the cursor position
         /// </summary>
         public abstract bool SupportsPreedit { get; }

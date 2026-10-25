@@ -285,62 +285,6 @@ public abstract class SyncClientForDatabase : SyncClient
 		return new ServiceResult<SyncObject>();
 	}
 
-	private (int Total, List<(ISyncableRepository Repository, int Count)> Repositories) GetChangeCount(
-		ISyncableDatabase database,
-		SyncRequest request)
-	{
-		using var getChangeCount = Profiler.Start("GetChangeCount");
-		if (request.Skip == 0)
-		{
-			_changeCountCache = null;
-		}
-
-		var repositories = new List<(ISyncableRepository Repository, int Count)>();
-		if (_changeCountCache is { } cached
-			&& (cached.Since == request.Since)
-			&& (cached.Until == request.Until))
-		{
-			var byName = new Dictionary<string, ISyncableRepository>();
-			foreach (var repository in database.GetSyncableRepositories())
-			{
-				byName[repository.TypeName] = repository;
-			}
-
-			var total = 0;
-			foreach (var (typeName, count) in cached.Counts)
-			{
-				if (!byName.TryGetValue(typeName, out var repository))
-				{
-					continue;
-				}
-
-				repositories.Add((repository, count));
-				total += count;
-			}
-
-			return (total, repositories);
-		}
-
-		var counts = new List<(string TypeName, int Count)>();
-		var counted = 0;
-		foreach (var repository in database.GetSyncableRepositories())
-		{
-			if (SyncSettings.ShouldExcludeRepository(repository.TypeName)
-				|| ((Converter != null) && !Converter.CanConvertOutgoing(repository.TypeName)))
-			{
-				continue;
-			}
-
-			var count = repository.GetChangeCount(request.Since, request.Until, SyncSettings.GetFilter(repository));
-			repositories.Add((repository, count));
-			counts.Add((repository.TypeName, count));
-			counted += count;
-		}
-
-		_changeCountCache = (request.Since, request.Until, counts);
-		return (counted, repositories);
-	}
-
 	private ServiceResult<SyncIssue> ApplyChanges(ServiceRequest<SyncObject> changes, bool corrections)
 	{
 		using var applyChanges = Profiler.Start(nameof(ApplyChanges));
@@ -434,11 +378,121 @@ public abstract class SyncClientForDatabase : SyncClient
 		return relationships.ToArray();
 	}
 
+	private SyncIssue CreateIssue(Guid id, string typeName, SyncIssueType issueType, string message)
+	{
+		return new SyncIssue
+		{
+			Id = id,
+			IssueType = issueType,
+			Message = message,
+			Side = IsServerClient ? "Server" : "Client",
+			TypeName = typeName ?? string.Empty
+		};
+	}
+
+	private SyncIssue CreateIssue(SyncObject syncObject, SyncIssueType issueType, string message)
+	{
+		return CreateIssue(syncObject.SyncId, syncObject.TypeName, issueType, message);
+	}
+
+	private bool DependsOnUnpersistedAdd(ISyncableDatabase database, ISyncEntity entity)
+	{
+		if (_groupAdded == null)
+		{
+			return false;
+		}
+
+		foreach (var relationship in GetRelationshipConfigurations(entity.GetRealType(), database))
+		{
+			var relatedSyncId = GetRelatedSyncId(entity, relationship);
+			if (relatedSyncId == null)
+			{
+				continue;
+			}
+
+			if (_groupAdded.TryGetValue((relationship.Type.ToAssemblyName(), relatedSyncId.Value), out var added)
+				&& !HasPersistedKey(added))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private string DescribeUpdateFailure(SyncObject syncObject, SyncObjectStatus status, string reason)
+	{
+		var side = IsServerClient ? "Server" : "Client";
+		if (string.IsNullOrEmpty(reason))
+		{
+			reason = "No reason was provided.";
+		}
+
+		return $"{side} refused {status} of {syncObject.TypeName} ({syncObject.SyncId}). {reason}";
+	}
+
+	private (int Total, List<(ISyncableRepository Repository, int Count)> Repositories) GetChangeCount(
+		ISyncableDatabase database,
+		SyncRequest request)
+	{
+		using var getChangeCount = Profiler.Start("GetChangeCount");
+		if (request.Skip == 0)
+		{
+			_changeCountCache = null;
+		}
+
+		var repositories = new List<(ISyncableRepository Repository, int Count)>();
+		if (_changeCountCache is { } cached
+			&& (cached.Since == request.Since)
+			&& (cached.Until == request.Until))
+		{
+			var byName = new Dictionary<string, ISyncableRepository>();
+			foreach (var repository in database.GetSyncableRepositories())
+			{
+				byName[repository.TypeName] = repository;
+			}
+
+			var total = 0;
+			foreach (var (typeName, count) in cached.Counts)
+			{
+				if (!byName.TryGetValue(typeName, out var repository))
+				{
+					continue;
+				}
+
+				repositories.Add((repository, count));
+				total += count;
+			}
+
+			return (total, repositories);
+		}
+
+		var counts = new List<(string TypeName, int Count)>();
+		var counted = 0;
+		foreach (var repository in database.GetSyncableRepositories())
+		{
+			if (SyncSettings.ShouldExcludeRepository(repository.TypeName)
+				|| ((Converter != null) && !Converter.CanConvertOutgoing(repository.TypeName)))
+			{
+				continue;
+			}
+
+			var count = repository.GetChangeCount(request.Since, request.Until, SyncSettings.GetFilter(repository));
+			repositories.Add((repository, count));
+			counts.Add((repository.TypeName, count));
+			counted += count;
+		}
+
+		_changeCountCache = (request.Since, request.Until, counts);
+		return (counted, repositories);
+	}
+
 	[UnconditionalSuppressMessage("Trimming", "IL2067", Justification = "Related types are sync entities registered with SourceReflector.")]
 	private ISyncEntity GetRelatedBySyncId(ISyncableDatabase database, Type relatedType, Guid syncId)
 	{
 		var typeName = relatedType.ToAssemblyName();
 		var key = (typeName, syncId);
+
 		// A parent added in this group has no database key until SaveChanges.
 		// Reading it back would copy 0 (or a temporary key) into the child and
 		// the group insert fails the foreign key. Use the instance only after
@@ -484,6 +538,24 @@ public abstract class SyncClientForDatabase : SyncClient
 		return _relationshipCache.GetOrAdd(entityType, type => BuildRelationships(type, database));
 	}
 
+	[UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Sync entity Id is a public property on source-reflected sync entities.")]
+	private static bool HasPersistedKey(ISyncEntity entity)
+	{
+		var idProperty = entity.GetRealType().GetProperty("Id", BindingFlags.Instance | BindingFlags.Public);
+		return (idProperty != null) && IsPersistedKeyValue(idProperty.GetValue(entity));
+	}
+
+	private static bool IsPersistedKeyValue(object id)
+	{
+		return id switch
+		{
+			int value => value > 0,
+			long value => value > 0,
+			Guid value => value != Guid.Empty,
+			_ => false
+		};
+	}
+
 	/// <summary>
 	/// Process the sync object.
 	/// </summary>
@@ -500,13 +572,7 @@ public abstract class SyncClientForDatabase : SyncClient
 
 		if (Converter == null)
 		{
-			issues.Add(new SyncIssue
-			{
-				Id = syncObject.SyncId,
-				IssueType = SyncIssueType.UpdateException,
-				Message = "A sync converter is required.",
-				TypeName = syncObject.TypeName
-			});
+			issues.Add(CreateIssue(syncObject, SyncIssueType.UpdateException, "A sync converter is required."));
 			return false;
 		}
 
@@ -518,13 +584,7 @@ public abstract class SyncClientForDatabase : SyncClient
 
 		if (syncEntity == null)
 		{
-			issues.Add(new SyncIssue
-			{
-				Id = syncObject.SyncId,
-				IssueType = SyncIssueType.UpdateException,
-				Message = "Failed to convert the incoming sync object.",
-				TypeName = syncObject.TypeName
-			});
+			issues.Add(CreateIssue(syncObject, SyncIssueType.UpdateException, "Failed to convert the incoming sync object."));
 			return false;
 		}
 
@@ -532,13 +592,7 @@ public abstract class SyncClientForDatabase : SyncClient
 
 		if (SyncSettings.ShouldExcludeRepository(syncEntity.GetRealType()))
 		{
-			var issue = new SyncIssue
-			{
-				Id = syncObject.SyncId,
-				IssueType = SyncIssueType.RepositoryFiltered,
-				Message = "The item is not being processed because this repository not syncable.",
-				TypeName = syncObject.TypeName
-			};
+			var issue = CreateIssue(syncObject, SyncIssueType.RepositoryFiltered, "The item is not being processed because this repository not syncable.");
 			issues.Add(issue);
 			Logger?.Write(LogLevel.Debug, SyncSessionStart?.Id ?? Guid.Empty, issue.Message, DateTimeProvider.UtcNow);
 			return false;
@@ -546,7 +600,7 @@ public abstract class SyncClientForDatabase : SyncClient
 
 		// Scope filters compare local *Id. Resolve *SyncId before the keep-test.
 		// A missing parent stays at the default so the keep-test can reject the row.
-		UpdateLocalRelationships(syncEntity, database, enforceMissing: false);
+		UpdateLocalRelationships(syncEntity, database, false);
 
 		if (RejectIfIncomingFiltered(syncEntity, syncObject, issues))
 		{
@@ -686,7 +740,7 @@ public abstract class SyncClientForDatabase : SyncClient
 
 				if (UpdateEntity(syncObject, syncEntity, foundEntity, syncStatus, issues, database))
 				{
-					RememberGroupEntity(foundEntity, added: true);
+					RememberGroupEntity(foundEntity, true);
 					repository.Add(foundEntity);
 					return true;
 				}
@@ -712,7 +766,7 @@ public abstract class SyncClientForDatabase : SyncClient
 					return false;
 				}
 
-				RememberGroupEntity(foundEntity, added: false);
+				RememberGroupEntity(foundEntity, false);
 				return true;
 			}
 			case SyncObjectStatus.Deleted:
@@ -731,8 +785,8 @@ public abstract class SyncClientForDatabase : SyncClient
 					repository.Add(foundEntity);
 				}
 				else if (IsServerClient
-					&& (foundEntity.ModifiedOn >= syncEntity.ModifiedOn)
-					&& !correction)
+						&& (foundEntity.ModifiedOn >= syncEntity.ModifiedOn)
+						&& !correction)
 				{
 					return false;
 				}
@@ -887,104 +941,76 @@ public abstract class SyncClientForDatabase : SyncClient
 				}
 			}
 			catch (SyncIssueException ex)
+			{
+				foreach (var child in ex.Issues)
 				{
-					ex.Issues.ForEach(issues.Add);
-
-					var issue = new SyncIssue
+					if (string.IsNullOrEmpty(child.Side))
 					{
-						Id = syncObject.SyncId,
-						IssueType = ex.IssueType,
-						Message = ex.Message,
-						TypeName = syncObject.TypeName
-					};
-
-					if (SyncSettings.IncludeIssueDetails)
-					{
-						issue.Message += Environment.NewLine + ex.ToDetailedString();
+						child.Side = IsServerClient ? "Server" : "Client";
 					}
 
-					issues.Add(issue);
+					issues.Add(child);
 				}
-				catch (InvalidConstraintException ex)
+
+				var issue = CreateIssue(syncObject, ex.IssueType, ex.Message);
+
+				if (SyncSettings.IncludeIssueDetails)
 				{
-					var issue = new SyncIssue
-					{
-						Id = syncObject.SyncId,
-						IssueType = SyncIssueType.ConstraintException,
-						Message = "Invalid constraint exception...",
-						TypeName = syncObject.TypeName
-					};
-
-					if (SyncSettings.IncludeIssueDetails)
-					{
-						issue.Message += Environment.NewLine + ex.ToDetailedString();
-					}
-
-					issues.Add(issue);
+					issue.Message += Environment.NewLine + ex.ToDetailedString();
 				}
-				catch (InvalidOperationException ex)
+
+				issues.Add(issue);
+			}
+			catch (InvalidConstraintException ex)
+			{
+				var issue = CreateIssue(syncObject, SyncIssueType.ConstraintException, "Invalid constraint exception...");
+
+				if (SyncSettings.IncludeIssueDetails)
 				{
-					var issue = new SyncIssue
-					{
-						Id = syncObject.SyncId,
-						IssueType = SyncIssueType.RelationshipConstraint,
-						Message = "Invalid operation exception...",
-						TypeName = syncObject.TypeName
-					};
-
-					if (SyncSettings.IncludeIssueDetails)
-					{
-						issue.Message += Environment.NewLine + ex.ToDetailedString();
-					}
-
-					issues.Add(issue);
+					issue.Message += Environment.NewLine + ex.ToDetailedString();
 				}
-				catch (ValidationException ex)
+
+				issues.Add(issue);
+			}
+			catch (InvalidOperationException ex)
+			{
+				var issue = CreateIssue(syncObject, SyncIssueType.RelationshipConstraint, "Invalid operation exception...");
+
+				if (SyncSettings.IncludeIssueDetails)
 				{
-					var issue = new SyncIssue
-					{
-						Id = syncObject.SyncId,
-						IssueType = SyncIssueType.ValidationException,
-						Message = ex.Message,
-						TypeName = syncObject.TypeName
-					};
-
-					if (SyncSettings.IncludeIssueDetails)
-					{
-						issue.Message += Environment.NewLine + ex.ToDetailedString();
-					}
-
-					issues.Add(issue);
+					issue.Message += Environment.NewLine + ex.ToDetailedString();
 				}
-				catch (Exception ex)
+
+				issues.Add(issue);
+			}
+			catch (ValidationException ex)
+			{
+				var issue = CreateIssue(syncObject, SyncIssueType.ValidationException, ex.Message);
+
+				if (SyncSettings.IncludeIssueDetails)
 				{
-					var details = ex.ToDetailedString();
-
-					// Cannot catch the DbUpdateException without reference EntityFramework.
-					var issue = details.Contains("conflicted with the FOREIGN KEY constraint")
-						|| details.Contains("The DELETE statement conflicted with the REFERENCE constraint")
-							? new SyncIssue
-							{
-								Id = syncObject.SyncId,
-								IssueType = SyncIssueType.RelationshipConstraint,
-								Message = "This entity has relationship issue with another entity.",
-								TypeName = syncObject.TypeName
-							}
-							: new SyncIssue
-							{
-								Id = syncObject.SyncId,
-								IssueType = SyncIssueType.Unknown,
-								Message = "Unknown issue...",
-								TypeName = syncObject.TypeName
-							};
-
-					if (SyncSettings.IncludeIssueDetails)
-					{
-						issue.Message += Environment.NewLine + ex.ToDetailedString();
-					}
-
-					issues.Add(issue);
+					issue.Message += Environment.NewLine + ex.ToDetailedString();
 				}
+
+				issues.Add(issue);
+			}
+			catch (Exception ex)
+			{
+				var details = ex.ToDetailedString();
+
+				// Cannot catch the DbUpdateException without reference EntityFramework.
+				var issue = details.Contains("conflicted with the FOREIGN KEY constraint")
+					|| details.Contains("The DELETE statement conflicted with the REFERENCE constraint")
+						? CreateIssue(syncObject, SyncIssueType.RelationshipConstraint, "This entity has relationship issue with another entity.")
+						: CreateIssue(syncObject, SyncIssueType.Unknown, "Unknown issue...");
+
+				if (SyncSettings.IncludeIssueDetails)
+				{
+					issue.Message += Environment.NewLine + ex.ToDetailedString();
+				}
+
+				issues.Add(issue);
+			}
 		}
 	}
 
@@ -1016,36 +1042,7 @@ public abstract class SyncClientForDatabase : SyncClient
 			return false;
 		}
 
-		var issue = new SyncIssue
-		{
-			Id = syncObject.SyncId,
-			IssueType = SyncIssueType.SyncEntityFiltered,
-			Message = "The item is not being processed because the sync entity is being filtered.",
-			TypeName = syncObject.TypeName
-		};
-		issues.Add(issue);
-		Logger?.Write(LogLevel.Debug, SyncSessionStart?.Id ?? Guid.Empty, issue.Message, DateTimeProvider.UtcNow);
-		return true;
-	}
-
-	/// <summary>
-	/// The stored row was already loaded by the SyncId read. Scope runs on that instance.
-	/// A missing row is a new insert and does not touch the store again.
-	/// </summary>
-	private bool RejectIfStoredScopeFailed(ISyncEntity entity, SyncObject syncObject, ICollection<SyncIssue> issues)
-	{
-		if ((entity == null) || !SyncSettings.FailsScope(entity.GetRealType().ToAssemblyName(), entity))
-		{
-			return false;
-		}
-
-		var issue = new SyncIssue
-		{
-			Id = syncObject.SyncId,
-			IssueType = SyncIssueType.SyncEntityFiltered,
-			Message = "The item is not being processed because the sync entity is being filtered.",
-			TypeName = syncObject.TypeName
-		};
+		var issue = CreateIssue(syncObject, SyncIssueType.SyncEntityFiltered, "The item is not being processed because the sync entity is being filtered.");
 		issues.Add(issue);
 		Logger?.Write(LogLevel.Debug, SyncSessionStart?.Id ?? Guid.Empty, issue.Message, DateTimeProvider.UtcNow);
 		return true;
@@ -1091,17 +1088,44 @@ public abstract class SyncClientForDatabase : SyncClient
 				continue;
 			}
 
-			issues.Add(new SyncIssue
-			{
-				Id = syncObject.SyncId,
-				IssueType = SyncIssueType.RelationshipConstraint,
-				Message = "The related entity is not being processed because the sync entity is being filtered.",
-				TypeName = syncObject.TypeName
-			});
+			issues.Add(CreateIssue(syncObject, SyncIssueType.RelationshipConstraint, "The related entity is not being processed because the sync entity is being filtered."));
 			return true;
 		}
 
 		return false;
+	}
+
+	/// <summary>
+	/// The stored row was already loaded by the SyncId read. Scope runs on that instance.
+	/// A missing row is a new insert and does not touch the store again.
+	/// </summary>
+	private bool RejectIfStoredScopeFailed(ISyncEntity entity, SyncObject syncObject, ICollection<SyncIssue> issues)
+	{
+		if ((entity == null) || !SyncSettings.FailsScope(entity.GetRealType().ToAssemblyName(), entity))
+		{
+			return false;
+		}
+
+		var issue = CreateIssue(syncObject, SyncIssueType.SyncEntityFiltered, "The item is not being processed because the sync entity is being filtered.");
+		issues.Add(issue);
+		Logger?.Write(LogLevel.Debug, SyncSessionStart?.Id ?? Guid.Empty, issue.Message, DateTimeProvider.UtcNow);
+		return true;
+	}
+
+	private void RememberGroupEntity(ISyncEntity entity, bool added)
+	{
+		if (_groupEntities == null)
+		{
+			return;
+		}
+
+		_groupEntities.Add(entity);
+		if (!added || (_groupAdded == null))
+		{
+			return;
+		}
+
+		_groupAdded[(entity.GetRealType().ToAssemblyName(), entity.SyncId)] = entity;
 	}
 
 	private static Type ResolveRelatedType(string prefix, Type ownerType, PropertyInfo[] properties, Type[] repositoryTypes)
@@ -1142,167 +1166,6 @@ public abstract class SyncClientForDatabase : SyncClient
 		}
 
 		return suffixMatch;
-	}
-
-	private static void SetRelationshipId(PropertyInfo idProperty, ISyncEntity entity, object value)
-	{
-		if (value != null)
-		{
-			idProperty.SetValue(entity, value);
-			return;
-		}
-
-		var type = idProperty.PropertyType;
-		if ((Nullable.GetUnderlyingType(type) != null) || !type.IsValueType)
-		{
-			idProperty.SetValue(entity, null);
-			return;
-		}
-
-		if (type == typeof(int))
-		{
-			idProperty.SetValue(entity, 0);
-			return;
-		}
-
-		if (type == typeof(long))
-		{
-			idProperty.SetValue(entity, 0L);
-			return;
-		}
-
-		idProperty.SetValue(entity, null);
-	}
-
-	private bool UpdateEntity(SyncObject syncObject, ISyncEntity syncEntity, ISyncEntity foundEntity, SyncObjectStatus status, ICollection<SyncIssue> issues, ISyncableDatabase database)
-	{
-		using var updateEntity = Profiler.Start("UpdateEntity");
-		try
-		{
-			var converter = Converter;
-			if (converter == null)
-			{
-				issues.Add(new SyncIssue
-				{
-					Id = syncObject.SyncId,
-					IssueType = SyncIssueType.UpdateException,
-					Message = "A sync converter is required.",
-					TypeName = syncObject.TypeName
-				});
-				return false;
-			}
-
-			if (!converter.Update(this, syncEntity, foundEntity, status))
-			{
-				issues.Add(new SyncIssue
-				{
-					Id = syncObject.SyncId,
-					IssueType = SyncIssueType.UpdateException,
-					Message = "The converter failed to update the entity.",
-					TypeName = syncObject.TypeName
-				});
-				return false;
-			}
-
-			// Incoming update does not copy CreatedOn or ModifiedOn (EverythingExceptSyncUpdate).
-			// Always take ModifiedOn. Copy CreatedOn only when this row has none, so a
-			// delete for a SyncId this database has never stored keeps the sender's time
-			// instead of DateTime.MinValue. A later update does not replace a real value.
-			foundEntity.ModifiedOn = syncEntity.ModifiedOn;
-			if ((foundEntity.CreatedOn == DateTime.MinValue) && (syncEntity.CreatedOn != DateTime.MinValue))
-			{
-				foundEntity.CreatedOn = syncEntity.CreatedOn;
-			}
-
-			using (Profiler.Start("UpdateLocalRelationships"))
-			{
-				UpdateLocalRelationships(foundEntity, database);
-			}
-
-			return true;
-		}
-		catch (SyncIssueException ex)
-		{
-			ex.Issues.ForEach(issues.Add);
-			issues.Add(new SyncIssue
-			{
-				Id = syncObject.SyncId,
-				IssueType = ex.IssueType,
-				Message = ex.Message,
-				TypeName = syncObject.TypeName
-			});
-			return false;
-		}
-		catch (SyncUpdateException ex)
-		{
-			issues.Add(new SyncIssue
-			{
-				Id = syncObject.SyncId,
-				IssueType = SyncIssueType.UpdateException,
-				Message = ex.Message,
-				TypeName = syncObject.TypeName
-			});
-			return false;
-		}
-	}
-
-	private static bool IsPersistedKeyValue(object id)
-	{
-		return id switch
-		{
-			int value => value > 0,
-			long value => value > 0,
-			Guid value => value != Guid.Empty,
-			_ => false
-		};
-	}
-
-	[UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "Sync entity Id is a public property on source-reflected sync entities.")]
-	private static bool HasPersistedKey(ISyncEntity entity)
-	{
-		var idProperty = entity.GetRealType().GetProperty("Id", BindingFlags.Instance | BindingFlags.Public);
-		return (idProperty != null) && IsPersistedKeyValue(idProperty.GetValue(entity));
-	}
-
-	private bool DependsOnUnpersistedAdd(ISyncableDatabase database, ISyncEntity entity)
-	{
-		if (_groupAdded == null)
-		{
-			return false;
-		}
-
-		foreach (var relationship in GetRelationshipConfigurations(entity.GetRealType(), database))
-		{
-			var relatedSyncId = GetRelatedSyncId(entity, relationship);
-			if (relatedSyncId == null)
-			{
-				continue;
-			}
-
-			if (_groupAdded.TryGetValue((relationship.Type.ToAssemblyName(), relatedSyncId.Value), out var added)
-				&& !HasPersistedKey(added))
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	private void RememberGroupEntity(ISyncEntity entity, bool added)
-	{
-		if (_groupEntities == null)
-		{
-			return;
-		}
-
-		_groupEntities.Add(entity);
-		if (!added || (_groupAdded == null))
-		{
-			return;
-		}
-
-		_groupAdded[(entity.GetRealType().ToAssemblyName(), entity.SyncId)] = entity;
 	}
 
 	private void SaveGroup(ISyncableDatabase database, List<ISyncEntity> deferred)
@@ -1347,7 +1210,7 @@ public abstract class SyncClientForDatabase : SyncClient
 					continue;
 				}
 
-				UpdateLocalRelationships(entity, database, enforceMissing: false);
+				UpdateLocalRelationships(entity, database, false);
 				database.GetSyncableRepository(entity.GetRealType())?.Add(entity);
 				ready = true;
 			}
@@ -1357,7 +1220,7 @@ public abstract class SyncClientForDatabase : SyncClient
 				for (var i = 0; i < stillWaiting.Count; i++)
 				{
 					var entity = stillWaiting[i];
-					UpdateLocalRelationships(entity, database, enforceMissing: false);
+					UpdateLocalRelationships(entity, database, false);
 					database.GetSyncableRepository(entity.GetRealType())?.Add(entity);
 				}
 
@@ -1382,6 +1245,36 @@ public abstract class SyncClientForDatabase : SyncClient
 		}
 
 		database.SaveChanges();
+	}
+
+	private static void SetRelationshipId(PropertyInfo idProperty, ISyncEntity entity, object value)
+	{
+		if (value != null)
+		{
+			idProperty.SetValue(entity, value);
+			return;
+		}
+
+		var type = idProperty.PropertyType;
+		if ((Nullable.GetUnderlyingType(type) != null) || !type.IsValueType)
+		{
+			idProperty.SetValue(entity, null);
+			return;
+		}
+
+		if (type == typeof(int))
+		{
+			idProperty.SetValue(entity, 0);
+			return;
+		}
+
+		if (type == typeof(long))
+		{
+			idProperty.SetValue(entity, 0L);
+			return;
+		}
+
+		idProperty.SetValue(entity, null);
 	}
 
 	private List<ISyncEntity> TakeDeferredRelationships(ISyncableDatabase database)
@@ -1437,6 +1330,7 @@ public abstract class SyncClientForDatabase : SyncClient
 		}
 
 		var id = relationship.RelatedIdPropertyInfo.GetValue(found);
+
 		// An unsaved parent still has a default or temporary key. Writing that
 		// into the child fails the foreign key on insert.
 		if (!IsPersistedKeyValue(id))
@@ -1447,6 +1341,70 @@ public abstract class SyncClientForDatabase : SyncClient
 		SetRelationshipId(relationship.EntityIdPropertyInfo, entity, id);
 		database.KeyCache?.AddEntityId(relationship.Type, relatedSyncId, id);
 		return true;
+	}
+
+	private bool UpdateEntity(SyncObject syncObject, ISyncEntity syncEntity, ISyncEntity foundEntity, SyncObjectStatus status, ICollection<SyncIssue> issues, ISyncableDatabase database)
+	{
+		using var updateEntity = Profiler.Start("UpdateEntity");
+		try
+		{
+			var converter = Converter;
+			if (converter == null)
+			{
+				issues.Add(CreateIssue(syncObject, SyncIssueType.UpdateException, "A sync converter is required."));
+				return false;
+			}
+
+			if (!converter.Update(this, syncEntity, foundEntity, status))
+			{
+				issues.Add(CreateIssue(syncObject, SyncIssueType.UpdateException,
+					DescribeUpdateFailure(syncObject, status, "The update callback returned false.")));
+				return false;
+			}
+
+			// Incoming update does not copy CreatedOn or ModifiedOn (EverythingExceptSyncUpdate).
+			// Always take ModifiedOn. Copy CreatedOn only when this row has none, so the delete
+			// for a SyncId this database has never stored keeps the sender's time
+			// instead of DateTime.MinValue. A later update does not replace a real value.
+			foundEntity.ModifiedOn = syncEntity.ModifiedOn;
+			if ((foundEntity.CreatedOn == DateTime.MinValue) && (syncEntity.CreatedOn != DateTime.MinValue))
+			{
+				foundEntity.CreatedOn = syncEntity.CreatedOn;
+			}
+
+			using (Profiler.Start("UpdateLocalRelationships"))
+			{
+				UpdateLocalRelationships(foundEntity, database);
+			}
+
+			return true;
+		}
+		catch (SyncIssueException ex)
+		{
+			foreach (var child in ex.Issues)
+			{
+				if (string.IsNullOrEmpty(child.Side))
+				{
+					child.Side = IsServerClient ? "Server" : "Client";
+				}
+
+				issues.Add(child);
+			}
+
+			issues.Add(CreateIssue(syncObject, ex.IssueType, ex.Message));
+			return false;
+		}
+		catch (SyncUpdateException ex)
+		{
+			var issue = CreateIssue(syncObject, SyncIssueType.UpdateException, DescribeUpdateFailure(syncObject, status, ex.Message));
+			if (SyncSettings.IncludeIssueDetails)
+			{
+				issue.Message += Environment.NewLine + ex.ToDetailedString();
+			}
+
+			issues.Add(issue);
+			return false;
+		}
 	}
 
 	/// <summary>
@@ -1479,13 +1437,7 @@ public abstract class SyncClientForDatabase : SyncClient
 				continue;
 			}
 
-			issues.Add(new SyncIssue
-			{
-				Id = relatedSyncId.Value,
-				IssueType = SyncIssueType.RelationshipConstraint,
-				Message = "Failed to find the relational entity.",
-				TypeName = relationship.Type.ToAssemblyName()
-			});
+			issues.Add(CreateIssue(relatedSyncId.Value, relationship.Type.ToAssemblyName(), SyncIssueType.RelationshipConstraint, "Failed to find the relational entity."));
 		}
 
 		if (issues.Count > 0)

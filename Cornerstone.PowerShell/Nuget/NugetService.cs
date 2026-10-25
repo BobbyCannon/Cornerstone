@@ -1,6 +1,5 @@
 ﻿#region References
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -47,64 +46,62 @@ public static class NugetService
 			.FirstOrDefault(fw => preferredList.Any(p => DefaultCompatibilityProvider.Instance.IsCompatible(p, fw)));
 	}
 
-	public static async Task<NugetPackage> QueryForPackageAsync(string packageId, bool includePrerelease = false, CancellationToken token = default)
+	public static async Task<NugetPackage> QueryForPackageAsync(string packageId, CancellationToken token = default)
 	{
-		try
-		{
-			var providers = Repository.Provider.GetCoreV3().ToList();
-			var source = new PackageSource("https://api.nuget.org/v3/index.json");
-			var repo = Repository.CreateSource(providers, source);
-
-			var metadataResource = await repo.GetResourceAsync<PackageMetadataResource>(token);
-
-			var cacheContext = new SourceCacheContext
-			{
-				MaxAge = DateTimeProvider.RealTime.UtcNow.AddHours(6),
-				DirectDownload = true,
-				NoCache = true
-			};
-
-			var allVersionsMetadata = (await metadataResource.GetMetadataAsync(packageId, includePrerelease, false, cacheContext, NullLogger.Instance, token))?.ToList();
-			if (allVersionsMetadata is not { Count: > 0 })
-			{
-				return null;
-			}
-
-			var result = new NugetPackage(packageId);
-
-			foreach (var pkg in allVersionsMetadata.OrderByDescending(p => p.Identity.Version))
-			{
-				var versionInfo = new NugetPackageVersion
-				{
-					Frameworks = pkg.DependencySets
-						.Where(ds => !ds.TargetFramework.IsUnsupported)
-						.Select(ds => new NugetPackageFramework
-						{
-							Framework = ds.TargetFramework,
-							Dependencies = ds.Packages
-								.Select(dep => new NugetPackageDependency
-								{
-									Id = dep.Id,
-									VersionRange = dep.VersionRange?.ToNormalizedString() ?? "[]",
-									TargetFramework = ds.TargetFramework?.GetShortFolderName() ?? "(any)"
-								})
-								.ToList()
-						})
-						.ToList(),
-					Version = pkg.Identity.Version.Version,
-					VersionString = pkg.Identity.Version.OriginalVersion,
-					Vulnerabilities = pkg.Vulnerabilities?.Select(ToVulnerability).ToList() ?? []
-				};
-
-				result.Versions.Add(versionInfo);
-			}
-
-			return result;
-		}
-		catch (Exception)
+		if (string.IsNullOrWhiteSpace(packageId))
 		{
 			return null;
 		}
+
+		var providers = Repository.Provider.GetCoreV3().ToList();
+		var source = new PackageSource("https://api.nuget.org/v3/index.json");
+		var repo = Repository.CreateSource(providers, source);
+
+		var metadataResource = await repo.GetResourceAsync<PackageMetadataResource>(token);
+
+		var cacheContext = new SourceCacheContext
+		{
+			MaxAge = DateTimeProvider.RealTime.UtcNow.AddHours(6),
+			DirectDownload = true,
+			NoCache = true
+		};
+
+		var allVersionsMetadata = (await metadataResource.GetMetadataAsync(packageId, true, false, cacheContext, NullLogger.Instance, token))?.ToList();
+		if (allVersionsMetadata is not { Count: > 0 })
+		{
+			return null;
+		}
+
+		var result = new NugetPackage(packageId);
+
+		foreach (var pkg in allVersionsMetadata.OrderByDescending(p => p.Identity.Version))
+		{
+			var versionInfo = new NugetPackageVersion
+			{
+				Frameworks = pkg.DependencySets
+					.Where(ds => !ds.TargetFramework.IsUnsupported)
+					.Select(ds => new NugetPackageFramework
+					{
+						Framework = ds.TargetFramework,
+						Dependencies = ds.Packages
+							.Select(dep => new NugetPackageDependency
+							{
+								Id = dep.Id,
+								VersionRange = dep.VersionRange?.ToNormalizedString() ?? "[]",
+								TargetFramework = ds.TargetFramework?.GetShortFolderName() ?? "(any)"
+							})
+							.ToList()
+					})
+					.ToList(),
+				Version = pkg.Identity.Version.Version,
+				VersionString = pkg.Identity.Version.OriginalVersion,
+				Vulnerabilities = pkg.Vulnerabilities?.Select(ToVulnerability).ToList() ?? []
+			};
+
+			result.Versions.Add(versionInfo);
+		}
+
+		return result;
 	}
 
 	private static NugetVulnerability ToVulnerability(PackageVulnerabilityMetadata item)

@@ -33,7 +33,7 @@ public class NugetCacheForFolder : NugetCache
 
 	#region Methods
 
-	public override async Task<NugetPackage> GetOrAddAsync(string packageId, Func<string, Task<NugetPackage>> factoryAsync, CancellationToken ct = default)
+	public override async Task<NugetPackage> GetOrAddAsync(string packageId, Func<string, CancellationToken, Task<NugetPackage>> factoryAsync, CancellationToken ct = default)
 	{
 		if (TryGet(packageId, out var package)
 			&& CacheStillValid(package))
@@ -41,7 +41,12 @@ public class NugetCacheForFolder : NugetCache
 			return package;
 		}
 
-		package = await factoryAsync.Invoke(packageId).ConfigureAwait(false);
+		package = await factoryAsync(packageId, ct).ConfigureAwait(false);
+		if (package == null)
+		{
+			return null;
+		}
+
 		return SetCache(packageId, package);
 	}
 

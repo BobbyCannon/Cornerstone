@@ -29,9 +29,9 @@ public class NugetManager
 
 	#region Methods
 
-	public Task<NugetPackage> QueryForPackageAsync(string packageId, bool includePrerelease = false, CancellationToken cancellationToken = default)
+	public Task<NugetPackage> QueryForPackageAsync(string packageId, CancellationToken cancellationToken = default)
 	{
-		return _cache.GetOrAddAsync(packageId, p => NugetService.QueryForPackageAsync(p, includePrerelease));
+		return _cache.GetOrAddAsync(packageId, NugetService.QueryForPackageAsync, cancellationToken);
 	}
 
 	#endregion

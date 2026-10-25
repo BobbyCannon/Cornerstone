@@ -13,6 +13,7 @@ using Cornerstone.Presentation.Android.Platform;
 using Cornerstone.Presentation.Android.Platform.Storage;
 using Cornerstone.Presentation.Controls.ApplicationLifetimes;
 using Cornerstone.Presentation.Platform;
+using Cornerstone.Presentation.Platforms.Android;
 
 namespace Cornerstone.Presentation.Android;
 
@@ -112,6 +113,7 @@ public class CornerstoneActivity : AppCompatActivity, ICornerstoneActivity
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
+        AndroidHost.Initialize(this);
         InitializeCornerstoneView(_content);
 
         base.OnCreate(savedInstanceState);
@@ -158,6 +160,7 @@ public class CornerstoneActivity : AppCompatActivity, ICornerstoneActivity
 
     protected override void OnResume()
     {
+        AndroidHost.Initialize(this);
         base.OnResume();
 
         // Android only respects LayoutInDisplayCutoutMode value if it has been set once before window becomes visible.

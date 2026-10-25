@@ -51,6 +51,8 @@ public partial class UndoManager : CornerstoneObject
 
 	public SpeedyQueue<UndoUnit> UndoStack { get; }
 
+	internal bool IsCompoundOpen => _compoundDepth > 0;
+
 	#endregion
 
 	#region Methods
@@ -169,12 +171,14 @@ public partial class UndoManager : CornerstoneObject
 
 		if (!Enabled || (changes == null) || (changes.Count == 0))
 		{
+			_textEditorViewModel.CommitDeferredDocumentChanges();
 			return;
 		}
 
 		UndoStack.Enqueue(new UndoUnit(changes.ToArray(), before, _compoundAfter));
 		_compoundAfter = null;
 		RedoStack.Clear();
+		_textEditorViewModel.CommitDeferredDocumentChanges();
 	}
 
 	internal void CancelCompound()
@@ -200,6 +204,7 @@ public partial class UndoManager : CornerstoneObject
 		_compoundMarks = null;
 		_compoundBefore = null;
 		_compoundAfter = null;
+		_textEditorViewModel.DiscardDeferredDocumentChanges();
 	}
 
 	private int PopCompoundMark()
@@ -296,6 +301,15 @@ public partial class UndoManager : CornerstoneObject
 			else
 			{
 				RedoStack.Enqueue(unit);
+			}
+
+			if (applied)
+			{
+				_textEditorViewModel.CommitDeferredDocumentChanges();
+			}
+			else
+			{
+				_textEditorViewModel.DiscardDeferredDocumentChanges();
 			}
 		}
 	}

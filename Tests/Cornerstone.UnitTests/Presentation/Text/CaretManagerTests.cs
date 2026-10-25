@@ -79,8 +79,38 @@ public class CaretManagerTests : CornerstoneUnitTest
 		var added = model.Carets.AddRelativeToPrimary(1);
 		IsNotNull(added);
 		AreEqual(2, model.Carets.Count);
-		AreEqual(9, added.Offset);
-		AreEqual(2, model.Caret.Offset);
+		AreEqual(model.Caret, added);
+		AreEqual(9, model.Caret.Offset);
+		AreEqual(2, model.Carets.All[1].Offset);
+	}
+
+	[TestMethod]
+	public void AddRelativeToPrimaryMovesActiveCaretUpAndLeavesExtra()
+	{
+		var model = CreateModel("aa\r\nbb\r\ncc");
+		model.Caret.Move(5);
+
+		var added = model.Carets.AddRelativeToPrimary(-1);
+		AreEqual(model.Caret, added);
+		AreEqual(1, model.Caret.Offset);
+		AreEqual(2, model.Carets.Count);
+		AreEqual(5, model.Carets.All[1].Offset);
+	}
+
+	[TestMethod]
+	public void AddRelativeToPrimaryReverseRemovesVacatedCaret()
+	{
+		var model = CreateModel("aa\r\nbb\r\ncc");
+		model.Caret.Move(0);
+		model.Carets.AddRelativeToPrimary(1);
+		model.Carets.AddRelativeToPrimary(1);
+		AreEqual(8, model.Caret.Offset);
+		AreEqual(3, model.Carets.Count);
+
+		model.Carets.AddRelativeToPrimary(-1);
+		AreEqual(2, model.Carets.Count);
+		AreEqual(4, model.Caret.Offset);
+		AreEqual(0, model.Carets.All[1].Offset);
 	}
 
 	[TestMethod]
@@ -94,10 +124,30 @@ public class CaretManagerTests : CornerstoneUnitTest
 		IsNotNull(model.Carets.AddRelativeToPrimary(1));
 
 		AreEqual(4, model.Carets.Count);
-		AreEqual(0, model.Caret.Offset);
-		AreEqual(4, model.Carets.All[1].Offset);
-		AreEqual(8, model.Carets.All[2].Offset);
-		AreEqual(12, model.Carets.All[3].Offset);
+		AreEqual(model.Caret, model.Carets.Primary);
+		AreEqual(12, model.Caret.Offset);
+		var offsets = model.Carets.All.Select(caret => caret.Offset).OrderBy(offset => offset).ToArray();
+		AreEqual(0, offsets[0]);
+		AreEqual(4, offsets[1]);
+		AreEqual(8, offsets[2]);
+		AreEqual(12, offsets[3]);
+	}
+
+	[TestMethod]
+	public void CollapseAfterSortKeepsPrimaryCaretMoved()
+	{
+		var model = CreateModel("abcdefghij");
+		model.Caret.Move(6);
+		model.Carets.AddAt(1);
+		model.Carets.MergeOverlapping();
+
+		IsTrue(model.Carets.CollapseToPrimary());
+
+		var moves = 0;
+		model.Carets.CaretMoved += (_, _) => moves++;
+		model.Caret.Move(2);
+		AreEqual(1, moves);
+		AreEqual(2, model.Caret.Offset);
 	}
 
 	[TestMethod]

@@ -805,10 +805,8 @@ internal class EditorPane : WindowPane,
 
 	/// <summary>
 	/// The document frame is going away. WindowPane.Dispose often runs later, or not
-	/// at all while the buffer stays in the running document table. Leave the host
-	/// running and its render hook keeps dirtying bitmaps at Render priority, which
-	/// sits above the keyboard. The shell then ignores input until a resize pumps
-	/// another window message.
+	/// at all while the buffer stays in the running document table. A host left
+	/// running keeps posting frame copies onto the shell. Stop it with the frame.
 	/// </summary>
 	private void StopPreviewBecauseFrameIsClosing()
 	{

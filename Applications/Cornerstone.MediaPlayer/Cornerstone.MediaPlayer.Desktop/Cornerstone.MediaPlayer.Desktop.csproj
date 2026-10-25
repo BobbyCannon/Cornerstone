@@ -9,7 +9,7 @@
 	</PropertyGroup>
 	<ItemGroup Condition="!$(TargetFramework.Contains('windows'))">
 		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.4" />
-		<PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="14.2.1.102" />
+		<PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="14.2.1.301" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\..\Cornerstone.Presentation.Diagnostics\Cornerstone.Presentation.Diagnostics.csproj" />

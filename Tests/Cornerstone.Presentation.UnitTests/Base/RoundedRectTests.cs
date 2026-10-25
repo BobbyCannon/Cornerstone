@@ -34,5 +34,31 @@ public class RoundedRectTests
 		CornerstoneTest.AreEqual(expectedResult, rrect.ContainsExclusive(new Point(x, y)));
 	}
 
+	[PresentationTestMethod]
+	public void UniformBorderCenterlineShrinksRadiiWithTheRect()
+	{
+		var outer = new RoundedRect(new Rect(0, 0, 80, 80), new CornerRadius(16, 12, 10, 8));
+		var centerline = outer.UniformBorderCenterline(2);
+
+		CornerstoneTest.AreEqual(1d, centerline.Rect.X, 0);
+		CornerstoneTest.AreEqual(1d, centerline.Rect.Y, 0);
+		CornerstoneTest.AreEqual(78d, centerline.Rect.Width, 0);
+		CornerstoneTest.AreEqual(78d, centerline.Rect.Height, 0);
+		CornerstoneTest.AreEqual(15d, centerline.RadiiTopLeft.X, 0);
+		CornerstoneTest.AreEqual(15d, centerline.RadiiTopLeft.Y, 0);
+		CornerstoneTest.AreEqual(11d, centerline.RadiiTopRight.X, 0);
+		CornerstoneTest.AreEqual(9d, centerline.RadiiBottomRight.X, 0);
+		CornerstoneTest.AreEqual(7d, centerline.RadiiBottomLeft.X, 0);
+	}
+
+	[PresentationTestMethod]
+	public void UniformBorderCenterlineClampsRadiusAtZero()
+	{
+		var centerline = new RoundedRect(new Rect(0, 0, 40, 40), 2).UniformBorderCenterline(6);
+
+		CornerstoneTest.AreEqual(0d, centerline.RadiiTopLeft.X, 0);
+		CornerstoneTest.AreEqual(0d, centerline.RadiiTopLeft.Y, 0);
+	}
+
 	#endregion
 }

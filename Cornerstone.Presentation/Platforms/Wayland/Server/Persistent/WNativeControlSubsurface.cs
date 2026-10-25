@@ -88,7 +88,9 @@ internal sealed class WNativeControlSubsurface : IPersistentWaylandObject, IWNat
         _destWidth = Math.Max(1, width);
         _destHeight = Math.Max(1, height);
         _scale = scale > 0 ? scale : 1;
-        if (!_usesExternalBuffers)
+        // A claimed external buffer with no pixels yet must not commit an empty surface.
+        // The Skia hole would then show the desktop.
+        if (!_usesExternalBuffers || _externalBgra == null)
         {
             _pixelWidth = Math.Max(1, (int)Math.Round(_destWidth * _scale));
             _pixelHeight = Math.Max(1, (int)Math.Round(_destHeight * _scale));
@@ -98,11 +100,9 @@ internal sealed class WNativeControlSubsurface : IPersistentWaylandObject, IWNat
         _subsurface.SetPosition(_x, _y);
         ApplyZOrder();
         ApplyViewport();
-        if (_usesExternalBuffers)
-        {
-            if (_externalBgra != null)
-                AttachBgraBuffer(_externalBgra, _pixelWidth, _pixelHeight);
-        }
+        var external = _usesExternalBuffers && _externalBgra != null;
+        if (external)
+            AttachBgraBuffer(_externalBgra, _pixelWidth, _pixelHeight);
         else
             AttachSolidBuffer(_pixelWidth, _pixelHeight);
         _mapped = true;
@@ -127,7 +127,7 @@ internal sealed class WNativeControlSubsurface : IPersistentWaylandObject, IWNat
             ApplyViewport();
             if (_usesExternalBuffers && _externalBgra != null)
                 AttachBgraBuffer(_externalBgra, _pixelWidth, _pixelHeight);
-            else if (!_usesExternalBuffers)
+            else
                 AttachSolidBuffer(_pixelWidth, _pixelHeight);
         }
         CommitParent();

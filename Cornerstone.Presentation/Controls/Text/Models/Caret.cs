@@ -391,6 +391,23 @@ public partial class Caret : CornerstoneObject
 	}
 
 	/// <summary>
+	/// Move the document offset without rebuilding the visual or raising
+	/// <see cref="CaretMoved" />. Used while a buffer edit is still shifting
+	/// carets, before lines are rebuilt.
+	/// </summary>
+	internal void Retarget(int offset)
+	{
+		IntegerExtensions.EnsureRange(ref offset, 0, _document.Buffer.Count);
+		if (offset == Offset)
+		{
+			return;
+		}
+
+		Offset = offset;
+		_line = null;
+	}
+
+	/// <summary>
 	/// Clamps caret and selection to the current document. Document shrinks
 	/// (undo, RemoveAt) do not call Move, so Offset can otherwise sit past Count.
 	/// </summary>
@@ -413,14 +430,12 @@ public partial class Caret : CornerstoneObject
 	}
 
 	/// <summary>
-	/// True when the caret should be painted. Blink phase is advanced only by
-	/// <see cref="ToggleBlink"/>, not by layout or font-size redraws.
+	/// True when the caret should be painted. The renderer owns the blink phase.
 	/// </summary>
 	internal bool IsDrawn => IsVisible && _blink;
 
 	/// <summary>
-	/// Show the caret until the next blink off. Used after move, focus, and measure
-	/// so the caret tracks the text immediately.
+	/// Show the caret until the next blink tick.
 	/// </summary>
 	internal void ResetBlink()
 	{
@@ -452,6 +467,21 @@ public partial class Caret : CornerstoneObject
 		{
 			VisualLayout = line.UpdateCaretVisual(this);
 		}
+	}
+
+	/// <summary>
+	/// Move the caret to the X the text was painted at. Character advance does not
+	/// match bold, italic, or proportional runs, which leaves the caret short of the glyphs.
+	/// </summary>
+	internal void ApplyPaintedX(double x)
+	{
+		if (!double.IsFinite(x) || (VisualLayout.Height <= 0))
+		{
+			return;
+		}
+
+		VisualLayout = new Rect(x, VisualLayout.Y, VisualLayout.Width, VisualLayout.Height);
+		_preferredVisualX = x;
 	}
 
 	/// <summary>

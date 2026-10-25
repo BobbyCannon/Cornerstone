@@ -9,15 +9,15 @@ const dotnetRuntime = await dotnet
     .withModuleConfig({
         onDownloadResourceProgress: (loaded, total) => {
             const progressElement = document.getElementById("progress");
+            if (!progressElement || !total) {
+                return;
+            }
+
             progressElement.value = (loaded / total) * 100;
         }
     })
     .create();
 
 const config = dotnetRuntime.getConfig();
-
-if (CornerstoneBrowser) {
-	dotnetRuntime.setModuleImports("Cornerstone.Browser.js", CornerstoneBrowser);
-}
 
 await dotnetRuntime.runMain(config.mainAssemblyName, [globalThis.location.href]);

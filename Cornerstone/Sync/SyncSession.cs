@@ -321,6 +321,7 @@ public partial class SyncSession : CornerstoneObject<SyncSession>, ISyncSessionS
 								Id = Guid.Empty,
 								IssueType = SyncIssueType.RepositoryFiltered,
 								Message = "Sync requires at least one repository filter.",
+								Side = "Client",
 								TypeName = string.Empty
 							});
 							break;
@@ -566,6 +567,7 @@ public partial class SyncSession : CornerstoneObject<SyncSession>, ISyncSessionS
 							Id = Guid.Empty,
 							IssueType = SyncIssueType.Unauthorized,
 							Message = "Unauthorized: please update your credentials in settings or contact support.",
+							Side = "Client",
 							TypeName = string.Empty
 						});
 						break;
@@ -577,6 +579,7 @@ public partial class SyncSession : CornerstoneObject<SyncSession>, ISyncSessionS
 							Id = Guid.Empty,
 							IssueType = SyncIssueType.ServiceUnavailable,
 							Message = "Service unavailable. Please try again later.",
+							Side = "Client",
 							TypeName = string.Empty
 						});
 						break;
@@ -588,6 +591,7 @@ public partial class SyncSession : CornerstoneObject<SyncSession>, ISyncSessionS
 							Id = Guid.Empty,
 							IssueType = SyncIssueType.ClientException,
 							Message = ex.Message,
+							Side = "Client",
 							TypeName = string.Empty
 						});
 						break;
@@ -604,6 +608,7 @@ public partial class SyncSession : CornerstoneObject<SyncSession>, ISyncSessionS
 					Id = Guid.Empty,
 					IssueType = SyncIssueType.ClientException,
 					Message = exception.Message,
+					Side = "Client",
 					TypeName = string.Empty
 				});
 				break;

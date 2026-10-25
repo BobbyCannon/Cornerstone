@@ -97,9 +97,12 @@ internal partial class CornerstoneDesigner : IDisposable
 	private double _scaling = 1;
 	private readonly SemaphoreSlim _startingProcess = new(1, 1);
 	private int _consecutiveHostStartFailures;
+	private int _textChangeQueued;
+	private int _pendingTextLength;
 	private readonly Throttle<string> _throttle;
 	private CornerstoneDesignerView _unPausedView;
 	private string _xamlPath;
+	private string _xamlFileProjectPath;
 
 	private static readonly GridLength OneStar;
 	private static readonly GridLength ZeroStar;
@@ -152,6 +155,8 @@ internal partial class CornerstoneDesigner : IDisposable
 			Log.Logger.Debug(ex, "ImageThemingUtilities.SetImageBackgroundColor failed");
 		}
 
+		_textChangeQueued = 0;
+		_pendingTextLength = 0;
 		_throttle = new Throttle<string>(XamlDebounceDefault, _ => PushXamlFromBuffer());
 
 		if (PreviewTheme != _sharedPreviewTheme)
@@ -586,7 +591,7 @@ internal partial class CornerstoneDesigner : IDisposable
 		}
 		else
 		{
-			// Drop the render hook now. The process stays up briefly so a
+			// Stop presenting now. The process stays up briefly so a
 			// transient hide/show pair does not pay for a new host.
 			UpdatePreviewPump();
 			EnsureBackgroundStopTimer().Stop();
@@ -675,6 +680,7 @@ internal partial class CornerstoneDesigner : IDisposable
 		_project = project ?? throw new ArgumentNullException(nameof(project));
 		_xamlPath = xamlPath ?? throw new ArgumentNullException(nameof(xamlPath));
 		_editor = editor ?? throw new ArgumentNullException(nameof(editor));
+		_xamlFileProjectPath = ResolveXamlFileProjectPath();
 
 		AttachProcess(PreviewerProcess.Create(XamlPreviewPlatformResolver.FromPath(_xamlPath)));
 
@@ -816,8 +822,9 @@ internal partial class CornerstoneDesigner : IDisposable
 					return;
 				}
 
-				// Still invalid after grace — surface the banner.
-				ShowError("Invalid Markup", FormatMarkupError(Process.Error));
+				// Still failing after grace. Broken XML is bad markup. A document that
+				// parses failed against the assemblies the host already loaded.
+				ShowPreviewFailure(Process.Error);
 			};
 		}
 
@@ -888,6 +895,7 @@ internal partial class CornerstoneDesigner : IDisposable
 
 		Process = process;
 		Process.SetDocument(Path.GetFileName(_xamlPath));
+		Process.XamlFileProjectPath = _xamlFileProjectPath;
 		Process.ErrorChanged += ErrorChanged;
 		Process.FrameReceived += FrameReceived;
 		Process.ProcessExited += ProcessExited;
@@ -897,6 +905,48 @@ internal partial class CornerstoneDesigner : IDisposable
 		}
 	}
 
+	private void ShowPreviewFailure(PreviewExceptionDetails error)
+	{
+		// A dropped socket is not a document problem and not a stale assembly.
+		if (IsTransportFailure(error))
+		{
+			_buildRequired = false;
+			ShowError("Invalid Markup", FormatMarkupError(error));
+			return;
+		}
+
+		var xaml = _lastSentXaml ?? TryGetBufferText();
+		if (XamlDocument.IsWellFormed(xaml))
+		{
+			_buildRequired = true;
+			Process.SetStatus("Awaiting build");
+			ShowError("Build Required", FormatBuildRequired(error));
+			return;
+		}
+
+		_buildRequired = false;
+		ShowError("Invalid Markup", FormatMarkupError(error));
+	}
+
+	private static bool IsTransportFailure(PreviewExceptionDetails error)
+	{
+		var message = error?.Message;
+		return (message != null) && message.StartsWith("Failed to update preview:", StringComparison.Ordinal);
+	}
+
+	private static string FormatBuildRequired(PreviewExceptionDetails error)
+	{
+		var detail = FirstErrorLine(error);
+		if (string.IsNullOrWhiteSpace(detail))
+		{
+			detail = "The previewer could not load this document from the last build.";
+		}
+
+		return "The markup is valid. Rebuild so the previewer can see new types and properties.\n\n"
+			+ detail
+			+ "\n\nPreview is paused on the last valid frame. Rebuild the project to resume.";
+	}
+
 	private static string FormatMarkupError(PreviewExceptionDetails error)
 	{
 		if (error == null)
@@ -904,15 +954,11 @@ internal partial class CornerstoneDesigner : IDisposable
 			return "Check the Error List for more information.";
 		}
 
-		var message = error.Message;
-		if (string.IsNullOrWhiteSpace(message))
+		var firstLine = FirstErrorLine(error);
+		if (string.IsNullOrWhiteSpace(firstLine))
 		{
-			message = "Invalid XAML.";
+			firstLine = "Invalid XAML.";
 		}
-
-		// Host sometimes returns full exception ToString(); keep the first line for the banner.
-		var firstLine = message.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()
-			?? message;
 
 		if (error.LineNumber is int line && line > 0)
 		{
@@ -921,6 +967,49 @@ internal partial class CornerstoneDesigner : IDisposable
 		}
 
 		return $"{firstLine}\n\nPreview is paused on the last valid frame. Fix the markup to resume.";
+	}
+
+	private static string FirstErrorLine(PreviewExceptionDetails error)
+	{
+		if (error == null)
+		{
+			return null;
+		}
+
+		var message = error.Message;
+		if (string.IsNullOrWhiteSpace(message))
+		{
+			return null;
+		}
+
+		return message.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? message;
+	}
+
+	private string ResolveXamlFileProjectPath()
+	{
+		var projectDirectory = Path.GetDirectoryName(_project.FullName);
+		try
+		{
+			var storage = GetMSBuildPropertyStorage(_project);
+			var msbuildDirectory = GetMSBuildProperty("MSBuildProjectDirectory", storage);
+			if (!string.IsNullOrWhiteSpace(msbuildDirectory))
+			{
+				if (!Path.IsPathRooted(msbuildDirectory))
+				{
+					msbuildDirectory = Path.Combine(projectDirectory ?? string.Empty, msbuildDirectory);
+				}
+
+				projectDirectory = msbuildDirectory;
+			}
+		}
+		catch (Exception ex)
+		{
+			Log.Logger.Debug(ex, "Could not read MSBuildProjectDirectory for the preview base URI");
+		}
+
+		var projectPath = XamlProjectPath.FromProjectDirectory(projectDirectory, _xamlPath);
+		Log.Logger.Information("Preview base path {Path} for {File}", projectPath, _xamlPath);
+		return projectPath;
 	}
 
 	private string GetMSBuildProperty(string key, IVsBuildPropertyStorage storage)
@@ -1932,7 +2021,7 @@ internal partial class CornerstoneDesigner : IDisposable
 
 	/// <summary>
 	/// Presents frames only while this document is on screen in Design or Split.
-	/// Source-only and a hidden tab acknowledge frames and do not hook the shell render pass.
+	/// Source-only and a hidden tab acknowledge frames and do not copy them.
 	/// </summary>
 	private void UpdatePreviewPump()
 	{
@@ -1971,7 +2060,7 @@ internal partial class CornerstoneDesigner : IDisposable
 			Process.SetStatus("Awaiting build");
 		}
 
-		// The process can already be gone while the render hook is still attached.
+		// The process can already be gone while a frame copy is still queued.
 		Process.ReleasePreviewSurface();
 
 		if (!Process.IsRunning)
@@ -1983,9 +2072,8 @@ internal partial class CornerstoneDesigner : IDisposable
 		Log.Logger.Debug("Suspending previewer host ({Reason})", reason);
 		_hostSuspendedIntentionally = true;
 		_lastSentXaml = null;
-		// Stop() kills the process off the UI thread. The render hook was already
-		// removed above. A Background unhook never runs while frames are still
-		// posting Render work above the keyboard.
+		// Stop() kills the process off the UI thread. Presenting was already
+		// stopped above, so a queued copy does not keep posting after the kill.
 		StopProcessOffUiAsync().FireAndForget();
 		// Exited may notify again; call now so the tab caption drops the live marker promptly.
 		NotifyPreviewHostRunningChanged();
@@ -2085,17 +2173,43 @@ internal partial class CornerstoneDesigner : IDisposable
 	{
 		// ChangedOnBackground fires on a thread-pool thread. Do not copy the whole
 		// snapshot here — debounce, then read the buffer once when idle.
-		ApplyTextChangedOnUiAsync(e.After.Length).FireAndForget();
+		// One Background post per burst. SwitchToMainThreadAsync posts at Normal,
+		// and a Normal post per keystroke sits above the keyboard.
+		Interlocked.Exchange(ref _pendingTextLength, e.After.Length);
+		if (Interlocked.CompareExchange(ref _textChangeQueued, 1, 0) != 0)
+		{
+			return;
+		}
+
+		var dispatcher = Dispatcher;
+		if ((dispatcher == null) || dispatcher.HasShutdownStarted)
+		{
+			Interlocked.Exchange(ref _textChangeQueued, 0);
+			return;
+		}
+
+		try
+		{
+			#pragma warning disable VSTHRD001
+			dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(ApplyTextChangeOnUi));
+			#pragma warning restore VSTHRD001
+		}
+		catch (InvalidOperationException)
+		{
+			Interlocked.Exchange(ref _textChangeQueued, 0);
+		}
 	}
 
-	private async Task ApplyTextChangedOnUiAsync(int length)
+	private void ApplyTextChangeOnUi()
 	{
-		await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+		// Clear before reading so a change that arrives during this call posts again.
+		Interlocked.Exchange(ref _textChangeQueued, 0);
 		if (_disposed)
 		{
 			return;
 		}
 
+		var length = Volatile.Read(ref _pendingTextLength);
 		_throttle.Interval = GetXamlDebounceInterval(length);
 		_throttle.Queue(null);
 
@@ -2201,12 +2315,18 @@ internal partial class CornerstoneDesigner : IDisposable
 			SwapPanesButton.Visibility = Visibility.Collapsed;
 		}
 
-		MainGrid.UpdateLayout();
-
 		if (View == CornerstoneDesignerView.Split)
 		{
-			// Actual sizes are only reliable after layout; convert equal stars if needed.
-			NormalizeSplitPaneSizes();
+			// Do not call UpdateLayout. That synchronously arranges the hosted
+			// text view, and its caret scroll waits inside that layout until a
+			// window message arrives. Normalize after the dispatcher has laid out.
+			var dispatcher = Dispatcher;
+			if (dispatcher != null)
+			{
+				#pragma warning disable VSTHRD001
+				dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(NormalizeSplitPaneSizes));
+				#pragma warning restore VSTHRD001
+			}
 		}
 	}
 

@@ -153,10 +153,9 @@ public partial class LineChart : TemplatedControl
 
 		if ((BorderBrush != null) && (borderThickness > 0))
 		{
-			backgroundArea = backgroundArea.Deflate(borderThickness * 0.5);
-			var roundedRect = new RoundedRect(backgroundArea, CornerRadius.TopLeft, CornerRadius.TopRight, CornerRadius.BottomRight, CornerRadius.BottomLeft);
+			var roundedRect = new RoundedRect(backgroundArea, CornerRadius).UniformBorderCenterline(borderThickness);
 			context.DrawRectangle(Background, new Pen(BorderBrush, borderThickness), roundedRect);
-			backgroundArea = backgroundArea.Deflate(borderThickness * 0.5);
+			backgroundArea = roundedRect.Rect.Deflate(borderThickness * 0.5);
 		}
 		else
 		{

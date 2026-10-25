@@ -19,6 +19,22 @@ public class CaretTests : CornerstoneUnitTest
 {
 	#region Methods
 
+	[TestMethod]
+	public void ResetBlinkShowsCaret()
+	{
+		var viewModel = new TextEditorViewModel();
+		viewModel.Load("abcdef");
+		var caret = viewModel.Caret;
+		caret.IsVisible = true;
+		caret.ToggleBlink();
+		caret.ToggleBlink();
+		IsFalse(caret.IsDrawn);
+
+		caret.ResetBlink();
+
+		IsTrue(caret.IsDrawn);
+	}
+
 	/// <summary>
 	/// Ensure the caret can move in all directions with wrap enabled
 	/// </summary>

@@ -1,10 +1,10 @@
 <Project>
 	<PropertyGroup>
 		<!-- Extension / assembly version; keep in sync via scripts/Update-ExtensionVersion.ps1 -->
-		<Version>1.5.277.37869</Version>
+		<Version>1.5.297.20657</Version>
 		<AvaloniaTemplatesPackageName>Avalonia.Templates</AvaloniaTemplatesPackageName>
-		<AvaloniaTemplatesPackageVersion>12.0.0</AvaloniaTemplatesPackageVersion>
-		<AvaloniaVersion>12.0.0</AvaloniaVersion>
+		<AvaloniaTemplatesPackageVersion>12.1.4</AvaloniaTemplatesPackageVersion>
+		<AvaloniaVersion>12.1.4</AvaloniaVersion>
 		<AvaloniaBaseVersion>12.0.0</AvaloniaBaseVersion>
 		<LangVersion>12.0</LangVersion>
 		<NoWarn>$(NoWarn);CEE0027;CS0162;CS1685;NU1608;VSSDK006;VSSDK007;VSTHRD010;VSTHRD100;VSTHRD110;</NoWarn>

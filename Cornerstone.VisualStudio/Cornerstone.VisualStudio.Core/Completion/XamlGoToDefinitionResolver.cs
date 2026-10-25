@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Cornerstone.VisualStudio.Core.AssemblyMetadata;
 using Cornerstone.VisualStudio.Core.Parsing;
@@ -94,7 +95,7 @@ public static class XamlGoToDefinitionResolver
 			if ((parser.AttributeValue != null) && parser.AttributeValue.Contains("{"))
 			{
 				XamlGoToDefinitionTarget bindingTarget;
-				if (TryResolveBindingPath(helper, parser, token, out bindingTarget))
+				if (TryResolveBindingPath(helper, parser, xml, caret, out bindingTarget))
 				{
 					return bindingTarget;
 				}
@@ -595,55 +596,445 @@ public static class XamlGoToDefinitionResolver
 	private static bool TryResolveBindingPath(
 		CompletionEngine.MetadataHelper helper,
 		XmlParser parser,
-		string token,
+		string xml,
+		int caret,
 		out XamlGoToDefinitionTarget target)
 	{
 		target = XamlGoToDefinitionTarget.None;
-		var value = parser.AttributeValue ?? "";
-		if ((value.IndexOf("{Binding", StringComparison.OrdinalIgnoreCase) < 0) &&
-			(value.IndexOf("{x:Bind", StringComparison.OrdinalIgnoreCase) < 0))
+		if ((parser == null) || string.IsNullOrEmpty(xml) || (parser.CurrentValueStart == null))
 		{
 			return false;
 		}
 
-		if (string.IsNullOrEmpty(token) || token.StartsWith("{", StringComparison.Ordinal) || IsBindingKeyword(token))
+		string path;
+		int pathStart;
+		if (!TryReadBindingPath(xml, parser.CurrentValueStart.Value, caret, out path, out pathStart))
 		{
 			return false;
 		}
 
-		var dataTypeName = parser.FindParentAttributeValue("(x\\:)?DataType");
-		var dataType = LookupType(helper, dataTypeName);
+		BindingSegment[] segments;
+		int segmentIndex;
+		if (!TrySelectBindingSegment(path, caret - pathStart, out segments, out segmentIndex))
+		{
+			return false;
+		}
+
+		var dataType = LookupType(helper, parser.FindParentAttributeValue("(x\\:)?DataType"));
 		if (dataType == null)
 		{
 			return false;
 		}
 
-		var member = token;
-		var dot = token.LastIndexOf('.');
-		if (dot >= 0)
+		for (var i = 0; i < segmentIndex; i++)
 		{
-			member = token.Substring(dot + 1);
+			var step = FindInstanceProperty(dataType, segments[i].Name);
+			if ((step == null) || (step.Type == null))
+			{
+				return false;
+			}
+
+			dataType = step.Type;
 		}
 
-		if (!MemberExists(dataType, member))
+		var property = FindInstanceProperty(dataType, segments[segmentIndex].Name);
+		if (property == null)
 		{
 			return false;
 		}
 
-		target = XamlGoToDefinitionTarget.ForMember(dataType.FullName, member);
+		var ownerName = "";
+		var owner = property.DeclaringType;
+		if ((owner != null) && !string.IsNullOrEmpty(owner.FullName))
+		{
+			ownerName = owner.FullName;
+		}
+		else
+		{
+			ownerName = dataType.FullName;
+		}
+
+		if (string.IsNullOrEmpty(ownerName))
+		{
+			return false;
+		}
+
+		target = XamlGoToDefinitionTarget.ForMember(ownerName, property.Name);
 		return true;
 	}
 
-	private static bool IsBindingKeyword(string token)
+	private static bool TryReadBindingPath(string xml, int valueStart, int caret, out string path, out int pathStart)
 	{
-		return token.Equals("Binding", StringComparison.OrdinalIgnoreCase)
-			|| token.Equals("Bind", StringComparison.OrdinalIgnoreCase)
-			|| token.Equals("Path", StringComparison.OrdinalIgnoreCase)
-			|| token.Equals("Mode", StringComparison.OrdinalIgnoreCase)
-			|| token.Equals("Source", StringComparison.OrdinalIgnoreCase)
-			|| token.Equals("Converter", StringComparison.OrdinalIgnoreCase)
-			|| token.Equals("ElementName", StringComparison.OrdinalIgnoreCase)
-			|| token.Equals("RelativeSource", StringComparison.OrdinalIgnoreCase);
+		path = "";
+		pathStart = 0;
+		if ((valueStart < 0) || (valueStart >= xml.Length))
+		{
+			return false;
+		}
+
+		var valueEnd = valueStart;
+		while ((valueEnd < xml.Length) && (xml[valueEnd] != '"') && (xml[valueEnd] != '<'))
+		{
+			valueEnd++;
+		}
+
+		var i = valueStart;
+		while (i < valueEnd)
+		{
+			if (xml[i] != '{')
+			{
+				i++;
+				continue;
+			}
+
+			var nameStart = i + 1;
+			var nameEnd = nameStart;
+			while ((nameEnd < valueEnd) && IsMarkupNameChar(xml[nameEnd]))
+			{
+				nameEnd++;
+			}
+
+			var extensionName = xml.Substring(nameStart, nameEnd - nameStart);
+			if (!IsBindingExtensionName(extensionName))
+			{
+				i = nameEnd;
+				continue;
+			}
+
+			var arg = nameEnd;
+			var candidateStart = -1;
+			var candidateEnd = -1;
+			while (arg < valueEnd)
+			{
+				while ((arg < valueEnd) && char.IsWhiteSpace(xml[arg]))
+				{
+					arg++;
+				}
+
+				if ((arg >= valueEnd) || (xml[arg] == '}'))
+				{
+					break;
+				}
+
+				int argumentNameLength;
+				if (LooksLikeNamedMarkupArgument(xml, arg, valueEnd, out argumentNameLength))
+				{
+					var argumentName = xml.Substring(arg, argumentNameLength);
+					arg += argumentNameLength;
+					while ((arg < valueEnd) && char.IsWhiteSpace(xml[arg]))
+					{
+						arg++;
+					}
+
+					if ((arg < valueEnd) && (xml[arg] == '='))
+					{
+						arg++;
+					}
+
+					while ((arg < valueEnd) && char.IsWhiteSpace(xml[arg]))
+					{
+						arg++;
+					}
+
+					var argumentValueStart = arg;
+					var argumentValueEnd = ReadMarkupValue(xml, arg, valueEnd);
+					if (argumentName.Equals("Path", StringComparison.OrdinalIgnoreCase))
+					{
+						candidateStart = argumentValueStart;
+						candidateEnd = argumentValueEnd;
+					}
+
+					arg = argumentValueEnd;
+				}
+				else
+				{
+					var argumentValueStart = arg;
+					var argumentValueEnd = ReadMarkupValue(xml, arg, valueEnd);
+					if (candidateStart < 0)
+					{
+						candidateStart = argumentValueStart;
+						candidateEnd = argumentValueEnd;
+					}
+
+					arg = argumentValueEnd;
+				}
+
+				while ((arg < valueEnd) && char.IsWhiteSpace(xml[arg]))
+				{
+					arg++;
+				}
+
+				if ((arg < valueEnd) && (xml[arg] == ','))
+				{
+					arg++;
+					continue;
+				}
+
+				break;
+			}
+
+			if ((candidateStart >= 0) && (caret >= candidateStart) && (caret <= candidateEnd) && (candidateEnd > candidateStart))
+			{
+				pathStart = candidateStart;
+				path = xml.Substring(candidateStart, candidateEnd - candidateStart);
+				return true;
+			}
+
+			i = arg > i ? arg : nameEnd;
+		}
+
+		return false;
+	}
+
+	private static bool TrySelectBindingSegment(string path, int offset, out BindingSegment[] segments, out int index)
+	{
+		segments = new BindingSegment[0];
+		index = -1;
+		if (string.IsNullOrEmpty(path))
+		{
+			return false;
+		}
+
+		if (offset < 0)
+		{
+			offset = 0;
+		}
+
+		if (offset > path.Length)
+		{
+			offset = path.Length;
+		}
+
+		var parsed = new List<BindingSegment>();
+		var blocked = false;
+		var i = 0;
+		while ((i < path.Length) && (path[i] == '!'))
+		{
+			i++;
+		}
+
+		while (i < path.Length)
+		{
+			var c = path[i];
+			if (c == '.')
+			{
+				i++;
+				continue;
+			}
+
+			if ((c == '?') && ((i + 1) < path.Length) && (path[i + 1] == '.'))
+			{
+				i += 2;
+				continue;
+			}
+
+			if (c == '[')
+			{
+				blocked = true;
+				i = SkipBrackets(path, i);
+				continue;
+			}
+
+			if (!IsBindingSegmentStart(c))
+			{
+				break;
+			}
+
+			var start = i;
+			i++;
+			while ((i < path.Length) && IsBindingSegmentChar(path[i]))
+			{
+				i++;
+			}
+
+			parsed.Add(new BindingSegment(path.Substring(start, i - start), start, i, !blocked));
+		}
+
+		if (parsed.Count == 0)
+		{
+			return false;
+		}
+
+		var selected = -1;
+		for (var s = 0; s < parsed.Count; s++)
+		{
+			if ((offset >= parsed[s].Start) && (offset < parsed[s].End))
+			{
+				selected = s;
+				break;
+			}
+		}
+
+		// A caret sitting on '.' or '?.' belongs to the property before that separator.
+		if (selected < 0)
+		{
+			for (var s = parsed.Count - 1; s >= 0; s--)
+			{
+				if (offset < parsed[s].End)
+				{
+					continue;
+				}
+
+				if (IsCaretOnSegmentBoundary(path, parsed[s].End, offset))
+				{
+					selected = s;
+				}
+
+				break;
+			}
+		}
+
+		if ((selected < 0) || !parsed[selected].Reachable)
+		{
+			return false;
+		}
+
+		segments = parsed.ToArray();
+		index = selected;
+		return true;
+	}
+
+	private static bool IsCaretOnSegmentBoundary(string path, int segmentEnd, int offset)
+	{
+		if (offset == segmentEnd)
+		{
+			return true;
+		}
+
+		var i = segmentEnd;
+		if ((i < path.Length) && (path[i] == '?'))
+		{
+			i++;
+		}
+
+		if ((i < path.Length) && (path[i] == '.'))
+		{
+			i++;
+		}
+
+		return offset <= i;
+	}
+
+	private static int SkipBrackets(string text, int index)
+	{
+		var depth = 0;
+		while (index < text.Length)
+		{
+			var c = text[index];
+			if (c == '[')
+			{
+				depth++;
+				index++;
+				continue;
+			}
+
+			if (c == ']')
+			{
+				depth--;
+				index++;
+				if (depth <= 0)
+				{
+					return index;
+				}
+
+				continue;
+			}
+
+			index++;
+		}
+
+		return index;
+	}
+
+	private static int ReadMarkupValue(string xml, int start, int end)
+	{
+		var i = start;
+		while (i < end)
+		{
+			var c = xml[i];
+			if (char.IsWhiteSpace(c) || (c == ',') || (c == '}') || (c == '{') || (c == '"'))
+			{
+				break;
+			}
+
+			i++;
+		}
+
+		return i;
+	}
+
+	private static bool LooksLikeNamedMarkupArgument(string xml, int index, int end, out int nameLength)
+	{
+		nameLength = 0;
+		if ((index >= end) || !IsBindingSegmentStart(xml[index]))
+		{
+			return false;
+		}
+
+		var i = index + 1;
+		while ((i < end) && IsBindingSegmentChar(xml[i]))
+		{
+			i++;
+		}
+
+		var length = i - index;
+		while ((i < end) && char.IsWhiteSpace(xml[i]))
+		{
+			i++;
+		}
+
+		if ((i >= end) || (xml[i] != '='))
+		{
+			return false;
+		}
+
+		nameLength = length;
+		return true;
+	}
+
+	private static bool IsBindingExtensionName(string name)
+	{
+		return name.Equals("Binding", StringComparison.OrdinalIgnoreCase)
+			|| name.Equals("x:Bind", StringComparison.OrdinalIgnoreCase)
+			|| name.Equals("Bind", StringComparison.OrdinalIgnoreCase);
+	}
+
+	private static bool IsBindingSegmentChar(char c)
+	{
+		return char.IsLetterOrDigit(c) || (c == '_');
+	}
+
+	private static bool IsBindingSegmentStart(char c)
+	{
+		return char.IsLetter(c) || (c == '_');
+	}
+
+	private static bool IsMarkupNameChar(char c)
+	{
+		return char.IsLetterOrDigit(c) || (c == '_') || (c == ':');
+	}
+
+	private static MetadataProperty FindInstanceProperty(MetadataType type, string name)
+	{
+		if ((type == null) || string.IsNullOrEmpty(name))
+		{
+			return null;
+		}
+
+		foreach (var property in type.Properties)
+		{
+			if (property.IsAttached || property.IsStatic || !property.HasGetter)
+			{
+				continue;
+			}
+
+			if (string.Equals(property.Name, name, StringComparison.Ordinal))
+			{
+				return property;
+			}
+		}
+
+		return null;
 	}
 
 	private static XamlGoToDefinitionTarget ResolveName(
@@ -720,6 +1111,29 @@ public static class XamlGoToDefinitionResolver
 		}
 
 		return value.Trim();
+	}
+
+	#endregion
+
+	#region Structures
+
+	private readonly struct BindingSegment
+	{
+		public BindingSegment(string name, int start, int end, bool reachable)
+		{
+			Name = name;
+			Start = start;
+			End = end;
+			Reachable = reachable;
+		}
+
+		public int End { get; }
+
+		public string Name { get; }
+
+		public bool Reachable { get; }
+
+		public int Start { get; }
 	}
 
 	#endregion

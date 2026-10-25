@@ -130,7 +130,7 @@ public final class ControlInjector {
 				continue;
 			}
 			if (i > start) {
-				new ProcessBuilder("input", "text", escapeInputText(value.substring(start, i))).start().waitFor();
+				new ProcessBuilder("input", "text", formatInputText(value.substring(start, i))).start().waitFor();
 			}
 			if (i < value.length()) {
 				key(66);
@@ -143,14 +143,14 @@ public final class ControlInjector {
 		}
 	}
 
-	private static String escapeInputText(String value) {
+	// ProcessBuilder execs `input` directly. A backslash would be typed.
+	// `input text` itself turns %s into a space.
+	private static String formatInputText(String value) {
 		StringBuilder builder = new StringBuilder(value.length());
 		for (int i = 0; i < value.length(); i++) {
 			char c = value.charAt(i);
 			if (c == ' ') {
 				builder.append("%s");
-			} else if (c == '%' || c == '"' || c == '\'' || c == '\\' || c == '&' || c == '<' || c == '>' || c == ';' || c == '(' || c == ')' || c == '|') {
-				builder.append('\\').append(c);
 			} else {
 				builder.append(c);
 			}

@@ -50,7 +50,7 @@ Do not hand-`AddTransient<T>()` for types the generator already emits.
 - Two assemblies registering the same interface: order is the contract; second `Add*` is ignored.
 - Calling a desktop assembly’s `RegisterDependencies` from ASP.NET leaves unused desktop keys (`AppKeystone`, `IWebClient`) that blow up on first resolve.
 - Instance `AddSingleton(value)` after a generated factory for the same type is a no-op — register the instance **first**.
-- `SetTransient<T, T2>()` with no factory calls `CreateInstanceForDependencyInjection`. A type with no `[DependencyInjectionConstructor]` throws `DependencyInjectorConstructorException` on `GetInstance`. On WASM that exception, thrown from inside a pointer-up, freezes the page. Pass a factory: `SetTransient<T, T2>(() => new T2())`. See [BrowserDebug.md](BrowserDebug.md).
+- `AddTransient<TService, TImpl>()` and `SetTransient<TService, TImpl>()` with no factory call `CreateInstanceForDependencyInjection`. The implementation needs `[SourceReflection]` and `[DependencyInjectionConstructor]`. On the browser, a public constructor that was not generated is reported as "Source reflection returned 0 constructors." That exception, thrown from inside a pointer-up, freezes the page. `BrowserGamepad` is the worked example in [SourceReflection.md](SourceReflection.md). An explicit factory (`() => new TImpl(...)`) skips the map. See [BrowserDebug.md](BrowserDebug.md).
 
 ## File map
 

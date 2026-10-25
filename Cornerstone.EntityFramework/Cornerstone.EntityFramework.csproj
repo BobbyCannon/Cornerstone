@@ -8,8 +8,8 @@
 	</PropertyGroup>
 	<Import Project="..\Package.props" />
 	<ItemGroup>
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.11" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.13" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Cornerstone\Cornerstone.csproj" />

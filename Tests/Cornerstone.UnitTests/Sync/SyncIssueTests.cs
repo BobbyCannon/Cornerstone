@@ -24,12 +24,14 @@ public class SyncIssueTests : CornerstoneUnitTest
 			Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
 			IssueType = SyncIssueType.UpdateException,
 			Message = "failed",
+			Side = "Server",
 			TypeName = "Old.Type"
 		};
 		var converted = issue.Convert("New.Type");
 		AreEqual(issue.Id, converted.Id);
 		AreEqual(issue.IssueType, converted.IssueType);
 		AreEqual(issue.Message, converted.Message);
+		AreEqual("Server", converted.Side);
 		AreEqual("New.Type", converted.TypeName);
 		AreEqual("Old.Type", issue.TypeName);
 	}

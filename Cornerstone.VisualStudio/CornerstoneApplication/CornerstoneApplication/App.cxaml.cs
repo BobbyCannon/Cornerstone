@@ -3,6 +3,7 @@
 using Cornerstone.Presentation.Controls;
 using Cornerstone.Presentation.Controls.ApplicationLifetimes;
 using Cornerstone.Presentation.Markup.Xaml;
+using Cornerstone.Runtime;
 using CornerstoneApplication.ViewModels;
 using CornerstoneApplication.Views;
 
@@ -22,13 +23,15 @@ public class App : global::Cornerstone.Presentation.Application
 
 	public override void OnFrameworkInitializationCompleted()
 	{
-		switch (ApplicationLifetime)
+		var viewModel = AppBootstrap.GetInstance<MainViewModel>();
+
+        switch (ApplicationLifetime)
 		{
 			case IClassicDesktopStyleApplicationLifetime desktop:
 			{
 				desktop.MainWindow = new MainWindow
 				{
-					DataContext = new MainViewModel()
+					DataContext = viewModel
 				};
 				break;
 			}
@@ -36,7 +39,7 @@ public class App : global::Cornerstone.Presentation.Application
 			{
 				singleViewPlatform.MainView = new MainView
 				{
-					DataContext = new MainViewModel()
+					DataContext = viewModel
 				};
 				break;
 			}
@@ -45,5 +48,17 @@ public class App : global::Cornerstone.Presentation.Application
 		base.OnFrameworkInitializationCompleted();
 	}
 
-	#endregion
+    public static void RegisterServices(DependencyProvider dependencyProvider, bool designOrUnitTesting)
+    {
+        if (designOrUnitTesting)
+        {
+            dependencyProvider.AddDesignStubs();
+        }
+
+        Cornerstone.CornerstoneGenerated.RegisterDependencies(dependencyProvider);
+        Cornerstone.Presentation.CornerstoneGenerated.RegisterDependencies(dependencyProvider);
+        //CornerstoneGenerated.RegisterDependencies(dependencyProvider);
+    }
+
+    #endregion
 }

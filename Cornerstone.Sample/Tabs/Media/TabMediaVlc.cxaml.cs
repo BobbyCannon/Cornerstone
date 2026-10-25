@@ -263,8 +263,17 @@ public partial class TabMediaVlc : UserControl
 			return;
 		}
 
-		Player.Source = source;
-		Player.Play();
+		try
+		{
+			Player.Source = source;
+			Player.Play();
+		}
+		catch (Exception ex)
+		{
+			StatusText = ex.Message;
+			return;
+		}
+
 		_timer.Start();
 		StatusText = "Playing";
 		RefreshTransport();

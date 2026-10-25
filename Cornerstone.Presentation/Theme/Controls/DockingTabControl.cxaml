@@ -9,7 +9,7 @@
 					BasedOn="{StaticResource {x:Type TabControl}}">
 				<Setter Property="Background" Value="{DynamicResource Background03}" />
 				<Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
-				<Setter Property="BorderThickness" Value="1" />
+				<Setter Property="BorderThickness" Value="0,1,0,0" />
 				<Setter Property="CornerRadius" Value="0" />
 				<Setter Property="Foreground" Value="{DynamicResource Foreground02}" />
 				<Setter Property="Template">
@@ -47,7 +47,8 @@
 							<!-- TabItem header (tabs, new tab button) -->
 							<ScrollViewer Name="PART_ScrollViewer"
 									Theme="{StaticResource MenuScrollViewerForHorizontal}"
-									Grid.Row="0" Grid.Column="1">
+									Grid.Row="0" Grid.Column="1"
+									IsVisible="{TemplateBinding ShowTabStrip}">
 								<StackPanel Orientation="Horizontal">
 									<ItemsPresenter
 											Name="PART_ItemsPresenter"

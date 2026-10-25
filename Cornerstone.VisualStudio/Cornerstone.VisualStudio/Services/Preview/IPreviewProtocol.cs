@@ -29,7 +29,7 @@ internal interface IPreviewProtocol
 
 	object CreateRenderInfo(double dpiX, double dpiY);
 
-	object CreateUpdateXaml(string xaml, string assemblyPath, string themeVariant, string themeColor, string themeDensity);
+	object CreateUpdateXaml(string xaml, string assemblyPath, string xamlFileProjectPath, string themeVariant, string themeColor, string themeDensity);
 
 	void DisposeConnection(object connection);
 

@@ -74,7 +74,7 @@ public class CornerstoneTheme : Style, IApplicationTheme
 	{
 		using (AppBootstrap.StartupProfiler.Start("CornerstoneTheme.Xaml"))
 		{
-			CornerstoneXamlLoader.Load(sp, this);
+			LoadThemeXaml(sp);
 		}
 
 		TryCaptureFontSizeDefaults(Resources);
@@ -129,6 +129,14 @@ public class CornerstoneTheme : Style, IApplicationTheme
 		ToggleThemeCommand = new RelayCommand(ToggleTheme);
 		EnsureFontSizeDefaults();
 		DefaultFocus.EnsureRegistered();
+	}
+
+	/// <summary>
+	/// Loads this theme's XAML document. The markup compiler rewrites CornerstoneXamlLoader.Load in the method that contains the call, so a subclass overrides this and calls Load itself.
+	/// </summary>
+	protected virtual void LoadThemeXaml(IServiceProvider sp)
+	{
+		CornerstoneXamlLoader.Load(sp, this);
 	}
 
 	#endregion

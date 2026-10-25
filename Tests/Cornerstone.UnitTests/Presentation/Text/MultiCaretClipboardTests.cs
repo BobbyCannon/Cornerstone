@@ -62,6 +62,20 @@ public class MultiCaretClipboardTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void PasteCanUndoDuringDocumentChanged()
+	{
+		var model = Create("aa");
+		var canUndoDuringChange = false;
+		model.DocumentChanged += (_, _) => canUndoDuringChange = model.UndoManager.CanUndo();
+
+		model.ProcessPaste("Z");
+
+		IsTrue(canUndoDuringChange);
+		IsTrue(model.UndoManager.CanUndo());
+		AreEqual("Zaa", model.ToString());
+	}
+
+	[TestMethod]
 	public void PasteRepeatsFullTextWhenLineCountDoesNotMatch()
 	{
 		var model = Create("aa\r\nbb");

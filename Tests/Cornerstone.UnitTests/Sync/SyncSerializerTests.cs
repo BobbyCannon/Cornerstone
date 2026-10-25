@@ -44,6 +44,7 @@ public class SyncSerializerTests : CornerstoneUnitTest
 				Id = issueId,
 				IssueType = SyncIssueType.UpdateException,
 				Message = "nope",
+				Side = "Server",
 				TypeName = "T"
 			}),
 			ResumeStatistics = new SyncStatistics
@@ -97,6 +98,7 @@ public class SyncSerializerTests : CornerstoneUnitTest
 		AreEqual(issueId, restoredOperation.Issues.Collection[0].Id);
 		AreEqual(SyncIssueType.UpdateException, restoredOperation.Issues.Collection[0].IssueType);
 		AreEqual("nope", restoredOperation.Issues.Collection[0].Message);
+		AreEqual("Server", restoredOperation.Issues.Collection[0].Side);
 
 		var result = new SyncOperationResult
 		{
@@ -105,6 +107,7 @@ public class SyncSerializerTests : CornerstoneUnitTest
 				Id = issueId,
 				IssueType = SyncIssueType.SyncEntityFiltered,
 				Message = "filtered",
+				Side = "Client",
 				TypeName = "Address"
 			}),
 			Changes = new ServiceResult<SyncObject>(operation.Changes.Collection.ToList())
@@ -143,6 +146,7 @@ public class SyncSerializerTests : CornerstoneUnitTest
 		AreEqual(2, restoredResult.Statistics.IndividualProcessCount);
 		AreEqual(SyncIssueType.SyncEntityFiltered, restoredResult.AppliedIssues.Collection[0].IssueType);
 		AreEqual("filtered", restoredResult.AppliedIssues.Collection[0].Message);
+		AreEqual("Client", restoredResult.AppliedIssues.Collection[0].Side);
 		AreEqual(2, restoredResult.Changes.Skipped);
 		AreEqual(5, restoredResult.Changes.TotalCount);
 		IsTrue(restoredResult.Changes.HasMore);

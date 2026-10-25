@@ -1,6 +1,7 @@
 #region References
 
 using System.Runtime.InteropServices.JavaScript;
+using Cornerstone.Presentation.Browser.Interop;
 
 #endregion
 
@@ -13,34 +14,34 @@ public partial class BrowserInterop
 	[JSImport("globalThis.document.createElement")]
 	public static partial JSObject CreateElement(string tagName);
 
-	[JSImport("document.createElement", "Cornerstone.Browser.js")]
+	[JSImport("document.createElement", CornerstoneModule.MainModuleName)]
 	public static partial JSObject CreateElement(JSObject parent, string tagName);
 
-	[JSImport("document.attachOverlay", "Cornerstone.Browser.js")]
+	[JSImport("document.attachOverlay", CornerstoneModule.MainModuleName)]
 	public static partial JSObject AttachOverlay(JSObject element);
 
-	[JSImport("document.setOverlayBounds", "Cornerstone.Browser.js")]
+	[JSImport("document.setOverlayBounds", CornerstoneModule.MainModuleName)]
 	public static partial JSObject SetOverlayBounds(JSObject element, double x, double y, double width, double height);
 
-	[JSImport("document.detachOverlay", "Cornerstone.Browser.js")]
+	[JSImport("document.detachOverlay", CornerstoneModule.MainModuleName)]
 	public static partial JSObject DetachOverlay(JSObject element);
 
-	[JSImport("localStorage.getValue", "Cornerstone.Browser.js")]
+	[JSImport("localStorage.getValue", CornerstoneModule.MainModuleName)]
 	public static partial string GetLocalStorageValue(string key);
 
-	[JSImport("window.getLocation", "Cornerstone.Browser.js")]
+	[JSImport("window.getLocation", CornerstoneModule.MainModuleName)]
 	public static partial string GetWindowLocation();
 
-	[JSImport("document.hideElement", "Cornerstone.Browser.js")]
+	[JSImport("document.hideElement", CornerstoneModule.MainModuleName)]
 	public static partial JSObject HideElement(JSObject parent);
 
-	[JSImport("localStorage.setValue", "Cornerstone.Browser.js")]
+	[JSImport("localStorage.setValue", CornerstoneModule.MainModuleName)]
 	public static partial void SetLocalStorageValue(string key, string value);
 
-	[JSImport("window.setLocation", "Cornerstone.Browser.js")]
+	[JSImport("window.setLocation", CornerstoneModule.MainModuleName)]
 	public static partial string SetWindowLocation(string location);
 
-	[JSImport("document.showElement", "Cornerstone.Browser.js")]
+	[JSImport("document.showElement", CornerstoneModule.MainModuleName)]
 	public static partial JSObject ShowElement(JSObject parent);
 
 	#endregion

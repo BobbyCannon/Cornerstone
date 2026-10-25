@@ -7,6 +7,7 @@ using Android.Hardware.Display;
 using Android.OS;
 using Android.Views;
 using Cornerstone.Data.Bytes;
+using Cornerstone.Platforms;
 using Cornerstone.Input;
 using Cornerstone.Location;
 using Cornerstone.Media;
@@ -98,6 +99,7 @@ public class AndroidPlatform : CornerstoneObject, IPlatform
 	private void AddPlatformImplementations()
 	{
 		DependencyProvider.AddTransient<AudioPlayer, AndroidAudioPlayer>();
+		DependencyProvider.AddSingleton<IBiometricKeyService, AndroidBiometricKeyService>();
 		DependencyProvider.AddSingleton<Gamepad, GamepadStub>();
 		DependencyProvider.AddSingleton<IKeepAlive, AndroidKeepAlive>();
 		DependencyProvider.AddSingleton<Keyboard, KeyboardStub>();
@@ -105,8 +107,8 @@ public class AndroidPlatform : CornerstoneObject, IPlatform
 		DependencyProvider.AddSingleton<ILocationProvider>(() => new AndroidLocationProvider());
 		DependencyProvider.AddSingleton<IPermissions, AndroidPermissions>();
 		DependencyProvider.AddSingleton<PlatformCredentialVault, AndroidPlatformCredentialVault>();
+		DependencyProvider.AddSingleton<IScreenSampler, ScreenSamplerStub>();
 		DependencyProvider.AddSingleton<SecurityCardReader, AndroidSecurityCardReader>();
-		DependencyProvider.AddSingleton<IWindowsHelloService, WindowsHelloServiceStub>();
 	}
 
 	private static string GetSystemSetting(string name, bool isGlobal = false)

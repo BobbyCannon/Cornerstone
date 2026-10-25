@@ -78,12 +78,13 @@ internal sealed class CornerstonePreviewProtocol : IPreviewProtocol
 		return new ClientRenderInfoMessage { DpiX = dpiX, DpiY = dpiY };
 	}
 
-	public object CreateUpdateXaml(string xaml, string assemblyPath, string themeVariant, string themeColor, string themeDensity)
+	public object CreateUpdateXaml(string xaml, string assemblyPath, string xamlFileProjectPath, string themeVariant, string themeColor, string themeDensity)
 	{
 		return new UpdateXamlMessage
 		{
 			Xaml = xaml,
 			AssemblyPath = assemblyPath,
+			XamlFileProjectPath = xamlFileProjectPath,
 			ThemeVariant = themeVariant,
 			ThemeColor = themeColor,
 			ThemeDensity = themeDensity

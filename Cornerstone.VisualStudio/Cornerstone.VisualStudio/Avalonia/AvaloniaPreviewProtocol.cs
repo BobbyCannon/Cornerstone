@@ -80,9 +80,14 @@ internal sealed class AvaloniaPreviewProtocol : IPreviewProtocol
 		return new ClientRenderInfoMessage { DpiX = dpiX, DpiY = dpiY };
 	}
 
-	public object CreateUpdateXaml(string xaml, string assemblyPath, string themeVariant, string themeColor, string themeDensity)
+	public object CreateUpdateXaml(string xaml, string assemblyPath, string xamlFileProjectPath, string themeVariant, string themeColor, string themeDensity)
 	{
-		return new UpdateXamlMessage { Xaml = xaml, AssemblyPath = assemblyPath };
+		return new UpdateXamlMessage
+		{
+			Xaml = xaml,
+			AssemblyPath = assemblyPath,
+			XamlFileProjectPath = xamlFileProjectPath
+		};
 	}
 
 	public void DisposeConnection(object connection)

@@ -34,7 +34,7 @@ public partial class CornerstoneView
         if (_client == null && IsDrivingText)
             BecomeFirstResponder();            
 
-        if (_client is { })
+        if (_client is { ShowInputPane: true })
         {
             new TextInputResponder(this, _client).BecomeFirstResponder();
         }

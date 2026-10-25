@@ -142,7 +142,7 @@
 	<ItemGroup>
 		<PackageReference Include="Avalonia.Remote.Protocol" Version="$(AvaloniaVersion)" />
 		<PackageReference Include="MessagePack" Version="2.5.302" />
-		<PackageReference Include="Microsoft.Build.Tasks.Core" Version="17.8.43" />
+		<PackageReference Include="Microsoft.Build.Tasks.Core" Version="18.11.0" />
 		<PackageReference Include="Microsoft.CodeAnalysis" Version="4.14.0" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.14.0" />
@@ -158,7 +158,7 @@
 		<PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.14.40608">
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
-		<PackageReference Include="Serilog" Version="4.0.0" />
+		<PackageReference Include="Serilog" Version="4.4.0" />
 		<PackageReference Include="Serilog.Sinks.Trace" Version="4.0.0" />
 		<PackageReference Include="SerilogAnalyzer" Version="0.15.0" />
 	</ItemGroup>

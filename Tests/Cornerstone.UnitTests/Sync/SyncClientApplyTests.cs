@@ -157,7 +157,9 @@ public class SyncClientApplyTests : SyncScenarioTest
 			var result = target.ApplyChanges(targetSession, new ServiceRequest<SyncObject>(incoming));
 			AreEqual(1, result.Collection.Count);
 			AreEqual(SyncIssueType.UpdateException, result.Collection[0].IssueType);
-			IsTrue(result.Collection[0].Message.Contains("The converter failed to update the entity."));
+			AreEqual("Client", result.Collection[0].Side);
+			IsTrue(result.Collection[0].Message.Contains("Client refused Added"));
+			IsTrue(result.Collection[0].Message.Contains("The update callback returned false."));
 		});
 	}
 

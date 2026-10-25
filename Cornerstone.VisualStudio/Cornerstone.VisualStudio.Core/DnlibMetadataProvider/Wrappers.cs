@@ -204,6 +204,32 @@ internal class TypeWrapper : ITypeInformation
 		return FromDef(_session.GetTypeDef(_session.GetBaseType(_type)), _session);
 	}
 
+	public IEnumerable<ITypeInformation> GetInterfaces()
+	{
+		if (!_type.HasInterfaces)
+		{
+			return [];
+		}
+
+		var result = new List<ITypeInformation>();
+		foreach (var impl in _type.Interfaces)
+		{
+			var iface = impl.Interface;
+			if ((iface is TypeSpec spec) && (spec.TypeSig is GenericInstSig generic))
+			{
+				iface = generic.GenericType.TypeDefOrRef;
+			}
+
+			var wrapped = FromDef(_session.GetTypeDef(iface), _session);
+			if (wrapped != null)
+			{
+				result.Add(wrapped);
+			}
+		}
+
+		return result;
+	}
+
 	public override string ToString()
 	{
 		return Name;

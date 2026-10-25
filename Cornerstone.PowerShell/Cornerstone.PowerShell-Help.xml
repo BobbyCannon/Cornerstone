@@ -643,13 +643,13 @@ DeviceType                    : Desktop</dev:code>
 			<command:name>Restart-WebsiteAppPool</command:name>
 			<gl:group>Environment</gl:group>
 			<maml:description>
-				<maml:para>Restart a website application pool</maml:para>
+				<maml:para>Restart (or start) a website application pool.</maml:para>
 			</maml:description>
 			<command:verb>Restart</command:verb>
 			<command:noun>WebsiteAppPool</command:noun>
 		</command:details>
 		<maml:description>
-			<maml:para>Restart a website application pool</maml:para>
+			<maml:para>Restart (or start) a website application pool.</maml:para>
 		</maml:description>
 		<command:syntax>
 			<command:syntaxItem>

@@ -11,6 +11,12 @@
 		<GenerateDocumentationFile>false</GenerateDocumentationFile>
 		<NoWarn>$(NoWarn);CS8002</NoWarn>
 	</PropertyGroup>
+	<!-- Pkcs 9.0.x and 10.0.12 are flagged by GHSA-846f-f764-76mx. A direct reference keeps restore on the patched build. -->
+	<ItemGroup>
+		<PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13">
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+	</ItemGroup>
 	<!-- Cornerstone/Directory.Build.props is not imported here. App x:Class files still need the name generator for InitializeComponent. -->
 	<ItemGroup>
 		<ProjectReference Include="$(MSBuildThisFileDirectory)..\Cornerstone.Generators\Cornerstone.Generators.csproj"

@@ -14,7 +14,8 @@ namespace Cornerstone.Sample.Tabs.Inputs;
 
 /// <summary>
 /// Four gamepad slots for the Inputs sample. Uses the platform Gamepad when
-/// registered (Windows XInput); otherwise GamepadStub.
+/// it is registered as a transient (Windows, browser, iOS, Linux, macOS).
+/// A singleton registration is the stub, and each slot is then its own stub.
 /// </summary>
 [DependencyInjected]
 [SourceReflection]

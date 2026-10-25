@@ -1,7 +1,6 @@
 ﻿using Cornerstone.Presentation.Controls.Elements;
 using Cornerstone.Presentation.Media;
 using Cornerstone.Presentation.Platform;
-using Cornerstone.Presentation.Utilities;
 
 namespace Cornerstone.Presentation.Controls.Utils
 {
@@ -138,11 +137,10 @@ namespace Cornerstone.Presentation.Controls.Utils
 
                 Pen.TryModifyOrCreate(ref _cachedPen, borderBrush, thickness);
 
-                var rect = new Rect(_size);
-                if (!MathUtilities.IsZero(thickness))
-                    rect = rect.Deflate(thickness * 0.5);
-                var rrect = new RoundedRect(rect, _cornerRadius.TopLeft, _cornerRadius.TopRight,
-                    _cornerRadius.BottomRight, _cornerRadius.BottomLeft);
+                // CornerRadius is the outer corner. Shrink the radii with the centerline so the
+                // stroke stays on that corner. Leaving the outer radius on the inset rect bows the
+                // bend past the rounded clip, and the antialiased edge fades.
+                var rrect = new RoundedRect(new Rect(_size), _cornerRadius).UniformBorderCenterline(thickness);
 
                 context.DrawRectangle(background, _cachedPen, rrect, boxShadows);
             }

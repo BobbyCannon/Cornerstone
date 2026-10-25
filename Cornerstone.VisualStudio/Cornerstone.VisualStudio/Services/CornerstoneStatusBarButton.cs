@@ -6,7 +6,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
-using System.Windows.Media.Animation;
 using Microsoft.VisualStudio.PlatformUI;
 using Cornerstone.VisualStudio.Views;
 using Microsoft.VisualStudio.Shell;
@@ -27,6 +26,7 @@ internal static class CornerstoneStatusBarButton
 
 	private static Button _button;
 	private static RotateTransform _rotation;
+	private static DispatcherTimer _spinTimer;
 	private static bool _spinning;
 	private static int _workingQueued;
 
@@ -38,6 +38,7 @@ internal static class CornerstoneStatusBarButton
 	{
 		_button = null;
 		_rotation = null;
+		_spinTimer = null;
 		_spinning = false;
 		_workingQueued = 0;
 	}
@@ -164,18 +165,51 @@ internal static class CornerstoneStatusBarButton
 			}
 
 			_spinning = true;
-			var animation = new DoubleAnimation();
-			animation.From = 0;
-			animation.To = 360;
-			animation.Duration = new Duration(TimeSpan.FromSeconds(3));
-			animation.RepeatBehavior = RepeatBehavior.Forever;
-			_rotation.BeginAnimation(RotateTransform.AngleProperty, animation);
+			EnsureSpinTimer().Start();
 			return;
 		}
 
 		_spinning = false;
-		_rotation.BeginAnimation(RotateTransform.AngleProperty, null);
+		if (_spinTimer != null)
+		{
+			_spinTimer.Stop();
+		}
+
 		_rotation.Angle = 0;
+	}
+
+	private static DispatcherTimer EnsureSpinTimer()
+	{
+		var timer = _spinTimer;
+		if (timer != null)
+		{
+			return timer;
+		}
+
+		// Background yields to input. A forever DoubleAnimation ticks at Render,
+		// which stays above the keyboard for the whole metadata load.
+		timer = new DispatcherTimer(DispatcherPriority.Background);
+		timer.Interval = TimeSpan.FromMilliseconds(50);
+		timer.Tick += AdvanceGear;
+		_spinTimer = timer;
+		return timer;
+	}
+
+	private static void AdvanceGear(object sender, EventArgs e)
+	{
+		var rotation = _rotation;
+		if (rotation == null)
+		{
+			return;
+		}
+
+		var angle = rotation.Angle + 6;
+		if (angle >= 360)
+		{
+			angle -= 360;
+		}
+
+		rotation.Angle = angle;
 	}
 
 	private static int IndexBeforeResizeGrip(DockPanel panel)

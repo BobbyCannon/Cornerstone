@@ -118,7 +118,9 @@ internal static class CornerstoneSettingsBridge
 	}
 
 	/// <summary>
-	/// Reads current modern Settings into the MEF store (safe to call from the UI thread).
+	/// Reads current modern Settings into the MEF store.
+	/// On the UI thread the values are applied before this returns. From any
+	/// other thread the apply is posted and this returns without waiting.
 	/// </summary>
 	public static void PullFromExtensibilityBlocking(ICornerstoneSettings store)
 	{
@@ -133,8 +135,9 @@ internal static class CornerstoneSettingsBridge
 		}
 		catch
 		{
-			// If not on UI thread, marshal.
-			ThreadHelper.JoinableTaskFactory.Run(async () =>
+			// JoinableTaskFactory.Run would block this thread inside the same
+			// protector that has been sticking the UI thread.
+			_ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
 			{
 				await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 				ApplyFromSettingsJson(store);

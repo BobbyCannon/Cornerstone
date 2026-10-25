@@ -21,9 +21,9 @@ public class MultiCaretInputTests : CornerstoneUnitTest
 		model.HandlePointerPressed(4, KeyModifiers.Alt, 1);
 
 		AreEqual(2, model.Carets.Count);
-		AreEqual(0, model.Caret.Offset);
-		AreEqual(4, model.Carets.All[1].Offset);
-		IsTrue(model.Carets.All[1].Selection.IsSelectingUsingMouse);
+		AreEqual(4, model.Caret.Offset);
+		AreEqual(0, model.Carets.All[1].Offset);
+		IsTrue(model.Caret.Selection.IsSelectingUsingMouse);
 	}
 
 	[TestMethod]
@@ -33,9 +33,44 @@ public class MultiCaretInputTests : CornerstoneUnitTest
 		model.HandlePointerPressed(4, KeyModifiers.Alt, 1);
 		model.HandlePointerReleased();
 		AreEqual(2, model.Carets.Count);
+		AreEqual(4, model.Caret.Offset);
 
 		model.HandlePointerPressed(4, KeyModifiers.Alt, 1);
-		AreEqual(1, model.Carets.Count);
+		AreEqual(2, model.Carets.Count);
+		AreEqual(4, model.Caret.Offset);
+	}
+
+	[TestMethod]
+	public void CtrlAltClickMakesClickedCaretActive()
+	{
+		var model = Create("abcdefghij");
+		model.HandlePointerPressed(4, KeyModifiers.Control | KeyModifiers.Alt, 1);
+
+		AreEqual(2, model.Carets.Count);
+		AreEqual(model.Caret, model.Carets.Primary);
+		AreEqual(4, model.Caret.Offset);
+		AreEqual(0, model.Carets.All[1].Offset);
+		IsTrue(model.Caret.Selection.IsSelectingUsingMouse);
+
+		model.HandlePointerReleased();
+		model.HandlePointerPressed(7, KeyModifiers.Control | KeyModifiers.Alt, 1);
+
+		AreEqual(3, model.Carets.Count);
+		AreEqual(7, model.Caret.Offset);
+		AreEqual(0, model.Carets.All[1].Offset);
+		AreEqual(4, model.Carets.All[2].Offset);
+	}
+
+	[TestMethod]
+	public void CtrlAltClickOnExtraBecomesActive()
+	{
+		var model = Create("abcdefghij");
+		model.Carets.AddAt(4);
+		model.HandlePointerPressed(4, KeyModifiers.Control | KeyModifiers.Alt, 1);
+
+		AreEqual(2, model.Carets.Count);
+		AreEqual(4, model.Caret.Offset);
+		AreEqual(0, model.Carets.All[1].Offset);
 	}
 
 	[TestMethod]
@@ -45,11 +80,10 @@ public class MultiCaretInputTests : CornerstoneUnitTest
 		model.HandlePointerPressed(2, KeyModifiers.Alt, 1);
 		model.HandlePointerMoved(6);
 
-		var extra = model.Carets.All[1];
-		AreEqual(2, extra.Selection.StartOffset);
-		AreEqual(6, extra.Selection.EndOffset);
-		AreEqual(6, extra.Offset);
-		AreEqual(0, model.Caret.Offset);
+		AreEqual(2, model.Caret.Selection.StartOffset);
+		AreEqual(6, model.Caret.Selection.EndOffset);
+		AreEqual(6, model.Caret.Offset);
+		AreEqual(0, model.Carets.All[1].Offset);
 	}
 
 	[TestMethod]
@@ -123,8 +157,8 @@ public class MultiCaretInputTests : CornerstoneUnitTest
 		model.ProcessKeyDownEvent(args);
 
 		AreEqual(2, model.Carets.Count);
-		AreEqual(1, model.Caret.Offset);
-		AreEqual(8, model.Carets.All[1].Offset);
+		AreEqual(8, model.Caret.Offset);
+		AreEqual(1, model.Carets.All[1].Offset);
 	}
 
 	[TestMethod]
@@ -144,9 +178,9 @@ public class MultiCaretInputTests : CornerstoneUnitTest
 		});
 
 		AreEqual(3, model.Carets.Count);
-		AreEqual(0, model.Caret.Offset);
-		AreEqual(4, model.Carets.All[1].Offset);
-		AreEqual(8, model.Carets.All[2].Offset);
+		AreEqual(8, model.Caret.Offset);
+		AreEqual(0, model.Carets.All[1].Offset);
+		AreEqual(4, model.Carets.All[2].Offset);
 	}
 
 	[TestMethod]

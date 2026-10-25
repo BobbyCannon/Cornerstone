@@ -524,7 +524,14 @@ namespace Cornerstone.Presentation.Backends.Skia
             {
                 using (stroke)
                 {
-                    if (isRounded)
+                    if (isRounded && !HasDash(pen))
+                    {
+                        // A stroked arc drops coverage through the bend, so the corner fades.
+                        // Fill the band between the outer and inner round rects instead. That
+                        // keeps a constant width and the same antialiasing as the straight edges.
+                        DrawFilledRoundedStroke(skRoundRect!, stroke.Paint, pen.Thickness);
+                    }
+                    else if (isRounded)
                     {
                         Canvas.DrawRoundRect(skRoundRect, stroke.Paint);
                     }
@@ -537,6 +544,54 @@ namespace Cornerstone.Presentation.Backends.Skia
 
             if (skRoundRect is not null)
                 SKRoundRectCache.Shared.Return(skRoundRect);
+        }
+
+        private static bool HasDash(IPen pen)
+        {
+            var dashes = pen.DashStyle?.Dashes;
+            return dashes != null && dashes.Count > 0;
+        }
+
+        /// <summary>
+        /// Fills the round-rect stroke as the band between its outer and inner edges.
+        /// </summary>
+        private void DrawFilledRoundedStroke(SKRoundRect centerline, SKPaint paint, double thickness)
+        {
+            var half = (float)(thickness * 0.5);
+            var outer = SKRoundRectCache.Shared.GetAndSetRadii(centerline.Rect, centerline.Radii);
+            var inner = SKRoundRectCache.Shared.GetAndSetRadii(centerline.Rect, centerline.Radii);
+            try
+            {
+                if (half > 0)
+                {
+                    outer.Inflate(half, half);
+                    inner.Deflate(half, half);
+                }
+
+                paint.Style = SKPaintStyle.Fill;
+                paint.StrokeWidth = 0;
+
+                var innerBounds = inner.Rect;
+                if (innerBounds.Width <= 0 || innerBounds.Height <= 0)
+                {
+                    Canvas.DrawRoundRect(outer, paint);
+                    return;
+                }
+
+                // A one-pixel diagonal never covers a pixel center, so a single fill tops out
+                // around three quarters opaque and the bend looks faded next to a solid edge.
+                // Drawing an opaque band again with source-over leaves fully covered pixels alone
+                // and lifts the partial pixels on the bend. Translucent brushes skip the second
+                // pass so their opacity stays what the brush asked for.
+                Canvas.DrawRoundRectDifference(outer, inner, paint);
+                if (paint.Color.Alpha == 255 && paint.Shader == null)
+                    Canvas.DrawRoundRectDifference(outer, inner, paint);
+            }
+            finally
+            {
+                SKRoundRectCache.Shared.Return(outer);
+                SKRoundRectCache.Shared.Return(inner);
+            }
         }
 
         /// <inheritdoc />

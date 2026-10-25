@@ -88,6 +88,7 @@
   <Project Path="Cornerstone.Presentation.BuildTasks/Cornerstone.Presentation.BuildTasks.csproj" />
   <Project Path="Cornerstone.Presentation.DevGenerators/Cornerstone.Presentation.DevGenerators.csproj" />
   <Project Path="Cornerstone.Presentation.Sandbox/Cornerstone.Presentation.Sandbox.csproj" />
+  <Project Path="Cornerstone.Presentation.Themes.Extras/Cornerstone.Presentation.Themes.Extras.csproj" />
   <Project Path="Cornerstone.Sample.Android/Cornerstone.Sample.Android.csproj">
     <Deploy />
   </Project>

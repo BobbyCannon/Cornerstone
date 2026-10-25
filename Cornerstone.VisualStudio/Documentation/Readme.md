@@ -12,6 +12,6 @@ Notes and plans for the **Cornerstone.VisualStudio** extension (Cornerstone desi
 | [Todo/Optimization.md](Todo/Optimization.md) | Performance optimization plan for the designer |
 | [Todo/ClickToSourceNavigation.md](Todo/ClickToSourceNavigation.md) | Design: click preview → navigate to AXAML (deferred) |
 | [Todo/BlankPreview.md](Todo/BlankPreview.md) | Blank preview: host accepts XAML, no frame painted yet |
-| [Todo/ShellLockup.md](Todo/ShellLockup.md) | Open leads for the shell ignoring input until a key or a resize |
+| [Todo/ShellLockup.md](Todo/ShellLockup.md) | Resume here when Visual Studio ignores input until a key, a resize, or moving the window. The lockup cannot be forced |
 
 Framework-level docs live in **Cornerstone.Documentation** (separate reader EXE).

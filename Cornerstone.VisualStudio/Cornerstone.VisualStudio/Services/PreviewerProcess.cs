@@ -72,6 +72,7 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 	private int _framePainted;
 	private int _lastFrameWidth;
 	private int _lastFrameHeight;
+	private int _activityStamp;
 	private readonly object _lifetimeGate;
 	private int _runId;
 	private int _disposedProcess;
@@ -136,6 +137,7 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 		_framePainted = 0;
 		_lastFrameWidth = 0;
 		_lastFrameHeight = 0;
+		_activityStamp = 0;
 		Status = "Idle";
 		Activity = "Idle";
 	}
@@ -188,6 +190,12 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 	/// Preview density sent with the next XAML update: Compact, Normal, or Large.
 	/// </summary>
 	public string PreviewThemeDensity { get; set; }
+
+	/// <summary>
+	/// Project-relative XAML path sent as the preview base URI, such as /SourceControl/Views/RepositoryInfoView.cxaml.
+	/// Relative ResourceInclude and StyleInclude sources resolve against this path.
+	/// </summary>
+	public string XamlFileProjectPath { get; set; }
 
 	/// <summary>
 	/// File name of the designer tab, such as About.cxaml.
@@ -768,8 +776,8 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 	}
 
 	/// <summary>
-	/// Unhooks the preview render pump on the calling thread when that thread is the
-	/// UI thread. Does not kill the process or close the socket.
+	/// Stops presenting on the calling thread when that thread is the UI thread.
+	/// Does not kill the process or close the socket.
 	/// The Cornerstone pump stays stopped until the next listen.
 	/// </summary>
 	public void ReleasePreviewSurface()
@@ -779,7 +787,7 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 	}
 
 	/// <summary>
-	/// Drops the render hook while the host is still running. A hidden tab or a
+	/// Stops presenting while the host is still running. A hidden tab or a
 	/// source-only view uses this so frames are acknowledged and not applied.
 	/// </summary>
 	public void SuspendPreviewSurface()
@@ -1007,10 +1015,10 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 		Interlocked.Exchange(ref _framePainted, 0);
 		Status = "Updating";
 		Activity = "Sent " + refreshedAt;
-		_log.Information("Preview XAML sent at {Time}. Waiting for the host.", refreshedAt);
+		_log.Information("Preview XAML sent at {Time} from {ProjectPath}. Waiting for the host.", refreshedAt, XamlFileProjectPath);
 		try
 		{
-			await SendAsync(_protocol.CreateUpdateXaml(xaml, _assemblyPath, PreviewTheme, PreviewThemeColor, PreviewThemeDensity)).ConfigureAwait(false);
+			await SendAsync(_protocol.CreateUpdateXaml(xaml, _assemblyPath, XamlFileProjectPath, PreviewTheme, PreviewThemeColor, PreviewThemeDensity)).ConfigureAwait(false);
 			// Showing means a frame was painted. Sending the XAML is not that.
 			if ((_error == null) && (Volatile.Read(ref _framePainted) == 0))
 			{
@@ -1908,12 +1916,17 @@ public class PreviewerProcess : IDisposable, ILogEventEnricher
 		var sizeChanged = (width != _lastFrameWidth) || (height != _lastFrameHeight);
 		_lastFrameWidth = width;
 		_lastFrameHeight = height;
-		var paintedAt = DateTime.Now.ToString("h:mm:ss tt");
-		Status = "Showing";
-		Activity = "Frame " + width + "x" + height + " " + paintedAt;
-		if (first || sizeChanged)
+		var now = Environment.TickCount;
+		if (first || sizeChanged || (unchecked(now - _activityStamp) >= 500))
 		{
-			_log.Information("Preview frame painted {Width}x{Height} at {Time}.", width, height, paintedAt);
+			_activityStamp = now;
+			var paintedAt = DateTime.Now.ToString("h:mm:ss tt");
+			Status = "Showing";
+			Activity = "Frame " + width + "x" + height + " " + paintedAt;
+			if (first || sizeChanged)
+			{
+				_log.Information("Preview frame painted {Width}x{Height} at {Time}.", width, height, paintedAt);
+			}
 		}
 	}
 

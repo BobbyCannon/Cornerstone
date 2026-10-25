@@ -1,5 +1,6 @@
 #region References
 
+using System;
 using Cornerstone.Presentation;
 using Cornerstone.Runtime;
 
@@ -27,7 +28,10 @@ public static class AppBuilderExtensions
 			#elif WINDOWS
 			dependencyProvider.SetTransient<IVideoViewAdapter, Platforms.Windows.VideoViewAdapter>();
 			#else
-			dependencyProvider.SetTransient<IVideoViewAdapter, VideoViewAdapterStub>();
+			if (OperatingSystem.IsLinux())
+				dependencyProvider.SetTransient<IVideoViewAdapter, Platforms.Linux.VideoViewAdapter>();
+			else
+				dependencyProvider.SetTransient<IVideoViewAdapter, VideoViewAdapterStub>();
 			#endif
 		});
 	}

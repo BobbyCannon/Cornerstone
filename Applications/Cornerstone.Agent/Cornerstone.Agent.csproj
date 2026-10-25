@@ -21,7 +21,7 @@
 		<PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.27.0" />
 		<PackageReference Include="LLamaSharp.Backend.Cuda12.Windows" Version="0.27.0" />
 		<PackageReference Include="LLamaSharp.Backend.Vulkan.Windows" Version="0.27.0" />
-		<PackageReference Include="WmiLight" Version="7.2.0" />
+		<PackageReference Include="WmiLight" Version="7.3.0" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\Cornerstone.Presentation.Diagnostics\Cornerstone.Presentation.Diagnostics.csproj" />

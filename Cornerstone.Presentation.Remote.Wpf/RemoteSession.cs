@@ -29,28 +29,17 @@ public sealed class RemoteSession : IDisposable
 	private ICornerstoneRemoteTransportConnection _connection;
 	private Dispatcher _dispatcher;
 	private readonly object _frameGate;
-	private bool _compositionHooked;
-	private TimeSpan _lastRenderingTime;
 	private IDisposable _listener;
 	private RemoteFrame _pendingFrame;
 	private bool _processingFrame;
 	private int _writeSlot;
 	private int _disposed;
-	private int _presentScheduled;
-	private int _renderKickScheduled;
+	private int _copyScheduled;
+	private int _preferInputCopy;
 	private int _pumpStopped;
 	private int _pumpSuspended;
-	private TimeSpan _lastFrameRenderingTime;
 	private byte[] _slot0;
 	private byte[] _slot1;
-
-	/// <summary>
-	/// How long the composition hook stays up after the last painted frame.
-	/// Host frames arrive between WPF passes. Dropping the hook on the first
-	/// empty pass made the next frame wait on the Background queue, which is
-	/// the pause-then-burst jitter. A static preview still unhooks after this.
-	/// </summary>
-	private const int RenderHookHoldMilliseconds = 200;
 
 	#endregion
 
@@ -59,17 +48,14 @@ public sealed class RemoteSession : IDisposable
 	public RemoteSession()
 	{
 		_frameGate = new object();
-		_compositionHooked = false;
-		_lastRenderingTime = TimeSpan.MinValue;
 		_pendingFrame = null;
 		_processingFrame = false;
 		_writeSlot = 0;
 		_disposed = 0;
-		_presentScheduled = 0;
-		_renderKickScheduled = 0;
+		_copyScheduled = 0;
+		_preferInputCopy = 1;
 		_pumpStopped = 0;
 		_pumpSuspended = 0;
-		_lastFrameRenderingTime = TimeSpan.MinValue;
 		_slot0 = Array.Empty<byte>();
 		_slot1 = Array.Empty<byte>();
 		PauseFrames = false;
@@ -103,11 +89,11 @@ public sealed class RemoteSession : IDisposable
 
 	/// <summary>
 	/// Binds frame application to <paramref name="dispatcher"/>.
-	/// One callback below keyboard input installs the render hook. Later frames
-	/// ride that hook. One coalesced kick, also below Render, asks for the next
-	/// pass. The hook stays up briefly after the last frame so a live preview
-	/// does not re-enter through the Background queue, then it drops.
-	/// A size change posts layout below input instead of running it on the render pass.
+	/// The first copy after attach, resume, or a new listen is posted at Input
+	/// so a restored document paints. Later copies are posted at Background.
+	/// Background yields while a message is waiting. A chain of Input copies
+	/// does not: with no key down, each one posts a dispatcher message that
+	/// sits in front of a build until Ctrl. There is no CompositionTarget.Rendering hook.
 	/// </summary>
 	public void AttachDispatcher(Dispatcher dispatcher)
 	{
@@ -126,6 +112,7 @@ public sealed class RemoteSession : IDisposable
 
 		if (hasPending)
 		{
+			Interlocked.Exchange(ref _preferInputCopy, 1);
 			EnsurePump();
 		}
 	}
@@ -159,9 +146,10 @@ public sealed class RemoteSession : IDisposable
 		// session, and those frames must present.
 		Interlocked.Exchange(ref _pumpStopped, 0);
 		Interlocked.Exchange(ref _pumpSuspended, 0);
+		Interlocked.Exchange(ref _preferInputCopy, 1);
 		lock (_frameGate)
 		{
-			_presentScheduled = 0;
+			_copyScheduled = 0;
 		}
 
 		var port = FreeTcpPort();
@@ -283,7 +271,7 @@ public sealed class RemoteSession : IDisposable
 	}
 
 	/// <summary>
-	/// Drops the composition hook without closing the socket. Safe on the UI thread.
+	/// Stops presenting without closing the socket. Safe on the UI thread.
 	/// A later <see cref="Stop"/> still disposes the connection.
 	/// The pump stays stopped until the next <see cref="ListenLoopback"/>.
 	/// </summary>
@@ -296,22 +284,23 @@ public sealed class RemoteSession : IDisposable
 			_processingFrame = false;
 		}
 
-		// Send runs before a queued present. A Background unhook never ran while
-		// frames were still posting work above the keyboard.
+		// Send runs before a queued copy so a frame already in the dispatcher
+		// does not paint after the pump is stopped.
 		PostToDispatcher(StopPumpOnUi, DispatcherPriority.Send);
 	}
 
 	/// <summary>
-	/// Unhooks the render pump until <see cref="ResumePump"/>. Frames are still
-	/// acknowledged. Used while the document is hidden or showing source only,
-	/// so a live host does not keep the shell's render band full.
+	/// Stops presenting until <see cref="ResumePump"/>. Frames are still
+	/// acknowledged. Used while the document is hidden or showing source only.
+	/// The latest frame is kept so resume can show it.
 	/// </summary>
 	public void SuspendPump()
 	{
 		Interlocked.Exchange(ref _pumpSuspended, 1);
 		lock (_frameGate)
 		{
-			_pendingFrame = null;
+			// Keep the latest frame. ResumePump presents it. Clearing it here
+			// acknowledged a paint the surface never showed.
 			_processingFrame = false;
 		}
 
@@ -331,6 +320,18 @@ public sealed class RemoteSession : IDisposable
 	public void ResumePump()
 	{
 		Interlocked.Exchange(ref _pumpSuspended, 0);
+
+		var hasPending = false;
+		lock (_frameGate)
+		{
+			hasPending = _pendingFrame != null;
+		}
+
+		if (hasPending)
+		{
+			Interlocked.Exchange(ref _preferInputCopy, 1);
+			EnsurePump();
+		}
 	}
 
 	private async Task CompleteConnectAsync()
@@ -395,7 +396,10 @@ public sealed class RemoteSession : IDisposable
 	{
 		if (message is FrameMessage frame)
 		{
-			if (AcceptsFrames && CopyFrameToPending(frame))
+			// Store even while the surface is suspended. A restored document can
+			// hide and show during solution open. Acknowledging a frame that was
+			// not stored drops the only paint; the host will not send it again.
+			if ((_disposed == 0) && CopyFrameToPending(frame) && AcceptsFrames)
 			{
 				EnsurePump();
 			}
@@ -467,239 +471,77 @@ public sealed class RemoteSession : IDisposable
 			return;
 		}
 
-		// One posted callback installs the hook. A Render or Normal post per frame
-		// sits above the keyboard, and the shell ignores input until a resize.
-		// While the hook is up, one coalesced Input kick schedules the next pass.
-		// That kick is not a Render post, and a second frame does not queue another.
-		var start = false;
-		var hooked = false;
+		// Loaded, Normal, and Render are foreground: WPF posts a dispatcher
+		// message for each of them even while a key is waiting. Input does the
+		// same when no key is already waiting, so a stream of Input copies keeps
+		// a build sitting until Ctrl. One Input copy paints a restored document.
+		// Every copy after that is Background, which arms a timer and yields.
+		// The scheduled flag stays set until the copy returns, so a frame that
+		// arrives during WritePixels cannot queue another Input copy into this
+		// same drain. Do not subscribe to CompositionTarget.Rendering.
+		var input = false;
 		lock (_frameGate)
 		{
-			hooked = _compositionHooked;
-			if (!hooked && (_presentScheduled == 0))
-			{
-				_presentScheduled = 1;
-				start = true;
-			}
-		}
-
-		if (hooked)
-		{
-			SchedulePresentKick();
-		}
-
-		if (start && !BeginOnDispatcher(StartPresentOnUi, DispatcherPriority.Background))
-		{
-			lock (_frameGate)
-			{
-				_presentScheduled = 0;
-			}
-		}
-	}
-
-	private void StartPresentOnUi()
-	{
-		if (!AcceptsFrames)
-		{
-			StopPumpOnUi();
-			return;
-		}
-
-		if (_dispatcher == null)
-		{
-			lock (_frameGate)
-			{
-				_presentScheduled = 0;
-			}
-
-			return;
-		}
-
-		var subscribe = false;
-		lock (_frameGate)
-		{
-			_presentScheduled = 0;
-			if (!_compositionHooked)
-			{
-				_compositionHooked = true;
-				subscribe = true;
-			}
-		}
-
-		if (!subscribe)
-		{
-			return;
-		}
-
-		System.Windows.Media.CompositionTarget.Rendering += OnCompositionRendering;
-		WakePresent();
-	}
-
-	private void OnCompositionRendering(object sender, EventArgs e)
-	{
-		if (!AcceptsFrames)
-		{
-			StopPumpOnUi();
-			return;
-		}
-
-		var rendering = e as System.Windows.Media.RenderingEventArgs;
-		if (rendering != null)
-		{
-			// WPF raises this twice for one pass. The second call has the same time.
-			if (rendering.RenderingTime == _lastRenderingTime)
+			if (_copyScheduled != 0)
 			{
 				return;
 			}
 
-			_lastRenderingTime = rendering.RenderingTime;
+			_copyScheduled = 1;
+			input = Interlocked.Exchange(ref _preferInputCopy, 0) == 1;
 		}
 
-		var painted = ProcessPendingFrameOnUi();
-		if (painted)
+		var priority = input ? DispatcherPriority.Input : DispatcherPriority.Background;
+		if (!BeginOnDispatcher(CopyOnUi, priority))
 		{
-			_lastFrameRenderingTime = _lastRenderingTime;
-		}
-
-		var pending = false;
-		lock (_frameGate)
-		{
-			pending = (_pendingFrame != null) || _processingFrame;
-		}
-
-		// Stay hooked across the gap between host frames. The queue is often
-		// empty at the pass even while the preview is moving, because the next
-		// frame has not arrived yet. Unhooking there sent every frame back
-		// through the Background queue.
-		if (!pending && !painted && !WithinRenderHookHold())
-		{
-			var unhook = false;
 			lock (_frameGate)
 			{
-				if ((_pendingFrame == null) && !_processingFrame && _compositionHooked)
-				{
-					_compositionHooked = false;
-					unhook = true;
-				}
+				_copyScheduled = 0;
 			}
 
-			if (unhook)
+			if (input)
 			{
-				System.Windows.Media.CompositionTarget.Rendering -= OnCompositionRendering;
-				return;
+				Interlocked.Exchange(ref _preferInputCopy, 1);
 			}
 		}
-
-		SchedulePresentKick();
 	}
 
-	private bool WithinRenderHookHold()
-	{
-		if ((_lastFrameRenderingTime == TimeSpan.MinValue) || (_lastRenderingTime == TimeSpan.MinValue))
-		{
-			return false;
-		}
-
-		var elapsed = _lastRenderingTime - _lastFrameRenderingTime;
-		return (elapsed >= TimeSpan.Zero) && (elapsed.TotalMilliseconds < RenderHookHoldMilliseconds);
-	}
-
-	/// <summary>
-	/// Asks WPF for another composition pass. At most one kick is queued.
-	/// Input is below Render, so this does not sit above the keyboard, and the
-	/// same band still drains.
-	/// </summary>
-	private void SchedulePresentKick()
+	private void CopyOnUi()
 	{
 		if (!AcceptsFrames)
 		{
-			return;
-		}
-
-		lock (_frameGate)
-		{
-			if (!_compositionHooked || (_renderKickScheduled != 0))
-			{
-				return;
-			}
-
-			_renderKickScheduled = 1;
-		}
-
-		if (!BeginOnDispatcher(KickPresentOnUi, DispatcherPriority.Input))
-		{
 			lock (_frameGate)
 			{
-				_renderKickScheduled = 0;
+				_copyScheduled = 0;
 			}
-		}
-	}
 
-	private void KickPresentOnUi()
-	{
-		var hooked = false;
-		var pending = false;
+			return;
+		}
+
+		ProcessPendingFrameOnUi();
+
+		var hasPending = false;
 		lock (_frameGate)
 		{
-			_renderKickScheduled = 0;
-			hooked = _compositionHooked;
-			pending = _pendingFrame != null;
+			_copyScheduled = 0;
+			hasPending = _pendingFrame != null;
 		}
 
-		if (!AcceptsFrames || !hooked)
+		// The frame that arrived during the copy was acknowledged and stored.
+		// One Background follow-up shows it. Posting that follow-up at Input
+		// would run before this callback returned to the message loop.
+		if (hasPending)
 		{
-			return;
-		}
-
-		if (pending || WithinRenderHookHold())
-		{
-			WakePresent();
-		}
-	}
-
-	private void WakePresent()
-	{
-		var bitmap = Bitmap;
-		if ((bitmap == null) || (bitmap.PixelWidth <= 0) || (bitmap.PixelHeight <= 0))
-		{
-			return;
-		}
-
-		// A dirty bitmap schedules the render pass that raises Rendering.
-		try
-		{
-			bitmap.Lock();
-			try
-			{
-				bitmap.AddDirtyRect(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight));
-			}
-			finally
-			{
-				bitmap.Unlock();
-			}
-		}
-		catch (InvalidOperationException)
-		{
-			// The bitmap can already be locked by the render pass that subscribed us.
+			EnsurePump();
 		}
 	}
 
 	private void StopPumpOnUi()
 	{
-		_lastFrameRenderingTime = TimeSpan.MinValue;
 		lock (_frameGate)
 		{
-			_presentScheduled = 0;
-			_renderKickScheduled = 0;
-			if (!_compositionHooked)
-			{
-				return;
-			}
-
-			_compositionHooked = false;
+			_copyScheduled = 0;
 		}
-
-		System.Windows.Media.CompositionTarget.Rendering -= OnCompositionRendering;
 	}
 
 	private bool BeginOnDispatcher(Action action, DispatcherPriority priority)
@@ -808,13 +650,12 @@ public sealed class RemoteSession : IDisposable
 
 			var previous = Bitmap;
 			Bitmap = RemoteFrameBitmap.Apply(Bitmap, frame);
-			// WritePixels already invalidates the image. Layout subscribers run only
-			// when the bitmap instance changes (first frame or a new size), and they
-			// run below input. Raising them on this stack is inside the render pass.
+			// WritePixels invalidates the image. Layout runs on this callback
+			// only when the bitmap instance changes.
 			FramePainted?.Invoke(this, EventArgs.Empty);
 			if (!ReferenceEquals(previous, Bitmap))
 			{
-				BeginOnDispatcher(RaiseFrameReceived, DispatcherPriority.Background);
+				RaiseFrameReceived();
 			}
 
 			return true;

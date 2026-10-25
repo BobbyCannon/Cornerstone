@@ -1,6 +1,6 @@
 # Blank preview with no error
 
-**Status:** Open. Reproduced. The host loads the XAML and replies. No frame is painted.  
+**Status:** First paint on a restored document is addressed in `RemoteSession` (2026-10-08). The host sent `frame sent 900x700` and the surface stayed at the 100×100 placeholder: the copy was a Background post, and a hide/show during solution open dropped the only frame. The copy is one Input callback, and a suspended surface keeps that frame for resume. A Loaded callback was tried and removed: it sits above the keyboard, and a build then waited until Ctrl.  
 **Date:** 2026-09-27  
 **Area:** Cornerstone.VisualStudio designer / previewer
 

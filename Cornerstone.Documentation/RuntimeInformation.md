@@ -129,7 +129,7 @@ The flag reports that the image contains ReadyToRun native code. It does not rep
 
 ## Device facts
 
-`DevicePlatform` is chosen at compile time: `Android`, `Browser`, `IOS`, or `Windows`. Any other build reports `Unknown`. The `MacOS` and `Linux` enum values are not returned by this getter.
+`DevicePlatform` is the compile-time platform on Android, browser, iOS, and the Windows target. The shared desktop build checks the operating system at runtime and returns `Windows`, `Linux`, or `MacOS`. Anything else reports `Unknown`.
 
 `DevicePlatformVersion` is `Environment.OSVersion.Version`.
 

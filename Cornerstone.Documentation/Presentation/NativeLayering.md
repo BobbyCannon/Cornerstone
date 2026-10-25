@@ -69,6 +69,8 @@ Premultiplied alpha applies while native-behind is on and that window has a nati
 
 Linux WebView is system WebKitGTK. X11 reparents the widget XID. Wayland cannot share Cornerstone’s `wl_display`, so GTK renders in a hidden X11 window and frames are copied into the subsurface.
 
+Linux video does the same kind of copy. LibVLC decodes into memory and the frame is attached to the Wayland subsurface. The picture is letterboxed inside the control. The H.264 decoder is the system package `vlc-plugin-ffmpeg` (FFmpeg 4.4), not the base `vlc` package. Those libraries have to be loaded before LibVLC starts, or the decoder plugin does not register.
+
 ---
 
 ## Option

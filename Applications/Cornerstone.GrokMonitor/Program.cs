@@ -2,9 +2,9 @@
 
 using System;
 using Cornerstone.Presentation;
+using Cornerstone.Presentation.Controls;
 using Cornerstone.Presentation.Logging;
 using Cornerstone.Presentation.Platforms;
-using Cornerstone.Presentation.Controls;
 using Cornerstone.Runtime;
 
 #endregion

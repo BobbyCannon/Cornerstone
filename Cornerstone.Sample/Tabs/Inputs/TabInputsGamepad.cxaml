@@ -48,7 +48,8 @@
 										<TextBlock Text="Connected" IsVisible="{Binding State.IsConnected}" />
 										<TextBlock Text="Disconnected" Opacity="0.65" IsVisible="{Binding !State.IsConnected}" />
 									</StackPanel>
-									<GamepadView Gamepad="{Binding State}" />
+									<GamepadView Gamepad="{Binding State}"
+											IsVisible="{Binding State.IsConnected}" />
 								</StackPanel>
 							</Border>
 						</DataTemplate>

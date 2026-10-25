@@ -276,6 +276,20 @@ namespace Cornerstone.Presentation.Controls
             return _currentHost.CreateDefaultChild(parent);
         }
 
+        internal void RecreateNativeControl()
+        {
+            _attachment?.Dispose();
+            _attachment = null;
+            if (NativeControlHandle != null)
+            {
+                DestroyNativeControlCore(NativeControlHandle);
+                NativeControlHandle = null;
+            }
+
+            _queuedForDestruction = false;
+            UpdateHost();
+        }
+
         private void DestroyNativeControl()
         {
             if (NativeControlHandle != null)

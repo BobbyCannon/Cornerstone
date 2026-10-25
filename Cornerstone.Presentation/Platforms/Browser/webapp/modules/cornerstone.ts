@@ -13,6 +13,7 @@ import { WebRenderTarget } from "./cornerstone/rendering/webRenderTarget";
 import { SoftwareRenderTarget } from "./cornerstone/rendering/softwareRenderTarget";
 import { WebGlRenderTarget } from "./cornerstone/rendering/webGlRenderTarget";
 import { ScreenHelper } from "./cornerstone/screens";
+import { GamepadHelper } from "./cornerstone/browserHost";
 
 function getModuleUrl(): string {
     return import.meta.url;
@@ -45,7 +46,10 @@ export {
     WebRenderTargetRegistry,
     SoftwareRenderTarget,
     WebGlRenderTarget,
+    GamepadHelper,
     registerServiceWorker,
     getModuleUrl,
     resolveModuleUrl
 };
+
+export { localStorage, document, window } from "./cornerstone/browserHost";

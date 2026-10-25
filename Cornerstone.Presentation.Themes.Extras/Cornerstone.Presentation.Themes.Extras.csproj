@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net10.0;net10.0-windows10.0.26100.0</TargetFrameworks>
+		<RootNamespace>Cornerstone.Presentation.Themes.Extras</RootNamespace>
+		<AssemblyName>Cornerstone.Presentation.Themes.Extras</AssemblyName>
+		<Description>Demo skins for Cornerstone.Presentation. Each theme is a folder with its own root theme and a full copy of the control styles.</Description>
+	</PropertyGroup>
+	<ItemGroup>
+		<CornerstoneXaml Include="**\*.cxaml" Exclude="bin\**;obj\**" />
+	</ItemGroup>
+	<Import Project="..\Build\Presentation.props" />
+</Project>

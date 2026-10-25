@@ -24,6 +24,7 @@ Human model: [../Presentation/NativeLayering.md](../Presentation/NativeLayering.
 | macOS | `Native/` + ObjC `Native/Cornerstone.Native` |
 | Wayland host | `Wayland/WaylandNativeControlHost.cs`, `Wayland/Server/Persistent/WNativeControlSubsurface.cs` |
 | Linux WebView | Theme `Platforms/Desktop/LinuxWebViewAdapter.cs`, `LinuxWebKit.cs` |
+| Linux video | `Platforms/Desktop/LinuxMediaPlayerAdapter.cs`, `LinuxLibVlc.cs`, `LinuxVideoFrames.cs`; VLC `Integrations/Cornerstone.Vlc/Platforms/Linux/VideoViewAdapter.cs` |
 
 ## Do not retry
 
@@ -39,6 +40,7 @@ These failed as the **primary** native-behind path. Do not revive them under a n
 - iOS `HandleResize` `Frame (0,0)` or CSS zoom = device scale; `ScrollsToTop` on a window-sibling WKWebView.
 - WebKitGTK `GtkOffscreenWindow` (2.48 `gdk_window_get_origin` / `isInMonitor` crash). Hidden real `GtkWindow` + cairo blit instead.
 - `gdk_window_set_composited` on XWayland: `BadAccess` CompositeRedirectWindow.
+- Wayland video: returning null from `CreateNativeControlCore` creates a second subsurface and destroys the one the adapter held. `AttachBgra` must run on the UI thread (`Dispatcher.VerifyAccess` in `PostServerJob`). Arch/SteamOS H.264 is `vlc-plugin-ffmpeg` plus FFmpeg 4.4 preloaded from `/usr/lib/ffmpeg4.4` before `libvlc_new`. `libvlc_media_tracks_get` returns the count and writes the array through the second argument.
 - Portal clip left until `PostSubgraph` (descendants inherit hole-exclusion; overlay chrome vanishes).
 
 X11 stays child-on-top + pause. No X11 native-behind.

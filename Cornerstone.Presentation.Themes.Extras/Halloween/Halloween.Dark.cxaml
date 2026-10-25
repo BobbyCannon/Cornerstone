@@ -1,0 +1,33 @@
+<ResourceDictionary xmlns="https://github.com/BobbyCannon/Cornerstone"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+	<!-- Night purple, lifted so panels read as purple and cream text stays bright. -->
+	<Color x:Key="Background00">#160818</Color>
+	<Color x:Key="Background01">#1E0C28</Color>
+	<Color x:Key="Background02">#2A1240</Color>
+	<Color x:Key="Background03">#361854</Color>
+	<Color x:Key="Background04">#421E68</Color>
+	<Color x:Key="Background05">#522880</Color>
+	<Color x:Key="Background06">#643496</Color>
+	<Color x:Key="Background07">#7A44AA</Color>
+	<Color x:Key="Background08">#9258C0</Color>
+	<Color x:Key="Background09">#B07AD8</Color>
+	<Color x:Key="Foreground00">#FFF6EE</Color>
+	<Color x:Key="Foreground01">#FFE8D2</Color>
+	<Color x:Key="Foreground02">#FFD8B8</Color>
+	<Color x:Key="Foreground03">#F6C8A4</Color>
+	<Color x:Key="Foreground04">#E8B890</Color>
+	<Color x:Key="Foreground05">#D4A484</Color>
+	<Color x:Key="Foreground06">#C09078</Color>
+	<Color x:Key="Foreground07">#B08080</Color>
+	<Color x:Key="Foreground08">#A07090</Color>
+	<Color x:Key="Foreground09">#907088</Color>
+
+	<ResourceDictionary.MergedDictionaries>
+		<ResourceInclude Source="csres://Cornerstone.Presentation/Theming/SyntaxColor.Dark.cxaml" />
+		<ResourceInclude Source="csres://Cornerstone.Presentation/Theming/Theme.Shared.cxaml" />
+	</ResourceDictionary.MergedDictionaries>
+
+	<Color x:Key="SelectionColor">#66FF8A1E</Color>
+	<SolidColorBrush x:Key="SelectionBrush" Color="#66FF8A1E" />
+</ResourceDictionary>

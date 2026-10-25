@@ -34,6 +34,11 @@ public partial class SyncIssue : CornerstoneObject<SyncIssue>
 	public partial string Message { get; set; }
 
 	/// <summary>
+	/// Which side recorded the issue. Client or Server.
+	/// </summary>
+	public partial string Side { get; set; }
+
+	/// <summary>
 	/// Gets or sets the type name of the object.
 	/// </summary>
 	public partial string TypeName { get; set; }
@@ -60,7 +65,12 @@ public partial class SyncIssue : CornerstoneObject<SyncIssue>
 
 	public override string ToString()
 	{
-		return $"{IssueType} : {TypeName} - {Message}";
+		if (string.IsNullOrEmpty(Side))
+		{
+			return $"{IssueType} : {TypeName} - {Message}";
+		}
+
+		return $"{Side} {IssueType} : {TypeName} - {Message}";
 	}
 
 	#endregion

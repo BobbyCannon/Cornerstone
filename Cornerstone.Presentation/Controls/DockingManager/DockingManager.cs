@@ -166,6 +166,11 @@ public partial class DockingManager : DockSplitPanel
 	public IRuntimeInformation RuntimeInformation { get; }
 
 	/// <summary>
+	/// A floated window shows the tab content only. The shell tab strip stays on the main window.
+	/// </summary>
+	public bool SingleViewFloatWindows { get; set; }
+
+	/// <summary>
 	/// Root tab lifecycle. Hosts should Track this and let parent phases run.
 	/// </summary>
 	public LifecycleTracker TabLifecycle { get; }
@@ -391,6 +396,120 @@ public partial class DockingManager : DockSplitPanel
 
 		// Visual already gone — still end lifecycle.
 		DeactivateTab(tabModel);
+	}
+
+	/// <summary>
+	/// Move a floated tab back into the shell. The float window closes when it is empty.
+	/// </summary>
+	public bool DockTab(DockableTabModel tabModel)
+	{
+		if ((tabModel == null) || !IsFloated(tabModel))
+		{
+			return false;
+		}
+
+		var root = RootDockingManager;
+		if (!ReferenceEquals(this, root))
+		{
+			return root.DockTab(tabModel);
+		}
+
+		var located = GetTabControlContaining(tabModel);
+		if (located == null)
+		{
+			return false;
+		}
+
+		var (tabControl, index) = located.Value;
+		if (tabControl.Items[index] is not DockableTabView tabView)
+		{
+			return false;
+		}
+
+		var window = FindContainingWindow(tabView);
+		tabControl.Items.Remove(tabView);
+
+		var destination = GetTabControls(Children).FirstOrDefault(x => x.CanAcceptTabModel(tabModel))
+			?? RootTabControl;
+		destination.Add(tabView);
+
+		if ((window != null) && !window.DockingManager.GetAllTabViews().Any())
+		{
+			window.Close();
+		}
+
+		return true;
+	}
+
+	/// <summary>
+	/// Move a shell tab into its own window. The tab keeps the lifecycle it already has.
+	/// </summary>
+	public bool FloatTab(DockableTabModel tabModel)
+	{
+		if ((tabModel == null) || IsFloated(tabModel))
+		{
+			return false;
+		}
+
+		var root = RootDockingManager;
+		if (!ReferenceEquals(this, root))
+		{
+			return root.FloatTab(tabModel);
+		}
+
+		var located = GetTabControlContaining(tabModel);
+		if (located == null)
+		{
+			return false;
+		}
+
+		var (tabControl, index) = located.Value;
+		if (tabControl.Items[index] is not DockableTabView tabView)
+		{
+			return false;
+		}
+
+		var width = tabControl.Bounds.Width;
+		var height = tabControl.Bounds.Height;
+		if (width < 1)
+		{
+			width = 800;
+		}
+
+		if (height < 1)
+		{
+			height = 450;
+		}
+
+		var host = GetHostWindow();
+		tabControl.Items.Remove(tabView);
+		ShowFloatedTab(tabView, height, width, host.Position.X + 48, host.Position.Y + 48);
+		return true;
+	}
+
+	/// <summary>
+	/// True when the tab is open in a float window.
+	/// </summary>
+	public bool IsFloated(DockableTabModel tabModel)
+	{
+		if (tabModel == null)
+		{
+			return false;
+		}
+
+		var root = RootDockingManager;
+		if (!ReferenceEquals(this, root))
+		{
+			return root.IsFloated(tabModel);
+		}
+
+		var located = GetTabControlContaining(tabModel);
+		if (located == null)
+		{
+			return false;
+		}
+
+		return !GetTabControls(Children).Contains(located.Value.tabControl);
 	}
 
 	public T CreateTabModel<T>() where T : DockableTabModel
@@ -1077,16 +1196,12 @@ public partial class DockingManager : DockSplitPanel
 		}
 		else
 		{
-			var window = GetDockingWindow(
-				draggingWindow.Height, draggingWindow.Width,
-				draggingWindowPosition.X, draggingWindowPosition.Y
-			);
-
-			window.DockingManager._rootDockingManager = RootDockingManager;
-			window.DockingManager.Initialize(GetAllowedDockTypes(tabItem.TabModel));
-			window.DockingManager.AddTab(tabItem);
-			RootDockingManager.Windows.Add(window);
-			window.Show();
+			ShowFloatedTab(
+				tabItem,
+				draggingWindow.Height,
+				draggingWindow.Width,
+				draggingWindowPosition.X,
+				draggingWindowPosition.Y);
 		}
 
 		OnTabDropped(tabItem);
@@ -1115,23 +1230,53 @@ public partial class DockingManager : DockSplitPanel
 		return model;
 	}
 
+	private DockingWindow ShowFloatedTab(DockableTabView tabView, double height, double width, int left, int top)
+	{
+		var window = GetDockingWindow(height, width, left, top);
+		var header = tabView.TabModel?.Header;
+		if (!string.IsNullOrWhiteSpace(header))
+		{
+			window.Title = header;
+		}
+
+		window.DockingManager._rootDockingManager = RootDockingManager;
+		window.DockingManager.Initialize(GetAllowedDockTypes(tabView.TabModel));
+		window.DockingManager.AddTab(tabView);
+		if (RootDockingManager.SingleViewFloatWindows)
+		{
+			var strip = window.DockingManager.RootTabControl;
+			strip.ShowTabStrip = false;
+			strip.BorderThickness = new Thickness(0);
+			window.ContextMenu = tabView.TabModel?.HeaderMenu;
+		}
+
+		RootDockingManager.Windows.Add(window);
+		window.Show();
+		return window;
+	}
+
 	private DockingWindow GetDockingWindow(double height, double width, int left, int top)
 	{
 		var hostWindow = GetHostWindow();
 		var dockingManager = new DockingManager(DependencyProvider, RuntimeInformation, []);
 		var response = new DockingWindow(dockingManager);
+		var icon = WindowIcon ?? hostWindow.Icon;
 		response.DataContext = hostWindow.DataContext;
 		response.Height = height;
 		response.Position = new PixelPoint(left, top);
 		response.WindowDecorations = WindowDecorations.Full;
 		response.Title = WindowTitle ?? "Window";
-		response.Icon = WindowIcon;
-		response.TitleBarIcon = WindowIcon?.ToBitmap();
+		response.Icon = icon;
+		response.TitleBarIcon = icon?.ToBitmap();
 		response.Width = width;
 		response.DockingManager[!BackgroundProperty] = this[!BackgroundProperty];
 		response.DockingManager[!DockIndicatorFieldFillProperty] = this[!DockIndicatorFieldFillProperty];
 		response.DockingManager[!DockIndicatorFieldHoveredFillProperty] = this[!DockIndicatorFieldHoveredFillProperty];
-		response.DockingManager[!NewTabCommandProperty] = this[!NewTabCommandProperty];
+		if (!RootDockingManager.SingleViewFloatWindows)
+		{
+			response.DockingManager[!NewTabCommandProperty] = this[!NewTabCommandProperty];
+		}
+
 		return response;
 	}
 

@@ -110,15 +110,25 @@ public class SchemaSnapshot
 		return fk;
 	}
 
-	public static SqlIndex CreateIndex(string name, bool isUnique, string columnName)
+	/// <summary>
+	/// Builds an index. Column names are stored in the order given.
+	/// </summary>
+	public static SqlIndex CreateIndex(string name, bool isUnique, params string[] columnNames)
 	{
 		var index = new SqlIndex();
 		index.Name = name;
 		index.IsUnique = isUnique;
-		var indexColumn = new SqlIndexColumn();
-		indexColumn.ColumnName = columnName;
-		indexColumn.Ordinal = 0;
-		index.Columns.Add(indexColumn);
+		if (columnNames != null)
+		{
+			for (var i = 0; i < columnNames.Length; i++)
+			{
+				var indexColumn = new SqlIndexColumn();
+				indexColumn.ColumnName = columnNames[i];
+				indexColumn.Ordinal = i;
+				index.Columns.Add(indexColumn);
+			}
+		}
+
 		return index;
 	}
 

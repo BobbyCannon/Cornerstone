@@ -4,6 +4,7 @@
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:tabs="clr-namespace:Cornerstone.Sample.Tabs.Welcome"
+		xmlns:sampleThemes="clr-namespace:Cornerstone.Sample.Theming"
 		xmlns:themes="clr-namespace:Cornerstone.Presentation.Theme.Theming;assembly=Cornerstone.Presentation"
 		mc:Ignorable="d" d:DesignHeight="700" d:DesignWidth="640"
 		x:Class="Cornerstone.Sample.Tabs.Welcome.TabThemes"
@@ -15,7 +16,22 @@
 			<StackPanel Margin="16,8,16,20" Spacing="16" MaxWidth="560" HorizontalAlignment="Center">
 				<TextBlock Opacity="0.7"
 						TextWrapping="Wrap"
-						Text="Choose color, light/dark mode, and UI density. Values save with the sample app and apply through CornerstoneTheme (same pattern as real products)." />
+						Text="Choose a skin, then color, light/dark mode, and density. Values save with the sample app. Cornerstone is the product skin. Add a later demo skin by registering it in SampleThemeCatalog." />
+
+				<!-- Skin -->
+				<Border Background="{DynamicResource Background03}"
+						BorderBrush="{DynamicResource BorderBrush}"
+						BorderThickness="1"
+						CornerRadius="8"
+						Padding="14">
+					<StackPanel Spacing="10">
+						<TextBlock Text="Skin" Opacity="0.9" />
+						<ComboBox Width="220"
+								HorizontalAlignment="Left"
+								ItemsSource="{x:Static sampleThemes:SampleThemeCatalog.Names}"
+								SelectedItem="{Binding Settings.ThemeSkin, Mode=TwoWay}" />
+					</StackPanel>
+				</Border>
 
 				<!-- Mode -->
 				<Border Background="{DynamicResource Background03}"

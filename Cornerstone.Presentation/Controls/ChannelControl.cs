@@ -107,11 +107,9 @@ public partial class ChannelControl : TemplatedControl, IDispatchable
         // Draw background + border
         if ((BorderBrush != null) && (borderThickness > 0))
         {
-            backgroundArea = backgroundArea.Deflate(borderThickness * 0.5);
-            var roundedRect = new RoundedRect(backgroundArea, CornerRadius.TopLeft, CornerRadius.TopRight,
-                CornerRadius.BottomRight, CornerRadius.BottomLeft);
+            var roundedRect = new RoundedRect(backgroundArea, CornerRadius).UniformBorderCenterline(borderThickness);
             context.DrawRectangle(Background, _borderPen ??= new Pen(BorderBrush), roundedRect);
-            backgroundArea = backgroundArea.Deflate(borderThickness * 0.5);
+            backgroundArea = roundedRect.Rect.Deflate(borderThickness * 0.5);
         }
         else
         {

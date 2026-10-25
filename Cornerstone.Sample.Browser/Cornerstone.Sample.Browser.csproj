@@ -15,8 +15,6 @@
 	<Target Name="CopyFiles" AfterTargets="Build">
 		<Copy SourceFiles="$(ProjectDir)..\Cornerstone.Presentation\Platforms\Browser\Cornerstone.Browser.css"
 				DestinationFiles="$(ProjectDir)wwwroot\css\Cornerstone.Browser.css" />
-		<Copy SourceFiles="$(ProjectDir)..\Cornerstone.Presentation\Platforms\Browser\Cornerstone.Browser.js"
-				DestinationFiles="$(ProjectDir)wwwroot\Cornerstone.Browser.js" />
 	</Target>
 	<Import Project="..\Build\Presentation.props" />
 </Project>

@@ -16,6 +16,27 @@ public class MultiCaretEditTests : CornerstoneUnitTest
 	#region Methods
 
 	[TestMethod]
+	public void BackspaceAfterColumnInsertKeepsEveryCaretColumn()
+	{
+		var model = Create("aa\r\nbb\r\ncc\r\ndd\r\nee");
+		model.Caret.Move(2);
+		model.Carets.AddAt(6);
+		model.Carets.AddAt(10);
+		model.Carets.AddAt(14);
+		model.Carets.AddAt(18);
+		model.ProcessTextInput("X");
+		model.Delete(0, false);
+
+		AreEqual("aa\r\nbb\r\ncc\r\ndd\r\nee", model.ToString());
+		AreEqual(5, model.Carets.Count);
+		foreach (var caret in model.Carets.All)
+		{
+			var line = model.Lines.GetLineFromOffset(caret.Offset);
+			AreEqual(2, caret.Offset - line.StartOffset);
+		}
+	}
+
+	[TestMethod]
 	public void DeleteBackwardsAtEveryCaret()
 	{
 		var model = Create("abcde");

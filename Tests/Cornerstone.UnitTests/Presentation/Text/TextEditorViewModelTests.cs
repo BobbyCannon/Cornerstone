@@ -169,6 +169,20 @@ public class TextEditorViewModelTests : CornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void DeleteDoesNothingWhenReadOnly()
+	{
+		var model = new TextEditorViewModel();
+		model.Load("Hello");
+		model.IsReadOnly = true;
+		model.Caret.Move(2);
+
+		model.Delete(2, false);
+
+		AreEqual("Hello", model.Buffer.ToString());
+		AreEqual(2, model.Caret.Offset);
+	}
+
+	[TestMethod]
 	public void DuplicateDoesNothingWhenReadOnly()
 	{
 		var model = new TextEditorViewModel();
@@ -180,6 +194,20 @@ public class TextEditorViewModelTests : CornerstoneUnitTest
 
 		AreEqual("Hello", model.Buffer.ToString());
 		AreEqual(2, model.Caret.Offset);
+	}
+
+	[TestMethod]
+	public void ProcessTextInputDoesNothingWhenReadOnly()
+	{
+		var model = new TextEditorViewModel();
+		model.Load("Hello");
+		model.IsReadOnly = true;
+		model.Caret.Move(5);
+
+		model.ProcessTextInput("!");
+
+		AreEqual("Hello", model.Buffer.ToString());
+		AreEqual(5, model.Caret.Offset);
 	}
 
 	[TestMethod]

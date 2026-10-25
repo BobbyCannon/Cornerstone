@@ -60,6 +60,11 @@ public class LineManager : CornerstoneObject, IEnumerable<Line>, IQueue<Line>
 	/// </summary>
 	internal bool LastEditNeedsPaintOnly { get; private set; }
 
+	internal void RestoreLastEditNeedsPaintOnly(bool value)
+	{
+		LastEditNeedsPaintOnly = value;
+	}
+
 	/// <summary>
 	/// True when the last Measure recomputed line metrics, shifted Y, or changed extent.
 	/// False on a wrap-off cache hit (resize with the same character metrics).

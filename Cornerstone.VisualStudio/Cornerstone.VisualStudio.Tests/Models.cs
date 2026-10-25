@@ -78,4 +78,19 @@ namespace CompletionEngineTests.Models
     public class MyButton : Button
     {
     }
+
+    public interface IDeviceDetails
+    {
+        string DeviceId { get; }
+    }
+
+    public interface IRuntimeDetails : IDeviceDetails
+    {
+        string ApplicationName { get; }
+    }
+
+    public class DetailsViewModel
+    {
+        public IRuntimeDetails RuntimeInformation { get; set; }
+    }
 }

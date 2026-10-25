@@ -17,8 +17,9 @@
 				<Setter Property="ExtendClientAreaTitleBarHeightHint" Value="32" />
 				<Setter Property="Template">
 					<ControlTemplate>
-						<Grid x:Name="WindowGrid"
-								RowDefinitions="Auto,*">
+						<Panel>
+							<Grid x:Name="WindowClient"
+									RowDefinitions="Auto,*">
 							<Border Grid.Row="0"
 									x:Name="TitleBar"
 									BorderThickness="0"
@@ -126,9 +127,33 @@
 											VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
 								</VisualLayerManager>
 							</Panel>
-						</Grid>
+							</Grid>
+							<Border x:Name="WindowBorder"
+									BorderBrush="{TemplateBinding BorderBrush}"
+									BorderThickness="1"
+									IsHitTestVisible="False"
+									IsVisible="False" />
+						</Panel>
 					</ControlTemplate>
 				</Setter>
+				<Style Selector="^[IsExtendedIntoWindowDecorations=True] /template/ Grid#WindowClient">
+					<Setter Property="Margin" Value="1" />
+				</Style>
+				<Style Selector="^[IsExtendedIntoWindowDecorations=True] /template/ Border#WindowBorder">
+					<Setter Property="IsVisible" Value="True" />
+				</Style>
+				<Style Selector="^[IsExtendedIntoWindowDecorations=True][WindowState=Maximized] /template/ Grid#WindowClient">
+					<Setter Property="Margin" Value="0" />
+				</Style>
+				<Style Selector="^[IsExtendedIntoWindowDecorations=True][WindowState=Maximized] /template/ Border#WindowBorder">
+					<Setter Property="IsVisible" Value="False" />
+				</Style>
+				<Style Selector="^[IsExtendedIntoWindowDecorations=True][WindowState=FullScreen] /template/ Grid#WindowClient">
+					<Setter Property="Margin" Value="0" />
+				</Style>
+				<Style Selector="^[IsExtendedIntoWindowDecorations=True][WindowState=FullScreen] /template/ Border#WindowBorder">
+					<Setter Property="IsVisible" Value="False" />
+				</Style>
 			</ControlTheme>
 		</ResourceDictionary>
 	</Styles.Resources>

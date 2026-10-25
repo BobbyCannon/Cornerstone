@@ -88,9 +88,45 @@ public class CaretManager
 	}
 
 	/// <summary>
-	/// Adds a caret one line toward lineDelta from the farthest caret in that direction,
-	/// using that caret's column (clamped). Repeated Down/Up therefore stacks carets
-	/// across many lines instead of toggling the neighbor of Primary.
+	/// Moves the active caret to offset and leaves the previous offset as an extra.
+	/// An extra already at offset is removed so the active caret takes that spot.
+	/// </summary>
+	public Caret PlaceActiveAt(int offset)
+	{
+		offset = ClampOffset(offset);
+		if (offset == _primary.Offset)
+		{
+			return _primary;
+		}
+
+		var occupied = FindEmptyCaret(offset);
+		if (occupied != null)
+		{
+			Unwire(occupied);
+			_carets.Remove(occupied);
+		}
+		else if (_carets.Count >= MaxCarets)
+		{
+			return null;
+		}
+
+		var previous = _primary.Offset;
+		if (CreateCaretAt(previous) == null)
+		{
+			return null;
+		}
+
+		_primary.Selection.Reset(offset);
+		_primary.Move(offset);
+		return _primary;
+	}
+
+	/// <summary>
+	/// Moves the active caret one line toward lineDelta and leaves its previous
+	/// offset as an extra caret (Visual Studio column add). The column is the
+	/// active caret's column, clamped to the target line. Repeating stacks carets
+	/// because the active caret is now the edge. Moving back onto an existing
+	/// empty caret removes the vacated line.
 	/// </summary>
 	public Caret AddRelativeToPrimary(int lineDelta)
 	{
@@ -105,8 +141,7 @@ public class CaretManager
 			return null;
 		}
 
-		var origin = GetExtremalCaret(lineDelta);
-		var originLine = origin.Line ?? lines.GetLineFromOffset(origin.Offset);
+		var originLine = _primary.Line ?? lines.GetLineFromOffset(_primary.Offset);
 		if (originLine == null)
 		{
 			return null;
@@ -119,14 +154,41 @@ public class CaretManager
 		}
 
 		var targetLine = lines[targetIndex];
-		var column = origin.Offset - originLine.StartOffset;
+		var column = _primary.Offset - originLine.StartOffset;
 		var maxColumn = Math.Max(0, targetLine.Length - targetLine.LineEndingLength);
 		if (column > maxColumn)
 		{
 			column = maxColumn;
 		}
 
-		return EnsureAt(targetLine.StartOffset + column);
+		var targetOffset = targetLine.StartOffset + column;
+		var occupied = FindEmptyCaret(targetOffset);
+		if (occupied != null)
+		{
+			if (occupied != _primary)
+			{
+				Remove(occupied);
+				_primary.Selection.Reset(targetOffset);
+				_primary.Move(targetOffset);
+			}
+
+			return _primary;
+		}
+
+		if (_carets.Count >= MaxCarets)
+		{
+			return null;
+		}
+
+		var leftBehind = _primary.Offset;
+		if (CreateCaretAt(leftBehind) == null)
+		{
+			return null;
+		}
+
+		_primary.Selection.Reset(targetOffset);
+		_primary.Move(targetOffset);
+		return _primary;
 	}
 
 	/// <summary>
@@ -139,9 +201,12 @@ public class CaretManager
 			return false;
 		}
 
-		for (var i = 1; i < _carets.Count; i++)
+		for (var i = 0; i < _carets.Count; i++)
 		{
-			Unwire(_carets[i]);
+			if (_carets[i] != _primary)
+			{
+				Unwire(_carets[i]);
+			}
 		}
 
 		_carets.Clear();
@@ -197,6 +262,7 @@ public class CaretManager
 				}
 
 				_carets.Remove(other);
+				Unwire(other);
 				if (!_carets.Contains(survivor))
 				{
 					_carets.Add(survivor);
@@ -209,8 +275,10 @@ public class CaretManager
 	}
 
 	/// <summary>
-	/// Moves carets and selections after offset by delta. The source caret is skipped
-	/// (it was already moved for this edit).
+	/// Shifts every caret except source when its offset is past the edit.
+	/// Does not rebuild the visual. A delete must call this before the document
+	/// notification. That notification clamps an end caret, and shifting afterward
+	/// moves it a second time.
 	/// </summary>
 	public void ShiftAfter(int offset, int delta, Caret source)
 	{
@@ -237,7 +305,7 @@ public class CaretManager
 			IntegerExtensions.EnsureRange(ref nextOffset, 0, length);
 			if (nextOffset != caret.Offset)
 			{
-				caret.Move(nextOffset);
+				caret.Retarget(nextOffset);
 			}
 
 			var start = caret.Selection.StartOffset;
@@ -376,12 +444,8 @@ public class CaretManager
 		caret.Selection.Update(state.SelectionStart, state.SelectionEnd);
 	}
 
-	/// <summary>
-	/// Adds a caret at offset if none is already there. Does not toggle.
-	/// </summary>
-	private Caret EnsureAt(int offset)
+	private Caret FindEmptyCaret(int offset)
 	{
-		offset = ClampOffset(offset);
 		for (var i = 0; i < _carets.Count; i++)
 		{
 			var existing = _carets[i];
@@ -391,44 +455,7 @@ public class CaretManager
 			}
 		}
 
-		if (_carets.Count >= MaxCarets)
-		{
-			return null;
-		}
-
-		return CreateCaretAt(offset);
-	}
-
-	private Caret GetExtremalCaret(int lineDelta)
-	{
-		var best = _primary;
-		var bestLine = GetLineIndex(best);
-		for (var i = 0; i < _carets.Count; i++)
-		{
-			var caret = _carets[i];
-			var lineIndex = GetLineIndex(caret);
-			if (lineDelta > 0)
-			{
-				if (lineIndex > bestLine)
-				{
-					best = caret;
-					bestLine = lineIndex;
-				}
-			}
-			else if (lineIndex < bestLine)
-			{
-				best = caret;
-				bestLine = lineIndex;
-			}
-		}
-
-		return best;
-	}
-
-	private int GetLineIndex(Caret caret)
-	{
-		var line = caret.Line ?? _viewModel.Lines.GetLineFromOffset(caret.Offset);
-		return line == null ? 0 : line.LineNumber - 1;
+		return null;
 	}
 
 	private Caret CreateCaretAt(int offset)

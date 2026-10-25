@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Cornerstone.Runtime;
@@ -37,32 +38,53 @@ public class NugetCacheForMemory : NugetCache
 
 	#region Methods
 
-	public override async Task<NugetPackage> GetOrAddAsync(string packageId, Func<string, Task<NugetPackage>> factoryAsync, CancellationToken ct = default)
+	public override async Task<NugetPackage> GetOrAddAsync(string packageId, Func<string, CancellationToken, Task<NugetPackage>> factoryAsync, CancellationToken ct = default)
 	{
 		if (!EnableMemoryCache)
 		{
-			var p = await factoryAsync(packageId).ConfigureAwait(false);
-			p.UpdatedOn = DateTimeProvider.RealTime.UtcNow;
-			return p.ShallowClone();
+			return CloneResult(await factoryAsync(packageId, ct).ConfigureAwait(false));
 		}
 
-		var responseTask = _cache.GetOrAdd(packageId,
-			id =>
-			{
-				var task = factoryAsync(id);
-				_ = task.ContinueWith(t =>
-				{
-					if (t is { IsCompletedSuccessfully: true, Result: not null })
-					{
-						t.Result.UpdatedOn = DateTimeProvider.RealTime.UtcNow;
-					}
-				});
-				return task;
-			}
-		);
+		var task = _cache.GetOrAdd(packageId, id => Create(id, factoryAsync, ct));
 
-		var response = await responseTask.ConfigureAwait(false);
-		return response?.ShallowClone();
+		try
+		{
+			var response = await task.ConfigureAwait(false);
+			if (response == null)
+			{
+				_cache.TryRemove(new KeyValuePair<string, Task<NugetPackage>>(packageId, task));
+				return null;
+			}
+
+			return response.ShallowClone();
+		}
+		catch
+		{
+			_cache.TryRemove(new KeyValuePair<string, Task<NugetPackage>>(packageId, task));
+			throw;
+		}
+	}
+
+	private static async Task<NugetPackage> Create(string packageId, Func<string, CancellationToken, Task<NugetPackage>> factoryAsync, CancellationToken ct)
+	{
+		var package = await factoryAsync(packageId, ct).ConfigureAwait(false);
+		if (package != null)
+		{
+			package.UpdatedOn = DateTimeProvider.RealTime.UtcNow;
+		}
+
+		return package;
+	}
+
+	private static NugetPackage CloneResult(NugetPackage package)
+	{
+		if (package == null)
+		{
+			return null;
+		}
+
+		package.UpdatedOn = DateTimeProvider.RealTime.UtcNow;
+		return package.ShallowClone();
 	}
 
 	#endregion

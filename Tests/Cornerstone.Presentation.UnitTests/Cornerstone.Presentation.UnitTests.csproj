@@ -31,14 +31,14 @@
 		</Content>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
-		<PackageReference Include="MSTest.TestAdapter" Version="4.4.0" />
-		<PackageReference Include="MSTest.TestFramework" Version="4.4.0" />
-		<PackageReference Include="System.Reactive" Version="6.1.0" />
-		<PackageReference Include="Microsoft.Reactive.Testing" Version="6.1.0" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+		<PackageReference Include="MSTest.TestAdapter" Version="4.5.1" />
+		<PackageReference Include="MSTest.TestFramework" Version="4.5.1" />
+		<PackageReference Include="System.Reactive" Version="7.0.0" />
+		<PackageReference Include="Microsoft.Reactive.Testing" Version="7.0.0" />
 		<PackageReference Include="Nito.AsyncEx.Context" Version="5.1.2" />
-		<PackageReference Include="Microsoft.Build.Framework" Version="18.0.2" />
-		<PackageReference Include="Microsoft.Build.Utilities.Core" Version="18.0.2" />
+		<PackageReference Include="Microsoft.Build.Framework" Version="18.11.0" />
+		<PackageReference Include="Microsoft.Build.Utilities.Core" Version="18.11.0" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
 	</ItemGroup>

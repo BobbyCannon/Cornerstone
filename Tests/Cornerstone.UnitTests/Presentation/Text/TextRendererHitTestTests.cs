@@ -151,6 +151,37 @@ public class TextRendererHitTestTests : CornerstoneCornerstoneUnitTest
 	}
 
 	[TestMethod]
+	public void ColumnCaretsSharePaintedX()
+	{
+		RunOnUi(() =>
+		{
+			var renderer = new TextRenderer { FontSize = 16 };
+			using (var em = renderer.GetTextLayout("X", 999999, false, Brushes.Black))
+			{
+				renderer.ViewModel.ViewMetrics.CharacterHeight = Math.Max(1, em.Height);
+				renderer.ViewModel.ViewMetrics.CharacterWidth = Math.Max(1, em.WidthIncludingTrailingWhitespace);
+			}
+
+			const string line = "lazy";
+			renderer.ViewModel.Load(line + "\r\n" + line + "\r\n" + line);
+			renderer.ViewModel.Lines.Measure(new Size(800, 400), false);
+
+			var first = renderer.ViewModel.Lines[0];
+			var column = first.EndOffset - first.LineEndingLength;
+			renderer.ViewModel.Caret.Move(column);
+			renderer.ViewModel.Carets.AddRelativeToPrimary(1);
+			renderer.ViewModel.Carets.AddRelativeToPrimary(1);
+
+			var painted = renderer.GetPaintedWidth(first.StartOffset, column);
+			AreEqual(3, renderer.ViewModel.Carets.Count);
+			foreach (var caret in renderer.ViewModel.Carets.All)
+			{
+				IsTrue(Math.Abs(caret.VisualLayout.X - painted) < 0.5);
+			}
+		});
+	}
+
+	[TestMethod]
 	public void TryGetDocumentOffsetAtPointMatchesPaintWidthsForNarrowPrefix()
 	{
 		RunOnUi(() =>

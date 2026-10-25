@@ -1,14 +1,29 @@
 # Cornerstone : Next Release Changelog
 
-Living feature / update log for the **next** VSIX release (currently shipping **1.1**).  
+Living feature / update log for the **next** VSIX release (currently shipping **1.5.277.37869**).  
 Add entries as work lands. When a release ships, move the block into a dated release section (or archive) and start a fresh “Unreleased” list.
 
-**Target version:** 1.2  
 **Related plan:** [Todo/Optimization.md](Todo/Optimization.md)
 
 ---
 
 ## Unreleased
+
+### Features
+
+### Performance
+
+### Fixes
+
+- **Hosted editor resize waits until layout finishes**  
+  The designer code window was resized during WPF layout. `SWP_ASYNCWINDOWPOS` does not defer that call when the editor window belongs to the Visual Studio UI thread, so the shell could ignore input until the window was moved. The new rectangle is stored and applied after layout returns.
+
+- **Cross-platform app template adds every host**  
+  New Project → Cornerstone Cross-Platform App now adds the shared project and the Desktop, Android, Browser, and iOS hosts. Visual Studio was adding only the Desktop project.
+
+---
+
+## 1.5.277.37869 — 2026-10-05
 
 ### Features
 
@@ -25,7 +40,7 @@ Add entries as work lands. When a release ships, move the block into a dated rel
   Brush and `Color` properties complete named colors (`Foreground="R"` → `Red`). `TextDecorations`, `Cursor`, `TextTrimming`, `RenderTransform` / `LayoutTransform`, `Effect`, and `CacheMode` complete their known tokens. `Image.Source` and `WindowIcon` complete image and icon paths.
 
 - **Go To Definition on binding paths**  
-  `{Binding Greeting}` with `x:DataType` opens that property (`MainViewModel.Greeting`). The caret can sit in the middle of the name. See [GoToDefinition.md](GoToDefinition.md).
+  `{Binding Greeting}` with `x:DataType` opens that property (`MainViewModel.Greeting`). A dotted path opens the property the caret is on: `{Binding Authentication.AuthenticatedAccountId}` opens `AuthenticatedAccountId` on the type of `Authentication`. A property declared on a base interface opens that interface member: `{Binding RuntimeInformation.DeviceId}` opens `ISyncClientDetails.DeviceId`. The caret can sit in the middle of the name. See [GoToDefinition.md](GoToDefinition.md).
 
 - **Go To Definition on attribute values**  
   F12 on an enum value (`HorizontalAlignment="Center"`) or a named brush, color, decoration, or cursor (`Foreground="Red"`) opens that member. Plain text such as `Text="About"` is unchanged.
@@ -57,7 +72,7 @@ Add entries as work lands. When a release ships, move the block into a dated rel
 ### Performance
 
 - **Completion metadata starts when the solution opens**  
-  The editor host reads assemblies in the background once when the solution is loaded. Each assembly is stored once in the solution's `.cscache` folder and reused by every project in that solution. A file is read again only when its size or write time changes. Older whole-set cache files in that folder are ignored.
+  The editor host reads assemblies in the background once when the solution is loaded. Each assembly is stored once in the solution's `.cscache` folder and reused by every project in that solution. A file is read again when its size or write time changes, or when the cache format changes. Older whole-set cache files in that folder are ignored.
 
 - **Debounce + skip unchanged XAML to host**  
   Classic debounce on every edit; adaptive idle delay for large documents (300 / 500 / 750 ms by size); skip `UpdateXaml` when settled buffer matches last successfully sent XAML.
@@ -76,6 +91,9 @@ Add entries as work lands. When a release ships, move the block into a dated rel
 
 ### Fixes
 
+- **Valid CXAML asks for a rebuild**  
+  The preview overlay said Invalid Markup when a document parsed but the host could not resolve a type or property from the last build. Well-formed CXAML now shows Build Required and the Build button. Markup that does not parse still shows Invalid Markup.
+
 - **Cornerstone preview frames no longer sit above the keyboard**  
   Each frame posted a dispatcher callback at Render priority, which runs before input. While a preview kept painting, Visual Studio ignored the keyboard and mouse until a resize. One callback below input now installs the render hook, and later frames ride that hook. A size change lays out below input instead of inside the render pass. Hiding the tab, or switching to source only, drops the hook immediately. The preview process still waits a moment before it exits. A rebuilt designer listens on the same session again, and that listen presents frames. A pump left stopped from the previous process was acknowledging frames and dropping them.
 
@@ -86,7 +104,7 @@ Add entries as work lands. When a release ships, move the block into a dated rel
   Closing a designer tab stops the preview process in `OnClose`, instead of waiting for the pane to be disposed. The render hook is removed immediately. A host left running after the tab was gone kept posting render work above the keyboard, and Visual Studio ignored input until the window was resized.
 
 - **Preview no longer freezes Visual Studio**  
-  Frames were applied at the same priority as the keyboard, and sizing the hosted editor called `SetWindowPos` during layout. The shell stopped taking input until a resize or any key in the preview pumped another window message. Frame work now stays below input, same-size frames skip layout, and the editor size change is posted instead of sent.
+  Frames were applied at the same priority as the keyboard, and sizing the hosted editor called `SetWindowPos` during layout. The shell stopped taking input until a resize or any key in the preview pumped another window message. Frame work now stays below input, and same-size frames skip layout. That release also passed `SWP_ASYNCWINDOWPOS` for the editor resize. The flag does not post when the editor window belongs to the UI thread. The resize that waits until layout returns is under Unreleased.
 
 - **Designer toolbar combos follow the Visual Studio theme**  
   Theme, zoom, and target use the shell dialog combo style and update with the theme. The zoom box is not editable.
@@ -163,7 +181,8 @@ Add entries as work lands. When a release ships, move the block into a dated rel
 | Multiple AXAML tabs | Only the active tab keeps a live host (after short delay); tab `*` reflects that |
 | Type in large AXAML | Debounced updates; no multi-second freezes from every keystroke |
 | Type `<` and pause briefly | Last good preview stays; no immediate Invalid Markup flash |
-| Invalid markup | Last frame frozen; error banner; fix markup → resume |
+| Invalid markup | Document does not parse. Last frame frozen; fix the markup to resume |
+| Valid CXAML the host cannot load | Build Required and a Build button. Last frame stays. A new property shows up after the build |
 | Host process exit (crash) | Pause UI; edit restarts host; tab loses `*` until live again |
 | Source-only idle | Host stops after ~15 s; `*` drops; typing brings host back |
 | Logging | Default remains Information; no frame pixel dumps |

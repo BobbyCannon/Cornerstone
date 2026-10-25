@@ -36,6 +36,8 @@ internal class TextEditorTextInputMethodClient<T> : TextInputMethodClient
 		set => _editor.Renderer?.ViewModel.Caret.Selection.Update(value);
 	}
 
+	public override bool ShowInputPane => (_editor == null) || !_editor.IsReadOnly;
+
 	public override bool SupportsPreedit => true;
 
 	public override bool SupportsSurroundingText => true;
@@ -67,6 +69,11 @@ internal class TextEditorTextInputMethodClient<T> : TextInputMethodClient
 
 	private void OnParentTapped(object sender, TappedEventArgs e)
 	{
+		if ((_editor != null) && _editor.IsReadOnly)
+		{
+			return;
+		}
+
 		RaiseInputPaneActivationRequested();
 	}
 

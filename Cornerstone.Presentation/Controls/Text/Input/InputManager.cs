@@ -123,10 +123,10 @@ public class InputManager
 		AddBinding(new KeyGesture(Key.PageDown), new KeyCommand(_ => _viewModel.MoveAllCarets(CaretMoveDirection.PageDown, false)));
 		AddBinding(new KeyGesture(Key.PageDown, KeyModifiers.Shift), new KeyCommand(_ => _viewModel.MoveAllCarets(CaretMoveDirection.PageDown, true)));
 		AddBinding(new KeyGesture(Key.A, KeyModifiers.Control), new KeyCommand(_ => _viewModel.SelectAllText()));
-		AddBinding(new KeyGesture(Key.Enter), new KeyCommand(_ => _viewModel.HandleEnterKey()));
-		AddBinding(new KeyGesture(Key.Return), new KeyCommand(_ => _viewModel.HandleEnterKey()));
-		AddBinding(new KeyGesture(Key.Back), new KeyCommand(_ => _viewModel.Delete(_viewModel.Caret.Offset, false)));
-		AddBinding(new KeyGesture(Key.Delete), new KeyCommand(_ => _viewModel.Delete(_viewModel.Caret.Offset, true)));
+		AddBinding(new KeyGesture(Key.Enter), new KeyCommand(_ => _viewModel.HandleEnterKey(), _ => !_viewModel.IsReadOnly));
+		AddBinding(new KeyGesture(Key.Return), new KeyCommand(_ => _viewModel.HandleEnterKey(), _ => !_viewModel.IsReadOnly));
+		AddBinding(new KeyGesture(Key.Back), new KeyCommand(_ => _viewModel.Delete(_viewModel.Caret.Offset, false), _ => !_viewModel.IsReadOnly));
+		AddBinding(new KeyGesture(Key.Delete), new KeyCommand(_ => _viewModel.Delete(_viewModel.Caret.Offset, true), _ => !_viewModel.IsReadOnly));
 
 		AddBinding(new KeyGesture(Key.X, KeyModifiers.Control), new KeyCommand(_ => _viewModel.Clipboard.Cut(), _ => _viewModel.Clipboard.CanCut()));
 		AddBinding(new KeyGesture(Key.C, KeyModifiers.Control), new KeyCommand(_ => _viewModel.Clipboard.Copy(), _ => _viewModel.Clipboard.CanCopy()));
@@ -137,8 +137,8 @@ public class InputManager
 		AddBinding(new KeyGesture(Key.Z, KeyModifiers.Control), new KeyCommand(_ => _viewModel.UndoManager.Undo(), _ => _viewModel.UndoManager.CanUndo()));
 
 		AddBinding(new KeyGesture(Key.Insert), new KeyCommand(_ => _viewModel.Caret.OverstrikeMode = !_viewModel.Caret.OverstrikeMode));
-		AddBinding(new KeyGesture(Key.Tab), new KeyCommand(_ => _viewModel.Indent()));
-		AddBinding(new KeyGesture(Key.Tab, KeyModifiers.Shift), new KeyCommand(_ => _viewModel.Unindent()));
+		AddBinding(new KeyGesture(Key.Tab), new KeyCommand(_ => _viewModel.Indent(), _ => !_viewModel.IsReadOnly));
+		AddBinding(new KeyGesture(Key.Tab, KeyModifiers.Shift), new KeyCommand(_ => _viewModel.Unindent(), _ => !_viewModel.IsReadOnly));
 	}
 
 	#endregion

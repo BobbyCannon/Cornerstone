@@ -19,7 +19,7 @@
 	<ItemGroup>
 		<PackageReference Include="BouncyCastle.Cryptography" Version="2.7.0" />
 		<PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.13" />
 		<!--
 			NuGet audit walks the restore graph, not the output. Makaretu.Dns.Multicast 0.27.0
 			(and its netstandard1.x / NETStandard.Library 1.6 chain) still lists System.Net.Http

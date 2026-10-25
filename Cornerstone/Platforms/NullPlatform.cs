@@ -1,7 +1,13 @@
 #region References
 
+using System;
 using Cornerstone.Input;
 using Cornerstone.Media;
+#if !ANDROID && !BROWSER && !IOS && !WINDOWS
+using Cornerstone.Platforms.Linux;
+using Cornerstone.Platforms.MacOS;
+using Cornerstone.Platforms.Windows;
+#endif
 using Cornerstone.Runtime;
 using Cornerstone.Security;
 using Cornerstone.Security.SecurityKeys;
@@ -40,13 +46,45 @@ public class NullPlatform : CornerstoneObject, IPlatform
 		if (!IsLifecycleInitialized())
 		{
 			DependencyProvider.AddTransient<AudioPlayer, AudioPlayerStub>();
+			DependencyProvider.AddSingleton<IBiometricKeyService, BiometricKeyServiceStub>();
+			#if ANDROID || BROWSER || IOS || WINDOWS
 			DependencyProvider.AddSingleton<Gamepad, GamepadStub>();
+			#else
+			if (OperatingSystem.IsLinux())
+			{
+				DependencyProvider.AddTransient<Gamepad, LinuxGamepad>();
+			}
+			else if (OperatingSystem.IsMacOS())
+			{
+				DependencyProvider.AddTransient<Gamepad, MacOSGamepad>();
+			}
+			else
+			{
+				DependencyProvider.AddSingleton<Gamepad, GamepadStub>();
+			}
+
+			if (OperatingSystem.IsWindows())
+			{
+				DependencyProvider.AddSingleton<IScreenSampler, WindowsScreenSampler>();
+			}
+			else if (OperatingSystem.IsLinux())
+			{
+				DependencyProvider.AddSingleton<IScreenSampler, LinuxScreenSampler>();
+			}
+			else if (OperatingSystem.IsMacOS())
+			{
+				DependencyProvider.AddSingleton<IScreenSampler, MacOSScreenSampler>();
+			}
+			else
+			{
+				DependencyProvider.AddSingleton<IScreenSampler, ScreenSamplerStub>();
+			}
+			#endif
 			DependencyProvider.AddSingleton<IKeepAlive, UnsupportedKeepAlive>();
 			DependencyProvider.AddSingleton<Keyboard, KeyboardStub>();
 			DependencyProvider.AddSingleton<Mouse, MouseStub>();
 			DependencyProvider.AddSingleton<IPermissions, Permissions>();
 			DependencyProvider.AddSingleton<SecurityCardReader, SecurityCardReaderStub>();
-			DependencyProvider.AddSingleton<IWindowsHelloService, WindowsHelloServiceStub>();
 		}
 
 		base.InitializeLifecycle();

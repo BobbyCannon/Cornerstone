@@ -8,6 +8,11 @@
 
 ---
 
+* [Cornerstone: ChangeLog](changelog.md)
+* [Visual Studio Extension: ChangeLog](Cornerstone.VisualStudio/changelog.md)
+
+---
+
 ## Shape of an app
 
 Process entry builds one stack. Domain work stays in Keystone. Presentation is optional.

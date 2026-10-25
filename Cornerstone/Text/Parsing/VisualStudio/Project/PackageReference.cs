@@ -13,6 +13,7 @@ public class PackageReference
 
 	private readonly XElement _element;
 	private Version _version;
+	private bool _versionFromAttribute;
 	private string _versionString;
 
 	#endregion
@@ -136,28 +137,80 @@ public class PackageReference
 		return $"{Include}:{VersionString}";
 	}
 
+	public void RefreshVersion()
+	{
+		_version = null;
+		_versionString = null;
+	}
+
+	public bool SharesVersionElement(PackageReference other)
+	{
+		return (other != null) && ReferenceEquals(_element, other._element);
+	}
+
 	public bool UpdateVersion(string versionString)
 	{
-		// XElement.SetAttributeValue handles both updating an existing attribute or creating a new one.
-		// If the project file format requires an <Version> element instead of an attribute, 
-		// you may need to explicitly remove the attribute and add an element, but standard SDK-style 
-		// project files use attributes.
-		_element.SetAttributeValue("Version", versionString);
-		_versionString = null; // Invalidate cache
+		if (string.IsNullOrWhiteSpace(versionString))
+		{
+			return false;
+		}
+
+		var current = VersionString;
+		if (string.IsNullOrWhiteSpace(current) || current.Contains('$'))
+		{
+			return false;
+		}
+
+		if (_versionFromAttribute)
+		{
+			var attribute = _element.Attribute("Version");
+			if (attribute == null)
+			{
+				return false;
+			}
+
+			attribute.Value = versionString;
+		}
+		else
+		{
+			var child = FindVersionElement();
+			if (child == null)
+			{
+				return false;
+			}
+
+			child.Value = versionString;
+		}
+
+		_version = null;
+		_versionString = null;
 		return true;
+	}
+
+	private XElement FindVersionElement()
+	{
+		foreach (var child in _element.Elements())
+		{
+			if (child.Name.LocalName == "Version")
+			{
+				return child;
+			}
+		}
+
+		return null;
 	}
 
 	private string GetVersionFromAttributeOrElement()
 	{
-		// Check attribute first (SDK-style)
-		var attrValue = _element.Attribute("Version")?.Value;
-		if (!string.IsNullOrWhiteSpace(attrValue))
+		var attribute = _element.Attribute("Version");
+		if (!string.IsNullOrWhiteSpace(attribute?.Value))
 		{
-			return attrValue;
+			_versionFromAttribute = true;
+			return attribute.Value;
 		}
 
-		// Check element (classic/manual style)
-		return _element.Element("Version")?.Value;
+		_versionFromAttribute = false;
+		return FindVersionElement()?.Value;
 	}
 
 	#endregion

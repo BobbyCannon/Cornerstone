@@ -101,37 +101,37 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="MessagePack" Version="2.5.302" />
+		<PackageReference Include="MessagePack" Version="3.1.12" />
 		<PackageReference Include="MicroCom.Runtime" Version="0.11.6" />
 		<PackageReference Include="SkiaSharp" Version="3.119.4" />
-		<PackageReference Include="HarfBuzzSharp" Version="14.2.1.102" />
+		<PackageReference Include="HarfBuzzSharp" Version="14.2.1.301" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(_PresentationPlatform)' == 'windows'">
-		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4129.50" />
+		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
 	</ItemGroup>
 	<PropertyGroup Condition="'$(_PresentationPlatform)' == 'windows'">
 		<UseWindowsForms>true</UseWindowsForms>
 	</PropertyGroup>
 	<ItemGroup Condition="'$(_PresentationIsAndroid)' == 'true'">
-		<PackageReference Include="Xamarin.AndroidX.Camera.Core" Version="1.6.1.1" />
-		<PackageReference Include="Xamarin.AndroidX.Camera.Lifecycle" Version="1.6.1.1" />
-		<PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.6.1.1" />
-		<PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.6.1.1" />
+		<PackageReference Include="Xamarin.AndroidX.Camera.Core" Version="1.6.2" />
+		<PackageReference Include="Xamarin.AndroidX.Camera.Lifecycle" Version="1.6.2" />
+		<PackageReference Include="Xamarin.AndroidX.Camera.View" Version="1.6.2" />
+		<PackageReference Include="Xamarin.AndroidX.Camera.Camera2" Version="1.6.2" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(_PresentationIsDesktop)' == 'true'">
 		<PackageReference Include="MicroCom.CodeGenerator.Roslyn" Version="0.11.6">
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.Windows.CsWin32" Version="0.3.257">
+		<PackageReference Include="Microsoft.Windows.CsWin32" Version="0.3.363">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.4" />
-		<PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="14.2.1.102" />
-		<PackageReference Include="NWayland" Version="0.11.0" />
-		<PackageReference Include="Tmds.DBus.Protocol" Version="0.94.1" />
-		<PackageReference Include="Tmds.DBus.Generator" Version="0.94.1">
+		<PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="14.2.1.301" />
+		<PackageReference Include="NWayland" Version="0.12.5" />
+		<PackageReference Include="Tmds.DBus.Protocol" Version="0.95.1" />
+		<PackageReference Include="Tmds.DBus.Generator" Version="0.95.1">
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
 	</ItemGroup>
@@ -189,16 +189,16 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(_PresentationIsAndroid)' == 'true'">
-		<PackageReference Include="Xamarin.AndroidX.AppCompat" Version="1.7.1.4" />
-		<PackageReference Include="Xamarin.AndroidX.Window" Version="1.5.1.2" />
-		<PackageReference Include="Xamarin.AndroidX.DocumentFile" Version="1.1.0.3" />
+		<PackageReference Include="Xamarin.AndroidX.AppCompat" Version="1.8.0" />
+		<PackageReference Include="Xamarin.AndroidX.Window" Version="1.5.1.3" />
+		<PackageReference Include="Xamarin.AndroidX.DocumentFile" Version="1.1.0.4" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(_PresentationIsBrowser)' == 'true'">
 		<SupportedPlatform Remove="@(SupportedPlatform)" />
 		<SupportedPlatform Include="browser" />
 		<PackageReference Include="SkiaSharp.NativeAssets.WebAssembly" Version="3.119.4" />
-		<PackageReference Include="HarfBuzzSharp.NativeAssets.WebAssembly" Version="14.2.1.102" />
+		<PackageReference Include="HarfBuzzSharp.NativeAssets.WebAssembly" Version="14.2.1.301" />
 	</ItemGroup>
 
 	<Import Project="..\Cornerstone.Presentation.BuildTasks\CornerstoneBuildTasks.targets" />

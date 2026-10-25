@@ -161,6 +161,52 @@ internal static class XamlGoToDefinitionNavigator
 		return false;
 	}
 
+	private static ISymbol FindMember(INamedTypeSymbol type, string memberName)
+	{
+		if ((type == null) || string.IsNullOrEmpty(memberName))
+		{
+			return null;
+		}
+
+		ISymbol metadataOnly = null;
+		var seen = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+		var pending = new Queue<INamedTypeSymbol>();
+		pending.Enqueue(type);
+		while (pending.Count > 0)
+		{
+			var current = pending.Dequeue();
+			if ((current == null) || !seen.Add(current))
+			{
+				continue;
+			}
+
+			foreach (var member in current.GetMembers(memberName))
+			{
+				if (member.Locations.Any(location => location.IsInSource))
+				{
+					return member;
+				}
+
+				if (metadataOnly == null)
+				{
+					metadataOnly = member;
+				}
+			}
+
+			foreach (var iface in current.Interfaces)
+			{
+				pending.Enqueue(iface);
+			}
+
+			if (current.BaseType != null)
+			{
+				pending.Enqueue(current.BaseType);
+			}
+		}
+
+		return metadataOnly;
+	}
+
 	private static async Task<bool> GoToMemberAsync(
 		VisualStudioWorkspace workspace,
 		string typeFullName,
@@ -178,13 +224,12 @@ internal static class XamlGoToDefinitionNavigator
 		{
 			var compilation = await project.GetCompilationAsync().ConfigureAwait(false);
 			var type = compilation?.GetTypeByMetadataName(typeFullName);
-			var member = type?.GetMembers(memberName).FirstOrDefault(m => m.Locations.Any(l => l.IsInSource));
-			if (member != null)
+			var member = FindMember(type, memberName);
+			if ((member != null) && member.Locations.Any(location => location.IsInSource))
 			{
 				return await NavigateToSymbolAsync(workspace, member, project).ConfigureAwait(true);
 			}
 
-			member = type?.GetMembers(memberName).FirstOrDefault();
 			if ((member != null) && (metadataMember == null))
 			{
 				metadataMember = member;

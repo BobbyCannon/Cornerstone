@@ -2,12 +2,11 @@
 
 using System;
 using System.Collections.Generic;
-using Cornerstone.Presentation;
+using Cornerstone.Presentation.Controls.Resources;
+using Cornerstone.Presentation.Controls.Text;
+using Cornerstone.Presentation.Controls.Text.Folding;
 using Cornerstone.Presentation.Input;
 using Cornerstone.Presentation.Media;
-using Cornerstone.Presentation.Controls.Resources;
-using Cornerstone.Presentation.Controls.Text.Folding;
-using Cornerstone.Presentation.Controls.Text;
 
 #endregion
 
@@ -20,9 +19,14 @@ namespace Cornerstone.Presentation.Controls;
 public class FoldingMargin<T> : Margin
 	where T : TextEditorViewModel, new()
 {
-	#region Fields
+	#region Constants
 
 	private const double MutedOpacity = 0.4;
+
+	#endregion
+
+	#region Fields
+
 	private static StreamGeometry _angleRight;
 	private readonly TextEditor<T> _editor;
 	private FoldingSection _hoveredSection;
@@ -43,6 +47,11 @@ public class FoldingMargin<T> : Margin
 
 	public override void Render(DrawingContext drawingContext)
 	{
+		if (!_editor.ShowMargins)
+		{
+			return;
+		}
+
 		drawingContext.FillRectangle(Brushes.Transparent, new Rect(Bounds.Size));
 
 		var dividerBrush = _editor.BorderBrush ?? Brushes.Gray;
@@ -117,6 +126,11 @@ public class FoldingMargin<T> : Margin
 
 	protected override Size MeasureOverride(Size availableSize)
 	{
+		if (!_editor.ShowMargins)
+		{
+			return new Size(0, 0);
+		}
+
 		var metrics = _editor.ViewModel?.ViewMetrics;
 		var characterHeight = metrics?.CharacterHeight ?? _editor.FontSize;
 		var arrowSize = (double.IsFinite(characterHeight) ? characterHeight : 12) * 0.7;
@@ -172,35 +186,6 @@ public class FoldingMargin<T> : Margin
 		e.Handled = true;
 	}
 
-	private FoldingSection GetFoldingAt(Point localPoint)
-	{
-		var folding = _editor.ViewModel?.FoldingManager;
-		var renderer = _editor.Renderer;
-		if ((folding == null) || (renderer == null) || (_editor.ViewModel == null))
-		{
-			return null;
-		}
-
-		var documentY = localPoint.Y + renderer.Offset.Y;
-		if (!_editor.ViewModel.Lines.TryGetLineForOffset(0, documentY, out var line) || (line.VisualLayout.Height <= 0))
-		{
-			return null;
-		}
-
-		return folding.GetFoldingStartingOnLine(line);
-	}
-
-	private void SetHoveredSection(FoldingSection section)
-	{
-		if (ReferenceEquals(_hoveredSection, section))
-		{
-			return;
-		}
-
-		_hoveredSection = section;
-		InvalidateVisual();
-	}
-
 	private void DrawFoldRangeLine(DrawingContext drawingContext, Pen pen, double x, FoldingSection section, double topY)
 	{
 		var lines = _editor.ViewModel?.Lines;
@@ -222,8 +207,8 @@ public class FoldingMargin<T> : Margin
 			endLine = startLine;
 		}
 
-		var startY = startLine.VisualLayout.Top - topY + startLine.VisualLayout.Height;
-		var endY = endLine.VisualLayout.Top - topY + endLine.VisualLayout.Height;
+		var startY = (startLine.VisualLayout.Top - topY) + startLine.VisualLayout.Height;
+		var endY = (endLine.VisualLayout.Top - topY) + endLine.VisualLayout.Height;
 		if (endY <= startY)
 		{
 			return;
@@ -302,6 +287,35 @@ public class FoldingMargin<T> : Margin
 
 		var centerX = arrowWidth / 2;
 		return (arrowWidth, SnapToHalfPixel(centerX), centerX);
+	}
+
+	private FoldingSection GetFoldingAt(Point localPoint)
+	{
+		var folding = _editor.ViewModel?.FoldingManager;
+		var renderer = _editor.Renderer;
+		if ((folding == null) || (renderer == null) || (_editor.ViewModel == null))
+		{
+			return null;
+		}
+
+		var documentY = localPoint.Y + renderer.Offset.Y;
+		if (!_editor.ViewModel.Lines.TryGetLineForOffset(0, documentY, out var line) || (line.VisualLayout.Height <= 0))
+		{
+			return null;
+		}
+
+		return folding.GetFoldingStartingOnLine(line);
+	}
+
+	private void SetHoveredSection(FoldingSection section)
+	{
+		if (ReferenceEquals(_hoveredSection, section))
+		{
+			return;
+		}
+
+		_hoveredSection = section;
+		InvalidateVisual();
 	}
 
 	private static double SnapToHalfPixel(double value)

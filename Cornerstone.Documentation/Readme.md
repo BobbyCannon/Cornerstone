@@ -30,7 +30,7 @@ This index covers how the framework behaves and how hosts use it.
 | [TokenTextFilter.md](TokenTextFilter.md) | Whitespace-token AND filter across any text fields (Sample tab) |
 | [Sync.md](Sync.md) | Entity sync: `SyncId`, pull/push rules, one `POST api/Sync`, SQL apply |
 | [Storage.md](Storage.md) | SQL table mapper vs EF: generated CUD, versioned migrations, Sample Loopback (`WebSyncClient`) |
-| [SourceReflection.md](SourceReflection.md) | Compile-time type maps for Native AOT; no runtime reflection on the generated path |
+| [SourceReflection.md](SourceReflection.md) | Compile-time type maps for Native AOT. On the browser, dependency injection only sees constructors in that map |
 
 ## Appearance
 
@@ -69,6 +69,12 @@ Task recipes for hosts. Full index: [HowTo/Readme.md](HowTo/Readme.md).
 |----------|---------|
 | [HowTo/Readme.md](HowTo/Readme.md) | Index of how-tos |
 | [HowTo/DocumentationReaderHost.md](HowTo/DocumentationReaderHost.md) | Stand up a documentation WinExe with `DocumentationReaderHost` |
+
+## Sample
+
+| Document | Summary |
+|----------|---------|
+| [Cornerstone.Sample.md](Cornerstone.Sample.md) | Sample media and WebView on Linux, including SteamOS LibVLC install |
 
 ## Quick Start
 

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Xml;
 using System.Xml.Linq;
 using Cornerstone.Text.Parsing.VisualStudio.Solution.Classic;
 using NuGet.Frameworks;
@@ -20,8 +21,10 @@ public class DotNetProject
 {
 	#region Fields
 
+	private XDocument _document;
 	private IEnumerable<DotNetProjectType> _projectTypeGuids;
 	private XElement _root;
+	private Encoding _saveEncoding;
 	private IList<NuGetFramework> _targetFrameworks;
 	private Version _version;
 	private string _versionString;
@@ -98,28 +101,57 @@ public class DotNetProject
 
 	public void LoadFile(string projectPath)
 	{
-		LoadXml(XDocument.Load(projectPath, LoadOptions.SetLineInfo));
-		Variables = GetVariables();
+		var bytes = File.ReadAllBytes(projectPath);
+		var encoding = DetectEncoding(bytes);
+		using (var stream = new MemoryStream(bytes))
+		{
+			LoadXml(XDocument.Load(stream, LoadOptions.PreserveWhitespace | LoadOptions.SetLineInfo));
+		}
+
+		_saveEncoding = encoding;
+		FilePath = Path.GetFullPath(projectPath);
 	}
 
 	public void LoadXml(string xml)
 	{
 		Reset();
-		_root = XDocument.Parse(xml, LoadOptions.SetLineInfo).Root;
+		_document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace | LoadOptions.SetLineInfo);
+		_root = _document.Root;
+		_saveEncoding = new UTF8Encoding(false);
 		Variables = GetVariables();
 	}
 
 	public void LoadXml(XDocument doc)
 	{
 		Reset();
+		_document = doc;
 		_root = doc.Root;
+		_saveEncoding = new UTF8Encoding(false);
 		Variables = GetVariables();
 	}
 
 	public void SaveFile(string filePath)
 	{
-		var xml = ToXml();
-		File.WriteAllText(filePath, xml, new UTF8Encoding(true));
+		if ((_document == null) || string.IsNullOrEmpty(filePath))
+		{
+			return;
+		}
+
+		var encoding = _saveEncoding ?? new UTF8Encoding(false);
+		var settings = new XmlWriterSettings
+		{
+			CloseOutput = false,
+			Encoding = encoding,
+			Indent = false,
+			NewLineHandling = NewLineHandling.None,
+			OmitXmlDeclaration = _document.Declaration == null
+		};
+
+		using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read))
+		using (var writer = XmlWriter.Create(stream, settings))
+		{
+			_document.Save(writer);
+		}
 	}
 
 	public string ToXml()
@@ -131,6 +163,26 @@ public class DotNetProject
 
 		var doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"), _root);
 		return doc.ToString();
+	}
+
+	private static Encoding DetectEncoding(byte[] bytes)
+	{
+		if ((bytes.Length >= 3) && (bytes[0] == 0xEF) && (bytes[1] == 0xBB) && (bytes[2] == 0xBF))
+		{
+			return new UTF8Encoding(true);
+		}
+
+		if ((bytes.Length >= 2) && (bytes[0] == 0xFF) && (bytes[1] == 0xFE))
+		{
+			return Encoding.Unicode;
+		}
+
+		if ((bytes.Length >= 2) && (bytes[0] == 0xFE) && (bytes[1] == 0xFF))
+		{
+			return Encoding.BigEndianUnicode;
+		}
+
+		return new UTF8Encoding(false);
 	}
 
 	private IEnumerable<DotNetProjectType> ReadProjectTypeGuids()
@@ -279,8 +331,10 @@ public class DotNetProject
 
 	private void Reset()
 	{
+		_document = null;
 		_root = null;
 		_projectTypeGuids = null;
+		_saveEncoding = null;
 		_targetFrameworks = null;
 		_version = null;
 		_versionString = null;

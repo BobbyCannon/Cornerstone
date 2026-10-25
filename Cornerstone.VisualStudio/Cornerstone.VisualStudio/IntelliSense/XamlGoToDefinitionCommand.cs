@@ -214,7 +214,8 @@ internal static class XamlGoToDefinitionCommand
 			return;
 		}
 
-		ThreadHelper.JoinableTaskFactory.Run(async () =>
+		// Run would block this thread inside JoinableTaskFactory.SingleExecuteProtector.
+		_ = ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
 		{
 			await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 			if (textView.IsClosed)

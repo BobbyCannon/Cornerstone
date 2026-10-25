@@ -77,7 +77,7 @@ public class DependencyProvider : IDependencyProvider
 		AddSingleton<IRuntimeInformation>(RuntimeInformationData.GetSample());
 		AddSingleton<SyncClient, SyncClientStub>();
 		AddSingleton<IWebClient, WebClientStub>();
-		AddSingleton<IWindowsHelloService, WindowsHelloServiceStub>();
+		AddSingleton<IBiometricKeyService, BiometricKeyServiceStub>();
 	}
 
 	/// <summary>

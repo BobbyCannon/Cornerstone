@@ -18,10 +18,15 @@ using Task = System.Threading.Tasks.Task;
 
 #endregion
 
+// Serilog.Sinks.Trace is compiled against Serilog 4.0.0.0. This package
+// references 4.4.0.0. Without the redirect, InitializeLogging cannot load
+// the assembly and Visual Studio reports every designer document as missing.
+[assembly: ProvideBindingRedirection(AssemblyName = "Serilog", PublicKeyToken = "24c2f752a8e58a10", OldVersionLowerBound = "4.0.0.0", OldVersionUpperBound = "4.4.0.0", NewVersion = "4.4.0.0")]
+
 namespace Cornerstone.VisualStudio;
 
 [Guid(CornerstoneConstants.PackageGuidString)]
-[InstalledProductRegistration("#110", "#112", "1.5.277.37869", IconResourceID = 400)]
+[InstalledProductRegistration("#110", "#112", "1.5.297.20657", IconResourceID = 400)]
 [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
 // Priority must beat the XML editor (0x2710 / 10000). .axaml is Avalonia. .cxaml is Cornerstone.
 // .xaml stays with the Visual Studio XAML editor.

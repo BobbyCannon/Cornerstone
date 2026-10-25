@@ -273,8 +273,8 @@ Always at least one caret. `TextEditorViewModel.Caret` **is** `Carets.Primary` (
 | API | Role |
 |-----|------|
 | `AddAt(offset)` | Add extra, or **toggle off** a non-primary empty caret at that offset |
-| `AddRelativeToPrimary(lineDelta)` | Add one line beyond the **farthest** caret in that direction (same column, clamped). Repeats stack down/up the file |
-| `EnsureAt` (private) | Add without toggle (used by relative add) |
+| `PlaceActiveAt(offset)` | Move the active caret to offset and leave the old offset as an extra. An extra already there is removed |
+| `AddRelativeToPrimary(lineDelta)` | Move the active caret one line (same column, clamped) and leave the old offset as an extra. Repeating stacks because the active caret is the edge. Reversing onto an existing empty caret removes that vacated line |
 | `CollapseToPrimary` | Drop extras |
 | `DocumentOrder` / `ReverseDocumentOrder` | Clipboard vs buffer mutation |
 | `ShiftAfter(offset, delta, source)` | Move other carets/selections after an insert/delete |
@@ -333,7 +333,7 @@ Ctrl+Wheel (TextRenderer)
 
 | Gesture | Action |
 |---------|--------|
-| Alt+Click | `AddAt` (toggle extra); Alt-drag extends that caret's selection |
+| Alt+Click / Ctrl+Alt+Click | `PlaceActiveAt`: the clicked caret becomes the active one; the previous active offset stays as an extra. Drag extends that caret |
 | Click | `CollapseToPrimary`, place primary |
 | Shift+Click | Extend primary selection; extras kept |
 | Double-click | Collapse, `SelectWord` |
@@ -345,7 +345,7 @@ Ctrl+Wheel (TextRenderer)
 | Arrows / Shift+Arrows | `MoveAllCarets` / extend each selection |
 | Home / End (+ Ctrl/Shift) | Smart line start, line end, document start/end (all carets) |
 | PageUp/Down (+ Shift) | Page move (all carets) |
-| Shift+Alt+Up/Down | Add caret on previous/next line from the farthest caret (VS). Ctrl+Alt+Up/Down also bound |
+| Shift+Alt+Up/Down | Move the active caret to the previous/next line and leave an extra behind (VS). Reversing shrinks. Ctrl+Alt+Up/Down also bound |
 | Escape | `CollapseToPrimary` when `Count > 1` (otherwise not handled) |
 | Ctrl+A | Select all |
 | Enter / Return | `HandleEnterKey` |
@@ -393,7 +393,7 @@ To add shortcuts: `InputManager.AddBinding(gesture, new KeyCommand(...))` or `Re
    - Visible lines only (binary search by Y, then a `for` over `LineManager` until past the viewport)
    - Per visual subline: `TokenManager.GetOverlappingTokens` (struct enumerator, no `TextRange` alloc). Styled `TextLayout`s are cached per run and reused across scroll; document/font/theme changes drop the cache.
    - Fold markers: `GetFoldingStartingOnLine` / `GetNextFolding` binary-search the sorted section list.
-   - `CaretVisual` child: primary blinks; extras stay visible while focused. One caret uses theme foreground; several carets: primary red, extras blue.
+   - `CaretVisual` child: primary blinks (500 ms). Focus and primary move call `ShowBlinkingCaret` (force on, restart the timer). Extras stay visible while focused. One caret uses theme foreground; several carets: primary red, extras blue.
 
 ### Extending background paint
 
