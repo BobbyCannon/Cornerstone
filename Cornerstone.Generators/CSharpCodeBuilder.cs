@@ -1,12 +1,13 @@
 ﻿#region References
 
+using Cornerstone.Generators.Models;
+using Microsoft.CodeAnalysis;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
-using Cornerstone.Generators.Models;
-using Microsoft.CodeAnalysis;
 
 #endregion
 
@@ -124,11 +125,11 @@ public class CSharpCodeBuilder
 			}
 			case float f:
 			{
-				return f.ToString("G9");
+				return f.ToString("G9", CultureInfo.InvariantCulture);
 			}
 			case double d:
 			{
-				return d.ToString("G17");
+				return d.ToString("G17", CultureInfo.InvariantCulture);
 			}
 			case ITypeSymbol typeSymbol:
 			{
@@ -154,8 +155,8 @@ public class CSharpCodeBuilder
 				return b.ToString();
 			}
 		}
-		return value.ToString();
-	}
+        return value is IFormattable formattable ? formattable.ToString(null, CultureInfo.InvariantCulture) : value.ToString();
+    }
 
 	private static string ToTypeofLiteral(ITypeSymbol typeSymbol)
 	{
